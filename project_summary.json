@@ -2,29 +2,59 @@
   "project": {
     "name": "医院信息故障智能报修助手",
     "service_name": "信息保障助手",
-    "version": "1.0.0",
-    "baseline_date": "2026-08-20",
+    "version": "1.2.0",
+    "architecture_baseline": "V1.2",
+    "baseline_date": "2026-08-21",
     "current_phase": "G0",
-    "status": "specification_ready"
+    "status": "architecture_baseline_cleaned_g0_not_started",
+    "first_executable_task": "G0-001"
   },
-  "mission": "企业微信可靠受理 + 现有工单闭环 + 院内AI异步增强",
+  "phase_model": [
+    {
+      "id": "G0",
+      "name": "企业微信 WebSocket 能力验证",
+      "ticket_backend": null
+    },
+    {
+      "id": "P1",
+      "name": "企业微信外网试点",
+      "ticket_backend": "Pilot Ticket Core",
+      "hospital_dependencies_allowed": false
+    },
+    {
+      "id": "P2",
+      "name": "AI增强",
+      "ticket_backend": "Pilot Ticket Core",
+      "ai_is_critical_path": false
+    },
+    {
+      "id": "P3",
+      "name": "医院融合",
+      "migration_path": "Pilot Ticket Core -> Ticket Adapter -> Hospital Tickets",
+      "target_source_of_truth": "Hospital Tickets"
+    }
+  ],
+  "mission": "企业微信公网可靠受理，Pilot Ticket Core 验证闭环，Phase 3 通过 Adapter 融合医院 Tickets",
   "hard_invariants": [
     "persist_before_ack",
     "provider_msg_id_unique",
+    "channel_intake_ticket_incident_separated",
+    "phase1_uses_pilot_ticket_core",
+    "phase1_has_no_hospital_ticket_dependency",
     "ai_not_in_critical_path",
-    "existing_tickets_is_source_of_truth",
     "outbox_same_transaction_as_state_change",
     "no_simple_time_category_auto_merge",
     "private_medical_data_processing",
-    "no_ai_direct_production_actions"
+    "no_ai_direct_production_actions",
+    "phase3_hospital_tickets_becomes_single_long_term_source_of_truth"
   ],
   "recommended_stack": {
-    "gateway": "Node.js 24 + TypeScript + @wecom/aibot-node-sdk",
-    "web": "Next.js 16 + React",
-    "core": "Existing Node.js/Express Tickets service",
-    "database": "PostgreSQL 18",
-    "cache": "Redis 7.2",
-    "object_storage": "MinIO",
-    "ai": "Python 3.12 + FastAPI + PaddleOCR + local 2B-4B model adapter"
+    "gateway": "Node.js + TypeScript + locked WeCom SDK via adapter",
+    "phase1_core": "Pilot Ticket Core",
+    "database": "PostgreSQL",
+    "cache": "Redis optional and non-critical",
+    "object_storage": "Private object storage",
+    "ai": "Local asynchronous OCR/triage provider in Phase 2",
+    "phase3_integration": "Ticket Adapter to Hospital Tickets"
   }
 }

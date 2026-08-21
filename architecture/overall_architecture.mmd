@@ -1,51 +1,52 @@
 flowchart TB
-    subgraph WECOM[企业微信]
+    subgraph WECOM[Enterprise WeCom]
         GROUP[临床报修群]
         DIRECT[机器人单聊]
         BOT[信息保障助手]
     end
 
-    subgraph ACCESS[受控接入区]
-        ADAPTER[wecom-adapter]
-        GATEWAY[wecom-gateway]
-    end
-
-    subgraph CORE[医院应用区]
+    subgraph PILOT[Phase 1 公网试点]
+        ADAPTER[WeCom SDK Adapter]
+        GATEWAY[WeCom Gateway]
+        MESSAGE[Channel Message]
         INTAKE[Service Intake]
-        TICKETS[现有 Tickets]
+        PILOT_TICKET[Pilot Ticket Core]
         INCIDENT[Incident]
         OUTBOX[Notification Outbox]
-        RELAY[Relay Worker]
-        HUB[Hub / SSE / 灵动岛]
+        DELIVERY[Delivery Worker]
+        PG[(Pilot PostgreSQL)]
     end
 
-    subgraph DATA[数据层]
-        PG[(PostgreSQL 18)]
-        REDIS[(Redis 7.2)]
-        MINIO[(MinIO 私有桶)]
-    end
-
-    subgraph AI[AI增强区]
+    subgraph AI[Phase 2 异步增强]
         RULES[规则/系统指纹]
         OCR[OCR Service]
         TRIAGE[AI Triage]
+    end
+
+    subgraph HOSPITAL[Phase 3 医院融合]
+        TICKET_ADAPTER[Ticket Adapter]
+        HOSPITAL_TICKETS[Hospital Tickets]
+        MAPPING[ticket_external_mapping]
     end
 
     GROUP --> BOT
     DIRECT --> BOT
     BOT <-->|WSS 443| ADAPTER
     ADAPTER --> GATEWAY
-    GATEWAY --> INTAKE
+    GATEWAY --> MESSAGE
+    MESSAGE --> INTAKE
+    INTAKE --> PILOT_TICKET
+    PILOT_TICKET --> INCIDENT
+    PILOT_TICKET --> OUTBOX
+    OUTBOX --> DELIVERY
+    DELIVERY --> GATEWAY
+    MESSAGE --> PG
     INTAKE --> PG
-    INTAKE --> TICKETS
-    TICKETS --> INCIDENT
-    TICKETS --> OUTBOX
-    OUTBOX --> RELAY
-    RELAY --> GATEWAY
-    RELAY --> HUB
-    GATEWAY --> MINIO
-    INTAKE --> REDIS
+    PILOT_TICKET --> PG
     INTAKE -.async.-> RULES
     RULES -.optional.-> OCR
     OCR -.optional.-> TRIAGE
-    TRIAGE -.suggestion.-> INTAKE
+    TRIAGE -.suggestion only.-> INTAKE
+    PILOT_TICKET -.Phase 3 only.-> TICKET_ADAPTER
+    TICKET_ADAPTER --> HOSPITAL_TICKETS
+    TICKET_ADAPTER --> MAPPING

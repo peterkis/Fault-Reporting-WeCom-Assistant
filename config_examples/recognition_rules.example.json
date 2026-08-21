@@ -1,4 +1,9 @@
 {
+  "_meta": {
+    "architecture_baseline": "V1.2",
+    "phase_scope": ["P1", "P2"],
+    "ticket_creation_backend": "PILOT_TICKET_CORE"
+  },
   "version": "rules-v1-example",
   "intents": {
     "incident_positive_terms": [

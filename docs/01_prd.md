@@ -1,5 +1,7 @@
 
-# PRD
+# PRD V1.2 摘要
+
+> 唯一架构边界：Phase 1 使用公网 Pilot Ticket Core；Phase 3 才通过 Ticket Adapter 融合 Hospital Tickets。
 
 ## 产品目标
 
@@ -30,3 +32,4 @@
 - 自动执行运维命令
 - 全院群无感监听
 - 多医院租户
+- Phase 1 直接接入医院 Tickets

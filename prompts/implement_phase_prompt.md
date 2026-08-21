@@ -27,7 +27,9 @@
 - persist before ack；
 - provider + msg_id唯一；
 - AI不在关键路径；
-- Tickets是唯一工单事实源；
+- Phase 1/2由Pilot Ticket Core承载工单事实；
+- Phase 1不得依赖Hospital Tickets；
+- Phase 3只能通过Ticket Adapter融合，切换后Hospital Tickets为唯一长期事实源；
 - 状态与Outbox同事务；
 - 不按“同类别+时间”自动合并。
 ```

@@ -1,5 +1,7 @@
 # 07. 企业微信 WebSocket 接入规范
 
+阶段边界：Gate 0 和 Phase 1 运行在公网试点环境，Gateway 的业务下游是 Channel Message、Service Intake 和 Pilot Ticket Core；Phase 1 不连接 Hospital Tickets。
+
 ## 1. 前提
 
 用户已在企业微信创建智能机器人并完成 API 配置和权限授权，计划采用 WebSocket 长连接。
@@ -106,7 +108,7 @@ SDK 回调处理器只允许执行：
 
 1. 基础字段校验；
 2. 生成 trace_id；
-3. 调用内部 Intake API；
+3. 调用 Pilot Intake API；
 4. 在事务成功后回复；
 5. 将媒体下载或 AI 任务异步化。
 
@@ -138,7 +140,7 @@ SDK 回调处理器只允许执行：
 - 解决确认；
 - Incident 进展。
 
-所有主动推送来源于 Outbox，而不是 Tickets 控制器直接调用 SDK。
+所有主动推送来源于 Pilot Outbox，而不是 Ticket 控制器直接调用 SDK。Phase 3 的通知所有权必须通过切换计划明确。
 
 ## 8. 卡片按钮
 

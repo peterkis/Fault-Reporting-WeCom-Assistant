@@ -1,5 +1,7 @@
 # G0：企业微信 WebSocket 能力验证
 
+> 架构基线：V1.2。ARCH-001 已完成，但 G0-001 尚未开始。本阶段不实现 Pilot Ticket Core，也不接入 Hospital Tickets。
+
 ## 阶段目标
 
 用贵院真实租户冻结群聊、图片、主动推送、卡片、重连和单活能力，不写完整业务。
@@ -9,6 +11,7 @@
 
 ## 进入条件
 
+- ARCH-001 Architecture Baseline Cleanup 已完成
 - Bot ID/Secret 已配置
 - 测试群和测试账号可用
 - 测试服务器可出站访问企业微信
@@ -39,3 +42,4 @@
 - 任何核心边界变化新增 ADR；
 - 退出前执行阶段 E2E 和故障路径测试；
 - 未通过退出条件不得进入下一阶段。
+- 下一阶段只能是 Phase 1 公网 Pilot Ticket Core，不得直接接入 Hospital Tickets。

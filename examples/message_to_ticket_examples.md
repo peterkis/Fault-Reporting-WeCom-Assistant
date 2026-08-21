@@ -96,7 +96,7 @@ ticket_type = ACCOUNT_PROVISION
 若用户仅有一张最近未关闭工单：
 
 - 不新建 Ticket；
-- 返回现有工单状态；
+- 返回当前 Pilot 工单状态；Phase 3 切换后由 Adapter/Hospital Tickets 提供同等业务语义；
 - 建立一条 STATUS_QUERY 互动记录。
 
 若存在多张可能工单：

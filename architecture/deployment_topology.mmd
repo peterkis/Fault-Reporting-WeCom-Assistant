@@ -1,28 +1,35 @@
 flowchart TB
-    CLOUD[企业微信云<br/>openws WSS]
-    subgraph ACCESS[医院受控接入区]
+    CLOUD[Enterprise WeCom<br/>openws WSS]
+
+    subgraph PILOT[Phase 1 公网试点环境]
         GW1[Gateway Active]
-        GW2[Gateway Standby]
+        GW2[Gateway Standby<br/>无活动连接]
+        CORE[Pilot Ticket Core<br/>Channel + Intake + Ticket + Event]
+        RELAY[Outbox / Delivery Worker]
+        H5[Pilot Handler UI / H5]
+        PG[(Pilot PostgreSQL)]
+        STORE[(Private Object Storage)]
     end
-    subgraph APP[医院应用区]
-        T[现有 Tickets/Intake]
-        R[Outbox Relay]
-        H[Hub/H5]
-        AI[AI/OCR 可关闭]
+
+    subgraph ENHANCEMENT[Phase 2 可关闭增强]
+        AI[AI / OCR]
     end
-    subgraph DATA[数据区]
-        PG[(PostgreSQL)]
-        REDIS[(Redis)]
-        MINIO[(MinIO)]
+
+    subgraph HOSPITAL[Phase 3 医院环境]
+        ADAPTER[Ticket Adapter]
+        TICKETS[Hospital Tickets]
+        HM[Hospital Identity / Organization]
     end
 
     GW1 <-->|WSS 443 出站| CLOUD
-    GW2 -.无活动连接.-> CLOUD
-    GW1 --> T
-    T --> PG
-    T --> REDIS
-    GW1 --> MINIO
-    T --> R
-    R --> GW1
-    R --> H
-    T -.async.-> AI
+    GW2 -.standby.-> CLOUD
+    GW1 --> CORE
+    CORE --> PG
+    CORE --> RELAY
+    RELAY --> GW1
+    CORE --> H5
+    GW1 --> STORE
+    CORE -.async.-> AI
+    CORE -.Phase 3 only.-> ADAPTER
+    ADAPTER --> TICKETS
+    ADAPTER --> HM

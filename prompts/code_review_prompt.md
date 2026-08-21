@@ -8,7 +8,7 @@
 1. 消息是否在回复前可靠持久化；
 2. provider + msg_id是否具备数据库唯一约束和并发测试；
 3. AI/OCR失败是否影响建单；
-4. 是否绕过现有Tickets直接写工单核心；
+4. 是否符合当前Phase的工单边界：P1/P2使用Pilot Ticket Core，P3通过Ticket Adapter；
 5. 状态变更是否通过Action API；
 6. ticket_event和notification_outbox是否同事务；
 7. 是否存在群内敏感信息泄漏；
@@ -20,6 +20,8 @@
 13. 是否有超时、重试、死信和幂等；
 14. 是否新增未批准基础设施；
 15. 是否具备单元、Contract、集成和降级测试。
+16. 是否在Phase 1偷渡Hospital Tickets/SSO/Hub/院内Outbox依赖；
+17. 是否在Phase 3形成长期双写、双状态或双通知事实源。
 
 输出：
 - 阻断问题；

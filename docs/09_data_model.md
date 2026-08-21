@@ -1,265 +1,191 @@
-# 09. 数据模型设计
+# 09. V1.2 数据模型设计
 
-`database/schema_draft.sql` 为增量草案，实施前应与现有 Tickets 表结构对齐。
+## 1. 阶段边界
 
-## 1. Schema 边界
+- Phase 1/2 数据事实存放在公网 Pilot 数据边界；
+- Phase 1 必须具备 Channel Message、Service Intake、Pilot Ticket、Ticket Event、Notification Outbox/Delivery；
+- Phase 2 增加 Media Asset、AI Decision、Incident 和 Subscription；
+- Phase 3 增加 Ticket External Mapping、迁移批次和对账记录；
+- Phase 1 不读取或写入 Hospital Tickets 数据库；
+- Phase 3 只能通过 Ticket Adapter/API 融合，禁止共享数据库直写。
 
-建议：
+`database/schema_draft.sql` 是 V1.0 旧架构草案，缺少 Pilot Ticket Core 和 Phase 3 映射，不得直接实施。P1-005 必须基于本文件重新冻结可执行 Schema。
+
+## 2. 建议 Schema
 
 ```text
+channel.*
 intake.*
+pilot_ticket.*
 notification.*
-incident.*
+media.*          # Phase 2
+ai.*             # Phase 2
+incident.*       # Phase 2
+integration.*    # Phase 3
 ```
 
-现有 Tickets 表保留在原 Schema，不复制核心数据。
+Schema 名可按实现约定调整，但领域边界不得合并成单表。
 
-## 2. `intake.channel_message`
+## 3. Channel Message
 
-目的：保存原始企业微信消息事实。
-
-核心字段：
+保存企业微信原始消息事实，至少包含：
 
 ```text
-id uuid
-provider varchar
-msg_id varchar
-req_id varchar
-bot_id varchar
-chat_type varchar
-chat_id varchar
-sender_user_id varchar
-msg_type varchar
-create_time timestamptz
-raw_text text
-clean_text text
-raw_payload_encrypted bytea/jsonb
-processing_status varchar
-privacy_class varchar
-trace_id varchar
-retention_until timestamptz
-received_at timestamptz
+id
+provider
+msg_id
+req_id
+bot_id
+chat_type / chat_id
+sender_user_id
+msg_type
+create_time
+raw_text / clean_text
+raw_payload_encrypted
+processing_status
+privacy_class
+trace_id
+retention_until
+received_at
 ```
 
-索引：
+必须唯一：`(provider, msg_id)`。AI/OCR 不得覆盖原始消息。
 
-- unique `(provider, msg_id)`；
-- `(sender_user_id, received_at desc)`；
-- `(chat_id, received_at desc)`；
-- `(processing_status, received_at)`。
+## 4. Service Intake
 
-## 3. `intake.service_intake`
-
-目的：表达一次完整服务受理。
-
-核心字段：
+表示一次完整受理，至少包含：
 
 ```text
-id uuid
-intake_no varchar unique
-source_channel varchar
-primary_message_id uuid
-reporter_wecom_userid varchar
-reporter_person_id uuid/null
-reporter_org_assignment_id uuid/null
-request_type varchar
-summary varchar
-reported_campus_id varchar/null
-reported_department_id varchar/null
-reported_location_text varchar/null
-status varchar
-ticket_id uuid/null
-incident_id uuid/null
-created_at
-updated_at
-version int
+id / intake_no
+primary_message_id
+reporter_wecom_userid
+request_type
+summary
+reported_campus_id
+reported_department_id
+reported_location_text
+status
+pilot_ticket_id
+incident_id
+version
+created_at / updated_at
 ```
 
-## 4. `intake.intake_message_rel`
+通过 Intake Message Relation 支持多条消息、补充和澄清。Phase 1 身份字段允许仅有 WeCom userid，不要求医院 person_id。
 
-支持一个 Intake 多条消息：
+## 5. Pilot Ticket Core
+
+Phase 1/2 的工单事实源至少包含：
 
 ```text
-intake_id
-message_id
-relation_type PRIMARY/FOLLOW_UP/CLARIFICATION/STATUS_QUERY
-sequence_no
-created_at
+pilot_ticket.id
+pilot_ticket.ticket_no
+pilot_ticket.source_intake_id
+pilot_ticket.title
+pilot_ticket.request_type
+pilot_ticket.status
+pilot_ticket.priority
+pilot_ticket.resolver_team_id
+pilot_ticket.assignee_id
+pilot_ticket.reported_location fields
+pilot_ticket.external_result
+pilot_ticket.closure_reason
+pilot_ticket.version
+pilot_ticket.created_at / updated_at
 ```
 
-唯一 `(intake_id, message_id)`。
+Ticket 编号、状态、版本和外部结果是结构化字段，不能只存 JSONB。
 
-## 5. `intake.media_asset`
+### Ticket Event
 
-```text
-id uuid
-message_id uuid
-object_key varchar
-original_filename varchar
-mime_type varchar
-size_bytes bigint
-sha256 char(64)
-security_scan_status varchar
-sensitivity_level varchar
-external_visible boolean
-retention_until timestamptz
-created_at timestamptz
-```
-
-SHA256 可用于重复文件识别，但不能仅按文件哈希自动判断同一故障。
-
-## 6. `intake.identity_binding`
+每次 Action 追加事件：
 
 ```text
-wecom_userid varchar
-person_id uuid
-sso_username varchar
-org_assignment_id uuid
-department_id varchar
-campus_id varchar
-valid_from timestamptz
-valid_to timestamptz
-status varchar
-```
-
-支持历史有效期，避免人员调科后历史工单归属变化。
-
-## 7. `intake.ai_decision`
-
-```text
-id uuid
-intake_id uuid
-pipeline_version varchar
-model_name varchar
-model_version varchar
-prompt_version varchar
-input_hash char(64)
-ocr_text_redacted text
-structured_output jsonb
-decision_band varchar
-human_corrected boolean
-corrected_by uuid/null
-corrected_fields jsonb/null
-latency_ms int
-created_at timestamptz
-```
-
-AI 结果只追加，不覆盖旧版本。
-
-## 8. `incident.incident_report`
-
-```text
-incident_id uuid
-intake_id uuid
-match_method varchar
-match_evidence jsonb
-match_score numeric
-confirmed_by uuid/null
-created_at timestamptz
-```
-
-唯一 `(incident_id, intake_id)`。
-
-## 9. `incident.reporter_subscription`
-
-```text
-id uuid
-ticket_id uuid/null
-incident_id uuid/null
-wecom_userid varchar
-notification_channel varchar
-last_notified_version int
-notification_preference jsonb
-status varchar
-created_at
-updated_at
-```
-
-约束：ticket_id 与 incident_id 至少一个非空。
-
-## 10. `notification.outbox`
-
-如果现有系统已有 Outbox，扩展而不新建。最小字段：
-
-```text
-id uuid
-event_type varchar
-aggregate_type varchar
-aggregate_id uuid
-aggregate_version int
-payload jsonb
-status varchar
-available_at timestamptz
-attempt_count int
+event_type
+old_status / new_status
+operator_type / operator_id
+internal_note / external_note
+reason_code
+attachment_ids
+trace_id
 created_at
 ```
 
-唯一幂等建议：
+Ticket 状态、Ticket Event 和对应 Notification Outbox 必须同事务。
+
+## 6. Notification Outbox / Delivery
+
+Outbox 表示应发送事实，Delivery 表示每个目标的实际发送结果。
+
+建议幂等键：
 
 ```text
 event_type + aggregate_id + aggregate_version + target_key
 ```
 
-## 11. `notification.delivery`
+Phase 1 使用 Pilot Outbox，不依赖医院院内 Outbox。Phase 3 切换时必须迁移通知所有权并处理积压去重。
+
+## 7. Phase 2 增强对象
+
+### Media Asset
+
+保存对象键、SHA256、MIME、大小、安全扫描、敏感级别、外部可见性和留存时间。大文件不进入数据库。
+
+### AI Decision
+
+保存 pipeline/model/prompt/rule/catalog 版本、输入哈希、脱敏 OCR、结构化结果、决策带和人工修正。只追加，不覆盖历史。
+
+### Incident / Incident Report / Subscription
+
+Incident 关联多个独立 Intake；每条申报证据保留。Subscription 独立维护每位申报人的通知关系。
+
+## 8. Phase 3 Integration 对象
+
+### Ticket External Mapping
 
 ```text
-id uuid
-outbox_id uuid
-target_type varchar
-target_id varchar
-channel varchar
-template_code varchar
-payload_hash char(64)
-status varchar
-attempt_count int
-last_error_code varchar
-last_error_message_redacted varchar
-sent_at timestamptz
-created_at
-updated_at
+id
+pilot_ticket_id unique
+hospital_ticket_id unique
+hospital_ticket_no
+adapter_version
+migration_batch_id
+sync_state
+cutover_state
+last_reconciled_at
+created_at / updated_at
 ```
 
-## 12. 现有 Ticket 扩展建议
+### Migration Batch
 
-若现有 Tickets 缺少以下字段，可增量扩展：
+记录批次范围、输入快照、开始/结束时间、成功/失败/跳过数量、校验摘要和回滚标识。
 
-```text
-source_channel
-source_intake_id
-reported_campus_id
-reported_department_id
-reported_location_text
-external_status
-closure_reason
-version
-```
+### Reconciliation Result
 
-不要把全部企业微信原始字段堆入 Ticket 表。
+记录对象、比较版本、字段差异、解释状态、责任人和处置结果。不得以最后写入覆盖无法解释的冲突。
 
-## 13. 数据保留
+## 9. 身份与组织
 
-建议由 `config_examples/retention_policy.example.json` 驱动：
+- Phase 1 使用 Pilot 用户/角色/处理组和 WeCom userid；
+- 申报人所属科室与故障发生科室分离；
+- Phase 3 才引入医院 person/SSO/组织映射；
+- 映射保留有效期，人员调科不能改写历史事实；
+- 映射失败进入人工队列，不丢工单。
 
-- ChannelMessage：
-  - 成为工单证据：跟随工单档案策略；
-  - 问候/无关消息：短期删除；
-- 原始截图：
-  - 结案后按配置保留；
-  - 长期保留需审批；
-- OCR 原文：
-  - 敏感版受控；
-  - 分析版脱敏；
-- Notification Delivery：
-  - 保留满足审计需要；
-- AI Decision：
-  - 保留模型版本和结构化结果；
-  - 训练集另行审批。
+## 10. 数据保留与安全
 
-## 14. 数据迁移原则
+- 原始消息、截图、OCR和AI数据按敏感级别和用途留存；
+- 问候和无关消息短期删除；
+- 原图私有存储，访问有审计；
+- 日志不输出原始患者文本、OCR、Secret、AES Key或完整媒体URL；
+- Phase 3 迁移完成后明确 Pilot 数据只读、归档和删除责任。
 
-- 仅新增表和字段；
-- 不直接改写历史 Ticket 事实；
-- 数据回填使用可重入任务；
-- 映射失败形成报告；
-- 所有迁移记录行数、耗时和异常；
-- 先测试环境，再试点环境，再生产。
+## 11. 迁移原则
+
+- 使用可重入批次；
+- 每个 Pilot Ticket 最多映射一个正式 Hospital Ticket；
+- 创建、状态和附件操作幂等；
+- 迁移记录行数、版本、耗时和异常；
+- 切换前后均执行逐对象对账；
+- 不长期双写；
+- 回滚不能抹除已发生的业务事实。

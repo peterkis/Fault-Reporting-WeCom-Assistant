@@ -2,6 +2,8 @@
 
 完整机器可读契约见 `contracts/openapi.yaml` 和 JSON Schema。
 
+阶段适用性：Phase 1/2 的 Ticket API 由 Pilot Ticket Core 提供；Phase 3 新增 Ticket Adapter 契约并完成向 Hospital Tickets 的迁移。Gateway 和识别服务不得直接调用 Hospital Tickets。
+
 ## 1. 设计原则
 
 - 内部接口使用 `/internal/v1`；
@@ -99,6 +101,8 @@ Gateway 完成下载、解密和存储后登记：
 ```
 
 ## 4. Ticket Action API
+
+以下 Action 在 Phase 1/2 操作 Pilot Ticket。Phase 3 必须由 Ticket Adapter 或切换后的 Hospital Tickets 兼容层承接相同业务语义。
 
 ### 接单
 
@@ -255,7 +259,7 @@ Readiness 需要：
 
 - Gateway authenticated；
 - Database 可用；
-- Tickets API 可用或处于明确降级策略；
+- Pilot Ticket Core 可用或处于明确的消息已落库、工单待补建策略；
 - 不要求 AI/OCR 可用。
 
 ## 9. 错误响应
@@ -295,10 +299,22 @@ INTERNAL_DEPENDENCY_UNAVAILABLE
 | 调用 | 超时 |
 |---|---:|
 | Gateway → Intake | 3 秒 |
-| Intake → Tickets 创建 | 2 秒，失败进入待补建 |
+| Intake → Pilot Ticket Core 创建 | 2 秒，失败进入待补建 |
 | Outbox → WeCom send | 5 秒 |
 | 媒体下载 | 按大小配置，默认 15 秒 |
 | OCR | 10 秒 |
 | AI Triage | 15 秒，但不在首次回复链路 |
 
 超时值须经本地测试调整。
+
+## 11. Phase 3 Adapter 契约要求
+
+Phase 3 实施前必须补充机器可读 Ticket Adapter Contract，至少覆盖：
+
+- Pilot/Hospital Ticket 幂等创建和查询；
+- `ticket_external_mapping`；
+- 状态、事件、备注、附件和身份映射；
+- 重放、死信、对账和冲突响应；
+- 切换状态与只读保护。
+
+在 P3-003 前，本文件不构成 Hospital Tickets 的可调用契约。

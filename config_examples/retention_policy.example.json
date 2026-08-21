@@ -1,4 +1,9 @@
 {
+  "_meta": {
+    "architecture_baseline": "V1.2",
+    "phase_scope": ["P1", "P2", "P3"],
+    "pilot_archive_requires_phase3_decision": true
+  },
   "version": "retention-v1-example",
   "policies": [
     {

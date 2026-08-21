@@ -1,6 +1,8 @@
 
 # 企业微信WebSocket设计
 
+> V1.2：本设计用于 Gate 0 与 Phase 1 公网试点。Gateway 下游是 Channel Message、Service Intake 和 Pilot Ticket Core，不连接 Hospital Tickets。
+
 ## Gateway职责
 
 - Bot认证

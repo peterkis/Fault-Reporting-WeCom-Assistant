@@ -1,21 +1,23 @@
-# ADR-0002：复用现有 Tickets 作为唯一工单事实源
+# ADR-0002：首期直接复用现有 Tickets
 
-- 状态：Accepted
+- 状态：Superseded
 - 日期：2026-08-20
+- 取代者：ADR-0007
+- 取代日期：2026-08-21
 
-## 决策
+## 原决策
 
-不新建第二套 FastAPI 工单系统。企业微信项目增加 Channel、Intake、Incident 和 Notification 能力，通过内部 API 使用现有 Tickets。
+原计划不建设试点工单核心，由企业微信项目通过内部 API 直接使用医院现有 Tickets。
 
-## 原因
+## 废弃原因
 
-- 避免双工单编号、双状态和双权限；
-- 复用现有 SSO、Hub、Outbox 和管理页面；
-- 降低 1—2 人维护负担；
-- 统一统计和审计。
+Phase 1 是企业微信外网试点，无法把医院内网 Tickets、SSO、Hub 或院内 Outbox 作为可用依赖。继续执行原决策会阻塞试点，并与 V1.2 阶段边界冲突。
 
-## 后果
+## 当前有效决策
 
-- 需补齐 Tickets Action API；
-- Gateway 不得直接写 Tickets 数据库；
-- 现有状态模型需与本规格对齐。
+- Phase 1 使用独立 Pilot Ticket Core；
+- Phase 1 不直连医院 Tickets；
+- Phase 3 通过 Ticket Adapter 对接 Hospital Tickets；
+- Phase 3 切换完成后，Hospital Tickets 成为唯一长期工单事实源。
+
+当前决策详见 ADR-0007。本 ADR 仅保留历史追溯，不得作为实施依据。

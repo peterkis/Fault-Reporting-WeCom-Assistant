@@ -1,5 +1,7 @@
 # 10. AI、OCR 与 Prompt 设计
 
+本能力属于 Phase 2，只增强 Pilot Ticket Core。不得提前成为 Gate 0/Phase 1 依赖，也不得直接调用 Hospital Tickets。
+
 ## 1. 定位
 
 AI/OCR 的目标是减少人工分类和信息补录，不是决定报修是否被接收。
@@ -7,7 +9,7 @@ AI/OCR 的目标是减少人工分类和信息补录，不是决定报修是否�
 核心受理链路：
 
 ```text
-WebSocket → PostgreSQL → Intake → Tickets → 回复
+WebSocket → PostgreSQL → Intake → Pilot Ticket Core → 回复
 ```
 
 AI链路：

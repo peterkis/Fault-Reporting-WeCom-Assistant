@@ -1,12 +1,15 @@
 openapi: 3.1.0
 info:
-  title: Hospital IT Assistant Internal API
-  version: 1.0.0
+  title: WeCom Fault Reporting Pilot Internal API
+  version: 1.2.0
+  x-architecture-baseline: V1.2
+  x-phase-scope: [P1, P2]
   description: >
-    医院信息故障智能报修助手的内部接口基线。AI/OCR 仅返回建议，
-    Tickets 是工单事实源，创建接口必须支持幂等。
+    医院信息故障智能报修助手 Phase 1/2 的内部接口基线。AI/OCR 仅返回建议，
+    Pilot Ticket Core 是当前工单事实源，创建接口必须支持幂等。
+    Phase 1 不连接 Hospital Tickets；Phase 3 Ticket Adapter 契约将在 P3-003 冻结。
 servers:
-  - url: https://hospital.local
+  - url: https://pilot.example.invalid
 paths:
   /internal/v1/intakes/wecom:
     post:

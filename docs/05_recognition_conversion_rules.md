@@ -450,6 +450,8 @@ AI 只能建议，不直接写最终优先级。
 
 ## 13. Ticket 转换规则
 
+后端边界：Phase 1/2 所有本节中的 `Ticket` 均指 Pilot Ticket Core；Phase 3 由 Ticket Adapter 把相同领域意图映射到 Hospital Tickets。识别逻辑不得直接调用 Hospital Tickets。
+
 ### 13.1 立即建单
 
 以下情况不等待 AI：
@@ -652,7 +654,7 @@ on_message(message):
           append_to_intake()
           emit intake.updated
       else if is_explicit_incident(normalized):
-          ticket = create_ticket(status=QUEUED)
+          ticket = create_pilot_ticket(status=QUEUED)
           link(intake, ticket)
           emit intake.ticket_created
       else:
@@ -666,6 +668,8 @@ on_message(message):
 
     enqueue_async_enrichment(intake)
 ```
+
+Phase 3 切换时，`create_pilot_ticket` 的正式入口由已批准的 Ticket Adapter 迁移方案替代，不允许在识别层增加医院工单直连逻辑。
 
 ---
 

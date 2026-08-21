@@ -2,6 +2,8 @@
 
 ## 1. 为什么需要独立领域对象
 
+本领域模型与工单后端解耦：Phase 1/2 的 Ticket 由 Pilot Ticket Core 管理；Phase 3 通过 Ticket Adapter 映射到 Hospital Tickets。
+
 企业微信消息、服务受理、工单和公共故障表达的是不同事实：
 
 - 消息：用户说了什么；
@@ -71,7 +73,7 @@
 
 表示需要处理团队完成的任务。
 
-由现有 Tickets 管理：
+Phase 1/2 由 Pilot Ticket Core 管理；Phase 3 切换后由 Hospital Tickets 管理，并通过外部映射保持追溯：
 
 - 标题；
 - 类型；
@@ -140,6 +142,8 @@ Incident 不等于重复 Ticket 合并。每个 Intake 仍保留。
 
 企业微信账号与医院人员主数据的映射。
 
+Phase 1 只要求 WeCom userid 与 Pilot 角色/处理组；医院 person_id、SSO和组织主数据属于 Phase 3 映射，不得成为 Phase 1 建单条件。
+
 必须区分：
 
 - 企业微信 userid；
@@ -172,6 +176,23 @@ Outbox 表示“应该发送什么”，Delivery 表示“实际发送结果”�
 
 不得将二者混成一个状态字段，否则无法表达多目标、多次重试和部分成功。
 
+### 2.10 TicketExternalMapping
+
+仅在 Phase 3 启用，表示 Pilot Ticket 与 Hospital Ticket 的可审计映射。
+
+关键属性：
+
+- pilot_ticket_id；
+- hospital_ticket_id；
+- hospital_ticket_no；
+- adapter_version；
+- migration_batch_id；
+- sync_state；
+- last_reconciled_at；
+- cutover_state。
+
+该对象不能成为第三套工单事实，只保存跨系统身份、同步和对账事实。
+
 ## 3. 关系图
 
 ```mermaid
@@ -188,6 +209,7 @@ erDiagram
     INCIDENT ||--o{ REPORTER_SUBSCRIPTION : notifies
     NOTIFICATION_OUTBOX ||--o{ NOTIFICATION_DELIVERY : delivered_as
     IDENTITY_BINDING }o--|| SERVICE_INTAKE : identifies
+    TICKET ||--o| TICKET_EXTERNAL_MAPPING : maps_in_phase3
 ```
 
 ## 4. 核心不变量
@@ -202,6 +224,8 @@ erDiagram
 8. 外部可见附件和内部附件显式区分。
 9. 申报人所属科室不自动等于故障发生科室。
 10. 任何自动路由和自动关联都可人工撤销并留痕。
+11. Phase 1 Ticket 不得依赖 Hospital Tickets 标识或可用性。
+12. Phase 3 切换完成后不得继续把 Pilot Ticket 作为正式长期写入事实源。
 
 ## 5. 请求类型
 

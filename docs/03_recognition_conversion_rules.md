@@ -1,6 +1,8 @@
 
 # 识别转换规则
 
+> V1.2：Phase 1 的明确报修转换为 Pilot Ticket；Phase 2 才增加 AI/OCR；Phase 3 由 Ticket Adapter 迁移到 Hospital Tickets。
+
 ## 输入
 
 text

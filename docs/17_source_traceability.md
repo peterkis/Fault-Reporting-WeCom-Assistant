@@ -1,109 +1,86 @@
-# 17. 源资料追溯与决策说明
+# 17. V1.2 源资料追溯与决策说明
 
 ## 1. 原始资料
 
-原始文件：
+原始文件：`source/企业微信智能机器人方案.docx`。
 
-```text
-source/企业微信智能机器人方案.docx
-```
-
-原始草稿主要内容：
-
-- 企业微信智能机器人；
-- 工单系统；
-- 小程序/内网管理端；
-- LLM 分类和 OCR；
-- 纯 CPU；
-- 约 800 人报修群；
-- 10 秒确认；
-- 状态推送；
-- 功能清单 F01—F19。
-
-本规格包保留其业务目标，但根据后续技术讨论进行了边界调整。
+原始资料保留业务目标：企业微信机器人、工单闭环、CPU约束、约800人报修群、10秒确认、状态通知和月报。`source/` 仅用于历史追溯，不是当前执行基线。
 
 ## 2. 官方 SDK 资料
 
-参考：
+参考来源：`https://github.com/WecomTeam/aibot-node-sdk`。
+
+文档中记录的WebSocket、认证、心跳、重连、消息、媒体、主动推送和卡片能力都必须在真实租户G0验证。文档版本或SDK示例不能替代Gate证据。
+
+## 3. 架构演进
+
+### V1.0/V1.1 方向
+
+旧规格假设企业微信接入层可以在首期直接使用医院现有Tickets、SSO、Hub和Outbox，并把相关能力拆为G0–P6执行计划。
+
+### V1.2 变化
+
+外网试点无法把医院内网Tickets作为可用依赖，因此采用：
 
 ```text
-https://github.com/WecomTeam/aibot-node-sdk
+Phase 1
+Enterprise WeCom
+→ WeCom Gateway
+→ Channel Message
+→ Service Intake
+→ Pilot Ticket Core
 ```
 
-本次读取的官方 README 说明包括：
+```text
+Phase 3
+Pilot Ticket Core
+→ Ticket Adapter
+→ Hospital Tickets
+```
 
-- WebSocket 长连接；
-- 自动认证和心跳；
-- 指数退避重连；
-- text/image/mixed/voice/file；
-- 主动推送；
-- 模板卡片和卡片事件；
-- 文件下载和 AES 解密。
+ADR-0002已被ADR-0007取代。Hospital Tickets仍是最终长期事实源，但不再是Phase 1运行依赖。
 
-本次读取仓库 `package.json` 标识版本为 `1.0.6`。实际项目必须在 Gate 0 后锁定经测试版本。
+## 4. 源资料与当前决策对照
 
-## 3. 源资料与修订决策对照
-
-| 原始方向 | V1.1 修订 |
+| 原始或旧方向 | V1.2 当前决策 |
 |---|---|
-| 公网回调网关 | WebSocket 出站长连接为主 |
-| 群内文本、私聊图片双通道固定 | Gate 0 验证群图片/mixed，按租户能力冻结 |
-| AI 判断后建单 | 明确报修先建单，AI 异步 |
-| `confidence ≥ 0.7` 自动建单 | 不使用模型自报 confidence 作为唯一门槛 |
-| 5分钟同类别并单 | Incident 候选，多特征关联，默认人工确认 |
-| 每次状态群内 @ | 群内公共信息，个人进度单聊 |
-| 新建 FastAPI 工单系统 | 复用现有 Tickets |
-| Redis Stream + Celery | PostgreSQL Inbox/Outbox 为主，Redis 辅助 |
-| 已创建→已受理→处理中→已解决→关闭 | 增加待补充、待厂商、重开、撤销、关联公共故障 |
-| 全量保存非报修消息 | 只保存必要交互，短期留存和数据最小化 |
-| 拍照结单 | 附件按服务目录配置，区分内外部可见 |
-| 跨院区多租户不做 | 不做多医院租户，但保留多院区字段 |
+| 公网回调网关 | WebSocket出站长连接为主，G0实测 |
+| AI判断后建单 | 明确报修先建Pilot Ticket，AI异步 |
+| 置信度阈值自动建单 | 不用模型自报置信度决定是否受理 |
+| 5分钟同类别并单 | Incident候选，多特征且默认人工确认 |
+| 每次状态群内广播 | 群内公共信息，个人进度单聊 |
+| Phase 1直接复用医院Tickets | Phase 1独立Pilot Ticket Core |
+| 医院SSO/Hub/Outbox作为首期依赖 | Phase 1最小Pilot身份、处理端和Outbox |
+| P3=OCR、P4=AI、P5=Incident、P6=试点 | 统一为P1公网试点、P2 AI增强、P3医院融合 |
+| 新建长期第二套工单 | Pilot仅用于试点；Phase 3切换后Hospital Tickets唯一 |
 
-## 4. 决策来源分类
+## 5. 当前权威来源
 
-### 源资料直接支持
+1. `AGENTS.md`；
+2. `docs/architecture_baseline_status.md`；
+3. 未被取代的Accepted ADR；
+4. `plans/current_phase.json`、`plans/roadmap.md`和`plans/master_backlog.json`；
+5. 详细文档、Contract、Schema和示例。
 
-- 业务痛点；
-- 800 人群；
-- 秒级确认；
-- 工单闭环；
-- 纯 CPU；
-- 小程序/H5需求；
-- 状态通知；
-- 报表。
+## 6. 仍需验证的事实
 
-### 项目上下文补充
+### G0
 
-- 现有 Tickets；
-- Hub/灵动岛；
-- SSO；
-- API 平台；
-- PostgreSQL/Redis/MinIO；
-- 多院区；
-- 1—2 人开发运维。
+- 企业微信真实租户的群聊、媒体、主动推送、卡片、重连和单活行为；
+- 锁定SDK版本、包哈希和网络条件。
 
-### 架构修订
+### Phase 1
 
-- Service Intake；
-- Incident；
-- Reporter Subscription；
-- AI 异步；
-- Outbox 同事务；
-- 群内/单聊分工；
-- SDK Adapter；
-- Gate 0；
-- 状态语义细化。
+- 公网Pilot环境、安全审批、处理人员认证、H5路径、备份和留存；
+- Pilot Ticket最小状态、编号、通知和试点规则。
 
-## 5. 未经源资料确认的内容
+### Phase 2
 
-以下为建议基线，实施前需项目负责人确认：
+- 私有媒体存储、CPU资源、模型许可、评估集和数据使用审批。
 
-- 具体 H5 网络方案；
-- Tickets API 现状；
-- 人员主数据权威源；
-- 附件留存期限；
-- 自动关闭时长；
-- 值班表接口；
-- 试点科室；
-- 生产服务器规格；
-- 安全和合规审批流程。
+### Phase 3
+
+- Hospital Tickets真实API、状态机、身份、组织、附件、事件和通知契约；
+- 迁移范围、切换窗口、回滚授权和Pilot归档期限。
+
+未经验证的建议不得表述为当前系统事实。

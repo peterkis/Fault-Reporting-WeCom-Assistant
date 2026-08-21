@@ -1,4 +1,9 @@
 {
+  "_meta": {
+    "architecture_baseline": "V1.2",
+    "phase_scope": ["P1", "P2"],
+    "ticket_source": "PILOT"
+  },
   "version": "notification-v1-example",
   "events": {
     "intake.ticket_created": {

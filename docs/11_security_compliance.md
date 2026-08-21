@@ -1,5 +1,7 @@
 # 11. 安全、合规与数据生命周期
 
+阶段边界：Phase 1 的公网 Pilot 数据域必须独立完成安全控制；不得以医院内网系统“以后会接入”为由降低试点安全要求。Phase 3 的跨域连接、迁移和 Hospital Tickets 权限需单独评审。
+
 ## 1. 安全目标
 
 - 患者和员工信息不因报修机器人扩大暴露范围；
@@ -45,19 +47,29 @@ Bot ID 可视为配置，Bot Secret 必须：
 
 ## 5. 网络边界
 
-推荐：
+Phase 1：
 
 ```text
 企业微信云
     ↑ WSS 443 出站
-院内受控接入区：wecom-gateway
-    ↓ 内部 HTTPS / API平台
-院内应用区：Tickets / Intake / Hub / AI
+公网试点受控区：WeCom Gateway
     ↓
-PostgreSQL / Redis / MinIO
+Channel Message / Service Intake / Pilot Ticket Core
+    ↓
+Pilot PostgreSQL / Private Object Storage
 ```
 
-主方案不需要公网入站回调。若未来增加公网入口，必须独立安全评审和 ADR。
+Phase 3：
+
+```text
+Pilot Ticket Core
+    ↓ 受控网络与认证
+Ticket Adapter
+    ↓
+Hospital Tickets
+```
+
+主方案不需要公网入站回调。Ticket Adapter 的网络、双向认证、最小权限、审计和数据迁移必须独立安全评审和 ADR。
 
 ## 6. 附件安全
 
@@ -199,7 +211,7 @@ retention.deleted
 
 ## 12. AI 安全
 
-- AI 服务无生产数据库写权限；
+- AI 服务无 Pilot Ticket 或 Hospital Tickets 数据库写权限；
 - 不启用任意工具调用；
 - 不加载用户提供的可执行代码；
 - Prompt 中明确忽略截图内的指令文本；

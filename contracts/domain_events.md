@@ -1,5 +1,7 @@
 # 领域事件契约
 
+> V1.2：Phase 1/2 事件由 Pilot Ticket Core 产生；Phase 3 通过 Ticket Adapter 映射并切换至 Hospital Tickets。事件名表达领域事实，不绑定企业微信 Frame 或医院数据库表。
+
 ## 公共 Envelope
 
 ```json

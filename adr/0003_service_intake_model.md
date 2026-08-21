@@ -15,5 +15,5 @@
 
 - 增加 `service_intake` 和消息关系表；
 - 需要 90 秒上下文聚合；
-- 对现有 Ticket 增加 `source_intake_id`；
+- Phase 1 Pilot Ticket 保存 `source_intake_id`；Phase 3 通过外部映射传递该追溯关系；
 - 补充信息不再新建工单。

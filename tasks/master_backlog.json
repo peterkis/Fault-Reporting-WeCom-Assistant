@@ -1,62 +1,23 @@
-[
-  {
-    "id": "G0-001",
-    "phase": "Phase0",
-    "task": "企业微信WebSocket连接验证",
-    "acceptance": "Bot认证成功，连续运行24小时"
+{
+  "version": "1.2.0",
+  "architecture_baseline": "V1.2",
+  "canonical_source": "plans/master_backlog.json",
+  "current_phase": "G0",
+  "first_executable_task": "G0-001",
+  "completed_preflight": [
+    {"id":"ARCH-001","title":"Architecture Baseline Cleanup","status":"DONE"}
+  ],
+  "task_files": {
+    "G0": "tickets/G0_gate0_tasks.md",
+    "P1": "tickets/P1_pilot_tasks.md",
+    "P2": "tickets/P2_ai_enhancement_tasks.md",
+    "P3": "tickets/P3_hospital_integration_tasks.md"
   },
-  {
-    "id": "G0-002",
-    "phase": "Phase0",
-    "task": "消息事件矩阵测试",
-    "acceptance": "text/image/mixed/file事件均可记录"
-  },
-  {
-    "id": "P1-001",
-    "phase": "Phase1",
-    "task": "channel_message消息Inbox",
-    "acceptance": "msgid唯一约束，重复消息不重复处理"
-  },
-  {
-    "id": "P1-002",
-    "phase": "Phase1",
-    "task": "Service Intake服务受理模型",
-    "acceptance": "支持多消息聚合"
-  },
-  {
-    "id": "P1-003",
-    "phase": "Phase1",
-    "task": "Pilot Ticket Core",
-    "acceptance": "创建、接单、处理、解决、关闭完整闭环"
-  },
-  {
-    "id": "P1-004",
-    "phase": "Phase1",
-    "task": "Notification Outbox",
-    "acceptance": "失败重试、发送审计"
-  },
-  {
-    "id": "P2-001",
-    "phase": "Phase2",
-    "task": "OCR服务",
-    "acceptance": "截图文字提取并结构化"
-  },
-  {
-    "id": "P2-002",
-    "phase": "Phase2",
-    "task": "AI Triage服务",
-    "acceptance": "输出标准JSON"
-  },
-  {
-    "id": "P2-003",
-    "phase": "Phase2",
-    "task": "人工修正闭环",
-    "acceptance": "保存AI版本和人工修改"
-  },
-  {
-    "id": "P3-001",
-    "phase": "Phase3",
-    "task": "Ticket Adapter",
-    "acceptance": "试点工单映射医院Tickets"
-  }
-]
+  "architecture_guards": [
+    "P1 uses Pilot Ticket Core",
+    "P1 has no Hospital Tickets dependency",
+    "P2 AI is asynchronous enhancement",
+    "P3 uses Ticket Adapter to migrate to Hospital Tickets",
+    "Hospital Tickets becomes the sole long-term source of truth after cutover"
+  ]
+}

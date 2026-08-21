@@ -29,7 +29,7 @@
 - 使用真实Gate 0脱敏Frame作为fixture；
 - 单元测试不访问公网；
 - SDK通过Adapter Mock；
-- 至少一个测试证明AI关闭仍可建单；
+- 至少一个测试证明AI关闭仍可创建Pilot Ticket；
 - 至少一个测试证明commit失败不会回复“已收到”；
 - 至少一个测试证明同一msg_id并发只生成一张工单。
 

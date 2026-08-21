@@ -2,7 +2,7 @@
 
 ## 1. 选型原则
 
-1. 复用医院现有技术体系；
+1. Phase 1 采用可独立运行的轻量 Pilot 技术体系，Phase 3 再评估复用医院现有能力；
 2. 关键链路减少技术种类；
 3. AI 服务与业务服务解耦；
 4. 版本必须锁定；
@@ -17,7 +17,8 @@
 | 官方 SDK | `@wecom/aibot-node-sdk` | 长连接、消息、卡片、媒体 |
 | Web 框架 | Express 或现有 Node 服务框架 | 健康检查、内部 API |
 | 前端 | Next.js 16 + React | 医生/工程师响应式 H5 |
-| 工单核心 | 现有 Tickets | 唯一工单事实源 |
+| Phase 1 工单核心 | Pilot Ticket Core | 公网试点期工单事实源 |
+| Phase 3 工单融合 | Ticket Adapter + Hospital Tickets | 切换后唯一长期工单事实源 |
 | 数据库 | PostgreSQL 18 | 消息、Intake、事件、Outbox、审计 |
 | 缓存 | Redis 7.2 | 短期聚合、限流、缓存、单活租约 |
 | 对象存储 | MinIO | 私有截图和处理附件 |
@@ -96,11 +97,13 @@ interface WeComChannel {
 - 限制请求大小和并发；
 - 不接受任意文件路径；
 - 不执行工具调用；
-- 不直接访问 Tickets 数据库；
+- 不直接访问 Pilot Ticket 或 Hospital Tickets 数据库；
 - 只返回建议；
 - 模型和 Prompt 版本必须进入响应和审计。
 
 ## 7. 数据库规范
+
+Phase 1 数据库承载 Channel Message、Service Intake、Pilot Ticket、Ticket Event 和 Outbox。Phase 3 通过 Adapter/API 融合 Hospital Tickets，不允许直接写医院工单数据库。
 
 - 所有外部消息 ID 建唯一索引；
 - 状态变更使用事务；
@@ -144,6 +147,13 @@ interface WeComChannel {
 - 全量向量数据库。
 
 达到明确业务规模和运维能力后再评估。
+
+## 9.1 阶段依赖边界
+
+- Phase 1 不配置 `HOSPITAL_TICKETS_*`、医院 SSO、医院 Hub 或院内 Outbox 运行依赖；
+- Phase 2 的 AI/OCR 服务可独立关闭；
+- Phase 3 才引入 Ticket Adapter 和 Hospital Tickets 连接配置；
+- 任何共享数据库直写方案均不属于 V1.2 架构。
 
 ## 10. 版本与供应链策略
 

@@ -1,7 +1,17 @@
 {
+  "architecture_baseline": "V1.2",
+  "baseline_status_document": "docs/architecture_baseline_status.md",
+  "preflight_task": {
+    "id": "ARCH-001",
+    "name": "Architecture Baseline Cleanup",
+    "status": "DONE",
+    "completed_at": "2026-08-21",
+    "changed_phase_status": false
+  },
   "phase_id": "G0",
   "phase_name": "企业微信 WebSocket 能力验证",
   "status": "READY",
+  "started": false,
   "first_task": "G0-001",
   "allowed_scope": [
     "network connectivity",
@@ -14,9 +24,11 @@
     "capability decision record"
   ],
   "forbidden_before_exit": [
+    "Phase 1 Pilot Ticket Core implementation",
     "production AI integration",
     "automatic incident merging",
-    "full ticket UI",
+    "Hospital Ticket Adapter",
+    "Hospital Tickets synchronization",
     "multi-active gateway",
     "public HTTP callback as primary channel"
   ],
@@ -24,5 +36,11 @@
     "24小时稳定运行",
     "能力矩阵完成",
     "SDK版本和连接策略ADR冻结"
-  ]
+  ],
+  "next_phase_after_exit": {
+    "phase_id": "P1",
+    "phase_name": "企业微信外网试点",
+    "ticket_backend": "Pilot Ticket Core",
+    "hospital_ticket_dependency": false
+  }
 }

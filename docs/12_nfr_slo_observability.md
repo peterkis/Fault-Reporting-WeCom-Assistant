@@ -1,5 +1,7 @@
 # 12. 非功能需求、SLO 与可观测性
 
+Phase 1/2 的核心 SLO 以 Pilot Ticket Core 为工单事实源；Phase 3 另行增加 Ticket Adapter、Hospital Tickets 和迁移/对账 SLI。
+
 ## 1. SLO 分层
 
 核心链路与增强链路分开统计。
@@ -10,7 +12,7 @@
 企业微信连接
 → 消息持久化
 → Intake
-→ Tickets
+→ Pilot Ticket Core
 → 首次回复
 ```
 
@@ -60,7 +62,8 @@ OCR
 - 50 张图片短时到达；
 - 企业微信断线恢复后 Outbox 积压发送；
 - AI 服务完全停止；
-- Tickets 短时不可用。
+- Pilot Ticket Core 短时不可用；
+- Phase 3 另测 Ticket Adapter/Hospital Tickets 短时不可用。
 
 ## 4. RTO/RPO
 
@@ -174,7 +177,7 @@ WeCom frame
 ### P2 告警
 
 - 重连连续超过 3 次；
-- Tickets 创建积压；
+- Pilot Ticket 补建积压；
 - 首次回复 P95 超标；
 - MinIO 下载/上传失败；
 - 身份映射失败率升高；
@@ -193,7 +196,7 @@ Gateway readiness 为 true 需满足：
 
 - WebSocket authenticated；
 - PostgreSQL 可写；
-- Intake/Tickets 内部接口可达或有可靠待补建机制；
+- Intake/Pilot Ticket Core 可达或有可靠待补建机制；
 - Outbox 可写。
 
 AI、OCR、Redis、MinIO 可按功能降级，不应一律使核心服务 Not Ready。
@@ -213,7 +216,7 @@ AI、OCR、Redis、MinIO 可按功能降级，不应一律使核心服务 Not Re
 
 ```text
 消息接收
-→ Tickets 事务提交
+→ Pilot Ticket Core 事务提交
 ```
 
 状态通知时间：

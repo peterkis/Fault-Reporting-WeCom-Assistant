@@ -1,5 +1,7 @@
 # 06. 工单状态机与通知规则
 
+本状态机在 Phase 1/2 由 Pilot Ticket Core 执行。Phase 3 必须通过已批准的状态映射迁移到 Hospital Tickets，不得在 Gateway 中直接修改医院工单状态。
+
 ## 1. 状态设计原则
 
 状态必须表达真实事实，不能为了“让临床感觉有人处理”而提前改变语义。
@@ -167,6 +169,8 @@ trace_id
 
 ## 8. Outbox 事务
 
+Phase 1 使用 Pilot Outbox；不得依赖医院院内 Outbox。Phase 3 切换通知所有权时必须完成积压对账和去重。
+
 状态、事件和通知必须在同一事务：
 
 ```text
@@ -293,4 +297,4 @@ ticket_id + ticket_version + channel + target_id + template_code
 - 产生管理员告警；
 - 支持人工补发；
 - 不改变 Ticket 事实；
-- 若用户退群或不可达，降级为单聊/H5/Hub 可用渠道。
+- 若用户退群或不可达，Phase 1 降级为单聊或 Pilot H5；Phase 3 切换后才可使用已确认的医院 Hub 渠道。

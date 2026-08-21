@@ -1,5 +1,7 @@
 # 13. 测试与验收计划
 
+阶段边界：G0 只验证企业微信能力；Phase 1 测 Pilot Ticket Core；Phase 2 测异步AI/OCR；Phase 3 单独测试 Ticket Adapter 与 Hospital Tickets。不得用 Mock Hospital Tickets 掩盖 Phase 1 的直接依赖。
+
 ## 1. 测试原则
 
 - 关键不变量必须自动化测试；
@@ -33,7 +35,8 @@
 
 - SDK Frame → Normalized Message；
 - Gateway → Intake；
-- Intake → Tickets；
+- Intake → Pilot Ticket Core；
+- Phase 3 Ticket Adapter → Hospital Tickets；
 - Ticket Event → Outbox；
 - AI Schema；
 - Card Action；
@@ -47,13 +50,13 @@
 - Redis；
 - MinIO；
 - Mock WeCom Adapter；
-- Mock Tickets 或测试实例；
+- Pilot Ticket Core 测试实例；
 - AI 可开关。
 
 场景：
 
 - 消息落库和建单同链路；
-- Tickets 短时失败后补建；
+- Pilot Ticket Core 短时失败后补建；
 - Outbox 重试；
 - 图片下载失败；
 - AI 关闭；
@@ -104,7 +107,8 @@
 - 停止 OCR；
 - 停止 Redis；
 - MinIO 不可用；
-- Tickets 不可用；
+- Pilot Ticket Core 不可用；
+- Phase 3 Ticket Adapter/Hospital Tickets 不可用；
 - WebSocket 断网；
 - PostgreSQL 主库切换；
 - Bot Secret 轮换；
