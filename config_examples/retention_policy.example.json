@@ -1,0 +1,44 @@
+{
+  "version": "retention-v1-example",
+  "policies": [
+    {
+      "data_type": "channel_message_ticket_evidence",
+      "retention_days": 1095,
+      "condition": "linked_to_ticket",
+      "review_required": true
+    },
+    {
+      "data_type": "channel_message_chatter",
+      "retention_days": 7,
+      "condition": "not_linked_to_ticket"
+    },
+    {
+      "data_type": "raw_media_patient_sensitive",
+      "retention_days": 90,
+      "condition": "after_ticket_closed",
+      "review_required": true
+    },
+    {
+      "data_type": "redacted_media",
+      "retention_days": 365,
+      "condition": "needed_for_audit"
+    },
+    {
+      "data_type": "notification_delivery",
+      "retention_days": 365
+    },
+    {
+      "data_type": "ai_decision",
+      "retention_days": 730
+    },
+    {
+      "data_type": "security_audit",
+      "retention_days": 1095
+    }
+  ],
+  "notes": [
+    "天数仅为示例，必须由医院制度、审计和合规要求确认。",
+    "备份中的删除策略需单独设计。",
+    "训练数据不自动继承工单数据使用权。"
+  ]
+}

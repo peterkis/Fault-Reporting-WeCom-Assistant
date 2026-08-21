@@ -1,0 +1,17 @@
+stateDiagram-v2
+    [*] --> NEW
+    NEW --> QUEUED
+    QUEUED --> ACCEPTED: accept
+    ACCEPTED --> IN_PROGRESS: start
+    IN_PROGRESS --> WAITING_REQUESTER: request_information
+    WAITING_REQUESTER --> IN_PROGRESS: requester_replied
+    IN_PROGRESS --> WAITING_VENDOR: wait_vendor
+    WAITING_VENDOR --> IN_PROGRESS: vendor_replied
+    IN_PROGRESS --> RESOLVED: resolve
+    RESOLVED --> CLOSED: confirm/auto_close
+    RESOLVED --> REOPENED: still_broken
+    REOPENED --> IN_PROGRESS: resume
+    QUEUED --> CANCELLED: cancel
+    ACCEPTED --> CANCELLED: cancel
+    QUEUED --> DUPLICATE_LINKED: link_incident
+    DUPLICATE_LINKED --> REOPENED: unlink_or_reopen

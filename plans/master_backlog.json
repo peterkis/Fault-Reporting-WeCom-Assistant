@@ -1,0 +1,1771 @@
+{
+  "project": "医院信息故障智能报修助手",
+  "version": "1.0.0",
+  "baseline_date": "2026-08-20",
+  "current_phase": "G0",
+  "status_values": [
+    "TODO",
+    "IN_PROGRESS",
+    "BLOCKED",
+    "REVIEW",
+    "DONE",
+    "CANCELLED"
+  ],
+  "phases": [
+    {
+      "id": "G0",
+      "name": "企业微信 WebSocket 能力验证",
+      "goal": "用贵院真实租户冻结群聊、图片、主动推送、卡片、重连和单活能力，不写完整业务。",
+      "duration": "2-3天",
+      "entry": [
+        "Bot ID/Secret 已配置",
+        "测试群和测试账号可用",
+        "测试服务器可出站访问企业微信"
+      ],
+      "exit": [
+        "24小时稳定运行",
+        "能力矩阵完成",
+        "SDK版本和连接策略ADR冻结"
+      ]
+    },
+    {
+      "id": "P1",
+      "name": "可靠受理与首次工单",
+      "goal": "在无AI条件下实现消息不丢、不重、自动创建现有Tickets工单并返回工单号。",
+      "duration": "1-2周",
+      "entry": [
+        "G0通过",
+        "Tickets创建接口明确",
+        "PostgreSQL测试环境可用"
+      ],
+      "exit": [
+        "明确报修漏单为0",
+        "重复建单为0",
+        "AI关闭E2E通过"
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "工单处理闭环与个人通知",
+      "goal": "完成真实状态机、工程师H5、补充信息、解决确认、重开和单聊进度通知。",
+      "duration": "2周",
+      "entry": [
+        "P1通过",
+        "现有Tickets可扩展Action API",
+        "身份/组织接口可用"
+      ],
+      "exit": [
+        "接单到关闭全链路通过",
+        "状态语义真实",
+        "并发操作不回退"
+      ]
+    },
+    {
+      "id": "P3",
+      "name": "媒体与OCR",
+      "goal": "安全接收截图，私有存储，OCR提取错误文本，纯图片也不漏单。",
+      "duration": "1-2周",
+      "entry": [
+        "P2核心闭环稳定",
+        "MinIO和安全扫描方案可用"
+      ],
+      "exit": [
+        "图片E2E通过",
+        "OCR失败不影响工单",
+        "敏感数据不进入普通日志"
+      ]
+    },
+    {
+      "id": "P4",
+      "name": "AI影子分诊",
+      "goal": "建立规则、系统目录、小模型结构化建议、人工修正和评估体系，不直接自动路由。",
+      "duration": "2周",
+      "entry": [
+        "P3通过",
+        "脱敏评估数据可用",
+        "AI CPU服务器可用"
+      ],
+      "exit": [
+        "Schema通过率和分类指标可测",
+        "人工修正留痕",
+        "AI关闭可回滚"
+      ]
+    },
+    {
+      "id": "P5",
+      "name": "公共故障与数据运营",
+      "goal": "建立Incident、多申报人订阅、监控信号关联和月度指标。",
+      "duration": "1-2周",
+      "entry": [
+        "P4影子数据积累",
+        "公共事件管理责任人明确"
+      ],
+      "exit": [
+        "Incident人工确认闭环",
+        "错误关联可解除",
+        "首份月报可生成"
+      ]
+    },
+    {
+      "id": "P6",
+      "name": "试点上线与全院推广决策",
+      "goal": "完成试点、培训、性能与灾备演练、合规检查和全院推广Go/No-Go。",
+      "duration": "2-4周试点",
+      "entry": [
+        "P1-P5所需功能达到试点基线",
+        "试点科室和支持人员确定"
+      ],
+      "exit": [
+        "试点评审完成",
+        "问题清单关闭或接受",
+        "全院推广决策"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "G0-001",
+      "phase": "G0",
+      "title": "验证 WSS 网络路径",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [],
+      "objective": "确认测试服务器到企业微信长连接地址的DNS、TCP443、TLS和WebSocket Upgrade可用。",
+      "deliverables": [
+        "网络测试脚本",
+        "DNS/TLS/WSS结果记录",
+        "网络设备或代理限制清单"
+      ],
+      "acceptance_criteria": [
+        "可建立WSS连接",
+        "测试结果包含时间、服务器、出口IP和失败原因",
+        "不暴露Secret"
+      ],
+      "tests": [
+        "正常网络",
+        "阻断443",
+        "TLS拦截或代理场景"
+      ],
+      "notes": "私有部署企业的WSS地址以企业管理端实际配置为准。"
+    },
+    {
+      "id": "G0-002",
+      "phase": "G0",
+      "title": "SDK认证与连接生命周期PoC",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "G0-001"
+      ],
+      "objective": "使用官方Node.js SDK完成connect、authenticated、heartbeat、disconnect和优雅退出。",
+      "deliverables": [
+        "最小PoC代码",
+        "结构化连接日志",
+        "SDK锁定版本记录"
+      ],
+      "acceptance_criteria": [
+        "认证成功",
+        "进程退出前主动断开",
+        "错误Secret返回可识别错误",
+        "不打印Secret"
+      ],
+      "tests": [
+        "正确Secret",
+        "错误Secret",
+        "SIGTERM优雅退出"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "G0-003",
+      "phase": "G0",
+      "title": "群聊与单聊文本能力矩阵",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "G0-002"
+      ],
+      "objective": "验证单聊、群内@、群内不@、引用消息的实际Frame字段。",
+      "deliverables": [
+        "脱敏Frame样例",
+        "能力矩阵",
+        "msgid/chatid/userid字段说明"
+      ],
+      "acceptance_criteria": [
+        "单聊文本结果明确",
+        "群内@文本结果明确",
+        "群内不@行为明确",
+        "引用消息行为明确"
+      ],
+      "tests": [
+        "两个账号交叉测试",
+        "重复发送",
+        "引用历史消息"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "G0-004",
+      "phase": "G0",
+      "title": "图片、mixed与文件下载解密PoC",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "G0-002"
+      ],
+      "objective": "验证单聊和群聊图片/mixed/file的事件类型、下载、AES解密和文件名。",
+      "deliverables": [
+        "媒体PoC代码",
+        "脱敏Frame样例",
+        "文件哈希和大小记录"
+      ],
+      "acceptance_criteria": [
+        "至少一种图片路径成功下载解密",
+        "群聊图片行为有明确结论",
+        "失败不输出aeskey或URL"
+      ],
+      "tests": [
+        "PNG/JPG",
+        "图文混排",
+        "大图片",
+        "错误aeskey",
+        "下载超时"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "G0-005",
+      "phase": "G0",
+      "title": "主动推送与提醒效果验证",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "G0-003"
+      ],
+      "objective": "验证sendMessage到userid和chatid的显示、通知、群内提醒和重复发送行为。",
+      "deliverables": [
+        "用户单聊截图",
+        "群聊截图",
+        "主动推送结果表"
+      ],
+      "acceptance_criteria": [
+        "userid主动推送成功",
+        "chatid主动推送行为明确",
+        "群内@效果有结论",
+        "错误目标有错误码"
+      ],
+      "tests": [
+        "在线/离线用户",
+        "退群用户",
+        "无效chatid"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "G0-006",
+      "phase": "G0",
+      "title": "模板卡片按钮与更新时限验证",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "G0-005"
+      ],
+      "objective": "验证模板卡片发送、task_id、按钮事件、重复点击和卡片更新。",
+      "deliverables": [
+        "卡片PoC",
+        "事件样例",
+        "时限测试结果"
+      ],
+      "acceptance_criteria": [
+        "按钮事件可识别用户和task_id",
+        "5秒内更新成功",
+        "重复点击可识别",
+        "过期行为明确"
+      ],
+      "tests": [
+        "确认按钮",
+        "仍未恢复按钮",
+        "重复点击",
+        "延迟超过时限"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "G0-007",
+      "phase": "G0",
+      "title": "24小时稳定性与断网重连测试",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "G0-002",
+        "G0-003"
+      ],
+      "objective": "连续运行24小时并进行短时断网、DNS失败和进程重启。",
+      "deliverables": [
+        "稳定性报告",
+        "重连次数和耗时",
+        "CPU/内存曲线"
+      ],
+      "acceptance_criteria": [
+        "连续运行24小时",
+        "断网恢复后重新认证",
+        "无明显内存持续增长",
+        "消息重放行为已记录"
+      ],
+      "tests": [
+        "断网60秒",
+        "断网10分钟",
+        "进程kill/restart",
+        "网络抖动"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "G0-008",
+      "phase": "G0",
+      "title": "能力结论与架构冻结",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "G0-003",
+        "G0-004",
+        "G0-005",
+        "G0-006",
+        "G0-007"
+      ],
+      "objective": "形成Gate 0结论，冻结触发方式、媒体路径、主动通知、单活和SDK版本。",
+      "deliverables": [
+        "Gate 0验收报告",
+        "ADR更新",
+        "开放问题清单"
+      ],
+      "acceptance_criteria": [
+        "所有能力项有通过/不通过/降级结论",
+        "未验证项不写成确定能力",
+        "项目负责人签字或确认"
+      ],
+      "tests": [
+        "文档评审"
+      ],
+      "notes": "未通过项必须给出产品降级方案。"
+    },
+    {
+      "id": "P1-001",
+      "phase": "P1",
+      "title": "建立仓库骨架与配置校验",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "G0-008"
+      ],
+      "objective": "建立Gateway、contracts和测试目录，启动时严格校验配置。",
+      "deliverables": [
+        "项目骨架",
+        "tsconfig严格模式",
+        "配置Schema",
+        ".env.example"
+      ],
+      "acceptance_criteria": [
+        "缺少必填配置启动失败",
+        "日志不输出Secret",
+        "构建和lint通过"
+      ],
+      "tests": [
+        "配置单元测试",
+        "Secret脱敏测试"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P1-002",
+      "phase": "P1",
+      "title": "结构化日志、Trace与健康接口",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-001"
+      ],
+      "objective": "实现trace_id、live、ready和基础metrics。",
+      "deliverables": [
+        "logger封装",
+        "/health/live",
+        "/health/ready",
+        "指标清单"
+      ],
+      "acceptance_criteria": [
+        "每条消息有trace_id",
+        "readiness能反映认证和数据库",
+        "日志无原始敏感文本"
+      ],
+      "tests": [
+        "健康接口测试",
+        "日志字段测试"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P1-003",
+      "phase": "P1",
+      "title": "封装WeCom Adapter",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-001",
+        "G0-008"
+      ],
+      "objective": "隔离官方SDK，提供稳定connect/onMessage/send/downloadMedia接口。",
+      "deliverables": [
+        "wecom-adapter包",
+        "错误码映射",
+        "Mock Adapter"
+      ],
+      "acceptance_criteria": [
+        "业务层不引用SDK原始类型",
+        "可替换Mock",
+        "连接/发送错误转换稳定"
+      ],
+      "tests": [
+        "Adapter单元测试",
+        "Mock Contract Test"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P1-004",
+      "phase": "P1",
+      "title": "实现标准化消息Contract",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-003"
+      ],
+      "objective": "将text/image/mixed等转换为NormalizedWeComMessage。",
+      "deliverables": [
+        "JSON Schema",
+        "TypeScript类型",
+        "normalizer"
+      ],
+      "acceptance_criteria": [
+        "保留raw与clean文本",
+        "媒体引用结构一致",
+        "未知类型不崩溃并进入审计"
+      ],
+      "tests": [
+        "各消息类型fixture",
+        "Unicode/mention/quote测试"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P1-005",
+      "phase": "P1",
+      "title": "建立ChannelMessage与ServiceIntake表",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-004"
+      ],
+      "objective": "实施增量数据库迁移和必要索引。",
+      "deliverables": [
+        "迁移脚本",
+        "Repository层",
+        "回滚/前滚说明"
+      ],
+      "acceptance_criteria": [
+        "provider+msg_id唯一",
+        "时间字段为timestamptz",
+        "迁移可在空库和已有库执行"
+      ],
+      "tests": [
+        "迁移测试",
+        "唯一约束并发测试"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P1-006",
+      "phase": "P1",
+      "title": "实现幂等消息受理事务",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-005"
+      ],
+      "objective": "消息、Intake和处理结果在事务内写入，重复消息返回原结果。",
+      "deliverables": [
+        "ingestion service",
+        "幂等响应",
+        "并发控制"
+      ],
+      "acceptance_criteria": [
+        "并发重放只生成一条消息和一个Intake",
+        "失败事务不回复已收到",
+        "重复请求返回同一ID"
+      ],
+      "tests": [
+        "并发20请求",
+        "事务回滚",
+        "重启重放"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P1-007",
+      "phase": "P1",
+      "title": "对接现有Tickets创建接口",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-006"
+      ],
+      "objective": "使用Idempotency-Key创建工单，不直接写Tickets数据库。",
+      "deliverables": [
+        "Tickets Adapter",
+        "创建请求映射",
+        "错误处理"
+      ],
+      "acceptance_criteria": [
+        "明确报修创建工单",
+        "Tickets重复请求不重复建单",
+        "接口失败进入待补建"
+      ],
+      "tests": [
+        "成功",
+        "超时",
+        "5xx",
+        "重复键"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P1-008",
+      "phase": "P1",
+      "title": "实现首次回复",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-007"
+      ],
+      "objective": "在事务提交后回复工单号和真实状态。",
+      "deliverables": [
+        "回复模板",
+        "发送实现",
+        "语言文案测试"
+      ],
+      "acceptance_criteria": [
+        "不得在commit前回复",
+        "文案为等待受理而非处理中",
+        "P95在目标范围"
+      ],
+      "tests": [
+        "正常",
+        "Tickets待补建临时回执",
+        "发送失败"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P1-009",
+      "phase": "P1",
+      "title": "扩展Outbox与Delivery Worker",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-007"
+      ],
+      "objective": "实现可靠通知、重试、幂等和发送审计。",
+      "deliverables": [
+        "Outbox事件",
+        "Delivery表/适配",
+        "Relay Worker",
+        "死信机制"
+      ],
+      "acceptance_criteria": [
+        "业务事务与Outbox同事务",
+        "重复Worker不重复发送",
+        "失败可重试和人工补发"
+      ],
+      "tests": [
+        "进程中断",
+        "平台限流",
+        "无效用户",
+        "重复消费"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P1-010",
+      "phase": "P1",
+      "title": "P1端到端与AI关闭演练",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-008",
+        "P1-009"
+      ],
+      "objective": "完成群报修到工单号的E2E，并证明AI/OCR完全关闭仍正常。",
+      "deliverables": [
+        "E2E脚本",
+        "演练报告",
+        "性能基线"
+      ],
+      "acceptance_criteria": [
+        "明确报修漏单0",
+        "重复建单0",
+        "AI关闭正常",
+        "30条/分钟不丢"
+      ],
+      "tests": [
+        "真实测试群",
+        "Mock负载",
+        "断线恢复"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P2-001",
+      "phase": "P2",
+      "title": "实现完整工单状态机",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-010"
+      ],
+      "objective": "在现有Tickets中实现合法状态和转换规则。",
+      "deliverables": [
+        "状态枚举",
+        "transition service",
+        "错误码"
+      ],
+      "acceptance_criteria": [
+        "非法转换被拒绝",
+        "所有合法路径有测试",
+        "外部状态映射正确"
+      ],
+      "tests": [
+        "状态机全路径",
+        "非法转换表"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P2-002",
+      "phase": "P2",
+      "title": "实现Action API与乐观锁",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P2-001"
+      ],
+      "objective": "使用accept/start/request-information/resolve/confirm/reopen等Action。",
+      "deliverables": [
+        "Action API",
+        "version字段",
+        "冲突响应"
+      ],
+      "acceptance_criteria": [
+        "并发接单只有一个成功",
+        "重复卡片不会状态回退",
+        "无通用status PATCH"
+      ],
+      "tests": [
+        "并发操作",
+        "旧version",
+        "重复请求"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P2-003",
+      "phase": "P2",
+      "title": "工单时间线和内外部备注",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P2-002"
+      ],
+      "objective": "记录每次状态、操作人、内部备注和对外说明。",
+      "deliverables": [
+        "ticket_event",
+        "时间线API",
+        "可见性规则"
+      ],
+      "acceptance_criteria": [
+        "临床看不到内部备注",
+        "事件不可被覆盖",
+        "每次状态有操作证据"
+      ],
+      "tests": [
+        "权限测试",
+        "事件顺序测试"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P2-004",
+      "phase": "P2",
+      "title": "身份、科室和院区映射",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-010"
+      ],
+      "objective": "建立userid到人员、SSO和任职关系映射。",
+      "deliverables": [
+        "identity binding",
+        "同步/查询接口",
+        "未映射队列"
+      ],
+      "acceptance_criteria": [
+        "重名不按姓名唯一匹配",
+        "历史任职有效期保留",
+        "未映射不阻塞Intake"
+      ],
+      "tests": [
+        "人员调科",
+        "多任职",
+        "未知userid"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P2-005",
+      "phase": "P2",
+      "title": "处理组与值班路由",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P2-004"
+      ],
+      "objective": "基于系统目录、院区和值班表推荐或分配处理组。",
+      "deliverables": [
+        "resolver routing配置",
+        "值班表接口",
+        "手工覆盖"
+      ],
+      "acceptance_criteria": [
+        "路由结果有来源",
+        "冲突进入人工",
+        "关键故障不静默自动分配"
+      ],
+      "tests": [
+        "无值班人",
+        "多规则冲突",
+        "跨院区"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P2-006",
+      "phase": "P2",
+      "title": "工程师响应式H5",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P2-002",
+        "P2-003"
+      ],
+      "objective": "实现待办、详情、接单、处理、解决和备注。",
+      "deliverables": [
+        "H5页面",
+        "企微OAuth/SSO接入",
+        "权限控制"
+      ],
+      "acceptance_criteria": [
+        "手机可访问",
+        "只显示有权工单",
+        "状态操作使用version"
+      ],
+      "tests": [
+        "移动端",
+        "越权",
+        "弱网"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P2-007",
+      "phase": "P2",
+      "title": "个人进度通知策略",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P1-009",
+        "P2-002"
+      ],
+      "objective": "实现接单、处理中、待补充、解决和关闭的单聊通知。",
+      "deliverables": [
+        "通知模板",
+        "策略引擎",
+        "Delivery审计"
+      ],
+      "acceptance_criteria": [
+        "群内不刷全部状态",
+        "个人单聊正确",
+        "内部信息不外发"
+      ],
+      "tests": [
+        "每个状态",
+        "用户不可达",
+        "重复事件"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P2-008",
+      "phase": "P2",
+      "title": "申报人补充信息流程",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P2-006",
+        "P2-007"
+      ],
+      "objective": "支持卡片/H5补充文字、终端编号、位置和附件。",
+      "deliverables": [
+        "补充表单",
+        "关联Intake",
+        "恢复处理Action"
+      ],
+      "acceptance_criteria": [
+        "补充不新建工单",
+        "待补充到处理中合法转换",
+        "来源字段可追溯"
+      ],
+      "tests": [
+        "多次补充",
+        "错误工单",
+        "过期卡片"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P2-009",
+      "phase": "P2",
+      "title": "解决确认、自动关闭与重开",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P2-002",
+        "P2-007"
+      ],
+      "objective": "实现已恢复、仍未恢复、提醒和自动关闭原因。",
+      "deliverables": [
+        "解决卡片",
+        "确认/重开API",
+        "自动关闭Job"
+      ],
+      "acceptance_criteria": [
+        "用户确认与自动关闭分开统计",
+        "仍未恢复可重开",
+        "核心工单可禁用自动关闭"
+      ],
+      "tests": [
+        "确认",
+        "重开",
+        "超时",
+        "重复点击"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P2-010",
+      "phase": "P2",
+      "title": "SLA催办与P2验收",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P2-005",
+        "P2-009"
+      ],
+      "objective": "实现待接单、处理中超时提醒并完成闭环验收。",
+      "deliverables": [
+        "SLA规则",
+        "内部催办",
+        "P2验收报告"
+      ],
+      "acceptance_criteria": [
+        "超时不直接群内公开",
+        "全状态链路通过",
+        "并发和权限测试通过"
+      ],
+      "tests": [
+        "15分钟未接单",
+        "处理超时",
+        "非工作时段"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P3-001",
+      "phase": "P3",
+      "title": "MinIO私有桶与访问控制",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P2-010"
+      ],
+      "objective": "建立私有附件存储、服务端鉴权和生命周期策略。",
+      "deliverables": [
+        "私有桶",
+        "访问服务",
+        "生命周期配置"
+      ],
+      "acceptance_criteria": [
+        "无公开读",
+        "前端无MinIO密钥",
+        "访问有审计"
+      ],
+      "tests": [
+        "越权访问",
+        "签名URL过期",
+        "删除策略"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P3-002",
+      "phase": "P3",
+      "title": "媒体下载、解密和安全校验",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P3-001",
+        "G0-004"
+      ],
+      "objective": "实现企业微信媒体下载解密、Magic/MIME、大小和恶意文件检查。",
+      "deliverables": [
+        "media pipeline",
+        "临时文件清理",
+        "错误码"
+      ],
+      "acceptance_criteria": [
+        "错误aeskey安全失败",
+        "未知文件拒绝解析",
+        "URL/aeskey不写日志"
+      ],
+      "tests": [
+        "PNG/JPG/PDF",
+        "超大文件",
+        "伪造MIME"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P3-003",
+      "phase": "P3",
+      "title": "MediaAsset数据与留存",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P3-002"
+      ],
+      "objective": "登记哈希、敏感级别、可见性和到期时间。",
+      "deliverables": [
+        "media_asset repository",
+        "retention job",
+        "审计"
+      ],
+      "acceptance_criteria": [
+        "外部可见默认false",
+        "到期可删除",
+        "删除失败告警"
+      ],
+      "tests": [
+        "重复文件",
+        "留存例外",
+        "删除重试"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P3-004",
+      "phase": "P3",
+      "title": "纯图片和图文上下文流程",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P3-003"
+      ],
+      "objective": "纯图片先建单并请求补充，mixed同一Intake处理。",
+      "deliverables": [
+        "图片Intake规则",
+        "补充文案",
+        "上下文关联"
+      ],
+      "acceptance_criteria": [
+        "纯图片不漏单",
+        "mixed不拆多单",
+        "90秒补充追加同单"
+      ],
+      "tests": [
+        "纯图",
+        "mixed",
+        "图片后文字",
+        "文字后图片"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P3-005",
+      "phase": "P3",
+      "title": "OCR服务化",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P3-003"
+      ],
+      "objective": "建立独立OCR接口、并发限制、超时和版本记录。",
+      "deliverables": [
+        "OCR FastAPI",
+        "Pydantic Contract",
+        "模型版本配置"
+      ],
+      "acceptance_criteria": [
+        "OCR不访问Tickets DB",
+        "超时不阻塞工单",
+        "结果可重算"
+      ],
+      "tests": [
+        "清晰截图",
+        "模糊截图",
+        "并发",
+        "服务停止"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P3-006",
+      "phase": "P3",
+      "title": "OCR后处理和错误码提取",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P3-005"
+      ],
+      "objective": "标准化OCR文本，提取窗口标题、错误码和系统指纹。",
+      "deliverables": [
+        "后处理规则",
+        "错误码正则",
+        "字段证据"
+      ],
+      "acceptance_criteria": [
+        "不虚构错误码",
+        "患者号不误当错误码的回归集",
+        "原文与脱敏版分开"
+      ],
+      "tests": [
+        "HTTP/ORA/0x",
+        "数字患者号",
+        "中英文"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P3-007",
+      "phase": "P3",
+      "title": "敏感信息检测和脱敏",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P3-005"
+      ],
+      "objective": "识别患者/员工/Secret信息，控制群文案、日志和AI输入。",
+      "deliverables": [
+        "脱敏服务",
+        "日志扫描",
+        "敏感级别"
+      ],
+      "acceptance_criteria": [
+        "患者信息不进普通日志",
+        "群文案无患者身份",
+        "疑似Secret触发告警"
+      ],
+      "tests": [
+        "身份证/手机号/住院号",
+        "密码/token",
+        "误报回归"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P3-008",
+      "phase": "P3",
+      "title": "媒体/OCR E2E与性能验收",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P3-004",
+        "P3-006",
+        "P3-007"
+      ],
+      "objective": "完成图片全链路、安全和CPU性能基线。",
+      "deliverables": [
+        "E2E报告",
+        "OCR基准",
+        "安全测试报告"
+      ],
+      "acceptance_criteria": [
+        "50张图片突发不丢",
+        "OCR停止仍建单",
+        "无公开附件",
+        "P95记录"
+      ],
+      "tests": [
+        "真实脱敏截图集",
+        "服务故障",
+        "负载"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P4-001",
+      "phase": "P4",
+      "title": "建立系统目录和别名库",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P3-008"
+      ],
+      "objective": "维护系统、模块、别名、URL、窗口标题、处理组和关键等级。",
+      "deliverables": [
+        "system catalog",
+        "版本管理",
+        "管理员维护规范"
+      ],
+      "acceptance_criteria": [
+        "每个code唯一",
+        "来源可追溯",
+        "未知系统不自动映射"
+      ],
+      "tests": [
+        "别名冲突",
+        "过期系统",
+        "跨院区"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P4-002",
+      "phase": "P4",
+      "title": "实现确定性规则引擎",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P4-001"
+      ],
+      "objective": "实现请求类型、否定词、系统、症状、关键临床和敏感规则。",
+      "deliverables": [
+        "rules engine",
+        "规则配置",
+        "命中证据"
+      ],
+      "acceptance_criteria": [
+        "规则可版本化",
+        "否定句不误建",
+        "规则结果可解释"
+      ],
+      "tests": [
+        "正反例集",
+        "规则冲突",
+        "热更新"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P4-003",
+      "phase": "P4",
+      "title": "冻结AI Triage Contract",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P4-002"
+      ],
+      "objective": "定义输入、输出、证据、decision_band和Schema。",
+      "deliverables": [
+        "OpenAPI/JSON Schema",
+        "TypeScript/Python类型",
+        "Contract Test"
+      ],
+      "acceptance_criteria": [
+        "未知字段处理明确",
+        "不含可执行命令",
+        "Schema验证100%覆盖"
+      ],
+      "tests": [
+        "合法/非法响应",
+        "枚举外值"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P4-004",
+      "phase": "P4",
+      "title": "实现模型Provider Adapter",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P4-003"
+      ],
+      "objective": "封装Ollama/llama.cpp等，业务不依赖具体后端。",
+      "deliverables": [
+        "Provider接口",
+        "至少一个本地实现",
+        "超时/熔断"
+      ],
+      "acceptance_criteria": [
+        "可切换Provider",
+        "模型停止返回AI_UNAVAILABLE",
+        "不影响核心链路"
+      ],
+      "tests": [
+        "超时",
+        "无效JSON",
+        "模型进程停止"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P4-005",
+      "phase": "P4",
+      "title": "结构化Prompt与输出校验",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P4-004"
+      ],
+      "objective": "实现严格Prompt、JSON Schema校验和有限重试。",
+      "deliverables": [
+        "Prompt版本",
+        "parser",
+        "校验失败策略"
+      ],
+      "acceptance_criteria": [
+        "不输出推理过程",
+        "错误码不捏造",
+        "失败进入人工"
+      ],
+      "tests": [
+        "Prompt注入",
+        "截图指令",
+        "字段冲突"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P4-006",
+      "phase": "P4",
+      "title": "AI影子编排",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P4-005"
+      ],
+      "objective": "异步执行规则/OCR/模型并保存AIDecision，不自动改处理组。",
+      "deliverables": [
+        "异步Job",
+        "AIDecision表",
+        "降级指标"
+      ],
+      "acceptance_criteria": [
+        "AI结果不覆盖原始消息",
+        "可关闭",
+        "每次推理版本完整"
+      ],
+      "tests": [
+        "AI开/关",
+        "重复推理",
+        "超时"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P4-007",
+      "phase": "P4",
+      "title": "人工审核与修正页面",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P4-006"
+      ],
+      "objective": "管理员查看AI建议、证据和最终字段，修正留痕。",
+      "deliverables": [
+        "审核页面",
+        "修正API",
+        "修正审计"
+      ],
+      "acceptance_criteria": [
+        "保留前后值",
+        "权限控制",
+        "修正可进入评估集标记"
+      ],
+      "tests": [
+        "多字段修正",
+        "撤销",
+        "越权"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P4-008",
+      "phase": "P4",
+      "title": "评估集与指标校准",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P4-007"
+      ],
+      "objective": "建立脱敏锁定测试集和字段级指标。",
+      "deliverables": [
+        "数据集说明",
+        "评估脚本",
+        "基线报告"
+      ],
+      "acceptance_criteria": [
+        "Precision/Recall/Macro-F1可复现",
+        "锁定测试集不用于调参",
+        "关键场景单独统计"
+      ],
+      "tests": [
+        "固定随机种子",
+        "版本对比",
+        "数据泄漏检查"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P4-009",
+      "phase": "P4",
+      "title": "自动路由开关与回滚Gate",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P4-008"
+      ],
+      "objective": "建立按类别启用的自动路由Feature Flag和审批门槛。",
+      "deliverables": [
+        "Feature Flag",
+        "门槛配置",
+        "回滚流程"
+      ],
+      "acceptance_criteria": [
+        "默认关闭",
+        "高风险类别不可自动",
+        "一键回滚人工分诊"
+      ],
+      "tests": [
+        "开关切换",
+        "模型漂移",
+        "错误路由撤销"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P5-001",
+      "phase": "P5",
+      "title": "Incident与Subscription数据模型",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P4-009"
+      ],
+      "objective": "建立公共故障、关联报告和多申报人订阅。",
+      "deliverables": [
+        "Incident表/接口",
+        "incident_report",
+        "subscription"
+      ],
+      "acceptance_criteria": [
+        "关联不删除Intake",
+        "每个申报人可独立通知",
+        "可解除关联"
+      ],
+      "tests": [
+        "关联/解除",
+        "重复订阅",
+        "关闭"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P5-002",
+      "phase": "P5",
+      "title": "公共故障候选指纹",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P5-001",
+        "P4-002"
+      ],
+      "objective": "基于系统、模块、错误码、症状、时间和院区生成候选。",
+      "deliverables": [
+        "fingerprint service",
+        "候选解释",
+        "阈值配置"
+      ],
+      "acceptance_criteria": [
+        "不只按类别时间",
+        "候选有证据",
+        "不同HIS问题不误合并"
+      ],
+      "tests": [
+        "同错误多科室",
+        "不同错误同系统",
+        "无错误码"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P5-003",
+      "phase": "P5",
+      "title": "接入API平台和监控信号",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P5-002"
+      ],
+      "objective": "将接口、应用、网络或数据库告警作为Incident证据。",
+      "deliverables": [
+        "monitoring adapter",
+        "信号Contract",
+        "时间对齐"
+      ],
+      "acceptance_criteria": [
+        "监控信号可追溯",
+        "监控不可用不阻塞报修",
+        "时钟偏差处理"
+      ],
+      "tests": [
+        "告警先于报修",
+        "报修先于告警",
+        "重复告警"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P5-004",
+      "phase": "P5",
+      "title": "管理员确认、关联与解除",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P5-002"
+      ],
+      "objective": "提供候选列表、确认Incident、link/unlink和审计。",
+      "deliverables": [
+        "管理页面",
+        "Action API",
+        "审计"
+      ],
+      "acceptance_criteria": [
+        "未经确认不自动合并",
+        "解除后原工单恢复可见",
+        "每次操作留痕"
+      ],
+      "tests": [
+        "确认",
+        "拒绝",
+        "解除",
+        "并发"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P5-005",
+      "phase": "P5",
+      "title": "公共故障群公告",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P5-004",
+        "P2-007"
+      ],
+      "objective": "发布统一事件编号、影响范围和重要进展。",
+      "deliverables": [
+        "公告模板",
+        "群内合并策略",
+        "权限"
+      ],
+      "acceptance_criteria": [
+        "不含患者信息",
+        "避免刷屏",
+        "所有订阅人可获得个人进展"
+      ],
+      "tests": [
+        "首次公告",
+        "进展合并",
+        "解决公告"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P5-006",
+      "phase": "P5",
+      "title": "Incident生命周期与批量订阅",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P5-005"
+      ],
+      "objective": "实现确认、处理中、缓解、解决、关闭和申报人恢复收集。",
+      "deliverables": [
+        "状态机",
+        "批量通知",
+        "个人恢复状态"
+      ],
+      "acceptance_criteria": [
+        "Incident解决不强制所有个人工单自动确认",
+        "可识别局部未恢复",
+        "通知幂等"
+      ],
+      "tests": [
+        "部分恢复",
+        "重新打开",
+        "大批订阅"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P5-007",
+      "phase": "P5",
+      "title": "指标仓与月报",
+      "priority": "P1",
+      "status": "TODO",
+      "dependencies": [
+        "P5-001",
+        "P2-010"
+      ],
+      "objective": "实现明确口径的报修、时效、质量、AI和Incident指标。",
+      "deliverables": [
+        "指标查询",
+        "月报页面/导出",
+        "口径说明"
+      ],
+      "acceptance_criteria": [
+        "自动关闭与用户确认分开",
+        "Incident与Ticket不重复计数",
+        "测试数据排除"
+      ],
+      "tests": [
+        "跨月",
+        "时区",
+        "重开",
+        "测试数据"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P5-008",
+      "phase": "P5",
+      "title": "Incident误关联与性能验收",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P5-003",
+        "P5-006",
+        "P5-007"
+      ],
+      "objective": "验证公共故障候选精确率、解除能力和大规模通知。",
+      "deliverables": [
+        "验收报告",
+        "误关联样例",
+        "性能结果"
+      ],
+      "acceptance_criteria": [
+        "错误自动关联默认0",
+        "人工关联可撤销",
+        "100订阅人通知不重复"
+      ],
+      "tests": [
+        "同类不同问题",
+        "跨院区",
+        "大批量"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P6-001",
+      "phase": "P6",
+      "title": "生产环境与运维文档",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P5-008"
+      ],
+      "objective": "完成部署、备份、监控、告警、回滚和Runbook。",
+      "deliverables": [
+        "部署清单",
+        "Runbook",
+        "备份恢复说明"
+      ],
+      "acceptance_criteria": [
+        "新运维人员可按文档恢复服务",
+        "AI可独立关闭",
+        "Secret不入文档明文"
+      ],
+      "tests": [
+        "演练走查"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P6-002",
+      "phase": "P6",
+      "title": "试点群和用户沟通",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P6-001"
+      ],
+      "objective": "选择试点科室，明确@方式、隐私提示、服务时间和反馈渠道。",
+      "deliverables": [
+        "试点方案",
+        "临床操作说明",
+        "群公告"
+      ],
+      "acceptance_criteria": [
+        "用户知道如何报修",
+        "不承诺未验证能力",
+        "反馈负责人明确"
+      ],
+      "tests": [
+        "现场演示",
+        "用户走查"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P6-003",
+      "phase": "P6",
+      "title": "工程师和值班管理员培训",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P6-001"
+      ],
+      "objective": "培训接单、状态语义、外部说明、敏感附件和Incident。",
+      "deliverables": [
+        "培训材料",
+        "操作手册",
+        "签到/确认"
+      ],
+      "acceptance_criteria": [
+        "无人用“处理中”替代未接单",
+        "内部备注不外发",
+        "能完成重开流程"
+      ],
+      "tests": [
+        "模拟工单"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P6-004",
+      "phase": "P6",
+      "title": "试点上线与每日复盘",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P6-002",
+        "P6-003"
+      ],
+      "objective": "在一个临床群运行，AI默认影子，日报跟踪漏单和体验。",
+      "deliverables": [
+        "试点日报",
+        "问题清单",
+        "变更记录"
+      ],
+      "acceptance_criteria": [
+        "明确报修漏单0",
+        "重复建单0",
+        "关键问题当天复盘",
+        "可随时回滚"
+      ],
+      "tests": [
+        "真实试点"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P6-005",
+      "phase": "P6",
+      "title": "安全合规验收",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P6-004"
+      ],
+      "objective": "完成数据范围、附件、日志、权限、留存和Bot Secret检查。",
+      "deliverables": [
+        "合规检查表",
+        "整改清单",
+        "审批记录"
+      ],
+      "acceptance_criteria": [
+        "普通日志无敏感数据",
+        "附件私有",
+        "权限最小化",
+        "留存任务可运行"
+      ],
+      "tests": [
+        "日志扫描",
+        "越权",
+        "删除"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P6-006",
+      "phase": "P6",
+      "title": "性能、断网和灾备演练",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P6-004"
+      ],
+      "objective": "执行峰值、WebSocket断网、Tickets失败、AI停止和恢复演练。",
+      "deliverables": [
+        "演练报告",
+        "RTO/RPO记录",
+        "改进项"
+      ],
+      "acceptance_criteria": [
+        "30条/分钟不丢",
+        "AI停止正常",
+        "断网恢复",
+        "Outbox不重复刷屏"
+      ],
+      "tests": [
+        "负载",
+        "故障注入"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "P6-007",
+      "phase": "P6",
+      "title": "试点评审与全院推广Go/No-Go",
+      "priority": "P0",
+      "status": "TODO",
+      "dependencies": [
+        "P6-005",
+        "P6-006"
+      ],
+      "objective": "基于指标、临床反馈、运维负担和风险决定推广。",
+      "deliverables": [
+        "试点评审报告",
+        "Go/No-Go决议",
+        "下一阶段Backlog"
+      ],
+      "acceptance_criteria": [
+        "所有红线指标有数据",
+        "未关闭高风险有负责人",
+        "推广范围和回滚明确"
+      ],
+      "tests": [
+        "管理评审"
+      ],
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+flowchart LR
+    M1[Message 1] --> I1[Intake 1]
+    M2[Message 2] --> I2[Intake 2]
+    M3[Message 3] --> I3[Intake 3]
+
+    I1 --> C[Incident Candidate<br/>系统+模块+错误码+时间+监控]
+    I2 --> C
+    I3 --> C
+
+    C --> H{管理员确认?}
+    H -- 否 --> N[保持独立工单]
+    H -- 是 --> INC[Incident]
+    INC --> S1[Subscription 1]
+    INC --> S2[Subscription 2]
+    INC --> S3[Subscription 3]
+    INC --> T1[处理任务 1]
+    INC --> T2[处理任务 2]

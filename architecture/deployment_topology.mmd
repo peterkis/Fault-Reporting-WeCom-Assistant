@@ -1,0 +1,28 @@
+flowchart TB
+    CLOUD[企业微信云<br/>openws WSS]
+    subgraph ACCESS[医院受控接入区]
+        GW1[Gateway Active]
+        GW2[Gateway Standby]
+    end
+    subgraph APP[医院应用区]
+        T[现有 Tickets/Intake]
+        R[Outbox Relay]
+        H[Hub/H5]
+        AI[AI/OCR 可关闭]
+    end
+    subgraph DATA[数据区]
+        PG[(PostgreSQL)]
+        REDIS[(Redis)]
+        MINIO[(MinIO)]
+    end
+
+    GW1 <-->|WSS 443 出站| CLOUD
+    GW2 -.无活动连接.-> CLOUD
+    GW1 --> T
+    T --> PG
+    T --> REDIS
+    GW1 --> MINIO
+    T --> R
+    R --> GW1
+    R --> H
+    T -.async.-> AI

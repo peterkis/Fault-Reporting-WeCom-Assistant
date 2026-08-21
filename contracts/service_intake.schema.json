@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/service-intake.schema.json",
+  "title": "ServiceIntake",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "intake_no",
+    "source_channel",
+    "reporter_wecom_userid",
+    "request_type",
+    "status",
+    "created_at",
+    "version"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "intake_no": {
+      "type": "string",
+      "pattern": "^INT-[0-9]{8}-[0-9]{4,}$"
+    },
+    "source_channel": {
+      "enum": [
+        "WECOM_GROUP",
+        "WECOM_DIRECT",
+        "PORTAL",
+        "MANUAL"
+      ]
+    },
+    "reporter_wecom_userid": {
+      "type": "string"
+    },
+    "reporter_person_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "request_type": {
+      "enum": [
+        "INCIDENT",
+        "SERVICE_REQUEST",
+        "QUESTION",
+        "COMPLAINT",
+        "STATUS_QUERY",
+        "FOLLOW_UP",
+        "CHATTER",
+        "UNKNOWN"
+      ]
+    },
+    "summary": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "reported_campus_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64
+    },
+    "reported_department_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64
+    },
+    "reported_location_text": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "status": {
+      "enum": [
+        "RECEIVED",
+        "TICKET_CREATED",
+        "WAITING_DESCRIPTION",
+        "WAITING_TRIAGE",
+        "LINKED_INCIDENT",
+        "COMPLETED",
+        "IGNORED",
+        "FAILED"
+      ]
+    },
+    "ticket_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "incident_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

@@ -1,0 +1,268 @@
+[
+  {
+    "id": "RC-001",
+    "channel": "group_mention",
+    "messages": [
+      "@信息保障助手 本部3楼护士站HIS登录报错"
+    ],
+    "expected": {
+      "request_type": "INCIDENT",
+      "action": "CREATE_TICKET_IMMEDIATELY",
+      "system_code": "HIS",
+      "symptom_code": "LOGIN_FAILURE",
+      "reported_campus_id": "HQ",
+      "reported_location_text": "3楼护士站",
+      "external_status": "等待受理"
+    },
+    "notes": "AI不得阻塞建单。"
+  },
+  {
+    "id": "RC-002",
+    "channel": "group_mention",
+    "messages": [
+      "@信息保障助手 高新院区心内科打印不了"
+    ],
+    "expected": {
+      "request_type": "INCIDENT",
+      "action": "CREATE_TICKET_IMMEDIATELY",
+      "system_code": "PRINT",
+      "symptom_code": "PRINT_FAILURE",
+      "reported_campus_id": "GX",
+      "reported_department_text": "心内科"
+    }
+  },
+  {
+    "id": "RC-003",
+    "channel": "direct",
+    "messages": [
+      "<image-only>"
+    ],
+    "expected": {
+      "request_type": "UNKNOWN",
+      "action": "CREATE_WAITING_DESCRIPTION_TICKET",
+      "external_status": "待您补充"
+    },
+    "notes": "OCR失败也不得丢单。"
+  },
+  {
+    "id": "RC-004",
+    "channel": "group_mention",
+    "messages": [
+      "@信息保障助手 医生站打不开",
+      "提示权限错误",
+      "<image>",
+      "我们病区三台都这样"
+    ],
+    "interval_seconds": [
+      0,
+      20,
+      35,
+      60
+    ],
+    "expected": {
+      "intake_count": 1,
+      "ticket_count": 1,
+      "message_count": 4,
+      "system_code": "HIS",
+      "symptom_code": "AUTHORIZATION_ERROR",
+      "impact_scope": "SINGLE_WARD"
+    }
+  },
+  {
+    "id": "RC-005",
+    "channel": "direct",
+    "messages": [
+      "请帮我开通HIS账号"
+    ],
+    "expected": {
+      "request_type": "SERVICE_REQUEST",
+      "action": "CREATE_SERVICE_REQUEST_TICKET",
+      "system_code": "HIS"
+    }
+  },
+  {
+    "id": "RC-006",
+    "channel": "direct",
+    "messages": [
+      "今天测试正常，没有报错"
+    ],
+    "expected": {
+      "request_type": "CHATTER",
+      "action": "NO_NEW_TICKET"
+    },
+    "notes": "否定词必须覆盖“报错”。"
+  },
+  {
+    "id": "RC-007",
+    "channel": "direct",
+    "messages": [
+      "上次那个处理到哪了"
+    ],
+    "context": {
+      "recent_open_ticket": "IT-20260820-0013"
+    },
+    "expected": {
+      "request_type": "STATUS_QUERY",
+      "action": "RETURN_EXISTING_TICKET_STATUS",
+      "ticket_no": "IT-20260820-0013"
+    }
+  },
+  {
+    "id": "RC-008",
+    "channel": "direct",
+    "messages": [
+      "好了，谢谢"
+    ],
+    "context": {
+      "recent_ticket_status": "RESOLVED"
+    },
+    "expected": {
+      "request_type": "FOLLOW_UP",
+      "action": "CONFIRM_OR_PROMPT_CONFIRM",
+      "new_ticket": false
+    }
+  },
+  {
+    "id": "RC-009",
+    "channel": "group_mention",
+    "messages": [
+      "@信息保障助手 抢救室医嘱下不了"
+    ],
+    "expected": {
+      "request_type": "INCIDENT",
+      "action": "CREATE_TICKET_AND_CRITICAL_REVIEW",
+      "system_code": null,
+      "clinical_impact_signals": [
+        "抢救",
+        "医嘱"
+      ],
+      "decision_band": "CRITICAL_REVIEW"
+    },
+    "notes": "不能由模型直接认定最终P1，但必须立即提醒人工。"
+  },
+  {
+    "id": "RC-010",
+    "channel": "group_mention",
+    "messages": [
+      "@信息保障助手 HIS登录提示HTTP 403"
+    ],
+    "expected": {
+      "request_type": "INCIDENT",
+      "system_code": "HIS",
+      "symptom_code": "AUTHORIZATION_ERROR",
+      "error_codes": [
+        "HTTP 403"
+      ]
+    }
+  },
+  {
+    "id": "RC-011",
+    "channel": "group_mention",
+    "messages": [
+      "@信息保障助手 系统打不开，3楼护士站"
+    ],
+    "sender_profile": {
+      "campus_id": "HQ",
+      "department_id": "CARDIOLOGY"
+    },
+    "expected": {
+      "request_type": "INCIDENT",
+      "system_code": null,
+      "reported_campus_id": "HQ",
+      "campus_source": "SENDER_PROFILE",
+      "reported_department_id": null,
+      "action": "CREATE_TICKET_AND_REQUEST_SYSTEM"
+    },
+    "notes": "申报人科室不能直接等于故障发生科室。"
+  },
+  {
+    "id": "RC-012",
+    "channel": "group_mention",
+    "messages": [
+      "@信息保障助手 HIS登录失败"
+    ],
+    "sender_profile": null,
+    "expected": {
+      "request_type": "INCIDENT",
+      "action": "CREATE_TICKET_WITH_UNMAPPED_IDENTITY",
+      "identity_queue": true
+    }
+  },
+  {
+    "id": "RC-013",
+    "channel": "group_mention",
+    "messages": [
+      "@信息保障助手 HIS登录失败"
+    ],
+    "parallel_reports": [
+      {
+        "sender": "A",
+        "text": "HIS登录提示ORA-12514"
+      },
+      {
+        "sender": "B",
+        "text": "HIS登录提示ORA-12514"
+      },
+      {
+        "sender": "C",
+        "text": "医生站ORA-12514"
+      }
+    ],
+    "expected": {
+      "intake_count": 4,
+      "incident_candidate": true,
+      "auto_link": false,
+      "candidate_evidence": [
+        "same_system",
+        "same_error_code",
+        "different_reporters",
+        "close_time"
+      ]
+    }
+  },
+  {
+    "id": "RC-014",
+    "channel": "group_mention",
+    "parallel_reports": [
+      {
+        "sender": "A",
+        "text": "HIS登录失败"
+      },
+      {
+        "sender": "B",
+        "text": "HIS打印失败"
+      }
+    ],
+    "expected": {
+      "incident_candidate": false,
+      "reason": "same category is insufficient; symptoms differ"
+    }
+  },
+  {
+    "id": "RC-015",
+    "channel": "direct",
+    "messages": [
+      "<image with patient name, inpatient number and error dialog>"
+    ],
+    "expected": {
+      "action": "CREATE_TICKET_PRIVATE_MEDIA",
+      "media_sensitivity": "PATIENT_SENSITIVE",
+      "group_copy_redacted": true,
+      "normal_log_contains_phi": false
+    }
+  },
+  {
+    "id": "RC-016",
+    "channel": "direct",
+    "messages": [
+      "新报修：打印机坏了"
+    ],
+    "context": {
+      "active_intake_within_90s": true
+    },
+    "expected": {
+      "action": "CREATE_NEW_INTAKE",
+      "reason": "explicit new request term"
+    }
+  }
+]

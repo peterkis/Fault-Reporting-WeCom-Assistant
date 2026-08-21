@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/ticket-event.schema.json",
+  "title": "TicketEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "ticket_id",
+    "event_type",
+    "new_status",
+    "aggregate_version",
+    "occurred_at",
+    "trace_id"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "ticket_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "ticket_no": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64
+    },
+    "event_type": {
+      "enum": [
+        "ticket.created",
+        "ticket.accepted",
+        "ticket.started",
+        "ticket.waiting_requester",
+        "ticket.waiting_vendor",
+        "ticket.resolved",
+        "ticket.closed",
+        "ticket.reopened",
+        "ticket.cancelled",
+        "ticket.linked_incident"
+      ]
+    },
+    "old_status": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "new_status": {
+      "type": "string"
+    },
+    "aggregate_version": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "operator_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        null,
+        "USER",
+        "ENGINEER",
+        "ADMIN",
+        "SYSTEM",
+        "BOT"
+      ]
+    },
+    "operator_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "external_note": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 2000
+    },
+    "reason_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_id": {
+      "type": "string",
+      "maxLength": 128
+    }
+  }
+}

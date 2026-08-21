@@ -1,0 +1,30 @@
+{
+  "project": {
+    "name": "医院信息故障智能报修助手",
+    "service_name": "信息保障助手",
+    "version": "1.0.0",
+    "baseline_date": "2026-08-20",
+    "current_phase": "G0",
+    "status": "specification_ready"
+  },
+  "mission": "企业微信可靠受理 + 现有工单闭环 + 院内AI异步增强",
+  "hard_invariants": [
+    "persist_before_ack",
+    "provider_msg_id_unique",
+    "ai_not_in_critical_path",
+    "existing_tickets_is_source_of_truth",
+    "outbox_same_transaction_as_state_change",
+    "no_simple_time_category_auto_merge",
+    "private_medical_data_processing",
+    "no_ai_direct_production_actions"
+  ],
+  "recommended_stack": {
+    "gateway": "Node.js 24 + TypeScript + @wecom/aibot-node-sdk",
+    "web": "Next.js 16 + React",
+    "core": "Existing Node.js/Express Tickets service",
+    "database": "PostgreSQL 18",
+    "cache": "Redis 7.2",
+    "object_storage": "MinIO",
+    "ai": "Python 3.12 + FastAPI + PaddleOCR + local 2B-4B model adapter"
+  }
+}

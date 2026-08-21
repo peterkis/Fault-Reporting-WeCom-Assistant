@@ -1,0 +1,28 @@
+{
+  "phase_id": "G0",
+  "phase_name": "企业微信 WebSocket 能力验证",
+  "status": "READY",
+  "first_task": "G0-001",
+  "allowed_scope": [
+    "network connectivity",
+    "sdk authentication",
+    "message capability matrix",
+    "media decrypt",
+    "active push",
+    "card event",
+    "reconnect and soak test",
+    "capability decision record"
+  ],
+  "forbidden_before_exit": [
+    "production AI integration",
+    "automatic incident merging",
+    "full ticket UI",
+    "multi-active gateway",
+    "public HTTP callback as primary channel"
+  ],
+  "exit_gate": [
+    "24小时稳定运行",
+    "能力矩阵完成",
+    "SDK版本和连接策略ADR冻结"
+  ]
+}

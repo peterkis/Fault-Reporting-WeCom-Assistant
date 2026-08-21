@@ -1,0 +1,44 @@
+{
+  "version": "routing-v1-example",
+  "rules": [
+    {
+      "id": "R-HIS",
+      "when": {
+        "system_code": "HIS",
+        "campus_id": "*"
+      },
+      "suggest_team": "APPLICATION_SUPPORT",
+      "automation": "SUGGEST_ONLY"
+    },
+    {
+      "id": "R-NETWORK",
+      "when": {
+        "system_code": "NETWORK",
+        "campus_id": "HQ"
+      },
+      "suggest_team": "NETWORK_SUPPORT_HQ",
+      "automation": "SUGGEST_ONLY"
+    },
+    {
+      "id": "R-PRINT",
+      "when": {
+        "system_code": "PRINT",
+        "impact_scope": [
+          "SINGLE_USER",
+          "SINGLE_TERMINAL",
+          "SINGLE_LOCATION"
+        ]
+      },
+      "suggest_team": "ENDPOINT_SUPPORT",
+      "automation": "SUGGEST_ONLY"
+    }
+  ],
+  "manual_review_conditions": [
+    "clinical_critical_signal",
+    "multiple_system_conflict",
+    "data_change_request",
+    "security_incident_suspected",
+    "resolver_rule_conflict",
+    "unknown_campus_for_campus_specific_team"
+  ]
+}

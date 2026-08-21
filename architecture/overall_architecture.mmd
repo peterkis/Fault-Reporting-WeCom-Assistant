@@ -1,0 +1,51 @@
+flowchart TB
+    subgraph WECOM[企业微信]
+        GROUP[临床报修群]
+        DIRECT[机器人单聊]
+        BOT[信息保障助手]
+    end
+
+    subgraph ACCESS[受控接入区]
+        ADAPTER[wecom-adapter]
+        GATEWAY[wecom-gateway]
+    end
+
+    subgraph CORE[医院应用区]
+        INTAKE[Service Intake]
+        TICKETS[现有 Tickets]
+        INCIDENT[Incident]
+        OUTBOX[Notification Outbox]
+        RELAY[Relay Worker]
+        HUB[Hub / SSE / 灵动岛]
+    end
+
+    subgraph DATA[数据层]
+        PG[(PostgreSQL 18)]
+        REDIS[(Redis 7.2)]
+        MINIO[(MinIO 私有桶)]
+    end
+
+    subgraph AI[AI增强区]
+        RULES[规则/系统指纹]
+        OCR[OCR Service]
+        TRIAGE[AI Triage]
+    end
+
+    GROUP --> BOT
+    DIRECT --> BOT
+    BOT <-->|WSS 443| ADAPTER
+    ADAPTER --> GATEWAY
+    GATEWAY --> INTAKE
+    INTAKE --> PG
+    INTAKE --> TICKETS
+    TICKETS --> INCIDENT
+    TICKETS --> OUTBOX
+    OUTBOX --> RELAY
+    RELAY --> GATEWAY
+    RELAY --> HUB
+    GATEWAY --> MINIO
+    INTAKE --> REDIS
+    INTAKE -.async.-> RULES
+    RULES -.optional.-> OCR
+    OCR -.optional.-> TRIAGE
+    TRIAGE -.suggestion.-> INTAKE

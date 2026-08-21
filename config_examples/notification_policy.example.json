@@ -1,0 +1,84 @@
+{
+  "version": "notification-v1-example",
+  "events": {
+    "intake.ticket_created": {
+      "group": true,
+      "direct": false,
+      "internal": true,
+      "template": "TICKET_CREATED"
+    },
+    "ticket.accepted": {
+      "group": false,
+      "direct": true,
+      "internal": true,
+      "template": "TICKET_ACCEPTED"
+    },
+    "ticket.started": {
+      "group": false,
+      "direct": true,
+      "internal": true,
+      "template": "TICKET_STARTED"
+    },
+    "ticket.waiting_requester": {
+      "group": false,
+      "direct": true,
+      "internal": true,
+      "template": "TICKET_NEEDS_INFO"
+    },
+    "ticket.resolved": {
+      "group": false,
+      "direct": true,
+      "internal": true,
+      "template": "TICKET_RESOLVED"
+    },
+    "ticket.closed": {
+      "group": false,
+      "direct": true,
+      "internal": true,
+      "template": "TICKET_CLOSED"
+    },
+    "ticket.reopened": {
+      "group": false,
+      "direct": true,
+      "internal": true,
+      "template": "TICKET_REOPENED"
+    },
+    "incident.confirmed": {
+      "group": true,
+      "direct": true,
+      "internal": true,
+      "template": "INCIDENT_CONFIRMED"
+    },
+    "incident.updated": {
+      "group": "important_only",
+      "direct": true,
+      "internal": true,
+      "template": "INCIDENT_UPDATED"
+    },
+    "incident.resolved": {
+      "group": true,
+      "direct": true,
+      "internal": true,
+      "template": "INCIDENT_RESOLVED"
+    }
+  },
+  "idempotency_key": [
+    "aggregate_id",
+    "aggregate_version",
+    "channel",
+    "target_id",
+    "template"
+  ],
+  "rate_limit": {
+    "group_messages_per_minute": 15,
+    "direct_messages_per_minute": 60,
+    "merge_window_seconds": 60,
+    "priority_order": [
+      "critical_incident",
+      "waiting_requester",
+      "resolved_confirmation",
+      "ticket_created",
+      "routine_progress"
+    ]
+  }
+}

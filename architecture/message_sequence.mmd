@@ -1,0 +1,27 @@
+sequenceDiagram
+    autonumber
+    participant U as 临床用户
+    participant W as 企业微信
+    participant G as WeCom Gateway
+    participant I as Intake Service
+    participant DB as PostgreSQL
+    participant T as Tickets
+    participant O as Outbox Relay
+    participant A as AI/OCR
+
+    U->>W: @信息保障助手 + 文字/截图
+    W->>G: WebSocket Frame
+    G->>I: POST /internal/v1/intakes/wecom
+    I->>DB: 幂等检查 + 保存消息/Intake
+    I->>T: 创建工单(Idempotency-Key)
+    T-->>I: ticket_no + QUEUED
+    I->>DB: 写Outbox并提交事务
+    I-->>G: 工单号/首次回复模板
+    G-->>W: 回复“已生成工单，等待受理”
+    W-->>U: 首次确认
+    I--)A: 异步规则/OCR/AI
+    A-->>I: 结构化建议
+    T->>DB: 接单/处理/解决 + 事件 + Outbox
+    O->>G: 发送申报人单聊
+    G->>W: 主动推送
+    W->>U: 进度卡片

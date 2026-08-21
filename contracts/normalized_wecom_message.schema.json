@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/normalized-wecom-message.schema.json",
+  "title": "NormalizedWeComMessage",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "provider",
+    "msg_id",
+    "chat_type",
+    "sender_user_id",
+    "msg_type",
+    "create_time"
+  ],
+  "properties": {
+    "provider": {
+      "const": "WECOM_AIBOT"
+    },
+    "msg_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "req_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "bot_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "chat_type": {
+      "enum": [
+        "single",
+        "group"
+      ]
+    },
+    "chat_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "sender_user_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "msg_type": {
+      "enum": [
+        "text",
+        "image",
+        "mixed",
+        "voice",
+        "file",
+        "event",
+        "unknown"
+      ]
+    },
+    "create_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "text": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 20000
+        },
+        "clean": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 20000
+        }
+      }
+    },
+    "mentions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 256
+      },
+      "maxItems": 100
+    },
+    "quote": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true
+    },
+    "media": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "download_ref"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "image",
+              "file",
+              "voice",
+              "video"
+            ]
+          },
+          "provider_media_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 512
+          },
+          "download_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "filename": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 512
+          },
+          "mime_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    "raw_payload_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 1024
+    },
+    "trace_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    }
+  }
+}

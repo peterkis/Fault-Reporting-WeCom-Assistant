@@ -1,0 +1,157 @@
+{
+  "version": "2026-08-20-example",
+  "systems": [
+    {
+      "system_code": "HIS",
+      "name": "医院信息系统",
+      "aliases": [
+        "HIS",
+        "医生站",
+        "护士站",
+        "住院医生站",
+        "门诊医生站"
+      ],
+      "window_titles": [
+        "医生工作站",
+        "护士工作站"
+      ],
+      "domains": [
+        "his.example.local"
+      ],
+      "executables": [
+        "doctor.exe",
+        "nurse.exe"
+      ],
+      "common_error_codes": [
+        "HTTP 403",
+        "ORA-12514"
+      ],
+      "default_resolver_team": "APPLICATION_SUPPORT",
+      "service_criticality": "CLINICAL_CORE",
+      "campus_scope": [
+        "HQ",
+        "GX",
+        "CENTER"
+      ]
+    },
+    {
+      "system_code": "EMR",
+      "name": "电子病历系统",
+      "aliases": [
+        "EMR",
+        "电子病历",
+        "病历系统"
+      ],
+      "window_titles": [
+        "电子病历"
+      ],
+      "domains": [
+        "emr.example.local"
+      ],
+      "executables": [],
+      "common_error_codes": [],
+      "default_resolver_team": "APPLICATION_SUPPORT",
+      "service_criticality": "CLINICAL_CORE",
+      "campus_scope": [
+        "HQ",
+        "GX",
+        "CENTER"
+      ]
+    },
+    {
+      "system_code": "LIS",
+      "name": "检验信息系统",
+      "aliases": [
+        "LIS",
+        "检验系统",
+        "检验工作站"
+      ],
+      "window_titles": [
+        "检验信息系统"
+      ],
+      "domains": [
+        "lis.example.local"
+      ],
+      "executables": [],
+      "common_error_codes": [],
+      "default_resolver_team": "LAB_SYSTEM_SUPPORT",
+      "service_criticality": "CLINICAL_CORE",
+      "campus_scope": [
+        "HQ",
+        "GX",
+        "CENTER"
+      ]
+    },
+    {
+      "system_code": "PACS",
+      "name": "医学影像系统",
+      "aliases": [
+        "PACS",
+        "影像系统",
+        "阅片系统"
+      ],
+      "window_titles": [
+        "PACS",
+        "影像浏览"
+      ],
+      "domains": [
+        "pacs.example.local"
+      ],
+      "executables": [],
+      "common_error_codes": [],
+      "default_resolver_team": "IMAGING_SYSTEM_SUPPORT",
+      "service_criticality": "CLINICAL_CORE",
+      "campus_scope": [
+        "HQ",
+        "GX",
+        "CENTER"
+      ]
+    },
+    {
+      "system_code": "NETWORK",
+      "name": "网络服务",
+      "aliases": [
+        "网络",
+        "断网",
+        "上不了网",
+        "连不上"
+      ],
+      "window_titles": [],
+      "domains": [],
+      "executables": [],
+      "common_error_codes": [],
+      "default_resolver_team": "NETWORK_SUPPORT",
+      "service_criticality": "INFRASTRUCTURE",
+      "campus_scope": [
+        "HQ",
+        "GX",
+        "CENTER"
+      ]
+    },
+    {
+      "system_code": "PRINT",
+      "name": "打印服务",
+      "aliases": [
+        "打印机",
+        "打印",
+        "打不出来"
+      ],
+      "window_titles": [],
+      "domains": [],
+      "executables": [],
+      "common_error_codes": [],
+      "default_resolver_team": "ENDPOINT_SUPPORT",
+      "service_criticality": "STANDARD",
+      "campus_scope": [
+        "HQ",
+        "GX",
+        "CENTER"
+      ]
+    }
+  ],
+  "notes": [
+    "这是示例配置，不包含医院真实域名、程序名和负责人。",
+    "正式目录由医院系统主数据和服务目录维护。",
+    "别名冲突必须进入人工确认。"
+  ]
+}
