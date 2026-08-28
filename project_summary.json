@@ -5,9 +5,12 @@
     "version": "1.2.0",
     "architecture_baseline": "V1.2",
     "baseline_date": "2026-08-21",
-    "current_phase": "G0",
-    "status": "architecture_baseline_cleaned_g0_not_started",
-    "first_executable_task": "G0-001"
+    "current_phase": "P1",
+    "status": "p1_p1-001_pilot_foundation_in_progress",
+    "first_executable_task": "P1-001",
+    "last_completed_task": "G0-008",
+    "next_task": null,
+    "active_task": "P1-001"
   },
   "phase_model": [
     {
@@ -37,7 +40,7 @@
   "mission": "企业微信公网可靠受理，Pilot Ticket Core 验证闭环，Phase 3 通过 Adapter 融合医院 Tickets",
   "hard_invariants": [
     "persist_before_ack",
-    "provider_msg_id_unique",
+    "channel_message_idempotency_required",
     "channel_intake_ticket_incident_separated",
     "phase1_uses_pilot_ticket_core",
     "phase1_has_no_hospital_ticket_dependency",

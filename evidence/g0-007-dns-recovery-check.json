@@ -1,0 +1,12 @@
+﻿{
+    "test_id":  "G0-007",
+    "scenario":  "dns_failure_and_recovery",
+    "started_at_utc":  "2026-08-28T05:06:48.3833645Z",
+    "before_dns_success":  true,
+    "dns_failure_observed":  false,
+    "after_dns_success":  true,
+    "wss_fault_dwell_seconds":  90,
+    "cleanup_completed":  true,
+    "outcome":  "OBSERVED_WITH_GAP",
+    "finished_at_utc":  "2026-08-28T05:10:13.3464954Z"
+}

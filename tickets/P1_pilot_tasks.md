@@ -4,12 +4,25 @@
 
 ## P1-001 建立 Pilot 工程骨架与配置校验
 
-- 状态：TODO
+- 状态：IN_PROGRESS
 - 依赖：G0-008
 - 输入：Gate 0 能力结论、锁定 SDK、Pilot 运行环境约束。
 - 输出：最小工程骨架、分层配置、启动校验和依赖边界说明。
 - 测试：配置缺失、非法值、Secret 日志扫描、启动/退出测试。
 - 验收：配置只声明 Pilot 依赖；不存在 Hospital Tickets 运行依赖。
+
+### 启动记录
+
+- 启动日期：2026-08-28
+- 启动授权：项目负责人确认 Gate 0 结论并授权开始下一阶段。
+- 执行边界：只建立 Pilot 工程骨架和配置/依赖边界校验；不实现 WeCom SDK Adapter、Channel Message 持久化、Ticket、AI 或 Hospital Tickets 集成。
+
+### 当前验收记录
+
+- 已完成：`src/p1-001-pilot-foundation.mjs`、`docs/20_p1_pilot_foundation.md` 和 4 项 P1-001 自动化测试；本机版本控制外的配置模板预检通过，全量本地回归为 58/58 通过。
+- 已完成：无 Secret 的模板预检通过；健康端点启动/关闭与非业务路由拒绝通过。
+- 未执行：真实 `.env.pilot` 预检。当前工作区没有该本机忽略文件，不能宣称试点环境、安全边界、测试群或负责人已经配置/验收。
+- 状态：保持 `IN_PROGRESS`；未通过真实配置预检和负责人确认前，不启动 P1-002。
 
 ## P1-002 WeCom SDK Adapter 与标准消息契约
 

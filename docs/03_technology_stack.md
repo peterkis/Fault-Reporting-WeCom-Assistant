@@ -42,12 +42,20 @@ https://github.com/WecomTeam/aibot-node-sdk
 - WebSocket 长连接；
 - 自动认证；
 - 心跳和指数退避重连；
-- text/image/mixed/voice/file；
+- text/image/mixed/voice/file/video；
 - 模板卡片和事件；
 - 主动推送；
+- 临时素材三步分片上传、媒体回复与主动媒体投递；
 - 文件下载和 AES 解密。
 
 仓库 `package.json` 在本次读取时标识版本为 `1.0.6`。生产实现不应盲目使用 `latest`，应在 Gate 0 验证后锁定具体版本和包完整性。
+
+### 3.1 G0-002 锁定记录
+
+- G0-002 使用精确依赖 `@wecom/aibot-node-sdk@1.0.6`；
+- `package-lock.json` 锁定 npm 完整性为 `sha512-WZJN3Q+s+94Qjc0VW8d5W1cVkA3emYxiqf+mNRO9UEHoF40puHvizreNMtudjFhm7mmkYiK5ue/QzNiCk+xwLA==`；
+- 官方 SDK 的认证、心跳、重连和断开接口由最小 PoC 实测；完整记录见 `evidence/g0-002-sdk-authentication-report.md`；
+- G0-002 已在本机 Windows 完成认证生命周期验证；SIGTERM 以同一 Node 处理器模拟验证，不使用 WSL。切换操作系统或进程管理方式时需重新验证。
 
 ## 4. SDK 隔离策略
 
@@ -75,6 +83,18 @@ interface WeComChannel {
   downloadMedia(input: EncryptedMediaRef): Promise<DownloadedMedia>;
 }
 ```
+
+出站媒体必须再通过内部端口隔离企业微信临时协议：
+
+```ts
+interface WeComTemporaryMediaPort {
+  publish(asset: ValidatedOutboundMediaAsset): Promise<WeComMediaLease>;
+  reply(callback: CallbackRef, lease: WeComMediaLease, options?: VideoOptions): Promise<SendResult>;
+  send(delivery: AuthorizedDeliveryTarget, lease: WeComMediaLease, options?: VideoOptions): Promise<SendResult>;
+}
+```
+
+`ValidatedOutboundMediaAsset` 是经过权限、格式、字节数和完整性校验的受控字节来源；`WeComMediaLease` 封装短期 `media_id` 与到期时间，不得作为领域附件 ID。完整约束见 `docs/18_wecom_temporary_media_constraints.md`。
 
 ## 5. Node.js 规范
 

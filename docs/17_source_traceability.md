@@ -12,6 +12,8 @@
 
 文档中记录的WebSocket、认证、心跳、重连、消息、媒体、主动推送和卡片能力都必须在真实租户G0验证。文档版本或SDK示例不能替代Gate证据。
 
+企业微信[上传临时素材（101838）](https://developer.work.weixin.qq.com/document/path/101838)是出站 `file/image/voice/video` 的协议来源：上传必须经过初始化、分片和完成三步，且会话 30 分钟、媒体 3 天、分片及类型上限均为提供方硬约束。项目将其整理为 `docs/18_wecom_temporary_media_constraints.md`；[回复消息（101836）](https://developer.work.weixin.qq.com/document/path/101836)定义回调绑定媒体回复的 `media_id` 引用和时限。
+
 ## 3. 架构演进
 
 ### V1.0/V1.1 方向
@@ -53,6 +55,7 @@ ADR-0002已被ADR-0007取代。Hospital Tickets仍是最终长期事实源，但
 | 医院SSO/Hub/Outbox作为首期依赖 | Phase 1最小Pilot身份、处理端和Outbox |
 | P3=OCR、P4=AI、P5=Incident、P6=试点 | 统一为P1公网试点、P2 AI增强、P3医院融合 |
 | 新建长期第二套工单 | Pilot仅用于试点；Phase 3切换后Hospital Tickets唯一 |
+| 把企业微信临时 media_id 当作附件事实 | 仅作为 Adapter 的短期 WeComMediaLease，业务附件与投递事实分离 |
 
 ## 5. 当前权威来源
 
@@ -67,6 +70,7 @@ ADR-0002已被ADR-0007取代。Hospital Tickets仍是最终长期事实源，但
 ### G0
 
 - 企业微信真实租户的群聊、媒体、主动推送、卡片、重连和单活行为；
+- 主动媒体投递的真实租户可见性、播放效果和有效容量；回复侧成功不得替代该证据；
 - 锁定SDK版本、包哈希和网络条件。
 
 ### Phase 1

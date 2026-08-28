@@ -1,0 +1,37 @@
+{
+  "name": "fault-reporting-wecom-assistant",
+  "version": "0.0.0-p1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "g0:002:valid": "node --env-file=.env src/g0-002-sdk-lifecycle.mjs --mode=valid",
+    "g0:002:invalid": "node --env-file=.env src/g0-002-sdk-lifecycle.mjs --mode=invalid-secret",
+    "g0:002:sigterm": "node --env-file=.env src/g0-002-sdk-lifecycle.mjs --mode=valid --self-sigterm-after-auth",
+    "test:g0:002": "node --test tests/g0-002-sdk-lifecycle.test.mjs",
+    "g0:003:capture": "node --env-file=.env src/g0-003-frame-capture.mjs",
+    "test:g0:003": "node --test tests/g0-003-frame-capture.test.mjs",
+    "g0:004:capture": "node --env-file=.env src/g0-004-media-capture.mjs",
+    "test:g0:004": "node --test tests/g0-004-media-capture.test.mjs",
+    "g0:005:push": "node --env-file=.env src/g0-005-active-push.mjs",
+    "test:g0:005": "node --test tests/g0-005-active-push.test.mjs",
+    "g0:006:card": "node --env-file=.env src/g0-006-template-card.mjs",
+    "g0:006:reply-mention": "node --env-file=.env src/g0-006-group-reply-mention.mjs",
+    "test:g0:006": "node --test tests/g0-006-template-card.test.mjs tests/g0-006-group-reply-mention.test.mjs",
+    "g0:006a:reply": "node --env-file=.env src/g0-006a-reply-capability.mjs",
+    "test:g0:006a": "node --test tests/g0-006a-reply-capability.test.mjs",
+    "g0:open:003:video": "node --env-file=.env src/g0-open-003-video-chunk-revalidation.mjs",
+    "test:g0:open:003": "node --test tests/g0-open-003-video-chunk-revalidation.test.mjs",
+    "g0:007:soak": "node --env-file=.env src/g0-007-stability-soak.mjs",
+    "test:g0:007": "node --test tests/g0-007-stability-soak.test.mjs",
+    "test:g0:008": "node --test tests/g0-008-capability-freeze.test.mjs",
+    "p1:preflight": "node src/p1-001-pilot-foundation.mjs --check",
+    "p1:serve": "node src/p1-001-pilot-foundation.mjs --serve",
+    "test:p1:001": "node --test tests/p1-001-pilot-foundation.test.mjs"
+  },
+  "dependencies": {
+    "@wecom/aibot-node-sdk": "1.0.6"
+  }
+}

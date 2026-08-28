@@ -5,6 +5,8 @@
   "status": "ACTIVE",
   "current_phase": "G0",
   "first_executable_task": "G0-001",
+  "active_task": "G0-007",
+  "task_status": "G0-007_IN_PROGRESS_STABILITY_AND_RECONNECT",
   "architecture_status": "docs/architecture_baseline_status.md",
   "canonical_plans": [
     "plans/phase_0_wecom_poc.md",
@@ -18,6 +20,15 @@
     "tickets/P1_pilot_tasks.md",
     "tickets/P2_ai_enhancement_tasks.md",
     "tickets/P3_hospital_integration_tasks.md"
+  ],
+  "g0_evidence": [
+    "evidence/g0-001-wss-network-report.md",
+    "evidence/g0-002-sdk-authentication-report.md",
+    "evidence/g0-003-text-capability-matrix.md",
+    "evidence/g0-004-media-capability-matrix.md",
+    "evidence/g0-005-active-push-matrix.md",
+    "evidence/g0-006-template-card-matrix.md",
+    "evidence/g0-007-stability-report.md"
   ],
   "integrity": {
     "static_file_hash_manifest": "DEPRECATED",

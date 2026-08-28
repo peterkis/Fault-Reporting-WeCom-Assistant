@@ -2,8 +2,11 @@
   "version": "1.2.0",
   "architecture_baseline": "V1.2",
   "canonical_source": "plans/master_backlog.json",
-  "current_phase": "G0",
-  "first_executable_task": "G0-001",
+  "current_phase": "P1",
+  "first_executable_task": "P1-001",
+  "last_completed_task": "G0-008",
+  "next_task": null,
+  "active_task": "P1-001",
   "completed_preflight": [
     {"id":"ARCH-001","title":"Architecture Baseline Cleanup","status":"DONE"}
   ],

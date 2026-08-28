@@ -44,6 +44,7 @@ Adapter 负责幂等、映射、迁移、对账和回滚。切换完成后 Hospi
 - Incident：公共故障；
 - Reporter Subscription：通知关系；
 - Notification Outbox/Delivery：可靠发送事实；
+- OutboundMediaIntent/WeComMediaLease：业务投递意图与企业微信临时素材租约；临时 `media_id` 不是业务附件事实，见 `docs/18_wecom_temporary_media_constraints.md`；
 - Ticket External Mapping：Phase 3 的跨系统可审计映射。
 
 ## 禁止
@@ -52,4 +53,5 @@ Adapter 负责幂等、映射、迁移、对账和回滚。切换完成后 Hospi
 - Phase 3 前生产同步医院工单；
 - 长期 Pilot Ticket + Hospital Ticket 双事实源；
 - 用企业微信消息模型替代业务领域模型；
+- 将企业微信 `upload_id` 或 `media_id` 作为 Ticket、附件或通知的长期业务标识；
 - 让 AI 决定明确报修是否受理。

@@ -30,7 +30,7 @@ https://github.com/WecomTeam/aibot-node-sdk
 | W09 | 主动发给 chatid | 显示和提醒效果 |
 | W10 | 模板卡片按钮 | 事件和 5 秒更新 |
 | W11 | 断网、恢复、重连 | 恢复时间和消息行为 |
-| W12 | 24小时稳定运行 | 重连次数、心跳、内存 |
+| W12 | 4小时30分钟稳定运行 | 重连次数、心跳、内存 |
 | W13 | 多实例同时连接 | 生产单活策略依据 |
 | W14 | H5 跳转 | 企业微信移动端网络可达 |
 
@@ -95,6 +95,7 @@ Gate 0 前：
 | `message.mixed` | `wecom.message.received` |
 | `message.voice` | `wecom.message.received` |
 | `message.file` | `wecom.message.received` |
+| `message.video` | `wecom.message.received` |
 | `event.enter_chat` | `wecom.chat.entered` |
 | `event.template_card_event` | `wecom.card.action` |
 | authenticated | `wecom.authenticated` |
@@ -130,6 +131,8 @@ SDK 回调处理器只允许执行：
 - 输入校验错误；
 - 即时卡片响应。
 
+媒体被动回复必须先经临时素材上传得到同一机器人、未过期的 `media_id`，再使用当前消息回调的 `req_id` 发送 `aibot_respond_msg`。不得把超出回调窗口的失败直接改造成主动消息。
+
 ### 主动推送
 
 用于：
@@ -141,6 +144,8 @@ SDK 回调处理器只允许执行：
 - Incident 进展。
 
 所有主动推送来源于 Pilot Outbox，而不是 Ticket 控制器直接调用 SDK。Phase 3 的通知所有权必须通过切换计划明确。
+
+主动媒体投递同样先上传临时素材，再由 Outbox 的 Delivery 调用 `aibot_send_msg`；回调 `req_id` 不参与该路径。
 
 ## 8. 卡片按钮
 
@@ -183,6 +188,12 @@ expires_at
 
 下载地址和 AES Key 不得写入普通日志。
 
+### 9.1 临时素材上传和出站投递
+
+企业微信出站媒体严格遵循 `aibot_upload_media_init → aibot_upload_media_chunk × N → aibot_upload_media_finish → media_id → aibot_respond_msg/aibot_send_msg`。上传会话 30 分钟有效，临时素材 3 天有效，分片上限为 Base64 前 512KB 和 100 个分片。`upload_id`、`media_id` 与上传命令 `req_id` 均属于通道敏感元数据。
+
+类型/大小、同机器人重连恢复、MD5、配额、视频容量边界、重试纪律和安全记录规则由 `docs/18_wecom_temporary_media_constraints.md` 定义；该文档优先于 SDK 的泛化分片能力。业务领域只可传递受控媒体意图，不能直接操作临时标识。
+
 ## 10. 适配器错误码
 
 建议：
@@ -195,6 +206,15 @@ WECOM_SEND_TIMEOUT
 WECOM_SEND_REJECTED
 WECOM_MEDIA_DOWNLOAD_FAILED
 WECOM_MEDIA_DECRYPT_FAILED
+WECOM_MEDIA_UPLOAD_INIT_FAILED
+WECOM_MEDIA_UPLOAD_CHUNK_FAILED
+WECOM_MEDIA_UPLOAD_FINISH_FAILED
+WECOM_MEDIA_UPLOAD_SESSION_EXPIRED
+WECOM_MEDIA_LEASE_EXPIRED
+WECOM_MEDIA_TYPE_INVALID
+WECOM_MEDIA_SIZE_EXCEEDED
+WECOM_MEDIA_INTEGRITY_FAILED
+WECOM_MEDIA_RATE_LIMITED
 WECOM_CARD_EXPIRED
 WECOM_INVALID_FRAME
 WECOM_DUPLICATE_MESSAGE
@@ -212,6 +232,10 @@ wecom_message_received_total{type}
 wecom_message_duplicate_total
 wecom_send_total{type,status}
 wecom_media_download_seconds
+wecom_media_upload_total{type,stage,status}
+wecom_media_upload_seconds{type,stage}
+wecom_media_delivery_total{route,type,status}
+wecom_media_rate_limited_total{scope}
 wecom_callback_processing_seconds
 ```
 
@@ -239,4 +263,5 @@ connection_generation
 - 原始患者文本；
 - aeskey；
 - 完整媒体 URL；
+- upload_id、media_id 或上传命令 req_id；
 - 未脱敏截图 OCR。

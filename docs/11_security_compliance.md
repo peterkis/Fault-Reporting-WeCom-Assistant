@@ -94,6 +94,12 @@ Hospital Tickets
 - 将附件 Base64 写日志；
 - 默认向整个报修群展示处理照片。
 
+### 6.1 企业微信临时素材
+
+出站媒体必须先完成格式、大小、Magic/MIME、来源授权和完整性校验，再执行企业微信的三步临时上传。`upload_id` 仅用于 30 分钟内的同机器人恢复；`media_id` 仅用于 3 天内投递。两者不得成为业务附件主键或普通可见字段。
+
+如确需保存以恢复上传或重试投递，必须最小化、加密保存并带自动到期删除；普通日志、指标、告警、G0 证据和客户端文案中均不得出现 `upload_id`、`media_id`、Base64、下载 URL、AES Key 或原始文件名。不得为规避大小限制静默压缩、转码或公开链接敏感媒体。完整规则见 `docs/18_wecom_temporary_media_constraints.md`。
+
 ## 7. 患者信息脱敏
 
 规则可包括：
@@ -157,6 +163,10 @@ message.received
 message.duplicate
 media.downloaded
 media.viewed
+media.uploaded
+media.delivery_attempted
+media.delivery_completed
+media.lease_expired
 intake.created
 ticket.created
 ticket.state_changed
@@ -193,6 +203,7 @@ retention.deleted
 - Bot Secret；
 - 密码；
 - 完整媒体 URL；
+- upload_id、media_id、Base64 或原始文件名；
 - 未脱敏内部网络信息。
 
 ## 11. 数据留存

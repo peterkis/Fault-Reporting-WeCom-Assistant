@@ -93,6 +93,21 @@ wecom_message_received_total{type}
 wecom_message_duplicate_total
 ```
 
+### 企业微信临时素材
+
+```text
+wecom_media_upload_total{type,stage,status}
+wecom_media_upload_bytes_total{type}
+wecom_media_upload_seconds{type,stage}
+wecom_media_chunk_retry_total{type}
+wecom_media_session_expired_total{type}
+wecom_media_lease_expired_total{type}
+wecom_media_delivery_total{route,type,status}
+wecom_media_rate_limited_total{scope}
+```
+
+不以 `media_id`、`upload_id`、文件名、用户或会话标识作为指标标签。当前没有针对视频上传时延或最大可用大小的生产 SLO；ADR-0009 已冻结自动视频回复遵循 `docs/18_wecom_temporary_media_constraints.md` 的 1MB 保守运营上限。提高上限须另行获得项目负责人确认并更新 ADR。
+
 ### Intake
 
 ```text
@@ -180,6 +195,8 @@ WeCom frame
 - Pilot Ticket 补建积压；
 - 首次回复 P95 超标；
 - MinIO 下载/上传失败；
+- 企业微信临时素材上传/完成失败、会话过期或配额耗尽；
+- 临时素材租约即将过期但仍有待投递 Delivery；
 - 身份映射失败率升高；
 - 公共故障候选激增。
 

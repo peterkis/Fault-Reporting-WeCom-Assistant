@@ -1,5 +1,7 @@
 # Phase 1：企业微信外网试点
 
+- 当前状态：`IN_PROGRESS`；仅 P1-001“建立 Pilot 工程骨架与配置校验”已启动。模板预检和本地测试已通过，真实 `.env.pilot` 预检尚未执行；真实试点运行、WeCom Adapter、持久化和 Pilot Ticket Core 均尚未开始。
+
 ## 阶段目标
 
 在不依赖医院内网系统的前提下，以 Pilot Ticket Core 完成可靠受理、处理闭环、通知和临床试点验证。
@@ -32,7 +34,7 @@ Enterprise WeCom
 
 | ID | 标题 | 依赖 | 状态 |
 |---|---|---|---|
-| P1-001 | 建立 Pilot 工程骨架与配置校验 | G0-008 | TODO |
+| P1-001 | 建立 Pilot 工程骨架与配置校验 | G0-008 | IN_PROGRESS |
 | P1-002 | WeCom SDK Adapter 与标准消息契约 | P1-001 | TODO |
 | P1-003 | Channel Message Inbox 与数据库幂等 | P1-002 | TODO |
 | P1-004 | Service Intake 创建与消息聚合 | P1-003 | TODO |

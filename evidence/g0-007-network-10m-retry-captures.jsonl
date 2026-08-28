@@ -1,0 +1,14 @@
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":1,"at_utc":"2026-08-28T03:08:07.891Z","event":"monitor_started","state":"CONNECTING","duration_ms":960000,"sample_interval_ms":10000}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":2,"at_utc":"2026-08-28T03:08:07.893Z","event":"resource_sample","state":"CONNECTING","memory_rss_bytes":62066688,"heap_used_bytes":11375720,"cpu_percent":0}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":3,"at_utc":"2026-08-28T03:08:08.241Z","event":"connected","state":"CONNECTED"}
+{"test_id":"G0-007","run_id":"006b8ea9997c","at_utc":"2026-08-28T03:08:08.449Z","event":"heartbeat_timer_started"}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":4,"at_utc":"2026-08-28T03:08:08.451Z","event":"authenticated","state":"AUTHENTICATED"}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":5,"at_utc":"2026-08-28T03:08:17.909Z","event":"resource_sample","state":"AUTHENTICATED","memory_rss_bytes":62365696,"heap_used_bytes":10077456,"cpu_percent":0.619}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":6,"at_utc":"2026-08-28T03:08:27.912Z","event":"resource_sample","state":"AUTHENTICATED","memory_rss_bytes":62447616,"heap_used_bytes":10104312,"cpu_percent":0}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":7,"at_utc":"2026-08-28T03:08:37.912Z","event":"resource_sample","state":"AUTHENTICATED","memory_rss_bytes":62459904,"heap_used_bytes":10118608,"cpu_percent":0}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":8,"at_utc":"2026-08-28T03:08:47.920Z","event":"resource_sample","state":"AUTHENTICATED","memory_rss_bytes":62476288,"heap_used_bytes":10140656,"cpu_percent":0}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":9,"at_utc":"2026-08-28T03:08:57.928Z","event":"resource_sample","state":"AUTHENTICATED","memory_rss_bytes":62484480,"heap_used_bytes":10157408,"cpu_percent":0}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":10,"at_utc":"2026-08-28T03:09:07.936Z","event":"resource_sample","state":"AUTHENTICATED","memory_rss_bytes":62439424,"heap_used_bytes":10172656,"cpu_percent":0}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":11,"at_utc":"2026-08-28T03:09:17.946Z","event":"resource_sample","state":"AUTHENTICATED","memory_rss_bytes":62529536,"heap_used_bytes":10248792,"cpu_percent":0}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":12,"at_utc":"2026-08-28T03:09:27.947Z","event":"resource_sample","state":"AUTHENTICATED","memory_rss_bytes":62529536,"heap_used_bytes":10257344,"cpu_percent":0}
+{"test_id":"G0-007","run_id":"006b8ea9997c","sequence":13,"at_utc":"2026-08-28T03:09:37.952Z","event":"resource_sample","state":"AUTHENTICATED","memory_rss_bytes":62533632,"heap_used_bytes":10272728,"cpu_percent":0}

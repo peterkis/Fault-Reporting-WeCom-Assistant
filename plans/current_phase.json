@@ -8,38 +8,41 @@
     "completed_at": "2026-08-21",
     "changed_phase_status": false
   },
-  "phase_id": "G0",
-  "phase_name": "企业微信 WebSocket 能力验证",
-  "status": "READY",
-  "started": false,
-  "first_task": "G0-001",
+  "phase_id": "P1",
+  "phase_name": "企业微信外网试点",
+  "status": "IN_PROGRESS",
+  "started": true,
+  "first_task": "P1-001",
+  "last_completed_task": "G0-008",
+  "next_task": null,
+  "active_task": "P1-001",
   "allowed_scope": [
-    "network connectivity",
-    "sdk authentication",
-    "message capability matrix",
-    "media decrypt",
-    "active push",
-    "card event",
-    "reconnect and soak test",
-    "capability decision record"
+    "Pilot project scaffold",
+    "layered configuration validation",
+    "Pilot-only dependency boundary",
+    "startup and shutdown health validation",
+    "Phase 1 configuration documentation"
   ],
   "forbidden_before_exit": [
-    "Phase 1 Pilot Ticket Core implementation",
-    "production AI integration",
-    "automatic incident merging",
+    "Hospital Tickets dependency",
+    "hospital SSO or personnel interface",
+    "hospital Hub or in-hospital Outbox",
     "Hospital Ticket Adapter",
     "Hospital Tickets synchronization",
     "multi-active gateway",
+    "production AI or OCR integration",
+    "automatic incident merging",
     "public HTTP callback as primary channel"
   ],
   "exit_gate": [
-    "24小时稳定运行",
-    "能力矩阵完成",
-    "SDK版本和连接策略ADR冻结"
+    "明确报修漏单为 0",
+    "同一消息重复建单为 0",
+    "状态、事件和通知一致",
+    "公网试点安全与运行验收通过"
   ],
   "next_phase_after_exit": {
-    "phase_id": "P1",
-    "phase_name": "企业微信外网试点",
+    "phase_id": "P2",
+    "phase_name": "AI增强",
     "ticket_backend": "Pilot Ticket Core",
     "hospital_ticket_dependency": false
   }

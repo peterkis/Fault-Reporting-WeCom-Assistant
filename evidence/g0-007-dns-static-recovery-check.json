@@ -1,0 +1,14 @@
+﻿{
+    "test_id":  "G0-007",
+    "scenario":  "static_dns_failure_and_exact_recovery",
+    "started_at_utc":  "2026-08-28T05:11:59.0104222Z",
+    "original_dns_static":  true,
+    "before_dns_success":  true,
+    "temporary_loopback_dns_applied":  false,
+    "dns_failure_observed":  false,
+    "after_dns_success":  true,
+    "restored_dns_matches_original":  true,
+    "cleanup_completed":  true,
+    "outcome":  "OBSERVED_WITH_GAP",
+    "finished_at_utc":  "2026-08-28T05:12:30.1984656Z"
+}
