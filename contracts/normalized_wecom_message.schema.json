@@ -2,19 +2,36 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hospital.local/schemas/normalized-wecom-message.schema.json",
   "title": "NormalizedWeComMessage",
+  "description": "SDK-independent inbound message contract produced by the Phase 1 WeCom Adapter.",
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "provider",
+    "idempotency_key",
     "msg_id",
+    "req_id",
+    "bot_id",
     "chat_type",
+    "chat_id",
     "sender_user_id",
     "msg_type",
-    "create_time"
+    "create_time",
+    "received_at",
+    "content",
+    "quote"
   ],
   "properties": {
+    "schema_version": {
+      "const": 1
+    },
     "provider": {
       "const": "WECOM_AIBOT"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "pattern": "^WECOM_AIBOT:.{1,256}$",
+      "maxLength": 268
     },
     "msg_id": {
       "type": "string",
@@ -22,17 +39,13 @@
       "maxLength": 256
     },
     "req_id": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": "string",
+      "minLength": 1,
       "maxLength": 256
     },
     "bot_id": {
-      "type": [
-        "string",
-        "null"
-      ],
+      "type": "string",
+      "minLength": 1,
       "maxLength": 256
     },
     "chat_type": {
@@ -46,6 +59,7 @@
         "string",
         "null"
       ],
+      "minLength": 1,
       "maxLength": 256
     },
     "sender_user_id": {
@@ -60,113 +74,193 @@
         "mixed",
         "voice",
         "file",
-        "event",
-        "unknown"
+        "video"
       ]
     },
     "create_time": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "received_at": {
       "type": "string",
       "format": "date-time"
     },
-    "text": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "raw": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "maxLength": 20000
-        },
-        "clean": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "maxLength": 20000
-        }
-      }
-    },
-    "mentions": {
+    "content": {
       "type": "array",
-      "items": {
-        "type": "string",
-        "maxLength": 256
-      },
-      "maxItems": 100
-    },
-    "quote": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "additionalProperties": true
-    },
-    "media": {
-      "type": "array",
+      "minItems": 1,
       "maxItems": 10,
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "type",
-          "download_ref"
-        ],
+        "oneOf": [
+          {
+            "$ref": "#/$defs/text_item"
+          },
+          {
+            "$ref": "#/$defs/media_item"
+          }
+        ]
+      }
+    },
+    "quote": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/quote"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
         "properties": {
-          "type": {
-            "enum": [
-              "image",
-              "file",
-              "voice",
-              "video"
-            ]
-          },
-          "provider_media_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 512
-          },
-          "download_ref": {
+          "chat_type": {
+            "const": "group"
+          }
+        },
+        "required": [
+          "chat_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "chat_id": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 2048
-          },
-          "filename": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 512
-          },
-          "mime_type": {
-            "type": [
-              "string",
-              "null"
-            ],
             "maxLength": 256
           }
         }
+      },
+      "else": {
+        "properties": {
+          "chat_id": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "text": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw",
+        "clean"
+      ],
+      "properties": {
+        "raw": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        },
+        "clean": {
+          "type": "string",
+          "maxLength": 20000
+        }
       }
     },
-    "raw_payload_ref": {
-      "type": [
-        "string",
-        "null"
+    "text_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "text"
       ],
-      "maxLength": 1024
+      "properties": {
+        "kind": {
+          "const": "text"
+        },
+        "source": {
+          "enum": [
+            "VOICE_TRANSCRIPT"
+          ]
+        },
+        "text": {
+          "$ref": "#/$defs/text"
+        }
+      }
     },
-    "trace_id": {
-      "type": [
-        "string",
-        "null"
+    "media": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "source_index",
+        "download_ref"
       ],
-      "maxLength": 128
+      "properties": {
+        "type": {
+          "enum": [
+            "image",
+            "file",
+            "video"
+          ]
+        },
+        "source_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "download_ref": {
+          "type": "string",
+          "pattern": "^wmr_[a-f0-9]{32}$"
+        }
+      }
+    },
+    "media_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "media"
+      ],
+      "properties": {
+        "kind": {
+          "const": "media"
+        },
+        "media": {
+          "$ref": "#/$defs/media"
+        }
+      }
+    },
+    "quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "msg_type",
+        "content"
+      ],
+      "properties": {
+        "msg_type": {
+          "enum": [
+            "text",
+            "image",
+            "mixed",
+            "voice",
+            "file"
+          ]
+        },
+        "content": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/text_item"
+              },
+              {
+                "$ref": "#/$defs/media_item"
+              }
+            ]
+          }
+        }
+      }
     }
   }
 }

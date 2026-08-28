@@ -33,11 +33,52 @@
 ```json
 {
   "intake_id": "uuid",
+  "channel_message_id": "opaque-channel-message-id",
   "source_channel": "WECOM_GROUP",
   "reporter_wecom_userid": "opaque",
-  "request_type": "UNKNOWN"
+  "request_type": "UNKNOWN",
+  "status": "WAITING_DESCRIPTION"
 }
 ```
+
+### `intake.needs_clarification`
+
+```json
+{
+  "intake_id": "uuid",
+  "channel_message_id": "opaque-channel-message-id",
+  "reason": "DESCRIPTION_REQUIRED",
+  "message_type": "image"
+}
+```
+
+### `intake.message_added`
+
+```json
+{
+  "intake_id": "uuid",
+  "channel_message_id": "opaque-channel-message-id",
+  "relation_type": "SUPPLEMENT",
+  "message_count": 3,
+  "request_type": "INCIDENT",
+  "status": "RECEIVED"
+}
+```
+
+### `intake.clarification_added`
+
+```json
+{
+  "intake_id": "uuid",
+  "channel_message_id": "opaque-channel-message-id",
+  "relation_type": "CLARIFICATION",
+  "message_count": 2,
+  "request_type": "INCIDENT",
+  "status": "RECEIVED"
+}
+```
+
+P1-004 将以上 Intake 事件保存在 `intake.service_intake_event` 作为同事务审计事实；这不是 P1-007 的 Notification Outbox，也不会触发通知。payload 不复制原始报修文字、媒体 URL、AES Key、患者文本或 Secret。
 
 ### `intake.ticket_created`
 

@@ -9,9 +9,17 @@
     "intake_no",
     "source_channel",
     "reporter_wecom_userid",
+    "reporter_person_id",
     "request_type",
+    "summary",
+    "reported_campus_id",
+    "reported_department_id",
+    "reported_location_text",
     "status",
+    "ticket_id",
+    "incident_id",
     "created_at",
+    "updated_at",
     "version"
   ],
   "properties": {
@@ -32,7 +40,9 @@
       ]
     },
     "reporter_wecom_userid": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
     },
     "reporter_person_id": {
       "type": [
@@ -120,7 +130,7 @@
     },
     "version": {
       "type": "integer",
-      "minimum": 0
+      "minimum": 1
     }
   }
 }

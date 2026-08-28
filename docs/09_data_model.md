@@ -9,7 +9,7 @@
 - Phase 1 不读取或写入 Hospital Tickets 数据库；
 - Phase 3 只能通过 Ticket Adapter/API 融合，禁止共享数据库直写。
 
-`database/schema_draft.sql` 是 V1.0 旧架构草案，缺少 Pilot Ticket Core 和 Phase 3 映射，不得直接实施。P1-005 必须基于本文件重新冻结可执行 Schema。
+`database/schema_draft.sql` 是 V1.0 旧架构草案，缺少 Pilot Ticket Core 和 Phase 3 映射，不得直接实施。P1-003 已用独立迁移只冻结 `channel.message_inbox`；P1-005 仍须基于本文件冻结其余 Pilot Ticket Core 可执行 Schema，不能复用旧草案整库建表。
 
 ## 2. 建议 Schema
 
@@ -40,16 +40,18 @@ chat_type / chat_id
 sender_user_id
 msg_type
 create_time
+received_at
 raw_text / clean_text
 raw_payload_encrypted
 processing_status
 privacy_class
 trace_id
 retention_until
-received_at
 ```
 
-必须唯一：`(provider, msg_id)`。AI/OCR 不得覆盖原始消息。
+必须唯一：`(provider, msg_id)`。`req_id` 仅用于通道关联，不能参与业务幂等。提供方未给出 `create_time` 时保持空值，使用独立的 `received_at` 记录本地接收事实；不得用接收时间冒充提供方时间。AI/OCR 不得覆盖原始消息。
+
+P1-003 可执行实现为 `database/migrations/001_p1_003_channel_message_inbox.sql`。它额外保存标准消息 JSON 和首次处理结果快照，以便数据库并发重放返回原结果；这不把 Channel Message 升格为 Service Intake 或 Ticket，也不授权创建后续 Schema。
 
 ## 4. Service Intake
 
@@ -72,6 +74,15 @@ created_at / updated_at
 ```
 
 通过 Intake Message Relation 支持多条消息、补充和澄清。Phase 1 身份字段允许仅有 WeCom userid，不要求医院 person_id。
+
+P1-004 的可执行迁移为 `database/migrations/002_p1_004_service_intake.sql`：
+
+- `intake.service_intake` 保存 Intake 聚合事实、主消息、当前请求类型、状态、消息数、最后消息时间和乐观版本；
+- `intake.service_intake_message` 保证一条 Channel Message 最多属于一个 Intake，并保存 `PRIMARY / SUPPLEMENT / CLARIFICATION` 关系与顺序；
+- `intake.service_intake_event` 保存同事务的 Intake 审计事件，JSONB payload 仅用于无原文的可选审计字段；
+- 聚合查询只覆盖当前允许追加的状态，并由同上下文 advisory lock 保护。
+
+该迁移不创建 `pilot_ticket.*`、Incident、Notification Outbox、AI/OCR 或 Hospital 集成表。`pilot_ticket_id` 和 `incident_id` 仍只作为公开契约中的空值；实际关联必须由后续受权任务以外键新增。
 
 ## 5. Pilot Ticket Core
 

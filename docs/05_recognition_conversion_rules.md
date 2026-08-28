@@ -61,14 +61,12 @@ Gate 0 后按实际租户能力冻结：
 
 ### 3.1 文本消息
 
-保留：
+Adapter 在有序 `content` 中保留：
 
-- 原始文本 `raw_text`；
-- 去除机器人 mention 后的 `clean_text`；
-- mention 列表；
+- 原始文本 `text.raw`；
+- 确定性规范化文本 `text.clean`；
 - 引用消息；
-- 标点和换行；
-- 原始编码。
+- `raw` 中的标点和换行。
 
 规范化仅用于检索和规则：
 
@@ -76,21 +74,19 @@ Gate 0 后按实际租户能力冻结：
 - 全角半角统一；
 - 连续空白折叠；
 - 英文字母大小写归一；
-- 常见系统别名映射；
 - 不修改原始证据。
+
+锁定的 SDK `1.0.6` Frame 没有提供可依赖的结构化 mention 列表，因此 P1-002 不从显示文本猜测 userid，也不做无依据的机器人 mention 删除。别名映射属于后续识别规则，不进入 Adapter 的通道事实转换。
 
 ### 3.2 图片消息
 
-保存：
+Normalized Message 只保存：
 
-- 企业微信媒体引用；
-- AES Key；
-- 下载时间；
-- 原始文件名；
-- MIME；
-- 大小；
-- SHA256；
-- MinIO object key。
+- opaque `download_ref`；
+- 原 Frame 中的 `source_index`；
+- 媒体类型 `image`。
+
+短时 URL、AES Key 和 `response_url` 不进入 Normalized Message。Channel 层后续只能在受保护原始回调上下文中解析该引用；下载、Magic/MIME、哈希、私有存储和留存事实由后续受权任务实现。
 
 图片下载失败时：
 
@@ -102,7 +98,7 @@ Gate 0 后按实际租户能力冻结：
 
 ### 3.3 Mixed 图文消息
 
-将文字和图片作为同一 ChannelMessage 的多个 content item 保存，不拆成多个工单。
+将文字和图片按 SDK `msg_item` 原顺序作为同一 Normalized Message 的多个 content item 保存，不拆成多个消息或工单。
 
 ### 3.4 文件消息
 
@@ -117,7 +113,11 @@ V1 仅保存允许类型：
 
 ### 3.5 语音消息
 
-本期不做电话通话报修。若企业微信提供语音转写文本，可将转写作为辅助文本，必须标记 `source=VOICE_TRANSCRIPT`，不能覆盖原音频证据。
+本期不做电话通话报修。企业微信提供的语音转写作为辅助 text item，必须标记 `source=VOICE_TRANSCRIPT`，不能冒充用户键入文字或覆盖原音频事实。
+
+### 3.6 视频消息
+
+视频按媒体 content item 归一化，只暴露 opaque `download_ref` 和 `source_index`；URL、AES Key 和媒体字节不进入标准消息。容量、下载、存储和后续投递仍遵守 Gate 0 冻结约束，不由 P1-002 实现。
 
 ---
 
@@ -149,6 +149,10 @@ AND no explicit "新报修/另一个问题/重新报修" intent
 ### 4.3 补充消息
 
 “这是截图”“错误是 403”“三台电脑都这样”“在高新院区”等短文本不得新建工单，应追加到最近上下文匹配的 Intake。
+
+P1-004 将窗口冻结为含边界的 `90` 秒，并以 `provider + bot_id + chat_type + chat_id + sender_user_id` 作为完整上下文；单聊的 `chat_id` 为空，但仍由 bot、会话类型和发送人隔离。相同上下文通过 PostgreSQL 事务级 advisory lock 串行化，避免不同 `msg_id` 的并发补充各自创建 Intake。明确的新报修短语或形如 `IT-YYYYMMDD-NNNN` 的另一工单引用直接开始新 Intake。
+
+本任务只创建/追加 Intake 和审计事件。表中“创建 Ticket”的默认动作由 P1-005 实现；P1-004 始终返回空 `ticket_id`，不得把规则分类结果冒充已建工单。
 
 ### 4.4 “谢谢/好了”
 

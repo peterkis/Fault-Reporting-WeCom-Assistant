@@ -31,27 +31,40 @@ Content-Type: application/json
 
 ```json
 {
+  "schema_version": 1,
   "provider": "WECOM_AIBOT",
+  "idempotency_key": "WECOM_AIBOT:msg-001",
   "msg_id": "msg-001",
   "req_id": "req-001",
+  "bot_id": "bot-001",
   "chat_type": "group",
   "chat_id": "group-001",
   "sender_user_id": "zhangsan",
   "msg_type": "mixed",
-  "create_time": "2026-08-20T01:00:00Z",
-  "text": {
-    "raw": "@信息保障助手 HIS登录报错",
-    "clean": "HIS登录报错"
-  },
-  "media": [
+  "create_time": null,
+  "received_at": "2026-08-28T10:00:00Z",
+  "content": [
     {
-      "provider_media_id": "media-001",
-      "type": "image",
-      "download_ref": "opaque-reference"
+      "kind": "text",
+      "text": {
+        "raw": "HIS登录报错",
+        "clean": "his登录报错"
+      }
+    },
+    {
+      "kind": "media",
+      "media": {
+        "type": "image",
+        "source_index": 1,
+        "download_ref": "wmr_0123456789abcdef0123456789abcdef"
+      }
     }
-  ]
+  ],
+  "quote": null
 }
 ```
+
+`req_id` 仅用于通道关联；Inbox 幂等只使用 `provider + msg_id`。Gate 0 真实 Frame 可能没有 `create_time`，此时保持 `null` 并使用 Adapter 记录的 `received_at`，不得伪造提供方时间。`download_ref` 只指向受保护原始回调上下文中的媒体位置，不能替代附件或企业微信 `media_id`。
 
 成功响应：
 

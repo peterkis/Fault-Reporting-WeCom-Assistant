@@ -9,23 +9,32 @@ function readWorkspaceFile(relativePath) {
   return readFileSync(resolve(root, relativePath), 'utf8');
 }
 
-test('G0-008 closure starts only P1-001 and retains Phase 1 boundaries', () => {
+test('G0-008 closure keeps the current P1 task pointers and Phase 1 boundaries', () => {
   const currentPhase = JSON.parse(readWorkspaceFile('plans/current_phase.json'));
   const backlog = JSON.parse(readWorkspaceFile('plans/master_backlog.json'));
   const projectSummary = JSON.parse(readWorkspaceFile('project_summary.json'));
   const g0Task = backlog.tasks.find(({ id }) => id === 'G0-008');
   const p1Task = backlog.tasks.find(({ id }) => id === 'P1-001');
+  const p1AdapterTask = backlog.tasks.find(({ id }) => id === 'P1-002');
+  const p1InboxTask = backlog.tasks.find(({ id }) => id === 'P1-003');
+  const p1IntakeTask = backlog.tasks.find(({ id }) => id === 'P1-004');
 
   assert.equal(currentPhase.phase_id, 'P1');
   assert.equal(currentPhase.status, 'IN_PROGRESS');
-  assert.equal(currentPhase.last_completed_task, 'G0-008');
-  assert.equal(currentPhase.active_task, 'P1-001');
-  assert.equal(currentPhase.next_task, null);
+  assert.equal(currentPhase.first_task, 'P1-001');
+  assert.equal(currentPhase.last_completed_task, 'P1-004');
+  assert.equal(currentPhase.active_task, null);
+  assert.equal(currentPhase.next_task, 'P1-005');
   assert.equal(g0Task?.status, 'DONE');
-  assert.equal(p1Task?.status, 'IN_PROGRESS');
+  assert.equal(p1Task?.status, 'DONE');
+  assert.equal(p1AdapterTask?.status, 'DONE');
+  assert.equal(p1InboxTask?.status, 'DONE');
+  assert.equal(p1IntakeTask?.status, 'DONE');
   assert.ok(g0Task.depends_on.includes('G0-006A'));
-  assert.equal(projectSummary.project.status, 'p1_p1-001_pilot_foundation_in_progress');
-  assert.equal(projectSummary.project.active_task, 'P1-001');
+  assert.equal(projectSummary.project.status, 'p1_p1-004_service_intake_aggregation_done');
+  assert.equal(projectSummary.project.last_completed_task, 'P1-004');
+  assert.equal(projectSummary.project.active_task, null);
+  assert.equal(projectSummary.project.next_task, 'P1-005');
   assert.ok(projectSummary.hard_invariants.includes('channel_message_idempotency_required'));
   assert.ok(!projectSummary.hard_invariants.includes('provider_msg_id_unique'));
   assert.ok(currentPhase.forbidden_before_exit.includes('Hospital Tickets dependency'));

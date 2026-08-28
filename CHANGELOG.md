@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### P1-004 Service Intake 创建与消息聚合（本机 PostgreSQL 集成验收完成）
+
+- 新增独立 `intake.service_intake`、消息关系和 Intake 审计事件迁移，并通过 P1-003 首次处理回调与 Channel Message 同事务提交/回滚。
+- 新增含边界的 90 秒同上下文聚合、PostgreSQL advisory lock、显式新报修/另一工单分流、八类确定性请求规则，以及纯图片和等待描述后的澄清路径。
+- 定向真实 PostgreSQL 测试 16/16 通过，覆盖 12 路不同消息并发、重放、整笔回滚和迁移/契约范围；所有结果均未创建 Ticket、Incident、Outbox、AI/OCR 或医院系统依赖，P1-005 未启动。
+
+### P1-003 Channel Message Inbox 与数据库幂等（本机 PostgreSQL 集成验收完成）
+
+- 新增独立 `channel.message_inbox` 可执行迁移、`pg@8.23.0` 驱动和无敏感输出迁移命令；精确唯一键为 `(provider, msg_id)`，`req_id` 只作通道关联。
+- 新增事务 Inbox：首个请求在同一事务内保存消息并执行一次处理器、持久化 JSON 结果快照；并发重复等待提交后返回原记录和结果，失败则整笔回滚。
+- 定向真实 PostgreSQL 测试 9/9、带数据库全量回归 77/77 通过，覆盖 12 路并发、事务回滚/提前提交防护、两个独立 Node 进程重启、数据库不可用、隐私/留存和迁移范围；P1-004 未启动。
+
+### P1-002 WeCom SDK Adapter 与标准消息契约（本地 Contract 验收完成）
+
+- 新增单一 `adaptWeComSdkFrame` seam，把锁定 SDK `1.0.6` 的文本、图片、mixed、文件、语音、视频和引用 Frame 转换为 SDK 无关的 Normalized Message。
+- 新增有序 content、可空提供方时间/独立接收时间、`provider + msg_id` 幂等键、opaque 媒体引用，以及不回显 URL、AES Key 或 `response_url` 的稳定错误结果。
+- P1-002 定向 Contract Test 10/10、当时全量本地回归 68/68 通过；该任务验收时未启动真实 WSS、消息持久化、Service Intake、Ticket、AI/OCR 或 Hospital Tickets 集成。P1-003 后续按独立授权实施，不能倒推扩大 P1-002 的验收范围。
+
 ### G0-OPEN-003 视频分片容量重新验证（当前环境完成）
 
 - 新增 Gate 0 专用串行 `init → chunk → finish → reply` 视频探针与 6 项自动化 Contract Test；每片原始字节不超过 512 KiB，证据不记录媒体、临时标识、URL、AES Key 或 Base64。

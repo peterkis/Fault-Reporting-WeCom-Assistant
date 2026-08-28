@@ -1,6 +1,6 @@
 # G0 任务明细：企业微信 WebSocket 能力验证
 
-> 架构基线：V1.2。ARCH-001、G0-001 至 G0-007 及 G0-006A（长连接回复消息能力补充验证）已完成；G0-008 正在进行。G0 不实现 Pilot Ticket Core，不接入 Hospital Tickets。
+> 架构基线：V1.2。ARCH-001、G0-001 至 G0-008 及 G0-006A（长连接回复消息能力补充验证）均已完成；当前处于 Phase 1。G0 不实现 Pilot Ticket Core，不接入 Hospital Tickets。
 
 ## G0-001 验证 WSS 网络路径
 

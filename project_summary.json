@@ -6,11 +6,11 @@
     "architecture_baseline": "V1.2",
     "baseline_date": "2026-08-21",
     "current_phase": "P1",
-    "status": "p1_p1-001_pilot_foundation_in_progress",
+    "status": "p1_p1-004_service_intake_aggregation_done",
     "first_executable_task": "P1-001",
-    "last_completed_task": "G0-008",
-    "next_task": null,
-    "active_task": "P1-001"
+    "last_completed_task": "P1-004",
+    "next_task": "P1-005",
+    "active_task": null
   },
   "phase_model": [
     {

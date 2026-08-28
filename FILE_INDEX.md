@@ -33,8 +33,16 @@
 - `src/g0-004-media-capture.mjs`、`tests/g0-004-media-capture.test.mjs` 与 `evidence/g0-004-media-capability-matrix.md`：图片、图文混排与文件的内存下载/AES 解密、脱敏记录及能力矩阵；
 - `src/g0-005-active-push.mjs`、`tests/g0-005-active-push.test.mjs` 与 `evidence/g0-005-active-push-matrix.md`：主动 Markdown 推送、回执、客户端提醒及 Markdown 后独立纯文本 @ 序列的脱敏验证；
 - `src/g0-006-template-card.mjs`、`src/g0-006-group-reply-mention.mjs`、对应 `tests/g0-006-*.test.mjs`、`evidence/g0-006-template-card-matrix.md` 与 `evidence/g0-006-group-reply-mention-captures.jsonl`：模板卡片、按钮事件、`task_id`、5 秒更新、重复点击、过期行为，以及绑定群回调 `req_id` 的被动回复 @ 脱敏验证；
-- `src/g0-007-stability-soak.mjs`、`tests/g0-007-stability-soak.test.mjs` 与 `evidence/g0-007-stability-report.md`：本机 Windows 连接稳定性、重连、资源采样和消息重放观察；真实浸泡正在执行。
-- G0-001 至 G0-006 已完成；G0-007 正在执行。
+- `src/g0-007-stability-soak.mjs`、`tests/g0-007-stability-soak.test.mjs` 与 `evidence/g0-007-stability-report.md`：本机 Windows 连接稳定性、重连、资源采样和消息重放观察；规定浸泡与恢复场景已完成。
+- G0-001 至 G0-008（含 G0-006A）均已完成并冻结为 ADR-0009。
+
+## Phase 1 实现与证据
+
+- `src/p1-001-pilot-foundation.mjs`、`tests/p1-001-pilot-foundation.test.mjs`、`docs/20_p1_pilot_foundation.md` 与 `evidence/p1-001-pilot-foundation-report.md`：Pilot 工程骨架、配置边界和本机受控验收；
+- `src/p1-002-wecom-sdk-adapter.mjs`、`tests/p1-002-wecom-sdk-adapter.test.mjs`、`contracts/normalized_wecom_message.schema.json`、`docs/21_p1_wecom_sdk_adapter.md` 与 `evidence/p1-002-wecom-adapter-report.md`：SDK Frame 隔离、标准消息契约、opaque 媒体引用和稳定错误码；
+- `database/migrations/001_p1_003_channel_message_inbox.sql`、`src/p1-003-channel-message-inbox.mjs`、`scripts/p1-003-migrate.mjs`、`tests/p1-003-channel-message-inbox.test.mjs`、`tests/fixtures/p1-003-inbox-worker.mjs`、`docs/22_p1_channel_message_inbox.md` 与 `evidence/p1-003-channel-message-inbox-report.md`：Channel Message 持久化、数据库并发幂等、原结果快照、隐私/留存输入和本机 PostgreSQL 集成验收；
+- `database/migrations/002_p1_004_service_intake.sql`、`src/p1-004-service-intake.mjs`、`scripts/p1-004-migrate.mjs`、`scripts/p1-004-verify.mjs`、`tests/p1-004-service-intake.test.mjs`、`contracts/service_intake.schema.json`、`docs/23_p1_service_intake.md` 与 `evidence/p1-004-service-intake-report.md`：Service Intake、90 秒同上下文聚合、补充/澄清关系、确定性请求分类和 Intake 审计事件的本机 PostgreSQL 集成验收；
+- P1-001 至 P1-004 已完成各自本地验收；P1-005 尚未启动。当前没有公网 IP，本地结果不构成公网或临床试点验收。
 
 ## 其他规格
 

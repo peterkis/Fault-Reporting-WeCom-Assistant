@@ -4,7 +4,7 @@
 
 ## P1-001 建立 Pilot 工程骨架与配置校验
 
-- 状态：IN_PROGRESS
+- 状态：DONE（本机受控验收；非公网试点验收）
 - 依赖：G0-008
 - 输入：Gate 0 能力结论、锁定 SDK、Pilot 运行环境约束。
 - 输出：最小工程骨架、分层配置、启动校验和依赖边界说明。
@@ -19,37 +19,81 @@
 
 ### 当前验收记录
 
-- 已完成：`src/p1-001-pilot-foundation.mjs`、`docs/20_p1_pilot_foundation.md` 和 4 项 P1-001 自动化测试；本机版本控制外的配置模板预检通过，全量本地回归为 58/58 通过。
-- 已完成：无 Secret 的模板预检通过；健康端点启动/关闭与非业务路由拒绝通过。
-- 未执行：真实 `.env.pilot` 预检。当前工作区没有该本机忽略文件，不能宣称试点环境、安全边界、测试群或负责人已经配置/验收。
-- 状态：保持 `IN_PROGRESS`；未通过真实配置预检和负责人确认前，不启动 P1-002。
+- 已完成：`src/p1-001-pilot-foundation.mjs`、`docs/20_p1_pilot_foundation.md` 和 4 项 P1-001 自动化测试；全量本地回归为 58/58 通过。
+- 已完成：真实 `.env.pilot` 预检、独立空的本机 `pilot_ticket_core` 数据库创建/连接验证、本机 `GET /healthz` 及 `/tickets` 404 路由边界验证；未记录或输出凭据。
+- 项目负责人确认：当前没有公网 IP，以本机作为 P1-001 受控验收标注。该决定不构成真实公网试点、安全边界、企业微信连通性或临床试点验收。
+- 当时后续限制：交接时 P1-002 尚未获得单独启动授权；项目负责人随后于 2026-08-28 明确要求依据交接文档继续开发 P1-002，该限制已按任务粒度解除。
+- 状态：P1 保持 `IN_PROGRESS`；P1-001 的本机受控验收不替代公网试点验收。
 
 ## P1-002 WeCom SDK Adapter 与标准消息契约
 
-- 状态：TODO
+- 状态：DONE（本地 Contract 验收；非公网/真实 WSS 试点验收）
 - 依赖：P1-001
 - 输入：Gate 0 脱敏 Frame 与 SDK 版本。
 - 输出：WeCom SDK Adapter、Normalized Message 契约和稳定错误码。
 - 测试：文本、图片、mixed、重复 Frame、非法 Frame Contract Test。
 - 验收：业务模块不依赖 SDK 原始类型。
 
+### 启动记录
+
+- 启动日期：2026-08-28
+- 启动授权：项目负责人明确要求“根据该文档，继续开发 P1-002”。
+- 执行边界：只实现 SDK Frame 转换、Normalized Message、媒体敏感引用隔离和稳定错误；不启动真实长连接，不持久化消息，不创建数据库表、Service Intake、Ticket、Outbox、AI/OCR 或 Hospital Tickets 集成。
+
+### 当前验收记录
+
+- 已完成：`src/p1-002-wecom-sdk-adapter.mjs`、`contracts/normalized_wecom_message.schema.json`、`docs/21_p1_wecom_sdk_adapter.md` 和 P1-002 Contract Test。
+- 已覆盖：文本、图片、mixed 顺序、同 `msg_id` 重放、非法 Frame、机器可读 Schema、引用，以及 Gate 0 已验证的文件、语音和视频 Frame；定向测试 10/10 通过。
+- 已确认：成功结果不包含 SDK `cmd/headers/body`、媒体 URL、AES Key 或 `response_url`；语音转写标记为 `VOICE_TRANSCRIPT`；`req_id` 不参与业务幂等。
+- 已确认：重复 Frame 只得到相同 `WECOM_AIBOT:{msg_id}` 幂等键，Adapter 不丢弃也不宣称可靠去重；数据库唯一约束和原结果返回仍属于 P1-003。
+- 全量本地回归：68/68 通过。该结果仅是本地纯转换与回归，不构成公网边界、真实 WSS、数据库幂等、临床试点或 Phase 1 Go/No-Go。
+- 历史限制：P1-003 当时尚未获得单独授权；项目负责人随后于 2026-08-28 明确要求“执行P1-003”，该限制已按任务粒度解除并完成本机数据库验收。
+
 ## P1-003 Channel Message Inbox 与数据库幂等
 
-- 状态：TODO
+- 状态：DONE（本机 PostgreSQL 集成验收；非公网/临床试点验收）
 - 依赖：P1-002
 - 输入：标准消息契约、隐私与留存规则。
 - 输出：Channel Message 持久化、`provider + msg_id` 唯一约束和重复请求原结果返回。
 - 测试：并发重复、事务回滚、进程重启和数据库暂时不可用。
 - 验收：同一消息只保存一次且不产生重复业务处理。
 
+### 启动记录
+
+- 启动日期：2026-08-28
+- 启动授权：项目负责人明确要求“执行P1-003”。
+- 执行边界：只创建 `channel.message_inbox`、迁移入口和数据库事务幂等；不创建 Service Intake、Pilot Ticket、Event、Outbox、AI/OCR 或医院系统集成。
+
+### 当前验收记录
+
+- 已完成：独立可重入迁移、严格 Normalized Message/隐私/留存输入、`(provider, msg_id)` 唯一约束、事务首次处理和 JSON 原结果快照。
+- 已覆盖：12 路并发重复、首次处理回滚、事务提前提交防护、两个独立 Node 进程重启、数据库不可用、调用方密文字节和迁移范围；定向真实 PostgreSQL 测试 9/9 通过。
+- 已确认：并发重复只保存一行且只执行一次处理器；失败事务不留半完成行；重启后重复请求返回首个已提交 `channelMessageId/result`。
+- 全量本机回归：77/77 通过；测试合成记录已精确清理，目录核验为一个唯一约束、零条 `p1-003-*` 测试残留。
+- 限制：Inbox 只保存 `retention_until`，未实现到期删除/备份生命周期；可选 raw payload 只接受调用方提供的字节，不能自行证明密码学加密。该任务验收时 P1-004 尚未启动；项目负责人随后已单独授权并完成 P1-004 本机验收。
+
 ## P1-004 Service Intake 创建与消息聚合
 
-- 状态：TODO
+- 状态：DONE（本机 PostgreSQL 集成验收；非公网/临床试点验收）
 - 依赖：P1-003
 - 输入：Channel Message、90秒聚合规则和请求类型规则。
 - 输出：Service Intake、消息关系、补充/澄清关联和审计事件。
 - 测试：单条、多条补充、新报修、纯图片和并发聚合。
 - 验收：消息与 Intake 分层；补充消息不错误新建工单。
+
+### 启动记录
+
+- 启动日期：2026-08-28
+- 启动授权：项目负责人明确调用 `implement` 并要求执行 `P1-004`。
+- 执行边界：只创建/追加 Service Intake、消息关系和 Intake 审计事件；不创建 Pilot Ticket、Incident、Notification Outbox、AI/OCR 或任何医院系统集成。
+
+### 当前验收记录
+
+- 已完成：独立可重入迁移、P1-003 同事务处理器、90 秒同上下文聚合、显式新报修/另一工单分流、确定性请求类型、纯图片等待澄清和补充/澄清关系。
+- 已覆盖：单条、多条补充、显式新报修、另一工单引用、纯图片、图片后澄清、12 路不同消息并发、八类请求类型与否定、90 秒边界、上下文隔离、重放、整笔回滚、迁移/契约范围；定向真实 PostgreSQL 测试 16/16 通过。
+- 全量本机带库回归：93/93 通过；`p1-004-*` 合成 Channel Message、Intake、关系和事件残留均为 0。
+- 已确认：Channel Message 与 Intake 分表；每条消息最多属于一个 Intake；并发补充只形成一个 Intake；所有结果的 `ticket_id` 与 `incident_id` 为空，数据库不存在 Pilot Ticket、Incident、Outbox 或 Hospital 表。
+- 限制：规则分类不是 AI 结论；未实现 Ticket、回复或通知，因此不证明“客户端已收到工单”或临床闭环。P1-005 保持 TODO，尚未启动。
 
 ## P1-005 Pilot Ticket Core 模型与编号
 

@@ -1,7 +1,7 @@
 # V1.2 分阶段路线图
 
 - 架构基线日期：2026-08-21
-- 当前阶段：P1（IN_PROGRESS，G0-008 已由项目负责人确认完成；P1-001“建立 Pilot 工程骨架与配置校验”进行中）
+- 当前阶段：P1（IN_PROGRESS；P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 已完成本机 PostgreSQL 幂等集成验收，P1-004 已完成本机 PostgreSQL Intake 聚合集成验收；P1-005 尚未启动）
 - 已完成前置任务：ARCH-001 Architecture Baseline Cleanup
 
 ## 唯一有效顺序

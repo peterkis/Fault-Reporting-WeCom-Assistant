@@ -29,9 +29,18 @@
     "test:g0:008": "node --test tests/g0-008-capability-freeze.test.mjs",
     "p1:preflight": "node src/p1-001-pilot-foundation.mjs --check",
     "p1:serve": "node src/p1-001-pilot-foundation.mjs --serve",
-    "test:p1:001": "node --test tests/p1-001-pilot-foundation.test.mjs"
+    "test:p1:001": "node --test tests/p1-001-pilot-foundation.test.mjs",
+    "test:p1:002": "node --test tests/p1-002-wecom-sdk-adapter.test.mjs",
+    "p1:003:migrate": "node --env-file=.env.pilot scripts/p1-003-migrate.mjs",
+    "test:p1:003": "node --test tests/p1-003-channel-message-inbox.test.mjs",
+    "test:p1:003:integration": "node --env-file=.env.pilot --test tests/p1-003-channel-message-inbox.test.mjs",
+    "p1:004:migrate": "node --env-file=.env.pilot scripts/p1-004-migrate.mjs",
+    "p1:004:verify": "node --env-file=.env.pilot scripts/p1-004-verify.mjs",
+    "test:p1:004": "node --test tests/p1-004-service-intake.test.mjs",
+    "test:p1:004:integration": "node --env-file=.env.pilot --test tests/p1-004-service-intake.test.mjs"
   },
   "dependencies": {
-    "@wecom/aibot-node-sdk": "1.0.6"
+    "@wecom/aibot-node-sdk": "1.0.6",
+    "pg": "8.23.0"
   }
 }

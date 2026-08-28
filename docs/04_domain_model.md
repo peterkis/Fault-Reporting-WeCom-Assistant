@@ -24,15 +24,16 @@
 
 - provider；
 - msg_id；
+- idempotency_key（固定为 `provider + msg_id`）；
 - req_id；
 - chat_type；
 - chat_id；
 - sender_user_id；
 - msg_type；
-- text；
-- media；
+- 有序 content（text/media）；
 - quote；
-- create_time；
+- create_time（提供方可缺省）；
+- received_at；
 - raw_payload；
 - privacy_class；
 - retention_until。
@@ -68,6 +69,8 @@
 - 可关联一个 Incident；
 - 可追加补充消息；
 - 可因咨询或无效请求不生成 Ticket，但必须保留处理结论。
+
+P1-004 的可执行边界由 `intake.service_intake`、`intake.service_intake_message` 和 `intake.service_intake_event` 三张表实现。Channel Message 仍是不可被 Intake 覆盖的通道事实；每条 Channel Message 最多属于一个 Intake，关系显式区分 `PRIMARY`、`SUPPLEMENT` 和 `CLARIFICATION`。P1-004 的 `ticket_id`、`incident_id` 公开值固定为空，实际关联列与外键分别留给 P1-005 和 Phase 2 的受权任务。
 
 ### 2.3 Ticket
 
