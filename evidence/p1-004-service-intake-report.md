@@ -1,6 +1,6 @@
 # P1-004 Service Intake 创建与消息聚合验收报告
 
-- 验收日期：2026-08-28
+- 验收日期：2026-08-29
 - 环境：Windows 本机、Node.js `24.18.0`、PostgreSQL `18.4`
 - 结论：DONE（本机 PostgreSQL 集成验收；非公网、非真实 WSS、非客户端、非临床试点验收）
 - 下一任务：P1-005 保持 TODO，未启动
@@ -37,7 +37,7 @@
 npm run test:p1:004:integration
 ```
 
-结果：`16/16` 通过，`0` 失败、`0` 跳过。覆盖：
+结果：`22/22` 通过，`0` 失败、`0` 跳过。覆盖：
 
 - 单条消息创建一个 Intake、PRIMARY 关系和 received 事件；
 - 90 秒内多条补充复用一个 Intake，不创建 Ticket；
@@ -45,10 +45,12 @@ npm run test:p1:004:integration
 - 纯图片创建 `UNKNOWN / WAITING_DESCRIPTION` Intake 并请求澄清；
 - 图片后的有效描述追加为 CLARIFICATION，并推进分类/状态；
 - 12 条不同 `msg_id` 并发只形成一个 Intake、12 条关系和连续版本；
-- 八类请求类型、故障否定、90 秒含边界/超界、发送人/会话隔离和单聊渠道映射；
+- 较早事务暂停、较晚时间戳先提交时仍只形成一个 Intake，并保持消息时间高水位和合法更新时间；显式新报修/另一工单边界不被较早逆序消息穿透，边界后的补充也不会回挂旧 Intake；
+- 八类请求类型、分句级“没有报错”否定、独立感谢、90 秒含边界/超界、发送人/会话隔离和单聊渠道映射；
+- 聚合使用最强隐私级别和最早留存期，可重放 Inbox 结果不复制数据库摘要；隔离旧结构升级按全部关系重算边界、以等价词边界从主消息恢复显式边界，并对旧非空快照摘要失败关闭且保持原值；迁移 CLI 仅在 SQLSTATE 与稳定消息同时匹配时返回不可重试的修复码；
 - Channel Message 重放返回原 Intake 快照，不增加关系或事件；
 - Intake 后续处理失败时，Channel Message、Intake、关系和事件整笔回滚，可干净重试；
-- 迁移范围、Schema 范围、迁移可重入和非法窗口参数。
+- 五位数编号不截断、严格事件 ordinal、迁移范围、Schema 范围、迁移可重入和非法窗口参数。
 
 ### 3.2 全量带库回归
 
@@ -58,7 +60,7 @@ npm run test:p1:004:integration
 node --env-file=.env.pilot --test
 ```
 
-结果：`93/93` 通过，`0` 失败、`0` 跳过。该结果同时覆盖既有 Gate 0、P1-001、P1-002、P1-003 和 P1-004 自动化回归。
+结果：`99/99` 通过，`0` 失败、`0` 跳过。该结果同时覆盖既有 Gate 0、P1-001、P1-002、P1-003 和 P1-004 自动化回归。
 
 ### 3.3 迁移与数据库收尾
 
@@ -72,6 +74,7 @@ npm run p1:004:verify
 结果：
 
 - `channel.message_inbox`、`intake.service_intake`、`intake.service_intake_message`、`intake.service_intake_event` 均存在；
+- 显式聚合边界列、聚合隐私/留存列、事件 ordinal 唯一索引均存在，关联 Inbox 不存在旧非空摘要；
 - `pilot_ticket` Schema 不存在；
 - `p1-004-*` 合成 Channel Message、Intake、消息关系、事件残留均为 `0`；
 - 核验输出不包含数据库 URL、用户名、密码或业务原文。

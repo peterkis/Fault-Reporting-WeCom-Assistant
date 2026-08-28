@@ -1,6 +1,9 @@
 import { Pool } from 'pg';
 import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
-import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
+import {
+  applyServiceIntakeMigration,
+  mapServiceIntakeMigrationFailure,
+} from '../src/p1-004-service-intake.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
@@ -34,13 +37,10 @@ if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
         'intake.service_intake_event',
       ],
     })}\n`);
-  } catch {
+  } catch (error) {
     process.stdout.write(`${JSON.stringify({
       ok: false,
-      error: {
-        code: 'P1_004_MIGRATION_FAILED',
-        retryable: true,
-      },
+      error: mapServiceIntakeMigrationFailure(error),
     })}\n`);
     process.exitCode = 1;
   } finally {

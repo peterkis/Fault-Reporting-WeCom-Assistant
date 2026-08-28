@@ -23,6 +23,48 @@ if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
               to_regclass('intake.service_intake')::text AS service_intake,
               to_regclass('intake.service_intake_message')::text AS intake_message,
               to_regclass('intake.service_intake_event')::text AS intake_event,
+              to_regclass('intake.service_intake_event_ordinal_unique')::text AS event_ordinal_unique,
+              (
+                  SELECT count(*) = 2
+                    FROM information_schema.columns
+                   WHERE table_schema = 'intake'
+                     AND table_name = 'service_intake'
+                     AND column_name IN ('privacy_class', 'retention_until')
+              ) AS intake_privacy_boundary_exists,
+              (
+                  SELECT count(*) = 1
+                    FROM information_schema.columns
+                   WHERE table_schema = 'intake'
+                     AND table_name = 'service_intake_event'
+                     AND column_name = 'event_ordinal'
+              ) AS event_ordinal_exists,
+              (
+                  SELECT count(*) = 1
+                    FROM information_schema.columns
+                   WHERE table_schema = 'intake'
+                     AND table_name = 'service_intake'
+                     AND column_name = 'explicit_aggregation_boundary'
+              ) AS explicit_aggregation_boundary_exists,
+              NOT EXISTS (
+                  SELECT 1
+                    FROM channel.message_inbox AS message_inbox
+                   WHERE jsonb_typeof(message_inbox.response_snapshot -> 'intake') = 'object'
+                     AND (message_inbox.response_snapshot -> 'intake') ? 'summary'
+                     AND message_inbox.response_snapshot #> '{intake,summary}'
+                         IS DISTINCT FROM 'null'::jsonb
+                     AND (
+                         EXISTS (
+                             SELECT 1
+                               FROM intake.service_intake_message AS relation
+                              WHERE relation.channel_message_id = message_inbox.id
+                         )
+                         OR EXISTS (
+                             SELECT 1
+                               FROM intake.service_intake AS service_intake
+                              WHERE service_intake.primary_message_id = message_inbox.id
+                         )
+                     )
+              ) AS inbox_summary_safe,
               to_regnamespace('pilot_ticket') IS NOT NULL AS pilot_ticket_schema_exists`,
     );
     const residue = await pool.query(
@@ -45,11 +87,16 @@ if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
              JOIN channel.message_inbox AS m ON m.id = r.channel_message_id
             WHERE m.msg_id LIKE 'p1-004-%') AS events`,
     );
-    const expectedInventory = {
+    const expectedCoreInventory = {
       channel_inbox: 'channel.message_inbox',
       service_intake: 'intake.service_intake',
       intake_message: 'intake.service_intake_message',
       intake_event: 'intake.service_intake_event',
+      event_ordinal_unique: 'intake.service_intake_event_ordinal_unique',
+      intake_privacy_boundary_exists: true,
+      event_ordinal_exists: true,
+      explicit_aggregation_boundary_exists: true,
+      inbox_summary_safe: true,
       pilot_ticket_schema_exists: false,
     };
     const expectedResidue = {
@@ -59,7 +106,9 @@ if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
       events: 0,
     };
     const result = {
-      ok: JSON.stringify(inventory.rows[0]) === JSON.stringify(expectedInventory)
+      ok: Object.entries(expectedCoreInventory).every(
+        ([key, value]) => inventory.rows[0][key] === value,
+      )
         && JSON.stringify(residue.rows[0]) === JSON.stringify(expectedResidue),
       task: 'P1-004',
       server_version: version.rows[0].server_version,

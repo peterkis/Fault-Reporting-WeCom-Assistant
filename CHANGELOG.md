@@ -6,7 +6,7 @@
 
 - 新增独立 `intake.service_intake`、消息关系和 Intake 审计事件迁移，并通过 P1-003 首次处理回调与 Channel Message 同事务提交/回滚。
 - 新增含边界的 90 秒同上下文聚合、PostgreSQL advisory lock、显式新报修/另一工单分流、八类确定性请求规则，以及纯图片和等待描述后的澄清路径。
-- 定向真实 PostgreSQL 测试 16/16 通过，覆盖 12 路不同消息并发、重放、整笔回滚和迁移/契约范围；所有结果均未创建 Ticket、Incident、Outbox、AI/OCR 或医院系统依赖，P1-005 未启动。
+- 定向真实 PostgreSQL 测试 22/22、全量带库回归 99/99 通过，覆盖 12 路不同消息并发、显式边界逆序与边界后回挂、分句否定、隐私/留存聚合、旧快照失败关闭及 CLI 稳定错误映射、重放、整笔回滚、五位数编号、事件顺序和迁移/契约范围；所有结果均未创建 Ticket、Incident、Outbox、AI/OCR 或医院系统依赖，P1-005 未启动。
 
 ### P1-003 Channel Message Inbox 与数据库幂等（本机 PostgreSQL 集成验收完成）
 

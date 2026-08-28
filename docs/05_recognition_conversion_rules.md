@@ -150,7 +150,9 @@ AND no explicit "新报修/另一个问题/重新报修" intent
 
 “这是截图”“错误是 403”“三台电脑都这样”“在高新院区”等短文本不得新建工单，应追加到最近上下文匹配的 Intake。
 
-P1-004 将窗口冻结为含边界的 `90` 秒，并以 `provider + bot_id + chat_type + chat_id + sender_user_id` 作为完整上下文；单聊的 `chat_id` 为空，但仍由 bot、会话类型和发送人隔离。相同上下文通过 PostgreSQL 事务级 advisory lock 串行化，避免不同 `msg_id` 的并发补充各自创建 Intake。明确的新报修短语或形如 `IT-YYYYMMDD-NNNN` 的另一工单引用直接开始新 Intake。
+P1-004 将窗口冻结为含边界的 `90` 秒，并以 `provider + bot_id + chat_type + chat_id + sender_user_id` 作为完整上下文；单聊的 `chat_id` 为空，但仍由 bot、会话类型和发送人隔离。相同上下文通过 PostgreSQL 事务级 advisory lock 串行化，且接受 90 秒内并发事务的有界时间戳逆序，避免不同 `msg_id` 的补充因获锁顺序各自创建 Intake。明确的新报修短语或形如 `IT-YYYYMMDD-NNNN` 的另一工单引用直接开始新 Intake，并持久化显式聚合边界；时间更早的逆序消息不得跨入该新上下文，边界后的候选按主消息逻辑接收时间选择，不能因旧 Intake 较晚完成而回挂。
+
+确定性否定至少覆盖“没有问题”“没有报错”“已经好了”“不报错了”“无需处理”“测试正常”，并按标点/转折词分句绑定否定，避免一个系统的否定吞掉另一系统的明确故障；独立“谢谢/感谢/多谢/辛苦了”归为 `CHATTER / IGNORED`，保留 Intake 事实但不产生无意义的澄清请求。
 
 本任务只创建/追加 Intake 和审计事件。表中“创建 Ticket”的默认动作由 P1-005 实现；P1-004 始终返回空 `ticket_id`，不得把规则分类结果冒充已建工单。
 

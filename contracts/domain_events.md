@@ -12,6 +12,7 @@
   "aggregate_type": "ticket",
   "aggregate_id": "uuid",
   "aggregate_version": 3,
+  "event_ordinal": 7,
   "trace_id": "trace-id",
   "payload": {}
 }
@@ -20,9 +21,10 @@
 ## 规则
 
 - `event_id` 全局唯一；
-- `aggregate_version` 单调递增；
+- `aggregate_version` 按聚合状态单调非递减；同一原子状态变化可产生多个同版本事件；
+- `event_ordinal` 在同一 aggregate 内从 1 严格递增，并与 `aggregate_id` 组成唯一顺序键；
 - Consumer 必须按 `event_id` 幂等；
-- 不保证全局顺序，只保证同 aggregate 版本可排序；
+- 不保证全局顺序；同一 aggregate 以内按 `event_ordinal` 确定事件顺序；
 - payload 不包含 Bot Secret、患者原始文本或永久附件 URL；
 - Schema 变更保持向后兼容。
 

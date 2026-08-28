@@ -77,9 +77,9 @@ created_at / updated_at
 
 P1-004 的可执行迁移为 `database/migrations/002_p1_004_service_intake.sql`：
 
-- `intake.service_intake` 保存 Intake 聚合事实、主消息、当前请求类型、状态、消息数、最后消息时间和乐观版本；
+- `intake.service_intake` 保存 Intake 聚合事实、主消息、显式新上下文边界、当前请求类型、状态、消息数、最后消息时间、最强隐私级别、最早留存期限和乐观版本；隐私与留存字段不属于既有外部响应契约；
 - `intake.service_intake_message` 保证一条 Channel Message 最多属于一个 Intake，并保存 `PRIMARY / SUPPLEMENT / CLARIFICATION` 关系与顺序；
-- `intake.service_intake_event` 保存同事务的 Intake 审计事件，JSONB payload 仅用于无原文的可选审计字段；
+- `intake.service_intake_event` 保存同事务的 Intake 审计事件，`event_ordinal` 提供严格的每 Intake 顺序，JSONB payload 仅用于无原文的可选审计字段；
 - 聚合查询只覆盖当前允许追加的状态，并由同上下文 advisory lock 保护。
 
 该迁移不创建 `pilot_ticket.*`、Incident、Notification Outbox、AI/OCR 或 Hospital 集成表。`pilot_ticket_id` 和 `incident_id` 仍只作为公开契约中的空值；实际关联必须由后续受权任务以外键新增。
