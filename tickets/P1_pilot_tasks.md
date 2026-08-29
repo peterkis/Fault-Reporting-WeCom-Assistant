@@ -170,12 +170,13 @@
 
 ## P1-011 Pilot 安全、可观测性与运维基线
 
-- 状态：TODO
+- 状态：DONE（本机 PostgreSQL 集成与本机加密备份恢复演练；非公网/临床试点验收）
 - 依赖：P1-007
 - 输入：公网试点威胁模型、日志规范、留存和备份要求。
 - 输出：权限、Secret、日志脱敏、指标、告警、备份、恢复和 Runbook。
 - 测试：Secret/患者信息扫描、依赖故障、恢复、限流和审计访问。
 - 验收：公网 Pilot 数据受控；Redis/AI等非关键依赖失败不漏单。
+- 结果：`createPilotOperationalIntake` 将真实 Inbox→Intake→Ticket→Outbox 组合接入普通日志、就绪检查和提交后的可降级增强，Redis/AI 失败不回滚已提交工单；日志/指标/告警均只含固定字段或 HMAC 摘要。`operations` schema 追加不可变审计、加密备份检查点、恢复成功/失败记录和固定恢复告警；本机成功完成 AES-256-GCM 逻辑备份、隔离临时恢复库校验和清理。Pilot Workbench 改为同源 CSP 与外置 CSS/JS。演练临时工件不等同于长期生产备份，且未验证公网、真实患者数据、医院密钥系统或临床试点。
 
 ## P1-012 Phase 1 E2E、故障演练与试点 Go/No-Go
 

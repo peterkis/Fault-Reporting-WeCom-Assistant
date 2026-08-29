@@ -1,7 +1,7 @@
 # V1.2 分阶段路线图
 
 - 架构基线日期：2026-08-21
-- 当前阶段：P1（IN_PROGRESS；P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 至 P1-010 已完成本机 PostgreSQL 集成验收；P1-011 尚未启动。注入式 sender/合成卡片不构成真实客户端或临床试点证据。）
+- 当前阶段：P1（IN_PROGRESS；P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 至 P1-011 已完成本机 PostgreSQL 集成验收；P1-012 尚未启动。注入式 sender/合成卡片不构成真实客户端或临床试点证据。）
 - 已完成前置任务：ARCH-001 Architecture Baseline Cleanup
 
 ## 唯一有效顺序

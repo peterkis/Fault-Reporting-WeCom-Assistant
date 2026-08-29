@@ -48,7 +48,8 @@
 - `src/p1-008-first-acknowledgement.mjs`、`tests/p1-008-first-acknowledgement.test.mjs` 与 `docs/27_p1_first_acknowledgement.md`：提交后首次确认编排；
 - `database/migrations/006_p1_009_pilot_access.sql`、`src/p1-009-pilot-access-workbench.mjs`、`scripts/p1-009-migrate.mjs`、`tests/p1-009-pilot-access-workbench.test.mjs` 与 `docs/28_p1_pilot_access_workbench.md`：Pilot-local 身份、角色、处理组与最小工作台；
 - `database/migrations/007_p1_010_ticket_closure.sql`、`database/migrations/008_p1_010_review_hardening.sql`、`src/p1-010-ticket-closure.mjs`、`scripts/p1-010-migrate.mjs`、`tests/p1-010-ticket-closure.test.mjs` 与 `docs/29_p1_ticket_closure.md`：补充、卡片任务回执、关闭前提醒、确认关闭、自动关闭和重开；
-- P1-001 至 P1-010 已完成各自本地验收；下一任务为 P1-011。当前没有公网 IP，注入式 sender/合成卡片不构成公网、客户端可见或临床试点验收。
+- `database/migrations/009_p1_011_pilot_operations_baseline.sql`、`src/p1-011-pilot-operations-baseline.mjs`、`src/p1-011-encrypted-backup.mjs`、`scripts/p1-011-migrate.mjs`、`scripts/p1-011-backup-restore.mjs`、`tests/p1-011-*.test.mjs`、`docs/30_p1_pilot_security_operations.md` 与 `evidence/p1-011-pilot-security-operations-report.md`：安全日志、固定指标告警、不可变运维审计和 AES-256-GCM 本机备份恢复演练；
+- P1-001 至 P1-011 已完成各自本地验收；下一任务为 P1-012。当前没有公网 IP，注入式 sender/合成卡片不构成公网、客户端可见或临床试点验收。
 
 ## 其他规格
 

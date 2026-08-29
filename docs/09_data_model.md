@@ -142,6 +142,11 @@ Phase 1 使用 Pilot Outbox，不依赖医院院内 Outbox。Phase 3 切换时�
 
 P1-007 使用 `notification.outbox`、`notification.delivery` 和 `notification.delivery_attempt`：Delivery 以事件、版本、通道、目标哈希和模板构成幂等键，并保存租约、重试时间、失败码和逐次尝试。P1-010 额外使用 `notification.card_action_task` 和 `notification.card_action_receipt`；其中 card action 仅为持久化处理契约，非客户端可见证据。`pilot_ticket.ticket.auto_close_at` 与 `auto_close_reminder_at` 分别记录自动关闭到期与一次性提醒事实；P1-010 的复核迁移还将 Ticket/Intake 的双向一对一约束应用到既有数据库。
 
+P1-011 另设 `operations.audit_event`、`operations.backup_checkpoint` 与 `operations.restore_drill`。
+它们仅保存不可变、受限的运维 metadata；不保存原始日志、患者文本、媒体引用、备份路径、URL、凭据、密钥或 dump
+载荷。恢复演练以检查点外键关联，并保留稳定成功/失败码；若加密检查点尚未建立，失败只以无业务载荷的不可变
+`backup.restore_drill_failed` 审计事件表示。
+
 ## 7. Phase 2 增强对象
 
 ### Media Asset

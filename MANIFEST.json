@@ -5,10 +5,10 @@
   "status": "ACTIVE",
   "current_phase": "P1",
   "first_executable_task": "P1-001",
-  "last_completed_task": "P1-010",
-  "next_task": "P1-011",
+  "last_completed_task": "P1-011",
+  "next_task": "P1-012",
   "active_task": null,
-  "task_status": "P1-005_TO_P1-010_LOCAL_POSTGRESQL_PILOT_TICKET_CORE_ACCEPTANCE_DONE",
+  "task_status": "P1-001_TO_P1-011_LOCAL_POSTGRESQL_PILOT_ACCEPTANCE_DONE",
   "architecture_status": "docs/architecture_baseline_status.md",
   "canonical_plans": [
     "plans/phase_0_wecom_poc.md",
@@ -37,7 +37,8 @@
     "evidence/p1-002-wecom-adapter-report.md",
     "evidence/p1-003-channel-message-inbox-report.md",
     "evidence/p1-004-service-intake-report.md",
-    "evidence/p1-005-to-p1-010-pilot-ticket-core-report.md"
+    "evidence/p1-005-to-p1-010-pilot-ticket-core-report.md",
+    "evidence/p1-011-pilot-security-operations-report.md"
   ],
   "integrity": {
     "static_file_hash_manifest": "DEPRECATED",

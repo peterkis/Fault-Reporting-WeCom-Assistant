@@ -4,8 +4,8 @@
 - 生效日期：2026-08-21
 - 状态：ACTIVE
 - 当前阶段：P1 / IN_PROGRESS
-- 当前已完成任务：G0-001（WSS 网络路径验证）、G0-002（SDK 认证与连接生命周期 PoC）、G0-003（群聊与单聊文本能力矩阵）、G0-004（图片、mixed、文件、语音与视频接收 PoC）、G0-005（主动推送与提醒效果验证）、G0-006（模板卡片按钮与更新时限验证）、G0-007（4小时30分钟稳定性、断网、DNS、网络抖动与进程重启验证）、G0-006A（长连接回复消息能力补充验证）、G0-008（能力结论与架构冻结）、P1-001（建立 Pilot 工程骨架与配置校验，本机受控验收）、P1-002（WeCom SDK Adapter 与标准消息契约，本地 Contract 验收）、P1-003（Channel Message Inbox 与数据库幂等，本机 PostgreSQL 集成验收）、P1-004（Service Intake 创建与消息聚合，本机 PostgreSQL 集成验收）、P1-005（Pilot Ticket Core 模型与编号，本机 PostgreSQL 集成验收）、P1-006（Pilot Ticket 状态机、Action 与事件，本机 PostgreSQL 集成验收）、P1-007（Notification Outbox 与 Delivery，本机 PostgreSQL 集成验收）、P1-008（首次确认与可靠回执，本机 PostgreSQL 集成验收）、P1-009（最小处理端与 Pilot 权限，本机 PostgreSQL 集成验收）、P1-010（补充、解决确认、关闭与重开，本机 PostgreSQL 集成验收）
-- 当前执行任务：无。Gate 0 已由项目负责人确认关闭，ADR-0009 为 Accepted。P1-001 至 P1-010 已完成各自本机验收；当前没有公网 IP，故均不表述为真实公网或临床试点验收。P1-005 至 P1-010 的外发发送器和卡片回调均为注入式/合成本地契约，未验证真实客户端可见性。当前不创建 Hospital Ticket Adapter、医院系统集成或 AI/OCR；下一任务为 P1-011。
+- 当前已完成任务：G0-001（WSS 网络路径验证）、G0-002（SDK 认证与连接生命周期 PoC）、G0-003（群聊与单聊文本能力矩阵）、G0-004（图片、mixed、文件、语音与视频接收 PoC）、G0-005（主动推送与提醒效果验证）、G0-006（模板卡片按钮与更新时限验证）、G0-007（4小时30分钟稳定性、断网、DNS、网络抖动与进程重启验证）、G0-006A（长连接回复消息能力补充验证）、G0-008（能力结论与架构冻结）、P1-001（建立 Pilot 工程骨架与配置校验，本机受控验收）、P1-002（WeCom SDK Adapter 与标准消息契约，本地 Contract 验收）、P1-003（Channel Message Inbox 与数据库幂等，本机 PostgreSQL 集成验收）、P1-004（Service Intake 创建与消息聚合，本机 PostgreSQL 集成验收）、P1-005（Pilot Ticket Core 模型与编号，本机 PostgreSQL 集成验收）、P1-006（Pilot Ticket 状态机、Action 与事件，本机 PostgreSQL 集成验收）、P1-007（Notification Outbox 与 Delivery，本机 PostgreSQL 集成验收）、P1-008（首次确认与可靠回执，本机 PostgreSQL 集成验收）、P1-009（最小处理端与 Pilot 权限，本机 PostgreSQL 集成验收）、P1-010（补充、解决确认、关闭与重开，本机 PostgreSQL 集成验收）、P1-011（Pilot 安全、可观测性与运维基线，本机 PostgreSQL 集成与加密恢复演练）
+- 当前执行任务：无。Gate 0 已由项目负责人确认关闭，ADR-0009 为 Accepted。P1-001 至 P1-011 已完成各自本机验收；当前没有公网 IP，故均不表述为真实公网或临床试点验收。P1-005 至 P1-010 的外发发送器和卡片回调均为注入式/合成本地契约，未验证真实客户端可见性。当前不创建 Hospital Ticket Adapter、医院系统集成或 AI/OCR；下一任务为 P1-012。
 - 已完成前置任务：ARCH-001 Architecture Baseline Cleanup
 
 ## 1. 当前唯一有效架构
@@ -74,7 +74,7 @@ ADR-0002 已标记为 Superseded；当前执行 ADR 为 ADR-0007。
 
 ## 3. Gate 0 完成与当前 Phase
 
-Gate 0 已完成；当前为 `P1：企业微信外网试点`。P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 至 P1-010 已完成本机 PostgreSQL 集成验收：
+Gate 0 已完成；当前为 `P1：企业微信外网试点`。P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 至 P1-011 已完成本机 PostgreSQL 集成验收：
 
 - ARCH-001 已完成，但不改变产品阶段；
 - G0-001 已完成，正式 WSS 网络路径已验证通过；
@@ -93,6 +93,7 @@ Gate 0 已完成；当前为 `P1：企业微信外网试点`。P1-001 已完成�
 - P1-003 仅实现 `channel.message_inbox`、数据库唯一幂等、首次处理事务与原结果快照；本机 PostgreSQL 集成验收已通过。
 - P1-004 在 P1-003 事务接缝上实现独立 `Service Intake`、消息关系、90 秒聚合与 Intake 审计事件；本机 PostgreSQL 集成验收已通过。
 - P1-005 至 P1-010 在其后新增 Pilot Ticket 的 Intake 一对一关系和编号、Action 状态机与事件、同事务 Pilot Outbox/Delivery、提交后的首次确认编排、Pilot-local 角色/处理组与最小工作台、以及补充/卡片回执/关闭/自动关闭/重开闭环。它们不调用 Hospital Tickets、医院 SSO、医院 Hub 或院内 Outbox；注入式 sender 和合成卡片任务不证明真实企业微信客户端显示、点击或临床试点就绪。
+- P1-011 将结构化安全日志、固定指标/告警、核心与可降级依赖边界接入真实 Inbox→Intake→Ticket→Outbox 组合，新增 ADMIN-only 不可变运维审计以及 AES-256-GCM 本机备份恢复演练；它不证明公网部署、真实患者数据、医院密钥系统、真实对象存储、长期生产备份或临床试点就绪。
 
 ## 4. 后续迁移路径
 
@@ -123,4 +124,4 @@ Gate 0 已完成；当前为 `P1：企业微信外网试点`。P1-001 已完成�
 - ADR-0002 保留但明确标记 Superseded；
 - 旧 P1–P6 计划和任务文件已删除，由 P1/P2/P3 新文件替代；
 - V1.0 静态哈希清单已废弃，发布时应基于最终 Git 提交重新生成校验清单；
-- `database/schema_draft.sql` 属于旧架构草案，未被实施；P1-005 至 P1-010 使用独立、可重复执行的增量迁移，后续任务不得复用旧草案整库建表。
+- `database/schema_draft.sql` 属于旧架构草案，未被实施；P1-005 至 P1-011 使用独立、可重复执行的增量迁移，后续任务不得复用旧草案整库建表。

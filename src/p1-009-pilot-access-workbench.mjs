@@ -314,16 +314,45 @@ function sendJson(response, status, body) {
   response.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
+    ...WORKBENCH_SECURITY_HEADERS,
   });
   response.end(JSON.stringify(body));
 }
 
+const WORKBENCH_SECURITY_HEADERS = Object.freeze({
+  'content-security-policy': "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'",
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY',
+  'referrer-policy': 'no-referrer',
+  'permissions-policy': 'camera=(), geolocation=(), microphone=()',
+});
+
 const WORKBENCH_HTML = `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pilot 工单处理</title><style>body{font:16px system-ui;margin:1rem;max-width:44rem}button{min-height:44px;padding:.5rem 1rem}li{padding:.75rem 0;border-bottom:1px solid #ddd}</style></head>
-<body><main><h1>Pilot 工单处理</h1><p id="state">正在加载待办…</p><ul id="work"></ul></main><script>
-fetch('/api/pilot/work').then(r=>r.json()).then(data=>{const list=document.querySelector('#work');document.querySelector('#state').textContent=data.ok?'待办工单':'无访问权限';(data.items||[]).forEach(item=>{const li=document.createElement('li');li.textContent=item.mobile_summary;list.append(li)})}).catch(()=>{document.querySelector('#state').textContent='暂时无法加载待办'})
-</script></body></html>`;
+<title>Pilot 工单处理</title><link rel="stylesheet" href="/static/pilot-workbench.css"></head>
+<body><main><h1>Pilot 工单处理</h1><p id="state">正在加载待办…</p><ul id="work"></ul></main><script src="/static/pilot-workbench.js" defer></script></body></html>`;
+
+const WORKBENCH_CSS = 'body{font:16px system-ui;margin:1rem;max-width:44rem}button{min-height:44px;padding:.5rem 1rem}li{padding:.75rem 0;border-bottom:1px solid #ddd}';
+
+const WORKBENCH_JAVASCRIPT = `const state=document.querySelector('#state');
+const list=document.querySelector('#work');
+fetch('/api/pilot/work').then((response)=>response.json()).then((data)=>{
+  state.textContent=data.ok?'待办工单':'无访问权限';
+  (data.items||[]).forEach((item)=>{
+    const entry=document.createElement('li');
+    entry.textContent=item.mobile_summary;
+    list.append(entry);
+  });
+}).catch(()=>{state.textContent='暂时无法加载待办'});`;
+
+function sendStatic(response, contentType, body) {
+  response.writeHead(200, {
+    'content-type': contentType,
+    'cache-control': 'no-store',
+    ...WORKBENCH_SECURITY_HEADERS,
+  });
+  response.end(body);
+}
 
 export function createPilotWorkbenchServer({ access, actions, authenticate } = {}) {
   if (!access || typeof access.listWorkQueue !== 'function' || typeof access.getTicketView !== 'function') {
@@ -339,8 +368,15 @@ export function createPilotWorkbenchServer({ access, actions, authenticate } = {
     const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
     try {
       if (request.method === 'GET' && pathname === '/') {
-        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
-        response.end(WORKBENCH_HTML);
+        sendStatic(response, 'text/html; charset=utf-8', WORKBENCH_HTML);
+        return;
+      }
+      if (request.method === 'GET' && pathname === '/static/pilot-workbench.css') {
+        sendStatic(response, 'text/css; charset=utf-8', WORKBENCH_CSS);
+        return;
+      }
+      if (request.method === 'GET' && pathname === '/static/pilot-workbench.js') {
+        sendStatic(response, 'text/javascript; charset=utf-8', WORKBENCH_JAVASCRIPT);
         return;
       }
       const actor = await authenticate(request);

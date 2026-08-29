@@ -54,7 +54,12 @@
     "test:p1:009:integration": "node --env-file=.env.pilot --test tests/p1-009-pilot-access-workbench.test.mjs",
     "p1:010:migrate": "node --env-file=.env.pilot scripts/p1-010-migrate.mjs",
     "test:p1:010": "node --test tests/p1-010-ticket-closure.test.mjs",
-    "test:p1:010:integration": "node --env-file=.env.pilot --test tests/p1-010-ticket-closure.test.mjs"
+    "test:p1:010:integration": "node --env-file=.env.pilot --test tests/p1-010-ticket-closure.test.mjs",
+    "p1:011:migrate": "node --env-file=.env.pilot scripts/p1-011-migrate.mjs",
+    "p1:011:backup-restore:check": "node --env-file=.env.pilot scripts/p1-011-backup-restore.mjs --check",
+    "p1:011:backup-restore:drill": "node --env-file=.env.pilot scripts/p1-011-backup-restore.mjs --drill",
+    "test:p1:011": "node --test tests/p1-011-pilot-operations-baseline.test.mjs tests/p1-011-encrypted-backup.test.mjs tests/p1-011-backup-restore-script.test.mjs",
+    "test:p1:011:integration": "node --env-file=.env.pilot --test tests/p1-011-pilot-operations-baseline.test.mjs tests/p1-011-encrypted-backup.test.mjs tests/p1-011-backup-restore-script.test.mjs"
   },
   "dependencies": {
     "@wecom/aibot-node-sdk": "1.0.6",

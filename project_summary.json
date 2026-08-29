@@ -6,10 +6,10 @@
     "architecture_baseline": "V1.2",
     "baseline_date": "2026-08-21",
     "current_phase": "P1",
-    "status": "p1_p1-005_to_p1-010_pilot_ticket_core_local_postgresql_acceptance_done",
+    "status": "p1_p1-001_to_p1-011_local_postgresql_pilot_acceptance_done",
     "first_executable_task": "P1-001",
-    "last_completed_task": "P1-010",
-    "next_task": "P1-011",
+    "last_completed_task": "P1-011",
+    "next_task": "P1-012",
     "active_task": null
   },
   "phase_model": [
@@ -49,6 +49,9 @@
     "no_simple_time_category_auto_merge",
     "private_medical_data_processing",
     "no_ai_direct_production_actions",
+    "normal_logs_exclude_secret_and_patient_content",
+    "optional_dependencies_do_not_reverse_persisted_core_intake",
+    "operations_audit_is_append_only",
     "phase3_hospital_tickets_becomes_single_long_term_source_of_truth"
   ],
   "recommended_stack": {

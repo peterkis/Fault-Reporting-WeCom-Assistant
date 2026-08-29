@@ -246,3 +246,17 @@ retention.deleted
 - 导出审计记录。
 
 核心原则：安全隔离不能篡改已发生的业务事实。
+
+## 14. P1-011 本机安全基线
+
+P1-011 已实现普通日志白名单：仅输出稳定事件、trace/message 标识、状态、错误码、耗时和 HMAC 身份摘要。
+Secret、患者自由文本、媒体 URL、临时媒体标识、文件名和附件数据进入 `details` 时只能形成固定的拒绝分类，
+不得写入日志、metric、告警或审计 metadata。
+
+`operations.audit_event` 仅接受受限运维 metadata，且由数据库触发器禁止 UPDATE/DELETE；读取仅限 Pilot
+`ADMIN`，并会产生 `audit.accessed`。授权检查、审计写入和读取位于同一事务并锁定授权行；引用审计的 principal
+采用删除限制，避免外键清理改写审计历史。
+
+备份转储采用 AES-256-GCM 流式工件，并在向恢复进程输出前完成认证标签验证；数据库密码和加密密钥由受控环境注入。
+备份路径、URL、密码、密钥材料和业务 payload 均不写入检查点。本机演练工件会清理，不能作为长期生产备份证据。
+详情和本机边界见 `docs/30_p1_pilot_security_operations.md`。

@@ -198,3 +198,15 @@ Phase 3增加：Adapter积压、映射冲突、未解释对账差异、双重通
 | Pilot数据库恢复 | 按备份制度 |
 | 敏感附件访问审计 | 每季度 |
 | Ticket Adapter/Hospital Tickets故障与回滚 | Phase 3切换前必做 |
+
+## 14. P1-011 加密备份恢复演练
+
+执行 `npm run p1:011:backup-restore:check` 只验证受控配置且不会发起备份。演练需要项目授权后由运行环境注入
+备份密钥、密钥标识、留存天数和 `PILOT_BACKUP_RESTORE_DRILL_APPROVED=true`。脚本以流式 AES-256-GCM
+生成加密工件后立即记录安全检查点，创建随机命名的隔离恢复库，核对 P1 对象，再删除临时库和工件。失败时必须
+确认不可变失败审计和 `PILOT_RESTORE_DRILL_FAILED`；巡检任务须以获批的最大备份年龄调用
+`assessBackupFreshness`，而非自行假定生产留存策略。
+
+成功后仅审计备份 ID、加密工件哈希、字节数、密钥标识、留存截止、恢复 ID 和稳定结果码。演练临时工件会删除，
+不等同于长期保留的生产备份；真实事故恢复必须仍按医院变更、备份和密钥制度执行，本机演练不是生产 RTO/RPO
+或公网试点通过证明。

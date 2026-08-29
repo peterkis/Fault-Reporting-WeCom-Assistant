@@ -242,3 +242,18 @@ AI、OCR、Redis、MinIO 可按功能降级，不应一律使核心服务 Not Re
 Ticket 状态事务提交
 → 企业微信接受通知
 ```
+
+## 10. P1-011 可执行基线
+
+P1-011 将 `postgres`、`intake`、`outbox` 固定为核心 readiness 输入；任一失败使
+`pilot_core_readiness` 为 0 并触发 `PILOT_CORE_UNAVAILABLE`。`redis`、`ai`、`ocr` 和
+`object_storage` 只能作为可降级依赖：失败记录
+`pilot_optional_dependency_degraded_total{dependency}`，不反向撤销已成功的核心受理。
+
+该边界由 `createPilotOperationalIntake` 包在真实 Inbox→Intake→Ticket→Outbox 组合外：核心事务先提交，
+可选增强随后执行。备份巡检使用获批的最大年龄调用 `assessBackupFreshness`；缺失/过期检查点触发
+`PILOT_BACKUP_STALE`，恢复失败触发 `PILOT_RESTORE_DRILL_FAILED`。普通日志写入器可同步或异步完成：异步
+失败触发、后续成功清除 `PILOT_SECURITY_LOG_WRITE_FAILED`，且不阻塞或回滚核心受理。
+
+告警和 metric label 只接受固定代码/依赖名称；禁止把用户、群、工单、文件、媒体、URL 或 Secret 作为维度。
+敏感日志拒绝使用 `PILOT_SENSITIVE_LOG_REJECTED`，告警只保留分类而不含被拒绝的值。
