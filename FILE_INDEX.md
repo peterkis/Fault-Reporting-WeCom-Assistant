@@ -49,7 +49,7 @@
 - `database/migrations/006_p1_009_pilot_access.sql`、`src/p1-009-pilot-access-workbench.mjs`、`scripts/p1-009-migrate.mjs`、`tests/p1-009-pilot-access-workbench.test.mjs` 与 `docs/28_p1_pilot_access_workbench.md`：Pilot-local 身份、角色、处理组与最小工作台；
 - `database/migrations/007_p1_010_ticket_closure.sql`、`database/migrations/008_p1_010_review_hardening.sql`、`src/p1-010-ticket-closure.mjs`、`scripts/p1-010-migrate.mjs`、`tests/p1-010-ticket-closure.test.mjs` 与 `docs/29_p1_ticket_closure.md`：补充、卡片任务回执、关闭前提醒、确认关闭、自动关闭和重开；
 - `database/migrations/009_p1_011_pilot_operations_baseline.sql`、`src/p1-011-pilot-operations-baseline.mjs`、`src/p1-011-encrypted-backup.mjs`、`scripts/p1-011-migrate.mjs`、`scripts/p1-011-backup-restore.mjs`、`tests/p1-011-*.test.mjs`、`docs/30_p1_pilot_security_operations.md` 与 `evidence/p1-011-pilot-security-operations-report.md`：安全日志、固定指标告警、不可变运维审计和 AES-256-GCM 本机备份恢复演练；
-- `src/p1-012-pilot-e2e.mjs`、`scripts/p1-012-live-e2e.mjs`、`tests/p1-012-*.test.mjs`、`docs/31_p1_e2e_pilot_go_no_go.md` 与 `evidence/p1-012-local-e2e-report.md`：测试群 scoped E2E、真实 Pilot Core 受控演练、WSS 重连、脱敏现场证据和 Go/No-Go 门禁；
+- `src/p1-012-pilot-e2e.mjs`、`scripts/p1-012-live-e2e.mjs`、`tests/p1-012-*.test.mjs`、`docs/31_p1_e2e_pilot_go_no_go.md`、`evidence/p1-012-local-e2e-report.md` 与 `evidence/p1-012-live-e2e.jsonl`：测试群 scoped E2E、真实 Pilot Core 受控演练、WSS 重连、仅本机群 ID 捕获、机器人/群/账号 scoped 的 `@` 前缀（或 callback 已省略前缀时的裸标记）短回执探针、HMAC 关联的客户端显示观察、异常遗留证据声明的分阶段受控审计恢复、脱敏现场证据和 Go/No-Go 门禁；
 - P1-001 至 P1-011 已完成各自本地验收；P1-012 正在执行。没有公网 IP 不阻塞企业微信出站 WSS，但既有注入式 sender/合成卡片仍不构成客户端可见或临床试点验收。
 
 ## 其他规格

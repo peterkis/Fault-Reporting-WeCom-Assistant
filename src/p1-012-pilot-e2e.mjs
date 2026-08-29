@@ -145,6 +145,22 @@ function replyAcknowledged(receipt) {
   return isRecord(receipt) && receipt.errcode === 0;
 }
 
+function providerErrorCode(receiptOrError) {
+  return Number.isInteger(receiptOrError?.errcode) ? receiptOrError.errcode : null;
+}
+
+function replyOutcome(acknowledged, providerErrcode) {
+  if (acknowledged) return 'ACKED';
+  return providerErrcode === null ? 'UNKNOWN' : 'REJECTED';
+}
+
+function safeReplyReceiptCode(receipt) {
+  if (receipt?.errcode !== 0 && Number.isInteger(receipt?.errcode)) {
+    return 'WECOM_REPLY_REJECTED';
+  }
+  return 'WECOM_REPLY_ACK_MISSING';
+}
+
 function safeReplyFailureCode(error) {
   if (Number.isInteger(error?.errcode)) return 'WECOM_REPLY_REJECTED';
   return safeErrorCode(error?.code, 'WECOM_REPLY_FAILED');
@@ -249,16 +265,24 @@ export function createPilotE2EHandler({
     try {
       const receipt = await reply(frame, replyBodyFor(accepted));
       const acknowledged = replyAcknowledged(receipt);
+      const providerErrcode = providerErrorCode(receipt);
       passiveReply = {
+        operation: 'aibot_respond_msg_stream',
         attempted: true,
         acknowledged,
-        ...(acknowledged ? {} : { error_code: 'WECOM_REPLY_ACK_MISSING' }),
+        provider_errcode: providerErrcode,
+        outcome: replyOutcome(acknowledged, providerErrcode),
+        ...(acknowledged ? {} : { error_code: safeReplyReceiptCode(receipt) }),
         within_target: Date.now() - startedAt <= passiveReplyTargetMs,
       };
     } catch (error) {
+      const providerErrcode = providerErrorCode(error);
       passiveReply = {
+        operation: 'aibot_respond_msg_stream',
         attempted: true,
         acknowledged: false,
+        provider_errcode: providerErrcode,
+        outcome: replyOutcome(false, providerErrcode),
         error_code: safeReplyFailureCode(error),
         within_target: Date.now() - startedAt <= passiveReplyTargetMs,
       };

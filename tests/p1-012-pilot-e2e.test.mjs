@@ -93,7 +93,14 @@ test('P1-012 handles a scoped group text frame through Intake then a safe reply 
       intake_status: 'TICKET_CREATED',
       within_target: true,
     },
-    passive_reply: { attempted: true, acknowledged: true, within_target: true },
+    passive_reply: {
+      operation: 'aibot_respond_msg_stream',
+      attempted: true,
+      acknowledged: true,
+      provider_errcode: 0,
+      outcome: 'ACKED',
+      within_target: true,
+    },
     delivery: { attempted: true, status: 'SENT' },
   });
   assert.equal(acceptedRequests.length, 1);
@@ -142,7 +149,14 @@ test('P1-012 records an image-degraded Intake without fabricating a Ticket', asy
       intake_status: 'WAITING_DESCRIPTION',
       within_target: true,
     },
-    passive_reply: { attempted: true, acknowledged: true, within_target: true },
+    passive_reply: {
+      operation: 'aibot_respond_msg_stream',
+      attempted: true,
+      acknowledged: true,
+      provider_errcode: 0,
+      outcome: 'ACKED',
+      within_target: true,
+    },
     delivery: { attempted: false, status: 'NOT_APPLICABLE' },
   });
   assert.equal(replies.length, 1);
@@ -204,7 +218,14 @@ test('P1-012 keeps a transient core failure safe and retryable without leaking t
       retryable: true,
       within_target: true,
     },
-    passive_reply: { attempted: true, acknowledged: true, within_target: true },
+    passive_reply: {
+      operation: 'aibot_respond_msg_stream',
+      attempted: true,
+      acknowledged: true,
+      provider_errcode: 0,
+      outcome: 'ACKED',
+      within_target: true,
+    },
     delivery: { attempted: false, status: 'NOT_APPLICABLE' },
   });
   assert.equal(JSON.stringify(result).includes('password=must-not-appear'), false);
@@ -234,7 +255,14 @@ test('P1-012 keeps a thrown database fault out of the client reply and safe evid
       retryable: true,
       within_target: true,
     },
-    passive_reply: { attempted: true, acknowledged: true, within_target: true },
+    passive_reply: {
+      operation: 'aibot_respond_msg_stream',
+      attempted: true,
+      acknowledged: true,
+      provider_errcode: 0,
+      outcome: 'ACKED',
+      within_target: true,
+    },
     delivery: { attempted: false, status: 'NOT_APPLICABLE' },
   });
   assert.equal(JSON.stringify(result).includes('password=must-not-appear'), false);
@@ -259,11 +287,48 @@ test('P1-012 requires an explicit successful provider receipt for a passive repl
   const result = await handler.handleFrame(textFrame({ msgId: 'p1-012-reply-receipt-missing' }));
 
   assert.deepEqual(result.passive_reply, {
+    operation: 'aibot_respond_msg_stream',
     attempted: true,
     acknowledged: false,
+    provider_errcode: null,
+    outcome: 'UNKNOWN',
     error_code: 'WECOM_REPLY_ACK_MISSING',
     within_target: true,
   });
+});
+
+test('P1-012 preserves a provider reply rejection code without keeping its message text', async () => {
+  const handler = createPilotE2EHandler({
+    testGroupId: TEST_GROUP_ID,
+    testAccountUserIds: [TEST_ACCOUNT_USER_ID],
+    triggerToken: TRIGGER_TOKEN,
+    accept: async () => ({
+      ok: true,
+      result: {
+        intake: { status: 'TICKET_CREATED' },
+        ticket: { ticket_no: 'PILOT-20260829-0003' },
+        lifecycle: { delivery_ids: [] },
+      },
+    }),
+    reply: async () => {
+      const error = new Error('provider response must not be persisted');
+      error.errcode = 40008;
+      throw error;
+    },
+  });
+
+  const result = await handler.handleFrame(textFrame({ msgId: 'p1-012-reply-rejected' }));
+
+  assert.deepEqual(result.passive_reply, {
+    operation: 'aibot_respond_msg_stream',
+    attempted: true,
+    acknowledged: false,
+    provider_errcode: 40008,
+    outcome: 'REJECTED',
+    error_code: 'WECOM_REPLY_REJECTED',
+    within_target: true,
+  });
+  assert.equal(JSON.stringify(result).includes('provider response must not be persisted'), false);
 });
 
 test('P1-012 Go/No-Go requires real client observation but never a public IP for outbound WSS', () => {

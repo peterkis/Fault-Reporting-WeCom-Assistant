@@ -110,7 +110,11 @@ integrationTest('P1-012 exercises the real Pilot core under duplicate, image, bu
   const safeLogs = [];
   const replies = [];
   let senderMode = 'success';
-  let clock = Date.now() + 1_000;
+  // The worker uses this test clock to decide whether a just-committed
+  // Delivery is due. Leave enough headroom for the 100-message burst on a
+  // loaded local PostgreSQL instance, rather than depending on a one-second
+  // wall-clock race.
+  let clock = Date.now() + 60_000;
 
   const outbox = createNotificationOutbox();
   const closure = createTicketClosureService({

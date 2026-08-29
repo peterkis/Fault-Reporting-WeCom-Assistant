@@ -190,35 +190,43 @@ integrationTest('a Ticket number collision fails explicitly and leaves the secon
   const sequence = await pool.query(
     'SELECT last_value::bigint AS value FROM pilot_ticket.ticket_number_seq',
   );
+  const sequenceValue = BigInt(sequence.rows[0].value);
   await pool.query(
     `SELECT setval(
         'pilot_ticket.ticket_number_seq',
         $1::bigint,
         FALSE
      )`,
-    [sequence.rows[0].value],
+    [sequenceValue],
   );
-  const core = createPilotTicketCore({ pool });
-
-  await assert.rejects(
-    () => core.createForIntake({
-      intakeId: second.result.intake.id,
-      occurredAt: secondMessage.received_at,
-      traceId: 'trace-p1-005-number-collision',
-    }),
-    (error) => {
-      assert.equal(error.code, 'PILOT_TICKET_NUMBER_CONFLICT');
-      return true;
-    },
+  try {
+    const core = createPilotTicketCore({ pool });
+    await assert.rejects(
+      () => core.createForIntake({
+        intakeId: second.result.intake.id,
+        occurredAt: secondMessage.received_at,
+        traceId: 'trace-p1-005-number-collision',
+      }),
+      (error) => {
+        assert.equal(error.code, 'PILOT_TICKET_NUMBER_CONFLICT');
+        return true;
+      },
+    );
+  } finally {
+    await pool.query(
+      `SELECT setval(
+          'pilot_ticket.ticket_number_seq',
+          $1::bigint,
+          TRUE
+       )`,
+      [sequenceValue],
+    );
+  }
+  const restoredSequence = await pool.query(
+    'SELECT last_value::bigint AS value, is_called FROM pilot_ticket.ticket_number_seq',
   );
-  await pool.query(
-    `SELECT setval(
-        'pilot_ticket.ticket_number_seq',
-        $1::bigint,
-        TRUE
-     )`,
-    [sequence.rows[0].value + 1n],
-  );
+  assert.equal(BigInt(restoredSequence.rows[0].value), sequenceValue);
+  assert.equal(restoredSequence.rows[0].is_called, true);
   const unlinked = await pool.query(
     `SELECT pilot_ticket_id, status
        FROM intake.service_intake
