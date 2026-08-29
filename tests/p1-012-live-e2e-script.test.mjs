@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
@@ -8,6 +8,7 @@ import { EventEmitter } from 'node:events';
 import {
   createWeComDeliverySender,
   parseP1_012LiveArgs,
+  runP1_012GroupIdCapture,
   runP1_012LiveE2E,
   validateP1_012LiveConfig,
 } from '../scripts/p1-012-live-e2e.mjs';
@@ -54,6 +55,65 @@ class FakeReconnectClient extends EventEmitter {
   }
 }
 
+class FakeTransientReconnectClient extends EventEmitter {
+  constructor(options) {
+    super();
+    this.options = options;
+  }
+
+  connect() {
+    queueMicrotask(() => {
+      this.emit('authenticated');
+      queueMicrotask(() => {
+        this.emit('disconnected', 'test_transient_disconnect');
+        this.emit('reconnecting', 1);
+        queueMicrotask(() => {
+          this.emit('authenticated');
+          queueMicrotask(() => this.emit('message', {
+            cmd: 'aibot_msg_callback',
+            body: {
+              chattype: 'group',
+              chatid: 'p1-012-test-group',
+              from: { userid: 'p1-012-test-account' },
+              msgid: 'p1-012-transient-message',
+              msgtype: 'text',
+              text: { content: 'p1-012-transient-token' },
+            },
+          }));
+        });
+      });
+    });
+  }
+
+  disconnect() {}
+}
+
+class FakeGroupCaptureClient extends EventEmitter {
+  constructor(options) {
+    super();
+    this.options = options;
+  }
+
+  connect() {
+    queueMicrotask(() => {
+      this.emit('authenticated');
+      queueMicrotask(() => this.emit('message', {
+        cmd: 'aibot_msg_callback',
+        body: {
+          chattype: 'group',
+          chatid: 'captured-p1-012-test-group',
+          from: { userid: 'p1-012-test-account' },
+          msgid: 'p1-012-capture-message',
+          msgtype: 'text',
+          text: { content: 'p1-012-capture-token' },
+        },
+      }));
+    });
+  }
+
+  disconnect() {}
+}
+
 class FakePool {
   constructor(options) {
     this.options = options;
@@ -71,6 +131,10 @@ test('P1-012 accepts only an explicit check or approved live scenario', () => {
   assert.deepEqual(
     parseP1_012LiveArgs(['--live', '--scenario=group-text', '--trigger-token=p1-012-run', '--timeout-ms=120000']),
     { mode: 'live', scenario: 'GROUP_TEXT', triggerToken: 'p1-012-run', timeoutMs: 120_000 },
+  );
+  assert.deepEqual(
+    parseP1_012LiveArgs(['--capture-test-group-id', '--apply', '--trigger-token=p1-012-capture-token']),
+    { mode: 'capture_group_id', triggerToken: 'p1-012-capture-token', timeoutMs: 120_000 },
   );
   assert.throws(
     () => parseP1_012LiveArgs(['--live', '--scenario=group-text']),
@@ -133,6 +197,77 @@ test('P1-012 marks an active delivery without an explicit provider ACK as retrya
     await sender({ channel: 'WECOM_DIRECT', targetKey: 'p1-012-test-account' }),
     { ok: false, code: 'WECOM_DELIVERY_ACK_MISSING' },
   );
+});
+
+test('P1-012 waits through a transient SDK disconnect and records only safe reconnect evidence', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'p1-012-live-e2e-'));
+  const outputPath = join(directory, 'evidence.jsonl');
+  try {
+    const result = await runP1_012LiveE2E({
+      env: liveEnvironment({ P1_012_LIVE_TEST_APPROVED: 'true' }),
+      options: parseP1_012LiveArgs([
+        '--live',
+        '--scenario=group-text',
+        '--trigger-token=p1-012-transient-token',
+      ]),
+      Client: FakeTransientReconnectClient,
+      PoolClass: FakePool,
+      outputPath,
+      createHandler: () => ({
+        async handleFrame() {
+          return {
+            outcome: 'processed',
+            scenario: 'GROUP_TEXT',
+            core: { accepted: true },
+            passive_reply: { acknowledged: true },
+          };
+        },
+      }),
+    });
+    assert.deepEqual(result, { ok: true, scenario: 'GROUP_TEXT' });
+    const evidence = await readFile(outputPath, 'utf8');
+    assert.match(evidence, /p1_012_wss_disconnected/u);
+    assert.match(evidence, /p1_012_wss_reconnecting/u);
+    assert.match(evidence, /p1_012_wss_reauthenticated/u);
+    assert.equal(evidence.includes('p1-012-test-group'), false);
+    assert.equal(evidence.includes('p1-012-test-account'), false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('P1-012 captures a scoped test-group id only into the local config and hashes its evidence', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'p1-012-group-id-capture-'));
+  const outputPath = join(directory, 'evidence.jsonl');
+  const envFilePath = join(directory, '.env.pilot');
+  await writeFile(envFilePath, 'PILOT_TEST_GROUP_ID=stale-p1-012-group\nPRESERVED_VALUE=1\n', 'utf8');
+  try {
+    const result = await runP1_012GroupIdCapture({
+      env: liveEnvironment({
+        PILOT_TEST_GROUP_ID: 'stale-p1-012-group',
+        P1_012_GROUP_ID_CAPTURE_APPROVED: 'true',
+      }),
+      options: parseP1_012LiveArgs([
+        '--capture-test-group-id',
+        '--apply',
+        '--trigger-token=p1-012-capture-token',
+      ]),
+      Client: FakeGroupCaptureClient,
+      envFilePath,
+      outputPath,
+    });
+    assert.deepEqual(result, { ok: true, configuration_updated: true });
+    const updatedConfig = await readFile(envFilePath, 'utf8');
+    assert.match(updatedConfig, /^PILOT_TEST_GROUP_ID=captured-p1-012-test-group$/mu);
+    assert.match(updatedConfig, /^PRESERVED_VALUE=1$/mu);
+    const evidence = await readFile(outputPath, 'utf8');
+    assert.match(evidence, /p1_012_group_id_capture_applied/u);
+    assert.match(evidence, /group_id_hash/u);
+    assert.equal(evidence.includes('captured-p1-012-test-group'), false);
+    assert.equal(evidence.includes('p1-012-test-account'), false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test('P1-012 requires one-process approval and records an outbound-WSS reconnect without a public listener', async () => {

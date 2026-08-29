@@ -14,6 +14,8 @@
 
 企业微信[上传临时素材（101838）](https://developer.work.weixin.qq.com/document/path/101838)是出站 `file/image/voice/video` 的协议来源：上传必须经过初始化、分片和完成三步，且会话 30 分钟、媒体 3 天、分片及类型上限均为提供方硬约束。项目将其整理为 `docs/18_wecom_temporary_media_constraints.md`；[回复消息（101836）](https://developer.work.weixin.qq.com/document/path/101836)定义回调绑定媒体回复的 `media_id` 引用和时限。
 
+企业微信[全局错误码（90313）](https://developer.work.weixin.qq.com/document/path/90313)是服务端 `errcode` 的动态权威目录。项目不复制全量表，而在 `docs/32_wecom_global_error_code_governance.md` 固化数值优先于 `errmsg`、本项目关联代码、稳定内部映射、重试和脱敏记录规则。
+
 ## 3. 架构演进
 
 ### V1.0/V1.1 方向

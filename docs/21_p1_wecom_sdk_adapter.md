@@ -64,6 +64,8 @@ adaptWeComSdkFrame(frame, { receivedAt })
 
 `reason` 提供稳定、无敏感值的细分原因，例如 `MESSAGE_ID_REQUIRED`、`MEDIA_REFERENCE_INVALID`、`MIXED_ITEM_INVALID`、`QUOTE_INVALID` 和 `RECEIVED_AT_INVALID`。提供方原文不进入结果。非普通消息类型在检查普通消息专属的会话字段前分流为 `WECOM_UNSUPPORTED_MESSAGE_TYPE`。
 
+本任务不调用企业微信服务端命令，因而没有 `provider_errcode` 可返回。后续回复、主动投递、卡片或媒体 Adapter 的提供方错误必须在通道/Delivery 边界按 `docs/32_wecom_global_error_code_governance.md` 保留数值、内部稳定码和结果类别；不得把 `errmsg` 添加到本 Adapter 的公开结果。
+
 P1-002 只有确定性幂等键，不拥有可靠重复事实。后续 P1-003 已用数据库唯一约束完成持久化判定，并以成功结果中的 `duplicate` 标志和首个结果快照表达重放；它没有把重复投递误报成 Adapter 错误。
 
 ## 本地验收

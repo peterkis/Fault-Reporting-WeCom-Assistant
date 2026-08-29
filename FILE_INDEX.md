@@ -56,6 +56,7 @@
 
 - `docs/`：PRD、架构、领域、识别、状态、API、数据、安全、测试与运维；
 - `docs/18_wecom_temporary_media_constraints.md`：企业微信临时素材三步上传、短期媒体租约、回复/主动投递、时效、限流、隐私和验收约束；
+- `docs/32_wecom_global_error_code_governance.md`：企业微信全局错误码权威索引、项目稳定映射、重试纪律、脱敏记录和排障规则；
 - `adr/`：架构决策及其取代关系；
 - `architecture/`：Mermaid 架构图；
 - `contracts/`：机器可读接口和事件契约；

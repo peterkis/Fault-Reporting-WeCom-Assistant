@@ -10,6 +10,8 @@
 `details` 中被扫描后丢弃，不能进入输出记录。日志身份哈希密钥必须由运行环境受控注入，不能写入
 仓库、浏览器、证据或告警。
 
+企业微信调用可记录数值 `provider_errcode` 与稳定内部码，但不能将 `errmsg`、原始 `req_id` 或提供方媒体/会话标识加入普通日志、metric label、告警或审计 metadata；具体映射见 `docs/32_wecom_global_error_code_governance.md`。
+
 最小处理端的 HTML、CSS、JavaScript 分离为同源静态资源；响应使用同源 CSP、`nosniff`、拒绝嵌入和
 `no-referrer`。CSP 不使用 `unsafe-inline` 或 `unsafe-eval`。边缘 TLS、真实反向代理和生产身份认证
 仍须在公网 Pilot 进入前独立验证。

@@ -30,3 +30,5 @@ Worker 用 `FOR UPDATE SKIP LOCKED` 与租约领取 Delivery；每次尝试均�
 执行 `npm run p1:007:migrate` 和 `npm run test:p1:007:integration`。`sender` 是显式
 注入依赖；本任务没有调用企业微信主动发送 API。因此 Delivery 为 `SENT` 仅说明
 注入 sender 成功，不能证明企业微信 ACK、客户端显示、提醒或临床人员收到通知。
+
+接入真实企业微信 sender 后，每个 Attempt 必须在脱敏审计边界记录实际 `provider_errcode`（如有）、稳定内部码和 `ACKED`/`REJECTED`/`UNKNOWN`，并按 `docs/32_wecom_global_error_code_governance.md` 决定等待窗口、受控重建输入或人工处置。它不改变本任务现有 `sender` 注入式本地验收结论。

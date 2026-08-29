@@ -1,4 +1,5 @@
-import { mkdir, appendFile } from 'node:fs/promises';
+import { mkdir, appendFile, readFile, writeFile } from 'node:fs/promises';
+import { createHmac } from 'node:crypto';
 import { dirname, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import AiBot from '@wecom/aibot-node-sdk';
@@ -56,6 +57,22 @@ export function parseP1_012LiveArgs(argv) {
   if (argv.length === 0 || (argv.length === 1 && argv[0] === '--check')) {
     return Object.freeze({ mode: 'check' });
   }
+  const captureGroupId = argv.includes('--capture-test-group-id');
+  if (captureGroupId) {
+    const triggerArgument = argv.find((argument) => argument.startsWith('--trigger-token='));
+    const timeoutArgument = argv.find((argument) => argument.startsWith('--timeout-ms='));
+    const expectedCount = timeoutArgument ? 4 : 3;
+    if (argv.includes('--live') || !argv.includes('--apply') || argv.length !== expectedCount || !triggerArgument) {
+      throw failure('P1_012_LIVE_ARGS');
+    }
+    return Object.freeze({
+      mode: 'capture_group_id',
+      triggerToken: safeTriggerToken(triggerArgument.slice('--trigger-token='.length)),
+      timeoutMs: timeoutArgument
+        ? positiveInteger(timeoutArgument.slice('--timeout-ms='.length), 'P1_012_LIVE_ARGS', 10_000, 900_000)
+        : DEFAULT_TIMEOUT_MS,
+    });
+  }
   const live = argv.includes('--live');
   const scenarioArgument = argv.find((argument) => argument.startsWith('--scenario='));
   const triggerArgument = argv.find((argument) => argument.startsWith('--trigger-token='));
@@ -79,6 +96,17 @@ export function parseP1_012LiveArgs(argv) {
   });
 }
 
+function publicSummaryFor(pilot) {
+  return Object.freeze({
+    phase: 'P1',
+    environment: pilot.environment,
+    public_listener_required: false,
+    ai_triage_enabled: false,
+    ocr_enabled: false,
+    hospital_tickets_enabled: false,
+  });
+}
+
 /**
  * Validates only the outbound-WSS Pilot prerequisites. A public inbound HTTP
  * listener is deliberately not a P1-012 requirement.
@@ -96,14 +124,28 @@ export function validateP1_012LiveConfig(env = process.env) {
     pilot,
     logIdentityHashKey,
     testAccountUserId,
-    public_summary: Object.freeze({
-      phase: 'P1',
-      environment: pilot.environment,
-      public_listener_required: false,
-      ai_triage_enabled: false,
-      ocr_enabled: false,
-      hospital_tickets_enabled: false,
-    }),
+    public_summary: publicSummaryFor(pilot),
+  });
+}
+
+/**
+ * A wrong or absent group id must not prevent an operator from safely
+ * capturing the callback-provided value into the local Pilot configuration.
+ */
+export function validateP1_012GroupIdCaptureConfig(env = process.env) {
+  let pilot;
+  try {
+    pilot = validatePilotConfig({ ...env, PILOT_TEST_GROUP_ID: 'p1-012-capture-pending' });
+  } catch {
+    throw failure('P1_012_PILOT_CONFIG_INVALID');
+  }
+  const logIdentityHashKey = nonEmpty(env.PILOT_LOG_IDENTITY_HASH_KEY, 'P1_012_LOG_HASH_KEY_MISSING', 4_096);
+  const testAccountUserId = nonEmpty(env.PILOT_TEST_ACCOUNT_USER_ID, 'P1_012_TEST_ACCOUNT_REQUIRED', 128);
+  return Object.freeze({
+    pilot,
+    logIdentityHashKey,
+    testAccountUserId,
+    public_summary: publicSummaryFor(pilot),
   });
 }
 
@@ -132,6 +174,61 @@ function safeWssErrorCode(error) {
 
 function safeClientLogger() {
   return { debug() {}, info() {}, warn() {}, error() {} };
+}
+
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function callbackContainsTrigger(frame, triggerToken) {
+  const body = frame?.body;
+  if (!isRecord(body)) return false;
+  if (body.msgtype === 'text') {
+    return typeof body.text?.content === 'string' && body.text.content.includes(triggerToken);
+  }
+  if (body.msgtype === 'mixed') {
+    return Array.isArray(body.mixed?.msg_item) && body.mixed.msg_item.some((item) => (
+      item?.msgtype === 'text'
+      && typeof item.text?.content === 'string'
+      && item.text.content.includes(triggerToken)
+    ));
+  }
+  return false;
+}
+
+function capturedGroupId(frame, { testAccountUserId, triggerToken }) {
+  const body = frame?.body;
+  if (frame?.cmd !== 'aibot_msg_callback' || !isRecord(body) || body.chattype !== 'group') return null;
+  if (body.from?.userid !== testAccountUserId || !callbackContainsTrigger(frame, triggerToken)) return null;
+  if (typeof body.chatid !== 'string' || !/^[^\s#=]{1,128}$/u.test(body.chatid)) return null;
+  return body.chatid;
+}
+
+function groupIdHash(groupId, logIdentityHashKey) {
+  return createHmac('sha256', logIdentityHashKey).update(groupId).digest('hex').slice(0, 32);
+}
+
+async function updatePilotTestGroupId(envFilePath, groupId) {
+  const current = await readFile(envFilePath, 'utf8');
+  const linePattern = /^PILOT_TEST_GROUP_ID=.*$/mu;
+  if (!linePattern.test(current)) {
+    throw failure('P1_012_GROUP_ID_CONFIG_LINE_MISSING');
+  }
+  const next = current.replace(linePattern, `PILOT_TEST_GROUP_ID=${groupId}`);
+  if (next === current) return false;
+  await writeFile(envFilePath, next, { encoding: 'utf8' });
+  return true;
+}
+
+function createWssClient(Client, config) {
+  return new Client({
+    botId: config.pilot.wecom.botId,
+    secret: config.pilot.wecom.botSecret,
+    wsUrl: config.pilot.wecom.wsUrl,
+    reconnectInterval: 1_000,
+    maxReconnectAttempts: -1,
+    logger: safeClientLogger(),
+  });
 }
 
 export function createWeComDeliverySender(client) {
@@ -210,12 +307,17 @@ function liveApproved(env) {
   return String(env.P1_012_LIVE_TEST_APPROVED ?? '').toLowerCase() === 'true';
 }
 
+function groupIdCaptureApproved(env) {
+  return String(env.P1_012_GROUP_ID_CAPTURE_APPROVED ?? '').toLowerCase() === 'true';
+}
+
 export async function runP1_012LiveE2E({
   env = process.env,
   options,
   Client = AiBot.WSClient,
   PoolClass = Pool,
   outputPath = evidencePath(),
+  createHandler = createLiveComposition,
 } = {}) {
   if (!options || options.mode !== 'live') {
     throw failure('P1_012_LIVE_ARGS');
@@ -249,16 +351,20 @@ export async function runP1_012LiveE2E({
       console.log(JSON.stringify(record));
       return record;
     };
-    client = new Client({
-      botId: config.pilot.wecom.botId,
-      secret: config.pilot.wecom.botSecret,
-      wsUrl: config.pilot.wecom.wsUrl,
-      heartbeatInterval: 1_000,
-      logger: safeClientLogger(),
-    });
+    const fail = async (errorCode) => {
+      try {
+        await writeEvent('p1_012_live_e2e_failed', {
+          ...config.public_summary,
+          scenario: options.scenario,
+          error_code: errorCode,
+        });
+      } catch {}
+      await finish({ ok: false, error_code: errorCode });
+    };
+    client = createWssClient(Client, config);
     const handler = options.scenario === 'RECONNECT'
       ? null
-      : createLiveComposition({ pool, client, config, options, writeEvent });
+      : createHandler({ pool, client, config, options, writeEvent });
 
     client.on('authenticated', () => {
       void (async () => {
@@ -269,11 +375,11 @@ export async function runP1_012LiveE2E({
         });
         if (options.scenario !== 'RECONNECT') return;
         if (authenticatedCount === 1) {
-          try { client.disconnect(); } catch { await finish({ ok: false, error_code: 'WECOM_DISCONNECT_FAILED' }); }
+          try { client.disconnect(); } catch { await fail('WECOM_DISCONNECT_FAILED'); }
           return;
         }
         await finish({ ok: true, scenario: 'RECONNECT' });
-      })().catch(() => { void finish({ ok: false, error_code: 'P1_012_EVIDENCE_WRITE_FAILED' }); });
+      })().catch(() => { void fail('P1_012_EVIDENCE_WRITE_FAILED'); });
     });
     client.on('message', (frame) => {
       if (handler === null || stopping) return;
@@ -285,28 +391,135 @@ export async function runP1_012LiveE2E({
           ok: result.outcome === 'processed' && result.core.accepted === true && result.passive_reply.acknowledged === true,
           scenario: result.scenario,
         });
-      })().catch(() => { void finish({ ok: false, error_code: 'P1_012_LIVE_HANDLER_FAILED' }); });
+      })().catch(() => { void fail('P1_012_LIVE_HANDLER_FAILED'); });
     });
     client.on('disconnected', () => {
       if (stopping) return;
-      if (reconnectExpected && authenticatedCount === 1) {
-        reconnectExpected = false;
-        setTimeout(() => {
-          try { client.connect(); } catch { void finish({ ok: false, error_code: 'WECOM_RECONNECT_FAILED' }); }
-        }, 250);
-        return;
-      }
-      void finish({ ok: false, error_code: 'WECOM_DISCONNECTED_BEFORE_RESULT' });
+      void (async () => {
+        await writeEvent('p1_012_wss_disconnected', {
+          ...config.public_summary,
+          scenario: options.scenario,
+        });
+        if (reconnectExpected && authenticatedCount === 1) {
+          reconnectExpected = false;
+          setTimeout(() => {
+            try { client.connect(); } catch { void fail('WECOM_RECONNECT_FAILED'); }
+          }, 250);
+        }
+      })().catch(() => { void fail('P1_012_EVIDENCE_WRITE_FAILED'); });
     });
-    client.on('error', (error) => { void finish({ ok: false, error_code: safeWssErrorCode(error) }); });
-    timer = setTimeout(() => { void finish({ ok: false, error_code: 'P1_012_LIVE_TIMEOUT' }); }, options.timeoutMs);
+    client.on('reconnecting', () => {
+      if (stopping) return;
+      void writeEvent('p1_012_wss_reconnecting', {
+        ...config.public_summary,
+        scenario: options.scenario,
+      }).catch(() => { void fail('P1_012_EVIDENCE_WRITE_FAILED'); });
+    });
+    client.on('error', (error) => { void fail(safeWssErrorCode(error)); });
+    timer = setTimeout(() => { void fail('P1_012_LIVE_TIMEOUT'); }, options.timeoutMs);
     void writeEvent('p1_012_wss_connect_requested', {
       ...config.public_summary,
       scenario: options.scenario,
       timeout_ms: options.timeoutMs,
     }).then(() => {
-      try { client.connect(); } catch { void finish({ ok: false, error_code: 'WECOM_CONNECT_THROWN' }); }
-    }).catch(() => { void finish({ ok: false, error_code: 'P1_012_EVIDENCE_WRITE_FAILED' }); });
+      try { client.connect(); } catch { void fail('WECOM_CONNECT_THROWN'); }
+    }).catch(() => { void fail('P1_012_EVIDENCE_WRITE_FAILED'); });
+  });
+  return completion;
+}
+
+/**
+ * Captures a callback's group id only after an operator has supplied the
+ * configured test account and a one-time token. The raw id is written only to
+ * the local .env.pilot line; all evidence keeps a keyed hash instead.
+ */
+export async function runP1_012GroupIdCapture({
+  env = process.env,
+  options,
+  Client = AiBot.WSClient,
+  envFilePath = resolve(process.cwd(), '.env.pilot'),
+  outputPath = evidencePath(),
+} = {}) {
+  if (!options || options.mode !== 'capture_group_id') {
+    throw failure('P1_012_LIVE_ARGS');
+  }
+  if (!groupIdCaptureApproved(env)) {
+    throw failure('P1_012_GROUP_ID_CAPTURE_APPROVAL_REQUIRED');
+  }
+  const config = validateP1_012GroupIdCaptureConfig(env);
+  let client;
+  let timer;
+  let stopping = false;
+  let authenticatedCount = 0;
+  const completion = new Promise((resolveCompletion) => {
+    const finish = (result) => {
+      if (stopping) return;
+      stopping = true;
+      clearTimeout(timer);
+      try { client?.disconnect(); } catch {}
+      resolveCompletion(result);
+    };
+    const writeEvent = async (event, extra = {}) => {
+      const record = Object.freeze({ test_id: TEST_ID, event, ...extra });
+      await appendEvidence(outputPath, record);
+      console.log(JSON.stringify(record));
+      return record;
+    };
+    const fail = async (errorCode) => {
+      try {
+        await writeEvent('p1_012_group_id_capture_failed', {
+          ...config.public_summary,
+          error_code: errorCode,
+        });
+      } catch {}
+      finish({ ok: false, error_code: errorCode });
+    };
+    client = createWssClient(Client, config);
+    client.on('authenticated', () => {
+      void writeEvent(authenticatedCount++ === 0 ? 'p1_012_group_id_capture_ready' : 'p1_012_wss_reauthenticated', {
+        ...config.public_summary,
+        mode: 'capture_group_id',
+      }).catch(() => { void fail('P1_012_EVIDENCE_WRITE_FAILED'); });
+    });
+    client.on('message', (frame) => {
+      if (stopping) return;
+      void (async () => {
+        const groupId = capturedGroupId(frame, {
+          testAccountUserId: config.testAccountUserId,
+          triggerToken: options.triggerToken,
+        });
+        if (groupId === null) return;
+        const configurationUpdated = await updatePilotTestGroupId(envFilePath, groupId);
+        await writeEvent('p1_012_group_id_capture_applied', {
+          ...config.public_summary,
+          configuration_updated: configurationUpdated,
+          group_id_hash: groupIdHash(groupId, config.logIdentityHashKey),
+        });
+        finish({ ok: true, configuration_updated: configurationUpdated });
+      })().catch((error) => { void fail(error?.code ?? 'P1_012_GROUP_ID_CAPTURE_FAILED'); });
+    });
+    client.on('disconnected', () => {
+      if (stopping) return;
+      void writeEvent('p1_012_wss_disconnected', {
+        ...config.public_summary,
+        mode: 'capture_group_id',
+      }).catch(() => { void fail('P1_012_EVIDENCE_WRITE_FAILED'); });
+    });
+    client.on('reconnecting', () => {
+      if (stopping) return;
+      void writeEvent('p1_012_wss_reconnecting', {
+        ...config.public_summary,
+        mode: 'capture_group_id',
+      }).catch(() => { void fail('P1_012_EVIDENCE_WRITE_FAILED'); });
+    });
+    client.on('error', (error) => { void fail(safeWssErrorCode(error)); });
+    timer = setTimeout(() => { void fail('P1_012_GROUP_ID_CAPTURE_TIMEOUT'); }, options.timeoutMs);
+    void writeEvent('p1_012_group_id_capture_connect_requested', {
+      ...config.public_summary,
+      timeout_ms: options.timeoutMs,
+    }).then(() => {
+      try { client.connect(); } catch { void fail('WECOM_CONNECT_THROWN'); }
+    }).catch(() => { void fail('P1_012_EVIDENCE_WRITE_FAILED'); });
   });
   return completion;
 }
@@ -315,7 +528,9 @@ async function main() {
   let options;
   try {
     options = parseP1_012LiveArgs(process.argv.slice(2));
-    const config = validateP1_012LiveConfig(process.env);
+    const config = options.mode === 'capture_group_id'
+      ? validateP1_012GroupIdCaptureConfig(process.env)
+      : validateP1_012LiveConfig(process.env);
     if (options.mode === 'check') {
       console.log(JSON.stringify({
         test_id: TEST_ID,
@@ -331,13 +546,23 @@ async function main() {
     return;
   }
   try {
-    const result = await runP1_012LiveE2E({ options });
+    const result = options.mode === 'capture_group_id'
+      ? await runP1_012GroupIdCapture({ options })
+      : await runP1_012LiveE2E({ options });
     if (!result.ok) {
-      console.log(JSON.stringify({ test_id: TEST_ID, event: 'p1_012_live_e2e_failed', error_code: result.error_code ?? 'P1_012_LIVE_FAILED' }));
+      console.log(JSON.stringify({
+        test_id: TEST_ID,
+        event: options.mode === 'capture_group_id' ? 'p1_012_group_id_capture_failed' : 'p1_012_live_e2e_failed',
+        error_code: result.error_code ?? 'P1_012_LIVE_FAILED',
+      }));
       process.exitCode = 2;
     }
   } catch (error) {
-    console.log(JSON.stringify({ test_id: TEST_ID, event: 'p1_012_live_e2e_failed', error_code: error?.code ?? 'P1_012_LIVE_FAILED' }));
+    console.log(JSON.stringify({
+      test_id: TEST_ID,
+      event: options?.mode === 'capture_group_id' ? 'p1_012_group_id_capture_failed' : 'p1_012_live_e2e_failed',
+      error_code: error?.code ?? 'P1_012_LIVE_FAILED',
+    }));
     process.exitCode = 2;
   }
 }

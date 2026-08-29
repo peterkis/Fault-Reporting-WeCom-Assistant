@@ -223,6 +223,8 @@ WECOM_DUPLICATE_MESSAGE
 
 P1-002 的入站转换只返回 `WECOM_INVALID_FRAME` 或 `WECOM_UNSUPPORTED_MESSAGE_TYPE`，并附无敏感值的稳定 `reason`。`WECOM_DUPLICATE_MESSAGE` 由 P1-003 的持久化 Inbox 判定；Adapter 只生成 `WECOM_AIBOT:{msg_id}` 幂等键，不能用进程内记忆替代数据库唯一约束。
 
+`WECOM_*` 是项目稳定分类，不是企业微信 `errcode` 的替代品。调用实际企业微信命令时，必须同时保留数值 `provider_errcode`（如存在）、内部码、操作和 `ACKED`/`REJECTED`/`UNKNOWN` 结果；不得按 `errmsg` 分支或写入 `errmsg`。全局错误码的权威索引、映射与重试规则见 [错误码引用与排障规范](32_wecom_global_error_code_governance.md)。
+
 ## 11. 健康指标
 
 ```text
@@ -248,7 +250,7 @@ wecom_callback_processing_seconds
 trace_id
 provider
 msg_id
-req_id
+req_id_hash
 chat_type
 chat_id_hash
 sender_user_id_hash
@@ -256,6 +258,9 @@ msg_type
 intake_id
 ticket_id
 outbox_id
+provider_errcode
+internal_error_code
+delivery_outcome
 sdk_version
 connection_generation
 ```
@@ -266,5 +271,5 @@ connection_generation
 - 原始患者文本；
 - aeskey；
 - 完整媒体 URL；
-- upload_id、media_id 或上传命令 req_id；
+- errmsg、原始 req_id、upload_id 或 media_id；
 - 未脱敏截图 OCR。

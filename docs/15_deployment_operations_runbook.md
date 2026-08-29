@@ -134,7 +134,16 @@ Phase 3 还必须增加映射抽样、迁移批次对账、通知去重和回滚
 
 Phase 3增加：Adapter积压、映射冲突、未解释对账差异、双重通知和切换后Pilot正式写入数。
 
-## 7. Runbook：WebSocket 未认证
+## 7. Runbook：企业微信提供方错误码
+
+1. 记录操作、`provider_errcode`（如有）、稳定内部码、`ACKED`/`REJECTED`/`UNKNOWN`、尝试次数、SDK 版本、连接代次和项目 `trace_id`；不得复制 `errmsg`、Secret、原始 `req_id`、媒体标识或内容。
+2. 先查询[企业微信全局错误码](https://developer.work.weixin.qq.com/document/path/90313)，再查询对应命令文档；项目的映射与脱敏字段规则见 `docs/32_wecom_global_error_code_governance.md`。
+3. `-1` 只对明确被拒绝且幂等的调用进行有界退避，最多 3 次；`45009` 等限流只等待受控配额窗口，禁止忙等或扩容规避。
+4. 参数、媒体、目标、卡片或回调上下文错误先修复输入/配置。`media_id` 过期时重新上传受控素材；`req_id` 过期或非法时结束当前被动回复，不能自动转为主动发送。
+5. 超时、断线或无回执记为 `UNKNOWN`，按 Delivery 幂等键、审计事实和必要的客户端观察对账；不得盲目重发造成重复通知。
+6. 新的或含义变化的数值在核对官方来源、补充脱敏证据和 Contract Test 前，不得写成稳定平台结论。
+
+## 8. Runbook：WebSocket 未认证
 
 1. 检查DNS/TLS/WSS；
 2. 检查Secret轮换和单活锁；
@@ -144,7 +153,7 @@ Phase 3增加：Adapter积压、映射冲突、未解释对账差异、双重通
 6. 恢复后幂等补发必要通知；
 7. 记录事件，禁止打印Secret。
 
-## 8. Runbook：Pilot Ticket Core 不可用
+## 9. Runbook：Pilot Ticket Core 不可用
 
 1. Channel Message优先可靠落库；
 2. Intake标记 `TICKET_CREATE_PENDING`；
@@ -157,7 +166,7 @@ Phase 3增加：Adapter积压、映射冲突、未解释对账差异、双重通
 
 临时回执文案和最大补建时限必须在P1-D2冻结。
 
-## 9. Runbook：AI/OCR 不可用
+## 10. Runbook：AI/OCR 不可用
 
 1. 标记降级并停止新推理；
 2. Pilot Ticket继续建单和通知；
@@ -165,7 +174,7 @@ Phase 3增加：Adapter积压、映射冲突、未解释对账差异、双重通
 4. 告警并记录影响数量；
 5. 恢复后按批准策略补算。
 
-## 10. Runbook：Outbox 堆积
+## 11. Runbook：Outbox 堆积
 
 1. 检查企业微信连接、错误码和限流；
 2. 暂停低优先级消息；
@@ -174,7 +183,7 @@ Phase 3增加：Adapter积压、映射冲突、未解释对账差异、双重通
 5. 恢复后限速并合并公共进展；
 6. 不修改已发生的Ticket事实。
 
-## 11. Runbook：Phase 3 Adapter/Hospital Tickets 不可用
+## 12. Runbook：Phase 3 Adapter/Hospital Tickets 不可用
 
 1. 确认当前cutover_state和写入所有权；
 2. 停止可能形成双写的自动重试；
@@ -184,7 +193,7 @@ Phase 3增加：Adapter积压、映射冲突、未解释对账差异、双重通
 6. 恢复后幂等重放并逐对象对账；
 7. 未解释差异不得自动覆盖。
 
-## 12. Runbook：疑似敏感数据泄漏
+## 13. Runbook：疑似敏感数据泄漏
 
 1. 停止相关日志、导出和媒体访问；
 2. 保存审计证据；
@@ -194,7 +203,7 @@ Phase 3增加：Adapter积压、映射冲突、未解释对账差异、双重通
 6. 修复脱敏/权限规则；
 7. 完成事件报告和复测。
 
-## 13. 演练频率
+## 14. 演练频率
 
 | 演练 | 频率 |
 |---|---|
@@ -207,7 +216,7 @@ Phase 3增加：Adapter积压、映射冲突、未解释对账差异、双重通
 | 敏感附件访问审计 | 每季度 |
 | Ticket Adapter/Hospital Tickets故障与回滚 | Phase 3切换前必做 |
 
-## 14. P1-011 加密备份恢复演练
+## 15. P1-011 加密备份恢复演练
 
 执行 `npm run p1:011:backup-restore:check` 只验证受控配置且不会发起备份。演练需要项目授权后由运行环境注入
 备份密钥、密钥标识、留存天数和 `PILOT_BACKUP_RESTORE_DRILL_APPROVED=true`。脚本以流式 AES-256-GCM
