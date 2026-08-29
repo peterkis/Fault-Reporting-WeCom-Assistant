@@ -1,10 +1,8 @@
 import { createHash } from 'node:crypto';
 
-export const TEST_ID = 'P1-002';
-export const SDK_VERSION = '1.0.6';
-export const NORMALIZED_MESSAGE_SCHEMA_VERSION = 1;
-export const WECOM_PROVIDER = 'WECOM_AIBOT';
-export const WECOM_ADAPTER_ERROR_CODES = Object.freeze({
+const NORMALIZED_MESSAGE_SCHEMA_VERSION = 1;
+const WECOM_PROVIDER = 'WECOM_AIBOT';
+const WECOM_ADAPTER_ERROR_CODES = Object.freeze({
   invalidFrame: 'WECOM_INVALID_FRAME',
   unsupportedMessageType: 'WECOM_UNSUPPORTED_MESSAGE_TYPE',
 });
@@ -31,8 +29,12 @@ function isRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function isStorageSafeString(value) {
+  return typeof value === 'string' && value.isWellFormed() && !value.includes('\u0000');
+}
+
 function isBoundedString(value, maxLength) {
-  return isNonEmptyString(value) && value.length <= maxLength;
+  return isNonEmptyString(value) && isStorageSafeString(value) && value.length <= maxLength;
 }
 
 function isIdentifier(value, maxLength = 256) {
@@ -70,7 +72,7 @@ function validateMixedContent(mixed) {
     if (!isRecord(item) || !['text', 'image'].includes(item.msgtype)) {
       return invalidFrame('MIXED_ITEM_INVALID');
     }
-    if (item.msgtype === 'text' && (!isRecord(item.text) || !isBoundedString(item.text.content, 20_000))) {
+    if (item.msgtype === 'text' && (!isRecord(item.text) || !validNormalizedText(item.text.content))) {
       return invalidFrame('MIXED_ITEM_INVALID');
     }
     if (item.msgtype === 'image' && !validMediaReference(item.image)) {
@@ -88,13 +90,13 @@ function validateQuote(quote) {
   if (!isRecord(quote) || !['text', 'image', 'mixed', 'voice', 'file'].includes(quote.msgtype)) {
     return invalidFrame('QUOTE_INVALID');
   }
-  if (quote.msgtype === 'text' && (!isRecord(quote.text) || !isBoundedString(quote.text.content, 20_000))) {
+  if (quote.msgtype === 'text' && (!isRecord(quote.text) || !validNormalizedText(quote.text.content))) {
     return invalidFrame('QUOTE_INVALID');
   }
   if (['image', 'file'].includes(quote.msgtype) && !validMediaReference(quote[quote.msgtype])) {
     return invalidFrame('QUOTE_INVALID');
   }
-  if (quote.msgtype === 'voice' && (!isRecord(quote.voice) || !isBoundedString(quote.voice.content, 20_000))) {
+  if (quote.msgtype === 'voice' && (!isRecord(quote.voice) || !validNormalizedText(quote.voice.content))) {
     return invalidFrame('QUOTE_INVALID');
   }
   if (quote.msgtype === 'mixed' && validateMixedContent(quote.mixed)) {
@@ -124,6 +126,9 @@ function validateFrame(frame) {
   if (!isIdentifier(body.aibotid)) {
     return invalidFrame('BOT_ID_REQUIRED');
   }
+  if (!SUPPORTED_MESSAGE_TYPES.includes(body.msgtype)) {
+    return adapterError(WECOM_ADAPTER_ERROR_CODES.unsupportedMessageType, 'MESSAGE_TYPE_UNSUPPORTED');
+  }
   if (!['single', 'group'].includes(body.chattype)) {
     return invalidFrame('CHAT_TYPE_INVALID');
   }
@@ -133,19 +138,16 @@ function validateFrame(frame) {
   if (!isRecord(body.from) || !isIdentifier(body.from.userid)) {
     return invalidFrame('SENDER_USER_ID_REQUIRED');
   }
-  if (!SUPPORTED_MESSAGE_TYPES.includes(body.msgtype)) {
-    return adapterError(WECOM_ADAPTER_ERROR_CODES.unsupportedMessageType, 'MESSAGE_TYPE_UNSUPPORTED');
-  }
   if (!validProviderCreateTime(body.create_time)) {
     return invalidFrame('CREATE_TIME_INVALID');
   }
-  if (body.msgtype === 'text' && (!isRecord(body.text) || !isBoundedString(body.text.content, 20_000))) {
+  if (body.msgtype === 'text' && (!isRecord(body.text) || !validNormalizedText(body.text.content))) {
     return invalidFrame('TEXT_CONTENT_REQUIRED');
   }
   if (DOWNLOADABLE_MEDIA_TYPES.includes(body.msgtype) && !validMediaReference(body[body.msgtype])) {
     return invalidFrame('MEDIA_REFERENCE_INVALID');
   }
-  if (body.msgtype === 'voice' && (!isRecord(body.voice) || !isBoundedString(body.voice.content, 20_000))) {
+  if (body.msgtype === 'voice' && (!isRecord(body.voice) || !validNormalizedText(body.voice.content))) {
     return invalidFrame('VOICE_TRANSCRIPT_REQUIRED');
   }
   if (body.msgtype === 'mixed') {
@@ -165,9 +167,17 @@ function cleanText(value) {
     .toLowerCase();
 }
 
+function validNormalizedText(value) {
+  return isBoundedString(value, 20_000) && cleanText(value).length <= 20_000;
+}
+
 function normalizeReceivedAt(value) {
-  const date = value instanceof Date ? value : new Date(value ?? Date.now());
-  return date.toISOString();
+  try {
+    const date = value instanceof Date ? value : new Date(value ?? Date.now());
+    return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function normalizeCreateTime(value) {
@@ -273,6 +283,10 @@ export function adaptWeComSdkFrame(frame, { receivedAt } = {}) {
   if (validationError) {
     return validationError;
   }
+  const normalizedReceivedAt = normalizeReceivedAt(receivedAt);
+  if (normalizedReceivedAt === null) {
+    return invalidFrame('RECEIVED_AT_INVALID');
+  }
   const body = frame.body;
 
   return {
@@ -289,7 +303,7 @@ export function adaptWeComSdkFrame(frame, { receivedAt } = {}) {
       sender_user_id: body.from.userid,
       msg_type: body.msgtype,
       create_time: normalizeCreateTime(body.create_time),
-      received_at: normalizeReceivedAt(receivedAt),
+      received_at: normalizedReceivedAt,
       content: normalizeContent(body),
       quote: normalizeQuote(body.quote, body.msgid),
     },

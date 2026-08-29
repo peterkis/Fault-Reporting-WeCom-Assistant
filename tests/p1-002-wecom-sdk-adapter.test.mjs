@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { adaptWeComSdkFrame, SDK_VERSION } from '../src/p1-002-wecom-sdk-adapter.mjs';
+import * as weComSdkAdapter from '../src/p1-002-wecom-sdk-adapter.mjs';
+
+const { adaptWeComSdkFrame } = weComSdkAdapter;
 
 const RECEIVED_AT = '2026-08-28T10:00:00.000Z';
 
@@ -182,6 +184,89 @@ test('illegal Frame returns a stable, non-retryable and secret-free error', () =
   assert.equal(serialized.includes(invalidFrame.body.image.aeskey), false);
 });
 
+test('invalid Adapter receive time returns a stable error instead of throwing', () => {
+  const frame = baseFrame({ msgtype: 'text', text: { content: 'HIS login failed' } });
+
+  for (const receivedAt of ['not-a-date', new Date(Number.NaN), Symbol('invalid-time')]) {
+    assert.deepEqual(
+      adaptWeComSdkFrame(frame, { receivedAt }),
+      {
+        ok: false,
+        error: {
+          code: 'WECOM_INVALID_FRAME',
+          retryable: false,
+          reason: 'RECEIVED_AT_INVALID',
+        },
+      },
+    );
+  }
+});
+
+test('text that exceeds the contract only after normalization fails closed', () => {
+  const expandingText = '\uFDFA'.repeat(2_000);
+  assert.ok(expandingText.length <= 20_000);
+  assert.ok(expandingText.normalize('NFKC').length > 20_000);
+
+  assert.deepEqual(
+    adaptWeComSdkFrame(
+      baseFrame({ msgtype: 'text', text: { content: expandingText } }),
+      { receivedAt: RECEIVED_AT },
+    ),
+    {
+      ok: false,
+      error: {
+        code: 'WECOM_INVALID_FRAME',
+        retryable: false,
+        reason: 'TEXT_CONTENT_REQUIRED',
+      },
+    },
+  );
+});
+
+test('text incompatible with the Phase 1 PostgreSQL boundary fails closed', () => {
+  for (const content of ['before\u0000after', 'unpaired-\uD800-surrogate']) {
+    assert.deepEqual(
+      adaptWeComSdkFrame(
+        baseFrame({ msgtype: 'text', text: { content } }),
+        { receivedAt: RECEIVED_AT },
+      ),
+      {
+        ok: false,
+        error: {
+          code: 'WECOM_INVALID_FRAME',
+          retryable: false,
+          reason: 'TEXT_CONTENT_REQUIRED',
+        },
+      },
+    );
+  }
+});
+
+test('non-message callback bodies are classified as unsupported before message-only fields', () => {
+  const eventFrame = {
+    cmd: 'aibot_msg_callback',
+    headers: { req_id: 'req-contract-event' },
+    body: {
+      msgid: 'msg-contract-event',
+      aibotid: 'bot-contract-001',
+      msgtype: 'event',
+      event: { eventtype: 'template_card_event' },
+    },
+  };
+
+  assert.deepEqual(
+    adaptWeComSdkFrame(eventFrame, { receivedAt: RECEIVED_AT }),
+    {
+      ok: false,
+      error: {
+        code: 'WECOM_UNSUPPORTED_MESSAGE_TYPE',
+        retryable: false,
+        reason: 'MESSAGE_TYPE_UNSUPPORTED',
+      },
+    },
+  );
+});
+
 test('Frame envelope, identity and content validation use stable reasons', () => {
   const validTextFrame = baseFrame({ msgtype: 'text', text: { content: 'HIS login failed' } });
   const cases = [
@@ -220,8 +305,8 @@ test('Normalized Message JSON Schema matches the Adapter interface and excludes 
     'utf8',
   ));
 
-  assert.equal(SDK_VERSION, '1.0.6');
-  assert.equal(packageManifest.dependencies['@wecom/aibot-node-sdk'], SDK_VERSION);
+  assert.deepEqual(Object.keys(weComSdkAdapter), ['adaptWeComSdkFrame']);
+  assert.equal(packageManifest.dependencies['@wecom/aibot-node-sdk'], '1.0.6');
   assert.equal(schema.additionalProperties, false);
   assert.deepEqual(schema.required, [
     'schema_version',
@@ -245,6 +330,14 @@ test('Normalized Message JSON Schema matches the Adapter interface and excludes 
   assert.equal(schema.properties.content.items.oneOf.length, 2);
   assert.deepEqual(schema.$defs.media.properties.type.enum, ['image', 'file', 'video']);
   assert.deepEqual(schema.$defs.text_item.properties.source.enum, ['VOICE_TRANSCRIPT']);
+  for (const field of ['raw', 'clean']) {
+    const textPattern = new RegExp(schema.$defs.text.properties[field].pattern, 'u');
+    assert.equal(textPattern.test('HIS login failed'), true);
+    assert.equal(textPattern.test('设备😀失败'), true);
+    assert.equal(textPattern.test('before\u0000after'), false);
+    assert.equal(textPattern.test('unpaired-high-\uD800'), false);
+    assert.equal(textPattern.test('unpaired-low-\uDC00'), false);
+  }
   const serialized = JSON.stringify(schema);
   assert.equal(serialized.includes('response_url'), false);
   assert.equal(serialized.includes('aeskey'), false);

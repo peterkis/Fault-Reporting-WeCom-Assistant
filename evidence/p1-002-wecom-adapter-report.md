@@ -72,3 +72,29 @@ tests 68 | pass 68 | fail 0
 P1-002 的本地 Contract 验收通过，满足“业务模块不依赖 SDK 原始类型”的任务验收条件。该结论只覆盖纯转换接口及其机器可读契约，不证明真实长连接或公网 Pilot 就绪。
 
 在本报告形成时，P1-003 的依赖已满足但尚未获得单独启动授权。项目负责人随后于 2026-08-28 独立授权并完成 P1-003；数据库唯一约束、并发重复、进程重启、事务回滚、数据库暂时不可用和重复请求返回原结果的证据见 `evidence/p1-003-channel-message-inbox-report.md`，不得倒推为 P1-002 的纯转换验收结果。
+
+## 7. 2026-08-29 Code Review / TDD 修复记录
+
+本轮以提交 `19e7f55abf5c16f78c187bca846e3cf530675e13` 为固定审查点，分别执行 Standards 与 Spec 轴审查，并只通过公共 `adaptWeComSdkFrame` 接缝及机器可读 Schema 建立回归。每项修复前均观察到对应测试失败，修复后转绿：
+
+- 非法 `receivedAt` 统一返回 `WECOM_INVALID_FRAME / RECEIVED_AT_INVALID`，不再让无效 Date 或 Symbol 形成运行时异常；
+- 原文和 NFKC 规范化结果均执行最终 20,000 字符上限，避免规范化扩展越界；
+- 非消息事件在普通消息专属会话字段前分流为不支持类型；
+- 公开模块面只保留 `adaptWeComSdkFrame`；
+- Adapter 与 Schema 均拒绝 NUL 和孤立 Unicode 代理项，同时允许合法 astral 字符。
+
+当前定向结果：
+
+```text
+npm run test:p1:002
+tests 14 | pass 14 | fail 0 | skipped 0
+```
+
+带库全量回归：
+
+```text
+node --env-file=.env.pilot --test
+tests 129 | pass 129 | fail 0 | skipped 0
+```
+
+目标 JSON 解析 2/2、定向凭据/私钥模式扫描 0、Phase 1 越界运行时代码匹配 0，`git diff --check` 退出码为 0（仅有工作区 LF/CRLF 转换提示）。Standards 与 Spec 终局复审均为 `No findings`。这些结果只更新 P1-002 本地 Contract 证据，不新增真实企业微信、公网或临床验收结论。

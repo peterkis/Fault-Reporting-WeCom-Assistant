@@ -21,11 +21,13 @@ adaptWeComSdkFrame(frame, { receivedAt })
 
 调用方和 Contract Test 只通过该接口观察行为。业务模块只接收成功结果中的 `message`，不导入 SDK Frame 类型。
 
+`receivedAt` 省略时由 Adapter 记录当前时间；调用方显式提供时必须能转换为有效 ISO 时间。非法时间不抛出运行时异常，而是返回 `WECOM_INVALID_FRAME / RECEIVED_AT_INVALID`。
+
 ## 支持的冻结输入
 
 | SDK `msgtype` | Normalized Message 表达 |
 | --- | --- |
-| `text` | 一个有序 `text` content item，同时保留 `raw` 并生成 NFKC、空白折叠和小写化后的 `clean`。 |
+| `text` | 一个有序 `text` content item，同时保留 `raw` 并生成 NFKC、空白折叠和小写化后的 `clean`；原文及规范化结果均不得超过 20,000 字符。 |
 | `image` | 一个 `media(type=image)` item，只暴露 opaque `download_ref` 和原 Frame 中的位置。 |
 | `mixed` | 在同一条消息中按 SDK `msg_item` 原顺序保存 text/image items，不拆成多条业务消息。 |
 | `voice` | 一个带 `source=VOICE_TRANSCRIPT` 的 text item；不得冒充用户键入的原始文字。 |
@@ -35,6 +37,8 @@ adaptWeComSdkFrame(frame, { receivedAt })
 引用消息按独立 `quote` 对象归一化；当前 SDK 已声明的 text/image/mixed/voice/file 引用使用相同 content 契约。模板卡片事件不冒充普通消息，仍按 ADR-0009 的独立交互路径处理。
 
 当前 SDK Frame 没有提供可依赖的结构化 mention 列表。Adapter 不从显示文本猜测 userid，也不凭字符串臆测是否形成原生 @；群内未 @ 文本本身不会由当前真实租户投递。`clean` 因而只做确定性文本规范化，不做无依据的 mention 删除。
+
+所有输出字符串必须是结构完整的 Unicode 且不得包含 PostgreSQL `TEXT/JSONB` 无法存储的 NUL。该约束同时写入 Normalized Message Schema 的文本模式；Adapter 在形成标准消息前失败关闭，不把确定性输入问题推迟成 P1-003 的可重试存储故障。
 
 ## 时间、身份与重复边界
 
@@ -58,7 +62,7 @@ adaptWeComSdkFrame(frame, { receivedAt })
 | `WECOM_INVALID_FRAME` | `false` | Frame 包络、身份、会话、时间或对应消息内容不完整/非法。 |
 | `WECOM_UNSUPPORTED_MESSAGE_TYPE` | `false` | 输入不是本任务冻结支持的普通消息类型，例如把事件 Frame 当作消息。 |
 
-`reason` 提供稳定、无敏感值的细分原因，例如 `MESSAGE_ID_REQUIRED`、`MEDIA_REFERENCE_INVALID`、`MIXED_ITEM_INVALID` 和 `QUOTE_INVALID`。提供方原文不进入结果。
+`reason` 提供稳定、无敏感值的细分原因，例如 `MESSAGE_ID_REQUIRED`、`MEDIA_REFERENCE_INVALID`、`MIXED_ITEM_INVALID`、`QUOTE_INVALID` 和 `RECEIVED_AT_INVALID`。提供方原文不进入结果。非普通消息类型在检查普通消息专属的会话字段前分流为 `WECOM_UNSUPPORTED_MESSAGE_TYPE`。
 
 P1-002 只有确定性幂等键，不拥有可靠重复事实。后续 P1-003 已用数据库唯一约束完成持久化判定，并以成功结果中的 `duplicate` 标志和首个结果快照表达重放；它没有把重复投递误报成 Adapter 错误。
 
@@ -69,4 +73,4 @@ npm run test:p1:002
 node --test tests/*.test.mjs
 ```
 
-Contract Test 覆盖文本、图片、mixed、有序内容、重复 Frame、非法 Frame、机器可读 Schema、引用，以及 Gate 0 已验证的文件/语音/视频形态。验收只证明本地纯转换契约和回归，不证明公网边界、真实 WSS 运行、数据库幂等、临床使用或 Phase 1 Go/No-Go。
+Contract Test 覆盖文本、图片、mixed、有序内容、重复 Frame、非法 Frame、非法接收时间、NFKC 扩展上限、数据库不兼容字符、非消息事件分类、唯一公开导出、机器可读 Schema、引用，以及 Gate 0 已验证的文件/语音/视频形态。验收只证明本地纯转换契约和回归，不证明公网边界、真实 WSS 运行、数据库幂等、临床使用或 Phase 1 Go/No-Go。

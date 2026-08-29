@@ -156,11 +156,13 @@
         "raw": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 20000
+          "maxLength": 20000,
+          "pattern": "^(?:[\\u0001-\\uD7FF\\uE000-\\uFFFF]|[\\u{10000}-\\u{10FFFF}])*$"
         },
         "clean": {
           "type": "string",
-          "maxLength": 20000
+          "maxLength": 20000,
+          "pattern": "^(?:[\\u0001-\\uD7FF\\uE000-\\uFFFF]|[\\u{10000}-\\u{10FFFF}])*$"
         }
       }
     },

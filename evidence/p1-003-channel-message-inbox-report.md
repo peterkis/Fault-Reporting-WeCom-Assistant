@@ -91,3 +91,49 @@ tests 77 | pass 77 | fail 0 | skipped 0
 ## 7. 结论与下一边界
 
 P1-003 满足“同一消息只保存一次且不产生重复业务处理”的本机数据库验收条件，状态更新为 DONE（本机 PostgreSQL 集成验收）。P1 保持 IN_PROGRESS；下一候选任务为 P1-004，但尚未启动，也没有由本报告授权。
+
+## 8. 2026-08-29 Code Review / TDD 修复记录
+
+本轮以提交 `19e7f55abf5c16f78c187bca846e3cf530675e13` 为固定审查点，通过 `createChannelMessageInbox(...).accept` 与 `applyChannelMessageInboxMigration` 两个已确认公共接缝逐项执行红→绿修复。2026-08-28 的 9/9 与 77/77 是历史首次验收快照，本节记录当前复核状态，不回写或伪装旧证据。
+
+修复覆盖：
+
+- 在首次异步等待前复制、验证并冻结输入，避免连接获取期间的 TOCTOU；
+- 只接受纯 JSON 对象数据树；拒绝 Buffer/TypedArray、Date、Proxy、访问器、函数、循环与非有限数，并从已验证 data descriptor 构造无原型快照，继承或虚拟 `toJSON` 不会被执行；
+- 事务视图在处理器 settle 后撤销并 drain 全部已发起 Promise；只接受 `query(sql, values?)` 的 Promise 形态，callback 重载在下发前拒绝；
+- 识别嵌套块注释及 CR/LF 行注释，拒绝事务控制、`SET/RESET/DISCARD`、`SET LOCAL/SESSION` 和直接 `set_config`，同时不重置调用方拥有的池会话基线；
+- 在数据库连接前拒绝 NUL、结构不完整 Unicode 和 PostgreSQL `timestamptz` 不接受的超界偏移；
+- 迁移在建索引前核对关键表/列/默认值/非生成属性及精确 p/u/c 约束集合，拒绝弱化或额外 CHECK/UNIQUE、延迟主键/唯一键；索引后检要求有效单列 btree，缺列、hash 同名索引和其他漂移均稳定失败关闭。
+
+当前定向与兼容结果：
+
+```text
+npm run test:p1:003:integration   -> 35/35 pass, 0 fail, 0 skip
+npm run test:p1:004:integration   -> 22/22 pass, 0 fail, 0 skip
+node --env-file=.env.pilot --test -> 129/129 pass, 0 fail, 0 skip
+```
+
+迁移入口再次执行成功，并得到以下脱敏目录/残留核验：
+
+```json
+{
+  "residue": {
+    "channel_messages": 0,
+    "intakes": 0,
+    "relations": 0,
+    "events": 0,
+    "isolated_databases": 0,
+    "pilot_ticket_exists": false,
+    "public_pilot_ticket_exists": false
+  },
+  "catalog": {
+    "primary_keys": 1,
+    "unique_constraints": 1,
+    "check_constraints": 16,
+    "generated_columns": 0,
+    "retention_btree": true
+  }
+}
+```
+
+JavaScript 语法检查、目标 JSON 解析、定向敏感模式扫描、Phase 1 越界运行时代码扫描和 `git diff --check` 均通过；后者仅输出 LF/CRLF 转换提示。Standards 与 Spec 两轴终局复审均为 `No findings`。P1-004 已有授权且兼容回归通过；本轮没有启动 P1-005，也没有创建 Ticket、Incident、Outbox、AI/OCR 或医院集成。当前结论仍只属于本机 PostgreSQL 集成验收。

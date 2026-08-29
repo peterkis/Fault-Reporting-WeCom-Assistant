@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { types as utilTypes } from 'node:util';
 
 const MIGRATION_URL = new URL('../database/migrations/001_p1_003_channel_message_inbox.sql', import.meta.url);
 const PRIVACY_CLASSES = new Set([
@@ -38,15 +39,19 @@ function isRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function storageSafeString(value) {
+  return typeof value === 'string' && value.isWellFormed() && !value.includes('\u0000');
+}
+
 function boundedString(value, maxLength) {
-  return typeof value === 'string' && value.length > 0 && value.length <= maxLength;
+  return storageSafeString(value) && value.length > 0 && value.length <= maxLength;
 }
 
 function validDateTime(value) {
   if (typeof value !== 'string') {
     return false;
   }
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/u.exec(value);
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:0\d|1[0-5]):[0-5]\d)$/u.exec(value);
   if (!match || match[1] === '0000' || !Number.isFinite(Date.parse(value))) {
     return false;
   }
@@ -80,7 +85,7 @@ function validateContent(content, reason) {
       if (
         !hasExactFields(item.text, ['raw', 'clean'])
         || !boundedString(item.text.raw, 20_000)
-        || typeof item.text.clean !== 'string'
+        || !storageSafeString(item.text.clean)
         || item.text.clean.length > 20_000
         || (Object.hasOwn(item, 'source') && item.source !== 'VOICE_TRANSCRIPT')
       ) {
@@ -194,6 +199,30 @@ function validateRequest(request) {
   }
 }
 
+function deepFreeze(value) {
+  for (const child of Object.values(value)) {
+    if (child !== null && typeof child === 'object' && !Object.isFrozen(child)) {
+      deepFreeze(child);
+    }
+  }
+  return Object.freeze(value);
+}
+
+function validatedRequestSnapshot(request) {
+  let snapshot;
+  try {
+    snapshot = structuredClone(request);
+  } catch {
+    throw new InboxInputError('REQUEST_SNAPSHOT_INVALID');
+  }
+  validateRequest(snapshot);
+  if (snapshot.rawPayloadEncrypted !== undefined) {
+    snapshot.rawPayloadEncrypted = Buffer.from(snapshot.rawPayloadEncrypted);
+  }
+  snapshot.message = deepFreeze(snapshot.message);
+  return Object.freeze(snapshot);
+}
+
 function textColumns(message) {
   const textItems = message.content.filter((item) => item?.kind === 'text' && isRecord(item.text));
   if (textItems.length === 0) {
@@ -205,35 +234,239 @@ function textColumns(message) {
   };
 }
 
+function snapshotPlainJsonValue(value, ancestors = new Set()) {
+  if (value === null || typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    if (!storageSafeString(value)) {
+      throw new InboxInputError('PROCESSING_RESULT_NOT_PLAIN_JSON');
+    }
+    return value;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      throw new InboxInputError('PROCESSING_RESULT_NOT_PLAIN_JSON');
+    }
+    return value;
+  }
+  if (typeof value !== 'object' || ancestors.has(value) || utilTypes.isProxy(value)) {
+    throw new InboxInputError('PROCESSING_RESULT_NOT_PLAIN_JSON');
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  if (Array.isArray(value)) {
+    if (prototype !== Array.prototype) {
+      throw new InboxInputError('PROCESSING_RESULT_NOT_PLAIN_JSON');
+    }
+    const snapshot = [];
+    ancestors.add(value);
+    for (let index = 0; index < value.length; index += 1) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+      if (
+        !descriptor?.enumerable
+        || !Object.hasOwn(descriptor, 'value')
+      ) {
+        throw new InboxInputError('PROCESSING_RESULT_NOT_PLAIN_JSON');
+      }
+      Object.defineProperty(snapshot, String(index), {
+        configurable: true,
+        enumerable: true,
+        value: snapshotPlainJsonValue(descriptor.value, ancestors),
+        writable: true,
+      });
+    }
+    for (const key of Reflect.ownKeys(value)) {
+      const numericIndex = typeof key === 'string' ? Number(key) : Number.NaN;
+      if (
+        key !== 'length'
+        && (
+          !Number.isInteger(numericIndex)
+          || numericIndex < 0
+          || numericIndex >= value.length
+          || String(numericIndex) !== key
+        )
+      ) {
+        throw new InboxInputError('PROCESSING_RESULT_NOT_PLAIN_JSON');
+      }
+    }
+    ancestors.delete(value);
+    Object.setPrototypeOf(snapshot, null);
+    return snapshot;
+  }
+  if (prototype !== Object.prototype && prototype !== null) {
+    throw new InboxInputError('PROCESSING_RESULT_NOT_PLAIN_JSON');
+  }
+
+  const snapshot = Object.create(null);
+  ancestors.add(value);
+  for (const key of Reflect.ownKeys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (
+      typeof key !== 'string'
+      || !storageSafeString(key)
+      || !descriptor?.enumerable
+      || !Object.hasOwn(descriptor, 'value')
+    ) {
+      throw new InboxInputError('PROCESSING_RESULT_NOT_PLAIN_JSON');
+    }
+    Object.defineProperty(snapshot, key, {
+      configurable: true,
+      enumerable: true,
+      value: snapshotPlainJsonValue(descriptor.value, ancestors),
+      writable: true,
+    });
+  }
+  ancestors.delete(value);
+  return snapshot;
+}
+
 function responseSnapshot(result) {
   if (!isRecord(result)) {
     throw new InboxInputError('PROCESSING_RESULT_OBJECT_REQUIRED');
   }
+  const safeSnapshot = snapshotPlainJsonValue(result);
   let serialized;
   try {
-    serialized = JSON.stringify(result);
+    serialized = JSON.stringify(safeSnapshot);
   } catch {
     throw new InboxInputError('PROCESSING_RESULT_NOT_JSON_SERIALIZABLE');
   }
   if (serialized === undefined) {
     throw new InboxInputError('PROCESSING_RESULT_NOT_JSON_SERIALIZABLE');
   }
-  return JSON.parse(serialized);
+  const snapshot = JSON.parse(serialized);
+  if (!isRecord(snapshot)) {
+    throw new InboxInputError('PROCESSING_RESULT_OBJECT_REQUIRED');
+  }
+  return { serialized, snapshot };
 }
 
-function transactionQuery(client, queryConfig, values) {
-  const queryText = typeof queryConfig === 'string' ? queryConfig : queryConfig?.text;
+function leadingSqlKeywords(sql, maximum = 5) {
+  const keywords = [];
+  let offset = 0;
+
+  while (keywords.length < maximum) {
+    let skippedIgnorable;
+    do {
+      skippedIgnorable = false;
+      while (offset < sql.length && /\s/u.test(sql[offset])) {
+        offset += 1;
+        skippedIgnorable = true;
+      }
+      if (sql.startsWith('--', offset)) {
+        const lineEndMatch = /[\r\n]/u.exec(sql.slice(offset + 2));
+        if (!lineEndMatch) {
+          offset = sql.length;
+        } else {
+          offset += 2 + lineEndMatch.index + 1;
+          if (sql[offset - 1] === '\r' && sql[offset] === '\n') {
+            offset += 1;
+          }
+        }
+        skippedIgnorable = true;
+        continue;
+      }
+      if (sql.startsWith('/*', offset)) {
+        let depth = 1;
+        offset += 2;
+        while (offset < sql.length && depth > 0) {
+          if (sql.startsWith('/*', offset)) {
+            depth += 1;
+            offset += 2;
+          } else if (sql.startsWith('*/', offset)) {
+            depth -= 1;
+            offset += 2;
+          } else {
+            offset += 1;
+          }
+        }
+        if (depth > 0) {
+          return keywords;
+        }
+        skippedIgnorable = true;
+      }
+    } while (skippedIgnorable);
+
+    const keyword = /^[A-Za-z_][A-Za-z_0-9$]*/u.exec(sql.slice(offset));
+    if (!keyword) {
+      break;
+    }
+    keywords.push(keyword[0].toUpperCase());
+    offset += keyword[0].length;
+  }
+  return keywords;
+}
+
+function isTransactionControlQuery(sql) {
+  const keywords = leadingSqlKeywords(sql);
+  if (
+    [
+      'BEGIN',
+      'COMMIT',
+      'END',
+      'ROLLBACK',
+      'ABORT',
+      'SAVEPOINT',
+      'SET',
+      'RESET',
+      'DISCARD',
+    ].includes(keywords[0])
+  ) {
+    return true;
+  }
+  if (/\bset_config\b/iu.test(sql)) {
+    return true;
+  }
+  const leadingPhrase = keywords.join(' ');
+  return leadingPhrase.startsWith('START TRANSACTION')
+    || leadingPhrase.startsWith('RELEASE SAVEPOINT')
+    || leadingPhrase.startsWith('PREPARE TRANSACTION');
+}
+
+function transactionQuery(client, queryText, values) {
   if (typeof queryText !== 'string' || queryText.trim().length === 0) {
+    throw new InboxInputError('TRANSACTION_QUERY_INVALID');
+  }
+  if (values !== undefined && !Array.isArray(values)) {
     throw new InboxInputError('TRANSACTION_QUERY_INVALID');
   }
   const withoutTrailingTerminator = queryText.trim().replace(/;\s*$/u, '');
   if (withoutTrailingTerminator.includes(';')) {
     throw new InboxInputError('TRANSACTION_MULTIPLE_STATEMENTS_NOT_ALLOWED');
   }
-  if (/^(?:\s|\/\*[\s\S]*?\*\/|--[^\r\n]*(?:\r?\n|$))*(?:BEGIN|START\s+TRANSACTION|COMMIT|END|ROLLBACK|ABORT|SAVEPOINT|RELEASE\s+SAVEPOINT|PREPARE\s+TRANSACTION)\b/iu.test(withoutTrailingTerminator)) {
+  if (isTransactionControlQuery(withoutTrailingTerminator)) {
     throw new InboxInputError('TRANSACTION_CONTROL_NOT_ALLOWED');
   }
-  return client.query(queryConfig, values);
+  return client.query(queryText, values);
+}
+
+function revocableTransactionView(client) {
+  let active = true;
+  const queryOutcomes = [];
+  return Object.freeze({
+    transaction: Object.freeze({
+      query(queryConfig, values) {
+        if (!active) {
+          return Promise.reject(new InboxInputError('TRANSACTION_VIEW_CLOSED'));
+        }
+        const queryPromise = Promise.resolve()
+          .then(() => transactionQuery(client, queryConfig, values));
+        queryOutcomes.push(queryPromise.then(
+          () => ({ ok: true }),
+          (error) => ({ ok: false, error }),
+        ));
+        return queryPromise;
+      },
+    }),
+    async revokeAndDrain() {
+      active = false;
+      const failed = (await Promise.all(queryOutcomes)).find((outcome) => !outcome.ok);
+      if (failed) {
+        throw failed.error;
+      }
+    },
+  });
 }
 
 function publicError(code, retryable, reason) {
@@ -247,7 +480,7 @@ function publicError(code, retryable, reason) {
   };
 }
 
-async function rollbackQuietly(client) {
+async function rollbackAndShouldDestroyClient(client) {
   try {
     await client.query('ROLLBACK');
     return false;
@@ -271,8 +504,9 @@ export function createChannelMessageInbox({ pool }) {
 
   return Object.freeze({
     async accept(request, processFirst) {
+      let requestSnapshot;
       try {
-        validateRequest(request);
+        requestSnapshot = validatedRequestSnapshot(request);
       } catch (error) {
         if (error instanceof InboxInputError) {
           return publicError('CHANNEL_INBOX_INVALID_INPUT', false, error.reason);
@@ -294,7 +528,7 @@ export function createChannelMessageInbox({ pool }) {
       let destroyClient = false;
       try {
         await client.query('BEGIN');
-        const { message } = request;
+        const { message } = requestSnapshot;
         const { rawText, cleanText } = textColumns(message);
         const inserted = await client.query(
           `INSERT INTO channel.message_inbox (
@@ -326,10 +560,10 @@ export function createChannelMessageInbox({ pool }) {
             rawText,
             cleanText,
             JSON.stringify(message),
-            request.rawPayloadEncrypted === undefined ? null : Buffer.from(request.rawPayloadEncrypted),
-            request.privacyClass,
-            request.traceId,
-            request.retentionUntil,
+            requestSnapshot.rawPayloadEncrypted ?? null,
+            requestSnapshot.privacyClass,
+            requestSnapshot.traceId,
+            requestSnapshot.retentionUntil,
           ],
         );
 
@@ -353,15 +587,20 @@ export function createChannelMessageInbox({ pool }) {
         }
 
         const channelMessageId = inserted.rows[0].id;
-        const transaction = Object.freeze({
-          query: transactionQuery.bind(null, client),
-        });
+        const transactionView = revocableTransactionView(client);
         failureKind = 'PROCESSING';
-        const result = responseSnapshot(await processFirst({
-          channelMessageId,
-          message,
-          transaction,
-        }));
+        let processingResult;
+        try {
+          processingResult = await processFirst({
+            channelMessageId,
+            message,
+            transaction: transactionView.transaction,
+          });
+        } finally {
+          await transactionView.revokeAndDrain();
+        }
+        const resultSnapshot = responseSnapshot(processingResult);
+        const result = resultSnapshot.snapshot;
 
         failureKind = 'STORAGE';
         const completed = await client.query(
@@ -370,7 +609,7 @@ export function createChannelMessageInbox({ pool }) {
                   response_snapshot = $2::jsonb,
                   completed_at = CURRENT_TIMESTAMP
             WHERE id = $1::bigint AND processing_status = 'PROCESSING'`,
-          [channelMessageId, JSON.stringify(result)],
+          [channelMessageId, resultSnapshot.serialized],
         );
         if (completed.rowCount !== 1) {
           throw new Error('INBOX_COMPLETION_UPDATE_MISSING');
@@ -383,7 +622,7 @@ export function createChannelMessageInbox({ pool }) {
           result,
         };
       } catch (error) {
-        destroyClient = await rollbackQuietly(client);
+        destroyClient = await rollbackAndShouldDestroyClient(client);
         if (failureKind === 'PROCESSING') {
           return publicError(
             'CHANNEL_INBOX_PROCESSING_FAILED',

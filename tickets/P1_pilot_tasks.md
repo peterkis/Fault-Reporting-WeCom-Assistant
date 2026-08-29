@@ -49,6 +49,12 @@
 - 全量本地回归：68/68 通过。该结果仅是本地纯转换与回归，不构成公网边界、真实 WSS、数据库幂等、临床试点或 Phase 1 Go/No-Go。
 - 历史限制：P1-003 当时尚未获得单独授权；项目负责人随后于 2026-08-28 明确要求“执行P1-003”，该限制已按任务粒度解除并完成本机数据库验收。
 
+### 2026-08-29 Code Review / TDD 复核
+
+- 状态保持 `DONE（本地 Contract 验收）`。通过唯一公共接口 `adaptWeComSdkFrame` 对非法接收时间、NFKC 后长度、非消息事件分流、Unicode/NUL 存储边界和公开导出面逐项建立失败测试并修复。
+- Normalized Message 文本 Schema 现同时拒绝 NUL 与孤立代理项，并保留合法 astral Unicode；定向 Contract Test 为 14/14 通过。
+- Standards 与 Spec 两轴终局复审均为 `No findings`；带库全量回归 129/129 通过。结论仍不扩大为真实 WSS、公网或临床试点验收。
+
 ## P1-003 Channel Message Inbox 与数据库幂等
 
 - 状态：DONE（本机 PostgreSQL 集成验收；非公网/临床试点验收）
@@ -71,6 +77,13 @@
 - 已确认：并发重复只保存一行且只执行一次处理器；失败事务不留半完成行；重启后重复请求返回首个已提交 `channelMessageId/result`。
 - 全量本机回归：77/77 通过；测试合成记录已精确清理，目录核验为一个唯一约束、零条 `p1-003-*` 测试残留。
 - 限制：Inbox 只保存 `retention_until`，未实现到期删除/备份生命周期；可选 raw payload 只接受调用方提供的字节，不能自行证明密码学加密。该任务验收时 P1-004 尚未启动；项目负责人随后已单独授权并完成 P1-004 本机验收。
+
+### 2026-08-29 Code Review / TDD 复核
+
+- 状态保持 `DONE（本机 PostgreSQL 集成验收）`。通过 `createChannelMessageInbox(...).accept` 与 `applyChannelMessageInboxMigration` 公共接缝补齐不可变输入快照、纯 JSON/Proxy 防护、事务查询生命周期与会话控制、PostgreSQL 时间边界和迁移目录失败关闭。
+- 定向真实 PostgreSQL 测试为 35/35 通过；P1-004 兼容回归 22/22、带库全量回归 129/129 均通过。
+- 验收后 `p1-003-*`/`p1-004-*` Channel Message、Intake、关系、事件和隔离数据库残留均为 0；主键 1、唯一约束 1、检查约束 16、生成列 0，留存索引为有效 btree；数据库仍不存在 Pilot Ticket 表。
+- Standards 与 Spec 两轴终局复审均为 `No findings`。本次没有启动 P1-005，也没有实现 Ticket、通知、AI/OCR 或医院系统集成。
 
 ## P1-004 Service Intake 创建与消息聚合
 
