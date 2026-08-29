@@ -14,8 +14,8 @@
   "started": true,
   "first_task": "P1-001",
   "last_completed_task": "P1-011",
-  "next_task": "P1-012",
-  "active_task": null,
+  "next_task": null,
+  "active_task": "P1-012",
   "allowed_scope": [
     "Pilot project scaffold",
     "layered configuration validation",
@@ -43,7 +43,8 @@
     "Pilot-local principal, role, team, and minimal workbench boundary",
     "supplement, card-action receipt, resolution confirmation, auto-close, and reopen lifecycle",
     "structured Pilot security logging, fixed-label telemetry, and core-versus-optional dependency readiness",
-    "append-only operations audit and encrypted local backup/restore drill"
+    "append-only operations audit and encrypted local backup/restore drill",
+    "outbound-WSS test-group E2E seam, controlled fault drills, and Pilot Go/No-Go evidence"
   ],
   "forbidden_before_exit": [
     "Hospital Tickets dependency",
@@ -60,7 +61,9 @@
     "明确报修漏单为 0",
     "同一消息重复建单为 0",
     "状态、事件和通知一致",
-    "公网试点安全与运行验收通过"
+    "试点安全与运行验收通过；公网入口仅在启用 HTTP/Webhook、外部 Workbench 或独立 Web/API 网关时另验",
+    "测试群真实消息往返和客户端观察已独立记录",
+    "项目负责人已基于完整证据明确批准 Go/No-Go"
   ],
   "next_phase_after_exit": {
     "phase_id": "P2",

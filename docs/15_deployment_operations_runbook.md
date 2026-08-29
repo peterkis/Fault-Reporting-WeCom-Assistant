@@ -79,6 +79,14 @@ hospital-production
 - 具备幂等、重放、死信、映射和对账；
 - 不通过共享数据库直写Hospital Tickets。
 
+### P1-012 测试群 E2E 边界
+
+- 企业微信长连接由 Gateway 主机主动建立到 WSS；验证前检查 DNS、TCP 443、TLS、机器人、测试群、测试账号和本机
+  Pilot PostgreSQL/Core/Outbox/发送器；
+- 该路径不要求公网 IP 或入站监听，`127.0.0.1` 本机 Workbench 仍可保持本地；
+- 只有 HTTP/Webhook 回调、外部 Workbench 访问或独立公网 Web/API 网关才触发公网入口、边缘 TLS 和安全审批；
+- 实测须在获批测试群中分别记录服务端事件、持久化事实、提供方回执与客户端显示。不得以 SDK ACK 替代客户端观察。
+
 ## 3. Phase 1 启动顺序
 
 ```text

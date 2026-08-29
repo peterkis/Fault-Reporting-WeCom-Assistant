@@ -19,6 +19,7 @@ test('G0-008 closure keeps the current P1 task pointers and Phase 1 boundaries',
   const p1InboxTask = backlog.tasks.find(({ id }) => id === 'P1-003');
   const p1IntakeTask = backlog.tasks.find(({ id }) => id === 'P1-004');
   const p1OperationsTask = backlog.tasks.find(({ id }) => id === 'P1-011');
+  const p1E2ETask = backlog.tasks.find(({ id }) => id === 'P1-012');
   const completedPilotTasks = ['P1-005', 'P1-006', 'P1-007', 'P1-008', 'P1-009', 'P1-010', 'P1-011']
     .map((id) => backlog.tasks.find((task) => task.id === id));
 
@@ -26,25 +27,28 @@ test('G0-008 closure keeps the current P1 task pointers and Phase 1 boundaries',
   assert.equal(currentPhase.status, 'IN_PROGRESS');
   assert.equal(currentPhase.first_task, 'P1-001');
   assert.equal(currentPhase.last_completed_task, 'P1-011');
-  assert.equal(currentPhase.active_task, null);
-  assert.equal(currentPhase.next_task, 'P1-012');
+  assert.equal(currentPhase.active_task, 'P1-012');
+  assert.equal(currentPhase.next_task, null);
   assert.equal(g0Task?.status, 'DONE');
   assert.equal(p1Task?.status, 'DONE');
   assert.equal(p1AdapterTask?.status, 'DONE');
   assert.equal(p1InboxTask?.status, 'DONE');
   assert.equal(p1IntakeTask?.status, 'DONE');
   assert.equal(p1OperationsTask?.status, 'DONE');
+  assert.equal(p1E2ETask?.status, 'IN_PROGRESS');
+  assert.deepEqual(p1E2ETask?.depends_on, ['P1-010', 'P1-011']);
   assert.ok(completedPilotTasks.every((task) => task?.status === 'DONE'));
   assert.ok(g0Task.depends_on.includes('G0-006A'));
-  assert.equal(projectSummary.project.status, 'p1_p1-001_to_p1-011_local_postgresql_pilot_acceptance_done');
+  assert.equal(projectSummary.project.status, 'p1_p1-012_e2e_fault_drill_and_go_no_go_in_progress');
   assert.equal(projectSummary.project.last_completed_task, 'P1-011');
-  assert.equal(projectSummary.project.active_task, null);
-  assert.equal(projectSummary.project.next_task, 'P1-012');
+  assert.equal(projectSummary.project.active_task, 'P1-012');
+  assert.equal(projectSummary.project.next_task, null);
   assert.ok(projectSummary.hard_invariants.includes('channel_message_idempotency_required'));
   assert.ok(!projectSummary.hard_invariants.includes('provider_msg_id_unique'));
   assert.ok(currentPhase.forbidden_before_exit.includes('Hospital Tickets dependency'));
   assert.ok(currentPhase.forbidden_before_exit.includes('production AI or OCR integration'));
   assert.ok(currentPhase.allowed_scope.includes('append-only operations audit and encrypted local backup/restore drill'));
+  assert.ok(currentPhase.allowed_scope.includes('outbound-WSS test-group E2E seam, controlled fault drills, and Pilot Go/No-Go evidence'));
 });
 
 test('G0-008 report covers every completed Gate 0 evidence source and retains limits', () => {

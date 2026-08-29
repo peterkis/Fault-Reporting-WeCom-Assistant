@@ -180,9 +180,10 @@
 
 ## P1-012 Phase 1 E2E、故障演练与试点 Go/No-Go
 
-- 状态：TODO
+- 状态：IN_PROGRESS（本机受控 E2E 接缝与 PostgreSQL 集成演练已通过；真实测试群消息往返、客户端观察、隔离数据库故障窗口和试点评审待完成）
 - 依赖：P1-010, P1-011
-- 输入：Phase 1 全部交付物、测试群和试点验收指标。
-- 输出：E2E报告、故障演练、性能/安全证据和试点评审结论。
+- 输入：Phase 1 全部交付物、已配置机器人/测试群/allowlist 测试账号、本机 Pilot PostgreSQL 与试点验收指标；主机须可经 DNS、TCP 443、TLS 稳定出站访问企业微信 WSS。
+- 输出：E2E报告、故障演练、性能/安全证据和试点评审结论；真实长连接不要求公网 IP 或公网入站监听。
 - 测试：文字/图片降级、100条突发、断线、数据库/Outbox故障、AI关闭占位场景。
-- 验收：漏单0、重复单0、10秒目标、状态真实、通知可追溯；批准后方可进入 Phase 2。
+- 验收：漏单0、重复单0、10秒目标、状态真实、通知可追溯，且有 allowlist 测试账号的测试群真实消息往返与客户端观察；提供方 ACK 或 SDK 成功不能替代客户端观察。HTTP/Webhook 回调、外部 Workbench 或独立公网 Web/API 网关才需要单独公网入口审批；完整证据经项目负责人明确批准后方可进入 Phase 2。
+- 当前结果：`src/p1-012-pilot-e2e.mjs` 将 allowlist 测试账号的真实 WSS callback、受控 Adapter、Inbox→Intake→Ticket→Outbox、显式提供方回执、被动回复和首个 Delivery 接缝组合起来；`scripts/p1-012-live-e2e.mjs` 提供只出站的配置预检、文字/图片测试群运行和 WSS 重连运行。带库受控演练已覆盖重复消息、图片降级、100 条突发、Outbox `RETRY_SCHEDULED` 记录与重试、以及 AI/OCR 关闭。它不替代测试账号客户端显示、实际群内突发、隔离 PostgreSQL 故障窗口或试点负责人 Go/No-Go 批准。

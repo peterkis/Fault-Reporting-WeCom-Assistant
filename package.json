@@ -59,7 +59,10 @@
     "p1:011:backup-restore:check": "node --env-file=.env.pilot scripts/p1-011-backup-restore.mjs --check",
     "p1:011:backup-restore:drill": "node --env-file=.env.pilot scripts/p1-011-backup-restore.mjs --drill",
     "test:p1:011": "node --test tests/p1-011-pilot-operations-baseline.test.mjs tests/p1-011-encrypted-backup.test.mjs tests/p1-011-backup-restore-script.test.mjs",
-    "test:p1:011:integration": "node --env-file=.env.pilot --test tests/p1-011-pilot-operations-baseline.test.mjs tests/p1-011-encrypted-backup.test.mjs tests/p1-011-backup-restore-script.test.mjs"
+    "test:p1:011:integration": "node --env-file=.env.pilot --test tests/p1-011-pilot-operations-baseline.test.mjs tests/p1-011-encrypted-backup.test.mjs tests/p1-011-backup-restore-script.test.mjs",
+    "p1:012:live-e2e:check": "node --env-file=.env.pilot scripts/p1-012-live-e2e.mjs --check",
+    "test:p1:012": "node --test tests/p1-012-pilot-e2e.test.mjs tests/p1-012-live-e2e-script.test.mjs",
+    "test:p1:012:integration": "node --env-file=.env.pilot --test tests/p1-012-pilot-e2e.test.mjs tests/p1-012-live-e2e-script.test.mjs tests/p1-012-pilot-e2e-integration.test.mjs"
   },
   "dependencies": {
     "@wecom/aibot-node-sdk": "1.0.6",

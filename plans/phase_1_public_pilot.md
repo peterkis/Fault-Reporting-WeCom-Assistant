@@ -1,6 +1,6 @@
 # Phase 1：企业微信外网试点
 
-- 当前状态：`IN_PROGRESS`；P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 至 P1-011 已完成 Channel Message Inbox、Service Intake、Pilot Ticket Core、Action/事件、Outbox/Delivery、首回执、Pilot 权限工作台、关闭重开、安全/可观测性和加密备份恢复基线的本机 PostgreSQL 集成验收。当前没有公网 IP，注入式 sender/合成卡片不构成真实客户端可见证据，以上结果均不构成公网或临床试点验收；下一任务为 P1-012。
+- 当前状态：`IN_PROGRESS`；P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 至 P1-011 已完成 Channel Message Inbox、Service Intake、Pilot Ticket Core、Action/事件、Outbox/Delivery、首回执、Pilot 权限工作台、关闭重开、安全/可观测性和加密备份恢复基线的本机 PostgreSQL 集成验收。P1-012 已开始建立真实测试群 E2E 与 Go/No-Go 接缝；没有公网 IP 不阻塞企业微信出站 WSS 长连接，但注入式 sender/合成卡片仍不构成真实客户端可见或临床试点证据。
 
 ## 阶段目标
 
@@ -20,7 +20,9 @@ Enterprise WeCom
 
 - G0-008 完成；
 - 企业微信能力矩阵和锁定 SDK 版本可用；
-- 公网试点环境、安全边界、测试群和责任人已确认。
+- 测试群、测试账号、责任人和本机 Pilot 环境已确认；主机可出站通过 DNS、TCP 443、TLS 访问企业微信 WSS。
+
+企业微信长连接不要求公网入站 IP。仅 HTTP/Webhook 回调、外部 Workbench 访问或独立公网 Web/API 网关需要单独的公网入口与安全边界审批。
 
 ## 禁止依赖
 
@@ -45,7 +47,7 @@ Enterprise WeCom
 | P1-009 | 最小处理端与 Pilot 权限 | P1-006 | DONE（本机 PostgreSQL 集成验收） |
 | P1-010 | 补充、解决确认、关闭与重开 | P1-008, P1-009 | DONE（本机 PostgreSQL 集成验收） |
 | P1-011 | Pilot 安全、可观测性与运维基线 | P1-007 | DONE（本机 PostgreSQL 集成与加密恢复演练） |
-| P1-012 | Phase 1 E2E、故障演练与试点 Go/No-Go | P1-010, P1-011 | TODO |
+| P1-012 | Phase 1 E2E、故障演练与试点 Go/No-Go | P1-010, P1-011 | IN_PROGRESS（真实客户端观察待完成） |
 
 ## 退出条件
 
@@ -54,5 +56,5 @@ Enterprise WeCom
 - 创建、接单、处理、待补充、解决、关闭和重开闭环通过；
 - 状态、事件和通知一致；
 - 依赖故障有可验证降级；
-- 公网试点安全与运行验收通过；
+- 试点安全与运行验收通过；若启用公网入口，另有边缘安全验收；
 - 形成 Phase 1 试点评审结论。

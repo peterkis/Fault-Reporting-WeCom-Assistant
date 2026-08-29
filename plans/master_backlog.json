@@ -72,7 +72,7 @@
     {"id":"P1-009","phase":"P1","title":"最小处理端与 Pilot 权限","status":"DONE","depends_on":["P1-006"]},
     {"id":"P1-010","phase":"P1","title":"补充、解决确认、关闭与重开","status":"DONE","depends_on":["P1-008","P1-009"]},
     {"id":"P1-011","phase":"P1","title":"Pilot 安全、可观测性与运维基线","status":"DONE","depends_on":["P1-007"]},
-    {"id":"P1-012","phase":"P1","title":"Phase 1 E2E、故障演练与试点 Go/No-Go","status":"TODO","depends_on":["P1-010","P1-011"]},
+    {"id":"P1-012","phase":"P1","title":"Phase 1 E2E、故障演练与试点 Go/No-Go","status":"IN_PROGRESS","depends_on":["P1-010","P1-011"]},
     {"id":"P2-001","phase":"P2","title":"私有媒体存储、扫描与留存","status":"TODO","depends_on":["P1-012"]},
     {"id":"P2-002","phase":"P2","title":"OCR 服务与错误代码提取","status":"TODO","depends_on":["P2-001"]},
     {"id":"P2-003","phase":"P2","title":"系统目录与确定性规则","status":"TODO","depends_on":["P1-012"]},

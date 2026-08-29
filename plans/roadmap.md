@@ -1,7 +1,7 @@
 # V1.2 分阶段路线图
 
 - 架构基线日期：2026-08-21
-- 当前阶段：P1（IN_PROGRESS；P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 至 P1-011 已完成本机 PostgreSQL 集成验收；P1-012 尚未启动。注入式 sender/合成卡片不构成真实客户端或临床试点证据。）
+- 当前阶段：P1（IN_PROGRESS；P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 至 P1-011 已完成本机 PostgreSQL 集成验收；P1-012 正在执行真实测试群 E2E 接缝与故障演练。企业微信出站 WSS 不以公网 IP 为前置，注入式 sender/合成卡片仍不构成真实客户端或临床试点证据。）
 - 已完成前置任务：ARCH-001 Architecture Baseline Cleanup
 
 ## 唯一有效顺序
@@ -19,7 +19,7 @@ Architecture Baseline Cleanup（DONE）
 | 阶段 | 目标 | 工单事实源 | 退出条件摘要 |
 |---|---|---|---|
 | G0 | 验证真实租户的 WSS、消息、媒体、推送、卡片、重连和单活能力 | 无 | 4小时30分钟稳定运行；能力矩阵和架构结论完成 |
-| P1 | 在纯公网环境完成可靠受理、处理闭环和试点验证 | Pilot Ticket Core | 漏单0；重复建单0；完整状态闭环；通知可靠；试点Go/No-Go |
+| P1 | 通过企业微信公网控制面完成可靠受理、处理闭环和试点验证 | Pilot Ticket Core | 漏单0；重复建单0；完整状态闭环；通知可靠；试点Go/No-Go；长连接不要求公网入站 IP |
 | P2 | 增加媒体、OCR、规则、AI影子分诊、人工修正、Incident候选和指标 | Pilot Ticket Core | AI关闭不影响核心链路；建议可评估；人工可撤销；敏感数据受控 |
 | P3 | 通过 Ticket Adapter 映射、迁移和切换到医院工单体系 | 切换前 Pilot；切换后 Hospital Tickets | 对账通过；回滚演练通过；Hospital Tickets 成为唯一长期事实源 |
 
