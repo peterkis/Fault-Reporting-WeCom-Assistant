@@ -9,7 +9,7 @@
 - Phase 1 不读取或写入 Hospital Tickets 数据库；
 - Phase 3 只能通过 Ticket Adapter/API 融合，禁止共享数据库直写。
 
-`database/schema_draft.sql` 是 V1.0 旧架构草案，缺少 Pilot Ticket Core 和 Phase 3 映射，不得直接实施。P1-003 已用独立迁移只冻结 `channel.message_inbox`；P1-005 仍须基于本文件冻结其余 Pilot Ticket Core 可执行 Schema，不能复用旧草案整库建表。
+`database/schema_draft.sql` 是 V1.0 旧架构草案，缺少 Pilot Ticket Core 和 Phase 3 映射，不得直接实施。P1-003 至 P1-010 已用独立增量迁移冻结 `channel`、`intake`、`pilot_ticket` 和 `notification` 的当前 Pilot 范围；后续任务不能复用旧草案整库建表。
 
 ## 2. 建议 Schema
 
@@ -82,7 +82,7 @@ P1-004 的可执行迁移为 `database/migrations/002_p1_004_service_intake.sql`
 - `intake.service_intake_event` 保存同事务的 Intake 审计事件，`event_ordinal` 提供严格的每 Intake 顺序，JSONB payload 仅用于无原文的可选审计字段；
 - 聚合查询只覆盖当前允许追加的状态，并由同上下文 advisory lock 保护。
 
-该迁移不创建 `pilot_ticket.*`、Incident、Notification Outbox、AI/OCR 或 Hospital 集成表。`pilot_ticket_id` 和 `incident_id` 仍只作为公开契约中的空值；实际关联必须由后续受权任务以外键新增。
+该迁移不创建 `pilot_ticket.*`、Incident、Notification Outbox、AI/OCR 或 Hospital 集成表。P1-005 后，`pilot_ticket_id` 由一对一外键关联到 Pilot Ticket；`incident_id` 仍只作为公开契约中的空值，必须由 Phase 2 的受权任务实现。
 
 ## 5. Pilot Ticket Core
 
@@ -107,6 +107,8 @@ pilot_ticket.created_at / updated_at
 
 Ticket 编号、状态、版本和外部结果是结构化字段，不能只存 JSONB。
 
+P1-005 使用 `database/migrations/003_p1_005_pilot_ticket_core.sql`：`ticket_no` 具有唯一和格式约束，`source_intake_id` 与 Intake 的 `pilot_ticket_id` 由延迟一致性约束保护，且默认处理组为 `PILOT_IT`。P1-009 在同一 Pilot schema 中补充本地 `principal`、角色和处理组成员关系，不引入医院 SSO 或人员主数据。
+
 ### Ticket Event
 
 每次 Action 追加事件：
@@ -124,6 +126,8 @@ created_at
 
 Ticket 状态、Ticket Event 和对应 Notification Outbox 必须同事务。
 
+P1-006 使用 `database/migrations/004_p1_006_ticket_state_actions.sql` 追加事件；P1-010 的补充事件也复用此时间线。内部备注只保留在 `internal_note`，受限申报人视图和 Outbox payload 不复制它。
+
 ## 6. Notification Outbox / Delivery
 
 Outbox 表示应发送事实，Delivery 表示每个目标的实际发送结果。
@@ -135,6 +139,8 @@ event_type + aggregate_id + aggregate_version + target_key
 ```
 
 Phase 1 使用 Pilot Outbox，不依赖医院院内 Outbox。Phase 3 切换时必须迁移通知所有权并处理积压去重。
+
+P1-007 使用 `notification.outbox`、`notification.delivery` 和 `notification.delivery_attempt`：Delivery 以事件、版本、通道、目标哈希和模板构成幂等键，并保存租约、重试时间、失败码和逐次尝试。P1-010 额外使用 `notification.card_action_task` 和 `notification.card_action_receipt`；其中 card action 仅为持久化处理契约，非客户端可见证据。`pilot_ticket.ticket.auto_close_at` 与 `auto_close_reminder_at` 分别记录自动关闭到期与一次性提醒事实；P1-010 的复核迁移还将 Ticket/Intake 的双向一对一约束应用到既有数据库。
 
 ## 7. Phase 2 增强对象
 

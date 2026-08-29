@@ -80,14 +80,19 @@ stateDiagram-v2
     IN_PROGRESS --> RESOLVED
     RESOLVED --> CLOSED
     RESOLVED --> REOPENED
+    CLOSED --> REOPENED
     REOPENED --> IN_PROGRESS
     QUEUED --> CANCELLED
     ACCEPTED --> CANCELLED
-    QUEUED --> DUPLICATE_LINKED
-    DUPLICATE_LINKED --> REOPENED
 ```
 
 任何未列出的转换返回 `INVALID_STATE_TRANSITION`。
+
+P1-010 明确保留已关闭工单的重开入口：申报人可将 `CLOSED`（包括
+`REQUESTER_CONFIRMED` 与 `AUTO_TIMEOUT`）转为 `REOPENED`，随后由处理人
+通过 `start` 进入 `IN_PROGRESS`；`CANCELLED` 不允许通过重开绕过原有处置。
+`DUPLICATE_LINKED` 的转换须等 Phase 2 形成可审计 Incident/主任务事实后再由受权任务
+定义，P1 不生成该状态。
 
 ## 5. Action API
 
@@ -110,8 +115,6 @@ resolve
 confirm
 reopen
 cancel
-link-incident
-unlink-incident
 ```
 
 每次 Action 请求包含：

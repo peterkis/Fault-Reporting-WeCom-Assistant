@@ -18,23 +18,26 @@ test('G0-008 closure keeps the current P1 task pointers and Phase 1 boundaries',
   const p1AdapterTask = backlog.tasks.find(({ id }) => id === 'P1-002');
   const p1InboxTask = backlog.tasks.find(({ id }) => id === 'P1-003');
   const p1IntakeTask = backlog.tasks.find(({ id }) => id === 'P1-004');
+  const completedPilotTasks = ['P1-005', 'P1-006', 'P1-007', 'P1-008', 'P1-009', 'P1-010']
+    .map((id) => backlog.tasks.find((task) => task.id === id));
 
   assert.equal(currentPhase.phase_id, 'P1');
   assert.equal(currentPhase.status, 'IN_PROGRESS');
   assert.equal(currentPhase.first_task, 'P1-001');
-  assert.equal(currentPhase.last_completed_task, 'P1-004');
+  assert.equal(currentPhase.last_completed_task, 'P1-010');
   assert.equal(currentPhase.active_task, null);
-  assert.equal(currentPhase.next_task, 'P1-005');
+  assert.equal(currentPhase.next_task, 'P1-011');
   assert.equal(g0Task?.status, 'DONE');
   assert.equal(p1Task?.status, 'DONE');
   assert.equal(p1AdapterTask?.status, 'DONE');
   assert.equal(p1InboxTask?.status, 'DONE');
   assert.equal(p1IntakeTask?.status, 'DONE');
+  assert.ok(completedPilotTasks.every((task) => task?.status === 'DONE'));
   assert.ok(g0Task.depends_on.includes('G0-006A'));
-  assert.equal(projectSummary.project.status, 'p1_p1-004_service_intake_aggregation_done');
-  assert.equal(projectSummary.project.last_completed_task, 'P1-004');
+  assert.equal(projectSummary.project.status, 'p1_p1-005_to_p1-010_pilot_ticket_core_local_postgresql_acceptance_done');
+  assert.equal(projectSummary.project.last_completed_task, 'P1-010');
   assert.equal(projectSummary.project.active_task, null);
-  assert.equal(projectSummary.project.next_task, 'P1-005');
+  assert.equal(projectSummary.project.next_task, 'P1-011');
   assert.ok(projectSummary.hard_invariants.includes('channel_message_idempotency_required'));
   assert.ok(!projectSummary.hard_invariants.includes('provider_msg_id_unique'));
   assert.ok(currentPhase.forbidden_before_exit.includes('Hospital Tickets dependency'));

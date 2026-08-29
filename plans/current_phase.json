@@ -13,8 +13,8 @@
   "status": "IN_PROGRESS",
   "started": true,
   "first_task": "P1-001",
-  "last_completed_task": "P1-004",
-  "next_task": "P1-005",
+  "last_completed_task": "P1-010",
+  "next_task": "P1-011",
   "active_task": null,
   "allowed_scope": [
     "Pilot project scaffold",
@@ -35,7 +35,13 @@
     "90-second same-context Intake aggregation",
     "primary supplement and clarification message relations",
     "transactional Intake audit events",
-    "deterministic request type rules"
+    "deterministic request type rules",
+    "Pilot Ticket Core and intake-to-ticket one-to-one relationship",
+    "explicit Ticket Action state transitions and append-only Ticket Events",
+    "Pilot Notification Outbox, Delivery, retry, lease, and dead-letter audit",
+    "post-commit first acknowledgement orchestration",
+    "Pilot-local principal, role, team, and minimal workbench boundary",
+    "supplement, card-action receipt, resolution confirmation, auto-close, and reopen lifecycle"
   ],
   "forbidden_before_exit": [
     "Hospital Tickets dependency",

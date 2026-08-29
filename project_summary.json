@@ -6,10 +6,10 @@
     "architecture_baseline": "V1.2",
     "baseline_date": "2026-08-21",
     "current_phase": "P1",
-    "status": "p1_p1-004_service_intake_aggregation_done",
+    "status": "p1_p1-005_to_p1-010_pilot_ticket_core_local_postgresql_acceptance_done",
     "first_executable_task": "P1-001",
-    "last_completed_task": "P1-004",
-    "next_task": "P1-005",
+    "last_completed_task": "P1-010",
+    "next_task": "P1-011",
     "active_task": null
   },
   "phase_model": [

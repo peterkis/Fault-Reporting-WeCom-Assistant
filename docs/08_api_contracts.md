@@ -66,6 +66,8 @@ Content-Type: application/json
 
 `req_id` 仅用于通道关联；Inbox 幂等只使用 `provider + msg_id`。Gate 0 真实 Frame 可能没有 `create_time`，此时保持 `null` 并使用 Adapter 记录的 `received_at`，不得伪造提供方时间。`download_ref` 只指向受保护原始回调上下文中的媒体位置，不能替代附件或企业微信 `media_id`。
 
+P1-005 至 P1-010 的可执行编排在同一 Inbox 事务中创建 Intake 和 Pilot Ticket，并在提交后才由首次确认服务尝试投递。咨询、无效请求或未创建 Ticket 的 Intake 不得虚构 `ticket_no`、`ticket_id` 或“处理中”状态；外发 sender 为注入式边界，提交或 SDK ACK 均不等同于客户端可见。
+
 成功响应：
 
 ```json
@@ -199,6 +201,8 @@ POST /api/v1/tickets/{ticket_id}/actions/reopen
 - 校验过期时间；
 - 转换为 Ticket Action；
 - 返回卡片更新内容。
+
+P1-010 的本地实现为 `notification.card_action_task` 和 `card_action_receipt`：服务端先校验任务、actor、过期时间和 `event_req_id`，再调用同一 Action 服务；重复事件返回首次响应快照。它是回调处理契约，不是企业微信客户端显示或用户点击的实测结论。
 
 ## 6. AI Triage API
 

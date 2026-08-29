@@ -4,8 +4,8 @@
   "canonical_source": "plans/master_backlog.json",
   "current_phase": "P1",
   "first_executable_task": "P1-001",
-  "last_completed_task": "P1-004",
-  "next_task": "P1-005",
+  "last_completed_task": "P1-010",
+  "next_task": "P1-011",
   "active_task": null,
   "completed_preflight": [
     {"id":"ARCH-001","title":"Architecture Baseline Cleanup","status":"DONE"}

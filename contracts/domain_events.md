@@ -104,6 +104,38 @@ P1-004 将以上 Intake 事件保存在 `intake.service_intake_event` 作为同�
 }
 ```
 
+### Ticket lifecycle events
+
+`ticket.created`、`ticket.started`、`ticket.waiting_vendor`、`ticket.resolved`、
+`ticket.closed`、`ticket.reopened`、`ticket.information_added` 和
+`ticket.auto_close_reminder` 均写入
+`pilot_ticket.ticket_event`。所有事件都带有 `ticket_id`、`ticket_no`、
+`aggregate_version`、前后状态、operator、`trace_id` 和时间线顺序；仅
+`external_note` 可以进入对申报人的通知 payload，`internal_note` 不得复制出去。
+
+```json
+{
+  "ticket_id": "uuid",
+  "ticket_no": "IT-20260829-0013",
+  "old_status": "RESOLVED",
+  "new_status": "CLOSED",
+  "aggregate_version": 6,
+  "reason_code": "AUTO_TIMEOUT"
+}
+```
+
+`ticket.closed` 的 `reason_code=REQUESTER_CONFIRMED` 表示申报人确认；
+`reason_code=AUTO_TIMEOUT` 表示系统自动关闭，二者不得混同。P1-010 的卡片
+回调、过期、重放和 actor 检查是本地持久化契约，并不声明真实企业微信客户端
+的显示或点击结果。
+
+`ticket.auto_close_reminder` 不改变 Ticket 状态；它只记录在自动关闭到期前、由 Outbox
+安排的一次提醒事实。自动关闭服务要求该事件已经被写入，不能跳过提醒直接把已解决工单
+关闭。
+
+`ticket.duplicate_linked` 与 `ticket.unlinked` 保留给 Phase 2 在存在可审计 Incident/主任务
+事实时使用；P1 不生成这两类事件。
+
 ### `ticket.waiting_requester`
 
 ```json

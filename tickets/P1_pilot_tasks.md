@@ -93,61 +93,67 @@
 - 已覆盖：单条、多条补充、显式新报修、另一工单引用、纯图片、图片后澄清、12 路不同消息并发、普通与显式边界逆序获锁及边界后回挂、八类请求类型与分句否定/感谢、聚合隐私与留存、旧结构升级/旧快照失败关闭、CLI 稳定错误映射、90 秒边界、上下文隔离、重放、整笔回滚、五位数编号、事件顺序和迁移/契约范围；定向真实 PostgreSQL 测试 22/22 通过。
 - 全量本机带库回归：99/99 通过；`p1-004-*` 合成 Channel Message、Intake、关系和事件残留均为 0。
 - 已确认：Channel Message 与 Intake 分表；每条消息最多属于一个 Intake；并发补充只形成一个 Intake；所有结果的 `ticket_id` 与 `incident_id` 为空，数据库不存在 Pilot Ticket、Incident、Outbox 或 Hospital 表。
-- 限制：规则分类不是 AI 结论；未实现 Ticket、回复或通知，因此不证明“客户端已收到工单”或临床闭环。P1-005 保持 TODO，尚未启动。
+- P1-004 的限定：规则分类不是 AI 结论；该任务本身未实现 Ticket、回复或通知，因此不证明“客户端已收到工单”或临床闭环。后续 P1-005 至 P1-010 的本机实现不改变该 P1-004 验收边界。
 
 ## P1-005 Pilot Ticket Core 模型与编号
 
-- 状态：TODO
+- 状态：DONE（本机 PostgreSQL 集成验收）
 - 依赖：P1-004
 - 输入：Service Intake、Pilot 服务目录和编号规则。
 - 输出：Pilot Ticket、编号、处理组、版本、内外部备注和迁移标识。
 - 测试：幂等创建、编号冲突、Intake 一对一主工单约束和回滚。
 - 验收：明确报修无需 AI 即可创建 Pilot Ticket；不调用 Hospital Tickets。
+- 结果：`pilot_ticket.ticket` 与 `intake.service_intake` 通过互相一致的外键和双向延迟约束形成一对一关系；提交时拒绝只写单侧的 Ticket/Intake 关联。编号为 `IT-YYYYMMDD-NNNN`，冲突稳定映射为 `PILOT_TICKET_NUMBER_CONFLICT`。真实 PostgreSQL 定向测试覆盖创建/重放、回滚、冲突后 Intake 未关联及单侧关联失败；未调用 Hospital Tickets、AI/OCR。
 
 ## P1-006 Pilot Ticket 状态机、Action 与事件
 
-- 状态：TODO
+- 状态：DONE（本机 PostgreSQL 集成验收）
 - 依赖：P1-005
 - 输入：状态枚举、合法转换、权限和乐观锁规则。
 - 输出：Action API、Ticket Event、真实对外状态和版本冲突处理。
 - 测试：全状态路径、非法转换、重复点击、并发接单和重开。
 - 验收：每次状态变化都有事件；不能通过通用 PATCH 绕过 Action。
+- 结果：`createTicketActionService` 仅接受命名 Action，并以 `expectedVersion`、行锁和追加式 `pilot_ticket.ticket_event` 实现状态转换、事件顺序和版本冲突；内部备注与外部说明分离。`CLOSED -> REOPENED -> IN_PROGRESS` 为显式闭环；P1 明确拒绝未有 Incident 事实的 `link-incident`，`DUPLICATE_LINKED` 留待 Phase 2 受权实现。
 
 ## P1-007 Notification Outbox 与 Delivery
 
-- 状态：TODO
+- 状态：DONE（本机 PostgreSQL 集成验收）
 - 依赖：P1-006
 - 输入：Ticket Event、通知矩阵、企业微信发送能力。
 - 输出：Pilot Outbox、Delivery、重试、限流、去重、死信和送达审计。
 - 测试：事务失败、发送超时、重复 Worker、断线积压和部分成功。
 - 验收：状态、事件和 Outbox 同事务；发送失败不回滚工单事实。
+- 结果：`notification.outbox`、`notification.delivery` 和 `notification.delivery_attempt` 以 Ticket Event 为幂等源；动作、事件与 Outbox 同事务，Worker 使用租约、`SKIP LOCKED`、指数重试、死信审计及按 `(channel, target_key)` 的持久化窗口限流。可执行矩阵使内部备注只发 Pilot 处理组。sender 为注入式测试边界，未发送真实企业微信消息。
 
 ## P1-008 首次确认与可靠回执
 
-- 状态：TODO
+- 状态：DONE（本机 PostgreSQL 集成验收）
 - 依赖：P1-007
 - 输入：持久化结果、Pilot Ticket 编号和通知模板。
 - 输出：事务提交后的首次回复、临时失败文案和发送时间指标。
 - 测试：提交失败、超时、重复消息、Gateway 重连和通知拒绝。
 - 验收：不在提交前回复；不虚构工单号或“处理中”状态。
+- 结果：首次确认只在 Inbox 事务成功返回后尝试投递，重复消息不重复发送；投递失败保留 `PENDING` 并返回只含真实编号/状态且标明临时性的 `TICKET_CREATED_DELIVERY_PENDING`，无工单不伪造编号或“处理中”事实，并记录首次确认投递延迟。该结果不证明客户端收到或展示。
 
 ## P1-009 最小处理端与 Pilot 权限
 
-- 状态：TODO
+- 状态：DONE（本机 PostgreSQL 集成验收）
 - 依赖：P1-006
 - 输入：Pilot 用户/角色配置、处理组和 Action API。
 - 输出：最小待办、接单、处理和备注入口及审计。
 - 测试：未授权、越权、并发操作、内部备注泄漏和移动端基础可用性。
 - 验收：使用 Pilot 身份边界，不要求医院 SSO 或 Hub。
+- 结果：新增 Pilot-local principal、角色与处理组成员关系；所有数据/API 入口都通过注入认证器，提供待办、受限 Ticket 视图和 Action 路由，申报人视图不泄漏内部备注，人工处理端不暴露系统 `auto-close`。根页面只提供无数据的静态壳并含移动端 viewport；未接入医院 SSO、人员主数据或 Hub。
 
 ## P1-010 补充、解决确认、关闭与重开
 
-- 状态：TODO
+- 状态：DONE（本机 PostgreSQL 集成验收）
 - 依赖：P1-008, P1-009
 - 输入：卡片能力、状态机、Outbox 和申报人关联。
 - 输出：请求补充、解决卡片、确认关闭、自动关闭标识和重开闭环。
 - 测试：过期/重复卡片、错误用户、超时关闭、仍未恢复和通知失败。
-- 验收：申报人可完成真实闭环；自动关闭不冒充用户确认。
+- 验收：申报人可完成闭环契约；自动关闭不冒充用户确认。
+- 结果：补充消息以持久化 Channel Message 关联到 Ticket 且拒绝跨 Intake 伪关联；本地卡片任务按 actor、过期时间、事件请求号和快照去重，解决后先记录并入队一次 `ticket.auto_close_reminder`，再可由 `SYSTEM` 在到期后以 `AUTO_TIMEOUT` 关闭。卡片任务为本地契约，未证明真实企业微信卡片展示或点击。
 
 ## P1-011 Pilot 安全、可观测性与运维基线
 

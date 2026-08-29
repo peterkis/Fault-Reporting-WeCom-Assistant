@@ -1,6 +1,6 @@
 # Phase 1：企业微信外网试点
 
-- 当前状态：`IN_PROGRESS`；P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 已完成 Channel Message Inbox 与数据库幂等的本机 PostgreSQL 集成验收，P1-004 已完成 Service Intake 与 90 秒消息聚合的本机 PostgreSQL 集成验收。当前没有公网 IP，以上结果均不构成公网或临床试点验收；Pilot Ticket Core 尚未开始，P1-005 保持 TODO。
+- 当前状态：`IN_PROGRESS`；P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 至 P1-010 已完成 Channel Message Inbox、Service Intake、Pilot Ticket Core、Action/事件、Outbox/Delivery、首回执、Pilot 权限工作台及关闭重开闭环的本机 PostgreSQL 集成验收。当前没有公网 IP，注入式 sender/合成卡片不构成真实客户端可见证据，以上结果均不构成公网或临床试点验收；下一任务为 P1-011。
 
 ## 阶段目标
 
@@ -38,12 +38,12 @@ Enterprise WeCom
 | P1-002 | WeCom SDK Adapter 与标准消息契约 | P1-001 | DONE（本地 Contract 验收） |
 | P1-003 | Channel Message Inbox 与数据库幂等 | P1-002 | DONE（本机 PostgreSQL 集成验收） |
 | P1-004 | Service Intake 创建与消息聚合 | P1-003 | DONE（本机 PostgreSQL 集成验收） |
-| P1-005 | Pilot Ticket Core 模型与编号 | P1-004 | TODO |
-| P1-006 | Pilot Ticket 状态机、Action 与事件 | P1-005 | TODO |
-| P1-007 | Notification Outbox 与 Delivery | P1-006 | TODO |
-| P1-008 | 首次确认与可靠回执 | P1-007 | TODO |
-| P1-009 | 最小处理端与 Pilot 权限 | P1-006 | TODO |
-| P1-010 | 补充、解决确认、关闭与重开 | P1-008, P1-009 | TODO |
+| P1-005 | Pilot Ticket Core 模型与编号 | P1-004 | DONE（本机 PostgreSQL 集成验收） |
+| P1-006 | Pilot Ticket 状态机、Action 与事件 | P1-005 | DONE（本机 PostgreSQL 集成验收） |
+| P1-007 | Notification Outbox 与 Delivery | P1-006 | DONE（本机 PostgreSQL 集成验收） |
+| P1-008 | 首次确认与可靠回执 | P1-007 | DONE（本机 PostgreSQL 集成验收） |
+| P1-009 | 最小处理端与 Pilot 权限 | P1-006 | DONE（本机 PostgreSQL 集成验收） |
+| P1-010 | 补充、解决确认、关闭与重开 | P1-008, P1-009 | DONE（本机 PostgreSQL 集成验收） |
 | P1-011 | Pilot 安全、可观测性与运维基线 | P1-007 | TODO |
 | P1-012 | Phase 1 E2E、故障演练与试点 Go/No-Go | P1-010, P1-011 | TODO |
 

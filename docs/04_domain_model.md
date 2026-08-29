@@ -70,7 +70,7 @@
 - 可追加补充消息；
 - 可因咨询或无效请求不生成 Ticket，但必须保留处理结论。
 
-P1-004 的可执行边界由 `intake.service_intake`、`intake.service_intake_message` 和 `intake.service_intake_event` 三张表实现。Channel Message 仍是不可被 Intake 覆盖的通道事实；每条 Channel Message 最多属于一个 Intake，关系显式区分 `PRIMARY`、`SUPPLEMENT` 和 `CLARIFICATION`。Intake 继承所有关联消息中的最强隐私级别和最早留存期限，这些数据库内部控制不无版本地扩展既有响应契约；处理结果不回显数据库摘要。P1-004 的 `ticket_id`、`incident_id` 公开值固定为空，实际关联列与外键分别留给 P1-005 和 Phase 2 的受权任务。
+P1-004 的可执行边界由 `intake.service_intake`、`intake.service_intake_message` 和 `intake.service_intake_event` 三张表实现。Channel Message 仍是不可被 Intake 覆盖的通道事实；每条 Channel Message 最多属于一个 Intake，关系显式区分 `PRIMARY`、`SUPPLEMENT` 和 `CLARIFICATION`。Intake 继承所有关联消息中的最强隐私级别和最早留存期限，这些数据库内部控制不无版本地扩展既有响应契约；处理结果不回显数据库摘要。P1-005 已以 `pilot_ticket_id` 与 `pilot_ticket.ticket.source_intake_id` 的双向一致关系补齐一张主 Ticket；`incident_id` 仍留给 Phase 2 的受权任务。
 
 ### 2.3 Ticket
 
@@ -91,7 +91,7 @@ Phase 1/2 由 Pilot Ticket Core 管理；Phase 3 切换后由 Hospital Tickets �
 - 关闭原因；
 - version。
 
-一个 Ticket 可由一个 Intake 创建，也可承载 Incident 下的处理任务。
+P1-005 至 P1-010 的可执行 Ticket 只由一个 Service Intake 创建，使用 `IT-YYYYMMDD-NNNN` 编号、显式 Action、乐观版本、追加式 Ticket Event 和 Pilot Outbox。P1-010 增加持久化补充、卡片任务回执、`AUTO_TIMEOUT` 自动关闭和 `CLOSED -> REOPENED`；真实企业微信卡片显示/点击仍须单独实测。一个 Ticket 可在 Phase 2 受权后承载 Incident 下的处理任务。
 
 ### 2.4 Incident
 

@@ -83,4 +83,4 @@ npm run p1:004:verify
 
 全量带库回归为 99/99 通过；验收后 `p1-004-*` 合成 Channel Message、Intake、关系和事件残留均为 0，且数据库中不存在 `pilot_ticket` Schema。
 
-当前结果只证明本机、合成 Normalized Message 和本机 PostgreSQL 下的 P1-004 行为。它没有连接真实 WSS、没有公网 IP、没有客户端回执，也没有临床人员观察，因此不构成公网、企业微信端到端或临床试点验收。P1-005 仍为 TODO，必须另行授权后才能创建 Pilot Ticket。
+当前结果只证明本机、合成 Normalized Message 和本机 PostgreSQL 下的 P1-004 行为。它没有连接真实 WSS、没有公网 IP、没有客户端回执，也没有临床人员观察，因此不构成公网、企业微信端到端或临床试点验收。P1-004 验收时 P1-005 仍为 TODO；后续经单独授权实施的 P1-005 至 P1-010 不改变本任务自身的验收边界。

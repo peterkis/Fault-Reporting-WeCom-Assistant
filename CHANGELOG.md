@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### P1-005 至 P1-010 Pilot Ticket Core 闭环（本机 PostgreSQL 集成验收完成）
+
+- 新增独立 Pilot Ticket Core：Service Intake 双向一对一主工单、稳定 `IT-YYYYMMDD-NNNN` 编号、`PILOT_IT` 默认处理组、版本与 Intake 创建审计事件；不调用 Hospital Tickets。
+- 新增显式 Ticket Action、乐观锁与追加式 Ticket Event；状态、事件与 Pilot Outbox/Delivery 同事务，Worker 使用可执行目标矩阵、逐目标窗口限流、目标幂等、租约、`SKIP LOCKED`、指数重试和死信审计。
+- 新增提交后首次确认编排和真实事实限定的临时失败回复、Pilot-local principal/角色/处理组和最小工作台，以及补充、卡片任务回执、关闭前提醒、确认关闭、`AUTO_TIMEOUT` 自动关闭与 `CLOSED -> REOPENED` 闭环。
+- P1-005 至 P1-010 串行真实 PostgreSQL 集成回归 18/18、全仓串行回归 147/147 通过。sender 与卡片均为注入式/合成边界；本次未发送真实企业微信消息、未验证客户端显示/点击、未接入医院 SSO、Hub、Hospital Tickets、Ticket Adapter 或 AI/OCR，因此不构成公网或临床试点验收。
+
 ### P1-004 Service Intake 创建与消息聚合（本机 PostgreSQL 集成验收完成）
 
 - 新增独立 `intake.service_intake`、消息关系和 Intake 审计事件迁移，并通过 P1-003 首次处理回调与 Channel Message 同事务提交/回滚。

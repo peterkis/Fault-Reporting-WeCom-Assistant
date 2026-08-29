@@ -42,7 +42,13 @@
 - `src/p1-002-wecom-sdk-adapter.mjs`、`tests/p1-002-wecom-sdk-adapter.test.mjs`、`contracts/normalized_wecom_message.schema.json`、`docs/21_p1_wecom_sdk_adapter.md` 与 `evidence/p1-002-wecom-adapter-report.md`：SDK Frame 隔离、标准消息契约、opaque 媒体引用和稳定错误码；
 - `database/migrations/001_p1_003_channel_message_inbox.sql`、`src/p1-003-channel-message-inbox.mjs`、`scripts/p1-003-migrate.mjs`、`tests/p1-003-channel-message-inbox.test.mjs`、`tests/fixtures/p1-003-inbox-worker.mjs`、`docs/22_p1_channel_message_inbox.md` 与 `evidence/p1-003-channel-message-inbox-report.md`：Channel Message 持久化、数据库并发幂等、原结果快照、隐私/留存输入和本机 PostgreSQL 集成验收；
 - `database/migrations/002_p1_004_service_intake.sql`、`src/p1-004-service-intake.mjs`、`scripts/p1-004-migrate.mjs`、`scripts/p1-004-verify.mjs`、`tests/p1-004-service-intake.test.mjs`、`contracts/service_intake.schema.json`、`docs/23_p1_service_intake.md` 与 `evidence/p1-004-service-intake-report.md`：Service Intake、90 秒同上下文聚合、补充/澄清关系、确定性请求分类和 Intake 审计事件的本机 PostgreSQL 集成验收；
-- P1-001 至 P1-004 已完成各自本地验收；P1-005 尚未启动。当前没有公网 IP，本地结果不构成公网或临床试点验收。
+- `database/migrations/003_p1_005_pilot_ticket_core.sql`、`src/p1-005-pilot-ticket-core.mjs`、`scripts/p1-005-migrate.mjs`、`tests/p1-005-pilot-ticket-core.test.mjs` 与 `docs/24_p1_pilot_ticket_core.md`：Pilot Ticket Core、Intake 一对一关系和稳定编号；
+- `database/migrations/004_p1_006_ticket_state_actions.sql`、`src/p1-006-ticket-state-actions.mjs`、`scripts/p1-006-migrate.mjs`、`tests/p1-006-ticket-state-actions.test.mjs` 与 `docs/25_p1_ticket_actions.md`：显式 Ticket Action、乐观版本和追加式事件；
+- `database/migrations/005_p1_007_notification_outbox.sql`、`src/p1-007-notification-outbox.mjs`、`scripts/p1-007-migrate.mjs`、`tests/p1-007-notification-outbox.test.mjs` 与 `docs/26_p1_notification_outbox.md`：Pilot Outbox、Delivery、租约、重试和死信审计；
+- `src/p1-008-first-acknowledgement.mjs`、`tests/p1-008-first-acknowledgement.test.mjs` 与 `docs/27_p1_first_acknowledgement.md`：提交后首次确认编排；
+- `database/migrations/006_p1_009_pilot_access.sql`、`src/p1-009-pilot-access-workbench.mjs`、`scripts/p1-009-migrate.mjs`、`tests/p1-009-pilot-access-workbench.test.mjs` 与 `docs/28_p1_pilot_access_workbench.md`：Pilot-local 身份、角色、处理组与最小工作台；
+- `database/migrations/007_p1_010_ticket_closure.sql`、`database/migrations/008_p1_010_review_hardening.sql`、`src/p1-010-ticket-closure.mjs`、`scripts/p1-010-migrate.mjs`、`tests/p1-010-ticket-closure.test.mjs` 与 `docs/29_p1_ticket_closure.md`：补充、卡片任务回执、关闭前提醒、确认关闭、自动关闭和重开；
+- P1-001 至 P1-010 已完成各自本地验收；下一任务为 P1-011。当前没有公网 IP，注入式 sender/合成卡片不构成公网、客户端可见或临床试点验收。
 
 ## 其他规格
 
