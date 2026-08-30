@@ -1,13 +1,13 @@
 # V1.4 分阶段路线图
 
-- 当前阶段：P2 / P2-001 / DONE（等待下一任务独立授权）
+- 当前阶段：P2 / P2-002 / IN_PROGRESS（仅本任务已获独立授权）
 - 长期事实源：Unified Ticket Core
 - P3 前提：没有历史业务 Ticket，采用绿地内网接入
 
 ```text
 Gate 0 企业微信能力验证（DONE）
 → Phase 1 企业微信外网试点（DONE / GO）
-→ Phase 2 Conversation Center 与 AI 协作（IN_PROGRESS / P2-001 DONE / STOP）
+→ Phase 2 Conversation Center 与 AI 协作（IN_PROGRESS / P2-002 ACTIVE）
 → Phase 3 医院内网新来源接入与统一运营
 ```
 
@@ -51,7 +51,7 @@ P3-G1 Contract + Outbound Transport
 
 ## 阶段纪律
 
-1. P1-012 已完成并保留 `GO`；P2-001 已完成，P2-002 及以后和 P3 仍须另行授权；
+1. P1-012 已完成并保留 `GO`；P2-001 已完成，仅 P2-002 已授权并在执行，P2-003 及以后和 P3 仍须另行授权；
 2. P2 必须先 Human-only；
 3. AI 自动回复必须独立 Gate；
 4. P3 先 Contract 和 Simulator，再真实来源；

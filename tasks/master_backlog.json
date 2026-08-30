@@ -4,8 +4,15 @@
   "canonical_source": "plans/master_backlog.json",
   "current_phase": "P2",
   "last_completed_task": "P2-001",
-  "active_task": null,
+  "active_task": "P2-002",
   "next_phase_authorized": true,
+  "authorized_tasks": [
+    "P2-001",
+    "P2-002"
+  ],
+  "active_lane": "P2-A",
+  "implementation_authorization_status": "P2_002_IN_PROGRESS",
+  "p2_g1_status": "NOT_STARTED",
   "task_files": {
     "G0": "tickets/G0_gate0_tasks.md",
     "P1": "tickets/P1_pilot_tasks.md",
@@ -23,9 +30,9 @@
     "2C4G lightweight deployment is mandatory"
   ],
   "next_tasks": {
-    "current": null,
+    "current": "P2-002",
     "candidate": "P2-002",
-    "candidate_authorized": false,
+    "candidate_authorized": true,
     "after_p1": [
       "P2-001"
     ],

@@ -3,13 +3,15 @@
   "current_phase": "P2",
   "next_phase_authorized": true,
   "authorized_tasks": [
-    "P2-001"
+    "P2-001",
+    "P2-002"
   ],
   "last_completed_task": "P2-001",
-  "active_task": null,
-  "active_lane": null,
+  "active_task": "P2-002",
+  "active_lane": "P2-A",
+  "implementation_authorization_status": "P2_002_IN_PROGRESS",
   "next_task_candidate": "P2-002",
-  "next_task_authorized": false,
+  "next_task_authorized": true,
   "feature_flags_enabled": [],
   "feature_flag_defaults": {
     "CONVERSATION_CENTER_ENABLED": false,
@@ -26,7 +28,7 @@
     "HOSPITAL_API_SOURCE_ENABLED": false,
     "MONITORING_SOURCE_ENABLED": false
   },
-  "rule": "P2-001 in P2-A is complete. No implementation task is active. Other lanes may only read the frozen contracts. P2-002 and later tasks must not start without separate authorization. Every P2 and P3 feature flag remains false. P3 is not started and has no historical-ticket work.",
+  "rule": "P2-001 in P2-A is complete and only P2-002 is authorized and active in P2-A. Other lanes may only read the frozen contracts. P2-003 and later tasks must not start without separate authorization. Every P2 and P3 feature flag remains false. P2-G1 and P3 are not started.",
   "migration_number_reservations": {
     "P2-A": "010-019",
     "P2-B": "020-029",
@@ -196,6 +198,7 @@
     {
       "id": "P2-G1",
       "name": "Human-only Conversation Center",
+      "status": "NOT_STARTED",
       "requires": [
         "P2-001",
         "P2-002",
@@ -208,6 +211,7 @@
     {
       "id": "P2-G2",
       "name": "AI Shadow",
+      "status": "NOT_STARTED",
       "requires": [
         "P2-G1",
         "P2-007",
@@ -218,6 +222,7 @@
     {
       "id": "P2-G3",
       "name": "Copilot Media Incident",
+      "status": "NOT_STARTED",
       "requires": [
         "P2-G1",
         "P2-G2",
@@ -228,6 +233,7 @@
     {
       "id": "P2-G4",
       "name": "Controlled Auto and Phase 2 Go",
+      "status": "NOT_STARTED",
       "requires": [
         "P2-G3",
         "P2-010",
@@ -238,6 +244,7 @@
     {
       "id": "P3-G1",
       "name": "Connector Contract and Transport",
+      "status": "NOT_STARTED",
       "requires": [
         "P3-001",
         "P3-002",
@@ -248,6 +255,7 @@
     {
       "id": "P3-G2",
       "name": "First Intranet Source E2E",
+      "status": "NOT_STARTED",
       "requires": [
         "P3-G1",
         "P3-004",
@@ -258,6 +266,7 @@
     {
       "id": "P3-G3",
       "name": "Multi-source Operations Fault Security Reconciliation",
+      "status": "NOT_STARTED",
       "requires": [
         "P3-G2",
         "P3-008",
@@ -269,6 +278,7 @@
     {
       "id": "P3-G4",
       "name": "First Production Source Onboarding and Phase 3 Go",
+      "status": "NOT_STARTED",
       "requires": [
         "P3-G3",
         "P3-012"

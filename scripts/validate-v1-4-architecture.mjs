@@ -23,15 +23,20 @@ const sourceExample = json('config_examples/integration_source.example.json');
 
 check(manifest.architecture_baseline === 'V1.4', 'manifest baseline is V1.4');
 check(manifest.current_phase === 'P2', 'manifest records P2 current');
-check(manifest.active_task === null && manifest.last_completed_task === 'P2-001', 'manifest records P2-001 complete with no active task');
-check(manifest.status === 'P2_P2_001_DONE_AWAITING_SEPARATE_AUTHORIZATION', 'manifest stops after P2-001');
-check(manifest.next_task_candidate === 'P2-002' && manifest.next_task_authorized === false, 'manifest keeps P2-002 unauthorized');
+check(manifest.active_task === 'P2-002' && manifest.last_completed_task === 'P2-001', 'manifest records only P2-002 active after P2-001');
+check(manifest.status === 'P2_P2_002_IN_PROGRESS', 'manifest records P2-002 in progress');
+check(manifest.next_task_candidate === 'P2-002' && manifest.next_task_authorized === true, 'manifest records P2-002 authorization');
+check(JSON.stringify(manifest.authorized_tasks) === JSON.stringify(['P2-001', 'P2-002']) && manifest.active_lane === 'P2-A', 'manifest limits active authorization to P2-A P2-002');
+check(manifest.implementation_authorization_status === 'P2_002_IN_PROGRESS' && manifest.p2_g1_status === 'NOT_STARTED', 'manifest keeps P2-G1 not started');
+check(manifest.source_of_truth === 'Unified Ticket Core in this repository', 'manifest preserves Unified Ticket Core as sole source');
 check(manifest.p3_scope === 'GREENFIELD_INTRANET_SOURCE_ONBOARDING_NO_HISTORICAL_TICKETS', 'manifest declares greenfield P3');
-check(current.phase_id === 'P2' && current.status === 'IN_PROGRESS' && current.active_task === null, 'current phase remains P2 with no active implementation task');
+check(current.phase_id === 'P2' && current.status === 'IN_PROGRESS' && current.active_task === 'P2-002', 'current phase records only P2-002 active');
 check(current.last_completed_task === 'P2-001', 'current phase records P2-001 as last completed');
 check(current.next_phase_authorized === true, 'P2 phase start is authorized');
-check(JSON.stringify(current.authorized_tasks) === JSON.stringify(['P2-001']) && current.active_lane === null, 'completed authorization remains limited to P2-001 with no active lane');
-check(current.next_task_candidate === 'P2-002' && current.next_task_authorized === false, 'P2-002 remains a candidate without authorization');
+check(JSON.stringify(current.authorized_tasks) === JSON.stringify(['P2-001', 'P2-002']) && current.active_lane === 'P2-A', 'current authorization is limited to P2-001 and active P2-002 in P2-A');
+check(current.next_task_candidate === 'P2-002' && current.next_task_authorized === true, 'P2-002 is the authorized active candidate');
+check(current.implementation_authorization_status === 'P2_002_IN_PROGRESS' && current.p2_g1_status === 'NOT_STARTED', 'current state keeps P2-G1 not started');
+check(current.p2_002_authorization_evidence === 'evidence/p2-002-start-authorization.md', 'current state links P2-002 authorization evidence');
 check(current.exit_decision?.phase_id === 'P1' && current.exit_decision?.decision === 'GO' && current.exit_decision?.completed_at === '2026-08-30' && current.exit_decision?.evidence === 'evidence/p1-012-project-owner-go-approval.md' && current.exit_decision?.blockers?.length === 0, 'P1 exit identity completion and Go evidence are preserved');
 
 const p1 = backlog.phases.find((p) => p.id === 'P1');
@@ -39,12 +44,18 @@ const p2 = backlog.phases.find((p) => p.id === 'P2');
 const p3 = backlog.phases.find((p) => p.id === 'P3');
 check(p1?.status === 'DONE' && p1?.go_decision === 'GO', 'P1 phase is complete with Go');
 check(p2?.status === 'IN_PROGRESS', 'P2 is in progress');
-check(backlog.active_task === null && backlog.last_completed_task === 'P2-001', 'backlog records P2-001 complete with no active task');
-check(backlog.next_task_candidate === 'P2-002' && backlog.next_task_authorized === false, 'backlog keeps P2-002 unauthorized');
+check(backlog.active_task === 'P2-002' && backlog.last_completed_task === 'P2-001', 'backlog records P2-002 active after P2-001');
+check(backlog.next_task_candidate === 'P2-002' && backlog.next_task_authorized === true, 'backlog records P2-002 authorized');
+check(JSON.stringify(backlog.authorized_tasks) === JSON.stringify(['P2-001', 'P2-002']) && backlog.active_lane === 'P2-A' && backlog.implementation_authorization_status === 'P2_002_IN_PROGRESS', 'backlog limits active work to P2-002 in P2-A');
 check(backlog.tasks.find((task) => task.id === 'P2-001')?.status === 'DONE', 'P2-001 is done');
 check(backlog.tasks.find((task) => task.id === 'P2-001')?.evidence === 'evidence/p2-001-conversation-contracts-report.md', 'P2-001 evidence is linked');
-check(backlog.tasks.filter((task) => task.phase === 'P2' && task.id !== 'P2-001').every((task) => task.status === 'TODO'), 'P2-002 and later remain TODO');
+check(backlog.tasks.find((task) => task.id === 'P2-002')?.status === 'IN_PROGRESS', 'P2-002 is in progress');
+check(backlog.tasks.find((task) => task.id === 'P2-002')?.lane === 'P2-A' && backlog.tasks.find((task) => task.id === 'P2-002')?.gate === 'P2-G1', 'P2-002 remains in P2-A targeting but not starting P2-G1');
+check(backlog.tasks.find((task) => task.id === 'P2-002')?.authorization_evidence === 'evidence/p2-002-start-authorization.md' && backlog.tasks.find((task) => task.id === 'P2-002')?.task_file === 'tasks/P2-002_persistent_timeline_projector.md', 'P2-002 links its task and authorization evidence');
+check(backlog.tasks.filter((task) => task.phase === 'P2' && !['P2-001', 'P2-002'].includes(task.id)).every((task) => task.status === 'TODO'), 'P2-003 and later remain TODO');
 check(p3?.status === 'TODO', 'P3 remains TODO');
+check(backlog.tasks.filter((task) => task.phase === 'P3').every((task) => task.status === 'TODO'), 'all P3 tasks remain TODO');
+check(backlog.source_of_truth === 'Unified Ticket Core in this repository' && p2?.ticket_backend === 'Unified Ticket Core', 'backlog preserves Unified Ticket Core as sole source');
 check(p3?.target_source_of_truth === 'Unified Ticket Core', 'Unified Ticket Core remains authoritative');
 check(p3?.scope_mode === 'GREENFIELD_NO_HISTORICAL_TICKETS', 'P3 scope is greenfield');
 check(!Object.hasOwn(p3 ?? {}, 'legacy_source'), 'P3 has no legacy source field');
@@ -77,8 +88,8 @@ const expectedFeatureFlags = [
   'MONITORING_SOURCE_ENABLED',
 ];
 check(parallel.current_phase === 'P2' && parallel.next_phase_authorized === true, 'parallel workstreams record P2 authorization');
-check(parallel.active_task === null && parallel.active_lane === null && parallel.last_completed_task === 'P2-001' && JSON.stringify(parallel.authorized_tasks) === JSON.stringify(['P2-001']), 'parallel workstreams stop after completed P2-001');
-check(parallel.next_task_candidate === 'P2-002' && parallel.next_task_authorized === false, 'parallel workstreams do not authorize P2-002');
+check(parallel.active_task === 'P2-002' && parallel.active_lane === 'P2-A' && parallel.last_completed_task === 'P2-001' && JSON.stringify(parallel.authorized_tasks) === JSON.stringify(['P2-001', 'P2-002']), 'parallel workstreams activate only P2-002 in P2-A');
+check(parallel.next_task_candidate === 'P2-002' && parallel.next_task_authorized === true && parallel.implementation_authorization_status === 'P2_002_IN_PROGRESS', 'parallel workstreams record P2-002 authorization');
 check(Object.values(parallel.feature_flag_defaults ?? {}).every((value) => value === false) && parallel.feature_flags_enabled?.length === 0, 'all parallel feature flags remain false');
 check(JSON.stringify(Object.keys(parallel.feature_flag_defaults ?? {})) === JSON.stringify(expectedFeatureFlags), 'parallel feature flag inventory matches the frozen environment contract');
 check(JSON.stringify(laneIds) === JSON.stringify(['P2-A','P2-B','P2-C','P2-D','P3-A','P3-B','P3-C','P3-D']), 'parallel lanes are complete');
@@ -88,6 +99,8 @@ check(p3c?.branch === 'phase3/intranet-sources', 'P3-C branch is greenfield');
 check(!(p3c?.feature_flags ?? []).some((f) => /LEGACY|HOSPITAL_TICKETS/.test(f)), 'P3-C has no legacy import flags');
 
 const gates = new Map(parallel.assembly_gates.map((g) => [g.id, g.name]));
+check(parallel.assembly_gates.find((g) => g.id === 'P2-G1')?.status === 'NOT_STARTED', 'P2-G1 remains not started');
+check(parallel.assembly_gates.every((g) => g.status === 'NOT_STARTED'), 'all assembly gates remain not started');
 check(gates.get('P3-G2') === 'First Intranet Source E2E', 'P3-G2 is first source E2E');
 check(gates.get('P3-G4') === 'First Production Source Onboarding and Phase 3 Go', 'P3-G4 is production source onboarding');
 
@@ -131,16 +144,20 @@ check(!/migration_batch_id|MIGRATION_BATCH|FINAL_CUTOVER|IMPORT_ONLY|IMPORT_AND_
 check(!/CREATE TABLE IF NOT EXISTS\s+unified_ticket\.ticket/i.test(schema), 'schema does not create second ticket core');
 
 check(taskIndex.architecture_baseline === 'V1.4', 'task index baseline is V1.4');
-check(taskIndex.current_phase === 'P2' && taskIndex.active_task === null && taskIndex.last_completed_task === 'P2-001', 'task index stops after P2-001');
+check(taskIndex.current_phase === 'P2' && taskIndex.active_task === 'P2-002' && taskIndex.last_completed_task === 'P2-001', 'task index records P2-002 active after P2-001');
 check(taskIndex.next_phase_authorized === true, 'task index records P2 authorization');
-check(taskIndex.next_tasks?.current === null && taskIndex.next_tasks?.candidate === 'P2-002' && taskIndex.next_tasks?.candidate_authorized === false, 'task index keeps P2-002 unauthorized');
-check(JSON.stringify(taskIndex.next_tasks?.after_p1) === JSON.stringify(['P2-001']) && taskIndex.next_tasks?.authorization_required_after_current === true, 'task index preserves the completed P2-001 authorization and requires authorization afterward');
+check(taskIndex.next_tasks?.current === 'P2-002' && taskIndex.next_tasks?.candidate === 'P2-002' && taskIndex.next_tasks?.candidate_authorized === true, 'task index records P2-002 as current and authorized');
+check(JSON.stringify(taskIndex.authorized_tasks) === JSON.stringify(['P2-001', 'P2-002']) && taskIndex.active_lane === 'P2-A' && taskIndex.implementation_authorization_status === 'P2_002_IN_PROGRESS', 'task index limits authorization to active P2-A');
+check(JSON.stringify(taskIndex.next_tasks?.after_p1) === JSON.stringify(['P2-001']) && taskIndex.next_tasks?.authorization_required_after_current === true, 'task index requires separate authorization after P2-002');
 check(taskIndex.architecture_guards.some((g) => g.includes('no historical ticket import')), 'task index guards greenfield P3');
 
 check(projectSummary.project.architecture_baseline === 'V1.4', 'project summary uses V1.4');
-check(projectSummary.project.status === 'p2_p2_001_done_awaiting_separate_authorization', 'project summary stops after P2-001');
-check(projectSummary.project.last_completed_task === 'P2-001' && projectSummary.project.active_task === null && projectSummary.project.active_lane === null, 'project summary records no active task or lane');
-check(projectSummary.project.next_task === 'P2-002' && projectSummary.project.next_task_authorized === false, 'project summary does not authorize P2-002');
+check(projectSummary.project.status === 'p2_p2_002_in_progress', 'project summary records P2-002 in progress');
+check(projectSummary.project.last_completed_task === 'P2-001' && projectSummary.project.active_task === 'P2-002' && projectSummary.project.active_lane === 'P2-A', 'project summary records only P2-002 active in P2-A');
+check(projectSummary.project.next_task === 'P2-002' && projectSummary.project.next_task_authorized === true, 'project summary records P2-002 authorization');
+check(JSON.stringify(projectSummary.project.authorized_tasks) === JSON.stringify(['P2-001', 'P2-002']) && projectSummary.project.p2_g1_status === 'NOT_STARTED', 'project summary keeps P2-G1 not started');
+const p2Summary = projectSummary.phase_model.find((phase) => phase.id === 'P2');
+check(p2Summary?.status === 'IN_PROGRESS' && p2Summary?.active_task === 'P2-002' && p2Summary?.next_task_authorized === true && p2Summary?.p2_g1_status === 'NOT_STARTED', 'phase model mirrors P2-002 active state');
 check(projectSummary.hard_invariants.includes('unified_ticket_core_is_long_term_source_of_truth'), 'project summary preserves Unified Ticket Core authority');
 
 const conversationThreadSchema = json('contracts/conversation_thread.schema.json');
@@ -151,6 +168,8 @@ check(conversationSessionSchema.properties?.control_mode?.default === 'HUMAN', '
 check(conversationItemSchema['x-implementation-task'] === 'P2-002', 'Conversation Item persistence remains reserved for P2-002');
 check(fs.existsSync(path.join(root, 'tasks/P2-001_conversation_thread_session_contracts.md')), 'P2-001 task record exists');
 check(fs.existsSync(path.join(root, 'evidence/p2-001-conversation-contracts-report.md')), 'P2-001 evidence exists');
+check(fs.existsSync(path.join(root, 'tasks/P2-002_persistent_timeline_projector.md')), 'P2-002 task record exists');
+check(fs.existsSync(path.join(root, 'evidence/p2-002-start-authorization.md')), 'P2-002 authorization evidence exists');
 
 const p1Approval = read('evidence/p1-012-project-owner-go-approval.md');
 check(p1Approval.includes('“我批准了”'), 'P1 approval preserves the project owner confirmation');
@@ -159,6 +178,10 @@ const p2Authorization = read('evidence/p2-phase-start-authorization.md');
 check(p2Authorization.includes('项目负责人正式授权启动 Phase 2，但本轮仅授权 ARCH-004 和 P2-001'), 'P2 authorization records exact authorized scope');
 check(p2Authorization.includes('P2-002 及以后任务仍须另行授权'), 'P2 authorization preserves the next-task stop line');
 check(p2Authorization.includes('不等同于生产上线、临床上线或 AI 自动回复批准'), 'P2 authorization excludes production clinical and AI reply approval');
+const p2_002Authorization = read('evidence/p2-002-start-authorization.md');
+check(p2_002Authorization.includes('项目负责人正式、独立授权启动 P2-002'), 'P2-002 authorization records exact project-owner scope');
+check(p2_002Authorization.includes('P2-003 及以后任务、P2-G1 组装和所有生产功能仍须另行授权'), 'P2-002 authorization preserves the next-task and gate stop line');
+check(p2_002Authorization.includes('所有 P2/P3 Feature Flag 继续为 `false`'), 'P2-002 authorization keeps all feature flags off');
 
 check(pkg.scripts['validate:architecture:v1.4'] === 'node scripts/validate-v1-4-architecture.mjs', 'package exposes V1.4 validator');
 check(pkg.scripts['test:architecture:v1.4'] === 'node --test tests/v1-4-architecture-baseline.test.mjs', 'package exposes V1.4 tests');

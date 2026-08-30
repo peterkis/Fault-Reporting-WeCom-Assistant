@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### P2-002 持久化 Timeline Projector 独立启动授权
+
+- 项目负责人于 2026-08-30 正式、独立授权仅启动 `P2-002 / P2-A`，状态更新为 `IN_PROGRESS`；授权 Evidence 和完整 Task 停止线已记录。
+- 本任务只允许实现可重建 Conversation Timeline 投影、Source Binding、Checkpoint、当前 P1 事实源只读 Mapper 与未来来源 fixture Mapper；Unified Ticket Core 和各上游事实所有权不变。
+- P2-003 至 P2-014、P2-G1、SSE、Realtime Event Log、Workbench、Communication Outbox、Handoff/Assignment/Read Cursor、AI/DeepSeek、医院内网和全部 P3 任务仍未授权。
+- 全部 P2/P3 Feature Flag 继续为 `false`；本授权不等同于生产或临床上线，且不授权推送、合并、打标签或发布远端。
+
 ### P2-001 Conversation Thread、Session 与控制模式契约
 
 - 冻结 Thread 四元自然身份、参与人隔离 Session、Conversation Item、`HUMAN/COPILOT/AUTO` 控制模式与 generation/row version 契约；新 Session 默认 `HUMAN`。

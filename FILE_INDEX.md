@@ -10,8 +10,10 @@
 - `tasks/master_backlog.json`：精简任务索引。
 - `tasks/ARCH-004_p1_to_p2_phase_transition.md`：P1 → P2 阶段切换任务记录；
 - `tasks/P2-001_conversation_thread_session_contracts.md`：P2-001 契约任务记录；
+- `tasks/P2-002_persistent_timeline_projector.md`：当前 P2-002 投影任务记录；
 - `evidence/p2-phase-start-authorization.md`：Phase 2 启动及仅授权 P2-001 的负责人 Evidence；
-- `evidence/p2-001-conversation-contracts-report.md`：P2-001 脱敏验证 Evidence。
+- `evidence/p2-001-conversation-contracts-report.md`：P2-001 脱敏验证 Evidence；
+- `evidence/p2-002-start-authorization.md`：仅启动 P2-002 的项目负责人独立授权 Evidence。
 
 ## ADR
 
@@ -45,6 +47,13 @@
 - `scripts/p2-001-migrate.mjs`：受限迁移入口；
 - `tests/p2-001-conversation-contracts.test.mjs`：Contract/Unit 测试；
 - `tests/p2-001-conversation-contracts.integration.test.mjs`：隔离 PostgreSQL 集成测试。
+
+## P2-002 授权状态
+
+- 当前唯一活动任务：`P2-002 / P2-A / IN_PROGRESS`；
+- `P2-003` 及以后任务与 `P2-G1` 均未授权；
+- 所有 P2/P3 Feature Flag 保持 `false`；
+- P2-002 实现文件只可在本任务第二个本地提交中加入。
 
 ## 设计与契约
 

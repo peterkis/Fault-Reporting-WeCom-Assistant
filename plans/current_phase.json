@@ -1,25 +1,30 @@
 {
   "architecture_baseline": "V1.4",
   "baseline_status_document": "docs/architecture_baseline_status.md",
-  "source_base_commit": "0ac71269c0da8a6ee55bb2f96e3d293c57c0e398",
+  "source_base_commit": "a30dced5fc62fa62ace1ebe1b86cd765f9f73310",
   "phase_id": "P2",
   "phase_name": "Conversation Center 与 AI 协作",
   "status": "IN_PROGRESS",
   "started": true,
   "last_completed_task": "P2-001",
-  "active_task": null,
+  "active_task": "P2-002",
   "next_phase_authorized": true,
   "authorized_tasks": [
-    "P2-001"
+    "P2-001",
+    "P2-002"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "AWAITING_SEPARATE_TASK_AUTHORIZATION",
+  "active_lane": "P2-A",
+  "implementation_authorization_status": "P2_002_IN_PROGRESS",
+  "p2_g1_status": "NOT_STARTED",
   "next_task_candidate": "P2-002",
-  "next_task_authorized": false,
+  "next_task_authorized": true,
   "p2_001_completed_at": "2026-08-30",
+  "p2_002_authorized_at": "2026-08-30",
+  "p2_002_authorization_evidence": "evidence/p2-002-start-authorization.md",
   "allowed_scope": [
-    "read-only use of frozen P2-001 contracts",
-    "maintenance required to preserve the completed P2-001 contract",
+    "implement P2-002 persistent rebuildable timeline projection in P2-A",
+    "read-only mapping from existing Channel Message, Ticket Event, and Notification Delivery facts",
+    "fixture-only mapping for future Communication Message and Handoff Event contracts",
     "all P2 and P3 feature flags remain disabled"
   ],
   "forbidden_before_exit": [
@@ -35,7 +40,7 @@
     "historical ticket compatibility scope"
   ],
   "forbidden_without_task_authorization": [
-    "start P2-002 or any later P2 task",
+    "start P2-003 or any later P2 task",
     "start any P3 task",
     "assemble P2-G1 or any later gate",
     "enable Conversation Center, human delivery, realtime, SSE, AI, OCR, Incident, or integration feature flags",
@@ -67,7 +72,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_001_DONE_AWAITING_SEPARATE_AUTHORIZATION",
+    "activation_status": "P2_002_IN_PROGRESS",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

@@ -26,12 +26,12 @@ test('G0-008 closure preserves completed P1 facts after the scoped P2 transition
   assert.equal(currentPhase.phase_id, 'P2');
   assert.equal(currentPhase.status, 'IN_PROGRESS');
   assert.equal(currentPhase.last_completed_task, 'P2-001');
-  assert.equal(currentPhase.active_task, null);
+  assert.equal(currentPhase.active_task, 'P2-002');
   assert.equal(currentPhase.next_phase_authorized, true);
   assert.equal(currentPhase.exit_decision.decision, 'GO');
   assert.equal(backlog.current_phase, 'P2');
   assert.equal(backlog.last_completed_task, 'P2-001');
-  assert.equal(backlog.active_task, null);
+  assert.equal(backlog.active_task, 'P2-002');
   assert.equal(g0Task?.status, 'DONE');
   assert.equal(p1Task?.status, 'DONE');
   assert.equal(p1AdapterTask?.status, 'DONE');
@@ -42,22 +42,23 @@ test('G0-008 closure preserves completed P1 facts after the scoped P2 transition
   assert.deepEqual(p1E2ETask?.depends_on, ['P1-010', 'P1-011']);
   assert.ok(completedPilotTasks.every((task) => task?.status === 'DONE'));
   assert.ok(g0Task.depends_on.includes('G0-006A'));
-  assert.equal(projectSummary.project.status, 'p2_p2_001_done_awaiting_separate_authorization');
+  assert.equal(projectSummary.project.status, 'p2_p2_002_in_progress');
   assert.equal(projectSummary.project.last_completed_task, 'P2-001');
-  assert.equal(projectSummary.project.active_task, null);
-  assert.equal(projectSummary.project.active_lane, null);
+  assert.equal(projectSummary.project.active_task, 'P2-002');
+  assert.equal(projectSummary.project.active_lane, 'P2-A');
   assert.equal(projectSummary.project.next_task, 'P2-002');
-  assert.equal(projectSummary.project.next_task_authorized, false);
+  assert.equal(projectSummary.project.next_task_authorized, true);
   assert.ok(projectSummary.hard_invariants.includes('channel_message_idempotency_required'));
   assert.ok(!projectSummary.hard_invariants.includes('provider_msg_id_unique'));
   assert.ok(currentPhase.forbidden_before_exit.includes('real hospital identity connection'));
   assert.ok(currentPhase.forbidden_before_exit.includes('production AI conversation or automatic reply'));
   assert.ok(currentPhase.forbidden_before_exit.includes('production OCR'));
-  assert.ok(currentPhase.allowed_scope.includes('read-only use of frozen P2-001 contracts'));
-  assert.ok(currentPhase.forbidden_without_task_authorization.includes('start P2-002 or any later P2 task'));
+  assert.ok(currentPhase.allowed_scope.includes('implement P2-002 persistent rebuildable timeline projection in P2-A'));
+  assert.ok(currentPhase.forbidden_without_task_authorization.includes('start P2-003 or any later P2 task'));
   assert.equal(backlog.phases.find(({ id }) => id === 'P2')?.status, 'IN_PROGRESS');
   assert.equal(backlog.tasks.find(({ id }) => id === 'P2-001')?.status, 'DONE');
-  assert.ok(backlog.tasks.filter(({ phase, id }) => phase === 'P2' && id !== 'P2-001').every(({ status }) => status === 'TODO'));
+  assert.equal(backlog.tasks.find(({ id }) => id === 'P2-002')?.status, 'IN_PROGRESS');
+  assert.ok(backlog.tasks.filter(({ phase, id }) => phase === 'P2' && !['P2-001', 'P2-002'].includes(id)).every(({ status }) => status === 'TODO'));
 });
 
 test('G0-008 report covers every completed Gate 0 evidence source and retains limits', () => {

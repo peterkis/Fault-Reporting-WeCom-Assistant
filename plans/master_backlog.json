@@ -3,13 +3,20 @@
   "version": "1.4.0",
   "architecture_baseline": "V1.4",
   "baseline_date": "2026-08-30",
-  "source_base_commit": "0ac71269c0da8a6ee55bb2f96e3d293c57c0e398",
+  "source_base_commit": "a30dced5fc62fa62ace1ebe1b86cd765f9f73310",
   "current_phase": "P2",
   "last_completed_task": "P2-001",
-  "active_task": null,
+  "active_task": "P2-002",
   "next_phase_authorized": true,
+  "authorized_tasks": [
+    "P2-001",
+    "P2-002"
+  ],
+  "active_lane": "P2-A",
+  "implementation_authorization_status": "P2_002_IN_PROGRESS",
+  "p2_g1_status": "NOT_STARTED",
   "next_task_candidate": "P2-002",
-  "next_task_authorized": false,
+  "next_task_authorized": true,
   "status_values": [
     "TODO",
     "IN_PROGRESS",
@@ -336,7 +343,10 @@
       "lane": "P2-A",
       "gate": "P2-G1",
       "phase": "P2",
-      "status": "TODO"
+      "status": "IN_PROGRESS",
+      "authorized_at": "2026-08-30",
+      "authorization_evidence": "evidence/p2-002-start-authorization.md",
+      "task_file": "tasks/P2-002_persistent_timeline_projector.md"
     },
     {
       "id": "P2-003",

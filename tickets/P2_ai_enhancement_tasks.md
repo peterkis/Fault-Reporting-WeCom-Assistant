@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 已启动，P2-A 的 P2-001 已完成。当前无活动实施任务；P2-002 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO`。所有 Feature Flag 默认关闭；其他 Lane 只能读取 P2-001 冻结的 Contract。
+> Phase 2 已启动，P2-A 的 P2-001 已完成；项目负责人已正式、独立授权仅启动 P2-002，当前为 `P2-002 / P2-A / IN_PROGRESS`。P2-003 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO`。所有 Feature Flag 默认关闭；其他 Lane 只能读取冻结 Contract。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -46,7 +46,9 @@ P2-B/P2-C 当前只能读取冻结 Contract，不得启动 fixture 或实现开�
 
 ## P2-002 持久化 Timeline Projector 与可重建投影
 
-- 状态：TODO
+- 状态：IN_PROGRESS（2026-08-30，仅本任务获独立授权）
+- 授权 Evidence：`evidence/p2-002-start-authorization.md`
+- Task：`tasks/P2-002_persistent_timeline_projector.md`
 - Lane：P2-A
 - 目标 Gate：P2-G1
 - 依赖：P2-001
@@ -84,7 +86,7 @@ P2-B/P2-C 当前只能读取冻结 Contract，不得启动 fixture 或实现开�
 
 ### 并行边界
 
-可与 P2-003 并行；先使用合成事件，不要求 Workbench 完成。
+本次不得与 P2-003 并行启动；P2-003 未授权。P2-002 只使用现有事实的只读 Mapper 与未来来源的合成 fixture，不要求 Workbench 完成。
 
 ### 资源约束
 

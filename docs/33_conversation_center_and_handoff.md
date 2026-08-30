@@ -25,10 +25,11 @@ Service Intake         = 一次服务受理
 Unified Ticket Core    = 处理生命周期
 ```
 
-已完成的实现边界为 `P2-001`：只冻结 Thread、Session、Conversation Item、控制模式、
-版本和隔离契约，并建立 Thread/Session 的数据库约束。Timeline 持久化、SSE、人工回复、
-Handoff、Assignment、Read Cursor、Communication Outbox 和任何 AI 行为仍属于 P2-002
-及以后任务，当前未授权、未实现。
+已完成的 `P2-001` 冻结 Thread、Session、Conversation Item、控制模式、版本和隔离
+契约，并建立 Thread/Session 数据库约束。项目负责人现已独立授权仅实施 `P2-002`：
+持久化、幂等、可重建的 Timeline Item/Source Binding/Checkpoint 与只读源 Mapper。
+SSE、Realtime Event Log、人工回复、Handoff、Assignment、Read Cursor、Communication
+Outbox、Workbench 和任何 AI 行为仍属于 P2-003 及以后任务，未授权、未实现。
 
 ## 3. Thread 与 Session
 
