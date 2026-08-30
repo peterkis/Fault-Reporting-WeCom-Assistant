@@ -22,3 +22,6 @@ secrets/
 *.key
 *.p12
 *.pfx
+
+# Local architecture increment backups
+.v*-backup/
