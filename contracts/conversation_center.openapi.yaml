@@ -1,0 +1,382 @@
+openapi: 3.1.0
+info:
+  title: Fault Reporting Conversation Center API
+  version: 1.0.0
+  description: >
+    V1.4 contract for the lightweight human/AI conversation workbench.
+    Ticket status remains authoritative in Unified Ticket Core.
+servers:
+  - url: /api
+paths:
+  /conversations:
+    get:
+      operationId: listConversations
+      parameters:
+        - in: query
+          name: state
+          schema:
+            type: string
+            enum: [open, waiting_human, mine, waiting_user, failed_delivery, ended]
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+      responses:
+        "200":
+          description: Conversation page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationPage"
+  /conversations/{sessionId}:
+    get:
+      operationId: getConversation
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Conversation session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /conversations/{sessionId}/items:
+    get:
+      operationId: listConversationItems
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - in: query
+          name: after_sequence
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Timeline page
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next_after_sequence]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ConversationItem"
+                  next_after_sequence:
+                    type: [integer, "null"]
+  /conversations/{sessionId}/takeover:
+    post:
+      operationId: takeoverConversation
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_row_version, reason_code]
+              properties:
+                expected_row_version:
+                  type: integer
+                  minimum: 1
+                reason_code:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+      responses:
+        "200":
+          description: Handoff accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationSession"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /conversations/{sessionId}/release:
+    post:
+      operationId: releaseConversation
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_row_version, target_mode]
+              properties:
+                expected_row_version:
+                  type: integer
+                  minimum: 1
+                target_mode:
+                  type: string
+                  enum: [COPILOT, AUTO]
+                reason_code:
+                  type: string
+                  maxLength: 64
+      responses:
+        "200":
+          description: Released
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationSession"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /conversations/{sessionId}/messages:
+    post:
+      operationId: sendConversationMessage
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./conversation_reply_command.schema.json"
+      responses:
+        "202":
+          description: Message and outbox committed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message_id, outbox_id, status]
+                properties:
+                  message_id:
+                    type: string
+                    format: uuid
+                  outbox_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    const: PENDING
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /conversations/{sessionId}/internal-notes:
+    post:
+      operationId: addInternalNote
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_row_version, text, client_command_id]
+              properties:
+                expected_row_version:
+                  type: integer
+                  minimum: 1
+                text:
+                  type: string
+                  minLength: 1
+                  maxLength: 10000
+                client_command_id:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Internal note committed
+  /realtime/events:
+    get:
+      operationId: streamRealtimeEvents
+      parameters:
+        - in: header
+          name: Last-Event-ID
+          schema:
+            type: string
+        - in: query
+          name: scope
+          schema:
+            type: string
+            enum: [workbench]
+            default: workbench
+      responses:
+        "200":
+          description: Server-sent event stream
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            text/event-stream:
+              schema:
+                type: string
+components:
+  parameters:
+    SessionId:
+      in: path
+      name: sessionId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+  responses:
+    NotFound:
+      description: Resource not found or not visible
+    Conflict:
+      description: Row version, ownership, mode or idempotency conflict
+  schemas:
+    ConversationSession:
+      type: object
+      required:
+        - id
+        - thread_id
+        - status
+        - control_mode
+        - generation_version
+        - row_version
+        - last_activity_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        thread_id:
+          type: string
+          format: uuid
+        participant_key:
+          type: string
+          description: Redacted/opaque external participant identifier
+        status:
+          type: string
+          enum: [OPEN, WAITING_USER, ENDED]
+        control_mode:
+          type: string
+          enum: [AUTO, COPILOT, HUMAN]
+        generation_version:
+          type: integer
+          minimum: 1
+        row_version:
+          type: integer
+          minimum: 1
+        assigned_principal_id:
+          type: [string, "null"]
+          format: uuid
+        service_intake_id:
+          type: [string, "null"]
+          format: uuid
+        ticket_id:
+          type: [string, "null"]
+          format: uuid
+        last_activity_at:
+          type: string
+          format: date-time
+    ConversationItem:
+      type: object
+      required:
+        - id
+        - session_id
+        - sequence_no
+        - item_type
+        - sender_kind
+        - visibility
+        - occurred_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        sequence_no:
+          type: integer
+          minimum: 1
+        item_type:
+          type: string
+          enum:
+            - USER_MESSAGE
+            - AI_MESSAGE
+            - AGENT_MESSAGE
+            - INTERNAL_NOTE
+            - SYSTEM_EVENT
+            - TICKET_EVENT
+            - DELIVERY_STATUS
+            - HANDOFF_EVENT
+        sender_kind:
+          type: string
+          enum: [USER, AI, AGENT, SYSTEM, TOOL]
+        visibility:
+          type: string
+          enum: [EXTERNAL, INTERNAL, RESTRICTED]
+        text:
+          type: [string, "null"]
+        source_type:
+          type: [string, "null"]
+        source_id:
+          type: [string, "null"]
+        occurred_at:
+          type: string
+          format: date-time
+    ConversationSummary:
+      type: object
+      required: [session, unread_count, last_item]
+      properties:
+        session:
+          $ref: "#/components/schemas/ConversationSession"
+        unread_count:
+          type: integer
+          minimum: 0
+        last_item:
+          anyOf:
+            - $ref: "#/components/schemas/ConversationItem"
+            - type: "null"
+    ConversationPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConversationSummary"
+        next_cursor:
+          type: [string, "null"]
+    ConversationDetail:
+      type: object
+      required: [session, items]
+      properties:
+        session:
+          $ref: "#/components/schemas/ConversationSession"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConversationItem"
+        ticket:
+          type: [object, "null"]
+        incident:
+          type: [object, "null"]

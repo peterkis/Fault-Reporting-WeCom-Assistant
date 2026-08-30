@@ -1,0 +1,252 @@
+{
+  "version": "1.4.0",
+  "current_phase": "P1",
+  "rule": "Future lanes may develop contracts and simulators while P1 is active, but production flags and real integrations remain disabled. P3 is greenfield and has no historical-ticket work.",
+  "migration_number_reservations": {
+    "P2-A": "010-019",
+    "P2-B": "020-029",
+    "P2-C": "030-039",
+    "P2-D": "040-049",
+    "P3-A": "050-059",
+    "P3-B": "060-069",
+    "P3-C": "070-079",
+    "P3-D": "080-089"
+  },
+  "lanes": [
+    {
+      "id": "P2-A",
+      "name": "Conversation Core",
+      "branch": "phase2/conversation-core",
+      "tasks": [
+        "P2-001",
+        "P2-002",
+        "P2-003"
+      ],
+      "feature_flags": [
+        "CONVERSATION_CENTER_ENABLED",
+        "CONVERSATION_REALTIME_SSE_ENABLED"
+      ],
+      "mock_dependencies": [
+        "normalized channel messages",
+        "ticket event fixtures"
+      ],
+      "assembly_gate": "P2-G1"
+    },
+    {
+      "id": "P2-B",
+      "name": "Realtime and Human Workbench",
+      "branch": "phase2/realtime-workbench",
+      "tasks": [
+        "P2-004",
+        "P2-005",
+        "P2-006"
+      ],
+      "feature_flags": [
+        "HUMAN_WORKBENCH_V2_ENABLED"
+      ],
+      "mock_dependencies": [
+        "conversation API fixture",
+        "wecom sender stub"
+      ],
+      "assembly_gate": "P2-G1"
+    },
+    {
+      "id": "P2-C",
+      "name": "AI Orchestrator",
+      "branch": "phase2/ai-orchestrator",
+      "tasks": [
+        "P2-007",
+        "P2-008",
+        "P2-009",
+        "P2-010"
+      ],
+      "feature_flags": [
+        "AI_CONVERSATION_ENABLED",
+        "AI_AUTO_REPLY_ENABLED"
+      ],
+      "mock_dependencies": [
+        "model provider stub",
+        "redacted evaluation set"
+      ],
+      "assembly_gate": "P2-G2/P2-G4"
+    },
+    {
+      "id": "P2-D",
+      "name": "Media Incident Metrics",
+      "branch": "phase2/media-incident",
+      "tasks": [
+        "P2-011",
+        "P2-012",
+        "P2-013"
+      ],
+      "feature_flags": [
+        "OCR_ENABLED",
+        "INCIDENT_CORRELATION_ENABLED"
+      ],
+      "mock_dependencies": [
+        "test storage",
+        "synthetic media",
+        "incident fixtures"
+      ],
+      "assembly_gate": "P2-G3/P2-G4"
+    },
+    {
+      "id": "P3-A",
+      "name": "Integration Core",
+      "branch": "phase3/integration-core",
+      "tasks": [
+        "P3-001",
+        "P3-002",
+        "P3-003",
+        "P3-004"
+      ],
+      "feature_flags": [
+        "INTEGRATION_CONNECTOR_ENABLED"
+      ],
+      "mock_dependencies": [
+        "source simulator"
+      ],
+      "assembly_gate": "P3-G1/P3-G2"
+    },
+    {
+      "id": "P3-B",
+      "name": "Identity and Connector",
+      "branch": "phase3/identity-connector",
+      "tasks": [
+        "P3-005",
+        "P3-006"
+      ],
+      "feature_flags": [
+        "INTEGRATION_CONNECTOR_ENABLED",
+        "HOSPITAL_IDENTITY_ENABLED"
+      ],
+      "mock_dependencies": [
+        "fake SSO",
+        "fake organization API",
+        "mTLS test CA"
+      ],
+      "assembly_gate": "P3-G1/P3-G2"
+    },
+    {
+      "id": "P3-C",
+      "name": "Intranet Source Adapters",
+      "branch": "phase3/intranet-sources",
+      "tasks": [
+        "P3-007",
+        "P3-008"
+      ],
+      "feature_flags": [
+        "INTRANET_PORTAL_SOURCE_ENABLED",
+        "HOSPITAL_API_SOURCE_ENABLED",
+        "MONITORING_SOURCE_ENABLED"
+      ],
+      "mock_dependencies": [
+        "portal simulator",
+        "hospital API simulator",
+        "monitoring alert simulator"
+      ],
+      "assembly_gate": "P3-G2"
+    },
+    {
+      "id": "P3-D",
+      "name": "Unified Operations and Reconciliation",
+      "branch": "phase3/unified-operations",
+      "tasks": [
+        "P3-009",
+        "P3-010"
+      ],
+      "feature_flags": [
+        "INTEGRATION_CONNECTOR_ENABLED"
+      ],
+      "mock_dependencies": [
+        "binding fixture",
+        "projection ACK fixture",
+        "reconciliation fixture"
+      ],
+      "assembly_gate": "P3-G3"
+    }
+  ],
+  "assembly_gates": [
+    {
+      "id": "P2-G1",
+      "name": "Human-only Conversation Center",
+      "requires": [
+        "P2-001",
+        "P2-002",
+        "P2-003",
+        "P2-004",
+        "P2-005",
+        "P2-006"
+      ]
+    },
+    {
+      "id": "P2-G2",
+      "name": "AI Shadow",
+      "requires": [
+        "P2-G1",
+        "P2-007",
+        "P2-008",
+        "P2-009"
+      ]
+    },
+    {
+      "id": "P2-G3",
+      "name": "Copilot Media Incident",
+      "requires": [
+        "P2-G1",
+        "P2-G2",
+        "P2-011",
+        "P2-012"
+      ]
+    },
+    {
+      "id": "P2-G4",
+      "name": "Controlled Auto and Phase 2 Go",
+      "requires": [
+        "P2-G3",
+        "P2-010",
+        "P2-013",
+        "P2-014"
+      ]
+    },
+    {
+      "id": "P3-G1",
+      "name": "Connector Contract and Transport",
+      "requires": [
+        "P3-001",
+        "P3-002",
+        "P3-003",
+        "P3-006"
+      ]
+    },
+    {
+      "id": "P3-G2",
+      "name": "First Intranet Source E2E",
+      "requires": [
+        "P3-G1",
+        "P3-004",
+        "P3-005",
+        "P3-007"
+      ]
+    },
+    {
+      "id": "P3-G3",
+      "name": "Multi-source Operations Fault Security Reconciliation",
+      "requires": [
+        "P3-G2",
+        "P3-008",
+        "P3-009",
+        "P3-010",
+        "P3-011"
+      ]
+    },
+    {
+      "id": "P3-G4",
+      "name": "First Production Source Onboarding and Phase 3 Go",
+      "requires": [
+        "P3-G3",
+        "P3-012"
+      ]
+    }
+  ]
+}

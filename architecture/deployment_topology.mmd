@@ -1,35 +1,36 @@
 flowchart TB
-    CLOUD[Enterprise WeCom<br/>openws WSS]
+    WECOM[Enterprise WeCom openws WSS]
 
-    subgraph PILOT[Phase 1 公网试点环境]
-        GW1[Gateway Active]
-        GW2[Gateway Standby<br/>无活动连接]
-        CORE[Pilot Ticket Core<br/>Channel + Intake + Ticket + Event]
-        RELAY[Outbox / Delivery Worker]
-        H5[Pilot Handler UI / H5]
-        PG[(Pilot PostgreSQL)]
-        STORE[(Private Object Storage)]
+    subgraph CLOUD[2C4G Cloud Host]
+        EDGE[Nginx optional]
+        APP[Node App / REST / SSE / Workbench]
+        WORKER[Node Worker]
+        GW[WeCom Gateway Active]
+        PG[(PostgreSQL)]
+        STORE[(Encrypted Local or External Object Storage)]
     end
 
-    subgraph ENHANCEMENT[Phase 2 可关闭增强]
-        AI[AI / OCR]
+    subgraph INTRANET[Hospital Intranet - Phase 3]
+        CONNECTOR[Intranet Connector Agent]
+        SSO[SSO / Person / Organization APIs]
+        PORTAL[New Reporting Portal / Hospital API / Monitoring]
     end
 
-    subgraph HOSPITAL[Phase 3 医院环境]
-        ADAPTER[Ticket Adapter]
-        TICKETS[Hospital Tickets]
-        HM[Hospital Identity / Organization]
+    subgraph EXTERNAL[External AI - Phase 2]
+        MODEL[DeepSeek API]
     end
 
-    GW1 <-->|WSS 443 出站| CLOUD
-    GW2 -.standby.-> CLOUD
-    GW1 --> CORE
-    CORE --> PG
-    CORE --> RELAY
-    RELAY --> GW1
-    CORE --> H5
-    GW1 --> STORE
-    CORE -.async.-> AI
-    CORE -.Phase 3 only.-> ADAPTER
-    ADAPTER --> TICKETS
-    ADAPTER --> HM
+    GW <-->|single outbound WSS 443| WECOM
+    EDGE --> APP
+    APP --> PG
+    WORKER --> PG
+    GW --> PG
+    APP --> STORE
+    WORKER --> STORE
+    WORKER -.approved outbound HTTPS.-> MODEL
+    CONNECTOR --> SSO
+    CONNECTOR --> PORTAL
+    CONNECTOR -->|outbound mTLS HTTPS/WSS| EDGE
+
+    note1[No historical ticket import or old-system cutover]
+    CONNECTOR -.-> note1

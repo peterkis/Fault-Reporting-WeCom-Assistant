@@ -1,0 +1,42 @@
+{
+  "source_code": "INTRANET_REPORT_PORTAL",
+  "source_type": "INTRANET_PORTAL",
+  "direction": "BIDIRECTIONAL",
+  "authority_policy": "LOCAL_TICKET_AUTHORITATIVE",
+  "connector_mode": "INTRANET_OUTBOUND_AGENT",
+  "data_classification": "SENSITIVE_INTERNAL",
+  "contract_version": "1.0",
+  "status": "DISABLED",
+  "capabilities": {
+    "submit_service_requests": true,
+    "submit_messages": true,
+    "submit_attachments": true,
+    "query_ticket_projection": true,
+    "receive_status_projection": true,
+    "own_ticket_state": false,
+    "send_user_notifications": false
+  },
+  "idempotency": {
+    "external_event_id_field": "event_id",
+    "external_record_id_field": "request_id",
+    "cursor_field": "event_sequence"
+  },
+  "mapping": {
+    "identity_mapping_version": "hospital-identity-v1",
+    "request_mapping_version": "intranet-request-v1",
+    "attachment_policy": "PRIVATE_SCAN_REQUIRED",
+    "unmapped_policy": "QUARANTINE_AND_REVIEW"
+  },
+  "transport": {
+    "protocol": "mTLS HTTPS",
+    "outbound_from_intranet": true,
+    "request_signing": "HMAC-SHA256",
+    "credentials_reference": "secret://connector/intranet-report-portal"
+  },
+  "operations": {
+    "production_enabled": false,
+    "require_contract_test": true,
+    "require_first_source_e2e": true,
+    "require_zero_unexplained_runtime_differences": true
+  }
+}

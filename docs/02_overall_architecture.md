@@ -1,189 +1,137 @@
-# 02. V1.2 总体技术架构
+# 02. V1.4 总体技术架构
 
 ## 1. 架构目标
 
 - 企业微信连接稳定且可验证；
 - 消息先持久化再回复；
-- Channel Message、Service Intake、Ticket、Incident 分层；
-- Phase 1 在公网独立完成 Pilot 闭环；
-- AI/OCR 不在关键路径；
-- Phase 3 通过 Adapter 迁移至 Hospital Tickets；
-- 不形成长期双工单事实源；
-- 适合少量开发运维人员。
+- Channel Message、Conversation、Service Intake、Ticket、Incident 分层；
+- Unified Ticket Core 是唯一长期工单事实源；
+- P2 形成 Human-only 可用的 Conversation Center，再逐步启用 AI；
+- P3 接入新的医院内网来源，不处理历史 Ticket 兼容；
+- 适合 1—2 人维护和 2 核 4GB 云服务器。
 
-## 2. Phase 1：公网试点架构
-
-```mermaid
-flowchart TB
-    W[Enterprise WeCom] <-->|WSS 443| A[WeCom SDK Adapter]
-    A --> G[WeCom Gateway]
-    G --> M[Channel Message]
-    M --> I[Service Intake]
-    I --> P[Pilot Ticket Core]
-    P --> E[Ticket Event]
-    P --> O[Notification Outbox]
-    O --> D[Delivery Worker]
-    D --> G
-    P --> UI[Pilot Handler UI / H5]
-    M --> DB[(Pilot PostgreSQL)]
-    I --> DB
-    P --> DB
-    O --> DB
-```
-
-固定链路：
+## 2. 当前 P1 架构
 
 ```text
 Enterprise WeCom
-→ WeCom Gateway
-→ Channel Message
+→ WeCom SDK Adapter
+→ Channel Message Inbox
 → Service Intake
-→ Pilot Ticket Core
+→ Pilot Ticket Core compatibility implementation
+→ Ticket Event + Notification Outbox
 ```
 
-Phase 1 不依赖 Hospital Tickets、医院 SSO、医院 Hub、医院 API 平台或院内 Outbox。试点身份、处理组和通知能力在最小 Pilot 边界内提供。
+P1 不依赖医院 SSO、人员、组织、内网门户或 Connector。
 
-## 3. Phase 2：异步增强
+## 3. P2 Conversation Center
 
 ```text
-Service Intake
-→ rules / catalog
-→ private media / OCR
-→ AI Triage suggestion
-→ AIDecision
-→ human correction
+Committed Channel/Integration Message
+→ Conversation Projector
+→ Thread / Session / Timeline
+→ REST + SSE Workbench
+→ Human Assignment / Handoff / Internal Note
+→ Communication Outbox
+→ WeCom Delivery
 ```
 
-AI/OCR：
-
-- 只产生建议；
-- 不决定明确报修是否建单；
-- 不直接修改 Ticket/Incident；
-- 不执行生产工具；
-- 可单独关闭；
-- 失败时进入人工分诊。
-
-## 4. Phase 3：医院融合架构
-
-```mermaid
-flowchart LR
-    P[Pilot Ticket Core] --> A[Ticket Adapter]
-    A --> H[Hospital Tickets]
-    A --> M[ticket_external_mapping]
-    A --> R[Reconciliation]
-```
-
-固定迁移路径：
+AI 路径：
 
 ```text
-Pilot Ticket Core
-→ Ticket Adapter
-→ Hospital Tickets
+Committed Session
+→ Redaction + Context Builder
+→ DeepSeek Provider
+→ AI Run / Structured Memory
+→ Shadow / Copilot / Controlled Auto
 ```
 
-Ticket Adapter 负责：
+### P2 不变量
 
-- 双方 Contract 隔离；
-- 幂等创建和重放；
-- 编号、状态、事件、人员、处理组、备注和附件映射；
-- `ticket_external_mapping`；
-- 迁移批次、异常队列和逐对象对账；
-- 通知所有权切换；
-- 受控回滚。
+- Human-only 必须独立可用；
+- 人工和 AI 回复走同一 Outbox；
+- `generation_version` 使过期 AI 结果失效；
+- 内部备注不能外发；
+- AI 不直接改 Ticket/Incident；
+- 群聊按参与者和 Intake 隔离上下文。
 
-切换完成后：
+## 4. P3 绿地内网接入
 
-- Hospital Tickets 是唯一长期工单事实源；
-- Pilot Ticket Core 停止正式写入；
-- Pilot 历史按批准方案只读或归档；
-- 不允许长期双写或双向无主同步。
+```text
+New Intranet Portal / Hospital API / Monitoring Alert
+                         ↓
+              Intranet Connector Agent
+                         ↓
+                  Integration Inbox
+                         ↓
+       Service Intake / Authorized Ticket Action
+                         ↓
+                Unified Ticket Core
+                         ↓
+          Integration Outbox / Projection
+```
+
+P3 建设：
+
+- UnifiedTicket Port；
+- Integration Source Registry；
+- Inbox、Outbox、Binding、Cursor、重放和一致性核验；
+- SSO、人员、组织、院区和处理组映射；
+- 内网主动出站 Connector；
+- 新内网来源 Adapter；
+- 多来源统一 Workbench；
+- 第一条生产内网来源接入与 Go/No-Go。
+
+P3 不建设：历史导入、未完结切换、旧状态兼容、双系统并行、最终增量或旧系统退役。
 
 ## 5. 服务职责
 
-### 5.1 WeCom Gateway
+### WeCom Gateway
 
-负责连接、认证、心跳、重连、消息接收、基础校验、调用 Intake、回复与主动推送。不得承载工单状态机、AI分类或医院工单同步。
+只负责连接、认证、心跳、重连、消息接收、回复和主动发送。不得承载 Ticket 状态机或 AI 业务决策。
 
-### 5.2 WeCom SDK Adapter
+### Channel Message Inbox
 
-隔离官方 SDK Frame、错误码、媒体和卡片差异。业务模块只依赖内部消息和发送契约。
+保存不可变渠道事实并按 `provider + msg_id` 幂等。
 
-### 5.3 Channel Message
+### Conversation Center
 
-保存企业微信原始消息事实，使用 `provider + msg_id` 幂等；原始证据不可被 AI 结果覆盖。
+负责 Thread、Session、Timeline、坐席分配、Handoff、Read Cursor、AI Generation Fence 和实时事件。
 
-### 5.4 Service Intake
+### Service Intake
 
-负责一次服务受理、上下文聚合、身份/位置快照、创建或追加 Ticket、触发异步增强及关联 Incident。
+负责一次服务受理和消息聚合，决定是否需要创建 Ticket，但不依赖 AI。
 
-### 5.5 Pilot Ticket Core
+### Unified Ticket Core
 
-Phase 1/2 负责工单编号、状态机、处理组、事件、内外部备注、解决确认、重开和审计。它不等于企业微信消息模型，也不是长期医院工单替代品。
+负责 Ticket 编号、Action、状态、责任、事件、内部备注、外部结果、关闭与重开。
 
-### 5.6 Notification Outbox / Delivery
+### Communication Outbox / Delivery
 
-Outbox 与业务状态同事务；Delivery 异步发送、重试、限流、去重、死信并记录实际送达。
+负责人工、AI 和 Ticket 通知的统一可靠投递。
 
-### 5.7 Incident / Subscription
+### Integration Hub
 
-保留各 Intake 证据，通过 Incident 关联公共故障，并维护每位申报人的通知订阅。默认人工确认。
+负责新内网来源的认证、幂等、映射、Cursor、投影和运行时一致性核验。不得通过共享数据库修改 Ticket。
 
-### 5.8 Ticket Adapter
-
-只在 Phase 3 实现。不得由 Gateway 代替，也不得通过共享数据库直写实现。
-
-## 6. 关键数据流
-
-### Phase 1 首次报修
-
-```text
-WeCom Frame
-→ Normalized Message
-→ Channel Message（幂等持久化）
-→ Service Intake
-→ Pilot Ticket + Ticket Event + Outbox（事务）
-→ Commit
-→ 回复 Pilot 工单号
-```
-
-### Phase 2 增强
-
-```text
-Committed Intake
-→ rules / OCR / AI
-→ AIDecision
-→ human review
-```
-
-### Phase 3 迁移与切换
-
-```text
-Pilot Ticket snapshot/event
-→ Ticket Adapter
-→ Hospital Ticket
-→ ticket_external_mapping
-→ reconciliation
-→ source-of-truth cutover
-```
-
-## 7. 故障边界
+## 6. 故障边界
 
 | 故障 | 行为 |
 |---|---|
-| AI/OCR 不可用 | Phase 1 正常受理，人工分诊 |
-| Redis 不可用 | 关闭非关键缓存/聚合，不丢数据库事实 |
-| 媒体存储不可用 | 文字仍建单，媒体重试并告警 |
-| Pilot Ticket Core 不可用 | Channel Message 已落库，进入可靠待补建；不得虚构工单号 |
-| 企业微信断线 | 重连；Outbox 等待恢复后发送 |
-| 通知失败 | Delivery 重试，不回滚 Ticket 事实 |
-| Phase 3 Hospital Tickets 不可用 | Adapter 重试/死信/对账；按已批准切换状态决定回滚或暂停 |
-| 映射冲突 | 阻止自动覆盖，进入人工对账 |
+| AI/OCR 不可用 | Human-only 正常运行 |
+| SSE 不可用 | 轮询回退，数据库事实不丢 |
+| 企业微信断线 | Outbox 保留，恢复后继续发送 |
+| 媒体不可用 | 文字仍受理，媒体重试/人工补充 |
+| Connector 不可用 | 云端 Ticket 正常，内网投影积压 |
+| 身份映射失败 | 事件隔离待审，不丢原始请求 |
+| 新来源重复事件 | Inbox 幂等，不重复建单 |
+| 外部投影不一致 | Reconciliation 告警，不覆盖本地状态 |
 
-## 8. 明确不采用
+## 7. 明确不采用
 
-- Phase 1 直接复用 Hospital Tickets；
-- 企业微信 Frame 直接作为 Ticket；
+- 第二套 Ticket Core；
+- 共享数据库直写；
 - AI 前置建单；
-- 共享数据库直写 Hospital Tickets；
-- 长期 Pilot/Hospital 双事实源；
-- 当前规模下的 Kafka、Kubernetes 或复杂多 Agent 编排。
+- 历史 Ticket 迁移框架；
+- 浏览器/AI Worker 直连 WeCom SDK；
+- 2C4G 同机部署 Chatwoot、Dify、LangBot 全套；
+- Kafka、Kubernetes 和复杂多 Agent 编排。

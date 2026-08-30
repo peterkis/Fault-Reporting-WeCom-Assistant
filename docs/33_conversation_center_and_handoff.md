@@ -1,0 +1,349 @@
+# 33. Conversation Center、人工接管与实时工作台
+
+## 1. 目标
+
+在不引入第二套 Ticket 事实源的前提下，为企业微信机器人增加一个类似微信/微博私信的
+实时 Web 工作台：
+
+- 实时看到入站消息；
+- 按用户/群/话题查看历史；
+- 多名信息科人员安全协作；
+- 人工接管并主动回复；
+- AI 自动、Copilot 和人工模式切换；
+- 关联 Service Intake、Ticket 和 Incident；
+- 断线后可补放；
+- 内部备注与用户可见消息严格隔离。
+
+## 2. 边界
+
+Conversation Center 不是工单系统，也不是原始消息数据库的替代品。
+
+```text
+Channel Message        = 原始入站事实
+Conversation Center    = 通信时间线和控制状态
+Service Intake         = 一次服务受理
+Unified Ticket Core    = 处理生命周期
+```
+
+## 3. Thread 与 Session
+
+### Thread
+
+长期渠道窗口。
+
+```text
+单聊 key = wecom:{bot_id}:single:{userid}
+群聊 key = wecom:{bot_id}:group:{chatid}
+```
+
+### Session
+
+一次连续问题或服务话题。新 Session 触发条件：
+
+- 旧 Session 已结束；
+- 超过可配置空闲时间；
+- 用户明确说“另一个问题”；
+- 人工点击“新受理”；
+- 当前消息关联不同 Ticket；
+- 规则高置信确认话题切换。
+
+AI 不得自行在无审计情况下切换 Session。
+
+### 群聊子上下文
+
+群聊 Thread 保存完整投影，但每个服务 Session 必须保留：
+
+```text
+participant_key = userid
+service_intake_id
+```
+
+回复目标仍是群 `chatid`，但时间线和 AI 上下文只选取相关用户、引用消息、对应 Ticket
+和已确认 Incident 背景。
+
+## 4. Timeline Item
+
+工作台统一显示：
+
+| 类型 | 来源 | 对外可见 |
+|---|---|---:|
+| 用户消息 | Channel Message | 是 |
+| AI 回复 | Communication Message | 是 |
+| 人工回复 | Communication Message | 是 |
+| 内部备注 | Agent | 否 |
+| Ticket 事件 | Ticket Event | 取决于 external note |
+| Handoff/分配 | Conversation Event | 否或摘要可见 |
+| 投递状态 | Delivery | 内部 |
+| 系统告警 | Operations | 内部 |
+
+排序使用 Session 内稳定 `sequence_no`，不能只依赖时间戳。
+
+## 5. 会话模式
+
+```text
+AUTO
+COPILOT
+HUMAN
+```
+
+### AUTO
+
+仅在满足以下条件时允许：
+
+- 对应场景已批准；
+- Session 在白名单；
+- 未发现敏感信息；
+- 模型/Prompt 版本已通过评估；
+- 无人工接管；
+- 无高风险业务；
+- 当前 generation version 未变化。
+
+### COPILOT
+
+AI 生成草稿，人工编辑/确认后发送。发送者记为人工，AI 草稿和修改差异进入审计。
+
+### HUMAN
+
+AI 不得自动发送。允许：
+
+- 总结；
+- 字段候选；
+- 知识建议；
+- 草稿。
+
+## 6. Handoff 状态
+
+建议独立 Handoff 状态：
+
+```text
+NONE
+REQUESTED
+ACCEPTED
+RELEASED
+CANCELLED
+```
+
+触发来源：
+
+- 用户请求人工；
+- AI 低置信；
+- 连续失败；
+- 敏感内容；
+- 高优先级故障；
+- 坐席主动接管；
+- 管理员分派。
+
+### 接管事务
+
+```text
+UPDATE conversation_session
+  control_mode = HUMAN
+  assigned_principal_id = actor
+  generation_version = generation_version + 1
+  row_version = row_version + 1
+
+INSERT conversation_handoff
+INSERT conversation_event
+INSERT realtime_event
+COMMIT
+```
+
+所有未发送 AI 任务在完成时会因 generation version 不一致而失效。
+
+## 7. 人工回复命令
+
+REST：
+
+```http
+POST /api/conversations/{sessionId}/messages
+Idempotency-Key: <client-command-uuid>
+If-Match: <session-row-version>
+```
+
+请求：
+
+```json
+{
+  "message_type": "text",
+  "visibility": "external",
+  "text": "您好，我正在帮您查看，请补充终端编号。",
+  "reply_to_item_id": null,
+  "client_command_id": "uuid"
+}
+```
+
+同一事务：
+
+1. 校验用户和 Session 权限；
+2. 校验当前控制模式和版本；
+3. 创建 Communication Message；
+4. 创建 Outbox；
+5. 创建 Timeline Projection/Realtime Event；
+6. 提交。
+
+Delivery Worker 才能调用 WeCom Adapter。
+
+## 8. 内部备注
+
+```http
+POST /api/conversations/{sessionId}/internal-notes
+```
+
+必须：
+
+- `visibility=INTERNAL`；
+- 不创建外部 Outbox；
+- 默认不加入 AI Context；
+- 仅授权人员可见；
+- 记录创建人、编辑策略和审计；
+- 不允许通过参数改成 external。
+
+建议内部备注只追加；确需修订时保留版本历史。
+
+## 9. 分配与抢占
+
+坐席接管使用乐观锁：
+
+```text
+expected_row_version
+```
+
+并在数据库中原子判断：
+
+- 当前是否已被他人接管；
+- 当前用户是否有处理组权限；
+- 管理员是否允许强制转派。
+
+浏览器按钮隐藏不能替代后端授权。
+
+## 10. 已读游标
+
+每个用户独立：
+
+```text
+principal_id
+thread_id / session_id
+last_read_sequence
+updated_at
+```
+
+未读计算：
+
+```text
+latest_external_sequence - last_read_sequence
+```
+
+不能把一个全局 unread_count 当作所有坐席共同状态。
+
+## 11. 实时 Event Log
+
+表建议：
+
+```text
+event_id BIGINT/UUID
+workspace/tenant scope
+event_type
+aggregate_type
+aggregate_id
+aggregate_version
+payload
+created_at
+expires_at
+```
+
+SSE：
+
+```http
+GET /api/realtime/events?scope=workbench
+Last-Event-ID: 1234
+```
+
+事件：
+
+```text
+conversation.session.created
+conversation.item.created
+conversation.mode.changed
+conversation.assigned
+conversation.handoff.requested
+conversation.handoff.accepted
+conversation.read_cursor.changed
+communication.delivery.changed
+ticket.updated
+incident.updated
+gateway.connection.changed
+```
+
+## 12. 页面结构
+
+### 左侧
+
+- 待人工；
+- 我的会话；
+- 未分配；
+- AI 处理中；
+- 等待用户；
+- 发送失败；
+- 高优先级；
+- 已结束。
+
+列表项：
+
+- 姓名/科室；
+- 最后一条消息；
+- 未读；
+- 等待时长；
+- 模式；
+- 接待人；
+- Ticket/Incident 标记；
+- 投递异常标记。
+
+### 中间
+
+- 稳定时间线；
+- sender 标识；
+- 引用；
+- 附件；
+- 系统事件；
+- 投递状态；
+- 草稿与发送输入框。
+
+### 右侧
+
+- 用户/身份快照；
+- 当前 Session 摘要；
+- 已确认字段；
+- Service Intake；
+- Ticket；
+- Incident；
+- 历史工单；
+- AI Run；
+- 审计。
+
+## 13. 安全
+
+- 工作台必须认证；
+- Session/Ticket/Attachment 均后端授权；
+- 防 CSRF（Cookie 模式）或使用短期 Bearer；
+- CSP、frame-ancestors、nosniff；
+- 附件签名 URL；
+- 内部备注不进入对外 API；
+- SSE 只推授权范围；
+- 搜索结果按权限裁剪；
+- 操作日志使用哈希化身份；
+- 不将患者原文写入浏览器错误日志。
+
+## 14. 验收场景
+
+1. 企业微信单聊消息在 2 秒目标内出现在打开的 Workbench；
+2. 重复同一 msgid 只有一个 Timeline Item；
+3. 两名坐席同时接管只有一人成功；
+4. 人工发送重复点击只产生一次 Outbox；
+5. 人工接管前启动的 AI 结果不会发送；
+6. 内部备注不会出现在企业微信；
+7. SSE 断线后按 Last-Event-ID 补齐；
+8. 群聊两名用户的问题不会混入同一 Session；
+9. Delivery 失败可重试并可见；
+10. Ticket Event 可进入时间线但不改变原始消息；
+11. AI 服务关闭时人工全流程继续；
+12. 浏览器刷新后会话顺序、已读和分配保持。

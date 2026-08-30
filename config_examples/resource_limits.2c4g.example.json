@@ -1,0 +1,75 @@
+{
+  "profile": "2c4g-single-host",
+  "processes": {
+    "app": {
+      "instances": 1,
+      "db_pool_max": 4,
+      "max_http_inflight_commands": 16,
+      "max_sse_clients": 32,
+      "memory_soft_limit_mb": 512,
+      "memory_hard_limit_mb": 896
+    },
+    "worker": {
+      "instances": 1,
+      "db_pool_max": 2,
+      "communication_concurrency": 1,
+      "ai_concurrency": 1,
+      "integration_concurrency": 1,
+      "media_concurrency": 1,
+      "memory_soft_limit_mb": 384,
+      "memory_hard_limit_mb": 768
+    },
+    "wecom_gateway": {
+      "instances": 1,
+      "active_connections": 1,
+      "db_pool_max": 1,
+      "memory_soft_limit_mb": 256,
+      "memory_hard_limit_mb": 512
+    }
+  },
+  "queues": {
+    "communication_batch_size": 20,
+    "ai_batch_size": 1,
+    "integration_batch_size": 20,
+    "lease_seconds": 30,
+    "max_attempts": 8,
+    "dead_letter_enabled": true
+  },
+  "requests": {
+    "body_max_bytes": 262144,
+    "model_timeout_ms": 15000,
+    "connector_timeout_ms": 10000,
+    "storage_object_max_bytes": 10485760
+  },
+  "database": {
+    "max_connections_target": 40,
+    "shared_buffers_mb": 512,
+    "work_mem_mb": 4,
+    "maintenance_work_mem_mb": 64,
+    "statement_timeout_ms": 15000,
+    "slow_query_log_ms": 500
+  },
+  "degradation_order": [
+    "pause_metrics_cleanup",
+    "disable_ocr",
+    "disable_ai_auto_reply",
+    "disable_ai_all",
+    "pause_integration_projection",
+    "switch_sse_to_polling",
+    "preserve_inbound_ticket_and_communication_delivery"
+  ],
+  "not_required_on_host": [
+    "Redis",
+    "MinIO",
+    "Chatwoot",
+    "Dify",
+    "LangBot",
+    "Kafka",
+    "RabbitMQ",
+    "Elasticsearch",
+    "Kubernetes",
+    "local LLM",
+    "resident heavyweight OCR",
+    "Prometheus and Grafana full stack"
+  ]
+}

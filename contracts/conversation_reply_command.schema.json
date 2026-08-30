@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/conversation_reply_command.schema.json",
+  "title": "Conversation Reply Command",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "client_command_id",
+    "expected_row_version",
+    "message_type",
+    "visibility"
+  ],
+  "properties": {
+    "client_command_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "expected_row_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "markdown",
+        "image",
+        "file",
+        "mixed"
+      ]
+    },
+    "visibility": {
+      "const": "EXTERNAL"
+    },
+    "text": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 20480
+    },
+    "reply_to_item_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "attachment_ids": {
+      "type": "array",
+      "maxItems": 10,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "sender_display_name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "enum": [
+              "text",
+              "markdown"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "text"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "enum": [
+              "image",
+              "file",
+              "mixed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "attachment_ids"
+        ],
+        "properties": {
+          "attachment_ids": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

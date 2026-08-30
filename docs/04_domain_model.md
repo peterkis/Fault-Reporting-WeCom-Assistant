@@ -1,273 +1,101 @@
-# 04. 领域模型与系统边界
+# 04. 领域模型与系统边界 V1.4
 
-## 1. 为什么需要独立领域对象
+## 1. 核心对象
 
-本领域模型与工单后端解耦：Phase 1/2 的 Ticket 由 Pilot Ticket Core 管理；Phase 3 通过 Ticket Adapter 映射到 Hospital Tickets。
+### ChannelMessage
 
-企业微信消息、服务受理、工单和公共故障表达的是不同事实：
+企业微信原始消息事实。以 `provider + msg_id` 幂等，不被 AI 或投影覆盖。
 
-- 消息：用户说了什么；
-- Intake：系统受理了什么服务请求；
-- Ticket：处理团队需要做什么；
-- Incident：多个申报背后的共同故障；
-- Subscription：谁需要持续收到进展。
+### ConversationThread
 
-把这些对象混成一张表，会导致原始证据丢失、并单后无法追溯、多申报人通知混乱。
+某个渠道长期通信线程。单聊按 Bot+User，群聊按 Bot+Chat 建立。
 
-## 2. 核心对象
+### ConversationSession
 
-### 2.1 ChannelMessage
+一次连续服务话题，是 AI 上下文、人工接管和 Service Intake 的主要边界。群聊必须附带参与者隔离键。
 
-表示企业微信传入的一条原始消息。
+### ConversationItem
 
-关键属性：
+由 Channel Message、Communication Message、Ticket Event 和系统事件投影形成的统一时间线项目。它不是第二份原始消息事实。
 
-- provider；
-- msg_id；
-- idempotency_key（固定为 `provider + msg_id`）；
-- req_id；
-- chat_type；
-- chat_id；
-- sender_user_id；
-- msg_type；
-- 有序 content（text/media）；
-- quote；
-- create_time（提供方可缺省）；
-- received_at；
-- raw_payload；
-- privacy_class；
-- retention_until。
+### ServiceIntake
 
-不负责：
+一次完整服务受理，可包含多条消息和附件，最多创建一张主 Ticket，可关联 Incident。
 
-- 工单状态；
-- 最终分类；
-- 处理人；
-- 公共故障状态。
+### UnifiedTicket
 
-### 2.2 ServiceIntake
+唯一工单事实源，负责编号、状态、优先级、处理组、处理人、事件、内外部备注、关闭原因和版本。
 
-表示一次完整受理，可包含多条消息和附件。
+当前物理实现可继续位于 `pilot_ticket.*`。
 
-关键属性：
+### Incident
 
-- intake_no；
-- source_channel；
-- reporter；
-- 原始上下文；
-- 请求类型；
-- 标准摘要；
-- 院区、科室和位置；
-- ticket_id；
-- incident_id；
-- intake_status。
+多个独立 Intake 背后的公共故障。关联不删除任何个人 Intake 或原始证据。
 
-一个 Intake：
+### ReporterSubscription
 
-- 至少包含一条 ChannelMessage；
-- 最多关联一张主工单；
-- 可关联一个 Incident；
-- 可追加补充消息；
-- 可因咨询或无效请求不生成 Ticket，但必须保留处理结论。
+用户对 Ticket 或 Incident 的通知关系。
 
-P1-004 的可执行边界由 `intake.service_intake`、`intake.service_intake_message` 和 `intake.service_intake_event` 三张表实现。Channel Message 仍是不可被 Intake 覆盖的通道事实；每条 Channel Message 最多属于一个 Intake，关系显式区分 `PRIMARY`、`SUPPLEMENT` 和 `CLARIFICATION`。Intake 继承所有关联消息中的最强隐私级别和最早留存期限，这些数据库内部控制不无版本地扩展既有响应契约；处理结果不回显数据库摘要。P1-005 已以 `pilot_ticket_id` 与 `pilot_ticket.ticket.source_intake_id` 的双向一致关系补齐一张主 Ticket；`incident_id` 仍留给 Phase 2 的受权任务。
+### CommunicationMessage / Outbox / Delivery
 
-### 2.3 Ticket
+统一表达人工、AI 和 Ticket 通知的外部通信。内部备注不得形成外部 Delivery。
 
-表示需要处理团队完成的任务。
+### AIJob / AIRun / ConversationMemory
 
-Phase 1/2 由 Pilot Ticket Core 管理；Phase 3 切换后由 Hospital Tickets 管理，并通过外部映射保持追溯：
+保存可重放任务、模型调用、结果状态、Generation Version、Token 成本、滚动摘要和结构化记忆。AI 记录只追加。
 
-- 标题；
-- 类型；
-- 状态；
-- 优先级；
-- 处理组；
-- 处理人；
-- SLA；
-- 事件时间线；
-- 内部备注；
-- 外部结果；
-- 关闭原因；
-- version。
+### IntegrationSource
 
-P1-005 至 P1-010 的可执行 Ticket 只由一个 Service Intake 创建，使用 `IT-YYYYMMDD-NNNN` 编号、显式 Action、乐观版本、追加式 Ticket Event 和 Pilot Outbox。P1-010 增加持久化补充、卡片任务回执、`AUTO_TIMEOUT` 自动关闭和 `CLOSED -> REOPENED`；真实企业微信卡片显示/点击仍须单独实测。一个 Ticket 可在 Phase 2 受权后承载 Incident 下的处理任务。
+未来内网门户、医院 API、监控告警等新来源的注册信息。
 
-### 2.4 Incident
+### IntegrationInbox
 
-表示多个申报共同对应的公共故障。
+保存外部事件，按 `source + external_event_id` 幂等、校验、隔离和重放。
 
-关键属性：
+### ExternalReferenceBinding
 
-- incident_no；
-- system/module；
-- 症状和错误特征；
-- 影响范围；
-- 状态；
-- 严重等级；
-- 主要处理任务；
-- 公告；
-- 监控信号；
-- 关联 Intake；
-- 订阅人。
+关联外部请求/告警/消息标识与本地 Intake/Ticket，仅保存跨来源引用事实，不是第二套 Ticket。
 
-Incident 不等于重复 Ticket 合并。每个 Intake 仍保留。
+### IntegrationOutbox / SyncCursor / Reconciliation
 
-### 2.5 ReporterSubscription
+用于外部投影、断点续传和运行时一致性核验。V1.4 不包含历史 Ticket 批次或最终切换语义。
 
-表示某个用户对 Ticket 或 Incident 的通知关系。
+### IdentityBinding
 
-关键属性：
+企业微信、SSO、person、employee、任职、科室、院区和角色之间的有效期映射。
 
-- wecom_userid；
-- ticket_id 或 incident_id；
-- 通知渠道；
-- 最后通知版本；
-- 是否退订；
-- 送达偏好。
-
-### 2.6 MediaAsset
-
-表示一张图片、文件或处理附件。
-
-关键属性：
-
-- object_key；
-- SHA256；
-- MIME；
-- 文件大小；
-- 安全扫描状态；
-- 敏感级别；
-- 是否允许对申报人展示；
-- 留存到期时间。
-
-### 2.7 IdentityBinding
-
-企业微信账号与医院人员主数据的映射。
-
-Phase 1 只要求 WeCom userid 与 Pilot 角色/处理组；医院 person_id、SSO和组织主数据属于 Phase 3 映射，不得成为 Phase 1 建单条件。
-
-必须区分：
-
-- 企业微信 userid；
-- 医院 person_id；
-- SSO username；
-- 任职关系；
-- 所属院区；
-- 所属科室；
-- 有效期。
-
-### 2.8 AIDecision
-
-保存 AI/OCR 结果和人工修正。
-
-关键属性：
-
-- pipeline_version；
-- model_name/version；
-- prompt_version；
-- input_hash；
-- OCR 脱敏文本；
-- structured_output；
-- decision_band；
-- 人工修正字段；
-- latency。
-
-### 2.9 NotificationOutbox / Delivery
-
-Outbox 表示“应该发送什么”，Delivery 表示“实际发送结果”。
-
-不得将二者混成一个状态字段，否则无法表达多目标、多次重试和部分成功。
-
-### 2.10 TicketExternalMapping
-
-仅在 Phase 3 启用，表示 Pilot Ticket 与 Hospital Ticket 的可审计映射。
-
-关键属性：
-
-- pilot_ticket_id；
-- hospital_ticket_id；
-- hospital_ticket_no；
-- adapter_version；
-- migration_batch_id；
-- sync_state；
-- last_reconciled_at；
-- cutover_state。
-
-该对象不能成为第三套工单事实，只保存跨系统身份、同步和对账事实。
-
-## 3. 关系图
+## 2. 关系
 
 ```mermaid
 erDiagram
-    CHANNEL_MESSAGE }o--|| SERVICE_INTAKE : belongs_to
-    SERVICE_INTAKE }o--o| TICKET : creates
+    CHANNEL_MESSAGE }o--|| CONVERSATION_THREAD : projects_into
+    CONVERSATION_THREAD ||--o{ CONVERSATION_SESSION : contains
+    CONVERSATION_SESSION ||--o{ CONVERSATION_ITEM : timeline
+    CONVERSATION_SESSION }o--o| SERVICE_INTAKE : serves
+    SERVICE_INTAKE }o--o| UNIFIED_TICKET : creates
     SERVICE_INTAKE }o--o| INCIDENT : reports
-    SERVICE_INTAKE ||--o{ MEDIA_ASSET : contains
-    SERVICE_INTAKE ||--o{ AI_DECISION : evaluated_by
-    TICKET ||--o{ TICKET_EVENT : has
-    INCIDENT ||--o{ INCIDENT_REPORT : aggregates
-    SERVICE_INTAKE ||--o{ INCIDENT_REPORT : linked_by
-    TICKET ||--o{ REPORTER_SUBSCRIPTION : notifies
-    INCIDENT ||--o{ REPORTER_SUBSCRIPTION : notifies
-    NOTIFICATION_OUTBOX ||--o{ NOTIFICATION_DELIVERY : delivered_as
-    IDENTITY_BINDING }o--|| SERVICE_INTAKE : identifies
-    TICKET ||--o| TICKET_EXTERNAL_MAPPING : maps_in_phase3
+    UNIFIED_TICKET ||--o{ TICKET_EVENT : has
+    CONVERSATION_SESSION ||--o{ COMMUNICATION_MESSAGE : communicates
+    COMMUNICATION_MESSAGE ||--o{ COMMUNICATION_DELIVERY : delivered_as
+    CONVERSATION_SESSION ||--o{ AI_RUN : evaluated_by
+    INTEGRATION_SOURCE ||--o{ INTEGRATION_INBOX : receives
+    INTEGRATION_SOURCE ||--o{ EXTERNAL_REFERENCE_BINDING : references
+    UNIFIED_TICKET ||--o{ EXTERNAL_REFERENCE_BINDING : correlated_with
 ```
 
-## 4. 核心不变量
+## 3. 核心不变量
 
-1. `ChannelMessage` 一经保存不可被 AI 结果覆盖。
-2. `provider + msg_id` 唯一。
-3. 每个明确报修至少形成一个 Intake。
-4. Ticket 状态只能通过 Action 转换。
-5. Ticket 状态和对应 Outbox 同事务。
-6. Incident 关联不删除 Intake 和原 Ticket 证据。
-7. AI Decision 只能追加，不能覆盖历史版本。
-8. 外部可见附件和内部附件显式区分。
-9. 申报人所属科室不自动等于故障发生科室。
-10. 任何自动路由和自动关联都可人工撤销并留痕。
-11. Phase 1 Ticket 不得依赖 Hospital Tickets 标识或可用性。
-12. Phase 3 切换完成后不得继续把 Pilot Ticket 作为正式长期写入事实源。
-
-## 5. 请求类型
-
-建议枚举：
-
-```text
-INCIDENT
-SERVICE_REQUEST
-QUESTION
-COMPLAINT
-STATUS_QUERY
-FOLLOW_UP
-CHATTER
-UNKNOWN
-```
-
-当前项目优先处理 `INCIDENT`，但保留其他类型以避免把咨询和服务申请误当故障。
-
-## 6. 领域事件
-
-核心事件：
-
-```text
-intake.received
-intake.ticket_created
-intake.needs_clarification
-ticket.accepted
-ticket.started
-ticket.waiting_requester
-ticket.resolved
-ticket.closed
-ticket.reopened
-incident.candidate_detected
-incident.confirmed
-incident.updated
-incident.resolved
-notification.delivery_failed
-ai.degraded
-wecom.disconnected
-```
-
-事件字段详见 `contracts/domain_events.md`。
+1. ChannelMessage 一经保存不可覆盖。
+2. 每个明确报修至少形成 Intake。
+3. Ticket 状态只能通过 Action 转换。
+4. Ticket Event 追加不可变。
+5. Outbox 与业务事实同事务。
+6. 人工接管递增 Generation Version。
+7. 过期 AI 结果不得发送。
+8. 内部备注不得外发。
+9. Incident 不删除个人 Intake。
+10. 外部来源不拥有 Ticket 状态。
+11. ExternalReferenceBinding 不得演化为第二套 Ticket。
+12. 当前无历史 Ticket，P3 不建设历史兼容模型。
+13. P1 不依赖医院内网。
+14. AI/OCR/Connector 关闭时核心链路可用。

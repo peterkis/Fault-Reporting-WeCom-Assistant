@@ -1,48 +1,36 @@
 {
-  "package_name": "医院信息故障智能报修助手_Agent开发包_V1.2",
-  "version": "1.2.0",
-  "baseline_date": "2026-08-21",
-  "status": "ACTIVE",
+  "package_name": "医院信息故障智能报修与统一工单平台_Agent开发包_V1.4",
+  "version": "1.4.0",
+  "architecture_baseline": "V1.4",
+  "baseline_date": "2026-08-30",
+  "status": "ACTIVE_ARCHITECTURE_INCREMENT",
   "current_phase": "P1",
-  "first_executable_task": "P1-001",
-  "last_completed_task": "P1-011",
-  "next_task": "P1-012",
-  "active_task": null,
-  "task_status": "P1-001_TO_P1-011_LOCAL_POSTGRESQL_PILOT_ACCEPTANCE_DONE",
-  "architecture_status": "docs/architecture_baseline_status.md",
+  "active_task": "P1-012",
+  "source_repository": "peterkis/Fault-Reporting-WeCom-Assistant",
+  "source_base_commit": "8fcb6c1b6d7552d62ac859760c81ca4fba357626",
+  "source_of_truth": "Unified Ticket Core in this repository",
+  "p3_scope": "GREENFIELD_INTRANET_SOURCE_ONBOARDING_NO_HISTORICAL_TICKETS",
   "canonical_plans": [
     "plans/phase_0_wecom_poc.md",
     "plans/phase_1_public_pilot.md",
     "plans/phase_2_ai_enhancement.md",
-    "plans/phase_3_hospital_integration.md"
+    "plans/phase_3_unified_ticket_platform.md"
   ],
   "canonical_task_files": [
-    "tasks/ARCH-001_architecture_baseline_cleanup.md",
     "tickets/G0_gate0_tasks.md",
     "tickets/P1_pilot_tasks.md",
     "tickets/P2_ai_enhancement_tasks.md",
-    "tickets/P3_hospital_integration_tasks.md"
+    "tickets/P3_unified_ticket_platform_tasks.md"
   ],
-  "g0_evidence": [
-    "evidence/g0-001-wss-network-report.md",
-    "evidence/g0-002-sdk-authentication-report.md",
-    "evidence/g0-003-text-capability-matrix.md",
-    "evidence/g0-004-media-capability-matrix.md",
-    "evidence/g0-005-active-push-matrix.md",
-    "evidence/g0-006-template-card-matrix.md",
-    "evidence/g0-007-stability-report.md"
-  ],
-  "p1_evidence": [
-    "evidence/p1-001-pilot-foundation-report.md",
-    "evidence/p1-002-wecom-adapter-report.md",
-    "evidence/p1-003-channel-message-inbox-report.md",
-    "evidence/p1-004-service-intake-report.md",
-    "evidence/p1-005-to-p1-010-pilot-ticket-core-report.md",
-    "evidence/p1-011-pilot-security-operations-report.md"
+  "architecture_decisions": [
+    "adr/0010_unified_ticket_core_source_of_truth.md",
+    "adr/0011_lightweight_conversation_center_2c4g.md",
+    "adr/0012_greenfield_p3_no_historical_ticket_compatibility.md"
   ],
   "integrity": {
-    "static_file_hash_manifest": "DEPRECATED",
-    "reason": "Architecture Baseline Cleanup changes the working specification; release checksums must be generated from the final release artifact.",
-    "replacement": "Git commit identity plus release-time generated checksums"
+    "release_checksums": "PATCH_MANIFEST.json and SHA256SUMS.txt in outer package",
+    "application_model": "copy overlay into repository after base/ref review",
+    "deletions": false,
+    "contains_complete_v1_3_archive": true
   }
 }

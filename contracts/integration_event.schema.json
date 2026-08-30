@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/integration_event.schema.json",
+  "title": "Integration Event Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_code",
+    "external_event_id",
+    "external_record_type",
+    "external_record_id",
+    "event_type",
+    "occurred_at",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "source_code": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_]{3,64}$"
+    },
+    "external_event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "external_record_type": {
+      "type": "string",
+      "enum": [
+        "SERVICE_REQUEST",
+        "MESSAGE",
+        "ATTACHMENT",
+        "IDENTITY",
+        "ORGANIZATION",
+        "MONITORING_ALERT",
+        "STATUS_ACK",
+        "OTHER"
+      ]
+    },
+    "external_record_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "event_type": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_\\.]{3,128}$"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cursor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 512
+    },
+    "payload_hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "signature": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": [
+            "HMAC-SHA256",
+            "ED25519"
+          ]
+        },
+        "key_id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "value": {
+          "type": "string",
+          "maxLength": 1024
+        }
+      },
+      "required": [
+        "algorithm",
+        "key_id",
+        "value"
+      ]
+    }
+  }
+}

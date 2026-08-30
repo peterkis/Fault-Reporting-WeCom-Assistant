@@ -1,26 +1,39 @@
 {
-  "version": "1.2.0",
-  "architecture_baseline": "V1.2",
+  "version": "1.4.0",
+  "architecture_baseline": "V1.4",
   "canonical_source": "plans/master_backlog.json",
   "current_phase": "P1",
-  "first_executable_task": "P1-001",
   "last_completed_task": "P1-011",
-  "next_task": "P1-012",
-  "active_task": null,
-  "completed_preflight": [
-    {"id":"ARCH-001","title":"Architecture Baseline Cleanup","status":"DONE"}
-  ],
+  "active_task": "P1-012",
   "task_files": {
     "G0": "tickets/G0_gate0_tasks.md",
     "P1": "tickets/P1_pilot_tasks.md",
     "P2": "tickets/P2_ai_enhancement_tasks.md",
-    "P3": "tickets/P3_hospital_integration_tasks.md"
+    "P3": "tickets/P3_unified_ticket_platform_tasks.md"
   },
   "architecture_guards": [
-    "P1 uses Pilot Ticket Core",
-    "P1 has no Hospital Tickets dependency",
-    "P2 AI is asynchronous enhancement",
-    "P3 uses Ticket Adapter to migrate to Hospital Tickets",
-    "Hospital Tickets becomes the sole long-term source of truth after cutover"
-  ]
+    "P1 remains on current Pilot Ticket Core compatibility implementation",
+    "Unified Ticket Core in this repository is the long-term source of truth",
+    "P2 first delivers a human-only Conversation Center",
+    "AI is asynchronous, fenced, disableable, and cannot write ticket state",
+    "P3 onboards new intranet sources into Unified Ticket Core",
+    "P3 has no historical ticket import, cutover, or old-system compatibility",
+    "no second ticket core and no shared database integration",
+    "2C4G lightweight deployment is mandatory"
+  ],
+  "next_tasks": {
+    "current": "P1-012",
+    "after_p1": [
+      "P2-001",
+      "P2-003",
+      "P2-004",
+      "P2-007",
+      "P2-011"
+    ],
+    "after_p2": [
+      "P3-001",
+      "P3-002",
+      "P3-005"
+    ]
+  }
 }

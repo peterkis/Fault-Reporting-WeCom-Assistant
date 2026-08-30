@@ -1,252 +1,538 @@
--- 医院信息故障智能报修助手：增量数据模型草案
--- 版本：1.0.0
--- 注意：
--- 1. 本文件不创建现有 Tickets 核心表。
--- 2. ticket_id / incident_id 外键需在对齐现有数据库后补充。
--- 3. 生产执行前必须拆分为可审查的迁移文件。
--- 4. 需要 pgcrypto 的 gen_random_uuid()；也可改为应用层生成 UUID。
+-- ============================================================================
+-- V1.4 CONCEPTUAL SCHEMA DRAFT
+-- ============================================================================
+-- This file is NOT a production migration and MUST NOT be applied automatically.
+--
+-- Current G0/P1 production-like migrations remain authoritative, including:
+--   channel.message_inbox
+--   intake.service_intake
+--   pilot_ticket.ticket
+--   pilot_ticket.ticket_event
+--   notification.outbox / delivery / delivery_attempt
+--   pilot access control tables
+--
+-- V1.4 adds conceptual Conversation, Communication, AI and greenfield Integration tables.
+-- Create numbered migrations only after the corresponding task/Gate is approved.
+-- Do not create a second long-term Ticket Core and do not rename pilot_ticket.*
+-- in a big-bang migration.
+-- ============================================================================
 
-CREATE SCHEMA IF NOT EXISTS intake;
-CREATE SCHEMA IF NOT EXISTS incident;
-CREATE SCHEMA IF NOT EXISTS notification;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE IF NOT EXISTS intake.channel_message (
+CREATE SCHEMA IF NOT EXISTS conversation;
+CREATE SCHEMA IF NOT EXISTS communication;
+CREATE SCHEMA IF NOT EXISTS ai;
+CREATE SCHEMA IF NOT EXISTS integration;
+
+-- ============================================================================
+-- Conversation Center
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS conversation.thread (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    provider varchar(32) NOT NULL,
-    msg_id varchar(256) NOT NULL,
-    req_id varchar(256),
-    bot_id varchar(256),
-    chat_type varchar(16) NOT NULL CHECK (chat_type IN ('single','group')),
-    chat_id varchar(256),
-    sender_user_id varchar(256) NOT NULL,
-    msg_type varchar(32) NOT NULL,
-    create_time timestamptz NOT NULL,
-    raw_text text,
-    clean_text text,
-    raw_payload_encrypted bytea,
-    processing_status varchar(32) NOT NULL DEFAULT 'RECEIVED',
-    privacy_class varchar(32) NOT NULL DEFAULT 'INTERNAL',
-    trace_id varchar(128) NOT NULL,
-    retention_until timestamptz,
-    received_at timestamptz NOT NULL DEFAULT now(),
-    CONSTRAINT uq_channel_message_provider_msg UNIQUE (provider, msg_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_channel_message_sender_time
-    ON intake.channel_message (sender_user_id, received_at DESC);
-CREATE INDEX IF NOT EXISTS idx_channel_message_chat_time
-    ON intake.channel_message (chat_id, received_at DESC);
-CREATE INDEX IF NOT EXISTS idx_channel_message_status
-    ON intake.channel_message (processing_status, received_at);
-
-CREATE TABLE IF NOT EXISTS intake.service_intake (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    intake_no varchar(64) NOT NULL UNIQUE,
-    source_channel varchar(32) NOT NULL,
-    primary_message_id uuid NOT NULL REFERENCES intake.channel_message(id),
-    reporter_wecom_userid varchar(256) NOT NULL,
-    reporter_person_id uuid,
-    reporter_org_assignment_id uuid,
-    request_type varchar(32) NOT NULL DEFAULT 'UNKNOWN',
-    summary varchar(500),
-    reported_campus_id varchar(64),
-    reported_department_id varchar(64),
-    reported_location_text varchar(500),
-    status varchar(32) NOT NULL DEFAULT 'RECEIVED',
-    ticket_id uuid,
-    incident_id uuid,
-    version integer NOT NULL DEFAULT 0,
+    channel_type text NOT NULL,
+    channel_account_id text NOT NULL,
+    external_thread_key text NOT NULL,
+    chat_type text NOT NULL CHECK (chat_type IN ('single', 'group', 'system')),
+    status text NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'ARCHIVED')),
+    last_item_sequence bigint NOT NULL DEFAULT 0 CHECK (last_item_sequence >= 0),
+    last_activity_at timestamptz NOT NULL DEFAULT now(),
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
-    CHECK (request_type IN (
-        'INCIDENT','SERVICE_REQUEST','QUESTION','COMPLAINT',
-        'STATUS_QUERY','FOLLOW_UP','CHATTER','UNKNOWN'
+    UNIQUE (channel_type, channel_account_id, external_thread_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_conversation_thread_last_activity
+    ON conversation.thread (last_activity_at DESC);
+
+CREATE TABLE IF NOT EXISTS conversation.session (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    thread_id uuid NOT NULL REFERENCES conversation.thread(id),
+    participant_key text NOT NULL,
+    service_intake_id uuid NULL,
+    status text NOT NULL DEFAULT 'OPEN'
+        CHECK (status IN ('OPEN', 'WAITING_USER', 'ENDED')),
+    control_mode text NOT NULL DEFAULT 'COPILOT'
+        CHECK (control_mode IN ('AUTO', 'COPILOT', 'HUMAN')),
+    generation_version bigint NOT NULL DEFAULT 1 CHECK (generation_version >= 1),
+    row_version bigint NOT NULL DEFAULT 1 CHECK (row_version >= 1),
+    assigned_principal_id uuid NULL,
+    assigned_team_id uuid NULL,
+    topic_code text NULL,
+    started_at timestamptz NOT NULL DEFAULT now(),
+    last_activity_at timestamptz NOT NULL DEFAULT now(),
+    ended_at timestamptz NULL,
+    close_reason text NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    CHECK ((status = 'ENDED' AND ended_at IS NOT NULL) OR status <> 'ENDED')
+);
+
+CREATE INDEX IF NOT EXISTS idx_conversation_session_thread_activity
+    ON conversation.session (thread_id, last_activity_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_conversation_session_assignment
+    ON conversation.session (assigned_principal_id, status, last_activity_at DESC);
+
+-- Only one active Session per participant/thread should normally exist.
+-- Topic-specific parallel Sessions may later require a partial uniqueness policy
+-- rather than an unconditional unique constraint.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_conversation_session_active_participant
+    ON conversation.session (thread_id, participant_key)
+    WHERE status <> 'ENDED';
+
+CREATE TABLE IF NOT EXISTS conversation.item (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id uuid NOT NULL REFERENCES conversation.session(id),
+    sequence_no bigint NOT NULL CHECK (sequence_no >= 1),
+    item_type text NOT NULL CHECK (item_type IN (
+        'USER_MESSAGE',
+        'AI_MESSAGE',
+        'AGENT_MESSAGE',
+        'INTERNAL_NOTE',
+        'SYSTEM_EVENT',
+        'TICKET_EVENT',
+        'DELIVERY_STATUS',
+        'HANDOFF_EVENT'
     )),
-    CHECK (status IN (
-        'RECEIVED','TICKET_CREATED','WAITING_DESCRIPTION','WAITING_TRIAGE',
-        'LINKED_INCIDENT','COMPLETED','IGNORED','FAILED'
-    ))
+    source_type text NULL,
+    source_id text NULL,
+    sender_kind text NOT NULL CHECK (sender_kind IN (
+        'USER', 'AI', 'AGENT', 'SYSTEM', 'TOOL'
+    )),
+    sender_id text NULL,
+    visibility text NOT NULL CHECK (visibility IN (
+        'EXTERNAL', 'INTERNAL', 'RESTRICTED'
+    )),
+    content_text text NULL,
+    content_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+    occurred_at timestamptz NOT NULL,
+    projected_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (session_id, sequence_no)
 );
 
-CREATE INDEX IF NOT EXISTS idx_service_intake_reporter_time
-    ON intake.service_intake (reporter_wecom_userid, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_service_intake_ticket
-    ON intake.service_intake (ticket_id);
-CREATE INDEX IF NOT EXISTS idx_service_intake_status
-    ON intake.service_intake (status, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_conversation_item_source
+    ON conversation.item (source_type, source_id)
+    WHERE source_type IS NOT NULL AND source_id IS NOT NULL;
 
-CREATE TABLE IF NOT EXISTS intake.intake_message_rel (
-    intake_id uuid NOT NULL REFERENCES intake.service_intake(id) ON DELETE CASCADE,
-    message_id uuid NOT NULL REFERENCES intake.channel_message(id) ON DELETE RESTRICT,
-    relation_type varchar(32) NOT NULL,
-    sequence_no integer NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (intake_id, message_id),
-    UNIQUE (intake_id, sequence_no),
-    CHECK (relation_type IN ('PRIMARY','FOLLOW_UP','CLARIFICATION','STATUS_QUERY'))
+CREATE INDEX IF NOT EXISTS idx_conversation_item_session_sequence
+    ON conversation.item (session_id, sequence_no);
+
+CREATE TABLE IF NOT EXISTS conversation.projection_checkpoint (
+    projector_name text PRIMARY KEY,
+    last_source_sequence text NULL,
+    last_projected_at timestamptz NULL,
+    row_version bigint NOT NULL DEFAULT 1,
+    updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS intake.media_asset (
+CREATE TABLE IF NOT EXISTS conversation.assignment_history (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    message_id uuid NOT NULL REFERENCES intake.channel_message(id) ON DELETE RESTRICT,
-    object_key varchar(1024) NOT NULL UNIQUE,
-    original_filename varchar(512),
-    mime_type varchar(256) NOT NULL,
-    size_bytes bigint NOT NULL CHECK (size_bytes >= 0),
-    sha256 char(64) NOT NULL,
-    security_scan_status varchar(32) NOT NULL DEFAULT 'PENDING',
-    sensitivity_level varchar(32) NOT NULL DEFAULT 'UNKNOWN',
-    external_visible boolean NOT NULL DEFAULT false,
-    retention_until timestamptz,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    CHECK (security_scan_status IN ('PENDING','PASSED','REJECTED','FAILED')),
-    CHECK (sensitivity_level IN (
-        'UNKNOWN','INTERNAL','SENSITIVE_INTERNAL','PERSONAL','PATIENT_SENSITIVE','SECRET'
-    ))
+    session_id uuid NOT NULL REFERENCES conversation.session(id),
+    from_principal_id uuid NULL,
+    to_principal_id uuid NULL,
+    from_team_id uuid NULL,
+    to_team_id uuid NULL,
+    changed_by_principal_id uuid NOT NULL,
+    reason_code text NOT NULL,
+    occurred_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_media_asset_message
-    ON intake.media_asset (message_id);
-CREATE INDEX IF NOT EXISTS idx_media_asset_retention
-    ON intake.media_asset (retention_until)
-    WHERE retention_until IS NOT NULL;
-
-CREATE TABLE IF NOT EXISTS intake.identity_binding (
-    wecom_userid varchar(256) NOT NULL,
-    person_id uuid NOT NULL,
-    sso_username varchar(256),
-    org_assignment_id uuid,
-    department_id varchar(64),
-    campus_id varchar(64),
-    valid_from timestamptz NOT NULL DEFAULT now(),
-    valid_to timestamptz,
-    status varchar(16) NOT NULL DEFAULT 'ACTIVE',
-    created_at timestamptz NOT NULL DEFAULT now(),
+CREATE TABLE IF NOT EXISTS conversation.read_cursor (
+    principal_id uuid NOT NULL,
+    thread_id uuid NOT NULL REFERENCES conversation.thread(id),
+    last_read_sequence bigint NOT NULL DEFAULT 0 CHECK (last_read_sequence >= 0),
     updated_at timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (wecom_userid, valid_from),
-    CHECK (status IN ('ACTIVE','INACTIVE','PENDING','REVOKED'))
+    PRIMARY KEY (principal_id, thread_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_identity_binding_active
-    ON intake.identity_binding (wecom_userid, status, valid_from DESC);
-
-CREATE TABLE IF NOT EXISTS intake.ai_decision (
+CREATE TABLE IF NOT EXISTS conversation.handoff (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    intake_id uuid NOT NULL REFERENCES intake.service_intake(id) ON DELETE CASCADE,
-    pipeline_version varchar(128) NOT NULL,
-    model_name varchar(128) NOT NULL,
-    model_version varchar(128) NOT NULL,
-    prompt_version varchar(128),
-    rule_version varchar(128),
-    catalog_version varchar(128),
-    input_hash char(64) NOT NULL,
-    ocr_text_redacted text,
-    structured_output jsonb NOT NULL,
-    decision_band varchar(32) NOT NULL,
-    human_corrected boolean NOT NULL DEFAULT false,
-    corrected_by uuid,
-    corrected_fields jsonb,
-    latency_ms integer CHECK (latency_ms IS NULL OR latency_ms >= 0),
-    created_at timestamptz NOT NULL DEFAULT now(),
-    CHECK (decision_band IN (
-        'MANUAL_TRIAGE','SUGGEST_ROUTE','AUTO_ROUTE','CRITICAL_REVIEW'
-    ))
+    session_id uuid NOT NULL REFERENCES conversation.session(id),
+    requested_by_kind text NOT NULL CHECK (requested_by_kind IN (
+        'USER', 'AI', 'RULE', 'AGENT', 'ADMIN'
+    )),
+    requested_by_id text NULL,
+    reason_code text NOT NULL,
+    status text NOT NULL CHECK (status IN (
+        'REQUESTED', 'ACCEPTED', 'RELEASED', 'CANCELLED'
+    )),
+    from_mode text NOT NULL CHECK (from_mode IN ('AUTO', 'COPILOT', 'HUMAN')),
+    to_mode text NOT NULL CHECK (to_mode IN ('AUTO', 'COPILOT', 'HUMAN')),
+    assigned_principal_id uuid NULL,
+    requested_at timestamptz NOT NULL DEFAULT now(),
+    accepted_at timestamptz NULL,
+    released_at timestamptz NULL,
+    metadata jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 
-CREATE INDEX IF NOT EXISTS idx_ai_decision_intake_time
-    ON intake.ai_decision (intake_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conversation_handoff_session_time
+    ON conversation.handoff (session_id, requested_at DESC);
 
--- Incident 核心表可与现有 Ticketing schema 合并；此处给出独立草案。
-CREATE TABLE IF NOT EXISTS incident.incident (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    incident_no varchar(64) NOT NULL UNIQUE,
-    title varchar(500) NOT NULL,
-    system_code varchar(64),
-    module_code varchar(64),
-    symptom_code varchar(64),
-    status varchar(32) NOT NULL DEFAULT 'CANDIDATE',
-    severity varchar(16),
-    affected_scope varchar(32),
-    primary_ticket_id uuid,
-    summary_external text,
-    version integer NOT NULL DEFAULT 0,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now(),
-    resolved_at timestamptz,
-    CHECK (status IN ('CANDIDATE','CONFIRMED','IN_PROGRESS','MITIGATED','RESOLVED','CLOSED','REJECTED'))
-);
-
-CREATE TABLE IF NOT EXISTS incident.incident_report (
-    incident_id uuid NOT NULL REFERENCES incident.incident(id) ON DELETE CASCADE,
-    intake_id uuid NOT NULL REFERENCES intake.service_intake(id) ON DELETE RESTRICT,
-    match_method varchar(32) NOT NULL,
-    match_evidence jsonb NOT NULL DEFAULT '{}'::jsonb,
-    match_score numeric(6,5),
-    confirmed_by uuid,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (incident_id, intake_id)
-);
-
-CREATE TABLE IF NOT EXISTS incident.reporter_subscription (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    ticket_id uuid,
-    incident_id uuid REFERENCES incident.incident(id) ON DELETE CASCADE,
-    wecom_userid varchar(256) NOT NULL,
-    notification_channel varchar(32) NOT NULL,
-    last_notified_version integer NOT NULL DEFAULT 0,
-    notification_preference jsonb NOT NULL DEFAULT '{}'::jsonb,
-    status varchar(16) NOT NULL DEFAULT 'ACTIVE',
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now(),
-    CHECK (ticket_id IS NOT NULL OR incident_id IS NOT NULL),
-    CHECK (status IN ('ACTIVE','PAUSED','UNSUBSCRIBED','UNREACHABLE'))
-);
-
-CREATE INDEX IF NOT EXISTS idx_subscription_ticket
-    ON incident.reporter_subscription (ticket_id, status);
-CREATE INDEX IF NOT EXISTS idx_subscription_incident
-    ON incident.reporter_subscription (incident_id, status);
-
--- 若现有 notification_outbox 已存在，应扩展原表，不重复创建。
-CREATE TABLE IF NOT EXISTS notification.outbox (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_type varchar(128) NOT NULL,
-    aggregate_type varchar(64) NOT NULL,
-    aggregate_id uuid NOT NULL,
-    aggregate_version integer NOT NULL,
-    target_key varchar(512) NOT NULL,
+CREATE TABLE IF NOT EXISTS conversation.realtime_event (
+    event_id bigserial PRIMARY KEY,
+    event_type text NOT NULL,
+    aggregate_type text NOT NULL,
+    aggregate_id text NOT NULL,
+    aggregate_version bigint NULL,
+    visibility_scope text NOT NULL DEFAULT 'WORKBENCH',
     payload jsonb NOT NULL,
-    status varchar(16) NOT NULL DEFAULT 'PENDING',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    expires_at timestamptz NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_realtime_event_created
+    ON conversation.realtime_event (event_id);
+
+CREATE INDEX IF NOT EXISTS idx_realtime_event_aggregate
+    ON conversation.realtime_event (aggregate_type, aggregate_id, event_id);
+
+-- ============================================================================
+-- Communication Outbox
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS communication.message (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id uuid NULL REFERENCES conversation.session(id),
+    sender_kind text NOT NULL CHECK (sender_kind IN ('AI', 'AGENT', 'SYSTEM')),
+    sender_id text NULL,
+    message_type text NOT NULL CHECK (message_type IN (
+        'text', 'markdown', 'image', 'file', 'mixed', 'template_card'
+    )),
+    visibility text NOT NULL CHECK (visibility IN ('EXTERNAL', 'INTERNAL')),
+    body jsonb NOT NULL,
+    reply_to_conversation_item_id uuid NULL REFERENCES conversation.item(id),
+    client_command_id uuid NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (client_command_id)
+);
+
+CREATE TABLE IF NOT EXISTS communication.outbox (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    message_id uuid NOT NULL REFERENCES communication.message(id),
+    channel_type text NOT NULL,
+    target_type text NOT NULL CHECK (target_type IN ('PERSON', 'GROUP')),
+    target_id text NOT NULL,
+    idempotency_key text NOT NULL,
+    priority integer NOT NULL DEFAULT 100,
+    status text NOT NULL DEFAULT 'PENDING' CHECK (status IN (
+        'PENDING', 'LEASED', 'SENT', 'FAILED', 'DEAD_LETTER', 'CANCELLED'
+    )),
+    available_at timestamptz NOT NULL DEFAULT now(),
+    attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+    lease_token uuid NULL,
+    lease_expires_at timestamptz NULL,
+    last_error_code text NULL,
+    last_error_detail text NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    sent_at timestamptz NULL,
+    UNIQUE (idempotency_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_communication_outbox_claim
+    ON communication.outbox (status, available_at, priority, created_at);
+
+CREATE TABLE IF NOT EXISTS communication.delivery (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    outbox_id uuid NOT NULL REFERENCES communication.outbox(id),
+    attempt_no integer NOT NULL CHECK (attempt_no >= 1),
+    provider text NOT NULL,
+    status text NOT NULL CHECK (status IN (
+        'SENDING', 'SENT', 'ACKNOWLEDGED', 'FAILED'
+    )),
+    provider_message_id text NULL,
+    request_id text NULL,
+    error_code text NULL,
+    error_detail text NULL,
+    started_at timestamptz NOT NULL DEFAULT now(),
+    completed_at timestamptz NULL,
+    UNIQUE (outbox_id, attempt_no)
+);
+
+-- A compatibility adapter may project existing notification.outbox/delivery into
+-- the above logical contract instead of creating these tables immediately.
+
+-- ============================================================================
+-- AI jobs, runs and memory
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS ai.job (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id uuid NOT NULL REFERENCES conversation.session(id),
+    trigger_item_id uuid NOT NULL REFERENCES conversation.item(id),
+    generation_version bigint NOT NULL CHECK (generation_version >= 1),
+    job_type text NOT NULL CHECK (job_type IN (
+        'CONVERSATION_TURN', 'SUMMARY', 'FIELD_EXTRACTION', 'HANDOFF_SUMMARY'
+    )),
+    prompt_version text NOT NULL,
+    idempotency_key text NOT NULL,
+    status text NOT NULL DEFAULT 'PENDING' CHECK (status IN (
+        'PENDING', 'LEASED', 'COMPLETED', 'FAILED', 'CANCELLED', 'STALE', 'DEAD_LETTER'
+    )),
     available_at timestamptz NOT NULL DEFAULT now(),
     attempt_count integer NOT NULL DEFAULT 0,
+    lease_token uuid NULL,
+    lease_expires_at timestamptz NULL,
+    last_error_code text NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
-    processed_at timestamptz,
-    CHECK (status IN ('PENDING','PROCESSING','SENT','FAILED','DEAD')),
-    UNIQUE (event_type, aggregate_id, aggregate_version, target_key)
+    completed_at timestamptz NULL,
+    UNIQUE (idempotency_key)
 );
 
-CREATE INDEX IF NOT EXISTS idx_outbox_pending
-    ON notification.outbox (status, available_at)
-    WHERE status IN ('PENDING','FAILED');
+CREATE INDEX IF NOT EXISTS idx_ai_job_claim
+    ON ai.job (status, available_at, created_at);
 
-CREATE TABLE IF NOT EXISTS notification.delivery (
+CREATE TABLE IF NOT EXISTS ai.run (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    outbox_id uuid NOT NULL REFERENCES notification.outbox(id) ON DELETE CASCADE,
-    target_type varchar(32) NOT NULL,
-    target_id varchar(512) NOT NULL,
-    channel varchar(32) NOT NULL,
-    template_code varchar(128) NOT NULL,
-    payload_hash char(64) NOT NULL,
-    status varchar(16) NOT NULL DEFAULT 'PENDING',
-    attempt_count integer NOT NULL DEFAULT 0,
-    last_error_code varchar(128),
-    last_error_message_redacted varchar(1000),
-    sent_at timestamptz,
+    job_id uuid NOT NULL REFERENCES ai.job(id),
+    provider text NOT NULL,
+    model text NOT NULL,
+    model_version text NULL,
+    prompt_version text NOT NULL,
+    context_from_sequence bigint NULL,
+    context_to_sequence bigint NULL,
+    context_hash text NOT NULL,
+    redaction_result jsonb NOT NULL DEFAULT '{}'::jsonb,
+    structured_output jsonb NULL,
+    input_tokens integer NULL,
+    cached_input_tokens integer NULL,
+    output_tokens integer NULL,
+    estimated_cost numeric(12, 6) NULL,
+    latency_ms integer NULL,
+    status text NOT NULL CHECK (status IN (
+        'STARTED', 'COMPLETED', 'FAILED', 'STALE', 'REJECTED'
+    )),
+    finish_reason text NULL,
+    error_code text NULL,
+    response_message_id uuid NULL REFERENCES communication.message(id),
+    started_at timestamptz NOT NULL DEFAULT now(),
+    completed_at timestamptz NULL
+);
+
+CREATE TABLE IF NOT EXISTS ai.conversation_memory (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id uuid NOT NULL REFERENCES conversation.session(id),
+    memory_version bigint NOT NULL CHECK (memory_version >= 1),
+    summary_text text NOT NULL,
+    summary_until_sequence bigint NOT NULL CHECK (summary_until_sequence >= 0),
+    structured_facts jsonb NOT NULL DEFAULT '{}'::jsonb,
+    input_hash text NOT NULL,
+    prompt_version text NOT NULL,
+    model_version text NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (session_id, memory_version)
+);
+
+-- ============================================================================
+-- Integration Hub (greenfield sources only)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS integration.source (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_code text NOT NULL,
+    source_type text NOT NULL CHECK (source_type IN (
+        'INTRANET_PORTAL', 'HOSPITAL_API', 'MONITORING_ALERT',
+        'VENDOR_SERVICE', 'OTHER'
+    )),
+    direction text NOT NULL CHECK (direction IN (
+        'INBOUND_ONLY', 'OUTBOUND_ONLY', 'BIDIRECTIONAL'
+    )),
+    authority_policy text NOT NULL DEFAULT 'LOCAL_TICKET_AUTHORITATIVE',
+    connector_mode text NOT NULL CHECK (connector_mode IN (
+        'INTRANET_OUTBOUND_AGENT', 'PUSH_API', 'PULL_API'
+    )),
+    data_classification text NOT NULL,
+    contract_version text NOT NULL,
+    status text NOT NULL DEFAULT 'DISABLED' CHECK (status IN (
+        'DISABLED', 'TESTING', 'ACTIVE', 'SUSPENDED'
+    )),
+    config_reference text NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
-    CHECK (status IN ('PENDING','SENDING','SENT','FAILED','DEAD')),
-    UNIQUE (outbox_id, target_type, target_id, channel, template_code)
+    UNIQUE (source_code)
 );
 
-CREATE INDEX IF NOT EXISTS idx_delivery_status
-    ON notification.delivery (status, updated_at);
+CREATE TABLE IF NOT EXISTS integration.inbox_event (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_id uuid NOT NULL REFERENCES integration.source(id),
+    external_event_id text NOT NULL,
+    external_record_type text NOT NULL,
+    external_record_id text NOT NULL,
+    event_type text NOT NULL,
+    occurred_at timestamptz NOT NULL,
+    cursor_value text NULL,
+    payload_redacted jsonb NULL,
+    payload_encrypted bytea NULL,
+    payload_hash text NOT NULL,
+    status text NOT NULL DEFAULT 'RECEIVED' CHECK (status IN (
+        'RECEIVED', 'PROCESSING', 'PROCESSED', 'FAILED', 'QUARANTINED'
+    )),
+    attempt_count integer NOT NULL DEFAULT 0,
+    available_at timestamptz NOT NULL DEFAULT now(),
+    last_error_code text NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    processed_at timestamptz NULL,
+    UNIQUE (source_id, external_event_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_integration_inbox_claim
+    ON integration.inbox_event (source_id, status, available_at, occurred_at);
+
+CREATE TABLE IF NOT EXISTS integration.external_record_binding (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_id uuid NOT NULL REFERENCES integration.source(id),
+    external_record_type text NOT NULL,
+    external_record_id text NOT NULL,
+    local_aggregate_type text NOT NULL,
+    local_aggregate_id uuid NOT NULL,
+    mapping_version text NOT NULL,
+    binding_status text NOT NULL DEFAULT 'ACTIVE' CHECK (binding_status IN (
+        'ACTIVE', 'SUPERSEDED', 'CONFLICT', 'DELETED'
+    )),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (source_id, external_record_type, external_record_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_external_binding_local
+    ON integration.external_record_binding (local_aggregate_type, local_aggregate_id);
+
+CREATE TABLE IF NOT EXISTS integration.outbox (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_id uuid NOT NULL REFERENCES integration.source(id),
+    local_event_id text NOT NULL,
+    projection_type text NOT NULL,
+    external_record_type text NOT NULL,
+    external_record_id text NULL,
+    payload jsonb NOT NULL,
+    idempotency_key text NOT NULL,
+    status text NOT NULL DEFAULT 'PENDING' CHECK (status IN (
+        'PENDING', 'LEASED', 'SENT', 'ACKNOWLEDGED',
+        'FAILED', 'DEAD_LETTER', 'CANCELLED'
+    )),
+    available_at timestamptz NOT NULL DEFAULT now(),
+    attempt_count integer NOT NULL DEFAULT 0,
+    lease_token uuid NULL,
+    lease_expires_at timestamptz NULL,
+    last_error_code text NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    completed_at timestamptz NULL,
+    UNIQUE (source_id, idempotency_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_integration_outbox_claim
+    ON integration.outbox (source_id, status, available_at, created_at);
+
+CREATE TABLE IF NOT EXISTS integration.sync_cursor (
+    source_id uuid NOT NULL REFERENCES integration.source(id),
+    stream_name text NOT NULL,
+    cursor_value text NOT NULL,
+    cursor_hash text NULL,
+    last_event_occurred_at timestamptz NULL,
+    row_version bigint NOT NULL DEFAULT 1,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (source_id, stream_name)
+);
+
+CREATE TABLE IF NOT EXISTS integration.reconciliation_run (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_id uuid NOT NULL REFERENCES integration.source(id),
+    run_type text NOT NULL CHECK (run_type IN (
+        'CONTRACT_CHECK', 'INCREMENTAL', 'PERIODIC', 'ON_DEMAND', 'RECOVERY'
+    )),
+    status text NOT NULL CHECK (status IN (
+        'RUNNING', 'PASSED', 'FAILED', 'NEEDS_REVIEW'
+    )),
+    source_cursor_from text NULL,
+    source_cursor_to text NULL,
+    checked_count bigint NOT NULL DEFAULT 0,
+    explained_difference_count bigint NOT NULL DEFAULT 0,
+    unexplained_difference_count bigint NOT NULL DEFAULT 0,
+    summary jsonb NOT NULL DEFAULT '{}'::jsonb,
+    started_at timestamptz NOT NULL DEFAULT now(),
+    completed_at timestamptz NULL
+);
+
+CREATE TABLE IF NOT EXISTS integration.reconciliation_item (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    run_id uuid NOT NULL REFERENCES integration.reconciliation_run(id),
+    external_record_type text NOT NULL,
+    external_record_id text NOT NULL,
+    local_aggregate_id uuid NULL,
+    difference_type text NOT NULL,
+    severity text NOT NULL CHECK (severity IN ('INFO', 'WARNING', 'ERROR')),
+    explained boolean NOT NULL DEFAULT false,
+    explanation_code text NULL,
+    detail jsonb NOT NULL DEFAULT '{}'::jsonb,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_reconciliation_item_run
+    ON integration.reconciliation_item (run_id, severity, explained);
+
+CREATE TABLE IF NOT EXISTS integration.identity_binding (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_id uuid NOT NULL REFERENCES integration.source(id),
+    external_identity_type text NOT NULL,
+    external_identity_id text NOT NULL,
+    local_principal_id uuid NULL,
+    person_id text NULL,
+    employee_no text NULL,
+    department_id text NULL,
+    campus_id text NULL,
+    roles jsonb NOT NULL DEFAULT '[]'::jsonb,
+    valid_from timestamptz NULL,
+    valid_to timestamptz NULL,
+    status text NOT NULL DEFAULT 'ACTIVE' CHECK (status IN (
+        'ACTIVE', 'INACTIVE', 'NEEDS_REVIEW'
+    )),
+    snapshot jsonb NOT NULL DEFAULT '{}'::jsonb,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (source_id, external_identity_type, external_identity_id, valid_from)
+);
+
+-- The Integration Hub is for new sources. It intentionally contains no
+-- historical-ticket batch, final-cutover, legacy-state or old-system lifecycle fields.
+
+-- ============================================================================
+-- Cross-schema foreign keys
+-- ============================================================================
+-- Add real foreign keys to intake.service_intake and pilot_ticket.ticket only
+-- after checking their exact current types and approved numbered schema changes.
+--
+-- Example logical bindings:
+--   conversation.session.service_intake_id -> intake.service_intake.id
+--   integration.external_record_binding.local_aggregate_id -> pilot_ticket.ticket.id
+--
+-- Where polymorphism prevents a database FK, enforce aggregate type and ID in the
+-- service layer and reconciliation checks.
+
+-- ============================================================================
+-- Required transactional patterns
+-- ============================================================================
+-- 1. Inbound:
+--    INSERT channel/integration inbox
+--    INSERT/update conversation projection intent
+--    COMMIT
+--    THEN enqueue optional AI work.
+--
+-- 2. Human/AI reply:
+--    INSERT communication.message
+--    INSERT communication.outbox
+--    INSERT conversation.realtime_event
+--    COMMIT
+--    THEN send via Delivery Worker.
+--
+-- 3. Ticket action:
+--    UPDATE pilot_ticket.ticket with expected version
+--    INSERT pilot_ticket.ticket_event
+--    INSERT notification/communication outbox
+--    COMMIT
+--
+-- 4. External projection:
+--    INSERT integration.outbox from committed local event
+--    COMMIT
+--    THEN connector sends and records delivery.
+--
+-- 5. No external API calls are allowed while holding these transactions.

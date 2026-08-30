@@ -1,0 +1,25 @@
+stateDiagram-v2
+    [*] --> OpenAuto: Session created
+    OpenAuto --> Copilot: policy / risk / admin
+    OpenAuto --> Human: human takeover
+    Copilot --> Human: human takeover
+    Human --> Copilot: release to AI assist
+    Copilot --> OpenAuto: approved auto allowlist
+    OpenAuto --> WaitingUser: request information
+    Copilot --> WaitingUser: human sends question
+    Human --> WaitingUser: human sends question
+    WaitingUser --> Human: user replies while assigned
+    WaitingUser --> Copilot: user replies without active human
+    WaitingUser --> OpenAuto: approved low-risk mode
+    OpenAuto --> Ended: session resolved/closed
+    Copilot --> Ended: session resolved/closed
+    Human --> Ended: session resolved/closed
+    Ended --> [*]
+
+    note right of Human
+      Entering HUMAN:
+      - increment generation_version
+      - invalidate stale AI jobs
+      - record handoff
+      - preserve ticket state separately
+    end note

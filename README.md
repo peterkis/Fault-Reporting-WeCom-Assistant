@@ -1,61 +1,118 @@
-# 医院信息故障智能报修助手 Agent 开发包 V1.2
+# 医院信息故障智能报修与统一工单平台 Agent 开发包 V1.4
 
-本仓库的唯一有效架构基线为 V1.2。权威状态见 `docs/architecture_baseline_status.md`。
+本仓库当前唯一有效架构基线为 V1.4。权威状态见 `docs/architecture_baseline_status.md`。
 
 ## 当前阶段
 
-- 当前处于 `P1：企业微信外网试点`；`P1-001` 至 `P1-011` 已完成各自的本机受控、Contract 或 PostgreSQL 集成验收。P1-005 至 P1-011 已形成 Pilot Ticket Core、显式状态 Action/事件、Pilot Outbox/Delivery、提交后首次确认、Pilot 本地权限工作台及补充/确认关闭/自动关闭/重开闭环，并建立安全日志、固定指标告警、不可变运维审计和本机加密备份恢复基线。`P1-012` 正在建立真实测试群 E2E、故障演练和 Go/No-Go 接缝：企业微信出站 WSS 只要求 DNS、TCP 443、TLS 与本机 Pilot 运行时，不以公网 IP 为阻塞条件；外发发送器和卡片的既有注入式本地契约仍不是客户端可见或临床试点验收。
-- `G0-001` 已完成：正式 WSS 网络路径已验证通过；
-- `G0-002` 已完成：本机 Windows 的认证、心跳、错误 Secret、主动断开和 SIGTERM 处理器验证均已通过；
-- `G0-003` 已完成：单聊、群内 @、群内未 @、两账号交叉、引用消息与重复发送均已有实测结论；
-- `G0-004` 已完成：图片、群内 @ 图文混排、文件、错误 AES Key、真实下载超时和大图片通道压缩行为已取得脱敏实测结论；`message.voice` 与 `message.video` 也均已取得真实单聊 Frame，其中语音仅留存转写元数据，视频已在内存中成功下载/AES 解密；
-- `G0-005` 已完成：单聊在线/离线、群 `chatid`、群变更、重复投递和错误目标均已有实测结论；三种已测群 @ 路径均不可用，其中“Markdown 后独立纯文本 `<@userid>`”的第二条被平台拒绝且客户端不可见；
-- `G0-006` 已完成：确认/仍未恢复按钮、`task_id`、5 秒内更新和重复点击均已真实通过；超过 5 秒的更新会被平台拒绝。群回调被动纯文本 `<@userid>` 被 `40008` 拒绝，结束流式回复虽获 `provider_errcode=0`，客户端仍只显示字面量文本且无 @ 提醒，因此群内回复 @ 不可作为可靠提醒能力；
-- `G0-007` 已完成：ADR-0008 将 Gate 0 稳定运行退出项定为4小时30分钟；本机 Windows 已真实通过稳定浸泡、60秒和10分钟以上断网恢复、进程 kill/restart、三轮 WSS 定向网络抖动与 DNS 失败/恢复。临时网络规则均已清理；
-- `G0-006A` 已完成：以企业微信长连接“回复消息”文档为基准补齐欢迎语、流式刷新与反馈、被动 Markdown，以及文件、图片、语音和视频回复验证；真实租户接口回执和客户端显示/打开/播放均已确认。反馈事件后的空包被拒绝；3.92 MiB 高层并发视频超时保留为历史观察，G0-OPEN-003 已以串行分片真实验证 10 MiB 回传与播放，且不改变 1 MiB 运营上限；`G0-005` 主动推送不计入该回复侧覆盖；
-- `G0-008` 已完成：项目负责人已确认 Gate 0 验收报告与 ADR-0009，并授权进入 Phase 1；主动媒体显示可见验收和单连接限制均按冻结结论执行；
-- 出站语音、视频、图片和文件必须使用企业微信临时素材三步上传并通过 Adapter 的短期媒体租约投递；格式、大小、时效、恢复、隐私、限流及已知容量边界见 `docs/18_wecom_temporary_media_constraints.md`；
-- Phase 1 仍不得接入 Hospital Tickets、医院 SSO、医院 Hub 或院内 Outbox。
+- 当前仍处于 `P1：企业微信外网试点`；
+- G0 已完成并冻结；
+- P1-001 至 P1-011 保持既有验收结论；
+- P1-012 继续完成真实测试群 E2E、客户端观察、故障演练和 Go/No-Go；
+- V1.4 只调整未来架构、计划、契约和概念 Schema，不表示 P2/P3 已开始；
+- P1-012 退出前，不启用生产 Conversation Center、AI 自动回复、OCR、医院身份连接或内网 Connector。
+
+## V1.4 核心纠偏
+
+本项目当前没有任何历史业务 Ticket，也不存在需要继续兼容、迁移或退役的旧工单系统。因此，P3 不再包含历史 Ticket 导入、未完结 Ticket 切换、旧状态映射、双系统并行或旧系统退役。
+
+本系统自身的 Unified Ticket Core 从现在起就是唯一长期工单事实源。当前 `pilot_ticket.*` 物理 Schema 是其第一阶段兼容实现，不进行大爆炸式重命名，也不复制第二套核心表。
+
+## 最终架构
+
+```text
+企业微信 / 内网报修门户 / 医院 API / 监控告警 / 未来服务入口
+                              ↓
+                 Channel / Integration Adapter
+                              ↓
+                   Durable Inbox + Idempotency
+                              ↓
+                  Conversation Thread / Session
+                              ↓
+                        Service Intake
+                              ↓
+                     Unified Ticket Core
+                              ↓
+       Ticket Event + Communication Outbox / Integration Outbox
+                              ↓
+        企业微信 / Web 工作台 / 内网状态投影 / 运营与对账
+```
+
+核心分层：
+
+- `Channel Message`：企业微信原始消息事实；
+- `Conversation Thread / Session`：多轮通信、人工接管和 AI 上下文；
+- `Service Intake`：一次服务受理；
+- `Unified Ticket Core`：唯一工单编号、状态、责任和生命周期事实源；
+- `Incident`：公共故障聚合，不删除个人 Intake；
+- `Communication Outbox / Delivery`：人工、AI 和工单通知的统一可靠发送；
+- `Integration Inbox / Outbox`：未来内网来源的幂等接入与状态投影。
 
 ## Phase 1：企业微信外网试点
 
 ```text
 Enterprise WeCom
-    ↓
-WeCom Gateway
-    ↓
-Channel Message
-    ↓
-Service Intake
-    ↓
-Pilot Ticket Core
+→ WeCom Gateway
+→ Channel Message
+→ Service Intake
+→ Pilot Ticket Core compatibility implementation
 ```
 
-Phase 1 不依赖医院内网系统，不直连医院 Tickets。Pilot Ticket Core 是公网试点期的工单事实源，用于验证临床接受度、可靠受理、处理闭环和通知效果。
+P1 保持零医院内网依赖，继续完成真实企业微信闭环和试点评审。
 
-## Phase 2：AI 增强
-
-OCR、规则、分类和字段抽取均为异步增强。AI 失败不能影响消息保存、建单或通知，也不得直接操作生产系统。
-
-## Phase 3：医院融合
+## Phase 2：Conversation Center 与 AI 协作
 
 ```text
-Pilot Ticket Core
-    ↓
-Ticket Adapter
-    ↓
-Hospital Tickets
+Conversation Thread / Session
+→ Durable Timeline
+→ REST + SSE Workbench
+→ Human Takeover / Assignment / Read Cursor
+→ DeepSeek Provider Adapter
+→ Rolling Summary / Structured Memory
+→ AI Shadow → Copilot → Controlled Auto
 ```
 
-Phase 3 完成映射、迁移、对账和切换后，由 Hospital Tickets 成为唯一长期工单事实源。禁止长期保留 Pilot Ticket 与 Hospital Tickets 两套并行事实源。
+AI 始终是可关闭增强能力。AI 失败不能影响消息保存、受理、建单、人工回复和通知。
 
-## 核心原则
+## Phase 3：医院内网接入与统一运营
 
-- AI 不是工单入口；
-- 消息必须先保存，再确认；
-- 明确报修必须可靠受理；
-- Channel Message、Service Intake、Ticket、Incident 必须分层；
-- 所有消息必须幂等；
-- 所有状态变化必须产生事件；
-- 所有通知必须经过可靠 Outbox/Delivery 机制；
-- 不允许跨阶段提前开发。
+```text
+内网报修门户 / 医院 API / 监控告警 / 未来来源
+                          ↓
+              Intranet Connector Agent
+                          ↓
+                  Integration Inbox
+                          ↓
+                  Service Intake
+                          ↓
+                Unified Ticket Core
+                          ↓
+          Integration Outbox / Projection
+```
+
+P3 是绿地接入阶段：只接入新的内网来源和身份能力，不处理历史 Ticket 兼容或迁移。
+
+## 2 核 4GB 部署原则
+
+生产基线采用轻量模块化单体：
+
+- Node.js 24 + PostgreSQL；
+- 单活 WeCom Gateway；
+- 一个低并发 Worker；
+- 原生 REST + SSE 工作台；
+- DeepSeek 外部 API，默认并发 1；
+- PostgreSQL durable queue；
+- Redis、Chatwoot、Dify、LangBot、MinIO、Elasticsearch 和完整监控栈均不是同机必需依赖；
+- 不在 2C4G 云服务器运行本地大模型或常驻重型 OCR。
+
+## 核心纪律
+
+1. 先落库，再触发 AI，再发送回复。
+2. Channel Message、Conversation、Service Intake、Ticket、Incident 必须分层。
+3. Unified Ticket Core 是唯一 Ticket 状态事实源。
+4. 人工接管后，所有旧 AI 生成任务必须失效。
+5. AI 和人工回复必须进入同一可靠出站链路。
+6. 内部备注永远不能发送到企业微信。
+7. 所有外部消息、命令和投影事件必须幂等。
+8. 所有 Ticket 状态变化必须产生追加式事件。
+9. 外部来源不可通过共享数据库直接修改 Ticket。
+10. 并行开发必须契约先行、隔离运行、统一 Gate 后再组装上线。

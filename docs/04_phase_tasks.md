@@ -1,41 +1,38 @@
-# V1.2 开发阶段任务
+# V1.4 开发阶段任务
 
-机器可读状态见 `plans/master_backlog.json`，任务明细见 `tickets/`。
+## Gate 0
 
-## Gate 0：企业微信验证
+企业微信能力验证，已完成并冻结。
 
-范围：WSS、认证、消息、媒体、主动推送、卡片、重连和单活。
+## Phase 1
 
-验收：4小时30分钟稳定运行、能力矩阵和架构结论完成。不得实现 Pilot Ticket Core。
+企业微信外网试点。当前任务 P1-012，继续完成真实 E2E、故障演练和 Go/No-Go。
 
-## Phase 1：企业微信外网试点
+## Phase 2
 
-```text
-Enterprise WeCom
-→ WeCom Gateway
-→ Channel Message
-→ Service Intake
-→ Pilot Ticket Core
-```
+范围：
 
-范围：Inbox、Intake、Pilot Ticket Core、状态机、事件、Outbox/Delivery、最小处理端、解决确认、运维和试点评审。
+- Conversation Thread/Session；
+- 持久 Timeline；
+- REST + SSE Workbench；
+- 人工分配、接管和 Read Cursor；
+- Communication Outbox；
+- DeepSeek Shadow/Copilot/Controlled Auto；
+- 媒体/OCR；
+- Incident；
+- 指标和 2C4G 验收。
 
-验收：10秒目标、漏单0、重复单0、真实状态闭环、可靠通知。不得依赖 Hospital Tickets。
+## Phase 3
 
-## Phase 2：AI 增强
+范围：
 
-范围：私有媒体、OCR、规则、字段抽取、AI影子分诊、人工修正、Incident候选和指标。
+- UnifiedTicket Port；
+- Integration Source Registry；
+- Inbox/Outbox/Binding/Cursor/Reconciliation；
+- 医院身份组织映射；
+- 主动出站内网 Connector；
+- 新内网门户、医院 API 和监控告警 Adapter；
+- 多来源统一 Workbench；
+- 第一条生产来源接入与阶段验收。
 
-验收：AI关闭不影响 Phase 1；建议可评估；人工可撤销；敏感数据受控。
-
-## Phase 3：医院融合
-
-```text
-Pilot Ticket Core
-→ Ticket Adapter
-→ Hospital Tickets
-```
-
-范围：真实契约盘点、外部映射、身份/状态/附件映射、幂等同步、迁移、对账、回滚和切换。
-
-验收：Hospital Tickets 成为唯一长期事实源，Pilot Ticket Core 停止形成长期正式工单。
+P3 不包含历史 Ticket 导入、未完结切换、旧状态兼容、双系统切换或旧系统退役。

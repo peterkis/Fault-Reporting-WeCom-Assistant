@@ -1,0 +1,23 @@
+sequenceDiagram
+    autonumber
+    participant S as New Intranet Source
+    participant C as Intranet Connector
+    participant R as Cloud Integration Receiver
+    participant I as Integration Inbox
+    participant U as Unified Ticket Core
+    participant O as Integration Outbox
+
+    S->>C: New service request / alert / identity event
+    C->>C: Validate, sign, persist local cursor/spool
+    C->>R: Outbound mTLS event batch
+    R->>I: Store by source + external_event_id
+    I->>I: Authenticate, schema-check, idempotency
+    I->>U: Create Intake or perform authorized Ticket Action
+    U->>U: Ticket + append-only Event + Outbox transaction
+    U->>O: Create source projection intent
+    O->>C: Status projection / acknowledgement
+    C->>S: Update source-visible projection when supported
+    C->>C: Commit cursor after acknowledgement
+
+    Note over I,U: External source never owns Ticket status
+    Note over C,U: No historical Ticket import path exists in V1.4

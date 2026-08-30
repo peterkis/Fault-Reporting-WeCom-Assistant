@@ -1,171 +1,205 @@
-# 领域事件契约
+# V1.4 领域事件契约
 
-> V1.2：Phase 1/2 事件由 Pilot Ticket Core 产生；Phase 3 通过 Ticket Adapter 映射并切换至 Hospital Tickets。事件名表达领域事实，不绑定企业微信 Frame 或医院数据库表。
+> Ticket Event 由本系统 Unified Ticket Core 产生。Conversation、AI 和 Integration 事件不改变 Ticket 状态所有权。
 
 ## 公共 Envelope
 
 ```json
 {
-  "event_id": "uuid",
-  "event_type": "ticket.accepted",
-  "occurred_at": "2026-08-20T01:00:00Z",
-  "aggregate_type": "ticket",
+  "event_id": "uuid-or-monotonic-id",
+  "event_type": "conversation.handoff.accepted",
+  "occurred_at": "2026-08-30T00:00:00Z",
+  "aggregate_type": "conversation_session",
   "aggregate_id": "uuid",
   "aggregate_version": 3,
   "event_ordinal": 7,
   "trace_id": "trace-id",
+  "schema_version": "1.0",
   "payload": {}
 }
 ```
 
-## 规则
+规则：
 
 - `event_id` 全局唯一；
-- `aggregate_version` 按聚合状态单调非递减；同一原子状态变化可产生多个同版本事件；
-- `event_ordinal` 在同一 aggregate 内从 1 严格递增，并与 `aggregate_id` 组成唯一顺序键；
-- Consumer 必须按 `event_id` 幂等；
-- 不保证全局顺序；同一 aggregate 以内按 `event_ordinal` 确定事件顺序；
-- payload 不包含 Bot Secret、患者原始文本或永久附件 URL；
-- Schema 变更保持向后兼容。
+- 同一 aggregate 按 `event_ordinal` 严格排序；
+- Consumer 按 `event_id` 幂等；
+- 不保证全局顺序；
+- payload 不包含 Secret、AES Key、永久公开附件 URL 或未脱敏患者文本；
+- Schema 变更向后兼容；
+- Conversation 投影失败可重建；
+- Ticket Event 不能由 Conversation、AI 或 Integration 服务伪造。
 
-## 核心事件
+## Conversation 事件
 
-### `intake.received`
+```text
+conversation.thread.created
+conversation.session.created
+conversation.item.projected
+conversation.handoff.requested
+conversation.handoff.accepted
+conversation.mode.changed
+conversation.assignment.changed
+conversation.read_cursor.changed
+conversation.session.closed
+```
+
+`conversation.handoff.accepted` 示例：
 
 ```json
 {
-  "intake_id": "uuid",
-  "channel_message_id": "opaque-channel-message-id",
-  "source_channel": "WECOM_GROUP",
-  "reporter_wecom_userid": "opaque",
-  "request_type": "UNKNOWN",
-  "status": "WAITING_DESCRIPTION"
+  "session_id": "uuid",
+  "assigned_principal_id": "uuid",
+  "old_mode": "AUTO",
+  "new_mode": "HUMAN",
+  "generation_version": 6
 }
 ```
 
-### `intake.needs_clarification`
+## Communication 事件
+
+```text
+communication.message.committed
+communication.delivery.sent
+communication.delivery.failed
+communication.delivery.dead_lettered
+```
+
+人工、AI 和工单通知必须形成同一 Communication Message/Outbox/Delivery 事实链。`visibility=INTERNAL` 的消息不得产生外部 Delivery。
+
+## AI 事件
+
+```text
+ai.job.queued
+ai.run.completed
+ai.run.stale
+ai.run.rejected
+ai.memory.updated
+ai.degraded
+```
+
+`ai.run.stale` 示例：
 
 ```json
 {
-  "intake_id": "uuid",
-  "channel_message_id": "opaque-channel-message-id",
-  "reason": "DESCRIPTION_REQUIRED",
-  "message_type": "image"
+  "ai_run_id": "uuid",
+  "session_id": "uuid",
+  "generation_version_at_start": 8,
+  "current_generation_version": 9,
+  "reason_code": "HUMAN_TAKEOVER"
 }
 ```
 
-### `intake.message_added`
+## Ticket 事件
+
+现有 P1 事件继续有效：
+
+```text
+intake.received
+intake.message_added
+intake.needs_clarification
+intake.ticket_created
+ticket.created
+ticket.accepted
+ticket.started
+ticket.waiting_requester
+ticket.waiting_vendor
+ticket.information_added
+ticket.resolved
+ticket.auto_close_reminder
+ticket.closed
+ticket.reopened
+```
+
+长期权威属于 Unified Ticket Core；物理表可继续位于 `pilot_ticket.ticket_event`。
+
+## Incident 事件
+
+```text
+incident.candidate_detected
+incident.confirmed
+incident.report_linked
+incident.report_unlinked
+incident.updated
+incident.mitigated
+incident.resolved
+incident.closed
+subscription.created
+subscription.updated
+```
+
+## Integration 事件
+
+### `integration.source.registered`
 
 ```json
 {
-  "intake_id": "uuid",
-  "channel_message_id": "opaque-channel-message-id",
-  "relation_type": "SUPPLEMENT",
-  "message_count": 3,
-  "request_type": "INCIDENT",
-  "status": "RECEIVED"
+  "source_id": "uuid",
+  "source_code": "INTRANET_REPORT_PORTAL",
+  "source_type": "INTRANET_PORTAL",
+  "contract_version": "1.0",
+  "status": "TESTING"
 }
 ```
 
-### `intake.clarification_added`
+### `integration.event.received`
 
 ```json
 {
-  "intake_id": "uuid",
-  "channel_message_id": "opaque-channel-message-id",
-  "relation_type": "CLARIFICATION",
-  "message_count": 2,
-  "request_type": "INCIDENT",
-  "status": "RECEIVED"
+  "source_id": "uuid",
+  "source_code": "INTRANET_REPORT_PORTAL",
+  "external_event_id_hash": "sha256",
+  "external_record_type": "SERVICE_REQUEST",
+  "event_type": "SERVICE_REQUEST_SUBMITTED"
 }
 ```
 
-P1-004 将以上 Intake 事件保存在 `intake.service_intake_event` 作为同事务审计事实；这不是 P1-007 的 Notification Outbox，也不会触发通知。payload 不复制原始报修文字、媒体 URL、AES Key、患者文本或 Secret。
-
-### `intake.ticket_created`
+### `integration.event.quarantined`
 
 ```json
 {
-  "intake_id": "uuid",
-  "ticket_id": "uuid",
-  "ticket_no": "IT-20260820-0013",
-  "external_status": "等待受理"
+  "source_id": "uuid",
+  "inbox_event_id": "uuid",
+  "error_code": "IDENTITY_UNMAPPED",
+  "retryable_after_mapping": true
 }
 ```
 
-### `ticket.accepted`
+### `integration.reference.bound`
 
 ```json
 {
-  "ticket_id": "uuid",
-  "ticket_no": "IT-20260820-0013",
-  "handler_id": "uuid",
-  "external_note": "信息科已受理"
+  "source_id": "uuid",
+  "external_record_id_hash": "sha256",
+  "local_aggregate_type": "SERVICE_INTAKE",
+  "local_aggregate_id": "uuid",
+  "mapping_version": "intranet-request-v1"
 }
 ```
 
-### Ticket lifecycle events
-
-`ticket.created`、`ticket.started`、`ticket.waiting_vendor`、`ticket.resolved`、
-`ticket.closed`、`ticket.reopened`、`ticket.information_added` 和
-`ticket.auto_close_reminder` 均写入
-`pilot_ticket.ticket_event`。所有事件都带有 `ticket_id`、`ticket_no`、
-`aggregate_version`、前后状态、operator、`trace_id` 和时间线顺序；仅
-`external_note` 可以进入对申报人的通知 payload，`internal_note` 不得复制出去。
+### `integration.projection.acknowledged`
 
 ```json
 {
-  "ticket_id": "uuid",
-  "ticket_no": "IT-20260829-0013",
-  "old_status": "RESOLVED",
-  "new_status": "CLOSED",
-  "aggregate_version": 6,
-  "reason_code": "AUTO_TIMEOUT"
+  "source_id": "uuid",
+  "integration_outbox_id": "uuid",
+  "local_event_id": "uuid",
+  "external_ack_hash": "sha256"
 }
 ```
 
-`ticket.closed` 的 `reason_code=REQUESTER_CONFIRMED` 表示申报人确认；
-`reason_code=AUTO_TIMEOUT` 表示系统自动关闭，二者不得混同。P1-010 的卡片
-回调、过期、重放和 actor 检查是本地持久化契约，并不声明真实企业微信客户端
-的显示或点击结果。
-
-`ticket.auto_close_reminder` 不改变 Ticket 状态；它只记录在自动关闭到期前、由 Outbox
-安排的一次提醒事实。自动关闭服务要求该事件已经被写入，不能跳过提醒直接把已解决工单
-关闭。
-
-`ticket.duplicate_linked` 与 `ticket.unlinked` 保留给 Phase 2 在存在可审计 Incident/主任务
-事实时使用；P1 不生成这两类事件。
-
-### `ticket.waiting_requester`
+### `integration.reconciliation.completed`
 
 ```json
 {
-  "ticket_id": "uuid",
-  "questions": ["请补充终端编号"],
-  "card_task_id": "opaque"
+  "run_id": "uuid",
+  "source_id": "uuid",
+  "run_type": "PERIODIC",
+  "checked_count": 500,
+  "explained_difference_count": 3,
+  "unexplained_difference_count": 0,
+  "status": "PASSED"
 }
 ```
 
-### `incident.confirmed`
-
-```json
-{
-  "incident_id": "uuid",
-  "incident_no": "INC-20260820-003",
-  "summary": "HIS统一认证异常",
-  "affected_scope": "MULTI_DEPARTMENT",
-  "report_count": 5
-}
-```
-
-### `notification.delivery_failed`
-
-```json
-{
-  "outbox_id": "uuid",
-  "channel": "WECOM_DIRECT",
-  "target_hash": "hash",
-  "error_code": "WECOM_SEND_TIMEOUT",
-  "attempt_count": 5
-}
-```
+Integration Reconciliation 只用于新来源事件、Binding、Cursor 和外部投影的一致性核验，不表示历史 Ticket 迁移。

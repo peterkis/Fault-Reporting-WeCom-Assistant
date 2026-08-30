@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "default_control_mode": "COPILOT",
+  "session": {
+    "idle_timeout_minutes": 720,
+    "recent_message_limit": 20,
+    "context_token_budget": 8000,
+    "message_aggregation_ms": 1500,
+    "max_open_sessions_per_thread": 1,
+    "group_context_key": "bot_id+chat_id+participant_user_id+service_intake_id"
+  },
+  "handoff": {
+    "user_keywords": [
+      "人工",
+      "转人工",
+      "找信息科"
+    ],
+    "force_human_on_sensitive_data": true,
+    "force_human_on_critical_urgency": true,
+    "force_human_after_failed_turns": 2,
+    "generation_version_increment_on": [
+      "new_user_message",
+      "takeover",
+      "transfer",
+      "release",
+      "new_session",
+      "ticket_key_state_change",
+      "cancel_generation"
+    ]
+  },
+  "ai": {
+    "enabled": false,
+    "rollout_mode": "SHADOW",
+    "provider": "deepseek",
+    "model": "deepseek-v4-flash",
+    "thinking": "disabled",
+    "temperature": 0.3,
+    "max_output_tokens": 500,
+    "timeout_ms": 15000,
+    "max_concurrency": 1,
+    "auto_reply_allowlist": [
+      "GREETING",
+      "MISSING_FIELD_QUESTION",
+      "STATUS_QUERY"
+    ],
+    "auto_reply_min_confidence": 0.95,
+    "deny_auto_reply_when": [
+      "contains_patient_data",
+      "contains_secret",
+      "complaint",
+      "critical_urgency",
+      "patient_care_impact",
+      "human_assigned",
+      "generation_version_changed"
+    ]
+  },
+  "internal_notes": {
+    "include_in_ai_context": false,
+    "allow_external_delivery": false,
+    "append_only": true
+  },
+  "realtime": {
+    "transport": "SSE",
+    "heartbeat_seconds": 20,
+    "max_clients": 32,
+    "replay_enabled": true,
+    "polling_fallback_seconds": 5
+  }
+}

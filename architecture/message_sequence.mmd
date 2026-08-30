@@ -1,30 +1,40 @@
 sequenceDiagram
     autonumber
-    participant U as 临床用户
+    participant U as Clinical User
     participant W as Enterprise WeCom
     participant G as WeCom Gateway
+    participant C as Conversation Center
     participant I as Service Intake
-    participant DB as Pilot PostgreSQL
-    participant P as Pilot Ticket Core
-    participant O as Outbox/Delivery
-    participant A as AI/OCR (Phase 2)
+    participant T as Unified Ticket Core
+    participant O as Communication Outbox
+    participant A as AI Provider (optional)
+    participant H as Human Workbench
 
-    U->>W: @信息保障助手 + 文字/截图
+    U->>W: Text / image / file
     W->>G: WebSocket Frame
-    G->>I: 标准化消息
-    I->>DB: 幂等保存 Channel Message / Intake
-    I->>P: 创建 Pilot Ticket（幂等）
-    P->>DB: Ticket + Event + Outbox 同事务
-    P-->>I: pilot_ticket_no + QUEUED
-    I-->>G: 工单号/首次回复模板
-    G-->>W: 回复“已生成工单，等待受理”
-    W-->>U: 首次确认
-    I--)A: Phase 2 异步规则/OCR/AI
-    A-->>I: 结构化建议
-    P->>DB: 接单/处理/解决 + Event + Outbox
-    O->>G: 可靠发送申报人通知
-    G->>W: 主动推送
-    W->>U: 进度卡片
+    G->>I: Normalized Message
+    I->>I: Persist Channel Message and Intake idempotently
+    I->>T: Create Ticket when service work is required
+    T->>T: Ticket + Event + Outbox in one transaction
+    T-->>G: Ticket number / truthful acknowledgement
+    G-->>W: Reply after commit
+    W-->>U: Visible acknowledgement
 
-    Note over P,O: Phase 1 不调用 Hospital Tickets
-    Note over P,O: Phase 3 由 Ticket Adapter 承担迁移、同步和对账
+    I-->>C: Project committed message into Thread / Session
+    C-->>H: Realtime event via SSE
+    H->>C: Human takeover / reply command
+    C->>O: Commit external message and delivery intent
+    O->>G: Reliable delivery
+    G->>W: Active send
+
+    C--)A: Redacted context, generation_version N
+    A-->>C: Suggestion / draft
+    C->>C: Verify generation_version and safety
+    alt stale or human takeover
+        C->>C: Save AI Run as STALE; do not send
+    else approved external reply
+        C->>O: Commit AI message and delivery intent
+    end
+
+    Note over T,O: Unified Ticket Core remains authoritative
+    Note over C,A: AI failure never blocks human-only flow

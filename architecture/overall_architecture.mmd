@@ -1,52 +1,58 @@
 flowchart TB
-    subgraph WECOM[Enterprise WeCom]
-        GROUP[临床报修群]
-        DIRECT[机器人单聊]
-        BOT[信息保障助手]
+    subgraph CHANNELS[Service Entry Channels]
+        WECOM[Enterprise WeCom]
+        PORTAL[Intranet Reporting Portal]
+        API[Hospital API Platform]
+        ALERT[Monitoring Alerts]
+        FUTURE[Future Sources]
     end
 
-    subgraph PILOT[Phase 1 公网试点]
-        ADAPTER[WeCom SDK Adapter]
-        GATEWAY[WeCom Gateway]
-        MESSAGE[Channel Message]
+    subgraph PLATFORM[Unified Service Platform]
+        WADAPTER[WeCom SDK Adapter]
+        ICONN[Integration Connector / Receiver]
+        CINBOX[Channel Message Inbox]
+        IINBOX[Integration Inbox]
+        CONV[Conversation Thread / Session]
         INTAKE[Service Intake]
-        PILOT_TICKET[Pilot Ticket Core]
-        INCIDENT[Incident]
-        OUTBOX[Notification Outbox]
-        DELIVERY[Delivery Worker]
-        PG[(Pilot PostgreSQL)]
+        TICKET[Unified Ticket Core]
+        EVENT[Append-only Ticket Event]
+        INCIDENT[Incident / Subscription]
+        COMM[Communication Outbox / Delivery]
+        IOUT[Integration Outbox / Projection]
+        WORKBENCH[REST + SSE Workbench]
+        PG[(PostgreSQL)]
     end
 
-    subgraph AI[Phase 2 异步增强]
-        RULES[规则/系统指纹]
-        OCR[OCR Service]
-        TRIAGE[AI Triage]
+    subgraph OPTIONAL[Disableable Enhancements]
+        RULES[Rules / Catalog]
+        AI[DeepSeek Provider]
+        OCR[OCR / Media]
     end
 
-    subgraph HOSPITAL[Phase 3 医院融合]
-        TICKET_ADAPTER[Ticket Adapter]
-        HOSPITAL_TICKETS[Hospital Tickets]
-        MAPPING[ticket_external_mapping]
-    end
-
-    GROUP --> BOT
-    DIRECT --> BOT
-    BOT <-->|WSS 443| ADAPTER
-    ADAPTER --> GATEWAY
-    GATEWAY --> MESSAGE
-    MESSAGE --> INTAKE
-    INTAKE --> PILOT_TICKET
-    PILOT_TICKET --> INCIDENT
-    PILOT_TICKET --> OUTBOX
-    OUTBOX --> DELIVERY
-    DELIVERY --> GATEWAY
-    MESSAGE --> PG
+    WECOM --> WADAPTER --> CINBOX
+    PORTAL --> ICONN
+    API --> ICONN
+    ALERT --> ICONN
+    FUTURE --> ICONN
+    ICONN --> IINBOX
+    CINBOX --> CONV
+    IINBOX --> CONV
+    CONV --> INTAKE --> TICKET
+    TICKET --> EVENT
+    TICKET --> INCIDENT
+    TICKET --> COMM --> WADAPTER
+    TICKET --> IOUT --> ICONN
+    CONV --> WORKBENCH
+    TICKET --> WORKBENCH
+    CINBOX --> PG
+    IINBOX --> PG
+    CONV --> PG
     INTAKE --> PG
-    PILOT_TICKET --> PG
-    INTAKE -.async.-> RULES
-    RULES -.optional.-> OCR
-    OCR -.optional.-> TRIAGE
-    TRIAGE -.suggestion only.-> INTAKE
-    PILOT_TICKET -.Phase 3 only.-> TICKET_ADAPTER
-    TICKET_ADAPTER --> HOSPITAL_TICKETS
-    TICKET_ADAPTER --> MAPPING
+    TICKET --> PG
+    EVENT --> PG
+    COMM --> PG
+    IOUT --> PG
+    CONV -.async.-> RULES
+    RULES -.optional.-> AI
+    CONV -.optional.-> OCR
+    AI -.suggestion/draft only.-> CONV

@@ -1,35 +1,105 @@
-# Phase 2：AI 增强
+# Phase 2：Conversation Center 与 AI 协作
+
+> 文件名为兼容既有索引保留。V1.4 的 P2 已不只是 AI Enhancement。
 
 ## 阶段目标
 
-在已通过试点的 Pilot Ticket Core 之上增加安全媒体、OCR、规则、AI影子分诊、人工修正、Incident 候选和指标能力。
+在 P1 已验证的 Channel Message、Service Intake、Ticket Core 和 Outbox 之上，建设：
+
+- Durable Conversation Thread / Session；
+- 可重建的实时 Timeline；
+- REST + SSE 坐席 Workbench；
+- 人工接管、分配、已读游标和内部备注；
+- 人工、AI 和系统通知统一可靠出站；
+- DeepSeek 多轮上下文、摘要和结构化记忆；
+- Shadow、Copilot、Controlled Auto；
+- 私有媒体/OCR；
+- Incident 和运营指标。
 
 ## 进入条件
 
-- P1-012 完成；
-- Phase 1 核心链路和回滚路径稳定；
-- AI/OCR 数据使用、安全和资源边界已确认。
+- P1-012 完成并批准 Go；
+- 生产数据使用与模型边界已批准；
+- Workbench 访问边界已批准；
+- 2C4G 基准监控可用；
+- 所有 P2 Feature Flag 默认关闭。
+
+## 并行 Lane
+
+| Lane | 内容 | 可独立开发方式 |
+|---|---|---|
+| P2-A | Thread、Session、Timeline、SSE | PostgreSQL + fixture Channel Message |
+| P2-B | Communication Outbox、Handoff、Workbench | mock Conversation API / mock WeCom sender |
+| P2-C | Rules、DeepSeek、Context、Memory、AI Mode | 脱敏固定集 + mock Provider |
+| P2-D | Storage/OCR、Incident、Metrics | 测试对象存储 + 合成数据 |
 
 ## 任务总览
 
-| ID | 标题 | 依赖 | 状态 |
-|---|---|---|---|
-| P2-001 | 私有媒体存储、扫描与留存 | P1-012 | TODO |
-| P2-002 | OCR 服务与错误代码提取 | P2-001 | TODO |
-| P2-003 | 系统目录与确定性规则 | P1-012 | TODO |
-| P2-004 | AI Triage 契约与 Provider Adapter | P2-003 | TODO |
-| P2-005 | AI 异步影子编排 | P2-002, P2-004 | TODO |
-| P2-006 | 人工修正、评估集与版本审计 | P2-005 | TODO |
-| P2-007 | Incident 与 Reporter Subscription | P2-003 | TODO |
-| P2-008 | Incident 候选、人工确认与通知 | P2-006, P2-007 | TODO |
-| P2-009 | 指标口径与月报 | P2-006, P2-008 | TODO |
-| P2-010 | Phase 2 降级、性能和上线门槛验收 | P2-009 | TODO |
+| ID | 标题 | Lane | 依赖 | 目标 Gate |
+|---|---|---|---|---|
+| P2-001 | Conversation Thread、Session 与控制模式契约 | P2-A | P1-012 | P2-G1 |
+| P2-002 | 持久化 Timeline Projector 与可重建投影 | P2-A | P2-001 | P2-G1 |
+| P2-003 | Realtime Event Log、SSE 补放与慢客户端治理 | P2-A | P2-001 | P2-G1 |
+| P2-004 | 统一 Communication Message / Outbox / Delivery | P2-B | P2-001 | P2-G1 |
+| P2-005 | 坐席分配、Read Cursor、Handoff 与 Generation Fence | P2-B | P2-001, P2-004 | P2-G1 |
+| P2-006 | 实时 Web Workbench、REST Command 与权限 | P2-B | P2-002, P2-003, P2-005 | P2-G1 |
+| P2-007 | 服务目录、确定性规则与对话字段模型 | P2-C | P1-012 | P2-G2 |
+| P2-008 | DeepSeek Provider Adapter、脱敏与安全闸门 | P2-C | P2-007 | P2-G2 |
+| P2-009 | Context Builder、Rolling Memory、AI Job 与 AI Run | P2-C | P2-001, P2-008 | P2-G2 |
+| P2-010 | AI Shadow、Copilot、受控自动回复与评估 | P2-C | P2-006, P2-009 | P2-G4 |
+| P2-011 | 私有媒体、StoragePort、OCR 与敏感文本处理 | P2-D | P1-012 | P2-G3 |
+| P2-012 | Incident、Reporter Subscription 与人工确认 | P2-D | P2-007 | P2-G3 |
+| P2-013 | Conversation、AI、Ticket、Incident 运营指标与月报 | P2-D | P2-006, P2-010, P2-012 | P2-G4 |
+| P2-014 | P2 组装、2C4G 性能、安全、降级与 Go/No-Go | ASSEMBLY | P2-010, P2-011, P2-012, P2-013 | P2-G4 |
+
+## Gate 验收
+
+### P2-G1 Human-only Conversation Center
+
+- AI/OCR 全部关闭；
+- 真实数据库；
+- 企业微信消息投影到 Workbench；
+- 人工接管和回复；
+- 内部备注不外发；
+- SSE 断线补放；
+- 重复点击、并发接管和发送失败通过；
+- 2C4G 无 OOM。
+
+### P2-G2 AI Shadow
+
+- DeepSeek 只产生后台结果；
+- 脱敏和出域审查；
+- Context/Memory 可追溯；
+- generation fence；
+- 固定评估集；
+- AI 停止不影响 G1。
+
+### P2-G3 Copilot + Media/Incident
+
+- AI 草稿必须人工确认；
+- 草稿编辑差异可审计；
+- 媒体/OCR 可降级；
+- Incident 默认人工确认；
+- 群聊不同申报人隔离；
+- 敏感附件不外泄。
+
+### P2-G4 Controlled Auto
+
+- 仅批准低风险意图；
+- 白名单和小流量；
+- stale/unsafe/patient leak 均为 0；
+- 一键关闭；
+- 24 小时资源浸泡；
+- 真实企业微信客户端验证；
+- 项目负责人和安全责任人批准。
 
 ## 退出条件
 
-- AI/OCR 停止时核心链路 100% 可用；
-- AI 输出符合 Schema 并可追溯到模型、Prompt、规则和目录版本；
-- 人工修正不覆盖历史决策；
-- Incident 默认人工确认且可解除；
-- 普通日志和群消息不包含患者敏感信息；
-- 自动化启用条件有独立评估和审批。
+- Human-only 工作台可独立生产运行；
+- AI 全停时核心链路 100% 可用；
+- 人工接管后过期 AI 发送为 0；
+- 内部备注外泄为 0；
+- 患者敏感数据出域为 0；
+- 所有模型调用可追溯；
+- 2C4G 性能和恢复通过；
+- P2-014 evidence 完整。
