@@ -1,0 +1,26 @@
+{
+  "version": "1.2.0",
+  "architecture_baseline": "V1.2",
+  "canonical_source": "plans/master_backlog.json",
+  "current_phase": "P1",
+  "first_executable_task": "P1-001",
+  "last_completed_task": "P1-011",
+  "next_task": "P1-012",
+  "active_task": null,
+  "completed_preflight": [
+    {"id":"ARCH-001","title":"Architecture Baseline Cleanup","status":"DONE"}
+  ],
+  "task_files": {
+    "G0": "tickets/G0_gate0_tasks.md",
+    "P1": "tickets/P1_pilot_tasks.md",
+    "P2": "tickets/P2_ai_enhancement_tasks.md",
+    "P3": "tickets/P3_hospital_integration_tasks.md"
+  },
+  "architecture_guards": [
+    "P1 uses Pilot Ticket Core",
+    "P1 has no Hospital Tickets dependency",
+    "P2 AI is asynchronous enhancement",
+    "P3 uses Ticket Adapter to migrate to Hospital Tickets",
+    "Hospital Tickets becomes the sole long-term source of truth after cutover"
+  ]
+}

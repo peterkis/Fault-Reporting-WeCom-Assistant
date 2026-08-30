@@ -1,0 +1,97 @@
+{
+  "project": "医院信息故障智能报修助手",
+  "version": "1.2.0",
+  "architecture_baseline": "V1.2",
+  "baseline_date": "2026-08-21",
+  "current_phase": "P1",
+  "first_executable_task": "G0-001",
+  "status_values": ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"],
+  "baseline_tasks": [
+    {
+      "id": "ARCH-001",
+      "title": "Architecture Baseline Cleanup",
+      "status": "DONE",
+      "completed_at": "2026-08-21",
+      "acceptance": [
+        "V1.2 是唯一有效架构",
+        "Phase 1 使用 Pilot Ticket Core 且不依赖 Hospital Tickets",
+        "Phase 3 通过 Ticket Adapter 融合 Hospital Tickets",
+        "当前阶段仍为 G0 且 G0-001 未开始"
+      ]
+    }
+  ],
+  "phases": [
+    {
+      "id": "G0",
+      "name": "企业微信 WebSocket 能力验证",
+      "plan": "plans/phase_0_wecom_poc.md",
+      "task_file": "tickets/G0_gate0_tasks.md"
+    },
+    {
+      "id": "P1",
+      "name": "企业微信外网试点",
+      "ticket_backend": "Pilot Ticket Core",
+      "hospital_ticket_dependency": false,
+      "plan": "plans/phase_1_public_pilot.md",
+      "task_file": "tickets/P1_pilot_tasks.md"
+    },
+    {
+      "id": "P2",
+      "name": "AI增强",
+      "ticket_backend": "Pilot Ticket Core",
+      "plan": "plans/phase_2_ai_enhancement.md",
+      "task_file": "tickets/P2_ai_enhancement_tasks.md"
+    },
+    {
+      "id": "P3",
+      "name": "医院融合",
+      "migration_path": "Pilot Ticket Core -> Ticket Adapter -> Hospital Tickets",
+      "target_source_of_truth": "Hospital Tickets",
+      "plan": "plans/phase_3_hospital_integration.md",
+      "task_file": "tickets/P3_hospital_integration_tasks.md"
+    }
+  ],
+  "tasks": [
+    {"id":"G0-001","phase":"G0","title":"验证 WSS 网络路径","status":"DONE","depends_on":[]},
+    {"id":"G0-002","phase":"G0","title":"SDK认证与连接生命周期PoC","status":"DONE","depends_on":["G0-001"]},
+    {"id":"G0-003","phase":"G0","title":"群聊与单聊文本能力矩阵","status":"DONE","depends_on":["G0-002"]},
+    {"id":"G0-004","phase":"G0","title":"图片、mixed、文件、语音与视频接收 PoC","status":"DONE","depends_on":["G0-002"]},
+    {"id":"G0-005","phase":"G0","title":"主动推送与提醒效果验证","status":"DONE","depends_on":["G0-003"]},
+    {"id":"G0-006","phase":"G0","title":"模板卡片按钮与更新时限验证","status":"DONE","depends_on":["G0-005"]},
+    {"id":"G0-007","phase":"G0","title":"4小时30分钟稳定性与断网重连测试","status":"DONE","depends_on":["G0-002","G0-003"]},
+    {"id":"G0-006A","phase":"G0","title":"长连接回复消息能力补充验证","status":"DONE","depends_on":["G0-002","G0-003","G0-004","G0-006"]},
+    {"id":"G0-008","phase":"G0","title":"能力结论与架构冻结","status":"DONE","depends_on":["G0-003","G0-004","G0-005","G0-006","G0-007","G0-006A"]},
+    {"id":"P1-001","phase":"P1","title":"建立 Pilot 工程骨架与配置校验","status":"DONE","depends_on":["G0-008"]},
+    {"id":"P1-002","phase":"P1","title":"WeCom SDK Adapter 与标准消息契约","status":"DONE","depends_on":["P1-001"]},
+    {"id":"P1-003","phase":"P1","title":"Channel Message Inbox 与数据库幂等","status":"DONE","depends_on":["P1-002"]},
+    {"id":"P1-004","phase":"P1","title":"Service Intake 创建与消息聚合","status":"DONE","depends_on":["P1-003"]},
+    {"id":"P1-005","phase":"P1","title":"Pilot Ticket Core 模型与编号","status":"DONE","depends_on":["P1-004"]},
+    {"id":"P1-006","phase":"P1","title":"Pilot Ticket 状态机、Action 与事件","status":"DONE","depends_on":["P1-005"]},
+    {"id":"P1-007","phase":"P1","title":"Notification Outbox 与 Delivery","status":"DONE","depends_on":["P1-006"]},
+    {"id":"P1-008","phase":"P1","title":"首次确认与可靠回执","status":"DONE","depends_on":["P1-007"]},
+    {"id":"P1-009","phase":"P1","title":"最小处理端与 Pilot 权限","status":"DONE","depends_on":["P1-006"]},
+    {"id":"P1-010","phase":"P1","title":"补充、解决确认、关闭与重开","status":"DONE","depends_on":["P1-008","P1-009"]},
+    {"id":"P1-011","phase":"P1","title":"Pilot 安全、可观测性与运维基线","status":"DONE","depends_on":["P1-007"]},
+    {"id":"P1-012","phase":"P1","title":"Phase 1 E2E、故障演练与试点 Go/No-Go","status":"IN_PROGRESS","depends_on":["P1-010","P1-011"]},
+    {"id":"P2-001","phase":"P2","title":"私有媒体存储、扫描与留存","status":"TODO","depends_on":["P1-012"]},
+    {"id":"P2-002","phase":"P2","title":"OCR 服务与错误代码提取","status":"TODO","depends_on":["P2-001"]},
+    {"id":"P2-003","phase":"P2","title":"系统目录与确定性规则","status":"TODO","depends_on":["P1-012"]},
+    {"id":"P2-004","phase":"P2","title":"AI Triage 契约与 Provider Adapter","status":"TODO","depends_on":["P2-003"]},
+    {"id":"P2-005","phase":"P2","title":"AI 异步影子编排","status":"TODO","depends_on":["P2-002","P2-004"]},
+    {"id":"P2-006","phase":"P2","title":"人工修正、评估集与版本审计","status":"TODO","depends_on":["P2-005"]},
+    {"id":"P2-007","phase":"P2","title":"Incident 与 Reporter Subscription","status":"TODO","depends_on":["P2-003"]},
+    {"id":"P2-008","phase":"P2","title":"Incident 候选、人工确认与通知","status":"TODO","depends_on":["P2-006","P2-007"]},
+    {"id":"P2-009","phase":"P2","title":"指标口径与月报","status":"TODO","depends_on":["P2-006","P2-008"]},
+    {"id":"P2-010","phase":"P2","title":"Phase 2 降级、性能和上线门槛验收","status":"TODO","depends_on":["P2-009"]},
+    {"id":"P3-001","phase":"P3","title":"盘点 Hospital Tickets 与医院身份契约","status":"TODO","depends_on":["P2-010"]},
+    {"id":"P3-002","phase":"P3","title":"冻结映射、同步和切换 ADR","status":"TODO","depends_on":["P3-001"]},
+    {"id":"P3-003","phase":"P3","title":"Ticket Adapter 契约与 external mapping","status":"TODO","depends_on":["P3-002"]},
+    {"id":"P3-004","phase":"P3","title":"身份、组织与处理组映射","status":"TODO","depends_on":["P3-003"]},
+    {"id":"P3-005","phase":"P3","title":"Hospital Ticket 幂等创建与关联","status":"TODO","depends_on":["P3-003","P3-004"]},
+    {"id":"P3-006","phase":"P3","title":"状态、事件、备注与附件映射","status":"TODO","depends_on":["P3-005"]},
+    {"id":"P3-007","phase":"P3","title":"历史 Pilot Ticket 迁移与对账","status":"TODO","depends_on":["P3-006"]},
+    {"id":"P3-008","phase":"P3","title":"通知归属和事实源切换","status":"TODO","depends_on":["P3-007"]},
+    {"id":"P3-009","phase":"P3","title":"故障、性能、安全与回滚演练","status":"TODO","depends_on":["P3-008"]},
+    {"id":"P3-010","phase":"P3","title":"正式切换并终止长期双工单","status":"TODO","depends_on":["P3-009"]}
+  ]
+}
