@@ -8,6 +8,10 @@
 - `plans/current_phase.json`：当前阶段；
 - `plans/master_backlog.json`：机器可读完整 Backlog；
 - `tasks/master_backlog.json`：精简任务索引。
+- `tasks/ARCH-004_p1_to_p2_phase_transition.md`：P1 → P2 阶段切换任务记录；
+- `tasks/P2-001_conversation_thread_session_contracts.md`：P2-001 契约任务记录；
+- `evidence/p2-phase-start-authorization.md`：Phase 2 启动及仅授权 P2-001 的负责人 Evidence；
+- `evidence/p2-001-conversation-contracts-report.md`：P2-001 脱敏验证 Evidence。
 
 ## ADR
 
@@ -28,6 +32,19 @@
 - `tickets/P2_ai_enhancement_tasks.md`：P2-001 至 P2-014；
 - `tickets/P3_unified_ticket_platform_tasks.md`：P3-001 至 P3-012；
 - `tickets/P3_hospital_integration_tasks.md`：Superseded 指针。
+
+## P2-001 契约与实现
+
+- `CONTEXT.md`：Conversation Center 统一领域语言；
+- `contracts/conversation_thread.schema.json`：Thread 契约；
+- `contracts/conversation_session.schema.json`：Session 契约；
+- `contracts/conversation_item.schema.json`：Item 冻结契约，持久化保留给 P2-002；
+- `contracts/conversation_contracts.d.ts`：对应 TypeScript 类型；
+- `database/migrations/010_p2_001_conversation_contracts.sql`：Thread/Session 增量迁移；
+- `src/p2-001-conversation-contracts.mjs`：身份、边界、状态、控制模式与稳定错误策略；
+- `scripts/p2-001-migrate.mjs`：受限迁移入口；
+- `tests/p2-001-conversation-contracts.test.mjs`：Contract/Unit 测试；
+- `tests/p2-001-conversation-contracts.integration.test.mjs`：隔离 PostgreSQL 集成测试。
 
 ## 设计与契约
 

@@ -1,19 +1,26 @@
 {
   "architecture_baseline": "V1.4",
   "baseline_status_document": "docs/architecture_baseline_status.md",
-  "source_base_commit": "8fcb6c1b6d7552d62ac859760c81ca4fba357626",
-  "phase_id": "P1",
-  "phase_name": "企业微信外网试点",
-  "status": "DONE",
+  "source_base_commit": "0ac71269c0da8a6ee55bb2f96e3d293c57c0e398",
+  "phase_id": "P2",
+  "phase_name": "Conversation Center 与 AI 协作",
+  "status": "IN_PROGRESS",
   "started": true,
-  "last_completed_task": "P1-012",
+  "last_completed_task": "P2-001",
   "active_task": null,
-  "next_phase_authorized": false,
+  "next_phase_authorized": true,
+  "authorized_tasks": [
+    "P2-001"
+  ],
+  "active_lane": null,
+  "implementation_authorization_status": "AWAITING_SEPARATE_TASK_AUTHORIZATION",
+  "next_task_candidate": "P2-002",
+  "next_task_authorized": false,
+  "p2_001_completed_at": "2026-08-30",
   "allowed_scope": [
-    "P1 closeout documentation and evidence integrity",
-    "P1 maintenance only under separate authorization",
-    "V1.4 documentation and contract-only isolated future work",
-    "future-phase simulators with every feature flag disabled"
+    "read-only use of frozen P2-001 contracts",
+    "maintenance required to preserve the completed P2-001 contract",
+    "all P2 and P3 feature flags remain disabled"
   ],
   "forbidden_before_exit": [
     "production Conversation Center enablement",
@@ -27,13 +34,17 @@
     "shared database integration",
     "historical ticket compatibility scope"
   ],
-  "forbidden_without_next_phase_authorization": [
-    "start any P2 or P3 task",
+  "forbidden_without_task_authorization": [
+    "start P2-002 or any later P2 task",
+    "start any P3 task",
+    "assemble P2-G1 or any later gate",
+    "enable Conversation Center, human delivery, realtime, SSE, AI, OCR, Incident, or integration feature flags",
     "enable production Conversation Center or AI",
     "enable production OCR",
     "connect real hospital identity or intranet sources",
     "change any P2 or P3 task from TODO"
   ],
+  "exit_gate_phase": "P1",
   "exit_gate": [
     "明确报修漏单为 0",
     "同一消息重复建单为 0",
@@ -43,8 +54,10 @@
     "项目负责人批准 Go"
   ],
   "exit_decision": {
+    "phase_id": "P1",
     "decision": "GO",
     "approved_at": "2026-08-30",
+    "completed_at": "2026-08-30",
     "evidence": "evidence/p1-012-project-owner-go-approval.md",
     "blockers": []
   },
@@ -54,6 +67,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "NOT_STARTED_REQUIRES_SEPARATE_AUTHORIZATION"
+    "activation_status": "P2_001_DONE_AWAITING_SEPARATE_AUTHORIZATION",
+    "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

@@ -59,4 +59,4 @@ Enterprise WeCom
 - 试点安全与运行验收通过；若启用公网入口，另有边缘安全验收；
 - 形成 Phase 1 试点评审结论。
 
-上述退出条件已全部满足，Phase 1 结论为 `GO`。正式批准见 `evidence/p1-012-project-owner-go-approval.md`。Phase 2 仍为 `NOT_STARTED`，必须另行明确授权。
+上述退出条件已全部满足，Phase 1 结论为 `GO`。正式批准见 `evidence/p1-012-project-owner-go-approval.md`。P1 收口时 Phase 2 为 `NOT_STARTED`；后续独立授权见 `evidence/p2-phase-start-authorization.md`，其范围仅覆盖 ARCH-004 和 P2-001，二者现已完成。

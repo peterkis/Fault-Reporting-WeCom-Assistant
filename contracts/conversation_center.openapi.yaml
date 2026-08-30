@@ -254,10 +254,16 @@ components:
       description: Row version, ownership, mode or idempotency conflict
   schemas:
     ConversationSession:
+      description: >
+        Public workbench view of a Conversation Session. Provider participant
+        identifiers, scope digests, and creation idempotency keys are internal
+        contract fields and are intentionally excluded from this response.
       type: object
+      additionalProperties: false
       required:
         - id
         - thread_id
+        - service_intake_id
         - status
         - control_mode
         - generation_version
@@ -270,9 +276,9 @@ components:
         thread_id:
           type: string
           format: uuid
-        participant_key:
-          type: string
-          description: Redacted/opaque external participant identifier
+        service_intake_id:
+          type: [string, "null"]
+          format: uuid
         status:
           type: string
           enum: [OPEN, WAITING_USER, ENDED]
@@ -285,64 +291,11 @@ components:
         row_version:
           type: integer
           minimum: 1
-        assigned_principal_id:
-          type: [string, "null"]
-          format: uuid
-        service_intake_id:
-          type: [string, "null"]
-          format: uuid
-        ticket_id:
-          type: [string, "null"]
-          format: uuid
         last_activity_at:
           type: string
           format: date-time
     ConversationItem:
-      type: object
-      required:
-        - id
-        - session_id
-        - sequence_no
-        - item_type
-        - sender_kind
-        - visibility
-        - occurred_at
-      properties:
-        id:
-          type: string
-          format: uuid
-        session_id:
-          type: string
-          format: uuid
-        sequence_no:
-          type: integer
-          minimum: 1
-        item_type:
-          type: string
-          enum:
-            - USER_MESSAGE
-            - AI_MESSAGE
-            - AGENT_MESSAGE
-            - INTERNAL_NOTE
-            - SYSTEM_EVENT
-            - TICKET_EVENT
-            - DELIVERY_STATUS
-            - HANDOFF_EVENT
-        sender_kind:
-          type: string
-          enum: [USER, AI, AGENT, SYSTEM, TOOL]
-        visibility:
-          type: string
-          enum: [EXTERNAL, INTERNAL, RESTRICTED]
-        text:
-          type: [string, "null"]
-        source_type:
-          type: [string, "null"]
-        source_id:
-          type: [string, "null"]
-        occurred_at:
-          type: string
-          format: date-time
+      $ref: "./conversation_item.schema.json"
     ConversationSummary:
       type: object
       required: [session, unread_count, last_item]

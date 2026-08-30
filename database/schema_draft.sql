@@ -12,7 +12,8 @@
 --   pilot access control tables
 --
 -- V1.4 adds conceptual Conversation, Communication, AI and greenfield Integration tables.
--- Create numbered migrations only after the corresponding task/Gate is approved.
+-- Migration 010 is authoritative for the P2-001 Thread/Session subset below.
+-- The remaining conceptual tables require their corresponding task/Gate approval.
 -- Do not create a second long-term Ticket Core and do not rename pilot_ticket.*
 -- in a big-bang migration.
 -- ============================================================================
@@ -29,36 +30,35 @@ CREATE SCHEMA IF NOT EXISTS integration;
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS conversation.thread (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    channel_type text NOT NULL,
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    provider text NOT NULL,
     channel_account_id text NOT NULL,
+    chat_type text NOT NULL CHECK (chat_type IN ('single', 'group')),
     external_thread_key text NOT NULL,
-    chat_type text NOT NULL CHECK (chat_type IN ('single', 'group', 'system')),
+    thread_key text NOT NULL UNIQUE,
     status text NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'ARCHIVED')),
-    last_item_sequence bigint NOT NULL DEFAULT 0 CHECK (last_item_sequence >= 0),
     last_activity_at timestamptz NOT NULL DEFAULT now(),
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (channel_type, channel_account_id, external_thread_key)
+    UNIQUE (provider, channel_account_id, chat_type, external_thread_key)
 );
 
 CREATE INDEX IF NOT EXISTS idx_conversation_thread_last_activity
     ON conversation.thread (last_activity_at DESC);
 
 CREATE TABLE IF NOT EXISTS conversation.session (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     thread_id uuid NOT NULL REFERENCES conversation.thread(id),
     participant_key text NOT NULL,
-    service_intake_id uuid NULL,
+    service_intake_id uuid NULL REFERENCES intake.service_intake(id),
+    session_scope_key text NOT NULL,
+    creation_idempotency_key text NOT NULL UNIQUE,
     status text NOT NULL DEFAULT 'OPEN'
         CHECK (status IN ('OPEN', 'WAITING_USER', 'ENDED')),
-    control_mode text NOT NULL DEFAULT 'COPILOT'
+    control_mode text NOT NULL DEFAULT 'HUMAN'
         CHECK (control_mode IN ('AUTO', 'COPILOT', 'HUMAN')),
     generation_version bigint NOT NULL DEFAULT 1 CHECK (generation_version >= 1),
     row_version bigint NOT NULL DEFAULT 1 CHECK (row_version >= 1),
-    assigned_principal_id uuid NULL,
-    assigned_team_id uuid NULL,
-    topic_code text NULL,
     started_at timestamptz NOT NULL DEFAULT now(),
     last_activity_at timestamptz NOT NULL DEFAULT now(),
     ended_at timestamptz NULL,
@@ -71,12 +71,11 @@ CREATE TABLE IF NOT EXISTS conversation.session (
 CREATE INDEX IF NOT EXISTS idx_conversation_session_thread_activity
     ON conversation.session (thread_id, last_activity_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_conversation_session_assignment
-    ON conversation.session (assigned_principal_id, status, last_activity_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conversation_session_scope
+    ON conversation.session (session_scope_key);
 
--- Only one active Session per participant/thread should normally exist.
--- Topic-specific parallel Sessions may later require a partial uniqueness policy
--- rather than an unconditional unique constraint.
+-- P2-001 freezes one active Session per participant/thread. Parallel topic
+-- Sessions require a future ADR and must not weaken this contract implicitly.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_conversation_session_active_participant
     ON conversation.session (thread_id, participant_key)
     WHERE status <> 'ENDED';

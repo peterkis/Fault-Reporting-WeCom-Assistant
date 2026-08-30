@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/conversation-thread.schema.json",
+  "title": "Conversation Thread",
+  "description": "A long-lived conversation identity for one provider channel. The natural identity is the tuple provider, channel account, chat type, and external thread key; a Thread is not a Channel Message, Service Intake, or Ticket fact source.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "provider",
+    "channel_account_id",
+    "chat_type",
+    "external_thread_key",
+    "thread_key",
+    "status",
+    "last_activity_at",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "The external communication provider name."
+    },
+    "channel_account_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "An opaque provider channel-account identity (the bot identity for WeCom)."
+    },
+    "chat_type": {
+      "type": "string",
+      "enum": [
+        "single",
+        "group"
+      ]
+    },
+    "external_thread_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "The opaque provider conversation identity within the channel account and chat type."
+    },
+    "thread_key": {
+      "type": "string",
+      "pattern": "^ctk_v1_[a-f0-9]{64}$",
+      "description": "A non-sensitive stable representation of the natural Thread identity."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "ARCHIVED"
+      ],
+      "default": "OPEN"
+    },
+    "last_activity_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "x-natural-identity": [
+    "provider",
+    "channel_account_id",
+    "chat_type",
+    "external_thread_key"
+  ],
+  "x-unique-fields": [
+    "thread_key"
+  ]
+}

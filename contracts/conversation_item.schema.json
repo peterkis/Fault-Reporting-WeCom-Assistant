@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/conversation-item.schema.json",
+  "title": "Conversation Item",
+  "description": "A contract for one Session timeline entry. Durable Conversation Item persistence, projection, ordering, and source bindings are explicitly reserved for P2-002.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "session_id",
+    "sequence_no",
+    "item_type",
+    "sender_kind",
+    "visibility",
+    "occurred_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sequence_no": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The stable position of the Item within its Session timeline."
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "USER_MESSAGE",
+        "AI_MESSAGE",
+        "AGENT_MESSAGE",
+        "INTERNAL_NOTE",
+        "SYSTEM_EVENT",
+        "TICKET_EVENT",
+        "DELIVERY_STATUS",
+        "HANDOFF_EVENT"
+      ]
+    },
+    "sender_kind": {
+      "type": "string",
+      "enum": [
+        "USER",
+        "AI",
+        "AGENT",
+        "SYSTEM",
+        "TOOL"
+      ]
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "EXTERNAL",
+        "INTERNAL",
+        "RESTRICTED"
+      ]
+    },
+    "text": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 20000
+    },
+    "source_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "source_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "x-implementation-task": "P2-002"
+}

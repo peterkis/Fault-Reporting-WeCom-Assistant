@@ -8,8 +8,9 @@
 - G0 已完成并冻结；
 - P1-001 至 P1-011 保持既有验收结论；
 - P1-012 已完成真实测试群 E2E、客户端观察、故障演练和 Go/No-Go，状态为 `DONE`；
-- P2 当前为 `NOT_STARTED`，必须另行取得项目负责人明确授权；P1 Go 不自动启动 P2/P3；
-- 本次 Phase 1 Go 不等同于生产上线或临床生产使用批准，不启用生产 Conversation Center、AI 自动回复、OCR、医院身份连接或内网 Connector。
+- Phase 2 已获项目负责人独立授权并进入 `IN_PROGRESS`，`P2-001`（P2-A）已完成，当前无活动实施任务；
+- P2-002 及以后任务、P2-G1 组装和全部 P3 任务仍须另行授权，所有 P2/P3 Feature Flag 保持 `false`；
+- 本次 Phase 2 启动授权不等同于生产上线、临床上线或 AI 自动回复批准，不启用真实外发、SSE、模型、OCR、医院身份连接或内网 Connector。
 
 ## V1.4 核心纠偏
 
@@ -61,7 +62,7 @@ P1 保持零医院内网依赖；真实企业微信闭环和试点评审已完�
 
 ## Phase 2：Conversation Center 与 AI 协作
 
-P2 尚未启动，必须获得新的独立授权后方可开始。
+P2 已获独立授权并进入 `IN_PROGRESS`，P2-001 的 Conversation Thread、Session、Conversation Item 与控制模式契约已冻结。当前无活动实施任务；下图其余能力不在本轮授权内，P2-002 及以后任务和 P2-G1 仍须另行授权。
 
 ```text
 Conversation Thread / Session

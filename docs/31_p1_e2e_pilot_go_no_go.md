@@ -1,7 +1,7 @@
 # 31. P1-012 Phase 1 E2E、故障演练与试点 Go/No-Go
 
 - 状态：DONE / GO（本机受控 E2E、隔离 PostgreSQL/Outbox 故障恢复、真实测试群 mixed 图片降级、同一运行的重连后文字回环、完整文字 Ticket、共享 Delivery 对账及真实 100 条突发均已完成；项目负责人已于 2026-08-30 正式批准）
-- 下一阶段：P2 / NOT_STARTED；必须另行获得项目负责人明确授权
+- P1 收口时下一阶段状态：P2 / NOT_STARTED；当时必须另行获得项目负责人明确授权。后续独立授权见 `evidence/p2-phase-start-authorization.md`。
 - 运行时接缝：`createPilotE2EHandler(...)`、`createPilotOperationalIntake(...)`、`createNotificationDeliveryWorker(...)`、`scripts/p1-012-live-e2e.mjs`
 - 不改变事实源：所有受理仍只写入 `Pilot Ticket Core`；不接入 Hospital Tickets、医院 SSO、医院 Hub、院内 Outbox、AI 或 OCR。
 
@@ -199,7 +199,8 @@ try {
 客户端观察和项目负责人批准。任何一项未满足均为 `NO_GO`；其中 `client_observation` 或 `pilot_owner_approved` 缺失始终阻塞试点结论。2026-08-30 的最终证据已满足全部技术字段，项目负责人随后明确批准，最终判定为 `GO`。
 
 `public_ip` 不是判定字段。项目负责人批准已关闭 P1-012 和 Phase 1，但不自动启动 Phase 2；本文件、自动化测试、一次
-测试群运行或 Phase 1 Go 都不自行授权下一阶段。P2 必须另行获得项目负责人明确授权。
+测试群运行或 Phase 1 Go 都不自行授权下一阶段。P2 后续已通过独立授权启动；该授权见
+`evidence/p2-phase-start-authorization.md`，范围只覆盖现已完成的 ARCH-004 和 P2-001。
 
 ## 当前验收边界
 
@@ -258,7 +259,7 @@ try {
 
 - P1-012：`DONE / GO`；
 - Phase 1：`DONE / GO`；
-- Phase 2：`NOT_STARTED`，必须另行明确授权。
+- P1 收口时 Phase 2：`NOT_STARTED`，必须另行明确授权；后续独立授权仅覆盖现已完成的 ARCH-004 和 P2-001。
 
 正式记录见 `evidence/p1-012-project-owner-go-approval.md`。该批准不等同于生产上线或临床生产使用批准，不授权 P2/P3、
 真实 P2 依赖、Feature Flag 启用、提交、推送、合并或发布。

@@ -2,10 +2,10 @@
   "version": "1.4.0",
   "architecture_baseline": "V1.4",
   "canonical_source": "plans/master_backlog.json",
-  "current_phase": "P1",
-  "last_completed_task": "P1-012",
+  "current_phase": "P2",
+  "last_completed_task": "P2-001",
   "active_task": null,
-  "next_phase_authorized": false,
+  "next_phase_authorized": true,
   "task_files": {
     "G0": "tickets/G0_gate0_tasks.md",
     "P1": "tickets/P1_pilot_tasks.md",
@@ -24,13 +24,12 @@
   ],
   "next_tasks": {
     "current": null,
+    "candidate": "P2-002",
+    "candidate_authorized": false,
     "after_p1": [
-      "P2-001",
-      "P2-003",
-      "P2-004",
-      "P2-007",
-      "P2-011"
+      "P2-001"
     ],
+    "authorization_required_after_current": true,
     "after_p2": [
       "P3-001",
       "P3-002",

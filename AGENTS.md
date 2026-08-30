@@ -5,19 +5,19 @@
 
 `AGENTS.md`、`README.md`、`docs/architecture_baseline_status.md` 和 Accepted ADR 共同构成 V1.4 执行基线。冲突时必须先修正文档或新增 ADR，再实现代码。
 
-当前阶段结论固定为：
+上一阶段结论固定为：
 
 ```text
 P1 / P1-012 / DONE / GO
 ```
 
-下一阶段状态固定为：
+当前阶段状态固定为：
 
 ```text
-P2 / NOT_STARTED / REQUIRES_SEPARATE_AUTHORIZATION
+P2 / P2-001 / DONE / AWAITING_SEPARATE_AUTHORIZATION
 ```
 
-V1.4 不改变 G0/P1 已完成事实。P1-012 已于 2026-08-30 获项目负责人正式 Go 批准；该批准不等同于生产或临床上线批准，也不授权提前启动 P2/P3。
+V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-08-30 独立授权启动 Phase 2，本轮授权的 ARCH-004 和 P2-001 均已完成。当前无活动实施任务；P2-002 及以后任务和全部 P3 任务仍须另行授权。所有 Feature Flag 保持关闭。本授权不等同于生产上线、临床上线或 AI 自动回复批准。
 
 ## 2. 长期事实源
 
@@ -64,7 +64,7 @@ P1：
 
 ### Phase 2：Conversation Center 与 AI 协作
 
-P2 当前未启动，必须获得项目负责人新的、独立的明确授权后方可开始。
+P2 已于 2026-08-30 获项目负责人独立授权并进入 `IN_PROGRESS`；P2-A 的 P2-001 已完成。当前无活动实施任务，其他 Lane 只可读取冻结 Contract；P2-002 及以后任务和 P2-G1 组装不得启动，所有 Feature Flag 保持 `false`。
 
 P2 必须按以下顺序：
 

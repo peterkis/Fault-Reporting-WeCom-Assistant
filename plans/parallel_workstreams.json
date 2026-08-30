@@ -1,8 +1,32 @@
 {
   "version": "1.4.0",
-  "current_phase": "P1",
-  "next_phase_authorized": false,
-  "rule": "P1 is complete with Go approval, but P2 has not started and still requires separate authorization. Future lanes remain contract/simulator-only with production flags and real integrations disabled. P3 is greenfield and has no historical-ticket work.",
+  "current_phase": "P2",
+  "next_phase_authorized": true,
+  "authorized_tasks": [
+    "P2-001"
+  ],
+  "last_completed_task": "P2-001",
+  "active_task": null,
+  "active_lane": null,
+  "next_task_candidate": "P2-002",
+  "next_task_authorized": false,
+  "feature_flags_enabled": [],
+  "feature_flag_defaults": {
+    "CONVERSATION_CENTER_ENABLED": false,
+    "CONVERSATION_REALTIME_SSE_ENABLED": false,
+    "HUMAN_WORKBENCH_V2_ENABLED": false,
+    "AI_TRIAGE_ENABLED": false,
+    "AI_CONVERSATION_ENABLED": false,
+    "AI_AUTO_REPLY_ENABLED": false,
+    "OCR_ENABLED": false,
+    "INCIDENT_CORRELATION_ENABLED": false,
+    "INTEGRATION_CONNECTOR_ENABLED": false,
+    "HOSPITAL_IDENTITY_ENABLED": false,
+    "INTRANET_PORTAL_SOURCE_ENABLED": false,
+    "HOSPITAL_API_SOURCE_ENABLED": false,
+    "MONITORING_SOURCE_ENABLED": false
+  },
+  "rule": "P2-001 in P2-A is complete. No implementation task is active. Other lanes may only read the frozen contracts. P2-002 and later tasks must not start without separate authorization. Every P2 and P3 feature flag remains false. P3 is not started and has no historical-ticket work.",
   "migration_number_reservations": {
     "P2-A": "010-019",
     "P2-B": "020-029",
@@ -62,6 +86,7 @@
         "P2-010"
       ],
       "feature_flags": [
+        "AI_TRIAGE_ENABLED",
         "AI_CONVERSATION_ENABLED",
         "AI_AUTO_REPLY_ENABLED"
       ],

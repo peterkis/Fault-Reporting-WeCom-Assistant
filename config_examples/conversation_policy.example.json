@@ -1,13 +1,21 @@
 {
-  "version": "1.0",
-  "default_control_mode": "COPILOT",
+  "version": "1.1",
+  "contract_task": "P2-001",
+  "default_control_mode": "HUMAN",
   "session": {
     "idle_timeout_minutes": 720,
     "recent_message_limit": 20,
     "context_token_budget": 8000,
     "message_aggregation_ms": 1500,
-    "max_open_sessions_per_thread": 1,
-    "group_context_key": "bot_id+chat_id+participant_user_id+service_intake_id"
+    "max_open_sessions_per_participant": 1,
+    "group_context_key": "provider+bot_id+chat_id+participant_user_id+session_id+service_intake_id",
+    "topic_switch_reasons": [
+      "EXPLICIT_USER_NEW_TOPIC",
+      "MANUAL_NEW_INTAKE",
+      "DIFFERENT_INTAKE",
+      "DIFFERENT_TICKET",
+      "IDLE_TIMEOUT"
+    ]
   },
   "handoff": {
     "user_keywords": [
@@ -30,6 +38,7 @@
   },
   "ai": {
     "enabled": false,
+    "controlled_auto_authorized": false,
     "rollout_mode": "SHADOW",
     "provider": "deepseek",
     "model": "deepseek-v4-flash",

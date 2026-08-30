@@ -1,10 +1,11 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> 所有 Feature Flag 默认关闭。先通过 Human-only Gate，再逐步启用 AI。
+> Phase 2 已启动，P2-A 的 P2-001 已完成。当前无活动实施任务；P2-002 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO`。所有 Feature Flag 默认关闭；其他 Lane 只能读取 P2-001 冻结的 Contract。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
-- 状态：TODO
+- 状态：DONE（2026-08-30）
+- Evidence：`evidence/p2-001-conversation-contracts-report.md`
 - Lane：P2-A
 - 目标 Gate：P2-G1
 - 依赖：P1-012
@@ -41,7 +42,7 @@
 
 ### 并行边界
 
-P2-B/P2-C 可以基于冻结 Contract 使用 fixture 开发；本任务不得直接引入 UI 或模型调用。
+P2-B/P2-C 当前只能读取冻结 Contract，不得启动 fixture 或实现开发；本任务不得直接引入 UI、SSE、真实外发或模型调用。
 
 ## P2-002 持久化 Timeline Projector 与可重建投影
 

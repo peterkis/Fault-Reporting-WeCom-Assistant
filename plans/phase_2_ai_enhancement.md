@@ -2,6 +2,8 @@
 
 > 文件名为兼容既有索引保留。V1.4 的 P2 已不只是 AI Enhancement。
 
+> 授权状态（2026-08-30）：Phase 2 已启动，P2-A 的 P2-001 已完成。当前无活动实施任务；P2-002 至 P2-014 和其他 Lane 实现保持 `TODO`，其他 Lane 只能只读使用 P2-001 冻结的 Contract。所有 P2/P3 Feature Flag 保持 `false`，不得提前组装 P2-G1。本授权不等同于生产上线、临床上线或 AI 自动回复批准。
+
 ## 阶段目标
 
 在 P1 已验证的 Channel Message、Service Intake、Ticket Core 和 Outbox 之上，建设：

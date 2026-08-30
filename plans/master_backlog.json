@@ -3,10 +3,13 @@
   "version": "1.4.0",
   "architecture_baseline": "V1.4",
   "baseline_date": "2026-08-30",
-  "source_base_commit": "8fcb6c1b6d7552d62ac859760c81ca4fba357626",
-  "current_phase": "P1",
+  "source_base_commit": "0ac71269c0da8a6ee55bb2f96e3d293c57c0e398",
+  "current_phase": "P2",
+  "last_completed_task": "P2-001",
   "active_task": null,
-  "next_phase_authorized": false,
+  "next_phase_authorized": true,
+  "next_task_candidate": "P2-002",
+  "next_task_authorized": false,
   "status_values": [
     "TODO",
     "IN_PROGRESS",
@@ -46,6 +49,19 @@
         "P3 targets first new intranet source onboarding",
         "V1.3 Conversation Center and 2C4G decisions remain intact"
       ]
+    },
+    {
+      "id": "ARCH-004",
+      "title": "P1 to P2 Phase Transition",
+      "status": "DONE",
+      "completed_at": "2026-08-30",
+      "evidence": "evidence/p2-phase-start-authorization.md",
+      "acceptance": [
+        "P1 exit decision and evidence remain preserved",
+        "P2 is IN_PROGRESS with only P2-001 authorized",
+        "P2-002 and later tasks remain TODO and require separate authorization",
+        "all P2 and P3 feature flags remain disabled"
+      ]
     }
   ],
   "phases": [
@@ -69,7 +85,7 @@
     {
       "id": "P2",
       "name": "Conversation Center 与 AI 协作",
-      "status": "TODO",
+      "status": "IN_PROGRESS",
       "ticket_backend": "Unified Ticket Core",
       "plan": "plans/phase_2_ai_enhancement.md",
       "task_file": "tickets/P2_ai_enhancement_tasks.md",
@@ -307,7 +323,9 @@
       "lane": "P2-A",
       "gate": "P2-G1",
       "phase": "P2",
-      "status": "TODO"
+      "status": "DONE",
+      "completed_at": "2026-08-30",
+      "evidence": "evidence/p2-001-conversation-contracts-report.md"
     },
     {
       "id": "P2-002",

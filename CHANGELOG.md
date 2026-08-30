@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### P2-001 Conversation Thread、Session 与控制模式契约
+
+- 冻结 Thread 四元自然身份、参与人隔离 Session、Conversation Item、`HUMAN/COPILOT/AUTO` 控制模式与 generation/row version 契约；新 Session 默认 `HUMAN`。
+- 新增仅含 `conversation.thread` 与 `conversation.session` 的 010 增量迁移，包含创建幂等、单活 Session、可空 Service Intake 引用和失败关闭的漂移检查；Item 持久化明确保留给 P2-002。
+- 全部 P2/P3 Feature Flag 继续为 `false`，未实现 Timeline、SSE、真实外发、Handoff、Assignment、模型、OCR、Incident 或 P2-G1 组装。
+- P2-001 已完成，当前无活动实施任务；P2-002 仍为 `TODO` 且须项目负责人另行授权。
+
+### ARCH-004 P1 → P2 阶段切换
+
+- 项目负责人于 2026-08-30 独立授权启动 Phase 2；ARCH-004 切换时状态为 `P2 / P2-001 / IN_PROGRESS`，P1-012 的 `DONE / GO`、完成日期与 Evidence 保持不变。
+- 本轮仅授权 ARCH-004 和 P2-001；P2-002 至 P2-014、P2-G1 组装及全部 P3 任务仍未授权，所有 P2/P3 Feature Flag 保持 `false`。
+- `project_summary.json` 已从 V1.2 残留升级为 V1.4，长期事实源统一为本仓库 Unified Ticket Core，P3 保持无历史 Ticket 兼容的绿地接入。
+- 本授权不等同于生产上线、临床上线或 AI 自动回复批准；未授权真实外发、SSE、模型、OCR 或医院内网连接。
+
 ### P1-005 至 P1-010 Pilot Ticket Core 闭环（本机 PostgreSQL 集成验收完成）
 
 - 新增独立 Pilot Ticket Core：Service Intake 双向一对一主工单、稳定 `IT-YYYYMMDD-NNNN` 编号、`PILOT_IT` 默认处理组、版本与 Intake 创建审计事件；不调用 Hospital Tickets。

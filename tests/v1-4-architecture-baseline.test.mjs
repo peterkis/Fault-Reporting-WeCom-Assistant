@@ -13,26 +13,40 @@ test('V1.4 architecture validator passes', () => {
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 });
 
-test('P1 is complete while future phases remain gated pending separate authorization', () => {
+test('P1 remains complete and P2 stops after completed P2-001', () => {
   const current = json('plans/current_phase.json');
   const backlog = json('plans/master_backlog.json');
-  assert.equal(current.phase_id, 'P1');
-  assert.equal(current.status, 'DONE');
-  assert.equal(current.last_completed_task, 'P1-012');
+  assert.equal(current.phase_id, 'P2');
+  assert.equal(current.status, 'IN_PROGRESS');
+  assert.equal(current.last_completed_task, 'P2-001');
   assert.equal(current.active_task, null);
-  assert.equal(current.next_phase_authorized, false);
+  assert.equal(current.next_phase_authorized, true);
+  assert.deepEqual(current.authorized_tasks, ['P2-001']);
+  assert.equal(current.active_lane, null);
+  assert.equal(current.next_task_candidate, 'P2-002');
+  assert.equal(current.next_task_authorized, false);
   assert.deepEqual(current.exit_decision, {
+    phase_id: 'P1',
     decision: 'GO',
     approved_at: '2026-08-30',
+    completed_at: '2026-08-30',
     evidence: 'evidence/p1-012-project-owner-go-approval.md',
     blockers: [],
   });
   assert.equal(backlog.phases.find((phase) => phase.id === 'P1').status, 'DONE');
   assert.equal(backlog.tasks.find((t) => t.id === 'P1-012').status, 'DONE');
-  assert.equal(backlog.tasks.filter((t) => t.phase === 'P2').every((t) => t.status === 'TODO'), true);
+  assert.equal(backlog.phases.find((phase) => phase.id === 'P2').status, 'IN_PROGRESS');
+  assert.equal(backlog.active_task, null);
+  assert.equal(backlog.last_completed_task, 'P2-001');
+  assert.equal(backlog.next_task_candidate, 'P2-002');
+  assert.equal(backlog.next_task_authorized, false);
+  assert.equal(backlog.tasks.find((t) => t.id === 'P2-001').status, 'DONE');
+  assert.equal(backlog.tasks.filter((t) => t.phase === 'P2' && t.id !== 'P2-001').every((t) => t.status === 'TODO'), true);
   assert.equal(backlog.tasks.find((t) => t.id === 'P3-001').status, 'TODO');
   assert.match(text('evidence/p1-012-project-owner-go-approval.md'), /“我批准了”/u);
   assert.match(text('evidence/p1-012-project-owner-go-approval.md'), /P2.*单独授权/u);
+  assert.match(text('evidence/p2-phase-start-authorization.md'), /项目负责人正式授权启动 Phase 2，但本轮仅授权 ARCH-004 和 P2-001/u);
+  assert.match(text('evidence/p2-phase-start-authorization.md'), /P2-002 及以后任务仍须另行授权/u);
 });
 
 test('P3 is greenfield and contains no historical ticket program', () => {
@@ -48,8 +62,10 @@ test('P3 is greenfield and contains no historical ticket program', () => {
 test('future flags default off without legacy import flags', () => {
   const env = text('.env.example');
   for (const line of [
-    'CONVERSATION_CENTER_ENABLED=false', 'AI_CONVERSATION_ENABLED=false',
-    'AI_AUTO_REPLY_ENABLED=false', 'INTEGRATION_CONNECTOR_ENABLED=false',
+    'CONVERSATION_CENTER_ENABLED=false', 'CONVERSATION_REALTIME_SSE_ENABLED=false',
+    'HUMAN_WORKBENCH_V2_ENABLED=false', 'AI_TRIAGE_ENABLED=false',
+    'AI_CONVERSATION_ENABLED=false', 'AI_AUTO_REPLY_ENABLED=false', 'OCR_ENABLED=false',
+    'INCIDENT_CORRELATION_ENABLED=false', 'INTEGRATION_CONNECTOR_ENABLED=false',
     'HOSPITAL_IDENTITY_ENABLED=false', 'INTRANET_PORTAL_SOURCE_ENABLED=false',
     'HOSPITAL_API_SOURCE_ENABLED=false', 'MONITORING_SOURCE_ENABLED=false'
   ]) assert.match(env, new RegExp(`^${line}$`, 'm'));
@@ -64,6 +80,19 @@ test('P3 gates are source onboarding gates', () => {
   const lane = parallel.lanes.find((l) => l.id === 'P3-C');
   assert.equal(lane.name, 'Intranet Source Adapters');
   assert.equal(lane.branch, 'phase3/intranet-sources');
+});
+
+test('P2-001 is complete, no lane is active, and all feature flags remain false', () => {
+  const parallel = json('plans/parallel_workstreams.json');
+  assert.equal(parallel.current_phase, 'P2');
+  assert.equal(parallel.last_completed_task, 'P2-001');
+  assert.equal(parallel.active_task, null);
+  assert.equal(parallel.active_lane, null);
+  assert.equal(parallel.next_task_candidate, 'P2-002');
+  assert.equal(parallel.next_task_authorized, false);
+  assert.deepEqual(parallel.authorized_tasks, ['P2-001']);
+  assert.deepEqual(parallel.feature_flags_enabled, []);
+  assert.equal(Object.values(parallel.feature_flag_defaults).every((value) => value === false), true);
 });
 
 test('conceptual schema has no historical migration fields', () => {

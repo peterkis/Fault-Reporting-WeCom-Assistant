@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/conversation-session.schema.json",
+  "title": "Conversation Session",
+  "description": "A continuous service topic within a Conversation Thread. At most one non-ended Session is active for each thread and participant pair. A Session may reference the authoritative Service Intake, but never copies Ticket state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "thread_id",
+    "participant_key",
+    "service_intake_id",
+    "session_scope_key",
+    "creation_idempotency_key",
+    "status",
+    "control_mode",
+    "generation_version",
+    "row_version",
+    "started_at",
+    "last_activity_at",
+    "ended_at",
+    "close_reason",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "thread_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "participant_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "An opaque participant boundary. It is required for direct and group conversations."
+    },
+    "service_intake_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "description": "An optional reference to the authoritative Service Intake."
+    },
+    "session_scope_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^csk_v1_[a-f0-9]{64}$",
+      "description": "A stable scope for the Thread, participant, and optional Service Intake. It is not a Ticket identity."
+    },
+    "creation_idempotency_key": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 256,
+      "description": "A caller-provided identity for one Session-creation command."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "WAITING_USER",
+        "ENDED"
+      ],
+      "default": "OPEN"
+    },
+    "control_mode": {
+      "type": "string",
+      "enum": [
+        "AUTO",
+        "COPILOT",
+        "HUMAN"
+      ],
+      "default": "HUMAN",
+      "description": "The control-mode vocabulary is frozen here; HUMAN is the default for a newly created Session."
+    },
+    "generation_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "A monotonic generation fence for the Session."
+    },
+    "row_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The Session revision used to identify a current representation."
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_activity_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "close_reason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "ENDED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "ended_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "close_reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "ended_at": {
+            "type": "null"
+          },
+          "close_reason": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "x-unique-fields": [
+    "creation_idempotency_key"
+  ],
+  "x-active-uniqueness": [
+    "thread_id",
+    "participant_key"
+  ],
+  "x-active-statuses": [
+    "OPEN",
+    "WAITING_USER"
+  ]
+}

@@ -25,6 +25,11 @@ Service Intake         = 一次服务受理
 Unified Ticket Core    = 处理生命周期
 ```
 
+已完成的实现边界为 `P2-001`：只冻结 Thread、Session、Conversation Item、控制模式、
+版本和隔离契约，并建立 Thread/Session 的数据库约束。Timeline 持久化、SSE、人工回复、
+Handoff、Assignment、Read Cursor、Communication Outbox 和任何 AI 行为仍属于 P2-002
+及以后任务，当前未授权、未实现。
+
 ## 3. Thread 与 Session
 
 ### Thread
@@ -32,9 +37,15 @@ Unified Ticket Core    = 处理生命周期
 长期渠道窗口。
 
 ```text
-单聊 key = wecom:{bot_id}:single:{userid}
-群聊 key = wecom:{bot_id}:group:{chatid}
+数据库自然键 = provider + bot_id + chat_type + external_thread_key
+
+单聊 external_thread_key = userid
+群聊 external_thread_key = chatid
 ```
+
+`chat_type` 必须进入唯一键，避免同一机器人下字面值相同的 `userid` 与 `chatid`
+发生碰撞。文档可展示 `wecom:{bot_id}:single:{userid}` 或
+`wecom:{bot_id}:group:{chatid}`，但外部标识是不透明值，数据库不得依赖分隔符拆解。
 
 ### Session
 
@@ -49,17 +60,35 @@ Unified Ticket Core    = 处理生命周期
 
 AI 不得自行在无审计情况下切换 Session。
 
+P2-001 冻结以下确定性边界原因：`EXPLICIT_USER_NEW_TOPIC`、
+`MANUAL_NEW_INTAKE`、`DIFFERENT_INTAKE`、`DIFFERENT_TICKET` 和
+`IDLE_TIMEOUT`。自然语言或模型只可由后续获批规则转换为一个已审计原因，不能直接
+切换 Session。空闲判定为 `received_at >= last_activity_at + idle_timeout`；超时时长
+必须作为正整数配置注入。每个 `(thread_id, participant_key)` 同时最多一个非
+`ENDED` Session；旧 Session 原子结束后才可创建新 Session，`ENDED` 不得复活。
+
+Session 创建使用独立 `creation_idempotency_key`。同键同输入返回原 Session；同键
+不同输入返回稳定幂等冲突。不能只依赖“当前活动 Session”唯一约束，否则旧 Session
+结束后的消息重放会错误创建新 Session。
+
+`participant_key`、`session_scope_key` 和 `creation_idempotency_key` 是内部持久化契约，
+不得直接进入公共 Workbench 响应。显式结束通过 Session 状态转换为 `ENDED` 表达，
+不是“启动新 Session”的边界动作。
+
 ### 群聊子上下文
 
 群聊 Thread 保存完整投影，但每个服务 Session 必须保留：
 
 ```text
-participant_key = userid
-service_intake_id
+provider + bot_id + chatid + participant_key + session_id + service_intake_id
 ```
 
 回复目标仍是群 `chatid`，但时间线和 AI 上下文只选取相关用户、引用消息、对应 Ticket
 和已确认 Incident 背景。
+
+`service_intake_id` 是可空关联；Conversation 不复制 Intake 或 Ticket 状态。Ticket
+信息必须从 Service Intake / Unified Ticket Core 查询，不能在 Session 中建立第二份
+可漂移事实。
 
 ## 4. Timeline Item
 
@@ -86,6 +115,19 @@ COPILOT
 HUMAN
 ```
 
+P2-001 新 Session 默认 `HUMAN`。进入目标模式的最低条件为：
+
+| 目标模式 | 最低条件 |
+|---|---|
+| HUMAN | `CONVERSATION_CENTER_ENABLED=true` |
+| COPILOT | Center 开启且 `AI_CONVERSATION_ENABLED=true` |
+| AUTO | Center、AI、Auto Flag 开启，且另有 P2-010 / P2-G4 Controlled Auto 授权 |
+
+当前所有 Flag 均为 `false`，且没有 Controlled Auto 授权，因此本任务不会进入
+COPILOT/AUTO，也不会调用模型或发送消息。同模式请求是幂等 no-op；实际模式变化使
+`generation_version` 与 `row_version` 各增加 1。`HUMAN` 只表示控制模式，不表示已
+分配坐席、已接管或存在 Handoff。
+
 ### AUTO
 
 仅在满足以下条件时允许：
@@ -110,6 +152,15 @@ AI 不得自动发送。允许：
 - 字段候选；
 - 知识建议；
 - 草稿。
+
+### generation_version 与 row_version
+
+- 新 Session 两者均从 `1` 开始；首条触发消息已包含在初值中，不重复递增；
+- 同一 Session 的后续唯一用户消息、实际控制模式变化、Session 结束会使两者原子增加；
+- 重复消息、幂等重放和同模式 no-op 不增加版本；
+- `row_version` 用于乐观锁，`generation_version` 用于使旧生成假设失效；
+- Assignment、Handoff、Ticket 关键状态和管理员取消生成的运行时监听属于后续任务，
+  P2-001 只保留契约，不实现副作用。
 
 ## 6. Handoff 状态
 
