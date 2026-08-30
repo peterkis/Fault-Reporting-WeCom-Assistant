@@ -11,10 +11,12 @@
 - `tasks/ARCH-004_p1_to_p2_phase_transition.md`：P1 → P2 阶段切换任务记录；
 - `tasks/P2-001_conversation_thread_session_contracts.md`：P2-001 契约任务记录；
 - `tasks/P2-002_persistent_timeline_projector.md`：已完成 P2-002 投影任务记录；
+- `tasks/P2-003_realtime_event_log_sse.md`：当前唯一授权且 IN_PROGRESS 的 P2-003 任务记录；
 - `evidence/p2-phase-start-authorization.md`：Phase 2 启动及仅授权 P2-001 的负责人 Evidence；
 - `evidence/p2-001-conversation-contracts-report.md`：P2-001 脱敏验证 Evidence；
 - `evidence/p2-002-start-authorization.md`：仅启动 P2-002 的项目负责人独立授权 Evidence；
 - `evidence/p2-002-timeline-projector-report.md`：P2-002 完成验证 Evidence。
+- `evidence/p2-003-start-authorization.md`：仅启动 P2-003 的项目负责人独立授权 Evidence。
 
 ## ADR
 
@@ -49,13 +51,20 @@
 - `tests/p2-001-conversation-contracts.test.mjs`：Contract/Unit 测试；
 - `tests/p2-001-conversation-contracts.integration.test.mjs`：隔离 PostgreSQL 集成测试。
 
-## P2-002 完成状态
+## P2-002 冻结完成事实
 
-- P2-002：`DONE`（2026-08-30）；当前无活动任务或 Lane；
-- 下一任务候选 `P2-003` 未授权；`P2-G1` 为 `NOT_STARTED`；
+- P2-002：`DONE`（2026-08-30），其 Contract、迁移、运行时与 Evidence 保持冻结；
+- 当前前沿已由下方 P2-003 独立授权条目接续；`P2-G1` 仍为 `NOT_STARTED`；
 - P3 未启动；
 - 所有 P2/P3 Feature Flag 保持 `false`；
 - 完成状态不等同于生产、临床或 Assembly Gate 验收。
+
+## P2-003 启动状态
+
+- P2-003：`IN_PROGRESS / AUTHORIZED_TASK_ONLY`；活动 Lane 为 P2-A；
+- P2-004 至 P2-014 继续为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；
+- `P2-G1` 继续为 `NOT_STARTED`，所有 P2/P3 Feature Flag 保持 `false`；
+- 完成 P2-003 后必须停止；本授权不接真实 Workbench、企业微信新增路径、模型或医院内网。
 
 ## P2-002 契约、迁移、运行时与测试
 

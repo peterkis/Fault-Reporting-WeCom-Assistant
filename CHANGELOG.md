@@ -2,13 +2,19 @@
 
 ## [Unreleased]
 
+### P2-003 Realtime Event Log、SSE 补放与慢客户端治理
+
+- 项目负责人于 2026-08-30 正式、独立授权仅启动 `P2-003 / P2-A`；基线为 `d59de5d7db39c4a39f82093496a0e42565d67a7e`。
+- 当前只记录授权、任务边界与 `IN_PROGRESS` 状态；P2-004 及以后、P2-G1 和所有生产功能仍须另行授权，全部 P2/P3 Feature Flag 保持 `false`。
+- 不接真实 Workbench、企业微信新增路径、模型或医院内网；完成 P2-003 后必须停止。
+
 ### P2-002 持久化 Timeline Projector 与可重建投影
 
-- 项目负责人于 2026-08-30 正式、独立授权仅启动 `P2-002 / P2-A`；任务已完成并停止，当前无活动任务或 Lane。
+- 项目负责人于 2026-08-30 正式、独立授权仅启动 `P2-002 / P2-A`；该任务已完成并停止；其终态随后由上方 P2-003 独立授权继续推进。
 - 新增唯一 `CONVERSATION_TIMELINE` Projector、规范化 Source Record、Source Binding、Audience Query、当前 P1 事实只读 Mapper、未来来源 fixture Mapper，以及只含 Item/Binding/Checkpoint 三表的 migration 011；Unified Ticket Core 和各上游事实所有权不变。
 - 普通增量 `projectBatch` 在同一事务 CAS 推进全局 `(projector_name, source_stream)` Checkpoint；单 Session Rebuild 锁住相关 Checkpoint Key 与 Session，但保留全局 Checkpoint、返回 `checkpoint_updated=false`，并以完整 Binding identity/hash/privacy/retention fence 和持久化 Timeline Hash 拒绝 stale 或不一致重建。
 - P2-002 Contract/Unit 39/39、PostgreSQL Integration 13/13 通过，覆盖真实 `SIGKILL` 后重启、stale rebuild race、only-011 CLI 与 2,001 Item 有界批次；全仓回归、资源和残留结果见 `evidence/p2-002-timeline-projector-report.md`。
-- P2-003 至 P2-014、P2-G1、SSE、Realtime Event Log、Workbench、Communication Outbox、Handoff/Assignment/Read Cursor、AI/DeepSeek、医院内网和全部 P3 任务仍未授权；全部 P2/P3 Feature Flag 继续为 `false`。
+- 在 P2-002 完成时，P2-003 至 P2-014、P2-G1 及全部 P3 任务尚未授权；当前授权前沿以上方 P2-003 条目为准，全部 P2/P3 Feature Flag 继续为 `false`。
 
 ### P2-001 Conversation Thread、Session 与控制模式契约
 

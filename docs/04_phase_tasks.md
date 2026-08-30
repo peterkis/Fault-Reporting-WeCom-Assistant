@@ -10,7 +10,7 @@
 
 ## Phase 2
 
-状态：`IN_PROGRESS`。项目负责人已于 2026-08-30 独立授权启动 Phase 2；P2-A 的 P2-001 与随后独立授权的 P2-002 均已完成。当前无活动任务或 Lane；下一任务候选 P2-003 尚未授权，P2-003 至 P2-014 和其他 Lane 实现仍为 `TODO`，P2-G1 为 `NOT_STARTED`，全部 Feature Flag 保持 `false`。
+状态：`IN_PROGRESS`。项目负责人已于 2026-08-30 独立授权启动 Phase 2；P2-A 的 P2-001 与 P2-002 均已完成，随后又正式、独立授权仅启动 P2-003。当前唯一活动任务为 `P2-003 / P2-A`；P2-004 至 P2-014 和其他 Lane 实现仍为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`，P2-G1 为 `NOT_STARTED`，全部 Feature Flag 保持 `false`。完成 P2-003 后必须停止。
 
 范围：
 

@@ -1,31 +1,34 @@
 {
   "architecture_baseline": "V1.4",
   "baseline_status_document": "docs/architecture_baseline_status.md",
-  "source_base_commit": "a30dced5fc62fa62ace1ebe1b86cd765f9f73310",
+  "source_base_commit": "d59de5d7db39c4a39f82093496a0e42565d67a7e",
   "phase_id": "P2",
   "phase_name": "Conversation Center 与 AI 协作",
   "status": "IN_PROGRESS",
   "started": true,
   "last_completed_task": "P2-002",
-  "active_task": null,
+  "active_task": "P2-003",
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
-    "P2-002"
+    "P2-002",
+    "P2-003"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "P2_002_DONE_AWAITING_SEPARATE_AUTHORIZATION",
+  "active_lane": "P2-A",
+  "implementation_authorization_status": "P2_003_IN_PROGRESS",
   "p2_g1_status": "NOT_STARTED",
   "next_task_candidate": "P2-003",
-  "next_task_authorized": false,
+  "next_task_authorized": true,
   "p2_001_completed_at": "2026-08-30",
   "p2_002_authorized_at": "2026-08-30",
   "p2_002_authorization_evidence": "evidence/p2-002-start-authorization.md",
   "p2_002_completed_at": "2026-08-30",
   "p2_002_completion_evidence": "evidence/p2-002-timeline-projector-report.md",
+  "p2_003_authorized_at": "2026-08-30",
+  "p2_003_authorization_evidence": "evidence/p2-003-start-authorization.md",
   "allowed_scope": [
-    "preserve completed P2-001 and P2-002 artifacts and evidence",
-    "read frozen P2-001 and P2-002 contracts without starting later implementation",
+    "implement only P2-003 durable Realtime Event Log, authorized SSE replay, heartbeat, slow-client governance, polling fallback contract, and retention cleanup",
+    "preserve completed P2-001 and P2-002 contracts, artifacts, evidence, and runtime behavior",
     "all P2 and P3 feature flags remain disabled"
   ],
   "forbidden_before_exit": [
@@ -41,14 +44,14 @@
     "historical ticket compatibility scope"
   ],
   "forbidden_without_task_authorization": [
-    "start P2-003 or any later P2 task",
+    "start P2-004 or any later P2 task",
     "start any P3 task",
     "assemble P2-G1 or any later gate",
     "enable Conversation Center, human delivery, realtime, SSE, AI, OCR, Incident, or integration feature flags",
     "enable production Conversation Center or AI",
     "enable production OCR",
     "connect real hospital identity or intranet sources",
-    "change any P2 or P3 task from TODO"
+    "change any P2-004 or later P2 task or any P3 task from TODO"
   ],
   "exit_gate_phase": "P1",
   "exit_gate": [
@@ -73,7 +76,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_002_DONE_AWAITING_SEPARATE_AUTHORIZATION",
+    "activation_status": "P2_003_IN_PROGRESS",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

@@ -14,10 +14,10 @@ P1 / P1-012 / DONE / GO
 当前阶段状态固定为：
 
 ```text
-P2 / P2-002 / DONE / AWAITING_SEPARATE_AUTHORIZATION
+P2 / P2-003 / IN_PROGRESS / AUTHORIZED_TASK_ONLY
 ```
 
-V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-08-30 独立授权启动 Phase 2，ARCH-004、P2-001 和随后独立授权的 P2-002 均已完成。当前无活动实施任务或 Lane；下一任务候选 P2-003 未授权，P2-G1 保持 `NOT_STARTED`，全部 P3 未启动。所有 Feature Flag 保持关闭。P2-002 完成不等同于生产上线、临床上线或 AI 自动回复批准。
+V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-08-30 独立授权启动 Phase 2，ARCH-004、P2-001 和 P2-002 均已完成；随后又正式、独立授权仅启动 P2-003。当前唯一活动实施任务为 P2-003，唯一活动 Lane 为 P2-A。P2-004 及以后任务未授权，P2-G1 保持 `NOT_STARTED`，全部 P3 未启动。所有 Feature Flag 保持关闭。P2-003 授权不等同于生产上线、临床上线或 AI 自动回复批准；完成 P2-003 后必须停止。
 
 ## 2. 长期事实源
 
@@ -64,7 +64,7 @@ P1：
 
 ### Phase 2：Conversation Center 与 AI 协作
 
-P2 已于 2026-08-30 获项目负责人独立授权并进入 `IN_PROGRESS`；P2-A 的 P2-001 和 P2-002 均已完成。当前无活动实施任务或 Lane，其他 Lane 只可读取冻结 Contract；P2-003 及以后任务和 P2-G1 组装不得启动，所有 Feature Flag 保持 `false`。
+P2 已于 2026-08-30 获项目负责人独立授权并进入 `IN_PROGRESS`；P2-A 的 P2-001 和 P2-002 均已完成，P2-003 已获独立授权并且是当前唯一活动任务。其他 Lane 只可读取冻结 Contract；P2-004 及以后任务和 P2-G1 组装不得启动，所有 Feature Flag 保持 `false`。完成 P2-003 后必须停止。
 
 P2 必须按以下顺序：
 

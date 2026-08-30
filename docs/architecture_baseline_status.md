@@ -4,12 +4,12 @@
 - 生效日期：2026-08-30
 - 状态：ACTIVE
 - 当前阶段：P2 / IN_PROGRESS
-- 当前执行任务：无
-- 当前活动 Lane：无
+- 当前执行任务：P2-003 / IN_PROGRESS / AUTHORIZED_TASK_ONLY
+- 当前活动 Lane：P2-A
 - 最后完成任务：P2-002（2026-08-30）
 - 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001；P2-002
-- 当前授权：已授权任务均已完成；等待 P2-003 或后续任务的独立授权
-- 下一任务候选：P2-003 / 未授权
+- 当前授权：仅 P2-003 实施已获独立授权；完成 P2-003 后必须停止
+- 下一任务候选：P2-003 / 已授权且 IN_PROGRESS
 - P2-G1：NOT_STARTED
 - P2/P3 Feature Flags：全部 `false`
 - P3：TODO / 未启动
@@ -71,7 +71,7 @@ Enterprise WeCom / New Intranet Portal / Hospital API / Monitoring Alert
 
 - 创建另一套 `unified_ticket.ticket` 并双写；
 - 重写既有 P1 迁移历史；
-- 以已完成的 P2-002 授权为由启动 P2-003 及以后任务、P2-G1 组装或任何 P3 任务；
+- 以 P2-003 授权为由启动 P2-004 及以后任务、P2-G1 组装或任何 P3 任务；
 - 启用任何 P2/P3 Feature Flag、真实外发、SSE、模型、OCR 或医院内网连接；
 - 让外部来源状态覆盖本地 Ticket；
 - 引入历史 Ticket 兼容模型。
@@ -92,7 +92,7 @@ P1 退出条件为：漏单 0、重复单 0、状态/事件/通知一致、真�
 
 ## 6. Phase 2
 
-P2 已于 2026-08-30 获项目负责人独立授权并保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 已完成，Evidence 为 `evidence/p2-001-conversation-contracts-report.md`；项目负责人随后通过 `evidence/p2-002-start-authorization.md` 正式、独立授权仅启动 P2-002，P2-002 已于 2026-08-30 完成，验证结果见 `evidence/p2-002-timeline-projector-report.md`。当前无活动任务或 Lane；P2-003 及以后任务、P2-G1 组装和其他 Lane 实现仍须另行授权。所有 Feature Flag 保持关闭。
+P2 已于 2026-08-30 获项目负责人独立授权并保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 已完成，Evidence 为 `evidence/p2-001-conversation-contracts-report.md`；P2-002 已于 2026-08-30 完成，验证结果见 `evidence/p2-002-timeline-projector-report.md`。项目负责人随后通过 `evidence/p2-003-start-authorization.md` 正式、独立授权仅启动 P2-003。当前唯一活动任务为 `P2-003 / P2-A`；P2-004 及以后任务、P2-G1 组装和其他 Lane 实现仍须另行授权。所有 Feature Flag 保持关闭；完成 P2-003 后必须停止。
 
 固定顺序：
 
@@ -136,7 +136,7 @@ P3 非目标：历史导入、未完结切换、旧编号/状态/附件兼容、
 
 ## 9. 并行开发
 
-架构上定义八条 Lane，P2-A 的 P2-001 与 P2-002 已完成，当前无活动 Lane。其他 Lane 只能读取冻结 Contract。P2-003 及以后任务和 P3 均未获授权，所有 Feature Flag 默认关闭，且不得提前启动任何 Assembly Gate。
+架构上定义八条 Lane，P2-A 的 P2-001 与 P2-002 已完成；P2-003 是 P2-A 当前唯一授权实施任务。其他 Lane 只能读取冻结 Contract。P2-004 及以后任务和 P3 均未获授权，所有 Feature Flag 默认关闭，且不得提前启动任何 Assembly Gate。
 
 ## 10. 已废弃设计
 
@@ -162,4 +162,4 @@ P3 非目标：历史导入、未完结切换、旧编号/状态/附件兼容、
 
 ## 12. 应用基线
 
-本次 P2-002 独立授权以提交 `a30dced5fc62fa62ace1ebe1b86cd765f9f73310` 为工作基线。旧 P3 文件保留为 Superseded 指针，避免自动化引用失效；其内容不能作为任务来源。
+本次 P2-003 独立授权以提交 `d59de5d7db39c4a39f82093496a0e42565d67a7e` 为工作基线。旧 P3 文件保留为 Superseded 指针，避免自动化引用失效；其内容不能作为任务来源。
