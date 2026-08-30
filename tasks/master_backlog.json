@@ -3,16 +3,18 @@
   "architecture_baseline": "V1.4",
   "canonical_source": "plans/master_backlog.json",
   "current_phase": "P2",
-  "last_completed_task": "P2-001",
-  "active_task": "P2-002",
+  "last_completed_task": "P2-002",
+  "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
     "P2-002"
   ],
-  "active_lane": "P2-A",
-  "implementation_authorization_status": "P2_002_IN_PROGRESS",
+  "active_lane": null,
+  "implementation_authorization_status": "P2_002_DONE_AWAITING_SEPARATE_AUTHORIZATION",
   "p2_g1_status": "NOT_STARTED",
+  "p2_002_completed_at": "2026-08-30",
+  "p2_002_completion_evidence": "evidence/p2-002-timeline-projector-report.md",
   "task_files": {
     "G0": "tickets/G0_gate0_tasks.md",
     "P1": "tickets/P1_pilot_tasks.md",
@@ -30,9 +32,9 @@
     "2C4G lightweight deployment is mandatory"
   ],
   "next_tasks": {
-    "current": "P2-002",
-    "candidate": "P2-002",
-    "candidate_authorized": true,
+    "current": null,
+    "candidate": "P2-003",
+    "candidate_authorized": false,
     "after_p1": [
       "P2-001"
     ],

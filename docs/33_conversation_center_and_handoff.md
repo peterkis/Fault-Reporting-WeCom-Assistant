@@ -26,8 +26,9 @@ Unified Ticket Core    = 处理生命周期
 ```
 
 已完成的 `P2-001` 冻结 Thread、Session、Conversation Item、控制模式、版本和隔离
-契约，并建立 Thread/Session 数据库约束。项目负责人现已独立授权仅实施 `P2-002`：
+契约，并建立 Thread/Session 数据库约束。随后独立授权的 `P2-002` 也已完成：
 持久化、幂等、可重建的 Timeline Item/Source Binding/Checkpoint 与只读源 Mapper。
+当前无活动任务或 Lane。
 SSE、Realtime Event Log、人工回复、Handoff、Assignment、Read Cursor、Communication
 Outbox、Workbench 和任何 AI 行为仍属于 P2-003 及以后任务，未授权、未实现。
 
@@ -93,20 +94,52 @@ provider + bot_id + chatid + participant_key + session_id + service_intake_id
 
 ## 4. Timeline Item
 
-工作台统一显示：
+`Conversation Item` 是可删除、可重建的 Session 读模型，不是 Channel Message、Ticket
+Event、Delivery 或 Communication/Handoff 的事实副本。P2-002 的详细 Contract、迁移、
+排序、Checkpoint 和 Rebuild 边界见 `docs/38_p2_002_timeline_projector.md`。
 
-| 类型 | 来源 | 对外可见 |
-|---|---|---:|
-| 用户消息 | Channel Message | 是 |
-| AI 回复 | Communication Message | 是 |
-| 人工回复 | Communication Message | 是 |
-| 内部备注 | Agent | 否 |
-| Ticket 事件 | Ticket Event | 取决于 external note |
-| Handoff/分配 | Conversation Event | 否或摘要可见 |
-| 投递状态 | Delivery | 内部 |
-| 系统告警 | Operations | 内部 |
+完整 Conversation Center 未来可统一显示：
 
-排序使用 Session 内稳定 `sequence_no`，不能只依赖时间戳。
+| 类型 | 权威来源 | P2-002 状态 | 默认可见性 |
+|---|---|---|---|
+| 用户消息 | Channel Message | 现有 P1 表的只读 Mapper | `EXTERNAL` |
+| AI/人工回复 | future Communication Message | 合成 fixture Mapper；P2-004 未授权 | 由 future 事实明确声明 |
+| 内部备注 | future Communication / Ticket Event | 仅 Ticket internal note 可从现有事实映射 | `INTERNAL` |
+| Ticket 事件 | Ticket Event | 现有 P1 表的只读 Mapper | 状态/外部备注/内部备注按 Variant 隔离 |
+| Handoff/分配 | future Handoff Event | 合成 fixture Mapper；P2-005 未授权 | `INTERNAL` |
+| 投递状态 | Notification Delivery | 现有 P1 表的只读 Mapper | `INTERNAL` |
+| 系统告警 | future Operations Contract | 不属于 P2-002 | `INTERNAL` |
+
+P2-002 的固定 Source Rank 是 Channel Message `10`、future Communication Message `20`、
+Ticket Event `30`、Delivery `40`、future Handoff Event `50`。Session 内排序使用完整
+Canonical Tuple：
+
+```text
+(occurred_at, source_rank, source_ordinal, source_type, source_id, projection_variant)
+```
+
+调用方不得提交 source rank；`source_ordinal` 以受限十进制字符串和 BigInt 语义比较。
+唯一 Projector 名称固定为 `CONVERSATION_TIMELINE`。Projector 在 PostgreSQL
+transaction-level advisory lock 下分配从 1 开始的连续
+`sequence_no`。普通增量记录早于当前尾部时失败为
+`CONVERSATION_TIMELINE_REBUILD_REQUIRED`，不静默追加或重排。
+
+Source Binding 的幂等身份为 Projector、Source Stream、Source Type、Source ID、
+Projection Variant 和 Session 的完整组合。相同身份/相同 Hash 是安全重放；相同身份/
+不同 Hash 失败关闭。普通增量 `projectBatch` 把 Item、Binding 和按
+`(projector_name, source_stream)` 标识的全局 Checkpoint 在同一数据库事务提交，并且只有
+这条增量路径以 compare-and-set 推进该 Checkpoint。
+
+显式 Rebuild 每次只处理一个 Session。它按稳定顺序锁住所涉全局 Checkpoint Key 和目标
+Session，但保留全局 Checkpoint 原值，结果固定为 `checkpoint_updated=false`。在删除前，
+锁内检查该 Session 的全部既有 Binding identity、source hash、privacy 与 retention 控制
+信封，拒绝 stale snapshot；重建后从持久化 Item/Binding 重新读取并比对 Canonical
+Timeline Hash，之后才允许事务提交。投影重建绝不修改 Thread、Session、Service Intake、
+Ticket、Outbox、Delivery 或来源事实。
+
+Timeline Query 必须显式提供 Audience：`EXTERNAL` 仅看 External；`WORKBENCH` 可看
+External/Internal；`RESTRICTED_ADMIN` 还必须携带显式受限授权。普通 Workbench 不得读取
+Restricted Item。
 
 ## 5. 会话模式
 
@@ -163,7 +196,7 @@ AI 不得自动发送。允许：
 - Assignment、Handoff、Ticket 关键状态和管理员取消生成的运行时监听属于后续任务，
   P2-001 只保留契约，不实现副作用。
 
-## 6. Handoff 状态
+## 6. Handoff 状态（未来 P2-005，当前未授权）
 
 建议独立 Handoff 状态：
 
@@ -202,7 +235,7 @@ COMMIT
 
 所有未发送 AI 任务在完成时会因 generation version 不一致而失效。
 
-## 7. 人工回复命令
+## 7. 人工回复命令（未来 P2-004/P2-006，当前未授权）
 
 REST：
 
@@ -235,7 +268,7 @@ If-Match: <session-row-version>
 
 Delivery Worker 才能调用 WeCom Adapter。
 
-## 8. 内部备注
+## 8. 内部备注（未来 P2-004/P2-006，当前未授权）
 
 ```http
 POST /api/conversations/{sessionId}/internal-notes
@@ -252,7 +285,7 @@ POST /api/conversations/{sessionId}/internal-notes
 
 建议内部备注只追加；确需修订时保留版本历史。
 
-## 9. 分配与抢占
+## 9. 分配与抢占（未来 P2-005/P2-006，当前未授权）
 
 坐席接管使用乐观锁：
 
@@ -268,7 +301,7 @@ expected_row_version
 
 浏览器按钮隐藏不能替代后端授权。
 
-## 10. 已读游标
+## 10. 已读游标（未来 P2-005，当前未授权）
 
 每个用户独立：
 
@@ -287,7 +320,7 @@ latest_external_sequence - last_read_sequence
 
 不能把一个全局 unread_count 当作所有坐席共同状态。
 
-## 11. 实时 Event Log
+## 11. 实时 Event Log（未来 P2-003，当前未授权）
 
 表建议：
 
@@ -326,7 +359,7 @@ incident.updated
 gateway.connection.changed
 ```
 
-## 12. 页面结构
+## 12. 页面结构（未来 P2-006，当前未授权）
 
 ### 左侧
 
@@ -385,7 +418,9 @@ gateway.connection.changed
 - 操作日志使用哈希化身份；
 - 不将患者原文写入浏览器错误日志。
 
-## 14. 验收场景
+## 14. P2-G1 未来验收场景（当前未启动）
+
+以下是 P2-G1 的跨任务目标，不是 P2-002 的完成声明，也不表示相应能力已实现：
 
 1. 企业微信单聊消息在 2 秒目标内出现在打开的 Workbench；
 2. 重复同一 msgid 只有一个 Timeline Item；

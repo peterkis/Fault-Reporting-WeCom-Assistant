@@ -10,7 +10,7 @@
 - P1-001 至 P1-011 已完成既定本机验收；
 - P1-012 已完成真实测试群 E2E，并于 2026-08-30 获项目负责人正式 Go 批准；
 - Phase 1 状态为 `DONE / GO`；
-- Phase 2 状态为 `IN_PROGRESS`，P2-A 的 P2-001 已完成，仅 P2-002 已获新的独立授权并处于 `IN_PROGRESS`；P2-003 及以后和全部 P3 任务仍须另行授权；
+- Phase 2 状态为 `IN_PROGRESS`，P2-A 的 P2-001 与独立授权的 P2-002 均已完成；当前无活动任务或 Lane，下一任务候选 P2-003 未授权，P2-G1 为 `NOT_STARTED`，全部 P3 任务未启动；
 - 所有 P2/P3 Feature Flag 保持 `false`，本授权不等同于生产上线、临床上线或 AI 自动回复批准；
 - 没有历史业务 Ticket；
 - 没有需要兼容、迁移或退役的旧工单系统。
@@ -23,7 +23,7 @@
 
 ### P2
 
-P2-001 的 Conversation Thread、Session、Conversation Item 与控制模式契约已冻结。当前只允许 P2-002 在现有 Unified Ticket Core 上增量建设持久、可重建 Timeline 投影；人工工作台、多轮 AI、媒体/OCR、Incident 和运营能力仍须逐任务另行获批，不得提前组装 P2-G1。
+P2-001 的 Conversation Thread、Session、Conversation Item 与控制模式契约已冻结；P2-002 已在现有 Unified Ticket Core 上完成持久、可重建 Timeline 投影。当前无活动任务；人工工作台、多轮 AI、媒体/OCR、Incident 和运营能力仍须逐任务另行获批，不得提前组装 P2-G1。
 
 ### P3
 

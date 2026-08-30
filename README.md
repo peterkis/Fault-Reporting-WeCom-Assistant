@@ -8,8 +8,8 @@
 - G0 已完成并冻结；
 - P1-001 至 P1-011 保持既有验收结论；
 - P1-012 已完成真实测试群 E2E、客户端观察、故障演练和 Go/No-Go，状态为 `DONE`；
-- Phase 2 已获项目负责人独立授权并进入 `IN_PROGRESS`，`P2-001`（P2-A）已完成，项目负责人已再次独立授权仅启动 `P2-002`，当前活动任务为 `P2-002 / P2-A / IN_PROGRESS`；
-- P2-003 及以后任务、P2-G1 组装和全部 P3 任务仍须另行授权，所有 P2/P3 Feature Flag 保持 `false`；
+- Phase 2 已获项目负责人独立授权并保持 `IN_PROGRESS`，`P2-001` 与独立授权的 `P2-002`（P2-A）均已于 2026-08-30 完成；当前无活动任务或 Lane；
+- 下一任务候选 P2-003 尚未授权；P2-003 及以后任务仍须另行授权，P2-G1 保持 `NOT_STARTED`，全部 P3 任务未启动，所有 P2/P3 Feature Flag 保持 `false`；
 - 本次 Phase 2 启动授权不等同于生产上线、临床上线或 AI 自动回复批准，不启用真实外发、SSE、模型、OCR、医院身份连接或内网 Connector。
 
 ## V1.4 核心纠偏
@@ -62,7 +62,7 @@ P1 保持零医院内网依赖；真实企业微信闭环和试点评审已完�
 
 ## Phase 2：Conversation Center 与 AI 协作
 
-P2 已获独立授权并进入 `IN_PROGRESS`，P2-001 的 Conversation Thread、Session、Conversation Item 与控制模式契约已冻结。项目负责人已另行授权仅实施 P2-002 的持久 Timeline Projector 与可重建投影；P2-003 及以后能力和 P2-G1 仍须另行授权。
+P2 已获独立授权并保持 `IN_PROGRESS`。P2-001 的 Conversation Thread、Session、Conversation Item 与控制模式契约，以及 P2-002 的持久 Timeline Projector 与可重建投影均已完成。当前无活动任务或 Lane；P2-003 及以后能力和 P2-G1 仍须另行授权。
 
 ```text
 Conversation Thread / Session

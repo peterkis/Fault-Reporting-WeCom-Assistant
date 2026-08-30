@@ -1,7 +1,8 @@
 -- ============================================================================
 -- V1.4 CONCEPTUAL SCHEMA DRAFT
 -- ============================================================================
--- This file is NOT a production migration and MUST NOT be applied automatically.
+-- This file is NOT a production migration. NEVER execute or apply this file as
+-- a whole, manually or automatically. Apply only reviewed numbered migrations.
 --
 -- Current G0/P1 production-like migrations remain authoritative, including:
 --   channel.message_inbox
@@ -12,8 +13,16 @@
 --   pilot access control tables
 --
 -- V1.4 adds conceptual Conversation, Communication, AI and greenfield Integration tables.
--- Migration 010 is authoritative for the P2-001 Thread/Session subset below.
--- The remaining conceptual tables require their corresponding task/Gate approval.
+-- Migration 010 is authoritative for the P2-001 Thread/Session physical shape.
+-- Migration 011 is authoritative for the P2-002 Item/Item Source Binding/
+-- Projection Checkpoint physical shape. The three matching blocks below are
+-- navigation mirrors only and cannot supersede the numbered migrations.
+--
+-- P2-002 completed on 2026-08-30. Realtime Event, Handoff, Assignment,
+-- Read Cursor, Communication, AI and Integration tables remain conceptual and
+-- are NOT authorized by P2-002. Their presence below is not implementation or
+-- Gate authorization. The remaining conceptual tables require their own task
+-- and Assembly Gate approval.
 -- Do not create a second long-term Ticket Core and do not rename pilot_ticket.*
 -- in a big-bang migration.
 -- ============================================================================
@@ -81,10 +90,30 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_conversation_session_active_participant
     WHERE status <> 'ENDED';
 
 CREATE TABLE IF NOT EXISTS conversation.item (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id uuid NOT NULL REFERENCES conversation.session(id),
-    sequence_no bigint NOT NULL CHECK (sequence_no >= 1),
-    item_type text NOT NULL CHECK (item_type IN (
+    id uuid NOT NULL DEFAULT uuidv7(),
+    session_id uuid NOT NULL,
+    sequence_no bigint NOT NULL,
+    item_type text NOT NULL,
+    sender_kind text NOT NULL,
+    visibility text NOT NULL,
+    text text NULL,
+    safe_content jsonb NOT NULL DEFAULT '{}'::jsonb,
+    source_type text NOT NULL,
+    source_id text NOT NULL,
+    projection_variant text NOT NULL,
+    canonical_order_key text NOT NULL,
+    content_hash text NOT NULL,
+    privacy_class text NOT NULL,
+    retention_until timestamptz NOT NULL,
+    occurred_at timestamptz NOT NULL,
+    projected_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT conversation_item_pkey PRIMARY KEY (id),
+    CONSTRAINT conversation_item_id_session_unique UNIQUE (id, session_id),
+    CONSTRAINT conversation_item_session_sequence_unique UNIQUE (session_id, sequence_no),
+    CONSTRAINT conversation_item_session_fk FOREIGN KEY (session_id)
+        REFERENCES conversation.session(id) ON DELETE CASCADE,
+    CONSTRAINT conversation_item_sequence_check CHECK (sequence_no >= 1),
+    CONSTRAINT conversation_item_type_check CHECK (item_type IN (
         'USER_MESSAGE',
         'AI_MESSAGE',
         'AGENT_MESSAGE',
@@ -94,37 +123,162 @@ CREATE TABLE IF NOT EXISTS conversation.item (
         'DELIVERY_STATUS',
         'HANDOFF_EVENT'
     )),
-    source_type text NULL,
-    source_id text NULL,
-    sender_kind text NOT NULL CHECK (sender_kind IN (
+    CONSTRAINT conversation_item_sender_kind_check CHECK (sender_kind IN (
         'USER', 'AI', 'AGENT', 'SYSTEM', 'TOOL'
     )),
-    sender_id text NULL,
-    visibility text NOT NULL CHECK (visibility IN (
+    CONSTRAINT conversation_item_visibility_check CHECK (visibility IN (
         'EXTERNAL', 'INTERNAL', 'RESTRICTED'
     )),
-    content_text text NULL,
-    content_json jsonb NOT NULL DEFAULT '{}'::jsonb,
-    occurred_at timestamptz NOT NULL,
-    projected_at timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (session_id, sequence_no)
+    CONSTRAINT conversation_item_text_length_check CHECK (
+        text IS NULL OR char_length(text) <= 20000
+    ),
+    CONSTRAINT conversation_item_safe_content_check CHECK (
+        jsonb_typeof(safe_content) = 'object'
+    ),
+    CONSTRAINT conversation_item_source_type_check CHECK (source_type IN (
+        'CHANNEL_MESSAGE',
+        'COMMUNICATION_MESSAGE',
+        'TICKET_EVENT',
+        'DELIVERY',
+        'HANDOFF_EVENT'
+    )),
+    CONSTRAINT conversation_item_source_id_length_check CHECK (
+        char_length(source_id) BETWEEN 1 AND 256
+    ),
+    CONSTRAINT conversation_item_projection_variant_check CHECK (
+        char_length(projection_variant) BETWEEN 1 AND 64
+        AND projection_variant ~ '^[A-Z][A-Z0-9_]{0,63}$'
+    ),
+    CONSTRAINT conversation_item_canonical_order_key_length_check CHECK (
+        char_length(canonical_order_key) BETWEEN 1 AND 1024
+    ),
+    CONSTRAINT conversation_item_content_hash_check CHECK (
+        content_hash ~ '^[a-f0-9]{64}$'
+    ),
+    CONSTRAINT conversation_item_privacy_class_check CHECK (privacy_class IN (
+        'PUBLIC',
+        'INTERNAL',
+        'SENSITIVE_INTERNAL',
+        'PERSONAL',
+        'PATIENT_SENSITIVE',
+        'SECRET'
+    ))
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_conversation_item_source
-    ON conversation.item (source_type, source_id)
-    WHERE source_type IS NOT NULL AND source_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS conversation.item_source_binding (
+    projector_name text NOT NULL,
+    projector_version text NOT NULL,
+    source_stream text NOT NULL,
+    source_type text NOT NULL,
+    source_id text NOT NULL,
+    projection_variant text NOT NULL,
+    session_id uuid NOT NULL,
+    item_id uuid NOT NULL,
+    source_hash text NOT NULL,
+    canonical_order_key text NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT conversation_item_source_binding_pkey PRIMARY KEY (item_id),
+    CONSTRAINT conversation_item_source_binding_identity_unique UNIQUE (
+        projector_name,
+        source_stream,
+        source_type,
+        source_id,
+        projection_variant,
+        session_id
+    ),
+    CONSTRAINT conversation_item_source_binding_session_fk FOREIGN KEY (session_id)
+        REFERENCES conversation.session(id) ON DELETE CASCADE,
+    CONSTRAINT conversation_item_source_binding_item_session_fk FOREIGN KEY (item_id, session_id)
+        REFERENCES conversation.item(id, session_id) ON DELETE CASCADE,
+    CONSTRAINT conversation_item_source_binding_projector_name_length_check CHECK (
+        char_length(projector_name) BETWEEN 1 AND 128
+        AND projector_name ~ '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'
+    ),
+    CONSTRAINT conversation_item_source_binding_projector_version_length_check CHECK (
+        char_length(projector_version) BETWEEN 1 AND 64
+        AND projector_version ~ '^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$'
+    ),
+    CONSTRAINT conversation_item_source_binding_source_stream_length_check CHECK (
+        char_length(source_stream) BETWEEN 1 AND 128
+        AND source_stream ~ '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'
+    ),
+    CONSTRAINT conversation_item_source_binding_source_type_check CHECK (source_type IN (
+        'CHANNEL_MESSAGE',
+        'COMMUNICATION_MESSAGE',
+        'TICKET_EVENT',
+        'DELIVERY',
+        'HANDOFF_EVENT'
+    )),
+    CONSTRAINT conversation_item_source_binding_source_id_length_check CHECK (
+        char_length(source_id) BETWEEN 1 AND 256
+    ),
+    CONSTRAINT conversation_item_source_binding_projection_variant_check CHECK (
+        char_length(projection_variant) BETWEEN 1 AND 64
+        AND projection_variant ~ '^[A-Z][A-Z0-9_]{0,63}$'
+    ),
+    CONSTRAINT conversation_item_source_binding_source_hash_check CHECK (
+        source_hash ~ '^[a-f0-9]{64}$'
+    ),
+    CONSTRAINT conversation_item_source_binding_order_key_length_check CHECK (
+        char_length(canonical_order_key) BETWEEN 1 AND 1024
+    ),
+    CONSTRAINT conversation_item_source_binding_seen_time_check CHECK (
+        last_seen_at >= created_at
+    )
+);
 
-CREATE INDEX IF NOT EXISTS idx_conversation_item_session_sequence
-    ON conversation.item (session_id, sequence_no);
+CREATE INDEX IF NOT EXISTS conversation_item_external_timeline_idx
+    ON conversation.item (session_id, sequence_no)
+    WHERE visibility = 'EXTERNAL';
+
+CREATE INDEX IF NOT EXISTS conversation_item_retention_idx
+    ON conversation.item (retention_until);
+
+CREATE INDEX IF NOT EXISTS conversation_item_source_binding_session_order_idx
+    ON conversation.item_source_binding (session_id, canonical_order_key);
 
 CREATE TABLE IF NOT EXISTS conversation.projection_checkpoint (
-    projector_name text PRIMARY KEY,
-    last_source_sequence text NULL,
-    last_projected_at timestamptz NULL,
+    projector_name text NOT NULL,
+    projector_version text NOT NULL,
+    source_stream text NOT NULL,
+    cursor_value text NULL,
+    last_source_occurred_at timestamptz NULL,
+    last_batch_hash text NULL,
     row_version bigint NOT NULL DEFAULT 1,
-    updated_at timestamptz NOT NULL DEFAULT now()
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT conversation_projection_checkpoint_pkey PRIMARY KEY (
+        projector_name,
+        source_stream
+    ),
+    CONSTRAINT conversation_projection_checkpoint_projector_name_length_check CHECK (
+        char_length(projector_name) BETWEEN 1 AND 128
+        AND projector_name ~ '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'
+    ),
+    CONSTRAINT conversation_projection_checkpoint_version_length_check CHECK (
+        char_length(projector_version) BETWEEN 1 AND 64
+        AND projector_version ~ '^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$'
+    ),
+    CONSTRAINT conversation_projection_checkpoint_source_stream_length_check CHECK (
+        char_length(source_stream) BETWEEN 1 AND 128
+        AND source_stream ~ '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'
+    ),
+    CONSTRAINT conversation_projection_checkpoint_cursor_length_check CHECK (
+        cursor_value IS NULL OR char_length(cursor_value) BETWEEN 1 AND 512
+    ),
+    CONSTRAINT conversation_projection_checkpoint_batch_hash_check CHECK (
+        last_batch_hash IS NULL OR last_batch_hash ~ '^[a-f0-9]{64}$'
+    ),
+    CONSTRAINT conversation_projection_checkpoint_row_version_check CHECK (
+        row_version >= 1
+    )
 );
 
+-- The three blocks above mirror migration 011 for human navigation only.
+-- Migration 011, including its drift checks, is the executable authority.
+
+-- NOT AUTHORIZED BY P2-002: assignment/read cursor/handoff are future P2-005
+-- concepts. Keep them disabled and do not create them from this draft.
 CREATE TABLE IF NOT EXISTS conversation.assignment_history (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     session_id uuid NOT NULL REFERENCES conversation.session(id),
@@ -168,6 +322,7 @@ CREATE TABLE IF NOT EXISTS conversation.handoff (
 CREATE INDEX IF NOT EXISTS idx_conversation_handoff_session_time
     ON conversation.handoff (session_id, requested_at DESC);
 
+-- NOT AUTHORIZED BY P2-002: realtime_event and SSE belong to future P2-003.
 CREATE TABLE IF NOT EXISTS conversation.realtime_event (
     event_id bigserial PRIMARY KEY,
     event_type text NOT NULL,
@@ -189,6 +344,8 @@ CREATE INDEX IF NOT EXISTS idx_realtime_event_aggregate
 -- ============================================================================
 -- Communication Outbox
 -- ============================================================================
+-- NOT AUTHORIZED BY P2-002: every communication.* table below belongs to
+-- future P2-004 or later. P2-002 uses fixture-only Communication mapping.
 
 CREATE TABLE IF NOT EXISTS communication.message (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -254,6 +411,7 @@ CREATE TABLE IF NOT EXISTS communication.delivery (
 -- ============================================================================
 -- AI jobs, runs and memory
 -- ============================================================================
+-- NOT AUTHORIZED BY P2-002: every ai.* table below belongs to P2-007 or later.
 
 CREATE TABLE IF NOT EXISTS ai.job (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

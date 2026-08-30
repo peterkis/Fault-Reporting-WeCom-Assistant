@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/conversation-projection-checkpoint.schema.json",
+  "title": "Conversation Timeline Projection Checkpoint Safe View",
+  "description": "A bounded, non-sensitive view of one projector/source-stream checkpoint. The checkpoint is a scan optimization only; Source Binding remains the idempotency defense and the checkpoint is never a business fact source.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "projector_name",
+    "projector_version",
+    "source_stream",
+    "cursor_value",
+    "last_source_occurred_at",
+    "last_batch_hash",
+    "row_version",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "projector_name": {
+      "const": "CONVERSATION_TIMELINE",
+      "description": "The only P2-002 projector identity. A second projector is outside this task's rebuild semantics."
+    },
+    "projector_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$"
+    },
+    "source_stream": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "cursor_value": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "An opaque bounded source cursor. It must not contain source content or external identities."
+    },
+    "last_source_occurred_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 20,
+      "maxLength": 35,
+      "format": "date-time"
+    },
+    "last_batch_hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "row_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19,
+      "pattern": "^[1-9][0-9]{0,18}$",
+      "description": "A canonical positive decimal integer string. Runtime validation additionally caps it at PostgreSQL BIGINT maximum and never converts it to JavaScript Number.",
+      "x-maximum-decimal": "9223372036854775807"
+    },
+    "updated_at": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 35,
+      "format": "date-time"
+    }
+  },
+  "x-primary-key": [
+    "projector_name",
+    "source_stream"
+  ],
+  "x-safe-view": true,
+  "x-business-fact-source": false,
+  "x-consistency-boundary": "The checkpoint advances in the same database transaction as Conversation Item and Source Binding."
+}

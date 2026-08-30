@@ -2,6 +2,9 @@
 
 This context defines the domain language for the lightweight Conversation Center in V1.4. It keeps conversation identity, service topics, timeline entries, and the authoritative ticket lifecycle distinct.
 
+For P2-002 timeline projection, source mapping, ordering, checkpoint, or rebuild work, read
+`docs/38_p2_002_timeline_projector.md` before changing a Contract, migration, runtime, or test.
+
 ## Conversation identity
 
 **Channel Account**:
@@ -57,8 +60,40 @@ _Avoid_: AI enabled, autonomous operation
 ## Timeline and lifecycle
 
 **Conversation Item**:
-A single visible or internal entry associated with a Conversation Session, such as a user message, reply, note, or domain event.
-_Avoid_: Channel Message, Ticket Event, database record
+A deletable and rebuildable timeline projection associated with a Conversation Session, such as a user message, reply, note, or domain event.
+_Avoid_: Channel Message, Ticket Event, Delivery fact, authoritative event
+
+**Timeline Source Fact**:
+An authoritative Channel Message, Ticket Event, Delivery, future Communication Message, or future Handoff Event read without mutation by the projector.
+_Avoid_: Conversation Item, projection input copy
+
+**Timeline Source Record**:
+A normalized, privacy-trimmed, versioned projector input that references one Source Fact and one Projection Variant.
+_Avoid_: Source Fact, raw provider payload, second event store
+
+**Projection Variant**:
+The stable distinction between independently visible Items derived from one Source Fact, such as STATUS, EXTERNAL_NOTE, or INTERNAL_NOTE.
+_Avoid_: Source Type, Item Type
+
+**Source Binding**:
+The one-to-one persisted relationship between a complete projector/source/variant/session identity and its Conversation Item. It is the idempotency defense, not ownership of the Source Fact.
+_Avoid_: Source Fact, global cursor, Ticket binding
+
+**Canonical Order**:
+The deterministic Session ordering tuple of occurred time, fixed source rank, source ordinal, source type, source identity, and Projection Variant.
+_Avoid_: Timestamp-only order, database row order
+
+**Projection Checkpoint**:
+The global scan-optimization cursor for one projector and source stream. Only incremental projectBatch advances it with compare-and-set semantics in the same transaction as corresponding Items and Bindings; a single-Session rebuild locks but preserves it.
+_Avoid_: Business fact, idempotency key, Redis cursor
+
+**Timeline Rebuild**:
+An explicitly authorized, single-Session transaction that locks the relevant global checkpoints and Session, rejects a stale snapshot against every existing Binding identity/hash/privacy/retention fence, replaces only Item/Binding projection state, verifies the persisted canonical hash, and leaves global checkpoints unchanged.
+_Avoid_: Source repair, Ticket replay, ordinary incremental append
+
+**Timeline Audience**:
+The explicit query boundary EXTERNAL, WORKBENCH, or RESTRICTED_ADMIN used to filter Item visibility; no privileged audience is implicit.
+_Avoid_: Visibility stored on an Item, browser-only authorization
 
 **Generation Version**:
 The monotonic generation marker for the current Conversation Session context.

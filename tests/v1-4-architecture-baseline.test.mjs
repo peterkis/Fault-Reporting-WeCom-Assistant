@@ -13,20 +13,22 @@ test('V1.4 architecture validator passes', () => {
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 });
 
-test('P1 remains complete and only P2-002 is active in P2-A', () => {
+test('P1 remains complete and P2-002 is done with no active implementation task', () => {
   const current = json('plans/current_phase.json');
   const backlog = json('plans/master_backlog.json');
   assert.equal(current.phase_id, 'P2');
   assert.equal(current.status, 'IN_PROGRESS');
-  assert.equal(current.last_completed_task, 'P2-001');
-  assert.equal(current.active_task, 'P2-002');
+  assert.equal(current.last_completed_task, 'P2-002');
+  assert.equal(current.active_task, null);
   assert.equal(current.next_phase_authorized, true);
   assert.deepEqual(current.authorized_tasks, ['P2-001', 'P2-002']);
-  assert.equal(current.active_lane, 'P2-A');
-  assert.equal(current.implementation_authorization_status, 'P2_002_IN_PROGRESS');
+  assert.equal(current.active_lane, null);
+  assert.equal(current.implementation_authorization_status, 'P2_002_DONE_AWAITING_SEPARATE_AUTHORIZATION');
   assert.equal(current.p2_g1_status, 'NOT_STARTED');
-  assert.equal(current.next_task_candidate, 'P2-002');
-  assert.equal(current.next_task_authorized, true);
+  assert.equal(current.next_task_candidate, 'P2-003');
+  assert.equal(current.next_task_authorized, false);
+  assert.equal(current.p2_002_completed_at, '2026-08-30');
+  assert.equal(current.p2_002_completion_evidence, 'evidence/p2-002-timeline-projector-report.md');
   assert.deepEqual(current.exit_decision, {
     phase_id: 'P1',
     decision: 'GO',
@@ -38,14 +40,16 @@ test('P1 remains complete and only P2-002 is active in P2-A', () => {
   assert.equal(backlog.phases.find((phase) => phase.id === 'P1').status, 'DONE');
   assert.equal(backlog.tasks.find((t) => t.id === 'P1-012').status, 'DONE');
   assert.equal(backlog.phases.find((phase) => phase.id === 'P2').status, 'IN_PROGRESS');
-  assert.equal(backlog.active_task, 'P2-002');
-  assert.equal(backlog.last_completed_task, 'P2-001');
-  assert.equal(backlog.next_task_candidate, 'P2-002');
-  assert.equal(backlog.next_task_authorized, true);
+  assert.equal(backlog.active_task, null);
+  assert.equal(backlog.last_completed_task, 'P2-002');
+  assert.equal(backlog.next_task_candidate, 'P2-003');
+  assert.equal(backlog.next_task_authorized, false);
   assert.equal(backlog.tasks.find((t) => t.id === 'P2-001').status, 'DONE');
-  assert.equal(backlog.tasks.find((t) => t.id === 'P2-002').status, 'IN_PROGRESS');
+  assert.equal(backlog.tasks.find((t) => t.id === 'P2-002').status, 'DONE');
+  assert.equal(backlog.tasks.find((t) => t.id === 'P2-002').completed_at, '2026-08-30');
+  assert.equal(backlog.tasks.find((t) => t.id === 'P2-002').evidence, 'evidence/p2-002-timeline-projector-report.md');
   assert.equal(backlog.tasks.filter((t) => t.phase === 'P2' && !['P2-001', 'P2-002'].includes(t.id)).every((t) => t.status === 'TODO'), true);
-  assert.deepEqual(backlog.tasks.filter((t) => t.status === 'IN_PROGRESS').map((t) => t.id), ['P2-002']);
+  assert.deepEqual(backlog.tasks.filter((t) => t.status === 'IN_PROGRESS').map((t) => t.id), []);
   assert.equal(backlog.tasks.filter((t) => t.phase === 'P3').every((t) => t.status === 'TODO'), true);
   assert.match(text('evidence/p1-012-project-owner-go-approval.md'), /“我批准了”/u);
   assert.match(text('evidence/p1-012-project-owner-go-approval.md'), /P2.*单独授权/u);
@@ -54,6 +58,25 @@ test('P1 remains complete and only P2-002 is active in P2-A', () => {
   assert.match(text('evidence/p2-002-start-authorization.md'), /项目负责人正式、独立授权启动 P2-002/u);
   assert.match(text('evidence/p2-002-start-authorization.md'), /P2-003 及以后任务、P2-G1 组装和所有生产功能仍须另行授权/u);
   assert.equal(backlog.source_of_truth, 'Unified Ticket Core in this repository');
+});
+
+test('P2-002 completion artifacts and evidence are present', () => {
+  for (const rel of [
+    'contracts/conversation_projection_source.schema.json',
+    'contracts/conversation_projection_checkpoint.schema.json',
+    'contracts/conversation_projection_contracts.d.ts',
+    'database/migrations/011_p2_002_timeline_projector.sql',
+    'docs/38_p2_002_timeline_projector.md',
+    'evidence/p2-002-timeline-projector-report.md',
+    'scripts/p2-002-migrate.mjs',
+    'scripts/p2-002-rebuild.mjs',
+    'src/p2-002-timeline-projector.mjs',
+    'tests/helpers/p2-002-postgres-harness.mjs',
+    'tests/p2-002-timeline-projector.test.mjs',
+    'tests/p2-002-timeline-projector.integration.test.mjs',
+  ]) {
+    assert.equal(fs.existsSync(path.join(root, rel)), true, `${rel} should exist`);
+  }
 });
 
 test('P3 is greenfield and contains no historical ticket program', () => {
@@ -89,16 +112,18 @@ test('P3 gates are source onboarding gates', () => {
   assert.equal(lane.branch, 'phase3/intranet-sources');
 });
 
-test('P2-001 is complete, only P2-002 is active, and all feature flags remain false', () => {
+test('P2-001 and P2-002 are complete, no lane is active, and all feature flags remain false', () => {
   const parallel = json('plans/parallel_workstreams.json');
   assert.equal(parallel.current_phase, 'P2');
-  assert.equal(parallel.last_completed_task, 'P2-001');
-  assert.equal(parallel.active_task, 'P2-002');
-  assert.equal(parallel.active_lane, 'P2-A');
-  assert.equal(parallel.next_task_candidate, 'P2-002');
-  assert.equal(parallel.next_task_authorized, true);
+  assert.equal(parallel.last_completed_task, 'P2-002');
+  assert.equal(parallel.active_task, null);
+  assert.equal(parallel.active_lane, null);
+  assert.equal(parallel.next_task_candidate, 'P2-003');
+  assert.equal(parallel.next_task_authorized, false);
   assert.deepEqual(parallel.authorized_tasks, ['P2-001', 'P2-002']);
-  assert.equal(parallel.implementation_authorization_status, 'P2_002_IN_PROGRESS');
+  assert.equal(parallel.implementation_authorization_status, 'P2_002_DONE_AWAITING_SEPARATE_AUTHORIZATION');
+  assert.equal(parallel.p2_002_completed_at, '2026-08-30');
+  assert.equal(parallel.p2_002_completion_evidence, 'evidence/p2-002-timeline-projector-report.md');
   assert.equal(parallel.assembly_gates.find((gate) => gate.id === 'P2-G1').status, 'NOT_STARTED');
   assert.equal(parallel.assembly_gates.every((gate) => gate.status === 'NOT_STARTED'), true);
   assert.deepEqual(parallel.feature_flags_enabled, []);

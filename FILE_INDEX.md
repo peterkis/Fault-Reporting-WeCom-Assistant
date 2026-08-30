@@ -10,10 +10,11 @@
 - `tasks/master_backlog.json`：精简任务索引。
 - `tasks/ARCH-004_p1_to_p2_phase_transition.md`：P1 → P2 阶段切换任务记录；
 - `tasks/P2-001_conversation_thread_session_contracts.md`：P2-001 契约任务记录；
-- `tasks/P2-002_persistent_timeline_projector.md`：当前 P2-002 投影任务记录；
+- `tasks/P2-002_persistent_timeline_projector.md`：已完成 P2-002 投影任务记录；
 - `evidence/p2-phase-start-authorization.md`：Phase 2 启动及仅授权 P2-001 的负责人 Evidence；
 - `evidence/p2-001-conversation-contracts-report.md`：P2-001 脱敏验证 Evidence；
-- `evidence/p2-002-start-authorization.md`：仅启动 P2-002 的项目负责人独立授权 Evidence。
+- `evidence/p2-002-start-authorization.md`：仅启动 P2-002 的项目负责人独立授权 Evidence；
+- `evidence/p2-002-timeline-projector-report.md`：P2-002 完成验证 Evidence。
 
 ## ADR
 
@@ -40,7 +41,7 @@
 - `CONTEXT.md`：Conversation Center 统一领域语言；
 - `contracts/conversation_thread.schema.json`：Thread 契约；
 - `contracts/conversation_session.schema.json`：Session 契约；
-- `contracts/conversation_item.schema.json`：Item 冻结契约，持久化保留给 P2-002；
+- `contracts/conversation_item.schema.json`：Item 冻结契约；其持久化由 migration 011 实现；
 - `contracts/conversation_contracts.d.ts`：对应 TypeScript 类型；
 - `database/migrations/010_p2_001_conversation_contracts.sql`：Thread/Session 增量迁移；
 - `src/p2-001-conversation-contracts.mjs`：身份、边界、状态、控制模式与稳定错误策略；
@@ -48,12 +49,38 @@
 - `tests/p2-001-conversation-contracts.test.mjs`：Contract/Unit 测试；
 - `tests/p2-001-conversation-contracts.integration.test.mjs`：隔离 PostgreSQL 集成测试。
 
-## P2-002 授权状态
+## P2-002 完成状态
 
-- 当前唯一活动任务：`P2-002 / P2-A / IN_PROGRESS`；
-- `P2-003` 及以后任务与 `P2-G1` 均未授权；
+- P2-002：`DONE`（2026-08-30）；当前无活动任务或 Lane；
+- 下一任务候选 `P2-003` 未授权；`P2-G1` 为 `NOT_STARTED`；
+- P3 未启动；
 - 所有 P2/P3 Feature Flag 保持 `false`；
-- P2-002 实现文件只可在本任务第二个本地提交中加入。
+- 完成状态不等同于生产、临床或 Assembly Gate 验收。
+
+## P2-002 契约、迁移、运行时与测试
+
+- `docs/38_p2_002_timeline_projector.md`：持久 Timeline Projector、Checkpoint 与 Rebuild
+  运行契约；
+- `contracts/conversation_projection_source.schema.json`：隐私裁剪后的 Source Record
+  JSON Schema；
+- `contracts/conversation_projection_checkpoint.schema.json`：全局 Projection Checkpoint
+  安全视图 JSON Schema；
+- `contracts/conversation_projection_contracts.d.ts`：Source、Binding、Checkpoint、Audience、
+  Projector 与 Adapter 类型；
+- `database/migrations/011_p2_002_timeline_projector.sql`：Item、Source Binding 与 Projection
+  Checkpoint 三表增量迁移；
+- `src/p2-002-timeline-projector.mjs`：规范化、Mapper、Projector、Query、Worker 与单 Session
+  Rebuild 运行时；
+- `scripts/p2-002-migrate.mjs`：只应用/检查 migration 011 的受限迁移入口；
+- `scripts/p2-002-rebuild.mjs`：默认 check、显式双重批准 apply 的单 Session Rebuild 入口；
+- `tests/p2-002-timeline-projector.test.mjs`：P2-002 Contract/Unit 测试；
+- `tests/p2-002-timeline-projector.integration.test.mjs`：隔离 PostgreSQL 集成、故障、资源与
+  清理测试；
+- `tests/helpers/p2-002-postgres-harness.mjs`：P2-002 隔离 PostgreSQL 测试环境；
+- `tests/helpers/p2-002-migrate-process-harness.mjs`：迁移 CLI 子进程验证编排；
+- `tests/helpers/p2-002-migrate-child.mjs`：migration 011 独立子进程入口；
+- `tests/helpers/p2-002-worker-process-harness.mjs`：真实 Worker 进程 `SIGKILL`/重启编排；
+- `tests/helpers/p2-002-worker-child.mjs`：受控 Worker 子进程入口。
 
 ## 设计与契约
 

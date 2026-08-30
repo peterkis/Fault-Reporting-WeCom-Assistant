@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 已启动，P2-A 的 P2-001 已完成；项目负责人已正式、独立授权仅启动 P2-002，当前为 `P2-002 / P2-A / IN_PROGRESS`。P2-003 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO`。所有 Feature Flag 默认关闭；其他 Lane 只能读取冻结 Contract。
+> Phase 2 保持 `IN_PROGRESS`，P2-A 的 P2-001 与随后独立授权的 P2-002 均已完成。当前无活动任务或 Lane；P2-003 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO / NOT_STARTED`。所有 Feature Flag 默认关闭；其他 Lane 只能读取冻结 Contract。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -46,8 +46,9 @@ P2-B/P2-C 当前只能读取冻结 Contract，不得启动 fixture 或实现开�
 
 ## P2-002 持久化 Timeline Projector 与可重建投影
 
-- 状态：IN_PROGRESS（2026-08-30，仅本任务获独立授权）
+- 状态：DONE（2026-08-30）
 - 授权 Evidence：`evidence/p2-002-start-authorization.md`
+- 完成 Evidence：`evidence/p2-002-timeline-projector-report.md`
 - Task：`tasks/P2-002_persistent_timeline_projector.md`
 - Lane：P2-A
 - 目标 Gate：P2-G1
@@ -60,7 +61,7 @@ P2-B/P2-C 当前只能读取冻结 Contract，不得启动 fixture 或实现开�
 ### 交付物
 
 - Conversation Item 表和 source binding；
-- Projector Worker；
+- 唯一命名为 `CONVERSATION_TIMELINE` 的 Projector Worker；
 - rebuild 命令；
 - sequence 分配；
 - 内外部可见性；
@@ -83,6 +84,11 @@ P2-B/P2-C 当前只能读取冻结 Contract，不得启动 fixture 或实现开�
 - 原始 Channel Message/Ticket Event 不被修改；
 - 投影可从空表重建；
 - 内部数据不进入外部视图。
+
+上述 P2-002 验收已完成：Contract/Unit 39/39、PostgreSQL Integration 13/13；覆盖真实
+`SIGKILL` 后重启恢复、锁内 stale rebuild race 拒绝、只执行 migration 011 的受限 CLI，
+以及 2,001 Item 的有界批次投影。全仓最终回归数字、资源测量和数据库残留检查以完成
+Evidence 为准。
 
 ### 并行边界
 

@@ -2,10 +2,11 @@
 
 ## 状态
 
-`IN_PROGRESS`（2026-08-30）
+`DONE`（2026-08-30）
 
 项目负责人已通过 `evidence/p2-002-start-authorization.md` 正式、独立授权本任务。
-完成 P2-002 后必须停止；P2-003 及以后任务和 P2-G1 仍须另行授权。
+完成验证见 `evidence/p2-002-timeline-projector-report.md`。P2-002 完成后已停止；当前无
+活动任务或 Lane，P2-003 及以后任务和 P2-G1 仍须另行授权。
 
 ## 输入
 
@@ -24,7 +25,7 @@
 - Channel Message、Ticket Event、Notification Delivery 的只读 Mapper；
 - Communication Message、Handoff Event 的 fixture-only Mapper；
 - 稳定 Canonical Order、Canonical Timeline Hash 和 Projection Variant；
-- Projector、Query Port、Worker 与显式单 Session Rebuild；
+- 唯一 `CONVERSATION_TIMELINE` Projector、Query Port、Worker 与显式单 Session Rebuild；
 - 稳定、无敏感原文的 `CONVERSATION_TIMELINE_*` 错误码。
 
 P2-001 的 Item Type、Sender Kind、Visibility、Thread/Session 唯一性、状态机和控制模式
@@ -77,8 +78,15 @@ Session 通过 PostgreSQL 事务级 advisory lock 分配连续 `sequence_no`，�
 `MAX(sequence_no)+1`。早于现有尾部的增量返回
 `CONVERSATION_TIMELINE_REBUILD_REQUIRED`。
 
-Item、Binding 与 Checkpoint 必须在同一事务提交。Checkpoint 只是扫描优化；丢失或回退
-由 Binding 保证安全重放。提交前终止全部回滚；提交后 ACK 丢失由重放返回既有结果。
+普通增量 `projectBatch` 必须把 Item、Binding 与全局
+`(projector_name, source_stream)` Checkpoint 在同一事务 CAS 提交，且只有该增量路径推进
+Checkpoint。Checkpoint 只是扫描优化；丢失或回退由 Binding 保证安全重放。提交前终止
+全部回滚；提交后 ACK 丢失由重放返回既有结果。
+
+显式单 Session Rebuild 按稳定顺序锁住所涉全局 Checkpoint Key 与目标 Session，但保留
+Checkpoint 原值并返回 `checkpoint_updated=false`。删除前在锁内以当前 Session 的全部
+Binding identity、source hash、privacy 和 retention 控制信封拒绝 stale snapshot；写入后
+必须从持久化 Item/Binding 重读并核验 Canonical Timeline Hash，之后才可提交。
 
 ## Visibility、隐私与留存
 
@@ -102,8 +110,10 @@ Item、Binding 与 Checkpoint 必须在同一事务提交。Checkpoint 只是扫
 - Read-only Mapping：验证 P1 Schema fixture，不修改源表、不安装 Trigger；
 - 回归：架构、P2-001、P1-011、P1-012 和全仓串行测试。
 
-所有关键验收通过后才可将本任务标记 `DONE`。任一关键测试失败时保持
-`IN_PROGRESS`，不得启动 P2-003 或 P2-G1。
+关键验收已经通过：Contract/Unit 39/39、PostgreSQL Integration 13/13；数据库验收包含
+真实 `SIGKILL` 后重启恢复、锁内 stale rebuild race 拒绝、only-011 CLI、2,001 Item
+有界批次，以及隔离数据库清理。全仓最终回归数字、资源测量、Hash 与残留检查只以完成
+Evidence 为准。P2-003 与 P2-G1 未启动。
 
 ## Feature Flag 与资源上限
 
@@ -114,9 +124,7 @@ Redis/Kafka/RabbitMQ/ORM/TypeScript runtime/本地模型/Elasticsearch 或常驻
 ## Evidence
 
 - 启动授权：`evidence/p2-002-start-authorization.md`；
-- 完成验证预留：`evidence/p2-002-timeline-projector-report.md`；
-- 只有全部关键验收通过后才创建完成 Evidence 并把任务状态改为 `DONE`；失败时保留
-  `IN_PROGRESS`，Evidence 必须如实记录失败项和未完成门槛。
+- 完成验证：`evidence/p2-002-timeline-projector-report.md`。
 
 ## Rollback / 关闭方式
 

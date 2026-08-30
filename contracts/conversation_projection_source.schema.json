@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/conversation-projection-source.schema.json",
+  "title": "Conversation Timeline Projection Source Record",
+  "description": "A normalized, privacy-trimmed input to the P2-002 timeline projector. It references an authoritative source fact but does not copy ownership of that fact into Conversation Item.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "projector_name",
+    "projector_version",
+    "source_stream",
+    "source_type",
+    "source_id",
+    "projection_variant",
+    "session_id",
+    "item_type",
+    "sender_kind",
+    "visibility",
+    "text",
+    "safe_content",
+    "occurred_at",
+    "source_ordinal",
+    "source_hash",
+    "privacy_class",
+    "retention_until"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "The normalized projection-source contract version."
+    },
+    "projector_name": {
+      "const": "CONVERSATION_TIMELINE",
+      "description": "The only P2-002 projector identity. A second projector is outside this task's rebuild semantics."
+    },
+    "projector_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$"
+    },
+    "source_stream": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+      "description": "A bounded logical scan stream. It is paired with projector_name for checkpoint identity."
+    },
+    "source_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "enum": [
+        "CHANNEL_MESSAGE",
+        "COMMUNICATION_MESSAGE",
+        "TICKET_EVENT",
+        "DELIVERY",
+        "HANDOFF_EVENT"
+      ]
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "The stable internal primary key of the source fact. A raw provider message identifier is forbidden."
+    },
+    "projection_variant": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+      "description": "Distinguishes independently visible Items produced from one source fact, for example STATUS, EXTERNAL_NOTE, or INTERNAL_NOTE."
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "format": "uuid"
+    },
+    "item_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "enum": [
+        "USER_MESSAGE",
+        "AI_MESSAGE",
+        "AGENT_MESSAGE",
+        "INTERNAL_NOTE",
+        "SYSTEM_EVENT",
+        "TICKET_EVENT",
+        "DELIVERY_STATUS",
+        "HANDOFF_EVENT"
+      ],
+      "description": "The frozen P2-001 Conversation Item type; P2-002 does not change its meaning."
+    },
+    "sender_kind": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16,
+      "enum": [
+        "USER",
+        "AI",
+        "AGENT",
+        "SYSTEM",
+        "TOOL"
+      ],
+      "description": "The frozen P2-001 sender kind; P2-002 does not change its meaning."
+    },
+    "visibility": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16,
+      "enum": [
+        "EXTERNAL",
+        "INTERNAL",
+        "RESTRICTED"
+      ],
+      "description": "The frozen P2-001 visibility. Internal content must never be projected into an EXTERNAL variant."
+    },
+    "text": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 20000,
+      "description": "Privacy-trimmed projection text. The 20,000-character maximum is frozen by conversation_item.schema.json."
+    },
+    "safe_content": {
+      "$ref": "#/$defs/safe_json_object",
+      "description": "A plain, prototype-free JSON object containing only bounded, privacy-trimmed stable fields. Runtime validation must reject Proxy, toJSON, accessors, symbols, and non-plain prototypes before hashing."
+    },
+    "occurred_at": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 35,
+      "format": "date-time"
+    },
+    "source_ordinal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19,
+      "pattern": "^(?:0|[1-9][0-9]{0,18})$",
+      "description": "A canonical non-negative decimal integer string. Runtime validation additionally caps it at PostgreSQL BIGINT maximum and never converts it to JavaScript Number.",
+      "x-maximum-decimal": "9223372036854775807"
+    },
+    "source_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Lowercase SHA-256 of the canonical normalized safe semantic input. source_hash itself and the independently tightening privacy/retention control envelope are excluded."
+    },
+    "privacy_class": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "SENSITIVE_INTERNAL",
+        "PERSONAL",
+        "PATIENT_SENSITIVE",
+        "SECRET"
+      ],
+      "description": "The current P1 privacy vocabulary inherited by the projection."
+    },
+    "retention_until": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 35,
+      "format": "date-time",
+      "description": "The inherited source retention deadline."
+    }
+  },
+  "$defs": {
+    "safe_json_object": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "not": {
+          "enum": [
+            "__proto__",
+            "prototype",
+            "constructor",
+            "toJSON",
+            "raw_payload",
+            "raw_payload_encrypted",
+            "aes_key",
+            "aesKey",
+            "AESKey",
+            "media_url",
+            "mediaUrl",
+            "response_url",
+            "responseUrl",
+            "bot_secret",
+            "botSecret",
+            "database_url",
+            "databaseUrl",
+            "provider_error",
+            "providerError",
+            "raw_provider_error",
+            "provider_error_raw",
+            "userid",
+            "user_id",
+            "chatid",
+            "chat_id",
+            "target_key",
+            "provider_message_id",
+            "operator_id"
+          ]
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/safe_json_value"
+      }
+    },
+    "safe_json_value": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 20000
+        },
+        {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/safe_json_value"
+          }
+        },
+        {
+          "$ref": "#/$defs/safe_json_object"
+        }
+      ]
+    }
+  },
+  "x-source-ranks": {
+    "CHANNEL_MESSAGE": 10,
+    "COMMUNICATION_MESSAGE": 20,
+    "TICKET_EVENT": 30,
+    "DELIVERY": 40,
+    "HANDOFF_EVENT": 50
+  },
+  "x-canonical-order-tuple": [
+    "occurred_at",
+    "source_rank",
+    "source_ordinal",
+    "source_type",
+    "source_id",
+    "projection_variant"
+  ],
+  "x-source-rank-derived-from": "source_type",
+  "x-source-hash-excludes": [
+    "source_hash",
+    "privacy_class",
+    "retention_until"
+  ],
+  "x-source-hash-includes": [
+    "schema_version",
+    "projector_name",
+    "projector_version",
+    "source_stream",
+    "source_type",
+    "source_id",
+    "projection_variant",
+    "session_id",
+    "item_type",
+    "sender_kind",
+    "visibility",
+    "text",
+    "safe_content",
+    "occurred_at",
+    "source_ordinal"
+  ],
+  "x-idempotency-identity": [
+    "projector_name",
+    "source_stream",
+    "source_type",
+    "source_id",
+    "projection_variant",
+    "session_id"
+  ],
+  "x-forbidden-safe-content-properties": [
+    "raw_payload",
+    "AES Key",
+    "media URL",
+    "response_url",
+    "Bot Secret",
+    "database URL",
+    "raw provider error",
+    "raw userid/chatid",
+    "target_key",
+    "provider_message_id",
+    "operator_id"
+  ],
+  "x-business-fact-source": false
+}

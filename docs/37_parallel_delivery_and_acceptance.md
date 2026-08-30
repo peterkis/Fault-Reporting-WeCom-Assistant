@@ -2,18 +2,49 @@
 
 ## 1. 原则
 
-P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-A 的 P2-001 已完成，并已再次正式、独立授权仅启动 P2-002。当前唯一活动任务为 `P2-002 / P2-A / IN_PROGRESS`；P2-003 及以后任务、其他 Lane 实现、P2-G1 组装和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有 Feature Flag 保持默认关闭，本授权不等同于生产、临床或 AI 自动回复批准。
+P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-A 的 P2-001 与随后独立授权的 P2-002 均已完成。当前无活动任务或 Lane；P2-003 及以后任务、其他 Lane 实现、P2-G1 组装和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有 Feature Flag 保持默认关闭，本次完成不等同于生产、临床或 AI 自动回复批准。
 
 ## 2. P2 Lanes
 
-| Lane | 范围 |
-|---|---|
-| P2-A | Conversation Core、Timeline、Realtime Event Log |
-| P2-B | Communication Outbox、Handoff、Workbench |
-| P2-C | Rules、DeepSeek Provider、Context/Memory、Rollout |
-| P2-D | Media/OCR、Incident、Metrics |
+| Lane | 架构范围 | 当前授权 |
+|---|---|---|
+| P2-A | Conversation Core、Timeline、Realtime Event Log | P2-001/P2-002 已完成；当前未激活；P2-003 未授权 |
+| P2-B | Communication Outbox、Handoff、Workbench | 未授权；只读消费冻结 Contract |
+| P2-C | Rules、DeepSeek Provider、Context/Memory、Rollout | 未授权；只读消费冻结 Contract |
+| P2-D | Media/OCR、Incident、Metrics | 未授权；只读消费冻结 Contract |
 
-### P2-G1 Human-only Conversation Center
+### P2-002 独立交付边界
+
+P2-002 只交付可重建的持久 Timeline 读模型：
+
+```text
+read-only Source Fact / future fixture
+→ normalized safe Source Record
+→ Conversation Item + Source Binding
+→ Projection Checkpoint
+```
+
+- migration 010 继续独占 Thread/Session 的权威物理结构；
+- migration 011 只创建 Item、Item Source Binding、Projection Checkpoint 及直接索引/约束；
+- 本任务只存在一个命名为 `CONVERSATION_TIMELINE` 的 Projector；
+- Source Binding 用 Projector、Stream、Source Type/ID、Variant、Session 完整身份保证幂等；
+- 同一 Session 通过数据库 transaction-level advisory lock 分配连续 sequence；
+- 只有增量 `projectBatch` 才把 Checkpoint 与相应 Item/Binding 同事务 CAS 推进；Checkpoint
+  不是事实源；
+- 乱序增量失败为 `CONVERSATION_TIMELINE_REBUILD_REQUIRED`，只能经显式单 Session
+  事务 Rebuild 处理；
+- 单 Session Rebuild 锁住所涉 Checkpoint Key 与 Session，但保留全局 Checkpoint，返回
+  `checkpoint_updated=false`；锁内以完整 Binding identity/hash/privacy/retention fence
+  拒绝 stale snapshot，并在提交前核验持久化 Timeline Hash；
+- Audience 必须显式声明，External/Internal/Restricted 在数据库查询层裁剪；
+- Projector 默认关闭；单 Worker、默认 batch 20、无事务内外部调用。
+
+详细 Contract 和运行协议见 `docs/38_p2_002_timeline_projector.md`。P2-002 已以 39/39
+Contract/Unit 和 13/13 PostgreSQL Integration 完成独立验收，包括真实 `SIGKILL`、stale
+rebuild race、only-011 CLI 与 2,001 Item 有界批次；完整回归数字、资源和残留检查见
+`evidence/p2-002-timeline-projector-report.md`。
+
+### P2-G1 Human-only Conversation Center（NOT_STARTED）
 
 - 实时查看消息；
 - 人工接管、分配和回复；
@@ -21,6 +52,22 @@ P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启�
 - SSE 重连补放；
 - 重复命令不重复发送；
 - AI 全关时完整可用。
+
+P2-G1 需要 P2-001 至 P2-006 的独立任务完成和另行 Assembly 授权。P2-002 通过也不自动
+启动或通过 P2-G1。
+
+### 后续 Contract 消费（均未授权）
+
+- P2-003 可在另行授权后从已提交 Item/sequence 生成独立 Realtime Event Log 和 SSE
+  补放；它不能把 Projection Checkpoint 当作 `Last-Event-ID`，也不能反向拥有 Timeline。
+- P2-004 可在另行授权后提供 Communication Message / Outbox / Delivery 事实，并把
+  P2-002 的 fixture Mapper 替换为真实只读 Adapter；Communication 事务不能绕过 Source
+  Record/Binding，也不能让 Projector 直接调用 WeCom SDK。
+- P2-005/P2-006 只能通过显式 Audience Query Port 读取投影，不得由浏览器参数提升
+  Restricted 权限。
+
+这些消费关系只冻结接口方向，不构成启动 P2-003、P2-004、P2-005、P2-006 或 P2-G1 的
+授权。
 
 ### P2-G2 AI Shadow
 
