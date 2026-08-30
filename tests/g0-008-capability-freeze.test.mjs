@@ -9,7 +9,7 @@ function readWorkspaceFile(relativePath) {
   return readFileSync(resolve(root, relativePath), 'utf8');
 }
 
-test('G0-008 closure keeps the current P1 task pointers and Phase 1 boundaries', () => {
+test('G0-008 closure preserves the completed P1 pointers and keeps P2 gated', () => {
   const currentPhase = JSON.parse(readWorkspaceFile('plans/current_phase.json'));
   const backlog = JSON.parse(readWorkspaceFile('plans/master_backlog.json'));
   const projectSummary = JSON.parse(readWorkspaceFile('project_summary.json'));
@@ -24,31 +24,36 @@ test('G0-008 closure keeps the current P1 task pointers and Phase 1 boundaries',
     .map((id) => backlog.tasks.find((task) => task.id === id));
 
   assert.equal(currentPhase.phase_id, 'P1');
-  assert.equal(currentPhase.status, 'IN_PROGRESS');
-  assert.equal(currentPhase.first_task, 'P1-001');
-  assert.equal(currentPhase.last_completed_task, 'P1-011');
-  assert.equal(currentPhase.active_task, 'P1-012');
-  assert.equal(currentPhase.next_task, null);
+  assert.equal(currentPhase.status, 'DONE');
+  assert.equal(currentPhase.last_completed_task, 'P1-012');
+  assert.equal(currentPhase.active_task, null);
+  assert.equal(currentPhase.next_phase_authorized, false);
+  assert.equal(currentPhase.exit_decision.decision, 'GO');
+  assert.equal(backlog.current_phase, 'P1');
+  assert.equal(backlog.active_task, null);
   assert.equal(g0Task?.status, 'DONE');
   assert.equal(p1Task?.status, 'DONE');
   assert.equal(p1AdapterTask?.status, 'DONE');
   assert.equal(p1InboxTask?.status, 'DONE');
   assert.equal(p1IntakeTask?.status, 'DONE');
   assert.equal(p1OperationsTask?.status, 'DONE');
-  assert.equal(p1E2ETask?.status, 'IN_PROGRESS');
+  assert.equal(p1E2ETask?.status, 'DONE');
   assert.deepEqual(p1E2ETask?.depends_on, ['P1-010', 'P1-011']);
   assert.ok(completedPilotTasks.every((task) => task?.status === 'DONE'));
   assert.ok(g0Task.depends_on.includes('G0-006A'));
-  assert.equal(projectSummary.project.status, 'p1_p1-012_e2e_fault_drill_and_go_no_go_in_progress');
-  assert.equal(projectSummary.project.last_completed_task, 'P1-011');
-  assert.equal(projectSummary.project.active_task, 'P1-012');
+  assert.equal(projectSummary.project.status, 'p1_complete_go_approved_awaiting_p2_authorization');
+  assert.equal(projectSummary.project.last_completed_task, 'P1-012');
+  assert.equal(projectSummary.project.active_task, null);
   assert.equal(projectSummary.project.next_task, null);
   assert.ok(projectSummary.hard_invariants.includes('channel_message_idempotency_required'));
   assert.ok(!projectSummary.hard_invariants.includes('provider_msg_id_unique'));
-  assert.ok(currentPhase.forbidden_before_exit.includes('Hospital Tickets dependency'));
-  assert.ok(currentPhase.forbidden_before_exit.includes('production AI or OCR integration'));
-  assert.ok(currentPhase.allowed_scope.includes('append-only operations audit and encrypted local backup/restore drill'));
-  assert.ok(currentPhase.allowed_scope.includes('outbound-WSS test-group E2E seam, controlled fault drills, and Pilot Go/No-Go evidence'));
+  assert.ok(currentPhase.forbidden_before_exit.includes('real hospital identity connection'));
+  assert.ok(currentPhase.forbidden_before_exit.includes('production AI conversation or automatic reply'));
+  assert.ok(currentPhase.forbidden_before_exit.includes('production OCR'));
+  assert.ok(currentPhase.allowed_scope.includes('P1 closeout documentation and evidence integrity'));
+  assert.ok(currentPhase.forbidden_without_next_phase_authorization.includes('start any P2 or P3 task'));
+  assert.equal(backlog.phases.find(({ id }) => id === 'P2')?.status, 'TODO');
+  assert.equal(backlog.tasks.find(({ id }) => id === 'P2-001')?.status, 'TODO');
 });
 
 test('G0-008 report covers every completed Gate 0 evidence source and retains limits', () => {

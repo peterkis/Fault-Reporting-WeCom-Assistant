@@ -23,7 +23,7 @@
 - 已完成：真实 `.env.pilot` 预检、独立空的本机 `pilot_ticket_core` 数据库创建/连接验证、本机 `GET /healthz` 及 `/tickets` 404 路由边界验证；未记录或输出凭据。
 - 项目负责人确认：当前没有公网 IP，以本机作为 P1-001 受控验收标注。该决定不构成真实公网试点、安全边界、企业微信连通性或临床试点验收。
 - 当时后续限制：交接时 P1-002 尚未获得单独启动授权；项目负责人随后于 2026-08-28 明确要求依据交接文档继续开发 P1-002，该限制已按任务粒度解除。
-- 状态：P1 保持 `IN_PROGRESS`；P1-001 的本机受控验收不替代公网试点验收。
+- 当时状态：P1 保持 `IN_PROGRESS`；P1-001 的本机受控验收不替代公网试点验收。P1 后续已由 P1-012 完成正式收口。
 
 ## P1-002 WeCom SDK Adapter 与标准消息契约
 
@@ -180,10 +180,13 @@
 
 ## P1-012 Phase 1 E2E、故障演练与试点 Go/No-Go
 
-- 状态：IN_PROGRESS（本机受控 E2E 接缝与 PostgreSQL 集成演练已通过；旧版测试群短客户端回执探针、历史非写入显示观察和一次带逐次 HMAC `run_id` 的非写入短回执显示闭环均已完成；完整建单、图片、故障窗口和试点评审待完成）
+- 状态：DONE（GO，2026-08-30；完整技术证据与项目负责人正式批准均已完成）
 - 依赖：P1-010, P1-011
 - 输入：Phase 1 全部交付物、已配置机器人/测试群/allowlist 测试账号、本机 Pilot PostgreSQL 与试点验收指标；主机须可经 DNS、TCP 443、TLS 稳定出站访问企业微信 WSS。
 - 输出：E2E报告、故障演练、性能/安全证据和试点评审结论；真实长连接不要求公网 IP 或公网入站监听。
 - 测试：文字/图片降级、100条突发、断线、数据库/Outbox故障、AI关闭占位场景。
-- 验收：漏单0、重复单0、10秒目标、状态真实、通知可追溯，且有 allowlist 测试账号的测试群真实消息往返与客户端观察；提供方 ACK 或 SDK 成功不能替代客户端观察。HTTP/Webhook 回调、外部 Workbench 或独立公网 Web/API 网关才需要单独公网入口审批；完整证据经项目负责人明确批准后方可进入 Phase 2。
-- 当前结果：`src/p1-012-pilot-e2e.mjs` 将 allowlist 测试账号的真实 WSS callback、受控 Adapter、Inbox→Intake→Ticket→Outbox、显式提供方回执、被动回复和首个 Delivery 接缝组合起来；`scripts/p1-012-live-e2e.mjs` 提供只出站的配置预检、文字/图片测试群运行、WSS 重连、仅本机群 ID 捕获和非写入短回执探针。企业微信[回复消息（101836）](https://developer.work.weixin.qq.com/document/path/101836)要求消息 callback 使用流式或模板卡片回复，因此 P1-012 已固定为完成流式回复并记录数值 `provider_errcode`；不保留 `errmsg`。企业微信[接收消息（101834）](https://developer.work.weixin.qq.com/document/path/101834)显示群聊回调保留首部 `@机器人`，故 `GROUP_REPLY_PROBE` 现同时校验机器人 ID、测试群、测试账号；callback 保留该前缀时只在一个普通 ASCII 空格后的剩余 2–3 字符精确匹配，只有适配层已省略前缀时才接受裸标记。它不建立数据库连接。现场已完成 WSS 重认证、脱敏群 ID 捕获和一次旧版三字符文字回执：Pilot Intake 在 51 ms 内受理、完成流式回复取得 `errcode=0`，测试账号确认客户端显示；该短消息保持 `WAITING_DESCRIPTION`，未创建 Ticket，不能替代明确报修文字回环。旧版字面匹配窗口曾安全超时；修正后的探针现已通过 P1-012 集成 37/37 和全库串行 195/195。早期显示观察源回执早于逐次 HMAC `run_id`，故只保留历史事实；随后已完成带有效 `run_id` 的新一轮真实测试群回环，完成流式回复取得 `provider_errcode=0`、`ACKED`，测试账号确认客户端显示，且 `p1_012_client_display_observed` 以 HMAC 来源关联值独立记录。成功源结果追加与观察的选源、复核及追加共用跨进程证据链独占声明；来源在声明前过期会返回 `P1_012_CLIENT_OBSERVATION_SOURCE_STALE`，竞争 live 探针会在调用被动回复前以 `P1_012_REPLY_PROBE_EVIDENCE_CLAIM_IN_PROGRESS` 失败闭合，故不会产生无源回执；硬超时会释放声明，晚到结果不追加成功源证据。声明记录随机 owner、PID、主机名与创建时间；双重一次性批准、同一主机、至少 60 秒且 owner PID 已确认不存活的受控恢复会先审计 quarantine、删除成功后才审计 removed；删除失败可在阈值后续跑，异常多标记或不可解析状态保持 fail-closed 运维对账。全程没有数据库连接或业务写入。带库受控演练已覆盖重复消息、图片降级、100 条突发、Outbox `RETRY_SCHEDULED` 记录与重试、以及 AI/OCR 关闭。它仍不替代完整文字建单、图片客户端观察、实际群内突发、隔离 PostgreSQL 故障窗口或试点负责人 Go/No-Go 批准。
+- 验收：漏单0、重复单0、10秒目标、状态真实、通知可追溯，且有 allowlist 测试账号的测试群真实消息往返与客户端观察；提供方 ACK 或 SDK 成功不能替代客户端观察。HTTP/Webhook 回调、外部 Workbench 或独立公网 Web/API 网关才需要单独公网入口审批；完整证据和项目负责人 Phase 1 Go 是关闭 P1 的前提，Phase 2 仍须另行单独授权。
+- 实现与历史中间结果：`src/p1-012-pilot-e2e.mjs` 将 allowlist 测试账号的真实 WSS callback、受控 Adapter、Inbox→Intake→Ticket→Outbox、显式提供方回执、被动回复和首个 Delivery 接缝组合起来；`scripts/p1-012-live-e2e.mjs` 提供只出站的配置预检、文字/图片测试群运行、WSS 重连、仅本机群 ID 捕获和非写入短回执探针。企业微信[回复消息（101836）](https://developer.work.weixin.qq.com/document/path/101836)要求消息 callback 使用流式或模板卡片回复，因此 P1-012 已固定为完成流式回复并记录数值 `provider_errcode`；不保留 `errmsg`。企业微信[接收消息（101834）](https://developer.work.weixin.qq.com/document/path/101834)显示群聊回调保留首部 `@机器人`，故 `GROUP_REPLY_PROBE` 现同时校验机器人 ID、测试群、测试账号；callback 保留该前缀时只在一个普通 ASCII 空格后的剩余 2–3 字符精确匹配，只有适配层已省略前缀时才接受裸标记。它不建立数据库连接。现场已完成 WSS 重认证、脱敏群 ID 捕获和一次旧版三字符文字回执：Pilot Intake 在 51 ms 内受理、完成流式回复取得 `errcode=0`，测试账号确认客户端显示；该短消息保持 `WAITING_DESCRIPTION`，未创建 Ticket，不能替代明确报修文字回环。旧版字面匹配窗口曾安全超时；修正后的探针现已通过 P1-012 集成 37/37 和全库串行 195/195。早期显示观察源回执早于逐次 HMAC `run_id`，故只保留历史事实；随后已完成带有效 `run_id` 的新一轮真实测试群回环，完成流式回复取得 `provider_errcode=0`、`ACKED`，测试账号确认客户端显示，且 `p1_012_client_display_observed` 以 HMAC 来源关联值独立记录。成功源结果追加与观察的选源、复核及追加共用跨进程证据链独占声明；来源在声明前过期会返回 `P1_012_CLIENT_OBSERVATION_SOURCE_STALE`，竞争 live 探针会在调用被动回复前以 `P1_012_REPLY_PROBE_EVIDENCE_CLAIM_IN_PROGRESS` 失败闭合，故不会产生无源回执；硬超时会释放声明，晚到结果不追加成功源证据。声明记录随机 owner、PID、主机名与创建时间；双重一次性批准、同一主机、至少 60 秒且 owner PID 已确认不存活的受控恢复会先审计 quarantine、删除成功后才审计 removed；删除失败可在阈值后续跑，异常多标记或不可解析状态保持 fail-closed 运维对账。全程没有数据库连接或业务写入。上述结果在当时仍不能替代完整文字建单、图片客户端观察、实际群内突发、隔离 PostgreSQL 故障窗口或项目负责人批准，相关缺口随后均已按独立证据关闭。
+- 最终收口：明确报修文字的真实建单、客户端回执和 Ticket 事实，真实 mixed 图片降级提示，同一运行内 WSS 重连后文字回环，同一运行内 100 条真实群内突发，以及隔离 PostgreSQL 和实际 Outbox 故障恢复均已完成。最终突发对账为 100 callback、100 唯一消息、100 次目标内受理、0 重复 callback、100 Ticket、零漏单、零重复 Ticket且通知可追溯；历史失败运行保留且未与成功运行拼接。
+- 项目负责人决定：在完整证据结论后于 2026-08-30 明确表示“我批准了”，P1-012 决策为 `GO`，状态为 `DONE`；Phase 1 同步为 `DONE / GO`。正式记录见 `evidence/p1-012-project-owner-go-approval.md`。
+- 后续边界：P2 仍为 `NOT_STARTED`，必须另行获得项目负责人明确授权。本次批准不等同于生产上线、临床生产使用、P2/P3 启动、提交、推送、合并或发布批准。

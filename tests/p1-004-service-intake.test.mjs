@@ -522,6 +522,7 @@ integrationTest('reversed lock acquisition never crosses an explicit new-context
 integrationTest('classifies the documented request types without AI and honors incident negation', async () => {
   const cases = [
     ['INCIDENT', 'RECEIVED', 'HIS 登录失败'],
+    ['INCIDENT', 'RECEIVED', '新报修：测试终端无法登录，请处理'],
     ['SERVICE_REQUEST', 'RECEIVED', '请开通账号并增加权限'],
     ['QUESTION', 'RECEIVED', '请问移动护理怎么使用?'],
     ['COMPLAINT', 'RECEIVED', '投诉:报修后一直没人处理'],

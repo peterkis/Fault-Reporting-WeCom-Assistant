@@ -3,8 +3,9 @@
   "architecture_baseline": "V1.4",
   "canonical_source": "plans/master_backlog.json",
   "current_phase": "P1",
-  "last_completed_task": "P1-011",
-  "active_task": "P1-012",
+  "last_completed_task": "P1-012",
+  "active_task": null,
+  "next_phase_authorized": false,
   "task_files": {
     "G0": "tickets/G0_gate0_tasks.md",
     "P1": "tickets/P1_pilot_tasks.md",
@@ -22,7 +23,7 @@
     "2C4G lightweight deployment is mandatory"
   ],
   "next_tasks": {
-    "current": "P1-012",
+    "current": null,
     "after_p1": [
       "P2-001",
       "P2-003",

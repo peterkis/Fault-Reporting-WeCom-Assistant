@@ -171,9 +171,13 @@ integrationTest('state, Ticket Event, Outbox, and target deliveries commit toget
     },
   });
 
-  const firstRun = await worker.runOnce({ limit: 2 });
+  const [reporterDeliveryId, teamDeliveryId] = accepted.side_effects.delivery_ids;
+  const firstRun = await Promise.all([
+    worker.deliver({ deliveryId: reporterDeliveryId }),
+    worker.deliver({ deliveryId: teamDeliveryId }),
+  ]);
   assert.deepEqual(
-    firstRun.results.map((result) => result.status).sort(),
+    firstRun.map((result) => result.status).sort(),
     ['PENDING', 'SENT'],
   );
   const afterFailure = await pool.query(
@@ -189,8 +193,8 @@ integrationTest('state, Ticket Event, Outbox, and target deliveries commit toget
   ]);
 
   clock += 1_000;
-  const retried = await worker.runOnce({ limit: 2 });
-  assert.deepEqual(retried.results.map((result) => result.status), ['SENT']);
+  const retried = await worker.deliver({ deliveryId: reporterDeliveryId });
+  assert.equal(retried.status, 'SENT');
   assert.deepEqual(sentTargets.sort(), ['reporter-test', 'reporter-test', 'team-test']);
 
   const ticketFact = await pool.query(
@@ -231,15 +235,16 @@ integrationTest('a leased Delivery is not sent twice by concurrent Workers and t
       return { ok: true, providerMessageId: 'single-provider-ack' };
     },
   });
-  const firstWorker = worker.runOnce({ limit: 1 });
+  const deliveryId = accepted.side_effects.delivery_ids[0];
+  const firstWorker = worker.deliver({ deliveryId });
   await senderReachedGate;
-  const secondWorker = await worker.runOnce({ limit: 1 });
+  const secondWorker = await worker.deliver({ deliveryId });
   releaseSend();
   const firstResult = await firstWorker;
 
   assert.equal(sendCount, 1);
-  assert.deepEqual(secondWorker, { processed: 0, results: [] });
-  assert.deepEqual(firstResult.results.map((result) => result.status), ['SENT']);
+  assert.equal(secondWorker, null);
+  assert.equal(firstResult.status, 'SENT');
   assert.equal(accepted.side_effects.delivery_ids.length, 1);
 
   const deadTicket = await seedTicket();
@@ -260,8 +265,8 @@ integrationTest('a leased Delivery is not sent twice by concurrent Workers and t
       throw error;
     },
   });
-  const deadResult = await deadWorker.runOnce({ limit: 1 });
-  assert.deepEqual(deadResult.results.map((result) => result.status), ['DEAD_LETTER']);
+  const deadResult = await deadWorker.deliver({ deliveryId: deadAccepted.side_effects.delivery_ids[0] });
+  assert.equal(deadResult.status, 'DEAD_LETTER');
   const audit = await pool.query(
     `SELECT attempt.outcome, attempt.error_code
        FROM notification.delivery_attempt AS attempt

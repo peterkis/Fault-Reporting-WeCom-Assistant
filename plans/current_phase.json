@@ -4,15 +4,14 @@
   "source_base_commit": "8fcb6c1b6d7552d62ac859760c81ca4fba357626",
   "phase_id": "P1",
   "phase_name": "企业微信外网试点",
-  "status": "IN_PROGRESS",
+  "status": "DONE",
   "started": true,
-  "last_completed_task": "P1-011",
-  "active_task": "P1-012",
+  "last_completed_task": "P1-012",
+  "active_task": null,
+  "next_phase_authorized": false,
   "allowed_scope": [
-    "existing P1-012 live WeCom test-group E2E",
-    "controlled fault drills",
-    "client-visible evidence",
-    "P1 Go/No-Go",
+    "P1 closeout documentation and evidence integrity",
+    "P1 maintenance only under separate authorization",
     "V1.4 documentation and contract-only isolated future work",
     "future-phase simulators with every feature flag disabled"
   ],
@@ -28,6 +27,13 @@
     "shared database integration",
     "historical ticket compatibility scope"
   ],
+  "forbidden_without_next_phase_authorization": [
+    "start any P2 or P3 task",
+    "enable production Conversation Center or AI",
+    "enable production OCR",
+    "connect real hospital identity or intranet sources",
+    "change any P2 or P3 task from TODO"
+  ],
   "exit_gate": [
     "明确报修漏单为 0",
     "同一消息重复建单为 0",
@@ -36,11 +42,18 @@
     "故障、安全和恢复验收通过",
     "项目负责人批准 Go"
   ],
+  "exit_decision": {
+    "decision": "GO",
+    "approved_at": "2026-08-30",
+    "evidence": "evidence/p1-012-project-owner-go-approval.md",
+    "blockers": []
+  },
   "next_phase_after_exit": {
     "phase_id": "P2",
     "phase_name": "Conversation Center 与 AI 协作",
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
-    "first_gate": "P2-G1 Human-only Conversation Center"
+    "first_gate": "P2-G1 Human-only Conversation Center",
+    "activation_status": "NOT_STARTED_REQUIRES_SEPARATE_AUTHORIZATION"
   }
 }

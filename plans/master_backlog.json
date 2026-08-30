@@ -5,7 +5,8 @@
   "baseline_date": "2026-08-30",
   "source_base_commit": "8fcb6c1b6d7552d62ac859760c81ca4fba357626",
   "current_phase": "P1",
-  "active_task": "P1-012",
+  "active_task": null,
+  "next_phase_authorized": false,
   "status_values": [
     "TODO",
     "IN_PROGRESS",
@@ -58,7 +59,9 @@
     {
       "id": "P1",
       "name": "企业微信外网试点",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
+      "completed_at": "2026-08-30",
+      "go_decision": "GO",
       "ticket_backend": "current Pilot Ticket Core compatibility implementation",
       "plan": "plans/phase_1_public_pilot.md",
       "task_file": "tickets/P1_pilot_tasks.md"
@@ -286,7 +289,10 @@
       "id": "P1-012",
       "phase": "P1",
       "title": "Phase 1 E2E、故障演练与试点 Go/No-Go",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
+      "completed_at": "2026-08-30",
+      "decision": "GO",
+      "evidence": "evidence/p1-012-project-owner-go-approval.md",
       "depends_on": [
         "P1-010",
         "P1-011"

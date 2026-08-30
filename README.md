@@ -4,12 +4,12 @@
 
 ## 当前阶段
 
-- 当前仍处于 `P1：企业微信外网试点`；
+- `P1：企业微信外网试点` 已于 2026-08-30 完成并取得项目负责人正式 `GO`；
 - G0 已完成并冻结；
 - P1-001 至 P1-011 保持既有验收结论；
-- P1-012 继续完成真实测试群 E2E、客户端观察、故障演练和 Go/No-Go；
-- V1.4 只调整未来架构、计划、契约和概念 Schema，不表示 P2/P3 已开始；
-- P1-012 退出前，不启用生产 Conversation Center、AI 自动回复、OCR、医院身份连接或内网 Connector。
+- P1-012 已完成真实测试群 E2E、客户端观察、故障演练和 Go/No-Go，状态为 `DONE`；
+- P2 当前为 `NOT_STARTED`，必须另行取得项目负责人明确授权；P1 Go 不自动启动 P2/P3；
+- 本次 Phase 1 Go 不等同于生产上线或临床生产使用批准，不启用生产 Conversation Center、AI 自动回复、OCR、医院身份连接或内网 Connector。
 
 ## V1.4 核心纠偏
 
@@ -57,9 +57,11 @@ Enterprise WeCom
 → Pilot Ticket Core compatibility implementation
 ```
 
-P1 保持零医院内网依赖，继续完成真实企业微信闭环和试点评审。
+P1 保持零医院内网依赖；真实企业微信闭环和试点评审已完成，阶段结论为 `DONE / GO`。
 
 ## Phase 2：Conversation Center 与 AI 协作
+
+P2 尚未启动，必须获得新的独立授权后方可开始。
 
 ```text
 Conversation Thread / Session

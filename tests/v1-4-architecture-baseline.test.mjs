@@ -13,14 +13,26 @@ test('V1.4 architecture validator passes', () => {
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 });
 
-test('P1 remains active and future phases remain gated', () => {
+test('P1 is complete while future phases remain gated pending separate authorization', () => {
   const current = json('plans/current_phase.json');
   const backlog = json('plans/master_backlog.json');
   assert.equal(current.phase_id, 'P1');
-  assert.equal(current.active_task, 'P1-012');
-  assert.equal(backlog.tasks.find((t) => t.id === 'P1-012').status, 'IN_PROGRESS');
-  assert.equal(backlog.tasks.find((t) => t.id === 'P2-001').status, 'TODO');
+  assert.equal(current.status, 'DONE');
+  assert.equal(current.last_completed_task, 'P1-012');
+  assert.equal(current.active_task, null);
+  assert.equal(current.next_phase_authorized, false);
+  assert.deepEqual(current.exit_decision, {
+    decision: 'GO',
+    approved_at: '2026-08-30',
+    evidence: 'evidence/p1-012-project-owner-go-approval.md',
+    blockers: [],
+  });
+  assert.equal(backlog.phases.find((phase) => phase.id === 'P1').status, 'DONE');
+  assert.equal(backlog.tasks.find((t) => t.id === 'P1-012').status, 'DONE');
+  assert.equal(backlog.tasks.filter((t) => t.phase === 'P2').every((t) => t.status === 'TODO'), true);
   assert.equal(backlog.tasks.find((t) => t.id === 'P3-001').status, 'TODO');
+  assert.match(text('evidence/p1-012-project-owner-go-approval.md'), /“我批准了”/u);
+  assert.match(text('evidence/p1-012-project-owner-go-approval.md'), /P2.*单独授权/u);
 });
 
 test('P3 is greenfield and contains no historical ticket program', () => {

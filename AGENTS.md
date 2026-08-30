@@ -5,13 +5,19 @@
 
 `AGENTS.md`、`README.md`、`docs/architecture_baseline_status.md` 和 Accepted ADR 共同构成 V1.4 执行基线。冲突时必须先修正文档或新增 ADR，再实现代码。
 
-当前阶段固定为：
+当前阶段结论固定为：
 
 ```text
-P1 / P1-012 / IN_PROGRESS
+P1 / P1-012 / DONE / GO
 ```
 
-V1.4 不改变 G0/P1 已完成事实，也不授权提前启用 P2/P3。
+下一阶段状态固定为：
+
+```text
+P2 / NOT_STARTED / REQUIRES_SEPARATE_AUTHORIZATION
+```
+
+V1.4 不改变 G0/P1 已完成事实。P1-012 已于 2026-08-30 获项目负责人正式 Go 批准；该批准不等同于生产或临床上线批准，也不授权提前启动 P2/P3。
 
 ## 2. 长期事实源
 
@@ -54,9 +60,11 @@ P1：
 - 不依赖医院 SSO、人员、组织、内网门户、医院 API 或内网 Connector；
 - 不启用生产 AI/OCR；
 - 不启用完整 Conversation Center；
-- 继续完成 P1-012 真实 E2E 和 Go/No-Go。
+- P1-012 真实 E2E 和 Go/No-Go 已完成，Phase 1 结论为 `DONE / GO`。
 
 ### Phase 2：Conversation Center 与 AI 协作
+
+P2 当前未启动，必须获得项目负责人新的、独立的明确授权后方可开始。
 
 P2 必须按以下顺序：
 

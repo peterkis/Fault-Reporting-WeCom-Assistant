@@ -12,6 +12,7 @@ import { applyPilotAccessMigration } from '../src/p1-009-pilot-access-workbench.
 import { applyTicketClosureMigration, createTicketClosureService } from '../src/p1-010-ticket-closure.mjs';
 import { applyPilotOperationsMigration, createPilotOperationalIntake } from '../src/p1-011-pilot-operations-baseline.mjs';
 import { createPilotE2EHandler } from '../src/p1-012-pilot-e2e.mjs';
+import { verifyGroupBurstDatabaseFacts } from '../scripts/p1-012-live-e2e.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
@@ -30,12 +31,12 @@ function textFrame({ testGroupId, triggerToken, msgId, sender }) {
       chatid: testGroupId,
       from: { userid: sender },
       msgtype: 'text',
-      text: { content: `${triggerToken} HIS 登录失败，请报修` },
+      text: { content: `新报修：测试终端无法登录，请处理。 ${triggerToken}` },
     },
   };
 }
 
-function imageFrame({ testGroupId, msgId, sender }) {
+function mixedImageFrame({ testGroupId, triggerToken, msgId, sender }) {
   return {
     cmd: 'aibot_msg_callback',
     headers: { req_id: `req-${msgId}` },
@@ -45,10 +46,18 @@ function imageFrame({ testGroupId, msgId, sender }) {
       chattype: 'group',
       chatid: testGroupId,
       from: { userid: sender },
-      msgtype: 'image',
-      image: {
-        url: 'https://example.test/p1-012-image',
-        aeskey: 'p1-012-e2e-aes-key',
+      msgtype: 'mixed',
+      mixed: {
+        msg_item: [
+          { msgtype: 'text', text: { content: `@p1-012-e2e-bot ${triggerToken}` } },
+          {
+            msgtype: 'image',
+            image: {
+              url: 'https://example.test/p1-012-mixed-image',
+              aeskey: 'p1-012-e2e-mixed-aes-key',
+            },
+          },
+        ],
       },
     },
   };
@@ -200,8 +209,9 @@ integrationTest('P1-012 exercises the real Pilot core under duplicate, image, bu
     assert.equal(replay.core.accepted, true);
     assert.equal(ticketIds.size, 1);
 
-    const imageResult = await imageHandler.handleFrame(imageFrame({
+    const imageResult = await imageHandler.handleFrame(mixedImageFrame({
       testGroupId,
+      triggerToken,
       msgId: `p1-012-image-${randomUUID()}`,
       sender: imageSender,
     }));
@@ -212,11 +222,12 @@ integrationTest('P1-012 exercises the real Pilot core under duplicate, image, bu
       within_target: true,
     });
 
+    const burstMessageIds = [...Array(100)].map((_, index) => `p1-012-burst-${index}-${randomUUID()}`);
     const burstStartedAt = Date.now();
-    const burst = await Promise.all([...Array(100)].map((_, index) => handler.handleFrame(textFrame({
+    const burst = await Promise.all(burstMessageIds.map((msgId, index) => handler.handleFrame(textFrame({
       testGroupId,
       triggerToken,
-      msgId: `p1-012-burst-${index}-${randomUUID()}`,
+      msgId,
       sender: burstSenders[index],
     }))));
     const burstElapsedMs = Date.now() - burstStartedAt;
@@ -225,6 +236,15 @@ integrationTest('P1-012 exercises the real Pilot core under duplicate, image, bu
     assert.equal(burst.every((result) => result.delivery.status === 'SENT'), true);
     assert.ok(burstElapsedMs <= 10_000, `100-message burst took ${burstElapsedMs}ms`);
     assert.equal(ticketIds.size, 101);
+    assert.deepEqual(await verifyGroupBurstDatabaseFacts({ pool, messageIds: burstMessageIds }), {
+      inbox_count: 100,
+      intake_count: 100,
+      ticket_count: 100,
+      outbox_count: 100,
+      delivery_count: 200,
+      tickets_with_invalid_outbox_count: 0,
+      tickets_with_invalid_delivery_count: 0,
+    });
 
     clock = Date.now() + 60_000;
     senderMode = 'failure';

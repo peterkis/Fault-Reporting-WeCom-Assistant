@@ -53,6 +53,38 @@ function imageFrame({
   };
 }
 
+function mixedImageFrame({
+  chatId = TEST_GROUP_ID,
+  content = `@p1-012-bot ${TRIGGER_TOKEN}`,
+  includeImage = true,
+  msgId = 'p1-012-mixed-image-message',
+  sender = TEST_ACCOUNT_USER_ID,
+} = {}) {
+  const msgItem = [{ msgtype: 'text', text: { content } }];
+  if (includeImage) {
+    msgItem.push({
+      msgtype: 'image',
+      image: {
+        url: 'https://example.test/p1-012-mixed-image',
+        aeskey: 'p1-012-test-mixed-aes-key',
+      },
+    });
+  }
+  return {
+    cmd: 'aibot_msg_callback',
+    headers: { req_id: `req-${msgId}` },
+    body: {
+      msgid: msgId,
+      aibotid: 'p1-012-bot',
+      chattype: 'group',
+      chatid: chatId,
+      from: { userid: sender },
+      msgtype: 'mixed',
+      mixed: { msg_item: msgItem },
+    },
+  };
+}
+
 test('P1-012 handles a scoped group text frame through Intake then a safe reply and Delivery', async () => {
   const acceptedRequests = [];
   const replies = [];
@@ -162,6 +194,66 @@ test('P1-012 records an image-degraded Intake without fabricating a Ticket', asy
   assert.equal(replies.length, 1);
   assert.match(replies[0].text.content, /补充/u);
   assert.equal(JSON.stringify(result).includes('p1-012-image-message'), false);
+});
+
+test('P1-012 accepts an addressed group mixed image only when it contains the run token and an image', async () => {
+  const acceptedMessages = [];
+  const replies = [];
+  const handler = createPilotE2EHandler({
+    testGroupId: TEST_GROUP_ID,
+    testAccountUserIds: [TEST_ACCOUNT_USER_ID],
+    triggerToken: TRIGGER_TOKEN,
+    scenario: 'GROUP_IMAGE_DEGRADED',
+    accept: async ({ message }) => {
+      acceptedMessages.push(message);
+      return {
+        ok: true,
+        result: {
+          intake: { status: 'WAITING_DESCRIPTION' },
+          ticket: null,
+          lifecycle: { delivery_ids: [] },
+        },
+      };
+    },
+    reply: async (_frame, body) => {
+      replies.push(body);
+      return { errcode: 0 };
+    },
+  });
+
+  assert.deepEqual(await handler.handleFrame(mixedImageFrame({
+    content: '@p1-012-bot wrong-run-token',
+    msgId: 'p1-012-mixed-wrong-token',
+  })), {
+    outcome: 'ignored',
+    reason: 'TRIGGER_TOKEN_MISMATCH',
+  });
+  assert.deepEqual(await handler.handleFrame(mixedImageFrame({
+    includeImage: false,
+    msgId: 'p1-012-mixed-without-image',
+  })), {
+    outcome: 'ignored',
+    reason: 'SCENARIO_MESSAGE_TYPE_MISMATCH',
+  });
+
+  const result = await handler.handleFrame(mixedImageFrame());
+
+  assert.equal(result.outcome, 'processed');
+  assert.equal(result.scenario, 'GROUP_IMAGE_DEGRADED');
+  assert.deepEqual(result.core, {
+    accepted: true,
+    ticket_created: false,
+    intake_status: 'WAITING_DESCRIPTION',
+    within_target: true,
+  });
+  assert.equal(acceptedMessages.length, 1);
+  assert.equal(acceptedMessages[0].msg_type, 'mixed');
+  assert.deepEqual(acceptedMessages[0].content.map((item) => item.kind), ['text', 'media']);
+  assert.equal(replies.length, 1);
+  assert.match(replies[0].text.content, /补充/u);
+  const serialized = JSON.stringify(result);
+  assert.equal(serialized.includes(TRIGGER_TOKEN), false);
+  assert.equal(serialized.includes('p1-012-mixed-image-message'), false);
 });
 
 test('P1-012 ignores an unscoped group frame without calling any operational seam', async () => {

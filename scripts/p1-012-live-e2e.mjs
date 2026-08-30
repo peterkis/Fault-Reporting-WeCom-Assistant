@@ -28,9 +28,16 @@ const PROBE_OPERATION_CLAIMED = Symbol('p1-012-probe-operation-claimed');
 const PROBE_EVIDENCE_CHAIN_CLAIM = Symbol('p1-012-probe-evidence-chain-claim');
 const SCENARIOS = Object.freeze({
   'group-text': 'GROUP_TEXT',
+  'group-burst-100': 'GROUP_BURST_100',
   'group-image-degraded': 'GROUP_IMAGE_DEGRADED',
   'group-reply-probe': 'GROUP_REPLY_PROBE',
+  'reconnect-group-text': 'RECONNECT_GROUP_TEXT',
   reconnect: 'RECONNECT',
+});
+const GROUP_BURST_EXPECTED_COUNT = 100;
+const CLIENT_OBSERVATION_SCENARIOS = Object.freeze({
+  'group-reply-probe': 'GROUP_REPLY_PROBE',
+  'group-text': 'GROUP_TEXT',
 });
 
 function failure(code) {
@@ -84,6 +91,9 @@ export function parseP1_012LiveArgs(argv) {
   if (argv.length === 0 || (argv.length === 1 && argv[0] === '--check')) {
     return Object.freeze({ mode: 'check' });
   }
+  if (argv.length === 1 && argv[0] === '--record-shared-delivery-reconciliation') {
+    return Object.freeze({ mode: 'shared_delivery_reconciliation' });
+  }
   const recoverReplyProbeClaim = argv.includes('--recover-stale-reply-probe-claim');
   if (recoverReplyProbeClaim) {
     const staleClaimAgeArgument = argv.find((argument) => argument.startsWith('--stale-claim-min-age-ms='));
@@ -120,12 +130,13 @@ export function parseP1_012LiveArgs(argv) {
   const clientObservationArgument = argv.find((argument) => argument.startsWith('--record-client-observation='));
   if (clientObservationArgument) {
     const scenarioArgument = argv.find((argument) => argument.startsWith('--scenario='));
-    if (argv.length !== 2 || !scenarioArgument || scenarioArgument !== '--scenario=group-reply-probe') {
+    const scenario = CLIENT_OBSERVATION_SCENARIOS[scenarioArgument?.slice('--scenario='.length)];
+    if (argv.length !== 2 || !scenarioArgument || !scenario) {
       throw failure('P1_012_LIVE_ARGS');
     }
     return Object.freeze({
       mode: 'client_observation',
-      scenario: 'GROUP_REPLY_PROBE',
+      scenario,
       observation: safeClientDisplayObservation(clientObservationArgument.slice('--record-client-observation='.length)),
     });
   }
@@ -265,6 +276,27 @@ function latestSuccessfulMentionReplyProbeRecord(records) {
   return null;
 }
 
+function isSuccessfulGroupTextRecord(record) {
+  return record?.test_id === TEST_ID
+    && record.event === 'p1_012_live_message_result'
+    && record.scenario === 'GROUP_TEXT'
+    && typeof record.run_id === 'string'
+    && /^[a-f0-9]{32}$/u.test(record.run_id)
+    && record.core?.accepted === true
+    && record.core?.ticket_created === true
+    && record.core?.intake_status === 'TICKET_CREATED'
+    && record.passive_reply?.operation === 'aibot_respond_msg_stream'
+    && record.passive_reply?.acknowledged === true
+    && record.passive_reply?.outcome === 'ACKED';
+}
+
+function latestSuccessfulGroupTextRecord(records) {
+  for (let index = records.length - 1; index >= 0; index -= 1) {
+    if (isSuccessfulGroupTextRecord(records[index])) return records[index];
+  }
+  return null;
+}
+
 function sourceResultHash(record, logIdentityHashKey) {
   return createHmac('sha256', logIdentityHashKey)
     .update(JSON.stringify(record))
@@ -277,6 +309,17 @@ function opaqueReplyProbeRunId(createId, logIdentityHashKey) {
     throw failure('P1_012_REPLY_PROBE_RUN_ID_INVALID');
   }
   const entropy = nonEmpty(createId(), 'P1_012_REPLY_PROBE_RUN_ID_INVALID', 128);
+  return createHmac('sha256', logIdentityHashKey)
+    .update(entropy)
+    .digest('hex')
+    .slice(0, 32);
+}
+
+function opaqueOperationalRunId(createId, logIdentityHashKey) {
+  if (typeof createId !== 'function') {
+    throw failure('P1_012_OPERATIONAL_RUN_ID_INVALID');
+  }
+  const entropy = nonEmpty(createId(), 'P1_012_OPERATIONAL_RUN_ID_INVALID', 128);
   return createHmac('sha256', logIdentityHashKey)
     .update(entropy)
     .digest('hex')
@@ -995,11 +1038,11 @@ async function appendReplyProbeEvidenceRecord({
   }
 }
 
-function clientObservationAlreadyRecorded(records, sourceHash) {
+function clientObservationAlreadyRecorded(records, sourceHash, scenario = 'GROUP_REPLY_PROBE') {
   return records.some((record) => (
     record?.test_id === TEST_ID
     && record.event === 'p1_012_client_display_observed'
-    && record.scenario === 'GROUP_REPLY_PROBE'
+    && record.scenario === scenario
     && record.source_result_hash === sourceHash
   ));
 }
@@ -1323,6 +1366,106 @@ function acceptedLiveResult(result) {
     && result.passive_reply?.acknowledged === true;
 }
 
+function escapedRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+function groupBurstSequenceIndex(frame, triggerToken) {
+  const body = frame?.body;
+  if (frame?.cmd !== 'aibot_msg_callback' || body?.msgtype !== 'text') return null;
+  const content = body.text?.content;
+  if (typeof content !== 'string') return null;
+  const matcher = new RegExp(`(?:^|\\s)${escapedRegExp(triggerToken)}-(\\d{3})(?=\\s|$)`, 'gu');
+  const matches = [...content.matchAll(matcher)];
+  if (matches.length !== 1) return null;
+  const sequenceIndex = Number.parseInt(matches[0][1], 10);
+  return sequenceIndex >= 1 && sequenceIndex <= GROUP_BURST_EXPECTED_COUNT
+    ? sequenceIndex
+    : null;
+}
+
+function groupBurstMessageId(frame) {
+  const messageId = frame?.body?.msgid;
+  return typeof messageId === 'string' && messageId.length >= 1 && messageId.length <= 256
+    ? messageId
+    : null;
+}
+
+function acceptedBurstMessage(result) {
+  return result?.outcome === 'processed'
+    && result.core?.accepted === true
+    && result.core?.ticket_created === true
+    && result.core?.intake_status === 'TICKET_CREATED'
+    && result.core?.within_target === true
+    && result.passive_reply?.acknowledged === true
+    && result.passive_reply?.outcome === 'ACKED'
+    && result.passive_reply?.within_target === true;
+}
+
+export async function verifyGroupBurstDatabaseFacts({ pool, messageIds }) {
+  if (!pool || !Array.isArray(messageIds)
+    || messageIds.length !== GROUP_BURST_EXPECTED_COUNT
+    || new Set(messageIds).size !== GROUP_BURST_EXPECTED_COUNT) {
+    throw failure('P1_012_BURST_FACT_VERIFICATION_FAILED');
+  }
+  const facts = await pool.query(
+    `WITH burst_message_facts AS (
+       SELECT inbox.id AS inbox_id,
+              membership.intake_id,
+              intake.pilot_ticket_id
+         FROM channel.message_inbox AS inbox
+         LEFT JOIN intake.service_intake_message AS membership
+           ON membership.channel_message_id = inbox.id
+         LEFT JOIN intake.service_intake AS intake
+           ON intake.id = membership.intake_id
+        WHERE inbox.provider = 'WECOM_AIBOT'
+          AND inbox.msg_id = ANY($1::text[])
+     ),
+     burst_tickets AS (
+       SELECT DISTINCT pilot_ticket_id
+         FROM burst_message_facts
+        WHERE pilot_ticket_id IS NOT NULL
+     ),
+     notification_counts AS (
+       SELECT burst_tickets.pilot_ticket_id,
+              COUNT(DISTINCT outbox.id)::integer AS outbox_count,
+              COUNT(DISTINCT delivery.id)::integer AS delivery_count
+         FROM burst_tickets
+         LEFT JOIN notification.outbox AS outbox
+           ON outbox.ticket_id = burst_tickets.pilot_ticket_id
+         LEFT JOIN notification.delivery AS delivery
+           ON delivery.outbox_id = outbox.id
+        GROUP BY burst_tickets.pilot_ticket_id
+     )
+     SELECT COUNT(DISTINCT inbox_id)::integer AS inbox_count,
+            COUNT(DISTINCT intake_id)::integer AS intake_count,
+            COUNT(DISTINCT pilot_ticket_id)::integer AS ticket_count,
+            COALESCE((SELECT SUM(outbox_count) FROM notification_counts), 0)::integer AS outbox_count,
+            COALESCE((SELECT SUM(delivery_count) FROM notification_counts), 0)::integer AS delivery_count,
+            (SELECT COUNT(*) FROM notification_counts WHERE outbox_count <> 1)::integer
+              AS tickets_with_invalid_outbox_count,
+            (SELECT COUNT(*) FROM notification_counts WHERE delivery_count <> 2)::integer
+              AS tickets_with_invalid_delivery_count
+       FROM burst_message_facts`,
+    [messageIds],
+  );
+  const row = facts.rows[0] ?? {};
+  const safeCount = (value) => (Number.isSafeInteger(value) && value >= 0 ? value : null);
+  const result = Object.freeze({
+    inbox_count: safeCount(row.inbox_count),
+    intake_count: safeCount(row.intake_count),
+    ticket_count: safeCount(row.ticket_count),
+    outbox_count: safeCount(row.outbox_count),
+    delivery_count: safeCount(row.delivery_count),
+    tickets_with_invalid_outbox_count: safeCount(row.tickets_with_invalid_outbox_count),
+    tickets_with_invalid_delivery_count: safeCount(row.tickets_with_invalid_delivery_count),
+  });
+  if (Object.values(result).some((value) => value === null)) {
+    throw failure('P1_012_BURST_FACT_VERIFICATION_FAILED');
+  }
+  return result;
+}
+
 function createOperationReservation() {
   let active = false;
   let deferredFailureCode = null;
@@ -1425,9 +1568,9 @@ function groupIdCaptureApproved(env) {
 
 /**
  * Records the configured test account's explicit client-side observation only
- * after a completed, mention-prefixed, non-writing reply probe is already in
- * the append-only evidence log. The source record itself remains redacted;
- * this record carries only an HMAC correlation value.
+ * after a qualifying non-writing reply probe or Ticket-creating GROUP_TEXT
+ * result is already in the append-only evidence log. The source record remains
+ * redacted; this record carries only an HMAC correlation value.
  */
 export async function runP1_012ClientObservation({
   env = process.env,
@@ -1437,7 +1580,9 @@ export async function runP1_012ClientObservation({
   readRecords = readEvidenceRecords,
   claimDirectory = defaultClientObservationClaimDirectory(),
 } = {}) {
-  if (!options || options.mode !== 'client_observation' || options.scenario !== 'GROUP_REPLY_PROBE') {
+  if (!options
+    || options.mode !== 'client_observation'
+    || !['GROUP_REPLY_PROBE', 'GROUP_TEXT'].includes(options.scenario)) {
     throw failure('P1_012_LIVE_ARGS');
   }
   const observation = safeClientDisplayObservation(options.observation);
@@ -1445,6 +1590,56 @@ export async function runP1_012ClientObservation({
     throw failure('P1_012_LIVE_APPROVAL_REQUIRED');
   }
   const config = validateP1_012LiveConfig(env);
+  if (options.scenario === 'GROUP_TEXT') {
+    const records = await readRecords(outputPath);
+    const source = latestSuccessfulGroupTextRecord(records);
+    if (source === null) {
+      throw failure('P1_012_CLIENT_OBSERVATION_SOURCE_MISSING');
+    }
+    const sourceHash = sourceResultHash(source, config.logIdentityHashKey);
+    if (clientObservationAlreadyRecorded(records, sourceHash, 'GROUP_TEXT')) {
+      throw failure('P1_012_CLIENT_OBSERVATION_ALREADY_RECORDED');
+    }
+    const record = Object.freeze({
+      test_id: TEST_ID,
+      event: 'p1_012_client_display_observed',
+      ...config.public_summary,
+      scenario: 'GROUP_TEXT',
+      source_result_hash: sourceHash,
+      provider_reply_acknowledged: true,
+      database_write: true,
+      ticket_created: true,
+      intake_status: 'TICKET_CREATED',
+      observer: 'configured_test_account',
+      observation,
+    });
+    const claim = await claimClientObservation(sourceHash, claimDirectory);
+    if (claim === null) {
+      throw failure('P1_012_CLIENT_OBSERVATION_CLAIM_IN_PROGRESS');
+    }
+    try {
+      const currentRecords = await readRecords(outputPath);
+      const currentSource = latestSuccessfulGroupTextRecord(currentRecords);
+      if (currentSource === null) {
+        throw failure('P1_012_CLIENT_OBSERVATION_SOURCE_MISSING');
+      }
+      if (sourceResultHash(currentSource, config.logIdentityHashKey) !== sourceHash) {
+        throw failure('P1_012_CLIENT_OBSERVATION_SOURCE_STALE');
+      }
+      if (clientObservationAlreadyRecorded(currentRecords, sourceHash, 'GROUP_TEXT')) {
+        throw failure('P1_012_CLIENT_OBSERVATION_ALREADY_RECORDED');
+      }
+      try {
+        await appendEvidenceRecord(outputPath, record);
+      } catch {
+        throw failure('P1_012_CLIENT_OBSERVATION_EVIDENCE_WRITE_FAILED');
+      }
+    } finally {
+      await releaseClientObservationClaim(claim);
+    }
+    console.log(JSON.stringify(record));
+    return Object.freeze({ ok: true, scenario: 'GROUP_TEXT', observation });
+  }
   const records = await readRecords(outputPath);
   const source = latestSuccessfulMentionReplyProbeRecord(records);
   if (source === null) {
@@ -1513,6 +1708,92 @@ export async function runP1_012ClientObservation({
   return Object.freeze({ ok: true, scenario: 'GROUP_REPLY_PROBE', observation });
 }
 
+/**
+ * Identifies the two known synthetic ack-* Delivery results produced by the
+ * formerly broad P1-007 test worker. This is a read-only reconciliation: the
+ * immutable Delivery/Attempt history is preserved and explicitly excluded
+ * from real WeCom acceptance evidence.
+ */
+export async function runP1_012SharedDeliveryReconciliation({
+  env = process.env,
+  options,
+  PoolClass = Pool,
+  outputPath = evidencePath(),
+  appendEvidenceRecord = appendEvidence,
+} = {}) {
+  if (!options || options.mode !== 'shared_delivery_reconciliation') {
+    throw failure('P1_012_LIVE_ARGS');
+  }
+  if (!liveApproved(env)) {
+    throw failure('P1_012_LIVE_APPROVAL_REQUIRED');
+  }
+  const config = validateP1_012LiveConfig(env);
+  const pool = new PoolClass({
+    connectionString: config.pilot.pilotDatabaseUrl,
+    max: 1,
+    connectionTimeoutMillis: 5_000,
+  });
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(DISTINCT delivery.id)::integer AS delivery_count,
+              COUNT(DISTINCT outbox.ticket_id)::integer AS ticket_count,
+              COUNT(DISTINCT attempt.id)::integer AS attempt_count,
+              COUNT(*) FILTER (WHERE attempt.outcome = 'RETRY_SCHEDULED')::integer AS retry_attempts,
+              COUNT(*) FILTER (WHERE attempt.outcome = 'SENT'
+                                AND attempt.provider_message_id LIKE 'ack-%')::integer AS synthetic_sent_attempts,
+              COUNT(DISTINCT delivery.id) FILTER (WHERE delivery.channel = 'PILOT_TEAM')::integer AS pilot_team_deliveries,
+              COUNT(DISTINCT delivery.id) FILTER (WHERE delivery.channel = 'WECOM_DIRECT')::integer AS wecom_direct_deliveries,
+              COUNT(DISTINCT delivery.id) FILTER (WHERE delivery.status = 'SENT')::integer AS sent_deliveries
+         FROM notification.delivery AS delivery
+         JOIN notification.outbox AS outbox ON outbox.id = delivery.outbox_id
+         JOIN pilot_ticket.ticket AS ticket ON ticket.id = outbox.ticket_id
+         JOIN intake.service_intake AS intake ON intake.id = ticket.source_intake_id
+         JOIN channel.message_inbox AS inbox ON inbox.id = intake.primary_message_id
+         LEFT JOIN notification.delivery_attempt AS attempt ON attempt.delivery_id = delivery.id
+        WHERE delivery.provider_message_id LIKE 'ack-%'
+          AND inbox.provider = 'WECOM_AIBOT'`,
+    );
+    const row = result.rows[0] ?? {};
+    const expected = row.delivery_count === 2
+      && row.ticket_count === 1
+      && row.attempt_count === 3
+      && row.retry_attempts === 1
+      && row.synthetic_sent_attempts === 2
+      && row.pilot_team_deliveries === 1
+      && row.wecom_direct_deliveries === 1
+      && row.sent_deliveries === 2;
+    if (!expected) {
+      throw failure('P1_012_SHARED_DELIVERY_RECONCILIATION_MISMATCH');
+    }
+    const record = Object.freeze({
+      test_id: TEST_ID,
+      event: 'p1_012_shared_delivery_reconciled',
+      ...config.public_summary,
+      scenario: 'SHARED_DELIVERY_RECONCILIATION',
+      database_mutation: false,
+      synthetic_signature: 'ACK_PREFIX',
+      delivery_count: 2,
+      ticket_count: 1,
+      attempt_count: 3,
+      retry_attempts: 1,
+      synthetic_sent_attempts: 2,
+      channels: Object.freeze({ pilot_team: 1, wecom_direct: 1 }),
+      audit_history_preserved: true,
+      excluded_from_real_wecom_delivery_evidence: true,
+      reconciliation_status: 'IDENTIFIED_AND_EXCLUDED',
+    });
+    try {
+      await appendEvidenceRecord(outputPath, record);
+    } catch {
+      throw failure('P1_012_RECONCILIATION_EVIDENCE_WRITE_FAILED');
+    }
+    console.log(JSON.stringify(record));
+    return Object.freeze({ ok: true, reconciliation_status: 'IDENTIFIED_AND_EXCLUDED' });
+  } finally {
+    await pool.end().catch(() => {});
+  }
+}
+
 export async function runP1_012LiveE2E({
   env = process.env,
   options,
@@ -1525,6 +1806,7 @@ export async function runP1_012LiveE2E({
   cancelTimeout = clearTimeout,
   createRunId = randomUUID,
   claimDirectory = defaultClientObservationClaimDirectory(),
+  verifyBurstFacts = verifyGroupBurstDatabaseFacts,
 } = {}) {
   if (!options || options.mode !== 'live') {
     throw failure('P1_012_LIVE_ARGS');
@@ -1536,7 +1818,17 @@ export async function runP1_012LiveE2E({
   const replyProbeRunId = options.scenario === 'GROUP_REPLY_PROBE'
     ? opaqueReplyProbeRunId(createRunId, config.logIdentityHashKey)
     : null;
-  const usesOperationalStore = options.scenario === 'GROUP_TEXT' || options.scenario === 'GROUP_IMAGE_DEGRADED';
+  const reconnectOnly = options.scenario === 'RECONNECT';
+  const reconnectBeforeMessage = options.scenario === 'RECONNECT_GROUP_TEXT';
+  const burst100 = options.scenario === 'GROUP_BURST_100';
+  const forcesReconnect = reconnectOnly || reconnectBeforeMessage;
+  const usesOperationalStore = options.scenario === 'GROUP_TEXT'
+    || burst100
+    || options.scenario === 'GROUP_IMAGE_DEGRADED'
+    || reconnectBeforeMessage;
+  const operationalRunId = usesOperationalStore
+    ? opaqueOperationalRunId(createRunId, config.logIdentityHashKey)
+    : null;
   const pool = usesOperationalStore
     ? new PoolClass({
       connectionString: config.pilot.pilotDatabaseUrl,
@@ -1549,9 +1841,15 @@ export async function runP1_012LiveE2E({
   let stopping = false;
   let terminalResult = null;
   let terminalCompletion = null;
-  let reconnectExpected = options.scenario === 'RECONNECT';
+  let reconnectExpected = forcesReconnect;
   let authenticatedCount = 0;
+  let postReconnectMessageReady = !reconnectBeforeMessage;
   let evidenceWrites = Promise.resolve();
+  const burstSlots = new Map();
+  const burstMessageIds = new Set();
+  let burstDuplicateCallbacks = 0;
+  let burstStartedAt = null;
+  let burstFinalizing = false;
   const drainEvidenceWrites = async () => {
     let observed;
     do {
@@ -1636,7 +1934,10 @@ export async function runP1_012LiveE2E({
       return terminalCompletion;
     };
     client = createWssClient(Client, config);
-    const handler = options.scenario === 'RECONNECT'
+    const handlerOptions = reconnectBeforeMessage || burst100
+      ? Object.freeze({ ...options, scenario: 'GROUP_TEXT' })
+      : options;
+    const handler = reconnectOnly
       ? null
       : options.scenario === 'GROUP_REPLY_PROBE'
         ? createGroupReplyProbeHandler({
@@ -1655,7 +1956,53 @@ export async function runP1_012LiveE2E({
           onEvidenceChainClaimed: rememberReplyProbeEvidenceChainClaim,
           releaseEvidenceChain: releaseReplyProbeEvidenceChainClaim,
         })
-        : createHandler({ pool, client, config, options, writeEvent });
+        : createHandler({ pool, client, config, options: handlerOptions, writeEvent });
+
+    const maybeFinishBurst = async () => {
+      if (!burst100 || burstFinalizing || terminalResult !== null
+        || burstSlots.size !== GROUP_BURST_EXPECTED_COUNT
+        || [...burstSlots.values()].some((slot) => slot.state !== 'COMPLETED')) return;
+      burstFinalizing = true;
+      try {
+        const results = [...burstSlots.values()].map((slot) => slot.result);
+        const database = await verifyBurstFacts({ pool, messageIds: [...burstMessageIds] });
+        const acceptedCount = results.filter((result) => acceptedBurstMessage(result)).length;
+        const zeroLostTickets = database.ticket_count === GROUP_BURST_EXPECTED_COUNT;
+        const zeroDuplicateTickets = database.inbox_count === GROUP_BURST_EXPECTED_COUNT
+          && database.intake_count === GROUP_BURST_EXPECTED_COUNT
+          && database.ticket_count === GROUP_BURST_EXPECTED_COUNT;
+        const notificationsTraceable = database.outbox_count === GROUP_BURST_EXPECTED_COUNT
+          && database.delivery_count === GROUP_BURST_EXPECTED_COUNT * 2
+          && database.tickets_with_invalid_outbox_count === 0
+          && database.tickets_with_invalid_delivery_count === 0;
+        const passed = acceptedCount === GROUP_BURST_EXPECTED_COUNT
+          && burstMessageIds.size === GROUP_BURST_EXPECTED_COUNT
+          && zeroLostTickets
+          && zeroDuplicateTickets
+          && notificationsTraceable;
+        await writeEvent('p1_012_live_burst_result', {
+          ...config.public_summary,
+          scenario: 'GROUP_BURST_100',
+          run_id: operationalRunId,
+          expected_count: GROUP_BURST_EXPECTED_COUNT,
+          callback_count: burstSlots.size,
+          unique_message_count: burstMessageIds.size,
+          accepted_within_target_count: acceptedCount,
+          duplicate_callback_count: burstDuplicateCallbacks,
+          database,
+          zero_lost_tickets: zeroLostTickets,
+          zero_duplicate_tickets: zeroDuplicateTickets,
+          notifications_traceable: notificationsTraceable,
+          collection_elapsed_ms: Math.max(0, Date.now() - burstStartedAt),
+          outcome: passed ? 'PASSED' : 'FAILED',
+        });
+        await finish(passed
+          ? { ok: true, scenario: 'GROUP_BURST_100' }
+          : { ok: false, error_code: 'P1_012_BURST_ACCEPTANCE_FAILED' });
+      } catch (error) {
+        await fail(error?.code ?? 'P1_012_BURST_FACT_VERIFICATION_FAILED');
+      }
+    };
 
     client.on('authenticated', () => {
       if (stopping) return;
@@ -1665,16 +2012,36 @@ export async function runP1_012LiveE2E({
           ...config.public_summary,
           scenario: options.scenario,
         });
-        if (options.scenario !== 'RECONNECT') return;
+        if (!forcesReconnect) return;
         if (authenticatedCount === 1) {
           try { client.disconnect(); } catch { await fail('WECOM_DISCONNECT_FAILED'); }
           return;
         }
-        await finish({ ok: true, scenario: 'RECONNECT' });
+        if (reconnectOnly) {
+          await finish({ ok: true, scenario: 'RECONNECT' });
+          return;
+        }
+        await writeEvent('p1_012_post_reconnect_message_ready', {
+          ...config.public_summary,
+          scenario: options.scenario,
+          reauthenticated: true,
+        });
+        postReconnectMessageReady = true;
       })().catch(() => { void fail('P1_012_EVIDENCE_WRITE_FAILED'); });
     });
     client.on('message', (frame) => {
       if (handler === null || stopping) return;
+      if (reconnectBeforeMessage && !postReconnectMessageReady) return;
+      const burstIndex = burst100 ? groupBurstSequenceIndex(frame, options.triggerToken) : null;
+      if (burst100 && burstIndex === null) return;
+      if (burst100 && burstSlots.has(burstIndex)) {
+        burstDuplicateCallbacks += 1;
+        return;
+      }
+      if (burst100) {
+        burstSlots.set(burstIndex, { state: 'PROCESSING' });
+        burstStartedAt ??= Date.now();
+      }
       void (async () => {
         let operationClaimed = false;
         let replyProbeEvidenceChainClaim = null;
@@ -1683,6 +2050,7 @@ export async function runP1_012LiveE2E({
           operationClaimed = result[PROBE_OPERATION_CLAIMED] === true;
           replyProbeEvidenceChainClaim = result[PROBE_EVIDENCE_CHAIN_CLAIM] ?? null;
           if (result.outcome === 'ignored') {
+            if (burst100) burstSlots.delete(burstIndex);
             if (!result.probe_diagnostic || terminalResult !== null) return;
             try {
               await writeEvent('p1_012_reply_probe_callback_observed', result.probe_diagnostic);
@@ -1702,13 +2070,30 @@ export async function runP1_012LiveE2E({
             replyProbeEvidenceChainClaim = null;
             return;
           }
+          let evidenceResult = result;
           try {
-            const evidenceResult = result.scenario === 'GROUP_REPLY_PROBE'
+            evidenceResult = result.scenario === 'GROUP_REPLY_PROBE'
               ? {
                 ...result,
                 probe: Object.freeze({ ...result.probe, run_id: replyProbeRunId }),
                 }
-              : result;
+              : reconnectBeforeMessage
+                ? {
+                  ...result,
+                  scenario: 'RECONNECT_GROUP_TEXT',
+                  run_id: operationalRunId,
+                  reconnect: Object.freeze({ reauthenticated_before_callback: true }),
+                }
+              : burst100
+                ? {
+                  ...result,
+                  scenario: 'GROUP_BURST_100',
+                  sequence_index: burstIndex,
+                  run_id: operationalRunId,
+                }
+              : usesOperationalStore
+                ? { ...result, run_id: operationalRunId }
+                : result;
             await writeEvent('p1_012_live_message_result', evidenceResult, {
               replyProbeEvidenceChainClaim,
             });
@@ -1727,9 +2112,20 @@ export async function runP1_012LiveE2E({
             return;
           }
           if (terminalResult !== null) return;
+          if (burst100) {
+            const messageId = groupBurstMessageId(frame);
+            if (messageId === null || burstMessageIds.has(messageId)) {
+              await fail('P1_012_BURST_MESSAGE_ID_INVALID');
+              return;
+            }
+            burstMessageIds.add(messageId);
+            burstSlots.set(burstIndex, { state: 'COMPLETED', result: evidenceResult });
+            await maybeFinishBurst();
+            return;
+          }
           await finish({
-            ok: acceptedLiveResult(result),
-            scenario: result.scenario,
+            ok: acceptedLiveResult(evidenceResult),
+            scenario: evidenceResult.scenario,
           });
         } catch (error) {
           await releaseReplyProbeEvidenceChainClaim(replyProbeEvidenceChainClaim);
@@ -1750,6 +2146,10 @@ export async function runP1_012LiveE2E({
         });
         if (reconnectExpected && authenticatedCount === 1) {
           reconnectExpected = false;
+          await writeEvent('p1_012_wss_reconnect_requested', {
+            ...config.public_summary,
+            scenario: options.scenario,
+          });
           setTimeout(() => {
             if (stopping) return;
             try { client.connect(); } catch { void fail('WECOM_RECONNECT_FAILED'); }
@@ -1986,9 +2386,11 @@ async function main() {
       ? await runP1_012GroupIdCapture({ options })
       : options.mode === 'client_observation'
         ? await runP1_012ClientObservation({ options })
-        : options.mode === 'recover_reply_probe_evidence_claim'
-          ? await runP1_012ReplyProbeEvidenceChainRecovery({ options })
-        : await runP1_012LiveE2E({ options });
+        : options.mode === 'shared_delivery_reconciliation'
+          ? await runP1_012SharedDeliveryReconciliation({ options })
+          : options.mode === 'recover_reply_probe_evidence_claim'
+            ? await runP1_012ReplyProbeEvidenceChainRecovery({ options })
+            : await runP1_012LiveE2E({ options });
     if (!result.ok) {
       console.log(JSON.stringify({
         test_id: TEST_ID,

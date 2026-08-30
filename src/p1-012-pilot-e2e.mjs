@@ -78,6 +78,11 @@ function contentIncludesTrigger(frame, triggerToken) {
   return false;
 }
 
+function mixedContainsImage(frame) {
+  return Array.isArray(frame?.body?.mixed?.msg_item)
+    && frame.body.mixed.msg_item.some((item) => item?.msgtype === 'image');
+}
+
 function scopeResult(frame, { testGroupId, testAccountUserIds, triggerToken, scenario }) {
   const body = frame?.body;
   if (!isRecord(body) || frame?.cmd !== 'aibot_msg_callback') {
@@ -93,9 +98,13 @@ function scopeResult(frame, { testGroupId, testAccountUserIds, triggerToken, sce
     return { outcome: 'ignored', reason: 'TEST_ACCOUNT_MISMATCH' };
   }
   if (scenario === GROUP_IMAGE_DEGRADED) {
-    return body.msgtype === 'image'
+    if (body.msgtype === 'image') return null;
+    if (body.msgtype !== 'mixed' || !mixedContainsImage(frame)) {
+      return { outcome: 'ignored', reason: 'SCENARIO_MESSAGE_TYPE_MISMATCH' };
+    }
+    return contentIncludesTrigger(frame, triggerToken)
       ? null
-      : { outcome: 'ignored', reason: 'SCENARIO_MESSAGE_TYPE_MISMATCH' };
+      : { outcome: 'ignored', reason: 'TRIGGER_TOKEN_MISMATCH' };
   }
   if (!['text', 'mixed'].includes(body.msgtype)) {
     return { outcome: 'ignored', reason: 'SCENARIO_MESSAGE_TYPE_MISMATCH' };

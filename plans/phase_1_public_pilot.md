@@ -1,6 +1,6 @@
 # Phase 1：企业微信外网试点
 
-- 当前状态：`IN_PROGRESS`；P1-001 已完成本机受控验收，P1-002 已完成本地 Contract 验收，P1-003 至 P1-011 已完成 Channel Message Inbox、Service Intake、Pilot Ticket Core、Action/事件、Outbox/Delivery、首回执、Pilot 权限工作台、关闭重开、安全/可观测性和加密备份恢复基线的本机 PostgreSQL 集成验收。P1-012 已开始建立真实测试群 E2E 与 Go/No-Go 接缝；没有公网 IP 不阻塞企业微信出站 WSS 长连接，但注入式 sender/合成卡片仍不构成真实客户端可见或临床试点证据。
+- 当前状态：`DONE / GO`。P1-001 至 P1-011 保持既有验收结论；P1-012 已完成真实测试群文字建单与客户端回执、图片降级、重连后文字回环、同一运行内 100 条真实群内突发、隔离 PostgreSQL/实际 Outbox 故障恢复及全量自动化对账，并于 2026-08-30 获项目负责人正式 Go 批准。该批准不等同于生产或临床上线批准，不自动授权 Phase 2。
 
 ## 阶段目标
 
@@ -47,7 +47,7 @@ Enterprise WeCom
 | P1-009 | 最小处理端与 Pilot 权限 | P1-006 | DONE（本机 PostgreSQL 集成验收） |
 | P1-010 | 补充、解决确认、关闭与重开 | P1-008, P1-009 | DONE（本机 PostgreSQL 集成验收） |
 | P1-011 | Pilot 安全、可观测性与运维基线 | P1-007 | DONE（本机 PostgreSQL 集成与加密恢复演练） |
-| P1-012 | Phase 1 E2E、故障演练与试点 Go/No-Go | P1-010, P1-011 | IN_PROGRESS（真实客户端观察待完成） |
+| P1-012 | Phase 1 E2E、故障演练与试点 Go/No-Go | P1-010, P1-011 | DONE（GO，2026-08-30） |
 
 ## 退出条件
 
@@ -58,3 +58,5 @@ Enterprise WeCom
 - 依赖故障有可验证降级；
 - 试点安全与运行验收通过；若启用公网入口，另有边缘安全验收；
 - 形成 Phase 1 试点评审结论。
+
+上述退出条件已全部满足，Phase 1 结论为 `GO`。正式批准见 `evidence/p1-012-project-owner-go-approval.md`。Phase 2 仍为 `NOT_STARTED`，必须另行明确授权。

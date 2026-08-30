@@ -1,7 +1,8 @@
 {
   "version": "1.4.0",
   "current_phase": "P1",
-  "rule": "Future lanes may develop contracts and simulators while P1 is active, but production flags and real integrations remain disabled. P3 is greenfield and has no historical-ticket work.",
+  "next_phase_authorized": false,
+  "rule": "P1 is complete with Go approval, but P2 has not started and still requires separate authorization. Future lanes remain contract/simulator-only with production flags and real integrations disabled. P3 is greenfield and has no historical-ticket work.",
   "migration_number_reservations": {
     "P2-A": "010-019",
     "P2-B": "020-029",

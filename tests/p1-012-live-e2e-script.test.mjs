@@ -14,6 +14,7 @@ import {
   runP1_012ClientObservation,
   runP1_012GroupIdCapture,
   runP1_012LiveE2E,
+  runP1_012SharedDeliveryReconciliation,
   validateP1_012LiveConfig,
 } from '../scripts/p1-012-live-e2e.mjs';
 
@@ -59,6 +60,39 @@ class FakeReconnectClient extends EventEmitter {
   }
 }
 
+class FakeReconnectGroupTextClient extends EventEmitter {
+  constructor(options) {
+    super();
+    this.options = options;
+    this.connectCount = 0;
+  }
+
+  connect() {
+    this.connectCount += 1;
+    const connectCount = this.connectCount;
+    queueMicrotask(() => {
+      this.emit('authenticated');
+      const emitMessage = () => this.emit('message', {
+        cmd: 'aibot_msg_callback',
+        body: {
+          chattype: 'group',
+          chatid: 'p1-012-test-group',
+          from: { userid: 'p1-012-test-account' },
+          msgid: connectCount === 1 ? 'p1-012-before-reconnect' : 'p1-012-after-reconnect',
+          msgtype: 'text',
+          text: { content: 'p1-012-reconnect-text-token' },
+        },
+      });
+      if (connectCount === 1) queueMicrotask(emitMessage);
+      else setTimeout(emitMessage, 10);
+    });
+  }
+
+  disconnect() {
+    queueMicrotask(() => this.emit('disconnected'));
+  }
+}
+
 class FakeTransientReconnectClient extends EventEmitter {
   constructor(options) {
     super();
@@ -89,6 +123,35 @@ class FakeTransientReconnectClient extends EventEmitter {
           }));
         });
       });
+    });
+  }
+
+  disconnect() {}
+}
+
+class FakeGroupBurstClient extends EventEmitter {
+  constructor(options) {
+    super();
+    this.options = options;
+  }
+
+  connect() {
+    queueMicrotask(() => {
+      this.emit('authenticated');
+      for (let index = 1; index <= 100; index += 1) {
+        const sequence = String(index).padStart(3, '0');
+        queueMicrotask(() => this.emit('message', {
+          cmd: 'aibot_msg_callback',
+          body: {
+            chattype: 'group',
+            chatid: 'p1-012-test-group',
+            from: { userid: 'p1-012-test-account' },
+            msgid: `p1-012-burst-message-${sequence}`,
+            msgtype: 'text',
+            text: { content: `@test-bot P1012-BURST-TEST-${sequence}` },
+          },
+        }));
+      }
     });
   }
 
@@ -542,12 +605,37 @@ test('P1-012 accepts only an explicit check or approved live scenario', () => {
     { mode: 'live', scenario: 'GROUP_REPLY_PROBE', triggerToken: 'p12', timeoutMs: 120_000 },
   );
   assert.deepEqual(
+    parseP1_012LiveArgs([
+      '--live',
+      '--scenario=reconnect-group-text',
+      '--trigger-token=p1-012-reconnect-text-token',
+    ]),
+    {
+      mode: 'live',
+      scenario: 'RECONNECT_GROUP_TEXT',
+      triggerToken: 'p1-012-reconnect-text-token',
+      timeoutMs: 120_000,
+    },
+  );
+  assert.deepEqual(
     parseP1_012LiveArgs(['--capture-test-group-id', '--apply', '--trigger-token=p1-012-capture-token']),
     { mode: 'capture_group_id', triggerToken: 'p1-012-capture-token', timeoutMs: 120_000 },
   );
   assert.deepEqual(
     parseP1_012LiveArgs(['--record-client-observation=VISIBLE', '--scenario=group-reply-probe']),
     { mode: 'client_observation', scenario: 'GROUP_REPLY_PROBE', observation: 'VISIBLE' },
+  );
+  assert.deepEqual(
+    parseP1_012LiveArgs(['--record-client-observation=VISIBLE', '--scenario=group-text']),
+    { mode: 'client_observation', scenario: 'GROUP_TEXT', observation: 'VISIBLE' },
+  );
+  assert.deepEqual(
+    parseP1_012LiveArgs(['--record-shared-delivery-reconciliation']),
+    { mode: 'shared_delivery_reconciliation' },
+  );
+  assert.deepEqual(
+    parseP1_012LiveArgs(['--live', '--scenario=group-burst-100', '--trigger-token=P1012-BURST-TEST']),
+    { mode: 'live', scenario: 'GROUP_BURST_100', triggerToken: 'P1012-BURST-TEST', timeoutMs: 120_000 },
   );
   assert.deepEqual(
     parseP1_012LiveArgs([
@@ -574,7 +662,7 @@ test('P1-012 accepts only an explicit check or approved live scenario', () => {
     /P1_012_LIVE_ARGS/u,
   );
   assert.throws(
-    () => parseP1_012LiveArgs(['--record-client-observation=VISIBLE', '--scenario=group-text']),
+    () => parseP1_012LiveArgs(['--record-client-observation=VISIBLE', '--scenario=group-image-degraded']),
     /P1_012_LIVE_ARGS/u,
   );
   assert.throws(
@@ -1438,6 +1526,156 @@ test('P1-012 records a visible client observation only for the latest successful
   }
 });
 
+test('P1-012 records one HMAC-linked client observation for a successful Ticket-creating group text', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'p1-012-group-text-observation-'));
+  const outputPath = join(directory, 'evidence.jsonl');
+  const claimDirectory = join(directory, 'claims');
+  const options = parseP1_012LiveArgs([
+    '--record-client-observation=VISIBLE',
+    '--scenario=group-text',
+  ]);
+  const source = {
+    test_id: 'P1-012',
+    event: 'p1_012_live_message_result',
+    outcome: 'processed',
+    scenario: 'GROUP_TEXT',
+    run_id: 'a'.repeat(32),
+    core: {
+      accepted: true,
+      ticket_created: true,
+      intake_status: 'TICKET_CREATED',
+      within_target: true,
+    },
+    passive_reply: {
+      operation: 'aibot_respond_msg_stream',
+      attempted: true,
+      acknowledged: true,
+      provider_errcode: 0,
+      outcome: 'ACKED',
+      within_target: true,
+    },
+    delivery: { attempted: true, status: 'SENT' },
+  };
+  try {
+    await writeFile(outputPath, `${JSON.stringify(source)}\n`, 'utf8');
+    assert.deepEqual(
+      await runP1_012ClientObservation({
+        env: liveEnvironment({ P1_012_LIVE_TEST_APPROVED: 'true' }),
+        options,
+        outputPath,
+        claimDirectory,
+      }),
+      { ok: true, scenario: 'GROUP_TEXT', observation: 'VISIBLE' },
+    );
+    const records = (await readFile(outputPath, 'utf8'))
+      .trim()
+      .split(/\r?\n/u)
+      .map((line) => JSON.parse(line));
+    const observation = records.at(-1);
+    assert.deepEqual(observation, {
+      test_id: 'P1-012',
+      event: 'p1_012_client_display_observed',
+      phase: 'P1',
+      environment: 'development',
+      public_listener_required: false,
+      ai_triage_enabled: false,
+      ocr_enabled: false,
+      hospital_tickets_enabled: false,
+      scenario: 'GROUP_TEXT',
+      source_result_hash: observation.source_result_hash,
+      provider_reply_acknowledged: true,
+      database_write: true,
+      ticket_created: true,
+      intake_status: 'TICKET_CREATED',
+      observer: 'configured_test_account',
+      observation: 'VISIBLE',
+    });
+    assert.match(observation.source_result_hash, /^[a-f0-9]{32}$/u);
+    assert.equal(JSON.stringify(observation).includes('a'.repeat(32)), false);
+    await assert.rejects(
+      () => runP1_012ClientObservation({
+        env: liveEnvironment({ P1_012_LIVE_TEST_APPROVED: 'true' }),
+        options,
+        outputPath,
+        claimDirectory,
+      }),
+      /P1_012_CLIENT_OBSERVATION_ALREADY_RECORDED/u,
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('P1-012 reconciles the exact synthetic shared Delivery footprint without mutating database facts', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'p1-012-delivery-reconciliation-'));
+  const outputPath = join(directory, 'evidence.jsonl');
+  class ReconciliationPool {
+    constructor(options) {
+      assert.equal(options.max, 1);
+      this.ended = false;
+    }
+
+    async query(sql) {
+      assert.match(sql, /delivery\.provider_message_id LIKE 'ack-%'/u);
+      assert.match(sql, /inbox\.provider = 'WECOM_AIBOT'/u);
+      return {
+        rows: [{
+          delivery_count: 2,
+          ticket_count: 1,
+          attempt_count: 3,
+          retry_attempts: 1,
+          synthetic_sent_attempts: 2,
+          pilot_team_deliveries: 1,
+          wecom_direct_deliveries: 1,
+          sent_deliveries: 2,
+        }],
+      };
+    }
+
+    async end() {
+      this.ended = true;
+    }
+  }
+  try {
+    assert.deepEqual(
+      await runP1_012SharedDeliveryReconciliation({
+        env: liveEnvironment({ P1_012_LIVE_TEST_APPROVED: 'true' }),
+        options: parseP1_012LiveArgs(['--record-shared-delivery-reconciliation']),
+        PoolClass: ReconciliationPool,
+        outputPath,
+      }),
+      { ok: true, reconciliation_status: 'IDENTIFIED_AND_EXCLUDED' },
+    );
+    const records = (await readFile(outputPath, 'utf8')).trim().split(/\r?\n/u).map((line) => JSON.parse(line));
+    assert.equal(records.length, 1);
+    assert.deepEqual(records[0], {
+      test_id: 'P1-012',
+      event: 'p1_012_shared_delivery_reconciled',
+      phase: 'P1',
+      environment: 'development',
+      public_listener_required: false,
+      ai_triage_enabled: false,
+      ocr_enabled: false,
+      hospital_tickets_enabled: false,
+      scenario: 'SHARED_DELIVERY_RECONCILIATION',
+      database_mutation: false,
+      synthetic_signature: 'ACK_PREFIX',
+      delivery_count: 2,
+      ticket_count: 1,
+      attempt_count: 3,
+      retry_attempts: 1,
+      synthetic_sent_attempts: 2,
+      channels: { pilot_team: 1, wecom_direct: 1 },
+      audit_history_preserved: true,
+      excluded_from_real_wecom_delivery_evidence: true,
+      reconciliation_status: 'IDENTIFIED_AND_EXCLUDED',
+    });
+    assert.equal(JSON.stringify(records).includes('database-secret'), false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('P1-012 serializes concurrent client observations for one reply-probe source', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'p1-012-client-observation-claim-'));
   const outputPath = join(directory, 'evidence.jsonl');
@@ -2109,6 +2347,192 @@ test('P1-012 requires one-process approval and records an outbound-WSS reconnect
     assert.match(evidence, /"public_listener_required":false/u);
     assert.equal(evidence.includes('database-secret'), false);
     assert.equal(evidence.includes('wecom-secret-for-p1-012-test'), false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('P1-012 forces reauthentication before accepting one scoped group-text callback', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'p1-012-reconnect-group-text-'));
+  const outputPath = join(directory, 'evidence.jsonl');
+  const handledFrames = [];
+  try {
+    const result = await runP1_012LiveE2E({
+      env: liveEnvironment({ P1_012_LIVE_TEST_APPROVED: 'true' }),
+      options: parseP1_012LiveArgs([
+        '--live',
+        '--scenario=reconnect-group-text',
+        '--trigger-token=p1-012-reconnect-text-token',
+        '--timeout-ms=10000',
+      ]),
+      Client: FakeReconnectGroupTextClient,
+      PoolClass: FakePool,
+      outputPath,
+      createHandler: ({ options }) => {
+        assert.equal(options.scenario, 'GROUP_TEXT');
+        return {
+          async handleFrame(frame) {
+            handledFrames.push(frame);
+            return {
+              outcome: 'processed',
+              scenario: 'GROUP_TEXT',
+              core: { accepted: true, ticket_created: true, intake_status: 'TICKET_CREATED', within_target: true },
+              passive_reply: { acknowledged: true, outcome: 'ACKED', within_target: true },
+              delivery: { attempted: true, status: 'SENT' },
+            };
+          },
+        };
+      },
+    });
+
+    assert.deepEqual(result, { ok: true, scenario: 'RECONNECT_GROUP_TEXT' });
+    assert.equal(handledFrames.length, 1);
+    assert.equal(handledFrames[0].body.msgid, 'p1-012-after-reconnect');
+    const records = (await readFile(outputPath, 'utf8'))
+      .trim()
+      .split(/\r?\n/u)
+      .map((line) => JSON.parse(line));
+    const events = records.map((record) => record.event);
+    assert.ok(events.indexOf('p1_012_live_e2e_ready') < events.indexOf('p1_012_wss_disconnected'));
+    assert.ok(events.indexOf('p1_012_wss_disconnected') < events.indexOf('p1_012_wss_reconnect_requested'));
+    assert.ok(events.indexOf('p1_012_wss_reconnect_requested') < events.indexOf('p1_012_wss_reauthenticated'));
+    assert.ok(events.indexOf('p1_012_wss_reauthenticated') < events.indexOf('p1_012_post_reconnect_message_ready'));
+    assert.ok(events.indexOf('p1_012_post_reconnect_message_ready') < events.indexOf('p1_012_live_message_result'));
+    const messageResult = records.find((record) => record.event === 'p1_012_live_message_result');
+    assert.equal(messageResult.scenario, 'RECONNECT_GROUP_TEXT');
+    assert.equal(messageResult.reconnect.reauthenticated_before_callback, true);
+    assert.equal(JSON.stringify(records).includes('p1-012-before-reconnect'), false);
+    assert.equal(JSON.stringify(records).includes('p1-012-after-reconnect'), false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('P1-012 completes a strictly sequenced 100-message live burst only after database fact reconciliation', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'p1-012-group-burst-'));
+  const outputPath = join(directory, 'evidence.jsonl');
+  const handledMessageIds = new Set();
+  try {
+    const result = await runP1_012LiveE2E({
+      env: liveEnvironment({ P1_012_LIVE_TEST_APPROVED: 'true' }),
+      options: parseP1_012LiveArgs([
+        '--live',
+        '--scenario=group-burst-100',
+        '--trigger-token=P1012-BURST-TEST',
+      ]),
+      Client: FakeGroupBurstClient,
+      PoolClass: FakePool,
+      outputPath,
+      createRunId: () => 'group-burst-run-entropy',
+      createHandler: ({ options }) => {
+        assert.equal(options.scenario, 'GROUP_TEXT');
+        return {
+          async handleFrame(frame) {
+            handledMessageIds.add(frame.body.msgid);
+            return {
+              outcome: 'processed',
+              scenario: 'GROUP_TEXT',
+              core: { accepted: true, ticket_created: true, intake_status: 'TICKET_CREATED', within_target: true },
+              passive_reply: { acknowledged: true, outcome: 'ACKED', within_target: true },
+              delivery: { attempted: true, status: 'PENDING' },
+            };
+          },
+        };
+      },
+      verifyBurstFacts: async ({ messageIds }) => {
+        assert.equal(messageIds.length, 100);
+        assert.equal(new Set(messageIds).size, 100);
+        return {
+          inbox_count: 100,
+          intake_count: 100,
+          ticket_count: 100,
+          outbox_count: 100,
+          delivery_count: 200,
+          tickets_with_invalid_outbox_count: 0,
+          tickets_with_invalid_delivery_count: 0,
+        };
+      },
+    });
+
+    assert.deepEqual(result, { ok: true, scenario: 'GROUP_BURST_100' });
+    assert.equal(handledMessageIds.size, 100);
+    const records = (await readFile(outputPath, 'utf8'))
+      .trim()
+      .split(/\r?\n/u)
+      .map((line) => JSON.parse(line));
+    const messageResults = records.filter((record) => (
+      record.event === 'p1_012_live_message_result' && record.scenario === 'GROUP_BURST_100'
+    ));
+    assert.equal(messageResults.length, 100);
+    assert.deepEqual(messageResults.map((record) => record.sequence_index).sort((left, right) => left - right),
+      Array.from({ length: 100 }, (_, index) => index + 1));
+    const burstResult = records.find((record) => record.event === 'p1_012_live_burst_result');
+    assert.equal(burstResult.outcome, 'PASSED');
+    assert.equal(burstResult.accepted_within_target_count, 100);
+    assert.equal(burstResult.zero_lost_tickets, true);
+    assert.equal(burstResult.zero_duplicate_tickets, true);
+    assert.equal(burstResult.notifications_traceable, true);
+    assert.match(burstResult.run_id, /^[a-f0-9]{32}$/u);
+    const serialized = JSON.stringify(records);
+    assert.equal(serialized.includes('p1-012-burst-message-'), false);
+    assert.equal(serialized.includes('P1012-BURST-TEST'), false);
+    assert.equal(serialized.includes('group-burst-run-entropy'), false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('P1-012 burst fails closed when global notification totals mask per-ticket gaps', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'p1-012-group-burst-notification-gap-'));
+  const outputPath = join(directory, 'evidence.jsonl');
+  try {
+    const result = await runP1_012LiveE2E({
+      env: liveEnvironment({ P1_012_LIVE_TEST_APPROVED: 'true' }),
+      options: parseP1_012LiveArgs([
+        '--live',
+        '--scenario=group-burst-100',
+        '--trigger-token=P1012-BURST-TEST',
+      ]),
+      Client: FakeGroupBurstClient,
+      PoolClass: FakePool,
+      outputPath,
+      createHandler: () => ({
+        async handleFrame() {
+          return {
+            outcome: 'processed',
+            scenario: 'GROUP_TEXT',
+            core: { accepted: true, ticket_created: true, intake_status: 'TICKET_CREATED', within_target: true },
+            passive_reply: { acknowledged: true, outcome: 'ACKED', within_target: true },
+            delivery: { attempted: true, status: 'PENDING' },
+          };
+        },
+      }),
+      verifyBurstFacts: async () => ({
+        inbox_count: 100,
+        intake_count: 100,
+        ticket_count: 100,
+        outbox_count: 100,
+        delivery_count: 200,
+        // One Ticket has an extra notification while another is missing one, so totals alone look valid.
+        tickets_with_invalid_outbox_count: 2,
+        tickets_with_invalid_delivery_count: 2,
+      }),
+    });
+
+    assert.deepEqual(result, { ok: false, error_code: 'P1_012_BURST_ACCEPTANCE_FAILED' });
+    const records = (await readFile(outputPath, 'utf8'))
+      .trim()
+      .split(/\r?\n/u)
+      .map((line) => JSON.parse(line));
+    const burstResult = records.find((record) => record.event === 'p1_012_live_burst_result');
+    assert.equal(burstResult.outcome, 'FAILED');
+    assert.equal(burstResult.zero_lost_tickets, true);
+    assert.equal(burstResult.zero_duplicate_tickets, true);
+    assert.equal(burstResult.notifications_traceable, false);
+    assert.equal(burstResult.database.outbox_count, 100);
+    assert.equal(burstResult.database.delivery_count, 200);
+    assert.equal(burstResult.database.tickets_with_invalid_outbox_count, 2);
+    assert.equal(burstResult.database.tickets_with_invalid_delivery_count, 2);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 const MIGRATION_URL = new URL('../database/migrations/002_p1_004_service_intake.sql', import.meta.url);
 
-const INCIDENT_PATTERN = /(?:报错|打不开|进不去|登录失败|卡死|闪退|蓝屏|无响应|一直转圈|保存失败|提交失败|打印不了|读卡失败|断网|连不上|数据不对|查不到|接口异常|服务不可用|权限错误|login failed|error|unavailable|cannot|can't|unable)/iu;
+const INCIDENT_PATTERN = /(?:报错|打不开|进不去|无法登录|登录失败|卡死|闪退|蓝屏|无响应|一直转圈|保存失败|提交失败|打印不了|读卡失败|断网|连不上|数据不对|查不到|接口异常|服务不可用|权限错误|login failed|error|unavailable|cannot|can't|unable)/iu;
 const INCIDENT_NEGATION_PATTERN = /(?:没有问题|没有报错|已经好了|不报错了|无需处理|测试正常)/u;
 const INCIDENT_CLAUSE_SEPARATOR = /(?:[，,。；;！!？?\n]+|(?<!不)但(?:是)?|不过|然而)/u;
 const NEW_REPORT_PATTERN = /(?:新报修|另一个问题|重新报修)/u;

@@ -3,9 +3,11 @@
 - 基线版本：V1.4
 - 生效日期：2026-08-30
 - 状态：ACTIVE
-- 当前阶段：P1 / IN_PROGRESS
-- 当前执行任务：P1-012
-- 已完成任务：G0 全部冻结项；P1-001 至 P1-011 的既定本机验收
+- 当前阶段：P1 / DONE / GO
+- 当前执行任务：无
+- 最后完成任务：P1-012
+- 已完成任务：G0 全部冻结项；P1-001 至 P1-012
+- 下一阶段：P2 / NOT_STARTED / 需单独授权
 - 上一基线：V1.3
 - 关键决策：ADR-0010、ADR-0011、ADR-0012
 
@@ -64,7 +66,7 @@ Enterprise WeCom / New Intranet Portal / Hospital API / Monitoring Alert
 
 - 创建另一套 `unified_ticket.ticket` 并双写；
 - 重写既有 P1 迁移历史；
-- 在 P1-012 未完成时启用生产 P2/P3；
+- 在 P2/P3 未获各自单独授权时启动相应阶段或启用生产功能；
 - 让外部来源状态覆盖本地 Ticket；
 - 引入历史 Ticket 兼容模型。
 
@@ -80,9 +82,11 @@ Enterprise WeCom
 → Pilot Ticket Core compatibility implementation
 ```
 
-P1 当前退出条件不变：漏单 0、重复单 0、状态/事件/通知一致、真实客户端证据、故障安全验收和负责人 Go。
+P1 退出条件为：漏单 0、重复单 0、状态/事件/通知一致、真实客户端证据、故障安全验收和负责人 Go。上述条件已于 2026-08-30 全部满足，正式批准见 `evidence/p1-012-project-owner-go-approval.md`。
 
 ## 6. Phase 2
+
+P2 当前未启动；P1 Go 不构成 P2 启动授权，必须另行获得项目负责人明确授权。
 
 固定顺序：
 
@@ -126,7 +130,7 @@ P3 非目标：历史导入、未完结切换、旧编号/状态/附件兼容、
 
 ## 9. 并行开发
 
-允许八条 Lane 使用模拟依赖并行，但必须 Feature Flag 默认关闭，并通过 P2-G1～G4、P3-G1～G4 组装。
+架构上允许八条 Lane 使用模拟依赖并行，但 P2/P3 当前均未获阶段启动授权；获批后仍必须保持 Feature Flag 默认关闭，并通过 P2-G1～G4、P3-G1～G4 组装。
 
 ## 10. 已废弃设计
 

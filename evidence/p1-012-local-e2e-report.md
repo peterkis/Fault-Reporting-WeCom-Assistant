@@ -1,8 +1,93 @@
-# P1-012 本机 E2E 接缝与 Go/No-Go 预验收记录
+# P1-012 E2E 与 Go/No-Go 验收记录
 
-- 验收日期：2026-08-29
+- 技术验收起始日期：2026-08-29
+- 正式批准日期：2026-08-30
 - 环境：Windows 本机、Node.js、Pilot PostgreSQL；不建立公网入站监听。
-- 结论：本机受控实现通过；真实测试群已完成 WSS 重认证、群 ID 捕获和一次旧版三字符客户端回执探针。该探针取得完成流式回复的 `errcode=0`，且测试账号确认客户端显示。它不含明确报修描述，未创建 Ticket；按企业微信群聊 `@` 回调格式修正后的非写入探针已完成历史回环，提供方回执为 `errcode=0`，测试账号确认客户端显示。该源回执早于当前逐次 HMAC `run_id`，故仅保留历史事实。随后已完成新的带 `run_id` 的真实回环、`errcode=0`、`ACKED` 与测试账号 `VISIBLE`，并写入独立 HMAC 来源关联观察记录。完整场景尚未验收，当前结论仍为 `NO_GO`。
+- 结论：本机受控实现和 P1-012 要求的真实测试群技术场景已完成；项目负责人于 2026-08-30 对完整证据作出正式批准，当前结论为 `GO / DONE`。P2 未启动，仍需另行授权。
+
+## 2026-08-30 全量自动化复核与收口
+
+本轮在 `phase1/p1-012-closeout`、基线提交 `423b9b5` 上执行。技术复核完成后，项目负责人明确批准 Phase 1 Go；
+P1-012 与 Phase 1 状态更新为 `DONE / GO`。实时配置预检继续通过：P1、出站 WSS、无公网监听，AI/OCR/Hospital Tickets 均关闭。
+
+自动化结果：
+
+- V1.4 架构静态验证 101/101 通过，V1.4 架构测试 8/8 通过；
+- P1-012 单元/脚本回归 44/44 通过；
+- P1-012 真实 Pilot PostgreSQL 集成回归 45/45 通过；
+- P1-004 Intake 词法与聚合回归 22/22 通过；
+- 全仓 30 个测试文件在一次性隔离 PostgreSQL 数据库中串行执行，204/204 通过；隔离库在运行后删除；
+- `evidence/p1-012-live-e2e.jsonl` 当前 478/478 行均为有效 JSON，复核时 SHA-256 为
+  `37fa28d7682b9d09c84fa70f0a41acee840662b04c4eeaf160044325fc5d6199`。
+
+全仓首次复跑暴露了两个验证夹具问题，已作最小测试代码修正：G0-008 测试仍读取 V1.4 已删除的
+`current_phase.first_task`；P1-007 的集成测试使用全局 `runOnce()`，会租用共享 Pilot 库中不属于本次测试的
+`PENDING` Delivery。夹具现改为只按本次测试创建的确切 Delivery ID 执行，并已完成定向及隔离全仓回归。
+
+首次共享库复跑期间，现场 P1-012 Ticket 的两条 Delivery 被合成测试发送器写成 `SENT`，提供方标识符合测试
+`ack-*` 模式；其中一条保留原先的 `RETRY_SCHEDULED` 后又出现合成 `SENT`。这些记录不是企业微信真实发送成功，
+不得用于 P1-012 Outbox 或客户端可见性验收。随后执行只读、脱敏对账：确认为同一 Ticket 的 2 条 Delivery、3 次 Attempt、
+1 次重试和 2 次合成 `SENT`，两个通道各 1 条；数据库未变更，审计历史保留，并以 `IDENTIFIED_AND_EXCLUDED`
+从真实企业微信证据中排除。
+
+随后在一次性隔离数据库中执行真实 PostgreSQL/Outbox 故障演练：先持久化 Ticket 事实，再禁止该隔离库新连接并
+终止其现有连接；故障期 Intake 失败闭合。恢复连接后，同一消息幂等重放只形成一个 Ticket，故障前事实仍存在。
+对该 Ticket 的确切 Delivery 注入发送失败后，`delivery_attempt` 记录 `RETRY_SCHEDULED/WECOM_SEND_FAILED`；恢复
+发送器后同一 Delivery 变为 `SENT`，共保留两次 Attempt。共享 PostgreSQL 未停止，隔离数据库已删除。该结果满足
+本机隔离 PostgreSQL 与实际 Outbox Worker 故障/恢复演练，不证明企业微信提供方投递或客户端显示。
+
+Windows 企业微信客户端只读复核还确认：目标测试群中已有一条明确、非敏感报修，随后显示机器人“验收受理完成”
+及 Ticket 编号的客户端回复；不在本报告复述账号、群名、原文 token 或 Ticket 编号。对应 JSONL 源结果已经记录
+`TICKET_CREATED`、10 秒目标内、被动回复 `provider_errcode=0/ACKED`，但当前脚本只支持为非写入
+`GROUP_REPLY_PROBE` 追加 HMAC 关联的客户端观察，尚没有为完整 `GROUP_TEXT` 追加同等受控关联记录。因此只将本次
+屏幕复核记为现场可见事实，不把它提升为结构化 Go/No-Go 字段。
+
+同轮先在目标测试群发送了一张未提及机器人的非敏感图片：客户端可见，但 WSS 监听窗口没有收到 callback，不能作为
+机器人图片降级证据。依据该租户群聊的实际触发方式，图片场景随后收敛为两种兼容输入：直接 `image` callback，或同时
+包含本次一次性 token 和至少一张图片的 `mixed` callback；错误 token、无 token 或仅文字 `mixed` 均忽略。新增回归后，
+由受控 Windows 客户端自动化发送一次带原生机器人提及、一次性 token 和非敏感图片的真实 `mixed` 消息。WSS 源结果记录
+`GROUP_IMAGE_DEGRADED`、`WAITING_DESCRIPTION`、未创建 Ticket、核心及回复均在 10 秒目标内，完成流式被动回复为
+`provider_errcode=0/ACKED`；客户端随即显示“验收已受理，请补充文字描述后继续处理”的降级提示。报告不保存或复述
+账号、群名、原文 token、图片内容或本机路径。该结果满足本次图片降级的真实 callback、数据库事实、提供方回执和客户端
+显示观察；客户端观察仍是脱敏现场记录，不等同于负责人 Go 批准。
+
+真实重连后文字回环使用同一 `RECONNECT_GROUP_TEXT` 运行：初次认证后由脚本主动断开，依次记录断开、重连请求、重认证和
+`p1_012_post_reconnect_message_ready`，只有此后才允许匹配文字 callback。测试账号在 ready 后发送一条带原生机器人提及、
+一次性 token 和非敏感故障描述的文字。该 callback 在 29 ms 内完成 Intake，完成流式回复取得
+`provider_errcode=0/ACKED`，客户端也显示机器人回复；源结果带
+`reconnect.reauthenticated_before_callback=true`，因而重连与文字回环已经在同一证据链中关联。
+
+该次文字使用常见表述“无法登录”，现场同时暴露原规则只含“登录失败”的词法缺口：本次事实因此为
+`WAITING_DESCRIPTION`、未创建 Ticket，不能补写成成功建单。实现已把“无法登录”加入 Phase 1 确定性 Incident 规则，
+并将 P1-012 带库夹具改为同一表述；P1-004 22/22、P1-012 带库 39/39 均通过。没有自动补发现场消息，修正后的真实 Ticket
+重验随后使用新的受控 token 完成：`GROUP_TEXT` 在目标内受理并进入 `TICKET_CREATED`，只创建一个 Ticket，完成流式回复
+为 `provider_errcode=0/ACKED` 且在 10 秒目标内；Windows 客户端观察为 `VISIBLE`。源结果带有效 HMAC `run_id`，
+`p1_012_client_display_observed` 以 `database_write=true`、`ticket_created=true` 独立关联记录。该结果关闭完整文字建单和
+客户端回执项，不替代突发或负责人批准。
+
+随后首次真实 100 条突发尝试以新的受控 WSS 运行开始。序号 `001` 使用客户端候选菜单形成原生机器人提及，WSS 记录
+一个唯一 callback、`TICKET_CREATED`、10 秒目标内以及被动回复 `provider_errcode=0/ACKED`。后续使用复制粘贴、界面外观
+仍显示 `@` 的消息没有形成该运行的机器人 callback；运行最终以 `P1_012_LIVE_TIMEOUT` 结束。因此本轮只确认 1/100，
+不构成突发通过，也不能把外观看似提及当作原生提及证据。
+
+为消除手工往返和上述假提及风险，新增失败闭合的 Windows UI 驱动：每条消息都重新输入 `@`、粘贴唯一机器人搜索词、
+通过客户端候选菜单选择，再粘贴非敏感正文和三位序号；先单条校准，确认 WSS `sequence_index=1` 后才批量发送余下 99 条。
+驱动要求唯一企业微信主窗口、空输入框、显式 `-Execute`、前台窗口逐步复核、Esc 急停、剪贴板恢复和中断后对账。
+其 `PlanOnly`/失败闭合测试 3/3 通过，纳入 P1-012 回归后为 44/44 通过；正式批准状态写入后，V1.4 架构验证为 101/101、架构测试 8/8。
+UI 输入日志明确不证明 callback、Ticket 或 Delivery。
+
+之后一次新 token 重做在序号 `093` 后达到 15 分钟监听上限；客户端随后触发的 7 条输入没有回调，运行按
+`P1_012_LIVE_TIMEOUT` 失败关闭，不能与其他运行拼接。最终再次使用全新 token 和同一 15 分钟监听器，从 `001` 完整重做。
+每条均通过客户端候选菜单建立原生机器人提及；每 10 条按 WSS 序号核对。序号 `039` 首次因机器人回复抢走正文焦点，只发送
+了无 token 的提及，未进入本次统计；自动化在检查点暂停、重新聚焦输入框并补发唯一的 `039`，其余序号随后继续。最终同一运行
+`p1_012_live_burst_result` 记录：`expected_count=100`、`callback_count=100`、`unique_message_count=100`、
+`accepted_within_target_count=100`、`duplicate_callback_count=0`；数据库为 100 Inbox、100 Intake、100 Ticket、100 Outbox 和
+200 Delivery，`zero_lost_tickets=true`、`zero_duplicate_tickets=true`、`notifications_traceable=true`，总收集时间 597122 ms，
+结论为 `PASSED`。Windows 客户端末尾可见 `099`、`100` 及各自机器人受理回复；报告不保存账号、群名、token 或 Ticket 编号。
+该结果关闭真实 100 条群内突发项。
+
+技术证据完成后，项目负责人已复核完整结论并明确批准 Go。批准原文、证据范围和边界见
+`evidence/p1-012-project-owner-go-approval.md`。该批准关闭 P1-012 和 Phase 1，不启动 Phase 2，也不构成生产或临床上线批准。
 
 ## 已验证的本机范围
 
@@ -12,8 +97,10 @@
 npm run test:p1:012:integration
 ```
 
-结果：37/37 通过，0 失败。其中带库用例经过真实的
+结果：45/45 通过，0 失败。其中带库用例经过真实的
 `Inbox → Intake → Ticket → Outbox → Delivery` 组合，验证了：
+
+最终入口已固定 `--test-concurrency=1`。复核时旧并行入口曾因 UI 子进程、10 秒重连计时器和 100 并发数据库用例争用本机资源而出现 2 个失败；两项隔离串行复跑均通过，入口改为串行后统一复跑 45/45 通过，避免把调度争用误判为产品失败或把偶然复跑写成通过。
 
 - 同一 callback 的并发重复只形成一个 Ticket；
 - 图片进入 `WAITING_DESCRIPTION`，不伪造 Ticket；
@@ -63,18 +150,14 @@ Secret、哈希密钥、群 ID 或用户 ID。
   事实，并同时精确绑定 callback 机器人 ID、测试群和测试账号。企业微信[接收消息（101834）](https://developer.work.weixin.qq.com/document/path/101834)
   明确展示群聊 `body.text.content` 保留首部 `@机器人`；因此 callback 保留该前缀时探针只接受一个首部提及、一个普通 ASCII 空格及其后精确的 2–3 字符标记；仅适配层已省略前缀时接受裸标记，额外文字仍拒绝。旧版字面精确匹配窗口曾安全超时；修正版本的本机集成回归 37/37、全量串行回归 195/195 均通过。探针成功源结果追加与客户端观察的选源、复核及追加共用跨进程证据链声明，故不会在最终复核之后插入新的成功源结果；旧源在取得声明前被替换会安全返回 `P1_012_CLIENT_OBSERVATION_SOURCE_STALE`。早期真实测试群回环命中机器人/群/账号作用域和去前缀后的精确标记，完成流式回复记录 `provider_errcode=0`、`ACKED`，测试账号人工观察为 `VISIBLE`；其源记录早于逐次 `run_id`，故受控观察命令当时追加的脱敏记录仅保留历史事实。随后新一轮真实测试群回环产生了由随机运行熵导出的 HMAC `run_id`，完成流式回复再次记录 `provider_errcode=0`、`ACKED`，测试账号再次观察为 `VISIBLE`，且 `p1_012_client_display_observed` 以 HMAC 来源关联值独立记录。全程无数据库连接或业务写入。该结果是当前关联规则下的非写入显示证据，不替代文字建单、图片或试点 Go/No-Go。
 
-下一次完整文字演练必须使用明确、非敏感报修文本和 6–128 字符的新 token，并由测试账号观察最终流式回执与 Ticket 创建结果。
+完整文字演练已按明确、非敏感报修文本和新 token 完成，并形成 Ticket、提供方回执及 HMAC 关联的客户端观察；真实突发由后续独立运行证明，两项均不替代负责人批准。
 
 ## Go/No-Go 状态
 
 `public_ip` 不是 P1-012 字段。企业微信出站 WSS 的网络范围仅为 DNS、TCP 443 和 TLS；公网入口只属于 HTTP/Webhook、
 外部 Pilot Workbench 或独立公网 Web/API 网关。
 
-以下真实证据仍缺失，因此不得进入 Phase 2：
+项目负责人已于 2026-08-30 对完整证据明确批准 `GO`，因此 P1-012 与 Phase 1 状态均为 `DONE / GO`。
 
-- 含明确报修语义的测试群文字消息往返、Ticket 创建和客户端回执观察；
-- 已配置测试群中的图片降级提示和客户端观察；
-- 真实 WSS 断开后重认证及其后的文字回环；
-- 获批测试账号/工具的实际群内 100 条突发；
-- 隔离 Pilot PostgreSQL 的故障/恢复与实际 Outbox 故障演练；
-- 试点负责人对完整证据的明确 Go/No-Go 批准。
+该结论只完成 Phase 1 退出判定。Phase 2 当前为 `NOT_STARTED`，必须获得新的、独立的项目负责人授权后方可开始；
+本批准不等同于生产上线、临床生产使用、安全/运维变更、提交、推送、合并或发布批准。
