@@ -28,28 +28,29 @@ function isIsoDate(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/u.test(value);
 }
 
-const SOURCE_BASE = 'd59de5d7db39c4a39f82093496a0e42565d67a7e';
-const AUTHORIZED_TASKS = Object.freeze(['P2-001', 'P2-002', 'P2-003']);
+const SOURCE_BASE = '2b4548888882ce895a85f513d0a5bb57d9920b91';
+const P2_003_SOURCE_BASE = 'd59de5d7db39c4a39f82093496a0e42565d67a7e';
+const AUTHORIZED_TASKS = Object.freeze(['P2-001', 'P2-002', 'P2-003', 'P2-004']);
 const LIFECYCLE_PROFILES = Object.freeze({
-  P2_003_IN_PROGRESS: Object.freeze({
-    lastCompletedTask: 'P2-002',
-    activeTask: 'P2-003',
-    activeLane: 'P2-A',
-    candidate: 'P2-003',
-    candidateAuthorized: true,
-    p2003Status: 'IN_PROGRESS',
-    manifestStatus: 'P2_P2_003_IN_PROGRESS',
-    projectStatus: 'p2_p2_003_in_progress',
-  }),
-  P2_003_DONE_AWAITING_SEPARATE_AUTHORIZATION: Object.freeze({
+  P2_004_IN_PROGRESS: Object.freeze({
     lastCompletedTask: 'P2-003',
+    activeTask: 'P2-004',
+    activeLane: 'P2-B',
+    candidate: 'P2-004',
+    candidateAuthorized: true,
+    p2004Status: 'IN_PROGRESS',
+    manifestStatus: 'P2_P2_004_IN_PROGRESS',
+    projectStatus: 'p2_p2_004_in_progress',
+  }),
+  P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-004',
     activeTask: null,
     activeLane: null,
-    candidate: 'P2-004',
+    candidate: 'P2-005',
     candidateAuthorized: false,
-    p2003Status: 'DONE',
-    manifestStatus: 'P2_P2_003_DONE_AWAITING_SEPARATE_AUTHORIZATION',
-    projectStatus: 'p2_p2_003_done_awaiting_separate_authorization',
+    p2004Status: 'DONE',
+    manifestStatus: 'P2_P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION',
+    projectStatus: 'p2_p2_004_done_awaiting_separate_authorization',
   }),
 });
 
@@ -64,7 +65,7 @@ const sourceExample = json('config_examples/integration_source.example.json');
 
 const lifecycleStatus = current.implementation_authorization_status;
 const profile = LIFECYCLE_PROFILES[lifecycleStatus];
-check(Boolean(profile), 'current phase uses a recognized P2-003 lifecycle profile');
+check(Boolean(profile), 'current phase uses a recognized P2-004 lifecycle profile');
 
 if (profile) {
   const lifecycleViews = [
@@ -161,9 +162,9 @@ check(backlog.current_phase === 'P2', 'master backlog records P2 current');
 check(taskIndex.current_phase === 'P2', 'task index records P2 current');
 check(parallel.current_phase === 'P2', 'parallel workstreams record P2 current');
 check(projectSummary.project.current_phase === 'P2', 'project summary records P2 current');
-check(manifest.source_base_commit === SOURCE_BASE, 'manifest uses the frozen P2-003 base commit');
-check(current.source_base_commit === SOURCE_BASE, 'current phase uses the frozen P2-003 base commit');
-check(backlog.source_base_commit === SOURCE_BASE, 'master backlog uses the frozen P2-003 base commit');
+check(manifest.source_base_commit === SOURCE_BASE, 'manifest uses the frozen P2-004 base commit');
+check(current.source_base_commit === SOURCE_BASE, 'current phase uses the frozen P2-004 base commit');
+check(backlog.source_base_commit === SOURCE_BASE, 'master backlog uses the frozen P2-004 base commit');
 
 const p1 = backlog.phases.find((phase) => phase.id === 'P1');
 const p2 = backlog.phases.find((phase) => phase.id === 'P2');
@@ -172,6 +173,7 @@ const p10012 = backlog.tasks.find((task) => task.id === 'P1-012');
 const p2001 = backlog.tasks.find((task) => task.id === 'P2-001');
 const p2002 = backlog.tasks.find((task) => task.id === 'P2-002');
 const p2003 = backlog.tasks.find((task) => task.id === 'P2-003');
+const p2004 = backlog.tasks.find((task) => task.id === 'P2-004');
 
 check(p1?.status === 'DONE' && p1?.go_decision === 'GO', 'P1 remains DONE with GO');
 check(p10012?.status === 'DONE' && p10012?.decision === 'GO', 'P1-012 remains DONE with GO');
@@ -185,12 +187,16 @@ check(p2001?.status === 'DONE' && p2001?.evidence === 'evidence/p2-001-conversat
 check(p2002?.status === 'DONE'
   && p2002?.authorization_evidence === 'evidence/p2-002-start-authorization.md'
   && p2002?.evidence === 'evidence/p2-002-timeline-projector-report.md', 'P2-002 remains DONE with evidence');
-check(p2003?.status === profile?.p2003Status, 'P2-003 task status matches the lifecycle profile');
+check(p2003?.status === 'DONE', 'P2-003 remains DONE');
 check(p2003?.authorized_at === '2026-08-30'
   && p2003?.authorization_evidence === 'evidence/p2-003-start-authorization.md'
   && p2003?.task_file === 'tasks/P2-003_realtime_event_log_sse.md', 'P2-003 authorization metadata is linked');
-check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[4-9]|01[0-4])$/u.test(task.id))
-  .every((task) => task.status === 'TODO'), 'P2-004 through P2-014 remain TODO');
+check(p2004?.status === profile?.p2004Status, 'P2-004 task status matches the lifecycle profile');
+check(p2004?.authorized_at === '2026-08-31'
+  && p2004?.authorization_evidence === 'evidence/p2-004-start-authorization.md'
+  && p2004?.task_file === 'tasks/P2-004_unified_communication_outbox_delivery.md', 'P2-004 authorization metadata is linked');
+check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[5-9]|01[0-4])$/u.test(task.id))
+  .every((task) => task.status === 'TODO'), 'P2-005 through P2-014 remain TODO');
 check(sameArray(backlog.tasks.filter((task) => task.status === 'IN_PROGRESS').map((task) => task.id),
   profile?.activeTask ? [profile.activeTask] : []), 'the exact IN_PROGRESS task set matches the lifecycle profile');
 check(p3?.status === 'TODO', 'P3 remains TODO');
@@ -204,6 +210,14 @@ check(taskIndex.p2_003_authorized_at === '2026-08-30'
   && taskIndex.p2_003_authorization_evidence === 'evidence/p2-003-start-authorization.md', 'task index links P2-003 authorization');
 check(projectSummary.project.p2_003_authorized_at === '2026-08-30'
   && projectSummary.project.p2_003_authorization_evidence === 'evidence/p2-003-start-authorization.md', 'project summary links P2-003 authorization');
+check(current.p2_004_authorized_at === '2026-08-31'
+  && current.p2_004_authorization_evidence === 'evidence/p2-004-start-authorization.md', 'current phase links P2-004 authorization');
+check(manifest.p2_004_authorized_at === '2026-08-31'
+  && manifest.p2_004_authorization_evidence === 'evidence/p2-004-start-authorization.md', 'manifest links P2-004 authorization');
+check(taskIndex.p2_004_authorized_at === '2026-08-31'
+  && taskIndex.p2_004_authorization_evidence === 'evidence/p2-004-start-authorization.md', 'task index links P2-004 authorization');
+check(projectSummary.project.p2_004_authorized_at === '2026-08-31'
+  && projectSummary.project.p2_004_authorization_evidence === 'evidence/p2-004-start-authorization.md', 'project summary links P2-004 authorization');
 
 const expectedFeatureFlags = [
   'CONVERSATION_CENTER_ENABLED',
@@ -311,8 +325,15 @@ check(fs.existsSync(path.join(root, 'evidence/p2-003-start-authorization.md')), 
 const p2003Authorization = read('evidence/p2-003-start-authorization.md');
 check(p2003Authorization.includes('项目负责人正式、独立授权启动 P2-003。完成 P2-003 后必须停止。'), 'P2-003 authorization has the exact completion stop line');
 check(p2003Authorization.includes('P2-004 及以后任务、P2-G1 组装和所有生产功能仍须另行授权。'), 'P2-003 authorization has the exact next-task and gate stop line');
-check(p2003Authorization.includes(SOURCE_BASE), 'P2-003 authorization names the exact frozen base');
+check(p2003Authorization.includes(P2_003_SOURCE_BASE), 'P2-003 authorization names the exact frozen base');
 check(p2003Authorization.includes('所有 P2/P3 Feature Flag 继续为') && p2003Authorization.includes('false'), 'P2-003 authorization keeps all feature flags false');
+check(fs.existsSync(path.join(root, 'tasks/P2-004_unified_communication_outbox_delivery.md')), 'P2-004 task record exists');
+check(fs.existsSync(path.join(root, 'evidence/p2-004-start-authorization.md')), 'P2-004 authorization evidence exists');
+const p2004Authorization = read('evidence/p2-004-start-authorization.md');
+check(p2004Authorization.includes('项目负责人正式、独立授权启动 P2-004。完成 P2-004 后必须停止。'), 'P2-004 authorization has the exact completion stop line');
+check(p2004Authorization.includes('P2-005 及以后任务、P2-G1 组装和所有生产功能仍须另行授权。'), 'P2-004 authorization has the exact next-task and gate stop line');
+check(p2004Authorization.includes(SOURCE_BASE), 'P2-004 authorization names the exact frozen base');
+check(p2004Authorization.includes('所有 P2/P3 Feature Flag 继续为') && p2004Authorization.includes('false'), 'P2-004 authorization keeps all feature flags false');
 
 const p1Approval = read('evidence/p1-012-project-owner-go-approval.md');
 check(p1Approval.includes('“我批准了”'), 'P1 owner approval remains preserved');
@@ -329,18 +350,17 @@ check(pkg.scripts['test:p2:002'] === 'node --test tests/p2-002-timeline-projecto
 check(pkg.dependencies['@wecom/aibot-node-sdk'] === '1.0.6', 'WeCom SDK remains pinned');
 check(pkg.dependencies.pg === '8.23.0', 'pg remains pinned');
 
-if (lifecycleStatus === 'P2_003_DONE_AWAITING_SEPARATE_AUTHORIZATION') {
-  const completionDate = current.p2_003_completed_at;
-  const completionEvidence = 'evidence/p2-003-realtime-event-log-sse-report.md';
-  check(isIsoDate(completionDate), 'P2-003 completion date is ISO formatted');
-  check(current.p2_003_completion_evidence === completionEvidence, 'current phase links P2-003 completion evidence');
-  check(manifest.p2_003_completed_at === completionDate && manifest.p2_003_completion_evidence === completionEvidence, 'manifest mirrors P2-003 completion metadata');
-  check(taskIndex.p2_003_completed_at === completionDate && taskIndex.p2_003_completion_evidence === completionEvidence, 'task index mirrors P2-003 completion metadata');
-  check(projectSummary.project.p2_003_completed_at === completionDate && projectSummary.project.p2_003_completion_evidence === completionEvidence, 'project summary mirrors P2-003 completion metadata');
-  check(p2003?.completed_at === completionDate && p2003?.evidence === completionEvidence, 'master backlog mirrors P2-003 completion metadata');
-  check(projectSummary.hard_invariants.includes('realtime_event_log_is_non_authoritative'), 'project summary declares Realtime Event Log non-authoritative');
+const p2003CompletionDate = current.p2_003_completed_at;
+const p2003CompletionEvidence = 'evidence/p2-003-realtime-event-log-sse-report.md';
+check(isIsoDate(p2003CompletionDate), 'P2-003 completion date is ISO formatted');
+check(current.p2_003_completion_evidence === p2003CompletionEvidence, 'current phase links P2-003 completion evidence');
+check(manifest.p2_003_completed_at === p2003CompletionDate && manifest.p2_003_completion_evidence === p2003CompletionEvidence, 'manifest mirrors P2-003 completion metadata');
+check(taskIndex.p2_003_completed_at === p2003CompletionDate && taskIndex.p2_003_completion_evidence === p2003CompletionEvidence, 'task index mirrors P2-003 completion metadata');
+check(projectSummary.project.p2_003_completed_at === p2003CompletionDate && projectSummary.project.p2_003_completion_evidence === p2003CompletionEvidence, 'project summary mirrors P2-003 completion metadata');
+check(p2003?.completed_at === p2003CompletionDate && p2003?.evidence === p2003CompletionEvidence, 'master backlog mirrors P2-003 completion metadata');
+check(projectSummary.hard_invariants.includes('realtime_event_log_is_non_authoritative'), 'project summary declares Realtime Event Log non-authoritative');
 
-  const p2003Files = [
+const p2003Files = [
     'contracts/conversation_realtime_event.schema.json',
     'contracts/conversation_realtime_fallback.schema.json',
     'contracts/conversation_realtime_contracts.d.ts',
@@ -353,14 +373,24 @@ if (lifecycleStatus === 'P2_003_DONE_AWAITING_SEPARATE_AUTHORIZATION') {
     'evidence/p2-003-realtime-event-log-sse-report.md',
     'tests/p2-003-realtime-event-log.test.mjs',
     'tests/p2-003-realtime-event-log.integration.test.mjs',
-  ];
-  for (const relativePath of p2003Files) {
-    check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-003 completion');
-  }
-  check(pkg.scripts['p2:003:migrate'] === 'node --env-file=.env.pilot scripts/p2-003-migrate.mjs', 'package exposes migration 012 command');
-  check(pkg.scripts['p2:003:retention:check'] === 'node --env-file=.env.pilot scripts/p2-003-retention.mjs --check', 'package exposes retention check command');
-  check(pkg.scripts['test:p2:003'] === 'node --test tests/p2-003-realtime-event-log.test.mjs', 'package exposes P2-003 unit tests');
-  check(pkg.scripts['test:p2:003:integration'] === 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-003-realtime-event-log.integration.test.mjs', 'package exposes serial P2-003 integration tests');
+];
+for (const relativePath of p2003Files) {
+  check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-003 completion');
+}
+check(pkg.scripts['p2:003:migrate'] === 'node --env-file=.env.pilot scripts/p2-003-migrate.mjs', 'package exposes migration 012 command');
+check(pkg.scripts['p2:003:retention:check'] === 'node --env-file=.env.pilot scripts/p2-003-retention.mjs --check', 'package exposes retention check command');
+check(pkg.scripts['test:p2:003'] === 'node --test tests/p2-003-realtime-event-log.test.mjs', 'package exposes P2-003 unit tests');
+check(pkg.scripts['test:p2:003:integration'] === 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-003-realtime-event-log.integration.test.mjs', 'package exposes serial P2-003 integration tests');
+
+if (lifecycleStatus === 'P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION') {
+  const completionDate = current.p2_004_completed_at;
+  const completionEvidence = 'evidence/p2-004-communication-outbox-delivery-report.md';
+  check(isIsoDate(completionDate), 'P2-004 completion date is ISO formatted');
+  check(current.p2_004_completion_evidence === completionEvidence, 'current phase links P2-004 completion evidence');
+  check(manifest.p2_004_completed_at === completionDate && manifest.p2_004_completion_evidence === completionEvidence, 'manifest mirrors P2-004 completion metadata');
+  check(taskIndex.p2_004_completed_at === completionDate && taskIndex.p2_004_completion_evidence === completionEvidence, 'task index mirrors P2-004 completion metadata');
+  check(projectSummary.project.p2_004_completed_at === completionDate && projectSummary.project.p2_004_completion_evidence === completionEvidence, 'project summary mirrors P2-004 completion metadata');
+  check(p2004?.completed_at === completionDate && p2004?.evidence === completionEvidence, 'master backlog mirrors P2-004 completion metadata');
 }
 
 if (errors.length > 0) {

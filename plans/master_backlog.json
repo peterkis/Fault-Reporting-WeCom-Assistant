@@ -3,21 +3,22 @@
   "version": "1.4.0",
   "architecture_baseline": "V1.4",
   "baseline_date": "2026-08-30",
-  "source_base_commit": "d59de5d7db39c4a39f82093496a0e42565d67a7e",
+  "source_base_commit": "2b4548888882ce895a85f513d0a5bb57d9920b91",
   "current_phase": "P2",
   "last_completed_task": "P2-003",
-  "active_task": null,
+  "active_task": "P2-004",
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
     "P2-002",
-    "P2-003"
+    "P2-003",
+    "P2-004"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "P2_003_DONE_AWAITING_SEPARATE_AUTHORIZATION",
+  "active_lane": "P2-B",
+  "implementation_authorization_status": "P2_004_IN_PROGRESS",
   "p2_g1_status": "NOT_STARTED",
   "next_task_candidate": "P2-004",
-  "next_task_authorized": false,
+  "next_task_authorized": true,
   "status_values": [
     "TODO",
     "IN_PROGRESS",
@@ -376,7 +377,10 @@
       "lane": "P2-B",
       "gate": "P2-G1",
       "phase": "P2",
-      "status": "TODO"
+      "status": "IN_PROGRESS",
+      "authorized_at": "2026-08-31",
+      "authorization_evidence": "evidence/p2-004-start-authorization.md",
+      "task_file": "tasks/P2-004_unified_communication_outbox_delivery.md"
     },
     {
       "id": "P2-005",

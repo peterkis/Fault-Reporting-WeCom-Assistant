@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-A 的 P2-001、P2-002 与随后独立授权的 P2-003 均已完成。当前无活动任务或 Lane；P2-004 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO / NOT_STARTED`。所有 Feature Flag 默认关闭；其他 Lane 只能读取冻结 Contract。
+> Phase 2 保持 `IN_PROGRESS`，P2-001、P2-002、P2-003 均已完成。项目负责人已于 2026-08-31 独立授权 P2-B / P2-004，当前仅该任务为 `IN_PROGRESS`；P2-005 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO / NOT_STARTED`。所有 Feature Flag 默认关闭。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -149,7 +149,9 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 ## P2-004 统一 Communication Message / Outbox / Delivery
 
-- 状态：TODO
+- 状态：IN_PROGRESS（2026-08-31 独立授权）
+- 授权 Evidence：`evidence/p2-004-start-authorization.md`
+- Task：`tasks/P2-004_unified_communication_outbox_delivery.md`
 - Lane：P2-B
 - 目标 Gate：P2-G1
 - 依赖：P2-001

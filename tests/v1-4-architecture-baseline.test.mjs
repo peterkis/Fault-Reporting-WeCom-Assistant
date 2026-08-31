@@ -9,21 +9,21 @@ const json = (relativePath) => JSON.parse(fs.readFileSync(path.join(root, relati
 const text = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 
 const profiles = Object.freeze({
-  P2_003_IN_PROGRESS: Object.freeze({
-    lastCompletedTask: 'P2-002',
-    activeTask: 'P2-003',
-    activeLane: 'P2-A',
-    candidate: 'P2-003',
-    candidateAuthorized: true,
-    p2003Status: 'IN_PROGRESS',
-  }),
-  P2_003_DONE_AWAITING_SEPARATE_AUTHORIZATION: Object.freeze({
+  P2_004_IN_PROGRESS: Object.freeze({
     lastCompletedTask: 'P2-003',
+    activeTask: 'P2-004',
+    activeLane: 'P2-B',
+    candidate: 'P2-004',
+    candidateAuthorized: true,
+    p2004Status: 'IN_PROGRESS',
+  }),
+  P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-004',
     activeTask: null,
     activeLane: null,
-    candidate: 'P2-004',
+    candidate: 'P2-005',
     candidateAuthorized: false,
-    p2003Status: 'DONE',
+    p2004Status: 'DONE',
   }),
 });
 
@@ -35,7 +35,7 @@ test('V1.4 architecture validator passes', () => {
   assert.equal(result.status, 0, result.stdout + '\n' + result.stderr);
 });
 
-test('P2-003 lifecycle state is internally consistent without changing P1', () => {
+test('P2-004 lifecycle state is internally consistent without changing P1', () => {
   const manifest = json('MANIFEST.json');
   const current = json('plans/current_phase.json');
   const backlog = json('plans/master_backlog.json');
@@ -74,13 +74,14 @@ test('P2-003 lifecycle state is internally consistent without changing P1', () =
     assert.equal(lane, profile.activeLane);
     assert.equal(candidate, profile.candidate);
     assert.equal(authorized, profile.candidateAuthorized);
-    assert.deepEqual(tasks, ['P2-001', 'P2-002', 'P2-003']);
+    assert.deepEqual(tasks, ['P2-001', 'P2-002', 'P2-003', 'P2-004']);
   }
 
   assert.equal(backlog.tasks.find((task) => task.id === 'P2-001').status, 'DONE');
   assert.equal(backlog.tasks.find((task) => task.id === 'P2-002').status, 'DONE');
-  assert.equal(backlog.tasks.find((task) => task.id === 'P2-003').status, profile.p2003Status);
-  assert.equal(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[4-9]|01[0-4])$/u.test(task.id))
+  assert.equal(backlog.tasks.find((task) => task.id === 'P2-003').status, 'DONE');
+  assert.equal(backlog.tasks.find((task) => task.id === 'P2-004').status, profile.p2004Status);
+  assert.equal(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[5-9]|01[0-4])$/u.test(task.id))
     .every((task) => task.status === 'TODO'), true);
   assert.deepEqual(
     backlog.tasks.filter((task) => task.status === 'IN_PROGRESS').map((task) => task.id),
@@ -92,13 +93,13 @@ test('P2-003 lifecycle state is internally consistent without changing P1', () =
   assert.equal(Object.values(parallel.feature_flag_defaults).every((value) => value === false), true);
 });
 
-test('P2-003 independent authorization and stop line are preserved', () => {
-  const authorization = text('evidence/p2-003-start-authorization.md');
-  assert.match(authorization, /项目负责人正式、独立授权启动 P2-003。完成 P2-003 后必须停止。/u);
-  assert.match(authorization, /P2-004 及以后任务、P2-G1 组装和所有生产功能仍须另行授权。/u);
-  assert.match(authorization, /d59de5d7db39c4a39f82093496a0e42565d67a7e/u);
+test('P2-004 independent authorization and stop line are preserved', () => {
+  const authorization = text('evidence/p2-004-start-authorization.md');
+  assert.match(authorization, /项目负责人正式、独立授权启动 P2-004。完成 P2-004 后必须停止。/u);
+  assert.match(authorization, /P2-005 及以后任务、P2-G1 组装和所有生产功能仍须另行授权。/u);
+  assert.match(authorization, /2b4548888882ce895a85f513d0a5bb57d9920b91/u);
   assert.match(authorization, /所有 P2\/P3 Feature Flag 继续为/u);
-  assert.equal(fs.existsSync(path.join(root, 'tasks/P2-003_realtime_event_log_sse.md')), true);
+  assert.equal(fs.existsSync(path.join(root, 'tasks/P2-004_unified_communication_outbox_delivery.md')), true);
 });
 
 test('P2-001 and P2-002 frozen artifacts remain present', () => {
