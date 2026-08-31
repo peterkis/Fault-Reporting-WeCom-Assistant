@@ -1,6 +1,8 @@
 # P2-003 Realtime Event Log、SSE 补放与慢客户端治理
 
-- 状态：IN_PROGRESS
+- 状态：DONE
+- 完成日期：2026-08-31
+- 完成 Evidence：`evidence/p2-003-realtime-event-log-sse-report.md`
 - 授权日期：2026-08-30
 - 授权 Evidence：`evidence/p2-003-start-authorization.md`
 - 基线提交：`d59de5d7db39c4a39f82093496a0e42565d67a7e`

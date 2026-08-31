@@ -2,13 +2,13 @@
 
 ## 1. 原则
 
-P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-A 的 P2-001 与随后独立授权的 P2-002 均已完成。当前无活动任务或 Lane；P2-003 及以后任务、其他 Lane 实现、P2-G1 组装和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有 Feature Flag 保持默认关闭，本次完成不等同于生产、临床或 AI 自动回复批准。
+P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-A 的 P2-001、P2-002 与随后独立授权的 P2-003 均已完成。P2-004 及以后任务、其他 Lane 实现、P2-G1 组装和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有 Feature Flag 保持默认关闭，本次完成不等同于生产、临床或 AI 自动回复批准；完成 P2-003 后必须停止。
 
 ## 2. P2 Lanes
 
 | Lane | 架构范围 | 当前授权 |
 |---|---|---|
-| P2-A | Conversation Core、Timeline、Realtime Event Log | P2-001/P2-002 已完成；当前未激活；P2-003 未授权 |
+| P2-A | Conversation Core、Timeline、Realtime Event Log | P2-001/P2-002/P2-003 已完成；当前无活动任务 |
 | P2-B | Communication Outbox、Handoff、Workbench | 未授权；只读消费冻结 Contract |
 | P2-C | Rules、DeepSeek Provider、Context/Memory、Rollout | 未授权；只读消费冻结 Contract |
 | P2-D | Media/OCR、Incident、Metrics | 未授权；只读消费冻结 Contract |
@@ -44,6 +44,15 @@ Contract/Unit 和 13/13 PostgreSQL Integration 完成独立验收，包括真实
 rebuild race、only-011 CLI 与 2,001 Item 有界批次；完整回归数字、资源和残留检查见
 `evidence/p2-002-timeline-projector-report.md`。
 
+### P2-003 独立交付边界
+
+P2-003 只交付 durable Realtime Event Log、SSE replay、授权裁剪、heartbeat、slow-client
+隔离、fallback contract 与 retention。它读取 P2-001/P2-002 安全 Contract/fixture，但不自动
+连接 Projector；append 支持未来与业务事实同事务提交，SSE 只在 commit 后通过 PostgreSQL 补放。
+Wakeup Hub 不携带事件且不是 broker。详细 Contract 见
+`docs/39_p2_003_realtime_event_log_sse.md`，执行结果仅以
+`evidence/p2-003-realtime-event-log-sse-report.md` 为准。
+
 ### P2-G1 Human-only Conversation Center（NOT_STARTED）
 
 - 实时查看消息；
@@ -56,17 +65,17 @@ rebuild race、only-011 CLI 与 2,001 Item 有界批次；完整回归数字、�
 P2-G1 需要 P2-001 至 P2-006 的独立任务完成和另行 Assembly 授权。P2-002 通过也不自动
 启动或通过 P2-G1。
 
-### 后续 Contract 消费（均未授权）
+### 后续 Contract 消费（P2-004 及以后均未授权）
 
-- P2-003 可在另行授权后从已提交 Item/sequence 生成独立 Realtime Event Log 和 SSE
-  补放；它不能把 Projection Checkpoint 当作 `Last-Event-ID`，也不能反向拥有 Timeline。
+- P2-003 已冻结独立 append/replay Contract；P2-G1 未来组装仍不得把 Projection Checkpoint
+  当作 `Last-Event-ID`，也不得让 Realtime Event 反向拥有 Timeline。
 - P2-004 可在另行授权后提供 Communication Message / Outbox / Delivery 事实，并把
   P2-002 的 fixture Mapper 替换为真实只读 Adapter；Communication 事务不能绕过 Source
   Record/Binding，也不能让 Projector 直接调用 WeCom SDK。
 - P2-005/P2-006 只能通过显式 Audience Query Port 读取投影，不得由浏览器参数提升
   Restricted 权限。
 
-这些消费关系只冻结接口方向，不构成启动 P2-003、P2-004、P2-005、P2-006 或 P2-G1 的
+这些消费关系只冻结接口方向，不构成启动 P2-004、P2-005、P2-006 或 P2-G1 的
 授权。
 
 ### P2-G2 AI Shadow

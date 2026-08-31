@@ -4,12 +4,12 @@
 - 生效日期：2026-08-30
 - 状态：ACTIVE
 - 当前阶段：P2 / IN_PROGRESS
-- 当前执行任务：P2-003 / IN_PROGRESS / AUTHORIZED_TASK_ONLY
-- 当前活动 Lane：P2-A
-- 最后完成任务：P2-002（2026-08-30）
-- 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001；P2-002
-- 当前授权：仅 P2-003 实施已获独立授权；完成 P2-003 后必须停止
-- 下一任务候选：P2-003 / 已授权且 IN_PROGRESS
+- 当前执行任务：无
+- 当前活动 Lane：无
+- 最后完成任务：P2-003（2026-08-31）
+- 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001；P2-002；P2-003
+- 当前授权：无活动实施授权；P2-004 及以后仍须另行授权
+- 下一任务候选：P2-004 / 未授权
 - P2-G1：NOT_STARTED
 - P2/P3 Feature Flags：全部 `false`
 - P3：TODO / 未启动
@@ -92,7 +92,7 @@ P1 退出条件为：漏单 0、重复单 0、状态/事件/通知一致、真�
 
 ## 6. Phase 2
 
-P2 已于 2026-08-30 获项目负责人独立授权并保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 已完成，Evidence 为 `evidence/p2-001-conversation-contracts-report.md`；P2-002 已于 2026-08-30 完成，验证结果见 `evidence/p2-002-timeline-projector-report.md`。项目负责人随后通过 `evidence/p2-003-start-authorization.md` 正式、独立授权仅启动 P2-003。当前唯一活动任务为 `P2-003 / P2-A`；P2-004 及以后任务、P2-G1 组装和其他 Lane 实现仍须另行授权。所有 Feature Flag 保持关闭；完成 P2-003 后必须停止。
+P2 已于 2026-08-30 获项目负责人独立授权并保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001、P2-002 与随后独立授权的 P2-003 均已完成；P2-003 验证结果见 `evidence/p2-003-realtime-event-log-sse-report.md`。当前无活动任务或 Lane；P2-004 及以后任务、P2-G1 组装和其他 Lane 实现仍须另行授权。所有 Feature Flag 保持关闭。
 
 固定顺序：
 

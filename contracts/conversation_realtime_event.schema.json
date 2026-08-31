@@ -1,0 +1,588 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/conversation-realtime-event.schema.json",
+  "title": "Conversation Realtime Event Command",
+  "description": "A bounded, privacy-trimmed command for the P2-003 durable realtime event projection. The event log is replayable read-model state and is not a business fact source.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "publisher_name",
+    "publisher_version",
+    "source_type",
+    "source_id",
+    "event_variant",
+    "event_type",
+    "aggregate_type",
+    "aggregate_id",
+    "aggregate_version",
+    "authorization_scope_type",
+    "authorization_scope_id",
+    "visibility_scope",
+    "payload",
+    "occurred_at",
+    "expires_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "publisher_name": {
+      "$ref": "#/$defs/publisher_name"
+    },
+    "publisher_version": {
+      "$ref": "#/$defs/publisher_version"
+    },
+    "source_type": {
+      "$ref": "#/$defs/source_type"
+    },
+    "source_id": {
+      "$ref": "#/$defs/internal_id"
+    },
+    "event_variant": {
+      "$ref": "#/$defs/event_variant"
+    },
+    "event_type": {
+      "$ref": "#/$defs/event_type"
+    },
+    "aggregate_type": {
+      "$ref": "#/$defs/aggregate_type"
+    },
+    "aggregate_id": {
+      "$ref": "#/$defs/internal_id"
+    },
+    "aggregate_version": {
+      "$ref": "#/$defs/nullable_bigint_string"
+    },
+    "authorization_scope_type": {
+      "$ref": "#/$defs/authorization_scope_type"
+    },
+    "authorization_scope_id": {
+      "$ref": "#/$defs/nullable_uuid"
+    },
+    "visibility_scope": {
+      "$ref": "#/$defs/visibility_scope"
+    },
+    "payload": {
+      "$ref": "#/$defs/safe_json_object_depth_6"
+    },
+    "occurred_at": {
+      "$ref": "#/$defs/date_time"
+    },
+    "expires_at": {
+      "$ref": "#/$defs/date_time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "authorization_scope_type": {
+            "const": "SYSTEM"
+          }
+        },
+        "required": [
+          "authorization_scope_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "authorization_scope_id": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "authorization_scope_id": {
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "format": "uuid"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "publisher_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Z][A-Z0-9_.-]{0,63}$"
+    },
+    "publisher_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$"
+    },
+    "internal_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"
+    },
+    "event_variant": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 14,
+      "maxLength": 48,
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+      "enum": [
+        "conversation.session.created",
+        "conversation.session.updated",
+        "conversation.item.created",
+        "conversation.timeline.rebuilt",
+        "conversation.mode.changed",
+        "conversation.assigned",
+        "conversation.handoff.requested",
+        "conversation.handoff.accepted",
+        "conversation.read_cursor.changed",
+        "communication.delivery.changed",
+        "ticket.updated",
+        "incident.updated",
+        "gateway.connection.changed"
+      ]
+    },
+    "source_type": {
+      "type": "string",
+      "minLength": 11,
+      "maxLength": 32,
+      "enum": [
+        "CONVERSATION_SESSION",
+        "CONVERSATION_ITEM",
+        "TIMELINE_REBUILD",
+        "COMMUNICATION_DELIVERY",
+        "TICKET_EVENT",
+        "HANDOFF_EVENT",
+        "READ_CURSOR",
+        "INCIDENT_EVENT",
+        "GATEWAY_EVENT"
+      ]
+    },
+    "aggregate_type": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 32,
+      "enum": [
+        "CONVERSATION_SESSION",
+        "CONVERSATION_ITEM",
+        "CONVERSATION_TIMELINE",
+        "COMMUNICATION_DELIVERY",
+        "TICKET",
+        "CONVERSATION_HANDOFF",
+        "CONVERSATION_READ_CURSOR",
+        "INCIDENT",
+        "GATEWAY_CONNECTION"
+      ]
+    },
+    "authorization_scope_type": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 7,
+      "enum": [
+        "SESSION",
+        "THREAD",
+        "SYSTEM"
+      ]
+    },
+    "visibility_scope": {
+      "type": "string",
+      "minLength": 9,
+      "maxLength": 16,
+      "enum": [
+        "WORKBENCH",
+        "RESTRICTED_ADMIN"
+      ]
+    },
+    "bigint_string": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19,
+      "pattern": "^(?:0|[1-9][0-9]{0,18})$",
+      "x-maximum-decimal": "9223372036854775807"
+    },
+    "positive_bigint_string": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19,
+      "pattern": "^[1-9][0-9]{0,18}$",
+      "x-maximum-decimal": "9223372036854775807"
+    },
+    "nullable_bigint_string": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 19,
+      "pattern": "^(?:0|[1-9][0-9]{0,18})$",
+      "x-maximum-decimal": "9223372036854775807"
+    },
+    "nullable_uuid": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 36,
+      "maxLength": 36,
+      "format": "uuid"
+    },
+    "date_time": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 35,
+      "format": "date-time"
+    },
+    "sha256_hex": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "event_key": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^rte_v1_[a-f0-9]{64}$"
+    },
+    "safe_property_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "not": {
+        "enum": [
+          "__proto__",
+          "prototype",
+          "constructor",
+          "toJSON",
+          "text",
+          "message",
+          "message_text",
+          "message_body",
+          "body",
+          "content",
+          "safe_content",
+          "note",
+          "external_note",
+          "raw_text",
+          "raw_payload",
+          "raw_payload_encrypted",
+          "clean_text",
+          "aes_key",
+          "aesKey",
+          "AESKey",
+          "media_url",
+          "mediaUrl",
+          "response_url",
+          "responseUrl",
+          "bot_secret",
+          "botSecret",
+          "database_url",
+          "databaseUrl",
+          "provider_error",
+          "providerError",
+          "raw_provider_error",
+          "provider_error_raw",
+          "userid",
+          "user_id",
+          "chatid",
+          "chat_id",
+          "target_key",
+          "provider_message_id",
+          "internal_note",
+          "operator_id",
+          "patient_id",
+          "secret"
+        ]
+      }
+    },
+    "safe_json_primitive": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 4096
+        }
+      ]
+    },
+    "safe_json_array_depth_1": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/safe_json_primitive"
+      }
+    },
+    "safe_json_object_depth_1": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "$ref": "#/$defs/safe_property_name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/safe_json_primitive"
+      }
+    },
+    "safe_json_value_depth_1": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/safe_json_primitive"
+        },
+        {
+          "$ref": "#/$defs/safe_json_array_depth_1"
+        },
+        {
+          "$ref": "#/$defs/safe_json_object_depth_1"
+        }
+      ]
+    },
+    "safe_json_array_depth_2": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/safe_json_value_depth_1"
+      }
+    },
+    "safe_json_object_depth_2": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "$ref": "#/$defs/safe_property_name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/safe_json_value_depth_1"
+      }
+    },
+    "safe_json_value_depth_2": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/safe_json_primitive"
+        },
+        {
+          "$ref": "#/$defs/safe_json_array_depth_2"
+        },
+        {
+          "$ref": "#/$defs/safe_json_object_depth_2"
+        }
+      ]
+    },
+    "safe_json_array_depth_3": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/safe_json_value_depth_2"
+      }
+    },
+    "safe_json_object_depth_3": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "$ref": "#/$defs/safe_property_name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/safe_json_value_depth_2"
+      }
+    },
+    "safe_json_value_depth_3": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/safe_json_primitive"
+        },
+        {
+          "$ref": "#/$defs/safe_json_array_depth_3"
+        },
+        {
+          "$ref": "#/$defs/safe_json_object_depth_3"
+        }
+      ]
+    },
+    "safe_json_array_depth_4": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/safe_json_value_depth_3"
+      }
+    },
+    "safe_json_object_depth_4": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "$ref": "#/$defs/safe_property_name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/safe_json_value_depth_3"
+      }
+    },
+    "safe_json_value_depth_4": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/safe_json_primitive"
+        },
+        {
+          "$ref": "#/$defs/safe_json_array_depth_4"
+        },
+        {
+          "$ref": "#/$defs/safe_json_object_depth_4"
+        }
+      ]
+    },
+    "safe_json_array_depth_5": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/safe_json_value_depth_4"
+      }
+    },
+    "safe_json_object_depth_5": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "$ref": "#/$defs/safe_property_name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/safe_json_value_depth_4"
+      }
+    },
+    "safe_json_value_depth_5": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/safe_json_primitive"
+        },
+        {
+          "$ref": "#/$defs/safe_json_array_depth_5"
+        },
+        {
+          "$ref": "#/$defs/safe_json_object_depth_5"
+        }
+      ]
+    },
+    "safe_json_array_depth_6": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/safe_json_value_depth_5"
+      }
+    },
+    "safe_json_object_depth_6": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {
+        "$ref": "#/$defs/safe_property_name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/safe_json_value_depth_5"
+      }
+    },
+    "public_event_view": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "event_type",
+        "aggregate_type",
+        "aggregate_id",
+        "aggregate_version",
+        "visibility_scope",
+        "payload",
+        "occurred_at",
+        "created_at"
+      ],
+      "properties": {
+        "event_id": {
+          "$ref": "#/$defs/positive_bigint_string"
+        },
+        "event_type": {
+          "$ref": "#/$defs/event_type"
+        },
+        "aggregate_type": {
+          "$ref": "#/$defs/aggregate_type"
+        },
+        "aggregate_id": {
+          "$ref": "#/$defs/internal_id"
+        },
+        "aggregate_version": {
+          "$ref": "#/$defs/nullable_bigint_string"
+        },
+        "visibility_scope": {
+          "$ref": "#/$defs/visibility_scope"
+        },
+        "payload": {
+          "$ref": "#/$defs/safe_json_object_depth_6"
+        },
+        "occurred_at": {
+          "$ref": "#/$defs/date_time"
+        },
+        "created_at": {
+          "$ref": "#/$defs/date_time"
+        }
+      }
+    }
+  },
+  "x-implementation-task": "P2-003",
+  "x-stream-name": "CONVERSATION_WORKBENCH",
+  "x-business-fact-source": false,
+  "x-maximum-payload-depth": 6,
+  "x-maximum-payload-nodes": 4096,
+  "x-maximum-payload-properties-per-object": 64,
+  "x-maximum-payload-array-items": 100,
+  "x-maximum-payload-string-length": 4096,
+  "x-maximum-canonical-payload-bytes": 65536,
+  "x-runtime-constraints": [
+    "expires_at must be later than occurred_at",
+    "payload must be a finite, plain, prototype-safe JSON object without Proxy, accessors, symbols, or toJSON",
+    "all canonical BIGINT strings must be at most 9223372036854775807"
+  ],
+  "x-event-key-prefix": "rte_v1_",
+  "x-event-key-identity": [
+    "publisher_name",
+    "source_type",
+    "source_id",
+    "event_variant",
+    "event_type",
+    "authorization_scope_type",
+    "authorization_scope_id"
+  ],
+  "x-event-hash-includes": [
+    "schema_version",
+    "publisher_name",
+    "publisher_version",
+    "source_type",
+    "source_id",
+    "event_variant",
+    "event_type",
+    "aggregate_type",
+    "aggregate_id",
+    "aggregate_version",
+    "authorization_scope_type",
+    "authorization_scope_id",
+    "visibility_scope",
+    "payload",
+    "occurred_at"
+  ],
+  "x-event-hash-excludes": [
+    "event_id",
+    "created_at",
+    "expires_at",
+    "worker_id",
+    "process_id",
+    "run_id"
+  ],
+  "x-public-event-view": {
+    "$ref": "#/$defs/public_event_view"
+  }
+}

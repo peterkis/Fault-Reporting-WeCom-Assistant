@@ -322,24 +322,52 @@ CREATE TABLE IF NOT EXISTS conversation.handoff (
 CREATE INDEX IF NOT EXISTS idx_conversation_handoff_session_time
     ON conversation.handoff (session_id, requested_at DESC);
 
--- NOT AUTHORIZED BY P2-002: realtime_event and SSE belong to future P2-003.
+-- P2-003 IMPLEMENTED CONTRACT: durable, non-authoritative replay projection.
+-- Migration 012 is the executable source; this remains the conceptual draft.
 CREATE TABLE IF NOT EXISTS conversation.realtime_event (
-    event_id bigserial PRIMARY KEY,
+    event_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    event_key text NOT NULL UNIQUE,
+    stream_name text NOT NULL CHECK (stream_name = 'CONVERSATION_WORKBENCH'),
+    publisher_name text NOT NULL,
+    publisher_version text NOT NULL,
+    source_type text NOT NULL,
+    source_id text NOT NULL,
+    event_variant text NOT NULL,
     event_type text NOT NULL,
     aggregate_type text NOT NULL,
     aggregate_id text NOT NULL,
-    aggregate_version bigint NULL,
-    visibility_scope text NOT NULL DEFAULT 'WORKBENCH',
-    payload jsonb NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    expires_at timestamptz NULL
+    aggregate_version bigint NULL CHECK (aggregate_version IS NULL OR aggregate_version >= 0),
+    authorization_scope_type text NOT NULL CHECK (authorization_scope_type IN ('SESSION', 'THREAD', 'SYSTEM')),
+    authorization_scope_id uuid NULL,
+    visibility_scope text NOT NULL CHECK (visibility_scope IN ('WORKBENCH', 'RESTRICTED_ADMIN')),
+    payload jsonb NOT NULL CHECK (jsonb_typeof(payload) = 'object'),
+    payload_hash text NOT NULL,
+    event_hash text NOT NULL,
+    occurred_at timestamptz NOT NULL,
+    expires_at timestamptz NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (
+        (authorization_scope_type IN ('SESSION', 'THREAD') AND authorization_scope_id IS NOT NULL)
+        OR (authorization_scope_type = 'SYSTEM' AND authorization_scope_id IS NULL)
+    ),
+    CHECK (expires_at > occurred_at)
 );
 
-CREATE INDEX IF NOT EXISTS idx_realtime_event_created
-    ON conversation.realtime_event (event_id);
+CREATE INDEX IF NOT EXISTS conversation_realtime_event_visibility_event_idx
+    ON conversation.realtime_event (visibility_scope, event_id);
 
-CREATE INDEX IF NOT EXISTS idx_realtime_event_aggregate
-    ON conversation.realtime_event (aggregate_type, aggregate_id, event_id);
+CREATE INDEX IF NOT EXISTS conversation_realtime_event_authorization_scope_event_idx
+    ON conversation.realtime_event (authorization_scope_type, authorization_scope_id, event_id);
+
+CREATE INDEX IF NOT EXISTS conversation_realtime_event_expiry_event_idx
+    ON conversation.realtime_event (expires_at, event_id);
+
+CREATE TABLE IF NOT EXISTS conversation.realtime_stream_state (
+    stream_name text PRIMARY KEY CHECK (stream_name = 'CONVERSATION_WORKBENCH'),
+    retention_floor_event_id bigint NOT NULL DEFAULT 0 CHECK (retention_floor_event_id >= 0),
+    row_version bigint NOT NULL DEFAULT 1 CHECK (row_version >= 1),
+    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- ============================================================================
 -- Communication Outbox

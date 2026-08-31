@@ -5,8 +5,9 @@
 ### P2-003 Realtime Event Log、SSE 补放与慢客户端治理
 
 - 项目负责人于 2026-08-30 正式、独立授权仅启动 `P2-003 / P2-A`；基线为 `d59de5d7db39c4a39f82093496a0e42565d67a7e`。
-- 当前只记录授权、任务边界与 `IN_PROGRESS` 状态；P2-004 及以后、P2-G1 和所有生产功能仍须另行授权，全部 P2/P3 Feature Flag 保持 `false`。
-- 不接真实 Workbench、企业微信新增路径、模型或医院内网；完成 P2-003 后必须停止。
+- P2-003 已于 2026-08-31 完成：新增 migration 012、非权威 durable Realtime Event Log、caller-owned append、SQL-first authorization clipping、PostgreSQL replay、SSE heartbeat/recovery、32-client capacity、slow-client isolation、polling fallback 与连续前缀 retention。
+- Contract/Unit `41/41` 与 PostgreSQL/SSE Integration `10/10` 通过；完整回归与资源/残留数字记录在 `evidence/p2-003-realtime-event-log-sse-report.md`。
+- 当前无活动任务或 Lane。P2-004 及以后、P2-G1 和所有生产功能仍须另行授权，全部 P2/P3 Feature Flag 保持 `false`；未接真实 Workbench、企业微信新增路径、模型或医院内网。
 
 ### P2-002 持久化 Timeline Projector 与可重建投影
 

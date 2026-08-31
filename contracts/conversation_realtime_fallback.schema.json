@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/conversation-realtime-fallback.schema.json",
+  "title": "Conversation Realtime Polling Fallback",
+  "description": "A safe client instruction used when SSE is disabled, at capacity, outside the retained replay window, or temporarily unavailable. Authentication and authorization failures are never represented as fallback.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fallback_required",
+    "reason",
+    "poll_after_ms",
+    "strategy",
+    "latest_event_id",
+    "retention_floor_event_id"
+  ],
+  "properties": {
+    "fallback_required": {
+      "const": true
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 32,
+      "enum": [
+        "SSE_DISABLED",
+        "CAPACITY_REACHED",
+        "REPLAY_GAP",
+        "TEMPORARY_UNAVAILABLE"
+      ]
+    },
+    "poll_after_ms": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 300000
+    },
+    "strategy": {
+      "type": "string",
+      "minLength": 24,
+      "maxLength": 48,
+      "enum": [
+        "REFETCH_CONVERSATION_LIST_AND_TIMELINE",
+        "POLL_UNTIL_SSE_AVAILABLE"
+      ]
+    },
+    "latest_event_id": {
+      "$ref": "#/$defs/nullable_bigint_string"
+    },
+    "retention_floor_event_id": {
+      "$ref": "#/$defs/nullable_bigint_string"
+    }
+  },
+  "$defs": {
+    "nullable_bigint_string": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 19,
+      "pattern": "^(?:0|[1-9][0-9]{0,18})$",
+      "x-maximum-decimal": "9223372036854775807"
+    }
+  },
+  "x-implementation-task": "P2-003",
+  "x-authentication-errors-are-fallback": false,
+  "x-workbench-polling-endpoint-implemented": false,
+  "x-reason-error-code-map": {
+    "SSE_DISABLED": "CONVERSATION_REALTIME_DISABLED",
+    "CAPACITY_REACHED": "CONVERSATION_REALTIME_CAPACITY_REACHED",
+    "REPLAY_GAP": "CONVERSATION_REALTIME_REPLAY_GAP",
+    "TEMPORARY_UNAVAILABLE": "CONVERSATION_REALTIME_STORAGE_FAILED"
+  }
+}

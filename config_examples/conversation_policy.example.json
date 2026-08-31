@@ -70,9 +70,15 @@
   },
   "realtime": {
     "transport": "SSE",
+    "sse_enabled": false,
     "heartbeat_seconds": 20,
     "max_clients": 32,
     "replay_enabled": true,
-    "polling_fallback_seconds": 5
+    "polling_fallback_seconds": 5,
+    "event_retention_hours": 168,
+    "recovery_poll_seconds": 5,
+    "max_writable_buffer_bytes": 65536,
+    "drain_timeout_ms": 5000,
+    "cleanup_batch_size": 200
   }
 }

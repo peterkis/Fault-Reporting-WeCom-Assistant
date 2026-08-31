@@ -4,11 +4,10 @@
 
 本文记录已于 2026-08-30 完成的 `P2-002 / P2-A / DONE` 实现契约和运行边界；具体
 执行结果见 `evidence/p2-002-timeline-projector-report.md`。P2-002 完成后已停止，当前无
-活动任务或 Lane。
+P2-002 实施活动；P2-003 后续获独立授权并在自己的 Contract/迁移中完成。
 
 以下能力仍为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`：
 
-- P2-003 Realtime Event Log、SSE、`Last-Event-ID` 和慢客户端治理；
 - P2-004 Communication Message / Outbox / Delivery；
 - P2-005 Handoff、Assignment、Read Cursor 和 Generation Fence；
 - Workbench、AI/OCR、Incident、P2-G1 组装、全部 P3 能力；
@@ -392,12 +391,13 @@ P2_002_SCHEMA_DRIFT_REMEDIATION_REQUIRED
 
 ## 18. 后续任务如何消费本 Contract
 
-### P2-003（未来，未授权）
+### P2-003（已独立授权并完成）
 
-P2-003 可在另行授权后把已提交的 Timeline 变化转换为独立 Realtime Event Log，并通过 SSE
-补放。它必须引用 Item/Session 的稳定内部身份和 sequence，不得把 SSE 或 Realtime Event
-反向变为时间线事实源，也不得把 Projection Checkpoint 当作 `Last-Event-ID`。P2-003 的事件
-提交原子性、保留期、慢客户端和权限裁剪必须在自己的 Contract/迁移中解决。
+P2-003 通过独立 Append Port、安全 Item/Session/Timeline fixture Mapper、migration 012 与
+PostgreSQL-backed SSE 补放消费本 Contract。它引用 Item/Session 的稳定内部身份和 sequence，
+不把 SSE 或 Realtime Event 反向变为时间线事实源，也不把 Projection Checkpoint 当作
+`Last-Event-ID`。事件提交原子性、保留期、慢客户端和权限裁剪由
+`docs/39_p2_003_realtime_event_log_sse.md` 独立定义；真实 Projector 接线仍留给 P2-G1。
 
 ### P2-004（未来，未授权）
 
@@ -406,8 +406,8 @@ P2-004 可在另行授权后提供权威 Communication Message / Outbox / Delive
 写或拥有 Timeline Item；投影仍通过本 Contract 的 Source Record、Variant、Binding 和
 Checkpoint 接入。真实外发只能由 Delivery Worker 执行，Projector 永远不调用 WeCom SDK。
 
-以上“可消费”是接口兼容说明，不是启动授权。P2-003、P2-004、P2-G1 和所有后续能力保持
-未启动；P2-002 的实现或测试结果不能被表述为 P2-G1、生产或临床验收。
+以上“可消费”是接口兼容说明，不是启动授权。P2-004、P2-G1 和所有后续能力保持
+未启动；P2-002 或 P2-003 的独立实现/测试结果都不能被表述为 P2-G1、生产或临床验收。
 
 ## 19. 验证与 Evidence 分界
 

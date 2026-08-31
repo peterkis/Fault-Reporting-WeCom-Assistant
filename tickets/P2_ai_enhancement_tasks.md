@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-A 的 P2-001 与 P2-002 均已完成；P2-003 已获项目负责人独立授权，是当前唯一活动任务。P2-004 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO / NOT_STARTED`。所有 Feature Flag 默认关闭；其他 Lane 只能读取冻结 Contract。完成 P2-003 后必须停止。
+> Phase 2 保持 `IN_PROGRESS`，P2-A 的 P2-001、P2-002 与随后独立授权的 P2-003 均已完成。当前无活动任务或 Lane；P2-004 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO / NOT_STARTED`。所有 Feature Flag 默认关闭；其他 Lane 只能读取冻结 Contract。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -100,8 +100,9 @@ P2-002 已完成且保持冻结。P2-003 只能读取其安全 Contract/View，�
 
 ## P2-003 Realtime Event Log、SSE 补放与慢客户端治理
 
-- 状态：IN_PROGRESS（2026-08-30 独立授权）
+- 状态：DONE（2026-08-30 独立授权，2026-08-31 完成）
 - 授权 Evidence：`evidence/p2-003-start-authorization.md`
+- 完成 Evidence：`evidence/p2-003-realtime-event-log-sse-report.md`
 - Task：`tasks/P2-003_realtime_event_log_sse.md`
 - Lane：P2-A
 - 目标 Gate：P2-G1

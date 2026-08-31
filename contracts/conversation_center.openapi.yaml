@@ -208,11 +208,16 @@ paths:
   /realtime/events:
     get:
       operationId: streamRealtimeEvents
+      description: >
+        Durable PostgreSQL-backed authorized replay stream. The in-process
+        wakeup hub is only a latency optimization; reconnect uses Last-Event-ID.
       parameters:
         - in: header
           name: Last-Event-ID
           schema:
             type: string
+            pattern: "^(0|[1-9][0-9]{0,18})$"
+            maxLength: 19
         - in: query
           name: scope
           schema:
@@ -226,10 +231,44 @@ paths:
             Cache-Control:
               schema:
                 type: string
+                const: no-cache, no-transform
+            Connection:
+              schema:
+                type: string
+                const: keep-alive
+            X-Accel-Buffering:
+              schema:
+                type: string
+                const: no
           content:
             text/event-stream:
               schema:
                 type: string
+              examples:
+                event:
+                  value: "id: 42\nevent: conversation.item.created\ndata: {\"event_id\":\"42\",\"event_type\":\"conversation.item.created\"}\n\n"
+                heartbeat:
+                  value: ": heartbeat\n\n"
+        "400":
+          description: Invalid Last-Event-ID or scope
+        "401":
+          description: Authentication required; never converted to polling fallback
+        "403":
+          description: Authenticated caller is not authorized; no scope details disclosed
+        "409":
+          description: Last-Event-ID is ahead of the durable high watermark
+        "410":
+          description: Last-Event-ID is below the retention floor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeFallbackEnvelope"
+        "503":
+          description: SSE disabled, at capacity, or temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeFallbackEnvelope"
 components:
   parameters:
     SessionId:
@@ -253,6 +292,31 @@ components:
     Conflict:
       description: Row version, ownership, mode or idempotency conflict
   schemas:
+    RealtimeEvent:
+      $ref: "./conversation_realtime_event.schema.json"
+    RealtimeFallback:
+      $ref: "./conversation_realtime_fallback.schema.json"
+    RealtimeFallbackEnvelope:
+      type: object
+      additionalProperties: false
+      required: [ok, error, fallback]
+      properties:
+        ok:
+          type: boolean
+          const: false
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, retryable]
+          properties:
+            code:
+              type: string
+              minLength: 1
+              maxLength: 64
+            retryable:
+              type: boolean
+        fallback:
+          $ref: "#/components/schemas/RealtimeFallback"
     ConversationSession:
       description: >
         Public workbench view of a Conversation Session. Provider participant

@@ -41,6 +41,17 @@
     "connector_timeout_ms": 10000,
     "storage_object_max_bytes": 10485760
   },
+  "realtime": {
+    "event_retention_hours": 168,
+    "heartbeat_seconds": 20,
+    "recovery_poll_seconds": 5,
+    "replay_batch_size": 50,
+    "replay_limit_max": 200,
+    "max_writable_buffer_bytes": 65536,
+    "drain_timeout_ms": 5000,
+    "cleanup_batch_size": 200,
+    "persistent_application_queue_size": 0
+  },
   "database": {
     "max_connections_target": 40,
     "shared_buffers_mb": 512,

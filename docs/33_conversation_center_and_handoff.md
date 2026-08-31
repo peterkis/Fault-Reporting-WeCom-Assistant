@@ -28,9 +28,10 @@ Unified Ticket Core    = 处理生命周期
 已完成的 `P2-001` 冻结 Thread、Session、Conversation Item、控制模式、版本和隔离
 契约，并建立 Thread/Session 数据库约束。随后独立授权的 `P2-002` 也已完成：
 持久化、幂等、可重建的 Timeline Item/Source Binding/Checkpoint 与只读源 Mapper。
-当前无活动任务或 Lane。
-SSE、Realtime Event Log、人工回复、Handoff、Assignment、Read Cursor、Communication
-Outbox、Workbench 和任何 AI 行为仍属于 P2-003 及以后任务，未授权、未实现。
+P2-003 随后获得独立授权并实现 durable Realtime Event Log、授权 SSE replay、heartbeat、
+slow-client governance、fallback contract 与 retention；详细边界见
+`docs/39_p2_003_realtime_event_log_sse.md`。人工回复、Handoff、Assignment、Read Cursor、
+Communication Outbox、Workbench 和任何 AI 行为属于 P2-004 及以后任务，仍未授权、未实现。
 
 ## 3. Thread 与 Session
 
@@ -320,21 +321,11 @@ latest_external_sequence - last_read_sequence
 
 不能把一个全局 unread_count 当作所有坐席共同状态。
 
-## 11. 实时 Event Log（未来 P2-003，当前未授权）
+## 11. 实时 Event Log（P2-003 独立交付）
 
-表建议：
-
-```text
-event_id BIGINT/UUID
-workspace/tenant scope
-event_type
-aggregate_type
-aggregate_id
-aggregate_version
-payload
-created_at
-expires_at
-```
+P2-003 使用 migration 012 的 `conversation.realtime_event` 与
+`conversation.realtime_stream_state`。Event ID 是 `BIGINT GENERATED ALWAYS AS IDENTITY`，
+客户端只见规范十进制字符串；Event Log 是可清理 replay projection，不是 Timeline 或 Ticket 事实源。
 
 SSE：
 
@@ -347,7 +338,9 @@ Last-Event-ID: 1234
 
 ```text
 conversation.session.created
+conversation.session.updated
 conversation.item.created
+conversation.timeline.rebuilt
 conversation.mode.changed
 conversation.assigned
 conversation.handoff.requested
@@ -358,6 +351,11 @@ ticket.updated
 incident.updated
 gateway.connection.changed
 ```
+
+PostgreSQL 是唯一 durable replay 依据；进程内 Wakeup Hub 不携带 payload。Last-Event-ID 小于
+retention floor 返回 gap fallback，大于 high watermark 返回 ahead；自然 identity 空洞不是 gap。
+SESSION/THREAD/SYSTEM 与 RESTRICTED_ADMIN 在 SQL 中先裁剪并在返回前复核。32 clients、20 秒
+heartbeat、5 秒 recovery poll、64 KiB buffer 与 5 秒 drain timeout 是 2C4G 默认值。
 
 ## 12. 页面结构（未来 P2-006，当前未授权）
 

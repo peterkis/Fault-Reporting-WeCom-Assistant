@@ -11,12 +11,13 @@
 - `tasks/ARCH-004_p1_to_p2_phase_transition.md`：P1 → P2 阶段切换任务记录；
 - `tasks/P2-001_conversation_thread_session_contracts.md`：P2-001 契约任务记录；
 - `tasks/P2-002_persistent_timeline_projector.md`：已完成 P2-002 投影任务记录；
-- `tasks/P2-003_realtime_event_log_sse.md`：当前唯一授权且 IN_PROGRESS 的 P2-003 任务记录；
+- `tasks/P2-003_realtime_event_log_sse.md`：已完成的 P2-003 任务记录；
 - `evidence/p2-phase-start-authorization.md`：Phase 2 启动及仅授权 P2-001 的负责人 Evidence；
 - `evidence/p2-001-conversation-contracts-report.md`：P2-001 脱敏验证 Evidence；
 - `evidence/p2-002-start-authorization.md`：仅启动 P2-002 的项目负责人独立授权 Evidence；
-- `evidence/p2-002-timeline-projector-report.md`：P2-002 完成验证 Evidence。
-- `evidence/p2-003-start-authorization.md`：仅启动 P2-003 的项目负责人独立授权 Evidence。
+- `evidence/p2-002-timeline-projector-report.md`：P2-002 完成验证 Evidence；
+- `evidence/p2-003-start-authorization.md`：仅启动 P2-003 的项目负责人独立授权 Evidence；
+- `evidence/p2-003-realtime-event-log-sse-report.md`：P2-003 完成验证 Evidence。
 
 ## ADR
 
@@ -59,12 +60,12 @@
 - 所有 P2/P3 Feature Flag 保持 `false`；
 - 完成状态不等同于生产、临床或 Assembly Gate 验收。
 
-## P2-003 启动状态
+## P2-003 完成状态
 
-- P2-003：`IN_PROGRESS / AUTHORIZED_TASK_ONLY`；活动 Lane 为 P2-A；
+- P2-003：`DONE / AWAITING_SEPARATE_AUTHORIZATION`（2026-08-31）；当前无活动任务或 Lane；
 - P2-004 至 P2-014 继续为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；
 - `P2-G1` 继续为 `NOT_STARTED`，所有 P2/P3 Feature Flag 保持 `false`；
-- 完成 P2-003 后必须停止；本授权不接真实 Workbench、企业微信新增路径、模型或医院内网。
+- 未接真实 Workbench、企业微信新增路径、模型或医院内网；本完成不等同于生产或临床上线。
 
 ## P2-002 契约、迁移、运行时与测试
 
@@ -90,6 +91,26 @@
 - `tests/helpers/p2-002-migrate-child.mjs`：migration 011 独立子进程入口；
 - `tests/helpers/p2-002-worker-process-harness.mjs`：真实 Worker 进程 `SIGKILL`/重启编排；
 - `tests/helpers/p2-002-worker-child.mjs`：受控 Worker 子进程入口。
+
+## P2-003 契约、迁移、运行时与测试
+
+- `docs/39_p2_003_realtime_event_log_sse.md`：非权威 Event Log、授权 replay、SSE、backpressure、fallback 与 retention 契约；
+- `contracts/conversation_realtime_event.schema.json`：Realtime Event Command Schema；
+- `contracts/conversation_realtime_fallback.schema.json`：Polling Fallback Schema；
+- `contracts/conversation_realtime_contracts.d.ts`：Realtime Event、Authorization、SSE、Fallback 与 Retention 类型；
+- `database/migrations/012_p2_003_realtime_event_log.sql`：Realtime Event 与 Stream State 权威增量迁移；
+- `src/p2-003-realtime-event-log.mjs`：规范化、identity/hash、caller-owned append、授权 replay 与 retention runtime；
+- `src/p2-003-realtime-sse.mjs`：SSE handler、wakeup/recovery、heartbeat、capacity 与 slow-client runtime；
+- `scripts/p2-003-migrate.mjs`：只应用/检查 migration 012 的受限迁移入口；
+- `scripts/p2-003-retention.mjs`：默认 check、显式双重批准 apply 的连续前缀清理入口；
+- `tests/p2-003-realtime-event-log.test.mjs`：P2-003 Contract/Unit 测试；
+- `tests/p2-003-realtime-event-log.integration.test.mjs`：隔离 PostgreSQL、localhost SSE、故障、资源与残留集成测试；
+- `tests/helpers/p2-003-postgres-harness.mjs`：随机隔离 PostgreSQL 测试环境；
+- `tests/helpers/p2-003-sse-harness.mjs`：localhost SSE server/client 编排；
+- `tests/helpers/p2-003-server-child.mjs`：受控 SSE 子进程入口；
+- `tests/helpers/p2-003-client-harness.mjs`：SSE client、fallback request 与 socket 生命周期编排；
+- `tests/helpers/p2-003-cli-process-harness.mjs`：migration/retention CLI 子进程编排；
+- `tests/helpers/p2-003-realtime-fixtures.mjs`：纯合成 Event、Authorization 与数据库 fixture。
 
 ## 设计与契约
 

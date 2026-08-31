@@ -87,6 +87,13 @@ migration/admin reserve
 ```text
 HTTP in-flight commands: 16
 SSE clients: 32
+SSE replay batch: 50 (hard max 200)
+SSE heartbeat: 20 seconds
+SSE recovery poll: 5 seconds
+SSE writable buffer: 65536 bytes per connection
+SSE drain timeout: 5 seconds
+Realtime retention: 168 hours
+Retention cleanup batch: max 200
 outbox workers: 1
 AI concurrency: 1
 integration concurrency: 1
@@ -121,6 +128,11 @@ CONVERSATION_REALTIME_SSE_ENABLED=false
 ```
 
 SSE 关闭时 Workbench 使用有限轮询；AI 关闭时转人工；Storage 故障时文字受理继续。
+
+P2-003 Flag 关闭路径必须在认证/授权后、访问 Realtime pool、取得 Hub lease 或启动 timer 之前
+返回 fallback。Hub 只保存每客户端一个 wake boolean，不保存 payload 或事件队列。前 32 个客户端
+占满容量后，第 33 个客户端不取得 lease 并立即得到 capacity fallback；慢客户端达到 buffer/drain 边界时只关闭自身。Recovery poll 与 durable
+PostgreSQL replay 保证 missed wakeup 或 App restart 不丢事件。
 
 ## 8. 不同负载情景
 
@@ -166,6 +178,9 @@ SSE 关闭时 Workbench 使用有限轮询；AI 关闭时转人工；Storage 故
 - 事件补放；
 - 慢客户端；
 - 浏览器断连重连。
+- 第 33 客户端 polling fallback；
+- 5,000 Event 以 batch 50 有界补放；
+- 分段 heap、查询批次、最大 writableLength、timer/socket/backend 残留。
 
 ### C. Worker
 

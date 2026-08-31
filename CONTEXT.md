@@ -5,6 +5,9 @@ This context defines the domain language for the lightweight Conversation Center
 For P2-002 timeline projection, source mapping, ordering, checkpoint, or rebuild work, read
 `docs/38_p2_002_timeline_projector.md` before changing a Contract, migration, runtime, or test.
 
+For P2-003 durable realtime replay, authorization clipping, SSE, backpressure, or retention work,
+read `docs/39_p2_003_realtime_event_log_sse.md`. Realtime objects never become domain facts.
+
 ## Conversation identity
 
 **Channel Account**:
@@ -94,6 +97,22 @@ _Avoid_: Source repair, Ticket replay, ordinary incremental append
 **Timeline Audience**:
 The explicit query boundary EXTERNAL, WORKBENCH, or RESTRICTED_ADMIN used to filter Item visibility; no privileged audience is implicit.
 _Avoid_: Visibility stored on an Item, browser-only authorization
+
+**Realtime Event**:
+An immutable, retention-bounded communication projection appended after a source fact exists and used only for authorized workbench replay.
+_Avoid_: Ticket Event, Timeline Source Fact, business event ownership
+
+**Realtime Cursor**:
+The canonical PostgreSQL BIGINT event ID string last observed by one client; it is compared with the durable high watermark and retention floor.
+_Avoid_: Projection Checkpoint, identity sequence value, array offset
+
+**Retention Floor**:
+The monotonic per-stream event ID at or below which replay is no longer guaranteed after an atomic contiguous-prefix cleanup.
+_Avoid_: Client cursor, deletion scheduler position, fact retention policy
+
+**Wakeup Hub**:
+A process-local, payload-free latency hint that asks connected SSE writers to query PostgreSQL again; it has no replay or delivery authority.
+_Avoid_: Event queue, broker, source of truth
 
 **Generation Version**:
 The monotonic generation marker for the current Conversation Session context.
