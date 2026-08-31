@@ -2,7 +2,7 @@
 
 > 文件名为兼容既有索引保留。V1.4 的 P2 已不只是 AI Enhancement。
 
-> 状态（2026-08-31）：Phase 2 保持 `IN_PROGRESS`，P2-001、P2-002、P2-003、P2-004 均已完成，当前无活动任务或 Lane；P2-005 至 P2-014 保持 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`。所有 P2/P3 Feature Flag 保持 `false`，P2-G1 为 `NOT_STARTED`。P2-004 完成不等同于生产上线、临床上线、真实外发、SSE 生产开放或 AI 自动回复批准。
+> 状态（2026-08-31）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-004 均已完成；P2-005 已独立授权并为唯一 `IN_PROGRESS` 任务，活动 Lane 为 P2-B。P2-006 至 P2-014 保持 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`。所有 P2/P3 Feature Flag 保持 `false`，P2-G1 为 `NOT_STARTED`。
 
 ## 阶段目标
 
@@ -37,7 +37,7 @@
 
 ## 任务总览
 
-当前完成项为 P2-001、P2-002、P2-003、P2-004；当前无活动任务。下表的依赖和目标 Gate 只表达
+当前完成项为 P2-001、P2-002、P2-003、P2-004；P2-005 为唯一活动任务。下表的依赖和目标 Gate 只表达
 规划关系，不构成后续任务或 Assembly Gate 的启动授权。
 
 | ID | 标题 | Lane | 依赖 | 目标 Gate |

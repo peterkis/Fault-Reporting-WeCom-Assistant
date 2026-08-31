@@ -8,8 +8,8 @@
 - 当前活动 Lane：P2-B
 - 最后完成任务：P2-003（2026-08-31）
 - 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001；P2-002；P2-003
-- 当前活动任务与 Lane：无
-- 下一任务候选：P2-005 / 未授权，须另行授权
+- 当前活动任务与 Lane：P2-005 / P2-B
+- 下一任务候选：P2-005 / 已独立授权并处于 IN_PROGRESS
 - P2-G1：NOT_STARTED
 - P2/P3 Feature Flags：全部 `false`
 - P3：TODO / 未启动
@@ -92,7 +92,7 @@ P1 退出条件为：漏单 0、重复单 0、状态/事件/通知一致、真�
 
 ## 6. Phase 2
 
-P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001、P2-002、P2-003、P2-004 均已完成；P2-004 授权 Evidence 为 `evidence/p2-004-start-authorization.md`，完成 Evidence 为 `evidence/p2-004-communication-outbox-delivery-report.md`。当前无活动任务或 Lane；P2-005 及以后任务、P2-G1 组装和其他 Lane 实现仍须另行授权。所有 Feature Flag 保持关闭。
+P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001、P2-002、P2-003、P2-004 均已完成；P2-005 已由项目负责人独立授权，授权 Evidence 为 `evidence/p2-005-start-authorization.md`，当前活动 Lane 为 P2-B。P2-006 及以后任务、P2-G1 组装和其他 Lane 实现仍须另行授权。所有 Feature Flag 保持关闭。
 
 固定顺序：
 

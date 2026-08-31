@@ -9,21 +9,21 @@ const json = (relativePath) => JSON.parse(fs.readFileSync(path.join(root, relati
 const text = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 
 const profiles = Object.freeze({
-  P2_004_IN_PROGRESS: Object.freeze({
-    lastCompletedTask: 'P2-003',
-    activeTask: 'P2-004',
-    activeLane: 'P2-B',
-    candidate: 'P2-004',
-    candidateAuthorized: true,
-    p2004Status: 'IN_PROGRESS',
-  }),
-  P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION: Object.freeze({
+  P2_005_IN_PROGRESS: Object.freeze({
     lastCompletedTask: 'P2-004',
+    activeTask: 'P2-005',
+    activeLane: 'P2-B',
+    candidate: 'P2-005',
+    candidateAuthorized: true,
+    p2005Status: 'IN_PROGRESS',
+  }),
+  P2_005_DONE_AWAITING_SEPARATE_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-005',
     activeTask: null,
     activeLane: null,
-    candidate: 'P2-005',
+    candidate: 'P2-006',
     candidateAuthorized: false,
-    p2004Status: 'DONE',
+    p2005Status: 'DONE',
   }),
 });
 
@@ -35,7 +35,7 @@ test('V1.4 architecture validator passes', () => {
   assert.equal(result.status, 0, result.stdout + '\n' + result.stderr);
 });
 
-test('P2-004 lifecycle state is internally consistent without changing P1', () => {
+test('P2-005 lifecycle state is internally consistent without changing P1', () => {
   const manifest = json('MANIFEST.json');
   const current = json('plans/current_phase.json');
   const backlog = json('plans/master_backlog.json');
@@ -74,14 +74,15 @@ test('P2-004 lifecycle state is internally consistent without changing P1', () =
     assert.equal(lane, profile.activeLane);
     assert.equal(candidate, profile.candidate);
     assert.equal(authorized, profile.candidateAuthorized);
-    assert.deepEqual(tasks, ['P2-001', 'P2-002', 'P2-003', 'P2-004']);
+    assert.deepEqual(tasks, ['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005']);
   }
 
   assert.equal(backlog.tasks.find((task) => task.id === 'P2-001').status, 'DONE');
   assert.equal(backlog.tasks.find((task) => task.id === 'P2-002').status, 'DONE');
   assert.equal(backlog.tasks.find((task) => task.id === 'P2-003').status, 'DONE');
-  assert.equal(backlog.tasks.find((task) => task.id === 'P2-004').status, profile.p2004Status);
-  assert.equal(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[5-9]|01[0-4])$/u.test(task.id))
+  assert.equal(backlog.tasks.find((task) => task.id === 'P2-004').status, 'DONE');
+  assert.equal(backlog.tasks.find((task) => task.id === 'P2-005').status, profile.p2005Status);
+  assert.equal(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[6-9]|01[0-4])$/u.test(task.id))
     .every((task) => task.status === 'TODO'), true);
   assert.deepEqual(
     backlog.tasks.filter((task) => task.status === 'IN_PROGRESS').map((task) => task.id),
@@ -100,6 +101,15 @@ test('P2-004 independent authorization and stop line are preserved', () => {
   assert.match(authorization, /2b4548888882ce895a85f513d0a5bb57d9920b91/u);
   assert.match(authorization, /所有 P2\/P3 Feature Flag 继续为/u);
   assert.equal(fs.existsSync(path.join(root, 'tasks/P2-004_unified_communication_outbox_delivery.md')), true);
+});
+
+test('P2-005 independent authorization and stop line are recorded', () => {
+  const authorization = text('evidence/p2-005-start-authorization.md');
+  assert.match(authorization, /项目负责人正式、独立授权启动 P2-005。/u);
+  assert.match(authorization, /完成 P2-005 后必须停止。/u);
+  assert.match(authorization, /P2-006、P2-G1 和后续生产功能仍须另行授权。/u);
+  assert.match(authorization, /7e9a41498c471be4deca235439440ea7f157bdd4/u);
+  assert.equal(fs.existsSync(path.join(root, 'tasks/P2-005_assignment_handoff_read_cursor_generation_fence.md')), true);
 });
 
 test('P2-004 completion artifacts preserve P1 notification and Ticket ownership', () => {

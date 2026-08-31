@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### P2-005 坐席分配、Read Cursor、Handoff 与 Generation Fence
+
+- 项目负责人于 2026-08-31 正式、独立授权仅启动 `P2-005 / P2-B`；基线为 `7e9a41498c471be4deca235439440ea7f157bdd4`。
+- 当前机器状态为 `P2_005_IN_PROGRESS`；P2-006 及以后、P2-G1、真实 Workbench/REST、真实 Sender、模型、医院内网和生产功能仍未授权。
+- 全部 P2/P3 Feature Flag 保持 `false`；完成 P2-005 后必须停止。
+
 ### P2-004 统一 Communication Message / Outbox / Delivery
 
 - 项目负责人于 2026-08-31 正式、独立授权仅启动 `P2-004 / P2-B`；基线为 `2b4548888882ce895a85f513d0a5bb57d9920b91`。

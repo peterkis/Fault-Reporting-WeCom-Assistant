@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001、P2-002、P2-003、P2-004 均已完成，当前无活动任务或 Lane；P2-005 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO / NOT_STARTED`。所有 Feature Flag 默认关闭。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-004 均已完成；P2-005 已独立授权并为唯一 `IN_PROGRESS` 任务，活动 Lane 为 P2-B。P2-006 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO / NOT_STARTED`。所有 Feature Flag 默认关闭。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -197,7 +197,9 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 ## P2-005 坐席分配、Read Cursor、Handoff 与 Generation Fence
 
-- 状态：TODO
+- 状态：IN_PROGRESS（2026-08-31 独立授权）
+- Task：`tasks/P2-005_assignment_handoff_read_cursor_generation_fence.md`
+- 授权 Evidence：`evidence/p2-005-start-authorization.md`
 - Lane：P2-B
 - 目标 Gate：P2-G1
 - 依赖：P2-001, P2-004
