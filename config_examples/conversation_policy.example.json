@@ -1,6 +1,6 @@
 {
   "version": "1.2",
-  "contract_task": "P2-004",
+  "contract_task": "P2-005",
   "default_control_mode": "HUMAN",
   "session": {
     "idle_timeout_minutes": 720,
@@ -18,6 +18,12 @@
     ]
   },
   "handoff": {
+    "enabled": false,
+    "feature_flag": "HUMAN_WORKBENCH_V2_ENABLED",
+    "release_target_mode": "HUMAN",
+    "assignment_cache_enabled": false,
+    "global_unread_cache_enabled": false,
+    "command_list_limit": 200,
     "user_keywords": [
       "人工",
       "转人工",

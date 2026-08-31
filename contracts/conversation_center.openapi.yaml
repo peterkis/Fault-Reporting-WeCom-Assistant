@@ -5,6 +5,8 @@ info:
   description: >
     V1.4 contract for the lightweight human/AI conversation workbench.
     Ticket status remains authoritative in Unified Ticket Core.
+    P2-005 only freezes control contracts; every route in this document remains
+    unimplemented until P2-006 receives separate authorization.
 servers:
   - url: /api
 paths:
@@ -125,16 +127,17 @@ paths:
             schema:
               type: object
               additionalProperties: false
-              required: [expected_row_version, target_mode]
+              required: [expected_row_version, reason_code]
               properties:
                 expected_row_version:
                   type: integer
                   minimum: 1
                 target_mode:
                   type: string
-                  enum: [COPILOT, AUTO]
+                  enum: [HUMAN]
                 reason_code:
                   type: string
+                  minLength: 1
                   maxLength: 64
       responses:
         "200":

@@ -5,8 +5,9 @@
 ### P2-005 坐席分配、Read Cursor、Handoff 与 Generation Fence
 
 - 项目负责人于 2026-08-31 正式、独立授权仅启动 `P2-005 / P2-B`；基线为 `7e9a41498c471be4deca235439440ea7f157bdd4`。
-- 当前机器状态为 `P2_005_IN_PROGRESS`；P2-006 及以后、P2-G1、真实 Workbench/REST、真实 Sender、模型、医院内网和生产功能仍未授权。
-- 全部 P2/P3 Feature Flag 保持 `false`；完成 P2-005 后必须停止。
+- P2-005 已于 2026-08-31 完成：新增四张 `conversation.*` 控制表、业务命令幂等、Assignment/Handoff 生命周期、每 Principal Read Cursor、Generation Fence、Pilot 授权兼容、P2-004 Assigned Communication Authorizer 与纯 Projection Mapper。
+- Contract/Unit `11/11` 与 PostgreSQL Integration `6/6` 通过；完整回归、并发、资源和残留结果记录在 `evidence/p2-005-assignment-handoff-generation-fence-report.md`。
+- 当前无活动任务或 Lane；P2-006 及以后、P2-G1、真实 Workbench/REST、真实 Sender、模型、医院内网和生产功能仍未授权。全部 P2/P3 Feature Flag 保持 `false`；完成后已停止。
 
 ### P2-004 统一 Communication Message / Outbox / Delivery
 

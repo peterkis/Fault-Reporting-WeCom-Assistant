@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/conversation_generation_fence.schema.json",
+  "title": "Conversation Generation Fence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_id", "generation_version_at_start", "control_mode", "captured_at"],
+  "properties": {
+    "session_id": { "type": "string", "format": "uuid" },
+    "generation_version_at_start": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "control_mode": { "enum": ["HUMAN", "COPILOT", "AUTO"] },
+    "captured_at": { "type": "string", "format": "date-time" }
+  }
+}

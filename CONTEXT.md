@@ -12,6 +12,10 @@ For P2-004 Communication Message, committed Outbox, per-target Delivery, Sender/
 reconciliation, internal note, or P1 notification compatibility work, read
 `docs/40_p2_004_unified_communication.md`. Communication facts never own Ticket state.
 
+For P2-005 Assignment, Handoff, per-principal Read Cursor, Control Event, Generation Fence,
+or assigned Communication authorization, read
+`docs/41_p2_005_assignment_handoff_generation_fence.md`. Control facts never own Ticket state.
+
 ## Conversation identity
 
 **Channel Account**:
@@ -137,6 +141,22 @@ _Avoid_: Event queue, broker, source of truth
 **Generation Version**:
 The monotonic generation marker for the current Conversation Session context.
 _Avoid_: Model version, Session status
+
+**Current Assignment**:
+The single current internal Principal responsibility state for a Session; it is separate from Control Mode.
+_Avoid_: Session owner, Ticket assignee copy
+
+**Handoff**:
+An independently audited request/accept/release/cancel lifecycle for transferring a Session to human control.
+_Avoid_: Assignment history row, mode flag
+
+**Read Cursor**:
+One Principal's monotonic last-visible Item sequence for one Session.
+_Avoid_: global unread count, Realtime cursor
+
+**Control Event**:
+An append-only Assignment/Handoff/Cursor/Generation audit and command-idempotency fact.
+_Avoid_: Realtime Event, Ticket Event
 
 **Row Version**:
 The revision marker for a Conversation Session representation.

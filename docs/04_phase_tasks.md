@@ -10,7 +10,7 @@
 
 ## Phase 2
 
-状态：`IN_PROGRESS`。P2-001 至 P2-004 均已完成；P2-005 已独立授权并为唯一 `IN_PROGRESS` 任务，活动 Lane 为 P2-B。P2-006 至 P2-014 和其他 Lane 实现仍为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`，P2-G1 为 `NOT_STARTED`，全部 Feature Flag 保持 `false`。
+状态：`IN_PROGRESS`。P2-001 至 P2-005 均已完成；当前无活动实施任务或 Lane。P2-006 至 P2-014 和其他 Lane 实现仍为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`，P2-G1 为 `NOT_STARTED`，全部 Feature Flag 保持 `false`。
 
 范围：
 

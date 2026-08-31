@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/conversation_control_command.schema.json",
+  "title": "Conversation Control Command",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["command_type", "session_id", "client_command_id", "idempotency_scope", "reason_code"],
+  "properties": {
+    "command_type": { "enum": ["REQUEST_HANDOFF", "TAKEOVER", "TRANSFER", "RELEASE", "CANCEL_HANDOFF", "ADVANCE_READ_CURSOR", "INVALIDATE_GENERATION"] },
+    "session_id": { "type": "string", "format": "uuid" },
+    "client_command_id": { "type": "string", "format": "uuid" },
+    "idempotency_scope": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Z0-9][A-Z0-9_.:-]{0,127}$" },
+    "expected_row_version": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "expected_cursor_row_version": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "actor_principal_id": { "type": ["string", "null"], "format": "uuid" },
+    "target_principal_id": { "type": ["string", "null"], "format": "uuid" },
+    "handoff_id": { "type": ["string", "null"], "format": "uuid" },
+    "requested_by_kind": { "enum": ["USER", "AI", "RULE", "AGENT", "ADMIN"] },
+    "last_read_sequence": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "reason_code": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Z][A-Z0-9_]{0,63}$" },
+    "force": { "type": "boolean" },
+    "target_mode": { "enum": ["HUMAN", "COPILOT", "AUTO"] }
+  }
+}

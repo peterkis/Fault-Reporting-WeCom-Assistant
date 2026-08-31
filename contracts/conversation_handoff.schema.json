@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/conversation_handoff.schema.json",
+  "title": "Conversation Handoff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "session_id", "status", "requested_by_kind", "reason_code", "from_mode", "to_mode", "row_version", "requested_at", "updated_at"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "session_id": { "type": "string", "format": "uuid" },
+    "status": { "enum": ["REQUESTED", "ACCEPTED", "RELEASED", "CANCELLED"] },
+    "requested_by_kind": { "enum": ["USER", "AI", "RULE", "AGENT", "ADMIN"] },
+    "reason_code": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Z][A-Z0-9_]{0,63}$" },
+    "from_mode": { "enum": ["HUMAN", "COPILOT", "AUTO"] },
+    "to_mode": { "enum": ["HUMAN", "COPILOT", "AUTO"] },
+    "row_version": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "requested_at": { "type": "string", "format": "date-time" },
+    "accepted_at": { "type": ["string", "null"], "format": "date-time" },
+    "released_at": { "type": ["string", "null"], "format": "date-time" },
+    "cancelled_at": { "type": ["string", "null"], "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

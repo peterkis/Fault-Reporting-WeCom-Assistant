@@ -2,14 +2,14 @@
 
 ## 1. 原则
 
-P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-001、P2-002、P2-003 与随后独立授权的 P2-004 均已完成。当前无活动任务或 Lane；P2-005 及以后任务、P2-G1 组装和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有 Feature Flag 保持默认关闭，本次完成不等同于生产、临床或 AI 自动回复批准；完成 P2-004 后必须停止。
+P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-001 至 P2-005 均已完成。当前无活动实施任务或 Lane；P2-006 及以后任务、P2-G1 组装和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有 Feature Flag 保持默认关闭，本次完成不等同于生产、临床或 AI 自动回复批准；完成 P2-005 后已停止。
 
 ## 2. P2 Lanes
 
 | Lane | 架构范围 | 当前授权 |
 |---|---|---|
 | P2-A | Conversation Core、Timeline、Realtime Event Log | P2-001/P2-002/P2-003 已完成；当前无活动任务 |
-| P2-B | Communication Outbox、Handoff、Workbench | 未授权；只读消费冻结 Contract |
+| P2-B | Communication Outbox、Handoff、Workbench | P2-004/P2-005 已完成；当前无活动任务，P2-006 未授权 |
 | P2-C | Rules、DeepSeek Provider、Context/Memory、Rollout | 未授权；只读消费冻结 Contract |
 | P2-D | Media/OCR、Incident、Metrics | 未授权；只读消费冻结 Contract |
 
@@ -26,6 +26,7 @@ read-only Source Fact / future fixture
 
 - migration 010 继续独占 Thread/Session 的权威物理结构；
 - migration 011 只创建 Item、Item Source Binding、Projection Checkpoint 及直接索引/约束；
+- migration 021 只创建 Assignment、Handoff、Read Cursor、Control Event 及直接索引/约束；
 - 本任务只存在一个命名为 `CONVERSATION_TIMELINE` 的 Projector；
 - Source Binding 用 Projector、Stream、Source Type/ID、Variant、Session 完整身份保证幂等；
 - 同一 Session 通过数据库 transaction-level advisory lock 分配连续 sequence；
@@ -65,7 +66,7 @@ Wakeup Hub 不携带事件且不是 broker。详细 Contract 见
 P2-G1 需要 P2-001 至 P2-006 的独立任务完成和另行 Assembly 授权。P2-002 通过也不自动
 启动或通过 P2-G1。
 
-### 后续 Contract 消费（P2-004 已完成，P2-005 及以后未授权）
+### 后续 Contract 消费（P2-005 已完成，P2-006 及以后未授权）
 
 - P2-003 已冻结独立 append/replay Contract；P2-G1 未来组装仍不得把 Projection Checkpoint
   当作 `Last-Event-ID`，也不得让 Realtime Event 反向拥有 Timeline。
@@ -75,7 +76,7 @@ P2-G1 需要 P2-001 至 P2-006 的独立任务完成和另行 Assembly 授权。
 - P2-005/P2-006 只能通过显式 Audience Query Port 读取投影，不得由浏览器参数提升
   Restricted 权限。
 
-这些消费关系只冻结接口方向，不构成启动 P2-005、P2-006 或 P2-G1 的
+这些消费关系只冻结接口方向，不构成启动 P2-006 或 P2-G1 的
 授权。
 
 ### P2-G2 AI Shadow

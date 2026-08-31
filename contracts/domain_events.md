@@ -39,7 +39,7 @@ conversation.item.projected
 conversation.handoff.requested
 conversation.handoff.accepted
 conversation.mode.changed
-conversation.assignment.changed
+conversation.assigned
 conversation.read_cursor.changed
 conversation.session.closed
 ```
@@ -49,12 +49,17 @@ conversation.session.closed
 ```json
 {
   "session_id": "uuid",
-  "assigned_principal_id": "uuid",
-  "old_mode": "AUTO",
-  "new_mode": "HUMAN",
+  "handoff_status": "ACCEPTED",
+  "handoff_row_version": 2,
+  "session_row_version": 4,
   "generation_version": 6
 }
 ```
+
+P2-005 Control Event 是 Assignment/Handoff/Cursor/Generation 的追加式审计与命令幂等事实；
+Realtime Event 只是可清理通知投影。二者与状态变化在同一事务提交，但 Realtime payload 只含
+状态/版本，不含 Principal、display name、外部用户标识、正文、Internal Note 或目标。Read Cursor
+不写 Timeline Item；Assignment/Handoff 可由纯 Mapper 形成 INTERNAL `HANDOFF_EVENT` Source Record。
 
 ## Communication 事件
 

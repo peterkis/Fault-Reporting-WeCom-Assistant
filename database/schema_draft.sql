@@ -13,6 +13,7 @@
 --   pilot access control tables
 --
 -- V1.4 adds conceptual Conversation, Communication, AI and greenfield Integration tables.
+-- Migration 006 is authoritative for the current Pilot Principal/Role/Team shape.
 -- Migration 010 is authoritative for the P2-001 Thread/Session physical shape.
 -- Migration 011 is authoritative for the P2-002 Item/Item Source Binding/
 -- Projection Checkpoint physical shape. The three matching blocks below are
@@ -21,11 +22,13 @@
 -- Migration 020 is authoritative for the P2-004 communication.message,
 -- communication.outbox, communication.delivery and
 -- communication.delivery_attempt physical shape.
+-- Migration 021 is authoritative for the P2-005 Assignment/Handoff/Read
+-- Cursor/Control Event physical shape.
 -- Migration 005 remains authoritative for P1 notification.*; migration 020
 -- does not migrate, copy, rename, delete or dual-write those P1 facts.
 --
--- P2-004 is implemented independently. Assignment, Handoff, Read Cursor,
--- Workbench assembly, AI, Media, Incident and Integration remain unauthorized.
+-- P2-005 is implemented independently. P2-006 Workbench, AI, Media, Incident
+-- and P3 Integration remain unauthorized. Every P2/P3 feature flag is false.
 -- Their presence below is not implementation or Gate authorization.
 -- Do not create a second long-term Ticket Core and do not rename pilot_ticket.*
 -- in a big-bang migration.
@@ -281,50 +284,13 @@ CREATE TABLE IF NOT EXISTS conversation.projection_checkpoint (
 -- The three blocks above mirror migration 011 for human navigation only.
 -- Migration 011, including its drift checks, is the executable authority.
 
--- NOT AUTHORIZED BY P2-002: assignment/read cursor/handoff are future P2-005
--- concepts. Keep them disabled and do not create them from this draft.
-CREATE TABLE IF NOT EXISTS conversation.assignment_history (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id uuid NOT NULL REFERENCES conversation.session(id),
-    from_principal_id uuid NULL,
-    to_principal_id uuid NULL,
-    from_team_id uuid NULL,
-    to_team_id uuid NULL,
-    changed_by_principal_id uuid NOT NULL,
-    reason_code text NOT NULL,
-    occurred_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS conversation.read_cursor (
-    principal_id uuid NOT NULL,
-    thread_id uuid NOT NULL REFERENCES conversation.thread(id),
-    last_read_sequence bigint NOT NULL DEFAULT 0 CHECK (last_read_sequence >= 0),
-    updated_at timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (principal_id, thread_id)
-);
-
-CREATE TABLE IF NOT EXISTS conversation.handoff (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id uuid NOT NULL REFERENCES conversation.session(id),
-    requested_by_kind text NOT NULL CHECK (requested_by_kind IN (
-        'USER', 'AI', 'RULE', 'AGENT', 'ADMIN'
-    )),
-    requested_by_id text NULL,
-    reason_code text NOT NULL,
-    status text NOT NULL CHECK (status IN (
-        'REQUESTED', 'ACCEPTED', 'RELEASED', 'CANCELLED'
-    )),
-    from_mode text NOT NULL CHECK (from_mode IN ('AUTO', 'COPILOT', 'HUMAN')),
-    to_mode text NOT NULL CHECK (to_mode IN ('AUTO', 'COPILOT', 'HUMAN')),
-    assigned_principal_id uuid NULL,
-    requested_at timestamptz NOT NULL DEFAULT now(),
-    accepted_at timestamptz NULL,
-    released_at timestamptz NULL,
-    metadata jsonb NOT NULL DEFAULT '{}'::jsonb
-);
-
-CREATE INDEX IF NOT EXISTS idx_conversation_handoff_session_time
-    ON conversation.handoff (session_id, requested_at DESC);
+-- P2-005 IMPLEMENTED CONTRACT: the following names are navigation-only.
+-- Migration 021, including exact columns, FKs, checks and indexes, is the
+-- executable authority. NEVER execute this draft to create or repair them.
+--   conversation.assignment
+--   conversation.handoff
+--   conversation.read_cursor
+--   conversation.control_event
 
 -- P2-003 IMPLEMENTED CONTRACT: durable, non-authoritative replay projection.
 -- Migration 012 is the executable source; this remains the conceptual draft.

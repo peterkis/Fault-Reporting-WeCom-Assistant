@@ -404,7 +404,7 @@ check(pkg.scripts['p2:003:retention:check'] === 'node --env-file=.env.pilot scri
 check(pkg.scripts['test:p2:003'] === 'node --test tests/p2-003-realtime-event-log.test.mjs', 'package exposes P2-003 unit tests');
 check(pkg.scripts['test:p2:003:integration'] === 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-003-realtime-event-log.integration.test.mjs', 'package exposes serial P2-003 integration tests');
 
-if (lifecycleStatus === 'P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION') {
+{
   const completionDate = current.p2_004_completed_at;
   const completionEvidence = 'evidence/p2-004-communication-outbox-delivery-report.md';
   check(isIsoDate(completionDate), 'P2-004 completion date is ISO formatted');
@@ -437,6 +437,44 @@ if (lifecycleStatus === 'P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION') {
   const communicationMigration = read('database/migrations/020_p2_004_unified_communication.sql');
   check((communicationMigration.match(/CREATE TABLE IF NOT EXISTS\s+communication\./giu) ?? []).length === 4, 'migration 020 creates exactly four communication tables');
   check(!/\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|TRUNCATE)\s+(?:TABLE\s+)?notification\./iu.test(communicationMigration), 'migration 020 never mutates notification facts');
+}
+
+for (const relativePath of [
+  'contracts/conversation_assignment.schema.json',
+  'contracts/conversation_handoff.schema.json',
+  'contracts/conversation_read_cursor.schema.json',
+  'contracts/conversation_control_command.schema.json',
+  'contracts/conversation_generation_fence.schema.json',
+  'contracts/conversation_control_contracts.d.ts',
+  'database/migrations/021_p2_005_conversation_control.sql',
+  'docs/41_p2_005_assignment_handoff_generation_fence.md',
+  'scripts/p2-005-migrate.mjs',
+  'src/p2-005-conversation-control.mjs',
+  'src/p2-005-conversation-control-projections.mjs',
+  'tests/p2-005-conversation-control.test.mjs',
+  'tests/p2-005-conversation-control.integration.test.mjs',
+]) check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-005');
+check(pkg.scripts['p2:005:migrate'] === 'node --env-file=.env.pilot scripts/p2-005-migrate.mjs', 'package exposes migration 021 command');
+check(pkg.scripts['p2:005:migrate:check'] === 'node --env-file=.env.pilot scripts/p2-005-migrate.mjs --check', 'package exposes migration 021 check command');
+check(pkg.scripts['test:p2:005'] === 'node --test tests/p2-005-conversation-control.test.mjs', 'package exposes P2-005 unit tests');
+check(pkg.scripts['test:p2:005:integration'] === 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-005-conversation-control.integration.test.mjs', 'package exposes serial P2-005 integration tests');
+const controlMigration = read('database/migrations/021_p2_005_conversation_control.sql');
+check((controlMigration.match(/CREATE TABLE IF NOT EXISTS\s+conversation\./giu) ?? []).length === 4, 'migration 021 creates exactly four conversation control tables');
+check(!/ALTER\s+TABLE\s+conversation\.session/iu.test(controlMigration), 'migration 021 does not alter conversation.session');
+check(sameArray([...controlMigration.matchAll(/CREATE TABLE IF NOT EXISTS\s+([a-z_]+\.[a-z_]+)/giu)].map((match) => match[1]), [
+  'conversation.assignment', 'conversation.handoff', 'conversation.read_cursor', 'conversation.control_event',
+]), 'migration 021 creates only the four frozen control tables');
+
+if (lifecycleStatus === 'P2_005_DONE_AWAITING_SEPARATE_AUTHORIZATION') {
+  const completionDate = current.p2_005_completed_at;
+  const completionEvidence = 'evidence/p2-005-assignment-handoff-generation-fence-report.md';
+  check(isIsoDate(completionDate), 'P2-005 completion date is ISO formatted');
+  check(current.p2_005_completion_evidence === completionEvidence, 'current phase links P2-005 completion evidence');
+  check(manifest.p2_005_completed_at === completionDate && manifest.p2_005_completion_evidence === completionEvidence, 'manifest mirrors P2-005 completion metadata');
+  check(taskIndex.p2_005_completed_at === completionDate && taskIndex.p2_005_completion_evidence === completionEvidence, 'task index mirrors P2-005 completion metadata');
+  check(projectSummary.project.p2_005_completed_at === completionDate && projectSummary.project.p2_005_completion_evidence === completionEvidence, 'project summary mirrors P2-005 completion metadata');
+  check(p2005?.completed_at === completionDate && p2005?.evidence === completionEvidence, 'master backlog mirrors P2-005 completion metadata');
+  check(fs.existsSync(path.join(root, completionEvidence)), 'P2-005 completion evidence exists');
 }
 
 if (errors.length > 0) {

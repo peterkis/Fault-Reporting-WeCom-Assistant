@@ -472,7 +472,7 @@ export function createCommunicationService({
       return withTransaction(pool, async (transaction) => {
         const context = await loadSessionAndThread(transaction, normalized);
         if (context.ok === false) return context;
-        if (await authorizeCommand({ command: normalized, actor, ...context }) !== true) return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
+        if (await authorizeCommand({ transaction, command: normalized, actor, ...context }) !== true) return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
         const resolved = await destinationResolver({ command: normalized, ...context });
         return appendCommunication({ transaction, command: normalized, actor, resolvedDestinations: resolved });
       });
@@ -488,7 +488,7 @@ export function createCommunicationService({
       return withTransaction(pool, async (transaction) => {
         const context = await loadSessionAndThread(transaction, normalized);
         if (context.ok === false) return context;
-        if (await authorizeCommand({ command: normalized, actor, ...context }) !== true) return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
+        if (await authorizeCommand({ transaction, command: normalized, actor, ...context }) !== true) return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
         return appendCommunication({ transaction, command: normalized, actor, resolvedDestinations: [] });
       });
     });

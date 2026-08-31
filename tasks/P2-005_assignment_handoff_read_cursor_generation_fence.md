@@ -1,8 +1,10 @@
 # P2-005 坐席分配、Read Cursor、Handoff 与 Generation Fence
 
-- 状态：IN_PROGRESS
+- 状态：DONE
 - 授权日期：2026-08-31
 - 授权 Evidence：`evidence/p2-005-start-authorization.md`
+- 完成日期：2026-08-31
+- 完成 Evidence：`evidence/p2-005-assignment-handoff-generation-fence-report.md`
 - 基线提交：`7e9a41498c471be4deca235439440ea7f157bdd4`
 - Lane：P2-B
 - 目标 Gate：P2-G1（本任务不启动 Assembly Gate）

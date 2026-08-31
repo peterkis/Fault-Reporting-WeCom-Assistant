@@ -13,7 +13,7 @@
 - `tasks/P2-002_persistent_timeline_projector.md`：已完成 P2-002 投影任务记录；
 - `tasks/P2-003_realtime_event_log_sse.md`：已完成的 P2-003 任务记录；
 - `tasks/P2-004_unified_communication_outbox_delivery.md`：已完成的 P2-004 任务记录；
-- `tasks/P2-005_assignment_handoff_read_cursor_generation_fence.md`：当前 P2-005 任务记录；
+- `tasks/P2-005_assignment_handoff_read_cursor_generation_fence.md`：已完成的 P2-005 任务记录；
 - `evidence/p2-phase-start-authorization.md`：Phase 2 启动及仅授权 P2-001 的负责人 Evidence；
 - `evidence/p2-001-conversation-contracts-report.md`：P2-001 脱敏验证 Evidence；
 - `evidence/p2-002-start-authorization.md`：仅启动 P2-002 的项目负责人独立授权 Evidence；
@@ -23,6 +23,7 @@
 - `evidence/p2-004-start-authorization.md`：仅启动 P2-004 的项目负责人独立授权 Evidence；
 - `evidence/p2-004-communication-outbox-delivery-report.md`：P2-004 完成验证 Evidence。
 - `evidence/p2-005-start-authorization.md`：仅启动 P2-005 的项目负责人独立授权 Evidence；
+- `evidence/p2-005-assignment-handoff-generation-fence-report.md`：P2-005 完成验证 Evidence。
 
 ## ADR
 
@@ -65,12 +66,29 @@
 - 所有 P2/P3 Feature Flag 保持 `false`；
 - 完成状态不等同于生产、临床或 Assembly Gate 验收。
 
-## P2-005 启动状态
+## P2-005 完成状态
 
-- P2-003、P2-004：`DONE`（2026-08-31）；P2-005：`IN_PROGRESS`；活动 Lane：P2-B；
+- P2-003、P2-004、P2-005：`DONE`（2026-08-31）；当前无活动任务或 Lane；
 - P2-006 至 P2-014 继续为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；
 - `P2-G1` 继续为 `NOT_STARTED`，所有 P2/P3 Feature Flag 保持 `false`；
 - 未接真实 Workbench、企业微信新增 Sender、模型或医院内网；本完成不等同于生产或临床上线。
+
+## P2-005 契约、迁移、运行时与测试
+
+- `docs/41_p2_005_assignment_handoff_generation_fence.md`：Assignment、Handoff、Read Cursor、Control Event、Generation Fence、授权、隐私和资源边界；
+- `contracts/conversation_assignment.schema.json`：Assignment 安全状态 Contract；
+- `contracts/conversation_handoff.schema.json`：Handoff 生命周期 Contract；
+- `contracts/conversation_read_cursor.schema.json`：每 Principal/Session Cursor Contract；
+- `contracts/conversation_control_command.schema.json`：有界 Control Command Contract；
+- `contracts/conversation_generation_fence.schema.json`：Generation Fence Contract；
+- `contracts/conversation_control_contracts.d.ts`：P2-005 TypeScript Port 和状态类型；
+- `database/migrations/021_p2_005_conversation_control.sql`：只新增四张 `conversation.*` 控制表的增量迁移；
+- `scripts/p2-005-migrate.mjs`：只应用或检查 migration 021 的受限迁移入口；
+- `src/p2-005-conversation-control.mjs`：命令规范化、幂等、授权、控制服务、Cursor 与 Fence；
+- `src/p2-005-conversation-control-projections.mjs`：纯 Timeline/Realtime Mapper；
+- `tests/p2-005-conversation-control.test.mjs`：Contract/Unit 测试；
+- `tests/p2-005-conversation-control.integration.test.mjs`：隔离 PostgreSQL 并发、故障、资源与清理测试；
+- `tests/helpers/p2-005-postgres-harness.mjs`：随机隔离 PostgreSQL 测试环境。
 
 ## P2-004 契约、迁移、运行时与测试
 

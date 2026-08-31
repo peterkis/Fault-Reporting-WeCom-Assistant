@@ -9,10 +9,10 @@
     "P2-004",
     "P2-005"
   ],
-  "last_completed_task": "P2-004",
-  "active_task": "P2-005",
-  "active_lane": "P2-B",
-  "implementation_authorization_status": "P2_005_IN_PROGRESS",
+  "last_completed_task": "P2-005",
+  "active_task": null,
+  "active_lane": null,
+  "implementation_authorization_status": "P2_005_DONE_AWAITING_SEPARATE_AUTHORIZATION",
   "p2_002_completed_at": "2026-08-30",
   "p2_002_completion_evidence": "evidence/p2-002-timeline-projector-report.md",
   "p2_003_completed_at": "2026-08-31",
@@ -23,8 +23,10 @@
   "p2_004_completion_evidence": "evidence/p2-004-communication-outbox-delivery-report.md",
   "p2_005_authorized_at": "2026-08-31",
   "p2_005_authorization_evidence": "evidence/p2-005-start-authorization.md",
-  "next_task_candidate": "P2-005",
-  "next_task_authorized": true,
+  "p2_005_completed_at": "2026-08-31",
+  "p2_005_completion_evidence": "evidence/p2-005-assignment-handoff-generation-fence-report.md",
+  "next_task_candidate": "P2-006",
+  "next_task_authorized": false,
   "feature_flags_enabled": [],
   "feature_flag_defaults": {
     "CONVERSATION_CENTER_ENABLED": false,
@@ -41,7 +43,7 @@
     "HOSPITAL_API_SOURCE_ENABLED": false,
     "MONITORING_SOURCE_ENABLED": false
   },
-  "rule": "P2-005 alone is authorized and IN_PROGRESS on P2-B. P2-006 and later tasks must not start without separate authorization. Every P2 and P3 feature flag remains false. P2-G1 and P3 are not started.",
+  "rule": "P2-005 is DONE and there is no active task or lane. P2-006 and later tasks must not start without separate authorization. Every P2 and P3 feature flag remains false. P2-G1 and P3 are not started.",
   "migration_number_reservations": {
     "P2-A": "010-019",
     "P2-B": "020-029",

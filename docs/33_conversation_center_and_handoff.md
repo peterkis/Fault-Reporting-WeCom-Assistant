@@ -31,7 +31,7 @@ Unified Ticket Core    = 处理生命周期
 P2-003 随后获得独立授权并实现 durable Realtime Event Log、授权 SSE replay、heartbeat、
 slow-client governance、fallback contract 与 retention；详细边界见
 `docs/39_p2_003_realtime_event_log_sse.md`。人工回复、Handoff、Assignment、Read Cursor、
-Communication Message/Outbox/Delivery 已由独立授权的 P2-004 完成；Workbench、Assignment、Handoff、Read Cursor 和任何 AI 行为属于 P2-005 及以后任务，仍未授权、未实现。
+Communication Message/Outbox/Delivery 已由独立授权的 P2-004 完成；Assignment、Handoff、Read Cursor、Control Event 与 Generation Fence 已由独立授权的 P2-005 实现，详细边界见 `docs/41_p2_005_assignment_handoff_generation_fence.md`。Workbench、真实 REST Route、页面和任何 AI 行为仍属于 P2-006 及以后任务，未授权、未实现。
 
 ## 3. Thread 与 Session
 

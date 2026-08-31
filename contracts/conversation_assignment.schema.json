@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/conversation_assignment.schema.json",
+  "title": "Conversation Assignment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_id", "assignment_status", "assignment_version"],
+  "properties": {
+    "session_id": { "type": "string", "format": "uuid" },
+    "assignment_status": { "enum": ["UNASSIGNED", "ASSIGNED"] },
+    "assignment_version": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "assigned_at": { "type": ["string", "null"], "format": "date-time" },
+    "released_at": { "type": ["string", "null"], "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

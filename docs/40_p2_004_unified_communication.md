@@ -157,5 +157,6 @@ Redis、Kafka、RabbitMQ、ORM、Socket.IO、TypeScript runtime、本地模型�
 
 ## 15. 后续消费边界
 
-P2-005 可在另行授权后提供 Assignment/Handoff/Generation Fence；P2-006 可在另行授权后实现真实
+P2-005 已在独立授权下提供 Assignment/Handoff/Read Cursor/Generation Fence 和 assigned
+Communication Authorizer；P2-006 可在另行授权后实现真实
 REST/Workbench/权限；P2-G1 才能装配 Timeline/SSE/发送路径。上述接口兼容说明不构成启动授权。
