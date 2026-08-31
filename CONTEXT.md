@@ -8,6 +8,10 @@ For P2-002 timeline projection, source mapping, ordering, checkpoint, or rebuild
 For P2-003 durable realtime replay, authorization clipping, SSE, backpressure, or retention work,
 read `docs/39_p2_003_realtime_event_log_sse.md`. Realtime objects never become domain facts.
 
+For P2-004 Communication Message, committed Outbox, per-target Delivery, Sender/Worker,
+reconciliation, internal note, or P1 notification compatibility work, read
+`docs/40_p2_004_unified_communication.md`. Communication facts never own Ticket state.
+
 ## Conversation identity
 
 **Channel Account**:
@@ -67,7 +71,7 @@ A deletable and rebuildable timeline projection associated with a Conversation S
 _Avoid_: Channel Message, Ticket Event, Delivery fact, authoritative event
 
 **Timeline Source Fact**:
-An authoritative Channel Message, Ticket Event, Delivery, future Communication Message, or future Handoff Event read without mutation by the projector.
+An authoritative Channel Message, Ticket Event, Communication Message/Delivery, or future Handoff Event read without mutation by the projector.
 _Avoid_: Conversation Item, projection input copy
 
 **Timeline Source Record**:
@@ -101,6 +105,22 @@ _Avoid_: Visibility stored on an Item, browser-only authorization
 **Realtime Event**:
 An immutable, retention-bounded communication projection appended after a source fact exists and used only for authorized workbench replay.
 _Avoid_: Ticket Event, Timeline Source Fact, business event ownership
+
+**Communication Message**:
+An append-only externally intended message or internal note fact. It does not own Ticket or Session state.
+_Avoid_: Conversation Item, Provider request, Ticket Event
+
+**Communication Outbox**:
+An immutable send intent committed with its Communication Message before external side effects.
+_Avoid_: Delivery status, attempt log, in-memory queue
+
+**Communication Delivery**:
+The current per-target delivery state containing the internal target needed by the Worker.
+_Avoid_: Outbox intent, Delivery Attempt, public API view
+
+**Delivery Attempt**:
+The audit fact for one started/finalized delivery attempt or explicit reconciliation resolution.
+_Avoid_: Current Delivery state, retry scheduler
 
 **Realtime Cursor**:
 The canonical PostgreSQL BIGINT event ID string last observed by one client; it is compared with the durable high watermark and retention floor.

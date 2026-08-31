@@ -391,6 +391,30 @@ if (lifecycleStatus === 'P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION') {
   check(taskIndex.p2_004_completed_at === completionDate && taskIndex.p2_004_completion_evidence === completionEvidence, 'task index mirrors P2-004 completion metadata');
   check(projectSummary.project.p2_004_completed_at === completionDate && projectSummary.project.p2_004_completion_evidence === completionEvidence, 'project summary mirrors P2-004 completion metadata');
   check(p2004?.completed_at === completionDate && p2004?.evidence === completionEvidence, 'master backlog mirrors P2-004 completion metadata');
+  for (const relativePath of [
+    'contracts/communication_message.schema.json',
+    'contracts/communication_delivery.schema.json',
+    'contracts/communication_internal_note_command.schema.json',
+    'contracts/communication_system_notification.schema.json',
+    'contracts/communication_contracts.d.ts',
+    'database/migrations/020_p2_004_unified_communication.sql',
+    'docs/40_p2_004_unified_communication.md',
+    'scripts/p2-004-migrate.mjs',
+    'src/p2-004-communication-core.mjs',
+    'src/p2-004-communication-delivery-worker.mjs',
+    'src/p2-004-communication-projections.mjs',
+    'src/p2-004-communication-sender-port.mjs',
+    'tests/p2-004-communication-core.test.mjs',
+    'tests/p2-004-communication-core.integration.test.mjs',
+    completionEvidence,
+  ]) check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-004 completion');
+  check(pkg.scripts['p2:004:migrate'] === 'node --env-file=.env.pilot scripts/p2-004-migrate.mjs', 'package exposes migration 020 command');
+  check(pkg.scripts['p2:004:migrate:check'] === 'node --env-file=.env.pilot scripts/p2-004-migrate.mjs --check', 'package exposes migration 020 check command');
+  check(pkg.scripts['test:p2:004'] === 'node --test tests/p2-004-communication-core.test.mjs', 'package exposes P2-004 unit tests');
+  check(pkg.scripts['test:p2:004:integration'] === 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-004-communication-core.integration.test.mjs', 'package exposes serial P2-004 integration tests');
+  const communicationMigration = read('database/migrations/020_p2_004_unified_communication.sql');
+  check((communicationMigration.match(/CREATE TABLE IF NOT EXISTS\s+communication\./giu) ?? []).length === 4, 'migration 020 creates exactly four communication tables');
+  check(!/\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|TRUNCATE)\s+(?:TABLE\s+)?notification\./iu.test(communicationMigration), 'migration 020 never mutates notification facts');
 }
 
 if (errors.length > 0) {

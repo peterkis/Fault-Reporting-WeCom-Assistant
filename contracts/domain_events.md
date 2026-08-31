@@ -60,12 +60,22 @@ conversation.session.closed
 
 ```text
 communication.message.committed
+communication.delivery.changed
 communication.delivery.sent
 communication.delivery.failed
+communication.delivery.reconciliation_required
 communication.delivery.dead_lettered
+communication.delivery.cancelled
 ```
 
-人工、AI 和工单通知必须形成同一 Communication Message/Outbox/Delivery 事实链。`visibility=INTERNAL` 的消息不得产生外部 Delivery。
+P2-004 已冻结 Message / committed Outbox / per-target Delivery / Delivery Attempt 事实边界。
+人工、AI 和可信 System 通知必须先在同一 PostgreSQL 事务提交 Message、Outbox 和 Delivery，
+再由单 Worker 调用 Sender。`visibility=INTERNAL` 或 `purpose=INTERNAL_NOTE` 的消息不得产生
+Outbox、Delivery 或外部 Sender 调用。`communication.delivery.changed` 只是未来 P2-G1 可消费的
+Realtime 投影事件；P2-004 的纯函数 Mapper 不自动写 P2-002/P2-003 表。
+
+现有 P1 Ticket 通知继续由 `notification.*` 承载，不迁移、不回填、不复制、不重命名、不双写；
+Compatibility Adapter 只提供安全只读 View 或委托既有 P1 Worker。
 
 ## AI 事件
 

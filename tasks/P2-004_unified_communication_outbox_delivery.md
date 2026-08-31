@@ -1,8 +1,10 @@
 # P2-004 统一 Communication Message / Outbox / Delivery
 
-- 状态：IN_PROGRESS
+- 状态：DONE
 - 授权日期：2026-08-31
 - 授权 Evidence：`evidence/p2-004-start-authorization.md`
+- 完成日期：2026-08-31
+- 完成 Evidence：`evidence/p2-004-communication-outbox-delivery-report.md`
 - 基线提交：`2b4548888882ce895a85f513d0a5bb57d9920b91`
 - Lane：P2-B
 - 目标 Gate：P2-G1（本任务不启动 Assembly Gate）

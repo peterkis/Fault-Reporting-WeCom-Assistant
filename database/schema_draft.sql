@@ -17,12 +17,16 @@
 -- Migration 011 is authoritative for the P2-002 Item/Item Source Binding/
 -- Projection Checkpoint physical shape. The three matching blocks below are
 -- navigation mirrors only and cannot supersede the numbered migrations.
+-- Migration 012 is authoritative for the P2-003 Realtime Event Log shape.
+-- Migration 020 is authoritative for the P2-004 communication.message,
+-- communication.outbox, communication.delivery and
+-- communication.delivery_attempt physical shape.
+-- Migration 005 remains authoritative for P1 notification.*; migration 020
+-- does not migrate, copy, rename, delete or dual-write those P1 facts.
 --
--- P2-002 completed on 2026-08-30. Realtime Event, Handoff, Assignment,
--- Read Cursor, Communication, AI and Integration tables remain conceptual and
--- are NOT authorized by P2-002. Their presence below is not implementation or
--- Gate authorization. The remaining conceptual tables require their own task
--- and Assembly Gate approval.
+-- P2-004 is implemented independently. Assignment, Handoff, Read Cursor,
+-- Workbench assembly, AI, Media, Incident and Integration remain unauthorized.
+-- Their presence below is not implementation or Gate authorization.
 -- Do not create a second long-term Ticket Core and do not rename pilot_ticket.*
 -- in a big-bang migration.
 -- ============================================================================
@@ -372,69 +376,82 @@ CREATE TABLE IF NOT EXISTS conversation.realtime_stream_state (
 -- ============================================================================
 -- Communication Outbox
 -- ============================================================================
--- NOT AUTHORIZED BY P2-002: every communication.* table below belongs to
--- future P2-004 or later. P2-002 uses fixture-only Communication mapping.
+-- P2-004 IMPLEMENTED CONTRACT. Migration 020 is executable authority; this
+-- block is a navigation mirror and MUST NOT be applied.
 
 CREATE TABLE IF NOT EXISTS communication.message (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     session_id uuid NULL REFERENCES conversation.session(id),
     sender_kind text NOT NULL CHECK (sender_kind IN ('AI', 'AGENT', 'SYSTEM')),
-    sender_id text NULL,
+    sender_principal_id uuid NULL,
+    sender_system_code text NULL,
+    purpose text NOT NULL,
     message_type text NOT NULL CHECK (message_type IN (
         'text', 'markdown', 'image', 'file', 'mixed', 'template_card'
     )),
-    visibility text NOT NULL CHECK (visibility IN ('EXTERNAL', 'INTERNAL')),
-    body jsonb NOT NULL,
+    visibility text NOT NULL CHECK (visibility IN ('EXTERNAL', 'INTERNAL', 'RESTRICTED')),
+    idempotency_scope text NOT NULL,
+    client_command_id uuid NOT NULL,
+    command_hash text NOT NULL,
+    content jsonb NOT NULL,
+    content_hash text NOT NULL,
     reply_to_conversation_item_id uuid NULL REFERENCES conversation.item(id),
-    client_command_id uuid NULL,
+    privacy_class text NOT NULL,
+    retention_until timestamptz NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (client_command_id)
+    UNIQUE (idempotency_scope, client_command_id)
 );
 
 CREATE TABLE IF NOT EXISTS communication.outbox (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     message_id uuid NOT NULL REFERENCES communication.message(id),
-    channel_type text NOT NULL,
-    target_type text NOT NULL CHECK (target_type IN ('PERSON', 'GROUP')),
-    target_id text NOT NULL,
-    idempotency_key text NOT NULL,
+    idempotency_key text NOT NULL UNIQUE,
+    route_policy text NOT NULL,
     priority integer NOT NULL DEFAULT 100,
-    status text NOT NULL DEFAULT 'PENDING' CHECK (status IN (
-        'PENDING', 'LEASED', 'SENT', 'FAILED', 'DEAD_LETTER', 'CANCELLED'
-    )),
-    available_at timestamptz NOT NULL DEFAULT now(),
-    attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
-    lease_token uuid NULL,
-    lease_expires_at timestamptz NULL,
-    last_error_code text NULL,
-    last_error_detail text NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    sent_at timestamptz NULL,
-    UNIQUE (idempotency_key)
+    created_at timestamptz NOT NULL DEFAULT now()
 );
-
-CREATE INDEX IF NOT EXISTS idx_communication_outbox_claim
-    ON communication.outbox (status, available_at, priority, created_at);
 
 CREATE TABLE IF NOT EXISTS communication.delivery (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
     outbox_id uuid NOT NULL REFERENCES communication.outbox(id),
-    attempt_no integer NOT NULL CHECK (attempt_no >= 1),
     provider text NOT NULL,
-    status text NOT NULL CHECK (status IN (
-        'SENDING', 'SENT', 'ACKNOWLEDGED', 'FAILED'
-    )),
+    channel_account_id text NOT NULL,
+    target_type text NOT NULL CHECK (target_type IN ('PERSON', 'GROUP')),
+    target_id text NOT NULL,
+    target_hash text NOT NULL,
+    idempotency_key text NOT NULL UNIQUE,
+    priority integer NOT NULL DEFAULT 100,
+    status text NOT NULL DEFAULT 'PENDING',
+    attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+    next_attempt_at timestamptz NOT NULL DEFAULT now(),
+    lease_token uuid NULL,
+    lease_expires_at timestamptz NULL,
+    send_started_at timestamptz NULL,
+    side_effect_state text NOT NULL DEFAULT 'NOT_ATTEMPTED',
+    last_error_code text NULL,
     provider_message_id text NULL,
-    request_id text NULL,
-    error_code text NULL,
-    error_detail text NULL,
-    started_at timestamptz NOT NULL DEFAULT now(),
-    completed_at timestamptz NULL,
-    UNIQUE (outbox_id, attempt_no)
+    sent_at timestamptz NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- A compatibility adapter may project existing notification.outbox/delivery into
--- the above logical contract instead of creating these tables immediately.
+CREATE TABLE IF NOT EXISTS communication.delivery_attempt (
+    id uuid PRIMARY KEY DEFAULT uuidv7(),
+    delivery_id uuid NOT NULL REFERENCES communication.delivery(id),
+    attempt_no integer NOT NULL CHECK (attempt_no >= 1),
+    outcome text NOT NULL,
+    side_effect_state text NOT NULL,
+    lease_token uuid NULL,
+    request_id text NULL,
+    error_code text NULL,
+    provider_message_id text NULL,
+    started_at timestamptz NOT NULL,
+    completed_at timestamptz NULL,
+    UNIQUE (delivery_id, attempt_no)
+);
+
+-- P1NotificationCompatibilityAdapter reads a safe notification.delivery view
+-- or delegates the existing P1 Worker. It never copies P1 rows into these tables.
 
 -- ============================================================================
 -- AI jobs, runs and memory

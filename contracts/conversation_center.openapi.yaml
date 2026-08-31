@@ -148,6 +148,11 @@ paths:
   /conversations/{sessionId}/messages:
     post:
       operationId: sendConversationMessage
+      description: >
+        P2-004 freezes this future HTTP contract but does not implement the route.
+        Idempotency-Key MUST equal body.client_command_id, and body.session_id
+        MUST equal the sessionId path parameter. The client cannot provide a
+        provider, channel account, target, sender authority, lease, or status.
       parameters:
         - $ref: "#/components/parameters/SessionId"
         - $ref: "#/components/parameters/IdempotencyKey"
@@ -164,17 +169,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [message_id, outbox_id, status]
-                properties:
-                  message_id:
-                    type: string
-                    format: uuid
-                  outbox_id:
-                    type: string
-                    format: uuid
-                  status:
-                    type: string
-                    const: PENDING
+                $ref: "#/components/schemas/CommunicationCommandResult"
         "409":
           $ref: "#/components/responses/Conflict"
   /conversations/{sessionId}/internal-notes:
@@ -188,23 +183,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: false
-              required: [expected_row_version, text, client_command_id]
-              properties:
-                expected_row_version:
-                  type: integer
-                  minimum: 1
-                text:
-                  type: string
-                  minLength: 1
-                  maxLength: 10000
-                client_command_id:
-                  type: string
-                  format: uuid
+              $ref: "./communication_internal_note_command.schema.json"
       responses:
         "201":
           description: Internal note committed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunicationCommandResult"
   /realtime/events:
     get:
       operationId: streamRealtimeEvents
@@ -284,14 +270,46 @@ components:
       required: true
       schema:
         type: string
-        minLength: 16
-        maxLength: 128
+        format: uuid
+        minLength: 36
+        maxLength: 36
+      description: Must exactly equal body.client_command_id for Communication commands.
   responses:
     NotFound:
       description: Resource not found or not visible
     Conflict:
       description: Row version, ownership, mode or idempotency conflict
   schemas:
+    CommunicationMessage:
+      $ref: "./communication_message.schema.json"
+    CommunicationDelivery:
+      $ref: "./communication_delivery.schema.json"
+    CommunicationCommandResult:
+      type: object
+      additionalProperties: false
+      required: [message_id, outbox_id, delivery_ids, command_status, replayed, created_at]
+      properties:
+        message_id:
+          type: string
+          format: uuid
+        outbox_id:
+          type: [string, "null"]
+          format: uuid
+        delivery_ids:
+          type: array
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+        command_status:
+          type: string
+          enum: [COMMITTED, REPLAYED]
+        replayed:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
     RealtimeEvent:
       $ref: "./conversation_realtime_event.schema.json"
     RealtimeFallback:

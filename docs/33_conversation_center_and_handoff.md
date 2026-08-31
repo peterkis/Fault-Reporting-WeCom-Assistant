@@ -31,7 +31,7 @@ Unified Ticket Core    = 处理生命周期
 P2-003 随后获得独立授权并实现 durable Realtime Event Log、授权 SSE replay、heartbeat、
 slow-client governance、fallback contract 与 retention；详细边界见
 `docs/39_p2_003_realtime_event_log_sse.md`。人工回复、Handoff、Assignment、Read Cursor、
-Communication Outbox、Workbench 和任何 AI 行为属于 P2-004 及以后任务，仍未授权、未实现。
+Communication Message/Outbox/Delivery 已由独立授权的 P2-004 完成；Workbench、Assignment、Handoff、Read Cursor 和任何 AI 行为属于 P2-005 及以后任务，仍未授权、未实现。
 
 ## 3. Thread 与 Session
 
@@ -104,7 +104,7 @@ Event、Delivery 或 Communication/Handoff 的事实副本。P2-002 的详细 Co
 | 类型 | 权威来源 | P2-002 状态 | 默认可见性 |
 |---|---|---|---|
 | 用户消息 | Channel Message | 现有 P1 表的只读 Mapper | `EXTERNAL` |
-| AI/人工回复 | future Communication Message | 合成 fixture Mapper；P2-004 未授权 | 由 future 事实明确声明 |
+| AI/人工回复 | Communication Message | P2-004 合成 Contract/Mapper；未装配真实发送路径 | 由 Communication 事实明确声明 |
 | 内部备注 | future Communication / Ticket Event | 仅 Ticket internal note 可从现有事实映射 | `INTERNAL` |
 | Ticket 事件 | Ticket Event | 现有 P1 表的只读 Mapper | 状态/外部备注/内部备注按 Variant 隔离 |
 | Handoff/分配 | future Handoff Event | 合成 fixture Mapper；P2-005 未授权 | `INTERNAL` |
@@ -236,7 +236,7 @@ COMMIT
 
 所有未发送 AI 任务在完成时会因 generation version 不一致而失效。
 
-## 7. 人工回复命令（未来 P2-004/P2-006，当前未授权）
+## 7. 人工回复命令（P2-004 Contract 已完成；真实 Route/Workbench 未授权）
 
 REST：
 
@@ -269,7 +269,7 @@ If-Match: <session-row-version>
 
 Delivery Worker 才能调用 WeCom Adapter。
 
-## 8. 内部备注（未来 P2-004/P2-006，当前未授权）
+## 8. 内部备注（P2-004 Contract 已完成；真实 Route/Workbench 未授权）
 
 ```http
 POST /api/conversations/{sessionId}/internal-notes

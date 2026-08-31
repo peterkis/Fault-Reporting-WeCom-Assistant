@@ -12,14 +12,15 @@
 - `tasks/P2-001_conversation_thread_session_contracts.md`：P2-001 契约任务记录；
 - `tasks/P2-002_persistent_timeline_projector.md`：已完成 P2-002 投影任务记录；
 - `tasks/P2-003_realtime_event_log_sse.md`：已完成的 P2-003 任务记录；
-- `tasks/P2-004_unified_communication_outbox_delivery.md`：当前 P2-004 授权实施任务记录；
+- `tasks/P2-004_unified_communication_outbox_delivery.md`：已完成的 P2-004 任务记录；
 - `evidence/p2-phase-start-authorization.md`：Phase 2 启动及仅授权 P2-001 的负责人 Evidence；
 - `evidence/p2-001-conversation-contracts-report.md`：P2-001 脱敏验证 Evidence；
 - `evidence/p2-002-start-authorization.md`：仅启动 P2-002 的项目负责人独立授权 Evidence；
 - `evidence/p2-002-timeline-projector-report.md`：P2-002 完成验证 Evidence；
 - `evidence/p2-003-start-authorization.md`：仅启动 P2-003 的项目负责人独立授权 Evidence；
 - `evidence/p2-003-realtime-event-log-sse-report.md`：P2-003 完成验证 Evidence。
-- `evidence/p2-004-start-authorization.md`：仅启动 P2-004 的项目负责人独立授权 Evidence。
+- `evidence/p2-004-start-authorization.md`：仅启动 P2-004 的项目负责人独立授权 Evidence；
+- `evidence/p2-004-communication-outbox-delivery-report.md`：P2-004 完成验证 Evidence。
 
 ## ADR
 
@@ -62,12 +63,32 @@
 - 所有 P2/P3 Feature Flag 保持 `false`；
 - 完成状态不等同于生产、临床或 Assembly Gate 验收。
 
-## P2-004 启动状态
+## P2-004 完成状态
 
-- P2-003：`DONE`（2026-08-31）；P2-004：`IN_PROGRESS / AUTHORIZED`，活动 Lane 为 P2-B；
+- P2-003、P2-004：`DONE`（2026-08-31）；当前无活动任务或 Lane；
 - P2-005 至 P2-014 继续为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；
 - `P2-G1` 继续为 `NOT_STARTED`，所有 P2/P3 Feature Flag 保持 `false`；
-- 未接真实 Workbench、企业微信新增路径、模型或医院内网；本完成不等同于生产或临床上线。
+- 未接真实 Workbench、企业微信新增 Sender、模型或医院内网；本完成不等同于生产或临床上线。
+
+## P2-004 契约、迁移、运行时与测试
+
+- `docs/40_p2_004_unified_communication.md`：Communication 事实、事务、Sender、Worker、Reconciliation、兼容与投影边界；
+- `contracts/communication_message.schema.json`：Message Contract；
+- `contracts/communication_delivery.schema.json`：Delivery 安全视图 Contract；
+- `contracts/communication_internal_note_command.schema.json`：Internal Note Command Contract；
+- `contracts/communication_system_notification.schema.json`：System Notification Command Contract；
+- `contracts/communication_contracts.d.ts`：Message/Outbox/Delivery/Attempt/Port 类型；
+- `database/migrations/020_p2_004_unified_communication.sql`：只新增四张 `communication.*` 表的增量迁移；
+- `scripts/p2-004-migrate.mjs`：只应用/检查 migration 020 的受限迁移入口；
+- `src/p2-004-communication-core.mjs`：Command 规范化、Hash、原子提交、目的地解析与 P1 兼容 Adapter；
+- `src/p2-004-communication-sender-port.mjs`：Mock-only Sender Port；
+- `src/p2-004-communication-delivery-worker.mjs`：有界单并发 Worker、Lease、Retry、Unknown 与 Reconciliation；
+- `src/p2-004-communication-projections.mjs`：纯 Timeline/Realtime/Legacy Mapper；
+- `tests/p2-004-communication-core.test.mjs`：Contract/Unit 测试；
+- `tests/p2-004-communication-core.integration.test.mjs`：隔离 PostgreSQL、Worker、故障、兼容与资源测试；
+- `tests/helpers/p2-004-postgres-harness.mjs`：随机隔离 PostgreSQL 测试环境；
+- `tests/helpers/p2-004-worker-child.mjs`：受控 Worker 子进程入口；
+- `tests/helpers/p2-004-worker-process-harness.mjs`：真实 `SIGKILL`/重启编排。
 
 ## P2-002 契约、迁移、运行时与测试
 

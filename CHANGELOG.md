@@ -5,8 +5,9 @@
 ### P2-004 统一 Communication Message / Outbox / Delivery
 
 - 项目负责人于 2026-08-31 正式、独立授权仅启动 `P2-004 / P2-B`；基线为 `2b4548888882ce895a85f513d0a5bb57d9920b91`。
-- 当前状态为 `IN_PROGRESS`，全部 P2/P3 Feature Flag 保持 `false`，P2-G1 保持 `NOT_STARTED`。
-- P2-005 及以后、真实 Workbench/REST/权限、真实企业微信新增 Sender、模型、医院内网和生产功能均未授权；P2-004 完成后必须停止。
+- P2-004 已于 2026-08-31 完成：新增四张 `communication.*` 表、业务命令幂等、权威目的地解析、caller-owned transaction/standalone Service、P1 Notification 只读兼容、Mock Sender、Lease/Retry/Unknown/Dead Letter/Reconciliation Worker，以及纯 Projection Mapper。
+- Contract/Unit `17/17` 与 PostgreSQL/Worker Integration `9/9` 通过；完整回归、资源和残留结果记录在 `evidence/p2-004-communication-outbox-delivery-report.md`。
+- 当前无活动任务或 Lane；全部 P2/P3 Feature Flag 保持 `false`，P2-G1 保持 `NOT_STARTED`。P2-005 及以后、真实 Workbench/REST/权限、真实企业微信新增 Sender、模型、医院内网和生产功能均未授权；完成后已停止。
 
 ### P2-003 Realtime Event Log、SSE 补放与慢客户端治理
 

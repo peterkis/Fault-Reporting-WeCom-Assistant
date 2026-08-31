@@ -399,15 +399,15 @@ PostgreSQL-backed SSE 补放消费本 Contract。它引用 Item/Session 的稳�
 `Last-Event-ID`。事件提交原子性、保留期、慢客户端和权限裁剪由
 `docs/39_p2_003_realtime_event_log_sse.md` 独立定义；真实 Projector 接线仍留给 P2-G1。
 
-### P2-004（未来，未授权）
+### P2-004（后续独立授权已完成）
 
-P2-004 可在另行授权后提供权威 Communication Message / Outbox / Delivery 事实，并实现
-当前 `COMMUNICATION_MESSAGE` fixture Adapter 的真实只读版本。Communication 事务不得直接
+P2-004 已在独立授权下提供权威 Communication Message / Outbox / Delivery 事实和
+`COMMUNICATION_MESSAGE` 纯只读 Mapper。Communication 事务不得直接
 写或拥有 Timeline Item；投影仍通过本 Contract 的 Source Record、Variant、Binding 和
 Checkpoint 接入。真实外发只能由 Delivery Worker 执行，Projector 永远不调用 WeCom SDK。
 
-以上“可消费”是接口兼容说明，不是启动授权。P2-004、P2-G1 和所有后续能力保持
-未启动；P2-002 或 P2-003 的独立实现/测试结果都不能被表述为 P2-G1、生产或临床验收。
+以上“可消费”是接口兼容说明，不是后续任务启动授权。P2-G1 和 P2-005 及以后能力保持
+未启动；P2-002、P2-003 或 P2-004 的独立实现/测试结果都不能被表述为 P2-G1、生产或临床验收。
 
 ## 19. 验证与 Evidence 分界
 

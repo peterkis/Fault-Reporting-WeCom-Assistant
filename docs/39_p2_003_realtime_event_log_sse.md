@@ -4,7 +4,7 @@
 
 P2-003 只实现 PostgreSQL durable Realtime Event Log、授权补放、原生 HTTP SSE、心跳、
 慢客户端治理、polling fallback contract 与受控 retention。`CONVERSATION_REALTIME_SSE_ENABLED`
-和 `CONVERSATION_CENTER_ENABLED` 仍默认 `false`；P2-004 及以后、P2-G1、真实 Workbench、
+和 `CONVERSATION_CENTER_ENABLED` 仍默认 `false`；P2-004 已独立完成，但 P2-005 及以后、P2-G1、真实 Workbench、
 企业微信新增路径、模型、OCR、医院身份和内网 Connector 均未授权。
 
 Realtime Event Log 是可清理的通信投影；PostgreSQL 表是其 durable replay 依据，但它、SSE
@@ -158,4 +158,4 @@ limit 200、heartbeat 20 秒、recovery 5 秒、buffer 64 KiB。无 Redis、Kafk
 5,000 event 有界补放、heap 分段/趋势、query batches、timer/socket/backend/database 残留。
 
 这些本地 Contract/Integration/资源证据不等同于真实 Workbench、生产、临床、企业微信客户端或
-P2-G1 验收。完成 P2-003 后必须停止并等待 P2-004 的独立授权。
+P2-G1 验收。P2-004 已在后续独立授权中完成；当前必须停止并等待 P2-005 的独立授权。

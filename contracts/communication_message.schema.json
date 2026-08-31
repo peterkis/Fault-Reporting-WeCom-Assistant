@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/communication_message.schema.json",
+  "title": "Communication Message",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_id", "session_id", "sender_kind", "purpose", "message_type",
+    "visibility", "client_command_id", "content", "privacy_class",
+    "retention_until", "created_at"
+  ],
+  "properties": {
+    "message_id": { "type": "string", "format": "uuid" },
+    "session_id": { "type": ["string", "null"], "format": "uuid" },
+    "sender_kind": { "type": "string", "enum": ["AGENT", "AI", "SYSTEM"] },
+    "purpose": { "type": "string", "enum": ["HUMAN_REPLY", "AI_REPLY", "SYSTEM_NOTIFICATION", "INTERNAL_NOTE"] },
+    "message_type": { "type": "string", "enum": ["text", "markdown", "image", "file", "mixed", "template_card"] },
+    "visibility": { "type": "string", "enum": ["EXTERNAL", "INTERNAL", "RESTRICTED"] },
+    "client_command_id": { "type": "string", "format": "uuid" },
+    "content": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": { "minLength": 1, "maxLength": 64, "not": { "enum": ["__proto__", "constructor", "prototype"] } }
+    },
+    "reply_to_conversation_item_id": { "type": ["string", "null"], "format": "uuid" },
+    "privacy_class": { "type": "string", "enum": ["PUBLIC", "INTERNAL", "SENSITIVE_INTERNAL", "PERSONAL", "PATIENT_SENSITIVE", "SECRET"] },
+    "retention_until": { "type": "string", "format": "date-time", "maxLength": 40 },
+    "created_at": { "type": "string", "format": "date-time", "maxLength": 40 }
+  }
+}

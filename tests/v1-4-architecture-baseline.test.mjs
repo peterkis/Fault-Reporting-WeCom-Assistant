@@ -102,6 +102,25 @@ test('P2-004 independent authorization and stop line are preserved', () => {
   assert.equal(fs.existsSync(path.join(root, 'tasks/P2-004_unified_communication_outbox_delivery.md')), true);
 });
 
+test('P2-004 completion artifacts preserve P1 notification and Ticket ownership', () => {
+  const current = json('plans/current_phase.json');
+  if (current.implementation_authorization_status !== 'P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION') return;
+  for (const relativePath of [
+    'contracts/communication_message.schema.json',
+    'contracts/communication_delivery.schema.json',
+    'database/migrations/020_p2_004_unified_communication.sql',
+    'src/p2-004-communication-core.mjs',
+    'src/p2-004-communication-delivery-worker.mjs',
+    'src/p2-004-communication-projections.mjs',
+    'src/p2-004-communication-sender-port.mjs',
+    'evidence/p2-004-communication-outbox-delivery-report.md',
+  ]) assert.equal(fs.existsSync(path.join(root, relativePath)), true, relativePath);
+  const migration = text('database/migrations/020_p2_004_unified_communication.sql');
+  assert.equal((migration.match(/CREATE TABLE IF NOT EXISTS\s+communication\./giu) ?? []).length, 4);
+  assert.doesNotMatch(migration, /\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|TRUNCATE)\s+(?:TABLE\s+)?notification\./iu);
+  assert.match(text('docs/40_p2_004_unified_communication.md'), /Unified Ticket Core/u);
+});
+
 test('P2-001 and P2-002 frozen artifacts remain present', () => {
   for (const relativePath of [
     'contracts/conversation_thread.schema.json',

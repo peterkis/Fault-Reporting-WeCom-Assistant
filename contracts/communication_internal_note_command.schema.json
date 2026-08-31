@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/communication_internal_note_command.schema.json",
+  "title": "Communication Internal Note Command",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_id", "expected_row_version", "client_command_id", "text", "privacy_class", "retention_until"],
+  "properties": {
+    "session_id": { "type": "string", "format": "uuid" },
+    "expected_row_version": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "client_command_id": { "type": "string", "format": "uuid" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 10000 },
+    "privacy_class": { "type": "string", "enum": ["INTERNAL", "SENSITIVE_INTERNAL", "PERSONAL", "PATIENT_SENSITIVE", "SECRET"] },
+    "retention_until": { "type": "string", "format": "date-time", "maxLength": 40 },
+    "sender_display_name": { "type": ["string", "null"], "maxLength": 128 }
+  }
+}

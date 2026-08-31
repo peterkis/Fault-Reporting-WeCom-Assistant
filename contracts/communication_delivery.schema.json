@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/communication_delivery.schema.json",
+  "title": "Safe Communication Delivery View",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source_kind", "delivery_id", "outbox_id", "status", "channel", "attempt_count", "last_error_code", "sent_at"],
+  "properties": {
+    "source_kind": { "type": "string", "enum": ["COMMUNICATION", "P1_NOTIFICATION"] },
+    "delivery_id": { "type": "string", "format": "uuid" },
+    "outbox_id": { "type": "string", "format": "uuid" },
+    "status": { "type": "string", "enum": ["PENDING", "LEASED", "SENDING", "SENT", "RECONCILIATION_REQUIRED", "DEAD_LETTER", "CANCELLED"] },
+    "channel": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "attempt_count": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "last_error_code": { "type": ["string", "null"], "minLength": 1, "maxLength": 128 },
+    "side_effect_state": { "type": "string", "enum": ["NOT_ATTEMPTED", "ACKNOWLEDGED", "UNKNOWN"] },
+    "sent_at": { "type": ["string", "null"], "format": "date-time", "maxLength": 40 }
+  }
+}

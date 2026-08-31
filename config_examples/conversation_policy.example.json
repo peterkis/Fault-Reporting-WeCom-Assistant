@@ -1,6 +1,6 @@
 {
-  "version": "1.1",
-  "contract_task": "P2-001",
+  "version": "1.2",
+  "contract_task": "P2-004",
   "default_control_mode": "HUMAN",
   "session": {
     "idle_timeout_minutes": 720,
@@ -67,6 +67,21 @@
     "include_in_ai_context": false,
     "allow_external_delivery": false,
     "append_only": true
+  },
+  "communication": {
+    "enabled": false,
+    "feature_flag": "HUMAN_WORKBENCH_V2_ENABLED",
+    "worker_concurrency": 1,
+    "batch_size": 20,
+    "lease_ms": 30000,
+    "send_timeout_ms": 5000,
+    "retry_base_ms": 1000,
+    "max_attempts": 5,
+    "max_deliveries_per_target_window": 20,
+    "rate_limit_window_ms": 60000,
+    "real_wecom_sender_authorized": false,
+    "media_delivery_authorized": false,
+    "unknown_side_effect_requires_reconciliation": true
   },
   "realtime": {
     "transport": "SSE",

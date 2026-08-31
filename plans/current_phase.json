@@ -6,8 +6,8 @@
   "phase_name": "Conversation Center 与 AI 协作",
   "status": "IN_PROGRESS",
   "started": true,
-  "last_completed_task": "P2-003",
-  "active_task": "P2-004",
+  "last_completed_task": "P2-004",
+  "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -15,11 +15,11 @@
     "P2-003",
     "P2-004"
   ],
-  "active_lane": "P2-B",
-  "implementation_authorization_status": "P2_004_IN_PROGRESS",
+  "active_lane": null,
+  "implementation_authorization_status": "P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION",
   "p2_g1_status": "NOT_STARTED",
-  "next_task_candidate": "P2-004",
-  "next_task_authorized": true,
+  "next_task_candidate": "P2-005",
+  "next_task_authorized": false,
   "p2_001_completed_at": "2026-08-30",
   "p2_002_authorized_at": "2026-08-30",
   "p2_002_authorization_evidence": "evidence/p2-002-start-authorization.md",
@@ -31,6 +31,8 @@
   "p2_003_completion_evidence": "evidence/p2-003-realtime-event-log-sse-report.md",
   "p2_004_authorized_at": "2026-08-31",
   "p2_004_authorization_evidence": "evidence/p2-004-start-authorization.md",
+  "p2_004_completed_at": "2026-08-31",
+  "p2_004_completion_evidence": "evidence/p2-004-communication-outbox-delivery-report.md",
   "allowed_scope": [
     "implement only P2-004 unified Communication Message, Outbox, Delivery, Attempt, compatibility, mock worker, reconciliation, and projection mapper",
     "preserve completed P2-001, P2-002, and P2-003 contracts, artifacts, evidence, and runtime behavior",
@@ -81,7 +83,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_004_IN_PROGRESS",
+    "activation_status": "P2_004_DONE_AWAITING_SEPARATE_AUTHORIZATION",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }
