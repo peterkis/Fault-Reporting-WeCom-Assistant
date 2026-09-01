@@ -19,6 +19,7 @@ export function createP2G1Runtime({
   pool,
   operationalIntake,
   principalId,
+  principalIds = null,
   publicOrigin,
   listenPort = 0,
   botId,
@@ -41,7 +42,7 @@ export function createP2G1Runtime({
     || (senderAdapter !== null && typeof senderAdapter?.send !== 'function')) {
     throw new TypeError('P2_G1_RUNTIME_CONFIGURATION_INVALID');
   }
-  const authenticate = createP2G1TestAuthentication({ pool, principalId, publicOrigin });
+  const authenticate = createP2G1TestAuthentication({ pool, principalId, principalIds, publicOrigin });
   const authorization = createPilotWorkbenchAuthorizationAdapter({ pool });
   const controlAuthorization = createPilotConversationControlAuthorization({ pool });
   const controlService = createConversationControlService({
@@ -115,7 +116,7 @@ export function createP2G1Runtime({
       httpListening: listening,
       workbenchEnabled: true,
       projectionEnabled: !stopping,
-      communicationEnabled: communicationWorkerEnabled && !stopping,
+      communicationEnabled: !stopping && (communicationWorkerEnabled || senderEnabled === false),
       requireGateway: gatewayEnabled,
       featureFlags: {},
     }),
@@ -154,7 +155,7 @@ export function createP2G1Runtime({
       listening = true;
       if (gatewayEnabled) await gateway.start();
       scheduleWorkers();
-      return Object.freeze({ address, cookie: authenticate.browserCookie() });
+      return Object.freeze({ address, cookie: authenticate.browserCookie(), cookies: authenticate.browserCookies() });
     } catch (error) {
       await stop();
       throw error;

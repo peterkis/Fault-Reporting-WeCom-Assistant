@@ -7,6 +7,7 @@
 - 授权范围限于 P1/P2 Human-only 组装、真实测试 Gateway/Sender、受控测试认证、隔离 PostgreSQL 自动化和显式进程级批准下的测试范围。
 - 新增持久投影协调器、真实测试 Gateway/Sender、受控 Test Authentication、单 App Runtime、Health/资源指标以及 Synthetic/Fault/Resource/Live 工具；无新增 migration，所有 Feature Flag 默认关闭。
 - 隔离 PostgreSQL、系统浏览器、故障/容量与 P1/P2 回归通过；真实企业微信、60 分钟现场资源观察与项目负责人 Gate 批准均未执行，因此不是 `PASSED / GO`。P2-007、AI/OCR/Incident、P3、生产启用和远端发布仍未授权。
+- 真实现场预检后加固 Live Harness：支持至少两个 active Pilot Principal 的隔离短期认证、Safe Ready/run ID 输出和两个临时浏览器 Profile 的 HttpOnly Cookie 注入；原始标识与认证材料不输出，Inbound Shadow 继续保持真实发送关闭。
 
 ### P2-006 Human-only Workbench 完成
 

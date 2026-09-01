@@ -21,14 +21,14 @@ Test Authentication 只接受 Server-side Pilot Principal，逐请求确认 acti
 
 | 类别 | 结果 |
 |---|---|
-| P2-G1 Unit | 8/8；真实模式保险丝、单 Gateway、Sender ACK/拒绝/UNKNOWN、Allowlist、Test Auth、DB 故障脱敏、默认无真实发送 |
+| P2-G1 Unit | 10/10；真实模式保险丝、单 Gateway、Sender ACK/拒绝/UNKNOWN、Allowlist、双 Principal Test Auth、Safe run ID、DB 故障脱敏、默认无真实发送 |
 | P2-G1 PostgreSQL Integration | 4/4；P1→Conversation→Realtime→Workbench、投影恢复、参与者隔离、接管竞争、内部备注、12 路重复回复、Gateway 恢复、UNKNOWN 对账、Runtime Ready、容量与 Catalog |
 | P2-G1 System Browser | 1/1；移动视口重复提交只调用一次、XSS 未执行、无横向溢出、Polling fallback |
 | P2-001 至 P2-006 Unit | 138/138 |
 | P2-001 至 P2-006 Integration / Browser | 47/47 |
 | P1-009 / P1-011 / P1-012 Integration | 59/59 |
 | Architecture | validator 318 checks；test 14/14 |
-| 全仓串行 | 417/417；fail 0；cancelled 0；skipped 0 |
+| 全仓串行 | 419/419；fail 0；cancelled 0；skipped 0 |
 
 关键计数：明确报修 Ticket 漏单 0；重复 Channel Message 的 Ticket/Item 增量 0；两个群聊参与者 Session 相互隔离；并发接管成功数 1；Internal Note 为 Message/Outbox/Delivery `1/0/0`；12 路同命令 Human Reply 为 `1/1/1`；Gateway 未调用 Provider 时保持 PENDING，恢复后 Provider 调用 1；UNKNOWN 为 `RECONCILIATION_REQUIRED`；AI/OCR 调用 0。
 
@@ -54,3 +54,5 @@ Test Authentication 只接受 Server-side Pilot Principal，逐请求确认 acti
 - 2026-09-01：创建 Evidence 边界；未创建 live JSONL、Gate Pass 报告或项目负责人批准文件。
 - 2026-09-01：保留首次 migration readiness 失败，并在只应用既有 012/020/021 后重试成功。
 - 2026-09-01：自动化 Assembly 与授权回归完成；状态收敛到 `READY_FOR_LIVE_E2E`，真实现场执行保持未授权。
+- 2026-09-01：现场零副作用预检确认两个 active ADMIN Principal 与既有专用测试群/账号；在连接真实 WSS 前补强双 Principal Test Auth、Safe Ready/run ID 和独立浏览器会话接缝。该修复本身不构成 Live Evidence，状态仍为 `READY_FOR_LIVE_E2E`。
+- 2026-09-01：补强后首次全仓串行为 418/419，唯一失败是 P2-006 HTTP 性能用例使用固定到期时间并在墙钟跨界后返回 401；改为每次测试生成五分钟短期身份后，定向 Integration 6/6、最终全仓串行 419/419。该失败与成功重试均保留，不将中间失败隐藏为通过。

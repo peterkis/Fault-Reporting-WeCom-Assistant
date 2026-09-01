@@ -73,7 +73,7 @@ async function session(pool, label, { status = 'OPEN', controlMode = 'HUMAN', la
 }
 
 function auth(principalValue, method = 'BEARER') {
-  return Object.freeze({ principal_id: principalValue.id, auth_method: method, expires_at: '2026-09-01T05:00:00.000Z', csrf_token: method === 'COOKIE' ? 'synthetic-csrf-token-0123456789' : undefined });
+  return Object.freeze({ principal_id: principalValue.id, auth_method: method, expires_at: new Date(Date.now() + 300_000).toISOString(), csrf_token: method === 'COOKIE' ? 'synthetic-csrf-token-0123456789' : undefined });
 }
 
 async function assign(pool, sessionId, principalId) {

@@ -9,6 +9,7 @@ import { createP2G1InboundProjectionCoordinator, P2_G1_PROJECTION_STREAMS } from
 import { createP2G1TestAuthentication } from '../src/p2-g1-test-authentication.mjs';
 import { createP2G1WeComGateway } from '../src/p2-g1-wecom-gateway.mjs';
 import { createP2G1WeComCommunicationSender } from '../src/p2-g1-wecom-sender.mjs';
+import { configuredP2G1PrincipalIds, createP2G1RunId } from '../scripts/p2-g1-live-e2e.mjs';
 
 function hash(value) { return createHash('sha256').update(value).digest('hex'); }
 
@@ -71,6 +72,34 @@ test('test authentication is server-configured, active non-reporter only, short-
   assert.equal(await auth.authenticate({ headers: { cookie: `${cookie.name}=wrong`, authorization: 'Bearer ignored' } }), null);
 });
 
+test('test authentication isolates two configured principals with independent short-lived cookies and CSRF values', async () => {
+  const principalIds = ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002'];
+  const pool = { query: async (_sql, values) => ({ rowCount: 1, rows: [{ id: values[0], is_active: true, roles: ['ADMIN'] }] }) };
+  const auth = createP2G1TestAuthentication({
+    pool,
+    principalIds,
+    publicOrigin: 'http://127.0.0.1:3200',
+    tokens: ['a'.repeat(40), 'b'.repeat(40)],
+    csrfTokens: ['c'.repeat(32), 'd'.repeat(32)],
+  });
+  const cookies = auth.browserCookies();
+  assert.equal(cookies.length, 2);
+  assert.notEqual(cookies[0].name, cookies[1].name);
+  assert.equal((await auth.authenticate({ headers: { cookie: `${cookies[0].name}=${cookies[0].value}` } })).principal_id, principalIds[0]);
+  assert.equal((await auth.authenticate({ headers: { cookie: `${cookies[1].name}=${cookies[1].value}` } })).principal_id, principalIds[1]);
+  assert.notEqual((await auth.authenticate({ headers: { cookie: `${cookies[0].name}=${cookies[0].value}` } })).csrf_token,
+    (await auth.authenticate({ headers: { cookie: `${cookies[1].name}=${cookies[1].value}` } })).csrf_token);
+  assert.equal(await auth.authenticate({ headers: { cookie: `${cookies[0].name}=${cookies[1].value}` } }), null);
+});
+
+test('live harness requires two distinct configured principals and creates a safe unique run id', () => {
+  const principals = configuredP2G1PrincipalIds({ P2_G1_TEST_PRINCIPAL_IDS: '00000000-0000-4000-8000-000000000001,00000000-0000-4000-8000-000000000002' });
+  assert.equal(principals.length, 2);
+  assert.throws(() => configuredP2G1PrincipalIds({ P2_G1_TEST_PRINCIPAL_ID: principals[0] }), /P2_G1_TEST_PRINCIPALS_INVALID/u);
+  assert.throws(() => configuredP2G1PrincipalIds({ P2_G1_TEST_PRINCIPAL_IDS: `${principals[0]},${principals[0]}` }), /P2_G1_TEST_PRINCIPALS_INVALID/u);
+  assert.equal(createP2G1RunId(new Date(2026, 8, 1, 12, 30, 0), () => 123456), 'P2G1-20260901123000-123456');
+});
+
 test('disabled coordinator performs no database work and batch/stream inventory are bounded', async () => {
   let calls = 0;
   const pool = { query: async () => { calls += 1; }, connect: async () => { calls += 1; } };
@@ -103,7 +132,14 @@ test('P2-002 transaction hook is optional and P2-G1 browser source has an in-fli
 
 test('live script has no broad --live mode and no default live-send npm command', () => {
   const live = readFileSync('scripts/p2-g1-live-e2e.mjs', 'utf8');
+  const browserSessions = readFileSync('src/p2-g1-browser-sessions.mjs', 'utf8');
   assert.doesNotMatch(live, /--live\b/u);
+  assert.match(live, /supported_modes: P2_G1_LIVE_MODES/u);
+  assert.match(live, /p2_g1_live_ready/u);
+  assert.match(live, /raw_identifiers_recorded: false/u);
+  assert.match(browserSessions, /Network\.setCookie/u);
+  assert.match(browserSessions, /httpOnly: true/u);
+  assert.doesNotMatch(browserSessions, /console\.(?:log|error)/u);
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
   assert.equal(Object.values(pkg.scripts).some((value) => /p2-g1-live-e2e\.mjs\s+--mode=/u.test(value)), false);
 });

@@ -22,34 +22,68 @@ function cookieValue(header, name) {
   return null;
 }
 
+function configuredPrincipals(principalId, principalIds) {
+  const values = principalIds === null || principalIds === undefined ? [principalId] : principalIds;
+  if (!Array.isArray(values) || values.length < 1 || values.length > 4
+    || values.some((value) => typeof value !== 'string' || !UUID.test(value))) {
+    throw new TypeError(P2_G1_TEST_AUTH_ERROR_CODES.configurationInvalid);
+  }
+  const normalized = values.map((value) => value.toLowerCase());
+  if (new Set(normalized).size !== normalized.length) {
+    throw new TypeError(P2_G1_TEST_AUTH_ERROR_CODES.configurationInvalid);
+  }
+  return normalized;
+}
+
+function configuredSecrets(values, count, minimumLength) {
+  if (values === null || values === undefined) return Array.from({ length: count }, () => randomBytes(32).toString('base64url'));
+  if (!Array.isArray(values) || values.length !== count
+    || values.some((value) => typeof value !== 'string' || value.length < minimumLength)) {
+    throw new TypeError(P2_G1_TEST_AUTH_ERROR_CODES.configurationInvalid);
+  }
+  return [...values];
+}
+
 export function createP2G1TestAuthentication({
   pool,
   principalId,
+  principalIds = null,
   publicOrigin,
   ttlMs = 15 * 60_000,
   cookieName = 'p2_g1_test',
   now = () => new Date(),
   token = randomBytes(32).toString('base64url'),
   csrfToken = randomBytes(32).toString('base64url'),
+  tokens = null,
+  csrfTokens = null,
 } = {}) {
-  if (!pool || typeof pool.query !== 'function' || !UUID.test(principalId ?? '')
+  const identities = configuredPrincipals(principalId, principalIds);
+  const configuredTokens = tokens === null && identities.length === 1 ? [token] : configuredSecrets(tokens, identities.length, 32);
+  const configuredCsrfTokens = csrfTokens === null && identities.length === 1 ? [csrfToken] : configuredSecrets(csrfTokens, identities.length, 16);
+  if (!pool || typeof pool.query !== 'function'
     || typeof publicOrigin !== 'string' || !/^https?:\/\/127\.0\.0\.1(?::\d+)?$/u.test(publicOrigin)
     || !Number.isInteger(ttlMs) || ttlMs < 10_000 || ttlMs > 3_600_000
-    || typeof now !== 'function' || typeof token !== 'string' || token.length < 32
-    || typeof csrfToken !== 'string' || csrfToken.length < 16
+    || typeof now !== 'function'
     || !/^[A-Za-z][A-Za-z0-9_]{0,63}$/u.test(cookieName)) {
     throw new TypeError(P2_G1_TEST_AUTH_ERROR_CODES.configurationInvalid);
   }
   const issuedAt = now();
   const expiresAt = new Date(issuedAt.getTime() + ttlMs);
 
-  async function principalAllowed() {
+  const sessions = Object.freeze(identities.map((id, index) => Object.freeze({
+    principal_id: id,
+    token: configuredTokens[index],
+    csrf_token: configuredCsrfTokens[index],
+    cookie_name: identities.length === 1 ? cookieName : `${cookieName}_${index + 1}`,
+  })));
+
+  async function principalAllowed(candidateId) {
     const result = await pool.query(
       `SELECT p.id::text,p.is_active,array_agg(r.role ORDER BY r.role) FILTER(WHERE r.role IS NOT NULL) AS roles
          FROM pilot_ticket.pilot_principal p
          LEFT JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
         WHERE p.id=$1::uuid GROUP BY p.id,p.is_active`,
-      [principalId],
+      [candidateId],
     );
     if (result.rowCount !== 1 || result.rows[0].is_active !== true) return false;
     const roles = result.rows[0].roles ?? [];
@@ -59,22 +93,23 @@ export function createP2G1TestAuthentication({
   async function authenticate(request) {
     const current = now();
     if (current.getTime() >= expiresAt.getTime()) return null;
-    const candidate = cookieValue(request?.headers?.cookie, cookieName);
-    if (!secureEqual(candidate, token)) return null;
-    if (!await principalAllowed()) return null;
+    const session = sessions.find((entry) => secureEqual(cookieValue(request?.headers?.cookie, entry.cookie_name), entry.token));
+    if (!session || !await principalAllowed(session.principal_id)) return null;
     return Object.freeze({
-      principal_id: principalId.toLowerCase(),
+      principal_id: session.principal_id,
       auth_method: 'COOKIE',
       expires_at: expiresAt.toISOString(),
-      csrf_token: csrfToken,
+      csrf_token: session.csrf_token,
       public_origin: publicOrigin,
     });
   }
 
-  function browserCookie() {
+  function browserCookie(index = 0) {
+    const session = sessions[index];
+    if (!session) throw new TypeError(P2_G1_TEST_AUTH_ERROR_CODES.configurationInvalid);
     return Object.freeze({
-      name: cookieName,
-      value: token,
+      name: session.cookie_name,
+      value: session.token,
       url: publicOrigin,
       httpOnly: true,
       secure: publicOrigin.startsWith('https://'),
@@ -83,10 +118,14 @@ export function createP2G1TestAuthentication({
     });
   }
 
-  function setCookieHeader() {
+  function browserCookies() { return Object.freeze(sessions.map((_, index) => browserCookie(index))); }
+
+  function setCookieHeader(index = 0) {
+    const session = sessions[index];
+    if (!session) throw new TypeError(P2_G1_TEST_AUTH_ERROR_CODES.configurationInvalid);
     const secure = publicOrigin.startsWith('https://') ? '; Secure' : '';
-    return `${cookieName}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(ttlMs / 1000)}${secure}`;
+    return `${session.cookie_name}=${session.token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(ttlMs / 1000)}${secure}`;
   }
 
-  return Object.freeze({ authenticate, browserCookie, setCookieHeader, expires_at: expiresAt.toISOString() });
+  return Object.freeze({ authenticate, browserCookie, browserCookies, setCookieHeader, expires_at: expiresAt.toISOString() });
 }

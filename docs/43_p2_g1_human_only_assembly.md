@@ -26,6 +26,8 @@ WeCom WSClient
 
 默认所有 Feature Flag 为 `false`。真实 WSS 必须同时具备 `P2_G1_LIVE_TEST_APPROVED=true` 与 `P2_G1_TEST_SCOPE_CONFIGURED=true`；真实发送再额外要求 `P2_G1_REAL_WECOM_SEND_APPROVED=true`。Target 必须来自持久 Delivery 且 target hash 命中测试 Allowlist；浏览器不能提供 provider、channel account 或 target。
 
+Live Harness 要求 `P2_G1_TEST_PRINCIPAL_IDS` 至少包含两个不同的 active Pilot Principal，并为各 Principal 生成互相隔离的短期 HttpOnly Cookie/CSRF。Harness 只输出安全 `run_id`、loopback 地址、布尔 Readiness 与计数；Cookie、CSRF、Principal UUID 和原始 Channel/Target 标识不进入终端或 Evidence。Ready 后由当前进程通过 CDP 将短期 Cookie 注入两个独立临时浏览器 Profile，停止时关闭浏览器并清除经校验的临时目录。Inbound Shadow 的 Communication Worker 处于明确安全暂停状态，不能产生真实主动发送。
+
 ## Gate 语义
 
 自动化 Assembly 通过只证明实现可进入真实现场验证。真实客户端可见性、内部备注不可见性、重复为 0、SSE/Gateway 重连、资源观察和项目负责人批准是互相独立的 Evidence。任何一项缺失都不得标记 `PASSED/GO`。
