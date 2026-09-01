@@ -3,7 +3,7 @@
   "version": "1.4.0",
   "architecture_baseline": "V1.4",
   "baseline_date": "2026-08-30",
-  "status": "P2_P2_G1_ASSEMBLY_IN_PROGRESS",
+  "status": "P2_P2_G1_READY_FOR_LIVE_E2E",
   "current_phase": "P2",
   "last_completed_task": "P2-006",
   "active_task": "P2-G1",
@@ -16,8 +16,8 @@
     "P2-006"
   ],
   "active_lane": "ASSEMBLY",
-  "implementation_authorization_status": "P2_G1_ASSEMBLY_IN_PROGRESS",
-  "p2_g1_status": "IN_PROGRESS",
+  "implementation_authorization_status": "P2_G1_READY_FOR_LIVE_E2E",
+  "p2_g1_status": "READY_FOR_LIVE_E2E",
   "authorized_gates": [
     "P2-G1"
   ],
@@ -41,8 +41,8 @@
   "p2_006_authorization_evidence": "evidence/p2-006-start-authorization.md",
   "p2_006_completed_at": "2026-09-01",
   "p2_006_completion_evidence": "evidence/p2-006-realtime-workbench-report.md",
-  "next_task_candidate": "P2-G1",
-  "next_task_authorized": true,
+  "next_task_candidate": "P2-G1-LIVE",
+  "next_task_authorized": false,
   "source_repository": "peterkis/Fault-Reporting-WeCom-Assistant",
   "source_base_commit": "1c18d5653b17e4368b5fa057d513e1af1a8b4622",
   "source_of_truth": "Unified Ticket Core in this repository",

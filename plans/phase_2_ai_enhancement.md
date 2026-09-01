@@ -2,7 +2,7 @@
 
 > 文件名为兼容既有索引保留。V1.4 的 P2 已不只是 AI Enhancement。
 
-> 状态（2026-09-01）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 已独立授权，当前为 `IN_PROGRESS / ASSEMBLY`。P2-007 至 P2-014 保持 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`。所有提交的 P2/P3 Feature Flag 默认值保持 `false`；无真实现场 Evidence 与项目负责人批准时 P2-G1 最多到 `READY_FOR_LIVE_E2E`。
+> 状态（2026-09-01）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only 自动化 Assembly 已完成，当前为 `READY_FOR_LIVE_E2E / ASSEMBLY`。真实现场执行、P2-007 至 P2-014 均为 `REQUIRES_SEPARATE_AUTHORIZATION`。所有提交的 P2/P3 Feature Flag 默认值保持 `false`；当前没有真实现场 Evidence 或项目负责人 Gate 批准。
 
 ## 阶段目标
 

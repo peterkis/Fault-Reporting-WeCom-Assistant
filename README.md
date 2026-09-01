@@ -9,7 +9,7 @@
 - P1-001 至 P1-011 保持既有验收结论；
 - P1-012 已完成真实测试群 E2E、客户端观察、故障演练和 Go/No-Go，状态为 `DONE`；
 - Phase 2 保持 `IN_PROGRESS`；`P2-001` 至 `P2-005` 均已完成；
-- P2-001 至 P2-006 已完成；项目负责人已独立授权 P2-G1 Human-only Assembly，当前活动任务为 `P2-G1 / ASSEMBLY / IN_PROGRESS`。P2-007 及以后未授权，全部 P3 任务未启动，所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
+- P2-001 至 P2-006 已完成；P2-G1 Human-only 自动化 Assembly 已完成并停止在 `P2-G1 / ASSEMBLY / READY_FOR_LIVE_E2E`。真实现场执行仍须独立进程批准；P2-007 及以后未授权，全部 P3 任务未启动，所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 本次 Phase 2 启动授权不等同于生产上线、临床上线或 AI 自动回复批准，不启用真实外发、SSE、模型、OCR、医院身份连接或内网 Connector。
 
 ## V1.4 核心纠偏

@@ -29,3 +29,5 @@ WeCom WSClient
 ## Gate 语义
 
 自动化 Assembly 通过只证明实现可进入真实现场验证。真实客户端可见性、内部备注不可见性、重复为 0、SSE/Gateway 重连、资源观察和项目负责人批准是互相独立的 Evidence。任何一项缺失都不得标记 `PASSED/GO`。
+
+当前自动化终态为 `READY_FOR_LIVE_E2E`。真实 WSS、真实 Sender、客户端观察和至少 60 分钟现场资源观察均未在本次执行；`P2-G1-LIVE` 仍须独立进程授权，P2-007 未授权。

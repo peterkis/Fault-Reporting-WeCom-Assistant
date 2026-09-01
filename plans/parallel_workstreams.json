@@ -13,8 +13,8 @@
   "last_completed_task": "P2-006",
   "active_task": "P2-G1",
   "active_lane": "ASSEMBLY",
-  "implementation_authorization_status": "P2_G1_ASSEMBLY_IN_PROGRESS",
-  "p2_g1_status": "IN_PROGRESS",
+  "implementation_authorization_status": "P2_G1_READY_FOR_LIVE_E2E",
+  "p2_g1_status": "READY_FOR_LIVE_E2E",
   "authorized_gates": [
     "P2-G1"
   ],
@@ -36,8 +36,8 @@
   "p2_006_authorization_evidence": "evidence/p2-006-start-authorization.md",
   "p2_006_completed_at": "2026-09-01",
   "p2_006_completion_evidence": "evidence/p2-006-realtime-workbench-report.md",
-  "next_task_candidate": "P2-G1",
-  "next_task_authorized": true,
+  "next_task_candidate": "P2-G1-LIVE",
+  "next_task_authorized": false,
   "feature_flags_enabled": [],
   "feature_flag_defaults": {
     "CONVERSATION_CENTER_ENABLED": false,
@@ -54,7 +54,7 @@
     "HOSPITAL_API_SOURCE_ENABLED": false,
     "MONITORING_SOURCE_ENABLED": false
   },
-  "rule": "P2-006 is DONE and P2-G1 is the only active ASSEMBLY gate. P2-007 and later tasks remain unauthorized. Every committed P2 and P3 feature-flag default remains false; live test enablement requires explicit process-scoped approvals.",
+  "rule": "P2-006 is DONE and P2-G1 is READY_FOR_LIVE_E2E in the ASSEMBLY lane. P2-G1-LIVE, P2-007 and later tasks remain unauthorized. Every committed P2 and P3 feature-flag default remains false; live test enablement requires explicit process-scoped approvals.",
   "migration_number_reservations": {
     "P2-A": "010-019",
     "P2-B": "020-029",
@@ -224,7 +224,7 @@
     {
       "id": "P2-G1",
       "name": "Human-only Conversation Center",
-      "status": "IN_PROGRESS",
+      "status": "READY_FOR_LIVE_E2E",
       "authorized_at": "2026-09-01",
       "authorization_evidence": "evidence/p2-g1-start-authorization.md",
       "requires": [

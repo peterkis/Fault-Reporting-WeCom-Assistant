@@ -181,7 +181,13 @@ function listStateSql(state, index, principalIdIndex) {
   }
 }
 
-export function createConversationWorkbenchQueryService({ pool, enabled = false, authorize, now = () => new Date() } = {}) {
+export function createConversationWorkbenchQueryService({
+  pool,
+  enabled = false,
+  authorize,
+  now = () => new Date(),
+  featureStatus = null,
+} = {}) {
   if (!pool || typeof pool.query !== 'function' || typeof enabled !== 'boolean' || !authorize || typeof now !== 'function') {
     throw new TypeError('Workbench query service configuration is invalid.');
   }
@@ -201,7 +207,7 @@ export function createConversationWorkbenchQueryService({ pool, enabled = false,
       expires_at: authContext.expires_at,
       csrf_token: authContext.auth_method === 'COOKIE' ? authContext.csrf_token : undefined,
       capabilities: authorize.actionsFor(principal),
-      feature_status: Object.freeze({ workbench_enabled: true, realtime_sse_enabled: false, ai_enabled: false, incident_enabled: false, attachments_enabled: false }),
+      feature_status: Object.freeze(featureStatus ?? { workbench_enabled: true, realtime_sse_enabled: false, ai_enabled: false, incident_enabled: false, attachments_enabled: false }),
       polling_interval_ms: 5000,
       sse_endpoint: '/api/realtime/events?scope=workbench',
       max_page_sizes: Object.freeze({ conversations: 100, timeline: 200 }),

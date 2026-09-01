@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 已独立授权，当前为 `IN_PROGRESS / ASSEMBLY`。P2-007 至 P2-014 和其他 Lane 实现仍须另行授权并保持 `TODO`。所有提交的 Feature Flag 默认关闭；无真实现场 Evidence 与项目负责人批准时 P2-G1 最多到 `READY_FOR_LIVE_E2E`。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only 自动化 Assembly 已完成，当前为 `READY_FOR_LIVE_E2E / ASSEMBLY`。真实现场执行、P2-007 至 P2-014 和其他 Lane 实现仍须另行授权。所有提交的 Feature Flag 默认关闭；当前状态不是 `PASSED / GO`。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -292,7 +292,7 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 ## P2-G1 Human-only Conversation Center Assembly
 
-- 状态：IN_PROGRESS（2026-09-01 独立授权）
+- 状态：READY_FOR_LIVE_E2E（2026-09-01 自动化 Assembly 完成；真实现场未执行）
 - Task：`tasks/P2-G1_human_only_conversation_center_assembly.md`
 - 授权 Evidence：`evidence/p2-g1-start-authorization.md`
 - Lane：ASSEMBLY

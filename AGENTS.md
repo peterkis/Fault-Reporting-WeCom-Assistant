@@ -14,10 +14,10 @@ P1 / P1-012 / DONE / GO
 当前阶段状态固定为：
 
 ```text
-P2 / P2-G1 / IN_PROGRESS / ASSEMBLY
+P2 / P2-G1 / READY_FOR_LIVE_E2E / ASSEMBLY
 ```
 
-V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-09-01 独立授权并完成 P2-006，并于同日另行授权 P2-G1 Human-only Conversation Center Assembly。P2-G1 是当前唯一活动 Gate，状态为 `IN_PROGRESS`，Lane 为 `ASSEMBLY`；P2-007 及以后任务仍未授权，全部 P3 未启动。所有提交的 Feature Flag 默认值保持关闭；真实测试只允许在一次性进程级批准和测试范围配置同时满足时启用。P2-G1 授权不等同于 Gate 通过、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
+V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-09-01 独立授权并完成 P2-006，并于同日另行授权 P2-G1 Human-only Conversation Center Assembly。P2-G1 自动化装配已完成，当前唯一活动 Gate 保持在 `READY_FOR_LIVE_E2E`，Lane 为 `ASSEMBLY`；真实现场执行未获本次进程授权，P2-007 及以后任务仍未授权，全部 P3 未启动。所有提交的 Feature Flag 默认值保持关闭。`READY_FOR_LIVE_E2E` 不等同于 Gate 通过、生产上线、临床上线、真实外发、最终生产前端或 AI 自动回复批准。
 
 ## 2. 长期事实源
 

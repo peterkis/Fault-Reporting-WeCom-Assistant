@@ -77,7 +77,7 @@
 - P2-003、P2-004、P2-005、P2-006：`DONE`；当前 P2-G1 为唯一活动 `ASSEMBLY` Lane；
 - `docs/42_p2_006_realtime_web_workbench.md`：Internal Alpha、REST/Auth、Query、Command、Delivery、SSE/Polling 与 UI 边界。
 - P2-007 至 P2-014 继续为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；
-- `P2-G1` 为 `IN_PROGRESS`；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
+- `P2-G1` 为 `READY_FOR_LIVE_E2E`（不是 `PASSED / GO`）；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 未接真实 Workbench、企业微信新增 Sender、模型或医院内网；本完成不等同于生产或临床上线。
 
 ## P2-005 契约、迁移、运行时与测试

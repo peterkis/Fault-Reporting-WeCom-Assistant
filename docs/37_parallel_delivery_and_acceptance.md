@@ -10,7 +10,7 @@ P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启�
 |---|---|---|
 | P2-A | Conversation Core、Timeline、Realtime Event Log | P2-001/P2-002/P2-003 已完成并冻结 |
 | P2-B | Communication Outbox、Handoff、Workbench | P2-004/P2-005/P2-006 已完成并冻结 |
-| ASSEMBLY | P1 与 P2-001 至 P2-006 Human-only 组装 | P2-G1 `IN_PROGRESS`，无真实 Evidence 时最多 `READY_FOR_LIVE_E2E` |
+| ASSEMBLY | P1 与 P2-001 至 P2-006 Human-only 组装 | P2-G1 `READY_FOR_LIVE_E2E`；真实现场执行未授权 |
 | P2-C | Rules、DeepSeek Provider、Context/Memory、Rollout | 未授权；只读消费冻结 Contract |
 | P2-D | Media/OCR、Incident、Metrics | 未授权；只读消费冻结 Contract |
 
@@ -55,7 +55,7 @@ Wakeup Hub 不携带事件且不是 broker。详细 Contract 见
 `docs/39_p2_003_realtime_event_log_sse.md`，执行结果仅以
 `evidence/p2-003-realtime-event-log-sse-report.md` 为准。
 
-### P2-G1 Human-only Conversation Center（IN_PROGRESS）
+### P2-G1 Human-only Conversation Center（READY_FOR_LIVE_E2E）
 
 - 实时查看消息；
 - 人工接管、分配和回复；
@@ -64,8 +64,8 @@ Wakeup Hub 不携带事件且不是 broker。详细 Contract 见
 - 重复命令不重复发送；
 - AI 全关时完整可用。
 
-P2-G1 已在 P2-001 至 P2-006 独立完成后获得另行 Assembly 授权。任何单个任务通过或合成
-Assembly 通过都不自动使 P2-G1 `PASSED`；真实企业微信 Evidence 与项目负责人批准仍是独立门槛。
+P2-G1 已在 P2-001 至 P2-006 独立完成后完成自动化 Assembly。该结果不自动使 P2-G1
+`PASSED`；真实企业微信 Evidence、60 分钟现场资源观察与项目负责人批准仍是独立门槛。
 
 ### Assembly Contract 消费（P2-001 至 P2-006 已完成）
 

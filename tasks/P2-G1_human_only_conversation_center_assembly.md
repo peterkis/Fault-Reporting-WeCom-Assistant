@@ -1,6 +1,6 @@
 # P2-G1 Human-only Conversation Center Assembly
 
-- 状态：IN_PROGRESS
+- 状态：READY_FOR_LIVE_E2E
 - 授权日期：2026-09-01
 - 授权 Evidence：`evidence/p2-g1-start-authorization.md`
 - 基线：`1c18d5653b17e4368b5fa057d513e1af1a8b4622`
@@ -40,3 +40,4 @@
 
 - 2026-09-01：项目负责人正式、独立授权启动 P2-G1 Human-only Assembly；`last_completed_task` 保持 P2-006。
 - 2026-09-01：启动核验确认分支、干净工作树、HEAD、`origin/main`、完成标签与 divergence 全部满足固定基线要求。
+- 2026-09-01：Human-only 自动化 Assembly、隔离 PostgreSQL、系统浏览器、故障/容量与既有 P1/P2 回归通过；状态更新为 `READY_FOR_LIVE_E2E`。真实企业微信与 60 分钟现场资源观察均未执行，P2-G1 不得标记 `PASSED / GO`。

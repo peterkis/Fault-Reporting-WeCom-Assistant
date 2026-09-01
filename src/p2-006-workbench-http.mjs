@@ -93,9 +93,11 @@ export function createWorkbenchAuthenticationPort({ authenticate } = {}) {
 }
 
 export function createConversationWorkbenchHttpServer({ enabled = false, queryService, commandFacade, authenticate,
-  sseHandler = null, publicOrigin = 'http://127.0.0.1', staticHandler = createWorkbenchStaticHandler({ enabled }) } = {}) {
+  sseHandler = null, healthProvider = null, publicOrigin = 'http://127.0.0.1', staticHandler = createWorkbenchStaticHandler({ enabled }) } = {}) {
   if (typeof authenticate !== 'function') throw new TypeError('WorkbenchAuthenticationPort authenticate is required.');
-  if (!queryService || !commandFacade || typeof enabled !== 'boolean' || (sseHandler !== null && typeof sseHandler !== 'function')) {
+  if (!queryService || !commandFacade || typeof enabled !== 'boolean' || (sseHandler !== null && typeof sseHandler !== 'function')
+    || (healthProvider !== null && (typeof healthProvider.live !== 'function' || typeof healthProvider.ready !== 'function'
+      || (healthProvider.metrics !== undefined && typeof healthProvider.metrics !== 'function')))) {
     throw new TypeError('Workbench HTTP server configuration is invalid.');
   }
 
@@ -104,6 +106,15 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
     try {
       if (Buffer.byteLength(request.url ?? '', 'utf8') > MAX_URL_BYTES) throw new WorkbenchError(WORKBENCH_ERROR_CODES.requestInvalid, 414);
       const url = new URL(request.url ?? '/', publicOrigin);
+      if (request.method === 'GET' && url.pathname === '/health/live' && healthProvider !== null) {
+        const result = await healthProvider.live(); json(response, result.ok ? 200 : 503, result); return;
+      }
+      if (request.method === 'GET' && url.pathname === '/health/ready' && healthProvider !== null) {
+        const result = await healthProvider.ready(); json(response, result.ok ? 200 : 503, result); return;
+      }
+      if (request.method === 'GET' && url.pathname === '/health/metrics' && typeof healthProvider?.metrics === 'function') {
+        json(response, 200, await healthProvider.metrics()); return;
+      }
       if (await staticHandler(url.pathname, response)) return;
       if (!url.pathname.startsWith('/api/')) { json(response, 404, { error: { code: WORKBENCH_ERROR_CODES.notFound, retryable: false } }); return; }
       if (!enabled) throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled, 503);

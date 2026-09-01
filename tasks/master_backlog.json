@@ -15,8 +15,8 @@
     "P2-006"
   ],
   "active_lane": "ASSEMBLY",
-  "implementation_authorization_status": "P2_G1_ASSEMBLY_IN_PROGRESS",
-  "p2_g1_status": "IN_PROGRESS",
+  "implementation_authorization_status": "P2_G1_READY_FOR_LIVE_E2E",
+  "p2_g1_status": "READY_FOR_LIVE_E2E",
   "authorized_gates": [
     "P2-G1"
   ],
@@ -58,8 +58,8 @@
   ],
   "next_tasks": {
     "current": "P2-G1",
-    "candidate": "P2-G1",
-    "candidate_authorized": true,
+    "candidate": "P2-G1-LIVE",
+    "candidate_authorized": false,
     "after_p1": [
       "P2-001"
     ],

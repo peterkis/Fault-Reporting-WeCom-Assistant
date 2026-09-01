@@ -1522,7 +1522,8 @@ async function insertProjectedItem(client, record, sequenceNo, canonicalOrderKey
        $6, $7::jsonb, $8, $9, $10,
        $11, $12, $13, $14::timestamptz,
        $15::timestamptz
-     ) RETURNING id::text`,
+     ) RETURNING id::text, session_id::text, sequence_no::text, item_type,
+                 sender_kind, visibility, occurred_at, retention_until`,
     [
       record.session_id,
       sequenceNo.toString(),
@@ -1564,7 +1565,16 @@ async function insertProjectedItem(client, record, sequenceNo, canonicalOrderKey
       canonicalOrderKey,
     ],
   );
-  return itemId;
+  return Object.freeze({
+    id: itemId,
+    session_id: requiredUuid(inserted.rows[0].session_id),
+    sequence_no: canonicalBigint(inserted.rows[0].sequence_no, { minimum: 1n }),
+    item_type: inserted.rows[0].item_type,
+    sender_kind: inserted.rows[0].sender_kind,
+    visibility: inserted.rows[0].visibility,
+    occurred_at: isoDateTime(inserted.rows[0].occurred_at),
+    retention_until: isoDateTime(inserted.rows[0].retention_until),
+  });
 }
 
 async function persistedCanonicalTimeline(client, sessionId) {
@@ -1821,12 +1831,16 @@ export function createTimelineProjector(options = {}) {
     batchSize = DEFAULT_BATCH_SIZE,
     restrictedAuthorizer = null,
     faultInjection = null,
+    itemTransactionHook = null,
   } = options;
   const configuredBatchSize = boundedInteger(batchSize, DEFAULT_BATCH_SIZE, MAX_BATCH_SIZE);
   if (enabled !== true && enabled !== false) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
   if (restrictedAuthorizer !== null && typeof restrictedAuthorizer !== 'function') {
+    fail(TIMELINE_ERROR_CODES.sourceInvalid);
+  }
+  if (itemTransactionHook !== null && typeof itemTransactionHook !== 'function') {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
   let beforeCommit = null;
@@ -1899,7 +1913,14 @@ export function createTimelineProjector(options = {}) {
             fail(TIMELINE_ERROR_CODES.sequenceConflict);
           }
           sequence += 1n;
-          await insertProjectedItem(client, record, sequence, canonicalOrderKey);
+          const item = await insertProjectedItem(client, record, sequence, canonicalOrderKey);
+          if (itemTransactionHook !== null) {
+            await itemTransactionHook(Object.freeze({
+              transaction: client,
+              item,
+              source_record: record,
+            }));
+          }
           tailKey = canonicalOrderKey;
           inserted += 1;
         }

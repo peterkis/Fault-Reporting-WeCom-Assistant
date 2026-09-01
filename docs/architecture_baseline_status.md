@@ -4,14 +4,14 @@
 - 生效日期：2026-08-30
 - 状态：ACTIVE
 - 当前阶段：P2 / IN_PROGRESS
-- 最近完成任务：P2-005 / DONE
-- 当前活动 Lane：P2-B
-- 最后完成任务：P2-005（2026-08-31）
-- 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001 至 P2-005
-- 当前活动任务与 Lane：无 / 无
-- 当前任务：P2-G1 / IN_PROGRESS / ASSEMBLY
-- 下一任务候选：P2-G1
-- P2-G1：IN_PROGRESS
+- 最近完成任务：P2-006 / DONE
+- 当前活动 Lane：ASSEMBLY
+- 最后完成任务：P2-006（2026-09-01）
+- 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001 至 P2-006
+- 当前活动任务与 Lane：P2-G1 / ASSEMBLY
+- 当前任务：P2-G1 / READY_FOR_LIVE_E2E / ASSEMBLY
+- 下一任务候选：P2-G1-LIVE（未授权）
+- P2-G1：READY_FOR_LIVE_E2E（不是 PASSED / GO）
 - P2/P3 Feature Flags：全部 `false`
 - P3：TODO / 未启动
 - 上一基线：V1.3
