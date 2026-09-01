@@ -1,5 +1,12 @@
 # Changelog
 
+### P2-G1 Human-only Conversation Center Assembly 授权启动
+
+- 项目负责人于 2026-09-01 正式、独立授权 `P2-G1 / ASSEMBLY`；固定基线为 `1c18d5653b17e4368b5fa057d513e1af1a8b4622`。
+- P2-001 至 P2-006 保持 `DONE`，`last_completed_task` 保持 P2-006；P2-G1 启动状态为 `IN_PROGRESS`。
+- 授权范围限于 P1/P2 Human-only 组装、真实测试 Gateway/Sender、受控测试认证、隔离 PostgreSQL 自动化和显式进程级批准下的测试范围。
+- 无真实企业微信现场 Evidence 与项目负责人批准时最多更新为 `READY_FOR_LIVE_E2E`；P2-007、AI/OCR/Incident、P3、生产启用和远端发布仍未授权。
+
 ### P2-006 Human-only Workbench 完成
 
 - 新增默认关闭的 Node 原生 REST Server、Pilot 数据面授权、稳定 keyset/timeline query、P2-004/P2-005 command facade、Delivery retry/reconciliation 与 P2-003 SSE route。

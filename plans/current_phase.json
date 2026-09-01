@@ -1,13 +1,13 @@
 {
   "architecture_baseline": "V1.4",
   "baseline_status_document": "docs/architecture_baseline_status.md",
-  "source_base_commit": "6afe8157bfcae49d391d0f6e2aa5c60388377ea5",
+  "source_base_commit": "1c18d5653b17e4368b5fa057d513e1af1a8b4622",
   "phase_id": "P2",
   "phase_name": "Conversation Center 与 AI 协作",
   "status": "IN_PROGRESS",
   "started": true,
   "last_completed_task": "P2-006",
-  "active_task": null,
+  "active_task": "P2-G1",
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -17,11 +17,16 @@
     "P2-005",
     "P2-006"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION",
-  "p2_g1_status": "NOT_STARTED",
+  "active_lane": "ASSEMBLY",
+  "implementation_authorization_status": "P2_G1_ASSEMBLY_IN_PROGRESS",
+  "p2_g1_status": "IN_PROGRESS",
   "next_task_candidate": "P2-G1",
-  "next_task_authorized": false,
+  "next_task_authorized": true,
+  "authorized_gates": [
+    "P2-G1"
+  ],
+  "p2_g1_authorized_at": "2026-09-01",
+  "p2_g1_authorization_evidence": "evidence/p2-g1-start-authorization.md",
   "p2_001_completed_at": "2026-08-30",
   "p2_002_authorized_at": "2026-08-30",
   "p2_002_authorization_evidence": "evidence/p2-002-start-authorization.md",
@@ -44,9 +49,10 @@
   "p2_006_completed_at": "2026-09-01",
   "p2_006_completion_evidence": "evidence/p2-006-realtime-workbench-report.md",
   "allowed_scope": [
-    "implement only P2-006 human-only internal alpha workbench, REST, authorization, SSE/polling, delivery control, safe static UI, and isolated synthetic verification",
-    "preserve completed P2-001 through P2-005 contracts, artifacts, evidence, and runtime behavior",
-    "all P2 and P3 feature flags remain disabled"
+    "assemble completed P1 and P2-001 through P2-006 human-only contracts for P2-G1",
+    "implement controlled test WeCom gateway and sender adapters, durable projection coordination, test authentication, observability, and gate tooling",
+    "use real PostgreSQL and explicitly approved process-scoped live test flags while keeping every committed feature-flag default false",
+    "preserve completed P1 and P2-001 through P2-006 contracts, migrations, artifacts, evidence, and runtime behavior"
   ],
   "forbidden_before_exit": [
     "production Conversation Center enablement",
@@ -63,7 +69,8 @@
   "forbidden_without_task_authorization": [
     "start P2-007 or any later P2 task",
     "start any P3 task",
-    "assemble P2-G1 or any later gate",
+    "mark P2-G1 PASSED or GO without live WeCom evidence and project-owner approval",
+    "start P2-G2 or any later gate",
     "enable Conversation Center, human delivery, realtime, SSE, AI, OCR, Incident, or integration feature flags",
     "enable production Conversation Center or AI",
     "enable production OCR",
@@ -93,7 +100,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION",
+    "activation_status": "P2_G1_ASSEMBLY_IN_PROGRESS",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

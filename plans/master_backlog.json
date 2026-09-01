@@ -3,10 +3,10 @@
   "version": "1.4.0",
   "architecture_baseline": "V1.4",
   "baseline_date": "2026-08-30",
-  "source_base_commit": "6afe8157bfcae49d391d0f6e2aa5c60388377ea5",
+  "source_base_commit": "1c18d5653b17e4368b5fa057d513e1af1a8b4622",
   "current_phase": "P2",
   "last_completed_task": "P2-006",
-  "active_task": null,
+  "active_task": "P2-G1",
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -16,11 +16,16 @@
     "P2-005",
     "P2-006"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION",
-  "p2_g1_status": "NOT_STARTED",
+  "active_lane": "ASSEMBLY",
+  "implementation_authorization_status": "P2_G1_ASSEMBLY_IN_PROGRESS",
+  "p2_g1_status": "IN_PROGRESS",
   "next_task_candidate": "P2-G1",
-  "next_task_authorized": false,
+  "next_task_authorized": true,
+  "authorized_gates": [
+    "P2-G1"
+  ],
+  "p2_g1_authorized_at": "2026-09-01",
+  "p2_g1_authorization_evidence": "evidence/p2-g1-start-authorization.md",
   "status_values": [
     "TODO",
     "IN_PROGRESS",

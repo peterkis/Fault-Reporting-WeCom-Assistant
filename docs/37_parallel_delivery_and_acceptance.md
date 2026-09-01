@@ -2,14 +2,15 @@
 
 ## 1. 原则
 
-P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-001 至 P2-005 均已完成。当前无活动实施任务或 Lane；P2-006 及以后任务、P2-G1 组装和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有 Feature Flag 保持默认关闭，本次完成不等同于生产、临床或 AI 自动回复批准；完成 P2-005 后已停止。
+P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-001 至 P2-006 均已完成，并于 2026-09-01 另行授权 P2-G1 Human-only Assembly。当前唯一活动 Lane 为 `ASSEMBLY`；P2-007 及以后任务、P2-G2 及以后 Gate 和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有提交的 Feature Flag 默认关闭，本次授权不等同于 P2-G1 通过、生产、临床或 AI 自动回复批准。
 
 ## 2. P2 Lanes
 
 | Lane | 架构范围 | 当前授权 |
 |---|---|---|
-| P2-A | Conversation Core、Timeline、Realtime Event Log | P2-001/P2-002/P2-003 已完成；当前无活动任务 |
-| P2-B | Communication Outbox、Handoff、Workbench | P2-004/P2-005 已完成；当前无活动任务，P2-006 未授权 |
+| P2-A | Conversation Core、Timeline、Realtime Event Log | P2-001/P2-002/P2-003 已完成并冻结 |
+| P2-B | Communication Outbox、Handoff、Workbench | P2-004/P2-005/P2-006 已完成并冻结 |
+| ASSEMBLY | P1 与 P2-001 至 P2-006 Human-only 组装 | P2-G1 `IN_PROGRESS`，无真实 Evidence 时最多 `READY_FOR_LIVE_E2E` |
 | P2-C | Rules、DeepSeek Provider、Context/Memory、Rollout | 未授权；只读消费冻结 Contract |
 | P2-D | Media/OCR、Incident、Metrics | 未授权；只读消费冻结 Contract |
 
@@ -54,7 +55,7 @@ Wakeup Hub 不携带事件且不是 broker。详细 Contract 见
 `docs/39_p2_003_realtime_event_log_sse.md`，执行结果仅以
 `evidence/p2-003-realtime-event-log-sse-report.md` 为准。
 
-### P2-G1 Human-only Conversation Center（NOT_STARTED）
+### P2-G1 Human-only Conversation Center（IN_PROGRESS）
 
 - 实时查看消息；
 - 人工接管、分配和回复；
@@ -63,10 +64,10 @@ Wakeup Hub 不携带事件且不是 broker。详细 Contract 见
 - 重复命令不重复发送；
 - AI 全关时完整可用。
 
-P2-G1 需要 P2-001 至 P2-006 的独立任务完成和另行 Assembly 授权。P2-002 通过也不自动
-启动或通过 P2-G1。
+P2-G1 已在 P2-001 至 P2-006 独立完成后获得另行 Assembly 授权。任何单个任务通过或合成
+Assembly 通过都不自动使 P2-G1 `PASSED`；真实企业微信 Evidence 与项目负责人批准仍是独立门槛。
 
-### 后续 Contract 消费（P2-005 已完成，P2-006 及以后未授权）
+### Assembly Contract 消费（P2-001 至 P2-006 已完成）
 
 - P2-003 已冻结独立 append/replay Contract；P2-G1 未来组装仍不得把 Projection Checkpoint
   当作 `Last-Event-ID`，也不得让 Realtime Event 反向拥有 Timeline。
@@ -76,8 +77,8 @@ P2-G1 需要 P2-001 至 P2-006 的独立任务完成和另行 Assembly 授权。
 - P2-005/P2-006 只能通过显式 Audience Query Port 读取投影，不得由浏览器参数提升
   Restricted 权限。
 
-这些消费关系只冻结接口方向，不构成启动 P2-006 或 P2-G1 的
-授权。
+这些消费关系现在只在 P2-G1 授权范围内用于 Human-only 组装，不授权 P2-007、AI、Media、
+Incident、P3 或任何生产启用。
 
 ### P2-G2 AI Shadow
 
@@ -140,8 +141,9 @@ P2-G1 需要 P2-001 至 P2-006 的独立任务完成和另行 Assembly 授权。
 
 V1.4 不再要求历史数据 dry run、未完结工单切换、最终增量、旧系统冻结或退役证明。
 
-## P2-006 完成后的并行边界
+## P2-G1 授权后的并行边界
 
-P2-B 的 P2-004、P2-005、P2-006 均已独立完成，当前无活动 Lane。P2-G1 仍为
-`NOT_STARTED / REQUIRES_SEPARATE_AUTHORIZATION`；不得把本地 Internal Alpha、合成 SSE 或 Mock
-Sender 验证替代真实 Assembly、企业微信客户端观察、生产 Sender 或负责人 Gate 批准。
+P2-B 的 P2-004、P2-005、P2-006 均已独立完成，当前仅 P2-G1 `ASSEMBLY` Lane 活动。不得把
+本地 Internal Alpha、合成 SSE 或 Mock Sender 结果解释为 Assembly Gate 通过；没有真实现场
+Evidence 与项目负责人批准时，状态只能是 `READY_FOR_LIVE_E2E`。P2-007、AI/Media/Incident、
+P3 和生产启用仍须另行授权。

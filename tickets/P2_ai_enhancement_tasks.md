@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；当前无活动任务或 Lane。P2-007 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO / NOT_STARTED`。所有 Feature Flag 默认关闭。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 已独立授权，当前为 `IN_PROGRESS / ASSEMBLY`。P2-007 至 P2-014 和其他 Lane 实现仍须另行授权并保持 `TODO`。所有提交的 Feature Flag 默认关闭；无真实现场 Evidence 与项目负责人批准时 P2-G1 最多到 `READY_FOR_LIVE_E2E`。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -240,7 +240,7 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 ## P2-006 实时 Web Workbench、REST Command 与权限
 
-- 状态：IN_PROGRESS（2026-09-01 独立授权）
+- 状态：DONE（2026-09-01 独立授权并完成）
 - Task：`tasks/P2-006_realtime_web_workbench_rest_authorization.md`
 - 授权 Evidence：`evidence/p2-006-start-authorization.md`
 - Lane：P2-B
@@ -289,6 +289,17 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 ### 资源约束
 
 首版不做富文本编辑器、营销、呼叫中心或多租户。
+
+## P2-G1 Human-only Conversation Center Assembly
+
+- 状态：IN_PROGRESS（2026-09-01 独立授权）
+- Task：`tasks/P2-G1_human_only_conversation_center_assembly.md`
+- 授权 Evidence：`evidence/p2-g1-start-authorization.md`
+- Lane：ASSEMBLY
+- 依赖：P1、P2-001 至 P2-006
+- 数据库变更：无
+
+只组装 P1 与已冻结的 P2-001 至 P2-006 Human-only Contract。所有提交的 Feature Flag 默认关闭；真实测试依赖一次性进程批准和测试 Target Allowlist。无真实企业微信现场 Evidence 与项目负责人批准时，本 Gate 最多到 `READY_FOR_LIVE_E2E`，不得启动 P2-007。
 
 ## P2-007 服务目录、确定性规则与对话字段模型
 

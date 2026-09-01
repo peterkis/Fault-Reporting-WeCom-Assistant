@@ -9,7 +9,7 @@
 - P1-001 至 P1-011 保持既有验收结论；
 - P1-012 已完成真实测试群 E2E、客户端观察、故障演练和 Go/No-Go，状态为 `DONE`；
 - Phase 2 保持 `IN_PROGRESS`；`P2-001` 至 `P2-005` 均已完成；
-- P2-001 至 P2-006 已完成，当前无活动任务或 Lane；P2-007 及以后未授权，P2-G1 保持 `NOT_STARTED / REQUIRES_SEPARATE_AUTHORIZATION`，全部 P3 任务未启动，所有 P2/P3 Feature Flag 保持 `false`；
+- P2-001 至 P2-006 已完成；项目负责人已独立授权 P2-G1 Human-only Assembly，当前活动任务为 `P2-G1 / ASSEMBLY / IN_PROGRESS`。P2-007 及以后未授权，全部 P3 任务未启动，所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 本次 Phase 2 启动授权不等同于生产上线、临床上线或 AI 自动回复批准，不启用真实外发、SSE、模型、OCR、医院身份连接或内网 Connector。
 
 ## V1.4 核心纠偏
@@ -62,7 +62,7 @@ P1 保持零医院内网依赖；真实企业微信闭环和试点评审已完�
 
 ## Phase 2：Conversation Center 与 AI 协作
 
-P2 保持 `IN_PROGRESS`。P2-001 至 P2-006 均已完成；P2-006 提供默认关闭的 Human-only Workbench Internal Alpha、REST、SSE 与权限验证，不是最终生产前端。当前无活动 Lane，P2-G1 与 P2-007 及以后能力仍须另行授权。
+P2 保持 `IN_PROGRESS`。P2-001 至 P2-006 均已完成；P2-006 提供默认关闭的 Human-only Workbench Internal Alpha、REST、SSE 与权限验证，不是最终生产前端。P2-G1 已另行授权进行受控 Assembly；若没有真实企业微信现场 Evidence 和项目负责人批准，完成实现后必须停止在 `READY_FOR_LIVE_E2E`。P2-007 及以后能力仍须另行授权。
 
 ```text
 Conversation Thread / Session

@@ -24,6 +24,25 @@ const profiles = Object.freeze({
     candidate: 'P2-G1',
     candidateAuthorized: false,
     p2006Status: 'DONE',
+    p2g1Status: 'NOT_STARTED',
+  }),
+  P2_G1_ASSEMBLY_IN_PROGRESS: Object.freeze({
+    lastCompletedTask: 'P2-006',
+    activeTask: 'P2-G1',
+    activeLane: 'ASSEMBLY',
+    candidate: 'P2-G1',
+    candidateAuthorized: true,
+    p2006Status: 'DONE',
+    p2g1Status: 'IN_PROGRESS',
+  }),
+  P2_G1_READY_FOR_LIVE_E2E: Object.freeze({
+    lastCompletedTask: 'P2-006',
+    activeTask: 'P2-G1',
+    activeLane: 'ASSEMBLY',
+    candidate: 'P2-G1-LIVE',
+    candidateAuthorized: false,
+    p2006Status: 'DONE',
+    p2g1Status: 'READY_FOR_LIVE_E2E',
   }),
 });
 
@@ -35,7 +54,7 @@ test('V1.4 architecture validator passes', () => {
   assert.equal(result.status, 0, result.stdout + '\n' + result.stderr);
 });
 
-test('P2-006 lifecycle state is internally consistent without changing P1', () => {
+test('P2/P2-G1 lifecycle state is internally consistent without changing P1', () => {
   const manifest = json('MANIFEST.json');
   const current = json('plans/current_phase.json');
   const backlog = json('plans/master_backlog.json');
@@ -87,10 +106,11 @@ test('P2-006 lifecycle state is internally consistent without changing P1', () =
     .every((task) => task.status === 'TODO'), true);
   assert.deepEqual(
     backlog.tasks.filter((task) => task.status === 'IN_PROGRESS').map((task) => task.id),
-    profile.activeTask ? [profile.activeTask] : [],
+    profile.activeTask?.startsWith('P2-0') ? [profile.activeTask] : [],
   );
   assert.equal(backlog.tasks.filter((task) => task.phase === 'P3').every((task) => task.status === 'TODO'), true);
-  assert.equal(parallel.assembly_gates.every((gate) => gate.status === 'NOT_STARTED'), true);
+  assert.equal(parallel.assembly_gates.find((gate) => gate.id === 'P2-G1').status, profile.p2g1Status ?? 'NOT_STARTED');
+  assert.equal(parallel.assembly_gates.filter((gate) => gate.id !== 'P2-G1').every((gate) => gate.status === 'NOT_STARTED'), true);
   assert.deepEqual(parallel.feature_flags_enabled, []);
   assert.equal(Object.values(parallel.feature_flag_defaults).every((value) => value === false), true);
 });
@@ -141,7 +161,7 @@ test('P2-004 completion artifacts preserve P1 notification and Ticket ownership'
 
 test('P2-005 completion artifacts preserve frozen Session and identity ownership', () => {
   const current = json('plans/current_phase.json');
-  if (!current.implementation_authorization_status.startsWith('P2_006_')) return;
+  if (!current.implementation_authorization_status.startsWith('P2_006_') && !current.implementation_authorization_status.startsWith('P2_G1_')) return;
   for (const relativePath of [
     'contracts/conversation_assignment.schema.json',
     'contracts/conversation_handoff.schema.json',
@@ -162,7 +182,7 @@ test('P2-005 completion artifacts preserve frozen Session and identity ownership
 
 test('P2-006 completion has a runnable workbench and no migration 022', () => {
   const current = json('plans/current_phase.json');
-  if (current.implementation_authorization_status !== 'P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION') return;
+  if (json('plans/master_backlog.json').tasks.find((task) => task.id === 'P2-006').status !== 'DONE') return;
   for (const relativePath of [
     'docs/42_p2_006_realtime_web_workbench.md',
     'evidence/p2-006-realtime-workbench-report.md',

@@ -15,6 +15,7 @@
 - `tasks/P2-004_unified_communication_outbox_delivery.md`：已完成的 P2-004 任务记录；
 - `tasks/P2-005_assignment_handoff_read_cursor_generation_fence.md`：已完成的 P2-005 任务记录；
 - `tasks/P2-006_realtime_web_workbench_rest_authorization.md`：P2-006 独立授权与停止线任务记录；
+- `tasks/P2-G1_human_only_conversation_center_assembly.md`：P2-G1 Human-only Assembly 授权、验收和停止线；
 - `evidence/p2-phase-start-authorization.md`：Phase 2 启动及仅授权 P2-001 的负责人 Evidence；
 - `evidence/p2-001-conversation-contracts-report.md`：P2-001 脱敏验证 Evidence；
 - `evidence/p2-002-start-authorization.md`：仅启动 P2-002 的项目负责人独立授权 Evidence；
@@ -27,6 +28,8 @@
 - `evidence/p2-005-assignment-handoff-generation-fence-report.md`：P2-005 完成验证 Evidence。
 - `evidence/p2-006-start-authorization.md`：仅启动 P2-006 的项目负责人独立授权 Evidence。
 - `evidence/p2-006-realtime-workbench-report.md`：P2-006 REST、权限、SSE、浏览器与性能验收 Evidence。
+- `evidence/p2-g1-start-authorization.md`：P2-G1 独立启动授权和固定基线 Evidence。
+- `evidence/p2-g1-assembly-readiness-report.md`：P2-G1 自动化 Assembly 与 Live E2E 就绪状态报告。
 
 ## ADR
 
@@ -69,12 +72,12 @@
 - 所有 P2/P3 Feature Flag 保持 `false`；
 - 完成状态不等同于生产、临床或 Assembly Gate 验收。
 
-## P2-006 完成状态
+## P2-G1 Assembly 状态
 
-- P2-003、P2-004、P2-005、P2-006：`DONE`；当前无活动 Lane，P2-G1 保持未启动；
+- P2-003、P2-004、P2-005、P2-006：`DONE`；当前 P2-G1 为唯一活动 `ASSEMBLY` Lane；
 - `docs/42_p2_006_realtime_web_workbench.md`：Internal Alpha、REST/Auth、Query、Command、Delivery、SSE/Polling 与 UI 边界。
 - P2-007 至 P2-014 继续为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；
-- `P2-G1` 继续为 `NOT_STARTED`，所有 P2/P3 Feature Flag 保持 `false`；
+- `P2-G1` 为 `IN_PROGRESS`；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 未接真实 Workbench、企业微信新增 Sender、模型或医院内网；本完成不等同于生产或临床上线。
 
 ## P2-005 契约、迁移、运行时与测试
