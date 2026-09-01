@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### P2-006 Human-only Workbench 授权启动
+
+- 项目负责人于 2026-09-01 正式、独立授权仅启动 `P2-006 / P2-B`；基线为 `6afe8157bfcae49d391d0f6e2aa5c60388377ea5`。
+- 新增授权 Evidence 与任务记录；P2 状态保持 `IN_PROGRESS`，唯一活动任务为 P2-006，P2-001 至 P2-005 保持 `DONE`。
+- P2-006 明确无数据库结构变更，不创建 migration 022；Native UI 仅为 Internal Alpha / Reference Client，不冻结最终生产前端。
+- P2-G1、P2-007 及以后、真实 Sender/身份/内网、AI/Media/Incident 和远端发布仍未授权；全部 P2/P3 Feature Flag 保持 `false`。
+
 ### P2-005 坐席分配、Read Cursor、Handoff 与 Generation Fence
 
 - 项目负责人于 2026-08-31 正式、独立授权仅启动 `P2-005 / P2-B`；基线为 `7e9a41498c471be4deca235439440ea7f157bdd4`。

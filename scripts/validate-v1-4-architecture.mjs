@@ -28,30 +28,31 @@ function isIsoDate(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/u.test(value);
 }
 
-const SOURCE_BASE = '7e9a41498c471be4deca235439440ea7f157bdd4';
+const SOURCE_BASE = '6afe8157bfcae49d391d0f6e2aa5c60388377ea5';
+const P2_005_SOURCE_BASE = '7e9a41498c471be4deca235439440ea7f157bdd4';
 const P2_004_SOURCE_BASE = '2b4548888882ce895a85f513d0a5bb57d9920b91';
 const P2_003_SOURCE_BASE = 'd59de5d7db39c4a39f82093496a0e42565d67a7e';
-const AUTHORIZED_TASKS = Object.freeze(['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005']);
+const AUTHORIZED_TASKS = Object.freeze(['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006']);
 const LIFECYCLE_PROFILES = Object.freeze({
-  P2_005_IN_PROGRESS: Object.freeze({
-    lastCompletedTask: 'P2-004',
-    activeTask: 'P2-005',
-    activeLane: 'P2-B',
-    candidate: 'P2-005',
-    candidateAuthorized: true,
-    p2005Status: 'IN_PROGRESS',
-    manifestStatus: 'P2_P2_005_IN_PROGRESS',
-    projectStatus: 'p2_p2_005_in_progress',
-  }),
-  P2_005_DONE_AWAITING_SEPARATE_AUTHORIZATION: Object.freeze({
+  P2_006_IN_PROGRESS: Object.freeze({
     lastCompletedTask: 'P2-005',
+    activeTask: 'P2-006',
+    activeLane: 'P2-B',
+    candidate: 'P2-006',
+    candidateAuthorized: true,
+    p2006Status: 'IN_PROGRESS',
+    manifestStatus: 'P2_P2_006_IN_PROGRESS',
+    projectStatus: 'p2_p2_006_in_progress',
+  }),
+  P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-006',
     activeTask: null,
     activeLane: null,
-    candidate: 'P2-006',
+    candidate: 'P2-G1',
     candidateAuthorized: false,
-    p2005Status: 'DONE',
-    manifestStatus: 'P2_P2_005_DONE_AWAITING_SEPARATE_AUTHORIZATION',
-    projectStatus: 'p2_p2_005_done_awaiting_separate_authorization',
+    p2006Status: 'DONE',
+    manifestStatus: 'P2_P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION',
+    projectStatus: 'p2_p2_006_done_awaiting_p2_g1_assembly_authorization',
   }),
 });
 
@@ -66,7 +67,7 @@ const sourceExample = json('config_examples/integration_source.example.json');
 
 const lifecycleStatus = current.implementation_authorization_status;
 const profile = LIFECYCLE_PROFILES[lifecycleStatus];
-check(Boolean(profile), 'current phase uses a recognized P2-005 lifecycle profile');
+check(Boolean(profile), 'current phase uses a recognized P2-006 lifecycle profile');
 
 if (profile) {
   const lifecycleViews = [
@@ -163,9 +164,9 @@ check(backlog.current_phase === 'P2', 'master backlog records P2 current');
 check(taskIndex.current_phase === 'P2', 'task index records P2 current');
 check(parallel.current_phase === 'P2', 'parallel workstreams record P2 current');
 check(projectSummary.project.current_phase === 'P2', 'project summary records P2 current');
-check(manifest.source_base_commit === SOURCE_BASE, 'manifest uses the frozen P2-005 base commit');
-check(current.source_base_commit === SOURCE_BASE, 'current phase uses the frozen P2-005 base commit');
-check(backlog.source_base_commit === SOURCE_BASE, 'master backlog uses the frozen P2-005 base commit');
+check(manifest.source_base_commit === SOURCE_BASE, 'manifest uses the frozen P2-006 base commit');
+check(current.source_base_commit === SOURCE_BASE, 'current phase uses the frozen P2-006 base commit');
+check(backlog.source_base_commit === SOURCE_BASE, 'master backlog uses the frozen P2-006 base commit');
 
 const p1 = backlog.phases.find((phase) => phase.id === 'P1');
 const p2 = backlog.phases.find((phase) => phase.id === 'P2');
@@ -176,6 +177,7 @@ const p2002 = backlog.tasks.find((task) => task.id === 'P2-002');
 const p2003 = backlog.tasks.find((task) => task.id === 'P2-003');
 const p2004 = backlog.tasks.find((task) => task.id === 'P2-004');
 const p2005 = backlog.tasks.find((task) => task.id === 'P2-005');
+const p2006 = backlog.tasks.find((task) => task.id === 'P2-006');
 
 check(p1?.status === 'DONE' && p1?.go_decision === 'GO', 'P1 remains DONE with GO');
 check(p10012?.status === 'DONE' && p10012?.decision === 'GO', 'P1-012 remains DONE with GO');
@@ -197,12 +199,16 @@ check(p2004?.status === 'DONE', 'P2-004 remains DONE');
 check(p2004?.authorized_at === '2026-08-31'
   && p2004?.authorization_evidence === 'evidence/p2-004-start-authorization.md'
   && p2004?.task_file === 'tasks/P2-004_unified_communication_outbox_delivery.md', 'P2-004 authorization metadata is linked');
-check(p2005?.status === profile?.p2005Status, 'P2-005 task status matches the lifecycle profile');
+check(p2005?.status === 'DONE', 'P2-005 remains DONE');
 check(p2005?.authorized_at === '2026-08-31'
   && p2005?.authorization_evidence === 'evidence/p2-005-start-authorization.md'
   && p2005?.task_file === 'tasks/P2-005_assignment_handoff_read_cursor_generation_fence.md', 'P2-005 authorization metadata is linked');
-check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[6-9]|01[0-4])$/u.test(task.id))
-  .every((task) => task.status === 'TODO'), 'P2-006 through P2-014 remain TODO');
+check(p2006?.status === profile?.p2006Status, 'P2-006 task status matches the lifecycle profile');
+check(p2006?.authorized_at === '2026-09-01'
+  && p2006?.authorization_evidence === 'evidence/p2-006-start-authorization.md'
+  && p2006?.task_file === 'tasks/P2-006_realtime_web_workbench_rest_authorization.md', 'P2-006 authorization metadata is linked');
+check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[7-9]|01[0-4])$/u.test(task.id))
+  .every((task) => task.status === 'TODO'), 'P2-007 through P2-014 remain TODO');
 check(sameArray(backlog.tasks.filter((task) => task.status === 'IN_PROGRESS').map((task) => task.id),
   profile?.activeTask ? [profile.activeTask] : []), 'the exact IN_PROGRESS task set matches the lifecycle profile');
 check(p3?.status === 'TODO', 'P3 remains TODO');
@@ -232,6 +238,14 @@ check(taskIndex.p2_005_authorized_at === '2026-08-31'
   && taskIndex.p2_005_authorization_evidence === 'evidence/p2-005-start-authorization.md', 'task index links P2-005 authorization');
 check(projectSummary.project.p2_005_authorized_at === '2026-08-31'
   && projectSummary.project.p2_005_authorization_evidence === 'evidence/p2-005-start-authorization.md', 'project summary links P2-005 authorization');
+check(current.p2_006_authorized_at === '2026-09-01'
+  && current.p2_006_authorization_evidence === 'evidence/p2-006-start-authorization.md', 'current phase links P2-006 authorization');
+check(manifest.p2_006_authorized_at === '2026-09-01'
+  && manifest.p2_006_authorization_evidence === 'evidence/p2-006-start-authorization.md', 'manifest links P2-006 authorization');
+check(taskIndex.p2_006_authorized_at === '2026-09-01'
+  && taskIndex.p2_006_authorization_evidence === 'evidence/p2-006-start-authorization.md', 'task index links P2-006 authorization');
+check(projectSummary.project.p2_006_authorized_at === '2026-09-01'
+  && projectSummary.project.p2_006_authorization_evidence === 'evidence/p2-006-start-authorization.md', 'project summary links P2-006 authorization');
 
 const expectedFeatureFlags = [
   'CONVERSATION_CENTER_ENABLED',
@@ -354,8 +368,15 @@ const p2005Authorization = read('evidence/p2-005-start-authorization.md');
 check(p2005Authorization.includes('项目负责人正式、独立授权启动 P2-005。'), 'P2-005 authorization has the exact start line');
 check(p2005Authorization.includes('完成 P2-005 后必须停止。'), 'P2-005 authorization has the exact completion stop line');
 check(p2005Authorization.includes('P2-006、P2-G1 和后续生产功能仍须另行授权。'), 'P2-005 authorization has the exact next-task and gate stop line');
-check(p2005Authorization.includes(SOURCE_BASE), 'P2-005 authorization names the exact frozen base');
+check(p2005Authorization.includes(P2_005_SOURCE_BASE), 'P2-005 authorization names the exact frozen base');
 check(p2005Authorization.includes('所有 P2/P3 Feature Flag 继续为') && p2005Authorization.includes('false'), 'P2-005 authorization keeps all feature flags false');
+check(fs.existsSync(path.join(root, 'evidence/p2-006-start-authorization.md')), 'P2-006 authorization evidence exists');
+const p2006Authorization = read('evidence/p2-006-start-authorization.md');
+check(p2006Authorization.includes('项目负责人正式、独立授权启动 P2-006。'), 'P2-006 authorization has the exact start line');
+check(p2006Authorization.includes('完成 P2-006 后必须停止。'), 'P2-006 authorization has the exact completion stop line');
+check(p2006Authorization.includes('P2-G1 组装、P2-007 及以后任务和所有生产功能仍须另行授权。'), 'P2-006 authorization has the exact next-task and gate stop line');
+check(p2006Authorization.includes(SOURCE_BASE), 'P2-006 authorization names the exact frozen base');
+check(fs.existsSync(path.join(root, 'tasks/P2-006_realtime_web_workbench_rest_authorization.md')), 'P2-006 task record exists');
 
 const p1Approval = read('evidence/p1-012-project-owner-go-approval.md');
 check(p1Approval.includes('“我批准了”'), 'P1 owner approval remains preserved');
@@ -465,7 +486,7 @@ check(sameArray([...controlMigration.matchAll(/CREATE TABLE IF NOT EXISTS\s+([a-
   'conversation.assignment', 'conversation.handoff', 'conversation.read_cursor', 'conversation.control_event',
 ]), 'migration 021 creates only the four frozen control tables');
 
-if (lifecycleStatus === 'P2_005_DONE_AWAITING_SEPARATE_AUTHORIZATION') {
+if (lifecycleStatus === 'P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION') {
   const completionDate = current.p2_005_completed_at;
   const completionEvidence = 'evidence/p2-005-assignment-handoff-generation-fence-report.md';
   check(isIsoDate(completionDate), 'P2-005 completion date is ISO formatted');

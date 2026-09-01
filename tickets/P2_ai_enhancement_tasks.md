@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-005 均已完成；当前无活动实施任务或 Lane。P2-006 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO / NOT_STARTED`。所有 Feature Flag 默认关闭。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-005 均已完成；P2-006 已独立授权并在 P2-B 实施。P2-007 至 P2-014、其他 Lane 实现和 P2-G1 组装仍须另行授权并保持 `TODO / NOT_STARTED`。所有 Feature Flag 默认关闭。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -240,7 +240,9 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 ## P2-006 实时 Web Workbench、REST Command 与权限
 
-- 状态：TODO
+- 状态：IN_PROGRESS（2026-09-01 独立授权）
+- Task：`tasks/P2-006_realtime_web_workbench_rest_authorization.md`
+- 授权 Evidence：`evidence/p2-006-start-authorization.md`
 - Lane：P2-B
 - 目标 Gate：P2-G1
 - 依赖：P2-002, P2-003, P2-005

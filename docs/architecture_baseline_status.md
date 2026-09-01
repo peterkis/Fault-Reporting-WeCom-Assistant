@@ -5,11 +5,11 @@
 - 状态：ACTIVE
 - 当前阶段：P2 / IN_PROGRESS
 - 最近完成任务：P2-005 / DONE
-- 当前活动 Lane：无
+- 当前活动 Lane：P2-B
 - 最后完成任务：P2-005（2026-08-31）
 - 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001 至 P2-005
-- 当前活动任务与 Lane：无
-- 下一任务候选：P2-006 / 未授权
+- 当前活动任务与 Lane：P2-006 / P2-B
+- 下一任务候选：P2-006 / 已独立授权并处于 IN_PROGRESS
 - P2-G1：NOT_STARTED
 - P2/P3 Feature Flags：全部 `false`
 - P3：TODO / 未启动
@@ -71,7 +71,7 @@ Enterprise WeCom / New Intranet Portal / Hospital API / Monitoring Alert
 
 - 创建另一套 `unified_ticket.ticket` 并双写；
 - 重写既有 P1 迁移历史；
-- 以 P2-005 授权为由启动 P2-006 及以后任务、P2-G1 组装或任何 P3 任务；
+- 以 P2-006 授权为由启动 P2-007 及以后任务、P2-G1 组装或任何 P3 任务；
 - 启用任何 P2/P3 Feature Flag、真实外发、SSE、模型、OCR 或医院内网连接；
 - 让外部来源状态覆盖本地 Ticket；
 - 引入历史 Ticket 兼容模型。
@@ -92,7 +92,7 @@ P1 退出条件为：漏单 0、重复单 0、状态/事件/通知一致、真�
 
 ## 6. Phase 2
 
-P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 至 P2-005 均已完成；P2-005 授权 Evidence 为 `evidence/p2-005-start-authorization.md`，完成 Evidence 为 `evidence/p2-005-assignment-handoff-generation-fence-report.md`。当前无活动实施任务或 Lane。P2-006 及以后任务、P2-G1 组装和其他 Lane 实现仍须另行授权。所有 Feature Flag 保持关闭。
+P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 至 P2-005 均已完成；P2-006 已由项目负责人独立授权，授权 Evidence 为 `evidence/p2-006-start-authorization.md`，当前活动 Lane 为 P2-B。P2-007 及以后任务、P2-G1 组装和其他 Lane 实现仍须另行授权。所有 Feature Flag 保持关闭。
 
 固定顺序：
 
@@ -162,4 +162,4 @@ P3 非目标：历史导入、未完结切换、旧编号/状态/附件兼容、
 
 ## 12. 应用基线
 
-本次 P2-005 独立授权以提交 `7e9a41498c471be4deca235439440ea7f157bdd4` 为工作基线。旧 P3 文件保留为 Superseded 指针，避免自动化引用失效；其内容不能作为任务来源。
+本次 P2-006 独立授权以提交 `6afe8157bfcae49d391d0f6e2aa5c60388377ea5` 为工作基线。旧 P3 文件保留为 Superseded 指针，避免自动化引用失效；其内容不能作为任务来源。

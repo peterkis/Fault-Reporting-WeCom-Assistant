@@ -3,23 +3,24 @@
   "version": "1.4.0",
   "architecture_baseline": "V1.4",
   "baseline_date": "2026-08-30",
-  "source_base_commit": "7e9a41498c471be4deca235439440ea7f157bdd4",
+  "source_base_commit": "6afe8157bfcae49d391d0f6e2aa5c60388377ea5",
   "current_phase": "P2",
   "last_completed_task": "P2-005",
-  "active_task": null,
+  "active_task": "P2-006",
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
     "P2-002",
     "P2-003",
     "P2-004",
-    "P2-005"
+    "P2-005",
+    "P2-006"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "P2_005_DONE_AWAITING_SEPARATE_AUTHORIZATION",
+  "active_lane": "P2-B",
+  "implementation_authorization_status": "P2_006_IN_PROGRESS",
   "p2_g1_status": "NOT_STARTED",
   "next_task_candidate": "P2-006",
-  "next_task_authorized": false,
+  "next_task_authorized": true,
   "status_values": [
     "TODO",
     "IN_PROGRESS",
@@ -413,7 +414,10 @@
       "lane": "P2-B",
       "gate": "P2-G1",
       "phase": "P2",
-      "status": "TODO"
+      "status": "IN_PROGRESS",
+      "authorized_at": "2026-09-01",
+      "authorization_evidence": "evidence/p2-006-start-authorization.md",
+      "task_file": "tasks/P2-006_realtime_web_workbench_rest_authorization.md"
     },
     {
       "id": "P2-007",
