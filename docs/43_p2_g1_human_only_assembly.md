@@ -28,6 +28,8 @@ WeCom WSClient
 
 Live Harness 要求 `P2_G1_TEST_PRINCIPAL_IDS` 至少包含两个不同的 active Pilot Principal，并为各 Principal 生成互相隔离的短期 HttpOnly Cookie/CSRF。Harness 只输出安全 `run_id`、loopback 地址、布尔 Readiness 与计数；Cookie、CSRF、Principal UUID 和原始 Channel/Target 标识不进入终端或 Evidence。Ready 后由当前进程通过 CDP 将短期 Cookie 注入两个独立临时浏览器 Profile，停止时关闭浏览器并清除经校验的临时目录。Inbound Shadow 的 Communication Worker 处于明确安全暂停状态，不能产生真实主动发送。
 
+浏览器必须导航到 P2-006 冻结静态入口 `/workbench`，不得把 loopback 根路径推断为 Workbench。系统浏览器回归必须实际证明两个隔离 Cookie 会话均请求 `/workbench`，且没有请求 `/`。
+
 真实 Ready 还要求 Projection backlog 为 0 且当前进程 Projection failure 为 0。相同参与者进入新的 Service Intake 时，Coordinator 必须在同一事务先以 `DIFFERENT_INTAKE` 结束旧活动 Session，再创建版本保持 1/1 的新 Session，从而满足 P2-001 单活动参与者约束；旧 Intake 的 Session 及 Timeline 仍保留。
 
 ## Gate 语义

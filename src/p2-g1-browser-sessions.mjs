@@ -41,13 +41,15 @@ async function removeProfile(profile) {
   }, { timeoutMs: 8_000, intervalMs: 100 });
 }
 
-async function launchOne({ executable, origin, cookie, label }) {
+async function launchOne({ executable, origin, cookie, label, headless }) {
   const profile = await mkdtemp(join(tmpdir(), 'p2-g1-live-browser-'));
-  const child = spawn(executable, [
+  const argumentsList = [
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--new-window',
     '--disable-default-apps', '--disable-extensions', '--disable-background-networking',
     'about:blank',
-  ], { stdio: 'ignore', windowsHide: false });
+  ];
+  if (headless) argumentsList.unshift('--headless=new');
+  const child = spawn(executable, argumentsList, { stdio: 'ignore', windowsHide: headless });
   try {
     const activePortPath = join(profile, 'DevToolsActivePort');
     const activePort = await waitFor(async () => {
@@ -93,7 +95,7 @@ async function launchOne({ executable, origin, cookie, label }) {
       expires: cookie.expires,
     });
     if (accepted?.success !== true) throw new Error('P2_G1_TEST_BROWSER_COOKIE_FAILED');
-    await command('Page.navigate', { url: `${origin}/#test-agent-${label}` });
+    await command('Page.navigate', { url: `${origin}/workbench#test-agent-${label}` });
 
     async function close() {
       try { await command('Browser.close'); } catch { /* continue local cleanup */ }
@@ -113,16 +115,16 @@ async function launchOne({ executable, origin, cookie, label }) {
   }
 }
 
-export async function launchP2G1TestBrowserSessions({ origin, cookies } = {}) {
+export async function launchP2G1TestBrowserSessions({ origin, cookies, headless = false } = {}) {
   if (typeof origin !== 'string' || !/^http:\/\/127\.0\.0\.1:[0-9]{4,5}$/u.test(origin)
-    || !Array.isArray(cookies) || cookies.length < 2 || cookies.length > 4) {
+    || !Array.isArray(cookies) || cookies.length < 2 || cookies.length > 4 || typeof headless !== 'boolean') {
     throw new TypeError('P2_G1_TEST_BROWSER_CONFIGURATION_INVALID');
   }
   const executable = browserExecutable();
   const sessions = [];
   try {
     for (let index = 0; index < cookies.length; index += 1) {
-      sessions.push(await launchOne({ executable, origin, cookie: cookies[index], label: String.fromCharCode(65 + index) }));
+      sessions.push(await launchOne({ executable, origin, cookie: cookies[index], label: String.fromCharCode(65 + index), headless }));
     }
   } catch (error) {
     await Promise.allSettled(sessions.map((session) => session.close()));

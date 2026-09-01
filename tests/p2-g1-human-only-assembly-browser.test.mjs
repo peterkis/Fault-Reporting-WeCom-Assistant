@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import { createServer as createHttpServer } from 'node:http';
 import { createServer as createNetServer } from 'node:net';
 import { test } from 'node:test';
 
 import { closeConversationWorkbenchServer, createConversationWorkbenchHttpServer } from '../src/p2-006-workbench-http.mjs';
+import { launchP2G1TestBrowserSessions } from '../src/p2-g1-browser-sessions.mjs';
 import { launchSystemBrowser } from './helpers/p2-006-browser-harness.mjs';
 
 const SESSION_ID = '018f0000-0000-7000-8000-000000000061';
@@ -69,5 +71,47 @@ test('P2-G1 system browser duplicate submit fence sends one human reply and pres
     if (browser) await browser.close();
     server.closeAllConnections?.();
     await closeConversationWorkbenchServer(server);
+  }
+});
+
+test('P2-G1 live browser sessions navigate to the actual Workbench route with isolated cookies', { timeout: 90_000 }, async (t) => {
+  const port = await reservePort();
+  const origin = `http://127.0.0.1:${port}`;
+  const requests = [];
+  const server = createHttpServer((request, response) => {
+    requests.push({ path: request.url, cookie: typeof request.headers.cookie === 'string' });
+    if (request.url?.startsWith('/workbench')) {
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      response.end('<!doctype html><title>P2-G1 Workbench route check</title>');
+      return;
+    }
+    response.writeHead(404, { 'content-type': 'application/json' });
+    response.end('{"error":{"code":"WORKBENCH_NOT_FOUND"}}');
+  });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });
+  const expires = Math.floor(Date.now() / 1000) + 60;
+  let sessions;
+  try {
+    sessions = await launchP2G1TestBrowserSessions({
+      origin,
+      headless: true,
+      cookies: [
+        { name: 'p2_g1_test_1', value: 'a'.repeat(40), secure: false, expires },
+        { name: 'p2_g1_test_2', value: 'b'.repeat(40), secure: false, expires },
+      ],
+    });
+    const deadline = Date.now() + 10_000;
+    while (requests.filter((request) => request.path?.startsWith('/workbench')).length < 2 && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    const workbenchRequests = requests.filter((request) => request.path?.startsWith('/workbench'));
+    assert.equal(sessions.count, 2);
+    assert.ok(workbenchRequests.length >= 2);
+    assert.equal(workbenchRequests.every((request) => request.cookie), true);
+    assert.equal(requests.some((request) => request.path === '/'), false);
+    t.diagnostic(JSON.stringify({ browser_sessions: 2, workbench_route_requests: workbenchRequests.length, isolated_cookie_headers: true, root_not_requested: true }));
+  } finally {
+    await sessions?.close?.();
+    await new Promise((resolve) => server.close(resolve));
   }
 });

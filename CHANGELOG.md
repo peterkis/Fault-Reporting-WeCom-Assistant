@@ -9,6 +9,7 @@
 - 隔离 PostgreSQL、系统浏览器、故障/容量与 P1/P2 回归通过；真实企业微信、60 分钟现场资源观察与项目负责人 Gate 批准均未执行，因此不是 `PASSED / GO`。P2-007、AI/OCR/Incident、P3、生产启用和远端发布仍未授权。
 - 真实现场预检后加固 Live Harness：支持至少两个 active Pilot Principal 的隔离短期认证、Safe Ready/run ID 输出和两个临时浏览器 Profile 的 HttpOnly Cookie 注入；原始标识与认证材料不输出，Inbound Shadow 继续保持真实发送关闭。
 - 首次 Inbound Shadow 在真实发送关闭时发现既有 Channel Message 投影 backlog；修复 `DIFFERENT_INTAKE` 边界以原子结束旧活动 Session，并将 backlog=0/failure=0 纳入 Ready。失败现场记录保留，修复后必须使用新 HEAD 重做 Live E2E。
+- 第二次 Inbound Shadow 的 20 条真实测试入站均完成 P1/Timeline/Realtime，但两个临时浏览器错误导航到根路径并返回 `WORKBENCH_NOT_FOUND`；修复为冻结 `/workbench` 入口并新增双浏览器真实路由/Cookie 回归。该 run 保持 BLOCKED。
 
 ### P2-006 Human-only Workbench 完成
 

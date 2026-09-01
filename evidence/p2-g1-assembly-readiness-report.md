@@ -4,7 +4,7 @@
 - 基线：`1c18d5653b17e4368b5fa057d513e1af1a8b4622`
 - 授权分支：`phase2/gate-p2-g1-human-only`
 - 数据库结构变更：P2-G1 无 DDL、无 migration 022；001 至 021 文件未修改
-- Live WeCom Evidence：PARTIAL / BLOCKED；真实 Gateway 已认证一次，但获批入站样本为 0/20，未进入场景验收
+- Live WeCom Evidence：PARTIAL / BLOCKED；第二次真实 Inbound Shadow 收到 20/20 并完成 P1/Timeline/Realtime，但两个 Workbench 浏览器均返回 `WORKBENCH_NOT_FOUND`
 - 60 分钟现场资源观察：NOT PERFORMED
 - 项目负责人 Gate 批准：NOT PRESENT
 - Gate 结论：NOT PASSED / NOT GO
@@ -23,12 +23,12 @@ Test Authentication 只接受 Server-side Pilot Principal，逐请求确认 acti
 |---|---|
 | P2-G1 Unit | 10/10；真实模式保险丝、单 Gateway、Sender ACK/拒绝/UNKNOWN、Allowlist、双 Principal Test Auth、Safe run ID、DB 故障脱敏、默认无真实发送 |
 | P2-G1 PostgreSQL Integration | 5/5；P1→Conversation→Realtime→Workbench、投影恢复、参与者与 Different Intake 边界、接管竞争、内部备注、12 路重复回复、Gateway 恢复、UNKNOWN 对账、Runtime Ready、容量与 Catalog |
-| P2-G1 System Browser | 1/1；移动视口重复提交只调用一次、XSS 未执行、无横向溢出、Polling fallback |
+| P2-G1 System Browser | 2/2；移动视口重复提交只调用一次、XSS 未执行、无横向溢出、Polling fallback；双隔离 Cookie 会话均请求冻结 `/workbench` 路由且未请求根路径 |
 | P2-001 至 P2-006 Unit | 138/138 |
 | P2-001 至 P2-006 Integration / Browser | 47/47 |
 | P1-009 / P1-011 / P1-012 Integration | 59/59 |
 | Architecture | validator 318 checks；test 14/14 |
-| 全仓串行 | 420/420；fail 0；cancelled 0；skipped 0 |
+| 全仓串行 | 421/421；fail 0；cancelled 0；skipped 0 |
 
 关键计数：明确报修 Ticket 漏单 0；重复 Channel Message 的 Ticket/Item 增量 0；两个群聊参与者 Session 相互隔离；并发接管成功数 1；Internal Note 为 Message/Outbox/Delivery `1/0/0`；12 路同命令 Human Reply 为 `1/1/1`；Gateway 未调用 Provider 时保持 PENDING，恢复后 Provider 调用 1；UNKNOWN 为 `RECONCILIATION_REQUIRED`；AI/OCR 调用 0。
 
@@ -59,3 +59,5 @@ Test Authentication 只接受 Server-side Pilot Principal，逐请求确认 acti
 - 2026-09-01：候选 `f77198bce81afa91b4c0750b1a09e0d946adc0b3` 首次真实 Inbound Shadow 完成 Gateway 认证且 Sender 关闭，但启动后发现 202 条既有 Channel Message backlog、累计 380 次 Projection failure；获批 run 样本为 0/20，受控停止并保持 Gate 未通过。
 - 2026-09-01：脱敏诊断定位为同一参与者进入 `DIFFERENT_INTAKE` 时未先结束旧活动 Session，触发单活动 Session 唯一索引。修复后隔离 Integration 覆盖旧 Session 原子结束、新 Session 版本 1/1；本地既有事实在 13 个有界批次中补投影 398 个 Timeline/Realtime 结果，失败 0、剩余 backlog 0、Catalog 不变。新的真实候选仍须重新执行全部现场场景。
 - 2026-09-01：边界修复、backlog/failure Readiness 与受控 stdin 停止接缝完成后，全仓串行 420/420，fail/cancelled/skipped 均为 0；仅允许以修复提交的新 HEAD 重启真实现场验证。
+- 2026-09-01：候选 `fc00cc1c184a1a4f34e7441c6909962bb119f647` 的第二次 Inbound Shadow 收到 20/20，Channel Message/Timeline/Realtime 均为 20，Intake/Ticket/Session 为 2/2/2，Timeline P95 88.981ms，AI/OCR/真实发送均为 0；但 CDP 打开根路径而静态 Workbench 只服务 `/workbench`，两个客户端均观察到 `WORKBENCH_NOT_FOUND`、SSE Client 0，因此该 run 为 `BLOCKED`，不能作为可见性 PASS。
+- 2026-09-01：浏览器导航修复后，双隔离 Cookie `/workbench` 真实路由回归 1/1、新增后的 P2-G1 Browser 合计 2/2、全仓串行 421/421；旧 run 不复用，新的真实候选必须重新采集 20 条入站及 Workbench/SSE Evidence。
