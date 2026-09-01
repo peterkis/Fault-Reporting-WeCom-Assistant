@@ -131,6 +131,8 @@ test('P2-002 transaction hook is optional and P2-G1 browser source has an in-fli
   assert.match(browser, /eventSource\.addEventListener\(eventType, refresh\)/u);
   const realtimeSchema = JSON.parse(readFileSync('contracts/conversation_realtime_event.schema.json', 'utf8'));
   for (const eventType of realtimeSchema.$defs.event_type.enum) assert.equal(browser.includes(`'${eventType}'`), true, eventType);
+  assert.match(browser, /if \(realtimeRefreshRunning\) \{ realtimeRefreshPending = true; return; \}/u);
+  assert.match(browser, /while \(realtimeRefreshPending\)/u);
 });
 
 test('live script has no broad --live mode and no default live-send npm command', () => {
@@ -149,6 +151,8 @@ test('live script has no broad --live mode and no default live-send npm command'
   assert.match(browserSessions, /event_type: String\(type\), received_ms: Date\.now\(\)/u);
   assert.match(browserSessions, /category: requestCategory, start_ms: startMs, end_ms: Date\.now\(\), status:/u);
   assert.doesNotMatch(browserSessions, /lastEventId/u);
+  assert.match(live, /process\.stdin\.removeAllListeners\('data'\)/u);
+  assert.match(live, /process\.stdin\.pause\(\)/u);
   assert.doesNotMatch(browserSessions, /console\.(?:log|error)/u);
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
   assert.equal(Object.values(pkg.scripts).some((value) => /p2-g1-live-e2e\.mjs\s+--mode=/u.test(value)), false);

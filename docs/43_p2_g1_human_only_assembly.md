@@ -34,6 +34,8 @@ P2-003 SSE 使用冻结的具名 `event`；Workbench 必须为全部冻结 Realt
 
 Live Browser 的计时 Evidence 只能记录冻结事件类型、`LIST`/`DETAIL`/`TIMELINE` 请求分类、HTTP 状态和毫秒时间戳；禁止记录 URL、`Last-Event-ID`、Session ID 或响应正文。通过 stdin `telemetry` 获取的安全快照用于对齐 SSE 收到时间与 Detail/Timeline refetch 完成时间。
 
+首次 SSE 连接可能补放保留窗口内的多条授权事件。Workbench 必须串行合并刷新：刷新执行期间的新事件只设置一次 pending 标记，当前 LIST 与 Detail/Timeline 完成后最多再刷新一次，禁止为每个 replay event 并发请求。受控 `stop` 在浏览器和 Runtime 清理完成后必须暂停 stdin 并解除 data listener，确保 Live 进程退出。
+
 真实 Ready 还要求 Projection backlog 为 0 且当前进程 Projection failure 为 0。相同参与者进入新的 Service Intake 时，Coordinator 必须在同一事务先以 `DIFFERENT_INTAKE` 结束旧活动 Session，再创建版本保持 1/1 的新 Session，从而满足 P2-001 单活动参与者约束；旧 Intake 的 Session 及 Timeline 仍保留。
 
 ## Gate 语义

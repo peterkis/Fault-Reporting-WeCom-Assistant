@@ -11,6 +11,7 @@
 - 首次 Inbound Shadow 在真实发送关闭时发现既有 Channel Message 投影 backlog；修复 `DIFFERENT_INTAKE` 边界以原子结束旧活动 Session，并将 backlog=0/failure=0 纳入 Ready。失败现场记录保留，修复后必须使用新 HEAD 重做 Live E2E。
 - 第二次 Inbound Shadow 的 20 条真实测试入站均完成 P1/Timeline/Realtime，但两个临时浏览器错误导航到根路径并返回 `WORKBENCH_NOT_FOUND`；修复为冻结 `/workbench` 入口并新增双浏览器真实路由/Cookie 回归。该 run 保持 BLOCKED。
 - 第三次 Inbound Shadow 的 20 条真实测试入站再次完整提交，两个 Workbench 与 SSE 连接正常，但具名 `conversation.item.created` 未触发 UI refetch；Workbench 现监听全部冻结 Realtime Event Type，并为 Browser.close 增加有界超时和失活临时 Profile 清理。Live Browser 还增加只保留冻结事件类型、LIST/DETAIL/TIMELINE 分类、HTTP 状态和毫秒时间戳的安全计时探针，用于计算 SSE 到 refetch 完成延迟且不记录原始标识。该 run 仍保持 BLOCKED。
+- 第四次校准发现首次 SSE replay 的 459 个授权保留事件分别触发 459 次以上并发 LIST，P95 达 8 秒以上且只能手动刷新后看见消息；Workbench 现串行合并 realtime refresh，事件风暴期间只保留一次 pending refresh。Live 停止同时解除 stdin 引用，避免清理完成后进程残留。该 run 保持 BLOCKED。
 
 ### P2-006 Human-only Workbench 完成
 

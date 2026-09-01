@@ -120,6 +120,8 @@ async function main() {
       runtime_cleanup: runtimeCleanup.status === 'fulfilled',
       live_observation_claimed: false,
     }) + '\n');
+    process.stdin.removeAllListeners('data');
+    process.stdin.pause();
   }
   process.once('SIGINT', () => { void stop('SIGINT'); });
   process.once('SIGTERM', () => { void stop('SIGTERM'); });

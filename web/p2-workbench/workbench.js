@@ -10,6 +10,7 @@ const elements = Object.freeze(Object.fromEntries([
 const restored = loadRefreshState();
 let state = Object.freeze({ ...initialWorkbenchState(), filter: restored.filter, selectedSessionId: restored.selectedSessionId });
 let bootstrap = null; let csrfToken = null; let eventSource = null; let pollTimer = null; let activeController = null; let composerPending = false;
+let realtimeRefreshRunning = false; let realtimeRefreshPending = false;
 const realtimeEventTypes = Object.freeze([
   'conversation.session.created', 'conversation.session.updated', 'conversation.item.created',
   'conversation.timeline.rebuilt', 'conversation.mode.changed', 'conversation.assigned',
@@ -121,10 +122,22 @@ async function controlAction(action) {
 }
 
 function startPolling() { clearInterval(pollTimer); pollTimer = setInterval(() => { void loadConversations().then(() => loadSelected({ incremental: true })).catch(() => {}); }, bootstrap.polling_interval_ms); }
+async function refreshFromRealtime() {
+  if (realtimeRefreshRunning) { realtimeRefreshPending = true; return; }
+  realtimeRefreshRunning = true;
+  try {
+    do {
+      realtimeRefreshPending = false;
+      await loadConversations();
+      await loadSelected({ incremental: true });
+    } while (realtimeRefreshPending);
+  } catch { /* polling remains the bounded fallback */ }
+  finally { realtimeRefreshRunning = false; }
+}
 function connectRealtime() {
   eventSource?.close(); eventSource = new EventSource(bootstrap.sse_endpoint);
   eventSource.onopen = () => { setState({ type: 'CONNECTED', connected: true }); elements['connection-dot'].classList.add('online'); elements['connection-label'].textContent = '实时连接'; };
-  const refresh = () => { void loadConversations().then(() => loadSelected({ incremental: true })); };
+  const refresh = () => { void refreshFromRealtime(); };
   eventSource.onmessage = refresh;
   realtimeEventTypes.forEach((eventType) => eventSource.addEventListener(eventType, refresh));
   eventSource.onerror = () => { eventSource?.close(); setState({ type: 'CONNECTED', connected: false }); elements['connection-dot'].classList.remove('online'); elements['connection-label'].textContent = '轮询模式'; startPolling(); };

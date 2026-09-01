@@ -27,7 +27,7 @@ function fixture() {
   const assignment = { status: 'ASSIGNED', version: 1, assigned_to_me: true, assigned_display_name: 'Synthetic Admin', assigned_at: NOW };
   const queryService = {
     getBootstrap: async () => ({ authenticated: true, principal: { principal_id: PRINCIPAL_ID, display_name: 'Synthetic Admin', capabilities }, expires_at: new Date(Date.now() + 60_000).toISOString(), csrf_token: 'p2-g1-browser-csrf', feature_status: { workbench_enabled: true, realtime_sse_enabled: true, ai_enabled: false, incident_enabled: false, attachments_enabled: false }, polling_interval_ms: 60_000, sse_endpoint: '/api/realtime/events?scope=workbench', max_page_sizes: { conversations: 100, timeline: 200 } }),
-    listConversations: async () => { listCalls += 1; return { items: [{ session, queue_state: 'mine', channel_label: '群聊会话', unread_count: 1, last_item: item, assignment, handoff: null, ticket: null, latest_delivery: null, waiting_duration_seconds: 0, capabilities }], next_cursor: null }; },
+    listConversations: async () => { listCalls += 1; if (listCalls > 1) await new Promise((resolve) => setTimeout(resolve, 50)); return { items: [{ session, queue_state: 'mine', channel_label: '群聊会话', unread_count: 1, last_item: item, assignment, handoff: null, ticket: null, latest_delivery: null, waiting_duration_seconds: 0, capabilities }], next_cursor: null }; },
     getConversationDetail: async () => ({ session, assignment, handoff: null, read_cursor: { last_read_sequence: '0', row_version: 0 }, unread_count: 1, ticket: null, incident: { available: false, reason: 'INCIDENT_NOT_IMPLEMENTED' }, attachments: { available: false, reason: 'ATTACHMENT_NOT_IMPLEMENTED' }, delivery_summary: null, capabilities, etag: '"1"' }),
     listConversationItems: async () => ({ session_id: SESSION_ID, items: [item], before_sequence: '1', after_sequence: '1', has_more: false }),
     listEligiblePrincipals: async () => ({ items: [] }),
@@ -52,7 +52,7 @@ test('P2-G1 system browser duplicate submit fence sends one human reply and pres
     authenticate: async () => ({ principal_id: PRINCIPAL_ID, auth_method: 'COOKIE', expires_at: new Date(Date.now() + 60_000).toISOString(), csrf_token: 'p2-g1-browser-csrf' }),
     sseHandler: async (_request, response) => {
       response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' });
-      response.write('event: conversation.item.created\ndata: {}\n\n');
+      for (let index = 0; index < 100; index += 1) response.write('event: conversation.item.created\ndata: {}\n\n');
       await new Promise((resolve) => response.once('close', resolve));
     },
   });
@@ -63,7 +63,9 @@ test('P2-G1 system browser duplicate submit fence sends one human reply and pres
     await browser.waitFor(`document.readyState === 'complete' && document.querySelector('[data-session-id="${SESSION_ID}"]')`);
     const realtimeDeadline = Date.now() + 10_000;
     while (values.getListCalls() < 2 && Date.now() < realtimeDeadline) await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 250));
     assert.ok(values.getListCalls() >= 2, 'named realtime event did not trigger a Workbench refetch');
+    assert.ok(values.getListCalls() <= 3, `realtime replay was not coalesced: ${values.getListCalls()}`);
     await browser.evaluate(`document.querySelector('[data-session-id="${SESSION_ID}"]').click()`);
     await browser.waitFor("document.querySelector('#conversation-view').hidden === false");
     const safeBefore = await browser.evaluate(`({xss:window.__p2_g1_xss===1,images:document.querySelectorAll('#timeline img').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth})`);
@@ -73,7 +75,7 @@ test('P2-G1 system browser duplicate submit fence sends one human reply and pres
     assert.equal(values.getReplyCalls(), 1);
     const safeAfter = await browser.evaluate(`({disabled:document.querySelector('#send-message').disabled,xss:window.__p2_g1_xss===1,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth})`);
     assert.deepEqual(safeAfter, { disabled: false, xss: false, overflow: false });
-    t.diagnostic(JSON.stringify({ browser: browser.executable, viewport: { width: 390, height: 844 }, duplicate_submit_calls: 1, polling_fallback: true, xss_executed: false, horizontal_overflow: false }));
+    t.diagnostic(JSON.stringify({ browser: browser.executable, viewport: { width: 390, height: 844 }, replay_events: 100, realtime_list_calls: values.getListCalls(), duplicate_submit_calls: 1, polling_fallback: true, xss_executed: false, horizontal_overflow: false }));
   } finally {
     if (browser) await browser.close();
     server.closeAllConnections?.();
