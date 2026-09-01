@@ -255,7 +255,7 @@ test('Delivery Worker enforces claim CAS, ACK, retry, dead letter, timeout unkno
   await withP2004IsolatedDatabase({ databaseUrl, purpose: 'worker', run: async ({ pool }) => {
     await applyBaseMigrations(pool); await applyCommunicationMigration({ pool });
     const service = createCommunicationService({ pool, enabled: true });
-    let clock = Date.parse('2026-09-01T00:00:00.000Z');
+    let clock = Date.parse('2026-09-02T00:00:00.000Z');
     const createDelivery = async (label, targets = [destination(label)]) => service.commitSystemNotification({ command: systemCommand({ content: { text: `synthetic-${label}` } }), trustedDestinations: targets });
 
     const ackFact = await createDelivery('ack');
@@ -316,7 +316,7 @@ test('multi-target delivery is isolated, target rate limit is durable, and recon
   await withP2004IsolatedDatabase({ databaseUrl, purpose: 'targets', run: async ({ pool }) => {
     await applyBaseMigrations(pool); await applyCommunicationMigration({ pool });
     const service = createCommunicationService({ pool, enabled: true });
-    let clock = Date.parse('2026-09-01T00:00:00.000Z');
+    let clock = Date.parse('2026-09-02T00:00:00.000Z');
     const multi = await service.commitSystemNotification({ command: systemCommand(), trustedDestinations: [destination('good'), destination('bad')] });
     const sender = createMockCommunicationSender({ behavior: async (request) => request.target_id.endsWith('bad')
       ? { outcome: 'REJECTED_NOT_APPLIED', provider_message_id: null, error_code: 'SYNTHETIC_REJECTION', retryable: false }
@@ -365,7 +365,7 @@ test('real Worker kill/restart reclaims LEASED but never blindly resends SENDING
     const leasedExit = await killP2004WorkerChild(leasedChild);
     assert.notEqual(leasedExit.signal ?? leasedExit.code, null);
     const restartSender = createMockCommunicationSender();
-    const restartWorker = createCommunicationDeliveryWorker({ pool, sender: restartSender, enabled: true, now: () => new Date('2026-09-02T00:00:00Z'), leaseMs: 1000, sendTimeoutMs: 100 });
+    const restartWorker = createCommunicationDeliveryWorker({ pool, sender: restartSender, enabled: true, now: () => new Date('2026-09-03T00:00:00Z'), leaseMs: 1000, sendTimeoutMs: 100 });
     assert.equal((await restartWorker.deliver({ deliveryId: leasedFact.delivery_ids[0] })).status, 'SENT');
     assert.equal(restartSender.callCount, 1);
 
@@ -374,7 +374,7 @@ test('real Worker kill/restart reclaims LEASED but never blindly resends SENDING
     const sendingExit = await killP2004WorkerChild(sendingChild);
     assert.notEqual(sendingExit.signal ?? sendingExit.code, null);
     const noResendSender = createMockCommunicationSender();
-    const noResendWorker = createCommunicationDeliveryWorker({ pool, sender: noResendSender, enabled: true, now: () => new Date('2026-09-02T00:00:00Z'), leaseMs: 1000, sendTimeoutMs: 100 });
+    const noResendWorker = createCommunicationDeliveryWorker({ pool, sender: noResendSender, enabled: true, now: () => new Date('2026-09-03T00:00:00Z'), leaseMs: 1000, sendTimeoutMs: 100 });
     assert.equal((await noResendWorker.recoverExpiredSending()).recovered, 1);
     assert.equal((await noResendWorker.getDelivery({ deliveryId: sendingFact.delivery_ids[0] })).status, 'RECONCILIATION_REQUIRED');
     assert.equal(noResendSender.callCount, 0);
@@ -429,7 +429,7 @@ test('500 deliveries remain bounded at batch 20 and interruption resumes without
       assert.equal(result.delivery_ids.length, 20);
     }
     const sender = createMockCommunicationSender();
-    const worker = createCommunicationDeliveryWorker({ pool, sender, enabled: true, now: () => new Date('2026-09-01T00:00:00Z'), batchSize: 20, leaseMs: 1000, sendTimeoutMs: 100 });
+    const worker = createCommunicationDeliveryWorker({ pool, sender, enabled: true, now: () => new Date('2026-09-02T00:00:00Z'), batchSize: 20, leaseMs: 1000, sendTimeoutMs: 100 });
     const heapSamples = [process.memoryUsage().heapUsed];
     let processed = 0;
     for (let run = 0; run < 5; run += 1) {

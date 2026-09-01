@@ -5,11 +5,21 @@ info:
   description: >
     V1.4 contract for the lightweight human/AI conversation workbench.
     Ticket status remains authoritative in Unified Ticket Core.
-    P2-005 only freezes control contracts; every route in this document remains
-    unimplemented until P2-006 receives separate authorization.
+    P2-006 implements these Human-only Internal Alpha REST and SSE routes while
+    keeping all production feature flags disabled.
 servers:
   - url: /api
 paths:
+  /workbench/bootstrap:
+    get:
+      operationId: getWorkbenchBootstrap
+      responses:
+        "200":
+          description: Safe authenticated workbench bootstrap
+          content:
+            application/json:
+              schema:
+                $ref: "./workbench_bootstrap.schema.json"
   /conversations:
     get:
       operationId: listConversations
@@ -18,7 +28,7 @@ paths:
           name: state
           schema:
             type: string
-            enum: [open, waiting_human, mine, waiting_user, failed_delivery, ended]
+            enum: [open, waiting_human, mine, unassigned, waiting_user, failed_delivery, ended]
         - in: query
           name: cursor
           schema:
@@ -57,10 +67,15 @@ paths:
       parameters:
         - $ref: "#/components/parameters/SessionId"
         - in: query
+          name: before_sequence
+          schema:
+            type: string
+            pattern: "^(0|[1-9][0-9]{0,18})$"
+        - in: query
           name: after_sequence
           schema:
-            type: integer
-            minimum: 0
+            type: string
+            pattern: "^(0|[1-9][0-9]{0,18})$"
         - in: query
           name: limit
           schema:
@@ -114,6 +129,36 @@ paths:
                 $ref: "#/components/schemas/ConversationSession"
         "409":
           $ref: "#/components/responses/Conflict"
+  /conversations/{sessionId}/handoff/request:
+    post:
+      operationId: requestConversationHandoff
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./conversation_control_command.schema.json"
+      responses:
+        "200": { description: Handoff requested }
+  /conversations/{sessionId}/handoff/cancel:
+    post:
+      operationId: cancelConversationHandoff
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200": { description: Handoff cancelled }
+  /conversations/{sessionId}/transfer:
+    post:
+      operationId: transferConversation
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200": { description: Assignment transferred }
   /conversations/{sessionId}/release:
     post:
       operationId: releaseConversation
@@ -194,6 +239,63 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CommunicationCommandResult"
+  /conversations/{sessionId}/read-cursor:
+    post:
+      operationId: advanceConversationReadCursor
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200": { description: Principal read cursor advanced }
+  /conversations/{sessionId}/eligible-principals:
+    get:
+      operationId: listEligibleConversationPrincipals
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200": { description: Safe eligible principal list }
+  /conversations/{sessionId}/deliveries:
+    get:
+      operationId: listConversationDeliveries
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200": { description: Safe delivery views }
+  /deliveries/{deliveryId}/retry:
+    post:
+      operationId: retryConversationDelivery
+      parameters:
+        - in: path
+          name: deliveryId
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./workbench_delivery_action.schema.json"
+      responses:
+        "200": { description: Delivery remains or becomes safely pending }
+        "409": { description: Explicit reconciliation is required }
+  /deliveries/{deliveryId}/reconcile:
+    post:
+      operationId: reconcileConversationDelivery
+      parameters:
+        - in: path
+          name: deliveryId
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./workbench_delivery_action.schema.json"
+      responses:
+        "200": { description: Authorized explicit reconciliation result }
   /realtime/events:
     get:
       operationId: streamRealtimeEvents

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>信息保障会话工作台</title>
+  <link rel="stylesheet" href="/static/workbench/workbench.css">
+</head>
+<body>
+  <header class="topbar">
+    <div><p class="eyebrow">INTERNAL ALPHA · HUMAN ONLY</p><h1>信息保障会话工作台</h1></div>
+    <div class="connection"><span id="connection-dot" aria-hidden="true"></span><span id="connection-label">正在连接</span></div>
+  </header>
+  <main class="workspace" id="workspace">
+    <nav class="queue-panel" aria-label="会话队列">
+      <div class="queue-heading"><h2>会话</h2><button id="refresh-list" type="button">刷新</button></div>
+      <div class="filters" role="group" aria-label="会话筛选">
+        <button type="button" data-filter="open" aria-pressed="true">进行中</button>
+        <button type="button" data-filter="mine" aria-pressed="false">我的</button>
+        <button type="button" data-filter="unassigned" aria-pressed="false">未分配</button>
+        <button type="button" data-filter="waiting_user" aria-pressed="false">等用户</button>
+        <button type="button" data-filter="failed_delivery" aria-pressed="false">发送异常</button>
+        <button type="button" data-filter="ended" aria-pressed="false">已结束</button>
+      </div>
+      <ol id="conversation-list" class="conversation-list" aria-label="会话列表"></ol>
+      <button id="load-more-conversations" class="load-more" type="button" hidden>加载更多会话</button>
+    </nav>
+
+    <section class="conversation-panel" aria-labelledby="conversation-title">
+      <div id="empty-state" class="empty-state"><p>选择一个会话开始处理</p><small>所有操作均通过服务端权限校验</small></div>
+      <div id="conversation-view" hidden>
+        <div class="conversation-heading">
+          <button id="mobile-back" class="mobile-only" type="button">返回会话</button>
+          <div><p id="conversation-channel" class="eyebrow"></p><h2 id="conversation-title">会话</h2></div>
+          <button id="toggle-details" class="mobile-only" type="button">详情</button>
+        </div>
+        <button id="load-history" class="load-history" type="button" hidden>加载更早消息</button>
+        <ol id="timeline" class="timeline" aria-label="会话时间线"></ol>
+        <form id="composer" class="composer">
+          <div class="composer-mode" role="group" aria-label="消息类型">
+            <button type="button" data-compose="reply" aria-pressed="true">回复用户</button>
+            <button type="button" data-compose="note" aria-pressed="false">内部备注</button>
+          </div>
+          <label for="message-text" id="message-label">回复内容</label>
+          <textarea id="message-text" maxlength="20480" rows="3" required></textarea>
+          <div class="composer-footer"><span id="composer-hint">提交后进入可靠投递队列，不等待外部发送</span><button id="send-message" type="submit">提交回复</button></div>
+        </form>
+      </div>
+    </section>
+
+    <aside id="detail-panel" class="detail-panel" aria-label="会话详情">
+      <div class="aside-heading"><h2>处理详情</h2><button id="close-details" class="mobile-only" type="button">关闭</button></div>
+      <section><h3>会话状态</h3><dl id="session-facts"></dl></section>
+      <section><h3>人工处理</h3><div id="control-actions" class="action-stack"></div></section>
+      <section><h3>工单</h3><div id="ticket-panel" class="quiet-card">选择会话后显示</div></section>
+      <section><h3>关联能力</h3><p class="disabled-capability">附件能力未启用</p><p class="disabled-capability">Incident 能力未启用</p></section>
+      <section><h3>投递状态</h3><div id="delivery-panel" class="delivery-list"></div></section>
+    </aside>
+  </main>
+  <div id="status-live" class="sr-only" role="status" aria-live="polite"></div>
+  <script type="module" src="/static/workbench/workbench.js"></script>
+</body>
+</html>

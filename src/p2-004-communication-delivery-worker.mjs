@@ -364,3 +364,46 @@ export function createCommunicationReconciliationPort({ pool, now = () => new Da
     },
   });
 }
+
+export function createCommunicationDeliveryOperatorPort({ pool, now = () => new Date() } = {}) {
+  if (!pool || typeof pool.connect !== 'function' || typeof now !== 'function') throw new TypeError('Delivery operator port configuration is invalid.');
+  return Object.freeze({
+    async scheduleRetry({ deliveryId, authorized = false, reasonCode = 'OPERATOR_RETRY' }) {
+      if (authorized !== true) return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
+      if (typeof deliveryId !== 'string' || !UUID_PATTERN.test(deliveryId)
+        || typeof reasonCode !== 'string' || !/^[A-Z0-9_]{1,128}$/u.test(reasonCode)) {
+        return publicError(COMMUNICATION_ERROR_CODES.commandInvalid);
+      }
+      const occurredAt = validDate(now);
+      return withTransaction(pool, async (transaction) => {
+        const selected = await transaction.query(
+          `SELECT id::text,outbox_id::text,status,provider,attempt_count,last_error_code,side_effect_state,sent_at
+             FROM communication.delivery WHERE id=$1::uuid FOR UPDATE`, [deliveryId]);
+        if (selected.rowCount !== 1) return publicError(COMMUNICATION_ERROR_CODES.deliveryNotFound);
+        const row = selected.rows[0];
+        if (row.status === 'PENDING') return deliveryView(row);
+        if (row.status === 'RECONCILIATION_REQUIRED') return publicError(COMMUNICATION_ERROR_CODES.reconciliationRequired);
+        if (row.status !== 'DEAD_LETTER' || row.side_effect_state !== 'NOT_ATTEMPTED') {
+          return publicError(COMMUNICATION_ERROR_CODES.leaseConflict);
+        }
+        const attemptNo = Number(row.attempt_count) + 1;
+        const updated = await transaction.query(
+          `UPDATE communication.delivery
+              SET status='PENDING',side_effect_state='NOT_ATTEMPTED',attempt_count=$2,
+                  next_attempt_at=$3::timestamptz,lease_token=NULL,lease_expires_at=NULL,
+                  send_started_at=NULL,last_error_code=$4,updated_at=$3::timestamptz
+            WHERE id=$1::uuid
+            RETURNING id::text,outbox_id::text,status,provider,attempt_count,last_error_code,side_effect_state,sent_at`,
+          [deliveryId, attemptNo, occurredAt, reasonCode],
+        );
+        await transaction.query(
+          `INSERT INTO communication.delivery_attempt
+             (delivery_id,attempt_no,outcome,side_effect_state,error_code,started_at,completed_at)
+           VALUES ($1::uuid,$2,'RETRY_SCHEDULED','NOT_ATTEMPTED',$3,$4::timestamptz,$4::timestamptz)`,
+          [deliveryId, attemptNo, reasonCode, occurredAt],
+        );
+        return deliveryView(updated.rows[0]);
+      });
+    },
+  });
+}

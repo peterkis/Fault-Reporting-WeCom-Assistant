@@ -1,5 +1,11 @@
 # Changelog
 
+### P2-006 Human-only Workbench 完成
+
+- 新增默认关闭的 Node 原生 REST Server、Pilot 数据面授权、稳定 keyset/timeline query、P2-004/P2-005 command facade、Delivery retry/reconciliation 与 P2-003 SSE route。
+- 新增原生 HTML/CSS/ES Module Internal Alpha、系统 Edge 双视口验证、隔离 PostgreSQL catalog/容量/性能验证；P2-006 无数据库迁移。
+- P2-006 标为 `DONE`，但 P2 仍为 `IN_PROGRESS`；当前无活动 Lane，P2-G1、P2-007 及以后仍须另行授权，全部 Feature Flag 保持 `false`。
+
 ## [Unreleased]
 
 ### P2-006 Human-only Workbench 授权启动

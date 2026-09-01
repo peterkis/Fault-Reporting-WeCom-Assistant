@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_conversation_detail.schema.json",
+  "title": "Workbench Conversation Detail",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session", "assignment", "read_cursor", "unread_count", "ticket", "incident", "attachments", "delivery_summary", "capabilities", "etag"],
+  "properties": {
+    "session": { "type": "object" }, "assignment": { "type": "object" }, "handoff": { "type": ["object", "null"] },
+    "read_cursor": { "type": "object" }, "unread_count": { "type": "integer", "minimum": 0 }, "ticket": { "type": ["object", "null"] },
+    "incident": { "type": "object", "required": ["available", "reason"], "properties": { "available": { "const": false }, "reason": { "const": "INCIDENT_NOT_IMPLEMENTED" } } },
+    "attachments": { "type": "object", "required": ["available", "reason"], "properties": { "available": { "const": false }, "reason": { "const": "ATTACHMENT_NOT_IMPLEMENTED" } } },
+    "delivery_summary": { "type": ["object", "null"] }, "capabilities": { "type": "array", "items": { "type": "string" } }, "etag": { "type": "string" }
+  }
+}

@@ -432,3 +432,9 @@ heartbeat、5 秒 recovery poll、64 KiB buffer 与 5 秒 drain timeout 是 2C4G
 10. Ticket Event 可进入时间线但不改变原始消息；
 11. AI 服务关闭时人工全流程继续；
 12. 浏览器刷新后会话顺序、已读和分配保持。
+
+## 15. P2-006 Internal Alpha 完成边界
+
+P2-006 已以默认关闭的 Reference Client 验证 REST、Pilot 数据面授权、P2-005 Control、P2-004
+Communication、P2-003 SSE 与 Polling。它不等于上述 P2-G1 跨任务组装已经开始或通过；真实入站
+Projector、真实 Sender、最终生产前端和任何 Feature Flag 启用仍须 P2-G1 或后续独立授权。

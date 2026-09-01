@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_conversation_page.schema.json",
+  "title": "Workbench Conversation Page",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items", "next_cursor"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "required": ["session", "queue_state", "channel_label", "unread_count", "assignment", "capabilities"],
+        "properties": {
+          "session": { "type": "object" },
+          "queue_state": { "type": "string" },
+          "channel_label": { "enum": ["单聊会话", "群聊会话"] },
+          "unread_count": { "type": "integer", "minimum": 0 },
+          "assignment": { "type": "object" },
+          "capabilities": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "next_cursor": { "type": ["string", "null"], "maxLength": 1024 }
+  }
+}

@@ -139,3 +139,9 @@ P2-G1 需要 P2-001 至 P2-006 的独立任务完成和另行 Assembly 授权。
 ## 4. 明确删除的验收项
 
 V1.4 不再要求历史数据 dry run、未完结工单切换、最终增量、旧系统冻结或退役证明。
+
+## P2-006 完成后的并行边界
+
+P2-B 的 P2-004、P2-005、P2-006 均已独立完成，当前无活动 Lane。P2-G1 仍为
+`NOT_STARTED / REQUIRES_SEPARATE_AUTHORIZATION`；不得把本地 Internal Alpha、合成 SSE 或 Mock
+Sender 验证替代真实 Assembly、企业微信客户端观察、生产 Sender 或负责人 Gate 批准。

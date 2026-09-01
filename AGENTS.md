@@ -14,10 +14,10 @@ P1 / P1-012 / DONE / GO
 当前阶段状态固定为：
 
 ```text
-P2 / P2-006 / IN_PROGRESS
+P2 / P2-006 / DONE / AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION
 ```
 
-V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-09-01 正式、独立授权启动 P2-006；P2-001 至 P2-005 均保持完成。当前唯一活动任务为 P2-006、唯一活动 Lane 为 P2-B；P2-007 及以后任务仍未授权，P2-G1 保持 `NOT_STARTED`，全部 P3 未启动。所有 Feature Flag 保持关闭。本授权不等同于生产上线、临床上线、真实外发、SSE 生产开放或 AI 自动回复批准。
+V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-09-01 独立授权并完成 P2-006；P2-001 至 P2-005 均保持完成。当前无活动实施任务或 Lane；P2-G1 仍为 `NOT_STARTED / REQUIRES_SEPARATE_AUTHORIZATION`，P2-007 及以后任务仍未授权，全部 P3 未启动。所有 Feature Flag 保持关闭。P2-006 完成不等同于生产上线、临床上线、真实外发、SSE 生产开放、最终生产前端或 AI 自动回复批准。
 
 ## 2. 长期事实源
 
@@ -64,7 +64,7 @@ P1：
 
 ### Phase 2：Conversation Center 与 AI 协作
 
-P2 已进入 `IN_PROGRESS`；P2-001 至 P2-005 均已完成，P2-006 已独立授权并在 P2-B 实施。P2-007 及以后任务和 P2-G1 组装不得启动，所有 Feature Flag 保持 `false`。
+P2 保持 `IN_PROGRESS`；P2-001 至 P2-006 均已完成，当前无活动实施任务或 Lane。P2-G1 组装与 P2-007 及以后任务不得启动，所有 Feature Flag 保持 `false`。
 
 P2 必须按以下顺序：
 

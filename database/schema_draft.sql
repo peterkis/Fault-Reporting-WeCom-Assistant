@@ -27,8 +27,10 @@
 -- Migration 005 remains authoritative for P1 notification.*; migration 020
 -- does not migrate, copy, rename, delete or dual-write those P1 facts.
 --
--- P2-005 is implemented independently. P2-006 Workbench, AI, Media, Incident
--- and P3 Integration remain unauthorized. Every P2/P3 feature flag is false.
+-- P2-005 and P2-006 are implemented independently. P2-006 has no database
+-- migration: no migration 022 exists and this conceptual draft remains
+-- non-executable. P2-G1, AI, Media, Incident and P3 Integration remain
+-- unauthorized. Every P2/P3 feature flag is false.
 -- Their presence below is not implementation or Gate authorization.
 -- Do not create a second long-term Ticket Core and do not rename pilot_ticket.*
 -- in a big-bang migration.

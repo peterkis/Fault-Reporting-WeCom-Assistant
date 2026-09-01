@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_bootstrap.schema.json",
+  "title": "Workbench Bootstrap",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["authenticated", "principal", "expires_at", "capabilities", "feature_status", "polling_interval_ms", "sse_endpoint", "max_page_sizes"],
+  "properties": {
+    "authenticated": { "const": true },
+    "principal": {
+      "type": "object", "additionalProperties": false, "required": ["principal_id", "display_name", "capabilities"],
+      "properties": { "principal_id": { "type": "string", "format": "uuid" }, "display_name": { "type": "string", "minLength": 1, "maxLength": 128 }, "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true } }
+    },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "csrf_token": { "type": "string", "minLength": 16, "maxLength": 512 },
+    "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "feature_status": { "type": "object" },
+    "polling_interval_ms": { "type": "integer", "minimum": 1000, "maximum": 60000 },
+    "sse_endpoint": { "type": "string", "const": "/api/realtime/events?scope=workbench" },
+    "max_page_sizes": { "type": "object", "required": ["conversations", "timeline"], "properties": { "conversations": { "const": 100 }, "timeline": { "const": 200 } } }
+  }
+}

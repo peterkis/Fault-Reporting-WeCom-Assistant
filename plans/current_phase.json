@@ -6,8 +6,8 @@
   "phase_name": "Conversation Center 与 AI 协作",
   "status": "IN_PROGRESS",
   "started": true,
-  "last_completed_task": "P2-005",
-  "active_task": "P2-006",
+  "last_completed_task": "P2-006",
+  "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -17,11 +17,11 @@
     "P2-005",
     "P2-006"
   ],
-  "active_lane": "P2-B",
-  "implementation_authorization_status": "P2_006_IN_PROGRESS",
+  "active_lane": null,
+  "implementation_authorization_status": "P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION",
   "p2_g1_status": "NOT_STARTED",
-  "next_task_candidate": "P2-006",
-  "next_task_authorized": true,
+  "next_task_candidate": "P2-G1",
+  "next_task_authorized": false,
   "p2_001_completed_at": "2026-08-30",
   "p2_002_authorized_at": "2026-08-30",
   "p2_002_authorization_evidence": "evidence/p2-002-start-authorization.md",
@@ -41,6 +41,8 @@
   "p2_005_completion_evidence": "evidence/p2-005-assignment-handoff-generation-fence-report.md",
   "p2_006_authorized_at": "2026-09-01",
   "p2_006_authorization_evidence": "evidence/p2-006-start-authorization.md",
+  "p2_006_completed_at": "2026-09-01",
+  "p2_006_completion_evidence": "evidence/p2-006-realtime-workbench-report.md",
   "allowed_scope": [
     "implement only P2-006 human-only internal alpha workbench, REST, authorization, SSE/polling, delivery control, safe static UI, and isolated synthetic verification",
     "preserve completed P2-001 through P2-005 contracts, artifacts, evidence, and runtime behavior",
@@ -91,7 +93,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_006_IN_PROGRESS",
+    "activation_status": "P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

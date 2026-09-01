@@ -12,7 +12,7 @@ if (mode === 'LEASED') {
   const token = randomUUID();
   await pool.query(
     `UPDATE communication.delivery SET status='LEASED', lease_token=$2::uuid,
-       lease_expires_at='2026-09-01T00:00:01Z', updated_at='2026-09-01T00:00:00Z'
+       lease_expires_at='2026-09-02T00:00:01Z', updated_at='2026-09-02T00:00:00Z'
      WHERE id=$1::uuid AND status='PENDING'`,
     [deliveryId, token],
   );
@@ -23,7 +23,7 @@ if (mode === 'LEASED') {
     return new Promise(() => {});
   }});
   const worker = createCommunicationDeliveryWorker({
-    pool, sender, enabled: true, now: () => new Date('2026-09-01T00:00:00Z'),
+    pool, sender, enabled: true, now: () => new Date('2026-09-02T00:00:00Z'),
     leaseMs: 120_000, sendTimeoutMs: 60_000,
   });
   void worker.deliver({ deliveryId });

@@ -487,15 +487,27 @@ check(sameArray([...controlMigration.matchAll(/CREATE TABLE IF NOT EXISTS\s+([a-
 ]), 'migration 021 creates only the four frozen control tables');
 
 if (lifecycleStatus === 'P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION') {
-  const completionDate = current.p2_005_completed_at;
-  const completionEvidence = 'evidence/p2-005-assignment-handoff-generation-fence-report.md';
-  check(isIsoDate(completionDate), 'P2-005 completion date is ISO formatted');
-  check(current.p2_005_completion_evidence === completionEvidence, 'current phase links P2-005 completion evidence');
-  check(manifest.p2_005_completed_at === completionDate && manifest.p2_005_completion_evidence === completionEvidence, 'manifest mirrors P2-005 completion metadata');
-  check(taskIndex.p2_005_completed_at === completionDate && taskIndex.p2_005_completion_evidence === completionEvidence, 'task index mirrors P2-005 completion metadata');
-  check(projectSummary.project.p2_005_completed_at === completionDate && projectSummary.project.p2_005_completion_evidence === completionEvidence, 'project summary mirrors P2-005 completion metadata');
-  check(p2005?.completed_at === completionDate && p2005?.evidence === completionEvidence, 'master backlog mirrors P2-005 completion metadata');
-  check(fs.existsSync(path.join(root, completionEvidence)), 'P2-005 completion evidence exists');
+  const completionDate = current.p2_006_completed_at;
+  const completionEvidence = 'evidence/p2-006-realtime-workbench-report.md';
+  check(isIsoDate(completionDate), 'P2-006 completion date is ISO formatted');
+  check(current.p2_006_completion_evidence === completionEvidence, 'current phase links P2-006 completion evidence');
+  check(manifest.p2_006_completed_at === completionDate && manifest.p2_006_completion_evidence === completionEvidence, 'manifest mirrors P2-006 completion metadata');
+  check(taskIndex.p2_006_completed_at === completionDate && taskIndex.p2_006_completion_evidence === completionEvidence, 'task index mirrors P2-006 completion metadata');
+  check(projectSummary.project.p2_006_completed_at === completionDate && projectSummary.project.p2_006_completion_evidence === completionEvidence, 'project summary mirrors P2-006 completion metadata');
+  check(p2006?.completed_at === completionDate && p2006?.evidence === completionEvidence, 'master backlog mirrors P2-006 completion metadata');
+  check(fs.existsSync(path.join(root, completionEvidence)), 'P2-006 completion evidence exists');
+  for (const relativePath of [
+    'docs/42_p2_006_realtime_web_workbench.md', 'src/p2-006-workbench-query.mjs',
+    'src/p2-006-workbench-authorization.mjs', 'src/p2-006-workbench-command-facade.mjs',
+    'src/p2-006-workbench-delivery-control.mjs', 'src/p2-006-workbench-http.mjs',
+    'src/p2-006-workbench-static.mjs', 'web/p2-workbench/index.html',
+    'tests/p2-006-workbench.test.mjs', 'tests/p2-006-workbench.integration.test.mjs',
+    'tests/p2-006-workbench-browser.test.mjs',
+  ]) check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-006');
+  check(!fs.existsSync(path.join(root, 'database/migrations/022_p2_006_realtime_workbench.sql')), 'P2-006 creates no migration 022');
+  check(pkg.scripts['test:p2:006'] === 'node --test tests/p2-006-workbench.test.mjs', 'package exposes P2-006 unit tests');
+  check(pkg.scripts['test:p2:006:integration'] === 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-006-workbench.integration.test.mjs', 'package exposes P2-006 integration tests');
+  check(pkg.scripts['test:p2:006:browser'] === 'node --test tests/p2-006-workbench-browser.test.mjs', 'package exposes real browser tests');
 }
 
 if (errors.length > 0) {

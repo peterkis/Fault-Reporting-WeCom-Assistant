@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fault-reporting.local/contracts/workbench_delivery_action.schema.json",
+  "title": "Workbench Delivery Action",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["client_command_id", "reason_code"],
+  "properties": {
+    "client_command_id": { "type": "string", "format": "uuid" },
+    "reason_code": { "type": "string", "pattern": "^[A-Z0-9_]{1,128}$" },
+    "resolution": { "enum": ["CONFIRMED_SENT", "CONFIRMED_NOT_SENT_REQUEUE", "CANCEL"] }
+  }
+}

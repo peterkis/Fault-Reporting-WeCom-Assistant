@@ -1,6 +1,6 @@
 {
   "version": "1.2",
-  "contract_task": "P2-005",
+  "contract_task": "P2-006",
   "default_control_mode": "HUMAN",
   "session": {
     "idle_timeout_minutes": 720,
@@ -101,5 +101,18 @@
     "max_writable_buffer_bytes": 65536,
     "drain_timeout_ms": 5000,
     "cleanup_batch_size": 200
+  },
+  "workbench": {
+    "enabled": false,
+    "feature_flag": "HUMAN_WORKBENCH_V2_ENABLED",
+    "reference_client_only": true,
+    "conversation_page_default": 30,
+    "conversation_page_max": 100,
+    "timeline_page_default": 50,
+    "timeline_page_max": 200,
+    "polling_fallback_ms": 5000,
+    "public_origin_required": true,
+    "real_hospital_identity_authorized": false,
+    "production_frontend_authorized": false
   }
 }

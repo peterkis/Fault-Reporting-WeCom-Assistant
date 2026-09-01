@@ -96,5 +96,6 @@ limit `<=200`。容量证据覆盖 500 Assignment、500 Handoff、32 Principal C
 
 ## 12. 后续消费
 
-P2-006 可在另行授权后通过 Query/Command Port 构建真实 Workbench；P2-G1 可在独立 Assembly
-授权后装配 Timeline、Realtime、Communication 与页面。上述兼容关系不构成启动授权。
+P2-006 已在独立授权下通过 Query/Command Port 构建默认关闭的 Internal Alpha Workbench，并保留
+P2-005 Port 与事实所有权。P2-G1 仍只能在独立 Assembly 授权后装配真实入站、Timeline、Realtime、
+Communication Worker 与页面；P2-006 完成不构成该 Gate 的启动授权。

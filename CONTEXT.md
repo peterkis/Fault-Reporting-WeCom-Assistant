@@ -16,6 +16,11 @@ For P2-005 Assignment, Handoff, per-principal Read Cursor, Control Event, Genera
 or assigned Communication authorization, read
 `docs/41_p2_005_assignment_handoff_generation_fence.md`. Control facts never own Ticket state.
 
+For P2-006 Workbench REST, Pilot authorization, Human-only commands, Delivery control,
+SSE routing, Polling fallback, or the Internal Alpha / Reference Client, read
+`docs/42_p2_006_realtime_web_workbench.md`. The reference client is replaceable and does
+not authorize P2-G1 assembly or a production frontend.
+
 ## Conversation identity
 
 **Channel Account**:
@@ -161,6 +166,16 @@ _Avoid_: Realtime Event, Ticket Event
 **Row Version**:
 The revision marker for a Conversation Session representation.
 _Avoid_: Generation Version, Ticket version
+
+**Workbench Authentication Port**:
+The injected boundary that establishes an internal Principal, authentication method,
+expiry, and Cookie-mode CSRF context without creating a password or login store.
+_Avoid_: browser-provided role, local identity database, hospital SSO implementation
+
+**Internal Alpha / Reference Client**:
+The replaceable native HTML/CSS/ES Module client used to exercise the P2-006 REST,
+authorization, command, Timeline, Delivery, SSE, and Polling contracts.
+_Avoid_: final production frontend, approved design system, production deployment
 
 **Unified Ticket**:
 The authoritative record of service handling lifecycle, separate from conversation identity and communication history.

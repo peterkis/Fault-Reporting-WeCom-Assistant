@@ -160,6 +160,26 @@ test('P2-005 completion artifacts preserve frozen Session and identity ownership
   assert.doesNotMatch(migration, /CREATE TABLE IF NOT EXISTS\s+(?:pilot_ticket\.(?:pilot_principal|pilot_principal_role|pilot_team_member)|(?:unified_)?ticket\.)/iu);
 });
 
+test('P2-006 completion has a runnable workbench and no migration 022', () => {
+  const current = json('plans/current_phase.json');
+  if (current.implementation_authorization_status !== 'P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION') return;
+  for (const relativePath of [
+    'docs/42_p2_006_realtime_web_workbench.md',
+    'evidence/p2-006-realtime-workbench-report.md',
+    'src/p2-006-workbench-query.mjs',
+    'src/p2-006-workbench-authorization.mjs',
+    'src/p2-006-workbench-command-facade.mjs',
+    'src/p2-006-workbench-delivery-control.mjs',
+    'src/p2-006-workbench-http.mjs',
+    'src/p2-006-workbench-static.mjs',
+    'web/p2-workbench/index.html',
+    'tests/p2-006-workbench.test.mjs',
+    'tests/p2-006-workbench.integration.test.mjs',
+    'tests/p2-006-workbench-browser.test.mjs',
+  ]) assert.equal(fs.existsSync(path.join(root, relativePath)), true, relativePath);
+  assert.equal(fs.existsSync(path.join(root, 'database/migrations/022_p2_006_realtime_workbench.sql')), false);
+});
+
 test('P2-001 and P2-002 frozen artifacts remain present', () => {
   for (const relativePath of [
     'contracts/conversation_thread.schema.json',

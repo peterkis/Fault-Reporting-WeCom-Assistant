@@ -218,3 +218,9 @@ subscription.updated
 ```
 
 Integration Reconciliation 只用于新来源事件、Binding、Cursor 和外部投影的一致性核验，不表示历史 Ticket 迁移。
+
+## P2-006 Workbench 消费边界
+
+P2-006 不新增 Domain Event 或数据库事实。Workbench 列表/详情只读现有 Conversation、Unified Ticket
+Core、Communication 与 Control 投影；命令只调用 P2-004/P2-005 Port。SSE 继续消费 P2-003
+`CONVERSATION_WORKBENCH` 事件，Realtime Event 不是业务事实源，Polling/Refetch 不取得状态所有权。

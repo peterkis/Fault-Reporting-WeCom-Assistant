@@ -1,8 +1,10 @@
 # P2-006 Realtime Web Workbench, REST Command and Authorization
 
-- 状态：IN_PROGRESS
+- 状态：DONE
 - 授权日期：2026-09-01
+- 完成日期：2026-09-01
 - 授权 Evidence：`evidence/p2-006-start-authorization.md`
+- 完成 Evidence：`evidence/p2-006-realtime-workbench-report.md`
 - 基线：`6afe8157bfcae49d391d0f6e2aa5c60388377ea5`
 - Lane：P2-B
 - 目标 Gate：P2-G1（本任务不启动 Gate）
@@ -63,3 +65,9 @@ App/API/SSE 一个进程，无新增常驻 Worker、Redis、消息队列、ORM �
 项目负责人正式、独立授权启动 P2-006。
 完成 P2-006 后必须停止。
 P2-G1 组装、P2-007 及以后任务和所有生产功能仍须另行授权。
+
+## Comments
+
+- 2026-09-01：P2-006 的 Contract、REST、授权裁剪、Human-only 命令、Delivery 控制、SSE/Polling、Reference Client、隔离 PostgreSQL/HTTP、系统 Edge 和全仓串行验收均已完成；状态更新为 `DONE`。
+- 当前无活动任务或 Lane。P2-G1 保持 `NOT_STARTED / REQUIRES_SEPARATE_AUTHORIZATION`，P2-007 及以后保持未授权，所有 P2/P3 Feature Flag 保持 `false`。
+- 此完成结论不代表最终生产前端、真实企业微信发送、真实医院身份/内网、AI、Media/OCR、Incident、生产或临床上线。
