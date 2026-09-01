@@ -10,6 +10,7 @@ import { runP2G1Check } from './p2-g1-check.mjs';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const RUN_ID = /^P2G1-[0-9]{14}-[0-9]{6}$/u;
+const COMMIT = /^[a-f0-9]{40}$/u;
 
 function mode(argv) {
   const value = argv.find((entry) => entry.startsWith('--mode='));
@@ -64,7 +65,7 @@ async function main() {
       ...result,
       supported_modes: P2_G1_LIVE_MODES,
       required_live_configuration: Object.freeze([
-        'P2_G1_TEST_PRINCIPAL_IDS','P2_G1_ALLOWED_TARGET_HASHES','P2_G1_LISTEN_PORT',
+        'P2_G1_TEST_PRINCIPAL_IDS','P2_G1_ALLOWED_TARGET_HASHES','P2_G1_LISTEN_PORT','P2_G1_LIVE_CANDIDATE',
         'PILOT_DATABASE_URL','PILOT_LOG_IDENTITY_HASH_KEY','WECOM_BOT_ID','WECOM_BOT_SECRET','WECOM_WS_URL',
       ]),
       external_side_effects: false,
@@ -80,6 +81,8 @@ async function main() {
   const principals = configuredP2G1PrincipalIds(process.env);
   const runId = process.env.P2_G1_RUN_ID ? String(process.env.P2_G1_RUN_ID) : createP2G1RunId();
   if (!RUN_ID.test(runId)) throw new Error('P2_G1_RUN_ID_INVALID');
+  const liveCandidate = String(process.env.P2_G1_LIVE_CANDIDATE ?? '').toLowerCase();
+  if (!COMMIT.test(liveCandidate)) throw new Error('P2_G1_LIVE_CANDIDATE_INVALID');
   const port = Number(process.env.P2_G1_LISTEN_PORT ?? 3200);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('P2_G1_LISTEN_PORT_INVALID');
   const hashes = String(process.env.P2_G1_ALLOWED_TARGET_HASHES ?? '').split(',').filter(Boolean);
@@ -105,29 +108,41 @@ async function main() {
   async function stop(signal) {
     if (stopping) return;
     stopping = true;
-    await browserSessions?.close?.();
-    await runtime.stop();
-    await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_stopped', { mode: selected, signal, live_observation_claimed: false }) + '\n');
+    const [browserCleanup, runtimeCleanup] = await Promise.allSettled([
+      browserSessions?.close?.() ?? Promise.resolve(),
+      runtime.stop(),
+    ]);
+    await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_stopped', {
+      mode: selected,
+      live_candidate: liveCandidate,
+      signal,
+      browser_cleanup: browserCleanup.status === 'fulfilled',
+      runtime_cleanup: runtimeCleanup.status === 'fulfilled',
+      live_observation_claimed: false,
+    }) + '\n');
   }
   process.once('SIGINT', () => { void stop('SIGINT'); });
   process.once('SIGTERM', () => { void stop('SIGTERM'); });
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (chunk) => {
+    if (String(chunk).split(/\r?\n/u).some((line) => line.trim() === 'stop')) void stop('STDIN_STOP');
+  });
   let started = false;
   try {
     const runtimeStart = await runtime.start();
     started = true;
     const origin = `http://127.0.0.1:${port}`;
-    await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_started', { mode: selected, sender_enabled: approvals.send_approved, principal_count: principals.length, raw_identifiers_recorded: false }) + '\n');
+    await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_started', { mode: selected, live_candidate: liveCandidate, sender_enabled: approvals.send_approved, principal_count: principals.length, raw_identifiers_recorded: false }) + '\n');
     const ready = await waitForReady(origin);
     if (!ready.ok) {
-      await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_ready_failed', { mode: selected, checks: ready.checks, raw_identifiers_recorded: false }) + '\n');
+      await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_ready_failed', { mode: selected, live_candidate: liveCandidate, checks: ready.checks, raw_identifiers_recorded: false }) + '\n');
       throw new Error('P2_G1_READY_TIMEOUT');
     }
     browserSessions = await launchP2G1TestBrowserSessions({ origin, cookies: runtimeStart.cookies });
-    await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_ready', { mode: selected, checks: ready.checks, sender_enabled: approvals.send_approved, raw_identifiers_recorded: false }) + '\n');
-    console.log(JSON.stringify({ event: 'p2_g1_live_ready', run_id: runId, mode: selected, loopback_origin: origin, principal_count: principals.length, browser_sessions: browserSessions.count, sender_enabled: approvals.send_approved, raw_identifiers_recorded: false }));
+    await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_ready', { mode: selected, live_candidate: liveCandidate, checks: ready.checks, sender_enabled: approvals.send_approved, raw_identifiers_recorded: false }) + '\n');
+    console.log(JSON.stringify({ event: 'p2_g1_live_ready', run_id: runId, live_candidate: liveCandidate, mode: selected, loopback_origin: origin, principal_count: principals.length, browser_sessions: browserSessions.count, sender_enabled: approvals.send_approved, raw_identifiers_recorded: false }));
   } catch (error) {
-    await browserSessions?.close?.();
-    if (started) await runtime.stop();
+    if (started) await stop('STARTUP_FAILED');
     throw error;
   }
   await new Promise((resolve) => {

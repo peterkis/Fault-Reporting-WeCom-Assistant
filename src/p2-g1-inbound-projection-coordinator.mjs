@@ -198,6 +198,22 @@ async function resolveChannelSession(pool, row) {
     const sameIntake = active !== null
       && (active.service_intake_id ?? null) === (row.service_intake_id ?? null);
     if (sameIntake) return active.id;
+    if (active !== null) {
+      const ended = await transaction.query(
+        `UPDATE conversation.session
+            SET status='ENDED',
+                ended_at=GREATEST(last_activity_at,$2::timestamptz),
+                last_activity_at=GREATEST(last_activity_at,$2::timestamptz),
+                close_reason='DIFFERENT_INTAKE',
+                generation_version=generation_version+1,
+                row_version=row_version+1,
+                updated_at=CURRENT_TIMESTAMP
+          WHERE id=$1::uuid AND status<>'ENDED'
+          RETURNING id::text`,
+        [active.id, row.received_at],
+      );
+      if (ended.rowCount !== 1) throw new Error(P2_G1_PROJECTION_ERROR_CODES.storageFailed);
+    }
     const scope = buildConversationSessionScope({
       threadKey: identity.thread_key,
       participantKey: identity.participant_key,

@@ -99,12 +99,15 @@ export function createP2G1Observability({ pool, coordinator, gateway, realtime, 
   async function readiness({ httpListening, workbenchEnabled, projectionEnabled, communicationEnabled, requireGateway = true, featureFlags = {} }) {
     let database = false;
     let migrations = false;
+    let projectionBacklog = null;
     try {
       await pool.query('SELECT 1');
       database = true;
       const result = await pool.query('SELECT relation_name,to_regclass(relation_name) IS NOT NULL present FROM unnest($1::text[]) AS relation_name', [P2_G1_REQUIRED_MIGRATION_RELATIONS]);
       migrations = result.rows.length === P2_G1_REQUIRED_MIGRATION_RELATIONS.length && result.rows.every((row) => row.present === true);
     } catch { /* safe readiness remains false */ }
+    try { projectionBacklog = safeNumber((await coordinator?.backlog?.())?.total); }
+    catch { projectionBacklog = null; }
     const forbiddenFlagsOff = ['AI_TRIAGE_ENABLED','AI_CONVERSATION_ENABLED','AI_AUTO_REPLY_ENABLED','OCR_ENABLED','INCIDENT_CORRELATION_ENABLED','INTEGRATION_CONNECTOR_ENABLED']
       .every((name) => featureFlags[name] !== true);
     const checks = Object.freeze({
@@ -113,6 +116,8 @@ export function createP2G1Observability({ pool, coordinator, gateway, realtime, 
       app_http: httpListening === true,
       workbench: workbenchEnabled === true,
       projection_worker: projectionEnabled === true,
+      projection_backlog_drained: projectionBacklog === 0,
+      projection_failures_zero: projectionFailures === 0,
       communication_worker: communicationEnabled === true,
       gateway_authenticated: !requireGateway || gateway?.getStatus?.().authenticated === true,
       human_only_flags: forbiddenFlagsOff,

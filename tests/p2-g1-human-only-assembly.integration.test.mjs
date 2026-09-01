@@ -128,6 +128,34 @@ test('P2-G1 P1 commit, durable projection recovery, duplicate idempotency, parti
   } });
 });
 
+test('P2-G1 different Intake atomically ends the prior participant Session before opening the next', { timeout: TIMEOUT }, async (t) => {
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1boundary', run: async ({ pool }) => {
+    await base(pool);
+    const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20 });
+    const assembly = createP2G1HumanOnlyAssembly({ operationalIntake: operational(pool), coordinator });
+    const sender = 'synthetic-boundary-participant';
+    const first = await assembly.handleFrame(frame({ msgId: `p2-g1-${randomUUID()}`, sender, text: '新报修：合成测试终端无法登录。' }));
+    const second = await assembly.handleFrame(frame({ msgId: `p2-g1-${randomUUID()}`, sender, text: '新报修：另一台合成测试终端无法登录。' }));
+    assert.equal(first.ok, true);
+    assert.equal(second.ok, true);
+    assert.equal(second.projection.failures, 0);
+    const result = await pool.query(`SELECT
+      count(*)::integer sessions,
+      count(*) FILTER(WHERE status='ENDED' AND close_reason='DIFFERENT_INTAKE')::integer ended_for_intake,
+      count(*) FILTER(WHERE status='OPEN')::integer active,
+      min(generation_version) FILTER(WHERE status='OPEN')::integer active_generation,
+      min(row_version) FILTER(WHERE status='OPEN')::integer active_row_version
+      FROM conversation.session`);
+    assert.deepEqual(result.rows[0], { sessions: 2, ended_for_intake: 1, active: 1, active_generation: 1, active_row_version: 1 });
+    const counts = await pool.query(`SELECT
+      (SELECT count(*)::integer FROM pilot_ticket.ticket) tickets,
+      (SELECT count(*)::integer FROM conversation.item WHERE item_type='USER_MESSAGE') user_items,
+      (SELECT count(*)::integer FROM conversation.realtime_event WHERE event_type='conversation.item.created' AND payload->>'item_type'='USER_MESSAGE') realtime_events`);
+    assert.deepEqual(counts.rows[0], { tickets: 2, user_items: 2, realtime_events: 2 });
+    t.diagnostic(JSON.stringify({ different_intake_sessions: 2, prior_ended: 1, active_sessions: 1, active_versions: [1, 1], projection_failures: 0 }));
+  } });
+});
+
 test('P2-G1 fault paths serialize takeover, isolate internal note, deduplicate reply and recover delivery without blind resend', { timeout: TIMEOUT }, async (t) => {
   await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1fault', run: async ({ pool }) => {
     await base(pool);
