@@ -4,7 +4,7 @@
 - 基线：`1c18d5653b17e4368b5fa057d513e1af1a8b4622`
 - 授权分支：`phase2/gate-p2-g1-human-only`
 - 数据库结构变更：P2-G1 无 DDL、无 migration 022；001 至 021 文件未修改
-- Live WeCom Evidence：PARTIAL / BLOCKED；第二次真实 Inbound Shadow 收到 20/20 并完成 P1/Timeline/Realtime，但两个 Workbench 浏览器均返回 `WORKBENCH_NOT_FOUND`
+- Live WeCom Evidence：PARTIAL / BLOCKED；第三次真实 Inbound Shadow 收到 20/20、两个 Workbench 路由与 SSE 连接正常，但具名 SSE 事件未触发新样本 refetch
 - 60 分钟现场资源观察：NOT PERFORMED
 - 项目负责人 Gate 批准：NOT PRESENT
 - Gate 结论：NOT PASSED / NOT GO
@@ -61,3 +61,5 @@ Test Authentication 只接受 Server-side Pilot Principal，逐请求确认 acti
 - 2026-09-01：边界修复、backlog/failure Readiness 与受控 stdin 停止接缝完成后，全仓串行 420/420，fail/cancelled/skipped 均为 0；仅允许以修复提交的新 HEAD 重启真实现场验证。
 - 2026-09-01：候选 `fc00cc1c184a1a4f34e7441c6909962bb119f647` 的第二次 Inbound Shadow 收到 20/20，Channel Message/Timeline/Realtime 均为 20，Intake/Ticket/Session 为 2/2/2，Timeline P95 88.981ms，AI/OCR/真实发送均为 0；但 CDP 打开根路径而静态 Workbench 只服务 `/workbench`，两个客户端均观察到 `WORKBENCH_NOT_FOUND`、SSE Client 0，因此该 run 为 `BLOCKED`，不能作为可见性 PASS。
 - 2026-09-01：浏览器导航修复后，双隔离 Cookie `/workbench` 真实路由回归 1/1、新增后的 P2-G1 Browser 合计 2/2、全仓串行 421/421；旧 run 不复用，新的真实候选必须重新采集 20 条入站及 Workbench/SSE Evidence。
+- 2026-09-01：候选 `a531e42f0a1d7f3323011f2f84596d78f5a2c483` 第三次 Inbound Shadow 的 20 条入站全部形成 Channel Message/Timeline/Realtime，P1/Timeline P95 为 1.757/58.830ms，两个 `/workbench` 页面和 2 个 SSE Client 正常；但 P2-003 发出具名 `conversation.item.created`，UI 仅监听默认 `onmessage`，20 个样本均无可匹配 refetch，因此 run 为 `BLOCKED`。停止时浏览器已关闭、端口已释放，挂起的 Live Node 由验证后的精确 PID 终止，真实发送 0。
+- 2026-09-01：Workbench 已覆盖全部冻结具名 Realtime Event Type；Live Browser 安全计时探针只输出事件类型、LIST/DETAIL/TIMELINE 分类、状态码与时间戳，并明确不访问 `Last-Event-ID` 或任何 Session ID。双隔离 Cookie 真实浏览器回归证明具名事件和 LIST 完成时间均可采集，P2-G1 聚焦回归 12/12，最终全仓串行回归 421/421，fail/cancelled/skipped 均为 0。

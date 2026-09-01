@@ -30,6 +30,10 @@ Live Harness 要求 `P2_G1_TEST_PRINCIPAL_IDS` 至少包含两个不同的 activ
 
 浏览器必须导航到 P2-006 冻结静态入口 `/workbench`，不得把 loopback 根路径推断为 Workbench。系统浏览器回归必须实际证明两个隔离 Cookie 会话均请求 `/workbench`，且没有请求 `/`。
 
+P2-003 SSE 使用冻结的具名 `event`；Workbench 必须为全部冻结 Realtime Event Type 注册监听器，不能只依赖默认 `onmessage`。至少用 `conversation.item.created` 的真实 SSE frame 证明事件会触发列表与已选详情 refetch。Browser.close 必须有有界超时；下次 Live 启动只清理由失活 DevTools 端口证明不再使用的 `p2-g1-live-browser-*` 临时 Profile。
+
+Live Browser 的计时 Evidence 只能记录冻结事件类型、`LIST`/`DETAIL`/`TIMELINE` 请求分类、HTTP 状态和毫秒时间戳；禁止记录 URL、`Last-Event-ID`、Session ID 或响应正文。通过 stdin `telemetry` 获取的安全快照用于对齐 SSE 收到时间与 Detail/Timeline refetch 完成时间。
+
 真实 Ready 还要求 Projection backlog 为 0 且当前进程 Projection failure 为 0。相同参与者进入新的 Service Intake 时，Coordinator 必须在同一事务先以 `DIFFERENT_INTAKE` 结束旧活动 Session，再创建版本保持 1/1 的新 Session，从而满足 P2-001 单活动参与者约束；旧 Intake 的 Session 及 Timeline 仍保留。
 
 ## Gate 语义

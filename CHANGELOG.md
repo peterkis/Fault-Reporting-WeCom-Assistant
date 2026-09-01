@@ -10,6 +10,7 @@
 - 真实现场预检后加固 Live Harness：支持至少两个 active Pilot Principal 的隔离短期认证、Safe Ready/run ID 输出和两个临时浏览器 Profile 的 HttpOnly Cookie 注入；原始标识与认证材料不输出，Inbound Shadow 继续保持真实发送关闭。
 - 首次 Inbound Shadow 在真实发送关闭时发现既有 Channel Message 投影 backlog；修复 `DIFFERENT_INTAKE` 边界以原子结束旧活动 Session，并将 backlog=0/failure=0 纳入 Ready。失败现场记录保留，修复后必须使用新 HEAD 重做 Live E2E。
 - 第二次 Inbound Shadow 的 20 条真实测试入站均完成 P1/Timeline/Realtime，但两个临时浏览器错误导航到根路径并返回 `WORKBENCH_NOT_FOUND`；修复为冻结 `/workbench` 入口并新增双浏览器真实路由/Cookie 回归。该 run 保持 BLOCKED。
+- 第三次 Inbound Shadow 的 20 条真实测试入站再次完整提交，两个 Workbench 与 SSE 连接正常，但具名 `conversation.item.created` 未触发 UI refetch；Workbench 现监听全部冻结 Realtime Event Type，并为 Browser.close 增加有界超时和失活临时 Profile 清理。Live Browser 还增加只保留冻结事件类型、LIST/DETAIL/TIMELINE 分类、HTTP 状态和毫秒时间戳的安全计时探针，用于计算 SSE 到 refetch 完成延迟且不记录原始标识。该 run 仍保持 BLOCKED。
 
 ### P2-006 Human-only Workbench 完成
 

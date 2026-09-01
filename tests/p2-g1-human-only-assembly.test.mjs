@@ -128,6 +128,9 @@ test('P2-002 transaction hook is optional and P2-G1 browser source has an in-fli
   const browser = readFileSync('web/p2-workbench/workbench.js', 'utf8');
   assert.match(browser, /composerPending/u);
   assert.match(browser, /if \(!value \|\| !state\.detail \|\| composerPending\) return/u);
+  assert.match(browser, /eventSource\.addEventListener\(eventType, refresh\)/u);
+  const realtimeSchema = JSON.parse(readFileSync('contracts/conversation_realtime_event.schema.json', 'utf8'));
+  for (const eventType of realtimeSchema.$defs.event_type.enum) assert.equal(browser.includes(`'${eventType}'`), true, eventType);
 });
 
 test('live script has no broad --live mode and no default live-send npm command', () => {
@@ -139,6 +142,13 @@ test('live script has no broad --live mode and no default live-send npm command'
   assert.match(live, /raw_identifiers_recorded: false/u);
   assert.match(browserSessions, /Network\.setCookie/u);
   assert.match(browserSessions, /httpOnly: true/u);
+  assert.match(browserSessions, /Promise\.race\(\[command\('Browser\.close'\), delay\(2_000\)\]\)/u);
+  assert.match(browserSessions, /cleanupStaleProfiles/u);
+  assert.match(browserSessions, /Page\.addScriptToEvaluateOnNewDocument/u);
+  assert.match(browserSessions, /__p2g1SafeTelemetry/u);
+  assert.match(browserSessions, /event_type: String\(type\), received_ms: Date\.now\(\)/u);
+  assert.match(browserSessions, /category: requestCategory, start_ms: startMs, end_ms: Date\.now\(\), status:/u);
+  assert.doesNotMatch(browserSessions, /lastEventId/u);
   assert.doesNotMatch(browserSessions, /console\.(?:log|error)/u);
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
   assert.equal(Object.values(pkg.scripts).some((value) => /p2-g1-live-e2e\.mjs\s+--mode=/u.test(value)), false);

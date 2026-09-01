@@ -125,7 +125,20 @@ async function main() {
   process.once('SIGTERM', () => { void stop('SIGTERM'); });
   process.stdin.setEncoding('utf8');
   process.stdin.on('data', (chunk) => {
-    if (String(chunk).split(/\r?\n/u).some((line) => line.trim() === 'stop')) void stop('STDIN_STOP');
+    const commands = String(chunk).split(/\r?\n/u).map((line) => line.trim());
+    if (commands.includes('stop')) void stop('STDIN_STOP');
+    if (commands.includes('telemetry') && browserSessions) {
+      void browserSessions.safeTelemetry().then(async (sessions) => {
+        const observation = safeEvent(runId, 'browser_safe_telemetry', {
+          mode: selected,
+          live_candidate: liveCandidate,
+          sessions,
+          raw_identifiers_recorded: false,
+        });
+        await appendFile('evidence/p2-g1-live-e2e.jsonl', observation + '\n');
+        console.log(observation);
+      }).catch(() => console.log(JSON.stringify({ event: 'browser_safe_telemetry_failed', run_id: runId })));
+    }
   });
   let started = false;
   try {
