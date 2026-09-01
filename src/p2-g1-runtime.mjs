@@ -65,6 +65,7 @@ export function createP2G1Runtime({
   });
   const realtime = createRealtimeSseHandler({
     enabled: true,
+    refreshAuthorization: true,
     pool,
     maxClients: 32,
     authenticate: authenticate.authenticate,

@@ -153,6 +153,8 @@ test('live script has no broad --live mode and no default live-send npm command'
   assert.doesNotMatch(browserSessions, /lastEventId/u);
   assert.match(live, /process\.stdin\.removeAllListeners\('data'\)/u);
   assert.match(live, /process\.stdin\.pause\(\)/u);
+  assert.match(readFileSync('src/p2-g1-runtime.mjs', 'utf8'), /refreshAuthorization: true/u);
+  assert.match(readFileSync('src/p2-003-realtime-sse.mjs', 'utf8'), /state\.authorization = normalizeRealtimeAuthorization\(await authorizePrincipal/u);
   assert.doesNotMatch(browserSessions, /console\.(?:log|error)/u);
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
   assert.equal(Object.values(pkg.scripts).some((value) => /p2-g1-live-e2e\.mjs\s+--mode=/u.test(value)), false);

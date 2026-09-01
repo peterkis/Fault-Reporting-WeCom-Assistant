@@ -75,6 +75,26 @@ async function reservePort() {
   return port;
 }
 
+async function waitForSseEvent(response, eventType, { timeoutMs = 12_000 } = {}) {
+  const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffered = '';
+  const deadline = Date.now() + timeoutMs;
+  try {
+    while (Date.now() < deadline) {
+      const remaining = deadline - Date.now();
+      let timer;
+      const result = await Promise.race([
+        reader.read(),
+        new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('P2_G1_SSE_EVENT_TIMEOUT')), remaining); }),
+      ]).finally(() => clearTimeout(timer));
+      if (result.done) return false;
+      buffered += decoder.decode(result.value, { stream: true });
+      if (buffered.includes(`event: ${eventType}\n`)) return true;
+      if (buffered.length > 8192) buffered = buffered.slice(-4096);
+    }
+    return false;
+  } finally { await reader.cancel().catch(() => {}); }
+}
+
 test('P2-G1 P1 commit, durable projection recovery, duplicate idempotency, participant isolation and catalog invariance', { timeout: TIMEOUT }, async (t) => {
   await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1core', run: async ({ pool }) => {
     await base(pool);
@@ -260,7 +280,23 @@ test('P2-G1 local runtime binds one loopback App and reports human-only readines
         assert.equal(Number.isFinite(metrics[field]), true, field);
       }
       assert.equal(runtime.gateway.getStatus().active_gateway_count, 0);
-      t.diagnostic(JSON.stringify({ app_processes: 1, loopback_http: true, readiness: true, gateway_required: false, active_gateway_count: 0, projection_batch: 20, communication_batch: 20, communication_sender: 'MOCK', sse_client_cap: 32, test_auth_http_only: true, human_only: true }));
+      const sseController = new AbortController();
+      try {
+        const sseResponse = await fetch(`${origin}/api/realtime/events?scope=workbench`, {
+          headers: { cookie: `${started.cookie.name}=${started.cookie.value}` },
+          signal: sseController.signal,
+        });
+        assert.equal(sseResponse.status, 200);
+        const observed = waitForSseEvent(sseResponse, 'conversation.item.created');
+        const inbound = await runtime.assembly.handleFrame(frame({
+          msgId: `p2-g1-runtime-${randomUUID()}`,
+          sender: 'synthetic-runtime-new-session',
+          text: '新报修：合成实时授权刷新验证。',
+        }));
+        assert.equal(inbound.ok, true);
+        assert.equal(await observed, true, 'an SSE connection established before Session creation did not receive the new authorized event');
+      } finally { sseController.abort(); }
+      t.diagnostic(JSON.stringify({ app_processes: 1, loopback_http: true, readiness: true, gateway_required: false, active_gateway_count: 0, projection_batch: 20, communication_batch: 20, communication_sender: 'MOCK', sse_client_cap: 32, dynamic_realtime_authorization: true, test_auth_http_only: true, human_only: true }));
     } finally {
       await runtime.stop();
     }

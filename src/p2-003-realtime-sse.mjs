@@ -787,11 +787,13 @@ function normalizeHandlerConfiguration(options) {
     fail(REALTIME_SSE_ERROR_CODES.eventInvalid);
   }
   const enabled = ownData(options, 'enabled') ?? false;
-  if (typeof enabled !== 'boolean') {
+  const refreshAuthorization = ownData(options, 'refreshAuthorization') ?? false;
+  if (typeof enabled !== 'boolean' || typeof refreshAuthorization !== 'boolean') {
     fail(REALTIME_SSE_ERROR_CODES.eventInvalid);
   }
   return Object.freeze({
     enabled,
+    refreshAuthorization,
     maxClients: boundedInteger(
       ownData(options, 'maxClients'),
       REALTIME_SSE_DEFAULTS.maxClients,
@@ -960,6 +962,17 @@ export function createRealtimeSseHandler(options = {}) {
   }
 
   async function replayAvailable(state) {
+    if (state.configuration.refreshAuthorization) {
+      try {
+        state.authorization = normalizeRealtimeAuthorization(await authorizePrincipal(state.principal, {
+          request: state.request,
+          scope: REALTIME_SCOPE,
+        }));
+      } catch (error) {
+        if (error instanceof RealtimeSseError) throw error;
+        throw new RealtimeSseError(REALTIME_SSE_ERROR_CODES.storageFailed);
+      }
+    }
     while (!state.closed) {
       const afterEventId = state.scanCursor;
       const page = await replayReader.listEvents({
@@ -1195,6 +1208,7 @@ export function createRealtimeSseHandler(options = {}) {
     state = {
       request,
       response,
+      principal,
       authorization,
       configuration,
       metrics,
