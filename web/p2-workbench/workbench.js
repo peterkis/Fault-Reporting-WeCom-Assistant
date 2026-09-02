@@ -4,7 +4,7 @@ const elements = Object.freeze(Object.fromEntries([
   'workspace','conversation-list','load-more-conversations','timeline','load-history','conversation-view','empty-state',
   'conversation-title','conversation-channel','session-facts','control-actions','ticket-panel','delivery-panel','composer',
   'message-text','message-label','composer-hint','send-message','connection-dot','connection-label','detail-panel','status-live',
-  'refresh-list','mobile-back','toggle-details','close-details',
+  'refresh-list','mobile-back','toggle-details','close-details','test-session-label',
 ].map((id) => [id, document.getElementById(id)])));
 
 const restored = loadRefreshState();
@@ -145,6 +145,12 @@ function connectRealtime() {
 
 async function boot() {
   bootstrap = await api('/api/workbench/bootstrap'); csrfToken = bootstrap.csrf_token ?? null;
+  const testSession = location.hash.match(/^#test-agent-([A-D])$/u)?.[1] ?? null;
+  if (testSession) {
+    elements['test-session-label'].textContent = `测试窗口 ${testSession}`;
+    elements['test-session-label'].hidden = false;
+    document.title = `测试窗口 ${testSession} · 信息保障会话工作台`;
+  }
   document.querySelectorAll('[data-filter]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.filter === state.filter)));
   await loadConversations(); if (state.selectedSessionId) await selectSession(state.selectedSessionId).catch(() => { setState({ type: 'SELECT', sessionId: null }); }); connectRealtime();
 }

@@ -133,6 +133,9 @@ test('P2-002 transaction hook is optional and P2-G1 browser source has an in-fli
   for (const eventType of realtimeSchema.$defs.event_type.enum) assert.equal(browser.includes(`'${eventType}'`), true, eventType);
   assert.match(browser, /if \(realtimeRefreshRunning\) \{ realtimeRefreshPending = true; return; \}/u);
   assert.match(browser, /while \(realtimeRefreshPending\)/u);
+  assert.match(browser, /location\.hash\.match\(\/\^#test-agent-\(\[A-D\]\)\$\/u\)/u);
+  assert.match(browser, /测试窗口 \$\{testSession\}/u);
+  assert.match(readFileSync('web/p2-workbench/workbench.css', 'utf8'), /\[hidden\] \{ display: none !important; \}/u);
 });
 
 test('live script has no broad --live mode and no default live-send npm command', () => {

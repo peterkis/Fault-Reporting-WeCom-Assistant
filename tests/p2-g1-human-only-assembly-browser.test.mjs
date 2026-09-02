@@ -59,7 +59,7 @@ test('P2-G1 system browser duplicate submit fence sends one human reply and pres
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });
   let browser;
   try {
-    browser = await launchSystemBrowser({ url: `${origin}/workbench`, width: 390, height: 844 });
+    browser = await launchSystemBrowser({ url: `${origin}/workbench#test-agent-A`, width: 390, height: 844 });
     await browser.waitFor(`document.readyState === 'complete' && document.querySelector('[data-session-id="${SESSION_ID}"]')`);
     const realtimeDeadline = Date.now() + 10_000;
     while (values.getListCalls() < 2 && Date.now() < realtimeDeadline) await new Promise((resolve) => setTimeout(resolve, 50));
@@ -68,8 +68,8 @@ test('P2-G1 system browser duplicate submit fence sends one human reply and pres
     assert.ok(values.getListCalls() <= 3, `realtime replay was not coalesced: ${values.getListCalls()}`);
     await browser.evaluate(`document.querySelector('[data-session-id="${SESSION_ID}"]').click()`);
     await browser.waitFor("document.querySelector('#conversation-view').hidden === false");
-    const safeBefore = await browser.evaluate(`({xss:window.__p2_g1_xss===1,images:document.querySelectorAll('#timeline img').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth})`);
-    assert.deepEqual(safeBefore, { xss: false, images: 0, overflow: false });
+    const safeBefore = await browser.evaluate(`({xss:window.__p2_g1_xss===1,images:document.querySelectorAll('#timeline img').length,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth,testLabel:document.querySelector('#test-session-label').textContent,testLabelVisible:document.querySelector('#test-session-label').hidden===false,title:document.title,hiddenLoadMore:getComputedStyle(document.querySelector('#load-more-conversations')).display==='none'})`);
+    assert.deepEqual(safeBefore, { xss: false, images: 0, overflow: false, testLabel: '测试窗口 A', testLabelVisible: true, title: '测试窗口 A · 信息保障会话工作台', hiddenLoadMore: true });
     await browser.evaluate(`document.querySelector('#message-text').value='Synthetic duplicate-click reply';document.querySelector('#composer').requestSubmit();document.querySelector('#composer').requestSubmit()`);
     await browser.waitFor("document.querySelector('#status-live').textContent.includes('回复已提交')");
     assert.equal(values.getReplyCalls(), 1);

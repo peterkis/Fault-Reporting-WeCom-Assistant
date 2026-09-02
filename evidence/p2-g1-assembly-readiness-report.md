@@ -68,3 +68,5 @@ Test Authentication 只接受 Server-side Pilot Principal，逐请求确认 acti
 - 2026-09-01：候选 `d5b9cf1285e0c5b8acea4205ef975cfe6e37d111` 第五次 Inbound Shadow 的 1 条校准入站完成 Channel/P1/Timeline/Realtime 持久化，但两个既有 SSE 连接均未收到新事件，自动 refetch 为 0，用户 5 秒内未观察到自动显示，因此 run 为 `BLOCKED`。根因为连接时冻结的 461 个既有授权 Session 事件快照不包含随后创建的新 Session；受控 stop 2 秒内完成，真实发送 0。
 - 2026-09-01：P2-G1 Runtime 显式启用默认关闭的动态 Realtime Authorization。数据库集成先建立空 Session 集合的 SSE，再创建新入站 Session，原连接成功收到具名 Item 事件；P2-G1 单元 10/10、定向数据库集成 1/1。必须以新 HEAD 重做现场校准。
 - 2026-09-01：首次全仓串行回归中，既有 P2-003 5000 事件资源测试因整仓负载下 1 秒 recovery timer 多触发空批而仅有该项失败；未放宽 `replay_query_batch_count <= 101`。原样单测重跑为 5000/5000、100 批、无残留，随后完整串行回归 421/421，fail/cancelled/skipped 均为 0。
+- 2026-09-02：候选 `02d4f33a41ba2d65a6d45d9b0a2de8e67ba1a34d` 第六次 Inbound Shadow 的正确选中 Session 批次为 Channel/Timeline/Realtime 20/20/20、重复 0，Agent A DOM 含 20 个样本，完整计时 20/20，端到端 P95 108ms；但用户观察的是未选中 Session 的 Agent B，未完成人工客户端可见确认。隔夜后两 Cookie 过期、SSE Client 0，旧缓存仅留在 Agent A；该运行未持续资源采样，不得称为资源观察或 soak，结果为 `BLOCKED`。
+- 2026-09-02：受控浏览器检查发现无下一页时 `hidden=true`，但 `.load-more { display:block }` 仍使“加载更多会话”可见，且页面没有醒目的 A/B 标识。新增全局 `[hidden]` 规则、测试窗口 A/B 页内与标题标识及真实浏览器回归；必须用新 HEAD 重做现场验证。

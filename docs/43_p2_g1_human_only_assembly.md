@@ -38,6 +38,8 @@ Live Browser 的计时 Evidence 只能记录冻结事件类型、`LIST`/`DETAIL`
 
 P2-G1 入站可能在 SSE 连接建立后创建新 Session。P2-G1 Runtime 必须显式启用动态 Realtime Authorization，在每次事件泵送前以原已认证 Principal 重新解析当前 Session/Thread 权限；授权撤销、Principal 失活或刷新失败必须 fail closed。该选项默认关闭，以保持 P2-003 既有调用方和冻结行为不变。
 
+Live Harness 以 `#test-agent-A`、`#test-agent-B` 区分浏览器时，Workbench 必须在页内和标题醒目标注对应测试窗口，但不得显示 Principal ID。HTML `hidden` 必须具有不可被组件 `display` 规则覆盖的全局隐藏语义；无 `next_cursor` 时“加载更多会话”不得可见，避免把第二个未选中浏览器误判为 Timeline 缺失。
+
 真实 Ready 还要求 Projection backlog 为 0 且当前进程 Projection failure 为 0。相同参与者进入新的 Service Intake 时，Coordinator 必须在同一事务先以 `DIFFERENT_INTAKE` 结束旧活动 Session，再创建版本保持 1/1 的新 Session，从而满足 P2-001 单活动参与者约束；旧 Intake 的 Session 及 Timeline 仍保留。
 
 ## Gate 语义
