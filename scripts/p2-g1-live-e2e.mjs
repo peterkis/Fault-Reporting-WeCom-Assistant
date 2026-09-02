@@ -85,6 +85,7 @@ async function main() {
   if (!COMMIT.test(liveCandidate)) throw new Error('P2_G1_LIVE_CANDIDATE_INVALID');
   const port = Number(process.env.P2_G1_LISTEN_PORT ?? 3200);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('P2_G1_LISTEN_PORT_INVALID');
+  const origin = `http://127.0.0.1:${port}`;
   const hashes = String(process.env.P2_G1_ALLOWED_TARGET_HASHES ?? '').split(',').filter(Boolean);
   if (hashes.length < 1 || hashes.some((value) => !/^[a-f0-9]{64}$/u.test(value))) throw new Error('P2_G1_TEST_SCOPE_INVALID');
   const pool = new Pool({ connectionString: process.env.PILOT_DATABASE_URL, max: 4, connectionTimeoutMillis: 2_000 });
@@ -93,7 +94,7 @@ async function main() {
     pool,
     operationalIntake,
     principalIds: principals,
-    publicOrigin: `http://127.0.0.1:${port}`,
+    publicOrigin: origin,
     listenPort: port,
     botId: process.env.WECOM_BOT_ID,
     secret: process.env.WECOM_BOT_SECRET,
@@ -135,6 +136,40 @@ async function main() {
         console.log(JSON.stringify({ event: 'p2_g1_sse_principal_disconnected', run_id: runId, disconnected_count: result.disconnected_count, raw_identifiers_recorded: false }));
       } catch { console.log(JSON.stringify({ event: 'p2_g1_sse_principal_disconnect_failed', run_id: runId, raw_identifiers_recorded: false })); }
     }
+    if (commands.includes('gateway-disconnect')) {
+      void runtime.gateway.stop().then(async () => {
+        const readyResponse = await fetch(`${origin}/health/ready`, { signal: AbortSignal.timeout(2_000) });
+        const ready = await readyResponse.json();
+        const status = runtime.gateway.getStatus();
+        const observation = safeEvent(runId, 'gateway_controlled_disconnected', {
+          mode: selected,
+          live_candidate: liveCandidate,
+          readiness_ok: ready.ok === true,
+          gateway_authenticated: status.authenticated === true,
+          active_gateway_count: status.active_gateway_count,
+          raw_identifiers_recorded: false,
+        });
+        await appendFile('evidence/p2-g1-live-e2e.jsonl', observation + '\n');
+        console.log(observation);
+      }).catch(() => console.log(JSON.stringify({ event: 'p2_g1_gateway_disconnect_failed', run_id: runId, raw_identifiers_recorded: false })));
+    }
+    if (commands.includes('gateway-reconnect')) {
+      void runtime.gateway.start().then(async () => {
+        const ready = await waitForReady(origin);
+        const status = runtime.gateway.getStatus();
+        const observation = safeEvent(runId, 'gateway_controlled_reconnected', {
+          mode: selected,
+          live_candidate: liveCandidate,
+          readiness_ok: ready.ok === true,
+          gateway_authenticated: status.authenticated === true,
+          active_gateway_count: status.active_gateway_count,
+          gateway_reconnect_total: status.reconnect_total,
+          raw_identifiers_recorded: false,
+        });
+        await appendFile('evidence/p2-g1-live-e2e.jsonl', observation + '\n');
+        console.log(observation);
+      }).catch(() => console.log(JSON.stringify({ event: 'p2_g1_gateway_reconnect_failed', run_id: runId, raw_identifiers_recorded: false })));
+    }
     if (commands.includes('telemetry') && browserSessions) {
       void browserSessions.safeTelemetry().then(async (sessions) => {
         const observation = safeEvent(runId, 'browser_safe_telemetry', {
@@ -152,7 +187,6 @@ async function main() {
   try {
     const runtimeStart = await runtime.start();
     started = true;
-    const origin = `http://127.0.0.1:${port}`;
     await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_started', { mode: selected, live_candidate: liveCandidate, sender_enabled: approvals.send_approved, principal_count: principals.length, raw_identifiers_recorded: false }) + '\n');
     const ready = await waitForReady(origin);
     if (!ready.ok) {

@@ -34,16 +34,19 @@ test('live CLI exposes only the six explicit modes and requires three process fu
 });
 
 test('gateway permits one active WSClient, gates readiness on authentication, reconnects and shuts down cleanly', async () => {
-  const client = new FakeClient(); let inbound = 0;
-  const gateway = createP2G1WeComGateway({ enabled: true, botId: 'synthetic-bot', secret: 'synthetic-secret', clientFactory: () => client, onFrame: async () => { inbound += 1; } });
+  const clients = [new FakeClient(), new FakeClient()]; let clientIndex = 0; let inbound = 0;
+  const gateway = createP2G1WeComGateway({ enabled: true, botId: 'synthetic-bot', secret: 'synthetic-secret', clientFactory: () => clients[clientIndex++], onFrame: async () => { inbound += 1; } });
   await gateway.start();
   assert.equal(gateway.getStatus().active_gateway_count, 1);
   assert.throws(() => gateway.getAuthenticatedClient(), (error) => error.code === 'GATEWAY_UNAVAILABLE_BEFORE_SEND');
-  client.emit('authenticated'); assert.equal(gateway.getStatus().authenticated, true);
-  client.emit('message.text', { body: {} }); await new Promise((resolve) => setImmediate(resolve)); assert.equal(inbound, 1);
-  client.emit('disconnected'); assert.equal(gateway.getStatus().authenticated, false); assert.equal(gateway.getStatus().reconnect_total, 1);
-  client.emit('authenticated'); assert.equal(gateway.getAuthenticatedClient(), client);
-  await gateway.stop(); assert.equal(client.disconnected, 1); assert.equal(gateway.getStatus().active_gateway_count, 0);
+  clients[0].emit('authenticated'); assert.equal(gateway.getStatus().authenticated, true);
+  clients[0].emit('message.text', { body: {} }); await new Promise((resolve) => setImmediate(resolve)); assert.equal(inbound, 1);
+  clients[0].emit('disconnected'); assert.equal(gateway.getStatus().authenticated, false); assert.equal(gateway.getStatus().reconnect_total, 1);
+  clients[0].emit('authenticated'); assert.equal(gateway.getAuthenticatedClient(), clients[0]);
+  await gateway.stop(); assert.equal(clients[0].disconnected, 1); assert.equal(gateway.getStatus().active_gateway_count, 0);
+  await gateway.start(); assert.equal(gateway.getStatus().authenticated, false); assert.equal(clients[1].connected, 1);
+  clients[1].emit('authenticated'); assert.equal(gateway.getAuthenticatedClient(), clients[1]);
+  await gateway.stop(); assert.equal(clients[1].disconnected, 1); assert.equal(gateway.getStatus().active_gateway_count, 0);
 });
 
 test('sender enforces persistent target hash allowlist and maps ACK, explicit rejection, unknown and gateway-unavailable safely', async () => {
@@ -149,6 +152,8 @@ test('live script has no broad --live mode and no default live-send npm command'
   assert.match(live, /p2_g1_live_ready/u);
   assert.match(live, /raw_identifiers_recorded: false/u);
   assert.match(live, /sse-disconnect-a/u);
+  assert.match(live, /gateway-disconnect/u);
+  assert.match(live, /gateway-reconnect/u);
   assert.match(browserSessions, /Network\.setCookie/u);
   assert.match(browserSessions, /httpOnly: true/u);
   assert.match(browserSessions, /Promise\.race\(\[command\('Browser\.close'\), delay\(2_000\)\]\)/u);
