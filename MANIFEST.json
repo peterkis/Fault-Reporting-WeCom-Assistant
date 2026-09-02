@@ -5,7 +5,8 @@
   "baseline_date": "2026-08-30",
   "status": "P2_P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION",
   "current_phase": "P2",
-  "last_completed_task": "P2-G1",
+  "last_completed_task": "P2-006",
+  "last_completed_gate": "P2-G1",
   "active_task": null,
   "authorized_tasks": [
     "P2-001",

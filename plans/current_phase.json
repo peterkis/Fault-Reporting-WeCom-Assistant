@@ -6,7 +6,8 @@
   "phase_name": "Conversation Center 与 AI 协作",
   "status": "IN_PROGRESS",
   "started": true,
-  "last_completed_task": "P2-G1",
+  "last_completed_task": "P2-006",
+  "last_completed_gate": "P2-G1",
   "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [

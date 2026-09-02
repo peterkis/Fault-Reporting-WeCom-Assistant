@@ -34,9 +34,11 @@ const P2_005_SOURCE_BASE = '7e9a41498c471be4deca235439440ea7f157bdd4';
 const P2_004_SOURCE_BASE = '2b4548888882ce895a85f513d0a5bb57d9920b91';
 const P2_003_SOURCE_BASE = 'd59de5d7db39c4a39f82093496a0e42565d67a7e';
 const AUTHORIZED_TASKS = Object.freeze(['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006']);
+const AUTHORIZED_GATES = Object.freeze(['P2-G1']);
 const LIFECYCLE_PROFILES = Object.freeze({
   P2_006_IN_PROGRESS: Object.freeze({
     lastCompletedTask: 'P2-005',
+    lastCompletedGate: null,
     activeTask: 'P2-006',
     activeLane: 'P2-B',
     candidate: 'P2-006',
@@ -47,6 +49,7 @@ const LIFECYCLE_PROFILES = Object.freeze({
   }),
   P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION: Object.freeze({
     lastCompletedTask: 'P2-006',
+    lastCompletedGate: null,
     activeTask: null,
     activeLane: null,
     candidate: 'P2-G1',
@@ -57,6 +60,7 @@ const LIFECYCLE_PROFILES = Object.freeze({
   }),
   P2_G1_ASSEMBLY_IN_PROGRESS: Object.freeze({
     lastCompletedTask: 'P2-006',
+    lastCompletedGate: null,
     activeTask: 'P2-G1',
     activeLane: 'ASSEMBLY',
     candidate: 'P2-G1',
@@ -68,6 +72,7 @@ const LIFECYCLE_PROFILES = Object.freeze({
   }),
   P2_G1_READY_FOR_LIVE_E2E: Object.freeze({
     lastCompletedTask: 'P2-006',
+    lastCompletedGate: null,
     activeTask: 'P2-G1',
     activeLane: 'ASSEMBLY',
     candidate: 'P2-G1-LIVE',
@@ -78,7 +83,8 @@ const LIFECYCLE_PROFILES = Object.freeze({
     projectStatus: 'p2_p2_g1_ready_for_live_e2e',
   }),
   P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION: Object.freeze({
-    lastCompletedTask: 'P2-G1',
+    lastCompletedTask: 'P2-006',
+    lastCompletedGate: 'P2-G1',
     activeTask: null,
     activeLane: null,
     candidate: 'P2-007',
@@ -108,9 +114,11 @@ if (profile) {
     {
       name: 'MANIFEST',
       lastCompletedTask: manifest.last_completed_task,
+      lastCompletedGate: manifest.last_completed_gate,
       activeTask: manifest.active_task,
       activeLane: manifest.active_lane,
       authorizedTasks: manifest.authorized_tasks,
+      authorizedGates: manifest.authorized_gates,
       implementationStatus: manifest.implementation_authorization_status,
       candidate: manifest.next_task_candidate,
       candidateAuthorized: manifest.next_task_authorized,
@@ -119,9 +127,11 @@ if (profile) {
     {
       name: 'current phase',
       lastCompletedTask: current.last_completed_task,
+      lastCompletedGate: current.last_completed_gate,
       activeTask: current.active_task,
       activeLane: current.active_lane,
       authorizedTasks: current.authorized_tasks,
+      authorizedGates: current.authorized_gates,
       implementationStatus: current.implementation_authorization_status,
       candidate: current.next_task_candidate,
       candidateAuthorized: current.next_task_authorized,
@@ -130,9 +140,11 @@ if (profile) {
     {
       name: 'master backlog',
       lastCompletedTask: backlog.last_completed_task,
+      lastCompletedGate: backlog.last_completed_gate,
       activeTask: backlog.active_task,
       activeLane: backlog.active_lane,
       authorizedTasks: backlog.authorized_tasks,
+      authorizedGates: backlog.authorized_gates,
       implementationStatus: backlog.implementation_authorization_status,
       candidate: backlog.next_task_candidate,
       candidateAuthorized: backlog.next_task_authorized,
@@ -141,9 +153,11 @@ if (profile) {
     {
       name: 'parallel workstreams',
       lastCompletedTask: parallel.last_completed_task,
+      lastCompletedGate: parallel.last_completed_gate,
       activeTask: parallel.active_task,
       activeLane: parallel.active_lane,
       authorizedTasks: parallel.authorized_tasks,
+      authorizedGates: parallel.authorized_gates,
       implementationStatus: parallel.implementation_authorization_status,
       candidate: parallel.next_task_candidate,
       candidateAuthorized: parallel.next_task_authorized,
@@ -152,9 +166,11 @@ if (profile) {
     {
       name: 'task index',
       lastCompletedTask: taskIndex.last_completed_task,
+      lastCompletedGate: taskIndex.last_completed_gate,
       activeTask: taskIndex.active_task,
       activeLane: taskIndex.active_lane,
       authorizedTasks: taskIndex.authorized_tasks,
+      authorizedGates: taskIndex.authorized_gates,
       implementationStatus: taskIndex.implementation_authorization_status,
       candidate: taskIndex.next_tasks?.candidate,
       candidateAuthorized: taskIndex.next_tasks?.candidate_authorized,
@@ -163,9 +179,11 @@ if (profile) {
     {
       name: 'project summary',
       lastCompletedTask: projectSummary.project.last_completed_task,
+      lastCompletedGate: projectSummary.project.last_completed_gate,
       activeTask: projectSummary.project.active_task,
       activeLane: projectSummary.project.active_lane,
       authorizedTasks: projectSummary.project.authorized_tasks,
+      authorizedGates: projectSummary.project.authorized_gates,
       implementationStatus: projectSummary.project.implementation_authorization_status,
       candidate: projectSummary.project.next_task,
       candidateAuthorized: projectSummary.project.next_task_authorized,
@@ -175,9 +193,13 @@ if (profile) {
 
   for (const view of lifecycleViews) {
     check(view.lastCompletedTask === profile.lastCompletedTask, view.name + ' has the profile last completed task');
+    check(view.lastCompletedGate === profile.lastCompletedGate, view.name + ' has the profile last completed gate');
     check(view.activeTask === profile.activeTask, view.name + ' has the profile active task');
     check(view.activeLane === profile.activeLane, view.name + ' has the profile active lane');
     check(sameArray(view.authorizedTasks, AUTHORIZED_TASKS), view.name + ' has the exact authorized task set');
+    check(sameArray(view.authorizedGates, AUTHORIZED_GATES), view.name + ' has the exact authorized gate set');
+    check(view.lastCompletedTask === null || view.authorizedTasks.includes(view.lastCompletedTask), view.name + ' last completed task is authorized');
+    check(view.lastCompletedGate === null || view.authorizedGates.includes(view.lastCompletedGate), view.name + ' last completed gate is authorized');
     check(view.implementationStatus === lifecycleStatus, view.name + ' has the selected lifecycle status');
     check(view.candidate === profile.candidate, view.name + ' has the profile next candidate');
     check(view.candidateAuthorized === profile.candidateAuthorized, view.name + ' has the profile candidate authorization');
@@ -188,6 +210,12 @@ if (profile) {
   check(projectSummary.project.status === profile.projectStatus, 'project status matches the lifecycle profile');
   check(taskIndex.next_tasks?.current === profile.activeTask, 'task index current task matches the lifecycle profile');
   check(current.next_phase_after_exit?.activation_status === lifecycleStatus, 'current phase activation status matches the lifecycle profile');
+  const p2Summary = projectSummary.phase_model.find((phase) => phase.id === 'P2');
+  check(p2Summary?.last_completed_task === profile.lastCompletedTask, 'project P2 summary has the profile last completed task');
+  check(p2Summary?.last_completed_gate === profile.lastCompletedGate, 'project P2 summary has the profile last completed gate');
+  if (profile.p2g1Status === 'PASSED') {
+    check(current.next_task_candidate === 'P2-007' && current.next_task_authorized === false, 'P2-007 remains the unauthorized next task candidate');
+  }
 }
 
 check(manifest.architecture_baseline === 'V1.4', 'manifest baseline is V1.4');

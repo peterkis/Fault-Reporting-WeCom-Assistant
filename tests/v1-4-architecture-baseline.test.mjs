@@ -11,6 +11,7 @@ const text = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'u
 const profiles = Object.freeze({
   P2_006_IN_PROGRESS: Object.freeze({
     lastCompletedTask: 'P2-005',
+    lastCompletedGate: null,
     activeTask: 'P2-006',
     activeLane: 'P2-B',
     candidate: 'P2-006',
@@ -19,6 +20,7 @@ const profiles = Object.freeze({
   }),
   P2_006_DONE_AWAITING_P2_G1_ASSEMBLY_AUTHORIZATION: Object.freeze({
     lastCompletedTask: 'P2-006',
+    lastCompletedGate: null,
     activeTask: null,
     activeLane: null,
     candidate: 'P2-G1',
@@ -28,6 +30,7 @@ const profiles = Object.freeze({
   }),
   P2_G1_ASSEMBLY_IN_PROGRESS: Object.freeze({
     lastCompletedTask: 'P2-006',
+    lastCompletedGate: null,
     activeTask: 'P2-G1',
     activeLane: 'ASSEMBLY',
     candidate: 'P2-G1',
@@ -37,6 +40,7 @@ const profiles = Object.freeze({
   }),
   P2_G1_READY_FOR_LIVE_E2E: Object.freeze({
     lastCompletedTask: 'P2-006',
+    lastCompletedGate: null,
     activeTask: 'P2-G1',
     activeLane: 'ASSEMBLY',
     candidate: 'P2-G1-LIVE',
@@ -45,7 +49,8 @@ const profiles = Object.freeze({
     p2g1Status: 'READY_FOR_LIVE_E2E',
   }),
   P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION: Object.freeze({
-    lastCompletedTask: 'P2-G1',
+    lastCompletedTask: 'P2-006',
+    lastCompletedGate: 'P2-G1',
     activeTask: null,
     activeLane: null,
     candidate: 'P2-007',
@@ -82,27 +87,39 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
   assert.equal(backlog.phases.find((phase) => phase.id === 'P2').status, 'IN_PROGRESS');
 
   const views = [
-    [manifest.last_completed_task, manifest.active_task, manifest.active_lane,
-      manifest.next_task_candidate, manifest.next_task_authorized, manifest.authorized_tasks],
-    [current.last_completed_task, current.active_task, current.active_lane,
-      current.next_task_candidate, current.next_task_authorized, current.authorized_tasks],
-    [backlog.last_completed_task, backlog.active_task, backlog.active_lane,
-      backlog.next_task_candidate, backlog.next_task_authorized, backlog.authorized_tasks],
-    [parallel.last_completed_task, parallel.active_task, parallel.active_lane,
-      parallel.next_task_candidate, parallel.next_task_authorized, parallel.authorized_tasks],
-    [taskIndex.last_completed_task, taskIndex.active_task, taskIndex.active_lane,
-      taskIndex.next_tasks.candidate, taskIndex.next_tasks.candidate_authorized, taskIndex.authorized_tasks],
-    [projectSummary.project.last_completed_task, projectSummary.project.active_task,
+    [manifest.last_completed_task, manifest.last_completed_gate, manifest.active_task, manifest.active_lane,
+      manifest.next_task_candidate, manifest.next_task_authorized, manifest.authorized_tasks, manifest.authorized_gates],
+    [current.last_completed_task, current.last_completed_gate, current.active_task, current.active_lane,
+      current.next_task_candidate, current.next_task_authorized, current.authorized_tasks, current.authorized_gates],
+    [backlog.last_completed_task, backlog.last_completed_gate, backlog.active_task, backlog.active_lane,
+      backlog.next_task_candidate, backlog.next_task_authorized, backlog.authorized_tasks, backlog.authorized_gates],
+    [parallel.last_completed_task, parallel.last_completed_gate, parallel.active_task, parallel.active_lane,
+      parallel.next_task_candidate, parallel.next_task_authorized, parallel.authorized_tasks, parallel.authorized_gates],
+    [taskIndex.last_completed_task, taskIndex.last_completed_gate, taskIndex.active_task, taskIndex.active_lane,
+      taskIndex.next_tasks.candidate, taskIndex.next_tasks.candidate_authorized, taskIndex.authorized_tasks, taskIndex.authorized_gates],
+    [projectSummary.project.last_completed_task, projectSummary.project.last_completed_gate, projectSummary.project.active_task,
       projectSummary.project.active_lane, projectSummary.project.next_task,
-      projectSummary.project.next_task_authorized, projectSummary.project.authorized_tasks],
+      projectSummary.project.next_task_authorized, projectSummary.project.authorized_tasks, projectSummary.project.authorized_gates],
   ];
-  for (const [last, active, lane, candidate, authorized, tasks] of views) {
-    assert.equal(last, profile.lastCompletedTask);
+  for (const [lastTask, lastGate, active, lane, candidate, authorized, tasks, gates] of views) {
+    assert.equal(lastTask, profile.lastCompletedTask);
+    assert.equal(lastGate, profile.lastCompletedGate);
     assert.equal(active, profile.activeTask);
     assert.equal(lane, profile.activeLane);
     assert.equal(candidate, profile.candidate);
     assert.equal(authorized, profile.candidateAuthorized);
     assert.deepEqual(tasks, ['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006']);
+    assert.deepEqual(gates, ['P2-G1']);
+    assert.equal(tasks.includes(lastTask), true);
+    assert.equal(gates.includes(lastGate), profile.lastCompletedGate !== null);
+  }
+
+  const p2Summary = projectSummary.phase_model.find((phase) => phase.id === 'P2');
+  assert.equal(p2Summary.last_completed_task, profile.lastCompletedTask);
+  assert.equal(p2Summary.last_completed_gate, profile.lastCompletedGate);
+  if (profile.p2g1Status === 'PASSED') {
+    assert.equal(current.next_task_candidate, 'P2-007');
+    assert.equal(current.next_task_authorized, false);
   }
 
   assert.equal(backlog.tasks.find((task) => task.id === 'P2-001').status, 'DONE');
