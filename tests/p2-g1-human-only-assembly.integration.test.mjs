@@ -191,6 +191,7 @@ test('P2-G1 fault paths serialize takeover, isolate internal note, deduplicate r
     assert.equal(race.filter((result) => result.ok).length, 1);
     assert.equal(race.filter((result) => result.error?.code === CONVERSATION_CONTROL_ERROR_CODES.sessionVersionConflict).length, 1);
     const winner = race[0].ok ? a : b;
+    assert.equal((await coordinator.runOnce()).failures, 0);
     const current = (await pool.query('SELECT row_version::integer FROM conversation.session WHERE id=$1::uuid', [session.id])).rows[0];
     const communicationService = createCommunicationService({ pool, enabled: true,
       authorizeCommand: createAssignedCommunicationAuthorizer({ controlService, authorization: controlAuthorization, featureFlags: {} }) });
@@ -236,6 +237,13 @@ test('P2-G1 fault paths serialize takeover, isolate internal note, deduplicate r
     const unknownSender = createMockCommunicationSender({ behavior: async () => ({ outcome: 'UNKNOWN', provider_message_id: null, error_code: 'SYNTHETIC_UNKNOWN', retryable: false }) });
     const unknownWorker = createCommunicationDeliveryWorker({ pool, sender: unknownSender, enabled: true, now: () => new Date(Date.now() + 2_000) });
     const unknown = await unknownWorker.deliver({ deliveryId: secondReply.delivery_ids[0] }); assert.equal(unknown.status, 'RECONCILIATION_REQUIRED');
+    const projectedDeliveries = await coordinator.runOnce();
+    assert.equal(projectedDeliveries.failures, 0, JSON.stringify(projectedDeliveries.streams.map((stream) => ({
+      source_stream: stream.source_stream,
+      failure_codes: stream.failures.map((failure) => failure.code),
+    }))));
+    assert.equal((await coordinator.backlog()).total, 0);
+    assert.equal((await pool.query("SELECT count(*)::integer count FROM conversation.item WHERE source_type='DELIVERY'")).rows[0].count, 3);
     t.diagnostic(JSON.stringify({ concurrent_takeover_winners: 1, internal_note: { message: 1, outbox: 0, delivery: 0 }, duplicate_reply_parallel: 12, reply: facts.rows[0], gateway_unavailable_pending: true, reconnect_provider_calls: providerCalls, unknown_reconciliation: true, ai_calls: 0, ocr_calls: 0 }));
   } });
 });

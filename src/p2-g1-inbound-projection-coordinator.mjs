@@ -385,7 +385,7 @@ export function createP2G1InboundProjectionCoordinator({
          JOIN communication.message m ON m.id=o.message_id
         WHERE m.session_id IS NOT NULL AND NOT EXISTS(
           SELECT 1 FROM conversation.item_source_binding b
-           WHERE b.projector_name=$1 AND b.source_stream=$2 AND b.source_type='COMMUNICATION_DELIVERY'
+           WHERE b.projector_name=$1 AND b.source_stream=$2 AND b.source_type='DELIVERY'
              AND b.source_id=d.id::text
              AND b.projection_variant=(d.status||'_ATTEMPT_'||d.attempt_count::text)
              AND b.session_id=m.session_id)
@@ -460,7 +460,7 @@ export function createP2G1InboundProjectionCoordinator({
       (SELECT count(*) FROM communication.message m WHERE m.session_id IS NOT NULL AND NOT EXISTS(
         SELECT 1 FROM conversation.item_source_binding b WHERE b.projector_name=$1 AND b.source_stream=$3 AND b.source_type='COMMUNICATION_MESSAGE' AND b.source_id=m.id::text))::integer AS communication_messages,
       (SELECT count(*) FROM communication.delivery d JOIN communication.outbox o ON o.id=d.outbox_id JOIN communication.message m ON m.id=o.message_id WHERE m.session_id IS NOT NULL AND NOT EXISTS(
-        SELECT 1 FROM conversation.item_source_binding b WHERE b.projector_name=$1 AND b.source_stream=$4 AND b.source_type='COMMUNICATION_DELIVERY' AND b.source_id=d.id::text AND b.projection_variant=(d.status||'_ATTEMPT_'||d.attempt_count::text)))::integer AS communication_deliveries`,
+        SELECT 1 FROM conversation.item_source_binding b WHERE b.projector_name=$1 AND b.source_stream=$4 AND b.source_type='DELIVERY' AND b.source_id=d.id::text AND b.projection_variant=(d.status||'_ATTEMPT_'||d.attempt_count::text)))::integer AS communication_deliveries`,
     [PROJECTOR_NAME, P2_G1_PROJECTION_STREAMS.channelMessage, P2_G1_PROJECTION_STREAMS.communicationMessage, P2_G1_PROJECTION_STREAMS.communicationDelivery]);
     const counts = result.rows[0];
     return Object.freeze({ ...counts, total: counts.channel_messages + counts.communication_messages + counts.communication_deliveries, disabled: false });

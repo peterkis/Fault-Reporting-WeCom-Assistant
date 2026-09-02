@@ -39,7 +39,7 @@ export function mapCommunicationMessageToTimelineSourceRecord(message) {
 export function mapCommunicationDeliveryToTimelineSourceRecord(delivery) {
   if (!delivery || typeof delivery !== 'object' || delivery.session_id == null) throw new TypeError('COMMUNICATION_PROJECTION_INPUT_INVALID');
   return Object.freeze({
-    source_type: 'COMMUNICATION_DELIVERY',
+    source_type: 'DELIVERY',
     source_id: boundedString(delivery.id, 64),
     source_stream: 'COMMUNICATION_DELIVERY',
     source_ordinal: iso(delivery.updated_at),

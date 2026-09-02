@@ -221,6 +221,7 @@ test('delivery timeline and realtime mappers expose only safe delivery fields', 
   };
   const timeline = mapCommunicationDeliveryToTimelineSourceRecord(delivery);
   assert.equal(timeline.item_type, 'DELIVERY_STATUS');
+  assert.equal(timeline.source_type, 'DELIVERY');
   const realtime = mapCommunicationDeliveryChangedRealtimeEvent(delivery);
   assert.deepEqual(Object.keys(realtime.payload), ['status', 'attempt_count', 'last_error_code', 'side_effect_state']);
   assert.equal(JSON.stringify(realtime).includes('must-not-leak'), false);
