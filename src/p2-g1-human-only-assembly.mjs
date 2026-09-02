@@ -40,7 +40,7 @@ export function validateP2G1ProcessApprovals(env, { mode, checkOnly = false } = 
   if (!truth(env.P2_G1_LIVE_TEST_APPROVED) || !truth(env.P2_G1_TEST_SCOPE_CONFIGURED)) {
     throw new Error('P2_G1_LIVE_APPROVAL_REQUIRED');
   }
-  const sendMode = mode !== 'inbound-shadow';
+  const sendMode = ['human-live', 'reconnect', 'duplicate-reply'].includes(mode);
   if (sendMode && !truth(env.P2_G1_REAL_WECOM_SEND_APPROVED)) {
     throw new Error('P2_G1_REAL_SEND_APPROVAL_REQUIRED');
   }

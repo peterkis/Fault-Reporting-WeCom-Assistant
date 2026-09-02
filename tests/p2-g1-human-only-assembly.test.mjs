@@ -26,6 +26,8 @@ test('live CLI exposes only the six explicit modes and requires three process fu
   assert.throws(() => validateP2G1ProcessApprovals({}, { mode: 'human-live' }), /P2_G1_LIVE_APPROVAL_REQUIRED/u);
   const base = { P2_G1_LIVE_TEST_APPROVED: 'true', P2_G1_TEST_SCOPE_CONFIGURED: 'true' };
   assert.deepEqual(validateP2G1ProcessApprovals(base, { mode: 'inbound-shadow' }), { check_only: false, live_approved: true, send_approved: false });
+  assert.deepEqual(validateP2G1ProcessApprovals(base, { mode: 'concurrent-takeover' }), { check_only: false, live_approved: true, send_approved: false });
+  assert.deepEqual(validateP2G1ProcessApprovals(base, { mode: 'internal-note' }), { check_only: false, live_approved: true, send_approved: false });
   assert.throws(() => validateP2G1ProcessApprovals(base, { mode: 'human-live' }), /P2_G1_REAL_SEND_APPROVAL_REQUIRED/u);
   assert.deepEqual(validateP2G1ProcessApprovals({ ...base, P2_G1_REAL_WECOM_SEND_APPROVED: 'true' }, { mode: 'human-live' }), { check_only: false, live_approved: true, send_approved: true });
   assert.throws(() => validateP2G1ProcessApprovals({ ...base, AI_TRIAGE_ENABLED: 'true' }, { mode: 'inbound-shadow' }), /P2_G1_HUMAN_ONLY_FLAG_VIOLATION/u);
@@ -51,6 +53,7 @@ test('sender enforces persistent target hash allowlist and maps ACK, explicit re
   const sender = createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes: [hash(target)], enabled: true });
   const request = { provider: 'WECOM_AIBOT', channel_account_id: 'synthetic-bot', target_type: 'GROUP', target_id: target, delivery_id: '00000000-0000-4000-8000-000000000001', idempotency_key: 'synthetic-idempotency', message: { message_type: 'text', content: { text: 'synthetic reply' } }, signal: new AbortController().signal };
   assert.equal((await sender.send(request)).outcome, 'ACKNOWLEDGED'); assert.equal(client.calls.length, 1);
+  assert.deepEqual(client.calls[0].body, { msgtype: 'markdown', markdown: { content: 'synthetic reply' } });
   assert.equal((await createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes: [], enabled: true }).send(request)).error_code, 'P2_G1_SEND_SCOPE_FORBIDDEN');
   client.send = async () => { throw { errcode: 40003 }; }; assert.equal((await sender.send(request)).outcome, 'REJECTED_NOT_APPLIED');
   client.send = async () => ({}); assert.equal((await sender.send(request)).outcome, 'UNKNOWN');

@@ -17,7 +17,10 @@ function sdkBody(message) {
   if (typeof text !== 'string' || text.length < 1 || text.length > 20_480) {
     throw new TypeError(P2_G1_SENDER_ERROR_CODES.requestInvalid);
   }
-  if (message.message_type === 'text') return Object.freeze({ msgtype: 'text', text: Object.freeze({ content: text }) });
+  // The active-push SDK contract does not support a `text` body. Preserve the
+  // Workbench plain-text command as plain Markdown so the Provider receives a
+  // supported body without changing the stored Communication Message.
+  if (message.message_type === 'text') return Object.freeze({ msgtype: 'markdown', markdown: Object.freeze({ content: text }) });
   if (message.message_type === 'markdown') return Object.freeze({ msgtype: 'markdown', markdown: Object.freeze({ content: text }) });
   throw new TypeError(P2_G1_SENDER_ERROR_CODES.requestInvalid);
 }
