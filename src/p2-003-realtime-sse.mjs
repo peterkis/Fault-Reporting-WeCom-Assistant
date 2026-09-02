@@ -1354,6 +1354,24 @@ export function createRealtimeSseHandler(options = {}) {
     return hubWakeup.call(wakeupHub);
   }
 
+  function disconnectPrincipal(principalId) {
+    if (typeof principalId !== 'string' || principalId.length < 1 || principalId.length > 128) {
+      throw new TypeError('Realtime SSE principal disconnect configuration is invalid.');
+    }
+    let disconnectedCount = 0;
+    for (const state of [...streams]) {
+      let candidate = null;
+      try {
+        const descriptor = Object.getOwnPropertyDescriptor(state.principal, 'principal_id');
+        candidate = descriptor && Object.hasOwn(descriptor, 'value') ? descriptor.value : null;
+      } catch { candidate = null; }
+      if (candidate !== principalId) continue;
+      cleanupStream(state, { destroy: true });
+      disconnectedCount += 1;
+    }
+    return Object.freeze({ disconnected_count: disconnectedCount });
+  }
+
   Object.defineProperties(handler, {
     handle: { value: handler, enumerable: true },
     close: { value: close, enumerable: true },
@@ -1361,6 +1379,7 @@ export function createRealtimeSseHandler(options = {}) {
     metrics: { value: getMetrics, enumerable: true },
     wakeup: { value: wakeup, enumerable: true },
     notify: { value: wakeup, enumerable: true },
+    disconnectPrincipal: { value: disconnectPrincipal, enumerable: true },
     wakeupHub: { value: wakeupHub, enumerable: true },
     hubSnapshot: {
       value: () => (hubSnapshot ? hubSnapshot.call(wakeupHub) : null),

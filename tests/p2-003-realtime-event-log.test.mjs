@@ -847,6 +847,33 @@ test('restricted-admin defense-in-depth closes a malicious replay without delive
   await handler.close();
 });
 
+test('controlled principal disconnect closes only the selected SSE client', async () => {
+  const principalA = '01990c80-0000-7000-8000-000000000011';
+  const principalB = '01990c80-0000-7000-8000-000000000012';
+  const handler = createRealtimeSseHandler({
+    enabled: true,
+    eventStore: fakeEventStore(),
+    authenticate: async (request) => ({ principal_id: request.headers.principal_id }),
+    authorize: async () => ({ allowed_session_ids: [SESSION_ID] }),
+    setIntervalFn: () => ({ unref() {} }),
+    clearIntervalFn: () => {},
+  });
+  const responseA = new FakeResponse();
+  const responseB = new FakeResponse();
+  const servingA = handler(new FakeRequest({ headers: { principal_id: principalA } }), responseA);
+  const servingB = handler(new FakeRequest({ headers: { principal_id: principalB } }), responseB);
+  while (handler.getMetrics().active_clients < 2) await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(handler.disconnectPrincipal(principalA), { disconnected_count: 1 });
+  await servingA;
+  assert.equal(responseA.destroyed, true);
+  assert.equal(responseB.destroyed, false);
+  assert.equal(handler.getMetrics().active_clients, 1);
+  assert.deepEqual(handler.disconnectPrincipal(principalA), { disconnected_count: 0 });
+  await handler.close();
+  await servingB;
+  assert.equal(handler.getMetrics().active_clients, 0);
+});
+
 test('disabled handler returns safe polling fallback with zero database calls and no timers', async () => {
   let queryCount = 0;
   const pool = {

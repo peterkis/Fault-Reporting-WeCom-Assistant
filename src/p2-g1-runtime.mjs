@@ -189,5 +189,10 @@ export function createP2G1Runtime({
     observability,
     authenticate,
     assembly,
+    disconnectRealtimePrincipal: (index = 0) => {
+      const identities = principalIds ?? [principalId];
+      if (!Number.isInteger(index) || index < 0 || index >= identities.length) throw new TypeError('P2_G1_REALTIME_PRINCIPAL_INDEX_INVALID');
+      return realtime.disconnectPrincipal(identities[index]);
+    },
   });
 }

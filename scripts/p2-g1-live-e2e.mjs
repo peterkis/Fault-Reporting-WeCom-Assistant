@@ -129,6 +129,12 @@ async function main() {
   process.stdin.on('data', (chunk) => {
     const commands = String(chunk).split(/\r?\n/u).map((line) => line.trim());
     if (commands.includes('stop')) void stop('STDIN_STOP');
+    if (commands.includes('sse-disconnect-a')) {
+      try {
+        const result = runtime.disconnectRealtimePrincipal(0);
+        console.log(JSON.stringify({ event: 'p2_g1_sse_principal_disconnected', run_id: runId, disconnected_count: result.disconnected_count, raw_identifiers_recorded: false }));
+      } catch { console.log(JSON.stringify({ event: 'p2_g1_sse_principal_disconnect_failed', run_id: runId, raw_identifiers_recorded: false })); }
+    }
     if (commands.includes('telemetry') && browserSessions) {
       void browserSessions.safeTelemetry().then(async (sessions) => {
         const observation = safeEvent(runId, 'browser_safe_telemetry', {

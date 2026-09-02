@@ -148,6 +148,7 @@ test('live script has no broad --live mode and no default live-send npm command'
   assert.match(live, /supported_modes: P2_G1_LIVE_MODES/u);
   assert.match(live, /p2_g1_live_ready/u);
   assert.match(live, /raw_identifiers_recorded: false/u);
+  assert.match(live, /sse-disconnect-a/u);
   assert.match(browserSessions, /Network\.setCookie/u);
   assert.match(browserSessions, /httpOnly: true/u);
   assert.match(browserSessions, /Promise\.race\(\[command\('Browser\.close'\), delay\(2_000\)\]\)/u);
