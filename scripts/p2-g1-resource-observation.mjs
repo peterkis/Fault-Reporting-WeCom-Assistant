@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import { appendFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { Pool } from 'pg';
@@ -89,6 +89,39 @@ async function waitForBrowsers(browserSessions, { timeoutMs = 30_000 } = {}) {
   throw new Error('P2_G1_RESOURCE_BROWSER_READY_TIMEOUT');
 }
 
+export async function submitP2G1ResourceInternalNote(origin, cookie, text) {
+  const headers = { cookie: `${cookie.name}=${cookie.value}` };
+  const bootstrapResponse = await fetch(`${origin}/api/workbench/bootstrap`, { headers, signal: AbortSignal.timeout(5_000) });
+  const bootstrap = await bootstrapResponse.json();
+  const listResponse = await fetch(`${origin}/api/conversations?state=open&limit=1`, { headers, signal: AbortSignal.timeout(5_000) });
+  const list = await listResponse.json();
+  const sessionId = list?.items?.[0]?.session?.session_id;
+  if (!bootstrapResponse.ok || !listResponse.ok || typeof bootstrap?.csrf_token !== 'string' || typeof sessionId !== 'string') {
+    throw new Error('P2_G1_RESOURCE_WORKLOAD_CONTEXT_UNAVAILABLE');
+  }
+  const detailResponse = await fetch(`${origin}/api/conversations/${sessionId}`, { headers, signal: AbortSignal.timeout(5_000) });
+  const detail = await detailResponse.json();
+  const rowVersion = detail?.session?.row_version;
+  if (!detailResponse.ok || !Number.isSafeInteger(rowVersion) || rowVersion < 0) throw new Error('P2_G1_RESOURCE_WORKLOAD_CONTEXT_UNAVAILABLE');
+  const commandId = randomUUID();
+  const response = await fetch(`${origin}/api/conversations/${sessionId}/internal-notes`, {
+    method: 'POST',
+    headers: {
+      ...headers,
+      origin,
+      'content-type': 'application/json',
+      'x-csrf-token': bootstrap.csrf_token,
+      'sec-fetch-site': 'same-origin',
+      'idempotency-key': commandId,
+      'if-match': `"${rowVersion}"`,
+    },
+    body: JSON.stringify({ expected_row_version: rowVersion, client_command_id: commandId, text }),
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (response.status !== 201) throw new Error('P2_G1_RESOURCE_WORKLOAD_SUBMIT_FAILED');
+  return Object.freeze({ submitted: true });
+}
+
 export async function runP2G1ResourceObservation({
   databaseUrl, identityHashKey, botId, secret, wsUrl, liveCandidate,
   listenPort = 3200, durationMs = MINIMUM_DURATION_MS, headless = false, onProgress = () => {},
@@ -136,7 +169,7 @@ export async function runP2G1ResourceObservation({
       }));
       if (sample.elapsed_ms >= nextWorkAt && sample.elapsed_ms < durationMs - 60_000) {
         const text = ['P2G1', 'RESOURCE', observationRunId.slice(-6), String(periodicWorkCount + 1).padStart(2, '0')].join('-');
-        await browsers.submitInternalNote({ sessionIndex: 0, text });
+        await submitP2G1ResourceInternalNote(runtime.origin, runtime.cookies[0], text);
         periodicWorkCount += 1; nextWorkAt += WORK_INTERVAL_MS;
       }
       const remaining = durationMs - (Date.now() - started);

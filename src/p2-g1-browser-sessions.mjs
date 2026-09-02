@@ -155,13 +155,18 @@ async function launchOne({ executable, origin, cookie, label, headless }) {
       if (!message.id || !pending.has(message.id)) return;
       const request = pending.get(message.id);
       pending.delete(message.id);
+      clearTimeout(request.timer);
       if (message.error) request.reject(new Error('P2_G1_TEST_BROWSER_COMMAND_FAILED'));
       else request.resolve(message.result);
     });
-    function command(method, params = {}) {
+    function command(method, params = {}, { timeoutMs = 15_000 } = {}) {
       const id = ++sequence;
       return new Promise((resolveCommand, reject) => {
-        pending.set(id, { resolve: resolveCommand, reject });
+        const timer = setTimeout(() => {
+          pending.delete(id);
+          reject(new Error('P2_G1_TEST_BROWSER_COMMAND_TIMEOUT'));
+        }, timeoutMs);
+        pending.set(id, { resolve: resolveCommand, reject, timer });
         socket.send(JSON.stringify({ id, method, params }));
       });
     }

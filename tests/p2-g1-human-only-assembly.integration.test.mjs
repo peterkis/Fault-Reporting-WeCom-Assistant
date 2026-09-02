@@ -29,6 +29,7 @@ import { createP2G1ProcessCluster } from '../src/p2-g1-process-cluster.mjs';
 import { createP2G1Runtime } from '../src/p2-g1-runtime.mjs';
 import { assertNoP2006Residual, catalogSnapshot, withP2006IsolatedDatabase } from './helpers/p2-006-postgres-harness.mjs';
 import { runP2G1ReplayGap } from '../scripts/p2-g1-replay-gap-e2e.mjs';
+import { submitP2G1ResourceInternalNote } from '../scripts/p2-g1-resource-observation.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) throw new Error('P2_G1_INTEGRATION_DATABASE_REQUIRED');
@@ -318,6 +319,8 @@ test('P2-G1 process cluster runs App, Worker and Gateway in three bounded Node p
   await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1cluster', run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
     await base(pool);
     const principals = [await principal(pool, 'cluster-a'), await principal(pool, 'cluster-b')];
+    const seed = createP2G1HumanOnlyAssembly({ operationalIntake: operational(pool), coordinator: createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20 }), privacyClass: 'INTERNAL' });
+    assert.equal((await seed.handleFrame(frame({ msgId: `p2-g1-cluster-${randomUUID()}`, sender: 'synthetic-cluster-participant', text: '新报修：合成分进程资源负载。' }))).ok, true);
     const port = await reservePort();
     const cluster = createP2G1ProcessCluster({
       databaseUrl: isolatedDatabaseUrl,
@@ -343,6 +346,18 @@ test('P2-G1 process cluster runs App, Worker and Gateway in three bounded Node p
         assert.equal(Number.isFinite(metrics[field]) && metrics[field] >= 0, true, field);
       }
       assert.equal(metrics.total_rss_bytes, metrics.app_rss_bytes + metrics.worker_rss_bytes + metrics.gateway_rss_bytes);
+      const beforeNote = await pool.query(`SELECT
+        (SELECT count(*)::int FROM communication.message WHERE purpose='INTERNAL_NOTE') messages,
+        (SELECT count(*)::int FROM communication.outbox) outboxes,
+        (SELECT count(*)::int FROM communication.delivery) deliveries`);
+      await submitP2G1ResourceInternalNote(started.origin, started.cookies[0], 'Synthetic bounded resource note');
+      const afterNote = await pool.query(`SELECT
+        (SELECT count(*)::int FROM communication.message WHERE purpose='INTERNAL_NOTE') messages,
+        (SELECT count(*)::int FROM communication.outbox) outboxes,
+        (SELECT count(*)::int FROM communication.delivery) deliveries`);
+      assert.equal(afterNote.rows[0].messages - beforeNote.rows[0].messages, 1);
+      assert.equal(afterNote.rows[0].outboxes - beforeNote.rows[0].outboxes, 0);
+      assert.equal(afterNote.rows[0].deliveries - beforeNote.rows[0].deliveries, 0);
       t.diagnostic(JSON.stringify({ process_count: 3, app_pool_max: 4, worker_pool_max: 2, gateway_pool_max: 1, combined_runtime: false, raw_identifiers_recorded: false }));
     } finally {
       const stopped = await cluster.stop();
