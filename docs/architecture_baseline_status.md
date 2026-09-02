@@ -5,13 +5,13 @@
 - 状态：ACTIVE
 - 当前阶段：P2 / IN_PROGRESS
 - 最近完成任务：P2-006 / DONE
-- 当前活动 Lane：ASSEMBLY
-- 最后完成任务：P2-006（2026-09-01）
-- 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001 至 P2-006
-- 当前活动任务与 Lane：P2-G1 / ASSEMBLY
-- 当前任务：P2-G1 / READY_FOR_LIVE_E2E / ASSEMBLY
-- 下一任务候选：P2-G1-LIVE（未授权）
-- P2-G1：READY_FOR_LIVE_E2E（不是 PASSED / GO）
+- 当前活动 Lane：无
+- 最后完成任务：P2-G1（2026-09-02）
+- 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001 至 P2-006；P2-G1
+- 当前活动任务与 Lane：无
+- 当前 Gate：P2-G1 / PASSED
+- 下一任务候选：P2-007（未授权）
+- P2-G1：PASSED（不是 Phase 2 GO、生产或临床批准）
 - P2/P3 Feature Flags：全部 `false`
 - P3：TODO / 未启动
 - 上一基线：V1.3
@@ -93,7 +93,7 @@ P1 退出条件为：漏单 0、重复单 0、状态/事件/通知一致、真�
 
 ## 6. Phase 2
 
-P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 至 P2-006 均已完成；P2-006 完成 Evidence 为 `evidence/p2-006-realtime-workbench-report.md`。项目负责人于 2026-09-01 独立授权 P2-G1 Human-only Assembly，当前活动 Lane 为 `ASSEMBLY`。P2-007 及以后任务和其他 Lane 实现仍须另行授权。所有提交的 Feature Flag 默认值保持关闭。
+P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 于 2026-09-02 完成真实现场 Gate 并取得项目负责人批准，完成 Evidence 为 `evidence/p2-g1-project-owner-approval.md`。当前无活动 Lane；P2-007 及以后任务和 P2-G2 及以后 Gate 仍须另行授权。所有提交的 Feature Flag 默认值保持关闭。
 
 固定顺序：
 
@@ -137,7 +137,7 @@ P3 非目标：历史导入、未完结切换、旧编号/状态/附件兼容、
 
 ## 9. 并行开发
 
-架构上定义八条 Lane，P2-A 的 P2-001、P2-002、P2-003 与 P2-B 的 P2-004、P2-005、P2-006 已完成；当前仅 P2-G1 `ASSEMBLY` Lane 活动。其他 Lane 只能读取冻结 Contract。P2-007 及以后任务、P2-G2 及以后 Gate 和 P3 均未获授权，所有 Feature Flag 默认关闭。
+架构上定义八条 Lane，P2-A 的 P2-001、P2-002、P2-003 与 P2-B 的 P2-004、P2-005、P2-006 已完成，P2-G1 已通过；当前无活动 Lane。其他 Lane 只能读取冻结 Contract。P2-007 及以后任务、P2-G2 及以后 Gate 和 P3 均未获授权，所有 Feature Flag 默认关闭。
 
 ## 10. 已废弃设计
 

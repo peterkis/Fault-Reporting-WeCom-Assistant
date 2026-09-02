@@ -44,6 +44,15 @@ const profiles = Object.freeze({
     p2006Status: 'DONE',
     p2g1Status: 'READY_FOR_LIVE_E2E',
   }),
+  P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-G1',
+    activeTask: null,
+    activeLane: null,
+    candidate: 'P2-007',
+    candidateAuthorized: false,
+    p2006Status: 'DONE',
+    p2g1Status: 'PASSED',
+  }),
 });
 
 test('V1.4 architecture validator passes', () => {
@@ -113,6 +122,14 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
   assert.equal(parallel.assembly_gates.filter((gate) => gate.id !== 'P2-G1').every((gate) => gate.status === 'NOT_STARTED'), true);
   assert.deepEqual(parallel.feature_flags_enabled, []);
   assert.equal(Object.values(parallel.feature_flag_defaults).every((value) => value === false), true);
+  if (profile.p2g1Status === 'PASSED') {
+    const approvalPath = 'evidence/p2-g1-project-owner-approval.md';
+    assert.equal(fs.existsSync(path.join(root, approvalPath)), true);
+    const approval = text(approvalPath);
+    assert.match(approval, /决策：PASSED/u);
+    assert.match(approval, /不授权：/u);
+    assert.match(approval, /P2-007 或 P2-G2/u);
+  }
 });
 
 test('P2-004 independent authorization and stop line are preserved', () => {

@@ -30,6 +30,10 @@
 - `evidence/p2-006-realtime-workbench-report.md`：P2-006 REST、权限、SSE、浏览器与性能验收 Evidence。
 - `evidence/p2-g1-start-authorization.md`：P2-G1 独立启动授权和固定基线 Evidence。
 - `evidence/p2-g1-assembly-readiness-report.md`：P2-G1 自动化 Assembly 与 Live E2E 就绪状态报告。
+- `evidence/p2-g1-live-e2e.jsonl`：P2-G1 真实现场与修复周期的追加式结构化 Evidence。
+- `evidence/p2-g1-resource-observation.jsonl`：60 分钟 controlled observation 分进程资源 Evidence。
+- `evidence/p2-g1-human-only-gate-report.md`：P2-G1 Human-only 现场 Gate 汇总报告。
+- `evidence/p2-g1-project-owner-approval.md`：项目负责人 P2-G1 `PASSED` 决定与后续停止线。
 
 ## ADR
 
@@ -74,11 +78,11 @@
 
 ## P2-G1 Assembly 状态
 
-- P2-003、P2-004、P2-005、P2-006：`DONE`；当前 P2-G1 为唯一活动 `ASSEMBLY` Lane；
+- P2-003、P2-004、P2-005、P2-006：`DONE`；P2-G1：`PASSED`；当前无活动 Lane；
 - `docs/42_p2_006_realtime_web_workbench.md`：Internal Alpha、REST/Auth、Query、Command、Delivery、SSE/Polling 与 UI 边界。
 - P2-007 至 P2-014 继续为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；
-- `P2-G1` 为 `READY_FOR_LIVE_E2E`（不是 `PASSED / GO`）；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
-- 未接真实 Workbench、企业微信新增 Sender、模型或医院内网；本完成不等同于生产或临床上线。
+- `P2-G1` 已完成真实测试 Workbench、企业微信 Sender、Replay Gap、恢复和资源现场 Gate；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
+- 未启用生产 Workbench、模型或医院内网；本 Gate 通过不等同于 Phase 2 Go、生产或临床上线。
 
 ## P2-005 契约、迁移、运行时与测试
 

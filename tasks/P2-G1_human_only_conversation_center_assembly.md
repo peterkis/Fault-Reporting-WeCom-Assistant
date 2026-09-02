@@ -1,8 +1,10 @@
 # P2-G1 Human-only Conversation Center Assembly
 
-- 状态：READY_FOR_LIVE_E2E
+- 状态：PASSED
 - 授权日期：2026-09-01
 - 授权 Evidence：`evidence/p2-g1-start-authorization.md`
+- 完成日期：2026-09-02
+- 完成 Evidence：`evidence/p2-g1-project-owner-approval.md`
 - 基线：`1c18d5653b17e4368b5fa057d513e1af1a8b4622`
 - 分支：`phase2/gate-p2-g1-human-only`
 - Lane：ASSEMBLY
@@ -41,3 +43,5 @@
 - 2026-09-01：项目负责人正式、独立授权启动 P2-G1 Human-only Assembly；`last_completed_task` 保持 P2-006。
 - 2026-09-01：启动核验确认分支、干净工作树、HEAD、`origin/main`、完成标签与 divergence 全部满足固定基线要求。
 - 2026-09-01：Human-only 自动化 Assembly、隔离 PostgreSQL、系统浏览器、故障/容量与既有 P1/P2 回归通过；状态更新为 `READY_FOR_LIVE_E2E`。真实企业微信与 60 分钟现场资源观察均未执行，P2-G1 不得标记 `PASSED / GO`。
+- 2026-09-02：独立修复周期完成隔离 PostgreSQL Replay Gap、App/Worker/Gateway 分进程运行与分进程遥测；最终全量回归、真实现场场景和 60 分钟 controlled observation 全部通过，失败 Evidence 保持不可变。
+- 2026-09-02：项目负责人明确确认 `批准 P2-G1 PASSED`，状态更新为 `PASSED`。当前无活动 Lane；P2-007、P2-G2、生产、临床、AI/OCR、Incident、P3、merge、push 和 tag 仍未授权。

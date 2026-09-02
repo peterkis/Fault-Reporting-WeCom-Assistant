@@ -14,10 +14,10 @@ P1 / P1-012 / DONE / GO
 当前阶段状态固定为：
 
 ```text
-P2 / P2-G1 / READY_FOR_LIVE_E2E / ASSEMBLY
+P2 / P2-G1 / PASSED / NO_ACTIVE_LANE
 ```
 
-V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-09-01 独立授权并完成 P2-006，并于同日另行授权 P2-G1 Human-only Conversation Center Assembly。P2-G1 自动化装配已完成，当前唯一活动 Gate 保持在 `READY_FOR_LIVE_E2E`，Lane 为 `ASSEMBLY`；真实现场执行未获本次进程授权，P2-007 及以后任务仍未授权，全部 P3 未启动。所有提交的 Feature Flag 默认值保持关闭。`READY_FOR_LIVE_E2E` 不等同于 Gate 通过、生产上线、临床上线、真实外发、最终生产前端或 AI 自动回复批准。
+V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-09-01 独立授权并完成 P2-006，并于同日另行授权 P2-G1 Human-only Conversation Center Assembly；2026-09-02 在真实测试企业微信现场 Evidence、隔离 Replay Gap、60 分钟 controlled observation 和负责人明确批准全部完成后，P2-G1 更新为 `PASSED`。当前无活动任务或 Lane；P2-007 及以后任务、P2-G2 及以后 Gate 仍未授权，全部 P3 未启动。所有提交的 Feature Flag 默认值保持关闭。`P2-G1 PASSED` 不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
 
 ## 2. 长期事实源
 
@@ -64,7 +64,7 @@ P1：
 
 ### Phase 2：Conversation Center 与 AI 协作
 
-P2 保持 `IN_PROGRESS`；P2-001 至 P2-006 均已完成，P2-G1 Human-only Assembly 已独立授权并正在 `ASSEMBLY` Lane 实施。P2-007 及以后任务不得启动，所有提交的 Feature Flag 默认值保持 `false`。若只有自动化 Assembly 证据而无真实企业微信现场证据和项目负责人批准，P2-G1 最多只能到 `READY_FOR_LIVE_E2E`。
+P2 保持 `IN_PROGRESS`；P2-001 至 P2-006 均已完成，P2-G1 Human-only Assembly 已于 2026-09-02 通过。当前无活动 Lane；P2-007 及以后任务和 P2-G2 及以后 Gate 不得启动，所有提交的 Feature Flag 默认值保持 `false`。P2-G1 的通过 Evidence 不授权生产、临床、AI/OCR、Incident、P3 或后续任务。
 
 P2 必须按以下顺序：
 

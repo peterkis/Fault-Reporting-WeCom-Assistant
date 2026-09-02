@@ -6,8 +6,8 @@
   "phase_name": "Conversation Center 与 AI 协作",
   "status": "IN_PROGRESS",
   "started": true,
-  "last_completed_task": "P2-006",
-  "active_task": "P2-G1",
+  "last_completed_task": "P2-G1",
+  "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -17,16 +17,18 @@
     "P2-005",
     "P2-006"
   ],
-  "active_lane": "ASSEMBLY",
-  "implementation_authorization_status": "P2_G1_READY_FOR_LIVE_E2E",
-  "p2_g1_status": "READY_FOR_LIVE_E2E",
-  "next_task_candidate": "P2-G1-LIVE",
+  "active_lane": null,
+  "implementation_authorization_status": "P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION",
+  "p2_g1_status": "PASSED",
+  "next_task_candidate": "P2-007",
   "next_task_authorized": false,
   "authorized_gates": [
     "P2-G1"
   ],
   "p2_g1_authorized_at": "2026-09-01",
   "p2_g1_authorization_evidence": "evidence/p2-g1-start-authorization.md",
+  "p2_g1_completed_at": "2026-09-02",
+  "p2_g1_completion_evidence": "evidence/p2-g1-project-owner-approval.md",
   "p2_001_completed_at": "2026-08-30",
   "p2_002_authorized_at": "2026-08-30",
   "p2_002_authorization_evidence": "evidence/p2-002-start-authorization.md",
@@ -100,7 +102,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_G1_READY_FOR_LIVE_E2E",
+    "activation_status": "P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

@@ -5,8 +5,8 @@
   "baseline_date": "2026-08-30",
   "source_base_commit": "1c18d5653b17e4368b5fa057d513e1af1a8b4622",
   "current_phase": "P2",
-  "last_completed_task": "P2-006",
-  "active_task": "P2-G1",
+  "last_completed_task": "P2-G1",
+  "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -16,16 +16,18 @@
     "P2-005",
     "P2-006"
   ],
-  "active_lane": "ASSEMBLY",
-  "implementation_authorization_status": "P2_G1_READY_FOR_LIVE_E2E",
-  "p2_g1_status": "READY_FOR_LIVE_E2E",
-  "next_task_candidate": "P2-G1-LIVE",
+  "active_lane": null,
+  "implementation_authorization_status": "P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION",
+  "p2_g1_status": "PASSED",
+  "next_task_candidate": "P2-007",
   "next_task_authorized": false,
   "authorized_gates": [
     "P2-G1"
   ],
   "p2_g1_authorized_at": "2026-09-01",
   "p2_g1_authorization_evidence": "evidence/p2-g1-start-authorization.md",
+  "p2_g1_completed_at": "2026-09-02",
+  "p2_g1_completion_evidence": "evidence/p2-g1-project-owner-approval.md",
   "status_values": [
     "TODO",
     "IN_PROGRESS",

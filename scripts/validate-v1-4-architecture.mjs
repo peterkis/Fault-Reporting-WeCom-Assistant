@@ -77,6 +77,17 @@ const LIFECYCLE_PROFILES = Object.freeze({
     manifestStatus: 'P2_P2_G1_READY_FOR_LIVE_E2E',
     projectStatus: 'p2_p2_g1_ready_for_live_e2e',
   }),
+  P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-G1',
+    activeTask: null,
+    activeLane: null,
+    candidate: 'P2-007',
+    candidateAuthorized: false,
+    p2006Status: 'DONE',
+    p2g1Status: 'PASSED',
+    manifestStatus: 'P2_P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION',
+    projectStatus: 'p2_p2_g1_passed_awaiting_p2_007_authorization',
+  }),
 });
 
 const manifest = json('MANIFEST.json');
@@ -290,6 +301,17 @@ check(sameArray(Object.keys(parallel.feature_flag_defaults ?? {}), expectedFeatu
 check(Object.values(parallel.feature_flag_defaults ?? {}).every((value) => value === false), 'all feature flag defaults remain false');
 check(parallel.assembly_gates.find((gate) => gate.id === 'P2-G1')?.status === (profile?.p2g1Status ?? 'NOT_STARTED'), 'P2-G1 gate matches the lifecycle profile');
 check(parallel.assembly_gates.filter((gate) => gate.id !== 'P2-G1').every((gate) => gate.status === 'NOT_STARTED'), 'later assembly gates remain NOT_STARTED');
+if (profile?.p2g1Status === 'PASSED') {
+  const completionEvidence = 'evidence/p2-g1-project-owner-approval.md';
+  const completionViews = [manifest, current, backlog, parallel, taskIndex, projectSummary.project];
+  check(completionViews.every((view) => view.p2_g1_completed_at === '2026-09-02'), 'all lifecycle views record the P2-G1 completion date');
+  check(completionViews.every((view) => view.p2_g1_completion_evidence === completionEvidence), 'all lifecycle views link the P2-G1 approval evidence');
+  check(fs.existsSync(path.join(root, completionEvidence)), 'P2-G1 approval evidence exists');
+  const approval = read(completionEvidence);
+  check(approval.includes('决策：PASSED'), 'P2-G1 approval records PASSED');
+  check(approval.includes('16a02a56e60bd3cdb845b069caa4e6847d3fff52'), 'P2-G1 approval identifies the live candidate');
+  check(approval.includes('P2-007') && approval.includes('不授权'), 'P2-G1 approval preserves the P2-007 stop line');
+}
 check(sameArray(parallel.lanes.map((lane) => lane.id), ['P2-A', 'P2-B', 'P2-C', 'P2-D', 'P3-A', 'P3-B', 'P3-C', 'P3-D']), 'parallel lane inventory remains complete');
 
 check(manifest.source_of_truth === 'Unified Ticket Core in this repository', 'manifest preserves Unified Ticket Core authority');

@@ -1,5 +1,13 @@
 # Changelog
 
+### P2-G1 Human-only Conversation Center Gate 通过
+
+- 2026-09-02：真实测试企业微信入站、Workbench、双 Principal 并发接管、内部备注隔离、人工回复与幂等、SSE 补放、Gateway 恢复均通过；Provider 明确 ACK，客户端人工观察完成。
+- 独立修复周期在隔离 PostgreSQL 测试数据库完成真实 HTTP 410 Replay Gap，未修改 Pilot 现场事件或 retention floor；App、Worker、Gateway 已拆分为独立进程并提供分进程资源遥测。
+- 完整 60 分钟 controlled observation 完成 61 次采样，无 OOM、持续单调内存增长、积压、未解释 Dead Letter/Reconciliation 或清理残留；最终全量回归 427/427 通过。
+- 批准状态同步后的首次全量回归为 426/427，失败仅来自测试把“不授权”标题与 P2-007 项目符号错误限定为同一行；修正该过窄断言后，架构定向测试 14/14、最终全量回归 427/427 通过。
+- 项目负责人明确批准 P2-G1 更新为 `PASSED`。P2 仍为 `IN_PROGRESS`，当前无活动 Lane；P2-007、P2-G2、生产、临床、AI/OCR、Incident、P3、merge、push 和 tag 均未授权。
+
 ### P2-G1 Human-only Conversation Center Assembly 就绪
 
 - 项目负责人于 2026-09-01 正式、独立授权 `P2-G1 / ASSEMBLY`；固定基线为 `1c18d5653b17e4368b5fa057d513e1af1a8b4622`。

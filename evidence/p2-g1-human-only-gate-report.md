@@ -2,9 +2,9 @@
 
 - 执行日期：2026-09-01 至 2026-09-02
 - 当前最新候选：`16a02a56e60bd3cdb845b069caa4e6847d3fff52`
-- 仓库基线状态：`READY_FOR_LIVE_E2E`
-- 本次现场技术结论：`AWAITING_PROJECT_OWNER_APPROVAL`
-- 项目负责人批准：`NOT PERFORMED`
+- 仓库基线状态：`PASSED`
+- 本次现场 Gate 结论：`PASSED`
+- 项目负责人批准：`PASSED / 2026-09-02`
 - 生产、临床、AI、OCR、Incident、P2-007、P3 授权：无
 
 本报告只记录专用测试 Bot、专用测试群、测试账号、两个 active Pilot Principal、真实 PostgreSQL Pilot 数据库和合成故障数据上的 P2-G1 现场执行。Replay Gap 使用隔离 PostgreSQL 测试数据库，未修改 Pilot 现场事件或 retention floor。本报告不是生产稳定性证明、临床负载证明或 24 小时 soak。
@@ -15,12 +15,14 @@
 
 - 全量串行回归：427/427 PASS，0 fail、0 skipped；
 - P2-G1 定向验证：12 个 unit、7 个 integration、3 个 browser 测试全部 PASS；
-- V1.4 架构校验：318 checks PASS；
+- V1.4 架构校验：324 checks PASS；
 - P2-G1 Gate、Replay Gap 和资源工具 `--check`：全部 PASS；
 - Replay Gap 最终现场运行：PASS；
 - 60 分钟 controlled observation：PASS。
 
 一次全量回归中的既有 P1-012 Gateway 重认证用例在高负载下触发 10 秒超时；该用例单独复验通过，随后最终全量 427/427 通过。失败结果未被用作候选通过证据。
+
+项目负责人批准后的第一次关闭状态回归为 426/427：批准文件使用“不授权”标题和独立的 P2-007 项目符号，而新增测试错误要求两者位于同一行。修正过窄的文档断言后，架构定向测试 14/14、最终全量回归 427/427 通过。该失败未被删除或作为通过结果。
 
 ## 现场场景结果
 
@@ -36,7 +38,7 @@
 | G2 | SSE Replay Gap | PASS | 隔离 PostgreSQL 测试数据库；cursor 早于 floor 后实际 HTTP 410；Workbench 通过 Last-Event-ID 触发 fallback，并重新获取列表、Detail 和 Timeline；重复 Timeline 为 0；Pilot 数据未改变 |
 | H | Gateway 断线重连 | PASS | 断开时 Readiness 降级；Message/Outbox/Delivery 各 +1，Provider 0；重连认证后 Provider 1、ACK、SENT；Unknown/新增 Dead Letter/Reconciliation 均为 0；客户端显示 1 次 |
 | I | 60 分钟资源观察 | PASS | 3 个独立 Node 进程、2 个 Edge 会话、61 次采样；总 RSS P95 224,878,592 bytes、最大 230,768,640 bytes；数据库连接利用率最大 6%；无 OOM、持续单调内存增长、积压、未解释 Dead Letter/Reconciliation 或清理残留 |
-| J | 项目负责人批准 | NOT PERFORMED | 技术条件已完成，等待项目负责人独立核对和明确决定；批准文件不存在 |
+| J | 项目负责人批准 | PASS | 项目负责人核对技术 Evidence 后明确确认 `批准 P2-G1 PASSED`；批准文件已创建 |
 
 ## 独立修复周期
 
@@ -107,6 +109,6 @@
 
 ## Gate 决定
 
-技术场景 A 至 I（含 Replay Gap）均已通过，证据引用最新候选 `16a02a56e60bd3cdb845b069caa4e6847d3fff52`。项目负责人 Gate 决定尚未执行，因此仓库基线继续保持 `READY_FOR_LIVE_E2E`，本报告状态为 `AWAITING_PROJECT_OWNER_APPROVAL`。
+技术场景 A 至 I（含 Replay Gap）均已通过，证据引用最新候选 `16a02a56e60bd3cdb845b069caa4e6847d3fff52`。项目负责人于 2026-09-02 明确批准 P2-G1，Gate 状态更新为 `PASSED`。
 
-在项目负责人明确核对并批准前，不得创建 `evidence/p2-g1-project-owner-approval.md`，不得把 P2-G1 更新为 `PASSED`。原始结构化记录见 `evidence/p2-g1-live-e2e.jsonl` 和 `evidence/p2-g1-resource-observation.jsonl`。
+批准 Evidence 见 `evidence/p2-g1-project-owner-approval.md`。P2 继续保持 `IN_PROGRESS`；P2-007、P2-G2、生产、临床、AI/OCR、Incident、P3、merge、push 和 tag 均未授权。原始结构化记录见 `evidence/p2-g1-live-e2e.jsonl` 和 `evidence/p2-g1-resource-observation.jsonl`。

@@ -2,7 +2,7 @@
 
 > 文件名为兼容既有索引保留。V1.4 的 P2 已不只是 AI Enhancement。
 
-> 状态（2026-09-01）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only 自动化 Assembly 已完成，当前为 `READY_FOR_LIVE_E2E / ASSEMBLY`。真实现场执行、P2-007 至 P2-014 均为 `REQUIRES_SEPARATE_AUTHORIZATION`。所有提交的 P2/P3 Feature Flag 默认值保持 `false`；当前没有真实现场 Evidence 或项目负责人 Gate 批准。
+> 状态（2026-09-02）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 已通过真实现场 Gate 和项目负责人批准。当前无活动 Lane；P2-007 至 P2-014、P2-G2 及以后 Gate 均为 `REQUIRES_SEPARATE_AUTHORIZATION`。所有提交的 P2/P3 Feature Flag 默认值保持 `false`。
 
 ## 阶段目标
 
@@ -37,7 +37,7 @@
 
 ## 任务总览
 
-当前完成项为 P2-001 至 P2-006；当前唯一活动 Gate 为 P2-G1。下表的依赖和目标 Gate 只表达
+当前完成项为 P2-001 至 P2-006，P2-G1 已通过；当前无活动 Gate 或 Lane。下表的依赖和目标 Gate 只表达
 规划关系，不构成后续任务或 Assembly Gate 的启动授权。
 
 | ID | 标题 | Lane | 依赖 | 目标 Gate |
@@ -61,7 +61,7 @@
 
 ### P2-G1 Human-only Conversation Center
 
-状态：`IN_PROGRESS / ASSEMBLY`（2026-09-01 独立授权）。若只有自动化 Evidence，终态上限为 `READY_FOR_LIVE_E2E`。
+状态：`PASSED`（2026-09-02；真实现场 Evidence、60 分钟 controlled observation 和项目负责人批准已完成）。
 
 - AI/OCR 全部关闭；
 - 真实数据库；

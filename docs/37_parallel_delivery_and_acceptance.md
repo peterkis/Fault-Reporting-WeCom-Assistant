@@ -2,7 +2,7 @@
 
 ## 1. 原则
 
-P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-001 至 P2-006 均已完成，并于 2026-09-01 另行授权 P2-G1 Human-only Assembly。当前唯一活动 Lane 为 `ASSEMBLY`；P2-007 及以后任务、P2-G2 及以后 Gate 和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有提交的 Feature Flag 默认关闭，本次授权不等同于 P2-G1 通过、生产、临床或 AI 自动回复批准。
+P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 于 2026-09-02 完成真实现场 Gate 并取得项目负责人批准。当前无活动 Lane；P2-007 及以后任务、P2-G2 及以后 Gate 和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有提交的 Feature Flag 默认关闭，P2-G1 通过不等同于生产、临床、最终生产前端或 AI 自动回复批准。
 
 ## 2. P2 Lanes
 
@@ -10,7 +10,7 @@ P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启�
 |---|---|---|
 | P2-A | Conversation Core、Timeline、Realtime Event Log | P2-001/P2-002/P2-003 已完成并冻结 |
 | P2-B | Communication Outbox、Handoff、Workbench | P2-004/P2-005/P2-006 已完成并冻结 |
-| ASSEMBLY | P1 与 P2-001 至 P2-006 Human-only 组装 | P2-G1 `READY_FOR_LIVE_E2E`；真实现场执行未授权 |
+| ASSEMBLY | P1 与 P2-001 至 P2-006 Human-only 组装 | P2-G1 `PASSED`；当前无活动 Assembly |
 | P2-C | Rules、DeepSeek Provider、Context/Memory、Rollout | 未授权；只读消费冻结 Contract |
 | P2-D | Media/OCR、Incident、Metrics | 未授权；只读消费冻结 Contract |
 
@@ -55,7 +55,7 @@ Wakeup Hub 不携带事件且不是 broker。详细 Contract 见
 `docs/39_p2_003_realtime_event_log_sse.md`，执行结果仅以
 `evidence/p2-003-realtime-event-log-sse-report.md` 为准。
 
-### P2-G1 Human-only Conversation Center（READY_FOR_LIVE_E2E）
+### P2-G1 Human-only Conversation Center（PASSED）
 
 - 实时查看消息；
 - 人工接管、分配和回复；
@@ -64,8 +64,9 @@ Wakeup Hub 不携带事件且不是 broker。详细 Contract 见
 - 重复命令不重复发送；
 - AI 全关时完整可用。
 
-P2-G1 已在 P2-001 至 P2-006 独立完成后完成自动化 Assembly。该结果不自动使 P2-G1
-`PASSED`；真实企业微信 Evidence、60 分钟现场资源观察与项目负责人批准仍是独立门槛。
+P2-G1 已在 P2-001 至 P2-006 独立完成后完成自动化 Assembly、真实企业微信 Evidence、
+隔离 Replay Gap、60 分钟现场资源观察与项目负责人批准，并于 2026-09-02 更新为 `PASSED`。
+该结果不授权 P2-007、P2-G2、生产、临床、AI/Media/Incident 或 P3。
 
 ### Assembly Contract 消费（P2-001 至 P2-006 已完成）
 
@@ -143,7 +144,6 @@ V1.4 不再要求历史数据 dry run、未完结工单切换、最终增量、�
 
 ## P2-G1 授权后的并行边界
 
-P2-B 的 P2-004、P2-005、P2-006 均已独立完成，当前仅 P2-G1 `ASSEMBLY` Lane 活动。不得把
-本地 Internal Alpha、合成 SSE 或 Mock Sender 结果解释为 Assembly Gate 通过；没有真实现场
-Evidence 与项目负责人批准时，状态只能是 `READY_FOR_LIVE_E2E`。P2-007、AI/Media/Incident、
-P3 和生产启用仍须另行授权。
+P2-B 的 P2-004、P2-005、P2-006 均已独立完成，P2-G1 已通过，当前无活动 Lane。P2-G1 的
+真实现场 Evidence 与项目负责人批准只关闭 Human-only Assembly Gate；P2-007、P2-G2、
+AI/Media/Incident、P3 和生产启用仍须另行授权。
