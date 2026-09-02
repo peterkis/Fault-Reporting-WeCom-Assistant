@@ -134,8 +134,24 @@ async function launchOne({ executable, origin, cookie, label, headless }) {
     });
     let sequence = 0;
     const pending = new Map();
+    const eventSourceRequests = new Map();
     socket.addEventListener('message', (event) => {
       const message = JSON.parse(String(event.data));
+      if (message.method === 'Network.requestWillBeSent' && message.params?.type === 'EventSource'
+        && typeof message.params?.requestId === 'string') {
+        eventSourceRequests.set(message.params.requestId, { last_event_id: false, status: null });
+      }
+      if (message.method === 'Network.requestWillBeSentExtraInfo' && typeof message.params?.requestId === 'string'
+        && eventSourceRequests.has(message.params.requestId)) {
+        const headers = message.params.headers ?? {};
+        const cursorHeaderPresent = Object.keys(headers).some((name) => name.toLowerCase() === 'last-event-id');
+        eventSourceRequests.get(message.params.requestId).last_event_id ||= cursorHeaderPresent;
+      }
+      if (message.method === 'Network.responseReceived' && message.params?.type === 'EventSource'
+        && typeof message.params?.requestId === 'string' && eventSourceRequests.has(message.params.requestId)) {
+        const status = Number(message.params?.response?.status);
+        eventSourceRequests.get(message.params.requestId).status = Number.isInteger(status) && status >= 100 && status <= 599 ? status : null;
+      }
       if (!message.id || !pending.has(message.id)) return;
       const request = pending.get(message.id);
       pending.delete(message.id);
@@ -169,14 +185,19 @@ async function launchOne({ executable, origin, cookie, label, headless }) {
 
     async function safeTelemetry() {
       const evaluated = await command('Runtime.evaluate', {
-        expression: 'JSON.stringify(window.__p2g1SafeTelemetry ?? {sse:[],fetch:[]})',
+        expression: `JSON.stringify({
+          telemetry: window.__p2g1SafeTelemetry ?? {sse:[],fetch:[]},
+          connection_label: document.querySelector('#connection-label')?.textContent ?? 'UNKNOWN',
+          timeline_item_count: document.querySelectorAll('#timeline .timeline-item').length
+        })`,
         returnByValue: true,
       });
-      const value = JSON.parse(evaluated?.result?.value ?? '{"sse":[],"fetch":[]}');
-      const sse = (Array.isArray(value.sse) ? value.sse : []).filter((entry) => entry
+      const value = JSON.parse(evaluated?.result?.value ?? '{"telemetry":{"sse":[],"fetch":[]},"connection_label":"UNKNOWN","timeline_item_count":0}');
+      const telemetry = value.telemetry ?? {};
+      const sse = (Array.isArray(telemetry.sse) ? telemetry.sse : []).filter((entry) => entry
         && SAFE_REALTIME_EVENT_TYPES.includes(entry.event_type) && Number.isSafeInteger(entry.received_ms))
         .slice(0, 1000).map((entry) => Object.freeze({ event_type: entry.event_type, received_ms: entry.received_ms }));
-      const fetchEntries = (Array.isArray(value.fetch) ? value.fetch : []).filter((entry) => entry
+      const fetchEntries = (Array.isArray(telemetry.fetch) ? telemetry.fetch : []).filter((entry) => entry
         && SAFE_FETCH_CATEGORIES.includes(entry.category) && Number.isSafeInteger(entry.start_ms)
         && Number.isSafeInteger(entry.end_ms) && entry.end_ms >= entry.start_ms
         && Number.isInteger(entry.status) && entry.status >= 0 && entry.status <= 599)
@@ -187,7 +208,60 @@ async function launchOne({ executable, origin, cookie, label, headless }) {
         session_label: label,
         sse: Object.freeze(sse),
         fetch: Object.freeze(fetchEntries),
+        connection_label: ['实时连接','轮询模式','正在连接','不可用'].includes(value.connection_label) ? value.connection_label : 'UNKNOWN',
+        timeline_item_count: Number.isSafeInteger(value.timeline_item_count) && value.timeline_item_count >= 0 ? value.timeline_item_count : 0,
+        eventsource_request_count: eventSourceRequests.size,
+        eventsource_last_event_id_request_count: [...eventSourceRequests.values()].filter((entry) => entry.last_event_id).length,
+        eventsource_http_410_count: [...eventSourceRequests.values()].filter((entry) => entry.status === 410).length,
       });
+    }
+
+    async function selectFirstConversation() {
+      const evaluated = await command('Runtime.evaluate', {
+        expression: `(async () => {
+          const wait = (operation, timeout = 15000) => new Promise((resolve, reject) => {
+            const started = Date.now(); const timer = setInterval(() => {
+              try { const value = operation(); if (value) { clearInterval(timer); resolve(value); }
+              else if (Date.now() - started >= timeout) { clearInterval(timer); reject(new Error('timeout')); } }
+              catch (error) { clearInterval(timer); reject(error); }
+            }, 50);
+          });
+          const card = await wait(() => document.querySelector('.conversation-card'));
+          card.click();
+          await wait(() => document.querySelector('#conversation-view')?.hidden === false);
+          return { selected: true };
+        })()`,
+        awaitPromise: true,
+        returnByValue: true,
+      });
+      if (evaluated?.exceptionDetails || evaluated?.result?.value?.selected !== true) throw new Error('P2_G1_TEST_BROWSER_SELECTION_FAILED');
+      return Object.freeze({ selected: true, session_label: label });
+    }
+
+    async function submitInternalNote(text) {
+      if (typeof text !== 'string' || text.length < 1 || text.length > 20_480) throw new TypeError('P2_G1_TEST_BROWSER_NOTE_INVALID');
+      const evaluated = await command('Runtime.evaluate', {
+        expression: `(async () => {
+          const wait = (operation, timeout = 15000) => new Promise((resolve, reject) => {
+            const started = Date.now(); const timer = setInterval(() => {
+              try { const value = operation(); if (value) { clearInterval(timer); resolve(value); }
+              else if (Date.now() - started >= timeout) { clearInterval(timer); reject(new Error('timeout')); } }
+              catch (error) { clearInterval(timer); reject(error); }
+            }, 50);
+          });
+          if (document.querySelector('#conversation-view')?.hidden !== false) throw new Error('no-selection');
+          const status = document.querySelector('#status-live'); status.textContent = '';
+          document.querySelector('[data-compose="note"]').click();
+          const area = document.querySelector('#message-text'); area.value = ${JSON.stringify(text)}; area.dispatchEvent(new Event('input', { bubbles: true }));
+          document.querySelector('#composer').requestSubmit();
+          await wait(() => status.textContent.includes('内部备注已保存'));
+          return { submitted: true };
+        })()`,
+        awaitPromise: true,
+        returnByValue: true,
+      });
+      if (evaluated?.exceptionDetails || evaluated?.result?.value?.submitted !== true) throw new Error('P2_G1_TEST_BROWSER_NOTE_FAILED');
+      return Object.freeze({ submitted: true, session_label: label });
     }
 
     async function close() {
@@ -200,7 +274,7 @@ async function launchOne({ executable, origin, cookie, label, headless }) {
       });
       await removeProfile(profile);
     }
-    return Object.freeze({ close, safeTelemetry });
+    return Object.freeze({ close, safeTelemetry, selectFirstConversation, submitInternalNote });
   } catch (error) {
     if (child.exitCode === null) child.kill();
     await removeProfile(profile).catch(() => {});
@@ -227,6 +301,11 @@ export async function launchP2G1TestBrowserSessions({ origin, cookies, headless 
   return Object.freeze({
     count: sessions.length,
     safeTelemetry: async () => Object.freeze(await Promise.all(sessions.map((session) => session.safeTelemetry()))),
+    selectFirstConversations: async () => Object.freeze(await Promise.all(sessions.map((session) => session.selectFirstConversation()))),
+    submitInternalNote: async ({ sessionIndex = 0, text } = {}) => {
+      if (!Number.isInteger(sessionIndex) || sessionIndex < 0 || sessionIndex >= sessions.length) throw new TypeError('P2_G1_TEST_BROWSER_SESSION_INVALID');
+      return sessions[sessionIndex].submitInternalNote(text);
+    },
     close: async () => { await Promise.allSettled(sessions.map((session) => session.close())); },
   });
 }

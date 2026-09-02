@@ -4,6 +4,7 @@ export const P2_G1_TEST_AUTH_ERROR_CODES = Object.freeze({
   configurationInvalid: 'P2_G1_TEST_AUTH_CONFIGURATION_INVALID',
   principalForbidden: 'P2_G1_TEST_AUTH_PRINCIPAL_FORBIDDEN',
 });
+export const P2_G1_TEST_AUTH_MAX_TTL_MS = 65 * 60_000;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
@@ -62,7 +63,7 @@ export function createP2G1TestAuthentication({
   const configuredCsrfTokens = csrfTokens === null && identities.length === 1 ? [csrfToken] : configuredSecrets(csrfTokens, identities.length, 16);
   if (!pool || typeof pool.query !== 'function'
     || typeof publicOrigin !== 'string' || !/^https?:\/\/127\.0\.0\.1(?::\d+)?$/u.test(publicOrigin)
-    || !Number.isInteger(ttlMs) || ttlMs < 10_000 || ttlMs > 3_600_000
+    || !Number.isInteger(ttlMs) || ttlMs < 10_000 || ttlMs > P2_G1_TEST_AUTH_MAX_TTL_MS
     || typeof now !== 'function'
     || !/^[A-Za-z][A-Za-z0-9_]{0,63}$/u.test(cookieName)) {
     throw new TypeError(P2_G1_TEST_AUTH_ERROR_CODES.configurationInvalid);

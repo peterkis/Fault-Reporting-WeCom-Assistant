@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createServer as createNetServer } from 'node:net';
 import { test } from 'node:test';
+import { Pool } from 'pg';
 
 import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
 import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
@@ -24,8 +25,10 @@ import { createConversationWorkbenchQueryService } from '../src/p2-006-workbench
 import { createP2G1HumanOnlyAssembly, createP2G1PilotOperationalIntake } from '../src/p2-g1-human-only-assembly.mjs';
 import { createP2G1InboundProjectionCoordinator } from '../src/p2-g1-inbound-projection-coordinator.mjs';
 import { captureP2G1CatalogSnapshot } from '../src/p2-g1-observability.mjs';
+import { createP2G1ProcessCluster } from '../src/p2-g1-process-cluster.mjs';
 import { createP2G1Runtime } from '../src/p2-g1-runtime.mjs';
 import { assertNoP2006Residual, catalogSnapshot, withP2006IsolatedDatabase } from './helpers/p2-006-postgres-harness.mjs';
+import { runP2G1ReplayGap } from '../scripts/p2-g1-replay-gap-e2e.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) throw new Error('P2_G1_INTEGRATION_DATABASE_REQUIRED');
@@ -309,6 +312,72 @@ test('P2-G1 local runtime binds one loopback App and reports human-only readines
       await runtime.stop();
     }
   } });
+});
+
+test('P2-G1 process cluster runs App, Worker and Gateway in three bounded Node processes', { timeout: TIMEOUT }, async (t) => {
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1cluster', run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
+    await base(pool);
+    const principals = [await principal(pool, 'cluster-a'), await principal(pool, 'cluster-b')];
+    const port = await reservePort();
+    const cluster = createP2G1ProcessCluster({
+      databaseUrl: isolatedDatabaseUrl,
+      identityHashKey: 'synthetic-p2-g1-cluster-hash-key',
+      principalIds: principals.map((value) => value.id),
+      listenPort: port,
+      gatewayEnabled: false,
+      senderEnabled: false,
+      allowedTargetHashes: [],
+    });
+    try {
+      const started = await cluster.start();
+      assert.equal(started.process_count, 3);
+      assert.equal(started.origin, `http://127.0.0.1:${port}`);
+      assert.equal(started.cookies.length, 2);
+      assert.equal(started.readiness.ok, true);
+      const metrics = await cluster.metrics();
+      assert.equal(metrics.process_count, 3);
+      assert.equal(metrics.app_pool_max, 4);
+      assert.equal(metrics.worker_pool_max, 2);
+      assert.equal(metrics.gateway_pool_max, 1);
+      for (const field of ['app_rss_bytes','worker_rss_bytes','gateway_rss_bytes','total_rss_bytes','total_heap_used_bytes','postgres_active_connections','postgres_idle_connections','postgres_max_connections']) {
+        assert.equal(Number.isFinite(metrics[field]) && metrics[field] >= 0, true, field);
+      }
+      assert.equal(metrics.total_rss_bytes, metrics.app_rss_bytes + metrics.worker_rss_bytes + metrics.gateway_rss_bytes);
+      t.diagnostic(JSON.stringify({ process_count: 3, app_pool_max: 4, worker_pool_max: 2, gateway_pool_max: 1, combined_runtime: false, raw_identifiers_recorded: false }));
+    } finally {
+      const stopped = await cluster.stop();
+      assert.equal(stopped.process_count, 0);
+    }
+  } });
+});
+
+test('P2-G1 isolated PostgreSQL Replay Gap drives real Edge through Last-Event-ID, 410 and refetch', { timeout: TIMEOUT }, async (t) => {
+  const result = await runP2G1ReplayGap({
+    databaseUrl,
+    identityHashKey: 'synthetic-p2-g1-replay-gap-hash-key',
+    liveCandidate: 'a'.repeat(40),
+    headless: true,
+  });
+  assert.equal(result.outcome, 'PASS');
+  assert.equal(result.database_scope, 'ISOLATED_POSTGRESQL_TEST_DATABASE');
+  assert.equal(result.pilot_database_mutated, false);
+  assert.equal(result.http_status, 410);
+  assert.equal(result.eventsource_last_event_id_used, true);
+  assert.ok(result.eventsource_http_410_count >= 1);
+  assert.equal(result.list_refetched, true);
+  assert.equal(result.detail_refetched, true);
+  assert.equal(result.timeline_refetched, true);
+  assert.equal(result.duplicate_timeline_item_count, 0);
+  assert.equal(result.process_count, 3);
+  assert.equal(result.combined_runtime, false);
+  assert.equal(result.browser_cleanup, true);
+  assert.equal(result.process_cleanup, true);
+  const residualPool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000 });
+  try {
+    const residual = await residualPool.query("SELECT count(*)::int AS count FROM pg_database WHERE datname LIKE 'p2_g1_isolated_replaygap_%'");
+    assert.equal(residual.rows[0].count, 0);
+  } finally { await residualPool.end(); }
+  t.diagnostic(JSON.stringify({ http_status: 410, last_event_id: true, refetch: ['LIST','DETAIL','TIMELINE'], process_count: 3, isolated_database_cleanup: true }));
 });
 
 test('P2-G1 bounded capacity projects 1000 synthetic inbound facts and drains 500 deliveries with no catalog drift', { timeout: TIMEOUT }, async (t) => {

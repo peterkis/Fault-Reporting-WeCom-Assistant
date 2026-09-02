@@ -1,0 +1,283 @@
+import { randomUUID } from 'node:crypto';
+import { pathToFileURL } from 'node:url';
+import { Pool } from 'pg';
+
+import { createCommunicationDeliveryWorker } from '../src/p2-004-communication-delivery-worker.mjs';
+import { createP2G1HumanOnlyAssembly, createP2G1PilotOperationalIntake } from '../src/p2-g1-human-only-assembly.mjs';
+import { createP2G1ProcessMetrics, P2_G1_PROCESS_ROLES } from '../src/p2-g1-process-metrics.mjs';
+import { createP2G1Runtime } from '../src/p2-g1-runtime.mjs';
+import { createP2G1WeComGateway } from '../src/p2-g1-wecom-gateway.mjs';
+import { createP2G1WeComCommunicationSender } from '../src/p2-g1-wecom-sender.mjs';
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+
+function role(argv) {
+  const value = argv.find((entry) => entry.startsWith('--role='))?.slice('--role='.length)?.toUpperCase();
+  if (!P2_G1_PROCESS_ROLES.includes(value) || argv.length !== 1) throw new Error('P2_G1_PROCESS_ROLE_INVALID');
+  return value;
+}
+
+function required(name, pattern = /^.+$/u) {
+  const value = process.env[name];
+  if (typeof value !== 'string' || !pattern.test(value)) throw new Error('P2_G1_PROCESS_CONFIGURATION_INVALID');
+  return value;
+}
+
+function truth(name) { return process.env[name] === 'true'; }
+
+function send(value) {
+  if (typeof process.send !== 'function') throw new Error('P2_G1_PROCESS_IPC_REQUIRED');
+  process.send(value);
+}
+
+function stableFailure(currentRole) {
+  return `P2_G1_${currentRole}_PROCESS_FAILED`;
+}
+
+function safePoolMetrics(pool) {
+  return Object.freeze({
+    pool_total: Number(pool.totalCount ?? 0),
+    pool_idle: Number(pool.idleCount ?? 0),
+    pool_waiting: Number(pool.waitingCount ?? 0),
+    pool_max: Number(pool.options?.max ?? 0),
+  });
+}
+
+async function waitForGateway(gateway, { timeoutMs = 60_000 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (gateway.getStatus().authenticated === true) return true;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return false;
+}
+
+function configuredPrincipals() {
+  const values = required('P2_G1_TEST_PRINCIPAL_IDS').split(',').map((value) => value.trim().toLowerCase()).filter(Boolean);
+  if (values.length < 2 || values.length > 4 || new Set(values).size !== values.length || values.some((value) => !UUID.test(value))) {
+    throw new Error('P2_G1_PROCESS_CONFIGURATION_INVALID');
+  }
+  return values;
+}
+
+async function runApp() {
+  const pool = new Pool({
+    connectionString: required('PILOT_DATABASE_URL'),
+    max: 4,
+    connectionTimeoutMillis: 2_000,
+    application_name: 'p2_g1_app',
+  });
+  const metrics = createP2G1ProcessMetrics({ role: 'APP' });
+  const peer = { gatewayAuthenticated: !truth('P2_G1_REQUIRE_GATEWAY'), workerReady: false };
+  const runtime = createP2G1Runtime({
+    pool,
+    operationalIntake: createP2G1PilotOperationalIntake({ pool, identityHashKey: required('PILOT_LOG_IDENTITY_HASH_KEY', /^.{16,}$/u) }),
+    principalIds: configuredPrincipals(),
+    publicOrigin: `http://127.0.0.1:${Number(required('P2_G1_LISTEN_PORT', /^[0-9]{4,5}$/u))}`,
+    listenPort: Number(process.env.P2_G1_LISTEN_PORT),
+    allowedTargetHashes: [],
+    gatewayEnabled: false,
+    senderEnabled: false,
+    gatewayStatusProvider: { getStatus: () => ({ enabled: truth('P2_G1_REQUIRE_GATEWAY'), authenticated: peer.gatewayAuthenticated }) },
+    communicationStatusProvider: { isReady: () => peer.workerReady },
+    requireGateway: truth('P2_G1_REQUIRE_GATEWAY'),
+    testAuthTtlMs: Number(required('P2_G1_TEST_AUTH_TTL_MS', /^[0-9]{5,7}$/u)),
+    closePoolOnStop: true,
+  });
+  let stopping = false;
+  async function stop() {
+    if (stopping) return;
+    stopping = true;
+    await runtime.stop();
+    metrics.close();
+    send({ type: 'role-stopped', role: 'APP' });
+  }
+  process.on('message', (message) => {
+    if (!message || typeof message !== 'object') return;
+    if (message.type === 'peer-status') {
+      peer.gatewayAuthenticated = message.gateway_authenticated === true;
+      peer.workerReady = message.worker_ready === true;
+    }
+    if (message.type === 'metrics-request') {
+      send({ type: 'metrics-response', role: 'APP', request_id: message.request_id, metrics: { ...metrics.sample(), ...safePoolMetrics(pool) } });
+    }
+    if (message.type === 'sse-disconnect') {
+      try {
+        const result = runtime.disconnectRealtimePrincipal(message.principal_index);
+        send({ type: 'control-response', role: 'APP', request_id: message.request_id, ok: true, result });
+      } catch { send({ type: 'control-response', role: 'APP', request_id: message.request_id, ok: false, error_code: 'P2_G1_SSE_DISCONNECT_FAILED' }); }
+    }
+    if (message.type === 'stop') void stop().then(() => process.exit(0));
+  });
+  process.once('SIGTERM', () => void stop().then(() => process.exit(0)));
+  const started = await runtime.start();
+  send({ type: 'role-ready', role: 'APP', address: started.address, cookies: started.cookies, pool_max: 4 });
+}
+
+async function runGateway() {
+  const enabled = truth('P2_G1_GATEWAY_ENABLED');
+  const senderEnabled = truth('P2_G1_SENDER_ENABLED');
+  const pool = new Pool({
+    connectionString: required('PILOT_DATABASE_URL'),
+    max: 1,
+    connectionTimeoutMillis: 2_000,
+    application_name: 'p2_g1_gateway',
+  });
+  const metrics = createP2G1ProcessMetrics({ role: 'GATEWAY' });
+  let gateway;
+  if (enabled) {
+    const assembly = createP2G1HumanOnlyAssembly({
+      operationalIntake: createP2G1PilotOperationalIntake({ pool, identityHashKey: required('PILOT_LOG_IDENTITY_HASH_KEY', /^.{16,}$/u) }),
+      coordinator: null,
+      projectAfterCommit: false,
+    });
+    gateway = createP2G1WeComGateway({
+      enabled: true,
+      botId: required('WECOM_BOT_ID'),
+      secret: required('WECOM_BOT_SECRET'),
+      wsUrl: required('WECOM_WS_URL', /^wss:\/\//u),
+      onFrame: async (frame) => assembly.handleFrame(frame),
+    });
+  } else {
+    gateway = createP2G1WeComGateway({ enabled: false });
+  }
+  const allowedTargetHashes = enabled
+    ? required('P2_G1_ALLOWED_TARGET_HASHES', /^[a-f0-9]{64}(?:,[a-f0-9]{64})*$/u).split(',')
+    : [];
+  const sender = createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes, enabled: senderEnabled });
+  let stopping = false;
+  let lastStatus = '';
+  function publishStatus() {
+    const status = gateway.getStatus();
+    const safe = JSON.stringify({ enabled: status.enabled === true, started: status.started === true, authenticated: status.authenticated === true, reconnect_total: Number(status.reconnect_total ?? 0) });
+    if (safe !== lastStatus) {
+      lastStatus = safe;
+      send({ type: 'gateway-status', role: 'GATEWAY', status: JSON.parse(safe) });
+    }
+  }
+  const statusTimer = setInterval(publishStatus, 250);
+  async function stop() {
+    if (stopping) return;
+    stopping = true;
+    clearInterval(statusTimer);
+    await gateway.stop();
+    await pool.end();
+    metrics.close();
+    send({ type: 'role-stopped', role: 'GATEWAY' });
+  }
+  process.on('message', (message) => {
+    if (!message || typeof message !== 'object') return;
+    if (message.type === 'metrics-request') {
+      send({ type: 'metrics-response', role: 'GATEWAY', request_id: message.request_id, metrics: { ...metrics.sample(), ...safePoolMetrics(pool) } });
+    }
+    if (message.type === 'provider-send-request') {
+      const request = { ...message.request, signal: new AbortController().signal };
+      void sender.send(request).then((result) => {
+        send({ type: 'provider-send-response', role: 'GATEWAY', request_id: message.request_id, ok: true, result });
+      }).catch((error) => {
+        send({ type: 'provider-send-response', role: 'GATEWAY', request_id: message.request_id, ok: false, error_code: error?.code === 'GATEWAY_UNAVAILABLE_BEFORE_SEND' ? error.code : 'P2_G1_GATEWAY_SEND_FAILED' });
+      });
+    }
+    if (message.type === 'gateway-disconnect') {
+      void gateway.stop().then(() => {
+        publishStatus();
+        send({ type: 'control-response', role: 'GATEWAY', request_id: message.request_id, ok: true, result: { authenticated: false } });
+      }).catch(() => send({ type: 'control-response', role: 'GATEWAY', request_id: message.request_id, ok: false, error_code: 'P2_G1_GATEWAY_DISCONNECT_FAILED' }));
+    }
+    if (message.type === 'gateway-reconnect') {
+      void gateway.start().then(async () => {
+        const authenticated = enabled ? await waitForGateway(gateway) : false;
+        publishStatus();
+        send({ type: 'control-response', role: 'GATEWAY', request_id: message.request_id, ok: !enabled || authenticated, result: { authenticated } });
+      }).catch(() => send({ type: 'control-response', role: 'GATEWAY', request_id: message.request_id, ok: false, error_code: 'P2_G1_GATEWAY_RECONNECT_FAILED' }));
+    }
+    if (message.type === 'stop') void stop().then(() => process.exit(0));
+  });
+  process.once('SIGTERM', () => void stop().then(() => process.exit(0)));
+  await gateway.start();
+  const authenticated = enabled ? await waitForGateway(gateway) : false;
+  publishStatus();
+  if (enabled && !authenticated) throw new Error('P2_G1_GATEWAY_AUTH_TIMEOUT');
+  send({ type: 'role-ready', role: 'GATEWAY', authenticated, pool_max: 1 });
+}
+
+async function runWorker() {
+  const enabled = truth('P2_G1_SENDER_ENABLED');
+  const pool = new Pool({
+    connectionString: required('PILOT_DATABASE_URL'),
+    max: 2,
+    connectionTimeoutMillis: 2_000,
+    application_name: 'p2_g1_worker',
+  });
+  const metrics = createP2G1ProcessMetrics({ role: 'WORKER' });
+  const pending = new Map();
+  const sender = Object.freeze({
+    send(request) {
+      const requestId = randomUUID();
+      const serializable = {
+        provider: request.provider,
+        channel_account_id: request.channel_account_id,
+        target_type: request.target_type,
+        target_id: request.target_id,
+        delivery_id: request.delivery_id,
+        idempotency_key: request.idempotency_key,
+        message: request.message,
+      };
+      return new Promise((resolve, reject) => {
+        pending.set(requestId, { resolve, reject });
+        send({ type: 'provider-send-request', role: 'WORKER', request_id: requestId, request: serializable });
+      });
+    },
+  });
+  const worker = createCommunicationDeliveryWorker({ pool, sender, enabled, batchSize: 20 });
+  let stopping = false;
+  let running = false;
+  let task = Promise.resolve();
+  const timer = setInterval(() => {
+    if (stopping || running || !enabled) return;
+    running = true;
+    task = worker.runOnce().catch(() => {}).finally(() => { running = false; });
+  }, 250);
+  async function stop() {
+    if (stopping) return;
+    stopping = true;
+    clearInterval(timer);
+    await task;
+    for (const value of pending.values()) value.reject(Object.assign(new Error('GATEWAY_UNAVAILABLE_BEFORE_SEND'), { code: 'GATEWAY_UNAVAILABLE_BEFORE_SEND' }));
+    pending.clear();
+    await pool.end();
+    metrics.close();
+    send({ type: 'role-stopped', role: 'WORKER' });
+  }
+  process.on('message', (message) => {
+    if (!message || typeof message !== 'object') return;
+    if (message.type === 'provider-send-response') {
+      const request = pending.get(message.request_id);
+      if (!request) return;
+      pending.delete(message.request_id);
+      if (message.ok === true) request.resolve(message.result);
+      else request.reject(Object.assign(new Error(message.error_code), { code: message.error_code }));
+    }
+    if (message.type === 'metrics-request') {
+      send({ type: 'metrics-response', role: 'WORKER', request_id: message.request_id, metrics: { ...metrics.sample(), ...safePoolMetrics(pool) } });
+    }
+    if (message.type === 'stop') void stop().then(() => process.exit(0));
+  });
+  process.once('SIGTERM', () => void stop().then(() => process.exit(0)));
+  send({ type: 'role-ready', role: 'WORKER', enabled, pool_max: 2 });
+}
+
+export async function main(argv = process.argv.slice(2)) {
+  const selected = role(argv);
+  if (selected === 'APP') return runApp();
+  if (selected === 'WORKER') return runWorker();
+  return runGateway();
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main().catch(() => {
+    try { send({ type: 'role-failed', role: process.argv[2]?.slice('--role='.length)?.toUpperCase() ?? 'UNKNOWN', error_code: stableFailure(process.argv[2]?.slice('--role='.length)?.toUpperCase() ?? 'UNKNOWN') }); }
+    catch { /* no safe IPC channel remains */ }
+    process.exitCode = 1;
+  });
+}

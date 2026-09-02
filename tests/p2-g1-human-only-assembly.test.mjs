@@ -4,8 +4,9 @@ import { EventEmitter } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-import { P2_G1_LIVE_MODES, validateP2G1ProcessApprovals } from '../src/p2-g1-human-only-assembly.mjs';
+import { createP2G1HumanOnlyAssembly, P2_G1_LIVE_MODES, validateP2G1ProcessApprovals } from '../src/p2-g1-human-only-assembly.mjs';
 import { createP2G1InboundProjectionCoordinator, P2_G1_PROJECTION_STREAMS } from '../src/p2-g1-inbound-projection-coordinator.mjs';
+import { createP2G1ProcessMetrics } from '../src/p2-g1-process-metrics.mjs';
 import { createP2G1TestAuthentication } from '../src/p2-g1-test-authentication.mjs';
 import { createP2G1WeComGateway } from '../src/p2-g1-wecom-gateway.mjs';
 import { createP2G1WeComCommunicationSender } from '../src/p2-g1-wecom-sender.mjs';
@@ -31,6 +32,51 @@ test('live CLI exposes only the six explicit modes and requires three process fu
   assert.throws(() => validateP2G1ProcessApprovals(base, { mode: 'human-live' }), /P2_G1_REAL_SEND_APPROVAL_REQUIRED/u);
   assert.deepEqual(validateP2G1ProcessApprovals({ ...base, P2_G1_REAL_WECOM_SEND_APPROVED: 'true' }, { mode: 'human-live' }), { check_only: false, live_approved: true, send_approved: true });
   assert.throws(() => validateP2G1ProcessApprovals({ ...base, AI_TRIAGE_ENABLED: 'true' }, { mode: 'inbound-shadow' }), /P2_G1_HUMAN_ONLY_FLAG_VIOLATION/u);
+});
+
+test('gateway process can commit inbound before the App process projects it', async () => {
+  let accepted = 0;
+  const assembly = createP2G1HumanOnlyAssembly({
+    operationalIntake: { accept: async () => { accepted += 1; return { ok: true, result: { accepted: true } }; } },
+    coordinator: null,
+    projectAfterCommit: false,
+    privacyClass: 'INTERNAL',
+  });
+  const result = await assembly.handleFrame({
+    cmd: 'aibot_msg_callback',
+    headers: { req_id: 'synthetic-process-frame-request' },
+    body: {
+      msgid: 'synthetic-process-frame-message',
+      aibotid: 'synthetic-process-bot',
+      chattype: 'group',
+      chatid: 'synthetic-process-group',
+      from: { userid: 'synthetic-process-user' },
+      msgtype: 'text',
+      text: { content: '合成分进程入站。' },
+    },
+  });
+  assert.equal(accepted, 1);
+  assert.equal(result.ok, true);
+  assert.equal(result.p1_committed, true);
+  assert.deepEqual(result.projection, { processed: 0, failures: 0, deferred: true });
+  assert.throws(() => createP2G1HumanOnlyAssembly({
+    operationalIntake: { accept: async () => ({ ok: true }) },
+    coordinator: { runOnce: async () => ({}) },
+    projectAfterCommit: false,
+  }), /P2_G1_ASSEMBLY_CONFIGURATION_INVALID/u);
+});
+
+test('process resource interface exposes bounded role metrics without a PID or environment', () => {
+  const metrics = createP2G1ProcessMetrics({ role: 'APP' });
+  const sample = metrics.sample();
+  assert.equal(sample.role, 'APP');
+  for (const field of ['rss_bytes','heap_used_bytes','heap_total_bytes','external_bytes','cpu_percent','event_loop_delay_p95_ms','active_resources','active_sockets','active_file_handles','active_handles','uptime_seconds']) {
+    assert.equal(Number.isFinite(sample[field]) && sample[field] >= 0, true, field);
+  }
+  assert.equal(Object.hasOwn(sample, 'pid'), false);
+  assert.equal(Object.hasOwn(sample, 'environment'), false);
+  metrics.close();
+  assert.throws(() => metrics.sample(), /P2_G1_PROCESS_METRICS_CLOSED/u);
 });
 
 test('gateway permits one active WSClient, gates readiness on authentication, reconnects and shuts down cleanly', async () => {
@@ -154,6 +200,8 @@ test('live script has no broad --live mode and no default live-send npm command'
   assert.match(live, /sse-disconnect-a/u);
   assert.match(live, /gateway-disconnect/u);
   assert.match(live, /gateway-reconnect/u);
+  assert.match(live, /createP2G1ProcessCluster/u);
+  assert.match(live, /combined_runtime: false/u);
   assert.match(browserSessions, /Network\.setCookie/u);
   assert.match(browserSessions, /httpOnly: true/u);
   assert.match(browserSessions, /Promise\.race\(\[command\('Browser\.close'\), delay\(2_000\)\]\)/u);
@@ -170,4 +218,15 @@ test('live script has no broad --live mode and no default live-send npm command'
   assert.doesNotMatch(browserSessions, /console\.(?:log|error)/u);
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
   assert.equal(Object.values(pkg.scripts).some((value) => /p2-g1-live-e2e\.mjs\s+--mode=/u.test(value)), false);
+  const resource = readFileSync('scripts/p2-g1-resource-observation.mjs', 'utf8');
+  assert.match(resource, /MINIMUM_DURATION_MS = 3_600_000/u);
+  assert.match(resource, /app_rss_bytes/u);
+  assert.match(resource, /worker_rss_bytes/u);
+  assert.match(resource, /gateway_rss_bytes/u);
+  assert.match(resource, /postgres_connection_utilization_percent/u);
+  assert.match(resource, /claim_24h_soak: false/u);
+  const replayGap = readFileSync('scripts/p2-g1-replay-gap-e2e.mjs', 'utf8');
+  assert.match(replayGap, /P2_G1_ISOLATED_REPLAY_GAP_APPROVED/u);
+  assert.match(replayGap, /pilot_database_mutated: false/u);
+  assert.match(replayGap, /withP2G1IsolatedPostgres/u);
 });

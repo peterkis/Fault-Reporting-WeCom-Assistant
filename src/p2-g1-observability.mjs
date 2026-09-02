@@ -52,13 +52,19 @@ export function createP2G1Observability({ pool, coordinator, gateway, realtime, 
   function recordP1Commit() { p1CommittedFacts += 1; }
 
   async function metrics() {
-    const [backlog, communication] = await Promise.all([
+    const [backlog, communication, postgres] = await Promise.all([
       coordinator?.backlog?.() ?? { total: 0 },
       pool.query(`SELECT
         count(*) FILTER(WHERE status IN ('PENDING','LEASED','SENDING'))::integer pending,
         count(*) FILTER(WHERE status='RECONCILIATION_REQUIRED')::integer reconciliation_required,
         count(*) FILTER(WHERE status='DEAD_LETTER')::integer dead_letter
         FROM communication.delivery`),
+      pool.query(`SELECT
+        count(*) FILTER(WHERE state='active')::integer active,
+        count(*) FILTER(WHERE state='idle')::integer idle,
+        count(*) FILTER(WHERE state NOT IN ('active','idle') OR state IS NULL)::integer other,
+        current_setting('max_connections')::integer maximum
+        FROM pg_stat_activity WHERE datname=current_database()`),
     ]);
     const memory = process.memoryUsage();
     const cpu = process.cpuUsage();
@@ -87,6 +93,16 @@ export function createP2G1Observability({ pool, coordinator, gateway, realtime, 
       pool_idle: poolState.idle,
       pool_total: safeNumber(pool.totalCount),
       pool_max: safeNumber(pool.options?.max),
+      postgres_active_connections: safeNumber(postgres.rows[0]?.active),
+      postgres_idle_connections: safeNumber(postgres.rows[0]?.idle),
+      postgres_other_connections: safeNumber(postgres.rows[0]?.other),
+      postgres_max_connections: safeNumber(postgres.rows[0]?.maximum),
+      postgres_connection_utilization_percent: Number((
+        safeNumber(postgres.rows[0]?.maximum) > 0
+          ? (safeNumber(postgres.rows[0]?.active) + safeNumber(postgres.rows[0]?.idle) + safeNumber(postgres.rows[0]?.other))
+            / safeNumber(postgres.rows[0]?.maximum) * 100
+          : 0
+      ).toFixed(3)),
       rss_bytes: memory.rss,
       heap_used_bytes: memory.heapUsed,
       cpu_percent: Number(Math.max(0, cpuPercent).toFixed(3)),

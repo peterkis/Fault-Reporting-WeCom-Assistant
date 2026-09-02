@@ -1,11 +1,10 @@
 import { randomInt } from 'node:crypto';
 import { appendFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import { Pool } from 'pg';
 
-import { createP2G1PilotOperationalIntake, P2_G1_LIVE_MODES, validateP2G1ProcessApprovals } from '../src/p2-g1-human-only-assembly.mjs';
+import { P2_G1_LIVE_MODES, validateP2G1ProcessApprovals } from '../src/p2-g1-human-only-assembly.mjs';
 import { launchP2G1TestBrowserSessions } from '../src/p2-g1-browser-sessions.mjs';
-import { createP2G1Runtime } from '../src/p2-g1-runtime.mjs';
+import { createP2G1ProcessCluster } from '../src/p2-g1-process-cluster.mjs';
 import { runP2G1Check } from './p2-g1-check.mjs';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -69,6 +68,7 @@ async function main() {
         'PILOT_DATABASE_URL','PILOT_LOG_IDENTITY_HASH_KEY','WECOM_BOT_ID','WECOM_BOT_SECRET','WECOM_WS_URL',
       ]),
       external_side_effects: false,
+      process_topology: Object.freeze({ app: 1, worker: 1, gateway: 1, combined_runtime: false }),
     }));
     if (!result.ok) process.exitCode = 1;
     return;
@@ -88,13 +88,10 @@ async function main() {
   const origin = `http://127.0.0.1:${port}`;
   const hashes = String(process.env.P2_G1_ALLOWED_TARGET_HASHES ?? '').split(',').filter(Boolean);
   if (hashes.length < 1 || hashes.some((value) => !/^[a-f0-9]{64}$/u.test(value))) throw new Error('P2_G1_TEST_SCOPE_INVALID');
-  const pool = new Pool({ connectionString: process.env.PILOT_DATABASE_URL, max: 4, connectionTimeoutMillis: 2_000 });
-  const operationalIntake = createP2G1PilotOperationalIntake({ pool, identityHashKey: process.env.PILOT_LOG_IDENTITY_HASH_KEY });
-  const runtime = createP2G1Runtime({
-    pool,
-    operationalIntake,
+  const runtime = createP2G1ProcessCluster({
+    databaseUrl: process.env.PILOT_DATABASE_URL,
+    identityHashKey: process.env.PILOT_LOG_IDENTITY_HASH_KEY,
     principalIds: principals,
-    publicOrigin: origin,
     listenPort: port,
     botId: process.env.WECOM_BOT_ID,
     secret: process.env.WECOM_BOT_SECRET,
@@ -102,7 +99,6 @@ async function main() {
     allowedTargetHashes: hashes,
     gatewayEnabled: approvals.live_approved,
     senderEnabled: approvals.send_approved,
-    closePoolOnStop: true,
   });
   let stopping = false;
   let browserSessions = null;
@@ -131,22 +127,21 @@ async function main() {
     const commands = String(chunk).split(/\r?\n/u).map((line) => line.trim());
     if (commands.includes('stop')) void stop('STDIN_STOP');
     if (commands.includes('sse-disconnect-a')) {
-      try {
-        const result = runtime.disconnectRealtimePrincipal(0);
+      void runtime.disconnectRealtimePrincipal(0).then((result) => {
         console.log(JSON.stringify({ event: 'p2_g1_sse_principal_disconnected', run_id: runId, disconnected_count: result.disconnected_count, raw_identifiers_recorded: false }));
-      } catch { console.log(JSON.stringify({ event: 'p2_g1_sse_principal_disconnect_failed', run_id: runId, raw_identifiers_recorded: false })); }
+      }).catch(() => console.log(JSON.stringify({ event: 'p2_g1_sse_principal_disconnect_failed', run_id: runId, raw_identifiers_recorded: false })));
     }
     if (commands.includes('gateway-disconnect')) {
-      void runtime.gateway.stop().then(async () => {
+      void runtime.disconnectGateway().then(async () => {
         const readyResponse = await fetch(`${origin}/health/ready`, { signal: AbortSignal.timeout(2_000) });
         const ready = await readyResponse.json();
-        const status = runtime.gateway.getStatus();
+        const status = runtime.status();
         const observation = safeEvent(runId, 'gateway_controlled_disconnected', {
           mode: selected,
           live_candidate: liveCandidate,
           readiness_ok: ready.ok === true,
-          gateway_authenticated: status.authenticated === true,
-          active_gateway_count: status.active_gateway_count,
+          gateway_authenticated: status.gateway_authenticated === true,
+          active_gateway_count: status.gateway_authenticated ? 1 : 0,
           raw_identifiers_recorded: false,
         });
         await appendFile('evidence/p2-g1-live-e2e.jsonl', observation + '\n');
@@ -154,16 +149,15 @@ async function main() {
       }).catch(() => console.log(JSON.stringify({ event: 'p2_g1_gateway_disconnect_failed', run_id: runId, raw_identifiers_recorded: false })));
     }
     if (commands.includes('gateway-reconnect')) {
-      void runtime.gateway.start().then(async () => {
+      void runtime.reconnectGateway().then(async () => {
         const ready = await waitForReady(origin);
-        const status = runtime.gateway.getStatus();
+        const status = runtime.status();
         const observation = safeEvent(runId, 'gateway_controlled_reconnected', {
           mode: selected,
           live_candidate: liveCandidate,
           readiness_ok: ready.ok === true,
-          gateway_authenticated: status.authenticated === true,
-          active_gateway_count: status.active_gateway_count,
-          gateway_reconnect_total: status.reconnect_total,
+          gateway_authenticated: status.gateway_authenticated === true,
+          active_gateway_count: status.gateway_authenticated ? 1 : 0,
           raw_identifiers_recorded: false,
         });
         await appendFile('evidence/p2-g1-live-e2e.jsonl', observation + '\n');
@@ -194,8 +188,8 @@ async function main() {
       throw new Error('P2_G1_READY_TIMEOUT');
     }
     browserSessions = await launchP2G1TestBrowserSessions({ origin, cookies: runtimeStart.cookies });
-    await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_ready', { mode: selected, live_candidate: liveCandidate, checks: ready.checks, sender_enabled: approvals.send_approved, raw_identifiers_recorded: false }) + '\n');
-    console.log(JSON.stringify({ event: 'p2_g1_live_ready', run_id: runId, live_candidate: liveCandidate, mode: selected, loopback_origin: origin, principal_count: principals.length, browser_sessions: browserSessions.count, sender_enabled: approvals.send_approved, raw_identifiers_recorded: false }));
+    await appendFile('evidence/p2-g1-live-e2e.jsonl', safeEvent(runId, 'runtime_ready', { mode: selected, live_candidate: liveCandidate, checks: ready.checks, sender_enabled: approvals.send_approved, process_count: runtimeStart.process_count, combined_runtime: false, raw_identifiers_recorded: false }) + '\n');
+    console.log(JSON.stringify({ event: 'p2_g1_live_ready', run_id: runId, live_candidate: liveCandidate, mode: selected, loopback_origin: origin, principal_count: principals.length, browser_sessions: browserSessions.count, process_count: runtimeStart.process_count, combined_runtime: false, sender_enabled: approvals.send_approved, raw_identifiers_recorded: false }));
   } catch (error) {
     if (started) await stop('STARTUP_FAILED');
     throw error;

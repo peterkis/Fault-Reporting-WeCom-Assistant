@@ -70,13 +70,17 @@ export function createP2G1PilotOperationalIntake({ pool, identityHashKey } = {})
 
 export function createP2G1HumanOnlyAssembly({
   operationalIntake,
-  coordinator,
+  coordinator = null,
+  projectAfterCommit = true,
   observability = null,
   privacyClass = 'PATIENT_SENSITIVE',
   retentionMs = 86_400_000,
   now = () => new Date(),
 } = {}) {
-  if (!operationalIntake || typeof operationalIntake.accept !== 'function' || !coordinator || typeof coordinator.runOnce !== 'function'
+  if (!operationalIntake || typeof operationalIntake.accept !== 'function'
+    || typeof projectAfterCommit !== 'boolean'
+    || (projectAfterCommit && (!coordinator || typeof coordinator.runOnce !== 'function'))
+    || (!projectAfterCommit && coordinator !== null)
     || !['INTERNAL', 'PATIENT_SENSITIVE'].includes(privacyClass)
     || !Number.isSafeInteger(retentionMs) || retentionMs < 1 || retentionMs > 31_536_000_000
     || typeof now !== 'function') {
@@ -97,12 +101,14 @@ export function createP2G1HumanOnlyAssembly({
     });
     if (!accepted.ok) return accepted;
     observability?.recordP1Commit?.();
-    let projection;
-    try {
-      projection = await coordinator.runOnce();
-      observability?.recordProjection?.(projection);
-    } catch {
-      projection = Object.freeze({ processed: 0, failures: 1, error_code: 'P2_G1_PROJECTION_DEFERRED' });
+    let projection = Object.freeze({ processed: 0, failures: 0, deferred: true });
+    if (projectAfterCommit) {
+      try {
+        projection = await coordinator.runOnce();
+        observability?.recordProjection?.(projection);
+      } catch {
+        projection = Object.freeze({ processed: 0, failures: 1, error_code: 'P2_G1_PROJECTION_DEFERRED' });
+      }
     }
     return Object.freeze({
       ok: true,

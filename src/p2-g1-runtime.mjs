@@ -11,7 +11,7 @@ import { createConversationWorkbenchQueryService } from './p2-006-workbench-quer
 import { createP2G1HumanOnlyAssembly } from './p2-g1-human-only-assembly.mjs';
 import { createP2G1InboundProjectionCoordinator } from './p2-g1-inbound-projection-coordinator.mjs';
 import { createP2G1Observability } from './p2-g1-observability.mjs';
-import { createP2G1TestAuthentication } from './p2-g1-test-authentication.mjs';
+import { createP2G1TestAuthentication, P2_G1_TEST_AUTH_MAX_TTL_MS } from './p2-g1-test-authentication.mjs';
 import { createP2G1WeComGateway } from './p2-g1-wecom-gateway.mjs';
 import { createP2G1WeComCommunicationSender } from './p2-g1-wecom-sender.mjs';
 
@@ -29,6 +29,10 @@ export function createP2G1Runtime({
   gatewayEnabled = false,
   senderEnabled = false,
   senderAdapter = null,
+  gatewayStatusProvider = null,
+  communicationStatusProvider = null,
+  requireGateway = gatewayEnabled,
+  testAuthTtlMs = 15 * 60_000,
   clientFactory,
   projectionIntervalMs = 250,
   communicationIntervalMs = 250,
@@ -39,10 +43,14 @@ export function createP2G1Runtime({
     || !Number.isInteger(listenPort) || listenPort < 0 || listenPort > 65535
     || !Number.isInteger(projectionIntervalMs) || projectionIntervalMs < 50
     || !Number.isInteger(communicationIntervalMs) || communicationIntervalMs < 50
-    || (senderAdapter !== null && typeof senderAdapter?.send !== 'function')) {
+    || (senderAdapter !== null && typeof senderAdapter?.send !== 'function')
+    || (gatewayStatusProvider !== null && typeof gatewayStatusProvider?.getStatus !== 'function')
+    || (communicationStatusProvider !== null && typeof communicationStatusProvider?.isReady !== 'function')
+    || typeof requireGateway !== 'boolean'
+    || !Number.isInteger(testAuthTtlMs) || testAuthTtlMs < 10_000 || testAuthTtlMs > P2_G1_TEST_AUTH_MAX_TTL_MS) {
     throw new TypeError('P2_G1_RUNTIME_CONFIGURATION_INVALID');
   }
-  const authenticate = createP2G1TestAuthentication({ pool, principalId, principalIds, publicOrigin });
+  const authenticate = createP2G1TestAuthentication({ pool, principalId, principalIds, publicOrigin, ttlMs: testAuthTtlMs });
   const authorization = createPilotWorkbenchAuthorizationAdapter({ pool });
   const controlAuthorization = createPilotConversationControlAuthorization({ pool });
   const controlService = createConversationControlService({
@@ -87,7 +95,8 @@ export function createP2G1Runtime({
   const communicationWorkerEnabled = senderEnabled || senderAdapter !== null;
   const communicationWorker = createCommunicationDeliveryWorker({ pool, sender, enabled: communicationWorkerEnabled, batchSize: 20 });
   const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20, wakeup: realtime.wakeup });
-  const observability = createP2G1Observability({ pool, coordinator, gateway, realtime, enabled: true });
+  const observedGateway = gatewayStatusProvider ?? gateway;
+  const observability = createP2G1Observability({ pool, coordinator, gateway: observedGateway, realtime, enabled: true });
   assembly = createP2G1HumanOnlyAssembly({ operationalIntake, coordinator, observability });
   const queryService = createConversationWorkbenchQueryService({
     pool,
@@ -117,8 +126,8 @@ export function createP2G1Runtime({
       httpListening: listening,
       workbenchEnabled: true,
       projectionEnabled: !stopping,
-      communicationEnabled: !stopping && (communicationWorkerEnabled || senderEnabled === false),
-      requireGateway: gatewayEnabled,
+      communicationEnabled: !stopping && (communicationStatusProvider?.isReady?.() ?? (communicationWorkerEnabled || senderEnabled === false)),
+      requireGateway,
       featureFlags: {},
     }),
   };

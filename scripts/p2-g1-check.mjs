@@ -33,6 +33,9 @@ export async function runP2G1Check({ env = process.env } = {}) {
     'src/p2-g1-human-only-assembly.mjs','src/p2-g1-inbound-projection-coordinator.mjs',
     'src/p2-g1-wecom-gateway.mjs','src/p2-g1-wecom-sender.mjs','src/p2-g1-test-authentication.mjs',
     'src/p2-g1-runtime.mjs','src/p2-g1-observability.mjs','src/p2-g1-browser-sessions.mjs',
+    'src/p2-g1-process-cluster.mjs','src/p2-g1-process-metrics.mjs','src/p2-g1-isolated-postgres.mjs',
+    'src/p2-g1-migrations.mjs','scripts/p2-g1-process-role.mjs','scripts/p2-g1-replay-gap-e2e.mjs',
+    'scripts/p2-g1-resource-observation.mjs',
   ].every(existsSync);
   let postgres = false;
   let relations = false;
