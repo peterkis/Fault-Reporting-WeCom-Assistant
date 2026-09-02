@@ -142,6 +142,7 @@ test('content and command hashes are stable, key-order independent and cover row
   const first = computeCommunicationCommandHash(command);
   assert.match(first, /^[a-f0-9]{64}$/u);
   assert.equal(first, computeCommunicationCommandHash({ ...command }));
+  assert.equal(first, computeCommunicationCommandHash({ ...command, retention_until: '2027-09-01T00:00:00.000Z' }));
   assert.notEqual(first, computeCommunicationCommandHash({ ...command, expected_row_version: 4 }));
   assert.notEqual(first, computeCommunicationCommandHash({ ...command, sender_kind: 'AI', sender_system_code: 'AI_SYNTHETIC' }));
 });

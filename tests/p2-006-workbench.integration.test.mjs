@@ -91,23 +91,23 @@ async function item(pool, sessionId, sequence, visibility = 'EXTERNAL', text = `
   );
 }
 
-function services(pool) {
+function services(pool, { now = () => NOW } = {}) {
   const authorize = createPilotWorkbenchAuthorizationAdapter({ pool });
   const controlAuthorization = createPilotConversationControlAuthorization({ pool });
-  const controlService = createConversationControlService({ pool, enabled: true, authorize: controlAuthorization, realtimeAppender: appendRealtimeEvent, now: () => NOW });
+  const controlService = createConversationControlService({ pool, enabled: true, authorize: controlAuthorization, realtimeAppender: appendRealtimeEvent, now });
   const communicationService = createCommunicationService({
-    pool, enabled: true, now: () => NOW,
+    pool, enabled: true, now,
     authorizeCommand: createAssignedCommunicationAuthorizer({ controlService, authorization: controlAuthorization, featureFlags: {} }),
   });
   const deliveryControl = createWorkbenchDeliveryControl({
     pool, authorize, enabled: true,
-    operatorPort: createCommunicationDeliveryOperatorPort({ pool, now: () => NOW }),
-    reconciliationPort: createCommunicationReconciliationPort({ pool, now: () => NOW }),
+    operatorPort: createCommunicationDeliveryOperatorPort({ pool, now }),
+    reconciliationPort: createCommunicationReconciliationPort({ pool, now }),
   });
   return {
     authorize,
-    query: createConversationWorkbenchQueryService({ pool, authorize, enabled: true, now: () => NOW }),
-    commands: createConversationWorkbenchCommandFacade({ controlService, communicationService, deliveryControl, authorize, enabled: true, now: () => NOW }),
+    query: createConversationWorkbenchQueryService({ pool, authorize, enabled: true, now }),
+    commands: createConversationWorkbenchCommandFacade({ controlService, communicationService, deliveryControl, authorize, enabled: true, now }),
   };
 }
 
@@ -260,15 +260,20 @@ test('workbench facade commits human reply, internal note, takeover and idempote
     const nonAdmin = await principal(pool, 'commands-non-admin', ['HANDLER']);
     const authContext = auth(admin);
     const value = await session(pool, 'commands');
-    const { commands, query } = services(pool);
+    let workbenchNow = NOW;
+    const { commands, query } = services(pool, { now: () => workbenchNow });
     const takeoverBody = { client_command_id: randomUUID(), expected_row_version: value.row_version, reason_code: 'WORKBENCH_TAKEOVER', target_principal_id: admin.id };
     const takeover = await commands.takeover({ authContext, sessionId: value.id, body: takeoverBody });
     assert.equal(takeover.ok, true);
     const replay = await commands.takeover({ authContext, sessionId: value.id, body: takeoverBody });
     assert.equal(replay.replayed, true);
     let detail = await query.getConversationDetail({ authContext, sessionId: value.id });
-    const reply = await commands.reply({ authContext, sessionId: value.id, body: { client_command_id: randomUUID(), expected_row_version: detail.session.row_version, text: 'Synthetic human reply' } });
+    const replyBody = { client_command_id: randomUUID(), expected_row_version: detail.session.row_version, text: 'Synthetic human reply' };
+    const reply = await commands.reply({ authContext, sessionId: value.id, body: replyBody });
     assert.equal(reply.command_status, 'COMMITTED', JSON.stringify(reply));
+    workbenchNow = new Date(NOW.getTime() + 5 * 60_000);
+    const delayedReplyReplay = await commands.reply({ authContext, sessionId: value.id, body: replyBody });
+    assert.equal(delayedReplyReplay.replayed, true, JSON.stringify(delayedReplyReplay));
     detail = await query.getConversationDetail({ authContext, sessionId: value.id });
     const note = await commands.internalNote({ authContext, sessionId: value.id, body: { client_command_id: randomUUID(), expected_row_version: detail.session.row_version, text: 'Synthetic internal note' } });
     assert.equal(note.command_status, 'COMMITTED', JSON.stringify(note));

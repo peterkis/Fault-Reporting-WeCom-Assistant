@@ -261,6 +261,8 @@ export function computeCommunicationContentHash(content) {
 
 export function computeCommunicationCommandHash(command) {
   const normalized = NORMALIZED_COMMANDS.has(command) ? command : normalizeCommunicationCommand(command);
+  // retention_until is server policy metadata that Workbench recomputes on
+  // each request; it must not turn the same client command into a conflict.
   return sha256(canonicalJson({
     session_id: normalized.session_id,
     expected_row_version: normalized.expected_row_version,
@@ -273,7 +275,6 @@ export function computeCommunicationCommandHash(command) {
     attachment_ids: normalized.attachment_ids,
     destination_policy: normalized.destination_policy,
     privacy_class: normalized.privacy_class,
-    retention_until: normalized.retention_until,
   }));
 }
 

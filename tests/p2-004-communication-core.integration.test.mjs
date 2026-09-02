@@ -206,6 +206,12 @@ test('Communication service commits atomically, isolates idempotency scopes, and
     assert.deepEqual(await factCounts(pool), { messages: 1, outboxes: 1, deliveries: 1, attempts: 0 });
     assert.deepEqual(Object.keys(doubleClicks[0]), ['message_id', 'outbox_id', 'delivery_ids', 'command_status', 'replayed', 'created_at']);
     assert.equal(JSON.stringify(doubleClicks).includes(session.identity.external_thread_key), false);
+    const delayedReplay = await service.commitExternalMessage({
+      command: { ...command, retention_until: '2027-09-01T00:00:00.000Z' },
+      actor: { principal_id: ACTOR_ID },
+    });
+    assert.equal(delayedReplay.replayed, true);
+    assert.deepEqual(await factCounts(pool), { messages: 1, outboxes: 1, deliveries: 1, attempts: 0 });
 
     const conflict = await service.commitExternalMessage({ command: { ...command, text: 'changed body' }, actor: { principal_id: ACTOR_ID } });
     assert.equal(conflict.error.code, COMMUNICATION_ERROR_CODES.commandConflict);
