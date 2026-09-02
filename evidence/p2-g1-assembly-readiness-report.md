@@ -70,3 +70,4 @@ Test Authentication 只接受 Server-side Pilot Principal，逐请求确认 acti
 - 2026-09-01：首次全仓串行回归中，既有 P2-003 5000 事件资源测试因整仓负载下 1 秒 recovery timer 多触发空批而仅有该项失败；未放宽 `replay_query_batch_count <= 101`。原样单测重跑为 5000/5000、100 批、无残留，随后完整串行回归 421/421，fail/cancelled/skipped 均为 0。
 - 2026-09-02：候选 `02d4f33a41ba2d65a6d45d9b0a2de8e67ba1a34d` 第六次 Inbound Shadow 的正确选中 Session 批次为 Channel/Timeline/Realtime 20/20/20、重复 0，Agent A DOM 含 20 个样本，完整计时 20/20，端到端 P95 108ms；但用户观察的是未选中 Session 的 Agent B，未完成人工客户端可见确认。隔夜后两 Cookie 过期、SSE Client 0，旧缓存仅留在 Agent A；该运行未持续资源采样，不得称为资源观察或 soak，结果为 `BLOCKED`。
 - 2026-09-02：受控浏览器检查发现无下一页时 `hidden=true`，但 `.load-more { display:block }` 仍使“加载更多会话”可见，且页面没有醒目的 A/B 标识。新增全局 `[hidden]` 规则、测试窗口 A/B 页内与标题标识及真实浏览器回归；必须用新 HEAD 重做现场验证。
+- 2026-09-02：首次修复后全仓串行因 P2-004 固定 Worker 时钟早于跨日后的数据库 `next_attempt_at`，出现 4 个领取/Stage 失败及 1 个派生残留断言失败；生产代码未变、阈值未放宽。测试时钟改为相对当前时间未来 24 小时，1 秒与 120 秒 lease 关系不变，Stage 异常保证清理自有子进程；P2-004 Integration 9/9，最终全仓串行 421/421，fail/cancelled/skipped 均为 0。

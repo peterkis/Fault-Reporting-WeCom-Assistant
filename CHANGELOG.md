@@ -14,6 +14,7 @@
 - 第四次校准发现首次 SSE replay 的 459 个授权保留事件分别触发 459 次以上并发 LIST，P95 达 8 秒以上且只能手动刷新后看见消息；Workbench 现串行合并 realtime refresh，事件风暴期间只保留一次 pending refresh。Live 停止同时解除 stdin 引用，避免清理完成后进程残留。该 run 保持 BLOCKED。
 - 第五次校准确认既有 SSE 连接的 Session 授权快照不会包含连接后新建的 Session，导致已持久化的新事件被裁掉；Realtime SSE 新增默认关闭的动态授权刷新，P2-G1 Runtime 显式启用，在每次事件泵送前按同一 Principal 重算当前可见 Session。该 run 保持 BLOCKED。
 - 第六次 Inbound Shadow 的 20 条正确选中 Session 样本已在 Agent A DOM 可见且端到端 P95 为 108ms，但双浏览器人工确认发生窗口混淆；进一步检查发现 author CSS 的 `display:block` 覆盖 `hidden`，使无下一页时仍显示“加载更多会话”。Workbench 现以全局 `[hidden]` 规则恢复隐藏语义，并在 Harness hash 存在时醒目标注测试窗口 A/B。旧 run 保持 BLOCKED。
+- 跨到 2026-09-02 后，P2-004 Worker 测试的固定时钟早于数据库 `next_attempt_at`，使领取用例正确返回 0 并引发子进程超时；测试改为相对当前时间的未来时钟，真实 1 秒/120 秒 lease 关系保持不变，Stage 失败路径同时保证回收自有子进程。生产 Delivery 语义未修改。
 
 ### P2-006 Human-only Workbench 完成
 
