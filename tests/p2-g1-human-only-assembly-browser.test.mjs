@@ -83,6 +83,50 @@ test('P2-G1 system browser duplicate submit fence sends one human reply and pres
   }
 });
 
+test('P2-G1 system browser preserves native SSE reconnect and sends Last-Event-ID', { timeout: 90_000 }, async (t) => {
+  const port = await reservePort();
+  const origin = `http://127.0.0.1:${port}`;
+  const values = fixture();
+  let connections = 0;
+  const lastEventIds = [];
+  const server = createConversationWorkbenchHttpServer({
+    enabled: true,
+    queryService: values.queryService,
+    commandFacade: values.commandFacade,
+    publicOrigin: origin,
+    authenticate: async () => ({ principal_id: PRINCIPAL_ID, auth_method: 'COOKIE', expires_at: new Date(Date.now() + 60_000).toISOString(), csrf_token: 'p2-g1-browser-csrf' }),
+    sseHandler: async (request, response) => {
+      connections += 1;
+      lastEventIds.push(request.headers['last-event-id'] ?? null);
+      response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' });
+      if (connections === 1) {
+        response.write('id: 1\nevent: conversation.item.created\ndata: {}\n\n');
+        setTimeout(() => response.end(), 50);
+        return;
+      }
+      response.write('id: 2\nevent: conversation.item.created\ndata: {}\n\n');
+      await new Promise((resolve) => response.once('close', resolve));
+    },
+  });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });
+  let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${origin}/workbench#test-agent-A`, width: 390, height: 844 });
+    await browser.waitFor(`document.readyState === 'complete' && document.querySelector('[data-session-id="${SESSION_ID}"]')`);
+    const deadline = Date.now() + 15_000;
+    while ((connections < 2 || values.getListCalls() < 3) && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(connections, 2);
+    assert.equal(lastEventIds[1], '1');
+    assert.ok(values.getListCalls() >= 3);
+    assert.equal(await browser.evaluate(`document.querySelector('#connection-label').textContent`), '实时连接');
+    t.diagnostic(JSON.stringify({ sse_connections: connections, last_event_id_used: true, polling_stopped_after_reconnect: true }));
+  } finally {
+    if (browser) await browser.close();
+    server.closeAllConnections?.();
+    await closeConversationWorkbenchServer(server);
+  }
+});
+
 test('P2-G1 live browser sessions navigate to the actual Workbench route with isolated cookies', { timeout: 90_000 }, async (t) => {
   const port = await reservePort();
   const origin = `http://127.0.0.1:${port}`;

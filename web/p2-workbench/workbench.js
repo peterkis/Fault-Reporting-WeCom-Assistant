@@ -136,11 +136,11 @@ async function refreshFromRealtime() {
 }
 function connectRealtime() {
   eventSource?.close(); eventSource = new EventSource(bootstrap.sse_endpoint);
-  eventSource.onopen = () => { setState({ type: 'CONNECTED', connected: true }); elements['connection-dot'].classList.add('online'); elements['connection-label'].textContent = '实时连接'; };
+  eventSource.onopen = () => { clearInterval(pollTimer); setState({ type: 'CONNECTED', connected: true }); elements['connection-dot'].classList.add('online'); elements['connection-label'].textContent = '实时连接'; };
   const refresh = () => { void refreshFromRealtime(); };
   eventSource.onmessage = refresh;
   realtimeEventTypes.forEach((eventType) => eventSource.addEventListener(eventType, refresh));
-  eventSource.onerror = () => { eventSource?.close(); setState({ type: 'CONNECTED', connected: false }); elements['connection-dot'].classList.remove('online'); elements['connection-label'].textContent = '轮询模式'; startPolling(); };
+  eventSource.onerror = () => { setState({ type: 'CONNECTED', connected: false }); elements['connection-dot'].classList.remove('online'); elements['connection-label'].textContent = '轮询模式'; startPolling(); };
 }
 
 async function boot() {
