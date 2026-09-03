@@ -1,6 +1,8 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import { EXTERNAL_TICKET_STATUS, publicPilotTicket } from './p1-005-pilot-ticket-core.mjs';
+import { assertLocalDateTime } from './platform/time-contract.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/006_p1_009_pilot_access.sql', import.meta.url);
 const ROLES = new Set(['REPORTER', 'HANDLER', 'DISPATCHER', 'ADMIN']);
@@ -110,7 +112,7 @@ function publicEvent(row, includeInternal) {
     event_ordinal: row.event_ordinal,
     external_note: row.external_note,
     reason_code: row.reason_code,
-    created_at: new Date(row.created_at).toISOString(),
+    created_at: assertLocalDateTime(row.created_at),
   };
   if (includeInternal) {
     event.internal_note = row.internal_note;
@@ -122,6 +124,7 @@ export async function applyPilotAccessMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   await pool.query(sql);
 }
@@ -148,7 +151,7 @@ export function createPilotAccessService({ pool } = {}) {
          ON CONFLICT (wecom_user_id)
          DO UPDATE SET display_name = EXCLUDED.display_name,
                        is_active = TRUE,
-                       updated_at = clock_timestamp()
+                       updated_at = date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
          RETURNING id::text`,
         [wecomUserId, displayName],
       );
@@ -273,7 +276,7 @@ export function createPilotAccessService({ pool } = {}) {
                 reason_code, created_at
            FROM pilot_ticket.ticket_event
           WHERE ticket_id = $1::uuid
-          ORDER BY event_ordinal`,
+          ORDER BY created_at, event_ordinal`,
         [ticketId],
       );
       return {

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
@@ -33,7 +34,7 @@ const messageIds = new Set();
 const intakeIds = new Set();
 const ticketIds = new Set();
 const pool = databaseUrl
-  ? new Pool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
+  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
   : null;
 
 function normalizedMessage(msgId, text) {
@@ -56,11 +57,13 @@ function normalizedMessage(msgId, text) {
 }
 
 function request(message) {
+  const retentionUntilEpochMs = String(BigInt(message.received_epoch_ms) + 86_400_000n);
   return {
     message,
     traceId: `trace-${message.msg_id}`,
     privacyClass: 'INTERNAL',
-    retentionUntil: new Date(Date.parse(message.received_at) + 86_400_000).toISOString(),
+    retentionUntil: formatEpochMsToShanghaiLocal(retentionUntilEpochMs),
+    retentionUntilEpochMs,
   };
 }
 

@@ -11,9 +11,12 @@ import { applyTimelineProjectionMigration } from './p2-002-timeline-projector.mj
 import { applyRealtimeEventLogMigration } from './p2-003-realtime-event-log.mjs';
 import { applyCommunicationMigration } from './p2-004-communication-core.mjs';
 import { applyConversationControlMigration } from './p2-005-conversation-control.mjs';
+import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
 
-export async function applyP2G1Migrations({ pool } = {}) {
-  if (!pool || typeof pool.query !== 'function') throw new TypeError('P2_G1_MIGRATION_CONFIGURATION_INVALID');
+export async function applyP2G1Migrations({ pool, databaseUrl } = {}) {
+  if (!pool || typeof pool.query !== 'function' || typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
+    throw new TypeError('P2_G1_MIGRATION_CONFIGURATION_INVALID');
+  }
   await applyChannelMessageInboxMigration({ pool });
   await applyServiceIntakeMigration({ pool });
   await applyPilotTicketCoreMigration({ pool });
@@ -27,5 +30,6 @@ export async function applyP2G1Migrations({ pool } = {}) {
   await applyRealtimeEventLogMigration({ pool });
   await applyCommunicationMigration({ pool });
   await applyConversationControlMigration({ pool });
-  return Object.freeze({ migration_count: 13, latest_migration: '021' });
+  await migrateCurrentBaseline({ databaseUrl });
+  return Object.freeze({ migration_count: 14, latest_migration: '022' });
 }

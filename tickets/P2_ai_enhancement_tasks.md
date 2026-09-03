@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 已于 2026-09-02 通过真实现场 Gate 和项目负责人批准。当前无活动 Lane；P2-007 至 P2-014 和 P2-G2 及以后 Gate 仍须另行授权。所有提交的 Feature Flag 默认关闭；P2-G1 `PASSED` 不是 Phase 2 `GO`。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 已于 2026-09-02 通过真实现场 Gate 和项目负责人批准。当前唯一活动 Lane 是 `ARCHITECTURE / ARCH-005`；P2-007 为 `TODO / BLOCKED_BY_ARCH_005`，P2-007 至 P2-014 和 P2-G2 及以后 Gate 仍须另行授权。所有提交的 Feature Flag 默认关闭；P2-G1 `PASSED` 不是 Phase 2 `GO`。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -304,7 +304,7 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 ## P2-007 服务目录、确定性规则与对话字段模型
 
-- 状态：TODO
+- 状态：TODO / BLOCKED_BY_ARCH_005
 - Lane：P2-C
 - 目标 Gate：P2-G2
 - 依赖：P1-012

@@ -10,7 +10,14 @@ import { initialWorkbenchState, reduceWorkbenchState, loadRefreshState, saveRefr
 const root = process.cwd();
 const sessionId = '00000000-0000-4000-8000-000000000111';
 const principalId = '00000000-0000-4000-8000-000000000001';
-const expiresAt = () => new Date(Date.now() + 60_000).toISOString();
+const expiresEpochMs = () => String(Date.now() + 60_000);
+const expiresAt = (epochMs = expiresEpochMs()) => {
+  const date = new Date(Number(epochMs));
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    .formatToParts(date).filter((part) => part.type !== 'literal');
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day} ${values.hour}:${values.minute}:${values.second}`;
+};
 
 function fakeAuthorize() {
   const principal = Object.freeze({ principal_id: principalId, display_name: 'Synthetic', is_active: true, roles: ['ADMIN'], team_ids: [] });
@@ -24,7 +31,7 @@ function fakeAuthorize() {
 function fakeHttpServices() {
   return {
     queryService: Object.freeze({
-      getBootstrap: async ({ authContext }) => ({ authenticated: true, principal: { principal_id: principalId, display_name: 'Synthetic', capabilities: [] }, expires_at: authContext.expires_at, csrf_token: authContext.csrf_token, capabilities: [], feature_status: {}, polling_interval_ms: 5000, sse_endpoint: '/api/realtime/events?scope=workbench', max_page_sizes: { conversations: 100, timeline: 200 } }),
+      getBootstrap: async ({ authContext }) => ({ authenticated: true, principal: { principal_id: principalId, display_name: 'Synthetic', capabilities: [] }, expires_at: authContext.expires_at, expires_epoch_ms: authContext.expires_epoch_ms, csrf_token: authContext.csrf_token, capabilities: [], feature_status: {}, polling_interval_ms: 5000, sse_endpoint: '/api/realtime/events?scope=workbench', max_page_sizes: { conversations: 100, timeline: 200 } }),
       listConversations: async () => ({ items: [], next_cursor: null }),
       getConversationDetail: async () => ({ session: { session_id: sessionId, row_version: 1 }, assignment: {}, handoff: null, read_cursor: {}, unread_count: 0, ticket: null, incident: { available: false, reason: 'INCIDENT_NOT_IMPLEMENTED' }, attachments: { available: false, reason: 'ATTACHMENT_NOT_IMPLEMENTED' }, delivery_summary: null, capabilities: [], etag: '"1"' }),
       listConversationItems: async () => ({ items: [], before_sequence: null, after_sequence: null, has_more: false }),
@@ -51,8 +58,8 @@ test('workbench schemas parse and OpenAPI 3.1 exposes every implemented route', 
 });
 
 test('opaque cursor round-trips normalized timestamp and session id', () => {
-  const encoded = encodeConversationCursor({ last_activity_at: '2026-09-01T00:00:00+08:00', session_id: sessionId });
-  assert.deepEqual(decodeConversationCursor(encoded), { last_activity_at: '2026-08-31T16:00:00.000Z', session_id: sessionId });
+  const encoded = encodeConversationCursor({ last_activity_at: '2026-09-01 00:00:00', session_id: sessionId });
+  assert.deepEqual(decodeConversationCursor(encoded), { last_activity_at: '2026-09-01 00:00:00', session_id: sessionId });
   assert.doesNotMatch(encoded, /userid|chatid|participant/iu);
 });
 
@@ -96,14 +103,15 @@ test('HTTP API rejects unauthenticated and expired contexts without fallback', a
     const response = await fetch(`${base}/api/workbench/bootstrap`); assert.equal(response.status, 401);
     assert.equal((await response.json()).error.code, WORKBENCH_ERROR_CODES.unauthenticated);
   });
-  await withServer(async () => ({ principal_id: principalId, auth_method: 'COOKIE', expires_at: new Date(Date.now() - 1).toISOString(), csrf_token: '0123456789abcdef' }), async (base) => {
+  const expiredEpoch = String(Date.now() - 1);
+  await withServer(async () => ({ principal_id: principalId, auth_method: 'COOKIE', expires_at: expiresAt(expiredEpoch), expires_epoch_ms: expiredEpoch, csrf_token: '0123456789abcdef' }), async (base) => {
     const response = await fetch(`${base}/api/realtime/events`); assert.equal(response.status, 401);
     assert.equal((await response.json()).error.code, WORKBENCH_ERROR_CODES.authExpired);
   });
 });
 
 test('Cookie writes require exact origin, same-site context, constant-time CSRF and matching idempotency', async () => {
-  const authenticate = async () => ({ principal_id: principalId, auth_method: 'COOKIE', expires_at: expiresAt(), csrf_token: '0123456789abcdef' });
+  const authenticate = async () => { const epoch = expiresEpochMs(); return { principal_id: principalId, auth_method: 'COOKIE', expires_at: expiresAt(epoch), expires_epoch_ms: epoch, csrf_token: '0123456789abcdef' }; };
   await withServer(authenticate, async (base) => {
     const id = crypto.randomUUID(); const body = JSON.stringify({ client_command_id: id, expected_row_version: 1, text: 'synthetic' });
     const headers = { 'content-type': 'application/json', 'idempotency-key': id, 'if-match': '"1"', origin: 'http://wrong.invalid', 'sec-fetch-site': 'same-origin', 'x-csrf-token': '0123456789abcdef' };
@@ -119,7 +127,7 @@ test('Cookie writes require exact origin, same-site context, constant-time CSRF 
 });
 
 test('Bearer mode requires Authorization header and tokens in query are forbidden', async () => {
-  const authenticate = async () => ({ principal_id: principalId, auth_method: 'BEARER', expires_at: expiresAt() });
+  const authenticate = async () => { const epoch = expiresEpochMs(); return { principal_id: principalId, auth_method: 'BEARER', expires_at: expiresAt(epoch), expires_epoch_ms: epoch }; };
   await withServer(authenticate, async (base) => {
     let response = await fetch(`${base}/api/workbench/bootstrap?token=secret`); assert.equal(response.status, 401);
     const id = crypto.randomUUID(); response = await fetch(`${base}/api/conversations/${sessionId}/release`, { method: 'POST', headers: { 'content-type': 'application/json', 'idempotency-key': id, 'if-match': '"1"' }, body: JSON.stringify({ client_command_id: id, expected_row_version: 1 }) });
@@ -128,7 +136,7 @@ test('Bearer mode requires Authorization header and tokens in query are forbidde
 });
 
 test('HTTP security headers contain strict CSP without inline or eval and no wildcard CORS', async () => {
-  await withServer(async () => ({ principal_id: principalId, auth_method: 'COOKIE', expires_at: expiresAt(), csrf_token: '0123456789abcdef' }), async (base) => {
+  await withServer(async () => { const epoch = expiresEpochMs(); return { principal_id: principalId, auth_method: 'COOKIE', expires_at: expiresAt(epoch), expires_epoch_ms: epoch, csrf_token: '0123456789abcdef' }; }, async (base) => {
     const response = await fetch(`${base}/api/workbench/bootstrap`); assert.equal(response.status, 200);
     const csp = response.headers.get('content-security-policy'); assert.match(csp, /default-src 'self'/u); assert.doesNotMatch(csp, /unsafe-inline|unsafe-eval/u);
     assert.equal(response.headers.get('x-frame-options'), 'DENY'); assert.equal(response.headers.get('access-control-allow-origin'), null);
@@ -136,7 +144,7 @@ test('HTTP security headers contain strict CSP without inline or eval and no wil
 });
 
 test('non-JSON and oversized write bodies are rejected with stable public errors', async () => {
-  const authenticate = async () => ({ principal_id: principalId, auth_method: 'COOKIE', expires_at: expiresAt(), csrf_token: '0123456789abcdef' });
+  const authenticate = async () => { const epoch = expiresEpochMs(); return { principal_id: principalId, auth_method: 'COOKIE', expires_at: expiresAt(epoch), expires_epoch_ms: epoch, csrf_token: '0123456789abcdef' }; };
   await withServer(authenticate, async (base) => {
     let response = await fetch(`${base}/api/conversations/${sessionId}/release`, { method: 'POST', body: 'x' }); assert.equal(response.status, 415);
     const id = crypto.randomUUID(); response = await fetch(`${base}/api/conversations/${sessionId}/release`, { method: 'POST', headers: { 'content-type': 'application/json', origin: 'http://127.0.0.1', 'sec-fetch-site': 'same-origin', 'x-csrf-token': '0123456789abcdef', 'idempotency-key': id, 'if-match': '"1"' }, body: JSON.stringify({ client_command_id: id, expected_row_version: 1, reason_code: 'X'.repeat(40_000) }) });
@@ -149,7 +157,7 @@ test('command facade delegates frozen control and communication ports without se
   const facade = createConversationWorkbenchCommandFacade({ enabled: true, authorize: { ...fakeAuthorize(), isAdmin: () => true },
     controlService: { takeoverSession: async (command) => { calls.push(['takeover', command]); return { ok: true }; } },
     communicationService: { commitExternalMessage: async (command) => { calls.push(['reply', command]); return { command_status: 'COMMITTED' }; } },
-    deliveryControl: { retry: async () => ({}), reconcile: async () => ({}) }, now: () => new Date('2026-09-01T00:00:00Z') });
+    deliveryControl: { retry: async () => ({}), reconcile: async () => ({}) }, now: () => new Date('2026-09-01 08:00:00') });
   await facade.takeover({ authContext: {}, sessionId, body: { client_command_id: crypto.randomUUID(), expected_row_version: 1 } });
   await facade.reply({ authContext: {}, sessionId, body: { client_command_id: crypto.randomUUID(), expected_row_version: 2, text: 'reply' } });
   assert.equal(calls[0][0], 'takeover'); assert.equal(calls[1][0], 'reply');

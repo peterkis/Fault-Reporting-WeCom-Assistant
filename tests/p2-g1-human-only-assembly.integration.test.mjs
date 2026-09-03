@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createServer as createNetServer } from 'node:net';
 import { test } from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
 
 import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
 import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
@@ -35,7 +36,7 @@ const databaseUrl = process.env.PILOT_DATABASE_URL;
 if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) throw new Error('P2_G1_INTEGRATION_DATABASE_REQUIRED');
 const TIMEOUT = 300_000;
 
-async function base(pool) {
+async function base(pool, isolatedDatabaseUrl) {
   await applyChannelMessageInboxMigration({ pool });
   await applyServiceIntakeMigration({ pool });
   await applyPilotTicketCoreMigration({ pool });
@@ -49,6 +50,7 @@ async function base(pool) {
   await applyRealtimeEventLogMigration({ pool });
   await applyCommunicationMigration({ pool });
   await applyConversationControlMigration({ pool });
+  await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
 }
 
 function frame({ msgId, sender, text, group = 'synthetic-p2-g1-group' }) {
@@ -100,8 +102,8 @@ async function waitForSseEvent(response, eventType, { timeoutMs = 12_000 } = {})
 }
 
 test('P2-G1 P1 commit, durable projection recovery, duplicate idempotency, participant isolation and catalog invariance', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1core', run: async ({ pool }) => {
-    await base(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1core', run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
+    await base(pool, isolatedDatabaseUrl);
     const catalogBefore = await catalogSnapshot(pool);
     const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20 });
     const intake = operational(pool);
@@ -121,7 +123,7 @@ test('P2-G1 P1 commit, durable projection recovery, duplicate idempotency, parti
     const workbenchAuthorization = createPilotWorkbenchAuthorizationAdapter({ pool });
     const workbench = createConversationWorkbenchQueryService({ pool, enabled: true, authorize: workbenchAuthorization });
     const visible = await workbench.listConversations({
-      authContext: { principal_id: workbenchAdmin.id, auth_method: 'BEARER', expires_at: new Date(Date.now() + 60_000).toISOString() },
+      authContext: { principal_id: workbenchAdmin.id, auth_method: 'BEARER', expires_epoch_ms: String(Date.now() + 60_000) },
       state: 'open',
     });
     assert.equal(visible.items.length, 1);
@@ -133,7 +135,8 @@ test('P2-G1 P1 commit, durable projection recovery, duplicate idempotency, parti
     assert.deepEqual(counts.rows[0], { tickets: 1, items: 1, events: 1 });
 
     const supplement = await assembly.handleFrame(frame({ msgId: `p2-g1-${randomUUID()}`, sender: 'synthetic-participant-a', text: '补充：合成账号仍无法登录。' }));
-    assert.equal(supplement.ok, true);
+    assert.equal(supplement.ok, true, JSON.stringify(supplement));
+    assert.equal(supplement.projection?.failures ?? 0, 0, JSON.stringify(supplement));
     versions = await pool.query('SELECT generation_version::integer,row_version::integer FROM conversation.session');
     assert.deepEqual(versions.rows[0], { generation_version: 2, row_version: 2 });
     await assembly.handleFrame(frame({ msgId: `p2-g1-${randomUUID()}`, sender: 'synthetic-participant-b', text: '新报修：HIS 登录失败，提示权限错误。' }));
@@ -153,8 +156,8 @@ test('P2-G1 P1 commit, durable projection recovery, duplicate idempotency, parti
 });
 
 test('P2-G1 different Intake atomically ends the prior participant Session before opening the next', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1boundary', run: async ({ pool }) => {
-    await base(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1boundary', run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
+    await base(pool, isolatedDatabaseUrl);
     const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20 });
     const assembly = createP2G1HumanOnlyAssembly({ operationalIntake: operational(pool), coordinator });
     const sender = 'synthetic-boundary-participant';
@@ -181,8 +184,8 @@ test('P2-G1 different Intake atomically ends the prior participant Session befor
 });
 
 test('P2-G1 fault paths serialize takeover, isolate internal note, deduplicate reply and recover delivery without blind resend', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1fault', run: async ({ pool }) => {
-    await base(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1fault', run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
+    await base(pool, isolatedDatabaseUrl);
     const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true });
     const assembly = createP2G1HumanOnlyAssembly({ operationalIntake: operational(pool), coordinator });
     await assembly.handleFrame(frame({ msgId: `p2-g1-${randomUUID()}`, sender: 'synthetic-fault-user', text: '新报修：合成工作站异常。' }));
@@ -202,8 +205,8 @@ test('P2-G1 fault paths serialize takeover, isolate internal note, deduplicate r
     const authorize = createPilotWorkbenchAuthorizationAdapter({ pool });
     const facade = createConversationWorkbenchCommandFacade({ enabled: true, authorize, controlService, communicationService,
       deliveryControl: { retry: async () => ({}), reconcile: async () => ({}) },
-      now: () => new Date('2030-01-01T00:00:00.000Z') });
-    const authContext = { principal_id: winner.id, auth_method: 'BEARER', expires_at: new Date(Date.now() + 60_000).toISOString() };
+      now: () => new Date('2030-01-01 08:00:00') });
+    const authContext = { principal_id: winner.id, auth_method: 'BEARER', expires_epoch_ms: String(Date.now() + 60_000) };
     const noteId = randomUUID();
     const note = await facade.internalNote({ authContext, sessionId: session.id, body: { client_command_id: noteId, expected_row_version: current.row_version, text: 'Synthetic internal note' } });
     assert.equal(note.command_status, 'COMMITTED');
@@ -214,7 +217,8 @@ test('P2-G1 fault paths serialize takeover, isolate internal note, deduplicate r
       (SELECT count(*)::integer FROM communication.outbox) outboxes,
       (SELECT count(*)::integer FROM communication.delivery) deliveries`);
     assert.deepEqual(afterNote.rows[0], { messages: 1, outboxes: 0, deliveries: 0 });
-    await coordinator.runOnce();
+    const noteProjection = await coordinator.runOnce();
+    assert.equal(noteProjection.failures, 0, JSON.stringify(noteProjection));
     assert.equal((await pool.query("SELECT count(*)::integer count FROM conversation.item WHERE item_type='INTERNAL_NOTE'")).rows[0].count, 1);
 
     const replyId = randomUUID();
@@ -253,8 +257,8 @@ test('P2-G1 fault paths serialize takeover, isolate internal note, deduplicate r
 });
 
 test('P2-G1 local runtime binds one loopback App and reports human-only readiness with strict Test Auth', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1runtime', run: async ({ pool }) => {
-    await base(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1runtime', run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
+    await base(pool, isolatedDatabaseUrl);
     const admin = await principal(pool, 'runtime');
     const port = await reservePort();
     const origin = `http://127.0.0.1:${port}`;
@@ -317,7 +321,7 @@ test('P2-G1 local runtime binds one loopback App and reports human-only readines
 
 test('P2-G1 process cluster runs App, Worker and Gateway in three bounded Node processes', { timeout: TIMEOUT }, async (t) => {
   await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1cluster', run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
-    await base(pool);
+    await base(pool, isolatedDatabaseUrl);
     const principals = [await principal(pool, 'cluster-a'), await principal(pool, 'cluster-b')];
     const seed = createP2G1HumanOnlyAssembly({ operationalIntake: operational(pool), coordinator: createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20 }), privacyClass: 'INTERNAL' });
     assert.equal((await seed.handleFrame(frame({ msgId: `p2-g1-cluster-${randomUUID()}`, sender: 'synthetic-cluster-participant', text: '新报修：合成分进程资源负载。' }))).ok, true);
@@ -387,7 +391,7 @@ test('P2-G1 isolated PostgreSQL Replay Gap drives real Edge through Last-Event-I
   assert.equal(result.combined_runtime, false);
   assert.equal(result.browser_cleanup, true);
   assert.equal(result.process_cleanup, true);
-  const residualPool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000 });
+  const residualPool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000 });
   try {
     const residual = await residualPool.query("SELECT count(*)::int AS count FROM pg_database WHERE datname LIKE 'p2_g1_isolated_replaygap_%'");
     assert.equal(residual.rows[0].count, 0);
@@ -396,21 +400,21 @@ test('P2-G1 isolated PostgreSQL Replay Gap drives real Edge through Last-Event-I
 });
 
 test('P2-G1 bounded capacity projects 1000 synthetic inbound facts and drains 500 deliveries with no catalog drift', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1capacity', max: 4, run: async ({ pool }) => {
-    await base(pool); const before = await catalogSnapshot(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'g1capacity', max: 4, run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
+    await base(pool, isolatedDatabaseUrl); const before = await catalogSnapshot(pool);
     await pool.query(`INSERT INTO channel.message_inbox(
       schema_version,provider,msg_id,idempotency_key,req_id,bot_id,chat_type,chat_id,sender_user_id,msg_type,
       received_at,raw_text,clean_text,normalized_message,processing_status,response_snapshot,privacy_class,trace_id,retention_until,completed_at)
       SELECT 1,'WECOM_AIBOT','p2-g1-capacity-'||n,'WECOM_AIBOT:p2-g1-capacity-'||n,'synthetic-request-'||n,
-        'synthetic-bot','group','synthetic-group','synthetic-user-'||n,'text','2030-01-01T00:00:00Z'::timestamptz+n*interval '1 millisecond',
+        'synthetic-bot','group','synthetic-group','synthetic-user-'||n,'text','2030-01-01 08:00:00'::timestamp without time zone,
         'synthetic inbound','synthetic inbound','{}','COMPLETED','{}','INTERNAL','synthetic-trace-'||n,
-        '2031-01-01T00:00:00Z','2030-01-01T00:00:00Z'::timestamptz+n*interval '1 millisecond'
+        '2031-01-01 08:00:00','2030-01-01 08:00:00'::timestamp without time zone
       FROM generate_series(1,1000) n`);
     await pool.query(`INSERT INTO intake.service_intake(
       intake_no,source_channel,source_provider,source_bot_id,source_chat_type,source_chat_id,reporter_wecom_userid,
       explicit_aggregation_boundary,privacy_class,retention_until,request_type,summary,status,primary_message_id,last_message_at)
       SELECT 'INT-20300101-'||lpad(row_number() OVER(ORDER BY id)::text,4,'0'),'WECOM_GROUP','WECOM_AIBOT','synthetic-bot','group','synthetic-group',
-        sender_user_id,true,'INTERNAL','2031-01-01T00:00:00Z','SERVICE_REQUEST','synthetic inbound','RECEIVED',id,received_at
+        sender_user_id,true,'INTERNAL','2031-01-01 08:00:00','SERVICE_REQUEST','synthetic inbound','RECEIVED',id,received_at
       FROM channel.message_inbox`);
     const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20 });
     let projected = 0;
@@ -425,17 +429,17 @@ test('P2-G1 bounded capacity projects 1000 synthetic inbound facts and drains 50
 
     const admin = await principal(pool, 'capacity');
     await pool.query(`INSERT INTO communication.message(session_id,sender_kind,sender_principal_id,purpose,message_type,visibility,idempotency_scope,client_command_id,command_hash,content,content_hash,privacy_class,retention_until,created_at)
-      SELECT s.id,'AGENT',$1::uuid,'HUMAN_REPLY','text','EXTERNAL','P2_G1_CAPACITY',uuidv7(),$2,'{"text":"synthetic"}',$3,'INTERNAL','2031-01-01T00:00:00Z','2030-01-02T00:00:00Z'::timestamptz+row_number() OVER(ORDER BY s.id)*interval '1 millisecond'
+      SELECT s.id,'AGENT',$1::uuid,'HUMAN_REPLY','text','EXTERNAL','P2_G1_CAPACITY',uuidv7(),$2,'{"text":"synthetic"}',$3,'INTERNAL','2031-01-01 08:00:00','2030-01-02 08:00:00'::timestamp without time zone
       FROM conversation.session s ORDER BY s.id LIMIT 500`, [admin.id, 'a'.repeat(64), 'b'.repeat(64)]);
     await pool.query(`INSERT INTO communication.outbox(message_id,idempotency_key,route_policy)
       SELECT id,'p2-g1-capacity-outbox-'||id::text,'SESSION_THREAD' FROM communication.message WHERE idempotency_scope='P2_G1_CAPACITY'`);
     await pool.query(`INSERT INTO communication.delivery(outbox_id,provider,channel_account_id,target_type,target_id,target_hash,idempotency_key,next_attempt_at,created_at,updated_at)
-      SELECT o.id,'WECOM_AIBOT','synthetic-bot','GROUP','synthetic-target',$1,'p2-g1-capacity-delivery-'||o.id::text,'2030-01-03T00:00:00Z','2030-01-03T00:00:00Z','2030-01-03T00:00:00Z'
+      SELECT o.id,'WECOM_AIBOT','synthetic-bot','GROUP','synthetic-target',$1,'p2-g1-capacity-delivery-'||o.id::text,'2030-01-03 08:00:00','2030-01-03 08:00:00','2030-01-03 08:00:00'
       FROM communication.outbox o JOIN communication.message m ON m.id=o.message_id WHERE m.idempotency_scope='P2_G1_CAPACITY'`, ['c'.repeat(64)]);
     for (let run = 0; run < 30; run += 1) await coordinator.runOnce();
     const sender = createMockCommunicationSender();
     const worker = createCommunicationDeliveryWorker({ pool, sender, enabled: true, batchSize: 20,
-      maxDeliveriesPerTargetWindow: 500, now: () => new Date('2030-01-03T00:00:00Z') });
+      maxDeliveriesPerTargetWindow: 500, now: () => new Date('2030-01-03 08:00:00') });
     for (let run = 0; run < 25; run += 1) await worker.runOnce();
     const deliveries = await pool.query(`SELECT count(*)::integer total,count(*) FILTER(WHERE status='SENT')::integer sent FROM communication.delivery`);
     assert.deepEqual(deliveries.rows[0], { total: 500, sent: 500 }); assert.equal(sender.callCount, 500);

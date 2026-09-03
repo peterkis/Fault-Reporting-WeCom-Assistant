@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { postgresTimestampToLocalDateTime } from '../src/platform/postgres-types.mjs';
+import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
@@ -26,6 +28,9 @@ import {
   createNotificationDeliveryWorker,
   createNotificationOutbox,
 } from '../src/p1-007-notification-outbox.mjs';
+import { applyPilotAccessMigration } from '../src/p1-009-pilot-access-workbench.mjs';
+import { applyTicketClosureMigration } from '../src/p1-010-ticket-closure.mjs';
+import { applyPilotOperationsMigration } from '../src/p1-011-pilot-operations-baseline.mjs';
 import {
   applyConversationContractsMigration,
   buildConversationSessionScope,
@@ -51,7 +56,7 @@ const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
 const PROJECTOR_NAME = 'CONVERSATION_TIMELINE';
 const PROJECTOR_VERSION = '1';
-const RETENTION_UNTIL = '2027-08-30T00:00:00.000Z';
+const RETENTION_UNTIL = '2027-08-30 08:00:00';
 
 async function applyBaseMigrations(pool) {
   await applyChannelMessageInboxMigration({ pool });
@@ -273,7 +278,7 @@ async function createConversationSession(pool, label, { serviceIntakeId = null }
       identity.chat_type,
       identity.external_thread_key,
       identity.thread_key,
-      '2026-08-30T00:00:00.000Z',
+      '2026-08-30 08:00:00',
     ],
   );
   const creationIdempotencyKey = `P2-002-INTEGRATION:${label}`;
@@ -295,7 +300,7 @@ async function createConversationSession(pool, label, { serviceIntakeId = null }
       serviceIntakeId,
       scope.session_scope_key,
       scope.creation_idempotency_key,
-      '2026-08-30T00:00:00.000Z',
+      '2026-08-30 08:00:00',
     ],
   );
   return session.rows[0].id;
@@ -335,7 +340,7 @@ function sourceRecord({
   sourceType = 'CHANNEL_MESSAGE',
   sourceId,
   projectionVariant = 'PRIMARY',
-  occurredAt = '2026-08-30T01:00:00.000Z',
+  occurredAt = '2026-08-30 09:00:00',
   sourceOrdinal = '1',
   text = 'synthetic timeline content',
   safeContent = { fixture_kind: 'P2_002_INTEGRATION' },
@@ -400,7 +405,12 @@ async function rawSessionItems(pool, sessionId) {
       ORDER BY conversation.item.sequence_no`,
     [sessionId],
   );
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    retention_until: postgresTimestampToLocalDateTime(row.retention_until),
+    occurred_at: postgresTimestampToLocalDateTime(row.occurred_at),
+    projected_at: postgresTimestampToLocalDateTime(row.projected_at),
+  }));
 }
 
 async function sourceFactCounts(pool) {
@@ -863,9 +873,15 @@ integrationTest('P2-002 P1 source adapter reads Channel/Intake/Ticket/Delivery f
     databaseUrl,
     purpose: 'sourceadapter',
     max: 4,
-    run: async ({ pool }) => {
+    run: async ({ pool, databaseName }) => {
       await applyBaseMigrations(pool);
       await applyTimelineProjectionMigration({ pool });
+      await applyPilotAccessMigration({ pool });
+      await applyTicketClosureMigration({ pool });
+      await applyPilotOperationsMigration({ pool });
+      await migrateCurrentBaseline({
+        databaseUrl: databaseUrlForP2002Database(databaseUrl, databaseName),
+      });
 
       const rawProviderMessageId = `synthetic-provider-message-${randomUUID()}`;
       const syntheticUserId = `synthetic-user-${randomUUID()}`;
@@ -882,7 +898,7 @@ integrationTest('P2-002 P1 source adapter reads Channel/Intake/Ticket/Delivery f
           msgtype: 'text',
           text: { content: 'HIS synthetic 登录失败，提示权限错误' },
         },
-      }, { receivedAt: '2026-08-30T01:00:00.000Z' });
+      }, { receivedAt: '2026-08-30 09:00:00' });
       assert.equal(adapted.ok, true);
       const ticketProcessor = createPilotTicketProcessor({
         serviceIntakeProcessor: createServiceIntakeProcessor(),
@@ -894,7 +910,7 @@ integrationTest('P2-002 P1 source adapter reads Channel/Intake/Ticket/Delivery f
         privacyClass: 'INTERNAL',
         retentionUntil: RETENTION_UNTIL,
       }, ticketProcessor);
-      assert.equal(acceptedMessage.ok, true);
+      assert.equal(acceptedMessage.ok, true, JSON.stringify(acceptedMessage));
       const { intake, ticket } = acceptedMessage.result;
       assert.ok(ticket);
 
@@ -1153,7 +1169,7 @@ integrationTest('P2-002 real worker processes roll back before commit and replay
         const afterCommitRestartResult = await afterCommitRestart.waitForEvent(
           'PROJECTION_RESULT',
         );
-        assert.equal(afterCommitRestartResult.event, 'PROJECTION_RESULT');
+        assert.equal(afterCommitRestartResult.event, 'PROJECTION_RESULT', JSON.stringify(afterCommitRestartResult));
         assert.equal(afterCommitRestartResult.result.inserted_count, 0);
         assert.equal(afterCommitRestartResult.result.replayed_count, 1);
         assert.equal(afterCommitRestartResult.result.checkpoint_updated, false);
@@ -1205,7 +1221,7 @@ integrationTest('P2-002 stale rebuild cannot delete a source committed after sna
         sourceId: 'stale-rebuild-old-1',
         projectionVariant: 'STATUS',
         sourceOrdinal: '1',
-        occurredAt: '2026-08-30T11:00:00.000Z',
+        occurredAt: '2026-08-30 19:00:00',
       });
       const oldSecond = sourceRecord({
         sessionId,
@@ -1214,7 +1230,7 @@ integrationTest('P2-002 stale rebuild cannot delete a source committed after sna
         sourceId: 'stale-rebuild-old-2',
         projectionVariant: 'STATUS',
         sourceOrdinal: '2',
-        occurredAt: '2026-08-30T11:01:00.000Z',
+        occurredAt: '2026-08-30 19:01:00',
       });
       const oldFullSnapshot = Object.freeze([oldFirst, oldSecond]);
       await projectBatch(projector, oldFullSnapshot);
@@ -1224,7 +1240,7 @@ integrationTest('P2-002 stale rebuild cannot delete a source committed after sna
       });
       assert.equal(checkpointBeforeRace.cursor_value, '2');
 
-      const rebuildPool = new Pool({
+      const rebuildPool = createPostgresPool({
         connectionString: databaseUrlForP2002Database(databaseUrl, databaseName),
         max: 1,
         connectionTimeoutMillis: 2_000,
@@ -1255,7 +1271,7 @@ integrationTest('P2-002 stale rebuild cannot delete a source committed after sna
           sourceId: 'stale-rebuild-new-3',
           projectionVariant: 'STATUS',
           sourceOrdinal: '3',
-          occurredAt: '2026-08-30T11:02:00.000Z',
+          occurredAt: '2026-08-30 19:02:00',
         });
         const newProjection = await projectOne(projector, newlyCommitted);
         assert.equal(newProjection.inserted_count, 1);
@@ -1339,7 +1355,7 @@ integrationTest('P2-002 projector is idempotent, concurrent, transactional, rebu
   await withP2002IsolatedDatabase({
     databaseUrl,
     purpose: 'runtime',
-    max: 16,
+    max: 8,
     run: async ({ pool }) => {
       await applyBaseMigrations(pool);
       await applyTimelineProjectionMigration({ pool });
@@ -1400,7 +1416,7 @@ integrationTest('P2-002 projector is idempotent, concurrent, transactional, rebu
         sourceId: one.source_id,
         text: one.text,
         privacyClass: 'SECRET',
-        retentionUntil: '2026-09-30T00:00:00.000Z',
+        retentionUntil: '2026-09-30 08:00:00',
       });
       assert.equal(tightened.source_hash, one.source_hash);
       const tightenedReplay = await projectOne(projector, tightened, { cursorValue: '2' });
@@ -1408,7 +1424,7 @@ integrationTest('P2-002 projector is idempotent, concurrent, transactional, rebu
       assert.equal(tightenedReplay.replayed_count, 1);
       oneRows = await rawSessionItems(pool, oneSessionId);
       assert.equal(oneRows[0].privacy_class, 'SECRET');
-      assert.equal(oneRows[0].retention_until.toISOString(), '2026-09-30T00:00:00.000Z');
+      assert.equal(oneRows[0].retention_until, '2026-09-30 08:00:00');
 
       const ticketSessionId = await createConversationSession(pool, 'ticketvariants');
       const ticketExternal = sourceRecord({
@@ -1463,7 +1479,7 @@ integrationTest('P2-002 projector is idempotent, concurrent, transactional, rebu
       assert.equal((await rawSessionItems(pool, sameConcurrentSessionId)).length, 1);
 
       const differentConcurrentSessionId = await createConversationSession(pool, 'differentconcurrent');
-      const sameOccurredAt = '2026-08-30T02:00:00.000Z';
+      const sameOccurredAt = '2026-08-30 10:00:00';
       const differentConcurrent = Array.from({ length: 12 }, (_, index) => sourceRecord({
         sessionId: differentConcurrentSessionId,
         sourceStream: 'channel.concurrent.different',
@@ -1651,7 +1667,7 @@ integrationTest('P2-002 projector is idempotent, concurrent, transactional, rebu
         sourceStream: ackRecord.source_stream,
         sourceId: 'checkpoint-conflict-source',
         sourceOrdinal: '2',
-        occurredAt: '2026-08-30T01:00:01.000Z',
+        occurredAt: '2026-08-30 09:00:01',
       });
       await assert.rejects(
         projectOne(restartedProjector, checkpointConflictRecord, {
@@ -1670,7 +1686,7 @@ integrationTest('P2-002 projector is idempotent, concurrent, transactional, rebu
         sourceId: 'later-ticket-event',
         projectionVariant: 'STATUS',
         sourceOrdinal: '2',
-        occurredAt: '2026-08-30T04:00:00.000Z',
+        occurredAt: '2026-08-30 12:00:00',
       });
       const earlier = sourceRecord({
         sessionId: rebuildSessionId,
@@ -1679,7 +1695,7 @@ integrationTest('P2-002 projector is idempotent, concurrent, transactional, rebu
         sourceId: 'earlier-ticket-event',
         projectionVariant: 'STATUS',
         sourceOrdinal: '1',
-        occurredAt: '2026-08-30T03:00:00.000Z',
+        occurredAt: '2026-08-30 11:00:00',
       });
       await projectOne(projector, later);
       const checkpointBeforeOutOfOrder = await projector.getProjectionCheckpoint({
@@ -1873,7 +1889,7 @@ integrationTest('P2-002 projector is idempotent, concurrent, transactional, rebu
               sourceStream: bulkStream,
               sourceId: `bulk-source-${String(ordinal).padStart(4, '0')}`,
               sourceOrdinal: String(ordinal),
-              occurredAt: '2026-08-30T08:00:00.000Z',
+              occurredAt: '2026-08-30 16:00:00',
               text: `synthetic bulk item ${ordinal}`,
             }));
           }
@@ -2021,7 +2037,7 @@ integrationTest('P2-002 projector is idempotent, concurrent, transactional, rebu
 });
 
 integrationTest('P2-002 suite leaves no random database or worker backend residual', async (t) => {
-  const adminPool = new Pool({
+  const adminPool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,

@@ -1,4 +1,7 @@
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
+import { assertLocalDateTime } from './platform/time-contract.mjs';
+import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/002_p1_004_service_intake.sql', import.meta.url);
 
@@ -95,7 +98,7 @@ function initialStatus(requestType, cleanText) {
 }
 
 function iso(value) {
-  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+  return postgresTimestampToLocalDateTime(value);
 }
 
 function publicIntake(row) {
@@ -124,7 +127,9 @@ function strongestPrivacy(left, right) {
 }
 
 function earliestTimestamp(left, right) {
-  return new Date(Math.min(new Date(left).getTime(), new Date(right).getTime())).toISOString();
+  const first = assertLocalDateTime(left);
+  const second = assertLocalDateTime(right);
+  return first < second ? first : second;
 }
 
 function aggregationKey(message) {
@@ -154,7 +159,7 @@ async function insertEvent({
             $2::uuid,
             $3,
             COALESCE(MAX(event_ordinal), 0) + 1,
-            $4::timestamptz,
+            $4::timestamp without time zone,
             $5,
             $6::jsonb
        FROM intake.service_intake_event
@@ -181,6 +186,7 @@ export async function applyServiceIntakeMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   await pool.query(sql);
 }
@@ -245,11 +251,11 @@ export function createServiceIntakeProcessor({
             AND candidate.source_chat_id IS NOT DISTINCT FROM $4
             AND candidate.reporter_wecom_userid = $5
             AND candidate.status IN ('RECEIVED', 'WAITING_DESCRIPTION', 'WAITING_TRIAGE', 'TICKET_CREATED')
-            AND candidate.last_message_at >= $6::timestamptz - ($7 * INTERVAL '1 millisecond')
-            AND candidate.last_message_at <= $6::timestamptz + ($7 * INTERVAL '1 millisecond')
+            AND candidate.last_message_at >= $6::timestamp without time zone - ($7 * INTERVAL '1 millisecond')
+            AND candidate.last_message_at <= $6::timestamp without time zone + ($7 * INTERVAL '1 millisecond')
             AND (
                 NOT candidate.explicit_aggregation_boundary
-                OR primary_message.received_at <= $6::timestamptz
+                OR primary_message.received_at <= $6::timestamp without time zone
             )
           ORDER BY primary_message.received_at DESC,
                    candidate.last_message_at DESC,
@@ -286,14 +292,17 @@ export function createServiceIntakeProcessor({
       const appended = await transaction.query(
         `UPDATE intake.service_intake
             SET message_count = message_count + 1,
-                last_message_at = GREATEST(last_message_at, $2::timestamptz),
+                last_message_at = GREATEST(last_message_at, $2::timestamp without time zone),
                 request_type = $3,
                 status = $4,
                 summary = $5,
                 privacy_class = $6,
-                retention_until = $7::timestamptz,
+                retention_until = $7::timestamp without time zone,
                 version = version + 1,
-                updated_at = clock_timestamp()
+                updated_at = GREATEST(
+                  created_at,
+                  date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
+                )
           WHERE id = $1::uuid
           RETURNING id::text, intake_no, source_channel, reporter_wecom_userid,
                     request_type, summary, reported_campus_id, reported_department_id,
@@ -314,7 +323,7 @@ export function createServiceIntakeProcessor({
       await transaction.query(
         `INSERT INTO intake.service_intake_message (
             intake_id, channel_message_id, relation_type, sequence_no, linked_at, trace_id
-         ) VALUES ($1::uuid, $2::bigint, $3, $4, $5::timestamptz, $6)`,
+         ) VALUES ($1::uuid, $2::bigint, $3, $4, $5::timestamp without time zone, $6)`,
         [intake.id, channelMessageId, relationType, intake.message_count, message.received_at, traceId],
       );
       const events = await insertEvent({
@@ -373,14 +382,14 @@ export function createServiceIntakeProcessor({
           last_message_at
        )
        SELECT
-          'INT-' || to_char($1::timestamptz AT TIME ZONE 'Asia/Shanghai', 'YYYYMMDD')
+          'INT-' || to_char($1::timestamp without time zone AT TIME ZONE 'Asia/Shanghai', 'YYYYMMDD')
             || '-' || lpad(
               generated_number.sequence_value,
               GREATEST(4, char_length(generated_number.sequence_value)),
               '0'
             ),
-          $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamptz,
-          $11, $12, $13, $14::bigint, $1::timestamptz
+          $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamp without time zone,
+          $11, $12, $13, $14::bigint, $1::timestamp without time zone
          FROM generated_number
        RETURNING id::text, intake_no, source_channel, reporter_wecom_userid,
                  request_type, summary, reported_campus_id, reported_department_id,
@@ -409,7 +418,7 @@ export function createServiceIntakeProcessor({
     await transaction.query(
       `INSERT INTO intake.service_intake_message (
           intake_id, channel_message_id, relation_type, sequence_no, linked_at, trace_id
-       ) VALUES ($1::uuid, $2::bigint, 'PRIMARY', 1, $3::timestamptz, $4)`,
+       ) VALUES ($1::uuid, $2::bigint, 'PRIMARY', 1, $3::timestamp without time zone, $4)`,
       [intake.id, channelMessageId, message.received_at, traceId],
     );
 

@@ -1,3 +1,5 @@
+import type { LocalDateTime, PhysicalEpochMs } from './time_contracts';
+
 /**
  * P2-003 durable realtime event projection, replay, authorization, SSE, and
  * polling-fallback contracts.
@@ -132,8 +134,9 @@ export interface RealtimeEventCommand {
   readonly authorization_scope_id: string | null;
   readonly visibility_scope: RealtimeVisibilityScope;
   readonly payload: RealtimeSafeJsonObject;
-  readonly occurred_at: string;
-  readonly expires_at: string;
+  readonly occurred_at: LocalDateTime;
+  readonly expires_at: LocalDateTime;
+  readonly expires_epoch_ms: PhysicalEpochMs;
 }
 
 /** PostgreSQL representation used by the event store and replay mapper. */
@@ -156,9 +159,10 @@ export interface RealtimeEventRow {
   readonly payload: RealtimeSafeJsonObject;
   readonly payload_hash: string;
   readonly event_hash: string;
-  readonly occurred_at: string | Date;
-  readonly expires_at: string | Date;
-  readonly created_at: string | Date;
+  readonly occurred_at: LocalDateTime;
+  readonly expires_at: LocalDateTime;
+  readonly expires_epoch_ms: PhysicalEpochMs;
+  readonly created_at: LocalDateTime;
 }
 
 /** Only this safe view may cross the replay/SSE boundary. */
@@ -170,8 +174,8 @@ export interface RealtimePublicEventView {
   readonly aggregate_version: RealtimeBigIntString | null;
   readonly visibility_scope: RealtimeVisibilityScope;
   readonly payload: RealtimeSafeJsonObject;
-  readonly occurred_at: string;
-  readonly created_at: string;
+  readonly occurred_at: LocalDateTime;
+  readonly created_at: LocalDateTime;
 }
 
 export interface RealtimeEventAppendResult {

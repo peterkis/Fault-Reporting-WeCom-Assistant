@@ -5,7 +5,7 @@ import * as weComSdkAdapter from '../src/p1-002-wecom-sdk-adapter.mjs';
 
 const { adaptWeComSdkFrame } = weComSdkAdapter;
 
-const RECEIVED_AT = '2026-08-28T10:00:00.000Z';
+const RECEIVED_AT = '2026-08-28 18:00:00';
 
 function baseFrame(body) {
   return {
@@ -28,7 +28,7 @@ test('text Frame becomes an SDK-independent normalized message', () => {
       text: { content: '  HIS\u3000Login FAILED\r\n' },
       response_url: 'https://sensitive.example.test/reply',
     }),
-    { receivedAt: RECEIVED_AT },
+    { receivedEpochMs: '1787911200000' },
   );
 
   assert.deepEqual(result, {
@@ -44,7 +44,9 @@ test('text Frame becomes an SDK-independent normalized message', () => {
       chat_id: null,
       sender_user_id: 'user-contract-001',
       msg_type: 'text',
+      provider_create_epoch_ms: null,
       create_time: null,
+      received_epoch_ms: '1787911200000',
       received_at: RECEIVED_AT,
       content: [
         {
@@ -148,8 +150,8 @@ test('replayed Frame keeps one durable idempotency key without Adapter-side drop
     headers: { req_id: 'req-contract-replayed' },
   };
 
-  const first = adaptWeComSdkFrame(firstFrame, { receivedAt: '2026-08-28T10:00:00.000Z' });
-  const replayed = adaptWeComSdkFrame(replayedFrame, { receivedAt: '2026-08-28T10:00:05.000Z' });
+  const first = adaptWeComSdkFrame(firstFrame, { receivedAt: '2026-08-28 18:00:00' });
+  const replayed = adaptWeComSdkFrame(replayedFrame, { receivedAt: '2026-08-28 18:00:05' });
 
   assert.equal(first.ok, true);
   assert.equal(replayed.ok, true);
@@ -319,14 +321,17 @@ test('Normalized Message JSON Schema matches the Adapter interface and excludes 
     'chat_id',
     'sender_user_id',
     'msg_type',
+    'provider_create_epoch_ms',
     'create_time',
+    'received_epoch_ms',
     'received_at',
     'content',
     'quote',
   ]);
   assert.deepEqual(schema.properties.msg_type.enum, ['text', 'image', 'mixed', 'voice', 'file', 'video']);
   assert.deepEqual(schema.properties.create_time.type, ['string', 'null']);
-  assert.equal(schema.properties.received_at.format, 'date-time');
+  assert.equal(schema.properties.received_at['x-business-timezone'], 'Asia/Shanghai');
+  assert.equal(schema.properties.received_at['x-offset-allowed'], false);
   assert.equal(schema.properties.content.items.oneOf.length, 2);
   assert.deepEqual(schema.$defs.media.properties.type.enum, ['image', 'file', 'video']);
   assert.deepEqual(schema.$defs.text_item.properties.source.enum, ['VOICE_TRANSCRIPT']);

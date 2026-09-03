@@ -131,38 +131,41 @@ test('Session boundary rules cover ended, explicit, different Intake, idle equal
   const active = {
     status: 'OPEN',
     service_intake_id: INTAKE_A,
-    last_activity_at: '2026-08-30T01:00:00.000Z',
+    last_activity_at: '2026-08-30 09:00:00',
+    last_activity_epoch_ms: '1788042000000',
   };
   assert.deepEqual(decideConversationSessionBoundary({
-    receivedAt: '2026-08-30T01:00:00.000Z',
+    receivedAt: '2026-08-30 09:00:00',
     idleTimeoutMs: 60_000,
   }), { action: 'START_NEW_SESSION', reason: 'NO_ACTIVE_SESSION' });
   assert.deepEqual(decideConversationSessionBoundary({
     currentSession: { ...active, status: 'ENDED' },
-    receivedAt: '2026-08-30T01:00:01.000Z',
+    receivedAt: '2026-08-30 09:00:01',
     idleTimeoutMs: 60_000,
   }), { action: 'START_NEW_SESSION', reason: 'PREVIOUS_SESSION_ENDED' });
   assert.deepEqual(decideConversationSessionBoundary({
     currentSession: active,
-    receivedAt: '2026-08-30T01:00:01.000Z',
+    receivedAt: '2026-08-30 09:00:01',
     idleTimeoutMs: 60_000,
     requestedBoundaryReason: 'EXPLICIT_USER_NEW_TOPIC',
   }), { action: 'START_NEW_SESSION', reason: 'EXPLICIT_USER_NEW_TOPIC' });
   assert.deepEqual(decideConversationSessionBoundary({
     currentSession: active,
-    receivedAt: '2026-08-30T01:00:01.000Z',
+    receivedAt: '2026-08-30 09:00:01',
     idleTimeoutMs: 60_000,
     nextServiceIntakeId: INTAKE_B,
   }), { action: 'START_NEW_SESSION', reason: 'DIFFERENT_INTAKE' });
   assert.deepEqual(decideConversationSessionBoundary({
     currentSession: active,
-    receivedAt: '2026-08-30T01:01:00.000Z',
+    receivedAt: '2026-08-30 09:01:00',
+    receivedEpochMs: '1788042060000',
     idleTimeoutMs: 60_000,
     nextServiceIntakeId: INTAKE_A,
   }), { action: 'START_NEW_SESSION', reason: 'IDLE_TIMEOUT' });
   assert.deepEqual(decideConversationSessionBoundary({
     currentSession: active,
-    receivedAt: '2026-08-30T01:00:59.999Z',
+    receivedAt: '2026-08-30 09:00:59',
+    receivedEpochMs: '1788042059000',
     idleTimeoutMs: 60_000,
     nextServiceIntakeId: INTAKE_A,
   }), { action: 'CONTINUE_SESSION', reason: null });
@@ -174,9 +177,9 @@ test('only auditable boundary reasons are accepted from callers', () => {
       currentSession: {
         status: 'OPEN',
         service_intake_id: INTAKE_A,
-        last_activity_at: '2026-08-30T01:00:00.000Z',
+        last_activity_at: '2026-08-30 09:00:00',
       },
-      receivedAt: '2026-08-30T01:00:01.000Z',
+      receivedAt: '2026-08-30 09:00:01',
       idleTimeoutMs: 60_000,
       requestedBoundaryReason: 'AI_HIGH_CONFIDENCE_TOPIC_SWITCH',
     }),
@@ -187,9 +190,9 @@ test('only auditable boundary reasons are accepted from callers', () => {
       currentSession: {
         status: 'OPEN',
         service_intake_id: INTAKE_A,
-        last_activity_at: '2026-08-30T01:00:00.000Z',
+        last_activity_at: '2026-08-30 09:00:00',
       },
-      receivedAt: '2026-08-30T01:00:01.000Z',
+      receivedAt: '2026-08-30 09:00:01',
       idleTimeoutMs: 60_000,
       requestedBoundaryReason: 'EXPLICIT_END',
     }),
@@ -203,8 +206,8 @@ test('only auditable boundary reasons are accepted from callers', () => {
     (error) => error.code === CONVERSATION_ERROR_CODES.idleTimeoutInvalid,
   );
   for (const receivedAt of [
-    '2026-02-31T01:00:00Z',
-    '2026-08-30T24:00:00Z',
+    '2026-02-30 09:00:00',
+    '2026-08-31T00:00:00Z',
   ]) {
     assert.throws(
       () => decideConversationSessionBoundary({ receivedAt, idleTimeoutMs: 60_000 }),
@@ -325,7 +328,7 @@ test('disabled guard does not invoke storage or external seams and raw failures 
     threadId: '018f4f00-3333-7333-8333-333333333333',
     participantKey: 'participant-a',
     creationIdempotencyKey: 'WECOM_AIBOT:message-disabled',
-    lastActivityAt: '2026-08-30T01:00:00.000Z',
+    lastActivityAt: '2026-08-30 09:00:00',
   });
   assert.equal(databaseQueried, false);
   assert.equal(creationDisabled.error.code, CONVERSATION_ERROR_CODES.centerDisabled);

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
@@ -32,7 +33,7 @@ const messageIds = new Set();
 const intakeIds = new Set();
 const ticketIds = new Set();
 const pool = databaseUrl
-  ? new Pool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
+  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
   : null;
 
 function newMessage(msgId) {
@@ -48,7 +49,7 @@ function newMessage(msgId) {
       msgtype: 'text',
       text: { content: 'HIS 登录失败，提示权限错误' },
     },
-  }, { receivedAt: '2026-08-29T02:00:00.000Z' });
+  }, { receivedAt: '2026-08-29 10:00:00' });
   assert.equal(adapted.ok, true);
   messageIds.add(msgId);
   return adapted.message;
@@ -64,7 +65,8 @@ async function seedTicket() {
     message,
     traceId: `trace-${message.msg_id}`,
     privacyClass: 'INTERNAL',
-    retentionUntil: '2026-09-05T02:00:00.000Z',
+    retentionUntil: '2026-09-05 10:00:00',
+    retentionUntilEpochMs: shanghaiLocalToEpochMs('2026-09-05 10:00:00'),
   }, processor);
   assert.equal(result.ok, true);
   intakeIds.add(result.result.intake.id);
@@ -389,8 +391,8 @@ integrationTest('the default notification matrix keeps internal notes off report
       WHERE channel = 'WECOM_DIRECT'
         AND target_key = $1
         AND status = 'SENT'
-        AND sent_at > $2::timestamptz`,
-    [targetKey, new Date(clock - 1_000)],
+        AND sent_epoch_ms > $2::bigint`,
+    [targetKey, String(clock - 1_000)],
   );
   assert.deepEqual(rateWindowFacts.rows, [{ sent_count: 1 }]);
   const blocked = await worker.deliver({ deliveryId: second.side_effects.delivery_ids[0] });

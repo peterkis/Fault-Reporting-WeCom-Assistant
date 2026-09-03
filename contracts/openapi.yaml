@@ -4,6 +4,8 @@ info:
   version: 1.2.0
   x-architecture-baseline: V1.2
   x-phase-scope: [P1, P2]
+  x-business-timezone: Asia/Shanghai
+  x-time-precision: second
   description: >
     医院信息故障智能报修助手 Phase 1/2 的内部接口基线。AI/OCR 仅返回建议，
     Pilot Ticket Core 是当前工单事实源，创建接口必须支持幂等。
@@ -221,6 +223,14 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
   schemas:
+    LocalDate:
+      $ref: './local_date.schema.json'
+    LocalTime:
+      $ref: './local_time.schema.json'
+    LocalDateTime:
+      $ref: './local_datetime.schema.json'
+    PhysicalEpochMs:
+      $ref: './epoch_ms_string.schema.json'
     NormalizedWeComMessage:
       $ref: './normalized_wecom_message.schema.json'
     IntakeResponse:

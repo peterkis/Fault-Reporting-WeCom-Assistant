@@ -11,6 +11,7 @@ import { createP2G1InboundProjectionCoordinator } from '../src/p2-g1-inbound-pro
 import { withP2G1IsolatedPostgres } from '../src/p2-g1-isolated-postgres.mjs';
 import { applyP2G1Migrations } from '../src/p2-g1-migrations.mjs';
 import { createP2G1ProcessCluster } from '../src/p2-g1-process-cluster.mjs';
+import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
 
 const COMMIT = /^[a-f0-9]{40}$/u;
 
@@ -89,7 +90,7 @@ export async function runP2G1ReplayGap({
     databaseUrl,
     purpose: 'replaygap',
     run: async ({ pool, databaseUrl: isolatedDatabaseUrl, databaseName }) => {
-      const migrations = await applyP2G1Migrations({ pool });
+      const migrations = await applyP2G1Migrations({ pool, databaseUrl: isolatedDatabaseUrl });
       const principals = await createPrincipals(pool);
       const occurredAt = new Date(Date.now() - 30_000);
       const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20 });
@@ -131,7 +132,8 @@ export async function runP2G1ReplayGap({
         const windowBefore = await store.getReplayWindow({ streamName: REALTIME_STREAM_NAME });
         const disconnected = await cluster.disconnectRealtimePrincipal(0);
         if (disconnected.disconnected_count !== 1) throw new Error('P2_G1_REPLAY_GAP_DISCONNECT_FAILED');
-        const gapOccurredAt = new Date(Date.now() - 20_000).toISOString();
+        const gapOccurredEpochMs = String(Date.now() - 20_000);
+        const gapOccurredAt = formatEpochMsToShanghaiLocal(gapOccurredEpochMs);
         const appended = await store.append({
           schema_version: 1,
           publisher_name: 'P2_G1_REPLAY_GAP',
@@ -148,13 +150,13 @@ export async function runP2G1ReplayGap({
           visibility_scope: 'WORKBENCH',
           payload: { state: 'OPEN', replay_gap_test: true },
           occurred_at: gapOccurredAt,
-          expires_at: new Date(Date.now() - 10_000).toISOString(),
+          expires_at: formatEpochMsToShanghaiLocal(String(Date.now() - 10_000)),
         });
         const cleanup = await cleanupRealtimeRetention({
           pool,
           streamName: REALTIME_STREAM_NAME,
           limit: 200,
-          now: new Date().toISOString(),
+          now_epoch_ms: String(Date.now()),
           authorized: true,
         });
         if (cleanup.deleted_count < 1 || BigInt(cleanup.new_floor_event_id) <= BigInt(windowBefore.high_watermark_event_id)
@@ -191,7 +193,8 @@ export async function runP2G1ReplayGap({
           gate: 'P2-G1',
           run_id: id,
           event: 'sse_replay_gap_result',
-          observed_at: new Date().toISOString(),
+          event_time: formatEpochMsToShanghaiLocal(String(Date.now())),
+          event_epoch_ms: String(Date.now()),
           scenario: 'isolated-postgresql-replay-gap',
           live_candidate: liveCandidate,
           outcome: 'PASS',

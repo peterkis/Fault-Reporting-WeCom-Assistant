@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
 
 import { createRealtimeEventStore } from '../../src/p2-003-realtime-event-log.mjs';
 import {
@@ -125,7 +125,7 @@ try {
   );
   const poolMax = boundedEnvironmentInteger('P2_003_TEST_POOL_MAX', 1, 4);
 
-  pool = new Pool({
+  pool = createPostgresPool({
     connectionString: databaseUrl,
     max: poolMax,
     connectionTimeoutMillis: 2_000,

@@ -1,4 +1,5 @@
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { stopLegacyMigrationAfterArch005 } from '../src/platform/legacy-migration-guard.mjs';
 import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
 import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
 import { applyPilotTicketCoreMigration } from '../src/p1-005-pilot-ticket-core.mjs';
@@ -8,8 +9,9 @@ if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
   process.stdout.write(`${JSON.stringify({ ok: false, error: { code: 'PILOT_DATABASE_URL_REQUIRED', retryable: false } })}\n`);
   process.exitCode = 1;
 } else {
-  const pool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000 });
+  const pool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000 });
   try {
+    await stopLegacyMigrationAfterArch005(pool, '003_p1_005_pilot_ticket_core');
     await applyChannelMessageInboxMigration({ pool });
     await applyServiceIntakeMigration({ pool });
     await applyPilotTicketCoreMigration({ pool });

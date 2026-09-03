@@ -5,7 +5,7 @@ import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import { decryptBackupStream, encryptBackupStream } from '../src/p1-011-encrypted-backup.mjs';
 import {
   applyPilotOperationsMigration,
@@ -211,7 +211,7 @@ function assertRestoreDatabaseName(value) {
 }
 
 async function verifyRestoredDatabase(connection, restoreDatabase) {
-  const pool = new Pool(connection.poolConfigFor(restoreDatabase));
+  const pool = createPostgresPool(connection.poolConfigFor(restoreDatabase));
   try {
     const verified = await pool.query(
       `SELECT count(*)::integer AS verified_object_count
@@ -470,7 +470,7 @@ async function main() {
   let operations = null;
   let completedDrill = null;
   try {
-    pool = new Pool(config.connection.poolConfigFor(config.connection.database));
+    pool = createPostgresPool(config.connection.poolConfigFor(config.connection.database));
     await applyPilotOperationsMigration({ pool });
     operations = createPilotOperationsService({ pool, alerts });
     completedDrill = await runBackupRestoreDrill({

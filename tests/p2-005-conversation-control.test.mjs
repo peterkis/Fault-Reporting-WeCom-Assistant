@@ -78,13 +78,13 @@ test('assigned Communication authorizer denies AI flags, inactive/unassigned age
 });
 
 test('Realtime mappers expose versions/status only and no identity or content', () => {
-  const common={eventId:randomUUID(),handoffId:randomUUID(),sessionId:SESSION,sessionRowVersion:3,generationVersion:4,occurredAt:'2026-08-31T00:00:00Z',expiresAt:'2026-09-01T00:00:00Z'};
+  const common={eventId:randomUUID(),handoffId:randomUUID(),sessionId:SESSION,sessionRowVersion:3,generationVersion:4,occurredAt:'2026-08-31 08:00:00',expiresAt:'2026-09-01 08:00:00'};
   const mapped=[mapAssignmentToRealtimeEvent({...common,assignmentStatus:'ASSIGNED',assignmentVersion:2}),mapHandoffToRealtimeEvent({...common,handoffStatus:'REQUESTED',handoffRowVersion:1}),mapReadCursorToRealtimeEvent({...common,cursorRowVersion:2,lastReadSequence:9})];
   const text=JSON.stringify(mapped); for(const forbidden of ['principal','display','wecom','message','target_id','internal_note']) assert.equal(text.includes(forbidden),false);
 });
 
 test('Timeline mapper uses internal HANDOFF_EVENT and requires explicit privacy/retention', () => {
-  const record=mapControlEventToTimelineSourceRecord({id:randomUUID(),session_id:SESSION,event_type:'ASSIGNMENT_ASSIGNED',event_ordinal:2,occurred_at:'2026-08-31T00:00:00Z',reason_code:'HUMAN_TAKEOVER',new_assignment_status:'ASSIGNED',new_control_mode:'HUMAN',privacy_class:'INTERNAL',retention_until:'2026-09-01T00:00:00Z'});
+  const record=mapControlEventToTimelineSourceRecord({id:randomUUID(),session_id:SESSION,event_type:'ASSIGNMENT_ASSIGNED',event_ordinal:2,occurred_at:'2026-08-31 08:00:00',reason_code:'HUMAN_TAKEOVER',new_assignment_status:'ASSIGNED',new_control_mode:'HUMAN',privacy_class:'INTERNAL',retention_until:'2026-09-01 08:00:00'});
   assert.deepEqual({source_type:record.source_type,item_type:record.item_type,sender_kind:record.sender_kind,visibility:record.visibility,text:record.text},{source_type:'HANDOFF_EVENT',item_type:'HANDOFF_EVENT',sender_kind:'SYSTEM',visibility:'INTERNAL',text:null}); assert.equal(JSON.stringify(record).includes(ACTOR),false);
   assert.equal(mapControlEventToTimelineSourceRecord({...record,event_type:'READ_CURSOR_ADVANCED'}),null);
 });

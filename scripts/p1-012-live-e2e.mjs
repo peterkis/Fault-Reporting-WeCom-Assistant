@@ -4,7 +4,7 @@ import { hostname, tmpdir } from 'node:os';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import AiBot from '@wecom/aibot-node-sdk';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import { validatePilotConfig } from '../src/p1-001-pilot-foundation.mjs';
 import { createServiceIntakeProcessor } from '../src/p1-004-service-intake.mjs';
 import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
@@ -1717,7 +1717,7 @@ export async function runP1_012ClientObservation({
 export async function runP1_012SharedDeliveryReconciliation({
   env = process.env,
   options,
-  PoolClass = Pool,
+  PoolClass = null,
   outputPath = evidencePath(),
   appendEvidenceRecord = appendEvidence,
 } = {}) {
@@ -1728,11 +1728,12 @@ export async function runP1_012SharedDeliveryReconciliation({
     throw failure('P1_012_LIVE_APPROVAL_REQUIRED');
   }
   const config = validateP1_012LiveConfig(env);
-  const pool = new PoolClass({
+  const poolConfig = {
     connectionString: config.pilot.pilotDatabaseUrl,
     max: 1,
     connectionTimeoutMillis: 5_000,
-  });
+  };
+  const pool = PoolClass === null ? createPostgresPool(poolConfig) : new PoolClass(poolConfig);
   try {
     const result = await pool.query(
       `SELECT COUNT(DISTINCT delivery.id)::integer AS delivery_count,
@@ -1798,7 +1799,7 @@ export async function runP1_012LiveE2E({
   env = process.env,
   options,
   Client = AiBot.WSClient,
-  PoolClass = Pool,
+  PoolClass = null,
   outputPath = evidencePath(),
   createHandler = createLiveComposition,
   appendEvidenceRecord = appendEvidence,
@@ -1829,12 +1830,13 @@ export async function runP1_012LiveE2E({
   const operationalRunId = usesOperationalStore
     ? opaqueOperationalRunId(createRunId, config.logIdentityHashKey)
     : null;
-  const pool = usesOperationalStore
-    ? new PoolClass({
+  const poolConfig = {
       connectionString: config.pilot.pilotDatabaseUrl,
       max: 4,
       connectionTimeoutMillis: 5_000,
-    })
+  };
+  const pool = usesOperationalStore
+    ? (PoolClass === null ? createPostgresPool(poolConfig) : new PoolClass(poolConfig))
     : null;
   let client;
   let timer;

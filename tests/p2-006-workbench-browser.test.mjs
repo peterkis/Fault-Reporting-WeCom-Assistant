@@ -4,13 +4,15 @@ import { createServer as createNetServer } from 'node:net';
 import { test } from 'node:test';
 
 import { closeConversationWorkbenchServer, createConversationWorkbenchHttpServer } from '../src/p2-006-workbench-http.mjs';
+import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
 import { launchSystemBrowser } from './helpers/p2-006-browser-harness.mjs';
 
 const SESSION_ID = '018f0000-0000-7000-8000-000000000006';
 const OTHER_ID = '018f0000-0000-7000-8000-000000000007';
 const PRINCIPAL_ID = '018f0000-0000-7000-8000-000000000008';
 const TARGET_ID = '018f0000-0000-7000-8000-000000000009';
-const NOW = '2026-09-01T04:00:00.000Z';
+const NOW = '2026-09-01 12:00:00';
+const expiry = () => { const epoch = String(Date.now() + 60_000); return { expires_at: formatEpochMsToShanghaiLocal(epoch), expires_epoch_ms: epoch }; };
 
 async function reservePort() {
   const probe = createNetServer();
@@ -39,7 +41,7 @@ function fixture() {
     delivery_summary: null, capabilities: conversation().capabilities, etag: `"${rowVersion}"`,
   });
   const queryService = {
-    getBootstrap: async () => ({ authenticated: true, principal: { principal_id: PRINCIPAL_ID, display_name: 'Synthetic Admin', capabilities: conversation().capabilities }, expires_at: new Date(Date.now() + 60_000).toISOString(), csrf_token: 'csrf-token-browser-test', feature_status: { workbench_enabled: true, realtime_sse_enabled: true, ai_enabled: false, incident_enabled: false, attachments_enabled: false }, polling_interval_ms: 60_000, sse_endpoint: '/api/realtime/events?scope=workbench', max_page_sizes: { conversations: 100, timeline: 200 } }),
+    getBootstrap: async () => ({ authenticated: true, principal: { principal_id: PRINCIPAL_ID, display_name: 'Synthetic Admin', capabilities: conversation().capabilities }, ...expiry(), csrf_token: 'csrf-token-browser-test', feature_status: { workbench_enabled: true, realtime_sse_enabled: true, ai_enabled: false, incident_enabled: false, attachments_enabled: false }, polling_interval_ms: 60_000, sse_endpoint: '/api/realtime/events?scope=workbench', max_page_sizes: { conversations: 100, timeline: 200 } }),
     listConversations: async ({ state }) => { calls.list += 1; return { items: state === 'ended' ? [] : [conversation(), conversation(OTHER_ID)], next_cursor: null }; },
     getConversationDetail: async () => detail(),
     listConversationItems: async () => ({ session_id: SESSION_ID, items: [conversation().last_item, { ...conversation().last_item, item_id: randomUUID(), sequence_no: '3', sender_kind: 'AGENT', text: '已收到，正在处理' }], before_sequence: '2', after_sequence: '3', has_more: false }),
@@ -61,7 +63,7 @@ async function withBrowser(width, height, run) {
   const values = fixture();
   const server = createConversationWorkbenchHttpServer({
     enabled: true, ...values, publicOrigin: origin,
-    authenticate: async () => ({ principal_id: PRINCIPAL_ID, auth_method: 'COOKIE', expires_at: new Date(Date.now() + 60_000).toISOString(), csrf_token: 'csrf-token-browser-test' }),
+    authenticate: async () => ({ principal_id: PRINCIPAL_ID, auth_method: 'COOKIE', ...expiry(), csrf_token: 'csrf-token-browser-test' }),
     sseHandler: async (_request, response) => { response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', 'x-accel-buffering': 'no' }); response.end('data: {}\n\n'); },
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });

@@ -6,7 +6,13 @@ import { test } from 'node:test';
 import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
 import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
 import { applyPilotTicketCoreMigration } from '../src/p1-005-pilot-ticket-core.mjs';
+import { applyTicketStateActionMigration } from '../src/p1-006-ticket-state-actions.mjs';
+import { applyNotificationOutboxMigration } from '../src/p1-007-notification-outbox.mjs';
 import { applyPilotAccessMigration, createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
+import { applyTicketClosureMigration } from '../src/p1-010-ticket-closure.mjs';
+import { applyPilotOperationsMigration } from '../src/p1-011-pilot-operations-baseline.mjs';
+import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
+import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
 import { applyConversationContractsMigration, buildConversationSessionScope, buildConversationThreadIdentity } from '../src/p2-001-conversation-contracts.mjs';
 import { applyTimelineProjectionMigration } from '../src/p2-002-timeline-projector.mjs';
 import { appendRealtimeEvent, applyRealtimeEventLogMigration } from '../src/p2-003-realtime-event-log.mjs';
@@ -26,18 +32,25 @@ import { ensureP2003StreamState, p2003EventCommand } from './helpers/p2-003-real
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) throw new Error('P2_006_INTEGRATION_DATABASE_REQUIRED');
 const TIMEOUT = 300_000;
-const NOW = new Date('2026-09-01T04:00:00.000Z');
+const NOW_EPOCH_MS = Date.parse('2026-09-01T04:00:00Z');
+const NOW = new Date(NOW_EPOCH_MS);
+const NOW_LOCAL = '2026-09-01 12:00:00';
 
-async function base(pool) {
+async function base(pool, isolatedDatabaseUrl) {
   await applyChannelMessageInboxMigration({ pool });
   await applyServiceIntakeMigration({ pool });
   await applyPilotTicketCoreMigration({ pool });
+  await applyTicketStateActionMigration({ pool });
+  await applyNotificationOutboxMigration({ pool });
   await applyPilotAccessMigration({ pool });
+  await applyTicketClosureMigration({ pool });
+  await applyPilotOperationsMigration({ pool });
   await applyConversationContractsMigration({ pool });
   await applyTimelineProjectionMigration({ pool });
   await applyRealtimeEventLogMigration({ pool });
   await applyCommunicationMigration({ pool });
   await applyConversationControlMigration({ pool });
+  await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
 }
 
 async function principal(pool, label, roles = ['ADMIN'], teams = []) {
@@ -49,14 +62,14 @@ async function principal(pool, label, roles = ['ADMIN'], teams = []) {
   });
 }
 
-async function session(pool, label, { status = 'OPEN', controlMode = 'HUMAN', lastActivityAt = NOW.toISOString() } = {}) {
+async function session(pool, label, { status = 'OPEN', controlMode = 'HUMAN', lastActivityAt = NOW_LOCAL } = {}) {
   const identity = buildConversationThreadIdentity({
     provider: 'WECOM_AIBOT', botId: `synthetic-${label}`, chatType: 'group',
     chatId: `synthetic-group-${label}`, senderUserId: `synthetic-participant-${label}`,
   });
   const thread = await pool.query(
     `INSERT INTO conversation.thread(provider,channel_account_id,chat_type,external_thread_key,thread_key,last_activity_at)
-     VALUES($1,$2,$3,$4,$5,$6::timestamptz) RETURNING id::text`,
+     VALUES($1,$2,$3,$4,$5,$6::timestamp without time zone) RETURNING id::text`,
     [identity.provider, identity.channel_account_id, identity.chat_type, identity.external_thread_key, identity.thread_key, lastActivityAt],
   );
   const scope = buildConversationSessionScope({
@@ -65,7 +78,7 @@ async function session(pool, label, { status = 'OPEN', controlMode = 'HUMAN', la
   });
   const created = await pool.query(
     `INSERT INTO conversation.session(thread_id,participant_key,session_scope_key,creation_idempotency_key,status,control_mode,last_activity_at,ended_at,close_reason)
-     VALUES($1::uuid,$2,$3,$4,$5,$6,$7::timestamptz,CASE WHEN $5='ENDED' THEN $7::timestamptz END,CASE WHEN $5='ENDED' THEN 'SYNTHETIC_END' END)
+     VALUES($1::uuid,$2,$3,$4,$5,$6,$7::timestamp without time zone,CASE WHEN $5='ENDED' THEN $7::timestamp without time zone END,CASE WHEN $5='ENDED' THEN 'SYNTHETIC_END' END)
      RETURNING id::text,row_version::integer,generation_version::integer,control_mode`,
     [thread.rows[0].id, scope.participant_key, scope.session_scope_key, scope.creation_idempotency_key, status, controlMode, lastActivityAt],
   );
@@ -73,21 +86,21 @@ async function session(pool, label, { status = 'OPEN', controlMode = 'HUMAN', la
 }
 
 function auth(principalValue, method = 'BEARER') {
-  return Object.freeze({ principal_id: principalValue.id, auth_method: method, expires_at: new Date(Date.now() + 300_000).toISOString(), csrf_token: method === 'COOKIE' ? 'synthetic-csrf-token-0123456789' : undefined });
+  return Object.freeze({ principal_id: principalValue.id, auth_method: method, expires_epoch_ms: String(Date.now() + 300_000), csrf_token: method === 'COOKIE' ? 'synthetic-csrf-token-0123456789' : undefined });
 }
 
 async function assign(pool, sessionId, principalId) {
   await pool.query(
     `INSERT INTO conversation.assignment(session_id,assignment_status,assigned_principal_id,assigned_by_principal_id,assigned_at)
-     VALUES($1::uuid,'ASSIGNED',$2::uuid,$2::uuid,$3::timestamptz)`, [sessionId, principalId, NOW.toISOString()],
+     VALUES($1::uuid,'ASSIGNED',$2::uuid,$2::uuid,$3::timestamp without time zone)`, [sessionId, principalId, NOW_LOCAL],
   );
 }
 
 async function item(pool, sessionId, sequence, visibility = 'EXTERNAL', text = `synthetic item ${sequence}`) {
   return pool.query(
     `INSERT INTO conversation.item(session_id,sequence_no,item_type,sender_kind,visibility,text,safe_content,source_type,source_id,projection_variant,canonical_order_key,content_hash,privacy_class,retention_until,occurred_at)
-     VALUES($1::uuid,$2,'USER_MESSAGE','USER',$3,$4,'{}','CHANNEL_MESSAGE',$5,'P2_006_FIXTURE',$6,$7,'INTERNAL','2027-09-01T00:00:00Z',$8::timestamptz)`,
-    [sessionId, sequence, visibility, text, `p2-006-item-${sequence}`, `p2-006-order-${String(sequence).padStart(6, '0')}`, 'c'.repeat(64), new Date(NOW.getTime() + sequence * 1000).toISOString()],
+     VALUES($1::uuid,$2,'USER_MESSAGE','USER',$3,$4,'{}','CHANNEL_MESSAGE',$5,'P2_006_FIXTURE',$6,$7,'INTERNAL','2027-09-01 08:00:00',$8::timestamp without time zone)`,
+    [sessionId, sequence, visibility, text, `p2-006-item-${sequence}`, `p2-006-order-${String(sequence).padStart(6, '0')}`, 'c'.repeat(64), formatEpochMsToShanghaiLocal(String(NOW_EPOCH_MS + sequence * 1000))],
   );
 }
 
@@ -117,20 +130,20 @@ function percentile(values, percent) {
 }
 
 test('P2-006 applies no DDL and leaves no isolated PostgreSQL resources', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'noddl', run: async ({ pool }) => {
-    await base(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'noddl', run: async ({ pool, databaseUrl: isolated }) => {
+    await base(pool, isolated);
     const before = await catalogSnapshot(pool);
     services(pool);
     const after = await catalogSnapshot(pool);
     assert.deepEqual(after, before);
-    t.diagnostic(JSON.stringify({ migration_022: false, catalog_unchanged: true, feature_enabled_only_in_test: true }));
+    t.diagnostic(JSON.stringify({ migration_022: true, catalog_unchanged: true, feature_enabled_only_in_test: true }));
   } });
   await assertNoP2006Residual({ databaseUrl });
 });
 
 test('admin/dispatcher/handler authorization is enforced in SQL data access and timeline visibility', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'auth', run: async ({ pool }) => {
-    await base(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'auth', run: async ({ pool, databaseUrl: isolated }) => {
+    await base(pool, isolated);
     const admin = await principal(pool, 'admin');
     const dispatcher = await principal(pool, 'dispatcher', ['DISPATCHER']);
     const handler = await principal(pool, 'handler', ['HANDLER']);
@@ -139,7 +152,7 @@ test('admin/dispatcher/handler authorization is enforced in SQL data access and 
     const inactive = await principal(pool, 'inactive');
     await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid', [inactive.id]);
     const assigned = await session(pool, 'assigned');
-    const unassigned = await session(pool, 'unassigned', { lastActivityAt: '2026-09-01T03:59:00.000Z' });
+    const unassigned = await session(pool, 'unassigned', { lastActivityAt: '2026-09-01 11:59:00' });
     await assign(pool, assigned.id, handler.id);
     await item(pool, assigned.id, 1, 'EXTERNAL');
     await item(pool, assigned.id, 2, 'INTERNAL');
@@ -160,16 +173,16 @@ test('admin/dispatcher/handler authorization is enforced in SQL data access and 
 });
 
 test('500 conversations and 10,000 items have duplicate-free keyset pages and bounded read latency', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'capacity', max: 4, run: async ({ pool }) => {
-    await base(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'capacity', max: 4, run: async ({ pool, databaseUrl: isolated }) => {
+    await base(pool, isolated);
     const admin = await principal(pool, 'capacity');
     for (let index = 0; index < 500; index += 1) {
-      const value = await session(pool, `capacity-${index}`, { lastActivityAt: new Date(NOW.getTime() - index * 1000).toISOString() });
+      const value = await session(pool, `capacity-${index}`, { lastActivityAt: formatEpochMsToShanghaiLocal(String(NOW_EPOCH_MS - index * 1000)) });
       await pool.query(
         `INSERT INTO conversation.item(session_id,sequence_no,item_type,sender_kind,visibility,text,safe_content,source_type,source_id,projection_variant,canonical_order_key,content_hash,privacy_class,retention_until,occurred_at)
          SELECT $1::uuid,n,'USER_MESSAGE','USER','EXTERNAL','synthetic capacity item','{}','CHANNEL_MESSAGE',
-                'p2-006-capacity-'||n,'P2_006_FIXTURE','capacity-'||n,$2,'INTERNAL','2027-09-01T00:00:00Z',$3::timestamptz
-           FROM generate_series(1,20) AS n`, [value.id, 'd'.repeat(64), NOW.toISOString()],
+                'p2-006-capacity-'||n,'P2_006_FIXTURE','capacity-'||n,$2,'INTERNAL','2027-09-01 08:00:00',$3::timestamptz
+           FROM generate_series(1,20) AS n`, [value.id, 'd'.repeat(64), NOW_LOCAL],
       );
     }
     await pool.query(
@@ -178,18 +191,18 @@ test('500 conversations and 10,000 items have duplicate-free keyset pages and bo
               CASE WHEN row_number() OVER (ORDER BY s.id) % 10 = 0 THEN NULL ELSE $1::uuid END,$1::uuid,
               CASE WHEN row_number() OVER (ORDER BY s.id) % 10 = 0 THEN NULL ELSE $2::timestamptz END,
               CASE WHEN row_number() OVER (ORDER BY s.id) % 10 = 0 THEN $2::timestamptz ELSE NULL END
-         FROM conversation.session s WHERE s.creation_idempotency_key LIKE 'P2-006:capacity-%'`, [admin.id, NOW.toISOString()],
+         FROM conversation.session s WHERE s.creation_idempotency_key LIKE 'P2-006:capacity-%'`, [admin.id, NOW_LOCAL],
     );
     await pool.query(
       `INSERT INTO channel.message_inbox(schema_version,provider,msg_id,idempotency_key,req_id,bot_id,chat_type,chat_id,sender_user_id,msg_type,received_at,raw_text,clean_text,normalized_message,processing_status,response_snapshot,privacy_class,trace_id,retention_until,completed_at)
        SELECT 1,'WECOM_AIBOT','p2-006-capacity-'||n,'WECOM_AIBOT:p2-006-capacity-'||n,'synthetic-request-'||n,'synthetic-bot','group','synthetic-group','synthetic-sender','text',$1::timestamptz,
-              'synthetic capacity','synthetic capacity','{}','COMPLETED','{}','INTERNAL','synthetic-trace-'||n,'2027-09-01T00:00:00Z',$1::timestamptz
-         FROM generate_series(1,500) n`, [NOW.toISOString()],
+              'synthetic capacity','synthetic capacity','{}','COMPLETED','{}','INTERNAL','synthetic-trace-'||n,'2027-09-01 08:00:00',$1::timestamptz
+         FROM generate_series(1,500) n`, [NOW_LOCAL],
     );
     await pool.query(
       `INSERT INTO intake.service_intake(intake_no,source_channel,source_provider,source_bot_id,source_chat_type,source_chat_id,reporter_wecom_userid,privacy_class,retention_until,request_type,summary,status,primary_message_id,last_message_at)
-       SELECT 'INT-20260901-'||lpad(row_number() OVER (ORDER BY mi.id)::text,4,'0'),'WECOM_GROUP','WECOM_AIBOT','synthetic-bot','group','synthetic-group','synthetic-sender','INTERNAL','2027-09-01T00:00:00Z','SERVICE_REQUEST','synthetic capacity','RECEIVED',mi.id,$1::timestamptz
-         FROM channel.message_inbox mi WHERE mi.msg_id LIKE 'p2-006-capacity-%'`, [NOW.toISOString()],
+       SELECT 'INT-20260901-'||lpad(row_number() OVER (ORDER BY mi.id)::text,4,'0'),'WECOM_GROUP','WECOM_AIBOT','synthetic-bot','group','synthetic-group','synthetic-sender','INTERNAL','2027-09-01 08:00:00','SERVICE_REQUEST','synthetic capacity','RECEIVED',mi.id,$1::timestamptz
+         FROM channel.message_inbox mi WHERE mi.msg_id LIKE 'p2-006-capacity-%'`, [NOW_LOCAL],
     );
     await pool.query(
       `BEGIN; SET CONSTRAINTS ALL DEFERRED;
@@ -208,7 +221,7 @@ test('500 conversations and 10,000 items have duplicate-free keyset pages and bo
     );
     await pool.query(
       `INSERT INTO communication.message(session_id,sender_kind,sender_principal_id,purpose,message_type,visibility,idempotency_scope,client_command_id,command_hash,content,content_hash,privacy_class,retention_until)
-       SELECT s.id,'AGENT',$1::uuid,'HUMAN_REPLY','text','EXTERNAL','P2_006_CAPACITY',uuidv7(),$2,'{"text":"synthetic"}',$3,'INTERNAL','2027-09-01T00:00:00Z'
+       SELECT s.id,'AGENT',$1::uuid,'HUMAN_REPLY','text','EXTERNAL','P2_006_CAPACITY',uuidv7(),$2,'{"text":"synthetic"}',$3,'INTERNAL','2027-09-01 08:00:00'
          FROM conversation.session s WHERE s.creation_idempotency_key LIKE 'P2-006:capacity-%'`, [admin.id, 'a'.repeat(64), 'b'.repeat(64)],
     );
     await pool.query(
@@ -253,8 +266,8 @@ test('500 conversations and 10,000 items have duplicate-free keyset pages and bo
 });
 
 test('workbench facade commits human reply, internal note, takeover and idempotent replay through P2-004/P2-005 ports', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'commands', run: async ({ pool }) => {
-    await base(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'commands', run: async ({ pool, databaseUrl: isolated }) => {
+    await base(pool, isolated);
     const admin = await principal(pool, 'commands');
     const target = await principal(pool, 'commands-target', ['HANDLER']);
     const nonAdmin = await principal(pool, 'commands-non-admin', ['HANDLER']);
@@ -295,10 +308,10 @@ test('workbench facade commits human reply, internal note, takeover and idempote
     const delivery = (await query.listConversationDeliveries({ authContext, sessionId: value.id })).items[0];
     const pending = await commands.retryDelivery({ authContext, deliveryId: delivery.delivery_id, reason_code: 'OPERATOR_RETRY' });
     assert.equal(pending.status, 'PENDING');
-    await pool.query(`UPDATE communication.delivery SET status='DEAD_LETTER',last_error_code='SYNTHETIC_FAILURE',updated_at=$2::timestamptz WHERE id=$1::uuid`, [delivery.delivery_id, NOW.toISOString()]);
+    await pool.query(`UPDATE communication.delivery SET status='DEAD_LETTER',last_error_code='SYNTHETIC_FAILURE',updated_at=$2::timestamp without time zone WHERE id=$1::uuid`, [delivery.delivery_id, NOW_LOCAL]);
     const requeued = await commands.retryDelivery({ authContext, deliveryId: delivery.delivery_id, reason_code: 'OPERATOR_RETRY' });
     assert.equal(requeued.status, 'PENDING');
-    await pool.query(`UPDATE communication.delivery SET status='RECONCILIATION_REQUIRED',side_effect_state='UNKNOWN',send_started_at=$2::timestamptz,last_error_code='SYNTHETIC_UNKNOWN',updated_at=$2::timestamptz WHERE id=$1::uuid`, [delivery.delivery_id, NOW.toISOString()]);
+    await pool.query(`UPDATE communication.delivery SET status='RECONCILIATION_REQUIRED',side_effect_state='UNKNOWN',send_started_at=$2::timestamp without time zone,last_error_code='SYNTHETIC_UNKNOWN',updated_at=$2::timestamp without time zone WHERE id=$1::uuid`, [delivery.delivery_id, NOW_LOCAL]);
     await assert.rejects(commands.retryDelivery({ authContext, deliveryId: delivery.delivery_id, reason_code: 'OPERATOR_RETRY' }), (error) => error.code === WORKBENCH_ERROR_CODES.deliveryReconciliationRequired);
     await assert.rejects(commands.reconcileDelivery({ authContext: auth(nonAdmin), deliveryId: delivery.delivery_id, resolution: 'CONFIRMED_SENT', reason_code: 'OPERATOR_RECONCILE' }), (error) => error.code === WORKBENCH_ERROR_CODES.notFound || error.code === WORKBENCH_ERROR_CODES.forbidden);
     const reconciled = await commands.reconcileDelivery({ authContext, deliveryId: delivery.delivery_id, resolution: 'CONFIRMED_SENT', reason_code: 'OPERATOR_RECONCILE' });
@@ -314,8 +327,8 @@ test('workbench facade commits human reply, internal note, takeover and idempote
 });
 
 test('200 real HTTP reply commits and 12-way duplicate submit remain bounded without sender calls or socket residue', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'httpperf', max: 4, run: async ({ pool }) => {
-    await base(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'httpperf', max: 4, run: async ({ pool, databaseUrl: isolated }) => {
+    await base(pool, isolated);
     const admin = await principal(pool, 'http-performance');
     const authContext = auth(admin);
     const values = services(pool);
@@ -372,8 +385,8 @@ test('200 real HTTP reply commits and 12-way duplicate submit remain bounded wit
 });
 
 test('P2-003 SSE route delivers committed messages through authorized refetch within 2 seconds and releases timers', { timeout: TIMEOUT }, async (t) => {
-  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'sselatency', max: 4, run: async ({ pool }) => {
-    await base(pool); await ensureP2003StreamState(pool);
+  await withP2006IsolatedDatabase({ databaseUrl, purpose: 'sselatency', max: 4, run: async ({ pool, databaseUrl: isolated }) => {
+    await base(pool, isolated); await ensureP2003StreamState(pool);
     const admin = await principal(pool, 'sse-latency');
     const value = await session(pool, 'sse-latency');
     const values = services(pool);
@@ -387,7 +400,7 @@ test('P2-003 SSE route delivers committed messages through authorized refetch wi
     });
     const server = createConversationWorkbenchHttpServer({
       enabled: true, queryService: values.query, commandFacade: values.commands, sseHandler: realtime,
-      authenticate: async () => ({ ...auth(admin), expires_at: new Date(Date.now() + 300_000).toISOString() }),
+      authenticate: async () => auth(admin),
     });
     const address = await listenConversationWorkbenchServer(server);
     const client = openP2003SseClient({ port: address.port, lastEventId: '0', captureLimit: 2 });
@@ -401,12 +414,12 @@ test('P2-003 SSE route delivers committed messages through authorized refetch wi
           await transaction.query('BEGIN');
           await transaction.query(
             `INSERT INTO conversation.item(session_id,sequence_no,item_type,sender_kind,visibility,text,safe_content,source_type,source_id,projection_variant,canonical_order_key,content_hash,privacy_class,retention_until,occurred_at)
-             VALUES($1::uuid,$2,'USER_MESSAGE','USER','EXTERNAL','synthetic realtime item','{}','CHANNEL_MESSAGE',$3,'P2_006_SSE',$4,$5,'INTERNAL','2027-09-01T00:00:00Z',$6::timestamptz)`,
-            [value.id, ordinal, `p2-006-sse-${ordinal}`, `p2-006-sse-order-${ordinal}`, 'f'.repeat(64), new Date(NOW.getTime() + ordinal).toISOString()],
+             VALUES($1::uuid,$2,'USER_MESSAGE','USER','EXTERNAL','synthetic realtime item','{}','CHANNEL_MESSAGE',$3,'P2_006_SSE',$4,$5,'INTERNAL','2027-09-01 08:00:00',$6::timestamptz)`,
+            [value.id, ordinal, `p2-006-sse-${ordinal}`, `p2-006-sse-order-${ordinal}`, 'f'.repeat(64), formatEpochMsToShanghaiLocal(String(NOW_EPOCH_MS + ordinal))],
           );
           await appendRealtimeEvent({ transaction, command: p2003EventCommand({
             ordinal, sessionId: value.id, threadId: value.id, sourceId: `p2-006-sse-${ordinal}`,
-            occurredAt: new Date(NOW.getTime() + ordinal).toISOString(), expiresAt: '2026-09-08T00:00:00.000Z',
+            occurredAt: formatEpochMsToShanghaiLocal(String(NOW_EPOCH_MS + ordinal)), expiresAt: '2026-09-08 08:00:00',
           }) });
           await transaction.query('COMMIT');
         } catch (error) { await transaction.query('ROLLBACK'); throw error; }

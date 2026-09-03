@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before } from 'node:test';
 import test from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
 import { applyServiceIntakeMigration, createServiceIntakeProcessor } from '../src/p1-004-service-intake.mjs';
 import { applyPilotTicketCoreMigration, createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
@@ -17,7 +17,7 @@ import { verifyGroupBurstDatabaseFacts } from '../scripts/p1-012-live-e2e.mjs';
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
 const pool = databaseUrl
-  ? new Pool({ connectionString: databaseUrl, max: 12, connectionTimeoutMillis: 2_000 })
+  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
   : null;
 
 function textFrame({ testGroupId, triggerToken, msgId, sender }) {

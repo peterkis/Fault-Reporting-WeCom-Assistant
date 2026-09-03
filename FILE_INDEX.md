@@ -16,6 +16,11 @@
 - `tasks/P2-005_assignment_handoff_read_cursor_generation_fence.md`：已完成的 P2-005 任务记录；
 - `tasks/P2-006_realtime_web_workbench_rest_authorization.md`：P2-006 独立授权与停止线任务记录；
 - `tasks/P2-G1_human_only_conversation_center_assembly.md`：P2-G1 Human-only Assembly 授权、验收和停止线；
+- `tasks/ARCH-005_asia_shanghai_local_business_time.md`：ARCH-005 独立授权、实现边界与目标现场重验停止线；
+- `evidence/arch-005-start-authorization.md`：ARCH-005 Gate、暂存分支隔离和迁移安全授权 Evidence；
+- `evidence/arch-005-time-inventory-before.json` / `.md`：迁移前时间资产、逐列分类、行数、catalog 指纹和备份事实；
+- `docs/48_arch_005_asia_shanghai_time_contract.md`：LocalDate/LocalTime/LocalDateTime/PhysicalEpochMs、数据库与 UI 统一契约；
+- `docs/49_p2_007_time_contract_migration_note.md`：未来 P2-007 v1.2.1 时间契约升级和重新生成 Manifest/Hash 要求；
 - `evidence/p2-phase-start-authorization.md`：Phase 2 启动及仅授权 P2-001 的负责人 Evidence；
 - `evidence/p2-001-conversation-contracts-report.md`：P2-001 脱敏验证 Evidence；
 - `evidence/p2-002-start-authorization.md`：仅启动 P2-002 的项目负责人独立授权 Evidence；

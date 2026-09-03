@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
@@ -11,7 +11,7 @@ if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
   })}\n`);
   process.exitCode = 1;
 } else {
-  const pool = new Pool({
+  const pool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,

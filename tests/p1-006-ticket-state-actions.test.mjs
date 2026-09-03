@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
@@ -27,7 +28,7 @@ const messageIds = new Set();
 const intakeIds = new Set();
 const ticketIds = new Set();
 const pool = databaseUrl
-  ? new Pool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
+  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
   : null;
 
 function messageFor(msgId) {
@@ -43,7 +44,7 @@ function messageFor(msgId) {
       msgtype: 'text',
       text: { content: 'HIS 登录失败，提示权限错误' },
     },
-  }, { receivedAt: '2026-08-29T01:00:00.000Z' });
+  }, { receivedAt: '2026-08-29 09:00:00' });
   assert.equal(adapted.ok, true);
   messageIds.add(msgId);
   return adapted.message;
@@ -60,7 +61,8 @@ async function seedTicket() {
     message,
     traceId: `trace-${message.msg_id}`,
     privacyClass: 'INTERNAL',
-    retentionUntil: '2026-09-05T01:00:00.000Z',
+    retentionUntil: '2026-09-05 09:00:00',
+    retentionUntilEpochMs: shanghaiLocalToEpochMs('2026-09-05 09:00:00'),
   }, processor);
   assert.equal(result.ok, true);
   intakeIds.add(result.result.intake.id);

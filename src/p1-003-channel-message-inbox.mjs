@@ -1,5 +1,12 @@
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import { types as utilTypes } from 'node:util';
+import {
+  assertEpochMsString,
+  assertLocalDateTime,
+  formatEpochMsToShanghaiLocal,
+  shanghaiLocalToEpochMs,
+} from './platform/time-contract.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/001_p1_003_channel_message_inbox.sql', import.meta.url);
 const PRIVACY_CLASSES = new Set([
@@ -22,7 +29,9 @@ const MESSAGE_FIELDS = [
   'chat_id',
   'sender_user_id',
   'msg_type',
+  'provider_create_epoch_ms',
   'create_time',
+  'received_epoch_ms',
   'received_at',
   'content',
   'quote',
@@ -48,19 +57,8 @@ function boundedString(value, maxLength) {
 }
 
 function validDateTime(value) {
-  if (typeof value !== 'string') {
-    return false;
-  }
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:0\d|1[0-5]):[0-5]\d)$/u.exec(value);
-  if (!match || match[1] === '0000' || !Number.isFinite(Date.parse(value))) {
-    return false;
-  }
-  const calendarDate = new Date(0);
-  calendarDate.setUTCHours(0, 0, 0, 0);
-  calendarDate.setUTCFullYear(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  return calendarDate.getUTCFullYear() === Number(match[1])
-    && calendarDate.getUTCMonth() === Number(match[2]) - 1
-    && calendarDate.getUTCDate() === Number(match[3]);
+  try { assertLocalDateTime(value); return true; }
+  catch { return false; }
 }
 
 function hasExactFields(value, required, optional = []) {
@@ -150,6 +148,20 @@ function validateMessage(message) {
   if (!validDateTime(message.received_at)) {
     throw new InboxInputError('MESSAGE_RECEIVED_AT_INVALID');
   }
+  try {
+    const receivedEpochMs = assertEpochMsString(message.received_epoch_ms);
+    if (formatEpochMsToShanghaiLocal(receivedEpochMs) !== message.received_at) {
+      throw new Error('received mismatch');
+    }
+    if (message.provider_create_epoch_ms === null) {
+      if (message.create_time !== null) throw new Error('provider mismatch');
+    } else {
+      const providerEpochMs = assertEpochMsString(message.provider_create_epoch_ms);
+      if (formatEpochMsToShanghaiLocal(providerEpochMs) !== message.create_time) throw new Error('provider mismatch');
+    }
+  } catch {
+    throw new InboxInputError('MESSAGE_EPOCH_TIME_MISMATCH');
+  }
   validateContent(message.content, 'MESSAGE_CONTENT_INVALID');
   if (message.quote !== null) {
     if (
@@ -170,7 +182,7 @@ function validateRequest(request) {
   if (!hasExactFields(
     request,
     ['message', 'traceId', 'privacyClass', 'retentionUntil'],
-    ['rawPayloadEncrypted'],
+    ['rawPayloadEncrypted', 'retentionUntilEpochMs'],
   )) {
     throw new InboxInputError('REQUEST_FIELDS_INVALID');
   }
@@ -184,7 +196,18 @@ function validateRequest(request) {
   if (!validDateTime(request.retentionUntil)) {
     throw new InboxInputError('RETENTION_UNTIL_INVALID');
   }
-  if (Date.parse(request.retentionUntil) <= Date.parse(request.message.received_at)) {
+  let retentionEpochMs;
+  try {
+    retentionEpochMs = request.retentionUntilEpochMs === undefined
+      ? shanghaiLocalToEpochMs(request.retentionUntil)
+      : assertEpochMsString(request.retentionUntilEpochMs);
+  } catch {
+    throw new InboxInputError('RETENTION_UNTIL_EPOCH_INVALID');
+  }
+  if (formatEpochMsToShanghaiLocal(retentionEpochMs) !== request.retentionUntil) {
+    throw new InboxInputError('RETENTION_UNTIL_EPOCH_MISMATCH');
+  }
+  if (BigInt(retentionEpochMs) <= BigInt(request.message.received_epoch_ms)) {
     throw new InboxInputError('RETENTION_UNTIL_NOT_AFTER_RECEIVED_AT');
   }
   if (
@@ -214,6 +237,9 @@ function validatedRequestSnapshot(request) {
     snapshot = structuredClone(request);
   } catch {
     throw new InboxInputError('REQUEST_SNAPSHOT_INVALID');
+  }
+  if (snapshot.retentionUntilEpochMs === undefined) {
+    snapshot.retentionUntilEpochMs = shanghaiLocalToEpochMs(snapshot.retentionUntil);
   }
   validateRequest(snapshot);
   if (snapshot.rawPayloadEncrypted !== undefined) {
@@ -493,6 +519,7 @@ export async function applyChannelMessageInboxMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   await pool.query(sql);
 }
@@ -530,21 +557,14 @@ export function createChannelMessageInbox({ pool }) {
         await client.query('BEGIN');
         const { message } = requestSnapshot;
         const { rawText, cleanText } = textColumns(message);
-        const inserted = await client.query(
-          `INSERT INTO channel.message_inbox (
-              schema_version, provider, msg_id, idempotency_key, req_id, bot_id,
-              chat_type, chat_id, sender_user_id, msg_type, create_time, received_at,
-              raw_text, clean_text, normalized_message, raw_payload_encrypted,
-              privacy_class, trace_id, retention_until
-           ) VALUES (
-              $1, $2, $3, $4, $5, $6,
-              $7, $8, $9, $10, $11::timestamptz, $12::timestamptz,
-              $13, $14, $15::jsonb, $16,
-              $17, $18, $19::timestamptz
-           )
-           ON CONFLICT (provider, msg_id) DO NOTHING
-           RETURNING id::text AS id`,
-          [
+        const timeContract = await client.query(
+          `SELECT EXISTS (
+             SELECT 1 FROM information_schema.columns
+              WHERE table_schema='channel' AND table_name='message_inbox'
+                AND column_name='received_epoch_ms'
+           ) AS enabled`,
+        );
+        const commonValues = [
             message.schema_version,
             message.provider,
             message.msg_id,
@@ -564,7 +584,43 @@ export function createChannelMessageInbox({ pool }) {
             requestSnapshot.privacyClass,
             requestSnapshot.traceId,
             requestSnapshot.retentionUntil,
-          ],
+        ];
+        const inserted = timeContract.rows[0]?.enabled === true
+          ? await client.query(
+            `INSERT INTO channel.message_inbox (
+                schema_version, provider, msg_id, idempotency_key, req_id, bot_id,
+                chat_type, chat_id, sender_user_id, msg_type,
+                create_time, provider_create_epoch_ms, received_at, received_epoch_ms,
+                raw_text, clean_text, normalized_message, raw_payload_encrypted,
+                privacy_class, trace_id, retention_until, retention_until_epoch_ms
+             ) VALUES (
+                $1, $2, $3, $4, $5, $6,
+                $7, $8, $9, $10,
+                $11::timestamp without time zone, $20::bigint,
+                $12::timestamp without time zone, $21::bigint,
+                $13, $14, $15::jsonb, $16,
+                $17, $18, $19::timestamp without time zone, $22::bigint
+             )
+             ON CONFLICT (provider, msg_id) DO NOTHING
+             RETURNING id::text AS id`,
+            [...commonValues, message.provider_create_epoch_ms, message.received_epoch_ms,
+              requestSnapshot.retentionUntilEpochMs],
+          )
+          : await client.query(
+            `INSERT INTO channel.message_inbox (
+                schema_version, provider, msg_id, idempotency_key, req_id, bot_id,
+                chat_type, chat_id, sender_user_id, msg_type, create_time, received_at,
+                raw_text, clean_text, normalized_message, raw_payload_encrypted,
+                privacy_class, trace_id, retention_until
+             ) VALUES (
+                $1, $2, $3, $4, $5, $6,
+                $7, $8, $9, $10, $11::timestamp without time zone, $12::timestamp without time zone,
+                $13, $14, $15::jsonb, $16,
+                $17, $18, $19::timestamp without time zone
+             )
+             ON CONFLICT (provider, msg_id) DO NOTHING
+             RETURNING id::text AS id`,
+            commonValues,
         );
 
         if (inserted.rowCount === 0) {
@@ -607,7 +663,7 @@ export function createChannelMessageInbox({ pool }) {
           `UPDATE channel.message_inbox
               SET processing_status = 'COMPLETED',
                   response_snapshot = $2::jsonb,
-                  completed_at = CURRENT_TIMESTAMP
+                  completed_at = date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
             WHERE id = $1::bigint AND processing_status = 'PROCESSING'`,
           [channelMessageId, resultSnapshot.serialized],
         );

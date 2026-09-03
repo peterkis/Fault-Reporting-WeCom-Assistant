@@ -1,4 +1,5 @@
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { stopLegacyMigrationAfterArch005 } from '../src/platform/legacy-migration-guard.mjs';
 import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
 import {
   applyServiceIntakeMigration,
@@ -16,12 +17,13 @@ if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
   })}\n`);
   process.exitCode = 1;
 } else {
-  const pool = new Pool({
+  const pool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,
   });
   try {
+    await stopLegacyMigrationAfterArch005(pool, '002_p1_004_service_intake');
     await applyChannelMessageInboxMigration({ pool });
     await applyServiceIntakeMigration({ pool });
     process.stdout.write(`${JSON.stringify({

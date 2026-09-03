@@ -1,3 +1,5 @@
+import type { LocalDateTime, PhysicalEpochMs } from './time_contracts';
+
 export type CommunicationSenderKind = 'AGENT' | 'AI' | 'SYSTEM';
 export type CommunicationMessageType = 'text' | 'markdown' | 'image' | 'file' | 'mixed' | 'template_card';
 export type CommunicationVisibility = 'EXTERNAL' | 'INTERNAL' | 'RESTRICTED';
@@ -13,7 +15,7 @@ export interface CommunicationCommandResult {
   delivery_ids: string[];
   command_status: 'COMMITTED' | 'REPLAYED';
   replayed: boolean;
-  created_at: string;
+  created_at: LocalDateTime;
 }
 
 export interface CommunicationSenderRequest {
@@ -43,5 +45,7 @@ export interface SafeCommunicationDeliveryView {
   attempt_count: number;
   last_error_code: string | null;
   side_effect_state?: ProviderSideEffectState;
-  sent_at: string | null;
+  sent_at: LocalDateTime | null;
+  next_attempt_epoch_ms?: PhysicalEpochMs;
+  lease_expires_epoch_ms?: PhysicalEpochMs | null;
 }

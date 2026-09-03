@@ -45,7 +45,7 @@ function externalCommand(overrides = {}) {
     visibility: 'EXTERNAL',
     text: 'synthetic communication message',
     privacy_class: 'INTERNAL',
-    retention_until: '2027-08-31T00:00:00.000Z',
+    retention_until: '2027-08-31 08:00:00',
     ...overrides,
   };
 }
@@ -99,7 +99,7 @@ test('normalization freezes Agent, AI, System, internal note and media contracts
   const system = normalizeCommunicationCommand({
     client_command_id: randomUUID(), sender_kind: 'SYSTEM', sender_system_code: 'SYNTHETIC_SYSTEM',
     purpose: 'SYSTEM_NOTIFICATION', message_type: 'markdown', visibility: 'EXTERNAL',
-    content: { text: 'synthetic' }, privacy_class: 'INTERNAL', retention_until: '2027-08-31T00:00:00.000Z',
+    content: { text: 'synthetic' }, privacy_class: 'INTERNAL', retention_until: '2027-08-31 08:00:00',
   });
   assert.equal(system.session_id, null);
   assert.equal(normalizeCommunicationCommand(externalCommand({ message_type: 'image', attachment_ids: [randomUUID()], text: 'descriptor' })).message_type, 'image');
@@ -142,7 +142,7 @@ test('content and command hashes are stable, key-order independent and cover row
   const first = computeCommunicationCommandHash(command);
   assert.match(first, /^[a-f0-9]{64}$/u);
   assert.equal(first, computeCommunicationCommandHash({ ...command }));
-  assert.equal(first, computeCommunicationCommandHash({ ...command, retention_until: '2027-09-01T00:00:00.000Z' }));
+  assert.equal(first, computeCommunicationCommandHash({ ...command, retention_until: '2027-09-01 08:00:00' }));
   assert.notEqual(first, computeCommunicationCommandHash({ ...command, expected_row_version: 4 }));
   assert.notEqual(first, computeCommunicationCommandHash({ ...command, sender_kind: 'AI', sender_system_code: 'AI_SYNTHETIC' }));
 });
@@ -207,7 +207,7 @@ test('Mock Sender records only safe call metadata', async () => {
 });
 
 test('message projection maps Agent, AI, Internal and System without changing ownership', () => {
-  const base = { id: randomUUID(), session_id: sessionId, visibility: 'EXTERNAL', content: { text: 'synthetic' }, privacy_class: 'INTERNAL', retention_until: '2027-08-31T00:00:00Z', created_at: '2026-08-31T00:00:00Z' };
+  const base = { id: randomUUID(), session_id: sessionId, visibility: 'EXTERNAL', content: { text: 'synthetic' }, privacy_class: 'INTERNAL', retention_until: '2027-08-31 08:00:00', created_at: '2026-08-31 08:00:00' };
   assert.equal(mapCommunicationMessageToTimelineSourceRecord({ ...base, sender_kind: 'AGENT', purpose: 'HUMAN_REPLY' }).item_type, 'AGENT_MESSAGE');
   assert.equal(mapCommunicationMessageToTimelineSourceRecord({ ...base, sender_kind: 'AI', purpose: 'AI_REPLY' }).item_type, 'AI_MESSAGE');
   assert.equal(mapCommunicationMessageToTimelineSourceRecord({ ...base, sender_kind: 'AGENT', purpose: 'INTERNAL_NOTE', visibility: 'INTERNAL' }).item_type, 'INTERNAL_NOTE');
@@ -217,7 +217,7 @@ test('message projection maps Agent, AI, Internal and System without changing ow
 test('delivery timeline and realtime mappers expose only safe delivery fields', () => {
   const delivery = {
     id: randomUUID(), session_id: sessionId, status: 'PENDING', attempt_count: 1, last_error_code: null,
-    side_effect_state: 'NOT_ATTEMPTED', privacy_class: 'INTERNAL', retention_until: '2027-08-31T00:00:00Z', updated_at: '2026-08-31T00:00:00Z',
+    side_effect_state: 'NOT_ATTEMPTED', privacy_class: 'INTERNAL', retention_until: '2027-08-31 08:00:00', updated_at: '2026-08-31 08:00:00',
     target_id: 'must-not-leak', target_hash: 'must-not-leak', provider_message_id: 'must-not-leak', content: 'must-not-leak',
   };
   const timeline = mapCommunicationDeliveryToTimelineSourceRecord(delivery);

@@ -20,6 +20,7 @@ import {
   mapCommunicationMessageToTimelineSourceRecord,
 } from './p2-004-communication-projections.mjs';
 import { mapControlEventToTimelineSourceRecord } from './p2-005-conversation-control-projections.mjs';
+import { assertLocalDateTime, shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
 
 export const P2_G1_PROJECTION_STREAMS = Object.freeze({
   channelMessage: 'CHANNEL_MESSAGE_INBOX',
@@ -45,13 +46,12 @@ function sha256(value) {
 }
 
 function iso(value) {
-  const date = value instanceof Date ? value : new Date(value);
-  if (!Number.isFinite(date.getTime())) throw new TypeError(P2_G1_PROJECTION_ERROR_CODES.storageFailed);
-  return date.toISOString();
+  try { return assertLocalDateTime(value); }
+  catch { throw new TypeError(P2_G1_PROJECTION_ERROR_CODES.storageFailed); }
 }
 
-function ordinalFromDate(value) {
-  return String(BigInt(new Date(value).getTime()) * 1000n);
+function stableOrdinal(value) {
+  return BigInt(`0x${sha256(value).slice(0, 15)}`).toString();
 }
 
 function boundedBatchSize(value) {
@@ -129,6 +129,7 @@ export function createP2G1TimelineProjector({
     batchSize,
     async itemTransactionHook({ transaction, item, source_record: sourceRecord }) {
       if (sourceRecord.source_type === 'CHANNEL_MESSAGE') {
+        const occurredEpochMs = shanghaiLocalToEpochMs(sourceRecord.occurred_at);
         const session = await transaction.query(
           `SELECT creation_idempotency_key,thread_id::text
              FROM conversation.session WHERE id=$1::uuid FOR UPDATE`,
@@ -140,14 +141,15 @@ export function createP2G1TimelineProjector({
           `UPDATE conversation.session
               SET generation_version=generation_version+CASE WHEN $2::boolean THEN 0 ELSE 1 END,
                   row_version=row_version+CASE WHEN $2::boolean THEN 0 ELSE 1 END,
-                  last_activity_at=GREATEST(last_activity_at,$3::timestamptz),
-                  updated_at=CURRENT_TIMESTAMP
+                  last_activity_at=GREATEST(last_activity_at,$3::timestamp without time zone),
+                  last_activity_epoch_ms=GREATEST(last_activity_epoch_ms,$4::bigint),
+                  updated_at=date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
             WHERE id=$1::uuid`,
-          [item.session_id, firstMessage, sourceRecord.occurred_at],
+          [item.session_id, firstMessage, sourceRecord.occurred_at, occurredEpochMs],
         );
         await transaction.query(
           `UPDATE conversation.thread
-              SET last_activity_at=GREATEST(last_activity_at,$2::timestamptz),updated_at=CURRENT_TIMESTAMP
+              SET last_activity_at=GREATEST(last_activity_at,$2::timestamp without time zone),updated_at=date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
             WHERE id=$1::uuid`,
           [session.rows[0].thread_id, sourceRecord.occurred_at],
         );
@@ -178,10 +180,10 @@ async function resolveChannelSession(pool, row) {
     const thread = await transaction.query(
       `INSERT INTO conversation.thread(
          provider,channel_account_id,chat_type,external_thread_key,thread_key,last_activity_at
-       ) VALUES($1,$2,$3,$4,$5,$6::timestamptz)
+       ) VALUES($1,$2,$3,$4,$5,$6::timestamp without time zone)
        ON CONFLICT(provider,channel_account_id,chat_type,external_thread_key)
        DO UPDATE SET last_activity_at=GREATEST(conversation.thread.last_activity_at,EXCLUDED.last_activity_at),
-                     updated_at=CURRENT_TIMESTAMP
+                     updated_at=date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
        RETURNING id::text`,
       [identity.provider, identity.channel_account_id, identity.chat_type,
         identity.external_thread_key, identity.thread_key, row.received_at],
@@ -202,15 +204,16 @@ async function resolveChannelSession(pool, row) {
       const ended = await transaction.query(
         `UPDATE conversation.session
             SET status='ENDED',
-                ended_at=GREATEST(last_activity_at,$2::timestamptz),
-                last_activity_at=GREATEST(last_activity_at,$2::timestamptz),
+                ended_at=GREATEST(last_activity_at,$2::timestamp without time zone),
+                last_activity_at=GREATEST(last_activity_at,$2::timestamp without time zone),
+                last_activity_epoch_ms=GREATEST(last_activity_epoch_ms,$3::bigint),
                 close_reason='DIFFERENT_INTAKE',
                 generation_version=generation_version+1,
                 row_version=row_version+1,
-                updated_at=CURRENT_TIMESTAMP
+                updated_at=date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
           WHERE id=$1::uuid AND status<>'ENDED'
           RETURNING id::text`,
-        [active.id, row.received_at],
+        [active.id, row.received_at, row.received_epoch_ms ?? shanghaiLocalToEpochMs(row.received_at)],
       );
       if (ended.rowCount !== 1) throw new Error(P2_G1_PROJECTION_ERROR_CODES.storageFailed);
     }
@@ -223,13 +226,14 @@ async function resolveChannelSession(pool, row) {
     const inserted = await transaction.query(
       `INSERT INTO conversation.session(
          thread_id,participant_key,service_intake_id,session_scope_key,
-         creation_idempotency_key,status,control_mode,last_activity_at
-       ) VALUES($1::uuid,$2,$3::uuid,$4,$5,'OPEN','HUMAN',$6::timestamptz)
+         creation_idempotency_key,status,control_mode,last_activity_at,last_activity_epoch_ms
+       ) VALUES($1::uuid,$2,$3::uuid,$4,$5,'OPEN','HUMAN',$6::timestamp without time zone,$7::bigint)
        ON CONFLICT(creation_idempotency_key) DO UPDATE
          SET creation_idempotency_key=EXCLUDED.creation_idempotency_key
        RETURNING id::text`,
       [thread.rows[0].id, scope.participant_key, scope.service_intake_id,
-        scope.session_scope_key, scope.creation_idempotency_key, row.received_at],
+        scope.session_scope_key, scope.creation_idempotency_key, row.received_at,
+        row.received_epoch_ms ?? shanghaiLocalToEpochMs(row.received_at)],
     );
     return inserted.rows[0].id;
   });
@@ -301,7 +305,8 @@ export function createP2G1InboundProjectionCoordinator({
   async function channelMessages() {
     const rows = await pool.query(
       `SELECT mi.id::text,mi.provider,mi.bot_id,mi.chat_type,mi.chat_id,mi.sender_user_id,
-              mi.msg_type,mi.clean_text,mi.received_at,mi.privacy_class,mi.retention_until,
+              mi.msg_type,mi.clean_text,mi.received_at,mi.received_epoch_ms::text,
+              mi.privacy_class,mi.retention_until,mi.retention_until_epoch_ms::text,
               COALESCE(sim.intake_id,si.id)::text AS service_intake_id,
               sim.relation_type,COALESCE(sim.sequence_no,1) AS source_ordinal
          FROM channel.message_inbox mi
@@ -342,7 +347,7 @@ export function createP2G1InboundProjectionCoordinator({
            WHERE b.projector_name=$1 AND b.source_stream=$2 AND b.source_type='TICKET_EVENT'
              AND b.source_id=te.event_id::text AND b.projection_variant='STATUS'
              AND b.session_id=s.id)
-        ORDER BY te.created_at,te.event_id,s.id LIMIT $3::integer`,
+        ORDER BY te.created_at,te.event_ordinal,te.event_id,s.id LIMIT $3::integer`,
       [PROJECTOR_NAME, P2_G1_PROJECTION_STREAMS.ticketEvent, size],
     );
     const groups = rows.rows.map((row) => ({
@@ -370,7 +375,7 @@ export function createP2G1InboundProjectionCoordinator({
       return {
         cursor: `${iso(row.created_at)}|${row.id}`,
         session_id: row.session_id,
-        records: [mappedRecord(base, { source_ordinal: ordinalFromDate(row.created_at) })],
+        records: [mappedRecord(base, { source_ordinal: stableOrdinal(row.id) })],
       };
     });
     return projectGroups(P2_G1_PROJECTION_STREAMS.communicationMessage, groups);
@@ -398,7 +403,7 @@ export function createP2G1InboundProjectionCoordinator({
         cursor: `${iso(row.updated_at)}|${row.id}`,
         session_id: row.session_id,
         records: [mappedRecord({ ...base, projection_variant: `${row.status}_ATTEMPT_${row.attempt_count}` }, {
-          source_ordinal: ordinalFromDate(row.updated_at),
+          source_ordinal: stableOrdinal(row.id),
           safe_content: base.content,
         })],
       };
@@ -421,7 +426,7 @@ export function createP2G1InboundProjectionCoordinator({
              WHERE b.projector_name=$1 AND b.source_stream=$2 AND b.source_type='HANDOFF_EVENT'
                AND b.source_id=ce.id::text AND b.projection_variant=ce.event_type
                AND b.session_id=ce.session_id)
-        ORDER BY ce.occurred_at,ce.id LIMIT $3::integer`,
+        ORDER BY ce.occurred_at,ce.event_ordinal,ce.id LIMIT $3::integer`,
       [PROJECTOR_NAME, P2_G1_PROJECTION_STREAMS.controlEvent, size],
     );
     const groups = rows.rows.map((row) => {

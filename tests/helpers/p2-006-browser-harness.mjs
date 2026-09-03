@@ -77,6 +77,9 @@ export async function launchSystemBrowser({ url, width, height }) {
     await command('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 });
     await command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 });
   }
+  async function setTimezone(timezoneId) {
+    await command('Emulation.setTimezoneOverride', { timezoneId });
+  }
   async function close() {
     await command('Browser.close').catch(() => {});
     if (socket.readyState !== WebSocket.CLOSED) {
@@ -94,5 +97,5 @@ export async function launchSystemBrowser({ url, width, height }) {
       catch (error) { if (!['EBUSY', 'EPERM', 'ENOTEMPTY'].includes(error?.code)) throw error; return false; }
     }, { timeoutMs: 8_000, intervalMs: 100 });
   }
-  return Object.freeze({ executable, evaluate, pressTab, waitFor: (expression, options) => waitFor(async () => evaluate(expression), options), close });
+  return Object.freeze({ executable, evaluate, pressTab, setTimezone, waitFor: (expression, options) => waitFor(async () => evaluate(expression), options), close });
 }

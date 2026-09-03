@@ -1,3 +1,5 @@
+import type { LocalDateTime } from './time_contracts';
+
 export type ConversationAssignmentStatus = 'UNASSIGNED' | 'ASSIGNED';
 export type ConversationHandoffStatus = 'REQUESTED' | 'ACCEPTED' | 'RELEASED' | 'CANCELLED';
 export type ConversationControlCommandType = 'REQUEST_HANDOFF' | 'TAKEOVER' | 'TRANSFER' | 'RELEASE' | 'CANCEL_HANDOFF' | 'ADVANCE_READ_CURSOR' | 'INVALIDATE_GENERATION';
@@ -25,5 +27,5 @@ export interface ConversationGenerationFence {
   session_id: string;
   generation_version_at_start: number;
   control_mode: 'HUMAN' | 'COPILOT' | 'AUTO';
-  captured_at: string;
+  captured_at: LocalDateTime;
 }

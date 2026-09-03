@@ -1,6 +1,9 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { types as utilTypes } from 'node:util';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
+import { assertLocalDateTime, shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
+import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
 
 const MIGRATION_URL = new URL(
   '../database/migrations/011_p2_002_timeline_projector.sql',
@@ -495,67 +498,8 @@ function requiredUuid(value) {
 }
 
 function isoDateTime(value) {
-  if (value !== null && typeof value === 'object') {
-    try {
-      if (utilTypes.isProxy(value) || !utilTypes.isDate(value)) {
-        fail(TIMELINE_ERROR_CODES.sourceInvalid);
-      }
-      if (
-        Object.getPrototypeOf(value) !== Date.prototype
-        || Object.getOwnPropertySymbols(value).length !== 0
-        || Object.keys(Object.getOwnPropertyDescriptors(value)).length !== 0
-      ) {
-        fail(TIMELINE_ERROR_CODES.sourceInvalid);
-      }
-      if (!Number.isFinite(Date.prototype.getTime.call(value))) {
-        fail(TIMELINE_ERROR_CODES.sourceInvalid);
-      }
-      return Date.prototype.toISOString.call(value);
-    } catch (error) {
-      if (isStableTimelineProjectionError(error)) {
-        throw error;
-      }
-      fail(TIMELINE_ERROR_CODES.sourceInvalid);
-    }
-  }
-  if (typeof value !== 'string' || value.trim() !== value) {
-    fail(TIMELINE_ERROR_CODES.sourceInvalid);
-  }
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|([+-])(\d{2}):(\d{2}))$/u.exec(value);
-  if (match === null) {
-    fail(TIMELINE_ERROR_CODES.sourceInvalid);
-  }
-  const [year, month, day, hour, minute, second] = match.slice(1, 7).map(Number);
-  const offsetHour = match[9] === undefined ? 0 : Number(match[9]);
-  const offsetMinute = match[10] === undefined ? 0 : Number(match[10]);
-  if (
-    year < 1
-    || month < 1
-    || month > 12
-    || day < 1
-    || hour > 23
-    || minute > 59
-    || second > 59
-    || offsetHour > 23
-    || offsetMinute > 59
-  ) {
-    fail(TIMELINE_ERROR_CODES.sourceInvalid);
-  }
-  const calendar = new Date(0);
-  calendar.setUTCHours(0, 0, 0, 0);
-  calendar.setUTCFullYear(year, month - 1, day);
-  if (
-    calendar.getUTCFullYear() !== year
-    || calendar.getUTCMonth() !== month - 1
-    || calendar.getUTCDate() !== day
-  ) {
-    fail(TIMELINE_ERROR_CODES.sourceInvalid);
-  }
-  const result = new Date(value);
-  if (!Number.isFinite(result.getTime())) {
-    fail(TIMELINE_ERROR_CODES.sourceInvalid);
-  }
-  return result.toISOString();
+  try { return assertLocalDateTime(value); }
+  catch { fail(TIMELINE_ERROR_CODES.sourceInvalid); }
 }
 
 function canonicalBigint(value, { minimum = 0n } = {}) {
@@ -1174,6 +1118,7 @@ export async function applyTimelineProjectionMigration(options) {
     if (typeof query !== 'function') {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
     }
+    if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
     const sql = await readFile(MIGRATION_URL, 'utf8');
     await query.call(pool, sql);
   } catch (error) {
@@ -1451,7 +1396,7 @@ function tighterPrivacy(current, candidate) {
 }
 
 function earlierRetention(current, candidate) {
-  const currentIso = isoDateTime(current);
+  const currentIso = postgresTimestampToLocalDateTime(current);
   const candidateIso = isoDateTime(candidate);
   return candidateIso < currentIso ? candidateIso : currentIso;
 }
@@ -1467,12 +1412,12 @@ async function replayExistingBinding(client, binding, record) {
   const retentionUntil = earlierRetention(binding.retention_until, record.retention_until);
   if (
     privacyClass !== binding.privacy_class
-    || retentionUntil !== isoDateTime(binding.retention_until)
+    || retentionUntil !== postgresTimestampToLocalDateTime(binding.retention_until)
   ) {
     await client.query(
       `UPDATE conversation.item
           SET privacy_class = $2,
-              retention_until = $3::timestamptz
+              retention_until = $3::timestamp without time zone
         WHERE id = $1::uuid`,
       [binding.item_id, privacyClass, retentionUntil],
     );
@@ -1480,7 +1425,10 @@ async function replayExistingBinding(client, binding, record) {
   await client.query(
     `UPDATE conversation.item_source_binding
         SET projector_version = $2,
-            last_seen_at = CURRENT_TIMESTAMP
+            last_seen_at = GREATEST(
+              created_at,
+              date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
+            )
       WHERE item_id = $1::uuid`,
     [binding.item_id, record.projector_version],
   );
@@ -1515,13 +1463,13 @@ async function insertProjectedItem(client, record, sequenceNo, canonicalOrderKey
     `INSERT INTO conversation.item (
        session_id, sequence_no, item_type, sender_kind, visibility,
        text, safe_content, source_type, source_id, projection_variant,
-       canonical_order_key, content_hash, privacy_class, retention_until,
-       occurred_at
+        canonical_order_key, content_hash, privacy_class, retention_until,
+        occurred_at
      ) VALUES (
        $1::uuid, $2::bigint, $3, $4, $5,
        $6, $7::jsonb, $8, $9, $10,
-       $11, $12, $13, $14::timestamptz,
-       $15::timestamptz
+        $11, $12, $13, $14::timestamp without time zone,
+        $15::timestamp without time zone
      ) RETURNING id::text, session_id::text, sequence_no::text, item_type,
                  sender_kind, visibility, occurred_at, retention_until`,
     [
@@ -1572,8 +1520,8 @@ async function insertProjectedItem(client, record, sequenceNo, canonicalOrderKey
     item_type: inserted.rows[0].item_type,
     sender_kind: inserted.rows[0].sender_kind,
     visibility: inserted.rows[0].visibility,
-    occurred_at: isoDateTime(inserted.rows[0].occurred_at),
-    retention_until: isoDateTime(inserted.rows[0].retention_until),
+    occurred_at: postgresTimestampToLocalDateTime(inserted.rows[0].occurred_at),
+    retention_until: postgresTimestampToLocalDateTime(inserted.rows[0].retention_until),
   });
 }
 
@@ -1588,12 +1536,16 @@ async function persistedCanonicalTimeline(client, sessionId) {
          ON binding.item_id = item.id
         AND binding.session_id = item.session_id
       WHERE item.session_id = $1::uuid
-      ORDER BY item.sequence_no`,
+      ORDER BY item.occurred_at, item.sequence_no`,
     [sessionId],
   );
-  const canonicalHash = computeTimelineCanonicalHash(result.rows);
+  const canonicalRows = result.rows.map((row) => ({
+    ...row,
+    occurred_at: postgresTimestampToLocalDateTime(row.occurred_at),
+  }));
+  const canonicalHash = computeTimelineCanonicalHash(canonicalRows);
   return Object.freeze({
-    itemCount: result.rows.length,
+    itemCount: canonicalRows.length,
     canonicalHash,
   });
 }
@@ -1631,7 +1583,7 @@ async function writeCheckpoint(client, {
       `INSERT INTO conversation.projection_checkpoint (
          projector_name, projector_version, source_stream, cursor_value,
          last_source_occurred_at, last_batch_hash
-       ) VALUES ($1, $2, $3, $4, $5::timestamptz, $6)`,
+       ) VALUES ($1, $2, $3, $4, $5::timestamp without time zone, $6)`,
       [projectorName, projectorVersion, sourceStream, cursorValue, occurredAt, batchHash],
     );
     return true;
@@ -1653,10 +1605,10 @@ async function writeCheckpoint(client, {
     `UPDATE conversation.projection_checkpoint
         SET projector_version = $3,
             cursor_value = $4,
-            last_source_occurred_at = $5::timestamptz,
+            last_source_occurred_at = $5::timestamp without time zone,
             last_batch_hash = $6,
             row_version = row_version + 1,
-            updated_at = CURRENT_TIMESTAMP
+            updated_at = date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
       WHERE projector_name = $1
         AND source_stream = $2
         AND row_version = $7::bigint`,
@@ -1709,9 +1661,10 @@ function publicItemFromRow(row) {
     canonical_order_key: boundedString(row.canonical_order_key, 1024),
     content_hash: row.content_hash,
     privacy_class: row.privacy_class,
-    retention_until: isoDateTime(row.retention_until),
-    occurred_at: isoDateTime(row.occurred_at),
-    projected_at: isoDateTime(row.projected_at),
+    retention_until: postgresTimestampToLocalDateTime(row.retention_until),
+    retention_until_epoch_ms: shanghaiLocalToEpochMs(postgresTimestampToLocalDateTime(row.retention_until)),
+    occurred_at: postgresTimestampToLocalDateTime(row.occurred_at),
+    projected_at: postgresTimestampToLocalDateTime(row.projected_at),
   });
 }
 
@@ -1785,7 +1738,7 @@ async function assertRebuildSnapshotCurrent(client, prepared) {
        LEFT JOIN conversation.item_source_binding AS binding
          ON binding.item_id = item.id
       WHERE item.session_id = $1::uuid
-      ORDER BY item.sequence_no`,
+      ORDER BY item.occurred_at, item.sequence_no`,
     [prepared.sessionId],
   );
   if (!Number.isSafeInteger(result.rowCount) || result.rowCount !== result.rows.length) {
@@ -1814,7 +1767,7 @@ async function assertRebuildSnapshotCurrent(client, prepared) {
       || row.source_hash !== expected.source_hash
       || !PRIVACY_CLASSES.has(row.privacy_class)
       || PRIVACY_RANK[row.privacy_class] > PRIVACY_RANK[expected.privacy_class]
-      || isoDateTime(row.retention_until) < isoDateTime(expected.retention_until)
+      || postgresTimestampToLocalDateTime(row.retention_until) < isoDateTime(expected.retention_until)
     ) {
       fail(TIMELINE_ERROR_CODES.rebuildFailed);
     }
@@ -1906,7 +1859,11 @@ export function createTimelineProjector(options = {}) {
             continue;
           }
           const canonicalOrderKey = computeTimelineCanonicalOrderKey(record);
-          if (tailKey !== null && canonicalOrderKey < tailKey) {
+          const tailOccurredAt = tailKey === null ? null : tailKey.slice(0, 19);
+          // ARCH-005: local business time has second precision.  Once a fact is
+          // appended, sequence_no is the authoritative deterministic tie-break
+          // for later facts in that same local second, even across source streams.
+          if (tailOccurredAt !== null && record.occurred_at < tailOccurredAt) {
             fail(TIMELINE_ERROR_CODES.rebuildRequired);
           }
           if (tailKey !== null && canonicalOrderKey === tailKey) {
@@ -2091,7 +2048,7 @@ export function createTimelineProjector(options = {}) {
           WHERE item.session_id = $1::uuid
             AND item.sequence_no > $2::bigint
             AND item.visibility = ANY($3::text[])
-          ORDER BY item.sequence_no
+          ORDER BY item.occurred_at, item.sequence_no
           LIMIT $4`,
         [sessionId, afterSequence, visibility, limit],
       );
@@ -2145,10 +2102,10 @@ export function createTimelineProjector(options = {}) {
           : boundedString(row.cursor_value, 512),
         last_source_occurred_at: row.last_source_occurred_at === null
           ? null
-          : isoDateTime(row.last_source_occurred_at),
+          : postgresTimestampToLocalDateTime(row.last_source_occurred_at),
         last_batch_hash: row.last_batch_hash,
         row_version: canonicalBigint(row.row_version, { minimum: 1n }),
-        updated_at: isoDateTime(row.updated_at),
+        updated_at: postgresTimestampToLocalDateTime(row.updated_at),
       });
     } catch (error) {
       throw mapStorageError(error);

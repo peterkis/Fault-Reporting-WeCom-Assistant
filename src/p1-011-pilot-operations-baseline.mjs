@@ -1,5 +1,11 @@
 import { createHash, createHmac, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
+import {
+  assertLocalDateTime,
+  formatEpochMsToShanghaiLocal,
+  shanghaiLocalToEpochMs,
+} from './platform/time-contract.mjs';
 import { createChannelMessageInbox } from './p1-003-channel-message-inbox.mjs';
 import { createTicketLifecycleProcessor } from './p1-010-ticket-closure.mjs';
 
@@ -528,11 +534,11 @@ export function createPilotOperationalIntake({
 }
 
 function iso(value, message) {
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    throw new TypeError(message);
-  }
-  return date.toISOString();
+  try {
+    return value instanceof Date
+      ? formatEpochMsToShanghaiLocal(String(value.getTime()))
+      : assertLocalDateTime(value);
+  } catch { throw new TypeError(message); }
 }
 
 function opaqueId(value, message, prefix) {
@@ -698,7 +704,7 @@ async function insertAuditEvent(transaction, {
   await transaction.query(
     `INSERT INTO operations.audit_event (
         event_key, event_type, actor_principal_id, trace_id, subject_hash, metadata, occurred_at
-     ) VALUES ($1, $2, $3::uuid, $4, $5, $6::jsonb, $7::timestamptz)
+     ) VALUES ($1, $2, $3::uuid, $4, $5, $6::jsonb, $7::timestamp without time zone)
      ON CONFLICT (event_key) DO NOTHING`,
     [
       key,
@@ -740,6 +746,7 @@ export async function applyPilotOperationsMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   await pool.query(sql);
 }
@@ -775,7 +782,7 @@ export function createPilotOperationsService({ pool, now = () => new Date(), ale
     const normalizedKeyId = requiredIdentifier(encryptionKeyId, 'encryptionKeyId is invalid.');
     const normalizedRetention = iso(retentionUntil, 'retentionUntil is invalid.');
     const normalizedOccurredAt = iso(occurredAt, 'occurredAt is invalid.');
-    if (Date.parse(normalizedRetention) <= Date.parse(normalizedOccurredAt)) {
+    if (BigInt(shanghaiLocalToEpochMs(normalizedRetention)) <= BigInt(shanghaiLocalToEpochMs(normalizedOccurredAt))) {
       throw new TypeError('retentionUntil must be after occurredAt.');
     }
 
@@ -783,7 +790,7 @@ export function createPilotOperationsService({ pool, now = () => new Date(), ale
       const inserted = await database.query(
         `INSERT INTO operations.backup_checkpoint (
             backup_id, checksum_sha256, size_bytes, encryption_key_id, retention_until, created_at
-         ) VALUES ($1, $2, $3, $4, $5::timestamptz, $6::timestamptz)
+         ) VALUES ($1, $2, $3, $4, $5::timestamp without time zone, $6::timestamp without time zone)
          ON CONFLICT (backup_id) DO NOTHING
          RETURNING id::text, backup_id, checksum_sha256, size_bytes, encryption_key_id, retention_until, created_at`,
         [
@@ -821,7 +828,6 @@ export function createPilotOperationsService({ pool, now = () => new Date(), ale
           checksum_sha256: normalizedChecksum,
           size_bytes: sizeBytes,
           encryption_key_id: normalizedKeyId,
-          retention_until: normalizedRetention,
           result: 'SUCCEEDED',
         },
         occurredAt: normalizedOccurredAt,
@@ -867,7 +873,7 @@ export function createPilotOperationsService({ pool, now = () => new Date(), ale
       const inserted = await database.query(
         `INSERT INTO operations.restore_drill (
             restore_id, backup_checkpoint_id, status, verified_object_count, failure_code, completed_at
-         ) VALUES ($1, $2::uuid, $3, $4, $5, $6::timestamptz)
+         ) VALUES ($1, $2::uuid, $3, $4, $5, $6::timestamp without time zone)
          ON CONFLICT (restore_id) DO NOTHING
          RETURNING id::text, restore_id, status, verified_object_count, failure_code, completed_at`,
         [
@@ -985,7 +991,7 @@ export function createPilotOperationsService({ pool, now = () => new Date(), ale
       ? iso(latest.rows[0].created_at, 'Stored backup time is invalid.')
       : null;
     const fresh = latestAt !== null
-      && Date.parse(checkedAt) - Date.parse(latestAt) <= maximumAgeMs;
+      && BigInt(shanghaiLocalToEpochMs(checkedAt)) - BigInt(shanghaiLocalToEpochMs(latestAt)) <= BigInt(maximumAgeMs);
     if (fresh) {
       if (typeof alerts?.resolve === 'function') {
         alerts.resolve('PILOT_BACKUP_STALE', 'backup');

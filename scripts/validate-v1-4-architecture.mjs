@@ -94,6 +94,32 @@ const LIFECYCLE_PROFILES = Object.freeze({
     manifestStatus: 'P2_P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION',
     projectStatus: 'p2_p2_g1_passed_awaiting_p2_007_authorization',
   }),
+  ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION_P2_007_BLOCKED: Object.freeze({
+    lastCompletedTask: 'P2-006',
+    lastCompletedGate: 'P2-G1',
+    activeTask: 'ARCH-005',
+    activeLane: 'ARCHITECTURE',
+    candidate: 'P2-007',
+    candidateAuthorized: false,
+    p2006Status: 'DONE',
+    p2g1Status: 'PASSED',
+    activeTaskStatus: 'READY_FOR_TARGETED_LIVE_REVALIDATION',
+    manifestStatus: 'P2_ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION',
+    projectStatus: 'p2_arch_005_ready_for_targeted_live_revalidation',
+  }),
+  ARCH_005_COMPLETED_P2_007_REQUIRES_SEPARATE_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-006',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-005',
+    activeTask: null,
+    activeLane: null,
+    candidate: 'P2-007',
+    candidateAuthorized: false,
+    p2006Status: 'DONE',
+    p2g1Status: 'PASSED',
+    manifestStatus: 'P2_ARCH_005_COMPLETED_AWAITING_P2_007_AUTHORIZATION',
+    projectStatus: 'p2_arch_005_completed_awaiting_p2_007_authorization',
+  }),
 });
 
 const manifest = json('MANIFEST.json');
@@ -115,6 +141,7 @@ if (profile) {
       name: 'MANIFEST',
       lastCompletedTask: manifest.last_completed_task,
       lastCompletedGate: manifest.last_completed_gate,
+      lastCompletedArchitectureTask: manifest.last_completed_architecture_task,
       activeTask: manifest.active_task,
       activeLane: manifest.active_lane,
       authorizedTasks: manifest.authorized_tasks,
@@ -128,6 +155,7 @@ if (profile) {
       name: 'current phase',
       lastCompletedTask: current.last_completed_task,
       lastCompletedGate: current.last_completed_gate,
+      lastCompletedArchitectureTask: current.last_completed_architecture_task,
       activeTask: current.active_task,
       activeLane: current.active_lane,
       authorizedTasks: current.authorized_tasks,
@@ -141,6 +169,7 @@ if (profile) {
       name: 'master backlog',
       lastCompletedTask: backlog.last_completed_task,
       lastCompletedGate: backlog.last_completed_gate,
+      lastCompletedArchitectureTask: backlog.last_completed_architecture_task,
       activeTask: backlog.active_task,
       activeLane: backlog.active_lane,
       authorizedTasks: backlog.authorized_tasks,
@@ -154,6 +183,7 @@ if (profile) {
       name: 'parallel workstreams',
       lastCompletedTask: parallel.last_completed_task,
       lastCompletedGate: parallel.last_completed_gate,
+      lastCompletedArchitectureTask: parallel.last_completed_architecture_task,
       activeTask: parallel.active_task,
       activeLane: parallel.active_lane,
       authorizedTasks: parallel.authorized_tasks,
@@ -167,6 +197,7 @@ if (profile) {
       name: 'task index',
       lastCompletedTask: taskIndex.last_completed_task,
       lastCompletedGate: taskIndex.last_completed_gate,
+      lastCompletedArchitectureTask: taskIndex.last_completed_architecture_task,
       activeTask: taskIndex.active_task,
       activeLane: taskIndex.active_lane,
       authorizedTasks: taskIndex.authorized_tasks,
@@ -180,6 +211,7 @@ if (profile) {
       name: 'project summary',
       lastCompletedTask: projectSummary.project.last_completed_task,
       lastCompletedGate: projectSummary.project.last_completed_gate,
+      lastCompletedArchitectureTask: projectSummary.project.last_completed_architecture_task,
       activeTask: projectSummary.project.active_task,
       activeLane: projectSummary.project.active_lane,
       authorizedTasks: projectSummary.project.authorized_tasks,
@@ -194,6 +226,9 @@ if (profile) {
   for (const view of lifecycleViews) {
     check(view.lastCompletedTask === profile.lastCompletedTask, view.name + ' has the profile last completed task');
     check(view.lastCompletedGate === profile.lastCompletedGate, view.name + ' has the profile last completed gate');
+    if (Object.hasOwn(profile, 'lastCompletedArchitectureTask')) {
+      check(view.lastCompletedArchitectureTask === profile.lastCompletedArchitectureTask, view.name + ' has the profile last completed architecture task');
+    }
     check(view.activeTask === profile.activeTask, view.name + ' has the profile active task');
     check(view.activeLane === profile.activeLane, view.name + ' has the profile active lane');
     check(sameArray(view.authorizedTasks, AUTHORIZED_TASKS), view.name + ' has the exact authorized task set');
@@ -213,6 +248,18 @@ if (profile) {
   const p2Summary = projectSummary.phase_model.find((phase) => phase.id === 'P2');
   check(p2Summary?.last_completed_task === profile.lastCompletedTask, 'project P2 summary has the profile last completed task');
   check(p2Summary?.last_completed_gate === profile.lastCompletedGate, 'project P2 summary has the profile last completed gate');
+  if (Object.hasOwn(profile, 'lastCompletedArchitectureTask')) {
+    check(p2Summary?.last_completed_architecture_task === profile.lastCompletedArchitectureTask, 'project P2 summary has the profile last completed architecture task');
+    const completionEvidence = 'evidence/arch-005-targeted-live-revalidation.md';
+    check(fs.existsSync(path.join(root, completionEvidence)), 'ARCH-005 completion evidence exists');
+    check(manifest.arch_005_completion_evidence === completionEvidence
+      && current.arch_005_completion_evidence === completionEvidence
+      && backlog.arch_005_completion_evidence === completionEvidence
+      && parallel.arch_005_completion_evidence === completionEvidence
+      && taskIndex.arch_005_completion_evidence === completionEvidence
+      && projectSummary.project.arch_005_completion_evidence === completionEvidence,
+    'all lifecycle views link ARCH-005 completion evidence');
+  }
   if (profile.p2g1Status === 'PASSED') {
     check(current.next_task_candidate === 'P2-007' && current.next_task_authorized === false, 'P2-007 remains the unauthorized next task candidate');
   }
@@ -271,8 +318,8 @@ check(p2006?.authorized_at === '2026-09-01'
   && p2006?.task_file === 'tasks/P2-006_realtime_web_workbench_rest_authorization.md', 'P2-006 authorization metadata is linked');
 check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[7-9]|01[0-4])$/u.test(task.id))
   .every((task) => task.status === 'TODO'), 'P2-007 through P2-014 remain TODO');
-check(sameArray(backlog.tasks.filter((task) => task.status === 'IN_PROGRESS').map((task) => task.id),
-  profile?.activeTask?.startsWith('P2-0') ? [profile.activeTask] : []), 'the exact IN_PROGRESS task set matches the lifecycle profile');
+check(sameArray(backlog.tasks.filter((task) => task.status === (profile?.activeTaskStatus ?? 'IN_PROGRESS')).map((task) => task.id),
+  profile?.activeTask?.startsWith('P2-0') || profile?.activeTask?.startsWith('ARCH-') ? [profile.activeTask] : []), 'the exact active task set matches the lifecycle profile');
 check(p3?.status === 'TODO', 'P3 remains TODO');
 check(backlog.tasks.filter((task) => task.phase === 'P3').every((task) => task.status === 'TODO'), 'all P3 tasks remain TODO');
 

@@ -1,4 +1,5 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 
 export const P2_G1_TEST_AUTH_ERROR_CODES = Object.freeze({
   configurationInvalid: 'P2_G1_TEST_AUTH_CONFIGURATION_INVALID',
@@ -69,7 +70,11 @@ export function createP2G1TestAuthentication({
     throw new TypeError(P2_G1_TEST_AUTH_ERROR_CODES.configurationInvalid);
   }
   const issuedAt = now();
-  const expiresAt = new Date(issuedAt.getTime() + ttlMs);
+  if (!(issuedAt instanceof Date) || !Number.isFinite(issuedAt.getTime()) || issuedAt.getTime() < 0) {
+    throw new TypeError(P2_G1_TEST_AUTH_ERROR_CODES.configurationInvalid);
+  }
+  const expiresEpochMs = String(issuedAt.getTime() + ttlMs);
+  const expiresAt = formatEpochMsToShanghaiLocal(expiresEpochMs);
 
   const sessions = Object.freeze(identities.map((id, index) => Object.freeze({
     principal_id: id,
@@ -93,13 +98,14 @@ export function createP2G1TestAuthentication({
 
   async function authenticate(request) {
     const current = now();
-    if (current.getTime() >= expiresAt.getTime()) return null;
+    if (!(current instanceof Date) || current.getTime() >= Number(expiresEpochMs)) return null;
     const session = sessions.find((entry) => secureEqual(cookieValue(request?.headers?.cookie, entry.cookie_name), entry.token));
     if (!session || !await principalAllowed(session.principal_id)) return null;
     return Object.freeze({
       principal_id: session.principal_id,
       auth_method: 'COOKIE',
-      expires_at: expiresAt.toISOString(),
+      expires_at: expiresAt,
+      expires_epoch_ms: expiresEpochMs,
       csrf_token: session.csrf_token,
       public_origin: publicOrigin,
     });
@@ -115,7 +121,7 @@ export function createP2G1TestAuthentication({
       httpOnly: true,
       secure: publicOrigin.startsWith('https://'),
       sameSite: 'Strict',
-      expires: Math.floor(expiresAt.getTime() / 1000),
+      expires: Math.floor(Number(expiresEpochMs) / 1000),
     });
   }
 
@@ -128,5 +134,5 @@ export function createP2G1TestAuthentication({
     return `${session.cookie_name}=${session.token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(ttlMs / 1000)}${secure}`;
   }
 
-  return Object.freeze({ authenticate, browserCookie, browserCookies, setCookieHeader, expires_at: expiresAt.toISOString() });
+  return Object.freeze({ authenticate, browserCookie, browserCookies, setCookieHeader, expires_at: expiresAt, expires_epoch_ms: expiresEpochMs });
 }

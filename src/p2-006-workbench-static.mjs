@@ -9,6 +9,7 @@ const ASSETS = Object.freeze({
   '/static/workbench/workbench.css': Object.freeze({ file: 'workbench.css', type: 'text/css; charset=utf-8' }),
   '/static/workbench/workbench.js': Object.freeze({ file: 'workbench.js', type: 'text/javascript; charset=utf-8' }),
   '/static/workbench/workbench-state.mjs': Object.freeze({ file: 'workbench-state.mjs', type: 'text/javascript; charset=utf-8' }),
+  '/static/workbench/time-display.mjs': Object.freeze({ file: 'time-display.mjs', type: 'text/javascript; charset=utf-8' }),
 });
 
 export function createWorkbenchStaticHandler({ enabled = false, root = ROOT } = {}) {

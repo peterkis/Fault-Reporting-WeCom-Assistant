@@ -5,8 +5,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { after, before, test } from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
+import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
 import {
   applyChannelMessageInboxMigration,
   createChannelMessageInbox,
@@ -18,7 +19,7 @@ const restartWorkerPath = fileURLToPath(new URL('fixtures/p1-003-inbox-worker.mj
 const integrationTest = databaseUrl ? test : test.skip;
 const testMessageIds = new Set();
 const pool = databaseUrl
-  ? new Pool({ connectionString: databaseUrl, max: 12, connectionTimeoutMillis: 2_000 })
+  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
   : null;
 
 function normalizedTextMessage(msgId, { reqId = `req-${msgId}`, text = 'HIS login failed' } = {}) {
@@ -33,7 +34,7 @@ function normalizedTextMessage(msgId, { reqId = `req-${msgId}`, text = 'HIS logi
       msgtype: 'text',
       text: { content: text },
     },
-  }, { receivedAt: new Date().toISOString() });
+  }, { receivedEpochMs: String(Date.now()) });
 
   assert.equal(adapted.ok, true);
   testMessageIds.add(msgId);
@@ -41,13 +42,20 @@ function normalizedTextMessage(msgId, { reqId = `req-${msgId}`, text = 'HIS logi
 }
 
 function inboxRequest(message, overrides = {}) {
-  return {
+  const retentionUntilEpochMs = String(BigInt(message.received_epoch_ms) + 7n * 24n * 60n * 60n * 1000n);
+  const request = {
     message,
     traceId: `trace-${message.msg_id}`,
     privacyClass: 'INTERNAL',
-    retentionUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1_000).toISOString(),
+    retentionUntil: formatEpochMsToShanghaiLocal(retentionUntilEpochMs),
+    retentionUntilEpochMs,
     ...overrides,
   };
+  if (Object.hasOwn(overrides, 'retentionUntil') && !Object.hasOwn(overrides, 'retentionUntilEpochMs')) {
+    try { request.retentionUntilEpochMs = shanghaiLocalToEpochMs(request.retentionUntil); }
+    catch { /* Invalid values are intentionally passed to the production validator. */ }
+  }
+  return request;
 }
 
 async function runRestartWorker(mode, msgId) {
@@ -76,7 +84,7 @@ async function withIsolatedDatabase(callback) {
   const databaseName = isolatedDatabaseName();
   const quotedDatabaseName = `"${databaseName}"`;
   await pool.query(`CREATE DATABASE ${quotedDatabaseName} TEMPLATE template0`);
-  const isolatedPool = new Pool({
+  const isolatedPool = createPostgresPool({
     connectionString: isolatedDatabaseUrl(databaseName),
     max: 1,
     connectionTimeoutMillis: 2_000,
@@ -258,7 +266,7 @@ integrationTest('first-processing failure rolls back the Inbox row and permits a
 
 integrationTest('non-plain processing result roots fail as processing errors', async () => {
   const cases = [
-    ['date', new Date('2026-08-29T00:00:00.000Z')],
+    ['date', new Date('2026-08-29 08:00:00')],
     ['array-to-json', { toJSON: () => ['not', 'an', 'object'] }],
     ['null-to-json', { toJSON: () => null }],
   ];
@@ -524,7 +532,7 @@ integrationTest('SET LOCAL cannot change the Inbox-owned transaction', async () 
 integrationTest('session defaults cannot poison a pooled connection after Inbox commit', async () => {
   const msgId = `p1-003-transaction-session-default-${randomUUID()}`;
   const message = normalizedTextMessage(msgId);
-  const sessionPool = new Pool({
+  const sessionPool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,
@@ -560,7 +568,7 @@ integrationTest('session defaults cannot poison a pooled connection after Inbox 
 integrationTest('function-based session configuration is rejected before pooled connection reuse', async () => {
   const firstMsgId = `p1-003-session-function-first-${randomUUID()}`;
   const secondMsgId = `p1-003-session-function-second-${randomUUID()}`;
-  const sessionPool = new Pool({
+  const sessionPool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,
@@ -601,7 +609,7 @@ integrationTest('function-based session configuration is rejected before pooled 
 
 integrationTest('ordinary Inbox use preserves caller-owned pool session baselines', async () => {
   const msgId = `p1-003-session-baseline-${randomUUID()}`;
-  const baselinePool = new Pool({
+  const baselinePool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,
@@ -719,7 +727,7 @@ integrationTest('a duplicate after a real process restart receives the committed
 });
 
 test('temporary database unavailability returns a stable retryable error without processing', async () => {
-  const unavailablePool = new Pool({
+  const unavailablePool = createPostgresPool({
     host: '127.0.0.1',
     port: 1,
     database: 'unavailable',
@@ -774,11 +782,11 @@ test('invalid privacy, retention, plaintext payload and non-contract message fie
       'PRIVACY_CLASS_INVALID',
     ],
     [
-      inboxRequest(message, { retentionUntil: message.received_at }),
+      inboxRequest(message, { retentionUntil: message.received_at, retentionUntilEpochMs: message.received_epoch_ms }),
       'RETENTION_UNTIL_NOT_AFTER_RECEIVED_AT',
     ],
     [
-      inboxRequest(message, { retentionUntil: '2099-01-01T00:00:00+16:00' }),
+      inboxRequest(message, { retentionUntil: '2098-02-30 16:00:00' }),
       'RETENTION_UNTIL_INVALID',
     ],
     [
@@ -818,7 +826,7 @@ test('invalid privacy, retention, plaintext payload and non-contract message fie
 integrationTest('privacy, retention and caller-encrypted raw payload are persisted without entering the result', async () => {
   const msgId = `p1-003-privacy-${randomUUID()}`;
   const message = normalizedTextMessage(msgId, { text: 'Synthetic patient-sensitive example' });
-  const retentionUntil = new Date(Date.now() + 90 * 24 * 60 * 60 * 1_000).toISOString();
+  const retentionUntil = formatEpochMsToShanghaiLocal(String(Date.now() + 90 * 24 * 60 * 60 * 1_000));
   const encryptedPayload = randomBytes(48);
   const inbox = createChannelMessageInbox({ pool });
 
@@ -840,7 +848,7 @@ integrationTest('privacy, retention and caller-encrypted raw payload are persist
   assert.deepEqual(persisted.rows[0].normalized_message, message);
   assert.deepEqual(persisted.rows[0].raw_payload_encrypted, encryptedPayload);
   assert.equal(persisted.rows[0].privacy_class, 'PATIENT_SENSITIVE');
-  assert.equal(persisted.rows[0].retention_until.toISOString(), retentionUntil);
+  assert.equal(persisted.rows[0].retention_until, retentionUntil);
 });
 
 integrationTest('migration fails closed when an existing Inbox lacks required constraints', async () => {

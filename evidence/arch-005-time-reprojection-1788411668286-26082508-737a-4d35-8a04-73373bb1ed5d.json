@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "architecture_task": "ARCH-005",
+  "run_id": "1788411668286-26082508-737a-4d35-8a04-73373bb1ed5d",
+  "event_time": "2026-09-03 13:01:08",
+  "event_epoch_ms": "1788411668286",
+  "scope": "P2_002_AND_P2_003_REBUILDABLE_PROJECTION_HASH_METADATA",
+  "authoritative_fact_deletes": 0,
+  "projection_row_deletes": 0,
+  "outcome": "FAIL",
+  "error_code": "428C9"
+}

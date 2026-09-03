@@ -1,5 +1,13 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
+import {
+  addEpochMilliseconds,
+  assertEpochMsString,
+  assertLocalDateTime,
+  formatEpochMsToShanghaiLocal,
+} from './platform/time-contract.mjs';
+import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/005_p1_007_notification_outbox.sql', import.meta.url);
 const CHANNELS = new Set(['WECOM_DIRECT', 'PILOT_TEAM']);
@@ -37,7 +45,20 @@ function isRecord(value) {
 }
 
 function iso(value) {
-  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+  return postgresTimestampToLocalDateTime(value);
+}
+
+function clock(nowEpochMs, legacyNow) {
+  let epochMs;
+  if (typeof nowEpochMs === 'function') epochMs = assertEpochMsString(nowEpochMs());
+  else {
+    const value = legacyNow();
+    if (!(value instanceof Date) || !Number.isFinite(value.getTime()) || value.getTime() < 0) {
+      throw new TypeError('clock must return non-negative epoch milliseconds.');
+    }
+    epochMs = String(Math.trunc(value.getTime()));
+  }
+  return Object.freeze({ epoch_ms: epochMs, local_datetime: formatEpochMsToShanghaiLocal(epochMs) });
 }
 
 function nonEmpty(value, code, maximum) {
@@ -138,6 +159,7 @@ export async function applyNotificationOutboxMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   await pool.query(sql);
 }
@@ -237,6 +259,7 @@ export function createNotificationDeliveryWorker({
   pool,
   sender,
   now = () => new Date(),
+  nowEpochMs = null,
   retryBaseMs = 1_000,
   maxAttempts = 5,
   leaseMs = 30_000,
@@ -244,7 +267,8 @@ export function createNotificationDeliveryWorker({
   maxDeliveriesPerTargetWindow = 20,
   rateLimitWindowMs = 60_000,
 } = {}) {
-  if (typeof sender !== 'function') {
+  if (typeof sender !== 'function' || typeof now !== 'function'
+    || (nowEpochMs !== null && typeof nowEpochMs !== 'function')) {
     throw new TypeError('A notification sender is required.');
   }
   for (const [name, value] of Object.entries({
@@ -264,11 +288,9 @@ export function createNotificationDeliveryWorker({
   }
 
   async function claimOne(deliveryId = null) {
-    const claimedAt = now();
-    if (!(claimedAt instanceof Date) || Number.isNaN(claimedAt.getTime())) {
-      throw new TypeError('now must return a valid Date.');
-    }
-    const rateLimitStart = new Date(claimedAt.getTime() - rateLimitWindowMs);
+    const claimedAt = clock(nowEpochMs, now);
+    const rateLimitStart = BigInt(claimedAt.epoch_ms) > BigInt(rateLimitWindowMs)
+      ? String(BigInt(claimedAt.epoch_ms) - BigInt(rateLimitWindowMs)) : '0';
     const leaseToken = randomUUID();
     return withTransaction(pool, async (transaction) => {
       const selected = deliveryId === null
@@ -281,8 +303,8 @@ export function createNotificationDeliveryWorker({
              JOIN notification.outbox AS outbox ON outbox.id = delivery.outbox_id
              JOIN pilot_ticket.ticket AS ticket ON ticket.id = outbox.ticket_id
             WHERE (
-                (delivery.status = 'PENDING' AND delivery.next_attempt_at <= $1::timestamptz)
-                OR (delivery.status = 'SENDING' AND delivery.lease_expires_at <= $1::timestamptz)
+                (delivery.status = 'PENDING' AND delivery.next_attempt_epoch_ms <= $1::bigint)
+                OR (delivery.status = 'SENDING' AND delivery.lease_expires_epoch_ms <= $1::bigint)
             )
               AND pg_try_advisory_xact_lock(
                   hashtext(delivery.channel),
@@ -295,9 +317,9 @@ export function createNotificationDeliveryWorker({
                      AND rate_delivery.target_key = delivery.target_key
                      AND (
                          (rate_delivery.status = 'SENT'
-                          AND rate_delivery.sent_at > $2::timestamptz)
+                          AND rate_delivery.sent_epoch_ms > $2::bigint)
                          OR (rate_delivery.status = 'SENDING'
-                             AND rate_delivery.lease_expires_at > $1::timestamptz)
+                             AND rate_delivery.lease_expires_epoch_ms > $1::bigint)
                      )
               ) < $3::integer
             ORDER BY CASE
@@ -306,10 +328,10 @@ export function createNotificationDeliveryWorker({
                        WHEN ticket.priority = 'HIGH' THEN 1
                        ELSE 2
                      END,
-                     delivery.next_attempt_at, delivery.created_at
+                     delivery.next_attempt_epoch_ms, delivery.created_at
             FOR UPDATE OF delivery SKIP LOCKED
             LIMIT 1`,
-          [claimedAt, rateLimitStart, maxDeliveriesPerTargetWindow],
+          [claimedAt.epoch_ms, rateLimitStart, maxDeliveriesPerTargetWindow],
         )
         : await transaction.query(
           `SELECT delivery.id::text, delivery.outbox_id::text, delivery.channel,
@@ -321,8 +343,8 @@ export function createNotificationDeliveryWorker({
              JOIN pilot_ticket.ticket AS ticket ON ticket.id = outbox.ticket_id
             WHERE delivery.id = $1::uuid
               AND (
-                  (delivery.status = 'PENDING' AND delivery.next_attempt_at <= $2::timestamptz)
-                  OR (delivery.status = 'SENDING' AND delivery.lease_expires_at <= $2::timestamptz)
+                  (delivery.status = 'PENDING' AND delivery.next_attempt_epoch_ms <= $2::bigint)
+                  OR (delivery.status = 'SENDING' AND delivery.lease_expires_epoch_ms <= $2::bigint)
               )
               AND pg_try_advisory_xact_lock(
                   hashtext(delivery.channel),
@@ -335,38 +357,38 @@ export function createNotificationDeliveryWorker({
                      AND rate_delivery.target_key = delivery.target_key
                      AND (
                          (rate_delivery.status = 'SENT'
-                          AND rate_delivery.sent_at > $3::timestamptz)
+                          AND rate_delivery.sent_epoch_ms > $3::bigint)
                          OR (rate_delivery.status = 'SENDING'
-                             AND rate_delivery.lease_expires_at > $2::timestamptz)
+                             AND rate_delivery.lease_expires_epoch_ms > $2::bigint)
                      )
               ) < $4::integer
             FOR UPDATE OF delivery SKIP LOCKED`,
-          [deliveryId, claimedAt, rateLimitStart, maxDeliveriesPerTargetWindow],
+          [deliveryId, claimedAt.epoch_ms, rateLimitStart, maxDeliveriesPerTargetWindow],
         );
       if (selected.rowCount !== 1) {
         return null;
       }
       const claimed = selected.rows[0];
-      const leaseExpiresAt = new Date(claimedAt.getTime() + leaseMs);
+      const leaseExpiresAt = addEpochMilliseconds(claimedAt.epoch_ms, leaseMs);
       await transaction.query(
         `UPDATE notification.delivery
             SET status = 'SENDING',
                 lease_token = $2::uuid,
-                lease_expires_at = $3::timestamptz,
-                updated_at = $1::timestamptz
+                lease_expires_epoch_ms = $3::bigint,
+                updated_at = $1::timestamp without time zone
           WHERE id = $4::uuid`,
-        [claimedAt, leaseToken, leaseExpiresAt, claimed.id],
+        [claimedAt.local_datetime, leaseToken, leaseExpiresAt, claimed.id],
       );
       return { ...claimed, leaseToken, claimedAt };
     });
   }
 
   async function finalize(claim, outcome) {
-    const completedAt = now();
+    const completedAt = clock(nowEpochMs, now);
     return withTransaction(pool, async (transaction) => {
       const selected = await transaction.query(
         `SELECT id::text, outbox_id::text, channel, status, attempt_count,
-                lease_token::text, last_error_code, provider_message_id, sent_at
+                lease_token::text, last_error_code, provider_message_id, sent_at, sent_epoch_ms::text
            FROM notification.delivery
           WHERE id = $1::uuid
           FOR UPDATE`,
@@ -382,61 +404,67 @@ export function createNotificationDeliveryWorker({
         const updated = await transaction.query(
           `UPDATE notification.delivery
               SET status = 'SENT',
-                  attempt_count = $2,
-                  lease_token = NULL,
-                  lease_expires_at = NULL,
+                   attempt_count = $2,
+                   lease_token = NULL,
+                   lease_expires_at = NULL,
+                   lease_expires_epoch_ms = NULL,
                   last_error_code = NULL,
                   provider_message_id = $3,
-                  sent_at = $4::timestamptz,
-                  updated_at = $4::timestamptz
+                  sent_epoch_ms = $4::bigint,
+                  updated_at = $5::timestamp without time zone
             WHERE id = $1::uuid
             RETURNING id::text, outbox_id::text, channel, status, attempt_count,
-                      last_error_code, provider_message_id, sent_at`,
-          [claim.id, attemptNo, outcome.providerMessageId ?? null, completedAt],
+                      last_error_code, provider_message_id, sent_at, sent_epoch_ms::text`,
+          [claim.id, attemptNo, outcome.providerMessageId ?? null,
+            completedAt.epoch_ms, completedAt.local_datetime],
         );
         await transaction.query(
           `INSERT INTO notification.delivery_attempt (
-              delivery_id, attempt_no, outcome, provider_message_id, occurred_at
-           ) VALUES ($1::uuid, $2, 'SENT', $3, $4::timestamptz)`,
-          [claim.id, attemptNo, outcome.providerMessageId ?? null, completedAt],
+              delivery_id, attempt_no, outcome, provider_message_id, occurred_at, occurred_epoch_ms
+           ) VALUES ($1::uuid, $2, 'SENT', $3, $4::timestamp without time zone, $5::bigint)`,
+          [claim.id, attemptNo, outcome.providerMessageId ?? null,
+            completedAt.local_datetime, completedAt.epoch_ms],
         );
         return publicDelivery(updated.rows[0]);
       }
       const terminal = attemptNo >= maxAttempts;
-      const nextAttemptAt = new Date(
-        completedAt.getTime() + retryBaseMs * (2 ** Math.max(0, attemptNo - 1)),
+      const nextAttemptAt = addEpochMilliseconds(
+        completedAt.epoch_ms,
+        retryBaseMs * (2 ** Math.max(0, attemptNo - 1)),
       );
       const updated = await transaction.query(
         `UPDATE notification.delivery
             SET status = $2,
                 attempt_count = $3,
-                next_attempt_at = $4::timestamptz,
-                lease_token = NULL,
-                lease_expires_at = NULL,
+                 next_attempt_epoch_ms = $4::bigint,
+                 lease_token = NULL,
+                 lease_expires_at = NULL,
+                 lease_expires_epoch_ms = NULL,
                 last_error_code = $5,
-                updated_at = $6::timestamptz
+                updated_at = $6::timestamp without time zone
           WHERE id = $1::uuid
           RETURNING id::text, outbox_id::text, channel, status, attempt_count,
-                    last_error_code, provider_message_id, sent_at`,
+                    last_error_code, provider_message_id, sent_at, sent_epoch_ms::text`,
         [
           claim.id,
           terminal ? 'DEAD_LETTER' : 'PENDING',
           attemptNo,
           nextAttemptAt,
           outcome.errorCode,
-          completedAt,
+          completedAt.local_datetime,
         ],
       );
       await transaction.query(
         `INSERT INTO notification.delivery_attempt (
-            delivery_id, attempt_no, outcome, error_code, occurred_at
-         ) VALUES ($1::uuid, $2, $3, $4, $5::timestamptz)`,
+            delivery_id, attempt_no, outcome, error_code, occurred_at, occurred_epoch_ms
+         ) VALUES ($1::uuid, $2, $3, $4, $5::timestamp without time zone, $6::bigint)`,
         [
           claim.id,
           attemptNo,
           terminal ? 'DEAD_LETTER' : 'RETRY_SCHEDULED',
           outcome.errorCode,
-          completedAt,
+          completedAt.local_datetime,
+          completedAt.epoch_ms,
         ],
       );
       return publicDelivery(updated.rows[0]);

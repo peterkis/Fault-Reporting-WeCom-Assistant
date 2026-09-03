@@ -8,6 +8,7 @@
   "started": true,
   "last_completed_task": "P2-006",
   "last_completed_gate": "P2-G1",
+  "last_completed_architecture_task": "ARCH-005",
   "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
@@ -19,7 +20,16 @@
     "P2-006"
   ],
   "active_lane": null,
-  "implementation_authorization_status": "P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION",
+  "implementation_authorization_status": "ARCH_005_COMPLETED_P2_007_REQUIRES_SEPARATE_AUTHORIZATION",
+  "authorized_architecture_tasks": [
+    "ARCH-005"
+  ],
+  "arch_005_status": "DONE",
+  "arch_005_authorized_at": "2026-09-03",
+  "arch_005_authorization_evidence": "evidence/arch-005-start-authorization.md",
+  "arch_005_completed_at": "2026-09-03",
+  "arch_005_completion_evidence": "evidence/arch-005-targeted-live-revalidation.md",
+  "p2_007_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
   "p2_g1_status": "PASSED",
   "next_task_candidate": "P2-007",
   "next_task_authorized": false,
@@ -70,7 +80,7 @@
     "historical ticket compatibility scope"
   ],
   "forbidden_without_task_authorization": [
-    "start P2-007 or any later P2 task",
+    "start P2-007 or any later P2 task while ARCH-005 is active or without separate authorization",
     "start any P3 task",
     "mark P2-G1 PASSED or GO without live WeCom evidence and project-owner approval",
     "start P2-G2 or any later gate",
@@ -103,7 +113,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION",
+    "activation_status": "ARCH_005_COMPLETED_P2_007_REQUIRES_SEPARATE_AUTHORIZATION",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

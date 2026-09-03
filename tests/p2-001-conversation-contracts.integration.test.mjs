@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
 import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
 import { applyPilotTicketCoreMigration } from '../src/p1-005-pilot-ticket-core.mjs';
@@ -43,7 +43,7 @@ async function insertThread(pool, identity) {
       identity.chat_type,
       identity.external_thread_key,
       identity.thread_key,
-      '2026-08-30T01:00:00.000Z',
+      '2026-08-30 09:00:00',
     ],
   );
   return inserted.rows[0];
@@ -77,14 +77,14 @@ async function insertSession(pool, {
       serviceIntakeId,
       scope.session_scope_key,
       creationIdempotencyKey,
-      '2026-08-30T01:00:00.000Z',
+      '2026-08-30 09:00:00',
     ],
   );
   return inserted.rows[0];
 }
 
 integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail closed', async () => {
-  const adminPool = new Pool({
+  const adminPool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,
@@ -95,7 +95,7 @@ integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail cl
 
   try {
     await adminPool.query(`CREATE DATABASE ${quotedDatabaseName} TEMPLATE template0`);
-    isolatedPool = new Pool({
+    isolatedPool = createPostgresPool({
       connectionString: databaseUrlFor(databaseName),
       max: 1,
       connectionTimeoutMillis: 2_000,
@@ -106,7 +106,6 @@ integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail cl
     await applyPilotTicketCoreMigration({ pool: isolatedPool });
     await applyConversationContractsMigration({ pool: isolatedPool });
     await applyConversationContractsMigration({ pool: isolatedPool });
-
     const firstIdentity = buildConversationThreadIdentity({
       provider: 'WECOM_AIBOT',
       botId: 'bot-contract-a',
@@ -137,10 +136,10 @@ integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail cl
       threadId: firstThread.id,
       participantKey: 'participant-a',
       creationIdempotencyKey: 'WECOM_AIBOT:message-a',
-      lastActivityAt: '2026-08-30T01:00:00.000Z',
+      lastActivityAt: '2026-08-30 09:00:00',
       featureFlags: conversationEnabled,
     });
-    assert.equal(firstCreation.ok, true);
+    assert.equal(firstCreation.ok, true, JSON.stringify(firstCreation));
     assert.equal(firstCreation.replayed, false);
     const firstSession = firstCreation.session;
     assert.deepEqual({
@@ -162,7 +161,7 @@ integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail cl
       threadId: firstThread.id,
       participantKey: 'participant-a',
       creationIdempotencyKey: 'WECOM_AIBOT:message-a',
-      lastActivityAt: '2026-08-30T01:00:01.000Z',
+      lastActivityAt: '2026-08-30 09:00:01',
       featureFlags: conversationEnabled,
     });
     assert.equal(firstReplay.ok, true);
@@ -210,7 +209,7 @@ integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail cl
               row_version = row_version + 1,
               updated_at = $2::timestamptz
         WHERE id = $1::uuid`,
-      [firstSession.id, '2026-08-30T01:01:00.000Z'],
+      [firstSession.id, '2026-08-30 09:01:00'],
     );
     const laterSession = await insertSession(isolatedPool, {
       threadId: firstThread.id,
@@ -226,14 +225,14 @@ integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail cl
               row_version = row_version + 1,
               updated_at = $2::timestamptz
         WHERE id = $1::uuid`,
-      [laterSession.id, '2026-08-30T01:02:00.000Z'],
+      [laterSession.id, '2026-08-30 09:02:00'],
     );
     const endedReplay = await createConversationSessionContractRecord({
       pool: isolatedPool,
       threadId: firstThread.id,
       participantKey: 'participant-a',
       creationIdempotencyKey: 'WECOM_AIBOT:message-a',
-      lastActivityAt: '2026-08-30T01:03:00.000Z',
+      lastActivityAt: '2026-08-30 09:03:00',
       featureFlags: conversationEnabled,
     });
     assert.equal(endedReplay.ok, true);
@@ -246,7 +245,7 @@ integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail cl
       threadId: firstThread.id,
       participantKey: 'participant-c',
       creationIdempotencyKey: 'WECOM_AIBOT:message-a',
-      lastActivityAt: '2026-08-30T01:03:00.000Z',
+      lastActivityAt: '2026-08-30 09:03:00',
       featureFlags: conversationEnabled,
     });
     assert.equal(
@@ -258,7 +257,7 @@ integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail cl
       threadId: randomUUID(),
       participantKey: 'participant-a',
       creationIdempotencyKey: 'WECOM_AIBOT:message-a',
-      lastActivityAt: '2026-08-30T01:03:00.000Z',
+      lastActivityAt: '2026-08-30 09:03:00',
       featureFlags: conversationEnabled,
     });
     assert.equal(
@@ -288,7 +287,7 @@ integrationTest('P2-001 PostgreSQL contract is idempotent, isolated, and fail cl
           'participant-c',
           'not-a-contract-scope',
           'WECOM_AIBOT:message-g',
-          '2026-08-30T01:00:00.000Z',
+          '2026-08-30 09:00:00',
         ],
       ),
       (error) => error.code === '23514'

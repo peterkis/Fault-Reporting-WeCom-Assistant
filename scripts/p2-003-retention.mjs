@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import { types as utilTypes } from 'node:util';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import {
   REALTIME_DEFAULT_CLEANUP_LIMIT,
   REALTIME_ERROR_CODES,
@@ -192,7 +192,7 @@ function publicResult(mode, result, limit) {
 export async function runP2_003RetentionCommand({
   options,
   env = process.env,
-  PoolClass = Pool,
+  PoolClass = null,
   runtime = DEFAULT_RUNTIME,
   now,
 } = {}) {
@@ -208,11 +208,12 @@ export async function runP2_003RetentionCommand({
   }
   let pool;
   try {
-    pool = new PoolClass({
+    const poolConfig = {
       connectionString: config.databaseUrl,
       max: 1,
       connectionTimeoutMillis: 2_000,
-    });
+    };
+    pool = PoolClass === null ? createPostgresPool(poolConfig) : new PoolClass(poolConfig);
     const common = {
       pool,
       streamName: REALTIME_STREAM_NAME,

@@ -58,6 +58,28 @@ const profiles = Object.freeze({
     p2006Status: 'DONE',
     p2g1Status: 'PASSED',
   }),
+  ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION_P2_007_BLOCKED: Object.freeze({
+    lastCompletedTask: 'P2-006',
+    lastCompletedGate: 'P2-G1',
+    activeTask: 'ARCH-005',
+    activeLane: 'ARCHITECTURE',
+    candidate: 'P2-007',
+    candidateAuthorized: false,
+    p2006Status: 'DONE',
+    p2g1Status: 'PASSED',
+    activeTaskStatus: 'READY_FOR_TARGETED_LIVE_REVALIDATION',
+  }),
+  ARCH_005_COMPLETED_P2_007_REQUIRES_SEPARATE_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-006',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-005',
+    activeTask: null,
+    activeLane: null,
+    candidate: 'P2-007',
+    candidateAuthorized: false,
+    p2006Status: 'DONE',
+    p2g1Status: 'PASSED',
+  }),
 });
 
 test('V1.4 architecture validator passes', () => {
@@ -117,6 +139,16 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
   const p2Summary = projectSummary.phase_model.find((phase) => phase.id === 'P2');
   assert.equal(p2Summary.last_completed_task, profile.lastCompletedTask);
   assert.equal(p2Summary.last_completed_gate, profile.lastCompletedGate);
+  if (Object.hasOwn(profile, 'lastCompletedArchitectureTask')) {
+    assert.equal(manifest.last_completed_architecture_task, profile.lastCompletedArchitectureTask);
+    assert.equal(current.last_completed_architecture_task, profile.lastCompletedArchitectureTask);
+    assert.equal(backlog.last_completed_architecture_task, profile.lastCompletedArchitectureTask);
+    assert.equal(parallel.last_completed_architecture_task, profile.lastCompletedArchitectureTask);
+    assert.equal(taskIndex.last_completed_architecture_task, profile.lastCompletedArchitectureTask);
+    assert.equal(projectSummary.project.last_completed_architecture_task, profile.lastCompletedArchitectureTask);
+    assert.equal(p2Summary.last_completed_architecture_task, profile.lastCompletedArchitectureTask);
+    assert.equal(fs.existsSync(path.join(root, 'evidence/arch-005-targeted-live-revalidation.md')), true);
+  }
   if (profile.p2g1Status === 'PASSED') {
     assert.equal(current.next_task_candidate, 'P2-007');
     assert.equal(current.next_task_authorized, false);
@@ -131,8 +163,8 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
   assert.equal(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[7-9]|01[0-4])$/u.test(task.id))
     .every((task) => task.status === 'TODO'), true);
   assert.deepEqual(
-    backlog.tasks.filter((task) => task.status === 'IN_PROGRESS').map((task) => task.id),
-    profile.activeTask?.startsWith('P2-0') ? [profile.activeTask] : [],
+    backlog.tasks.filter((task) => task.status === (profile.activeTaskStatus ?? 'IN_PROGRESS')).map((task) => task.id),
+    profile.activeTask?.startsWith('P2-0') || profile.activeTask?.startsWith('ARCH-') ? [profile.activeTask] : [],
   );
   assert.equal(backlog.tasks.filter((task) => task.phase === 'P3').every((task) => task.status === 'TODO'), true);
   assert.equal(parallel.assembly_gates.find((gate) => gate.id === 'P2-G1').status, profile.p2g1Status ?? 'NOT_STARTED');

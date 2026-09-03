@@ -1,0 +1,130 @@
+{
+  "evidence_id": "ARCH-005-TARGETED-LIVE-REVALIDATION",
+  "schema_version": 1,
+  "architecture_task": "ARCH-005",
+  "event_time": "2026-09-03 14:52:51",
+  "event_epoch_ms": "1788418371611",
+  "live_candidate": "82c5d035693705ae3af9290cb3f0af9c3183e900",
+  "branch": "arch/asia-shanghai-local-time",
+  "outcome": "PASS",
+  "business_timezone": "Asia/Shanghai",
+  "real_inbound": {
+    "scenario": "authorized test group mention",
+    "message_count": 1,
+    "received_at": "2026-09-03 14:10:42",
+    "received_epoch_ms": "1788415842978",
+    "processing_completed": true,
+    "intake_type": "INCIDENT",
+    "ticket_created": true,
+    "conversation_session_created": true,
+    "raw_identifiers_recorded": false
+  },
+  "workbench": {
+    "browser": "Google Chrome",
+    "connection_label": "实时连接",
+    "canonical_inbound_display": "2026-09-03 14:10",
+    "canonical_failed_reply_display": "2026-09-03 14:26",
+    "canonical_sent_reply_display": "2026-09-03 14:33",
+    "system_timezone_matrix": [
+      "UTC",
+      "Tokyo Standard Time",
+      "Eastern Standard Time"
+    ],
+    "display_mismatch_count": 0,
+    "offset_or_iso_leak_count": 0,
+    "system_timezone_restored": "China Standard Time"
+  },
+  "controlled_gateway_fault": {
+    "gateway_disconnected": true,
+    "gateway_reauthenticated": true,
+    "retry_attempt_numbers": [1, 2, 3, 4, 5],
+    "retry_outcomes": [
+      "RETRY_SCHEDULED",
+      "RETRY_SCHEDULED",
+      "RETRY_SCHEDULED",
+      "RETRY_SCHEDULED",
+      "DEAD_LETTER"
+    ],
+    "stable_error_code": "GATEWAY_UNAVAILABLE",
+    "provider_call_count": 0,
+    "side_effect_state": "NOT_ATTEMPTED",
+    "controlled_expected_dead_letter_delta": 1,
+    "unexplained_dead_letter_delta": 0,
+    "missing_epoch_anchor_count": 0,
+    "negative_elapsed_count": 0,
+    "lease_regression_count": 0
+  },
+  "recovered_human_reply": {
+    "delivery_status": "SENT",
+    "attempt_count": 1,
+    "side_effect_state": "ACKNOWLEDGED",
+    "provider_ack_present": true,
+    "sent_at": "2026-09-03 14:33:57",
+    "sent_epoch_ms": "1788417237070",
+    "client_display_count": 1,
+    "successful_reply_fact_count": 1,
+    "duplicate_provider_receipt_count": 0
+  },
+  "resource_observation": {
+    "duration_seconds": 600,
+    "sample_count": 11,
+    "runtime_role_process_count": 3,
+    "loopback_helper_process_count": 1,
+    "observed_process_count_min": 4,
+    "observed_process_count_max": 4,
+    "rss_first_bytes": 297000960,
+    "rss_last_bytes": 298778624,
+    "rss_max_bytes": 298778624,
+    "rss_growth_bytes": 1777664,
+    "abnormal_sustained_monotonic_memory_growth": false,
+    "max_handle_count": 957,
+    "max_owned_tcp_socket_count": 15,
+    "cpu_seconds_delta": 15.094,
+    "minimum_sse_clients": 1,
+    "maximum_postgres_connection_utilization_percent": 5,
+    "maximum_projection_backlog": 0,
+    "maximum_projection_failures": 0,
+    "maximum_communication_pending": 0,
+    "dead_letter_delta": 0,
+    "reconciliation_delta": 0,
+    "gateway_authenticated_for_all_samples": true
+  },
+  "automated_regression_reconfirmed_after_live": {
+    "p1": { "passed": 150, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "p2_unit": { "passed": 151, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "p2_postgres_integration": { "passed": 52, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "p2_workbench_and_assembly_browser": { "passed": 5, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "arch_005_unit_and_architecture": { "passed": 7, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "arch_005_postgres_integration": { "passed": 4, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "v1_4_architecture_tests": { "passed": 14, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "v1_4_architecture_validator_checks": 360,
+    "p2_g1_check": "PASS"
+  },
+  "final_hard_gates": {
+    "forbidden_timezone_column_count": 0,
+    "timeline_business_time_inversion_count": 0,
+    "realtime_business_time_inversion_count": 0,
+    "delivery_backlog_count": 0,
+    "reconciliation_required_count": 0,
+    "duplicate_delivery_count": 0,
+    "lease_regression_count": 0,
+    "browser_timezone_display_mismatch_count": 0,
+    "api_offset_timestamp_leak_count": 0,
+    "fake_source_conflict_count": 0
+  },
+  "cleanup": {
+    "runtime_role_process_count": 0,
+    "loopback_listener_count": 0,
+    "windows_timezone": "China Standard Time"
+  },
+  "scope_guards": {
+    "p2_007": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+    "deepseek_connected": false,
+    "ocr_enabled": false,
+    "incident_enabled": false,
+    "feature_flags_enabled_count": 0,
+    "push_merge_tag_release": false,
+    "historical_evidence_bulk_rewritten": false,
+    "migrations_001_through_021_modified": false
+  }
+}

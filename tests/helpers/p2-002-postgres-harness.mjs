@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
 
 const DATABASE_NAME_PATTERN = /^p2_002_[a-z0-9]+_[a-f0-9_]+$/u;
 
@@ -22,12 +22,12 @@ export function databaseUrlForP2002Database(databaseUrl, databaseName) {
 export async function withP2002IsolatedDatabase({
   databaseUrl,
   purpose,
-  max = 16,
+  max = 8,
   run,
 }) {
   const databaseName = createP2002DatabaseName(purpose);
   const quotedDatabaseName = `"${databaseName}"`;
-  const adminPool = new Pool({
+  const adminPool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,
@@ -37,7 +37,7 @@ export async function withP2002IsolatedDatabase({
 
   try {
     await adminPool.query(`CREATE DATABASE ${quotedDatabaseName} TEMPLATE template0`);
-    isolatedPool = new Pool({
+    isolatedPool = createPostgresPool({
       connectionString: databaseUrlForP2002Database(databaseUrl, databaseName),
       max,
       connectionTimeoutMillis: 2_000,
