@@ -90,10 +90,10 @@
     }
   },
   "classification_counts": {
-    "BUSINESS_LOCAL": 59,
+    "BUSINESS_LOCAL": 55,
     "EXTERNAL_SOURCE_INSTANT": 2,
     "TECHNICAL_DEADLINE": 13,
-    "ELAPSED_TIME_ANCHOR": 3,
+    "ELAPSED_TIME_ANCHOR": 7,
     "DERIVED_DISPLAY": 1,
     "HISTORICAL_EVIDENCE_EXEMPTION": 88
   },
@@ -127,7 +127,7 @@
         "next_attempt_at": "TECHNICAL_DEADLINE:add authoritative next_attempt_epoch_ms",
         "lease_expires_at": "TECHNICAL_DEADLINE:add authoritative lease_expires_epoch_ms, preserve NULL",
         "send_started_at": "ELAPSED_TIME_ANCHOR:add send_started_epoch_ms, preserve local display",
-        "sent_at": "BUSINESS_LOCAL:convert explicitly, preserve NULL",
+        "sent_at": "ELAPSED_TIME_ANCHOR:add sent_epoch_ms for rate and elapsed semantics, preserve NULL",
         "created_at": "BUSINESS_LOCAL:convert explicitly and use local default",
         "updated_at": "BUSINESS_LOCAL:convert explicitly and use local default"
       }
@@ -165,7 +165,7 @@
     {
       "table": "conversation.control_event",
       "source": "database/migrations/021_p2_005_conversation_control.sql",
-      "columns": { "occurred_at": "BUSINESS_LOCAL:convert explicitly and use local default" }
+      "columns": { "occurred_at": "ELAPSED_TIME_ANCHOR:add occurred_epoch_ms for retry measurement and keep local display" }
     },
     {
       "table": "conversation.handoff",
@@ -230,7 +230,7 @@
       "source": "database/migrations/010_p2_001_conversation_contracts.sql",
       "columns": {
         "started_at": "BUSINESS_LOCAL:convert explicitly and use local default",
-        "last_activity_at": "BUSINESS_LOCAL:convert explicitly and use local default; session_id remains keyset tie-break",
+        "last_activity_at": "ELAPSED_TIME_ANCHOR:add authoritative last_activity_epoch_ms for waiting duration; session_id remains keyset tie-break",
         "ended_at": "BUSINESS_LOCAL:convert explicitly, preserve NULL",
         "created_at": "BUSINESS_LOCAL:convert explicitly and use local default",
         "updated_at": "BUSINESS_LOCAL:convert explicitly and use local default"
@@ -285,7 +285,7 @@
       "columns": {
         "next_attempt_at": "TECHNICAL_DEADLINE:add authoritative next_attempt_epoch_ms",
         "lease_expires_at": "TECHNICAL_DEADLINE:add authoritative lease_expires_epoch_ms, preserve NULL",
-        "sent_at": "BUSINESS_LOCAL:convert explicitly, preserve NULL",
+        "sent_at": "ELAPSED_TIME_ANCHOR:add sent_epoch_ms for rate and elapsed semantics, preserve NULL",
         "created_at": "BUSINESS_LOCAL:convert explicitly and use local default",
         "updated_at": "BUSINESS_LOCAL:convert explicitly and use local default"
       }

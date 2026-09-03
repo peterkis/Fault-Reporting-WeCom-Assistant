@@ -1,3 +1,5 @@
+import type { LocalDateTime } from './time_contracts';
+
 /**
  * P2-001 Conversation Thread, Session, and Item contracts.
  *
@@ -36,9 +38,9 @@ export interface ConversationThread {
   external_thread_key: string;
   thread_key: string;
   status: ConversationThreadStatus;
-  last_activity_at: string;
-  created_at: string;
-  updated_at: string;
+  last_activity_at: LocalDateTime;
+  created_at: LocalDateTime;
+  updated_at: LocalDateTime;
 }
 
 export interface ConversationSession {
@@ -52,12 +54,12 @@ export interface ConversationSession {
   control_mode: ConversationControlMode;
   generation_version: number;
   row_version: number;
-  started_at: string;
-  last_activity_at: string;
-  ended_at: string | null;
+  started_at: LocalDateTime;
+  last_activity_at: LocalDateTime;
+  ended_at: LocalDateTime | null;
   close_reason: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: LocalDateTime;
+  updated_at: LocalDateTime;
 }
 
 export interface ConversationItem {
@@ -70,5 +72,5 @@ export interface ConversationItem {
   text?: string | null;
   source_type?: string | null;
   source_id?: string | null;
-  occurred_at: string;
+  occurred_at: LocalDateTime;
 }

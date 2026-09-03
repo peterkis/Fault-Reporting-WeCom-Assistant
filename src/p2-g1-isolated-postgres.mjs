@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Pool } from 'pg';
+import { createPostgresPool } from './platform/postgres-pool.mjs';
 
 const NAME = /^p2_g1_isolated_[a-z0-9]{1,12}_[a-f0-9]{24}$/u;
 
@@ -12,7 +12,7 @@ export async function withP2G1IsolatedPostgres({ databaseUrl, purpose, run } = {
   const databaseName = `p2_g1_isolated_${purpose}_${randomUUID().replaceAll('-', '').slice(0, 24)}`;
   if (!NAME.test(databaseName)) throw new Error('P2_G1_ISOLATED_DATABASE_NAME_INVALID');
   const quotedName = `"${databaseName}"`;
-  const admin = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: 'p2_g1_isolated_admin' });
+  const admin = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: 'p2_g1_isolated_admin' });
   let isolatedPool = null;
   let result;
   let failure;
@@ -21,7 +21,7 @@ export async function withP2G1IsolatedPostgres({ databaseUrl, purpose, run } = {
     const isolatedUrl = new URL(databaseUrl);
     isolatedUrl.pathname = `/${databaseName}`;
     const isolatedDatabaseUrl = isolatedUrl.toString();
-    isolatedPool = new Pool({ connectionString: isolatedDatabaseUrl, max: 4, connectionTimeoutMillis: 2_000, application_name: `p2_g1_${purpose}` });
+    isolatedPool = createPostgresPool({ connectionString: isolatedDatabaseUrl, max: 4, connectionTimeoutMillis: 2_000, application_name: `p2_g1_${purpose}` });
     result = await run({ pool: isolatedPool, databaseUrl: isolatedDatabaseUrl, databaseName });
   } catch (error) {
     failure = error;

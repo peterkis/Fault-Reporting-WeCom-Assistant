@@ -27,10 +27,11 @@
 -- Migration 005 remains authoritative for P1 notification.*; migration 020
 -- does not migrate, copy, rename, delete or dual-write those P1 facts.
 --
--- P2-005 and P2-006 are implemented independently. P2-006 has no database
--- migration: no migration 022 exists and this conceptual draft remains
--- non-executable. P2-G1, AI, Media, Incident and P3 Integration remain
--- unauthorized. Every P2/P3 feature flag is false.
+-- P2-005 and P2-006 are implemented independently. ARCH-005 migration 022 is
+-- authoritative for the Asia/Shanghai LocalDateTime and PhysicalEpochMs
+-- baseline; this conceptual draft remains non-executable. P2-007, AI, Media,
+-- Incident and P3 Integration remain unauthorized. Every P2/P3 feature flag
+-- is false.
 -- Their presence below is not implementation or Gate authorization.
 -- Do not create a second long-term Ticket Core and do not rename pilot_ticket.*
 -- in a big-bang migration.
@@ -38,6 +39,7 @@
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+CREATE SCHEMA IF NOT EXISTS platform;
 CREATE SCHEMA IF NOT EXISTS conversation;
 CREATE SCHEMA IF NOT EXISTS communication;
 CREATE SCHEMA IF NOT EXISTS ai;
@@ -55,9 +57,9 @@ CREATE TABLE IF NOT EXISTS conversation.thread (
     external_thread_key text NOT NULL,
     thread_key text NOT NULL UNIQUE,
     status text NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'ARCHIVED')),
-    last_activity_at timestamptz NOT NULL DEFAULT now(),
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now(),
+    last_activity_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    updated_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     UNIQUE (provider, channel_account_id, chat_type, external_thread_key)
 );
 
@@ -77,12 +79,12 @@ CREATE TABLE IF NOT EXISTS conversation.session (
         CHECK (control_mode IN ('AUTO', 'COPILOT', 'HUMAN')),
     generation_version bigint NOT NULL DEFAULT 1 CHECK (generation_version >= 1),
     row_version bigint NOT NULL DEFAULT 1 CHECK (row_version >= 1),
-    started_at timestamptz NOT NULL DEFAULT now(),
-    last_activity_at timestamptz NOT NULL DEFAULT now(),
-    ended_at timestamptz NULL,
+    started_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    last_activity_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    ended_at timestamp without time zone NULL,
     close_reason text NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now(),
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    updated_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     CHECK ((status = 'ENDED' AND ended_at IS NOT NULL) OR status <> 'ENDED')
 );
 
@@ -113,9 +115,9 @@ CREATE TABLE IF NOT EXISTS conversation.item (
     canonical_order_key text NOT NULL,
     content_hash text NOT NULL,
     privacy_class text NOT NULL,
-    retention_until timestamptz NOT NULL,
-    occurred_at timestamptz NOT NULL,
-    projected_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    retention_until timestamp without time zone NOT NULL,
+    occurred_at timestamp without time zone NOT NULL,
+    projected_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     CONSTRAINT conversation_item_pkey PRIMARY KEY (id),
     CONSTRAINT conversation_item_id_session_unique UNIQUE (id, session_id),
     CONSTRAINT conversation_item_session_sequence_unique UNIQUE (session_id, sequence_no),
@@ -185,8 +187,8 @@ CREATE TABLE IF NOT EXISTS conversation.item_source_binding (
     item_id uuid NOT NULL,
     source_hash text NOT NULL,
     canonical_order_key text NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_seen_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    last_seen_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     CONSTRAINT conversation_item_source_binding_pkey PRIMARY KEY (item_id),
     CONSTRAINT conversation_item_source_binding_identity_unique UNIQUE (
         projector_name,
@@ -252,10 +254,10 @@ CREATE TABLE IF NOT EXISTS conversation.projection_checkpoint (
     projector_version text NOT NULL,
     source_stream text NOT NULL,
     cursor_value text NULL,
-    last_source_occurred_at timestamptz NULL,
+    last_source_occurred_at timestamp without time zone NULL,
     last_batch_hash text NULL,
     row_version bigint NOT NULL DEFAULT 1,
-    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     CONSTRAINT conversation_projection_checkpoint_pkey PRIMARY KEY (
         projector_name,
         source_stream
@@ -315,9 +317,9 @@ CREATE TABLE IF NOT EXISTS conversation.realtime_event (
     payload jsonb NOT NULL CHECK (jsonb_typeof(payload) = 'object'),
     payload_hash text NOT NULL,
     event_hash text NOT NULL,
-    occurred_at timestamptz NOT NULL,
-    expires_at timestamptz NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    occurred_at timestamp without time zone NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     CHECK (
         (authorization_scope_type IN ('SESSION', 'THREAD') AND authorization_scope_id IS NOT NULL)
         OR (authorization_scope_type = 'SYSTEM' AND authorization_scope_id IS NULL)
@@ -338,7 +340,7 @@ CREATE TABLE IF NOT EXISTS conversation.realtime_stream_state (
     stream_name text PRIMARY KEY CHECK (stream_name = 'CONVERSATION_WORKBENCH'),
     retention_floor_event_id bigint NOT NULL DEFAULT 0 CHECK (retention_floor_event_id >= 0),
     row_version bigint NOT NULL DEFAULT 1 CHECK (row_version >= 1),
-    updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at timestamp without time zone NOT NULL DEFAULT platform.local_now()
 );
 
 -- ============================================================================
@@ -365,8 +367,8 @@ CREATE TABLE IF NOT EXISTS communication.message (
     content_hash text NOT NULL,
     reply_to_conversation_item_id uuid NULL REFERENCES conversation.item(id),
     privacy_class text NOT NULL,
-    retention_until timestamptz NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
+    retention_until timestamp without time zone NOT NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     UNIQUE (idempotency_scope, client_command_id)
 );
 
@@ -376,7 +378,7 @@ CREATE TABLE IF NOT EXISTS communication.outbox (
     idempotency_key text NOT NULL UNIQUE,
     route_policy text NOT NULL,
     priority integer NOT NULL DEFAULT 100,
-    created_at timestamptz NOT NULL DEFAULT now()
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now()
 );
 
 CREATE TABLE IF NOT EXISTS communication.delivery (
@@ -391,16 +393,16 @@ CREATE TABLE IF NOT EXISTS communication.delivery (
     priority integer NOT NULL DEFAULT 100,
     status text NOT NULL DEFAULT 'PENDING',
     attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
-    next_attempt_at timestamptz NOT NULL DEFAULT now(),
+    next_attempt_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     lease_token uuid NULL,
-    lease_expires_at timestamptz NULL,
-    send_started_at timestamptz NULL,
+    lease_expires_at timestamp without time zone NULL,
+    send_started_at timestamp without time zone NULL,
     side_effect_state text NOT NULL DEFAULT 'NOT_ATTEMPTED',
     last_error_code text NULL,
     provider_message_id text NULL,
-    sent_at timestamptz NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now()
+    sent_at timestamp without time zone NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    updated_at timestamp without time zone NOT NULL DEFAULT platform.local_now()
 );
 
 CREATE TABLE IF NOT EXISTS communication.delivery_attempt (
@@ -413,8 +415,8 @@ CREATE TABLE IF NOT EXISTS communication.delivery_attempt (
     request_id text NULL,
     error_code text NULL,
     provider_message_id text NULL,
-    started_at timestamptz NOT NULL,
-    completed_at timestamptz NULL,
+    started_at timestamp without time zone NOT NULL,
+    completed_at timestamp without time zone NULL,
     UNIQUE (delivery_id, attempt_no)
 );
 
@@ -439,13 +441,13 @@ CREATE TABLE IF NOT EXISTS ai.job (
     status text NOT NULL DEFAULT 'PENDING' CHECK (status IN (
         'PENDING', 'LEASED', 'COMPLETED', 'FAILED', 'CANCELLED', 'STALE', 'DEAD_LETTER'
     )),
-    available_at timestamptz NOT NULL DEFAULT now(),
+    available_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     attempt_count integer NOT NULL DEFAULT 0,
     lease_token uuid NULL,
-    lease_expires_at timestamptz NULL,
+    lease_expires_at timestamp without time zone NULL,
     last_error_code text NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    completed_at timestamptz NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    completed_at timestamp without time zone NULL,
     UNIQUE (idempotency_key)
 );
 
@@ -475,8 +477,8 @@ CREATE TABLE IF NOT EXISTS ai.run (
     finish_reason text NULL,
     error_code text NULL,
     response_message_id uuid NULL REFERENCES communication.message(id),
-    started_at timestamptz NOT NULL DEFAULT now(),
-    completed_at timestamptz NULL
+    started_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    completed_at timestamp without time zone NULL
 );
 
 CREATE TABLE IF NOT EXISTS ai.conversation_memory (
@@ -489,7 +491,7 @@ CREATE TABLE IF NOT EXISTS ai.conversation_memory (
     input_hash text NOT NULL,
     prompt_version text NOT NULL,
     model_version text NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     UNIQUE (session_id, memory_version)
 );
 
@@ -517,8 +519,8 @@ CREATE TABLE IF NOT EXISTS integration.source (
         'DISABLED', 'TESTING', 'ACTIVE', 'SUSPENDED'
     )),
     config_reference text NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now(),
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    updated_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     UNIQUE (source_code)
 );
 
@@ -529,7 +531,7 @@ CREATE TABLE IF NOT EXISTS integration.inbox_event (
     external_record_type text NOT NULL,
     external_record_id text NOT NULL,
     event_type text NOT NULL,
-    occurred_at timestamptz NOT NULL,
+    occurred_at timestamp without time zone NOT NULL,
     cursor_value text NULL,
     payload_redacted jsonb NULL,
     payload_encrypted bytea NULL,
@@ -538,10 +540,10 @@ CREATE TABLE IF NOT EXISTS integration.inbox_event (
         'RECEIVED', 'PROCESSING', 'PROCESSED', 'FAILED', 'QUARANTINED'
     )),
     attempt_count integer NOT NULL DEFAULT 0,
-    available_at timestamptz NOT NULL DEFAULT now(),
+    available_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     last_error_code text NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    processed_at timestamptz NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    processed_at timestamp without time zone NULL,
     UNIQUE (source_id, external_event_id)
 );
 
@@ -559,8 +561,8 @@ CREATE TABLE IF NOT EXISTS integration.external_record_binding (
     binding_status text NOT NULL DEFAULT 'ACTIVE' CHECK (binding_status IN (
         'ACTIVE', 'SUPERSEDED', 'CONFLICT', 'DELETED'
     )),
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now(),
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    updated_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     UNIQUE (source_id, external_record_type, external_record_id)
 );
 
@@ -580,13 +582,13 @@ CREATE TABLE IF NOT EXISTS integration.outbox (
         'PENDING', 'LEASED', 'SENT', 'ACKNOWLEDGED',
         'FAILED', 'DEAD_LETTER', 'CANCELLED'
     )),
-    available_at timestamptz NOT NULL DEFAULT now(),
+    available_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     attempt_count integer NOT NULL DEFAULT 0,
     lease_token uuid NULL,
-    lease_expires_at timestamptz NULL,
+    lease_expires_at timestamp without time zone NULL,
     last_error_code text NULL,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    completed_at timestamptz NULL,
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    completed_at timestamp without time zone NULL,
     UNIQUE (source_id, idempotency_key)
 );
 
@@ -598,9 +600,9 @@ CREATE TABLE IF NOT EXISTS integration.sync_cursor (
     stream_name text NOT NULL,
     cursor_value text NOT NULL,
     cursor_hash text NULL,
-    last_event_occurred_at timestamptz NULL,
+    last_event_occurred_at timestamp without time zone NULL,
     row_version bigint NOT NULL DEFAULT 1,
-    updated_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     PRIMARY KEY (source_id, stream_name)
 );
 
@@ -619,8 +621,8 @@ CREATE TABLE IF NOT EXISTS integration.reconciliation_run (
     explained_difference_count bigint NOT NULL DEFAULT 0,
     unexplained_difference_count bigint NOT NULL DEFAULT 0,
     summary jsonb NOT NULL DEFAULT '{}'::jsonb,
-    started_at timestamptz NOT NULL DEFAULT now(),
-    completed_at timestamptz NULL
+    started_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    completed_at timestamp without time zone NULL
 );
 
 CREATE TABLE IF NOT EXISTS integration.reconciliation_item (
@@ -634,7 +636,7 @@ CREATE TABLE IF NOT EXISTS integration.reconciliation_item (
     explained boolean NOT NULL DEFAULT false,
     explanation_code text NULL,
     detail jsonb NOT NULL DEFAULT '{}'::jsonb,
-    created_at timestamptz NOT NULL DEFAULT now()
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_reconciliation_item_run
@@ -651,14 +653,14 @@ CREATE TABLE IF NOT EXISTS integration.identity_binding (
     department_id text NULL,
     campus_id text NULL,
     roles jsonb NOT NULL DEFAULT '[]'::jsonb,
-    valid_from timestamptz NULL,
-    valid_to timestamptz NULL,
+    valid_from timestamp without time zone NULL,
+    valid_to timestamp without time zone NULL,
     status text NOT NULL DEFAULT 'ACTIVE' CHECK (status IN (
         'ACTIVE', 'INACTIVE', 'NEEDS_REVIEW'
     )),
     snapshot jsonb NOT NULL DEFAULT '{}'::jsonb,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now(),
+    created_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
+    updated_at timestamp without time zone NOT NULL DEFAULT platform.local_now(),
     UNIQUE (source_id, external_identity_type, external_identity_id, valid_from)
 );
 

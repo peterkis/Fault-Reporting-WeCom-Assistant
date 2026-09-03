@@ -1,3 +1,5 @@
+import { assertEpochMsString, assertLocalDateTime } from './platform/time-contract.mjs';
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const CURSOR_PATTERN = /^[A-Za-z0-9_-]{16,1024}$/u;
 const FILTERS = new Set(['open', 'waiting_human', 'mine', 'unassigned', 'waiting_user', 'failed_delivery', 'ended']);
@@ -39,10 +41,21 @@ function bigintString(value, { allowZero = true } = {}) {
   if (!/^(0|[1-9][0-9]{0,18})$/u.test(text) || (!allowZero && text === '0')) fail();
   return text;
 }
-function iso(value) { const date = new Date(value); if (!Number.isFinite(date.getTime())) fail(WORKBENCH_ERROR_CODES.storageFailed, 500); return date.toISOString(); }
+function localDateTime(value) {
+  try { return assertLocalDateTime(value); }
+  catch { fail(WORKBENCH_ERROR_CODES.storageFailed, 500); }
+}
+
+function elapsedSeconds(nowEpochMs, anchorEpochMs) {
+  const now = BigInt(assertEpochMsString(nowEpochMs));
+  const anchor = BigInt(assertEpochMsString(anchorEpochMs));
+  if (now <= anchor) return 0;
+  const seconds = (now - anchor) / 1000n;
+  return Number(seconds > BigInt(Number.MAX_SAFE_INTEGER) ? BigInt(Number.MAX_SAFE_INTEGER) : seconds);
+}
 
 export function encodeConversationCursor({ last_activity_at, session_id }) {
-  const payload = JSON.stringify({ v: 1, t: iso(last_activity_at), s: uuid(session_id) });
+  const payload = JSON.stringify({ v: 1, t: localDateTime(last_activity_at), s: uuid(session_id) });
   return Buffer.from(payload, 'utf8').toString('base64url');
 }
 
@@ -51,7 +64,7 @@ export function decodeConversationCursor(value) {
   try {
     const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
     if (!parsed || parsed.v !== 1 || Object.keys(parsed).sort().join(',') !== 's,t,v') fail(WORKBENCH_ERROR_CODES.cursorInvalid);
-    return Object.freeze({ last_activity_at: iso(parsed.t), session_id: uuid(parsed.s) });
+    return Object.freeze({ last_activity_at: localDateTime(parsed.t), session_id: uuid(parsed.s) });
   } catch (error) {
     if (error instanceof WorkbenchError) throw error;
     fail(WORKBENCH_ERROR_CODES.cursorInvalid);
@@ -67,7 +80,7 @@ function publicItem(row) {
     visibility: row.visibility,
     text: row.text,
     safe_content: row.safe_content ?? {},
-    occurred_at: iso(row.occurred_at),
+    occurred_at: localDateTime(row.occurred_at),
   });
 }
 
@@ -77,7 +90,7 @@ function assignmentView(row, principalId) {
     version: Number(row.assignment_version ?? 0),
     assigned_to_me: row.assigned_principal_id === principalId,
     assigned_display_name: row.assigned_display_name ?? null,
-    assigned_at: row.assigned_at ? iso(row.assigned_at) : null,
+    assigned_at: row.assigned_at ? localDateTime(row.assigned_at) : null,
   });
 }
 
@@ -87,7 +100,7 @@ function handoffView(row) {
     status: row.handoff_status,
     reason_code: row.handoff_reason_code,
     row_version: Number(row.handoff_row_version),
-    requested_at: iso(row.handoff_requested_at),
+    requested_at: localDateTime(row.handoff_requested_at),
   }) : null;
 }
 
@@ -110,7 +123,7 @@ function deliveryView(row) {
     attempt_count: Number(row.delivery_attempt_count),
     last_error_code: row.delivery_last_error_code,
     side_effect_state: row.delivery_side_effect_state,
-    sent_at: row.delivery_sent_at ? iso(row.delivery_sent_at) : null,
+    sent_at: row.delivery_sent_at ? localDateTime(row.delivery_sent_at) : null,
   }) : null;
 }
 
@@ -123,7 +136,7 @@ function capabilities(authorize, principal, row) {
 
 function baseSelect() {
   return `SELECT s.id::text AS session_id, s.thread_id::text, s.status, s.control_mode,
-                 s.generation_version::text, s.row_version::text, s.last_activity_at,
+                 s.generation_version::text, s.row_version::text, s.last_activity_at, s.last_activity_epoch_ms::text,
                  th.chat_type, a.assignment_status, a.assigned_principal_id::text,
                  a.assignment_version::text, a.assigned_at, ap.display_name AS assigned_display_name,
                  h.id::text AS handoff_id, h.status AS handoff_status, h.reason_code AS handoff_reason_code,
@@ -185,11 +198,19 @@ export function createConversationWorkbenchQueryService({
   pool,
   enabled = false,
   authorize,
+  nowEpochMs = null,
   now = () => new Date(),
   featureStatus = null,
 } = {}) {
-  if (!pool || typeof pool.query !== 'function' || typeof enabled !== 'boolean' || !authorize || typeof now !== 'function') {
+  if (!pool || typeof pool.query !== 'function' || typeof enabled !== 'boolean' || !authorize
+    || (nowEpochMs !== null && typeof nowEpochMs !== 'function') || typeof now !== 'function') {
     throw new TypeError('Workbench query service configuration is invalid.');
+  }
+  function currentEpochMs() {
+    if (nowEpochMs !== null) return assertEpochMsString(nowEpochMs());
+    const value = now();
+    if (!(value instanceof Date) || !Number.isFinite(value.getTime()) || value.getTime() < 0) fail();
+    return String(value.getTime());
   }
   function guard() { if (!enabled) fail(WORKBENCH_ERROR_CODES.disabled, 503); }
   async function principalFrom(authContext) {
@@ -205,6 +226,7 @@ export function createConversationWorkbenchQueryService({
       authenticated: true,
       principal: authorize.safePrincipal(principal),
       expires_at: authContext.expires_at,
+      expires_epoch_ms: authContext.expires_epoch_ms,
       csrf_token: authContext.auth_method === 'COOKIE' ? authContext.csrf_token : undefined,
       capabilities: authorize.actionsFor(principal),
       feature_status: Object.freeze(featureStatus ?? { workbench_enabled: true, realtime_sse_enabled: false, ai_enabled: false, incident_enabled: false, attachments_enabled: false }),
@@ -228,7 +250,7 @@ export function createConversationWorkbenchQueryService({
     if (cursor !== null && cursor !== undefined && cursor !== '') {
       const decoded = decodeConversationCursor(cursor);
       values.push(decoded.last_activity_at, decoded.session_id);
-      clauses.push(`(s.last_activity_at, s.id) < ($${values.length - 1}::timestamptz, $${values.length}::uuid)`);
+      clauses.push(`(s.last_activity_at, s.id) < ($${values.length - 1}::timestamp without time zone, $${values.length}::uuid)`);
     }
     values.push(pageSize + 1);
     let result;
@@ -239,7 +261,7 @@ export function createConversationWorkbenchQueryService({
     const rows = result.rows.slice(0, pageSize);
     const items = rows.map((row) => Object.freeze({
       session: Object.freeze({ session_id: row.session_id, status: row.status, control_mode: row.control_mode,
-        generation_version: Number(row.generation_version), row_version: Number(row.row_version), last_activity_at: iso(row.last_activity_at) }),
+        generation_version: Number(row.generation_version), row_version: Number(row.row_version), last_activity_at: localDateTime(row.last_activity_at) }),
       queue_state: row.status === 'ENDED' ? 'ended' : row.handoff_status === 'REQUESTED' ? 'waiting_human'
         : row.delivery_status === 'DEAD_LETTER' || row.delivery_status === 'RECONCILIATION_REQUIRED' ? 'failed_delivery'
           : row.status === 'WAITING_USER' ? 'waiting_user' : row.assignment_status === 'ASSIGNED' ? 'assigned' : 'unassigned',
@@ -250,7 +272,7 @@ export function createConversationWorkbenchQueryService({
         text: row.last_item_text, safe_content: row.last_item_safe_content, occurred_at: row.last_item_occurred_at }) : null,
       assignment: assignmentView(row, principal.principal_id),
       handoff: handoffView(row), ticket: ticketView(row), latest_delivery: deliveryView(row),
-      waiting_duration_seconds: Math.max(0, Math.floor((now().getTime() - new Date(row.last_activity_at).getTime()) / 1000)),
+      waiting_duration_seconds: elapsedSeconds(currentEpochMs(), row.last_activity_epoch_ms),
       capabilities: capabilities(authorize, principal, row),
     }));
     return Object.freeze({ items: Object.freeze(items), next_cursor: hasMore && rows.length > 0
@@ -272,7 +294,7 @@ export function createConversationWorkbenchQueryService({
     const cursor = await pool.query('SELECT last_read_sequence::text,row_version::text FROM conversation.read_cursor WHERE principal_id=$1::uuid AND session_id=$2::uuid', [principal.principal_id, row.session_id]);
     return Object.freeze({
       session: Object.freeze({ session_id: row.session_id, status: row.status, control_mode: row.control_mode,
-        generation_version: Number(row.generation_version), row_version: Number(row.row_version), last_activity_at: iso(row.last_activity_at) }),
+        generation_version: Number(row.generation_version), row_version: Number(row.row_version), last_activity_at: localDateTime(row.last_activity_at) }),
       assignment: assignmentView(row, principal.principal_id), handoff: handoffView(row),
       read_cursor: Object.freeze({ last_read_sequence: String(cursor.rows[0]?.last_read_sequence ?? '0'), row_version: Number(cursor.rows[0]?.row_version ?? 0) }),
       unread_count: row.unread_count, ticket: ticketView(row), incident: Object.freeze({ available: false, reason: 'INCIDENT_NOT_IMPLEMENTED' }),
@@ -332,7 +354,7 @@ export function createConversationWorkbenchQueryService({
     return Object.freeze({ items: Object.freeze(result.rows.map((row) => Object.freeze({
       delivery_id: row.delivery_id, status: row.status, channel: row.channel, attempt_count: row.attempt_count,
       last_error_code: row.last_error_code, side_effect_state: row.side_effect_state,
-      sent_at: row.sent_at ? iso(row.sent_at) : null,
+      sent_at: row.sent_at ? localDateTime(row.sent_at) : null,
       actions: Object.freeze(row.status === 'PENDING' ? ['RETRY'] : row.status === 'DEAD_LETTER' && row.side_effect_state === 'NOT_ATTEMPTED'
         ? ['RETRY'] : row.status === 'RECONCILIATION_REQUIRED' ? ['RECONCILE'] : []),
     }))) });

@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { EXTERNAL_TICKET_STATUS, publicPilotTicket } from './p1-005-pilot-ticket-core.mjs';
+import { assertLocalDateTime } from './platform/time-contract.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/006_p1_009_pilot_access.sql', import.meta.url);
 const ROLES = new Set(['REPORTER', 'HANDLER', 'DISPATCHER', 'ADMIN']);
@@ -110,7 +111,7 @@ function publicEvent(row, includeInternal) {
     event_ordinal: row.event_ordinal,
     external_note: row.external_note,
     reason_code: row.reason_code,
-    created_at: new Date(row.created_at).toISOString(),
+    created_at: assertLocalDateTime(row.created_at),
   };
   if (includeInternal) {
     event.internal_note = row.internal_note;
@@ -148,7 +149,7 @@ export function createPilotAccessService({ pool } = {}) {
          ON CONFLICT (wecom_user_id)
          DO UPDATE SET display_name = EXCLUDED.display_name,
                        is_active = TRUE,
-                       updated_at = clock_timestamp()
+                       updated_at = date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
          RETURNING id::text`,
         [wecomUserId, displayName],
       );

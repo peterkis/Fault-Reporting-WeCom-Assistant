@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 
 import { captureP2G1CatalogSnapshot, P2_G1_REQUIRED_MIGRATION_RELATIONS } from '../src/p2-g1-observability.mjs';
 
@@ -42,7 +42,7 @@ export async function runP2G1Check({ env = process.env } = {}) {
   let catalogHash = null;
   let catalogIdentityCount = 0;
   if (typeof env.PILOT_DATABASE_URL === 'string' && env.PILOT_DATABASE_URL.length > 0) {
-    const pool = new Pool({ connectionString: env.PILOT_DATABASE_URL, max: 1, connectionTimeoutMillis: 2_000 });
+    const pool = createPostgresPool({ connectionString: env.PILOT_DATABASE_URL, max: 1, connectionTimeoutMillis: 2_000 });
     try {
       await pool.query('SELECT 1'); postgres = true;
       const present = await pool.query('SELECT to_regclass(name) IS NOT NULL present FROM unnest($1::text[]) name', [P2_G1_REQUIRED_MIGRATION_RELATIONS]);

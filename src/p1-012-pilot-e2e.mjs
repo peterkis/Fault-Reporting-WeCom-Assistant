@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from './p1-002-wecom-sdk-adapter.mjs';
 
 const GROUP_TEXT = 'GROUP_TEXT';
@@ -244,7 +245,8 @@ export function createPilotE2EHandler({
     if (!(receivedAt instanceof Date) || Number.isNaN(receivedAt.getTime())) {
       throw new TypeError('now must return a valid Date.');
     }
-    const adapted = adaptWeComSdkFrame(frame, { receivedAt: receivedAt.toISOString() });
+    const receivedEpochMs = String(receivedAt.getTime());
+    const adapted = adaptWeComSdkFrame(frame, { receivedEpochMs });
     if (!adapted.ok) {
       return Object.freeze({
         outcome: 'rejected',
@@ -259,7 +261,8 @@ export function createPilotE2EHandler({
         message: adapted.message,
         traceId: traceIdFor(adapted.message),
         privacyClass: 'PATIENT_SENSITIVE',
-        retentionUntil: new Date(receivedAt.getTime() + retentionMs).toISOString(),
+        retentionUntil: formatEpochMsToShanghaiLocal(String(receivedAt.getTime() + retentionMs)),
+        retentionUntilEpochMs: String(receivedAt.getTime() + retentionMs),
       });
     } catch {
       accepted = {

@@ -24,6 +24,13 @@ export async function arch005MigrationApplied(queryable) {
 
 export async function stopLegacyMigrationAfterArch005(queryable, migrationId) {
   if (await arch005MigrationApplied(queryable)) {
+    process.stdout.write(`${JSON.stringify({
+      ok: true,
+      status: 'LEGACY_MIGRATION_SUPERSEDED',
+      migration_id: migrationId,
+      superseded_by: '022_arch_005_asia_shanghai_time_contract',
+      write_performed: false,
+    })}\n`);
     const error = new Error('LEGACY_MIGRATION_SUPERSEDED');
     error.code = 'LEGACY_MIGRATION_SUPERSEDED';
     error.migration_id = migrationId;

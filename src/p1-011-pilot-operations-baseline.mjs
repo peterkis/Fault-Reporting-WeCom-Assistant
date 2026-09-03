@@ -698,7 +698,7 @@ async function insertAuditEvent(transaction, {
   await transaction.query(
     `INSERT INTO operations.audit_event (
         event_key, event_type, actor_principal_id, trace_id, subject_hash, metadata, occurred_at
-     ) VALUES ($1, $2, $3::uuid, $4, $5, $6::jsonb, $7::timestamptz)
+     ) VALUES ($1, $2, $3::uuid, $4, $5, $6::jsonb, $7::timestamp without time zone)
      ON CONFLICT (event_key) DO NOTHING`,
     [
       key,
@@ -783,7 +783,7 @@ export function createPilotOperationsService({ pool, now = () => new Date(), ale
       const inserted = await database.query(
         `INSERT INTO operations.backup_checkpoint (
             backup_id, checksum_sha256, size_bytes, encryption_key_id, retention_until, created_at
-         ) VALUES ($1, $2, $3, $4, $5::timestamptz, $6::timestamptz)
+         ) VALUES ($1, $2, $3, $4, $5::timestamp without time zone, $6::timestamp without time zone)
          ON CONFLICT (backup_id) DO NOTHING
          RETURNING id::text, backup_id, checksum_sha256, size_bytes, encryption_key_id, retention_until, created_at`,
         [
@@ -867,7 +867,7 @@ export function createPilotOperationsService({ pool, now = () => new Date(), ale
       const inserted = await database.query(
         `INSERT INTO operations.restore_drill (
             restore_id, backup_checkpoint_id, status, verified_object_count, failure_code, completed_at
-         ) VALUES ($1, $2::uuid, $3, $4, $5, $6::timestamptz)
+         ) VALUES ($1, $2::uuid, $3, $4, $5, $6::timestamp without time zone)
          ON CONFLICT (restore_id) DO NOTHING
          RETURNING id::text, restore_id, status, verified_object_count, failure_code, completed_at`,
         [

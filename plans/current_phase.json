@@ -110,7 +110,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION",
+    "activation_status": "ARCH_005_AUTHORIZED_P2_007_BLOCKED",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

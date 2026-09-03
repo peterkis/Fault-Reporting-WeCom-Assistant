@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import {
   TIMELINE_PROJECTOR_NAME,
   TIMELINE_PROJECTOR_VERSION,
@@ -157,7 +157,7 @@ const DEFAULT_RUNTIME = Object.freeze({
 export async function runP2_002RebuildCommand({
   options,
   env = process.env,
-  PoolClass = Pool,
+  PoolClass = null,
   runtime = DEFAULT_RUNTIME,
   signal,
 }) {
@@ -178,11 +178,12 @@ export async function runP2_002RebuildCommand({
   let pool = null;
 
   try {
-    pool = new PoolClass({
+    const poolConfig = {
       connectionString: config.databaseUrl,
       max: 1,
       connectionTimeoutMillis: 2_000,
-    });
+    };
+    pool = PoolClass === null ? createPostgresPool(poolConfig) : new PoolClass(poolConfig);
     const sourceAdapter = runtime.createP1TimelineSourceAdapter({
       pool,
       projectorName: runtime.projectorName,

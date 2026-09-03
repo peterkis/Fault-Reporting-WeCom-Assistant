@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { types as utilTypes } from 'node:util';
+import { assertLocalDateTime, shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
 
 const MIGRATION_URL = new URL(
   '../database/migrations/011_p2_002_timeline_projector.sql',
@@ -495,67 +496,8 @@ function requiredUuid(value) {
 }
 
 function isoDateTime(value) {
-  if (value !== null && typeof value === 'object') {
-    try {
-      if (utilTypes.isProxy(value) || !utilTypes.isDate(value)) {
-        fail(TIMELINE_ERROR_CODES.sourceInvalid);
-      }
-      if (
-        Object.getPrototypeOf(value) !== Date.prototype
-        || Object.getOwnPropertySymbols(value).length !== 0
-        || Object.keys(Object.getOwnPropertyDescriptors(value)).length !== 0
-      ) {
-        fail(TIMELINE_ERROR_CODES.sourceInvalid);
-      }
-      if (!Number.isFinite(Date.prototype.getTime.call(value))) {
-        fail(TIMELINE_ERROR_CODES.sourceInvalid);
-      }
-      return Date.prototype.toISOString.call(value);
-    } catch (error) {
-      if (isStableTimelineProjectionError(error)) {
-        throw error;
-      }
-      fail(TIMELINE_ERROR_CODES.sourceInvalid);
-    }
-  }
-  if (typeof value !== 'string' || value.trim() !== value) {
-    fail(TIMELINE_ERROR_CODES.sourceInvalid);
-  }
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|([+-])(\d{2}):(\d{2}))$/u.exec(value);
-  if (match === null) {
-    fail(TIMELINE_ERROR_CODES.sourceInvalid);
-  }
-  const [year, month, day, hour, minute, second] = match.slice(1, 7).map(Number);
-  const offsetHour = match[9] === undefined ? 0 : Number(match[9]);
-  const offsetMinute = match[10] === undefined ? 0 : Number(match[10]);
-  if (
-    year < 1
-    || month < 1
-    || month > 12
-    || day < 1
-    || hour > 23
-    || minute > 59
-    || second > 59
-    || offsetHour > 23
-    || offsetMinute > 59
-  ) {
-    fail(TIMELINE_ERROR_CODES.sourceInvalid);
-  }
-  const calendar = new Date(0);
-  calendar.setUTCHours(0, 0, 0, 0);
-  calendar.setUTCFullYear(year, month - 1, day);
-  if (
-    calendar.getUTCFullYear() !== year
-    || calendar.getUTCMonth() !== month - 1
-    || calendar.getUTCDate() !== day
-  ) {
-    fail(TIMELINE_ERROR_CODES.sourceInvalid);
-  }
-  const result = new Date(value);
-  if (!Number.isFinite(result.getTime())) {
-    fail(TIMELINE_ERROR_CODES.sourceInvalid);
-  }
-  return result.toISOString();
+  try { return assertLocalDateTime(value); }
+  catch { fail(TIMELINE_ERROR_CODES.sourceInvalid); }
 }
 
 function canonicalBigint(value, { minimum = 0n } = {}) {
@@ -1472,7 +1414,7 @@ async function replayExistingBinding(client, binding, record) {
     await client.query(
       `UPDATE conversation.item
           SET privacy_class = $2,
-              retention_until = $3::timestamptz
+              retention_until = $3::timestamp without time zone
         WHERE id = $1::uuid`,
       [binding.item_id, privacyClass, retentionUntil],
     );
@@ -1480,7 +1422,7 @@ async function replayExistingBinding(client, binding, record) {
   await client.query(
     `UPDATE conversation.item_source_binding
         SET projector_version = $2,
-            last_seen_at = CURRENT_TIMESTAMP
+            last_seen_at = date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
       WHERE item_id = $1::uuid`,
     [binding.item_id, record.projector_version],
   );
@@ -1516,12 +1458,12 @@ async function insertProjectedItem(client, record, sequenceNo, canonicalOrderKey
        session_id, sequence_no, item_type, sender_kind, visibility,
        text, safe_content, source_type, source_id, projection_variant,
        canonical_order_key, content_hash, privacy_class, retention_until,
-       occurred_at
+       retention_until_epoch_ms, occurred_at
      ) VALUES (
        $1::uuid, $2::bigint, $3, $4, $5,
        $6, $7::jsonb, $8, $9, $10,
-       $11, $12, $13, $14::timestamptz,
-       $15::timestamptz
+       $11, $12, $13, $14::timestamp without time zone,
+       $15::bigint, $16::timestamp without time zone
      ) RETURNING id::text, session_id::text, sequence_no::text, item_type,
                  sender_kind, visibility, occurred_at, retention_until`,
     [
@@ -1539,6 +1481,7 @@ async function insertProjectedItem(client, record, sequenceNo, canonicalOrderKey
       record.source_hash,
       record.privacy_class,
       record.retention_until,
+      shanghaiLocalToEpochMs(record.retention_until),
       record.occurred_at,
     ],
   );
@@ -1631,7 +1574,7 @@ async function writeCheckpoint(client, {
       `INSERT INTO conversation.projection_checkpoint (
          projector_name, projector_version, source_stream, cursor_value,
          last_source_occurred_at, last_batch_hash
-       ) VALUES ($1, $2, $3, $4, $5::timestamptz, $6)`,
+       ) VALUES ($1, $2, $3, $4, $5::timestamp without time zone, $6)`,
       [projectorName, projectorVersion, sourceStream, cursorValue, occurredAt, batchHash],
     );
     return true;
@@ -1653,10 +1596,10 @@ async function writeCheckpoint(client, {
     `UPDATE conversation.projection_checkpoint
         SET projector_version = $3,
             cursor_value = $4,
-            last_source_occurred_at = $5::timestamptz,
+            last_source_occurred_at = $5::timestamp without time zone,
             last_batch_hash = $6,
             row_version = row_version + 1,
-            updated_at = CURRENT_TIMESTAMP
+            updated_at = date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
       WHERE projector_name = $1
         AND source_stream = $2
         AND row_version = $7::bigint`,
@@ -1710,6 +1653,7 @@ function publicItemFromRow(row) {
     content_hash: row.content_hash,
     privacy_class: row.privacy_class,
     retention_until: isoDateTime(row.retention_until),
+    retention_until_epoch_ms: shanghaiLocalToEpochMs(isoDateTime(row.retention_until)),
     occurred_at: isoDateTime(row.occurred_at),
     projected_at: isoDateTime(row.projected_at),
   });

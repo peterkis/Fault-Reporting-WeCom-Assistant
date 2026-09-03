@@ -34,10 +34,10 @@ The machine-readable, per-table and per-column inventory is in `evidence/arch-00
 
 | Classification | Owned DB columns | Required migration |
 |---|---:|---|
-| `BUSINESS_LOCAL` | 59 | `timestamp without time zone`, explicit `AT TIME ZONE 'Asia/Shanghai'`, second precision, local default where applicable |
+| `BUSINESS_LOCAL` | 55 | `timestamp without time zone`, explicit `AT TIME ZONE 'Asia/Shanghai'`, second precision, local default where applicable |
 | `EXTERNAL_SOURCE_INSTANT` | 2 | Preserve provider/receive epoch string as BIGINT and derive LocalDateTime once at the Adapter boundary |
 | `TECHNICAL_DEADLINE` | 13 | Add authoritative non-negative BIGINT `*_epoch_ms`; local `*_at` is display-only and constrained to the same second |
-| `ELAPSED_TIME_ANCHOR` | 3 | Add BIGINT epoch anchors for delivery send/attempt measurement; do not subtract LocalDateTime values |
+| `ELAPSED_TIME_ANCHOR` | 7 | Add BIGINT epoch anchors for Session activity plus both P1/P2 delivery send/attempt measurement; do not subtract LocalDateTime values |
 | `DERIVED_DISPLAY` | 1 UI path | Render server canonical LocalDateTime directly; browser timezone must not affect output |
 | `HISTORICAL_EVIDENCE_EXEMPTION` | 88 JSONL fields | Preserve immutable historical text |
 

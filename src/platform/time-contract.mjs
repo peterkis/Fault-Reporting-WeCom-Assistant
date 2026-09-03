@@ -112,6 +112,36 @@ export function formatEpochMsToShanghaiLocal(value) {
   );
 }
 
+function daysFromCivil(year, month, day) {
+  const adjustedYear = year - (month <= 2 ? 1 : 0);
+  const era = Math.floor(adjustedYear / 400);
+  const yearOfEra = adjustedYear - era * 400;
+  const adjustedMonth = month + (month > 2 ? -3 : 9);
+  const dayOfYear = Math.floor((153 * adjustedMonth + 2) / 5) + day - 1;
+  const dayOfEra = yearOfEra * 365 + Math.floor(yearOfEra / 4) - Math.floor(yearOfEra / 100) + dayOfYear;
+  return era * 146_097 + dayOfEra - 719_468;
+}
+
+export function shanghaiLocalToEpochMs(value) {
+  const local = assertLocalDateTime(value);
+  const [date, time] = local.split(' ');
+  const [year, month, day] = date.split('-').map(Number);
+  const [hour, minute, second] = time.split(':').map(Number);
+  const utcSeconds = BigInt(daysFromCivil(year, month, day)) * 86_400n
+    + BigInt(hour * 3600 + minute * 60 + second)
+    - 28_800n;
+  if (utcSeconds < 0n) fail(TIME_CONTRACT_ERROR_CODES.epochMsOutOfRange);
+  return assertEpochMsString(String(utcSeconds * 1000n));
+}
+
+export function addEpochMilliseconds(value, deltaMs) {
+  const epoch = BigInt(assertEpochMsString(value));
+  if (!Number.isSafeInteger(deltaMs)) fail(TIME_CONTRACT_ERROR_CODES.epochMsInvalid);
+  const result = epoch + BigInt(deltaMs);
+  if (result < 0n) fail(TIME_CONTRACT_ERROR_CODES.epochMsOutOfRange);
+  return assertEpochMsString(String(result));
+}
+
 export function nowShanghaiLocal({ nowEpochMs = String(Date.now()) } = {}) {
   return formatEpochMsToShanghaiLocal(assertEpochMsString(nowEpochMs));
 }

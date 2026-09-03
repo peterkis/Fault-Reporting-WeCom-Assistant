@@ -151,7 +151,7 @@ export function createTicketClosureService({
         `INSERT INTO notification.card_action_task (
             ticket_id, ticket_event_id, action_key, actor_wecom_user_id,
             expected_version, expires_at, created_at
-         ) VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::timestamptz, $7::timestamptz)
+         ) VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::timestamp without time zone, $7::timestamp without time zone)
          ON CONFLICT (ticket_event_id, action_key, actor_wecom_user_id)
          DO UPDATE SET task_id = notification.card_action_task.task_id
          RETURNING task_id::text, action_key, expires_at`,
@@ -178,7 +178,7 @@ export function createTicketClosureService({
     if (action === 'resolve') {
       await transaction.query(
         `UPDATE pilot_ticket.ticket
-            SET auto_close_at = $2::timestamptz,
+            SET auto_close_at = $2::timestamp without time zone,
                 auto_close_reminder_at = NULL
           WHERE id = $1::uuid`,
         [ticket.id, new Date(validNow(now).getTime() + autoCloseAfterMs)],
@@ -248,7 +248,7 @@ export function createTicketClosureService({
       `UPDATE pilot_ticket.ticket
           SET status = $2,
               version = version + 1,
-              updated_at = clock_timestamp()
+              updated_at = date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
         WHERE id = $1::uuid
         RETURNING ${ticketFields('pilot_ticket.ticket')}`,
       [ticket.id, nextStatus],
@@ -327,7 +327,7 @@ export function createTicketClosureService({
           const response = { ok: true, update_card: { state: 'WAITING_INFORMATION' } };
           await transaction.query(
             `UPDATE notification.card_action_task
-                SET consumed_at = $2::timestamptz
+                SET consumed_at = $2::timestamp without time zone
               WHERE task_id = $1::uuid`,
             [taskId, validNow(now)],
           );
@@ -351,7 +351,7 @@ export function createTicketClosureService({
         }, transaction);
         await transaction.query(
           `UPDATE notification.card_action_task
-              SET consumed_at = $2::timestamptz
+              SET consumed_at = $2::timestamp without time zone
             WHERE task_id = $1::uuid`,
           [taskId, validNow(now)],
         );
@@ -387,7 +387,7 @@ export function createTicketClosureService({
            FROM pilot_ticket.ticket
           WHERE status = 'RESOLVED'
             AND auto_close_at IS NOT NULL
-            AND auto_close_at <= $1::timestamptz
+            AND auto_close_at <= $1::timestamp without time zone
             AND auto_close_reminder_at IS NOT NULL
           ORDER BY auto_close_at, id
           FOR UPDATE SKIP LOCKED
@@ -430,8 +430,8 @@ export function createTicketClosureService({
              FROM pilot_ticket.ticket AS ticket
             WHERE ticket.status = 'RESOLVED'
               AND ticket.auto_close_at IS NOT NULL
-              AND ticket.auto_close_at > $1::timestamptz
-              AND ticket.auto_close_at <= $2::timestamptz
+              AND ticket.auto_close_at > $1::timestamp without time zone
+              AND ticket.auto_close_at <= $2::timestamp without time zone
               AND ticket.auto_close_reminder_at IS NULL
             ORDER BY ticket.auto_close_at, ticket.id
             FOR UPDATE SKIP LOCKED
@@ -442,7 +442,7 @@ export function createTicketClosureService({
         for (const row of selected.rows) {
           const marked = await transaction.query(
             `UPDATE pilot_ticket.ticket
-                SET auto_close_reminder_at = $2::timestamptz
+                SET auto_close_reminder_at = $2::timestamp without time zone
               WHERE id = $1::uuid
                 AND auto_close_reminder_at IS NULL
               RETURNING ${ticketFields('pilot_ticket.ticket')}`,

@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import { createWorkbenchStaticHandler } from './p2-006-workbench-static.mjs';
 import { WORKBENCH_ERROR_CODES, WorkbenchError } from './p2-006-workbench-query.mjs';
+import { assertEpochMsString } from './platform/time-contract.mjs';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const MAX_BODY_BYTES = 32 * 1024;
@@ -83,8 +84,17 @@ function validateWriteRequest(request, authContext, body, { sessionMutation = tr
 }
 
 function authExpired(authContext) {
-  const expires = new Date(authContext?.expires_at);
-  return !Number.isFinite(expires.getTime()) || expires.getTime() <= Date.now();
+  try {
+    return BigInt(assertEpochMsString(authContext?.expires_epoch_ms)) <= BigInt(String(Date.now()));
+  } catch {
+    return true;
+  }
+}
+
+function authExpiryDelay(authContext) {
+  const remaining = BigInt(assertEpochMsString(authContext.expires_epoch_ms)) - BigInt(String(Date.now()));
+  if (remaining <= 0n) return 1;
+  return Number(remaining > 2_147_483_647n ? 2_147_483_647n : remaining);
 }
 
 export function createWorkbenchAuthenticationPort({ authenticate } = {}) {
@@ -129,7 +139,7 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
 
       if (request.method === 'GET' && url.pathname === '/api/realtime/events') {
         if (sseHandler === null) throw new WorkbenchError(WORKBENCH_ERROR_CODES.sseUnavailable, 503);
-        const delay = Math.max(1, new Date(authContext.expires_at).getTime() - Date.now());
+        const delay = authExpiryDelay(authContext);
         const timer = setTimeout(() => { if (!response.destroyed) response.destroy(); }, delay);
         timer.unref?.(); response.once('close', () => clearTimeout(timer));
         await sseHandler(request, response, url); return;

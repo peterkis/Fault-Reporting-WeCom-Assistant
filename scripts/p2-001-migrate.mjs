@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { stopLegacyMigrationAfterArch005 } from '../src/platform/legacy-migration-guard.mjs';
 
 const migrationNames = [
   '001_p1_003_channel_message_inbox',
@@ -22,13 +23,14 @@ if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
   });
   process.exitCode = 1;
 } else {
-  const pool = new Pool({
+  const pool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,
   });
 
   try {
+    await stopLegacyMigrationAfterArch005(pool, '010_p2_001_conversation_contracts');
     for (const migrationName of migrationNames) {
       const migrationUrl = new URL(`../database/migrations/${migrationName}.sql`, import.meta.url);
       const sql = await readFile(fileURLToPath(migrationUrl), 'utf8');

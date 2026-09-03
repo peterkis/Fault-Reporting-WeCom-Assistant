@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { stopLegacyMigrationAfterArch005 } from '../src/platform/legacy-migration-guard.mjs';
 
 const migrationNames = Object.freeze([
   '011_p2_002_timeline_projector',
@@ -257,13 +258,14 @@ if (options === null) {
   });
   process.exitCode = 1;
 } else {
-  const pool = new Pool({
+  const pool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,
   });
 
   try {
+    await stopLegacyMigrationAfterArch005(pool, '011_p2_002_timeline_projector');
     const migrations = await readMigrations();
     if (options.mode === 'check') {
       await runCheck({ pool, migrations });

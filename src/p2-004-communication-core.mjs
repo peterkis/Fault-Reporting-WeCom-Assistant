@@ -2,6 +2,11 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 import { createNotificationDeliveryWorker } from './p1-007-notification-outbox.mjs';
+import {
+  assertEpochMsString,
+  assertLocalDateTime,
+  shanghaiLocalToEpochMs,
+} from './platform/time-contract.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/020_p2_004_unified_communication.sql', import.meta.url);
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -17,7 +22,7 @@ const MEDIA_TYPES = new Set(['image', 'file', 'mixed', 'template_card']);
 const COMMAND_KEYS = new Set([
   'session_id', 'expected_row_version', 'client_command_id', 'sender_kind', 'purpose',
   'message_type', 'visibility', 'text', 'content', 'reply_to_item_id', 'attachment_ids',
-  'sender_display_name', 'privacy_class', 'retention_until', 'destination_policy',
+  'sender_display_name', 'privacy_class', 'retention_until', 'retention_until_epoch_ms', 'destination_policy',
   'sender_system_code',
 ]);
 const NORMALIZED_COMMANDS = new WeakSet();
@@ -156,11 +161,8 @@ function requiredUuid(value) {
 }
 
 function instant(value) {
-  const text = requiredString(value, 40);
-  if (!/(?:Z|[+-]\d{2}:\d{2})$/u.test(text)) fail();
-  const date = new Date(text);
-  if (!Number.isFinite(date.getTime())) fail();
-  return date.toISOString();
+  try { return assertLocalDateTime(value); }
+  catch { fail(); }
 }
 
 function canonicalJson(value) {
@@ -176,7 +178,8 @@ function sha256(value) {
 }
 
 function iso(value) {
-  return (value instanceof Date ? value : new Date(value)).toISOString();
+  try { return assertLocalDateTime(value); }
+  catch { fail(COMMUNICATION_ERROR_CODES.storageFailed); }
 }
 
 function normalizeContent(input, messageType) {
@@ -225,6 +228,12 @@ export function normalizeCommunicationCommand(input) {
   const privacyClass = requiredString(input.privacy_class, 32);
   if (!PRIVACY_CLASSES.includes(privacyClass)) fail();
   const retentionUntil = instant(input.retention_until);
+  let retentionUntilEpochMs;
+  try {
+    retentionUntilEpochMs = input.retention_until_epoch_ms === undefined
+      ? shanghaiLocalToEpochMs(retentionUntil)
+      : assertEpochMsString(input.retention_until_epoch_ms);
+  } catch { fail(); }
   const attachmentIds = input.attachment_ids === undefined
     ? []
     : snapshotCommunicationJson(input.attachment_ids, { maximumArrayLength: 10, maximumNodes: 12 });
@@ -249,6 +258,7 @@ export function normalizeCommunicationCommand(input) {
     destination_policy: requiredString(input.destination_policy ?? (purpose === 'SYSTEM_NOTIFICATION' ? 'TRUSTED_DESTINATIONS' : 'SESSION_THREAD'), 64),
     privacy_class: privacyClass,
     retention_until: retentionUntil,
+    retention_until_epoch_ms: retentionUntilEpochMs,
   });
   NORMALIZED_COMMANDS.add(normalized);
   return normalized;
@@ -359,14 +369,16 @@ export async function appendCommunication({ transaction, command, actor, resolve
     `INSERT INTO communication.message (
        session_id, sender_kind, sender_principal_id, sender_system_code, purpose,
        message_type, visibility, idempotency_scope, client_command_id, command_hash,
-       content, content_hash, reply_to_conversation_item_id, privacy_class, retention_until
-     ) VALUES ($1::uuid,$2,$3::uuid,$4,$5,$6,$7,$8,$9::uuid,$10,$11::jsonb,$12,$13::uuid,$14,$15::timestamptz)
+       content, content_hash, reply_to_conversation_item_id, privacy_class, retention_until,
+       retention_until_epoch_ms
+     ) VALUES ($1::uuid,$2,$3::uuid,$4,$5,$6,$7,$8,$9::uuid,$10,$11::jsonb,$12,$13::uuid,$14,$15::timestamp without time zone,$16::bigint)
      ON CONFLICT (idempotency_scope, client_command_id) DO NOTHING
      RETURNING id::text, created_at`,
     [normalized.session_id, normalized.sender_kind, senderPrincipalId, normalized.sender_system_code,
       normalized.purpose, normalized.message_type, normalized.visibility, normalized.idempotency_scope,
       normalized.client_command_id, commandHash, JSON.stringify(normalized.content), contentHash,
-      normalized.reply_to_item_id, normalized.privacy_class, normalized.retention_until],
+      normalized.reply_to_item_id, normalized.privacy_class, normalized.retention_until,
+      normalized.retention_until_epoch_ms],
   );
   if (inserted.rowCount === 0) return readExistingCommand(transaction, normalized);
   const message = inserted.rows[0];
@@ -444,9 +456,11 @@ export function createCommunicationService({
   enabled = false,
   authorizeCommand = async () => false,
   destinationResolver = resolveCommunicationDestination,
+  nowEpochMs = null,
   now = () => new Date(),
 } = {}) {
-  if (typeof enabled !== 'boolean' || typeof authorizeCommand !== 'function' || typeof destinationResolver !== 'function' || typeof now !== 'function') throw new TypeError('Communication service configuration is invalid.');
+  if (typeof enabled !== 'boolean' || typeof authorizeCommand !== 'function' || typeof destinationResolver !== 'function'
+    || (nowEpochMs !== null && typeof nowEpochMs !== 'function') || typeof now !== 'function') throw new TypeError('Communication service configuration is invalid.');
 
   async function guarded(operation) {
     if (!enabled) return publicError(COMMUNICATION_ERROR_CODES.disabled);
@@ -459,9 +473,17 @@ export function createCommunicationService({
   }
 
   function validateRetentionBoundary(normalized) {
-    const current = now();
-    if (!(current instanceof Date) || !Number.isFinite(current.getTime())
-      || new Date(normalized.retention_until).getTime() <= current.getTime()) fail();
+    let current;
+    try {
+      if (nowEpochMs !== null) current = BigInt(assertEpochMsString(nowEpochMs()));
+      else {
+        const value = now();
+        if (!(value instanceof Date) || !Number.isFinite(value.getTime()) || value.getTime() < 0) fail();
+        current = BigInt(value.getTime());
+      }
+    }
+    catch { fail(); }
+    if (BigInt(normalized.retention_until_epoch_ms) <= current) fail();
   }
 
   async function commitExternalMessage({ command, actor }) {
@@ -535,11 +557,11 @@ export function createP1NotificationCompatibilityAdapter({ pool, legacyWorker, s
       );
       return result.rowCount === 1 ? safeLegacyDelivery(result.rows[0]) : null;
     },
-    async listLegacyDeliveryViews({ afterCreatedAt = '1970-01-01T00:00:00.000Z', limit = 50 } = {}) {
+    async listLegacyDeliveryViews({ afterCreatedAt = '1970-01-01 08:00:00', limit = 50 } = {}) {
       if (!Number.isInteger(limit) || limit < 1 || limit > 200) fail();
       const result = await pool.query(
         `SELECT id::text, outbox_id::text, status, channel, attempt_count, last_error_code, sent_at
-           FROM notification.delivery WHERE created_at > $1::timestamptz
+           FROM notification.delivery WHERE created_at > $1::timestamp without time zone
           ORDER BY created_at, id LIMIT $2::integer`, [instant(afterCreatedAt), limit],
       );
       return Object.freeze(result.rows.map(safeLegacyDelivery));

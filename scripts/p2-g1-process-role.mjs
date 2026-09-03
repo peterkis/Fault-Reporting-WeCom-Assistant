@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 
 import { createCommunicationDeliveryWorker } from '../src/p2-004-communication-delivery-worker.mjs';
 import { createP2G1HumanOnlyAssembly, createP2G1PilotOperationalIntake } from '../src/p2-g1-human-only-assembly.mjs';
@@ -61,7 +61,7 @@ function configuredPrincipals() {
 }
 
 async function runApp() {
-  const pool = new Pool({
+  const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
     max: 4,
     connectionTimeoutMillis: 2_000,
@@ -117,7 +117,7 @@ async function runApp() {
 async function runGateway() {
   const enabled = truth('P2_G1_GATEWAY_ENABLED');
   const senderEnabled = truth('P2_G1_SENDER_ENABLED');
-  const pool = new Pool({
+  const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
     max: 1,
     connectionTimeoutMillis: 2_000,
@@ -203,7 +203,7 @@ async function runGateway() {
 
 async function runWorker() {
   const enabled = truth('P2_G1_SENDER_ENABLED');
-  const pool = new Pool({
+  const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
     max: 2,
     connectionTimeoutMillis: 2_000,

@@ -1,4 +1,8 @@
 import { createHash } from 'node:crypto';
+import {
+  assertEpochMsString,
+  formatEpochMsToShanghaiLocal,
+} from './platform/time-contract.mjs';
 
 const NORMALIZED_MESSAGE_SCHEMA_VERSION = 1;
 const WECOM_PROVIDER = 'WECOM_AIBOT';
@@ -171,10 +175,20 @@ function validNormalizedText(value) {
   return isBoundedString(value, 20_000) && cleanText(value).length <= 20_000;
 }
 
-function normalizeReceivedAt(value) {
+function normalizeReceivedClock({ receivedAt, receivedEpochMs }) {
   try {
-    const date = value instanceof Date ? value : new Date(value ?? Date.now());
-    return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+    let epochMs;
+    if (receivedEpochMs !== undefined) {
+      epochMs = assertEpochMsString(receivedEpochMs);
+    } else {
+      const date = receivedAt instanceof Date ? receivedAt : new Date(receivedAt ?? Date.now());
+      if (!Number.isFinite(date.getTime()) || date.getTime() < 0) return null;
+      epochMs = String(Math.trunc(date.getTime()));
+    }
+    return Object.freeze({
+      epoch_ms: epochMs,
+      local_datetime: formatEpochMsToShanghaiLocal(epochMs),
+    });
   } catch {
     return null;
   }
@@ -182,9 +196,13 @@ function normalizeReceivedAt(value) {
 
 function normalizeCreateTime(value) {
   if (value === undefined) {
-    return null;
+    return Object.freeze({ epoch_ms: null, local_datetime: null });
   }
-  return new Date(value * 1000).toISOString();
+  const epochMs = String(value * 1000);
+  return Object.freeze({
+    epoch_ms: epochMs,
+    local_datetime: formatEpochMsToShanghaiLocal(epochMs),
+  });
 }
 
 function buildMediaDownloadRef(msgId, scope, mediaType, sourceIndex) {
@@ -278,16 +296,17 @@ function normalizeQuote(quote, msgId) {
   };
 }
 
-export function adaptWeComSdkFrame(frame, { receivedAt } = {}) {
+export function adaptWeComSdkFrame(frame, { receivedAt, receivedEpochMs } = {}) {
   const validationError = validateFrame(frame);
   if (validationError) {
     return validationError;
   }
-  const normalizedReceivedAt = normalizeReceivedAt(receivedAt);
-  if (normalizedReceivedAt === null) {
+  const receivedClock = normalizeReceivedClock({ receivedAt, receivedEpochMs });
+  if (receivedClock === null) {
     return invalidFrame('RECEIVED_AT_INVALID');
   }
   const body = frame.body;
+  const providerClock = normalizeCreateTime(body.create_time);
 
   return {
     ok: true,
@@ -302,8 +321,10 @@ export function adaptWeComSdkFrame(frame, { receivedAt } = {}) {
       chat_id: body.chattype === 'group' ? body.chatid : null,
       sender_user_id: body.from.userid,
       msg_type: body.msgtype,
-      create_time: normalizeCreateTime(body.create_time),
-      received_at: normalizedReceivedAt,
+      provider_create_epoch_ms: providerClock.epoch_ms,
+      create_time: providerClock.local_datetime,
+      received_epoch_ms: receivedClock.epoch_ms,
+      received_at: receivedClock.local_datetime,
       content: normalizeContent(body),
       quote: normalizeQuote(body.quote, body.msgid),
     },

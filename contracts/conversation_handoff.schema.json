@@ -14,10 +14,10 @@
     "from_mode": { "enum": ["HUMAN", "COPILOT", "AUTO"] },
     "to_mode": { "enum": ["HUMAN", "COPILOT", "AUTO"] },
     "row_version": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
-    "requested_at": { "type": "string", "format": "date-time" },
-    "accepted_at": { "type": ["string", "null"], "format": "date-time" },
-    "released_at": { "type": ["string", "null"], "format": "date-time" },
-    "cancelled_at": { "type": ["string", "null"], "format": "date-time" },
-    "updated_at": { "type": "string", "format": "date-time" }
+    "requested_at": { "type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", "x-business-timezone": "Asia/Shanghai", "x-precision": "second", "x-offset-allowed": false },
+    "accepted_at": { "type": ["string", "null"], "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", "x-business-timezone": "Asia/Shanghai", "x-precision": "second", "x-offset-allowed": false },
+    "released_at": { "type": ["string", "null"], "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", "x-business-timezone": "Asia/Shanghai", "x-precision": "second", "x-offset-allowed": false },
+    "cancelled_at": { "type": ["string", "null"], "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", "x-business-timezone": "Asia/Shanghai", "x-precision": "second", "x-offset-allowed": false },
+    "updated_at": { "type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", "x-business-timezone": "Asia/Shanghai", "x-precision": "second", "x-offset-allowed": false }
   }
 }

@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { appendFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 
 import { launchP2G1TestBrowserSessions } from '../src/p2-g1-browser-sessions.mjs';
 import { validateP2G1ProcessApprovals } from '../src/p2-g1-human-only-assembly.mjs';
@@ -137,7 +137,7 @@ export async function runP2G1ResourceObservation({
     throw new TypeError('P2_G1_RESOURCE_CONFIGURATION_INVALID');
   }
   const observationRunId = runId();
-  const adminPool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: 'p2_g1_resource_observer' });
+  const adminPool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: 'p2_g1_resource_observer' });
   let cluster = null; let browsers = null; let browserCleanup = false; let clusterCleanup = false; let failure = null; let result = null;
   try {
     const scope = await testScope(adminPool);

@@ -1,4 +1,5 @@
 import { initialWorkbenchState, loadRefreshState, reduceWorkbenchState, saveRefreshState } from './workbench-state.mjs';
+import { workbenchLocalDateTimeDisplay } from './time-display.mjs';
 
 const elements = Object.freeze(Object.fromEntries([
   'workspace','conversation-list','load-more-conversations','timeline','load-history','conversation-view','empty-state',
@@ -53,7 +54,7 @@ function renderTimeline() {
   clear(elements.timeline);
   for (const item of state.items) {
     const li = node('li', undefined, `timeline-item ${item.visibility === 'INTERNAL' ? 'internal' : item.sender_kind === 'AGENT' ? 'agent' : ''}`);
-    li.append(node('div', `${item.visibility === 'INTERNAL' ? '内部备注 · ' : ''}${item.sender_kind} · ${new Date(item.occurred_at).toLocaleString()}`, 'item-meta'));
+    li.append(node('div', `${item.visibility === 'INTERNAL' ? '内部备注 · ' : ''}${item.sender_kind} · ${workbenchLocalDateTimeDisplay(item.occurred_at)}`, 'item-meta'));
     li.append(node('div', item.text ?? '', 'item-text')); elements.timeline.append(li);
   }
   elements['load-history'].hidden = state.items.length === 0;

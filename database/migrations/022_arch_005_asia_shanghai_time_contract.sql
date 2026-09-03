@@ -187,6 +187,62 @@ BEGIN
 END
 $arch005_assert_time_contract$;
 
+CREATE OR REPLACE FUNCTION platform.sync_local_epoch_pair()
+RETURNS trigger
+LANGUAGE plpgsql
+VOLATILE
+SECURITY INVOKER
+SET search_path = pg_catalog, platform
+AS $arch005_sync_local_epoch_pair$
+DECLARE
+    local_column text := TG_ARGV[0];
+    epoch_column text := TG_ARGV[1];
+    local_text text;
+    epoch_text text;
+    old_local_text text;
+    old_epoch_text text;
+    derived_epoch bigint;
+    derived_local timestamp without time zone;
+BEGIN
+    local_text := to_jsonb(NEW) ->> local_column;
+    epoch_text := to_jsonb(NEW) ->> epoch_column;
+    IF TG_OP = 'UPDATE' THEN
+        old_local_text := to_jsonb(OLD) ->> local_column;
+        old_epoch_text := to_jsonb(OLD) ->> epoch_column;
+    END IF;
+
+    IF local_text IS NULL AND epoch_text IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    IF epoch_text IS NULL
+       OR (TG_OP = 'UPDATE' AND local_text IS DISTINCT FROM old_local_text
+           AND epoch_text IS NOT DISTINCT FROM old_epoch_text) THEN
+        derived_epoch := floor(extract(
+            epoch FROM (local_text::timestamp without time zone AT TIME ZONE 'Asia/Shanghai')
+        ) * 1000)::bigint;
+        NEW := jsonb_populate_record(NEW, jsonb_build_object(epoch_column, derived_epoch));
+        RETURN NEW;
+    END IF;
+
+    derived_local := platform.local_from_epoch_ms(epoch_text::bigint);
+    IF local_text IS NULL
+       OR (TG_OP = 'UPDATE' AND epoch_text IS DISTINCT FROM old_epoch_text
+           AND local_text IS NOT DISTINCT FROM old_local_text) THEN
+        NEW := jsonb_populate_record(NEW, jsonb_build_object(local_column, derived_local));
+        RETURN NEW;
+    END IF;
+
+    IF local_text::timestamp without time zone <> derived_local THEN
+        RAISE EXCEPTION USING
+            ERRCODE = '23514',
+            MESSAGE = 'ARCH_005_LOCAL_EPOCH_PAIR_MISMATCH',
+            DETAIL = format('%s.%s.%s/%s', TG_TABLE_SCHEMA, TG_TABLE_NAME, local_column, epoch_column);
+    END IF;
+    RETURN NEW;
+END
+$arch005_sync_local_epoch_pair$;
+
 CREATE TEMP TABLE arch005_column_plan (
     schema_name text NOT NULL,
     table_name text NOT NULL,
@@ -228,10 +284,10 @@ VALUES
     ('notification','outbox','created_at','BUSINESS_LOCAL',NULL,true),
     ('notification','delivery','next_attempt_at','TECHNICAL_DEADLINE','next_attempt_epoch_ms',true),
     ('notification','delivery','lease_expires_at','TECHNICAL_DEADLINE','lease_expires_epoch_ms',false),
-    ('notification','delivery','sent_at','BUSINESS_LOCAL',NULL,false),
+    ('notification','delivery','sent_at','ELAPSED_TIME_ANCHOR','sent_epoch_ms',false),
     ('notification','delivery','created_at','BUSINESS_LOCAL',NULL,true),
     ('notification','delivery','updated_at','BUSINESS_LOCAL',NULL,true),
-    ('notification','delivery_attempt','occurred_at','BUSINESS_LOCAL',NULL,true),
+    ('notification','delivery_attempt','occurred_at','ELAPSED_TIME_ANCHOR','occurred_epoch_ms',true),
     ('notification','card_action_task','expires_at','TECHNICAL_DEADLINE','expires_epoch_ms',false),
     ('notification','card_action_task','consumed_at','BUSINESS_LOCAL',NULL,false),
     ('notification','card_action_task','created_at','BUSINESS_LOCAL',NULL,true),
@@ -246,7 +302,7 @@ VALUES
     ('conversation','thread','created_at','BUSINESS_LOCAL',NULL,true),
     ('conversation','thread','updated_at','BUSINESS_LOCAL',NULL,true),
     ('conversation','session','started_at','BUSINESS_LOCAL',NULL,true),
-    ('conversation','session','last_activity_at','BUSINESS_LOCAL',NULL,true),
+    ('conversation','session','last_activity_at','ELAPSED_TIME_ANCHOR','last_activity_epoch_ms',true),
     ('conversation','session','ended_at','BUSINESS_LOCAL',NULL,false),
     ('conversation','session','created_at','BUSINESS_LOCAL',NULL,true),
     ('conversation','session','updated_at','BUSINESS_LOCAL',NULL,true),
@@ -279,7 +335,7 @@ VALUES
     ('communication','delivery','next_attempt_at','TECHNICAL_DEADLINE','next_attempt_epoch_ms',true),
     ('communication','delivery','lease_expires_at','TECHNICAL_DEADLINE','lease_expires_epoch_ms',false),
     ('communication','delivery','send_started_at','ELAPSED_TIME_ANCHOR','send_started_epoch_ms',false),
-    ('communication','delivery','sent_at','BUSINESS_LOCAL',NULL,false),
+    ('communication','delivery','sent_at','ELAPSED_TIME_ANCHOR','sent_epoch_ms',false),
     ('communication','delivery','created_at','BUSINESS_LOCAL',NULL,true),
     ('communication','delivery','updated_at','BUSINESS_LOCAL',NULL,true),
     ('communication','delivery_attempt','started_at','ELAPSED_TIME_ANCHOR','started_epoch_ms',false),
@@ -429,13 +485,6 @@ BEGIN
          WHERE epoch_column_name IS NOT NULL
          ORDER BY schema_name, table_name, column_name
     LOOP
-        IF plan.local_default THEN
-            EXECUTE format(
-                'ALTER TABLE %I.%I ALTER COLUMN %I SET DEFAULT platform.physical_epoch_ms()',
-                plan.schema_name, plan.table_name, plan.epoch_column_name
-            );
-        END IF;
-
         constraint_name := format('arch005_epoch_%s', substr(md5(
             plan.schema_name || '.' || plan.table_name || '.' || plan.epoch_column_name
         ), 1, 16));
@@ -453,6 +502,32 @@ BEGIN
     END LOOP;
 END
 $arch005_epoch_consistency$;
+
+DO $arch005_epoch_triggers$
+DECLARE
+    plan record;
+    trigger_name text;
+BEGIN
+    FOR plan IN
+        SELECT * FROM arch005_column_plan
+         WHERE epoch_column_name IS NOT NULL
+         ORDER BY schema_name, table_name, column_name
+    LOOP
+        trigger_name := format('arch005_sync_%s', substr(md5(
+            plan.schema_name || '.' || plan.table_name || '.' || plan.epoch_column_name
+        ), 1, 16));
+        EXECUTE format(
+            'DROP TRIGGER IF EXISTS %I ON %I.%I',
+            trigger_name, plan.schema_name, plan.table_name
+        );
+        EXECUTE format(
+            'CREATE TRIGGER %I BEFORE INSERT OR UPDATE OF %I, %I ON %I.%I FOR EACH ROW EXECUTE FUNCTION platform.sync_local_epoch_pair(%L, %L)',
+            trigger_name, plan.column_name, plan.epoch_column_name,
+            plan.schema_name, plan.table_name, plan.column_name, plan.epoch_column_name
+        );
+    END LOOP;
+END
+$arch005_epoch_triggers$;
 
 CREATE INDEX IF NOT EXISTS channel_message_inbox_retention_epoch_idx
     ON channel.message_inbox (retention_until_epoch_ms, id);

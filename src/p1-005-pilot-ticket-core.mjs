@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { assertLocalDateTime } from './platform/time-contract.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/003_p1_005_pilot_ticket_core.sql', import.meta.url);
 const TICKET_CREATING_REQUEST_TYPES = new Set(['INCIDENT', 'SERVICE_REQUEST']);
@@ -43,7 +44,7 @@ function isRecord(value) {
 }
 
 function iso(value) {
-  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+  return assertLocalDateTime(value);
 }
 
 function nonEmptyString(value, code, maximum = Number.POSITIVE_INFINITY) {
@@ -129,7 +130,7 @@ async function appendIntakeTicketCreatedEvent({ transaction, intake, ticket, occ
             $1::uuid,
             $2,
             COALESCE(MAX(event_ordinal), 0) + 1,
-            $3::timestamptz,
+            $3::timestamp without time zone,
             $4,
             $5::jsonb
        FROM intake.service_intake_event
@@ -182,10 +183,9 @@ function validateCreateInput({ intakeId, transaction, occurredAt, traceId, title
     throw new PilotTicketInputError('PILOT_TICKET_TRANSACTION_REQUIRED');
   }
   nonEmptyString(traceId, 'PILOT_TICKET_TRACE_ID_REQUIRED', 128);
-  const time = new Date(occurredAt);
-  if (Number.isNaN(time.getTime())) {
-    throw new PilotTicketInputError('PILOT_TICKET_OCCURRED_AT_INVALID');
-  }
+  let time;
+  try { time = assertLocalDateTime(occurredAt); }
+  catch { throw new PilotTicketInputError('PILOT_TICKET_OCCURRED_AT_INVALID'); }
   if (title !== undefined && title !== null) {
     nonEmptyString(title, 'PILOT_TICKET_TITLE_INVALID', 200);
   }
@@ -193,7 +193,7 @@ function validateCreateInput({ intakeId, transaction, occurredAt, traceId, title
   if (!PRIORITIES.has(priority)) {
     throw new PilotTicketInputError('PILOT_TICKET_PRIORITY_INVALID');
   }
-  return time.toISOString();
+  return time;
 }
 
 export async function applyPilotTicketCoreMigration({ pool }) {
@@ -308,7 +308,7 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
           reported_location_text
        )
        SELECT
-          'IT-' || to_char($1::timestamptz AT TIME ZONE 'Asia/Shanghai', 'YYYYMMDD')
+          'IT-' || to_char($1::timestamp without time zone AT TIME ZONE 'Asia/Shanghai', 'YYYYMMDD')
             || '-' || lpad(
               generated_number.sequence_value,
               GREATEST(4, char_length(generated_number.sequence_value)),
@@ -337,7 +337,7 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
           SET pilot_ticket_id = $2::uuid,
               status = 'TICKET_CREATED',
               version = version + 1,
-              updated_at = clock_timestamp()
+              updated_at = date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
         WHERE id = $1::uuid
         RETURNING id::text, intake_no, source_channel, reporter_wecom_userid,
                   request_type, reported_campus_id, reported_department_id,

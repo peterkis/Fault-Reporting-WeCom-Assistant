@@ -94,6 +94,18 @@ const LIFECYCLE_PROFILES = Object.freeze({
     manifestStatus: 'P2_P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION',
     projectStatus: 'p2_p2_g1_passed_awaiting_p2_007_authorization',
   }),
+  ARCH_005_AUTHORIZED_P2_007_BLOCKED: Object.freeze({
+    lastCompletedTask: 'P2-006',
+    lastCompletedGate: 'P2-G1',
+    activeTask: 'ARCH-005',
+    activeLane: 'ARCHITECTURE',
+    candidate: 'P2-007',
+    candidateAuthorized: false,
+    p2006Status: 'DONE',
+    p2g1Status: 'PASSED',
+    manifestStatus: 'P2_ARCH_005_IN_PROGRESS',
+    projectStatus: 'p2_arch_005_in_progress',
+  }),
 });
 
 const manifest = json('MANIFEST.json');
@@ -272,7 +284,7 @@ check(p2006?.authorized_at === '2026-09-01'
 check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[7-9]|01[0-4])$/u.test(task.id))
   .every((task) => task.status === 'TODO'), 'P2-007 through P2-014 remain TODO');
 check(sameArray(backlog.tasks.filter((task) => task.status === 'IN_PROGRESS').map((task) => task.id),
-  profile?.activeTask?.startsWith('P2-0') ? [profile.activeTask] : []), 'the exact IN_PROGRESS task set matches the lifecycle profile');
+  profile?.activeTask?.startsWith('P2-0') || profile?.activeTask?.startsWith('ARCH-') ? [profile.activeTask] : []), 'the exact IN_PROGRESS task set matches the lifecycle profile');
 check(p3?.status === 'TODO', 'P3 remains TODO');
 check(backlog.tasks.filter((task) => task.phase === 'P3').every((task) => task.status === 'TODO'), 'all P3 tasks remain TODO');
 

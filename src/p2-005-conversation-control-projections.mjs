@@ -1,12 +1,14 @@
+import { assertLocalDateTime, shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
+
 const CODE = /^[A-Z][A-Z0-9_]{0,63}$/u;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 function integer(value, minimum = 1) { const number = Number(value); if (!Number.isSafeInteger(number) || number < minimum) throw new TypeError('Invalid conversation control projection input.'); return number; }
-function date(value) { const result = new Date(value); if (!Number.isFinite(result.getTime())) throw new TypeError('Invalid conversation control projection input.'); return result.toISOString(); }
+function date(value) { try { return assertLocalDateTime(value); } catch { throw new TypeError('Invalid conversation control projection input.'); } }
 function uuid(value) { if (typeof value !== 'string' || !UUID.test(value)) throw new TypeError('Invalid conversation control projection input.'); return value.toLowerCase(); }
 function code(value) { if (typeof value !== 'string' || !CODE.test(value)) throw new TypeError('Invalid conversation control projection input.'); return value; }
 function privacy(value) { if (!['INTERNAL', 'SENSITIVE_INTERNAL'].includes(value)) throw new TypeError('Invalid conversation control projection input.'); return value; }
-function expiry(value, occurredAt) { const result = date(value); if (Date.parse(result) <= Date.parse(occurredAt)) throw new TypeError('Invalid conversation control projection input.'); return result; }
+function expiry(value, occurredAt) { const result = date(value); if (BigInt(shanghaiLocalToEpochMs(result)) <= BigInt(shanghaiLocalToEpochMs(occurredAt))) throw new TypeError('Invalid conversation control projection input.'); return result; }
 function realtimeBase({ sourceId, variant, eventType, aggregateType, sessionId, occurredAt, expiresAt, payload, sessionRowVersion }) {
   return Object.freeze({ schema_version: 1, publisher_name: 'P2_005_CONVERSATION_CONTROL', publisher_version: '1.0.0', source_type: variant.startsWith('READ_CURSOR') ? 'READ_CURSOR' : 'HANDOFF_EVENT', source_id: sourceId, event_variant: variant, event_type: eventType, aggregate_type: aggregateType, aggregate_id: uuid(sessionId), aggregate_version: String(integer(sessionRowVersion)), authorization_scope_type: 'SESSION', authorization_scope_id: uuid(sessionId), visibility_scope: 'WORKBENCH', payload: Object.freeze(payload), occurred_at: date(occurredAt), expires_at: expiry(expiresAt, occurredAt) });
 }

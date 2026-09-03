@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { assertEpochMsString, assertLocalDateTime } from './platform/time-contract.mjs';
 
 const MIGRATION_URL = new URL(
   '../database/migrations/010_p2_001_conversation_contracts.sql',
@@ -122,58 +123,8 @@ function requiredUuid(value, code) {
 }
 
 function validDateTime(value, code) {
-  if (value instanceof Date) {
-    const cloned = new Date(value.getTime());
-    if (!Number.isFinite(cloned.getTime())) {
-      fail(code);
-    }
-    return cloned;
-  }
-  if (typeof value !== 'string' || value.trim() !== value) {
-    fail(code);
-  }
-
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|([+-])(\d{2}):(\d{2}))$/u.exec(value);
-  if (!match) {
-    fail(code);
-  }
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const hour = Number(match[4]);
-  const minute = Number(match[5]);
-  const second = Number(match[6]);
-  const offsetHour = match[9] === undefined ? 0 : Number(match[9]);
-  const offsetMinute = match[10] === undefined ? 0 : Number(match[10]);
-  if (
-    year < 1
-    || month < 1
-    || month > 12
-    || day < 1
-    || hour > 23
-    || minute > 59
-    || second > 59
-    || offsetHour > 23
-    || offsetMinute > 59
-  ) {
-    fail(code);
-  }
-  const calendar = new Date(0);
-  calendar.setUTCHours(0, 0, 0, 0);
-  calendar.setUTCFullYear(year, month - 1, day);
-  if (
-    calendar.getUTCFullYear() !== year
-    || calendar.getUTCMonth() !== month - 1
-    || calendar.getUTCDate() !== day
-  ) {
-    fail(code);
-  }
-
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) {
-    fail(code);
-  }
-  return date;
+  try { return assertLocalDateTime(value); }
+  catch { fail(code); }
 }
 
 function positiveSafeInteger(value, code) {
@@ -198,7 +149,7 @@ function publicError(code, retryable = false) {
 }
 
 function isoTimestamp(value) {
-  return (value instanceof Date ? value : new Date(value)).toISOString();
+  return assertLocalDateTime(value);
 }
 
 function conversationSessionFromRow(row) {
@@ -324,11 +275,12 @@ export function buildConversationSessionScope({
 export function decideConversationSessionBoundary({
   currentSession = null,
   receivedAt,
+  receivedEpochMs,
   idleTimeoutMs,
   requestedBoundaryReason = null,
   nextServiceIntakeId = null,
 }) {
-  const received = validDateTime(receivedAt, ERROR_CODES.idleTimeoutInvalid);
+  validDateTime(receivedAt, ERROR_CODES.idleTimeoutInvalid);
   positiveSafeInteger(idleTimeoutMs, ERROR_CODES.idleTimeoutInvalid);
   const normalizedNextIntakeId = nullableUuid(
     nextServiceIntakeId,
@@ -363,11 +315,17 @@ export function decideConversationSessionBoundary({
     return Object.freeze({ action: 'START_NEW_SESSION', reason: 'DIFFERENT_INTAKE' });
   }
 
-  const lastActivity = validDateTime(
+  validDateTime(
     currentSession.last_activity_at,
     ERROR_CODES.idleTimeoutInvalid,
   );
-  if (received.getTime() >= lastActivity.getTime() + idleTimeoutMs) {
+  let receivedEpoch;
+  try { receivedEpoch = BigInt(assertEpochMsString(receivedEpochMs)); }
+  catch { fail(ERROR_CODES.idleTimeoutInvalid); }
+  let lastActivityEpoch;
+  try { lastActivityEpoch = BigInt(assertEpochMsString(currentSession.last_activity_epoch_ms)); }
+  catch { fail(ERROR_CODES.idleTimeoutInvalid); }
+  if (receivedEpoch >= lastActivityEpoch + BigInt(idleTimeoutMs)) {
     return Object.freeze({ action: 'START_NEW_SESSION', reason: 'IDLE_TIMEOUT' });
   }
   return Object.freeze({ action: 'CONTINUE_SESSION', reason: null });
@@ -569,7 +527,7 @@ export async function createConversationSessionContractRecord({
       const normalizedActivityAt = validDateTime(
         lastActivityAt,
         ERROR_CODES.idleTimeoutInvalid,
-      ).toISOString();
+      );
       const columns = `
         id::text, thread_id::text, participant_key, service_intake_id::text,
         session_scope_key, creation_idempotency_key, status, control_mode,
@@ -627,7 +585,7 @@ export async function createConversationSessionContractRecord({
         `INSERT INTO conversation.session (
            thread_id, participant_key, service_intake_id,
            session_scope_key, creation_idempotency_key, last_activity_at
-         ) VALUES ($1::uuid, $2, $3::uuid, $4, $5, $6::timestamptz)
+         ) VALUES ($1::uuid, $2, $3::uuid, $4, $5, $6::timestamp without time zone)
          ON CONFLICT ON CONSTRAINT conversation_session_creation_idempotency_key_unique
          DO NOTHING
          RETURNING ${columns}`,

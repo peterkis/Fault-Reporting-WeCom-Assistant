@@ -1,6 +1,13 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { types as utilTypes } from 'node:util';
+import {
+  addEpochMilliseconds,
+  assertEpochMsString,
+  assertLocalDateTime,
+  formatEpochMsToShanghaiLocal,
+  shanghaiLocalToEpochMs,
+} from './platform/time-contract.mjs';
 
 const MIGRATION_URL = new URL(
   '../database/migrations/012_p2_003_realtime_event_log.sql',
@@ -126,8 +133,10 @@ const COMMAND_KEYS = Object.freeze([
   'payload',
   'occurred_at',
   'expires_at',
+  'expires_epoch_ms',
 ]);
 const COMMAND_KEY_SET = new Set(COMMAND_KEYS);
+const REQUIRED_COMMAND_KEYS = Object.freeze(COMMAND_KEYS.filter((key) => key !== 'expires_epoch_ms'));
 const AUTHORIZATION_KEYS = new Set([
   'allowed_session_ids',
   'allowed_thread_ids',
@@ -516,64 +525,8 @@ function boundedInteger(value, fallback, maximum, code = REALTIME_ERROR_CODES.ev
 }
 
 function isoDateTime(value, code = REALTIME_ERROR_CODES.eventInvalid) {
-  if (value !== null && typeof value === 'object') {
-    try {
-      if (
-        utilTypes.isProxy(value)
-        || !utilTypes.isDate(value)
-        || Object.getPrototypeOf(value) !== Date.prototype
-        || Object.getOwnPropertySymbols(value).length !== 0
-        || Object.keys(Object.getOwnPropertyDescriptors(value)).length !== 0
-        || !Number.isFinite(Date.prototype.getTime.call(value))
-      ) {
-        fail(code);
-      }
-      return Date.prototype.toISOString.call(value);
-    } catch (error) {
-      if (isStableError(error)) {
-        throw error;
-      }
-      fail(code);
-    }
-  }
-  if (typeof value !== 'string' || value.trim() !== value) {
-    fail(code);
-  }
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|([+-])(\d{2}):(\d{2}))$/u.exec(value);
-  if (match === null) {
-    fail(code);
-  }
-  const [year, month, day, hour, minute, second] = match.slice(1, 7).map(Number);
-  const offsetHour = match[9] === undefined ? 0 : Number(match[9]);
-  const offsetMinute = match[10] === undefined ? 0 : Number(match[10]);
-  if (
-    year < 1
-    || month < 1
-    || month > 12
-    || day < 1
-    || hour > 23
-    || minute > 59
-    || second > 59
-    || offsetHour > 23
-    || offsetMinute > 59
-  ) {
-    fail(code);
-  }
-  const calendar = new Date(0);
-  calendar.setUTCHours(0, 0, 0, 0);
-  calendar.setUTCFullYear(year, month - 1, day);
-  if (
-    calendar.getUTCFullYear() !== year
-    || calendar.getUTCMonth() !== month - 1
-    || calendar.getUTCDate() !== day
-  ) {
-    fail(code);
-  }
-  const parsed = new Date(value);
-  if (!Number.isFinite(parsed.getTime())) {
-    fail(code);
-  }
-  return parsed.toISOString();
+  try { return assertLocalDateTime(value); }
+  catch { fail(code); }
 }
 
 function normalizeStreamName(value, code = REALTIME_ERROR_CODES.eventInvalid) {
@@ -683,7 +636,7 @@ async function acquireStreamLock(transaction, code = REALTIME_ERROR_CODES.storag
 
 export function normalizeRealtimeEventCommand(input) {
   const snapshot = plainRecordSnapshot(input);
-  assertExactKeys(snapshot, COMMAND_KEY_SET, COMMAND_KEYS, REALTIME_ERROR_CODES.eventInvalid);
+  assertExactKeys(snapshot, COMMAND_KEY_SET, REQUIRED_COMMAND_KEYS, REALTIME_ERROR_CODES.eventInvalid);
   if (snapshot.schema_version !== 1) {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
@@ -729,7 +682,15 @@ export function normalizeRealtimeEventCommand(input) {
   }
   const occurredAt = isoDateTime(snapshot.occurred_at);
   const expiresAt = isoDateTime(snapshot.expires_at);
-  if (Date.parse(expiresAt) <= Date.parse(occurredAt)) {
+  const occurredEpochMs = shanghaiLocalToEpochMs(occurredAt);
+  let expiresEpochMs;
+  try {
+    expiresEpochMs = snapshot.expires_epoch_ms === undefined
+      ? shanghaiLocalToEpochMs(expiresAt)
+      : assertEpochMsString(snapshot.expires_epoch_ms);
+  } catch { fail(REALTIME_ERROR_CODES.eventInvalid); }
+  if (formatEpochMsToShanghaiLocal(expiresEpochMs) !== expiresAt) fail(REALTIME_ERROR_CODES.eventInvalid);
+  if (BigInt(expiresEpochMs) <= BigInt(occurredEpochMs)) {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
 
@@ -750,6 +711,7 @@ export function normalizeRealtimeEventCommand(input) {
     payload,
     occurred_at: occurredAt,
     expires_at: expiresAt,
+    expires_epoch_ms: expiresEpochMs,
   });
 }
 
@@ -807,10 +769,10 @@ function normalizeRealtimeHashInput(input) {
   }
   const command = Object.create(null);
   for (const key of COMMAND_KEYS) {
-    if (!Object.hasOwn(snapshot, key)) {
+    if (!Object.hasOwn(snapshot, key) && key !== 'expires_epoch_ms') {
       fail(REALTIME_ERROR_CODES.eventInvalid);
     }
-    command[key] = snapshot[key];
+    if (Object.hasOwn(snapshot, key)) command[key] = snapshot[key];
   }
   return normalizeRealtimeEventCommand(command);
 }
@@ -868,11 +830,11 @@ export async function appendRealtimeEvent(input) {
          aggregate_type, aggregate_id, aggregate_version,
          authorization_scope_type, authorization_scope_id,
          visibility_scope, payload, payload_hash, event_hash,
-         occurred_at, expires_at
+         occurred_at, expires_at, expires_epoch_ms
        ) VALUES (
          $1, $2, $3, $4, $5, $6, $7, $8,
          $9, $10, $11::bigint, $12, $13::uuid,
-         $14, $15::jsonb, $16, $17, $18::timestamptz, $19::timestamptz
+         $14, $15::jsonb, $16, $17, $18::timestamp without time zone, $19::timestamp without time zone, $20::bigint
        )
        ON CONFLICT (event_key) DO NOTHING
        RETURNING event_id::text`,
@@ -896,6 +858,7 @@ export async function appendRealtimeEvent(input) {
         eventHash,
         command.occurred_at,
         command.expires_at,
+        command.expires_epoch_ms,
       ],
     ));
 
@@ -908,7 +871,7 @@ export async function appendRealtimeEvent(input) {
 
     const existingRows = resultRows(await query(
       transaction,
-      `SELECT event_id::text, payload_hash, event_hash, expires_at
+      `SELECT event_id::text, payload_hash, event_hash, expires_at, expires_epoch_ms::text
          FROM conversation.realtime_event
         WHERE event_key = $1
           AND stream_name = $2
@@ -923,17 +886,18 @@ export async function appendRealtimeEvent(input) {
       fail(REALTIME_ERROR_CODES.eventConflict);
     }
     const existingExpiry = isoDateTime(existing.expires_at, REALTIME_ERROR_CODES.storageFailed);
-    if (Date.parse(command.expires_at) < Date.parse(existingExpiry)) {
+    if (BigInt(command.expires_epoch_ms) < BigInt(assertEpochMsString(existing.expires_epoch_ms))) {
       const tightened = resultRows(await query(
         transaction,
         `UPDATE conversation.realtime_event
-            SET expires_at = $2::timestamptz
+            SET expires_at = $2::timestamp without time zone,
+                expires_epoch_ms = $5::bigint
           WHERE event_key = $1
             AND stream_name = $3
             AND event_hash = $4
-            AND expires_at > $2::timestamptz
+            AND expires_epoch_ms > $5::bigint
           RETURNING event_id::text`,
-        [eventKey, command.expires_at, REALTIME_STREAM_NAME, eventHash],
+        [eventKey, command.expires_at, REALTIME_STREAM_NAME, eventHash, command.expires_epoch_ms],
       ));
       if (tightened.length !== 1) {
         fail(REALTIME_ERROR_CODES.storageFailed);
@@ -1400,16 +1364,16 @@ function retentionResult({
   });
 }
 
-function expiredPrefix(rows, nowIso) {
-  const cutoff = Date.parse(nowIso);
+function expiredPrefix(rows, nowEpochMs) {
+  const cutoff = BigInt(assertEpochMsString(nowEpochMs));
   const prefix = [];
   for (const row of rows) {
     const eventId = canonicalBigint(row.event_id, {
       minimum: 1n,
       code: REALTIME_ERROR_CODES.retentionFailed,
     });
-    const expiresAt = retentionExpiry(row.expires_at);
-    if (Date.parse(expiresAt) > cutoff) {
+    const expiresAt = BigInt(assertEpochMsString(row.expires_epoch_ms));
+    if (expiresAt > cutoff) {
       break;
     }
     prefix.push(eventId);
@@ -1432,9 +1396,14 @@ function normalizeRetentionInput(input, { apply }) {
     REALTIME_MAX_CLEANUP_LIMIT,
     REALTIME_ERROR_CODES.retentionFailed,
   );
-  const now = snapshot.now === undefined
-    ? new Date().toISOString()
-    : isoDateTime(snapshot.now, REALTIME_ERROR_CODES.retentionFailed);
+  let nowEpochMs;
+  try {
+    nowEpochMs = snapshot.now_epoch_ms === undefined
+      ? String(Date.now())
+      : assertEpochMsString(snapshot.now_epoch_ms);
+  } catch {
+    fail(REALTIME_ERROR_CODES.retentionFailed);
+  }
   let afterDeleteBeforeFloor = null;
   if (snapshot.faultInjection !== undefined && snapshot.faultInjection !== null) {
     const fault = plainRecordSnapshot(
@@ -1454,7 +1423,7 @@ function normalizeRetentionInput(input, { apply }) {
     pool: snapshot.pool,
     streamName,
     limit,
-    now,
+    now_epoch_ms: nowEpochMs,
     afterDeleteBeforeFloor,
   });
 }
@@ -1462,7 +1431,7 @@ function normalizeRetentionInput(input, { apply }) {
 async function readRetentionCandidates(queryable, streamName, floor, limit, { lock }) {
   const rows = resultRows(await query(
     queryable,
-    `SELECT event.event_id::text, event.expires_at
+    `SELECT event.event_id::text, event.expires_at, event.expires_epoch_ms::text
        FROM conversation.realtime_event AS event
       WHERE event.stream_name = $1
         AND event.event_id > $2::bigint
@@ -1485,7 +1454,7 @@ export async function checkRealtimeRetention(input) {
       normalized.limit,
       { lock: false },
     );
-    const prefix = expiredPrefix(rows, normalized.now);
+    const prefix = expiredPrefix(rows, normalized.now_epoch_ms);
     const candidateFloor = prefix.at(-1) ?? window.retention_floor_event_id;
     return retentionResult({
       mode: 'CHECK',
@@ -1554,7 +1523,7 @@ export async function cleanupRealtimeRetention(input) {
       normalized.limit,
       { lock: true },
     );
-    const prefix = expiredPrefix(rows, normalized.now);
+    const prefix = expiredPrefix(rows, normalized.now_epoch_ms);
     const candidateFloor = prefix.at(-1) ?? previousFloor;
     let deletedCount = 0;
     let newFloor = previousFloor;
@@ -1590,7 +1559,7 @@ export async function cleanupRealtimeRetention(input) {
         `UPDATE conversation.realtime_stream_state
             SET retention_floor_event_id = $2::bigint,
                 row_version = row_version + 1,
-                updated_at = CURRENT_TIMESTAMP
+                updated_at = date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
           WHERE stream_name = $1
             AND retention_floor_event_id = $3::bigint
             AND retention_floor_event_id < $2::bigint
@@ -1636,11 +1605,12 @@ export async function cleanupRealtimeRetention(input) {
 
 function defaultExpiry(occurredAt, defaultRetentionMs) {
   const occurred = isoDateTime(occurredAt);
-  const expires = Date.parse(occurred) + defaultRetentionMs;
-  if (!Number.isSafeInteger(expires) || !Number.isFinite(expires)) {
-    fail(REALTIME_ERROR_CODES.eventInvalid);
-  }
-  return new Date(expires).toISOString();
+  try {
+    return formatEpochMsToShanghaiLocal(addEpochMilliseconds(
+      shanghaiLocalToEpochMs(occurred),
+      defaultRetentionMs,
+    ));
+  } catch { fail(REALTIME_ERROR_CODES.eventInvalid); }
 }
 
 function earlierExpiry(first, second) {
@@ -1648,7 +1618,7 @@ function earlierExpiry(first, second) {
     return second;
   }
   const normalized = isoDateTime(first);
-  return Date.parse(normalized) < Date.parse(second) ? normalized : second;
+  return normalized < second ? normalized : second;
 }
 
 function withDefaultRetention(command, defaultRetentionMs) {

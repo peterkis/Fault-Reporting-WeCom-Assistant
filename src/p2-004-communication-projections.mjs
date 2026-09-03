@@ -1,5 +1,13 @@
+import { createHash } from 'node:crypto';
+import { assertLocalDateTime } from './platform/time-contract.mjs';
+
 function iso(value) {
-  return (value instanceof Date ? value : new Date(value)).toISOString();
+  return assertLocalDateTime(value);
+}
+
+function stableOrdinal(value) {
+  const digest = createHash('sha256').update(String(value)).digest('hex').slice(0, 15);
+  return BigInt(`0x${digest}`).toString();
 }
 
 function boundedString(value, maximum = 256) {
@@ -23,7 +31,7 @@ export function mapCommunicationMessageToTimelineSourceRecord(message) {
     source_type: 'COMMUNICATION_MESSAGE',
     source_id: boundedString(message.id, 64),
     source_stream: 'COMMUNICATION_MESSAGE',
-    source_ordinal: iso(message.created_at),
+    source_ordinal: stableOrdinal(message.id),
     projection_variant: purpose,
     session_id: boundedString(message.session_id, 64),
     item_type: itemType,
@@ -42,7 +50,7 @@ export function mapCommunicationDeliveryToTimelineSourceRecord(delivery) {
     source_type: 'DELIVERY',
     source_id: boundedString(delivery.id, 64),
     source_stream: 'COMMUNICATION_DELIVERY',
-    source_ordinal: iso(delivery.updated_at),
+    source_ordinal: stableOrdinal(delivery.id),
     projection_variant: boundedString(delivery.status, 32),
     session_id: boundedString(delivery.session_id, 64),
     item_type: 'DELIVERY_STATUS',

@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { stopLegacyMigrationAfterArch005 } from '../src/platform/legacy-migration-guard.mjs';
 
 const migrationName = '021_p2_005_conversation_control';
 const relationNames = Object.freeze([
@@ -28,8 +29,9 @@ if (mode === null) {
   writeResult({ ok: false, error: { code: 'PILOT_DATABASE_URL_REQUIRED', retryable: false } });
   process.exitCode = 1;
 } else {
-  const pool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000 });
+  const pool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000 });
   try {
+    await stopLegacyMigrationAfterArch005(pool, '021_p2_005_conversation_control');
     const sql = await readFile(new URL(`../database/migrations/${migrationName}.sql`, import.meta.url), 'utf8');
     if (mode === 'check') {
       const client = await pool.connect(); let open = false;

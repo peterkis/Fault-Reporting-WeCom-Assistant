@@ -1,3 +1,5 @@
+import type { LocalDateTime, PhysicalEpochMs } from './time_contracts';
+
 /**
  * P2-002 rebuildable Conversation Timeline projection contracts.
  *
@@ -98,11 +100,12 @@ export interface ConversationProjectionSourceRecord {
   readonly visibility: ConversationItemVisibility;
   readonly text: string | null;
   readonly safe_content: SafeJsonObject;
-  readonly occurred_at: string;
+  readonly occurred_at: LocalDateTime;
   readonly source_ordinal: TimelineSourceOrdinal;
   readonly source_hash: string;
   readonly privacy_class: ConversationPrivacyClass;
-  readonly retention_until: string;
+  readonly retention_until: LocalDateTime;
+  readonly retention_until_epoch_ms: PhysicalEpochMs;
 }
 
 export type TimelineSourceRecord = ConversationProjectionSourceRecord;
@@ -131,8 +134,8 @@ export interface ConversationItemSourceBinding {
   readonly item_id: string;
   readonly source_hash: string;
   readonly canonical_order_key: string;
-  readonly created_at: string;
-  readonly last_seen_at: string;
+  readonly created_at: LocalDateTime;
+  readonly last_seen_at: LocalDateTime;
 }
 
 export type TimelineSourceBinding = ConversationItemSourceBinding;
@@ -144,10 +147,10 @@ export interface ConversationProjectionCheckpoint {
   readonly projector_version: string;
   readonly source_stream: string;
   readonly cursor_value: string | null;
-  readonly last_source_occurred_at: string | null;
+  readonly last_source_occurred_at: LocalDateTime | null;
   readonly last_batch_hash: string | null;
   readonly row_version: TimelineBigIntString;
-  readonly updated_at: string;
+  readonly updated_at: LocalDateTime;
 }
 
 export type TimelineProjectionCheckpoint = ConversationProjectionCheckpoint;
@@ -270,9 +273,10 @@ export interface TimelineItemView {
   readonly canonical_order_key: string;
   readonly content_hash: string;
   readonly privacy_class: ConversationPrivacyClass;
-  readonly retention_until: string;
-  readonly occurred_at: string;
-  readonly projected_at: string;
+  readonly retention_until: LocalDateTime;
+  readonly retention_until_epoch_ms: PhysicalEpochMs;
+  readonly occurred_at: LocalDateTime;
+  readonly projected_at: LocalDateTime;
 }
 
 export interface TimelineListItemsRequest {

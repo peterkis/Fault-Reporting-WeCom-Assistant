@@ -8,7 +8,8 @@
 {
   "event_id": "uuid-or-monotonic-id",
   "event_type": "conversation.handoff.accepted",
-  "occurred_at": "2026-08-30T00:00:00Z",
+  "occurred_at": "2026-08-30 08:00:00",
+  "occurred_epoch_ms": "1788048000000",
   "aggregate_type": "conversation_session",
   "aggregate_id": "uuid",
   "aggregate_version": 3,

@@ -1,4 +1,5 @@
 import { WORKBENCH_ERROR_CODES, WorkbenchError } from './p2-006-workbench-query.mjs';
+import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const COMMAND_ACTION = Object.freeze({
@@ -25,6 +26,12 @@ function mapPortFailure(result) {
 export function createConversationWorkbenchCommandFacade({ controlService, communicationService, deliveryControl, authorize, enabled = false, now = () => new Date() } = {}) {
   if (!controlService || !communicationService || !deliveryControl || !authorize || typeof enabled !== 'boolean' || typeof now !== 'function') {
     throw new TypeError('Workbench command facade configuration is invalid.');
+  }
+  function retention() {
+    const value = now();
+    if (!(value instanceof Date) || !Number.isFinite(value.getTime()) || value.getTime() < 0) invalid();
+    const epochMs = String(value.getTime() + 30 * 24 * 60 * 60 * 1000);
+    return Object.freeze({ retention_until: formatEpochMsToShanghaiLocal(epochMs), retention_until_epoch_ms: epochMs });
   }
   function guard() { if (!enabled) throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled, 503); }
   async function principal(authContext) {
@@ -92,7 +99,7 @@ export function createConversationWorkbenchCommandFacade({ controlService, commu
         purpose: 'HUMAN_REPLY', message_type: body.message_type ?? 'text', visibility: 'EXTERNAL',
         client_command_id: uuid(body.client_command_id), text: text(body.text), reply_to_item_id: body.reply_to_item_id ?? null,
         attachment_ids: [], destination_policy: 'SESSION_THREAD', privacy_class: 'INTERNAL',
-        retention_until: new Date(now().getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        ...retention(),
       },
     });
     return mapPortFailure(result);
@@ -111,7 +118,7 @@ export function createConversationWorkbenchCommandFacade({ controlService, commu
         session_id: id, expected_row_version: version(body.expected_row_version), sender_kind: 'AGENT',
         client_command_id: uuid(body.client_command_id), text: text(body.text), reply_to_item_id: null,
         attachment_ids: [], destination_policy: 'NONE', privacy_class: 'INTERNAL',
-        retention_until: new Date(now().getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        ...retention(),
       },
     });
     return mapPortFailure(result);

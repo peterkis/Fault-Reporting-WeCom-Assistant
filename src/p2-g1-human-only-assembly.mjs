@@ -1,4 +1,5 @@
 import { adaptWeComSdkFrame } from './p1-002-wecom-sdk-adapter.mjs';
+import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 import { createServiceIntakeProcessor } from './p1-004-service-intake.mjs';
 import { createPilotTicketCore } from './p1-005-pilot-ticket-core.mjs';
 import { createNotificationOutbox } from './p1-007-notification-outbox.mjs';
@@ -91,13 +92,15 @@ export function createP2G1HumanOnlyAssembly({
     if (!(receivedAt instanceof Date) || !Number.isFinite(receivedAt.getTime())) {
       throw new TypeError('P2_G1_ASSEMBLY_CLOCK_INVALID');
     }
-    const adapted = adaptWeComSdkFrame(frame, { receivedAt: receivedAt.toISOString() });
+    const receivedEpochMs = String(receivedAt.getTime());
+    const adapted = adaptWeComSdkFrame(frame, { receivedEpochMs });
     if (!adapted.ok) return adapted;
     const accepted = await operationalIntake.accept({
       message: adapted.message,
       traceId: adapted.message.req_id,
       privacyClass,
-      retentionUntil: new Date(receivedAt.getTime() + retentionMs).toISOString(),
+      retentionUntil: formatEpochMsToShanghaiLocal(String(receivedAt.getTime() + retentionMs)),
+      retentionUntilEpochMs: String(receivedAt.getTime() + retentionMs),
     });
     if (!accepted.ok) return accepted;
     observability?.recordP1Commit?.();
