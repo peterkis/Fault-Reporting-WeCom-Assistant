@@ -30,8 +30,8 @@ export function p2003EventCommand({
   scopeType = 'SESSION',
   visibilityScope = 'WORKBENCH',
   payload = { state: 'OPEN', ordinal },
-  occurredAt = '2026-08-31T01:00:00.000Z',
-  expiresAt = '2026-09-07T01:00:00.000Z',
+  occurredAt = '2026-08-31 09:00:00',
+  expiresAt = '2026-09-07 09:00:00',
 } = {}) {
   assert.ok(Number.isSafeInteger(ordinal) && ordinal >= 1);
   assert.match(sessionId, UUID_PATTERN);
@@ -108,13 +108,10 @@ export async function insertP2003MinimalEvents({
             jsonb_build_object('ordinal', $2::bigint + ordinal),
             lpad(to_hex(100000::bigint + $2::bigint + ordinal), 64, '0'),
             lpad(to_hex(200000::bigint + $2::bigint + ordinal), 64, '0'),
-            TIMESTAMPTZ '2026-08-31 01:00:00+00'
-              + ordinal * INTERVAL '1 millisecond',
+            TIMESTAMP WITHOUT TIME ZONE '2026-08-31 09:00:00',
             CASE WHEN $4::boolean
-              THEN TIMESTAMPTZ '2026-08-31 01:00:01+00'
-                + ordinal * INTERVAL '1 millisecond'
-              ELSE TIMESTAMPTZ '2026-09-07 01:00:00+00'
-                + ordinal * INTERVAL '1 millisecond'
+              THEN TIMESTAMP WITHOUT TIME ZONE '2026-08-31 09:00:01'
+              ELSE TIMESTAMP WITHOUT TIME ZONE '2026-09-07 09:00:00'
             END
        FROM generate_series(1, $1::integer) AS ordinal
       RETURNING event_id::text`,

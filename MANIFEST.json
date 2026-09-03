@@ -3,7 +3,7 @@
   "version": "1.4.0",
   "architecture_baseline": "V1.4",
   "baseline_date": "2026-08-30",
-  "status": "P2_ARCH_005_IN_PROGRESS",
+  "status": "P2_ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION",
   "current_phase": "P2",
   "last_completed_task": "P2-006",
   "last_completed_gate": "P2-G1",
@@ -17,11 +17,11 @@
     "P2-006"
   ],
   "active_lane": "ARCHITECTURE",
-  "implementation_authorization_status": "ARCH_005_AUTHORIZED_P2_007_BLOCKED",
+  "implementation_authorization_status": "ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION_P2_007_BLOCKED",
   "authorized_architecture_tasks": [
     "ARCH-005"
   ],
-  "arch_005_status": "IN_PROGRESS",
+  "arch_005_status": "READY_FOR_TARGETED_LIVE_REVALIDATION",
   "arch_005_authorized_at": "2026-09-03",
   "arch_005_authorization_evidence": "evidence/arch-005-start-authorization.md",
   "p2_g1_status": "PASSED",

@@ -7,3 +7,8 @@ export type LocalDate = string & { readonly [localDateBrand]: 'LocalDate' };
 export type LocalTime = string & { readonly [localTimeBrand]: 'LocalTime' };
 export type LocalDateTime = string & { readonly [localDateTimeBrand]: 'Asia/Shanghai second precision' };
 export type PhysicalEpochMs = string & { readonly [physicalEpochMsBrand]: 'non-negative epoch milliseconds' };
+
+export interface OrderedBusinessEvent<TSequence extends string = string> {
+  readonly business_time: LocalDateTime;
+  readonly sequence_no: TSequence;
+}

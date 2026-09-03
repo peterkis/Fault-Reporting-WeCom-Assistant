@@ -18,11 +18,11 @@
     "P2-006"
   ],
   "active_lane": "ARCHITECTURE",
-  "implementation_authorization_status": "ARCH_005_AUTHORIZED_P2_007_BLOCKED",
+  "implementation_authorization_status": "ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION_P2_007_BLOCKED",
   "authorized_architecture_tasks": [
     "ARCH-005"
   ],
-  "arch_005_status": "IN_PROGRESS",
+  "arch_005_status": "READY_FOR_TARGETED_LIVE_REVALIDATION",
   "arch_005_authorized_at": "2026-09-03",
   "arch_005_authorization_evidence": "evidence/arch-005-start-authorization.md",
   "p2_007_status": "TODO_BLOCKED_BY_ARCH_005",
@@ -39,6 +39,7 @@
   "status_values": [
     "TODO",
     "IN_PROGRESS",
+    "READY_FOR_TARGETED_LIVE_REVALIDATION",
     "BLOCKED",
     "DONE"
   ],
@@ -441,7 +442,7 @@
       "title": "Asia/Shanghai Local Business Time Contract",
       "phase": "P2",
       "lane": "ARCHITECTURE",
-      "status": "IN_PROGRESS",
+      "status": "READY_FOR_TARGETED_LIVE_REVALIDATION",
       "authorized_at": "2026-09-03",
       "authorization_evidence": "evidence/arch-005-start-authorization.md",
       "task_file": "tasks/ARCH-005_asia_shanghai_local_business_time.md",

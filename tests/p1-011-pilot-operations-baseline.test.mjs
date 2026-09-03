@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before } from 'node:test';
 import test from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
 import { applyChannelMessageInboxMigration } from '../src/p1-003-channel-message-inbox.mjs';
 import { applyServiceIntakeMigration, createServiceIntakeProcessor } from '../src/p1-004-service-intake.mjs';
@@ -30,11 +31,19 @@ import {
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const integrationTest = databaseUrl ? test : test.skip;
 const pool = databaseUrl
-  ? new Pool({ connectionString: databaseUrl, max: 4, connectionTimeoutMillis: 2_000 })
+  ? createPostgresPool({ connectionString: databaseUrl, max: 4, connectionTimeoutMillis: 2_000 })
   : null;
 const runtimeMessageIds = new Set();
 const runtimeIntakeIds = new Set();
 const runtimeTicketIds = new Set();
+
+function retentionFor(message) {
+  const retentionUntilEpochMs = String(BigInt(message.received_epoch_ms) + 86_400_000n);
+  return {
+    retentionUntil: formatEpochMsToShanghaiLocal(retentionUntilEpochMs),
+    retentionUntilEpochMs,
+  };
+}
 
 before(async () => {
   if (!pool) {
@@ -256,7 +265,7 @@ integrationTest('P1-011 composes the operational boundary around the real Inbox 
     message: adapted.message,
     traceId: `trace-${msgId}`,
     privacyClass: 'PATIENT_SENSITIVE',
-    retentionUntil: new Date(Date.parse(adapted.message.received_at) + 86_400_000).toISOString(),
+    ...retentionFor(adapted.message),
   });
 
   assert.equal(accepted.ok, true);
@@ -298,7 +307,7 @@ integrationTest('P1-011 composes the operational boundary around the real Inbox 
     message: logFailureMessage.message,
     traceId: `trace-${logFailureMsgId}`,
     privacyClass: 'INTERNAL',
-    retentionUntil: new Date(Date.parse(logFailureMessage.message.received_at) + 86_400_000).toISOString(),
+    ...retentionFor(logFailureMessage.message),
   });
   assert.equal(acceptedWithLogFailure.ok, true);
   await new Promise((resolve) => setImmediate(resolve));
@@ -327,7 +336,7 @@ integrationTest('P1-011 composes the operational boundary around the real Inbox 
     message: logRecoveryMessage.message,
     traceId: `trace-${logRecoveryMsgId}`,
     privacyClass: 'INTERNAL',
-    retentionUntil: new Date(Date.parse(logRecoveryMessage.message.received_at) + 86_400_000).toISOString(),
+    ...retentionFor(logRecoveryMessage.message),
   });
   assert.equal(acceptedAfterLogRecovery.ok, true);
   await new Promise((resolve) => setImmediate(resolve));
@@ -368,14 +377,14 @@ test('P1-011 alerts with stable codes without carrying the rejected sensitive va
       severity: 'P1',
       scope: 'postgres',
       status: 'ACTIVE',
-      opened_at: '2026-08-29T01:00:00.000Z',
+      opened_at: '2026-08-29 09:00:00',
     },
     {
       code: 'PILOT_SENSITIVE_LOG_REJECTED',
       severity: 'P1',
       scope: 'SECRET_FIELD',
       status: 'ACTIVE',
-      opened_at: '2026-08-29T01:00:00.000Z',
+      opened_at: '2026-08-29 09:00:00',
     },
   ]);
   assert.equal(JSON.stringify(alerts.snapshot()).includes('do-not-place-this-token-in-an-alert'), false);
@@ -388,7 +397,7 @@ test('P1-011 alerts with stable codes without carrying the rejected sensitive va
       severity: 'P1',
       scope: 'SECRET_FIELD',
       status: 'ACTIVE',
-      opened_at: '2026-08-29T01:00:00.000Z',
+      opened_at: '2026-08-29 09:00:00',
     },
   ]);
 });
@@ -463,7 +472,7 @@ integrationTest('P1-011 preserves safe backup and restore checkpoints in an admi
       checksumSha256: 'e'.repeat(64),
       sizeBytes: 10_000_000_000,
       encryptionKeyId: 'pilot-backup-key-v1',
-      retentionUntil: '2030-09-28T00:00:00.000Z',
+      retentionUntil: '2030-09-28 08:00:00',
     });
     const restore = await operations.recordRestoreDrill({
       transaction,
@@ -491,13 +500,13 @@ integrationTest('P1-011 preserves safe backup and restore checkpoints in an admi
     assert.deepEqual(await operations.assessBackupFreshness({ transaction, maximumAgeMs: 1 }), {
       fresh: false,
       code: 'PILOT_BACKUP_STALE',
-      latest_checkpoint_at: '2030-08-29T00:00:00.000Z',
+      latest_checkpoint_at: '2030-08-29 08:00:00',
     });
     clock = new Date('2030-08-29T00:00:00.500Z');
     assert.deepEqual(await operations.assessBackupFreshness({ transaction, maximumAgeMs: 1_000 }), {
       fresh: true,
       code: null,
-      latest_checkpoint_at: '2030-08-29T00:00:00.000Z',
+      latest_checkpoint_at: '2030-08-29 08:00:00',
     });
     assert.equal(alerts.snapshot().some((alert) => alert.code === 'PILOT_BACKUP_STALE'), false);
 

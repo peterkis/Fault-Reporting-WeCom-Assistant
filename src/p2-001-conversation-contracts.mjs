@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import { assertEpochMsString, assertLocalDateTime } from './platform/time-contract.mjs';
+import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
 
 const MIGRATION_URL = new URL(
   '../database/migrations/010_p2_001_conversation_contracts.sql',
@@ -149,7 +151,7 @@ function publicError(code, retryable = false) {
 }
 
 function isoTimestamp(value) {
-  return assertLocalDateTime(value);
+  return postgresTimestampToLocalDateTime(value);
 }
 
 function conversationSessionFromRow(row) {
@@ -630,6 +632,7 @@ export async function applyConversationContractsMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   await pool.query(sql);
 }

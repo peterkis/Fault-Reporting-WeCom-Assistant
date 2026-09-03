@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
 
 const token = randomUUID().replaceAll('-', '_').slice(0, 12);
 const created = new Set(); const applications = new Set();
@@ -9,12 +9,12 @@ function app(purpose) { const value = `p2_006_${purpose}_${token}`.slice(0, 63);
 export async function withP2006IsolatedDatabase({ databaseUrl, purpose, max = 4, run }) {
   assert.match(purpose, /^[a-z0-9]{1,12}$/u); assert.ok(max >= 1 && max <= 4);
   const name = `p2_006_${purpose}_${randomUUID().replaceAll('-', '_')}`; created.add(name); const quoted = `"${name}"`;
-  const admin = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: app('admin') });
+  const admin = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: app('admin') });
   let pool; let result; let failure;
   try {
     await admin.query(`CREATE DATABASE ${quoted} TEMPLATE template0`);
     const isolated = new URL(databaseUrl); isolated.pathname = `/${name}`;
-    pool = new Pool({ connectionString: isolated.toString(), max, connectionTimeoutMillis: 2_000, application_name: app(purpose) });
+    pool = createPostgresPool({ connectionString: isolated.toString(), max, connectionTimeoutMillis: 2_000, application_name: app(purpose) });
     result = await run({ pool, databaseUrl: isolated.toString(), databaseName: name });
   } catch (error) { failure = error; }
   finally {
@@ -41,7 +41,7 @@ export async function catalogSnapshot(pool) {
 }
 
 export async function assertNoP2006Residual({ databaseUrl }) {
-  const pool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: app('residual') });
+  const pool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: app('residual') });
   try {
     const result = await pool.query(`SELECT
       (SELECT count(*)::integer FROM pg_database WHERE datname=ANY($1::text[])) database_count,

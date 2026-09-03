@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { types as utilTypes } from 'node:util';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import {
   addEpochMilliseconds,
   assertLocalDateTime,
@@ -136,7 +137,7 @@ async function lockSession(tx, id) {
 }
 function assertVersion(session, expected) { if (Number(session.row_version) !== expected) fail(CONVERSATION_CONTROL_ERROR_CODES.sessionVersionConflict); }
 async function currentAssignment(tx, sessionId, lock = false) { const q = await tx.query(`SELECT session_id::text,assignment_status,assigned_principal_id::text,assigned_by_principal_id::text,assignment_version::text,assigned_at,released_at,updated_at FROM conversation.assignment WHERE session_id=$1::uuid${lock ? ' FOR UPDATE' : ''}`, [sessionId]); return q.rows[0] ?? null; }
-async function activeHandoff(tx, sessionId, lock = false) { const q = await tx.query(`SELECT id::text,session_id::text,status,requested_by_kind,requested_by_principal_id::text,reason_code,from_mode,to_mode,assigned_principal_id::text,row_version::text,requested_at,accepted_at,released_at,cancelled_at,updated_at FROM conversation.handoff WHERE session_id=$1::uuid AND status IN ('REQUESTED','ACCEPTED') ORDER BY requested_at DESC LIMIT 1${lock ? ' FOR UPDATE' : ''}`, [sessionId]); return q.rows[0] ?? null; }
+async function activeHandoff(tx, sessionId, lock = false) { const q = await tx.query(`SELECT id::text,session_id::text,status,requested_by_kind,requested_by_principal_id::text,reason_code,from_mode,to_mode,assigned_principal_id::text,row_version::text,requested_at,accepted_at,released_at,cancelled_at,updated_at FROM conversation.handoff WHERE session_id=$1::uuid AND status IN ('REQUESTED','ACCEPTED') ORDER BY requested_at DESC,row_version DESC,id DESC LIMIT 1${lock ? ' FOR UPDATE' : ''}`, [sessionId]); return q.rows[0] ?? null; }
 async function eventReplay(tx, command, hash) {
   const found = await tx.query('SELECT id::text,event_type,event_ordinal::text,command_hash,occurred_at FROM conversation.control_event WHERE idempotency_scope=$1 AND client_command_id=$2::uuid FOR UPDATE', [command.idempotency_scope, command.client_command_id]);
   if (found.rowCount === 0) return null; if (found.rows[0].command_hash !== hash) fail(CONVERSATION_CONTROL_ERROR_CODES.commandConflict);
@@ -291,4 +292,4 @@ export function createAssignedCommunicationAuthorizer({controlService,featureFla
   };
 }
 
-export async function applyConversationControlMigration({pool}) { if(!pool||typeof pool.query!=='function') throw new TypeError('A PostgreSQL pool is required.'); const sql=await readFile(MIGRATION_URL,'utf8'); try{await pool.query(sql);}catch(error){if(error?.message===CONVERSATION_CONTROL_ERROR_CODES.schemaDrift)throw new ConversationControlError(CONVERSATION_CONTROL_ERROR_CODES.schemaDrift);throw error;} }
+export async function applyConversationControlMigration({pool}) { if(!pool||typeof pool.query!=='function') throw new TypeError('A PostgreSQL pool is required.'); if(await arch005MigrationApplied(pool)) return Object.freeze({status:'LEGACY_MIGRATION_SUPERSEDED'}); const sql=await readFile(MIGRATION_URL,'utf8'); try{await pool.query(sql);}catch(error){if(error?.message===CONVERSATION_CONTROL_ERROR_CODES.schemaDrift)throw new ConversationControlError(CONVERSATION_CONTROL_ERROR_CODES.schemaDrift);throw error;} }

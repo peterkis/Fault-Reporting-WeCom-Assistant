@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
 
 export const P2003_DATABASE_NAME_PATTERN = /^p2_003_[a-z0-9]{1,12}_[a-f0-9_]{36}$/u;
 const APPLICATION_NAME_PATTERN = /^p2_003_[a-z0-9_]{1,54}$/u;
@@ -92,7 +92,7 @@ export async function withP2003IsolatedDatabase({
   const databaseName = createP2003DatabaseName(purpose);
   const quotedDatabaseName = `"${databaseName}"`;
   const applicationName = createApplicationName(purpose);
-  const adminPool = new Pool({
+  const adminPool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,
@@ -107,7 +107,7 @@ export async function withP2003IsolatedDatabase({
     await adminPool.query(`CREATE DATABASE ${quotedDatabaseName} TEMPLATE template0`);
     activeDatabaseNames.add(databaseName);
     const isolatedDatabaseUrl = databaseUrlForP2003Database(databaseUrl, databaseName);
-    isolatedPool = new Pool({
+    isolatedPool = createPostgresPool({
       connectionString: isolatedDatabaseUrl,
       max,
       connectionTimeoutMillis: 2_000,
@@ -166,7 +166,7 @@ export async function withP2003IsolatedDatabase({
 
 export async function assertNoP2003OwnedDatabaseResidual({ databaseUrl }) {
   assertDatabaseUrl(databaseUrl);
-  const adminPool = new Pool({
+  const adminPool = createPostgresPool({
     connectionString: databaseUrl,
     max: 1,
     connectionTimeoutMillis: 2_000,

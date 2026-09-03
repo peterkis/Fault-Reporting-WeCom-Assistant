@@ -1,0 +1,113 @@
+{
+  "evidence_id": "ARCH-005-TIME-INVENTORY-AFTER",
+  "schema_version": 1,
+  "architecture_task": "ARCH-005",
+  "event_time": "2026-09-03 13:27:03",
+  "event_epoch_ms": "1788413223666",
+  "branch": "arch/asia-shanghai-local-time",
+  "baseline_commit": "358d9f69392141401c4ca3b7ba46294541d2a696",
+  "status": "READY_FOR_TARGETED_LIVE_REVALIDATION",
+  "business_timezone": "Asia/Shanghai",
+  "database": {
+    "migration": "022_arch_005_asia_shanghai_time_contract",
+    "migration_checksum_sha256": "dd31f84d9afdea32cf298680e57baeb6834a6930727daa9eb1f2df9331e16cba",
+    "catalog_sha256_after": "c7a1052700902f8107882e452fd37b470b727f0f78416bb262a74dd032a44f71",
+    "owned_schema_table_count": 36,
+    "owned_schema_column_count": 411,
+    "timestamp_without_time_zone_column_count": 79,
+    "bigint_column_count": 47,
+    "epoch_ms_column_count": 24,
+    "forbidden_timezone_column_count_before": 77,
+    "forbidden_timezone_column_count_after": 0,
+    "session_timezone": "Asia/Shanghai",
+    "session_datestyle": "ISO, YMD"
+  },
+  "platform": {
+    "contract_version": "ARCH-005/v1",
+    "local_datetime_pattern": "YYYY-MM-DD HH:mm:ss",
+    "precision": "second",
+    "functions": [
+      "platform.local_now()",
+      "platform.physical_epoch_ms()",
+      "platform.local_from_epoch_ms(BIGINT)",
+      "platform.forbidden_owned_schema_time_types()",
+      "platform.assert_time_contract()",
+      "platform.sync_local_epoch_pair()"
+    ],
+    "security_invoker_function_count": 6,
+    "owned_schemas": [
+      "channel",
+      "intake",
+      "pilot_ticket",
+      "notification",
+      "operations",
+      "conversation",
+      "communication",
+      "platform",
+      "integration"
+    ]
+  },
+  "projection_rebuild": {
+    "timeline_projection_rows": 647,
+    "timeline_projection_rows_rehashed": 647,
+    "realtime_projection_rows": 649,
+    "realtime_projection_rows_rehashed": 649,
+    "realtime_business_time_inversions_before": 10,
+    "realtime_business_time_inversions_after": 0,
+    "realtime_events_resequenced": 649,
+    "retention_floor_after_resequence": "649",
+    "idempotent_repeat_rehashed": 0,
+    "idempotent_repeat_resequenced": 0,
+    "authoritative_fact_deletes": 0,
+    "projection_row_deletes": 0,
+    "failed_runs_retained": 2,
+    "successful_runs_retained": 4
+  },
+  "event_ordering": {
+    "contract": "ORDER BY business_time ASC, explicit_sequence ASC",
+    "timeline": "occurred_at ASC, sequence_no ASC",
+    "realtime": "occurred_at ASC, event_id ASC",
+    "ticket_event": "created_at ASC, event_ordinal ASC",
+    "control_event": "occurred_at ASC, event_ordinal ASC",
+    "timeline_business_time_inversions": 0,
+    "realtime_business_time_inversions": 0,
+    "timestamp_fraction_tie_break_count": 0,
+    "database_physical_order_tie_break_count": 0
+  },
+  "static_hard_gates": {
+    "contract_date_time_format_count": 0,
+    "api_offset_timestamp_leak_count": 0,
+    "direct_pg_factory_bypass_count": 0,
+    "date_in_business_sql_params": 0,
+    "browser_timezone_display_mismatch_count": 0,
+    "event_ordering_violation_count": 0,
+    "feature_flags_enabled_count": 0
+  },
+  "runtime_hard_gates": {
+    "fake_source_conflict_count": 0,
+    "duplicate_delivery_count": 0,
+    "lease_regression_count": 0,
+    "projection_backlog_count": 0
+  },
+  "automated_regression": {
+    "p1": { "tests": 150, "passed": 150, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "p2_unit": { "tests": 151, "passed": 151, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "p2_integration_and_p2_g1": { "tests": 52, "passed": 52, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "arch_005_unit_browser": { "tests": 7, "passed": 7, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "arch_005_postgres_integration": { "tests": 4, "passed": 4, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+    "p2_006_and_p2_g1_browser": { "tests": 5, "passed": 5, "failed": 0, "cancelled": 0, "skipped": 0, "todo": 0 }
+  },
+  "live_revalidation": {
+    "status": "NOT_RUN_REQUIRES_PROJECT_OWNER_TARGETED_LIVE_REVALIDATION",
+    "completion_claimed": false
+  },
+  "scope_guards": {
+    "p2_007": "TODO_BLOCKED_BY_ARCH_005",
+    "deepseek_connected": false,
+    "ocr_enabled": false,
+    "incident_enabled": false,
+    "push_merge_tag_release": false,
+    "historical_evidence_bulk_rewritten": false,
+    "migrations_001_through_021_modified": false
+  }
+}

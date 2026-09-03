@@ -31,8 +31,8 @@ import {
 const SESSION_ID = '01990c80-0000-7000-8000-000000000001';
 const SOURCE_ID = '01990c80-0000-7000-8000-000000000002';
 const SECOND_SOURCE_ID = '01990c80-0000-7000-8000-000000000003';
-const OCCURRED_AT = '2026-08-30T09:00:00.000Z';
-const RETENTION_UNTIL = '2027-08-30T09:00:00.000Z';
+const OCCURRED_AT = '2026-08-30 17:00:00';
+const RETENTION_UNTIL = '2027-08-30 17:00:00';
 const PRIVATE_SENTINEL = 'PRIVATE_SENTINEL_DO_NOT_LEAK';
 
 function assertStableSyncFailure(operation, code = TIMELINE_ERROR_CODES.sourceInvalid) {
@@ -148,12 +148,12 @@ function itemRow(overrides = {}) {
     source_type: 'COMMUNICATION_MESSAGE',
     source_id: SOURCE_ID,
     projection_variant: 'MESSAGE',
-    canonical_order_key: '2026-08-30T09:00:00.000Z|20|0000000000000000001|aa|bb|cc',
+    canonical_order_key: '2026-08-30 17:00:00|20|0000000000000000001|aa|bb|cc',
     content_hash: 'a'.repeat(64),
     privacy_class: 'INTERNAL',
     retention_until: RETENTION_UNTIL,
     occurred_at: OCCURRED_AT,
-    projected_at: '2026-08-30T10:00:00.000Z',
+    projected_at: '2026-08-30 18:00:00',
     ...overrides,
   };
 }
@@ -183,7 +183,7 @@ test('normalization rejects invalid source type, session UUID, date, ordinal and
   for (const overrides of [
     { source_type: 'UNKNOWN' },
     { session_id: 'not-a-uuid' },
-    { occurred_at: '2026-02-30T09:00:00Z' },
+    { occurred_at: '2026-02-30 17:00:00' },
     { source_ordinal: '01' },
     { source_ordinal: '9223372036854775808' },
     { unexpected: true },
@@ -297,7 +297,7 @@ test('privacy and retention controls can tighten without changing semantic sourc
   const initial = sourceRecord({ privacy_class: 'INTERNAL' });
   const tightened = rehash(initial, {
     privacy_class: 'SECRET',
-    retention_until: '2026-12-01T00:00:00.000Z',
+    retention_until: '2026-12-01 08:00:00',
   });
   assert.equal(initial.source_hash, tightened.source_hash);
 });
@@ -694,19 +694,19 @@ test('rebuild stale-snapshot fence fails before DELETE for extra or foreign bind
 });
 
 test('Canonical Timeline Hash excludes projected_at and physical input order', () => {
-  const first = itemRow({ sequence_no: '1', projected_at: '2026-08-30T10:00:00Z' });
+  const first = itemRow({ sequence_no: '1', projected_at: '2026-08-30 18:00:00' });
   const second = itemRow({
     id: '01990c80-0000-7000-8000-000000000004',
     sequence_no: '2',
     source_id: SECOND_SOURCE_ID,
     content_hash: 'b'.repeat(64),
-    occurred_at: '2026-08-30T09:00:01.000Z',
-    projected_at: '2026-08-30T10:00:01Z',
+    occurred_at: '2026-08-30 17:00:01',
+    projected_at: '2026-08-30 18:00:01',
   });
   const expected = computeTimelineCanonicalHash([first, second]);
   assert.equal(computeTimelineCanonicalHash([
-    { ...second, projected_at: '2030-01-01T00:00:00Z' },
-    { ...first, projected_at: '2040-01-01T00:00:00Z' },
+    { ...second, projected_at: '2030-01-01 08:00:00' },
+    { ...first, projected_at: '2040-01-01 08:00:00' },
   ]), expected);
 });
 
@@ -1052,22 +1052,52 @@ test('migration runner executes only migration 011 and sanitizes raw failures', 
   let migrationSql;
   await applyTimelineProjectionMigration({
     pool: {
-      query: async (sql) => { migrationSql = sql; },
+      query: async (sql) => {
+        if (/FROM pg_catalog\.pg_class AS relation/u.test(sql)) {
+          return { rows: [{ applied: false }] };
+        }
+        migrationSql = sql;
+        return { rows: [] };
+      },
     },
   });
   assert.match(migrationSql, /conversation\.item_source_binding/u);
   assert.doesNotMatch(migrationSql, /CREATE TABLE[^;]+conversation\.realtime_event/isu);
 
+  let supersededQueryCount = 0;
+  const superseded = await applyTimelineProjectionMigration({
+    pool: {
+      query: async () => {
+        supersededQueryCount += 1;
+        return supersededQueryCount === 1
+          ? { rows: [{ marker_table_exists: true }] }
+          : { rows: [{ applied: true }] };
+      },
+    },
+  });
+  assert.deepEqual(superseded, { status: 'LEGACY_MIGRATION_SUPERSEDED' });
+  assert.equal(supersededQueryCount, 2);
+
   await assert.rejects(
     applyTimelineProjectionMigration({
-      pool: { query: async () => { throw new Error('raw SQL and password'); } },
+      pool: {
+        query: async (sql) => {
+          if (/FROM pg_catalog\.pg_class AS relation/u.test(sql)) {
+            return { rows: [{ applied: false }] };
+          }
+          throw new Error('raw SQL and password');
+        },
+      },
     }),
     { code: TIMELINE_ERROR_CODES.storageFailed },
   );
   await assert.rejects(
     applyTimelineProjectionMigration({
       pool: {
-        query: async () => {
+        query: async (sql) => {
+          if (/FROM pg_catalog\.pg_class AS relation/u.test(sql)) {
+            return { rows: [{ applied: false }] };
+          }
           const error = new Error(TIMELINE_ERROR_CODES.schemaDrift);
           error.code = '23514';
           throw error;

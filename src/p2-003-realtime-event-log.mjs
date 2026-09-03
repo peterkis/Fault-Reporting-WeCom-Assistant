@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { types as utilTypes } from 'node:util';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import {
   addEpochMilliseconds,
   assertEpochMsString,
@@ -815,6 +816,20 @@ export async function appendRealtimeEvent(input) {
 
   try {
     await acquireStreamLock(transaction);
+    const tail = resultRows(await query(
+      transaction,
+      `SELECT occurred_at,event_id::text
+         FROM conversation.realtime_event
+        WHERE stream_name=$1
+        ORDER BY occurred_at DESC,event_id DESC
+        LIMIT 1`,
+      [REALTIME_STREAM_NAME],
+    ));
+    if (tail.length > 1
+      || (tail.length === 1
+        && command.occurred_at < isoDateTime(tail[0].occurred_at, REALTIME_ERROR_CODES.storageFailed))) {
+      fail(REALTIME_ERROR_CODES.eventInvalid);
+    }
     await query(
       transaction,
       `INSERT INTO conversation.realtime_stream_state (stream_name)
@@ -913,6 +928,7 @@ export async function applyRealtimeEventLogMigration(input) {
   input = plainRecordSnapshot(input);
   const pool = input.pool;
   try {
+    if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
     const sql = await readFile(MIGRATION_URL, 'utf8');
     await query(pool, sql, undefined, REALTIME_ERROR_CODES.storageFailed);
   } catch (error) {
@@ -1220,7 +1236,7 @@ export async function listAuthorizedRealtimeEvents(input) {
                event.visibility_scope = 'WORKBENCH'
                OR (event.visibility_scope = 'RESTRICTED_ADMIN' AND $6::boolean)
              )
-           ORDER BY event.event_id
+           ORDER BY event.occurred_at, event.event_id
            LIMIT $7
        ), scan_state AS MATERIALIZED (
           SELECT CASE
@@ -1267,7 +1283,7 @@ export async function listAuthorizedRealtimeEvents(input) {
          FROM cursor_state
          CROSS JOIN scan_state
          LEFT JOIN authorized ON TRUE
-        ORDER BY authorized.event_id NULLS LAST`,
+        ORDER BY authorized.occurred_at NULLS LAST, authorized.event_id NULLS LAST`,
       [
         streamName,
         afterEventId,

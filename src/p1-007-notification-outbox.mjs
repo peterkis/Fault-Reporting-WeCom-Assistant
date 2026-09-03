@@ -1,11 +1,13 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import {
   addEpochMilliseconds,
   assertEpochMsString,
   assertLocalDateTime,
   formatEpochMsToShanghaiLocal,
 } from './platform/time-contract.mjs';
+import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/005_p1_007_notification_outbox.sql', import.meta.url);
 const CHANNELS = new Set(['WECOM_DIRECT', 'PILOT_TEAM']);
@@ -43,7 +45,7 @@ function isRecord(value) {
 }
 
 function iso(value) {
-  return assertLocalDateTime(value);
+  return postgresTimestampToLocalDateTime(value);
 }
 
 function clock(nowEpochMs, legacyNow) {
@@ -157,6 +159,7 @@ export async function applyNotificationOutboxMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   await pool.query(sql);
 }
@@ -401,9 +404,10 @@ export function createNotificationDeliveryWorker({
         const updated = await transaction.query(
           `UPDATE notification.delivery
               SET status = 'SENT',
-                  attempt_count = $2,
-                  lease_token = NULL,
-                  lease_expires_epoch_ms = NULL,
+                   attempt_count = $2,
+                   lease_token = NULL,
+                   lease_expires_at = NULL,
+                   lease_expires_epoch_ms = NULL,
                   last_error_code = NULL,
                   provider_message_id = $3,
                   sent_epoch_ms = $4::bigint,
@@ -432,9 +436,10 @@ export function createNotificationDeliveryWorker({
         `UPDATE notification.delivery
             SET status = $2,
                 attempt_count = $3,
-                next_attempt_epoch_ms = $4::bigint,
-                lease_token = NULL,
-                lease_expires_epoch_ms = NULL,
+                 next_attempt_epoch_ms = $4::bigint,
+                 lease_token = NULL,
+                 lease_expires_at = NULL,
+                 lease_expires_epoch_ms = NULL,
                 last_error_code = $5,
                 updated_at = $6::timestamp without time zone
           WHERE id = $1::uuid

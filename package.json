@@ -102,6 +102,8 @@
     "arch:005:migrate": "node --env-file=.env.pilot scripts/migrate-current-baseline.mjs",
     "arch:005:migrate:check": "node --env-file=.env.pilot scripts/migrate-current-baseline.mjs --check",
     "arch:005:migrate:status": "node --env-file=.env.pilot scripts/migrate-current-baseline.mjs --status",
+    "arch:005:reproject": "node --env-file=.env.pilot scripts/arch-005-reproject-time-hashes.mjs",
+    "arch:005:validate": "node scripts/validate-arch-005-time-contract.mjs",
     "test:arch:005": "node --test tests/platform-time-contract.test.mjs tests/arch-005-time-contract-architecture.test.mjs tests/p2-006-workbench-timezone-browser.test.mjs",
     "test:arch:005:integration": "node --env-file=.env.pilot --test --test-concurrency=1 tests/platform-postgres-time.integration.test.mjs tests/arch-005-time-migration.integration.test.mjs",
     "validate:architecture:v1.3": "node scripts/validate-v1-4-architecture.mjs",

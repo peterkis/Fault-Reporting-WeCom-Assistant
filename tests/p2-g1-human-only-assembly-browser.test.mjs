@@ -4,12 +4,14 @@ import { createServer as createNetServer } from 'node:net';
 import { test } from 'node:test';
 
 import { closeConversationWorkbenchServer, createConversationWorkbenchHttpServer } from '../src/p2-006-workbench-http.mjs';
+import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
 import { launchP2G1TestBrowserSessions } from '../src/p2-g1-browser-sessions.mjs';
 import { launchSystemBrowser } from './helpers/p2-006-browser-harness.mjs';
 
 const SESSION_ID = '018f0000-0000-7000-8000-000000000061';
 const PRINCIPAL_ID = '018f0000-0000-7000-8000-000000000062';
-const NOW = '2026-09-01T06:00:00.000Z';
+const NOW = '2026-09-01 14:00:00';
+const expiry = () => { const epoch = String(Date.now() + 60_000); return { expires_at: formatEpochMsToShanghaiLocal(epoch), expires_epoch_ms: epoch }; };
 
 async function reservePort() {
   const probe = createNetServer();
@@ -26,7 +28,7 @@ function fixture() {
   const item = { item_id: '018f0000-0000-7000-8000-000000000063', sequence_no: '1', item_type: 'USER_MESSAGE', sender_kind: 'USER', visibility: 'EXTERNAL', text: '<img src=x onerror=window.__p2_g1_xss=1>', safe_content: {}, occurred_at: NOW };
   const assignment = { status: 'ASSIGNED', version: 1, assigned_to_me: true, assigned_display_name: 'Synthetic Admin', assigned_at: NOW };
   const queryService = {
-    getBootstrap: async () => ({ authenticated: true, principal: { principal_id: PRINCIPAL_ID, display_name: 'Synthetic Admin', capabilities }, expires_at: new Date(Date.now() + 60_000).toISOString(), csrf_token: 'p2-g1-browser-csrf', feature_status: { workbench_enabled: true, realtime_sse_enabled: true, ai_enabled: false, incident_enabled: false, attachments_enabled: false }, polling_interval_ms: 60_000, sse_endpoint: '/api/realtime/events?scope=workbench', max_page_sizes: { conversations: 100, timeline: 200 } }),
+    getBootstrap: async () => ({ authenticated: true, principal: { principal_id: PRINCIPAL_ID, display_name: 'Synthetic Admin', capabilities }, ...expiry(), csrf_token: 'p2-g1-browser-csrf', feature_status: { workbench_enabled: true, realtime_sse_enabled: true, ai_enabled: false, incident_enabled: false, attachments_enabled: false }, polling_interval_ms: 60_000, sse_endpoint: '/api/realtime/events?scope=workbench', max_page_sizes: { conversations: 100, timeline: 200 } }),
     listConversations: async () => { listCalls += 1; if (listCalls > 1) await new Promise((resolve) => setTimeout(resolve, 50)); return { items: [{ session, queue_state: 'mine', channel_label: '群聊会话', unread_count: 1, last_item: item, assignment, handoff: null, ticket: null, latest_delivery: null, waiting_duration_seconds: 0, capabilities }], next_cursor: null }; },
     getConversationDetail: async () => ({ session, assignment, handoff: null, read_cursor: { last_read_sequence: '0', row_version: 0 }, unread_count: 1, ticket: null, incident: { available: false, reason: 'INCIDENT_NOT_IMPLEMENTED' }, attachments: { available: false, reason: 'ATTACHMENT_NOT_IMPLEMENTED' }, delivery_summary: null, capabilities, etag: '"1"' }),
     listConversationItems: async () => ({ session_id: SESSION_ID, items: [item], before_sequence: '1', after_sequence: '1', has_more: false }),
@@ -49,7 +51,7 @@ test('P2-G1 system browser duplicate submit fence sends one human reply and pres
     queryService: values.queryService,
     commandFacade: values.commandFacade,
     publicOrigin: origin,
-    authenticate: async () => ({ principal_id: PRINCIPAL_ID, auth_method: 'COOKIE', expires_at: new Date(Date.now() + 60_000).toISOString(), csrf_token: 'p2-g1-browser-csrf' }),
+    authenticate: async () => ({ principal_id: PRINCIPAL_ID, auth_method: 'COOKIE', ...expiry(), csrf_token: 'p2-g1-browser-csrf' }),
     sseHandler: async (_request, response) => {
       response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' });
       for (let index = 0; index < 100; index += 1) response.write('event: conversation.item.created\ndata: {}\n\n');
@@ -94,7 +96,7 @@ test('P2-G1 system browser preserves native SSE reconnect and sends Last-Event-I
     queryService: values.queryService,
     commandFacade: values.commandFacade,
     publicOrigin: origin,
-    authenticate: async () => ({ principal_id: PRINCIPAL_ID, auth_method: 'COOKIE', expires_at: new Date(Date.now() + 60_000).toISOString(), csrf_token: 'p2-g1-browser-csrf' }),
+    authenticate: async () => ({ principal_id: PRINCIPAL_ID, auth_method: 'COOKIE', ...expiry(), csrf_token: 'p2-g1-browser-csrf' }),
     sseHandler: async (request, response) => {
       connections += 1;
       lastEventIds.push(request.headers['last-event-id'] ?? null);

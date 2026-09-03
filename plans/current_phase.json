@@ -19,11 +19,11 @@
     "P2-006"
   ],
   "active_lane": "ARCHITECTURE",
-  "implementation_authorization_status": "ARCH_005_AUTHORIZED_P2_007_BLOCKED",
+  "implementation_authorization_status": "ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION_P2_007_BLOCKED",
   "authorized_architecture_tasks": [
     "ARCH-005"
   ],
-  "arch_005_status": "IN_PROGRESS",
+  "arch_005_status": "READY_FOR_TARGETED_LIVE_REVALIDATION",
   "arch_005_authorized_at": "2026-09-03",
   "arch_005_authorization_evidence": "evidence/arch-005-start-authorization.md",
   "p2_007_status": "TODO_BLOCKED_BY_ARCH_005",
@@ -110,7 +110,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "ARCH_005_AUTHORIZED_P2_007_BLOCKED",
+    "activation_status": "ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION_P2_007_BLOCKED",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

@@ -1,9 +1,11 @@
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import {
   createPilotTicketProcessor,
   publicPilotTicket,
 } from './p1-005-pilot-ticket-core.mjs';
 import { appendTicketEvent } from './p1-006-ticket-state-actions.mjs';
+import { addEpochMilliseconds, formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/007_p1_010_ticket_closure.sql', import.meta.url);
 const REVIEW_HARDENING_MIGRATION_URL = new URL(
@@ -34,7 +36,8 @@ function validNow(now) {
   if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
     throw new TypeError('now must return a valid Date.');
   }
-  return value;
+  const epochMs = String(value.getTime());
+  return Object.freeze({ epoch_ms: epochMs, local_datetime: formatEpochMsToShanghaiLocal(epochMs) });
 }
 
 function cardError(code) {
@@ -100,6 +103,7 @@ export async function applyTicketClosureMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   await pool.query(sql);
   const reviewHardeningSql = await readFile(REVIEW_HARDENING_MIGRATION_URL, 'utf8');
@@ -133,6 +137,9 @@ export function createTicketClosureService({
   if (autoCloseReminderLeadMs >= autoCloseAfterMs) {
     throw new TypeError('autoCloseReminderLeadMs must be shorter than autoCloseAfterMs.');
   }
+  if (cardTtlMs < 1_000) {
+    throw new TypeError('cardTtlMs must be at least one second.');
+  }
 
   async function createCardTasks({ transaction, ticket, event, action }) {
     const cardActions = action === 'resolve'
@@ -144,14 +151,16 @@ export function createTicketClosureService({
       return [];
     }
     const reporterWeComUserId = await reporterForTicket(transaction, ticket);
-    const expiresAt = new Date(validNow(now).getTime() + cardTtlMs);
+    const createdAt = validNow(now);
+    const expiresEpochMs = addEpochMilliseconds(createdAt.epoch_ms, cardTtlMs);
+    const expiresAt = formatEpochMsToShanghaiLocal(expiresEpochMs);
     const tasks = [];
     for (const actionKey of cardActions) {
       const created = await transaction.query(
         `INSERT INTO notification.card_action_task (
             ticket_id, ticket_event_id, action_key, actor_wecom_user_id,
-            expected_version, expires_at, created_at
-         ) VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::timestamp without time zone, $7::timestamp without time zone)
+            expected_version, expires_at, expires_epoch_ms, created_at
+         ) VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::timestamp without time zone, $7::bigint, $8::timestamp without time zone)
          ON CONFLICT (ticket_event_id, action_key, actor_wecom_user_id)
          DO UPDATE SET task_id = notification.card_action_task.task_id
          RETURNING task_id::text, action_key, expires_at`,
@@ -162,13 +171,14 @@ export function createTicketClosureService({
           reporterWeComUserId,
           ticket.version,
           expiresAt,
-          validNow(now),
+          expiresEpochMs,
+          createdAt.local_datetime,
         ],
       );
       tasks.push({
         task_id: created.rows[0].task_id,
         action_key: created.rows[0].action_key,
-        expires_at: new Date(created.rows[0].expires_at).toISOString(),
+        expires_at: created.rows[0].expires_at,
       });
     }
     return tasks;
@@ -178,10 +188,11 @@ export function createTicketClosureService({
     if (action === 'resolve') {
       await transaction.query(
         `UPDATE pilot_ticket.ticket
-            SET auto_close_at = $2::timestamp without time zone,
-                auto_close_reminder_at = NULL
+            SET auto_close_epoch_ms = $2::bigint,
+                auto_close_reminder_at = NULL,
+                auto_close_reminder_epoch_ms = NULL
           WHERE id = $1::uuid`,
-        [ticket.id, new Date(validNow(now).getTime() + autoCloseAfterMs)],
+        [ticket.id, addEpochMilliseconds(validNow(now).epoch_ms, autoCloseAfterMs)],
       );
       return;
     }
@@ -189,7 +200,9 @@ export function createTicketClosureService({
       await transaction.query(
         `UPDATE pilot_ticket.ticket
             SET auto_close_at = NULL,
-                auto_close_reminder_at = NULL
+                auto_close_epoch_ms = NULL,
+                auto_close_reminder_at = NULL,
+                auto_close_reminder_epoch_ms = NULL
           WHERE id = $1::uuid`,
         [ticket.id],
       );
@@ -292,7 +305,7 @@ export function createTicketClosureService({
       return await withTransaction(pool, async (transaction) => {
         const task = await transaction.query(
           `SELECT task_id::text, ticket_id::text, action_key, actor_wecom_user_id,
-                  expected_version, expires_at, consumed_at
+                   expected_version, expires_at, expires_epoch_ms::text, consumed_at
              FROM notification.card_action_task
             WHERE task_id = $1::uuid
             FOR UPDATE`,
@@ -317,7 +330,7 @@ export function createTicketClosureService({
         if (current.actor_wecom_user_id !== actorWecomUserId) {
           return cardError('CARD_ACTION_FORBIDDEN');
         }
-        if (new Date(current.expires_at).getTime() < validNow(now).getTime()) {
+        if (BigInt(current.expires_epoch_ms) < BigInt(validNow(now).epoch_ms)) {
           return cardError('CARD_ACTION_EXPIRED');
         }
         if (current.consumed_at !== null) {
@@ -329,7 +342,7 @@ export function createTicketClosureService({
             `UPDATE notification.card_action_task
                 SET consumed_at = $2::timestamp without time zone
               WHERE task_id = $1::uuid`,
-            [taskId, validNow(now)],
+            [taskId, validNow(now).local_datetime],
           );
           await transaction.query(
             `INSERT INTO notification.card_action_receipt (task_id, event_req_id, response_snapshot)
@@ -353,7 +366,7 @@ export function createTicketClosureService({
           `UPDATE notification.card_action_task
               SET consumed_at = $2::timestamp without time zone
             WHERE task_id = $1::uuid`,
-          [taskId, validNow(now)],
+          [taskId, validNow(now).local_datetime],
         );
         await transaction.query(
           `INSERT INTO notification.card_action_receipt (task_id, event_req_id, response_snapshot)
@@ -386,13 +399,13 @@ export function createTicketClosureService({
         `SELECT id::text, version
            FROM pilot_ticket.ticket
           WHERE status = 'RESOLVED'
-            AND auto_close_at IS NOT NULL
-            AND auto_close_at <= $1::timestamp without time zone
-            AND auto_close_reminder_at IS NOT NULL
-          ORDER BY auto_close_at, id
+             AND auto_close_epoch_ms IS NOT NULL
+             AND auto_close_epoch_ms <= $1::bigint
+             AND auto_close_reminder_epoch_ms IS NOT NULL
+           ORDER BY auto_close_epoch_ms, id
           FOR UPDATE SKIP LOCKED
           LIMIT $2`,
-        [closingAt, limit],
+        [closingAt.epoch_ms, limit],
       );
       const closedTicketIds = [];
       for (const ticket of selected.rows) {
@@ -423,30 +436,30 @@ export function createTicketClosureService({
         throw new TypeError('limit must be an integer from 1 through 100.');
       }
       const reminderAt = validNow(now);
-      const reminderDeadline = new Date(reminderAt.getTime() + autoCloseReminderLeadMs);
+      const reminderDeadline = addEpochMilliseconds(reminderAt.epoch_ms, autoCloseReminderLeadMs);
       return withTransaction(pool, async (transaction) => {
         const selected = await transaction.query(
           `SELECT ${ticketFields()}
              FROM pilot_ticket.ticket AS ticket
             WHERE ticket.status = 'RESOLVED'
-              AND ticket.auto_close_at IS NOT NULL
-              AND ticket.auto_close_at > $1::timestamp without time zone
-              AND ticket.auto_close_at <= $2::timestamp without time zone
-              AND ticket.auto_close_reminder_at IS NULL
-            ORDER BY ticket.auto_close_at, ticket.id
+               AND ticket.auto_close_epoch_ms IS NOT NULL
+               AND ticket.auto_close_epoch_ms > $1::bigint
+               AND ticket.auto_close_epoch_ms <= $2::bigint
+               AND ticket.auto_close_reminder_epoch_ms IS NULL
+             ORDER BY ticket.auto_close_epoch_ms, ticket.id
             FOR UPDATE SKIP LOCKED
             LIMIT $3`,
-          [reminderAt, reminderDeadline, limit],
+          [reminderAt.epoch_ms, reminderDeadline, limit],
         );
         const remindedTicketIds = [];
         for (const row of selected.rows) {
           const marked = await transaction.query(
             `UPDATE pilot_ticket.ticket
-                SET auto_close_reminder_at = $2::timestamp without time zone
+                SET auto_close_reminder_epoch_ms = $2::bigint
               WHERE id = $1::uuid
                 AND auto_close_reminder_at IS NULL
               RETURNING ${ticketFields('pilot_ticket.ticket')}`,
-            [row.id, reminderAt],
+            [row.id, reminderAt.epoch_ms],
           );
           if (marked.rowCount !== 1) {
             continue;

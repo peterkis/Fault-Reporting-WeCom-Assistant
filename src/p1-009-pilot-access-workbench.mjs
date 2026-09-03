@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import { EXTERNAL_TICKET_STATUS, publicPilotTicket } from './p1-005-pilot-ticket-core.mjs';
 import { assertLocalDateTime } from './platform/time-contract.mjs';
 
@@ -123,6 +124,7 @@ export async function applyPilotAccessMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   await pool.query(sql);
 }
@@ -274,7 +276,7 @@ export function createPilotAccessService({ pool } = {}) {
                 reason_code, created_at
            FROM pilot_ticket.ticket_event
           WHERE ticket_id = $1::uuid
-          ORDER BY event_ordinal`,
+          ORDER BY created_at, event_ordinal`,
         [ticketId],
       );
       return {

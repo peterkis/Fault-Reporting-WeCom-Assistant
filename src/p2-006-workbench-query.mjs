@@ -321,7 +321,7 @@ export function createConversationWorkbenchQueryService({
       `SELECT id::text, sequence_no::text, item_type, sender_kind, visibility, text, safe_content, occurred_at
          FROM conversation.item
         WHERE session_id=$1::uuid AND visibility=ANY($2::text[]) ${boundary}
-        ORDER BY sequence_no ${direction} LIMIT $${values.length}`,
+        ORDER BY occurred_at ${direction}, sequence_no ${direction} LIMIT $${values.length}`,
       values,
     );
     const hasMore = result.rows.length > pageSize;

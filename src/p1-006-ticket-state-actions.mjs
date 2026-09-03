@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import { EXTERNAL_TICKET_STATUS, publicPilotTicket } from './p1-005-pilot-ticket-core.mjs';
 import { assertLocalDateTime } from './platform/time-contract.mjs';
+import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/004_p1_006_ticket_state_actions.sql', import.meta.url);
 const ACTIONS = Object.freeze({
@@ -50,7 +52,7 @@ function isRecord(value) {
 }
 
 function iso(value) {
-  return assertLocalDateTime(value);
+  return postgresTimestampToLocalDateTime(value);
 }
 
 function nonEmpty(value, code, maximum) {
@@ -178,6 +180,7 @@ export async function applyTicketStateActionMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   await pool.query(sql);
 }
@@ -296,7 +299,10 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
               assignee_id = $3::uuid,
               external_result = $4,
               closure_reason = $5,
-              updated_at = date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
+              updated_at = GREATEST(
+                created_at,
+                date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
+              )
         WHERE id = $1::uuid AND version = $6
         RETURNING ${ticketFields('pilot_ticket.ticket')}`,
       [current.id, nextStatus, assigneeId, externalResult, closureReason, request.expectedVersion],

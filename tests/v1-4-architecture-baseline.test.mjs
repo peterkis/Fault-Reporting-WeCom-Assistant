@@ -58,6 +58,17 @@ const profiles = Object.freeze({
     p2006Status: 'DONE',
     p2g1Status: 'PASSED',
   }),
+  ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION_P2_007_BLOCKED: Object.freeze({
+    lastCompletedTask: 'P2-006',
+    lastCompletedGate: 'P2-G1',
+    activeTask: 'ARCH-005',
+    activeLane: 'ARCHITECTURE',
+    candidate: 'P2-007',
+    candidateAuthorized: false,
+    p2006Status: 'DONE',
+    p2g1Status: 'PASSED',
+    activeTaskStatus: 'READY_FOR_TARGETED_LIVE_REVALIDATION',
+  }),
 });
 
 test('V1.4 architecture validator passes', () => {
@@ -131,8 +142,8 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
   assert.equal(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[7-9]|01[0-4])$/u.test(task.id))
     .every((task) => task.status === 'TODO'), true);
   assert.deepEqual(
-    backlog.tasks.filter((task) => task.status === 'IN_PROGRESS').map((task) => task.id),
-    profile.activeTask?.startsWith('P2-0') ? [profile.activeTask] : [],
+    backlog.tasks.filter((task) => task.status === (profile.activeTaskStatus ?? 'IN_PROGRESS')).map((task) => task.id),
+    profile.activeTask?.startsWith('P2-0') || profile.activeTask?.startsWith('ARCH-') ? [profile.activeTask] : [],
   );
   assert.equal(backlog.tasks.filter((task) => task.phase === 'P3').every((task) => task.status === 'TODO'), true);
   assert.equal(parallel.assembly_gates.find((gate) => gate.id === 'P2-G1').status, profile.p2g1Status ?? 'NOT_STARTED');

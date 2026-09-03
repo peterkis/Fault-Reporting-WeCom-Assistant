@@ -39,9 +39,9 @@ import {
 const SESSION_ID = '01990c80-0000-7000-8000-000000000001';
 const THREAD_ID = '01990c80-0000-7000-8000-000000000002';
 const ITEM_ID = '01990c80-0000-7000-8000-000000000003';
-const OCCURRED_AT = '2026-08-30T09:00:00.000Z';
-const CREATED_AT = '2026-08-30T09:00:01.000Z';
-const EXPIRES_AT = '2026-09-06T09:00:00.000Z';
+const OCCURRED_AT = '2026-08-30 17:00:00';
+const CREATED_AT = '2026-08-30 17:00:01';
+const EXPIRES_AT = '2026-09-06 17:00:00';
 const PRIVATE_SENTINEL = 'PRIVATE_SENTINEL_DO_NOT_LEAK';
 const MAX_POSTGRES_BIGINT = '9223372036854775807';
 
@@ -439,11 +439,11 @@ test('SESSION and THREAD require a UUID scope while SYSTEM requires null', () =>
 
 test('normalization rejects invalid timestamps and requires expires_at after occurred_at', () => {
   for (const overrides of [
-    { occurred_at: '2026-02-30T09:00:00.000Z' },
+    { occurred_at: '2026-02-30 17:00:00' },
     { occurred_at: 'not-a-date' },
     { expires_at: 'not-a-date' },
     { expires_at: OCCURRED_AT },
-    { expires_at: '2026-08-30T08:59:59.999Z' },
+    { expires_at: '2026-08-30 16:59:59' },
   ]) {
     assertStableFailure(
       () => validCommand(overrides),
@@ -643,7 +643,7 @@ test('event hash is canonical across payload key order and changes on semantic m
 
 test('event hash excludes expires_at, event_id and created_at', () => {
   const command = validCommand();
-  const tightened = validCommand({ expires_at: '2026-09-01T09:00:00.000Z' });
+  const tightened = validCommand({ expires_at: '2026-09-01 17:00:00' });
   assert.equal(computeRealtimeEventHash(command), computeRealtimeEventHash(tightened));
   assert.equal(
     computeRealtimeEventHash(command),

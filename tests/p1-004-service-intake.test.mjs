@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
+import { postgresTimestampToLocalDateTime } from '../src/platform/postgres-types.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
@@ -19,7 +21,7 @@ const integrationTest = databaseUrl ? test : test.skip;
 const testMessageIds = new Set();
 const testIntakeIds = new Set();
 const pool = databaseUrl
-  ? new Pool({ connectionString: databaseUrl, max: 12, connectionTimeoutMillis: 2_000 })
+  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
   : null;
 
 function normalizedMessage(msgId, {
@@ -79,13 +81,19 @@ function normalizedImageMessage(msgId, {
 }
 
 function inboxRequest(message, overrides = {}) {
-  return {
+  const retentionUntilEpochMs = String(BigInt(message.received_epoch_ms) + 7n * 24n * 60n * 60n * 1000n);
+  const request = {
     message,
     traceId: `trace-${message.msg_id}`,
     privacyClass: 'INTERNAL',
-    retentionUntil: new Date(Date.parse(message.received_at) + 7 * 24 * 60 * 60 * 1_000).toISOString(),
+    retentionUntil: formatEpochMsToShanghaiLocal(retentionUntilEpochMs),
+    retentionUntilEpochMs,
     ...overrides,
   };
+  if (Object.hasOwn(overrides, 'retentionUntil') && !Object.hasOwn(overrides, 'retentionUntilEpochMs')) {
+    request.retentionUntilEpochMs = shanghaiLocalToEpochMs(request.retentionUntil);
+  }
+  return request;
 }
 
 async function accept(message, requestOverrides = {}) {
@@ -174,7 +182,7 @@ integrationTest('creates one Service Intake, primary message relation and receiv
 
 integrationTest('aggregates multiple supplements into one Intake without creating a Ticket', async () => {
   const context = randomUUID();
-  const baseTime = Date.parse('2026-08-28T02:00:00.000Z');
+  const baseTime = Date.parse('2026-08-28 10:00:00');
   const texts = [
     'HIS 打不开',
     '这是截图',
@@ -233,7 +241,7 @@ integrationTest('aggregates multiple supplements into one Intake without creatin
 
 integrationTest('explicit new-report intent starts a new Intake inside the 90-second window', async () => {
   const context = randomUUID();
-  const baseTime = Date.parse('2026-08-28T03:00:00.000Z');
+  const baseTime = Date.parse('2026-08-28 11:00:00');
   const first = await accept(normalizedMessage(`p1-004-new-report-${context}-0`, {
     text: 'HIS 登录失败',
     receivedAt: new Date(baseTime).toISOString(),
@@ -260,7 +268,7 @@ integrationTest('explicit new-report intent starts a new Intake inside the 90-se
 
 integrationTest('an explicit reference to another ticket closes the current aggregation window', async () => {
   const context = randomUUID();
-  const baseTime = Date.parse('2026-08-28T03:30:00.000Z');
+  const baseTime = Date.parse('2026-08-28 11:30:00');
   const first = await accept(normalizedMessage(`p1-004-other-ticket-${context}-0`, {
     text: 'HIS 登录失败',
     receivedAt: new Date(baseTime).toISOString(),
@@ -311,7 +319,7 @@ integrationTest('pure image creates a waiting Intake and emits a clarification a
 
 integrationTest('a description clarifies the waiting image Intake instead of creating another Intake', async () => {
   const context = randomUUID();
-  const baseTime = Date.parse('2026-08-28T04:00:00.000Z');
+  const baseTime = Date.parse('2026-08-28 12:00:00');
   const image = await accept(normalizedImageMessage(`p1-004-clarify-${context}-0`, {
     receivedAt: new Date(baseTime).toISOString(),
     chatId: `group-${context}`,
@@ -347,7 +355,7 @@ integrationTest('a description clarifies the waiting image Intake instead of cre
 
 integrationTest('concurrent distinct messages in one context aggregate into exactly one Intake', async () => {
   const context = randomUUID();
-  const receivedAt = '2026-08-28T05:00:00.000Z';
+  const receivedAt = '2026-08-28 13:00:00';
   const messages = Array.from({ length: 12 }, (_, index) => normalizedMessage(
     `p1-004-concurrent-${context}-${index}`,
     {
@@ -390,7 +398,7 @@ integrationTest('concurrent distinct messages in one context aggregate into exac
 
 integrationTest('reversed lock acquisition still aggregates bounded timestamp inversion and preserves valid update time', async () => {
   const context = randomUUID();
-  const baseTime = Date.parse('2026-08-28T05:30:00.000Z');
+  const baseTime = Date.parse('2026-08-28 13:30:00');
   const earlierMessage = normalizedMessage(`p1-004-reversed-${context}-0`, {
     text: 'HIS 登录失败',
     receivedAt: new Date(baseTime).toISOString(),
@@ -438,7 +446,7 @@ integrationTest('reversed lock acquisition still aggregates bounded timestamp in
       WHERE id = $1::uuid`,
     [later.result.intake.id],
   );
-  assert.equal(stored.rows[0].last_message_at.toISOString(), laterMessage.received_at);
+  assert.equal(stored.rows[0].last_message_at, laterMessage.received_at);
   assert.equal(stored.rows[0].updated_at >= stored.rows[0].created_at, true);
   assert.equal(stored.rows[0].message_count, 2);
 });
@@ -451,7 +459,7 @@ integrationTest('reversed lock acquisition never crosses an explicit new-context
 
   for (const [index, [label, boundaryText]] of boundaryCases.entries()) {
     const context = randomUUID();
-    const baseTime = Date.parse('2026-08-28T05:40:00.000Z') + index * 5 * 60_000;
+    const baseTime = Date.parse('2026-08-28 13:40:00') + index * 5 * 60_000;
     const original = await accept(normalizedMessage(
       `p1-004-reversed-boundary-${label}-${context}-seed`,
       {
@@ -539,7 +547,7 @@ integrationTest('classifies the documented request types without AI and honors i
     const context = randomUUID();
     const response = await accept(normalizedMessage(`p1-004-classify-${context}-${index}`, {
       text,
-      receivedAt: new Date(Date.parse('2026-08-28T06:00:00.000Z') + index * 1_000).toISOString(),
+      receivedAt: new Date(Date.parse('2026-08-28 14:00:00') + index * 1_000).toISOString(),
       chatId: `group-${context}`,
       senderUserId: `user-${context}`,
     }));
@@ -571,10 +579,10 @@ integrationTest('standalone thanks is CHATTER without an unnecessary clarificati
 
 integrationTest('aggregate privacy is strongest, retention is earliest, and Inbox snapshots contain no report summary', async () => {
   const context = randomUUID();
-  const baseTime = Date.parse('2026-08-28T06:30:00.000Z');
+  const baseTime = Date.parse('2026-08-28 14:30:00');
   const sensitiveText = `patient-example-${context} login failed`;
-  const firstRetention = new Date(baseTime + 24 * 60 * 60 * 1_000).toISOString();
-  const laterRetention = new Date(baseTime + 30 * 24 * 60 * 60 * 1_000).toISOString();
+  const firstRetention = formatEpochMsToShanghaiLocal(String(baseTime + 24 * 60 * 60 * 1_000));
+  const laterRetention = formatEpochMsToShanghaiLocal(String(baseTime + 30 * 24 * 60 * 60 * 1_000));
   const first = await accept(normalizedMessage(`p1-004-privacy-${context}-0`, {
     text: sensitiveText,
     receivedAt: new Date(baseTime).toISOString(),
@@ -617,12 +625,12 @@ integrationTest('aggregate privacy is strongest, retention is earliest, and Inbo
   );
   assert.equal(persisted.rows[0].summary, sensitiveText);
   assert.equal(persisted.rows[0].privacy_class, 'PATIENT_SENSITIVE');
-  assert.equal(persisted.rows[0].retention_until.toISOString(), firstRetention);
+  assert.equal(persisted.rows[0].retention_until, firstRetention);
   assert.deepEqual(persisted.rows[0].message_privacy, ['PATIENT_SENSITIVE', 'PUBLIC']);
 });
 
 integrationTest('includes exactly 90 seconds and starts a new Intake after the window', async () => {
-  const baseTime = Date.parse('2026-08-28T07:00:00.000Z');
+  const baseTime = Date.parse('2026-08-28 15:00:00');
   const inclusiveContext = randomUUID();
   const inclusiveFirst = await accept(normalizedMessage(`p1-004-window-${inclusiveContext}-0`, {
     text: 'HIS 打不开',
@@ -646,7 +654,7 @@ integrationTest('includes exactly 90 seconds and starts a new Intake after the w
   }));
   const expiredSecond = await accept(normalizedMessage(`p1-004-window-${expiredContext}-1`, {
     text: '补充:错误是 403',
-    receivedAt: new Date(baseTime + 90_001).toISOString(),
+    receivedAt: new Date(baseTime + 91_000).toISOString(),
     chatId: `group-${expiredContext}`,
     senderUserId: `user-${expiredContext}`,
   }));
@@ -659,7 +667,7 @@ integrationTest('includes exactly 90 seconds and starts a new Intake after the w
 
 integrationTest('different senders and conversations stay separate while direct chat maps to WECOM_DIRECT', async () => {
   const context = randomUUID();
-  const receivedAt = '2026-08-28T07:30:00.000Z';
+  const receivedAt = '2026-08-28 15:30:00';
   const first = await accept(normalizedMessage(`p1-004-context-${context}-0`, {
     receivedAt,
     chatId: `group-${context}`,
@@ -774,9 +782,9 @@ integrationTest('migration fails closed on legacy Inbox summaries and upgrades p
     .replace(/(?<![A-Za-z0-9_])intake\./gu, `"${intakeSchema}".`);
   const isolatedChannelMigration = isolatedMigration(channelMigration);
   const isolatedIntakeMigration = isolatedMigration(intakeMigration);
-  const baseTime = Date.parse('2026-08-28T09:00:00.000Z');
-  const publicRetention = new Date(baseTime + 30 * 24 * 60 * 60 * 1_000).toISOString();
-  const sensitiveRetention = new Date(baseTime + 24 * 60 * 60 * 1_000).toISOString();
+  const baseTime = Date.parse('2026-08-28 17:00:00');
+  const publicRetention = formatEpochMsToShanghaiLocal(String(baseTime + 30 * 24 * 60 * 60 * 1_000));
+  const sensitiveRetention = formatEpochMsToShanghaiLocal(String(baseTime + 24 * 60 * 60 * 1_000));
   const legacySummary = `legacy-patient-summary-${suffix}`;
 
   try {
@@ -940,7 +948,7 @@ integrationTest('migration fails closed on legacy Inbox summaries and upgrades p
     );
     assert.equal(upgraded.rows[0].explicit_aggregation_boundary, true);
     assert.equal(upgraded.rows[0].privacy_class, 'PATIENT_SENSITIVE');
-    assert.equal(upgraded.rows[0].retention_until.toISOString(), sensitiveRetention);
+    assert.equal(postgresTimestampToLocalDateTime(upgraded.rows[0].retention_until), sensitiveRetention);
 
     const upgradedBoundaries = await pool.query(
       `SELECT intake_no, explicit_aggregation_boundary

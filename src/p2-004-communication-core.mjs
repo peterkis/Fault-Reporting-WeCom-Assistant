@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 
 import { createNotificationDeliveryWorker } from './p1-007-notification-outbox.mjs';
 import {
@@ -574,6 +575,7 @@ export function createP1NotificationCompatibilityAdapter({ pool, legacyWorker, s
 
 export async function applyCommunicationMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') throw new TypeError('A PostgreSQL pool is required.');
+  if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   try { await pool.query(sql); } catch (error) {
     if (error?.message === COMMUNICATION_ERROR_CODES.schemaDrift) throw error;

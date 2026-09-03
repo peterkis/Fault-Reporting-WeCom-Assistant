@@ -107,7 +107,7 @@ export function createCommunicationDeliveryWorker({
         await transaction.query(
           `UPDATE communication.delivery
               SET status = 'RECONCILIATION_REQUIRED', side_effect_state = 'UNKNOWN',
-                  lease_token = NULL, lease_expires_epoch_ms = NULL,
+                  lease_token = NULL, lease_expires_at = NULL, lease_expires_epoch_ms = NULL,
                   last_error_code = $2, updated_at = $3::timestamp without time zone
             WHERE id = $1::uuid`,
           [delivery.id, COMMUNICATION_ERROR_CODES.reconciliationRequired, recoveredAt.local_datetime],
@@ -244,7 +244,8 @@ export function createCommunicationDeliveryWorker({
       const updated = await transaction.query(
           `UPDATE communication.delivery
             SET status = $3, side_effect_state = $4, next_attempt_epoch_ms = $5::bigint,
-                lease_token = NULL, lease_expires_epoch_ms = NULL,
+                lease_token = NULL, lease_expires_at = NULL, lease_expires_epoch_ms = NULL,
+                send_started_at = CASE WHEN $3 = 'PENDING' THEN NULL ELSE send_started_at END,
                 send_started_epoch_ms = CASE WHEN $3 = 'PENDING' THEN NULL ELSE send_started_epoch_ms END,
                 last_error_code = $6, provider_message_id = $7,
                 sent_epoch_ms = $8::bigint, updated_at = $9::timestamp without time zone
@@ -375,9 +376,13 @@ export function createCommunicationReconciliationPort({ pool, now = () => new Da
         const updated = await transaction.query(
           `UPDATE communication.delivery
               SET status = $2, side_effect_state = $3, attempt_count = $4,
-                  next_attempt_epoch_ms = $5::bigint, lease_token = NULL, lease_expires_epoch_ms = NULL,
-                  send_started_epoch_ms = CASE WHEN $6::boolean THEN send_started_epoch_ms ELSE NULL END,
-                  last_error_code = $7, sent_epoch_ms = $8::bigint, updated_at = $9::timestamp without time zone
+                   next_attempt_epoch_ms = $5::bigint, lease_token = NULL,
+                   lease_expires_at = NULL, lease_expires_epoch_ms = NULL,
+                   send_started_at = CASE WHEN $6::boolean THEN send_started_at ELSE NULL END,
+                   send_started_epoch_ms = CASE WHEN $6::boolean THEN send_started_epoch_ms ELSE NULL END,
+                   last_error_code = $7,
+                   sent_at = CASE WHEN $8::bigint IS NULL THEN NULL ELSE sent_at END,
+                   sent_epoch_ms = $8::bigint, updated_at = $9::timestamp without time zone
             WHERE id = $1::uuid
             RETURNING id::text, outbox_id::text, status, provider, attempt_count,
                       last_error_code, side_effect_state, sent_at, sent_epoch_ms::text`,

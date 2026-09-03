@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
@@ -41,7 +42,7 @@ const intakeIds = new Set();
 const ticketIds = new Set();
 const principalIds = new Set();
 const pool = databaseUrl
-  ? new Pool({ connectionString: databaseUrl, max: 10, connectionTimeoutMillis: 2_000 })
+  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
   : null;
 
 function normalizedMessage(msgId, {
@@ -68,11 +69,13 @@ function normalizedMessage(msgId, {
 }
 
 function request(message) {
+  const retentionUntilEpochMs = String(BigInt(message.received_epoch_ms) + 86_400_000n);
   return {
     message,
     traceId: `trace-${message.msg_id}`,
     privacyClass: 'INTERNAL',
-    retentionUntil: new Date(Date.parse(message.received_at) + 86_400_000).toISOString(),
+    retentionUntil: formatEpochMsToShanghaiLocal(retentionUntilEpochMs),
+    retentionUntilEpochMs,
   };
 }
 
@@ -333,9 +336,9 @@ integrationTest('expired cards do not mutate Tickets and resolved Tickets close 
     outbox: createNotificationOutbox(),
     resolveReporterActor: access.resolveReporterActor,
     now: () => new Date(clock),
-    cardTtlMs: 10,
-    autoCloseAfterMs: 20,
-    autoCloseReminderLeadMs: 10,
+    cardTtlMs: 10_000,
+    autoCloseAfterMs: 20_000,
+    autoCloseReminderLeadMs: 10_000,
   });
   const actions = createTicketActionService({
     pool,
@@ -373,7 +376,7 @@ integrationTest('expired cards do not mutate Tickets and resolved Tickets close 
   );
   const beforeReminder = await closure.runAutoClose({ actionService: actions, limit: 5 });
   assert.deepEqual(beforeReminder.closed_ticket_ids, []);
-  clock += 15;
+  clock += 15_000;
   const reminder = await closure.runAutoCloseReminders({ limit: 5 });
   assert.deepEqual(reminder.reminded_ticket_ids, [ticket.id]);
   const repeatedReminder = await closure.runAutoCloseReminders({ limit: 5 });
@@ -401,7 +404,7 @@ integrationTest('expired cards do not mutate Tickets and resolved Tickets close 
     error: { code: 'CARD_ACTION_EXPIRED', retryable: false },
   });
 
-  clock += 10;
+  clock += 10_000;
   const automatic = await closure.runAutoClose({ actionService: actions, limit: 5 });
   assert.deepEqual(automatic.closed_ticket_ids, [ticket.id]);
   const persisted = await pool.query(

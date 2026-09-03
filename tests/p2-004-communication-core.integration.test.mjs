@@ -10,6 +10,10 @@ import { applyServiceIntakeMigration, createServiceIntakeProcessor } from '../sr
 import { applyPilotTicketCoreMigration, createPilotTicketCore, createPilotTicketProcessor } from '../src/p1-005-pilot-ticket-core.mjs';
 import { applyTicketStateActionMigration, createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
 import { applyNotificationOutboxMigration, createNotificationDeliveryWorker, createNotificationOutbox } from '../src/p1-007-notification-outbox.mjs';
+import { applyPilotAccessMigration } from '../src/p1-009-pilot-access-workbench.mjs';
+import { applyTicketClosureMigration } from '../src/p1-010-ticket-closure.mjs';
+import { applyPilotOperationsMigration } from '../src/p1-011-pilot-operations-baseline.mjs';
+import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
 import { applyConversationContractsMigration, buildConversationSessionScope, buildConversationThreadIdentity } from '../src/p2-001-conversation-contracts.mjs';
 import { applyTimelineProjectionMigration } from '../src/p2-002-timeline-projector.mjs';
 import { applyRealtimeEventLogMigration } from '../src/p2-003-realtime-event-log.mjs';
@@ -37,6 +41,9 @@ async function applyBaseMigrations(pool) {
   await applyPilotTicketCoreMigration({ pool });
   await applyTicketStateActionMigration({ pool });
   await applyNotificationOutboxMigration({ pool });
+  await applyPilotAccessMigration({ pool });
+  await applyTicketClosureMigration({ pool });
+  await applyPilotOperationsMigration({ pool });
   await applyConversationContractsMigration({ pool });
   await applyTimelineProjectionMigration({ pool });
   await applyRealtimeEventLogMigration({ pool });
@@ -98,8 +105,8 @@ async function createSession(pool, label, { status = 'OPEN', rowVersion = 3, cha
     `INSERT INTO conversation.session (
        thread_id, participant_key, session_scope_key, creation_idempotency_key,
        status, row_version, last_activity_at, ended_at, close_reason
-     ) VALUES ($1::uuid,$2,$3,$4,$5,$6,'2026-08-31T00:00:00Z',
-       CASE WHEN $5='ENDED' THEN '2026-08-31T00:01:00Z'::timestamptz ELSE NULL END,
+     ) VALUES ($1::uuid,$2,$3,$4,$5,$6,'2026-08-31 08:00:00',
+       CASE WHEN $5='ENDED' THEN '2026-08-31 08:01:00'::timestamptz ELSE NULL END,
        CASE WHEN $5='ENDED' THEN 'SYNTHETIC_END' ELSE NULL END)
      RETURNING id::text`,
     [thread.rows[0].id, scope.participant_key, scope.session_scope_key, scope.creation_idempotency_key, status, rowVersion],
@@ -112,7 +119,7 @@ function externalCommand(session, overrides = {}) {
     session_id: session.sessionId, expected_row_version: session.rowVersion,
     client_command_id: randomUUID(), sender_kind: 'AGENT', message_type: 'text',
     visibility: 'EXTERNAL', text: 'synthetic reply', privacy_class: 'INTERNAL',
-    retention_until: '2027-08-31T00:00:00.000Z', ...overrides,
+    retention_until: '2027-08-31 08:00:00', ...overrides,
   };
 }
 
@@ -120,7 +127,7 @@ function systemCommand(overrides = {}) {
   return {
     client_command_id: randomUUID(), sender_system_code: 'SYNTHETIC_SYSTEM',
     message_type: 'text', content: { text: 'synthetic system notification' },
-    privacy_class: 'INTERNAL', retention_until: '2027-08-31T00:00:00.000Z', ...overrides,
+    privacy_class: 'INTERNAL', retention_until: '2027-08-31 08:00:00', ...overrides,
   };
 }
 
@@ -194,8 +201,9 @@ test('migration 020 fails closed for missing columns, weakened checks, wrong uni
 });
 
 test('Communication service commits atomically, isolates idempotency scopes, and never mutates Session', { timeout: TEST_TIMEOUT }, async (t) => {
-  await withP2004IsolatedDatabase({ databaseUrl, purpose: 'service', run: async ({ pool }) => {
+  await withP2004IsolatedDatabase({ databaseUrl, purpose: 'service', run: async ({ pool, databaseUrl: isolated }) => {
     await applyBaseMigrations(pool); await applyCommunicationMigration({ pool });
+    await migrateCurrentBaseline({ databaseUrl: isolated });
     const session = await createSession(pool, 'service');
     const service = createCommunicationService({ pool, enabled: true, authorizeCommand: async () => true });
     const command = externalCommand(session);
@@ -207,7 +215,7 @@ test('Communication service commits atomically, isolates idempotency scopes, and
     assert.deepEqual(Object.keys(doubleClicks[0]), ['message_id', 'outbox_id', 'delivery_ids', 'command_status', 'replayed', 'created_at']);
     assert.equal(JSON.stringify(doubleClicks).includes(session.identity.external_thread_key), false);
     const delayedReplay = await service.commitExternalMessage({
-      command: { ...command, retention_until: '2027-09-01T00:00:00.000Z' },
+      command: { ...command, retention_until: '2027-09-01 08:00:00' },
       actor: { principal_id: ACTOR_ID },
     });
     assert.equal(delayedReplay.replayed, true);
@@ -231,7 +239,7 @@ test('Communication service commits atomically, isolates idempotency scopes, and
     assert.deepEqual(resolvedTargets.rows, [{ target_type: 'PERSON' }]);
     const note = await service.commitInternalNote({ command: {
       session_id: session.sessionId, expected_row_version: session.rowVersion, client_command_id: randomUUID(),
-      text: 'synthetic internal note', privacy_class: 'SENSITIVE_INTERNAL', retention_until: '2027-08-31T00:00:00Z',
+      text: 'synthetic internal note', privacy_class: 'SENSITIVE_INTERNAL', retention_until: '2027-08-31 08:00:00',
     }, actor: { principal_id: ACTOR_ID } });
     assert.equal(note.outbox_id, null); assert.deepEqual(note.delivery_ids, []);
     assert.deepEqual(await factCounts(pool), { messages: 5, outboxes: 4, deliveries: 4, attempts: 0 });
@@ -259,8 +267,9 @@ test('Communication service commits atomically, isolates idempotency scopes, and
 });
 
 test('Delivery Worker enforces claim CAS, ACK, retry, dead letter, timeout unknown and lease recovery', { timeout: TEST_TIMEOUT }, async (t) => {
-  await withP2004IsolatedDatabase({ databaseUrl, purpose: 'worker', run: async ({ pool }) => {
+  await withP2004IsolatedDatabase({ databaseUrl, purpose: 'worker', run: async ({ pool, databaseUrl: isolated }) => {
     await applyBaseMigrations(pool); await applyCommunicationMigration({ pool });
+    await migrateCurrentBaseline({ databaseUrl: isolated });
     const service = createCommunicationService({ pool, enabled: true });
     let clock = WORKER_TEST_CLOCK_MS;
     const createDelivery = async (label, targets = [destination(label)]) => service.commitSystemNotification({ command: systemCommand({ content: { text: `synthetic-${label}` } }), trustedDestinations: targets });
@@ -295,20 +304,20 @@ test('Delivery Worker enforces claim CAS, ACK, retry, dead letter, timeout unkno
     assert.equal((await timeoutWorker.deliver({ deliveryId: timeoutFact.delivery_ids[0] })).status, 'RECONCILIATION_REQUIRED');
 
     const leasedFact = await createDelivery('leased');
-    await pool.query("UPDATE communication.delivery SET status='LEASED', lease_token=$2::uuid, lease_expires_at=$3::timestamptz WHERE id=$1::uuid", [leasedFact.delivery_ids[0], randomUUID(), new Date(clock - 1)]);
+    await pool.query("UPDATE communication.delivery SET status='LEASED', lease_token=$2::uuid, lease_expires_epoch_ms=$3::bigint WHERE id=$1::uuid", [leasedFact.delivery_ids[0], randomUUID(), String(clock - 1)]);
     assert.equal((await ackWorker.deliver({ deliveryId: leasedFact.delivery_ids[0] })).status, 'SENT');
 
     const sendingFact = await createDelivery('sending');
     const staleToken = randomUUID();
     await pool.query(
       `UPDATE communication.delivery SET status='SENDING', attempt_count=1, lease_token=$2::uuid,
-       lease_expires_at=$3::timestamptz, send_started_at=$4::timestamptz WHERE id=$1::uuid`,
-      [sendingFact.delivery_ids[0], staleToken, new Date(clock - 1), new Date(clock - 100)],
+       lease_expires_epoch_ms=$3::bigint, send_started_epoch_ms=$4::bigint WHERE id=$1::uuid`,
+      [sendingFact.delivery_ids[0], staleToken, String(clock - 1), String(clock - 100)],
     );
     await pool.query(
-      `INSERT INTO communication.delivery_attempt (delivery_id,attempt_no,outcome,side_effect_state,lease_token,request_id,started_at)
-       VALUES ($1::uuid,1,'STARTED','NOT_ATTEMPTED',$2::uuid,'synthetic-stale',$3::timestamptz)`,
-      [sendingFact.delivery_ids[0], staleToken, new Date(clock - 100)],
+      `INSERT INTO communication.delivery_attempt (delivery_id,attempt_no,outcome,side_effect_state,lease_token,request_id,started_epoch_ms)
+       VALUES ($1::uuid,1,'STARTED','NOT_ATTEMPTED',$2::uuid,'synthetic-stale',$3::bigint)`,
+      [sendingFact.delivery_ids[0], staleToken, String(clock - 100)],
     );
     const recovered = await ackWorker.recoverExpiredSending();
     assert.equal(recovered.delivery_ids.includes(sendingFact.delivery_ids[0]), true);
@@ -320,8 +329,9 @@ test('Delivery Worker enforces claim CAS, ACK, retry, dead letter, timeout unkno
 });
 
 test('multi-target delivery is isolated, target rate limit is durable, and reconciliation is explicit', { timeout: TEST_TIMEOUT }, async (t) => {
-  await withP2004IsolatedDatabase({ databaseUrl, purpose: 'targets', run: async ({ pool }) => {
+  await withP2004IsolatedDatabase({ databaseUrl, purpose: 'targets', run: async ({ pool, databaseUrl: isolated }) => {
     await applyBaseMigrations(pool); await applyCommunicationMigration({ pool });
+    await migrateCurrentBaseline({ databaseUrl: isolated });
     const service = createCommunicationService({ pool, enabled: true });
     let clock = WORKER_TEST_CLOCK_MS;
     const multi = await service.commitSystemNotification({ command: systemCommand(), trustedDestinations: [destination('good'), destination('bad')] });
@@ -366,6 +376,7 @@ test('multi-target delivery is isolated, target rate limit is durable, and recon
 test('real Worker kill/restart reclaims LEASED but never blindly resends SENDING', { timeout: TEST_TIMEOUT }, async (t) => {
   await withP2004IsolatedDatabase({ databaseUrl, purpose: 'killworker', run: async ({ pool, databaseUrl: isolated }) => {
     await applyBaseMigrations(pool); await applyCommunicationMigration({ pool });
+    await migrateCurrentBaseline({ databaseUrl: isolated });
     const service = createCommunicationService({ pool, enabled: true });
     const leasedFact = await service.commitSystemNotification({ command: systemCommand(), trustedDestinations: [destination('kill-leased')] });
     const leasedChild = await spawnP2004WorkerStage({ databaseUrl: isolated, deliveryId: leasedFact.delivery_ids[0], mode: 'LEASED', nowMs: WORKER_TEST_CLOCK_MS });
@@ -390,18 +401,19 @@ test('real Worker kill/restart reclaims LEASED but never blindly resends SENDING
 });
 
 test('P1 compatibility is read-only until it delegates to the existing P1 worker', { timeout: TEST_TIMEOUT }, async (t) => {
-  await withP2004IsolatedDatabase({ databaseUrl, purpose: 'legacy', run: async ({ pool }) => {
+  await withP2004IsolatedDatabase({ databaseUrl, purpose: 'legacy', run: async ({ pool, databaseUrl: isolated }) => {
     await applyBaseMigrations(pool); await applyCommunicationMigration({ pool });
+    await migrateCurrentBaseline({ databaseUrl: isolated });
     const msgId = `p2-004-p1-${randomUUID()}`;
     const adapted = adaptWeComSdkFrame({
       cmd: 'aibot_msg_callback', headers: { req_id: `req-${msgId}` }, body: {
         msgid: msgId, aibotid: 'synthetic-bot', chattype: 'group', chatid: `synthetic-group-${msgId}`,
         from: { userid: `synthetic-reporter-${msgId}` }, msgtype: 'text', text: { content: 'HIS 登录失败，提示权限错误' },
       },
-    }, { receivedAt: '2026-08-31T00:00:00.000Z' });
+    }, { receivedAt: '2026-08-31 08:00:00' });
     const processor = createPilotTicketProcessor({ serviceIntakeProcessor: createServiceIntakeProcessor(), ticketCore: createPilotTicketCore({ pool }) });
     const accepted = await createChannelMessageInbox({ pool }).accept({
-      message: adapted.message, traceId: `trace-${msgId}`, privacyClass: 'INTERNAL', retentionUntil: '2027-08-31T00:00:00Z',
+      message: adapted.message, traceId: `trace-${msgId}`, privacyClass: 'INTERNAL', retentionUntil: '2027-08-31 08:00:00',
     }, processor);
     const outbox = createNotificationOutbox({ targetsForEvent: () => [{ channel: 'PILOT_TEAM', targetKey: 'synthetic-team-target' }] });
     const actions = createTicketActionService({ pool, afterAction: (context) => outbox.enqueueTicketEvent(context) });
@@ -427,8 +439,9 @@ test('P1 compatibility is read-only until it delegates to the existing P1 worker
 });
 
 test('500 deliveries remain bounded at batch 20 and interruption resumes without resource growth', { timeout: TEST_TIMEOUT }, async (t) => {
-  await withP2004IsolatedDatabase({ databaseUrl, purpose: 'capacity', run: async ({ pool }) => {
+  await withP2004IsolatedDatabase({ databaseUrl, purpose: 'capacity', run: async ({ pool, databaseUrl: isolated }) => {
     await applyBaseMigrations(pool); await applyCommunicationMigration({ pool });
+    await migrateCurrentBaseline({ databaseUrl: isolated });
     const service = createCommunicationService({ pool, enabled: true });
     for (let message = 0; message < 25; message += 1) {
       const targets = Array.from({ length: 20 }, (_, index) => destination(`capacity-${message}-${index}`));

@@ -17,7 +17,13 @@ LocalDateTime rejects `T`, `Z`, UTC/offset suffixes, fractional seconds, timezon
 
 ## Ordering
 
-LocalDateTime has only second precision. Deterministic order within the same second is carried by `sequence_no`, `event_id`, `event_ordinal`, `aggregate_version`, or a stable UUID/hash tie-break. Database insertion order and fractional time are never implicit tie-breakers.
+Business time records when a business fact occurred; it never provides unique ordering. Every event stream therefore carries an explicit `sequence_no`, `ordinal`, `revision`, or `event_id`. Canonical ascending reads order by business time first and the stream's explicit sequence second:
+
+```sql
+ORDER BY business_time ASC, sequence_no ASC
+```
+
+Concrete mappings are: Conversation Timeline `occurred_at, sequence_no`; Realtime `occurred_at, event_id`; Ticket and Control Events `occurred_at/created_at, event_ordinal`; Delivery Attempts `started_at, attempt_no`. Descending UI views reverse both fields. Fractional timestamps, insertion order, and database physical order are forbidden tie-breakers. A Timeline sequence is allocated explicitly under the per-Session advisory lock; facts that arrive in the same business second append with that persisted sequence, while a fact whose business second is older than the persisted tail requires the authorized rebuild flow.
 
 ## Database
 

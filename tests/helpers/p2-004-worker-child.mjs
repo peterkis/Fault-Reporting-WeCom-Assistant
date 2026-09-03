@@ -1,21 +1,21 @@
 import { randomUUID } from 'node:crypto';
 import { setInterval } from 'node:timers';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
 
 import { createCommunicationDeliveryWorker } from '../../src/p2-004-communication-delivery-worker.mjs';
 
 const { P2_004_CHILD_DATABASE_URL: databaseUrl, P2_004_CHILD_DELIVERY_ID: deliveryId, P2_004_CHILD_MODE: mode, P2_004_CHILD_NOW_MS: nowText } = process.env;
 const nowMs = Number(nowText);
 if (!databaseUrl || !deliveryId || !['LEASED', 'SENDING'].includes(mode) || !Number.isSafeInteger(nowMs)) process.exit(2);
-const pool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: `p2_004_child_${mode.toLowerCase()}` });
+const pool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: `p2_004_child_${mode.toLowerCase()}` });
 
 if (mode === 'LEASED') {
   const token = randomUUID();
   await pool.query(
     `UPDATE communication.delivery SET status='LEASED', lease_token=$2::uuid,
-       lease_expires_at=$3::timestamptz, updated_at=$4::timestamptz
+       lease_expires_epoch_ms=$3::bigint, updated_at=platform.local_from_epoch_ms($4::bigint)
      WHERE id=$1::uuid AND status='PENDING'`,
-    [deliveryId, token, new Date(nowMs + 1000), new Date(nowMs)],
+    [deliveryId, token, String(nowMs + 1000), String(nowMs)],
   );
   process.send?.({ stage: 'LEASED' });
 } else {

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
 import {
   applyChannelMessageInboxMigration,
@@ -35,7 +36,7 @@ const intakeIds = new Set();
 const ticketIds = new Set();
 const principalIds = new Set();
 const pool = databaseUrl
-  ? new Pool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
+  ? createPostgresPool({ connectionString: databaseUrl, max: 8, connectionTimeoutMillis: 2_000 })
   : null;
 
 function createMessage(msgId) {
@@ -60,6 +61,7 @@ function createMessage(msgId) {
 
 async function seedTicket() {
   const source = createMessage(`p1-009-${randomUUID()}`);
+  const retentionUntilEpochMs = String(BigInt(source.message.received_epoch_ms) + 86_400_000n);
   const processor = createPilotTicketProcessor({
     serviceIntakeProcessor: createServiceIntakeProcessor(),
     ticketCore: createPilotTicketCore({ pool }),
@@ -68,7 +70,8 @@ async function seedTicket() {
     message: source.message,
     traceId: `trace-${source.message.msg_id}`,
     privacyClass: 'INTERNAL',
-    retentionUntil: new Date(Date.parse(source.message.received_at) + 86_400_000).toISOString(),
+    retentionUntil: formatEpochMsToShanghaiLocal(retentionUntilEpochMs),
+    retentionUntilEpochMs,
   }, processor);
   assert.equal(result.ok, true);
   intakeIds.add(result.result.intake.id);

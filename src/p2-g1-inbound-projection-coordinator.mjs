@@ -347,7 +347,7 @@ export function createP2G1InboundProjectionCoordinator({
            WHERE b.projector_name=$1 AND b.source_stream=$2 AND b.source_type='TICKET_EVENT'
              AND b.source_id=te.event_id::text AND b.projection_variant='STATUS'
              AND b.session_id=s.id)
-        ORDER BY te.created_at,te.event_id,s.id LIMIT $3::integer`,
+        ORDER BY te.created_at,te.event_ordinal,te.event_id,s.id LIMIT $3::integer`,
       [PROJECTOR_NAME, P2_G1_PROJECTION_STREAMS.ticketEvent, size],
     );
     const groups = rows.rows.map((row) => ({
@@ -426,7 +426,7 @@ export function createP2G1InboundProjectionCoordinator({
              WHERE b.projector_name=$1 AND b.source_stream=$2 AND b.source_type='HANDOFF_EVENT'
                AND b.source_id=ce.id::text AND b.projection_variant=ce.event_type
                AND b.session_id=ce.session_id)
-        ORDER BY ce.occurred_at,ce.id LIMIT $3::integer`,
+        ORDER BY ce.occurred_at,ce.event_ordinal,ce.id LIMIT $3::integer`,
       [PROJECTOR_NAME, P2_G1_PROJECTION_STREAMS.controlEvent, size],
     );
     const groups = rows.rows.map((row) => {

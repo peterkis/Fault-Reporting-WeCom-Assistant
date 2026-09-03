@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "architecture_task": "ARCH-005",
+  "run_id": "1788411391749-d60cfc29-a20c-4f27-a89e-c2320b920ee9",
+  "event_time": "2026-09-03 12:56:31",
+  "event_epoch_ms": "1788411391749",
+  "scope": "P2_002_AND_P2_003_REBUILDABLE_PROJECTION_HASH_METADATA",
+  "authoritative_fact_deletes": 0,
+  "projection_row_deletes": 0,
+  "outcome": "PASS",
+  "migration_checksum_sha256": "dd31f84d9afdea32cf298680e57baeb6834a6930727daa9eb1f2df9331e16cba",
+  "timeline_projection_rows": 647,
+  "timeline_projection_rows_rehashed": 0,
+  "timeline_hash_digest_before": "639c2dd660afa28dcf9b56652e15e845ed136ec2ecbe75ec5b1caa9d4c4ba6cb",
+  "timeline_hash_digest_after": "639c2dd660afa28dcf9b56652e15e845ed136ec2ecbe75ec5b1caa9d4c4ba6cb",
+  "realtime_projection_rows": 649,
+  "realtime_projection_rows_rehashed": 0,
+  "realtime_hash_digest_before": "2c9f8b80649929951e025d002b5aab740302182aa8e85dae33e28629a4cf0b07",
+  "realtime_hash_digest_after": "2c9f8b80649929951e025d002b5aab740302182aa8e85dae33e28629a4cf0b07",
+  "forbidden_owned_schema_type_count": 0,
+  "fake_source_conflict_count": 0
+}

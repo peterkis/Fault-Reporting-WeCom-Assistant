@@ -9,7 +9,7 @@
 - 最后完成任务：P2-006（2026-09-01）
 - 最后完成 Gate：P2-G1（2026-09-02）
 - 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001 至 P2-006；P2-G1
-- 当前活动任务与 Lane：ARCH-005 / ARCHITECTURE
+- 当前活动任务与 Lane：ARCH-005 / ARCHITECTURE（`READY_FOR_TARGETED_LIVE_REVALIDATION`）
 - 当前 Gate：P2-G1 / PASSED
 - 下一任务候选：P2-007（`TODO / BLOCKED_BY_ARCH_005`，未授权）
 - P2-G1：PASSED（不是 Phase 2 GO、生产或临床批准）
@@ -18,7 +18,7 @@
 - 上一基线：V1.3
 - 关键决策：ADR-0010、ADR-0011、ADR-0012
 
-ARCH-005 于 2026-09-03 独立授权，仅校正 Asia/Shanghai Local Business Time Contract。自动化完成后最多进入 `READY_FOR_TARGETED_LIVE_REVALIDATION`；现场重验和负责人关闭批准完成前不计入已完成架构任务。P2-007、DeepSeek、OCR、Incident、P2-G2/P3 与生产/临床启用均未授权。
+ARCH-005 于 2026-09-03 独立授权，仅校正 Asia/Shanghai Local Business Time Contract；自动化、Pilot migration 022、正式投影重算和全量回归已完成，当前为 `READY_FOR_TARGETED_LIVE_REVALIDATION`。现场重验和负责人关闭批准完成前不计入已完成架构任务。P2-007、DeepSeek、OCR、Incident、P2-G2/P3 与生产/临床启用均未授权。
 
 ## 1. V1.4 变化
 

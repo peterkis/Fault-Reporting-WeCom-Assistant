@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { Pool } from 'pg';
+import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
 
 const RUN_TOKEN = randomUUID().replaceAll('-', '_').slice(0, 12);
 const createdDatabases = new Set();
@@ -21,7 +21,7 @@ export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4,
   assert.ok(databaseName.length <= 63);
   createdDatabases.add(databaseName);
   const quotedName = `"${databaseName}"`;
-  const adminPool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: applicationName('admin') });
+  const adminPool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: applicationName('admin') });
   let pool;
   let result;
   let runError;
@@ -31,7 +31,7 @@ export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4,
     activeDatabases.add(databaseName);
     const isolated = new URL(databaseUrl);
     isolated.pathname = `/${databaseName}`;
-    pool = new Pool({ connectionString: isolated.toString(), max, connectionTimeoutMillis: 2_000, application_name: applicationName(purpose) });
+    pool = createPostgresPool({ connectionString: isolated.toString(), max, connectionTimeoutMillis: 2_000, application_name: applicationName(purpose) });
     result = await run({ pool, databaseName, databaseUrl: isolated.toString() });
   } catch (error) {
     runError = error;
@@ -56,7 +56,7 @@ export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4,
 }
 
 export async function assertNoP2004Residual({ databaseUrl }) {
-  const pool = new Pool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: applicationName('residual') });
+  const pool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: applicationName('residual') });
   try {
     const result = await pool.query(
       `SELECT

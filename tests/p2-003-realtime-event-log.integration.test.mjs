@@ -8,6 +8,10 @@ import { applyServiceIntakeMigration } from '../src/p1-004-service-intake.mjs';
 import { applyPilotTicketCoreMigration } from '../src/p1-005-pilot-ticket-core.mjs';
 import { applyTicketStateActionMigration } from '../src/p1-006-ticket-state-actions.mjs';
 import { applyNotificationOutboxMigration } from '../src/p1-007-notification-outbox.mjs';
+import { applyPilotAccessMigration } from '../src/p1-009-pilot-access-workbench.mjs';
+import { applyTicketClosureMigration } from '../src/p1-010-ticket-closure.mjs';
+import { applyPilotOperationsMigration } from '../src/p1-011-pilot-operations-baseline.mjs';
+import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
 import {
   applyConversationContractsMigration,
   buildConversationSessionScope,
@@ -66,6 +70,9 @@ async function applyBaseMigrations(pool) {
   await applyPilotTicketCoreMigration({ pool });
   await applyTicketStateActionMigration({ pool });
   await applyNotificationOutboxMigration({ pool });
+  await applyPilotAccessMigration({ pool });
+  await applyTicketClosureMigration({ pool });
+  await applyPilotOperationsMigration({ pool });
   await applyConversationContractsMigration({ pool });
   await applyTimelineProjectionMigration({ pool });
 }
@@ -90,7 +97,7 @@ async function createSyntheticConversationSession(pool, label) {
       identity.chat_type,
       identity.external_thread_key,
       identity.thread_key,
-      '2026-08-31T00:00:00.000Z',
+      '2026-08-31 08:00:00',
     ],
   );
   const creationIdempotencyKey = `P2-003-INTEGRATION:${label}`;
@@ -111,7 +118,7 @@ async function createSyntheticConversationSession(pool, label) {
       scope.participant_key,
       scope.session_scope_key,
       scope.creation_idempotency_key,
-      '2026-08-31T00:00:00.000Z',
+      '2026-08-31 08:00:00',
     ],
   );
   return Object.freeze({
@@ -466,9 +473,10 @@ test('P2-003 append, concurrency, caller transaction, durable replay and authori
     databaseUrl,
     purpose: 'eventcore',
     max: 4,
-    run: async ({ pool }) => {
+    run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
       await applyBaseMigrations(pool);
       await applyRealtimeEventLogMigration({ pool });
+      await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
       const sessionId = randomUUID();
       const otherSessionId = randomUUID();
       const threadId = randomUUID();
@@ -790,7 +798,7 @@ test('P2-003 append, concurrency, caller transaction, durable replay and authori
           `UPDATE conversation.realtime_stream_state
               SET retention_floor_event_id = $2::bigint,
                   row_version = row_version + 1,
-                  updated_at = CURRENT_TIMESTAMP
+                  updated_at = platform.local_now()
             WHERE stream_name = $1`,
           [STREAM_NAME, floor],
         );
@@ -869,6 +877,7 @@ test('P2-003 retention check/apply preserves prefix and floor semantics with CLI
     run: async ({ pool, databaseName, databaseUrl: isolatedDatabaseUrl }) => {
       await applyBaseMigrations(pool);
       await applyRealtimeEventLogMigration({ pool });
+      await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
       await ensureP2003StreamState(pool);
       const sessionId = randomUUID();
       const expiredPrefix = await insertP2003MinimalEvents({
@@ -912,7 +921,7 @@ test('P2-003 retention check/apply preserves prefix and floor semantics with CLI
         pool,
         streamName: STREAM_NAME,
         limit: 200,
-        now: '2030-01-01T00:00:00.000Z',
+        now: '2030-01-01 08:00:00',
       });
       assert.equal(check.mode, 'CHECK');
       assert.equal(check.checked_count, 4);
@@ -957,7 +966,7 @@ test('P2-003 retention check/apply preserves prefix and floor semantics with CLI
         streamName: STREAM_NAME,
         limit: 200,
         authorized: true,
-        now: '2030-01-01T00:00:00.000Z',
+        now: '2030-01-01 08:00:00',
       });
       assert.equal(cleanup.mode, 'APPLY');
       assert.equal(cleanup.checked_count, 4);
@@ -974,7 +983,7 @@ test('P2-003 retention check/apply preserves prefix and floor semantics with CLI
         streamName: STREAM_NAME,
         limit: 200,
         authorized: true,
-        now: '2030-01-01T00:00:00.000Z',
+        now: '2030-01-01 08:00:00',
       });
       assert.equal(retry.mode, 'APPLY');
       assert.equal(retry.deleted_count, 0);
@@ -1065,7 +1074,7 @@ test('P2-003 retention check/apply preserves prefix and floor semantics with CLI
       });
       assert.deepEqual(
         fromFloor.events.map((event) => event.event_id),
-        [live.first_event_id, expiredAfterLive.first_event_id],
+        [expiredAfterLive.first_event_id, live.first_event_id],
       );
       evidence = {
         check_zero_write: true,
@@ -1087,6 +1096,7 @@ test('P2-003 retention check/apply preserves prefix and floor semantics with CLI
     run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
       await applyBaseMigrations(pool);
       await applyRealtimeEventLogMigration({ pool });
+      await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
       await ensureP2003StreamState(pool);
       await insertP2003MinimalEvents({
         pool,
@@ -1122,9 +1132,10 @@ test('P2-003 retention delete/floor is atomic and every cleanup batch is at most
     databaseUrl,
     purpose: 'retatomic',
     max: 4,
-    run: async ({ pool }) => {
+    run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
       await applyBaseMigrations(pool);
       await applyRealtimeEventLogMigration({ pool });
+      await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
       await ensureP2003StreamState(pool);
       await insertP2003MinimalEvents({
         pool,
@@ -1141,7 +1152,7 @@ test('P2-003 retention delete/floor is atomic and every cleanup batch is at most
           streamName: STREAM_NAME,
           limit: 200,
           authorized: true,
-          now: '2030-01-01T00:00:00.000Z',
+          now: '2030-01-01 08:00:00',
           faultInjection: {
             afterDeleteBeforeFloor: async () => {
               throw new Error('P2_003_SYNTHETIC_RETENTION_CRASH');
@@ -1158,9 +1169,10 @@ test('P2-003 retention delete/floor is atomic and every cleanup batch is at most
     databaseUrl,
     purpose: 'retbatch',
     max: 4,
-    run: async ({ pool }) => {
+    run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
       await applyBaseMigrations(pool);
       await applyRealtimeEventLogMigration({ pool });
+      await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
       await ensureP2003StreamState(pool);
       const inserted = await insertP2003MinimalEvents({
         pool,
@@ -1175,7 +1187,7 @@ test('P2-003 retention delete/floor is atomic and every cleanup batch is at most
         streamName: STREAM_NAME,
         limit: 200,
         authorized: true,
-        now: '2030-01-01T00:00:00.000Z',
+        now: '2030-01-01 08:00:00',
       });
       assert.equal(first.mode, 'APPLY');
       assert.equal(first.deleted_count, 200);
@@ -1188,7 +1200,7 @@ test('P2-003 retention delete/floor is atomic and every cleanup batch is at most
         streamName: STREAM_NAME,
         limit: 200,
         authorized: true,
-        now: '2030-01-01T00:00:00.000Z',
+        now: '2030-01-01 08:00:00',
       });
       assert.equal(second.mode, 'APPLY');
       assert.equal(second.deleted_count, 1);
@@ -1239,6 +1251,7 @@ test('P2-003 localhost SSE admits 32 clients, rejects 33, heartbeats, delivers a
     run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
       await applyBaseMigrations(pool);
       await applyRealtimeEventLogMigration({ pool });
+      await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
       await ensureP2003StreamState(pool);
       const sessionId = randomUUID();
       const threadId = randomUUID();
@@ -1374,6 +1387,7 @@ test('P2-003 child kill/restart replays Last-Event-ID and missed wakeup recovers
     run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
       await applyBaseMigrations(pool);
       await applyRealtimeEventLogMigration({ pool });
+      await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
       const sessionId = randomUUID();
       const threadId = randomUUID();
       const store = createRealtimeEventStore({ pool, enabled: true });
@@ -1496,6 +1510,7 @@ test('P2-003 real paused slow client is isolated while normal delivery and appen
     run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
       await applyBaseMigrations(pool);
       await applyRealtimeEventLogMigration({ pool });
+      await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
       await ensureP2003StreamState(pool);
       const conversation = await createSyntheticConversationSession(pool, 'slow-client');
       const { sessionId, threadId } = conversation;
@@ -1581,8 +1596,8 @@ test('P2-003 real paused slow client is isolated while normal delivery and appen
           String(BigInt(businessBefore.rows[0].row_version) + 1n),
         );
         assert.equal(
-          businessUpdate.rows[0].last_activity_at.toISOString(),
-          '2026-08-31T02:00:00.000Z',
+          businessUpdate.rows[0].last_activity_at,
+          '2026-08-31 10:00:00',
         );
         normalClient = openP2003SseClient({ port: address.port, lastEventId: '0' });
         await normalClient.connected();
@@ -1625,8 +1640,8 @@ test('P2-003 real paused slow client is isolated while normal delivery and appen
         assert.equal(persisted.rows[0].business_event_count, 1);
         assert.equal(persisted.rows[0].session_row_version, businessUpdate.rows[0].row_version);
         assert.equal(
-          persisted.rows[0].session_last_activity_at.toISOString(),
-          '2026-08-31T02:00:00.000Z',
+          persisted.rows[0].session_last_activity_at,
+          '2026-08-31 10:00:00',
         );
         const metrics = await serverProcess.snapshot();
         assert.equal(metrics.slow_client_disconnect_count, 1);
@@ -1670,6 +1685,7 @@ test('P2-003 streams 5,000 events in bounded batches and bounded heap without re
     run: async ({ pool, databaseUrl: isolatedDatabaseUrl }) => {
       await applyBaseMigrations(pool);
       await applyRealtimeEventLogMigration({ pool });
+      await migrateCurrentBaseline({ databaseUrl: isolatedDatabaseUrl });
       await ensureP2003StreamState(pool);
       const sessionId = randomUUID();
       const threadId = randomUUID();

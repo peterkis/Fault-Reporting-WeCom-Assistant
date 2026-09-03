@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
 import {
   TIMELINE_ERROR_CODES,
   TimelineProjectionError,
@@ -72,10 +72,10 @@ function childRecord({ sessionId, sourceStream, sourceId }) {
     visibility: 'EXTERNAL',
     text: 'synthetic child process timeline item',
     safe_content: { fixture_kind: 'P2_002_CHILD_PROCESS' },
-    occurred_at: '2026-08-30T10:00:00.000Z',
+    occurred_at: '2026-08-30 18:00:00',
     source_ordinal: '1',
     privacy_class: 'INTERNAL',
-    retention_until: '2027-08-30T00:00:00.000Z',
+    retention_until: '2027-08-30 08:00:00',
   });
 }
 
@@ -98,7 +98,7 @@ try {
     : mode === 'block-after-commit'
       ? { afterCommit: () => announceAndBlock('AFTER_COMMIT_BEFORE_ACK_BLOCKED') }
       : null;
-  pool = new Pool({
+  pool = createPostgresPool({
     connectionString: isolatedDatabaseUrl(),
     max: 1,
     connectionTimeoutMillis: 2_000,
