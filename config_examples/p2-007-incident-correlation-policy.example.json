@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "CD3H_P2_007_INCIDENT_CORRELATION_POLICY",
+  "policy_version": "0.2.0-draft",
+  "status": "DRAFT_FOR_P2_007_IMPLEMENTATION",
+  "mode": "CANDIDATE_ONLY_HUMAN_CONFIRMATION_REQUIRED",
+  "inputs": [
+    "service_family",
+    "symptom_family",
+    "transaction_stage",
+    "safe_error_fingerprint",
+    "reporter_ref",
+    "reporter_department_ref",
+    "occurrence_location_ref",
+    "asset_ref",
+    "network_segment_ref",
+    "reported_at",
+    "monitoring_corroboration"
+  ],
+  "deduplication": {
+    "same_reporter_across_group_and_direct_counts_once": true,
+    "same_intake_multiple_messages_counts_once": true,
+    "same_ticket_multiple_updates_counts_once": true,
+    "patient_identifier_is_never_a_cluster_key": true,
+    "raw_message_text_is_never_a_cluster_key": true
+  },
+  "compatibility": {
+    "exact_service_and_compatible_symptom": "STRONG",
+    "shared_platform_and_cross_workflow_outage": "STRONG",
+    "same_location_and_common_network_symptom": "STRONG",
+    "generic_system_slow_only": "WEAK_REQUIRES_MORE_EVIDENCE",
+    "unrelated_services_without_common_infrastructure": "INCOMPATIBLE"
+  },
+  "draft_thresholds": {
+    "candidate": {
+      "window_ms": 120000,
+      "minimum_distinct_reporters": 3,
+      "minimum_compatible_evidence": 3
+    },
+    "local_incident_review": {
+      "window_ms": 300000,
+      "minimum_distinct_reporters": 3,
+      "minimum_distinct_endpoints_or_rooms": 2,
+      "same_department_floor_building_or_network_segment": true
+    },
+    "campus_incident_review": {
+      "window_ms": 180000,
+      "minimum_distinct_reporters": 5,
+      "minimum_distinct_departments": 2
+    },
+    "hospital_incident_review": {
+      "window_ms": 180000,
+      "minimum_distinct_reporters": 8,
+      "minimum_distinct_departments": 3,
+      "minimum_distinct_buildings": 2
+    },
+    "monitoring_override": {
+      "authoritative_monitoring_can_trigger_review": true,
+      "still_requires_human_confirmation": true
+    }
+  },
+  "scope_and_severity_are_independent": true,
+  "scope_values": [
+    "ROOM",
+    "DEPARTMENT",
+    "FLOOR",
+    "BUILDING",
+    "CAMPUS",
+    "MULTI_CAMPUS",
+    "HOSPITAL_WIDE",
+    "UNKNOWN"
+  ],
+  "clinical_severity_inputs": [
+    "emergency_or_time_critical_care",
+    "prescription_or_order_blocked",
+    "critical_result_workflow",
+    "patients_waiting",
+    "only_available_endpoint",
+    "workaround_available"
+  ],
+  "active_incident_behavior": {
+    "new_matching_report_recommendation": "LINK_TO_ACTIVE_INCIDENT_AND_SUBSCRIBE_REPORTER",
+    "preserve_individual_intake": true,
+    "do_not_delete_or_silently_close_ticket": true,
+    "actual_relation_owner": "P2_012"
+  },
+  "notification_behavior": {
+    "candidate_only": "INTERNAL_REVIEW_OR_PRIVATE_UNDER_REVIEW_NOTICE",
+    "confirmed_incident": "VERSIONED_UNIFIED_BROADCAST_AND_PRIVATE_SUBSCRIBER_UPDATES",
+    "resolution": "VERSIONED_RESOLUTION_BROADCAST_AND_PRIVATE_SUBSCRIBER_UPDATES",
+    "actual_execution_owner": "P2_004_COMMUNICATION_OUTBOX_DELIVERY"
+  },
+  "governance": {
+    "thresholds_are_draft": true,
+    "calibrate_after_pilot": true,
+    "human_confirmation_required": true,
+    "rules_create_incident": false,
+    "rules_change_ticket_state": false
+  }
+}

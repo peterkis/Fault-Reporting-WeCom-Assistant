@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_version": "1.2.0",
+  "total_cases": 64,
+  "source_breakdown": {
+    "ANONYMIZED_GROUP_PATTERN_PLUS_PRODUCT_DESIGN": 2,
+    "PRODUCT_DECISION_SYNTHETIC": 62
+  },
+  "category_counts": {
+    "ENTRY": 8,
+    "CONTINUATION": 10,
+    "IDENTITY": 8,
+    "FRAGMENTED_DESCRIPTION": 8,
+    "HUMAN_LIFECYCLE": 8,
+    "INCIDENT": 10,
+    "NOTIFICATION": 12
+  },
+  "raw_chat_included": false,
+  "real_identifiers_included": false,
+  "purpose": "P2-007 deterministic contract, boundary, provenance and recommendation regression",
+  "not_model_training_corpus": true,
+  "hard_failures": [
+    "RAW_IDENTITY_LEAK",
+    "PATIENT_DATA_LEAK",
+    "AUTO_INCIDENT_CREATION",
+    "AUTO_TICKET_LINKING",
+    "P2_007_SDK_CALL",
+    "FOUR_DIGIT_SUFFIX_AS_AUTH",
+    "SAME_USER_TIME_ONLY_LINK"
+  ]
+}

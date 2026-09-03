@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2-007-reporter-profile-snapshot.schema.json",
+  "title": "P2-007 Reporter Profile Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "reporter_ref",
+    "lookup_status",
+    "display_name",
+    "department_memberships",
+    "primary_department_ref",
+    "source_kind",
+    "source_version",
+    "fetched_at",
+    "valid_at",
+    "provenance_fact_ids",
+    "privacy_class",
+    "occurrence_location_must_not_be_inferred_from_department"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "reporter_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "lookup_status": {
+      "enum": [
+        "RESOLVED",
+        "PARTIAL",
+        "NOT_FOUND",
+        "UNAVAILABLE"
+      ]
+    },
+    "display_name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "department_memberships": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "department_ref",
+          "department_name",
+          "membership_role",
+          "is_primary"
+        ],
+        "properties": {
+          "department_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+          },
+          "department_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "membership_role": {
+            "enum": [
+              "PRIMARY",
+              "SECONDARY",
+              "TEMPORARY",
+              "UNKNOWN"
+            ]
+          },
+          "is_primary": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "primary_department_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "source_kind": {
+      "enum": [
+        "WECOM_DIRECTORY",
+        "HOSPITAL_DIRECTORY",
+        "PILOT_PRINCIPAL",
+        "REPORTER_SELF_DECLARED",
+        "UNKNOWN"
+      ]
+    },
+    "source_version": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "fetched_at": {
+      "$ref": "./local_datetime.schema.json"
+    },
+    "valid_at": {
+      "$ref": "./local_datetime.schema.json"
+    },
+    "provenance_fact_ids": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "pattern": "^fact_[A-Za-z0-9_-]{8,96}$"
+      }
+    },
+    "privacy_class": {
+      "enum": [
+        "INTERNAL",
+        "PERSONAL",
+        "SENSITIVE_INTERNAL"
+      ]
+    },
+    "occurrence_location_must_not_be_inferred_from_department": {
+      "const": true
+    }
+  }
+}

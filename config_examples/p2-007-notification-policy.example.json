@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0.0",
+  "policy_version": "1.2.0",
+  "group_receipt": {
+    "enabled": true,
+    "preferred_transport": "CALLBACK_REPLY",
+    "asynchronous_fallback_transport": "AIBOT_SEND_MSG_TO_GROUP",
+    "strong_user_mention_capability": "UNVERIFIED",
+    "delivery_semantics": "BEST_EFFORT",
+    "must_not_claim_ticket_before_commit": true,
+    "patient_or_internal_identifiers_forbidden": true
+  },
+  "direct_guidance": {
+    "enabled": true,
+    "transport": "AIBOT_SEND_MSG",
+    "target": "ORIGIN_REPORTER_USERID",
+    "reliable_notification_path": true,
+    "allow_fragmented_user_messages": true
+  },
+  "ticket_card": {
+    "enabled_only_after_ticket_commit": true,
+    "message_type": "template_card",
+    "card_type": "text_notice",
+    "emphasis_field": "TICKET_DISPLAY_SUFFIX",
+    "display_suffix_length": 4,
+    "display_suffix_is_database_key": false,
+    "display_suffix_is_unique_identifier": false,
+    "display_suffix_is_authorization": false,
+    "timeline_link_uses_opaque_public_ref": true,
+    "timeline_link_requires_authentication": true,
+    "reporter_safe_view_required": true,
+    "current_sender_capability": "CONTRACT_RESERVED_IMPLEMENTATION_PENDING",
+    "requires_separate_sender_extension_and_live_test": true
+  },
+  "milestone_cards": [
+    "TICKET_CREATED",
+    "ASSIGNED",
+    "IN_PROGRESS",
+    "WAITING_USER",
+    "INCIDENT_LINKED",
+    "RESOLVED",
+    "REOPENED"
+  ],
+  "incident_candidate": {
+    "external_notification": false,
+    "internal_workbench_alert": true
+  },
+  "confirmed_incident": {
+    "group_public_notice": true,
+    "direct_reporter_subscription_notice": true,
+    "idempotency_by_incident_version": true
+  },
+  "idempotency_templates": {
+    "group_ack": "journey:{journey_id}:group_ack:v1",
+    "direct_guidance": "journey:{journey_id}:direct_guidance:v1",
+    "ticket_created_card": "ticket:{ticket_id}:created:{person_id}:v1",
+    "ticket_status_card": "ticket:{ticket_id}:status:{ticket_version}:{person_id}",
+    "incident_group_notice": "incident:{incident_id}:public:{incident_version}:{group_ref}",
+    "incident_private_notice": "incident:{incident_id}:private:{incident_version}:{person_id}"
+  },
+  "communication_pipeline_required": true,
+  "internal_note_external_delivery_count": 0
+}

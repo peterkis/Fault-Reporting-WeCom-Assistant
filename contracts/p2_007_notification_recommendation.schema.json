@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/p2-007/notification-recommendation.schema.json",
+  "title": "P2-007 Notification Recommendation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "recommendation_id",
+    "purpose",
+    "channel",
+    "audience",
+    "transport",
+    "template_code",
+    "precondition",
+    "idempotency_key",
+    "external_side_effect_performed"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "recommendation_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "purpose": {
+      "enum": [
+        "GROUP_RECEIPT",
+        "DIRECT_GUIDANCE",
+        "TICKET_CREATED_CARD",
+        "TICKET_STATUS_CARD",
+        "INCIDENT_INTERNAL_ALERT",
+        "INCIDENT_GROUP_NOTICE",
+        "INCIDENT_PRIVATE_NOTICE"
+      ]
+    },
+    "channel": {
+      "enum": [
+        "WECOM_GROUP",
+        "WECOM_DIRECT",
+        "WORKBENCH_INTERNAL"
+      ]
+    },
+    "audience": {
+      "enum": [
+        "ORIGIN_GROUP",
+        "ORIGIN_REPORTER",
+        "REPORTER_SUBSCRIBERS",
+        "INTERNAL_OPERATORS"
+      ]
+    },
+    "transport": {
+      "enum": [
+        "CALLBACK_REPLY",
+        "AIBOT_SEND_MSG",
+        "COMMUNICATION_PIPELINE",
+        "INTERNAL_REALTIME_EVENT"
+      ]
+    },
+    "template_code": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_.-]{2,96}$"
+    },
+    "precondition": {
+      "enum": [
+        "ORIGIN_MESSAGE_COMMITTED",
+        "JOURNEY_COMMITTED",
+        "TICKET_COMMITTED",
+        "INCIDENT_CANDIDATE_COMMITTED",
+        "INCIDENT_CONFIRMED",
+        "INCIDENT_VERSION_COMMITTED"
+      ]
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 512
+    },
+    "strong_user_mention_capability": {
+      "enum": [
+        "NOT_APPLICABLE",
+        "UNVERIFIED",
+        "VERIFIED"
+      ]
+    },
+    "contains_patient_or_internal_identifiers": {
+      "const": false
+    },
+    "external_side_effect_performed": {
+      "const": false
+    }
+  }
+}

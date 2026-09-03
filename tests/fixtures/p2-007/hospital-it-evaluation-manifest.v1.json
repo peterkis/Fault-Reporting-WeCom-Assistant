@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "corpus_id": "CD3H_P2_007_HOSPITAL_IT_EVALUATION_CORPUS",
+  "corpus_version": "0.1.0-draft",
+  "status": "SYNTHETIC_ANONYMIZED_SEED",
+  "case_count": 96,
+  "group_counts": {
+    "ALIAS_BASIC": 20,
+    "CLINICAL_RISK": 10,
+    "FRAGMENTED_MULTI_TURN": 16,
+    "NEGATION_CONFLICT": 12,
+    "PRIVACY": 8,
+    "ROUTING": 12,
+    "SCOPE_AND_INCIDENT": 12,
+    "STATUS_AND_RECOVERY": 6
+  },
+  "source_policy": {
+    "raw_chat_copied": false,
+    "real_person_names": false,
+    "real_patient_identifiers": false,
+    "real_phone_numbers": false,
+    "real_internal_ip_addresses": false,
+    "documentation_ip_ranges_used": [
+      "192.0.2.0/24",
+      "198.51.100.0/24",
+      "203.0.113.0/24"
+    ],
+    "media_content_inferred": false
+  },
+  "evaluation_requirements": {
+    "unknown_not_guessed": true,
+    "negation_preserved": true,
+    "reporter_department_separate_from_occurrence_location": true,
+    "recovery_does_not_close_ticket": true,
+    "rules_do_not_send_messages": true,
+    "rules_do_not_call_llm": true,
+    "incident_is_candidate_only": true
+  },
+  "file": "hospital-it-evaluation-corpus.v1.jsonl"
+}

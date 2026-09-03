@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "CD3H_P2_007_MULTICHANNEL_ENTRY_POLICY",
+  "policy_version": "0.2.0-draft",
+  "status": "DRAFT_FOR_P2_007_IMPLEMENTATION",
+  "source_distinction": {
+    "origin_is_immutable": true,
+    "origin_channel_values": [
+      "WECOM_GROUP",
+      "WECOM_DIRECT"
+    ],
+    "entry_modes": [
+      {
+        "code": "GROUP_MENTION_INLINE",
+        "definition_zh": "用户在群内 @Bot 并直接描述故障；分析可在群内继续，但敏感字段应转入单聊。",
+        "origin_channel": "WECOM_GROUP"
+      },
+      {
+        "code": "GROUP_MENTION_TO_DIRECT_GUIDED",
+        "definition_zh": "用户在群内 @Bot 后，由 Bot 通过可靠出站建立或复用单聊，引导补充描述；来源仍保留为群聊。",
+        "origin_channel": "WECOM_GROUP"
+      },
+      {
+        "code": "DIRECT_ORGANIC",
+        "definition_zh": "用户主动进入 Bot 单聊发起新报修，不存在群聊前置来源。",
+        "origin_channel": "WECOM_DIRECT"
+      }
+    ]
+  },
+  "cross_channel_correlation": {
+    "precedence": [
+      "PROVIDER_REPLY_CONTEXT",
+      "SERVER_CONTINUATION_REF",
+      "EXPLICIT_INTAKE_REF",
+      "MANUAL_AGENT_LINK",
+      "NONE"
+    ],
+    "same_user_and_time_only_is_sufficient": false,
+    "multiple_pending_guided_intakes": "ASK_USER_TO_SELECT",
+    "group_and_direct_threads_remain_distinct": true,
+    "service_intake_can_link_multiple_channel_legs": true,
+    "raw_channel_history_must_not_be_merged_destructively": true
+  },
+  "fragmented_description": {
+    "ingest_each_message_immediately": true,
+    "group_existing_p1_aggregation_window_ms": 90000,
+    "direct_guided_session_is_not_limited_to_p1_window": true,
+    "suggested_ui_debounce_ms": {
+      "minimum": 3000,
+      "default": 8000,
+      "maximum": 15000
+    },
+    "explicit_submit_or_confirmation_ends_collection": true,
+    "high_risk_issue_should_not_wait_for_perfect_description": true,
+    "ask_one_question_at_a_time": true,
+    "question_priority": [
+      "service_or_object",
+      "observable_symptom",
+      "occurrence_location_or_asset",
+      "affected_scope",
+      "clinical_impact",
+      "already_attempted_actions"
+    ]
+  },
+  "reporter_identity": {
+    "trusted_user_identity_source": "CHANNEL_PROVIDER_METADATA",
+    "authoritative_profile_sources": [
+      "HOSPITAL_DIRECTORY",
+      "WECOM_DIRECTORY",
+      "PILOT_PRINCIPAL"
+    ],
+    "snapshot_at_first_contact": true,
+    "preserve_multiple_department_memberships": true,
+    "unknown_not_guessed": true,
+    "reporter_department_is_not_occurrence_location": true,
+    "profile_lookup_failure_behavior": "CONTINUE_WITH_UNKNOWN_AND_PROVENANCE"
+  },
+  "time_semantics": {
+    "store_in_utc": true,
+    "display_timezone": "Asia/Shanghai",
+    "reported_at": "EARLIEST_TRUSTED_USER_ORIGIN_MESSAGE_TIME",
+    "required_timestamps": [
+      "provider_sent_at",
+      "gateway_received_at",
+      "inbox_committed_at",
+      "intake_created_at",
+      "ticket_created_at",
+      "first_private_outreach_at",
+      "first_human_takeover_at",
+      "first_human_reply_committed_at",
+      "first_delivery_ack_at"
+    ],
+    "direct_continuation_does_not_rewrite_reported_at": true
+  },
+  "human_handling": {
+    "single_authoritative_owner": true,
+    "multiple_collaborators_allowed": true,
+    "concurrent_takeover_attempts_must_all_be_audited": true,
+    "rejected_takeover_is_auditable": true,
+    "every_reply_requires_actor_ref": true,
+    "every_internal_note_requires_actor_ref": true,
+    "handoff_history_append_only": true,
+    "reuse_existing_sources": [
+      "conversation.assignment",
+      "conversation.handoff",
+      "conversation.read_cursor",
+      "conversation.control_event",
+      "communication.message",
+      "communication.delivery",
+      "communication.delivery_attempt"
+    ],
+    "do_not_create_duplicate_audit_tables_in_p2_007": true
+  },
+  "notification_recommendations": {
+    "rules_can_only_recommend": true,
+    "actual_execution_owner": "P2_004_COMMUNICATION_OUTBOX_DELIVERY",
+    "ticket_created_from_group": {
+      "group_action": "OPTIONAL_PUBLIC_SAFE_RECEIPT",
+      "direct_action": "PRIVATE_TICKET_ACKNOWLEDGEMENT"
+    },
+    "ticket_created_from_direct": {
+      "direct_action": "PRIVATE_TICKET_ACKNOWLEDGEMENT"
+    },
+    "group_strong_mention_not_required_for_correctness": true,
+    "private_active_push_is_primary_reporter_confirmation": true,
+    "internal_note_external_send_allowed": false,
+    "unknown_provider_side_effect": "RECONCILIATION_REQUIRED",
+    "idempotency_dimensions": [
+      "purpose",
+      "aggregate_ref",
+      "aggregate_version",
+      "reporter_ref",
+      "destination"
+    ]
+  },
+  "stage_boundaries": {
+    "P2_007": "定义来源旅程、身份快照、规则候选、Provenance、事故候选和通知建议；纯函数、无业务副作用。",
+    "P2_004": "实际 Message/Outbox/Delivery 和可靠出站。",
+    "P2_005": "Assignment、Handoff、Read Cursor、Generation Fence 和控制事件。",
+    "P2_012": "实际 Incident、Reporter Subscription、确认、合并与生命周期。",
+    "P2_013": "运营指标和月报。",
+    "P2_G2": "AI Shadow，只读候选，不发送。"
+  },
+  "forbidden_actions": [
+    "CREATE_TICKET",
+    "UPDATE_TICKET_STATUS",
+    "CREATE_INCIDENT",
+    "LINK_TICKET_TO_INCIDENT",
+    "SEND_WECOM_MESSAGE",
+    "CALL_WECOM_SDK",
+    "CALL_LLM_PROVIDER",
+    "WRITE_IDENTITY_TO_PUBLIC_LOG"
+  ]
+}

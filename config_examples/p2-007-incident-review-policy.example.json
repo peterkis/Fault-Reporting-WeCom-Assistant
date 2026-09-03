@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0.0",
+  "policy_version": "1.2.0",
+  "candidate_only": true,
+  "human_confirmation_required": true,
+  "automatic_incident_creation": false,
+  "automatic_ticket_linking": false,
+  "automatic_public_broadcast": false,
+  "thresholds_are_review_triggers_only": true,
+  "thresholds": {
+    "local": {
+      "window_seconds": 300,
+      "minimum_distinct_reporters": 3,
+      "compatible_service_and_symptom_required": true
+    },
+    "cross_department": {
+      "window_seconds": 300,
+      "minimum_distinct_reporters": 5,
+      "minimum_departments": 2
+    },
+    "hospital_wide": {
+      "window_seconds": 300,
+      "minimum_distinct_reporters": 8,
+      "minimum_departments": 3,
+      "alternative_minimum_buildings": 2
+    },
+    "authoritative_monitoring": {
+      "reporter_minimum_waived": true,
+      "human_confirmation_still_required": true
+    }
+  },
+  "confirmation_roles": {
+    "HANDLER": [
+      "SUGGEST",
+      "ADD_EVIDENCE"
+    ],
+    "DISPATCHER": [
+      "CONFIRM_LOCAL",
+      "CONFIRM_CROSS_DEPARTMENT"
+    ],
+    "ADMIN": [
+      "CONFIRM_ANY_SCOPE",
+      "UNLINK"
+    ],
+    "INCIDENT_MANAGER": [
+      "CONFIRM_ANY_SCOPE",
+      "UNLINK"
+    ]
+  },
+  "preserve_original_intake_and_ticket": true,
+  "actual_incident_owner_task": "P2-012"
+}

@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2-007-notification-recommendation.schema.json",
+  "title": "P2-007 Notification Recommendation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "recommendation_ref",
+    "trigger",
+    "purpose",
+    "audience",
+    "preferred_channel",
+    "fallback_channel",
+    "content_class",
+    "idempotency_scope",
+    "requires_outbox",
+    "execution_owner",
+    "preserve_origin_journey",
+    "send_authorized",
+    "provenance_fact_ids"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "recommendation_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "trigger": {
+      "enum": [
+        "GROUP_MENTION_RECEIVED",
+        "PRIVATE_GUIDANCE_REQUIRED",
+        "TICKET_CREATED",
+        "INCIDENT_CANDIDATE_DETECTED",
+        "INCIDENT_CONFIRMED",
+        "INCIDENT_UPDATED",
+        "INCIDENT_RESOLVED",
+        "DELIVERY_UNKNOWN",
+        "INTERNAL_NOTE_CREATED"
+      ]
+    },
+    "purpose": {
+      "enum": [
+        "GROUP_RECEIPT",
+        "PRIVATE_GUIDANCE",
+        "TICKET_ACKNOWLEDGEMENT",
+        "INCIDENT_UNDER_REVIEW",
+        "INCIDENT_STATUS_UPDATE",
+        "INCIDENT_RESOLUTION",
+        "DELIVERY_RECONCILIATION",
+        "NO_EXTERNAL_NOTIFICATION"
+      ]
+    },
+    "audience": {
+      "enum": [
+        "REPORTER",
+        "ORIGIN_GROUP",
+        "INCIDENT_SUBSCRIBERS",
+        "ASSIGNED_AGENTS",
+        "NONE"
+      ]
+    },
+    "preferred_channel": {
+      "enum": [
+        "WECOM_DIRECT",
+        "WECOM_GROUP",
+        "WORKBENCH_INTERNAL",
+        "NONE"
+      ]
+    },
+    "fallback_channel": {
+      "enum": [
+        "WECOM_DIRECT",
+        "WECOM_GROUP",
+        "WORKBENCH_INTERNAL",
+        "NONE"
+      ]
+    },
+    "content_class": {
+      "enum": [
+        "PUBLIC_SAFE",
+        "INTERNAL",
+        "PERSONAL",
+        "PATIENT_SENSITIVE_PROHIBITED"
+      ]
+    },
+    "idempotency_scope": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "requires_outbox": {
+      "type": "boolean"
+    },
+    "execution_owner": {
+      "const": "P2_004_COMMUNICATION_OUTBOX_DELIVERY"
+    },
+    "preserve_origin_journey": {
+      "const": true
+    },
+    "send_authorized": {
+      "const": false
+    },
+    "provenance_fact_ids": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+      }
+    }
+  }
+}

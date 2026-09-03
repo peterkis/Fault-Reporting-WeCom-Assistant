@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2-007-service-catalog.schema.json",
+  "title": "P2-007 Service Catalog",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "catalog_id",
+    "catalog_version",
+    "status",
+    "domains",
+    "taxonomies"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "catalog_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "catalog_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "DRAFT_FOR_P2_007_IMPLEMENTATION",
+        "ACTIVE",
+        "DEPRECATED"
+      ]
+    },
+    "domains": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "domain_code",
+          "name_zh",
+          "services"
+        ],
+        "properties": {
+          "domain_code": {
+            "type": "string",
+            "pattern": "^[A-Z0-9_]{2,64}$"
+          },
+          "name_zh": {
+            "type": "string",
+            "minLength": 1
+          },
+          "services": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "service_code",
+                "name_zh",
+                "aliases",
+                "default_owner_team",
+                "required_fields",
+                "common_symptom_codes",
+                "enabled"
+              ],
+              "properties": {
+                "service_code": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]*(?:\\.[A-Z][A-Z0-9_]*)+$"
+                },
+                "name_zh": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "aliases": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                },
+                "default_owner_team": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "required_fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "common_symptom_codes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/p2-007/ticket-card-view-model.schema.json",
+  "title": "P2-007 Reporter Ticket Card View Model",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "view_model_id",
+    "ticket_public_ref",
+    "display_suffix",
+    "display_suffix_is_authorization",
+    "card_type",
+    "title",
+    "status_label",
+    "source_label",
+    "reported_at_label",
+    "summary",
+    "timeline_action_ref",
+    "ticket_commit_observed"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "view_model_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "ticket_public_ref": {
+      "type": "string",
+      "pattern": "^ticketpub_[a-f0-9]{24,96}$"
+    },
+    "display_suffix": {
+      "type": "string",
+      "pattern": "^[0-9]{4}$"
+    },
+    "display_suffix_is_database_key": {
+      "const": false
+    },
+    "display_suffix_is_unique_identifier": {
+      "const": false
+    },
+    "display_suffix_is_authorization": {
+      "const": false
+    },
+    "card_type": {
+      "const": "text_notice"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "status_label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "source_label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "reported_at_label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "timeline_action_ref": {
+      "type": "string",
+      "pattern": "^timeline_[a-f0-9]{24,96}$"
+    },
+    "ticket_commit_observed": {
+      "const": true
+    },
+    "patient_or_internal_identifier_present": {
+      "const": false
+    }
+  }
+}

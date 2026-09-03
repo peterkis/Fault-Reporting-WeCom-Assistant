@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2-007-contact-journey.schema.json",
+  "title": "P2-007 Multichannel Contact Journey",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "journey_ref",
+    "entry_mode",
+    "origin",
+    "channel_legs",
+    "correlation",
+    "origin_is_immutable"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "journey_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{8,128}$"
+    },
+    "entry_mode": {
+      "enum": [
+        "GROUP_MENTION_INLINE",
+        "GROUP_MENTION_TO_DIRECT_GUIDED",
+        "DIRECT_ORGANIC"
+      ]
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channel_type",
+        "trigger",
+        "provider_message_ref",
+        "reporter_ref",
+        "occurred_at"
+      ],
+      "properties": {
+        "channel_type": {
+          "enum": [
+            "WECOM_GROUP",
+            "WECOM_DIRECT"
+          ]
+        },
+        "trigger": {
+          "enum": [
+            "BOT_MENTION",
+            "DIRECT_USER_MESSAGE"
+          ]
+        },
+        "provider_message_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+        },
+        "group_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+        },
+        "reporter_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+        },
+        "occurred_at": {
+          "$ref": "./local_datetime.schema.json"
+        },
+        "source_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "channel_legs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "leg_ref",
+          "channel_type",
+          "leg_role",
+          "started_at",
+          "parent_leg_ref",
+          "transition_reason",
+          "source_refs"
+        ],
+        "properties": {
+          "leg_ref": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+          },
+          "channel_type": {
+            "enum": [
+              "WECOM_GROUP",
+              "WECOM_DIRECT"
+            ]
+          },
+          "leg_role": {
+            "enum": [
+              "ORIGIN",
+              "CONTINUATION",
+              "RETURN_TO_ORIGIN"
+            ]
+          },
+          "started_at": {
+            "$ref": "./local_datetime.schema.json"
+          },
+          "ended_at": {
+            "anyOf": [
+              { "$ref": "./local_datetime.schema.json" },
+              { "type": "null" }
+            ]
+          },
+          "parent_leg_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+          },
+          "transition_reason": {
+            "enum": [
+              "NONE",
+              "BOT_GUIDED_PRIVATE_CONTINUATION",
+              "SENSITIVE_DATA_PROTECTION",
+              "USER_CHOSE_DIRECT",
+              "HUMAN_REQUESTED_PRIVATE",
+              "RETURNED_TO_GROUP"
+            ]
+          },
+          "source_refs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+            }
+          }
+        }
+      }
+    },
+    "correlation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "link_state",
+        "continuation_ref",
+        "requires_human_confirmation",
+        "same_user_and_time_only_is_sufficient"
+      ],
+      "properties": {
+        "method": {
+          "enum": [
+            "PROVIDER_REPLY_CONTEXT",
+            "SERVER_CONTINUATION_REF",
+            "EXPLICIT_INTAKE_REF",
+            "MANUAL_AGENT_LINK",
+            "NONE"
+          ]
+        },
+        "link_state": {
+          "enum": [
+            "EXACT",
+            "CANDIDATE",
+            "AMBIGUOUS",
+            "UNLINKED"
+          ]
+        },
+        "continuation_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Za-z0-9._:-]{4,128}$"
+        },
+        "requires_human_confirmation": {
+          "type": "boolean"
+        },
+        "same_user_and_time_only_is_sufficient": {
+          "const": false
+        }
+      }
+    },
+    "origin_is_immutable": {
+      "const": true
+    }
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/p2-007/lifecycle-audit-view.schema.json",
+  "title": "P2-007 Human and Communication Lifecycle Audit View",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "journey_id",
+    "session_id",
+    "ticket_id",
+    "events",
+    "single_authoritative_owner",
+    "source_fact_ownership_unchanged"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "journey_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "ticket_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "single_authoritative_owner": {
+      "const": true
+    },
+    "source_fact_ownership_unchanged": {
+      "const": true
+    },
+    "events": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event_ref",
+          "event_type",
+          "actor_ref",
+          "actor_role",
+          "occurred_at",
+          "result",
+          "source_fact_ref"
+        ],
+        "properties": {
+          "event_ref": {
+            "type": "string",
+            "pattern": "^opaque_[a-f0-9]{16,64}$"
+          },
+          "event_type": {
+            "enum": [
+              "INTAKE_ORIGIN_RECORDED",
+              "PRIVATE_OUTREACH_QUEUED",
+              "PRIVATE_OUTREACH_SENT",
+              "DIRECT_CONTINUATION_LINKED",
+              "REPORTER_PROFILE_RESOLVED",
+              "DESCRIPTION_SUFFICIENT",
+              "TICKET_CREATED",
+              "TAKEOVER_REQUESTED",
+              "TAKEOVER_ACCEPTED",
+              "TAKEOVER_REJECTED",
+              "HANDOFF_REQUESTED",
+              "HANDOFF_ACCEPTED",
+              "HANDOFF_RELEASED",
+              "HANDOFF_CANCELLED",
+              "TRANSFER_COMPLETED",
+              "HUMAN_REPLY_COMMITTED",
+              "INTERNAL_NOTE_COMMITTED",
+              "DELIVERY_ACKNOWLEDGED",
+              "DELIVERY_RECONCILIATION_REQUIRED",
+              "INCIDENT_CANDIDATE_EMITTED",
+              "INCIDENT_LINK_OBSERVED",
+              "REPORTER_RECOVERY_OBSERVED",
+              "TICKET_CLOSED_OBSERVED"
+            ]
+          },
+          "actor_ref": {
+            "type": "string",
+            "pattern": "^opaque_[a-f0-9]{16,64}$"
+          },
+          "actor_role": {
+            "enum": [
+              "REPORTER",
+              "HANDLER",
+              "DISPATCHER",
+              "ADMIN",
+              "INCIDENT_MANAGER",
+              "SYSTEM"
+            ]
+          },
+          "occurred_at": {
+            "$ref": "./local_datetime.schema.json"
+          },
+          "result": {
+            "enum": [
+              "COMMITTED",
+              "REJECTED",
+              "REPLAYED",
+              "UNKNOWN_SIDE_EFFECT"
+            ]
+          },
+          "reason_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[A-Z0-9_]{2,96}$"
+          },
+          "source_fact_ref": {
+            "type": "string",
+            "pattern": "^opaque_[a-f0-9]{16,64}$"
+          },
+          "owner_before_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^opaque_[a-f0-9]{16,64}$"
+          },
+          "owner_after_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^opaque_[a-f0-9]{16,64}$"
+          },
+          "aggregate_version_before": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "aggregate_version_after": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

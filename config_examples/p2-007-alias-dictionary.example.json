@@ -1,0 +1,3993 @@
+{
+  "schema_version": "1.0.0",
+  "alias_set_id": "CD3H_P2_007_ALIAS_DICTIONARY",
+  "alias_set_version": "0.1.0-draft",
+  "status": "DRAFT_FOR_P2_007_IMPLEMENTATION",
+  "matching_policy": {
+    "normalization": [
+      "Unicode NFKC",
+      "全角标点归一",
+      "英文大小写折叠",
+      "空白压缩"
+    ],
+    "priority": [
+      "LONGEST_PHRASE",
+      "EXPLICIT_NEGATION",
+      "CONTEXT_DISAMBIGUATION",
+      "NO_GUESS"
+    ],
+    "negative_scope": "否定词只作用于同一分句或显式指向的候选，不应抹去整个故障事实。",
+    "quoted_text": "引用块只能作为 CONTEXT_REFERENCE，不能重复计为新的上报事实。"
+  },
+  "service_aliases": [
+    {
+      "alias": "CT图像",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "CT检查",
+      "candidate_service_codes": [
+        "CLINICAL.EXAM_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "PACS",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "PET CT图像",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "一体化系统",
+      "candidate_service_codes": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "一体化门诊",
+      "candidate_service_codes": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "三日回诊单",
+      "candidate_service_codes": [
+        "CLINICAL.CERTIFICATE_DOCUMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "下柜",
+      "candidate_service_codes": [
+        "PHARM.DRUG_MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "不吸纸",
+      "candidate_service_codes": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "不能输入字母",
+      "candidate_service_codes": [
+        "ENDPOINT.INPUT_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "中草药",
+      "candidate_service_codes": [
+        "CLINICAL.PRESCRIPTION_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "中药处方",
+      "candidate_service_codes": [
+        "CLINICAL.PRESCRIPTION_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "主机",
+      "candidate_service_codes": [
+        "ENDPOINT.COMPUTER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "二维码打不全",
+      "candidate_service_codes": [
+        "PRINT.PRINT_RENDERING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "互联网医院",
+      "candidate_service_codes": [
+        "ONLINE.VISIT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "互联网医院开处方",
+      "candidate_service_codes": [
+        "ONLINE.PRESCRIPTION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "交换机",
+      "candidate_service_codes": [
+        "NETWORK.BUILDING_DISTRIBUTION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "交费",
+      "candidate_service_codes": [
+        "FIN.PAYMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "会诊",
+      "candidate_service_codes": [
+        "CLINICAL.CONSULTATION_WORKFLOW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "会诊意见",
+      "candidate_service_codes": [
+        "CLINICAL.CONSULTATION_WORKFLOW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "会诊提示",
+      "candidate_service_codes": [
+        "CONFIG.POPUP_NOTIFICATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "会诊消息",
+      "candidate_service_codes": [
+        "CLINICAL.CONSULTATION_WORKFLOW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "传染病卡提示",
+      "candidate_service_codes": [
+        "CONFIG.POPUP_NOTIFICATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "住院工作站",
+      "candidate_service_codes": [
+        "CLINICAL.INPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "住院病历系统",
+      "candidate_service_codes": [
+        "CLINICAL.INPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "住院系统",
+      "candidate_service_codes": [
+        "CLINICAL.INPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "住院证",
+      "candidate_service_codes": [
+        "CLINICAL.CERTIFICATE_DOCUMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "供应商",
+      "candidate_service_codes": [
+        "ROUTE.VENDOR"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "候诊屏",
+      "candidate_service_codes": [
+        "ENDPOINT.QUEUE_DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "假条",
+      "candidate_service_codes": [
+        "CLINICAL.CERTIFICATE_DOCUMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "停水",
+      "candidate_service_codes": [
+        "ROUTE.LOGISTICS_FACILITY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "公众号挂号",
+      "candidate_service_codes": [
+        "ACCESS.REGISTRATION",
+        "ONLINE.REGISTRATION"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": "同一词面命中多个服务，必须结合渠道、交易阶段或人工确认。"
+    },
+    {
+      "alias": "共享文件",
+      "candidate_service_codes": [
+        "SECURITY.FILE_SHARING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "共享盘",
+      "candidate_service_codes": [
+        "SECURITY.FILE_SHARING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "关机程序",
+      "candidate_service_codes": [
+        "ENDPOINT.OPERATING_SYSTEM"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "内存不足",
+      "candidate_service_codes": [
+        "ENDPOINT.OPERATING_SYSTEM"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "写病历",
+      "candidate_service_codes": [
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "凳子",
+      "candidate_service_codes": [
+        "ROUTE.LOGISTICS_FACILITY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "分辨率",
+      "candidate_service_codes": [
+        "ENDPOINT.DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "包装规格",
+      "candidate_service_codes": [
+        "PHARM.DRUG_MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "化验单",
+      "candidate_service_codes": [
+        "CLINICAL.LAB_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "化验单打印",
+      "candidate_service_codes": [
+        "DIAG.LAB_RESULT_PRINT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "化验打印",
+      "candidate_service_codes": [
+        "DIAG.LAB_RESULT_PRINT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "化验报告",
+      "candidate_service_codes": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "化验申请",
+      "candidate_service_codes": [
+        "CLINICAL.LAB_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "医保审核",
+      "candidate_service_codes": [
+        "INSURANCE.ELIGIBILITY_AUDIT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "医保校验",
+      "candidate_service_codes": [
+        "INSURANCE.ELIGIBILITY_AUDIT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "卡纸",
+      "candidate_service_codes": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "危急值弹窗",
+      "candidate_service_codes": [
+        "CONFIG.POPUP_NOTIFICATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "卷纸",
+      "candidate_service_codes": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "厂家",
+      "candidate_service_codes": [
+        "PHARM.DRUG_MASTER_DATA",
+        "ROUTE.VENDOR"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": "同一词面命中多个服务，必须结合渠道、交易阶段或人工确认。"
+    },
+    {
+      "alias": "历史检验",
+      "candidate_service_codes": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "双屏",
+      "candidate_service_codes": [
+        "ENDPOINT.DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "发药界面",
+      "candidate_service_codes": [
+        "PHARM.DISPENSING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "发药系统",
+      "candidate_service_codes": [
+        "PHARM.DISPENSING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "叫号器",
+      "candidate_service_codes": [
+        "ACCESS.QUEUE_CALLING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "叫号器不亮",
+      "candidate_service_codes": [
+        "ENDPOINT.QUEUE_DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "叫号屏",
+      "candidate_service_codes": [
+        "ENDPOINT.QUEUE_DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "叫号系统",
+      "candidate_service_codes": [
+        "ACCESS.QUEUE_CALLING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "右下角提醒",
+      "candidate_service_codes": [
+        "CONFIG.POPUP_NOTIFICATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "号源",
+      "candidate_service_codes": [
+        "ACCESS.REGISTRATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "号源规则",
+      "candidate_service_codes": [
+        "CONFIG.BUSINESS_RULE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "合理用药",
+      "candidate_service_codes": [
+        "PHARM.RATIONAL_MEDICATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "呼叫器",
+      "candidate_service_codes": [
+        "ACCESS.QUEUE_CALLING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "呼叫器快捷方式",
+      "candidate_service_codes": [
+        "CONFIG.CLIENT_COMPONENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "呼叫器没声音",
+      "candidate_service_codes": [
+        "ENDPOINT.QUEUE_DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "呼叫器系统",
+      "candidate_service_codes": [
+        "ACCESS.QUEUE_CALLING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "呼叫系统",
+      "candidate_service_codes": [
+        "ACCESS.QUEUE_CALLING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "喇叭",
+      "candidate_service_codes": [
+        "ENDPOINT.QUEUE_DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "回诊申请单",
+      "candidate_service_codes": [
+        "CLINICAL.CERTIFICATE_DOCUMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "图文报告",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_REPORT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "图标没有",
+      "candidate_service_codes": [
+        "CONFIG.CLIENT_COMPONENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "墨水",
+      "candidate_service_codes": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "墨盒",
+      "candidate_service_codes": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "处方",
+      "candidate_service_codes": [
+        "CLINICAL.PRESCRIPTION_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "处方审核",
+      "candidate_service_codes": [
+        "PHARM.PRESCRIPTION_REVIEW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "处方打印不全",
+      "candidate_service_codes": [
+        "PRINT.PRINT_RENDERING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "备案审核",
+      "candidate_service_codes": [
+        "INSURANCE.ELIGIBILITY_AUDIT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "复诊签到",
+      "candidate_service_codes": [
+        "ACCESS.CHECK_IN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "外语打印",
+      "candidate_service_codes": [
+        "PRINT.PRINT_RENDERING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "多一张空白页",
+      "candidate_service_codes": [
+        "PRINT.PRINT_RENDERING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "多个楼层断网",
+      "candidate_service_codes": [
+        "NETWORK.BUILDING_DISTRIBUTION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "多科会诊",
+      "candidate_service_codes": [
+        "CLINICAL.CONSULTATION_WORKFLOW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "夹纸",
+      "candidate_service_codes": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "审方",
+      "candidate_service_codes": [
+        "PHARM.PRESCRIPTION_REVIEW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "审方系统",
+      "candidate_service_codes": [
+        "PHARM.PRESCRIPTION_REVIEW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "密码不正确",
+      "candidate_service_codes": [
+        "IDENTITY.PASSWORD_RESET"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "导医",
+      "candidate_service_codes": [
+        "ROUTE.OUTPATIENT_ADMIN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "小程序挂号",
+      "candidate_service_codes": [
+        "ACCESS.REGISTRATION",
+        "ONLINE.REGISTRATION"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": "同一词面命中多个服务，必须结合渠道、交易阶段或人工确认。"
+    },
+    {
+      "alias": "屏幕",
+      "candidate_service_codes": [
+        "ENDPOINT.DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "屏幕截图",
+      "candidate_service_codes": [
+        "SECURITY.SCREEN_CAPTURE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "屏幕模糊",
+      "candidate_service_codes": [
+        "ENDPOINT.DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "屏幕水印",
+      "candidate_service_codes": [
+        "SECURITY.WATERMARK"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "工作电脑",
+      "candidate_service_codes": [
+        "ENDPOINT.COMPUTER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "工号",
+      "candidate_service_codes": [
+        "IDENTITY.ACCOUNT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "工程师",
+      "candidate_service_codes": [
+        "ROUTE.VENDOR"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "市门特",
+      "candidate_service_codes": [
+        "INSURANCE.OUTPATIENT_SPECIAL"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "年龄限制",
+      "candidate_service_codes": [
+        "CONFIG.BUSINESS_RULE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "开具和扫码不一致",
+      "candidate_service_codes": [
+        "FIN.CHARGE_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "开化验",
+      "candidate_service_codes": [
+        "CLINICAL.LAB_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "开检查",
+      "candidate_service_codes": [
+        "CLINICAL.EXAM_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "开检验",
+      "candidate_service_codes": [
+        "CLINICAL.LAB_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "开药",
+      "candidate_service_codes": [
+        "CLINICAL.PRESCRIPTION_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "弹窗",
+      "candidate_service_codes": [
+        "CONFIG.POPUP_NOTIFICATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "彩超报告",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_REPORT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "影像上传",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_TRANSFER_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "影像传输",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_TRANSFER_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "影像报告",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_REPORT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "影像检查开单",
+      "candidate_service_codes": [
+        "CLINICAL.EXAM_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "影像系统",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "待接诊看不到",
+      "candidate_service_codes": [
+        "ACCESS.PATIENT_LIST_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "微信预约挂号",
+      "candidate_service_codes": [
+        "ONLINE.REGISTRATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "忘记密码",
+      "candidate_service_codes": [
+        "IDENTITY.PASSWORD_RESET"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "快捷方式没有",
+      "candidate_service_codes": [
+        "CONFIG.CLIENT_COMPONENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "患者列表没有",
+      "candidate_service_codes": [
+        "ACCESS.PATIENT_LIST_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "截不了图",
+      "candidate_service_codes": [
+        "SECURITY.SCREEN_CAPTURE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "截图工具",
+      "candidate_service_codes": [
+        "SECURITY.SCREEN_CAPTURE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "户头",
+      "candidate_service_codes": [
+        "PHARM.DRUG_MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "手机挂号",
+      "candidate_service_codes": [
+        "ONLINE.REGISTRATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "手机缴费",
+      "candidate_service_codes": [
+        "FIN.PAYMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "手机退不到",
+      "candidate_service_codes": [
+        "FIN.REFUND"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "手消液",
+      "candidate_service_codes": [
+        "ROUTE.LOGISTICS_FACILITY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "打印机",
+      "candidate_service_codes": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "打印机没反应",
+      "candidate_service_codes": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "打印格式不对",
+      "candidate_service_codes": [
+        "PRINT.PRINT_RENDERING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "打印缺行",
+      "candidate_service_codes": [
+        "PRINT.PRINT_RENDERING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "扫码看不见收费项目",
+      "candidate_service_codes": [
+        "FIN.CHARGE_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "扫码缴费",
+      "candidate_service_codes": [
+        "FIN.PAYMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "报告没传",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_TRANSFER_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "拆零",
+      "candidate_service_codes": [
+        "PHARM.DRUG_MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "拆零咨询",
+      "candidate_service_codes": [
+        "ROUTE.PHARMACY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "拆零规则",
+      "candidate_service_codes": [
+        "CONFIG.BUSINESS_RULE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "挂了号系统没名字",
+      "candidate_service_codes": [
+        "ACCESS.PATIENT_LIST_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "挂号",
+      "candidate_service_codes": [
+        "ACCESS.REGISTRATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "挂号支付",
+      "candidate_service_codes": [
+        "FIN.PAYMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "提前签到",
+      "candidate_service_codes": [
+        "ACCESS.CHECK_IN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "提示不合理",
+      "candidate_service_codes": [
+        "CONFIG.BUSINESS_RULE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "操作系统",
+      "candidate_service_codes": [
+        "ENDPOINT.OPERATING_SYSTEM"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "支付不了",
+      "candidate_service_codes": [
+        "FIN.PAYMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "支付通道",
+      "candidate_service_codes": [
+        "ROUTE.FINANCE_BANK"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "收费处无信息",
+      "candidate_service_codes": [
+        "FIN.CHARGE_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "放射报告",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_REPORT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "整层断网",
+      "candidate_service_codes": [
+        "NETWORK.BUILDING_DISTRIBUTION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "整盒",
+      "candidate_service_codes": [
+        "PHARM.DRUG_MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "文件共享",
+      "candidate_service_codes": [
+        "SECURITY.FILE_SHARING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "断网",
+      "candidate_service_codes": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "新账号",
+      "candidate_service_codes": [
+        "IDENTITY.ACCOUNT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "既往检验记录",
+      "candidate_service_codes": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "旧账号",
+      "candidate_service_codes": [
+        "IDENTITY.ACCOUNT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "显示器",
+      "candidate_service_codes": [
+        "ENDPOINT.DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "智能审核",
+      "candidate_service_codes": [
+        "INSURANCE.ELIGIBILITY_AUDIT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "本地程序",
+      "candidate_service_codes": [
+        "CONFIG.CLIENT_COMPONENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "核磁报告",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_REPORT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "核磁检查",
+      "candidate_service_codes": [
+        "CLINICAL.EXAM_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "桌面程序",
+      "candidate_service_codes": [
+        "ENDPOINT.OPERATING_SYSTEM"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "检查单",
+      "candidate_service_codes": [
+        "CLINICAL.EXAM_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "检查申请",
+      "candidate_service_codes": [
+        "CLINICAL.EXAM_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "检验单",
+      "candidate_service_codes": [
+        "CLINICAL.LAB_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "检验单打印",
+      "candidate_service_codes": [
+        "DIAG.LAB_RESULT_PRINT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "检验报告",
+      "candidate_service_codes": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "检验报告打印",
+      "candidate_service_codes": [
+        "DIAG.LAB_RESULT_PRINT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "检验申请",
+      "candidate_service_codes": [
+        "CLINICAL.LAB_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "检验结果",
+      "candidate_service_codes": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "楼层网络",
+      "candidate_service_codes": [
+        "NETWORK.BUILDING_DISTRIBUTION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "楼栋网络",
+      "candidate_service_codes": [
+        "NETWORK.BUILDING_DISTRIBUTION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "水印",
+      "candidate_service_codes": [
+        "SECURITY.WATERMARK"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "没有单位",
+      "candidate_service_codes": [
+        "CONFIG.MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "没有流量",
+      "candidate_service_codes": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "没有网络",
+      "candidate_service_codes": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "没网",
+      "candidate_service_codes": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "片子",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "片子没传上来",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_TRANSFER_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "物资",
+      "candidate_service_codes": [
+        "ROUTE.LOGISTICS_FACILITY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "特病",
+      "candidate_service_codes": [
+        "INSURANCE.OUTPATIENT_SPECIAL"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "用药校验",
+      "candidate_service_codes": [
+        "PHARM.RATIONAL_MEDICATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "用药频次申请",
+      "candidate_service_codes": [
+        "ROUTE.PHARMACY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "电脑",
+      "candidate_service_codes": [
+        "ENDPOINT.COMPUTER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "电脑时间",
+      "candidate_service_codes": [
+        "ENDPOINT.OPERATING_SYSTEM"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "界面显示不全",
+      "candidate_service_codes": [
+        "ENDPOINT.DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "病人信息没推过来",
+      "candidate_service_codes": [
+        "ACCESS.PATIENT_LIST_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "病例系统",
+      "candidate_service_codes": [
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "病历保存",
+      "candidate_service_codes": [
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "病历系统",
+      "candidate_service_codes": [
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "病情证明",
+      "candidate_service_codes": [
+        "CLINICAL.CERTIFICATE_DOCUMENT",
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": "同一词面命中多个服务，必须结合渠道、交易阶段或人工确认。"
+    },
+    {
+      "alias": "病房系统",
+      "candidate_service_codes": [
+        "CLINICAL.INPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "登录口令",
+      "candidate_service_codes": [
+        "IDENTITY.ACCOUNT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "看片",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "看片系统",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "硒鼓",
+      "candidate_service_codes": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "社保审核",
+      "candidate_service_codes": [
+        "INSURANCE.ELIGIBILITY_AUDIT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "科室选项没有",
+      "candidate_service_codes": [
+        "CONFIG.MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "空白单",
+      "candidate_service_codes": [
+        "PRINT.PRINT_RENDERING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "空调",
+      "candidate_service_codes": [
+        "ROUTE.LOGISTICS_FACILITY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "窗口退不了",
+      "candidate_service_codes": [
+        "FIN.REFUND"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "签不起",
+      "candidate_service_codes": [
+        "IDENTITY.DIGITAL_SIGNATURE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "签到",
+      "candidate_service_codes": [
+        "ACCESS.CHECK_IN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "签到机",
+      "candidate_service_codes": [
+        "ACCESS.CHECK_IN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "签名失败",
+      "candidate_service_codes": [
+        "IDENTITY.DIGITAL_SIGNATURE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "签名密码",
+      "candidate_service_codes": [
+        "IDENTITY.DIGITAL_SIGNATURE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "签名密码忘了",
+      "candidate_service_codes": [
+        "IDENTITY.PASSWORD_RESET"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "系统时间",
+      "candidate_service_codes": [
+        "ENDPOINT.OPERATING_SYSTEM"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "系统显示未缴费",
+      "candidate_service_codes": [
+        "FIN.CHARGE_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "系统没有这个人",
+      "candidate_service_codes": [
+        "ACCESS.PATIENT_LIST_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "红色水印",
+      "candidate_service_codes": [
+        "SECURITY.WATERMARK"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "线上开药",
+      "candidate_service_codes": [
+        "ONLINE.PRESCRIPTION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "线上门诊",
+      "candidate_service_codes": [
+        "ONLINE.VISIT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "组件打不开",
+      "candidate_service_codes": [
+        "CONFIG.CLIENT_COMPONENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "终端",
+      "candidate_service_codes": [
+        "ENDPOINT.COMPUTER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "维保",
+      "candidate_service_codes": [
+        "ROUTE.VENDOR"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "缴费",
+      "candidate_service_codes": [
+        "FIN.PAYMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "缺药",
+      "candidate_service_codes": [
+        "PHARM.DRUG_MASTER_DATA",
+        "ROUTE.PHARMACY"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": "同一词面命中多个服务，必须结合渠道、交易阶段或人工确认。"
+    },
+    {
+      "alias": "网上开药",
+      "candidate_service_codes": [
+        "ONLINE.PRESCRIPTION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "网上挂号",
+      "candidate_service_codes": [
+        "ACCESS.REGISTRATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "网上问诊",
+      "candidate_service_codes": [
+        "ONLINE.VISIT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "网不通",
+      "candidate_service_codes": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "网线松了",
+      "candidate_service_codes": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "网络门诊",
+      "candidate_service_codes": [
+        "ONLINE.VISIT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "网络门诊开药",
+      "candidate_service_codes": [
+        "ONLINE.PRESCRIPTION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "花屏",
+      "candidate_service_codes": [
+        "ENDPOINT.DISPLAY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药品单位",
+      "candidate_service_codes": [
+        "PHARM.DRUG_MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药品审核",
+      "candidate_service_codes": [
+        "PHARM.RATIONAL_MEDICATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药品库存",
+      "candidate_service_codes": [
+        "ROUTE.PHARMACY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药品提交",
+      "candidate_service_codes": [
+        "CLINICAL.PRESCRIPTION_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药品权限",
+      "candidate_service_codes": [
+        "PHARM.DRUG_MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药品没有规格",
+      "candidate_service_codes": [
+        "CONFIG.MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药品频次",
+      "candidate_service_codes": [
+        "PHARM.DRUG_MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药师审核",
+      "candidate_service_codes": [
+        "PHARM.PRESCRIPTION_REVIEW"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药房",
+      "candidate_service_codes": [
+        "ROUTE.PHARMACY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药房系统",
+      "candidate_service_codes": [
+        "PHARM.DISPENSING"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药物审核",
+      "candidate_service_codes": [
+        "PHARM.RATIONAL_MEDICATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "药物提交",
+      "candidate_service_codes": [
+        "CLINICAL.PRESCRIPTION_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "补传",
+      "candidate_service_codes": [
+        "DIAG.IMAGING_TRANSFER_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "补推",
+      "candidate_service_codes": [
+        "ACCESS.PATIENT_LIST_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "装修噪声",
+      "candidate_service_codes": [
+        "ROUTE.LOGISTICS_FACILITY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "规则不对",
+      "candidate_service_codes": [
+        "CONFIG.BUSINESS_RULE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "诊室安排",
+      "candidate_service_codes": [
+        "ROUTE.OUTPATIENT_ADMIN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "诊断没有",
+      "candidate_service_codes": [
+        "CONFIG.MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "诊断证明",
+      "candidate_service_codes": [
+        "CLINICAL.CERTIFICATE_DOCUMENT",
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": "同一词面命中多个服务，必须结合渠道、交易阶段或人工确认。"
+    },
+    {
+      "alias": "诊间挂号",
+      "candidate_service_codes": [
+        "ACCESS.IN_ROOM_APPOINTMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "诊间预约",
+      "candidate_service_codes": [
+        "ACCESS.IN_ROOM_APPOINTMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "说明书矛盾",
+      "candidate_service_codes": [
+        "CONFIG.BUSINESS_RULE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "调用签名失败",
+      "candidate_service_codes": [
+        "IDENTITY.DIGITAL_SIGNATURE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "财务联系银行",
+      "candidate_service_codes": [
+        "ROUTE.FINANCE_BANK"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "账号",
+      "candidate_service_codes": [
+        "IDENTITY.ACCOUNT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "账号锁定",
+      "candidate_service_codes": [
+        "IDENTITY.ACCOUNT_ACCESS"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "费用双倍",
+      "candidate_service_codes": [
+        "FIN.CHARGE_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "费用异常",
+      "candidate_service_codes": [
+        "FIN.CHARGE_SYNC"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "超声检查",
+      "candidate_service_codes": [
+        "CLINICAL.EXAM_ORDER_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "输不了字",
+      "candidate_service_codes": [
+        "ENDPOINT.INPUT_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "输入法",
+      "candidate_service_codes": [
+        "ENDPOINT.INPUT_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "这台机器",
+      "candidate_service_codes": [
+        "ENDPOINT.COMPUTER"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "远程不了",
+      "candidate_service_codes": [
+        "NETWORK.REMOTE_SUPPORT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "远程协助",
+      "candidate_service_codes": [
+        "NETWORK.REMOTE_SUPPORT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "远程看不到",
+      "candidate_service_codes": [
+        "NETWORK.REMOTE_SUPPORT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "远程签到",
+      "candidate_service_codes": [
+        "ACCESS.CHECK_IN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "连不过来",
+      "candidate_service_codes": [
+        "NETWORK.REMOTE_SUPPORT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "退号",
+      "candidate_service_codes": [
+        "FIN.REFUND"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "退号流程",
+      "candidate_service_codes": [
+        "ROUTE.OUTPATIENT_ADMIN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "退费",
+      "candidate_service_codes": [
+        "FIN.REFUND"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "重启程序",
+      "candidate_service_codes": [
+        "ENDPOINT.OPERATING_SYSTEM"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "重置密码",
+      "candidate_service_codes": [
+        "IDENTITY.PASSWORD_RESET"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "银行问题",
+      "candidate_service_codes": [
+        "ROUTE.FINANCE_BANK"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "键盘",
+      "candidate_service_codes": [
+        "ENDPOINT.INPUT_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "键盘截图",
+      "candidate_service_codes": [
+        "SECURITY.SCREEN_CAPTURE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门办",
+      "candidate_service_codes": [
+        "ROUTE.OUTPATIENT_ADMIN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门特",
+      "candidate_service_codes": [
+        "INSURANCE.OUTPATIENT_SPECIAL"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门特备案",
+      "candidate_service_codes": [
+        "INSURANCE.OUTPATIENT_SPECIAL"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门特开药",
+      "candidate_service_codes": [
+        "CLINICAL.PRESCRIPTION_ENTRY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门特校验",
+      "candidate_service_codes": [
+        "INSURANCE.OUTPATIENT_SPECIAL"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门诊一体化",
+      "candidate_service_codes": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门诊办公室",
+      "candidate_service_codes": [
+        "ROUTE.OUTPATIENT_ADMIN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门诊医生工作站",
+      "candidate_service_codes": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门诊工作站",
+      "candidate_service_codes": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门诊病历",
+      "candidate_service_codes": [
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门诊秩序",
+      "candidate_service_codes": [
+        "ROUTE.OUTPATIENT_ADMIN"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门诊系统",
+      "candidate_service_codes": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "门锁",
+      "candidate_service_codes": [
+        "ROUTE.LOGISTICS_FACILITY"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "限制条件",
+      "candidate_service_codes": [
+        "CONFIG.BUSINESS_RULE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "项目没有",
+      "candidate_service_codes": [
+        "CONFIG.MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "项目维护",
+      "candidate_service_codes": [
+        "CONFIG.MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "预约号",
+      "candidate_service_codes": [
+        "ACCESS.IN_ROOM_APPOINTMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "预约系统",
+      "candidate_service_codes": [
+        "ACCESS.IN_ROOM_APPOINTMENT"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "频次没有",
+      "candidate_service_codes": [
+        "CONFIG.MASTER_DATA"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "鼠标",
+      "candidate_service_codes": [
+        "ENDPOINT.INPUT_DEVICE"
+      ],
+      "selection_policy": "AUTO_SELECT",
+      "match_mode": "PHRASE",
+      "case_sensitive": false,
+      "notes": ""
+    },
+    {
+      "alias": "系统",
+      "candidate_service_codes": [],
+      "selection_policy": "NEVER_AUTO_SELECT",
+      "match_mode": "TOKEN",
+      "notes": "只提供故障对象占位，不产生具体服务事实。"
+    },
+    {
+      "alias": "工作站",
+      "candidate_service_codes": [
+        "CLINICAL.OUTPATIENT_WORKSTATION",
+        "CLINICAL.INPATIENT_WORKSTATION"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "TOKEN",
+      "notes": "需由“门诊/住院/病房”等上下文消歧。"
+    },
+    {
+      "alias": "一体化",
+      "candidate_service_codes": [
+        "CLINICAL.OUTPATIENT_WORKSTATION",
+        "CLINICAL.INPATIENT_WORKSTATION",
+        "CONFIG.CLIENT_COMPONENT"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "TOKEN",
+      "notes": "在历史群聊中指代范围不稳定，不能作为单一系统名。"
+    },
+    {
+      "alias": "预约",
+      "candidate_service_codes": [
+        "ACCESS.IN_ROOM_APPOINTMENT",
+        "ONLINE.REGISTRATION"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "TOKEN",
+      "notes": "需区分诊间预约、网上预约或普通挂号。"
+    },
+    {
+      "alias": "审核",
+      "candidate_service_codes": [
+        "PHARM.RATIONAL_MEDICATION",
+        "PHARM.PRESCRIPTION_REVIEW",
+        "INSURANCE.ELIGIBILITY_AUDIT"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "TOKEN",
+      "notes": "需读取“合理用药/药师/医保/门特”等限定词。"
+    },
+    {
+      "alias": "报告",
+      "candidate_service_codes": [
+        "DIAG.LAB_RESULT_VIEW",
+        "DIAG.IMAGING_REPORT"
+      ],
+      "selection_policy": "REQUIRES_CONTEXT",
+      "match_mode": "TOKEN",
+      "notes": "需区分检验、放射、超声等报告类型。"
+    },
+    {
+      "alias": "医惠",
+      "candidate_service_codes": [
+        "CLINICAL.OUTPATIENT_WORKSTATION",
+        "CLINICAL.INPATIENT_WORKSTATION",
+        "CONFIG.CLIENT_COMPONENT"
+      ],
+      "selection_policy": "NEVER_AUTO_SELECT",
+      "match_mode": "TOKEN",
+      "notes": "厂商名称可能覆盖多个模块，仅作为路由线索。"
+    }
+  ],
+  "symptom_aliases": [
+    {
+      "alias": "打不开",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "进不去",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "登不起",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "登不上",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "登录不了",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "用不了",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "不能用",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "开不起",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "点不开",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "无反应",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没反应",
+      "symptom_code": "AVAILABILITY.UNAVAILABLE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "有时候可以",
+      "symptom_code": "AVAILABILITY.INTERMITTENT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "时好时坏",
+      "symptom_code": "AVAILABILITY.INTERMITTENT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "反复出现",
+      "symptom_code": "AVAILABILITY.INTERMITTENT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "又可以了又不行",
+      "symptom_code": "AVAILABILITY.INTERMITTENT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "很慢",
+      "symptom_code": "PERFORMANCE.SLOW",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "太慢",
+      "symptom_code": "PERFORMANCE.SLOW",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "好慢",
+      "symptom_code": "PERFORMANCE.SLOW",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "半天",
+      "symptom_code": "PERFORMANCE.SLOW",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "等几分钟",
+      "symptom_code": "PERFORMANCE.SLOW",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "五分钟没反应",
+      "symptom_code": "PERFORMANCE.SLOW",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "响应迟钝",
+      "symptom_code": "PERFORMANCE.SLOW",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "一直转圈圈",
+      "symptom_code": "PERFORMANCE.HANG_SPINNING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "转圈圈",
+      "symptom_code": "PERFORMANCE.HANG_SPINNING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "打转转",
+      "symptom_code": "PERFORMANCE.HANG_SPINNING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "卡住",
+      "symptom_code": "PERFORMANCE.HANG_SPINNING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "卡起",
+      "symptom_code": "PERFORMANCE.HANG_SPINNING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "卡死",
+      "symptom_code": "PERFORMANCE.HANG_SPINNING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "动不了",
+      "symptom_code": "PERFORMANCE.HANG_SPINNING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "一直缓冲",
+      "symptom_code": "PERFORMANCE.HANG_SPINNING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "系统崩了",
+      "symptom_code": "STABILITY.CRASH",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "崩溃了",
+      "symptom_code": "STABILITY.CRASH",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "系统瘫痪",
+      "symptom_code": "STABILITY.CRASH",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "系统蹦了",
+      "symptom_code": "STABILITY.CRASH",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "闪退",
+      "symptom_code": "STABILITY.FLASH_EXIT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "打开后退出",
+      "symptom_code": "STABILITY.FLASH_EXIT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "自动关了",
+      "symptom_code": "STABILITY.FLASH_EXIT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "黑屏",
+      "symptom_code": "STABILITY.BLACK_SCREEN",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "屏幕黑了",
+      "symptom_code": "STABILITY.BLACK_SCREEN",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "啥都看不见",
+      "symptom_code": "STABILITY.BLACK_SCREEN",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "登录失败",
+      "symptom_code": "AUTH.LOGIN_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "密码不正确",
+      "symptom_code": "AUTH.LOGIN_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "账号登不上",
+      "symptom_code": "AUTH.LOGIN_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "账号被锁",
+      "symptom_code": "AUTH.ACCOUNT_LOCKED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "账号锁定",
+      "symptom_code": "AUTH.ACCOUNT_LOCKED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "IP锁定",
+      "symptom_code": "AUTH.ACCOUNT_LOCKED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没有权限",
+      "symptom_code": "AUTH.PERMISSION_DENIED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "权限不足",
+      "symptom_code": "AUTH.PERMISSION_DENIED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "不让开",
+      "symptom_code": "AUTH.PERMISSION_DENIED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "签名失败",
+      "symptom_code": "AUTH.SIGNATURE_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "调用签名失败",
+      "symptom_code": "AUTH.SIGNATURE_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "签不起",
+      "symptom_code": "AUTH.SIGNATURE_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "提交不了",
+      "symptom_code": "TRANSACTION.SUBMIT_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "提交不起",
+      "symptom_code": "TRANSACTION.SUBMIT_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "无法提交",
+      "symptom_code": "TRANSACTION.SUBMIT_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "提不动",
+      "symptom_code": "TRANSACTION.SUBMIT_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "提交不到",
+      "symptom_code": "TRANSACTION.SUBMIT_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "保存不了",
+      "symptom_code": "TRANSACTION.SAVE_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "保存不起",
+      "symptom_code": "TRANSACTION.SAVE_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "无法保存",
+      "symptom_code": "TRANSACTION.SAVE_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "撤销不了",
+      "symptom_code": "TRANSACTION.CANCEL_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "撤销不起",
+      "symptom_code": "TRANSACTION.CANCEL_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "作废不了",
+      "symptom_code": "TRANSACTION.CANCEL_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "删除不了",
+      "symptom_code": "TRANSACTION.DELETE_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "删不掉",
+      "symptom_code": "TRANSACTION.DELETE_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "无法删除",
+      "symptom_code": "TRANSACTION.DELETE_FAILED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "接口超时",
+      "symptom_code": "TRANSACTION.TIMEOUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "超时了",
+      "symptom_code": "TRANSACTION.TIMEOUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "连接超时",
+      "symptom_code": "TRANSACTION.TIMEOUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没有信息",
+      "symptom_code": "DATA.MISSING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "看不到记录",
+      "symptom_code": "DATA.MISSING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "病人不见了",
+      "symptom_code": "DATA.MISSING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没有名字",
+      "symptom_code": "DATA.MISSING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "全是空的",
+      "symptom_code": "DATA.MISSING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没推过来",
+      "symptom_code": "DATA.NOT_SYNCED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "补推",
+      "symptom_code": "DATA.NOT_SYNCED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没传上来",
+      "symptom_code": "DATA.NOT_SYNCED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没有同步",
+      "symptom_code": "DATA.NOT_SYNCED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "费用不对",
+      "symptom_code": "DATA.MISMATCH",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "年龄不对",
+      "symptom_code": "DATA.MISMATCH",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "名字不对",
+      "symptom_code": "DATA.MISMATCH",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "和实际不符合",
+      "symptom_code": "DATA.MISMATCH",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "签字是别人",
+      "symptom_code": "DATA.MISMATCH",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "费用双倍",
+      "symptom_code": "DATA.DUPLICATED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "重复一张",
+      "symptom_code": "DATA.DUPLICATED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "开一份显示两份",
+      "symptom_code": "DATA.DUPLICATED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "系统时间不对",
+      "symptom_code": "DATA.WRONG_TIME",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "日期变成以前",
+      "symptom_code": "DATA.WRONG_TIME",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "病历显示错误日期",
+      "symptom_code": "DATA.WRONG_TIME",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "白屏",
+      "symptom_code": "UI.BLANK",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "全白了",
+      "symptom_code": "UI.BLANK",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "页面空白",
+      "symptom_code": "UI.BLANK",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "工作台是空的",
+      "symptom_code": "UI.BLANK",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "图标不见了",
+      "symptom_code": "UI.MISSING_ENTRY",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "快捷方式没有",
+      "symptom_code": "UI.MISSING_ENTRY",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "菜单没有",
+      "symptom_code": "UI.MISSING_ENTRY",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "叫号器消失",
+      "symptom_code": "UI.MISSING_ENTRY",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "弹窗关不掉",
+      "symptom_code": "UI.OVERLAY_BLOCKING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "挡住了",
+      "symptom_code": "UI.OVERLAY_BLOCKING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "遮挡信息",
+      "symptom_code": "UI.OVERLAY_BLOCKING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "一直弹",
+      "symptom_code": "UI.OVERLAY_BLOCKING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "分辨率不对",
+      "symptom_code": "UI.RESOLUTION_LAYOUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "显示不全",
+      "symptom_code": "UI.RESOLUTION_LAYOUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "界面偏了",
+      "symptom_code": "UI.RESOLUTION_LAYOUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "字太小",
+      "symptom_code": "UI.RESOLUTION_LAYOUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "模糊不清",
+      "symptom_code": "UI.RESOLUTION_LAYOUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "打印不了",
+      "symptom_code": "PRINT.NO_OUTPUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "打印不起",
+      "symptom_code": "PRINT.NO_OUTPUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "打不出来",
+      "symptom_code": "PRINT.NO_OUTPUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "打印机不工作",
+      "symptom_code": "PRINT.NO_OUTPUT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "卡纸",
+      "symptom_code": "PRINT.JAM",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "夹纸",
+      "symptom_code": "PRINT.JAM",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "不吸纸",
+      "symptom_code": "PRINT.JAM",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "卷纸",
+      "symptom_code": "PRINT.JAM",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "打出来空白",
+      "symptom_code": "PRINT.BLANK_PAGE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "空白单",
+      "symptom_code": "PRINT.BLANK_PAGE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "多一张空白页",
+      "symptom_code": "PRINT.EXTRA_PAGE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "每张跟一张空白单",
+      "symptom_code": "PRINT.EXTRA_PAGE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "打印不全",
+      "symptom_code": "PRINT.INCOMPLETE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "二维码打不全",
+      "symptom_code": "PRINT.INCOMPLETE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "缺行",
+      "symptom_code": "PRINT.INCOMPLETE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "格式不对",
+      "symptom_code": "PRINT.WRONG_FORMAT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "外语打印",
+      "symptom_code": "PRINT.WRONG_FORMAT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "排版错乱",
+      "symptom_code": "PRINT.WRONG_FORMAT",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "断网了",
+      "symptom_code": "NETWORK.DISCONNECTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没网了",
+      "symptom_code": "NETWORK.DISCONNECTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "网络中断",
+      "symptom_code": "NETWORK.DISCONNECTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "网不通",
+      "symptom_code": "NETWORK.DISCONNECTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没有流量",
+      "symptom_code": "NETWORK.DISCONNECTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "授权满了",
+      "symptom_code": "RESOURCE.LICENSE_EXHAUSTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "只有别人退出才能看",
+      "symptom_code": "RESOURCE.LICENSE_EXHAUSTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "登录人数太多",
+      "symptom_code": "RESOURCE.LICENSE_EXHAUSTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没有单位",
+      "symptom_code": "RESOURCE.MASTER_DATA_MISSING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没有规格",
+      "symptom_code": "RESOURCE.MASTER_DATA_MISSING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "项目找不到",
+      "symptom_code": "RESOURCE.MASTER_DATA_MISSING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "药品找不到",
+      "symptom_code": "RESOURCE.MASTER_DATA_MISSING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "频次没有",
+      "symptom_code": "RESOURCE.MASTER_DATA_MISSING",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "内存不足",
+      "symptom_code": "RESOURCE.MEMORY_EXHAUSTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "系统限制",
+      "symptom_code": "POLICY.RESTRICTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "安全要求",
+      "symptom_code": "POLICY.RESTRICTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "不允许开",
+      "symptom_code": "POLICY.RESTRICTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "不能拆零",
+      "symptom_code": "POLICY.RESTRICTED",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "不能开机",
+      "symptom_code": "HARDWARE.NO_POWER",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "开不了机",
+      "symptom_code": "HARDWARE.NO_POWER",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "鼠标没反应",
+      "symptom_code": "HARDWARE.INPUT_FAILURE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "键盘不能输入",
+      "symptom_code": "HARDWARE.INPUT_FAILURE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "输不了字母",
+      "symptom_code": "HARDWARE.INPUT_FAILURE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "显示器坏了",
+      "symptom_code": "HARDWARE.DISPLAY_FAILURE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "花屏",
+      "symptom_code": "HARDWARE.DISPLAY_FAILURE",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "呼叫器没声音",
+      "symptom_code": "HARDWARE.NO_AUDIO",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "喇叭坏了",
+      "symptom_code": "HARDWARE.NO_AUDIO",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "没墨",
+      "symptom_code": "CONSUMABLE.EMPTY",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "墨盒没了",
+      "symptom_code": "CONSUMABLE.EMPTY",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    },
+    {
+      "alias": "硒鼓没了",
+      "symptom_code": "CONSUMABLE.EMPTY",
+      "assertion": "AFFIRMED",
+      "match_mode": "PHRASE"
+    }
+  ],
+  "location_normalization": {
+    "location_dimensions": [
+      "campus",
+      "building",
+      "floor",
+      "zone",
+      "department",
+      "room",
+      "sub_location"
+    ],
+    "separate_fields": {
+      "reporter_department": "人员组织归属，只能来自身份目录或显式自述。",
+      "occurrence_location": "故障实际发生地点，可与上报人员科室不同。",
+      "asset_registered_location": "资产台账位置，可能滞后于设备移动。",
+      "service_scope_location": "公共故障影响范围，不等同单个上报地点。"
+    },
+    "normalization_rules": [
+      {
+        "input_pattern": "一号楼|1号楼",
+        "normalized_component": {
+          "building": "BUILDING_1"
+        }
+      },
+      {
+        "input_pattern": "二号楼|2号楼",
+        "normalized_component": {
+          "building": "BUILDING_2"
+        }
+      },
+      {
+        "input_pattern": "三号楼|3号楼",
+        "normalized_component": {
+          "building": "BUILDING_3"
+        }
+      },
+      {
+        "input_pattern": "五号楼|5号楼",
+        "normalized_component": {
+          "building": "BUILDING_5"
+        }
+      },
+      {
+        "input_pattern": "诊断室",
+        "normalized_token": "诊室",
+        "notes": "只做词形归一，不猜测房号。"
+      },
+      {
+        "input_pattern": "署前街|蜀前街",
+        "selection_policy": "REQUIRES_HUMAN_CONFIRMATION",
+        "notes": "原始语料存在两种写法，不能静默合并。"
+      }
+    ],
+    "ip_policy": {
+      "role": "ASSET_HINT_NOT_LOCATION_TRUTH",
+      "normalize_separators": [
+        ".",
+        ",",
+        "，",
+        "、"
+      ],
+      "validation": "必须恰好四段且每段 0–255；无效值不得部分解析。",
+      "storage": "生产日志只存 HMAC/Hash；原值仅可进入受控内部字段。"
+    }
+  },
+  "colloquial_discourse_markers": {
+    "addressing": [
+      "信息报修",
+      "老师",
+      "信息科老师",
+      "哪位老师",
+      "有人吗"
+    ],
+    "request": [
+      "麻烦处理一下",
+      "帮忙看一下",
+      "请处理一下",
+      "尽快处理",
+      "搞快点",
+      "救急",
+      "SOS"
+    ],
+    "impact": [
+      "病人等着",
+      "病人堆起了",
+      "还有病人没看",
+      "影响看诊",
+      "无法工作",
+      "值班要空缺"
+    ],
+    "failed_workaround": [
+      "重启了还是不行",
+      "重新登录也不行",
+      "换电脑还不行",
+      "插拔网线也不行"
+    ],
+    "recovery": [
+      "可以了",
+      "好了",
+      "恢复了",
+      "不用看了",
+      "后面恢复正常了"
+    ],
+    "context_inheritance": [
+      "同上",
+      "+1",
+      "加一",
+      "我的也是",
+      "俺也一样",
+      "+10086"
+    ],
+    "uncertainty": [
+      "是不是",
+      "好像",
+      "大概率",
+      "感觉",
+      "可能",
+      "咋回事"
+    ],
+    "emotion_only": [
+      "急",
+      "快啊",
+      "好恼火",
+      "无语",
+      "病人要骂了"
+    ],
+    "policy": "情绪词只能增强催办/影响信号，不能单独决定服务、原因或严重级别。"
+  }
+}

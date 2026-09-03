@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/p2-007/contact-journey.schema.json",
+  "title": "P2-007 Contact Journey",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "journey_id",
+    "entry_mode",
+    "origin_channel",
+    "current_channel",
+    "origin_trigger",
+    "reporter_person_id",
+    "reported_at",
+    "origin_message_ref",
+    "provider_context",
+    "channel_legs",
+    "continuation_state"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "journey_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "entry_mode": {
+      "enum": [
+        "GROUP_MENTION_INLINE",
+        "GROUP_MENTION_TO_DIRECT_GUIDED",
+        "DIRECT_ORGANIC"
+      ]
+    },
+    "origin_channel": {
+      "enum": [
+        "WECOM_GROUP",
+        "WECOM_DIRECT"
+      ]
+    },
+    "current_channel": {
+      "enum": [
+        "WECOM_GROUP",
+        "WECOM_DIRECT"
+      ]
+    },
+    "origin_trigger": {
+      "enum": [
+        "BOT_MENTION_WITH_DESCRIPTION",
+        "BOT_MENTION_ONLY",
+        "DIRECT_USER_MESSAGE"
+      ]
+    },
+    "reporter_person_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "reported_at": {
+      "$ref": "./local_datetime.schema.json"
+    },
+    "origin_message_ref": {
+      "type": "string",
+      "pattern": "^opaque_[a-f0-9]{16,64}$"
+    },
+    "provider_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "message_ref",
+        "callback_request_ref",
+        "chat_type",
+        "sender_ref",
+        "occurred_at"
+      ],
+      "properties": {
+        "provider": {
+          "const": "WECOM_AIBOT"
+        },
+        "message_ref": {
+          "type": "string",
+          "pattern": "^opaque_[a-f0-9]{16,64}$"
+        },
+        "callback_request_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^opaque_[a-f0-9]{16,64}$"
+        },
+        "chat_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^opaque_[a-f0-9]{16,64}$"
+        },
+        "chat_type": {
+          "enum": [
+            "GROUP",
+            "DIRECT"
+          ]
+        },
+        "sender_ref": {
+          "type": "string",
+          "pattern": "^opaque_[a-f0-9]{16,64}$"
+        },
+        "quote_present": {
+          "type": "boolean"
+        },
+        "response_url_present": {
+          "type": "boolean"
+        },
+        "occurred_at": {
+          "$ref": "./local_datetime.schema.json"
+        }
+      }
+    },
+    "channel_legs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "leg_id",
+          "channel",
+          "thread_id",
+          "opened_at",
+          "state",
+          "link_method"
+        ],
+        "properties": {
+          "leg_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "enum": [
+              "WECOM_GROUP",
+              "WECOM_DIRECT"
+            ]
+          },
+          "thread_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "opened_at": {
+            "$ref": "./local_datetime.schema.json"
+          },
+          "closed_at": {
+            "anyOf": [
+              { "$ref": "./local_datetime.schema.json" },
+              { "type": "null" }
+            ]
+          },
+          "state": {
+            "enum": [
+              "OPEN",
+              "CLOSED"
+            ]
+          },
+          "link_method": {
+            "enum": [
+              "ORIGIN",
+              "PROVIDER_CONTEXT",
+              "CONTINUATION_REF",
+              "DIRECT_CHANNEL_BINDING",
+              "HUMAN_CONFIRMED",
+              "DIRECT_ORGANIC"
+            ]
+          }
+        }
+      }
+    },
+    "continuation_state": {
+      "enum": [
+        "NOT_REQUIRED",
+        "PENDING",
+        "BOUND",
+        "AMBIGUOUS",
+        "EXPIRED",
+        "REVOKED"
+      ]
+    },
+    "continuation_ref": {
+      "anyOf": [
+        {
+          "$ref": "p2_007_continuation_ref.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "same_user_and_time_only_used": {
+      "const": false
+    }
+  }
+}

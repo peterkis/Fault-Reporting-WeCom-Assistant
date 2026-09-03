@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2-007-fact-provenance.schema.json",
+  "title": "P2-007 Fact Provenance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fact_id",
+    "field_path",
+    "value",
+    "normalized_value",
+    "assertion",
+    "source_kind",
+    "source_ref",
+    "source_hash",
+    "observed_at",
+    "reliability_tier",
+    "confidence_level",
+    "status",
+    "sensitivity",
+    "catalog_version",
+    "rule_set_version"
+  ],
+  "properties": {
+    "fact_id": {
+      "type": "string",
+      "pattern": "^fact_[A-Za-z0-9_-]{8,96}$"
+    },
+    "field_path": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.\\[\\]-]{1,127}$"
+    },
+    "value": {},
+    "normalized_value": {},
+    "assertion": {
+      "enum": [
+        "AFFIRMED",
+        "NEGATED",
+        "UNCERTAIN"
+      ]
+    },
+    "source_kind": {
+      "enum": [
+        "HUMAN_OPERATOR_CONFIRMED",
+        "REPORTER_CORRECTION",
+        "AUTHORITATIVE_DIRECTORY",
+        "SYSTEM_OBSERVATION",
+        "REPORTER_EXPLICIT",
+        "DETERMINISTIC_RULE",
+        "CONTEXT_INHERITANCE",
+        "MEDIA_METADATA",
+        "OCR_EXTRACTED_FUTURE",
+        "LLM_SUGGESTED_FUTURE",
+        "DEFAULT_UNKNOWN",
+        "TRUSTED_CHANNEL_METADATA",
+        "DIRECTORY_PROFILE_SNAPSHOT",
+        "CHANNEL_TRANSITION",
+        "CONVERSATION_CONTROL_EVENT",
+        "COMMUNICATION_MESSAGE_EVENT",
+        "DELIVERY_RECEIPT",
+        "INCIDENT_CORRELATION_RULE",
+        "MONITORING_CORROBORATION"
+      ]
+    },
+    "source_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "source_span": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ]
+    },
+    "source_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "observed_at": {
+      "$ref": "./local_datetime.schema.json"
+    },
+    "reliability_tier": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "confidence_level": {
+      "enum": [
+        "EXACT",
+        "STRONG",
+        "WEAK",
+        "UNKNOWN"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ACTIVE",
+        "SUPERSEDED",
+        "CONFLICTED",
+        "REJECTED"
+      ]
+    },
+    "sensitivity": {
+      "enum": [
+        "INTERNAL",
+        "SENSITIVE_INTERNAL",
+        "PERSONAL",
+        "PATIENT_SENSITIVE",
+        "SECRET"
+      ]
+    },
+    "catalog_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "rule_set_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "rule_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z]+-[0-9]{3}$"
+    },
+    "replaces_fact_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^fact_[A-Za-z0-9_-]{8,96}$"
+    },
+    "reason_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_]{3,96}$"
+    },
+    "journey_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "channel_leg_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "actor_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    }
+  }
+}

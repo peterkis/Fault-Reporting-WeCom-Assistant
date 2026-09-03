@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/p2-007/continuation-ref.schema.json",
+  "title": "P2-007 Continuation Reference Persisted View",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "continuation_id",
+    "journey_id",
+    "token_hash",
+    "reporter_person_id",
+    "bot_ref",
+    "purpose",
+    "state",
+    "issued_at",
+    "expires_at",
+    "expires_epoch_ms",
+    "authorization_token"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "continuation_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "journey_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "token_hash": {
+      "type": "string",
+      "pattern": "^sha256_[a-f0-9]{64}$"
+    },
+    "reporter_person_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "bot_ref": {
+      "type": "string",
+      "pattern": "^bot_[a-f0-9]{16,64}$"
+    },
+    "purpose": {
+      "enum": [
+        "GROUP_TO_DIRECT_GUIDANCE"
+      ]
+    },
+    "state": {
+      "enum": [
+        "PENDING",
+        "BOUND",
+        "CONSUMED",
+        "EXPIRED",
+        "REVOKED"
+      ]
+    },
+    "issued_at": {
+      "$ref": "./local_datetime.schema.json"
+    },
+    "expires_at": {
+      "$ref": "./local_datetime.schema.json"
+    },
+    "expires_epoch_ms": {
+      "$ref": "./epoch_ms_string.schema.json"
+    },
+    "bound_direct_thread_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    },
+    "consumed_at": {
+      "anyOf": [
+        { "$ref": "./local_datetime.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "revoked_at": {
+      "anyOf": [
+        { "$ref": "./local_datetime.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "authorization_token": {
+      "const": false
+    }
+  }
+}

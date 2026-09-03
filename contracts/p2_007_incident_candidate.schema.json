@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/p2-007/incident-candidate.schema.json",
+  "title": "P2-007 Incident Candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "candidate_id",
+    "candidate_state",
+    "scope_candidate",
+    "signature_hash",
+    "policy_version",
+    "window_seconds",
+    "distinct_reporter_count",
+    "department_count",
+    "building_count",
+    "evidence_refs",
+    "human_confirmation_required",
+    "automatic_incident_creation",
+    "automatic_ticket_linking",
+    "automatic_public_broadcast"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "candidate_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "candidate_state": {
+      "enum": [
+        "CANDIDATE",
+        "UNDER_REVIEW",
+        "REJECTED",
+        "EXPIRED"
+      ]
+    },
+    "scope_candidate": {
+      "enum": [
+        "LOCAL",
+        "CROSS_DEPARTMENT",
+        "BUILDING",
+        "CAMPUS",
+        "HOSPITAL_WIDE",
+        "UNKNOWN"
+      ]
+    },
+    "signature_hash": {
+      "type": "string",
+      "pattern": "^corr_[a-f0-9]{32,64}$"
+    },
+    "policy_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "window_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3600
+    },
+    "distinct_reporter_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000
+    },
+    "department_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "building_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "service_codes": {
+      "type": "array",
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z0-9_.-]{2,96}$"
+      }
+    },
+    "symptom_codes": {
+      "type": "array",
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z0-9_.-]{2,96}$"
+      }
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 512,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^opaque_[a-f0-9]{16,64}$"
+      }
+    },
+    "human_confirmation_required": {
+      "const": true
+    },
+    "automatic_incident_creation": {
+      "const": false
+    },
+    "automatic_ticket_linking": {
+      "const": false
+    },
+    "automatic_public_broadcast": {
+      "const": false
+    },
+    "recommended_review_role": {
+      "enum": [
+        "DISPATCHER",
+        "ADMIN",
+        "INCIDENT_MANAGER"
+      ]
+    }
+  }
+}

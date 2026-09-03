@@ -80,6 +80,19 @@ const profiles = Object.freeze({
     p2006Status: 'DONE',
     p2g1Status: 'PASSED',
   }),
+  P2_007_DONE_AWAITING_SEPARATE_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-007',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-005',
+    activeTask: null,
+    activeLane: null,
+    candidate: 'P2-008',
+    candidateAuthorized: false,
+    authorizedTasks: Object.freeze(['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006', 'P2-007']),
+    p2006Status: 'DONE',
+    p2007Status: 'DONE',
+    p2g1Status: 'PASSED',
+  }),
 });
 
 test('V1.4 architecture validator passes', () => {
@@ -130,7 +143,7 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
     assert.equal(lane, profile.activeLane);
     assert.equal(candidate, profile.candidate);
     assert.equal(authorized, profile.candidateAuthorized);
-    assert.deepEqual(tasks, ['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006']);
+    assert.deepEqual(tasks, profile.authorizedTasks ?? ['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006']);
     assert.deepEqual(gates, ['P2-G1']);
     assert.equal(tasks.includes(lastTask), true);
     assert.equal(gates.includes(lastGate), profile.lastCompletedGate !== null);
@@ -150,8 +163,8 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
     assert.equal(fs.existsSync(path.join(root, 'evidence/arch-005-targeted-live-revalidation.md')), true);
   }
   if (profile.p2g1Status === 'PASSED') {
-    assert.equal(current.next_task_candidate, 'P2-007');
-    assert.equal(current.next_task_authorized, false);
+    assert.equal(current.next_task_candidate, profile.candidate);
+    assert.equal(current.next_task_authorized, profile.candidateAuthorized);
   }
 
   assert.equal(backlog.tasks.find((task) => task.id === 'P2-001').status, 'DONE');
@@ -160,7 +173,8 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
   assert.equal(backlog.tasks.find((task) => task.id === 'P2-004').status, 'DONE');
   assert.equal(backlog.tasks.find((task) => task.id === 'P2-005').status, 'DONE');
   assert.equal(backlog.tasks.find((task) => task.id === 'P2-006').status, profile.p2006Status);
-  assert.equal(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[7-9]|01[0-4])$/u.test(task.id))
+  assert.equal(backlog.tasks.find((task) => task.id === 'P2-007').status, profile.p2007Status ?? 'TODO');
+  assert.equal(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[8-9]|01[0-4])$/u.test(task.id))
     .every((task) => task.status === 'TODO'), true);
   assert.deepEqual(
     backlog.tasks.filter((task) => task.status === (profile.activeTaskStatus ?? 'IN_PROGRESS')).map((task) => task.id),

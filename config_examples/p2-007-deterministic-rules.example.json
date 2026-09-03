@@ -1,0 +1,2267 @@
+{
+  "schema_version": "1.0.0",
+  "rule_set_id": "CD3H_P2_007_DETERMINISTIC_RULES",
+  "rule_set_version": "0.1.0-draft",
+  "status": "DRAFT_FOR_P2_007_IMPLEMENTATION",
+  "evaluation_order": "priority DESC, rule_id ASC",
+  "execution_mode": "PURE_FUNCTION_NO_SIDE_EFFECT",
+  "inputs": [
+    "normalized conversation turns",
+    "safe channel/session metadata",
+    "optional authoritative directory candidates",
+    "catalog and alias versions",
+    "time-window correlation context"
+  ],
+  "outputs": [
+    "structured facts with provenance",
+    "service/symptom/scope candidates",
+    "clarification questions",
+    "routing suggestion",
+    "incident candidate only",
+    "explainable rule hits"
+  ],
+  "forbidden_actions": [
+    "CREATE_TICKET",
+    "UPDATE_TICKET_STATUS",
+    "SEND_WECOM_MESSAGE",
+    "CALL_LLM_PROVIDER",
+    "WRITE_PATIENT_IDENTIFIER_TO_LOG",
+    "CREATE_INCIDENT"
+  ],
+  "rules": [
+    {
+      "rule_id": "AGG-001",
+      "version": "1.0.0",
+      "group": "AGGREGATION",
+      "priority": 1000,
+      "description_zh": "同一群、同一上报人在 90 秒内的连续消息合并为一个分析窗口。",
+      "when": {
+        "all": [
+          {
+            "field": "context.same_thread",
+            "eq": true
+          },
+          {
+            "field": "context.same_reporter",
+            "eq": true
+          },
+          {
+            "field": "context.gap_ms",
+            "lte": 90000
+          },
+          {
+            "field": "context.explicit_new_report",
+            "eq": false
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "MERGE_TURN",
+          "relation": "SUPPLEMENT"
+        }
+      ],
+      "explanation_template_zh": "群聊报修通常按图片、现象、IP、地点分多条补充。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "AGG-002",
+      "version": "1.0.0",
+      "group": "AGGREGATION",
+      "priority": 999,
+      "description_zh": "明确的新报修/另一个问题开启新窗口。",
+      "when": {
+        "any": [
+          {
+            "field": "normalized_text",
+            "contains_any": [
+              "新报修",
+              "另一个问题",
+              "重新报修",
+              "另外一个故障"
+            ]
+          },
+          {
+            "field": "context.explicit_new_report",
+            "eq": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "START_NEW_ANALYSIS_WINDOW",
+          "reason": "EXPLICIT_NEW_REPORT"
+        }
+      ],
+      "explanation_template_zh": "显式边界优先于时间窗口。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "AGG-003",
+      "version": "1.0.0",
+      "group": "AGGREGATION",
+      "priority": 998,
+      "description_zh": "图片/视频之后 90 秒内同一上报人的描述并入该媒体上下文。",
+      "when": {
+        "all": [
+          {
+            "field": "context.previous_turn_has_media",
+            "eq": true
+          },
+          {
+            "field": "context.same_reporter",
+            "eq": true
+          },
+          {
+            "field": "context.gap_ms",
+            "lte": 90000
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "MERGE_TURN",
+          "relation": "MEDIA_DESCRIPTION"
+        }
+      ],
+      "explanation_template_zh": "历史语料中大量报修先发图，后发一句“打不开/转圈”。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "AGG-004",
+      "version": "1.0.0",
+      "group": "AGGREGATION",
+      "priority": 997,
+      "description_zh": "只有图片/视频而无可用文字时，不猜测服务和故障。",
+      "when": {
+        "all": [
+          {
+            "field": "turn.has_media",
+            "eq": true
+          },
+          {
+            "field": "turn.textual_signal_count",
+            "eq": 0
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_RESULT_STATE",
+          "value": "NEEDS_DESCRIPTION"
+        },
+        {
+          "action": "ASK",
+          "question_code": "Q_DESCRIBE_VISIBLE_PROBLEM"
+        }
+      ],
+      "explanation_template_zh": "未做 OCR 时，媒体不能被当作已知故障事实。",
+      "safety": [
+        "P2-011 前不得从文件名或媒体 URL 猜测内容。"
+      ]
+    },
+    {
+      "rule_id": "AGG-005",
+      "version": "1.0.0",
+      "group": "AGGREGATION",
+      "priority": 996,
+      "description_zh": "引用块不重复计为新事实，只保留上下文引用关系。",
+      "when": {
+        "field": "turn.contains_quoted_message",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "MARK_TEXT_SEGMENT",
+          "segment": "QUOTE",
+          "fact_eligibility": "CONTEXT_ONLY"
+        }
+      ],
+      "explanation_template_zh": "企业微信导出包含大量引用原文，重复计数会放大事件。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "AGG-006",
+      "version": "1.0.0",
+      "group": "AGGREGATION",
+      "priority": 995,
+      "description_zh": "“同上/+1/我的也是”只能继承最近的兼容锚点。",
+      "when": {
+        "all": [
+          {
+            "field": "normalized_text",
+            "full_match_any": [
+              "同上",
+              "+1",
+              "加一",
+              "我的也是",
+              "俺也一样",
+              "+10086"
+            ]
+          },
+          {
+            "field": "context.anchor_age_ms",
+            "lte": 600000
+          },
+          {
+            "field": "context.anchor_compatible",
+            "eq": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "INHERIT_FACTS",
+          "from": "ACTIVE_ANCHOR",
+          "source_kind": "CONTEXT_INHERITANCE"
+        },
+        {
+          "action": "EMIT_CORROBORATION"
+        }
+      ],
+      "explanation_template_zh": "短回复本身不含服务和现象，必须绑定可审计锚点。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "AGG-007",
+      "version": "1.0.0",
+      "group": "AGGREGATION",
+      "priority": 994,
+      "description_zh": "无锚点的“同上/+1”保持未知并请求说明。",
+      "when": {
+        "all": [
+          {
+            "field": "normalized_text",
+            "full_match_any": [
+              "同上",
+              "+1",
+              "加一",
+              "我的也是",
+              "俺也一样",
+              "+10086"
+            ]
+          },
+          {
+            "field": "context.anchor_compatible",
+            "eq": false
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SELECTED_SERVICE",
+          "value": null
+        },
+        {
+          "action": "ASK",
+          "question_code": "Q_WHAT_IS_SAME_AS"
+        }
+      ],
+      "explanation_template_zh": "禁止跨话题误继承。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NORM-001",
+      "version": "1.0.0",
+      "group": "NORMALIZATION",
+      "priority": 900,
+      "description_zh": "文本使用 Unicode NFKC、全半角标点和空白归一。",
+      "when": {
+        "field": "input.exists",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "NORMALIZE_TEXT",
+          "profile": "ZH_HOSPITAL_CHAT_V1"
+        }
+      ],
+      "explanation_template_zh": "减少全角数字、标点和英文大小写差异。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NORM-002",
+      "version": "1.0.0",
+      "group": "NORMALIZATION",
+      "priority": 899,
+      "description_zh": "IP 中逗号/中文逗号/顿号仅在四段合法时归一为点。",
+      "when": {
+        "field": "normalized_text",
+        "regex": "(?<!\\d)(?:\\d{1,3}[.,，、]){3}\\d{1,3}(?!\\d)"
+      },
+      "actions": [
+        {
+          "action": "PARSE_ASSET_HINT",
+          "hint_type": "IP_ADDRESS",
+          "validation": "IPV4_STRICT",
+          "storage": "INTERNAL_HASHED_LOG"
+        }
+      ],
+      "explanation_template_zh": "群聊中存在 10.100，144.96 一类分隔符噪声。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NORM-003",
+      "version": "1.0.0",
+      "group": "NORMALIZATION",
+      "priority": 898,
+      "description_zh": "“系统”单独出现不选择任何具体服务。",
+      "when": {
+        "field": "normalized_text",
+        "token_only_or_generic": "系统"
+      },
+      "actions": [
+        {
+          "action": "ADD_SERVICE_CANDIDATE",
+          "service_code": null,
+          "confidence": "UNKNOWN"
+        },
+        {
+          "action": "ASK",
+          "question_code": "Q_WHICH_SYSTEM_OR_FUNCTION"
+        }
+      ],
+      "explanation_template_zh": "系统一词在医院场景覆盖门诊、住院、影像、检验、叫号等。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NORM-004",
+      "version": "1.0.0",
+      "group": "NORMALIZATION",
+      "priority": 897,
+      "description_zh": "“工作站”按门诊/住院限定词消歧。",
+      "when": {
+        "field": "normalized_text",
+        "contains": "工作站"
+      },
+      "actions": [
+        {
+          "action": "DISAMBIGUATE_BY_CONTEXT",
+          "mapping": {
+            "门诊": "CLINICAL.OUTPATIENT_WORKSTATION",
+            "住院": "CLINICAL.INPATIENT_WORKSTATION",
+            "病房": "CLINICAL.INPATIENT_WORKSTATION"
+          }
+        }
+      ],
+      "explanation_template_zh": "缺少限定词时保留两个候选。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NORM-005",
+      "version": "1.0.0",
+      "group": "NORMALIZATION",
+      "priority": 896,
+      "description_zh": "“预约”按诊间/微信/小程序/公众号渠道消歧。",
+      "when": {
+        "field": "normalized_text",
+        "contains": "预约"
+      },
+      "actions": [
+        {
+          "action": "DISAMBIGUATE_BY_CONTEXT",
+          "mapping": {
+            "诊间": "ACCESS.IN_ROOM_APPOINTMENT",
+            "微信": "ONLINE.REGISTRATION",
+            "小程序": "ONLINE.REGISTRATION",
+            "公众号": "ONLINE.REGISTRATION"
+          }
+        }
+      ],
+      "explanation_template_zh": "不把所有预约问题都归入同一系统。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NORM-006",
+      "version": "1.0.0",
+      "group": "NORMALIZATION",
+      "priority": 895,
+      "description_zh": "“报告”按检验/影像限定词消歧。",
+      "when": {
+        "field": "normalized_text",
+        "contains": "报告"
+      },
+      "actions": [
+        {
+          "action": "DISAMBIGUATE_BY_CONTEXT",
+          "mapping": {
+            "检验": "DIAG.LAB_RESULT_VIEW",
+            "化验": "DIAG.LAB_RESULT_VIEW",
+            "放射": "DIAG.IMAGING_REPORT",
+            "影像": "DIAG.IMAGING_REPORT",
+            "超声": "DIAG.IMAGING_REPORT",
+            "核磁": "DIAG.IMAGING_REPORT"
+          }
+        }
+      ],
+      "explanation_template_zh": "无类型时询问报告类别。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NORM-007",
+      "version": "1.0.0",
+      "group": "NORMALIZATION",
+      "priority": 894,
+      "description_zh": "“审核”不自动归类，按合理用药/药师/医保/门特限定词处理。",
+      "when": {
+        "field": "normalized_text",
+        "contains": "审核"
+      },
+      "actions": [
+        {
+          "action": "DISAMBIGUATE_BY_CONTEXT",
+          "mapping": {
+            "合理用药": "PHARM.RATIONAL_MEDICATION",
+            "药师": "PHARM.PRESCRIPTION_REVIEW",
+            "审方": "PHARM.PRESCRIPTION_REVIEW",
+            "医保": "INSURANCE.ELIGIBILITY_AUDIT",
+            "门特": "INSURANCE.OUTPATIENT_SPECIAL"
+          }
+        }
+      ],
+      "explanation_template_zh": "审核在历史语料中是高歧义词。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INT-001",
+      "version": "1.0.0",
+      "group": "INTENT",
+      "priority": 800,
+      "description_zh": "明确不可用、报错、卡顿、失败等识别为故障上报。",
+      "when": {
+        "any": [
+          {
+            "field": "symptom_facts.count",
+            "gte": 1
+          },
+          {
+            "field": "normalized_text",
+            "contains_any": [
+              "故障",
+              "出问题",
+              "坏了",
+              "报错",
+              "接口超时"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_DOMAIN_INTENT",
+          "value": "INCIDENT_REPORT"
+        }
+      ],
+      "explanation_template_zh": "故障意图和具体服务是两个独立维度。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INT-002",
+      "version": "1.0.0",
+      "group": "INTENT",
+      "priority": 799,
+      "description_zh": "重置密码、安装、配置、开通等识别为服务请求。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "重置密码",
+          "安装软件",
+          "配置打印机",
+          "开通账号",
+          "新增用户",
+          "增加权限",
+          "重装电脑"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_DOMAIN_INTENT",
+          "value": "SERVICE_REQUEST"
+        }
+      ],
+      "explanation_template_zh": "服务请求不等同系统故障。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INT-003",
+      "version": "1.0.0",
+      "group": "INTENT",
+      "priority": 798,
+      "description_zh": "新增药品、频次、科室、号别、提示规则等识别为配置变更请求。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "增加医嘱",
+          "增加频次",
+          "加上选项",
+          "修改规则",
+          "维护项目",
+          "增加科室",
+          "调整提示",
+          "改一下"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_DOMAIN_INTENT",
+          "value": "CONFIG_CHANGE_REQUEST"
+        }
+      ],
+      "explanation_template_zh": "需业务所有者批准，规则本身不执行变更。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INT-004",
+      "version": "1.0.0",
+      "group": "INTENT",
+      "priority": 797,
+      "description_zh": "“怎么/如何/为什么/请问”且无明确故障时识别为使用或政策问题。",
+      "when": {
+        "all": [
+          {
+            "field": "normalized_text",
+            "contains_any": [
+              "怎么",
+              "如何",
+              "为什么",
+              "请问",
+              "能不能",
+              "可以吗"
+            ]
+          },
+          {
+            "field": "symptom_facts.count",
+            "eq": 0
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_DOMAIN_INTENT",
+          "value": "HOW_TO_QUESTION"
+        }
+      ],
+      "explanation_template_zh": "问题类消息不能默认建故障。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INT-005",
+      "version": "1.0.0",
+      "group": "INTENT",
+      "priority": 796,
+      "description_zh": "工单或处理进度询问识别为状态查询。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "处理好了吗",
+          "修好了吗",
+          "好久能好",
+          "什么时候能来",
+          "还有多久",
+          "处理到哪"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_DOMAIN_INTENT",
+          "value": "STATUS_QUERY"
+        }
+      ],
+      "explanation_template_zh": "应关联已有会话/工单，而非创建重复故障。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INT-006",
+      "version": "1.0.0",
+      "group": "INTENT",
+      "priority": 795,
+      "description_zh": "无人响应、电话打不通、反复催办等识别为升级/投诉信号。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "电话打不通",
+          "一直没人处理",
+          "有人没有",
+          "催一下",
+          "投诉",
+          "怎么还没来"
+        ]
+      },
+      "actions": [
+        {
+          "action": "ADD_INTENT_SIGNAL",
+          "value": "ESCALATION_COMPLAINT"
+        }
+      ],
+      "explanation_template_zh": "投诉可与故障上报同时存在。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INT-007",
+      "version": "1.0.0",
+      "group": "INTENT",
+      "priority": 794,
+      "description_zh": "“好了/可以了/不用看了/恢复了”识别为恢复更新。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "可以了",
+          "好了",
+          "恢复了",
+          "不用看了",
+          "不用处理了",
+          "后面恢复正常了"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_DOMAIN_INTENT_IF_NO_NEW_FAULT",
+          "value": "RECOVERY_UPDATE"
+        },
+        {
+          "action": "SET_RECOVERY_SIGNAL",
+          "value": "REPORTER_OBSERVED_RECOVERED"
+        }
+      ],
+      "explanation_template_zh": "恢复信号不直接关闭 Ticket。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INT-008",
+      "version": "1.0.0",
+      "group": "INTENT",
+      "priority": 793,
+      "description_zh": "纯感谢或寒暄识别为确认/闲聊。",
+      "when": {
+        "field": "normalized_text",
+        "full_match_regex": "^(谢谢|感谢|多谢|辛苦了|好的|收到|在吗|有人吗)[!！?？。.]*$"
+      },
+      "actions": [
+        {
+          "action": "SET_DOMAIN_INTENT",
+          "value": "ACKNOWLEDGEMENT_OR_CHATTER"
+        }
+      ],
+      "explanation_template_zh": "避免把礼貌回复重复建单。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NEG-001",
+      "version": "1.0.0",
+      "group": "NEGATION",
+      "priority": 750,
+      "description_zh": "否定词只否定同分句中紧邻的服务或原因候选。",
+      "when": {
+        "field": "normalized_text",
+        "regex": "(?:不是|并非|不像|没有).{0,12}(?:系统|网络|审方|药房|电脑|患者)"
+      },
+      "actions": [
+        {
+          "action": "EMIT_NEGATED_FACT",
+          "scope": "CLAUSE_LOCAL"
+        }
+      ],
+      "explanation_template_zh": "“不是审方系统”不否定“提交失败”事实。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NEG-002",
+      "version": "1.0.0",
+      "group": "NEGATION",
+      "priority": 749,
+      "description_zh": "后续明确纠正位置、系统或范围时，旧事实标记为被替代。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "不是，是",
+          "搞错了",
+          "应该是",
+          "改为",
+          "前面说错了"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SUPERSEDE_PRIOR_FACT",
+          "source_kind": "REPORTER_CORRECTION"
+        }
+      ],
+      "explanation_template_zh": "保留旧事实审计，不直接删除。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NEG-003",
+      "version": "1.0.0",
+      "group": "NEGATION",
+      "priority": 748,
+      "description_zh": "“还是不行”否定前一个处置成功假设，而不删除原故障。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "还是不行",
+          "仍然不行",
+          "重启了也不行",
+          "重新登录也不行",
+          "换电脑还不行"
+        ]
+      },
+      "actions": [
+        {
+          "action": "MARK_WORKAROUND_RESULT",
+          "value": "FAILED"
+        },
+        {
+          "action": "KEEP_INCIDENT_ACTIVE",
+          "analysis_only": true
+        }
+      ],
+      "explanation_template_zh": "处置失败是新事实。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NEG-004",
+      "version": "1.0.0",
+      "group": "NEGATION",
+      "priority": 747,
+      "description_zh": "“不是审方，所有界面都卡”撤销审方唯一归类并扩大候选范围。",
+      "when": {
+        "all": [
+          {
+            "field": "normalized_text",
+            "contains_any": [
+              "不是审方",
+              "不是审方系统"
+            ]
+          },
+          {
+            "field": "normalized_text",
+            "contains_any": [
+              "所有界面",
+              "全部界面",
+              "整个系统"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "NEGATE_SERVICE_CANDIDATE",
+          "service_code": "PHARM.PRESCRIPTION_REVIEW"
+        },
+        {
+          "action": "SET_SCOPE_AT_LEAST",
+          "value": "MULTIPLE_ENDPOINTS"
+        },
+        {
+          "action": "ASK",
+          "question_code": "Q_WHICH_CORE_WORKFLOWS_AFFECTED"
+        }
+      ],
+      "explanation_template_zh": "用户早期原因猜测可能被后续观察推翻。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NEG-005",
+      "version": "1.0.0",
+      "group": "NEGATION",
+      "priority": 746,
+      "description_zh": "操作员称已恢复而上报人随后称仍失败时，保留冲突并以当前用户观察为未恢复。",
+      "when": {
+        "all": [
+          {
+            "field": "context.prior_operator_recovery_claim",
+            "eq": true
+          },
+          {
+            "field": "normalized_text",
+            "contains_any": [
+              "还是不行",
+              "没有好",
+              "仍然打不开"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "CREATE_CONFLICT",
+          "conflict_type": "RECOVERY_STATE_CONFLICT",
+          "resolution": "REPORTER_CURRENT_OBSERVATION",
+          "requires_human": false
+        }
+      ],
+      "explanation_template_zh": "不把后台推测当作客户端事实。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SCOPE-001",
+      "version": "1.0.0",
+      "group": "SCOPE",
+      "priority": 700,
+      "description_zh": "“其他电脑可以”支持单终端范围。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "其他电脑可以",
+          "换一个电脑就好了",
+          "别的电脑正常"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SCOPE",
+          "value": "SINGLE_ENDPOINT"
+        },
+        {
+          "action": "ADD_CAUSE_CANDIDATE",
+          "cause_code": "CAUSE.ENDPOINT_LOCAL",
+          "status": "HYPOTHESIS"
+        }
+      ],
+      "explanation_template_zh": "这是隔离定位线索，不是已确认根因。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SCOPE-002",
+      "version": "1.0.0",
+      "group": "SCOPE",
+      "priority": 699,
+      "description_zh": "“换电脑仍失败”排除纯单终端假设并继续询问患者/用户范围。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "换了电脑还不行",
+          "换个电脑也不行",
+          "其他电脑也一样"
+        ]
+      },
+      "actions": [
+        {
+          "action": "NEGATE_CAUSE_CANDIDATE",
+          "cause_code": "CAUSE.ENDPOINT_LOCAL"
+        },
+        {
+          "action": "ASK",
+          "question_code": "Q_ONE_PATIENT_OR_ALL"
+        }
+      ],
+      "explanation_template_zh": "故障可能落在患者数据、账号、应用服务或上游依赖。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SCOPE-003",
+      "version": "1.0.0",
+      "group": "SCOPE",
+      "priority": 698,
+      "description_zh": "“只有这个病人/就一个患者”设为单患者范围。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "只有这个病人",
+          "就这一个病人",
+          "只有这一个患者",
+          "其他患者正常"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SCOPE",
+          "value": "SINGLE_PATIENT"
+        }
+      ],
+      "explanation_template_zh": "患者级故障应使用安全患者引用。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SCOPE-004",
+      "version": "1.0.0",
+      "group": "SCOPE",
+      "priority": 697,
+      "description_zh": "“所有病人/换病人也不行”扩大为至少单用户或服务范围。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "所有病人都",
+          "换个病人也",
+          "其他患者也",
+          "每个病人都"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SCOPE_AT_LEAST",
+          "value": "SINGLE_USER"
+        },
+        {
+          "action": "NEGATE_SCOPE",
+          "value": "SINGLE_PATIENT"
+        }
+      ],
+      "explanation_template_zh": "仍需判断其他人员或终端是否受影响。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SCOPE-005",
+      "version": "1.0.0",
+      "group": "SCOPE",
+      "priority": 696,
+      "description_zh": "“整个科室/多个诊室/全部电脑”设为科室或多终端范围。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "整个科室",
+          "所有电脑",
+          "几个诊室",
+          "全部电脑",
+          "全科都"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SCOPE_AT_LEAST",
+          "value": "DEPARTMENT"
+        }
+      ],
+      "explanation_template_zh": "比单终端更可能是共享服务或网络问题。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SCOPE-006",
+      "version": "1.0.0",
+      "group": "SCOPE",
+      "priority": 695,
+      "description_zh": "多楼层同一时段断网并有交换机/停电线索，建立楼层网络候选。",
+      "when": {
+        "all": [
+          {
+            "field": "context.distinct_locations_120s",
+            "gte": 2
+          },
+          {
+            "field": "normalized_context",
+            "contains_any": [
+              "交换机",
+              "停电",
+              "多个楼层",
+              "4.5.6楼"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SELECT_SERVICE",
+          "service_code": "NETWORK.BUILDING_DISTRIBUTION"
+        },
+        {
+          "action": "ADD_CAUSE_CANDIDATE",
+          "cause_code": "CAUSE.NETWORK_DISTRIBUTION",
+          "status": "HYPOTHESIS"
+        },
+        {
+          "action": "SET_SCOPE_AT_LEAST",
+          "value": "BUILDING_FLOOR"
+        }
+      ],
+      "explanation_template_zh": "共享网络设备故障可影响多个楼层。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SCOPE-007",
+      "version": "1.0.0",
+      "group": "SCOPE",
+      "priority": 694,
+      "description_zh": "门诊和住院同时不可用时，范围至少为多部门。",
+      "when": {
+        "all": [
+          {
+            "field": "normalized_context",
+            "contains": "门诊"
+          },
+          {
+            "field": "normalized_context",
+            "contains_any": [
+              "住院",
+              "病房"
+            ]
+          },
+          {
+            "field": "context.time_span_ms",
+            "lte": 300000
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SCOPE_AT_LEAST",
+          "value": "MULTIPLE_DEPARTMENTS"
+        },
+        {
+          "action": "MARK_INCIDENT_CANDIDATE",
+          "reason": "CROSS_WORKFLOW_OUTAGE"
+        }
+      ],
+      "explanation_template_zh": "跨门诊/住院的共同故障不应按单点处理。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SCOPE-008",
+      "version": "1.0.0",
+      "group": "SCOPE",
+      "priority": 693,
+      "description_zh": "发生地点与上报人科室保持分离。",
+      "when": {
+        "all": [
+          {
+            "field": "reporter_directory.department",
+            "exists": true
+          },
+          {
+            "field": "extracted.occurrence_location",
+            "exists": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "STORE_SEPARATE_FACTS",
+          "fields": [
+            "reporter_department",
+            "occurrence_location"
+          ]
+        }
+      ],
+      "explanation_template_zh": "代报、跨科室支援和移动终端很常见。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SCOPE-009",
+      "version": "1.0.0",
+      "group": "SCOPE",
+      "priority": 692,
+      "description_zh": "IP 仅作为资产线索，不直接覆盖用户显式地点。",
+      "when": {
+        "field": "asset_hint.ip",
+        "exists": true
+      },
+      "actions": [
+        {
+          "action": "EMIT_FACT",
+          "field": "asset_hints",
+          "source_kind": "REPORTER_EXPLICIT"
+        },
+        {
+          "action": "LOOKUP_OPTIONAL",
+          "source": "ASSET_DIRECTORY",
+          "effect": "CANDIDATE_ONLY"
+        }
+      ],
+      "explanation_template_zh": "资产台账可能滞后，设备也可能移动。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INC-001",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 650,
+      "description_zh": "120 秒内至少 3 名不同上报人报告兼容服务/现象，标记公共故障候选。",
+      "when": {
+        "all": [
+          {
+            "field": "context.distinct_reporters_120s",
+            "gte": 3
+          },
+          {
+            "field": "context.compatible_fault_signals",
+            "eq": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "MARK_INCIDENT_CANDIDATE",
+          "reason": "MULTI_REPORTER_BURST"
+        },
+        {
+          "action": "SET_SCOPE_AT_LEAST",
+          "value": "MULTIPLE_ENDPOINTS"
+        }
+      ],
+      "explanation_template_zh": "只产生候选，P2-012 才允许创建 Incident。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INC-002",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 649,
+      "description_zh": "显式“都/所有/多个科室/住院部也”可在少量样本下扩大范围。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "都打不开",
+          "所有人都",
+          "多个科室",
+          "住院部也",
+          "其他科室也",
+          "全部都"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SCOPE_AT_LEAST",
+          "value": "MULTIPLE_ENDPOINTS"
+        },
+        {
+          "action": "MARK_INCIDENT_CANDIDATE",
+          "reason": "EXPLICIT_SHARED_SCOPE"
+        }
+      ],
+      "explanation_template_zh": "用户明确范围是公共事件的重要证据。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INC-003",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 648,
+      "description_zh": "公共故障候选期间的“+1/同上”只作为旁证，不复制患者或地点事实。",
+      "when": {
+        "all": [
+          {
+            "field": "context.active_incident_candidate",
+            "eq": true
+          },
+          {
+            "field": "source_kind",
+            "eq": "CONTEXT_INHERITANCE"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "EMIT_CORROBORATION"
+        },
+        {
+          "action": "DO_NOT_INHERIT_FIELDS",
+          "fields": [
+            "patient_ref",
+            "occurrence_location",
+            "asset_hint"
+          ]
+        }
+      ],
+      "explanation_template_zh": "避免把上一位用户的敏感信息复制给其他报告。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INC-004",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 647,
+      "description_zh": "公共故障候选活跃时不反复要求每位用户提供 IP，先确认影响范围。",
+      "when": {
+        "all": [
+          {
+            "field": "context.active_incident_candidate",
+            "eq": true
+          },
+          {
+            "field": "scope",
+            "in": [
+              "MULTIPLE_ENDPOINTS",
+              "DEPARTMENT",
+              "MULTIPLE_DEPARTMENTS",
+              "HOSPITAL_WIDE"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SUPPRESS_QUESTION",
+          "question_code": "Q_IP_ADDRESS"
+        },
+        {
+          "action": "ASK_ONCE_PER_INCIDENT",
+          "question_code": "Q_AFFECTED_LOCATIONS_AND_FUNCTIONS"
+        }
+      ],
+      "explanation_template_zh": "降低群聊风暴和重复沟通。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INC-005",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 646,
+      "description_zh": "不同服务且无共同上游证据时不强行合并公共事件。",
+      "when": {
+        "all": [
+          {
+            "field": "context.distinct_reporters_120s",
+            "gte": 3
+          },
+          {
+            "field": "context.compatible_fault_signals",
+            "eq": false
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "KEEP_SEPARATE_INCIDENT_CANDIDATES"
+        }
+      ],
+      "explanation_template_zh": "同一时间的打印机和药品主数据问题可能无关。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "CAUSE-001",
+      "version": "1.0.0",
+      "group": "CAUSE_CANDIDATE",
+      "priority": 600,
+      "description_zh": "“现病史太长/超过字符限制”只生成字段长度候选原因。",
+      "when": {
+        "field": "normalized_context",
+        "contains_any": [
+          "现病史太长",
+          "超过2000字符",
+          "字符太多",
+          "内容太长"
+        ]
+      },
+      "actions": [
+        {
+          "action": "ADD_CAUSE_CANDIDATE",
+          "cause_code": "CAUSE.FIELD_LENGTH_LIMIT",
+          "status": "HYPOTHESIS"
+        },
+        {
+          "action": "ADD_REQUIRED_CONFIRMATION",
+          "value": "ERROR_OR_OPERATOR_CONFIRMATION"
+        }
+      ],
+      "explanation_template_zh": "历史中该判断多次出现，但也有继续失败场景，不能直接写成根因。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "CAUSE-002",
+      "version": "1.0.0",
+      "group": "CAUSE_CANDIDATE",
+      "priority": 599,
+      "description_zh": "明确提到并发授权已满且需他人退出时，生成授权耗尽候选。",
+      "when": {
+        "field": "normalized_context",
+        "contains_any": [
+          "只买了这么多授权",
+          "有人退出才可以",
+          "同时登录的人太多",
+          "授权只有那么多"
+        ]
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "RESOURCE.LICENSE_EXHAUSTED"
+        },
+        {
+          "action": "ADD_CAUSE_CANDIDATE",
+          "cause_code": "CAUSE.CONCURRENCY_LICENSE",
+          "status": "CONFIRMED_IF_OPERATOR_SOURCE"
+        }
+      ],
+      "explanation_template_zh": "操作员明确说明时可提升可信等级。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "CAUSE-003",
+      "version": "1.0.0",
+      "group": "CAUSE_CANDIDATE",
+      "priority": 598,
+      "description_zh": "挂号成功但工作站无患者，生成数据同步候选。",
+      "when": {
+        "all": [
+          {
+            "field": "normalized_context",
+            "contains_any": [
+              "挂号成功",
+              "已经挂号",
+              "挂了号"
+            ]
+          },
+          {
+            "field": "normalized_context",
+            "contains_any": [
+              "系统没有",
+              "待接诊看不到",
+              "没有名字",
+              "患者列表没有"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SELECT_SERVICE",
+          "service_code": "ACCESS.PATIENT_LIST_SYNC"
+        },
+        {
+          "action": "ADD_CAUSE_CANDIDATE",
+          "cause_code": "CAUSE.DATA_SYNC",
+          "status": "HYPOTHESIS"
+        }
+      ],
+      "explanation_template_zh": "“补推后恢复”是常见处置线索，但不能从单句推断已确认。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "CAUSE-004",
+      "version": "1.0.0",
+      "group": "CAUSE_CANDIDATE",
+      "priority": 597,
+      "description_zh": "药品无单位/规格/项目时生成主数据候选并路由业务确认。",
+      "when": {
+        "field": "normalized_context",
+        "contains_any": [
+          "没有单位",
+          "没有规格",
+          "项目找不到",
+          "药品找不到",
+          "频次没有"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SELECT_SERVICE",
+          "service_code": "PHARM.DRUG_MASTER_DATA"
+        },
+        {
+          "action": "ADD_CAUSE_CANDIDATE",
+          "cause_code": "CAUSE.MASTER_DATA",
+          "status": "HYPOTHESIS"
+        },
+        {
+          "action": "ROUTE_SUGGESTION",
+          "owner": "PHARMACY_APPROVAL_THEN_IT"
+        }
+      ],
+      "explanation_template_zh": "药学语义和系统配置必须分权。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "CAUSE-005",
+      "version": "1.0.0",
+      "group": "CAUSE_CANDIDATE",
+      "priority": 596,
+      "description_zh": "预览正常但纸面异常，优先打印机设备候选。",
+      "when": {
+        "all": [
+          {
+            "field": "normalized_context",
+            "contains_any": [
+              "预览正常",
+              "预览打印正常"
+            ]
+          },
+          {
+            "field": "normalized_context",
+            "contains_any": [
+              "纸上不全",
+              "打不出来",
+              "卡纸",
+              "缺行"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SELECT_SERVICE",
+          "service_code": "PRINT.PRINTER_DEVICE"
+        },
+        {
+          "action": "ADD_CAUSE_CANDIDATE",
+          "cause_code": "CAUSE.HARDWARE",
+          "status": "HYPOTHESIS"
+        }
+      ],
+      "explanation_template_zh": "应用渲染已基本通过，需现场设备验证。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "CAUSE-006",
+      "version": "1.0.0",
+      "group": "CAUSE_CANDIDATE",
+      "priority": 595,
+      "description_zh": "多终端同一文书均多空白页/格式异常，优先应用打印候选。",
+      "when": {
+        "all": [
+          {
+            "field": "context.distinct_endpoints",
+            "gte": 2
+          },
+          {
+            "field": "normalized_context",
+            "contains_any": [
+              "多一张空白页",
+              "每张跟空白单",
+              "格式不对",
+              "打印不全"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SELECT_SERVICE",
+          "service_code": "PRINT.PRINT_RENDERING"
+        },
+        {
+          "action": "ADD_CAUSE_CANDIDATE",
+          "cause_code": "CAUSE.APPLICATION_SERVICE",
+          "status": "HYPOTHESIS"
+        }
+      ],
+      "explanation_template_zh": "跨打印机共性问题不应全部派硬件维保。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ROUTE-001",
+      "version": "1.0.0",
+      "group": "ROUTING",
+      "priority": 580,
+      "description_zh": "卡纸、不吸纸、耗材、异响等路由打印机维保。",
+      "when": {
+        "field": "symptom_codes",
+        "contains_any": [
+          "PRINT.JAM",
+          "CONSUMABLE.EMPTY",
+          "HARDWARE.NO_POWER"
+        ]
+      },
+      "actions": [
+        {
+          "action": "ROUTE_SUGGESTION",
+          "owner": "PRINTER_MAINTENANCE"
+        }
+      ],
+      "explanation_template_zh": "物理设备问题优先现场或维保。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ROUTE-002",
+      "version": "1.0.0",
+      "group": "ROUTING",
+      "priority": 579,
+      "description_zh": "打印空白页、格式、二维码、跨终端问题路由应用打印。",
+      "when": {
+        "field": "symptom_codes",
+        "contains_any": [
+          "PRINT.BLANK_PAGE",
+          "PRINT.EXTRA_PAGE",
+          "PRINT.INCOMPLETE",
+          "PRINT.WRONG_FORMAT"
+        ]
+      },
+      "actions": [
+        {
+          "action": "ROUTE_SUGGESTION",
+          "owner": "IT_APPLICATION"
+        }
+      ],
+      "explanation_template_zh": "先区分内容生成与物理输出。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ROUTE-003",
+      "version": "1.0.0",
+      "group": "ROUTING",
+      "priority": 578,
+      "description_zh": "药品库存、拆零、规格、频次、用法规则先到药学业务。",
+      "when": {
+        "field": "selected_service_code",
+        "in": [
+          "PHARM.DRUG_MASTER_DATA",
+          "ROUTE.PHARMACY"
+        ]
+      },
+      "actions": [
+        {
+          "action": "ROUTE_SUGGESTION",
+          "owner": "PHARMACY_APPROVAL_THEN_IT"
+        }
+      ],
+      "explanation_template_zh": "IT 不应自行决定临床药学规则。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ROUTE-004",
+      "version": "1.0.0",
+      "group": "ROUTING",
+      "priority": 577,
+      "description_zh": "银行支付通道故障路由财务/银行并由 IT 协同。",
+      "when": {
+        "field": "normalized_context",
+        "contains_any": [
+          "银行问题",
+          "财务联系银行",
+          "支付通道故障"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SELECT_SERVICE",
+          "service_code": "ROUTE.FINANCE_BANK"
+        },
+        {
+          "action": "ROUTE_SUGGESTION",
+          "owner": "FINANCE"
+        }
+      ],
+      "explanation_template_zh": "避免将外部支付故障误派给普通应用工程师。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ROUTE-005",
+      "version": "1.0.0",
+      "group": "ROUTING",
+      "priority": 576,
+      "description_zh": "退号、门诊秩序、导医流程等路由门诊业务管理。",
+      "when": {
+        "field": "selected_service_code",
+        "eq": "ROUTE.OUTPATIENT_ADMIN"
+      },
+      "actions": [
+        {
+          "action": "ROUTE_SUGGESTION",
+          "owner": "OUTPATIENT_ADMIN"
+        }
+      ],
+      "explanation_template_zh": "业务确认后涉及后台操作时再转 IT。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ROUTE-006",
+      "version": "1.0.0",
+      "group": "ROUTING",
+      "priority": 575,
+      "description_zh": "空调、停水、门锁、座椅、物资和装修噪声识别为非 IT。",
+      "when": {
+        "field": "normalized_context",
+        "contains_any": [
+          "空调",
+          "停水",
+          "门锁",
+          "凳子",
+          "手消液",
+          "装修声音",
+          "装修噪声",
+          "物资"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_DOMAIN_INTENT",
+          "value": "NON_IT_REQUEST"
+        },
+        {
+          "action": "SELECT_SERVICE",
+          "service_code": "ROUTE.LOGISTICS_FACILITY"
+        },
+        {
+          "action": "ROUTE_SUGGESTION",
+          "owner": "LOGISTICS"
+        }
+      ],
+      "explanation_template_zh": "混合群中不能把所有求助都建成 IT 故障。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ROUTE-007",
+      "version": "1.0.0",
+      "group": "ROUTING",
+      "priority": 574,
+      "description_zh": "安全水印、截图、共享文件问题走安全策略解释/审批。",
+      "when": {
+        "field": "selected_service_code",
+        "in": [
+          "SECURITY.WATERMARK",
+          "SECURITY.SCREEN_CAPTURE",
+          "SECURITY.FILE_SHARING"
+        ]
+      },
+      "actions": [
+        {
+          "action": "ROUTE_SUGGESTION",
+          "owner": "IT_SECURITY"
+        },
+        {
+          "action": "SET_REQUIRES_POLICY_REVIEW",
+          "value": true
+        }
+      ],
+      "explanation_template_zh": "可用性投诉与安全政策本身必须同时留痕。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ROUTE-008",
+      "version": "1.0.0",
+      "group": "ROUTING",
+      "priority": 573,
+      "description_zh": "业务配置变更必须带业务所有者确认状态。",
+      "when": {
+        "field": "domain_intent",
+        "eq": "CONFIG_CHANGE_REQUEST"
+      },
+      "actions": [
+        {
+          "action": "REQUIRE_FIELD",
+          "field": "business_owner_approval_status"
+        },
+        {
+          "action": "ROUTE_SUGGESTION",
+          "owner": "BUSINESS_OWNER_APPROVAL_THEN_IT"
+        }
+      ],
+      "explanation_template_zh": "机器人不得凭群聊直接改主数据或业务规则。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "RISK-001",
+      "version": "1.0.0",
+      "group": "CLINICAL_RISK",
+      "priority": 500,
+      "description_zh": "急诊、危急值、手术、抢救等关键词触发临床高风险人工复核。",
+      "when": {
+        "field": "normalized_context",
+        "contains_any": [
+          "急诊",
+          "危急值",
+          "手术记录",
+          "抢救",
+          "急救"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_CLINICAL_IMPACT_AT_LEAST",
+          "value": "CRITICAL_REVIEW_REQUIRED"
+        },
+        {
+          "action": "REQUIRE_HUMAN_REVIEW",
+          "reason": "CLINICAL_HIGH_RISK"
+        }
+      ],
+      "explanation_template_zh": "仅提示人工优先评估，不自动改变 Ticket 优先级。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "RISK-002",
+      "version": "1.0.0",
+      "group": "CLINICAL_RISK",
+      "priority": 499,
+      "description_zh": "处方/医嘱/检查全面不可提交且有在诊患者时标记高影响。",
+      "when": {
+        "all": [
+          {
+            "field": "selected_service_code",
+            "in": [
+              "CLINICAL.PRESCRIPTION_ENTRY",
+              "CLINICAL.EXAM_ORDER_ENTRY",
+              "CLINICAL.LAB_ORDER_ENTRY"
+            ]
+          },
+          {
+            "field": "symptom_codes",
+            "contains_any": [
+              "TRANSACTION.SUBMIT_FAILED",
+              "AVAILABILITY.UNAVAILABLE"
+            ]
+          },
+          {
+            "field": "impact.patients_waiting",
+            "eq": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_CLINICAL_IMPACT_AT_LEAST",
+          "value": "HIGH"
+        }
+      ],
+      "explanation_template_zh": "核心临床交易受阻会直接阻断诊疗。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "RISK-003",
+      "version": "1.0.0",
+      "group": "CLINICAL_RISK",
+      "priority": 498,
+      "description_zh": "多部门或全院核心临床工作流不可用标记高影响并要求公共事件复核。",
+      "when": {
+        "all": [
+          {
+            "field": "scope",
+            "in": [
+              "MULTIPLE_DEPARTMENTS",
+              "OUTPATIENT_WIDE",
+              "HOSPITAL_WIDE"
+            ]
+          },
+          {
+            "field": "symptom_codes",
+            "contains_any": [
+              "AVAILABILITY.UNAVAILABLE",
+              "STABILITY.CRASH",
+              "TRANSACTION.SUBMIT_FAILED"
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_CLINICAL_IMPACT_AT_LEAST",
+          "value": "HIGH"
+        },
+        {
+          "action": "MARK_INCIDENT_CANDIDATE",
+          "reason": "WIDE_CLINICAL_IMPACT"
+        }
+      ],
+      "explanation_template_zh": "范围和业务关键性共同决定建议级别。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "RISK-004",
+      "version": "1.0.0",
+      "group": "CLINICAL_RISK",
+      "priority": 497,
+      "description_zh": "唯一可用终端/打印点故障作为单点业务风险。",
+      "when": {
+        "field": "normalized_context",
+        "contains_any": [
+          "唯一一台",
+          "只有这一台",
+          "科室唯一"
+        ]
+      },
+      "actions": [
+        {
+          "action": "ADD_IMPACT_FACT",
+          "field": "single_point_of_failure",
+          "value": true
+        },
+        {
+          "action": "SET_CLINICAL_IMPACT_AT_LEAST",
+          "value": "HIGH"
+        }
+      ],
+      "explanation_template_zh": "单点故障即使范围小，也可能阻断整个科室。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "RISK-005",
+      "version": "1.0.0",
+      "group": "CLINICAL_RISK",
+      "priority": 496,
+      "description_zh": "费用重复、身份、年龄、签名归属不一致要求数据安全人工复核。",
+      "when": {
+        "field": "symptom_codes",
+        "contains_any": [
+          "DATA.DUPLICATED",
+          "DATA.MISMATCH"
+        ]
+      },
+      "actions": [
+        {
+          "action": "REQUIRE_HUMAN_REVIEW",
+          "reason": "CLINICAL_OR_FINANCIAL_DATA_INTEGRITY"
+        }
+      ],
+      "explanation_template_zh": "数据完整性问题不得由自动建议直接修复。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "RISK-006",
+      "version": "1.0.0",
+      "group": "CLINICAL_RISK",
+      "priority": 495,
+      "description_zh": "感叹号、催促、愤怒或“急”不能单独设为高优先。",
+      "when": {
+        "all": [
+          {
+            "field": "emotion_signal",
+            "eq": true
+          },
+          {
+            "field": "clinical_or_scope_evidence",
+            "eq": false
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "DO_NOT_ESCALATE_PRIORITY_BY_EMOTION_ONLY"
+        },
+        {
+          "action": "ADD_INTENT_SIGNAL",
+          "value": "URGENCY_CLAIM"
+        }
+      ],
+      "explanation_template_zh": "情绪需要回应，但不能替代客观影响证据。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "STATE-001",
+      "version": "1.0.0",
+      "group": "STATE_SIGNAL",
+      "priority": 450,
+      "description_zh": "用户称恢复只更新恢复信号，不关闭业务事实。",
+      "when": {
+        "field": "recovery_signal",
+        "eq": "REPORTER_OBSERVED_RECOVERED"
+      },
+      "actions": [
+        {
+          "action": "EMIT_FACT",
+          "field": "recovery.reporter_observed",
+          "value": true
+        },
+        {
+          "action": "FORBID_EFFECT",
+          "effect": "UPDATE_TICKET_STATUS"
+        }
+      ],
+      "explanation_template_zh": "P2-007 验收明确规则不得直接修改 Ticket 状态。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "STATE-002",
+      "version": "1.0.0",
+      "group": "STATE_SIGNAL",
+      "priority": 449,
+      "description_zh": "“又/还是/老问题/反复”标记复发性。",
+      "when": {
+        "field": "normalized_text",
+        "contains_any": [
+          "又",
+          "还是",
+          "老问题",
+          "反复",
+          "每天都",
+          "经常"
+        ]
+      },
+      "actions": [
+        {
+          "action": "ADD_FACT",
+          "field": "recurrence_signal",
+          "value": true
+        }
+      ],
+      "explanation_template_zh": "复发是问题管理线索，不自动关联旧工单。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "STATE-003",
+      "version": "1.0.0",
+      "group": "STATE_SIGNAL",
+      "priority": 448,
+      "description_zh": "已尝试的重启、重登、换电脑、插拔网线按顺序记录。",
+      "when": {
+        "field": "normalized_context",
+        "contains_any": [
+          "重启",
+          "重新登录",
+          "换电脑",
+          "插拔网线",
+          "删除重开",
+          "刷新"
+        ]
+      },
+      "actions": [
+        {
+          "action": "EXTRACT_WORKAROUND_ATTEMPTS",
+          "order": "MESSAGE_TIME"
+        }
+      ],
+      "explanation_template_zh": "避免机器人反复建议已失败操作。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ASK-001",
+      "version": "1.0.0",
+      "group": "CLARIFICATION",
+      "priority": 430,
+      "description_zh": "服务未知时先问“哪个系统/功能”。",
+      "when": {
+        "field": "selected_service_code",
+        "eq": null
+      },
+      "actions": [
+        {
+          "action": "ASK",
+          "question_code": "Q_WHICH_SYSTEM_OR_FUNCTION"
+        }
+      ],
+      "explanation_template_zh": "未知值不猜测。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ASK-002",
+      "version": "1.0.0",
+      "group": "CLARIFICATION",
+      "priority": 429,
+      "description_zh": "终端型问题缺 IP/资产和地点时按最小问题集询问。",
+      "when": {
+        "all": [
+          {
+            "field": "selected_service_code",
+            "in": [
+              "ENDPOINT.COMPUTER",
+              "ENDPOINT.DISPLAY",
+              "PRINT.PRINTER_DEVICE",
+              "NETWORK.ENDPOINT_ACCESS",
+              "ACCESS.QUEUE_CALLING"
+            ]
+          },
+          {
+            "field": "asset_hint",
+            "missing": true
+          },
+          {
+            "field": "occurrence_location",
+            "missing": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "ASK",
+          "question_code": "Q_LOCATION_AND_ASSET_HINT"
+        }
+      ],
+      "explanation_template_zh": "一次只问必要字段，减少来回。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ASK-003",
+      "version": "1.0.0",
+      "group": "CLARIFICATION",
+      "priority": 428,
+      "description_zh": "患者相关问题缺安全患者引用时引导私聊/安全通道。",
+      "when": {
+        "all": [
+          {
+            "field": "scope",
+            "eq": "SINGLE_PATIENT"
+          },
+          {
+            "field": "patient_ref_secure",
+            "missing": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "ASK_SECURELY",
+          "question_code": "Q_PATIENT_REFERENCE_PRIVATE_CHANNEL"
+        }
+      ],
+      "explanation_template_zh": "群聊不得继续收集患者姓名、证件号或完整病历。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ASK-004",
+      "version": "1.0.0",
+      "group": "CLARIFICATION",
+      "priority": 427,
+      "description_zh": "卡顿/失败未说明交易环节时询问具体步骤。",
+      "when": {
+        "all": [
+          {
+            "field": "symptom_codes",
+            "contains_any": [
+              "PERFORMANCE.SLOW",
+              "PERFORMANCE.HANG_SPINNING",
+              "TRANSACTION.SUBMIT_FAILED"
+            ]
+          },
+          {
+            "field": "transaction_stage",
+            "eq": "UNKNOWN"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "ASK",
+          "question_code": "Q_WHICH_STEP_FAILED"
+        }
+      ],
+      "explanation_template_zh": "“系统卡”不足以定位登录、患者打开、审核还是最终提交。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ASK-005",
+      "version": "1.0.0",
+      "group": "CLARIFICATION",
+      "priority": 426,
+      "description_zh": "缺范围时优先问“一台/一个患者/所有人”。",
+      "when": {
+        "field": "scope",
+        "eq": "UNKNOWN"
+      },
+      "actions": [
+        {
+          "action": "ASK",
+          "question_code": "Q_AFFECTED_SCOPE"
+        }
+      ],
+      "explanation_template_zh": "范围是区分单机、数据问题和公共事件的关键。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "PRIV-001",
+      "version": "1.0.0",
+      "group": "PRIVACY",
+      "priority": 400,
+      "description_zh": "识别患者姓名、就诊号、证件号、手机号等敏感片段。",
+      "when": {
+        "field": "privacy_detector.patient_or_personal_identifier",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "ADD_PRIVACY_FLAG",
+          "value": "PATIENT_OR_PERSONAL_DATA"
+        },
+        {
+          "action": "REDACT_FOR_LOGS"
+        },
+        {
+          "action": "FORBID_EXTERNAL_EGRESS",
+          "until": "P2_008_POLICY_APPROVED"
+        }
+      ],
+      "explanation_template_zh": "原始群聊含真实患者及人员标识。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "PRIV-002",
+      "version": "1.0.0",
+      "group": "PRIVACY",
+      "priority": 399,
+      "description_zh": "密码、密钥、Token 等秘密信息立即标记并禁止保留在普通日志。",
+      "when": {
+        "field": "privacy_detector.secret",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "ADD_PRIVACY_FLAG",
+          "value": "SECRET"
+        },
+        {
+          "action": "REDACT_FOR_LOGS"
+        },
+        {
+          "action": "REQUIRE_SECURITY_REVIEW"
+        }
+      ],
+      "explanation_template_zh": "P2-007 只输出是否存在和安全哈希，不复制秘密。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "PRIV-003",
+      "version": "1.0.0",
+      "group": "PRIVACY",
+      "priority": 398,
+      "description_zh": "内部 IP/资产号作为敏感内部线索，公共视图仅显示掩码。",
+      "when": {
+        "field": "asset_hint",
+        "exists": true
+      },
+      "actions": [
+        {
+          "action": "SET_SENSITIVITY",
+          "field": "asset_hint",
+          "value": "SENSITIVE_INTERNAL"
+        },
+        {
+          "action": "PUBLIC_VIEW_MASK",
+          "strategy": "HASH_OR_PARTIAL"
+        }
+      ],
+      "explanation_template_zh": "Workbench 内部授权可见与外部/模型出域是不同边界。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "PRIV-004",
+      "version": "1.0.0",
+      "group": "PRIVACY",
+      "priority": 397,
+      "description_zh": "测试语料禁止包含真实人名、患者号、电话、内部 IP 和媒体 URL。",
+      "when": {
+        "field": "execution_context",
+        "eq": "TEST_CORPUS_BUILD"
+      },
+      "actions": [
+        {
+          "action": "ENFORCE_SYNTHETIC_ANONYMIZATION"
+        },
+        {
+          "action": "FAIL_CLOSED_ON_PII"
+        }
+      ],
+      "explanation_template_zh": "评估集只保留语言模式与结构，不复制原始数据。",
+      "safety": [
+        "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "policy_version": "1.2.0",
+  "canonical_person_key": "SYSTEM_PERSON_ID",
+  "current_profile_authority": "WECOM_DIRECTORY",
+  "external_identity_type": "WECOM_USERID",
+  "lookup_failure": "DEFER_WITHOUT_BLOCKING_INTAKE",
+  "snapshot_at_report_time": true,
+  "multiple_department_memberships": true,
+  "future_authority": "HOSPITAL_PERSON_MASTER",
+  "future_merge_mode": "ADD_BINDING_AND_RECONCILE_NO_DESTRUCTIVE_REKEY",
+  "privacy": {
+    "raw_userid_in_public_view": false,
+    "raw_userid_in_general_log": false,
+    "external_subject_ref_is_opaque": true
+  }
+}

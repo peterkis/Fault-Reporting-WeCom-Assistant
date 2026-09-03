@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "corpus_id": "CD3H_P2_007_MULTICHANNEL_EVALUATION_CORPUS",
+  "corpus_version": "0.2.0-draft",
+  "status": "SYNTHETIC_ANONYMIZED_SEED",
+  "case_count": 42,
+  "group_counts": {
+    "CROSS_CHANNEL": 6,
+    "ENTRY_JOURNEY": 8,
+    "HUMAN_LIFECYCLE": 7,
+    "IDENTITY_TIME": 7,
+    "INCIDENT_CORRELATION": 8,
+    "NOTIFICATION_POLICY": 6
+  },
+  "source_policy": {
+    "raw_chat_copied": false,
+    "real_person_names": false,
+    "real_patient_identifiers": false,
+    "real_phone_numbers": false,
+    "real_internal_ip_addresses": false,
+    "documentation_ip_ranges_used": [
+      "192.0.2.0/24",
+      "198.51.100.0/24",
+      "203.0.113.0/24"
+    ],
+    "bot_private_chat_history_available": false,
+    "private_chat_cases_are_product_design_synthetic": true
+  },
+  "evaluation_requirements": {
+    "three_entry_modes_distinguished": true,
+    "origin_channel_is_immutable": true,
+    "cross_channel_link_requires_verified_correlation": true,
+    "same_reporter_cross_channel_deduplicated_for_incident_count": true,
+    "reporter_identity_uses_trusted_metadata": true,
+    "directory_lookup_failure_does_not_block_intake": true,
+    "reporter_department_separate_from_occurrence_location": true,
+    "single_authoritative_owner": true,
+    "all_takeover_results_audited": true,
+    "incident_is_candidate_only": true,
+    "rules_do_not_send_messages": true,
+    "private_ticket_ack_is_recommendation_only": true,
+    "internal_note_external_send_zero": true
+  },
+  "file": "hospital-it-multichannel-evaluation-corpus.v1.jsonl"
+}

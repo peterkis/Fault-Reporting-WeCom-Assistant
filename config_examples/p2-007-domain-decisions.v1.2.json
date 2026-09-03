@@ -1,0 +1,287 @@
+{
+  "schema_version": "1.0.0",
+  "decision_baseline_version": "1.2.0",
+  "decision_date": "2026-09-03",
+  "project": "Fault-Reporting-WeCom-Assistant",
+  "target_task": "P2-007",
+  "source_baseline_commit": "358d9f69392141401c4ca3b7ba46294541d2a696",
+  "status": "CONFIRMED_DISCUSSION_BASELINE_NOT_IMPLEMENTATION_AUTHORIZATION",
+  "identity": {
+    "canonical_person_key": "SYSTEM_PERSON_ID",
+    "current_profile_authority": "WECOM_DIRECTORY",
+    "wecom_userid_role": "EXTERNAL_IDENTITY_BINDING",
+    "message_metadata_identity_field": "from.userid",
+    "directory_lookup_required_for_intake": false,
+    "directory_lookup_failure_behavior": "ACCEPT_REPORT_AND_DEFER_RESOLUTION",
+    "snapshot_at_report_time": true,
+    "support_multiple_departments": true,
+    "separate_fields": [
+      "reporter_department",
+      "occurrence_department",
+      "occurrence_location",
+      "asset_registered_location"
+    ],
+    "future_person_master": {
+      "authority_candidate": "HOSPITAL_PERSON_MASTER",
+      "preserve_wecom_identity_binding": true,
+      "destructive_rekey": false,
+      "same_entity_multiple_source_dimensions": true
+    }
+  },
+  "entry_modes": [
+    {
+      "code": "GROUP_MENTION_INLINE",
+      "origin_channel": "WECOM_GROUP",
+      "description": "群内@Bot并直接描述故障"
+    },
+    {
+      "code": "GROUP_MENTION_TO_DIRECT_GUIDED",
+      "origin_channel": "WECOM_GROUP",
+      "description": "群内@Bot后，由Bot主动单聊引导补充"
+    },
+    {
+      "code": "DIRECT_ORGANIC",
+      "origin_channel": "WECOM_DIRECT",
+      "description": "用户主动进入Bot单聊发起新报修"
+    }
+  ],
+  "cross_channel_continuation": {
+    "strategy": "HYBRID",
+    "origin_channel_immutable": true,
+    "current_channel_mutable": true,
+    "provider_context_role": [
+      "CALLBACK_DEDUPLICATION",
+      "SAME_CHANNEL_REPLY",
+      "TRANSPORT_EVIDENCE"
+    ],
+    "provider_context_fields": [
+      "headers.req_id",
+      "msgid",
+      "chatid",
+      "chattype",
+      "from.userid",
+      "create_time",
+      "response_url",
+      "quote"
+    ],
+    "authoritative_cross_channel_link": "CONTINUATION_REF",
+    "continuation_ref": {
+      "opaque": true,
+      "single_purpose": true,
+      "bound_to_reporter": true,
+      "bound_to_bot": true,
+      "hash_at_rest": true,
+      "authorization_token": false,
+      "default_ttl_minutes": 120,
+      "single_use_for_binding": true,
+      "post_binding_authority": "DIRECT_CHANNEL_BINDING"
+    },
+    "resolution_priority": [
+      "TEMPLATE_CARD_TASK_ID_OR_EVENT_KEY",
+      "EXISTING_DIRECT_CHANNEL_BINDING",
+      "EXPLICIT_CONTINUATION_REF",
+      "EXPLICIT_TICKET_OR_INTAKE_REFERENCE",
+      "EXACTLY_ONE_OPEN_JOURNEY_FOR_REPORTER",
+      "ASK_USER_TO_SELECT",
+      "CREATE_DIRECT_ORGANIC_JOURNEY"
+    ],
+    "same_user_and_time_only_is_sufficient": false,
+    "ambiguous_multiple_journeys": "ASK_USER_TO_SELECT"
+  },
+  "fragmented_description": {
+    "supported": true,
+    "persist_each_message_immediately": true,
+    "incremental_fact_reduction": true,
+    "short_debounce_seconds": {
+      "minimum": 3,
+      "maximum": 15
+    },
+    "p1_intake_aggregation_window_is_separate": true,
+    "p1_aggregation_window_seconds": 90,
+    "direct_session_not_split_only_by_90_second_gap": true,
+    "description_sufficiency_states": [
+      "EMPTY",
+      "PARTIAL",
+      "SUFFICIENT_FOR_INTAKE",
+      "SUFFICIENT_FOR_ROUTING",
+      "SENSITIVE_MOVE_TO_PRIVATE",
+      "CONFLICTED"
+    ],
+    "bot_prompt_policy": "ONE_HIGH_INFORMATION_QUESTION_AT_A_TIME"
+  },
+  "ticket_creation": {
+    "explicit_incident_report": {
+      "create_minimal_ticket_early": true,
+      "allowed_missing_details": true,
+      "missing_information_status": "WAITING_USER"
+    },
+    "ambiguous_request": {
+      "require_rule_or_human_confirmation": true,
+      "do_not_force_incident_ticket": true
+    },
+    "ticket_fact_owner": "UNIFIED_TICKET_CORE"
+  },
+  "human_lifecycle": {
+    "single_authoritative_owner": true,
+    "collaborators_allowed": true,
+    "reuse_existing_authorities": [
+      "conversation.assignment",
+      "conversation.handoff",
+      "conversation.read_cursor",
+      "conversation.control_event",
+      "communication.message",
+      "communication.delivery",
+      "communication.delivery_attempt"
+    ],
+    "p2_007_role": "DEFINE_AUDIT_VIEW_AND_DOMAIN_CONTRACT_ONLY",
+    "all_takeover_handoff_reply_delivery_events_auditable": true
+  },
+  "incident": {
+    "candidate_generation_enabled": true,
+    "automatic_incident_creation": false,
+    "automatic_ticket_linking": false,
+    "automatic_public_broadcast": false,
+    "human_confirmation_required": true,
+    "candidate_thresholds_are_review_triggers_only": true,
+    "distinct_reporter_deduplication_key": "SYSTEM_PERSON_ID",
+    "state_machine": [
+      "NONE",
+      "CANDIDATE",
+      "UNDER_REVIEW",
+      "CONFIRMED_LOCAL",
+      "CONFIRMED_BUILDING",
+      "CONFIRMED_CAMPUS",
+      "CONFIRMED_HOSPITAL_WIDE",
+      "REJECTED",
+      "EXPIRED"
+    ],
+    "initial_review_thresholds": {
+      "local": {
+        "window_seconds": 300,
+        "minimum_distinct_reporters": 3,
+        "compatible_service_and_symptom_required": true
+      },
+      "cross_department": {
+        "window_seconds": 300,
+        "minimum_distinct_reporters": 5,
+        "minimum_departments": 2
+      },
+      "hospital_wide": {
+        "window_seconds": 300,
+        "minimum_distinct_reporters": 8,
+        "minimum_departments": 3,
+        "alternative_minimum_buildings": 2
+      },
+      "authoritative_monitoring": {
+        "reporter_minimum_waived": true,
+        "human_confirmation_still_required": true
+      }
+    },
+    "confirmation_roles": {
+      "HANDLER": [
+        "SUGGEST",
+        "ADD_EVIDENCE"
+      ],
+      "DISPATCHER": [
+        "CONFIRM_LOCAL",
+        "CONFIRM_CROSS_DEPARTMENT"
+      ],
+      "ADMIN": [
+        "CONFIRM_ANY_SCOPE",
+        "UNLINK"
+      ],
+      "INCIDENT_MANAGER": [
+        "CONFIRM_ANY_SCOPE",
+        "UNLINK"
+      ]
+    },
+    "preserve_original_intake_and_ticket": true,
+    "reporter_subscription_after_confirmation": true,
+    "actual_incident_owner_task": "P2-012"
+  },
+  "notification": {
+    "all_external_sends_use": [
+      "communication.message",
+      "communication.outbox",
+      "communication.delivery",
+      "communication.delivery_attempt"
+    ],
+    "group_receipt": {
+      "enabled": true,
+      "preferred_transport": "CALLBACK_REPLY",
+      "asynchronous_fallback_transport": "AIBOT_SEND_MSG_TO_GROUP",
+      "strong_user_mention_capability": "UNVERIFIED",
+      "delivery_semantics": "BEST_EFFORT",
+      "must_not_claim_ticket_before_commit": true,
+      "patient_or_internal_identifiers_forbidden": true
+    },
+    "direct_guidance": {
+      "enabled": true,
+      "transport": "AIBOT_SEND_MSG",
+      "target": "ORIGIN_REPORTER_USERID",
+      "reliable_notification_path": true,
+      "allow_fragmented_user_messages": true
+    },
+    "ticket_card": {
+      "enabled_only_after_ticket_commit": true,
+      "message_type": "template_card",
+      "card_type": "text_notice",
+      "emphasis_field": "TICKET_DISPLAY_SUFFIX",
+      "display_suffix_length": 4,
+      "display_suffix_is_database_key": false,
+      "display_suffix_is_unique_identifier": false,
+      "display_suffix_is_authorization": false,
+      "timeline_link_uses_opaque_public_ref": true,
+      "timeline_link_requires_authentication": true,
+      "reporter_safe_view_required": true,
+      "current_sender_capability": "CONTRACT_RESERVED_IMPLEMENTATION_PENDING",
+      "requires_separate_sender_extension_and_live_test": true
+    },
+    "milestone_cards": [
+      "TICKET_CREATED",
+      "ASSIGNED",
+      "IN_PROGRESS",
+      "WAITING_USER",
+      "INCIDENT_LINKED",
+      "RESOLVED",
+      "REOPENED"
+    ],
+    "incident_candidate": {
+      "external_notification": false,
+      "internal_workbench_alert": true
+    },
+    "confirmed_incident": {
+      "group_public_notice": true,
+      "direct_reporter_subscription_notice": true,
+      "idempotency_by_incident_version": true
+    },
+    "idempotency_templates": {
+      "group_ack": "journey:{journey_id}:group_ack:v1",
+      "direct_guidance": "journey:{journey_id}:direct_guidance:v1",
+      "ticket_created_card": "ticket:{ticket_id}:created:{person_id}:v1",
+      "ticket_status_card": "ticket:{ticket_id}:status:{ticket_version}:{person_id}",
+      "incident_group_notice": "incident:{incident_id}:public:{incident_version}:{group_ref}",
+      "incident_private_notice": "incident:{incident_id}:private:{incident_version}:{person_id}"
+    }
+  },
+  "feature_boundaries": {
+    "p2_007_external_side_effects": false,
+    "p2_007_directory_network_call": false,
+    "p2_007_model_calls": false,
+    "p2_007_ocr_calls": false,
+    "p2_007_incident_creation": false,
+    "p2_007_ticket_mutation": false,
+    "p2_007_wecom_send": false,
+    "p2_007_database_migration_default": false,
+    "all_feature_flags_default_false": true,
+    "deepseek_owner_task": "P2-008",
+    "incident_owner_task": "P2-012"
+  },
+  "open_follow_up_capabilities": [
+    "WECOM_DIRECTORY_ADAPTER_AND_PROFILE_CACHE",
+    "TEMPLATE_CARD_SENDER_EXTENSION",
+    "REPORTER_SAFE_TIMELINE_PORTAL_AND_AUTHENTICATION",
+    "GROUP_STRONG_MENTION_LIVE_CAPABILITY_VERIFICATION",
+    "INCIDENT_THRESHOLD_CALIBRATION_WITH_LIVE_BOT_DATA"
+  ]
+}
