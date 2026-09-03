@@ -12,9 +12,12 @@
   ],
   "last_completed_task": "P2-006",
   "last_completed_gate": "P2-G1",
-  "active_task": null,
-  "active_lane": null,
-  "implementation_authorization_status": "P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION",
+  "active_task": "ARCH-005",
+  "active_lane": "ARCHITECTURE",
+  "implementation_authorization_status": "ARCH_005_AUTHORIZED_P2_007_BLOCKED",
+  "authorized_architecture_tasks": ["ARCH-005"],
+  "arch_005_status": "IN_PROGRESS",
+  "p2_007_status": "TODO_BLOCKED_BY_ARCH_005",
   "p2_g1_status": "PASSED",
   "authorized_gates": [
     "P2-G1"
@@ -57,7 +60,7 @@
     "HOSPITAL_API_SOURCE_ENABLED": false,
     "MONITORING_SOURCE_ENABLED": false
   },
-  "rule": "P2-G1 is PASSED and there is no active lane. P2-007 and later tasks and P2-G2 and later gates remain unauthorized. Every committed P2 and P3 feature-flag default remains false; production or clinical enablement requires separate authorization.",
+  "rule": "P2-G1 is PASSED and ARCH-005 is the only active architecture lane. P2-007 is blocked by ARCH-005 and remains unauthorized; later tasks and P2-G2 and later gates remain unauthorized. Every committed P2 and P3 feature-flag default remains false; production or clinical enablement requires separate authorization.",
   "migration_number_reservations": {
     "P2-A": "010-019",
     "P2-B": "020-029",

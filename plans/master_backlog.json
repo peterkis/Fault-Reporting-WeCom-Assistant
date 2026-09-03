@@ -7,7 +7,7 @@
   "current_phase": "P2",
   "last_completed_task": "P2-006",
   "last_completed_gate": "P2-G1",
-  "active_task": null,
+  "active_task": "ARCH-005",
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -17,8 +17,15 @@
     "P2-005",
     "P2-006"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION",
+  "active_lane": "ARCHITECTURE",
+  "implementation_authorization_status": "ARCH_005_AUTHORIZED_P2_007_BLOCKED",
+  "authorized_architecture_tasks": [
+    "ARCH-005"
+  ],
+  "arch_005_status": "IN_PROGRESS",
+  "arch_005_authorized_at": "2026-09-03",
+  "arch_005_authorization_evidence": "evidence/arch-005-start-authorization.md",
+  "p2_007_status": "TODO_BLOCKED_BY_ARCH_005",
   "p2_g1_status": "PASSED",
   "next_task_candidate": "P2-007",
   "next_task_authorized": false,
@@ -430,6 +437,19 @@
       "task_file": "tasks/P2-006_realtime_web_workbench_rest_authorization.md"
     },
     {
+      "id": "ARCH-005",
+      "title": "Asia/Shanghai Local Business Time Contract",
+      "phase": "P2",
+      "lane": "ARCHITECTURE",
+      "status": "IN_PROGRESS",
+      "authorized_at": "2026-09-03",
+      "authorization_evidence": "evidence/arch-005-start-authorization.md",
+      "task_file": "tasks/ARCH-005_asia_shanghai_local_business_time.md",
+      "depends_on": [
+        "P2-G1"
+      ]
+    },
+    {
       "id": "P2-007",
       "title": "服务目录、确定性规则与对话字段模型",
       "depends_on": [
@@ -438,7 +458,8 @@
       "lane": "P2-C",
       "gate": "P2-G2",
       "phase": "P2",
-      "status": "TODO"
+      "status": "TODO",
+      "blocked_by": "ARCH-005"
     },
     {
       "id": "P2-008",

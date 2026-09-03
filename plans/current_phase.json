@@ -8,7 +8,7 @@
   "started": true,
   "last_completed_task": "P2-006",
   "last_completed_gate": "P2-G1",
-  "active_task": null,
+  "active_task": "ARCH-005",
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -18,8 +18,15 @@
     "P2-005",
     "P2-006"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "P2_G1_PASSED_AWAITING_P2_007_AUTHORIZATION",
+  "active_lane": "ARCHITECTURE",
+  "implementation_authorization_status": "ARCH_005_AUTHORIZED_P2_007_BLOCKED",
+  "authorized_architecture_tasks": [
+    "ARCH-005"
+  ],
+  "arch_005_status": "IN_PROGRESS",
+  "arch_005_authorized_at": "2026-09-03",
+  "arch_005_authorization_evidence": "evidence/arch-005-start-authorization.md",
+  "p2_007_status": "TODO_BLOCKED_BY_ARCH_005",
   "p2_g1_status": "PASSED",
   "next_task_candidate": "P2-007",
   "next_task_authorized": false,
@@ -70,7 +77,7 @@
     "historical ticket compatibility scope"
   ],
   "forbidden_without_task_authorization": [
-    "start P2-007 or any later P2 task",
+    "start P2-007 or any later P2 task while ARCH-005 is active or without separate authorization",
     "start any P3 task",
     "mark P2-G1 PASSED or GO without live WeCom evidence and project-owner approval",
     "start P2-G2 or any later gate",

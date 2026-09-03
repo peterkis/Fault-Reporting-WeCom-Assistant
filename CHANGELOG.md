@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] - ARCH-005 Asia/Shanghai time baseline
+
+- 项目负责人于 2026-09-03 独立授权 ARCH-005；当前唯一活动 Lane 为 `ARCHITECTURE`，自动化完成后最多进入 `READY_FOR_TARGETED_LIVE_REVALIDATION`。
+- 冻结 Gate 证明 ARCH-005 基线为 `358d9f69392141401c4ca3b7ba46294541d2a696`，P2-007 暂存包保持在独立分支 `staging/p2-007-domain-package-v1.2`，未导入本分支。
+- 迁移前盘点确认当前 Pilot 数据库非空且存在 77 个项目自有时区列；P1-011 AES-256-GCM 备份和隔离恢复演练成功。
+- P2-007 保持 `TODO / BLOCKED_BY_ARCH_005`；DeepSeek、OCR、Incident、P2-G2/P3、Feature Flag、push、merge、tag、release 均未授权。
+
 ### P2-G1 Human-only Conversation Center Gate 通过
 
 - 2026-09-02：真实测试企业微信入站、Workbench、双 Principal 并发接管、内部备注隔离、人工回复与幂等、SSE 补放、Gateway 恢复均通过；Provider 明确 ACK，客户端人工观察完成。
