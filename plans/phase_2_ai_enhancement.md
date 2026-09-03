@@ -2,7 +2,7 @@
 
 > 文件名为兼容既有索引保留。V1.4 的 P2 已不只是 AI Enhancement。
 
-> 状态（2026-09-03）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-G1、ARCH-005 与 ARCH-006 已完成。当前无活动任务或 Lane；下一候选为 P2-015，但未授权。P2-015、P2-016、P2-012、P2-008 至 P2-014 及 P2-G2 至 P2-G5 均须单独授权，所有 Feature Flag 默认 `false`。
+> 状态（2026-09-03）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-G1、ARCH-005 与 ARCH-006 已完成。当前仅 P2-015 获独立授权并在 Lane `P2-C` 活动；P2-016、P2-012、P2-008 至 P2-014 及 P2-G2 至 P2-G5 均须单独授权，所有 Feature Flag 默认 `false`。
 
 ## 阶段目标
 
@@ -38,7 +38,7 @@
 
 ## 任务总览
 
-当前完成项为 P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006；当前无活动 Gate 或 Lane。下表的依赖和目标 Gate 只表达
+当前完成项为 P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006；当前仅 P2-015 / P2-C 活动，无活动 Gate。下表的依赖和目标 Gate 只表达
 规划关系，不构成后续任务或 Assembly Gate 的启动授权。
 
 | ID | 标题 | Lane | 依赖 | 目标 Gate |

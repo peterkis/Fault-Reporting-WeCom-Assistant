@@ -17,7 +17,7 @@ P1 / P1-012 / DONE / GO
 P2 / P2-G1 / PASSED / NO_ACTIVE_LANE
 ```
 
-V1.4 不改变 G0/P1 已完成事实。P2-G1 于 2026-09-02 在真实测试企业微信现场 Evidence、隔离 Replay Gap、60 分钟 controlled observation 和负责人明确批准后更新为 `PASSED`。ARCH-005 与 P2-007 已于 2026-09-03 完成；同日独立授权的 ARCH-006 已完成 AI-Optional Rule-First Full Service Loop 架构、计划、任务与 Gate 重基线。当前无活动任务或 Lane；下一候选为 P2-015，但未授权。P2-015、P2-016、P2-012、P2-008 及以后 Runtime 任务、P2-G2 及以后 Gate 均未授权，全部 P3 未启动。所有 Feature Flag 默认关闭。上述完成事实均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
+V1.4 不改变 G0/P1 已完成事实。P2-G1 于 2026-09-02 在真实测试企业微信现场 Evidence、隔离 Replay Gap、60 分钟 controlled observation 和负责人明确批准后更新为 `PASSED`。ARCH-005、P2-007 与 ARCH-006 已于 2026-09-03 完成；P2-015 同日获得独立授权，当前活动任务为 `P2-015`、活动 Lane 为 `P2-C`。P2-016、P2-012、P2-008 及以后 Runtime 任务、P2-G2 及以后 Gate 均未授权，全部 P3 未启动。所有 Feature Flag 默认关闭。上述状态均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
 
 ## 2. 长期事实源
 
@@ -64,7 +64,7 @@ P1：
 
 ### Phase 2：Conversation Center 与 AI 协作
 
-P2 保持 `IN_PROGRESS`；P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006 均已完成。当前无活动任务或 Lane；P2-015 为下一候选但未授权。P2-015、P2-016、P2-012、P2-008 及以后 Runtime 任务和 P2-G2 及以后 Gate 不得启动，所有 Feature Flag 默认值保持 `false`。
+P2 保持 `IN_PROGRESS`；P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006 均已完成。当前仅授权并启动 P2-015（Lane `P2-C`）。P2-016、P2-012、P2-008 及以后 Runtime 任务和 P2-G2 及以后 Gate 不得启动，所有 Feature Flag 默认值保持 `false`。
 
 P2 必须按以下顺序：
 

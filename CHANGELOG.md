@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-03 - P2-015 independently authorized
+
+- 项目负责人只授权 P2-015 规则优先受理编排、Contact Journey、Channel Leg、continuation_ref 与 Manual Review；活动任务为 `P2-015`，活动 Lane 为 `P2-C`。
+- 固定起点为 `55a99e768643423a2bfaf5190266ee46b39e6090` 与标签 `arch-006-ai-optional-rule-first-service-loop-v1.0`；P2-016、P2-012、P2-G2、P2-008 仍未启动。
+- 所有 Feature Flag 继续为 `false`；禁止 AI/DeepSeek/OCR、真实 Incident、真实 WeCom Sender、push、merge、tag 或 release。
+
 ## [Unreleased] - ARCH-006 AI-Optional Rule-First Full Service Loop
 
 - 2026-09-03 独立授权并完成 ARCH-006；仅重基线架构、计划、任务、Gate、索引、Validator、Architecture Test 和新增 Evidence，无业务 Runtime 或 Migration 变更。
