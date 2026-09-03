@@ -7,8 +7,8 @@
   "current_phase": "P2",
   "last_completed_task": "P2-007",
   "last_completed_gate": "P2-G1",
-  "last_completed_architecture_task": "ARCH-005",
-  "active_task": "ARCH-006",
+  "last_completed_architecture_task": "ARCH-006",
+  "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -19,8 +19,8 @@
     "P2-006",
     "P2-007"
   ],
-  "active_lane": "ARCHITECTURE",
-  "implementation_authorization_status": "ARCH_006_IN_PROGRESS_NO_RUNTIME_AUTHORIZATION",
+  "active_lane": null,
+  "implementation_authorization_status": "ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION",
   "authorized_architecture_tasks": [
     "ARCH-005",
     "ARCH-006"
@@ -30,15 +30,29 @@
   "arch_005_authorization_evidence": "evidence/arch-005-start-authorization.md",
   "arch_005_completed_at": "2026-09-03",
   "arch_005_completion_evidence": "evidence/arch-005-targeted-live-revalidation.md",
-  "arch_006_status": "IN_PROGRESS",
+  "arch_006_status": "DONE",
   "arch_006_authorized_at": "2026-09-03",
   "arch_006_authorization_evidence": "evidence/arch-006-start-authorization.md",
+  "arch_006_completed_at": "2026-09-03",
+  "arch_006_completion_evidence": "evidence/arch-006-rule-first-service-loop-rebaseline-report.md",
   "p2_007_status": "DONE",
   "p2_007_completed_at": "2026-09-03",
   "p2_007_completion_evidence": "evidence/p2-007-implementation-report.md",
   "p2_g1_status": "PASSED",
   "p2_g2_status": "NOT_STARTED",
-  "next_task_candidate": "P2-008",
+  "p2_g3_status": "NOT_STARTED",
+  "p2_g4_status": "NOT_STARTED",
+  "p2_g5_status": "NOT_STARTED",
+  "p2_015_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_016_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_012_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
+  "p2_009_status": "TODO",
+  "p2_010_status": "TODO",
+  "p2_011_status": "TODO",
+  "p2_013_status": "TODO",
+  "p2_014_status": "TODO",
+  "next_task_candidate": "P2-015",
   "next_task_authorized": false,
   "authorized_gates": [
     "P2-G1"
@@ -105,9 +119,12 @@
     {
       "id": "ARCH-006",
       "title": "AI-Optional Rule-First Full Service Loop Rebaseline",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "authorized_at": "2026-09-03",
       "authorization_evidence": "evidence/arch-006-start-authorization.md",
+      "completed_at": "2026-09-03",
+      "evidence": "evidence/arch-006-rule-first-service-loop-rebaseline-report.md",
+      "task_file": "tasks/ARCH-006_ai_optional_rule_first_service_loop.md",
       "depends_on": [
         "P2-G1",
         "ARCH-005",
@@ -144,7 +161,8 @@
         "P2-G1",
         "P2-G2",
         "P2-G3",
-        "P2-G4"
+        "P2-G4",
+        "P2-G5"
       ]
     },
     {
@@ -489,15 +507,69 @@
       "authorization_status": "AUTHORIZED"
     },
     {
-      "id": "P2-008",
-      "title": "DeepSeek Provider Adapter、脱敏与安全闸门",
+      "id": "P2-015",
+      "title": "规则优先受理编排、跨渠道接触旅程与人工审核",
       "depends_on": [
-        "P2-007"
+        "P2-G1",
+        "ARCH-005",
+        "P2-007",
+        "P1-004",
+        "P1-005",
+        "P2-004"
       ],
       "lane": "P2-C",
       "gate": "P2-G2",
       "phase": "P2",
-      "status": "TODO"
+      "status": "TODO",
+      "authorization_status": "REQUIRES_SEPARATE_AUTHORIZATION",
+      "migration_reservation": "030",
+      "task_file": "tasks/P2-015_rule_first_intake_orchestration_manual_review.md"
+    },
+    {
+      "id": "P2-016",
+      "title": "完整工单生命周期工作台、上报人时间线与可靠通知",
+      "depends_on": [
+        "P2-015",
+        "P1-006",
+        "P2-004",
+        "P2-005",
+        "P2-006"
+      ],
+      "lane": "P2-B",
+      "gate": "P2-G2",
+      "phase": "P2",
+      "status": "TODO",
+      "authorization_status": "REQUIRES_SEPARATE_AUTHORIZATION",
+      "migration_reservation": "031_IF_REQUIRED",
+      "task_file": "tasks/P2-016_full_ticket_lifecycle_workbench_notifications.md"
+    },
+    {
+      "id": "P2-012",
+      "title": "Incident、Reporter Subscription 与人工确认",
+      "depends_on": [
+        "P2-007",
+        "P2-015",
+        "P2-016"
+      ],
+      "lane": "P2-D",
+      "gate": "P2-G2",
+      "phase": "P2",
+      "status": "TODO",
+      "authorization_status": "REQUIRES_SEPARATE_AUTHORIZATION",
+      "model_provider_calls": 0
+    },
+    {
+      "id": "P2-008",
+      "title": "DeepSeek Provider Adapter、脱敏与安全闸门",
+      "depends_on": [
+        "P2-G2",
+        "P2-007"
+      ],
+      "lane": "P2-C",
+      "gate": "P2-G3",
+      "phase": "P2",
+      "status": "TODO",
+      "authorization_status": "BLOCKED_BY_P2_G2"
     },
     {
       "id": "P2-009",
@@ -507,7 +579,7 @@
         "P2-008"
       ],
       "lane": "P2-C",
-      "gate": "P2-G2",
+      "gate": "P2-G3",
       "phase": "P2",
       "status": "TODO"
     },
@@ -530,18 +602,7 @@
         "P1-012"
       ],
       "lane": "P2-D",
-      "gate": "P2-G3",
-      "phase": "P2",
-      "status": "TODO"
-    },
-    {
-      "id": "P2-012",
-      "title": "Incident、Reporter Subscription 与人工确认",
-      "depends_on": [
-        "P2-007"
-      ],
-      "lane": "P2-D",
-      "gate": "P2-G3",
+      "gate": "P2-G4",
       "phase": "P2",
       "status": "TODO"
     },
@@ -549,12 +610,12 @@
       "id": "P2-013",
       "title": "Conversation、AI、Ticket、Incident 运营指标与月报",
       "depends_on": [
-        "P2-006",
+        "P2-G4",
         "P2-010",
         "P2-012"
       ],
       "lane": "P2-D",
-      "gate": "P2-G4",
+      "gate": "P2-G5",
       "phase": "P2",
       "status": "TODO"
     },
@@ -562,13 +623,14 @@
       "id": "P2-014",
       "title": "P2 组装、2C4G 性能、安全、降级与 Go/No-Go",
       "depends_on": [
+        "P2-G4",
         "P2-010",
         "P2-011",
         "P2-012",
         "P2-013"
       ],
       "lane": "ASSEMBLY",
-      "gate": "P2-G4",
+      "gate": "P2-G5",
       "phase": "P2",
       "status": "TODO"
     },

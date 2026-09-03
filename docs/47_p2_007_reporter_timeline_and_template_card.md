@@ -80,4 +80,4 @@ opaque public ref
 
 ## 5. 实现边界
 
-P2-007 只定义 `TicketCardViewModel`、`NotificationRecommendation` 和 Timeline Action Contract。真实模板卡片 Sender 和 Reporter Portal 需要独立任务、Feature Flag 与现场 Gate。
+P2-007 只定义 `TicketCardViewModel`、`NotificationRecommendation` 和 Timeline Action Contract。真实模板卡片 Sender、Reporter-safe Timeline Runtime 与受控现场验证归未授权的 P2-016；`WECOM_TEMPLATE_CARD_ENABLED` 与 `REPORTER_TIMELINE_ENABLED` 默认均为 false。

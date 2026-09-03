@@ -17,6 +17,9 @@
 - `tasks/P2-006_realtime_web_workbench_rest_authorization.md`：P2-006 独立授权与停止线任务记录；
 - `tasks/P2-G1_human_only_conversation_center_assembly.md`：P2-G1 Human-only Assembly 授权、验收和停止线；
 - `tasks/ARCH-005_asia_shanghai_local_business_time.md`：ARCH-005 独立授权、实现边界与目标现场重验停止线；
+- `tasks/ARCH-006_ai_optional_rule_first_service_loop.md`：ARCH-006 规则优先、AI 可选的 P2 重基线与停止线；
+- `tasks/P2-015_rule_first_intake_orchestration_manual_review.md`：未来规则受理编排、Contact Journey 与人工审核任务（未授权）；
+- `tasks/P2-016_full_ticket_lifecycle_workbench_notifications.md`：未来完整 Ticket 工作台、Reporter Timeline 与通知任务（未授权）；
 - `evidence/arch-005-start-authorization.md`：ARCH-005 Gate、暂存分支隔离和迁移安全授权 Evidence；
 - `evidence/arch-005-time-inventory-before.json` / `.md`：迁移前时间资产、逐列分类、行数、catalog 指纹和备份事实；
 - `docs/48_arch_005_asia_shanghai_time_contract.md`：LocalDate/LocalTime/LocalDateTime/PhysicalEpochMs、数据库与 UI 统一契约；
@@ -39,6 +42,9 @@
 - `evidence/p2-g1-resource-observation.jsonl`：60 分钟 controlled observation 分进程资源 Evidence。
 - `evidence/p2-g1-human-only-gate-report.md`：P2-G1 Human-only 现场 Gate 汇总报告。
 - `evidence/p2-g1-project-owner-approval.md`：项目负责人 P2-G1 `PASSED` 决定与后续停止线。
+- `evidence/arch-006-start-authorization.md`：ARCH-006 独立授权、固定基线和禁止范围；
+- `evidence/arch-006-capability-gap-inventory.md` / `.json`：当前能力与装配缺口的双格式盘点；
+- `evidence/arch-006-rule-first-service-loop-rebaseline-report.md`：ARCH-006 完成验证与范围证明。
 
 ## ADR
 
@@ -46,6 +52,7 @@
 - `adr/0010_unified_ticket_core_source_of_truth.md`：Unified Ticket Core 权威；
 - `adr/0011_lightweight_conversation_center_2c4g.md`：轻量 Conversation Center；
 - `adr/0012_greenfield_p3_no_historical_ticket_compatibility.md`：P3 绿地化、取消历史 Ticket 兼容。
+- `adr/0017_ai_optional_rule_first_service_loop.md`：规则/人工主路径、AI 可选以及 P2-G2 至 P2-G5 新顺序。
 
 ## 阶段计划
 
@@ -56,7 +63,7 @@
 
 ## 任务
 
-- `tickets/P2_ai_enhancement_tasks.md`：P2-001 至 P2-014；
+- `tickets/P2_ai_enhancement_tasks.md`：P2-001 至 P2-016（含 ARCH-006 插入的 P2-015/P2-016；编号不代表执行顺序）；
 - `tickets/P3_unified_ticket_platform_tasks.md`：P3-001 至 P3-012；
 - `tickets/P3_hospital_integration_tasks.md`：Superseded 指针。
 
@@ -85,7 +92,7 @@
 
 - P2-003、P2-004、P2-005、P2-006：`DONE`；P2-G1：`PASSED`；当前无活动 Lane；
 - `docs/42_p2_006_realtime_web_workbench.md`：Internal Alpha、REST/Auth、Query、Command、Delivery、SSE/Polling 与 UI 边界。
-- P2-007 至 P2-014 继续为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；
+- P2-007 保持 `DONE`；P2-015、P2-016、P2-012、P2-008 至 P2-014 继续为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；
 - `P2-G1` 已完成真实测试 Workbench、企业微信 Sender、Replay Gap、恢复和资源现场 Gate；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 未启用生产 Workbench、模型或医院内网；本 Gate 通过不等同于 Phase 2 Go、生产或临床上线。
 
@@ -200,7 +207,18 @@
 
 - `scripts/validate-v1-4-architecture.mjs`；
 - `tests/v1-4-architecture-baseline.test.mjs`；
+- `scripts/validate-arch-006-rule-first-service-loop.mjs`；
+- `tests/arch-006-rule-first-service-loop.test.mjs`；
 - V1.3 同名脚本保留为兼容入口并委托 V1.4 校验。
+
+## ARCH-006 架构
+
+- `docs/50_arch_006_ai_optional_rule_first_service_loop.md`：AI-off 主闭环、不变量、双责任、Readiness 和 Gate 指标；
+- `docs/51_rule_first_intake_manual_review.md`：十类一等确定性结果和 Contact Journey/Manual Review 契约；
+- `docs/52_full_ticket_lifecycle_workbench_notifications.md`：既有 Ticket Action、API、UI、Reporter Timeline 和通知链；
+- `docs/53_human_confirmed_incident_before_ai.md`：P2-012 人工确认 Incident 边界；
+- `docs/54_p2_g2_deterministic_full_service_loop_gate.md`：新 P2-G2 验收与后续 Gate；
+- `architecture/rule_first_service_loop.mmd`、`deterministic_intake_sequence.mmd`、`full_ticket_lifecycle.mmd`、`incident_human_confirmation.mmd`：ARCH-006 Mermaid 视图。
 
 ## Evidence
 

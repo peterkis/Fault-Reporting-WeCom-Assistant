@@ -1,0 +1,23 @@
+sequenceDiagram
+  participant W as WeCom Adapter
+  participant C as Channel Inbox
+  participant I as Service Intake
+  participant R as Deterministic Rules
+  participant J as Journey Store
+  participant M as Manual Review
+  participant T as TicketActionService
+  participant O as Communication Outbox
+  W->>C: persist normalized message
+  C-->>W: committed
+  C->>I: create or append intake
+  I->>J: create/append Journey and Leg
+  J->>R: evaluate persisted facts + versions
+  R->>J: persist result + provenance + hash
+  alt ticket eligible
+    J->>T: safe command suggestion through port
+  else description needed
+    J->>O: one-question notification suggestion
+  else manual review
+    J->>M: enqueue auditable review item
+  end
+  Note over R,O: model_provider_calls = 0

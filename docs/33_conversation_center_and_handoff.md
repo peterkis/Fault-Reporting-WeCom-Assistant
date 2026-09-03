@@ -156,7 +156,7 @@ P2-001 新 Session 默认 `HUMAN`。进入目标模式的最低条件为：
 |---|---|
 | HUMAN | `CONVERSATION_CENTER_ENABLED=true` |
 | COPILOT | Center 开启且 `AI_CONVERSATION_ENABLED=true` |
-| AUTO | Center、AI、Auto Flag 开启，且另有 P2-010 / P2-G4 Controlled Auto 授权 |
+| AUTO | Center、AI、Auto Flag 开启，且另有 P2-010 / P2-G5 Controlled Auto 授权 |
 
 当前所有 Flag 均为 `false`，且没有 Controlled Auto 授权，因此本任务不会进入
 COPILOT/AUTO，也不会调用模型或发送消息。同模式请求是幂等 no-op；实际模式变化使

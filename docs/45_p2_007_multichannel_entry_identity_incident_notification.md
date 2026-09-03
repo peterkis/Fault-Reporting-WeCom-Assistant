@@ -82,7 +82,7 @@ monitoring corroboration
 
 禁止聚类键：患者 ID、姓名、手机号、原始正文、原始 WeCom userid、原始 IP。
 
-候选只进入内部 Workbench。人工确认后，P2-012 才能：
+候选只进入未来 P2-015/P2-016 人工审核界面。P2-012 经独立授权且人工确认后才能：
 
 ```text
 create Incident
@@ -127,3 +127,5 @@ incident:{incident_id}:private:{incident_version}:{person_id}
 ```
 
 Sender 已调用但 ACK 不明确时进入 `RECONCILIATION_REQUIRED`，不得盲重发。
+
+真实模板卡片 Sender、Reporter-safe Timeline 和基于 Ticket Event 的状态通知归 P2-016，默认 Flag 关闭；P2-007 仍只产生 Candidate/Recommendation。

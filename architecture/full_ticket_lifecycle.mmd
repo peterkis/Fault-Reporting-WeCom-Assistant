@@ -1,0 +1,20 @@
+stateDiagram-v2
+  [*] --> NEW
+  NEW --> QUEUED: queue
+  QUEUED --> ACCEPTED: accept
+  ACCEPTED --> IN_PROGRESS: start
+  IN_PROGRESS --> WAITING_REQUESTER: request-information
+  WAITING_REQUESTER --> IN_PROGRESS: resume
+  IN_PROGRESS --> WAITING_VENDOR: wait-vendor
+  WAITING_VENDOR --> IN_PROGRESS: resume
+  IN_PROGRESS --> RESOLVED: resolve
+  RESOLVED --> CLOSED: confirm / auto-close
+  RESOLVED --> REOPENED: reopen
+  CLOSED --> REOPENED: reopen
+  REOPENED --> IN_PROGRESS: start
+  QUEUED --> CANCELLED: cancel
+  ACCEPTED --> CANCELLED: cancel
+  note right of IN_PROGRESS
+    add-note preserves current status
+    every action appends Ticket Event
+  end note

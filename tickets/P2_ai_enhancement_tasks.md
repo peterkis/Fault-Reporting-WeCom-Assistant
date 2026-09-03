@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 已于 2026-09-02 通过真实现场 Gate 和项目负责人批准。当前唯一活动 Lane 是 `ARCHITECTURE / ARCH-005`；P2-007 为 `TODO / BLOCKED_BY_ARCH_005`，P2-007 至 P2-014 和 P2-G2 及以后 Gate 仍须另行授权。所有提交的 Feature Flag 默认关闭；P2-G1 `PASSED` 不是 Phase 2 `GO`。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006 已完成。当前无活动任务或 Lane；下一候选为 P2-015，但未授权。P2-015、P2-016、P2-012、P2-008 至 P2-014 和 P2-G2 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED` 与 ARCH-006 `DONE` 均不是 Phase 2 `GO`。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -304,7 +304,9 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 ## P2-007 服务目录、确定性规则与对话字段模型
 
-- 状态：TODO / BLOCKED_BY_ARCH_005
+- 状态：DONE（2026-09-03）
+- Task：`tasks/P2-007_hospital_it_domain_model.md`
+- Evidence：`evidence/p2-007-implementation-report.md`
 - Lane：P2-C
 - 目标 Gate：P2-G2
 - 依赖：P1-012
@@ -342,12 +344,64 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 可独立于 Conversation DB 使用纯函数和 fixture 开发。
 
-## P2-008 DeepSeek Provider Adapter、脱敏与安全闸门
+## P2-015 规则优先受理编排、跨渠道接触旅程与人工审核
 
-- 状态：TODO
+- 状态：TODO / REQUIRES_SEPARATE_AUTHORIZATION
+- Task：`tasks/P2-015_rule_first_intake_orchestration_manual_review.md`
 - Lane：P2-C
 - 目标 Gate：P2-G2
-- 依赖：P2-007
+- 依赖：P2-G1, ARCH-005, P2-007, P1-004, P1-005, P2-004
+- Migration：预留 030；ARCH-006 不创建 SQL
+
+### 目标
+
+把 P2-007 纯函数装配到已持久化消息/Intake，支持三种 Contact Journey 入口、Channel Leg、持久 `continuation_ref`、多消息增量归约、可重放规则结果、一等人工审核队列和安全系统动作建议。模型调用为 0；不得绕过 Ticket/Communication 命令边界。
+
+### 验收
+
+- 明确技术故障尽早创建最小 Ticket，不等待所有字段完整；
+- `NEEDS_DESCRIPTION` 保留 Journey/Intake，每次只问一个高信息量问题；
+- `MANUAL_REVIEW_REQUIRED` 100% 可达且不静默忽略；
+- 多开放 Journey 要求用户选择，不能只按时间关联；
+- 重放不重复建单/通知，Provenance 与稳定 reason code 完整；
+- `RULE_FIRST_ORCHESTRATION_ENABLED=false`、`MANUAL_REVIEW_QUEUE_ENABLED=false` 时既有链路不变。
+
+## P2-016 完整工单生命周期工作台、上报人时间线与可靠通知
+
+- 状态：TODO / REQUIRES_SEPARATE_AUTHORIZATION
+- Task：`tasks/P2-016_full_ticket_lifecycle_workbench_notifications.md`
+- Lane：P2-B
+- 目标 Gate：P2-G2
+- 依赖：P2-015, P1-006, P2-004, P2-005, P2-006
+- Migration：031 仅在确有新持久化需要时；ARCH-006 不创建 SQL
+
+### 目标
+
+经既有 TicketActionService 暴露完整生命周期 API/UI，分离 Conversation/Ticket Assignment，提供 Manual Review UI、Reporter-safe Timeline、群安全回执、主动单聊、模板卡片和 Ticket Event 驱动的可靠通知。所有通知经 Communication/Outbox/Delivery；发送失败不回滚 Ticket；AI 完全关闭。
+
+### 验收
+
+- 既有全部 Ticket Action 可经真实 UI 完成，刷新后状态/版本/Event 一致；
+- 并发接单最多一人成功，转派/Handoff 留痕，复合接管/接单全成或全败；
+- 内部备注外泄 0；Reporter Timeline 使用 opaque ref + 身份授权；
+- 群回执/单聊/模板卡片幂等，ACK 不明不盲重发；
+- 群强 @ 保持 UNVERIFIED，主动单聊为可靠提醒；
+- 三个新增 Flag 默认 false。
+
+## AI 前置执行顺序（ARCH-006 冻结）
+
+```text
+P2-015 → P2-016 → P2-012 → P2-G2 PASSED → P2-008
+```
+
+P2-008 在 P2-G2 `PASSED` 前保持 `TODO / BLOCKED_BY_P2_G2`，不得成为 next candidate。
+
+## P2-008 DeepSeek Provider Adapter、脱敏与安全闸门
+
+- 状态：TODO / BLOCKED_BY_P2_G2
+- Lane：P2-C
+- 目标 Gate：P2-G3
+- 依赖：P2-G2, P2-007
 
 ### 目标
 
@@ -385,7 +439,7 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 ### 并行边界
 
-P2-C 可先用 mock；真实 API 只在 P2-G2 授权环境。
+P2-C 可先用 mock；真实 API 只在 P2-G3 单独授权环境。
 
 ### 资源约束
 
@@ -395,7 +449,7 @@ P2-C 可先用 mock；真实 API 只在 P2-G2 授权环境。
 
 - 状态：TODO
 - Lane：P2-C
-- 目标 Gate：P2-G2
+- 目标 Gate：P2-G3
 - 依赖：P2-001, P2-008
 
 ### 目标
@@ -475,7 +529,7 @@ AI worker 并发 1；任务由 PostgreSQL durable queue 管理。
 
 ### 验收
 
-- P2-G2 Shadow 无自动发送；
+- P2-G3 Shadow 无自动发送；
 - Copilot 必须人工确认；
 - Auto 只对白名单；
 - unsafe/stale/patient leak=0；
@@ -489,7 +543,7 @@ AI worker 并发 1；任务由 PostgreSQL durable queue 管理。
 
 - 状态：TODO
 - Lane：P2-D
-- 目标 Gate：P2-G3
+- 目标 Gate：P2-G4
 - 依赖：P1-012
 
 ### 目标
@@ -532,14 +586,14 @@ AI worker 并发 1；任务由 PostgreSQL durable queue 管理。
 
 ## P2-012 Incident、Reporter Subscription 与人工确认
 
-- 状态：TODO
+- 状态：TODO / REQUIRES_SEPARATE_AUTHORIZATION
 - Lane：P2-D
-- 目标 Gate：P2-G3
-- 依赖：P2-007
+- 目标 Gate：P2-G2
+- 依赖：P2-007, P2-015, P2-016
 
 ### 目标
 
-实现 Incident、IncidentReport 和 ReporterSubscription，候选关联默认人工确认并可解除。
+在 P2-008 之前实现 Incident、IncidentReport 和 ReporterSubscription；候选关联必须人工确认、拒绝或解除，模型调用为 0。
 
 ### 交付物
 
@@ -566,6 +620,10 @@ AI worker 并发 1；任务由 PostgreSQL durable queue 管理。
 - 默认无自动并单；
 - 每位申报人通知可审计；
 - 误关联可解除。
+- 按 internal person 跨渠道去重；
+- 一名用户恢复不关闭共享 Incident；
+- 群播报和主动单聊只经 Outbox；
+- Candidate 自动产生允许，自动创建 Incident 为 0。
 
 ### 并行边界
 
@@ -575,8 +633,8 @@ AI worker 并发 1；任务由 PostgreSQL durable queue 管理。
 
 - 状态：TODO
 - Lane：P2-D
-- 目标 Gate：P2-G4
-- 依赖：P2-006, P2-010, P2-012
+- 目标 Gate：P2-G5
+- 依赖：P2-G4, P2-010, P2-012
 
 ### 目标
 
@@ -611,7 +669,7 @@ AI worker 并发 1；任务由 PostgreSQL durable queue 管理。
 
 ### 并行边界
 
-可基于 fixture 先开发，P2-G4 与真实事件组装。
+可基于 fixture 先开发，P2-G5 与真实事件组装。
 
 ### 资源约束
 
@@ -621,8 +679,8 @@ AI worker 并发 1；任务由 PostgreSQL durable queue 管理。
 
 - 状态：TODO
 - Lane：ASSEMBLY
-- 目标 Gate：P2-G4
-- 依赖：P2-010, P2-011, P2-012, P2-013
+- 目标 Gate：P2-G5
+- 依赖：P2-G4, P2-010, P2-011, P2-012, P2-013
 
 ### 目标
 

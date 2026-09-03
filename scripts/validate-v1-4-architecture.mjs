@@ -135,6 +135,21 @@ const LIFECYCLE_PROFILES = Object.freeze({
     manifestStatus: 'P2_P2_007_DONE_AWAITING_SEPARATE_AUTHORIZATION',
     projectStatus: 'p2_p2_007_done_awaiting_separate_authorization',
   }),
+  ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-007',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: null,
+    activeLane: null,
+    candidate: 'P2-015',
+    candidateAuthorized: false,
+    authorizedTasks: Object.freeze([...AUTHORIZED_TASKS, 'P2-007']),
+    p2006Status: 'DONE',
+    p2007Status: 'DONE',
+    p2g1Status: 'PASSED',
+    manifestStatus: 'P2_ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION',
+    projectStatus: 'p2_arch_006_done_awaiting_p2_015_authorization',
+  }),
 });
 
 const manifest = json('MANIFEST.json');
@@ -274,6 +289,15 @@ if (profile) {
       && taskIndex.arch_005_completion_evidence === completionEvidence
       && projectSummary.project.arch_005_completion_evidence === completionEvidence,
     'all lifecycle views link ARCH-005 completion evidence');
+    if (profile.lastCompletedArchitectureTask === 'ARCH-006') {
+      const arch006Evidence = 'evidence/arch-006-rule-first-service-loop-rebaseline-report.md';
+      check(fs.existsSync(path.join(root, arch006Evidence)), 'ARCH-006 completion evidence exists');
+      check([manifest, current, backlog, parallel, taskIndex, projectSummary.project]
+        .every((view) => view.arch_006_status === 'DONE'
+          && view.arch_006_completed_at === '2026-09-03'
+          && view.arch_006_completion_evidence === arch006Evidence),
+      'all lifecycle views record ARCH-006 completion');
+    }
   }
   if (profile.p2g1Status === 'PASSED') {
     check(current.next_task_candidate === profile.candidate && current.next_task_authorized === profile.candidateAuthorized,
@@ -304,6 +328,10 @@ const p2004 = backlog.tasks.find((task) => task.id === 'P2-004');
 const p2005 = backlog.tasks.find((task) => task.id === 'P2-005');
 const p2006 = backlog.tasks.find((task) => task.id === 'P2-006');
 const p2007 = backlog.tasks.find((task) => task.id === 'P2-007');
+const p2008 = backlog.tasks.find((task) => task.id === 'P2-008');
+const p2012 = backlog.tasks.find((task) => task.id === 'P2-012');
+const p2015 = backlog.tasks.find((task) => task.id === 'P2-015');
+const p2016 = backlog.tasks.find((task) => task.id === 'P2-016');
 
 check(p1?.status === 'DONE' && p1?.go_decision === 'GO', 'P1 remains DONE with GO');
 check(p10012?.status === 'DONE' && p10012?.decision === 'GO', 'P1-012 remains DONE with GO');
@@ -336,6 +364,15 @@ check(p2006?.authorized_at === '2026-09-01'
 check(p2007?.status === (profile?.p2007Status ?? 'TODO'), 'P2-007 task status matches the lifecycle profile');
 check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[8-9]|01[0-4])$/u.test(task.id))
   .every((task) => task.status === 'TODO'), 'P2-008 through P2-014 remain TODO');
+if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
+  check(p2015?.status === 'TODO' && p2015?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-015 remains unauthorized TODO');
+  check(p2016?.status === 'TODO' && p2016?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-016 remains unauthorized TODO');
+  check(p2012?.status === 'TODO' && p2012?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-012 remains unauthorized TODO');
+  check(p2008?.status === 'TODO' && p2008?.authorization_status === 'BLOCKED_BY_P2_G2', 'P2-008 is blocked by P2-G2');
+  check(sameArray(p2015?.depends_on, ['P2-G1', 'ARCH-005', 'P2-007', 'P1-004', 'P1-005', 'P2-004']), 'P2-015 dependencies are frozen');
+  check(sameArray(p2016?.depends_on, ['P2-015', 'P1-006', 'P2-004', 'P2-005', 'P2-006']), 'P2-016 dependencies are frozen');
+  check(sameArray(p2012?.depends_on, ['P2-007', 'P2-015', 'P2-016']), 'P2-012 executes before AI with frozen dependencies');
+}
 check(sameArray(backlog.tasks.filter((task) => task.status === (profile?.activeTaskStatus ?? 'IN_PROGRESS')).map((task) => task.id),
   profile?.activeTask?.startsWith('P2-0') || profile?.activeTask?.startsWith('ARCH-') ? [profile.activeTask] : []), 'the exact active task set matches the lifecycle profile');
 check(p3?.status === 'TODO', 'P3 remains TODO');
@@ -388,12 +425,30 @@ const expectedFeatureFlags = [
   'INTRANET_PORTAL_SOURCE_ENABLED',
   'HOSPITAL_API_SOURCE_ENABLED',
   'MONITORING_SOURCE_ENABLED',
+  'RULE_FIRST_ORCHESTRATION_ENABLED',
+  'MANUAL_REVIEW_QUEUE_ENABLED',
+  'TICKET_LIFECYCLE_WORKBENCH_ENABLED',
+  'REPORTER_TIMELINE_ENABLED',
+  'WECOM_TEMPLATE_CARD_ENABLED',
 ];
 check(parallel.feature_flags_enabled?.length === 0, 'no P2 or P3 feature flag is enabled');
 check(sameArray(Object.keys(parallel.feature_flag_defaults ?? {}), expectedFeatureFlags), 'feature flag inventory remains frozen');
 check(Object.values(parallel.feature_flag_defaults ?? {}).every((value) => value === false), 'all feature flag defaults remain false');
 check(parallel.assembly_gates.find((gate) => gate.id === 'P2-G1')?.status === (profile?.p2g1Status ?? 'NOT_STARTED'), 'P2-G1 gate matches the lifecycle profile');
 check(parallel.assembly_gates.filter((gate) => gate.id !== 'P2-G1').every((gate) => gate.status === 'NOT_STARTED'), 'later assembly gates remain NOT_STARTED');
+if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
+  check(sameArray(parallel.assembly_gates.filter((gate) => gate.id.startsWith('P2-')).map((gate) => gate.id),
+    ['P2-G1', 'P2-G2', 'P2-G3', 'P2-G4', 'P2-G5']), 'P2 gate inventory includes the rebaselined P2-G5');
+  const p2g2 = parallel.assembly_gates.find((gate) => gate.id === 'P2-G2');
+  const p2g3 = parallel.assembly_gates.find((gate) => gate.id === 'P2-G3');
+  const p2g4 = parallel.assembly_gates.find((gate) => gate.id === 'P2-G4');
+  const p2g5 = parallel.assembly_gates.find((gate) => gate.id === 'P2-G5');
+  check(p2g2?.name === '规则优先、人工兜底的完整服务闭环'
+    && sameArray(p2g2.requires, ['P2-G1', 'ARCH-005', 'P2-007', 'P2-015', 'P2-016', 'P2-012']), 'P2-G2 is the deterministic full service loop');
+  check(p2g3?.name === 'AI Shadow' && sameArray(p2g3.requires, ['P2-G2', 'P2-008', 'P2-009']), 'P2-G3 is AI Shadow');
+  check(p2g4?.name === 'Copilot and Media' && sameArray(p2g4.requires, ['P2-G3', 'P2-010', 'P2-011']), 'P2-G4 is Copilot and Media without Incident dependency');
+  check(p2g5?.name === 'Controlled Auto and Phase 2 Go' && sameArray(p2g5.requires, ['P2-G4', 'P2-013', 'P2-014']), 'P2-G5 is Controlled Auto and Phase 2 Go');
+}
 if (profile?.p2g1Status === 'PASSED') {
   const completionEvidence = 'evidence/p2-g1-project-owner-approval.md';
   const completionViews = [manifest, current, backlog, parallel, taskIndex, projectSummary.project];
@@ -417,6 +472,7 @@ const taskIds = new Set(backlog.tasks.map((task) => task.id));
 for (let index = 1; index <= 14; index += 1) {
   check(taskIds.has('P2-' + String(index).padStart(3, '0')), 'backlog defines P2-' + String(index).padStart(3, '0'));
 }
+check(taskIds.has('P2-015') && taskIds.has('P2-016'), 'backlog defines P2-015 and P2-016');
 for (let index = 1; index <= 12; index += 1) {
   check(taskIds.has('P3-' + String(index).padStart(3, '0')), 'backlog defines P3-' + String(index).padStart(3, '0'));
 }
@@ -527,6 +583,8 @@ check(p2002Authorization.includes('项目负责人正式、独立授权启动 P2
 
 check(pkg.scripts['validate:architecture:v1.4'] === 'node scripts/validate-v1-4-architecture.mjs', 'package exposes V1.4 validator');
 check(pkg.scripts['test:architecture:v1.4'] === 'node --test tests/v1-4-architecture-baseline.test.mjs', 'package exposes V1.4 architecture tests');
+check(pkg.scripts['arch:006:validate'] === 'node scripts/validate-arch-006-rule-first-service-loop.mjs', 'package exposes ARCH-006 validator');
+check(pkg.scripts['test:arch:006'] === 'node --test --test-concurrency=1 tests/arch-006-rule-first-service-loop.test.mjs', 'package exposes ARCH-006 tests');
 check(pkg.scripts['test:p2:001'] === 'node --test tests/p2-001-conversation-contracts.test.mjs', 'package preserves P2-001 unit tests');
 check(pkg.scripts['test:p2:002'] === 'node --test tests/p2-002-timeline-projector.test.mjs', 'package preserves P2-002 unit tests');
 check(pkg.dependencies['@wecom/aibot-node-sdk'] === '1.0.6', 'WeCom SDK remains pinned');

@@ -1,0 +1,18 @@
+flowchart TD
+  CH[Channel Message<br/>durable first] --> IN[Service Intake<br/>90s compatibility aggregation]
+  IN --> OR[Rule-first Orchestrator<br/>P2-015]
+  OR --> J[Contact Journey / Channel Leg]
+  OR --> MR[Manual Review Queue]
+  OR --> TC[Unified Ticket Command Port]
+  TC --> T[Unified Ticket Core]
+  T --> TE[Ticket Event]
+  TE --> NP[Notification Policy]
+  NP --> CM[Communication Message]
+  CM --> OB[Outbox]
+  OB --> DL[Delivery]
+  DL --> WS[WeCom Sender]
+  OR --> IC[Incident Candidate]
+  IC --> HR[Human Review P2-012]
+  HR --> ID[Incident]
+  AI[Optional AI enhancement] -. candidate summary / draft .-> MR
+  AI -. no state ownership .-> OR

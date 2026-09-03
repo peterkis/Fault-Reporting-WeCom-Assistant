@@ -40,9 +40,9 @@ direct_guidance: REQUIRED_RELIABLE_PATH
 ticket_card: AFTER_TICKET_COMMIT
 ticket_suffix: DISPLAY_ONLY_4_DIGITS
 timeline: OPAQUE_REF_PLUS_AUTHENTICATION
-current_template_card_sender: IMPLEMENTATION_PENDING
+current_template_card_sender: PLANNED_P2_016_NOT_STARTED
 ```
 
 ## D5 P2-007 停止线
 
-P2-007 不接企业微信目录网络接口、不发消息、不调用 SDK、不接 DeepSeek、不创建 Incident、不修改 Ticket、不创建空迁移。它只冻结契约、规则、配置、纯函数和脱敏 fixture。
+P2-007 不接企业微信目录网络接口、不发消息、不调用 SDK、不接 DeepSeek、不创建 Incident、不修改 Ticket、不创建空迁移。它只冻结契约、规则、配置、纯函数和脱敏 fixture。ARCH-006 也不改变该停止线；后续装配属于未授权的 P2-015/P2-016/P2-012。

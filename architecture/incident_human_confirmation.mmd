@@ -1,0 +1,20 @@
+stateDiagram-v2
+  [*] --> CANDIDATE: deterministic candidate only
+  CANDIDATE --> UNDER_REVIEW: human opens review
+  CANDIDATE --> REJECTED: human rejects
+  UNDER_REVIEW --> CONFIRMED_LOCAL: human confirms
+  UNDER_REVIEW --> CONFIRMED_CAMPUS: human confirms
+  UNDER_REVIEW --> CONFIRMED_HOSPITAL_WIDE: human confirms
+  UNDER_REVIEW --> REJECTED: human rejects
+  CONFIRMED_LOCAL --> INVESTIGATING
+  CONFIRMED_CAMPUS --> INVESTIGATING
+  CONFIRMED_HOSPITAL_WIDE --> INVESTIGATING
+  INVESTIGATING --> RESOLVED
+  RESOLVED --> CLOSED
+  CONFIRMED_LOCAL --> UNLINKED: human unlinks wrong report
+  CONFIRMED_CAMPUS --> UNLINKED: human unlinks wrong report
+  CONFIRMED_HOSPITAL_WIDE --> UNLINKED: human unlinks wrong report
+  note right of CANDIDATE
+    automatic Incident creation = 0
+    model calls = 0
+  end note

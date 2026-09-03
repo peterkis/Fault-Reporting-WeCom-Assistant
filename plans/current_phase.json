@@ -8,8 +8,8 @@
   "started": true,
   "last_completed_task": "P2-007",
   "last_completed_gate": "P2-G1",
-  "last_completed_architecture_task": "ARCH-005",
-  "active_task": "ARCH-006",
+  "last_completed_architecture_task": "ARCH-006",
+  "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -20,8 +20,8 @@
     "P2-006",
     "P2-007"
   ],
-  "active_lane": "ARCHITECTURE",
-  "implementation_authorization_status": "ARCH_006_IN_PROGRESS_NO_RUNTIME_AUTHORIZATION",
+  "active_lane": null,
+  "implementation_authorization_status": "ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION",
   "authorized_architecture_tasks": [
     "ARCH-005",
     "ARCH-006"
@@ -31,15 +31,29 @@
   "arch_005_authorization_evidence": "evidence/arch-005-start-authorization.md",
   "arch_005_completed_at": "2026-09-03",
   "arch_005_completion_evidence": "evidence/arch-005-targeted-live-revalidation.md",
-  "arch_006_status": "IN_PROGRESS",
+  "arch_006_status": "DONE",
   "arch_006_authorized_at": "2026-09-03",
   "arch_006_authorization_evidence": "evidence/arch-006-start-authorization.md",
+  "arch_006_completed_at": "2026-09-03",
+  "arch_006_completion_evidence": "evidence/arch-006-rule-first-service-loop-rebaseline-report.md",
   "p2_007_status": "DONE",
   "p2_007_completed_at": "2026-09-03",
   "p2_007_completion_evidence": "evidence/p2-007-implementation-report.md",
   "p2_g1_status": "PASSED",
   "p2_g2_status": "NOT_STARTED",
-  "next_task_candidate": "P2-008",
+  "p2_g3_status": "NOT_STARTED",
+  "p2_g4_status": "NOT_STARTED",
+  "p2_g5_status": "NOT_STARTED",
+  "p2_015_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_016_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_012_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
+  "p2_009_status": "TODO",
+  "p2_010_status": "TODO",
+  "p2_011_status": "TODO",
+  "p2_013_status": "TODO",
+  "p2_014_status": "TODO",
+  "next_task_candidate": "P2-015",
   "next_task_authorized": false,
   "authorized_gates": [
     "P2-G1"
@@ -71,10 +85,10 @@
   "p2_006_completion_evidence": "evidence/p2-006-realtime-workbench-report.md",
   "allowed_scope": [
     "rebaseline architecture, plans, future tasks, gates, indexes, validators, architecture tests, diagrams, and ARCH-006 evidence only",
-    "develop the P2-007 hospital IT service catalog, deterministic rules, conversation field model, and pure evaluation boundary",
-    "use synthetic fixtures and keep P2-007 outputs advisory without Ticket or Incident state ownership",
+    "preserve the completed ARCH-006 rule-first architecture baseline without starting future runtime tasks",
+    "keep P2-007 outputs advisory until separately authorized P2-015 assembly",
     "inherit ARCH-005 LocalDateTime, PhysicalEpochMs, and explicit same-second ordering contracts",
-    "keep every committed feature-flag default false and preserve completed P1 and P2-001 through P2-006 behavior"
+    "keep every committed feature-flag default false and preserve completed P1 and P2-001 through P2-007 behavior"
   ],
   "forbidden_before_exit": [
     "production Conversation Center enablement",
@@ -89,7 +103,7 @@
     "historical ticket compatibility scope"
   ],
   "forbidden_without_task_authorization": [
-    "start P2-008 or any later P2 task without separate authorization",
+    "start P2-015, P2-016, P2-012, P2-008, or any later P2 task without separate authorization",
     "start any P3 task",
     "mark P2-G1 PASSED or GO without live WeCom evidence and project-owner approval",
     "start P2-G2 or any later gate",
@@ -97,7 +111,7 @@
     "enable production Conversation Center or AI",
     "enable production OCR",
     "connect real hospital identity or intranet sources",
-    "change any P2-008 or later P2 task or any P3 task from TODO"
+    "change any future P2 runtime task or any P3 task from TODO"
   ],
   "exit_gate_phase": "P1",
   "exit_gate": [
@@ -122,7 +136,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_007_DONE_AWAITING_SEPARATE_AUTHORIZATION",
+    "activation_status": "ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

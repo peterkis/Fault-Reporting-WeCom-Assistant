@@ -93,6 +93,19 @@ const profiles = Object.freeze({
     p2007Status: 'DONE',
     p2g1Status: 'PASSED',
   }),
+  ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-007',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: null,
+    activeLane: null,
+    candidate: 'P2-015',
+    candidateAuthorized: false,
+    authorizedTasks: Object.freeze(['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006', 'P2-007']),
+    p2006Status: 'DONE',
+    p2007Status: 'DONE',
+    p2g1Status: 'PASSED',
+  }),
 });
 
 test('V1.4 architecture validator passes', () => {
@@ -161,6 +174,13 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
     assert.equal(projectSummary.project.last_completed_architecture_task, profile.lastCompletedArchitectureTask);
     assert.equal(p2Summary.last_completed_architecture_task, profile.lastCompletedArchitectureTask);
     assert.equal(fs.existsSync(path.join(root, 'evidence/arch-005-targeted-live-revalidation.md')), true);
+    if (profile.lastCompletedArchitectureTask === 'ARCH-006') {
+      assert.equal(fs.existsSync(path.join(root, 'evidence/arch-006-rule-first-service-loop-rebaseline-report.md')), true);
+      for (const view of [manifest, current, backlog, parallel, taskIndex, projectSummary.project]) {
+        assert.equal(view.arch_006_status, 'DONE');
+        assert.equal(view.arch_006_completion_evidence, 'evidence/arch-006-rule-first-service-loop-rebaseline-report.md');
+      }
+    }
   }
   if (profile.p2g1Status === 'PASSED') {
     assert.equal(current.next_task_candidate, profile.candidate);
@@ -181,6 +201,14 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
     profile.activeTask?.startsWith('P2-0') || profile.activeTask?.startsWith('ARCH-') ? [profile.activeTask] : [],
   );
   assert.equal(backlog.tasks.filter((task) => task.phase === 'P3').every((task) => task.status === 'TODO'), true);
+  if (profile.lastCompletedArchitectureTask === 'ARCH-006') {
+    assert.equal(backlog.tasks.find((task) => task.id === 'P2-015').status, 'TODO');
+    assert.equal(backlog.tasks.find((task) => task.id === 'P2-016').status, 'TODO');
+    assert.equal(backlog.tasks.find((task) => task.id === 'P2-012').authorization_status, 'REQUIRES_SEPARATE_AUTHORIZATION');
+    assert.equal(backlog.tasks.find((task) => task.id === 'P2-008').authorization_status, 'BLOCKED_BY_P2_G2');
+    assert.deepEqual(parallel.assembly_gates.filter((gate) => gate.id.startsWith('P2-')).map((gate) => gate.id),
+      ['P2-G1', 'P2-G2', 'P2-G3', 'P2-G4', 'P2-G5']);
+  }
   assert.equal(parallel.assembly_gates.find((gate) => gate.id === 'P2-G1').status, profile.p2g1Status ?? 'NOT_STARTED');
   assert.equal(parallel.assembly_gates.filter((gate) => gate.id !== 'P2-G1').every((gate) => gate.status === 'NOT_STARTED'), true);
   assert.deepEqual(parallel.feature_flags_enabled, []);
@@ -325,6 +353,11 @@ test('future flags default off without legacy import flags', () => {
     'INTRANET_PORTAL_SOURCE_ENABLED=false',
     'HOSPITAL_API_SOURCE_ENABLED=false',
     'MONITORING_SOURCE_ENABLED=false',
+    'RULE_FIRST_ORCHESTRATION_ENABLED=false',
+    'MANUAL_REVIEW_QUEUE_ENABLED=false',
+    'TICKET_LIFECYCLE_WORKBENCH_ENABLED=false',
+    'REPORTER_TIMELINE_ENABLED=false',
+    'WECOM_TEMPLATE_CARD_ENABLED=false',
   ]) {
     assert.match(env, new RegExp('^' + line + '$', 'm'));
   }

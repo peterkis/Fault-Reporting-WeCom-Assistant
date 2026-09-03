@@ -11,13 +11,13 @@
 P1 / P1-012 / DONE / GO
 ```
 
-本轮活动架构任务状态固定为：
+当前阶段状态固定为：
 
 ```text
-P2 / ARCH-006 / IN_PROGRESS / ARCHITECTURE
+P2 / P2-G1 / PASSED / NO_ACTIVE_LANE
 ```
 
-V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-09-01 独立授权并完成 P2-006，并于同日另行授权 P2-G1 Human-only Conversation Center Assembly；2026-09-02 在真实测试企业微信现场 Evidence、隔离 Replay Gap、60 分钟 controlled observation 和负责人明确批准全部完成后，P2-G1 更新为 `PASSED`。P2-007 Hospital IT Domain Model 已于 2026-09-03 完成纯领域实现。项目负责人于同日独立授权 `ARCH-006 / ARCHITECTURE`，仅用于 AI-Optional Rule-First Full Service Loop 架构、计划、任务与 Gate 重基线；任何后续业务 Runtime、Migration、AI Provider、真实 Incident、企业微信发送和 Feature Flag 启用仍未授权。`P2-G1 PASSED`、`P2-007 DONE` 与 `ARCH-006 IN_PROGRESS` 均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
+V1.4 不改变 G0/P1 已完成事实。P2-G1 于 2026-09-02 在真实测试企业微信现场 Evidence、隔离 Replay Gap、60 分钟 controlled observation 和负责人明确批准后更新为 `PASSED`。ARCH-005 与 P2-007 已于 2026-09-03 完成；同日独立授权的 ARCH-006 已完成 AI-Optional Rule-First Full Service Loop 架构、计划、任务与 Gate 重基线。当前无活动任务或 Lane；下一候选为 P2-015，但未授权。P2-015、P2-016、P2-012、P2-008 及以后 Runtime 任务、P2-G2 及以后 Gate 均未授权，全部 P3 未启动。所有 Feature Flag 默认关闭。上述完成事实均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
 
 ## 2. 长期事实源
 
@@ -64,14 +64,18 @@ P1：
 
 ### Phase 2：Conversation Center 与 AI 协作
 
-P2 保持 `IN_PROGRESS`；P2-001 至 P2-007 均已完成，P2-G1 Human-only Assembly 已于 2026-09-02 通过。当前唯一活动任务为 `ARCH-006 / ARCHITECTURE`，只允许架构重基线；P2-008 及以后 Runtime 任务和 P2-G2 及以后 Gate 不得启动，所有提交的 Feature Flag 默认值保持 `false`。P2-G1 与 P2-007 的完成 Evidence 不授权生产、临床、AI/OCR、Incident、P3 或后续 Runtime 任务。
+P2 保持 `IN_PROGRESS`；P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006 均已完成。当前无活动任务或 Lane；P2-015 为下一候选但未授权。P2-015、P2-016、P2-012、P2-008 及以后 Runtime 任务和 P2-G2 及以后 Gate 不得启动，所有 Feature Flag 默认值保持 `false`。
 
 P2 必须按以下顺序：
 
 ```text
 Human-only Conversation Center
+→ Rule-first Orchestration + Manual Review
+→ Full Ticket Lifecycle + Reporter Timeline + Reliable Notification
+→ Human-confirmed Incident
+→ Deterministic Full Service Loop Gate
 → AI Shadow
-→ Copilot
+→ Copilot + Media
 → Controlled Auto
 ```
 
@@ -83,6 +87,10 @@ AI：
 - 不直接调用企业微信 SDK；
 - 必须经过脱敏、Schema、Generation Fence 和 Communication Outbox；
 - 人工接管后旧结果必须标记 STALE，禁止发送。
+
+Readiness 必须分为 `base_service_ready` 与 `ai_enhancement_ready`。核心服务就绪不得要求模型密钥或 Provider 网络；后者失败不得反向把前者置为失败。
+
+`Conversation Assignment` 是谁负责与用户沟通；`Ticket Assignment` 是谁负责解决故障。两者是独立权威事实，禁止复制第二套所有权。复合接管/接单命令必须同事务全部成功或全部失败。
 
 ### Phase 3：医院内网接入与统一运营
 
@@ -159,9 +167,10 @@ phase3/unified-operations
 ### P2
 
 - P2-G1：Human-only Conversation Center；
-- P2-G2：AI Shadow；
-- P2-G3：Copilot + Media + Incident；
-- P2-G4：Controlled Auto + Phase 2 Go。
+- P2-G2：规则优先、人工兜底的完整服务闭环；
+- P2-G3：AI Shadow；
+- P2-G4：Copilot + Media；
+- P2-G5：Controlled Auto + Phase 2 Go。
 
 ### P3
 

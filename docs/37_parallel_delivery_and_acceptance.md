@@ -2,17 +2,17 @@
 
 ## 1. 原则
 
-P1-012 与 Phase 1 已完成并取得 `GO`。项目负责人已独立授权启动 P2，P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 于 2026-09-02 完成真实现场 Gate 并取得项目负责人批准。当前无活动 Lane；P2-007 及以后任务、P2-G2 及以后 Gate 和 P3 均未授权。其他 Lane 只能读取冻结 Contract，不得据此启动开发。所有提交的 Feature Flag 默认关闭，P2-G1 通过不等同于生产、临床、最终生产前端或 AI 自动回复批准。
+P1-012 与 Phase 1 已完成并取得 `GO`。P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006 已完成。当前无活动 Lane；下一候选 P2-015 未授权。P2-015、P2-016、P2-012、P2-008 及以后 Runtime、P2-G2 至 P2-G5 和 P3 均须另行授权。所有 Feature Flag 默认关闭，完成架构重基线不等同于生产、临床、最终生产前端或 AI 自动回复批准。
 
 ## 2. P2 Lanes
 
 | Lane | 架构范围 | 当前授权 |
 |---|---|---|
 | P2-A | Conversation Core、Timeline、Realtime Event Log | P2-001/P2-002/P2-003 已完成并冻结 |
-| P2-B | Communication Outbox、Handoff、Workbench | P2-004/P2-005/P2-006 已完成并冻结 |
+| P2-B | Communication Outbox、Handoff、Workbench | P2-004/P2-005/P2-006 已完成；P2-016 未授权 |
 | ASSEMBLY | P1 与 P2-001 至 P2-006 Human-only 组装 | P2-G1 `PASSED`；当前无活动 Assembly |
-| P2-C | Rules、DeepSeek Provider、Context/Memory、Rollout | 未授权；只读消费冻结 Contract |
-| P2-D | Media/OCR、Incident、Metrics | 未授权；只读消费冻结 Contract |
+| P2-C | Rules、Journey/Manual Review、DeepSeek、Context/Memory | P2-007 已完成；P2-015/P2-008+ 未授权 |
+| P2-D | Human-confirmed Incident、Media/OCR、Metrics | P2-012/P2-011/P2-013 未授权 |
 
 ### P2-002 独立交付边界
 
@@ -81,15 +81,19 @@ P2-G1 已在 P2-001 至 P2-006 独立完成后完成自动化 Assembly、真实�
 这些消费关系现在只在 P2-G1 授权范围内用于 Human-only 组装，不授权 P2-007、AI、Media、
 Incident、P3 或任何生产启用。
 
-### P2-G2 AI Shadow
+### P2-G2 规则优先、人工兜底的完整服务闭环
 
-只记录 AI Run，不发送给用户。验证脱敏、上下文、Schema、成本和 Generation Fence。
+依赖 P2-G1、ARCH-005、P2-007、P2-015、P2-016、P2-012。全部 AI/OCR Flag 关闭、模型调用为 0；验证三入口先持久化、确定性安全路由覆盖率至少 90%、Manual Review 100% 可达、完整 Ticket Action UI、双责任、Reporter-safe Timeline、可靠通知和人工确认 Incident。真实 PostgreSQL、批准的真实企业微信测试范围、至少 60 分钟 controlled observation、2C4G、资源清理和项目负责人批准均为 Gate 条件。
 
-### P2-G3 Copilot + Media + Incident
+### P2-G3 AI Shadow
 
-人工审核草稿；媒体/OCR 可关闭；Incident 默认人工确认。
+依赖 P2-G2、P2-008、P2-009。只记录后台 AI Run，不参与受理、Ticket、Incident 或通知正确性；验证脱敏、上下文、Schema、成本和 Generation Fence。AI 停止时 P2-G2 仍完整通过。
 
-### P2-G4 Controlled Auto
+### P2-G4 Copilot + Media
+
+依赖 P2-G3、P2-010、P2-011。人工审核草稿，媒体/OCR 可关闭；Incident 已在 AI 之前由 P2-012/P2-G2 完成人工路径，不再依赖本 Gate。
+
+### P2-G5 Controlled Auto + Phase 2 Go
 
 只对白名单低风险场景放量。过期 AI、不安全回复、患者数据外泄、内部备注外泄和重复回复均必须为 0。
 
@@ -144,6 +148,4 @@ V1.4 不再要求历史数据 dry run、未完结工单切换、最终增量、�
 
 ## P2-G1 授权后的并行边界
 
-P2-B 的 P2-004、P2-005、P2-006 均已独立完成，P2-G1 已通过，当前无活动 Lane。P2-G1 的
-真实现场 Evidence 与项目负责人批准只关闭 Human-only Assembly Gate；P2-007、P2-G2、
-AI/Media/Incident、P3 和生产启用仍须另行授权。
+P2-B 的 P2-004、P2-005、P2-006 均已独立完成，P2-C 的 P2-007 已完成，P2-G1 已通过，ARCH-006 已完成重基线，当前无活动 Lane。下一候选 P2-015 以及 P2-016、P2-012、P2-G2、P2-008、AI/Media、P3 和生产启用仍须另行授权。

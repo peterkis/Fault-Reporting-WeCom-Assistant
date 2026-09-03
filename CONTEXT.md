@@ -21,6 +21,12 @@ SSE routing, Polling fallback, or the Internal Alpha / Reference Client, read
 `docs/42_p2_006_realtime_web_workbench.md`. The reference client is replaceable and does
 not authorize P2-G1 assembly or a production frontend.
 
+For the post-ARCH-006 rule-first sequence, deterministic result contract, Contact Journey,
+Manual Review, complete Ticket lifecycle, Reporter-safe Timeline, notification policy, or
+human-confirmed Incident boundary, read `docs/50_arch_006_ai_optional_rule_first_service_loop.md`
+through `docs/54_p2_g2_deterministic_full_service_loop_gate.md` before changing a future
+Contract, migration, Runtime, UI, task dependency, or Gate.
+
 ## Conversation identity
 
 **Channel Account**:
@@ -150,6 +156,26 @@ _Avoid_: Model version, Session status
 **Current Assignment**:
 The single current internal Principal responsibility state for a Session; it is separate from Control Mode.
 _Avoid_: Session owner, Ticket assignee copy
+
+**Conversation Assignment**:
+The authoritative answer to who is responsible for communicating with the requester. It is
+owned by Conversation Control and must not copy or override Ticket Assignment.
+_Avoid_: Ticket handler, resolver owner
+
+**Ticket Assignment**:
+The authoritative Unified Ticket Core responsibility for who resolves the fault and which
+resolver team owns the work. It must not be inferred from Conversation Assignment.
+_Avoid_: current communication seat, Conversation owner
+
+**Contact Journey**:
+The persisted business association across one or more independent group/direct Channel Legs
+for one service contact. It never merges raw Threads or owns Ticket state.
+_Avoid_: Conversation Thread merge, time-only correlation
+
+**Manual Review Item**:
+The first-class durable safe-routing outcome for ambiguous, conflicting, high-risk, or
+otherwise non-automatable input. It is a valid rule result, not a classification failure.
+_Avoid_: ignored message, boolean-only warning
 
 **Handoff**:
 An independently audited request/accept/release/cancel lifecycle for transferring a Session to human control.

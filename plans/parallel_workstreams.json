@@ -13,17 +13,19 @@
   ],
   "last_completed_task": "P2-007",
   "last_completed_gate": "P2-G1",
-  "last_completed_architecture_task": "ARCH-005",
-  "active_task": "ARCH-006",
-  "active_lane": "ARCHITECTURE",
-  "implementation_authorization_status": "ARCH_006_IN_PROGRESS_NO_RUNTIME_AUTHORIZATION",
+  "last_completed_architecture_task": "ARCH-006",
+  "active_task": null,
+  "active_lane": null,
+  "implementation_authorization_status": "ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION",
   "authorized_architecture_tasks": ["ARCH-005", "ARCH-006"],
   "arch_005_status": "DONE",
   "arch_005_completed_at": "2026-09-03",
   "arch_005_completion_evidence": "evidence/arch-005-targeted-live-revalidation.md",
-  "arch_006_status": "IN_PROGRESS",
+  "arch_006_status": "DONE",
   "arch_006_authorized_at": "2026-09-03",
   "arch_006_authorization_evidence": "evidence/arch-006-start-authorization.md",
+  "arch_006_completed_at": "2026-09-03",
+  "arch_006_completion_evidence": "evidence/arch-006-rule-first-service-loop-rebaseline-report.md",
   "p2_007_status": "DONE",
   "p2_007_completed_at": "2026-09-03",
   "p2_007_completion_evidence": "evidence/p2-007-implementation-report.md",
@@ -51,7 +53,20 @@
   "p2_006_authorization_evidence": "evidence/p2-006-start-authorization.md",
   "p2_006_completed_at": "2026-09-01",
   "p2_006_completion_evidence": "evidence/p2-006-realtime-workbench-report.md",
-  "next_task_candidate": "P2-008",
+  "p2_g2_status": "NOT_STARTED",
+  "p2_g3_status": "NOT_STARTED",
+  "p2_g4_status": "NOT_STARTED",
+  "p2_g5_status": "NOT_STARTED",
+  "p2_015_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_016_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_012_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
+  "p2_009_status": "TODO",
+  "p2_010_status": "TODO",
+  "p2_011_status": "TODO",
+  "p2_013_status": "TODO",
+  "p2_014_status": "TODO",
+  "next_task_candidate": "P2-015",
   "next_task_authorized": false,
   "feature_flags_enabled": [],
   "feature_flag_defaults": {
@@ -68,8 +83,13 @@
     "INTRANET_PORTAL_SOURCE_ENABLED": false,
     "HOSPITAL_API_SOURCE_ENABLED": false,
     "MONITORING_SOURCE_ENABLED": false
+    ,"RULE_FIRST_ORCHESTRATION_ENABLED": false
+    ,"MANUAL_REVIEW_QUEUE_ENABLED": false
+    ,"TICKET_LIFECYCLE_WORKBENCH_ENABLED": false
+    ,"REPORTER_TIMELINE_ENABLED": false
+    ,"WECOM_TEMPLATE_CARD_ENABLED": false
   },
-  "rule": "ARCH-006 is the only active architecture task and authorizes planning and architecture rebaseline only. P2-G1 remains PASSED, ARCH-005 remains DONE, and P2-007 remains DONE. P2-008 and later runtime tasks and P2-G2 and later gates remain unauthorized. Every committed P2 and P3 feature-flag default remains false.",
+  "rule": "ARCH-006 is DONE. P2-G1 remains PASSED, ARCH-005 remains DONE, and P2-007 remains DONE. P2-015 is the next candidate but is not authorized; P2-016 and P2-012 also require separate authorization. P2-008 is blocked until P2-G2 PASSED. Every committed P2 and P3 feature-flag default remains false.",
   "migration_number_reservations": {
     "P2-A": "010-019",
     "P2-B": "020-029",
@@ -79,6 +99,10 @@
     "P3-B": "060-069",
     "P3-C": "070-079",
     "P3-D": "080-089"
+  },
+  "task_migration_reservations": {
+    "P2-015": "030_CONCEPT_ONLY_UNTIL_AUTHORIZED",
+    "P2-016": "031_ONLY_IF_NEW_PERSISTENCE_IS_REQUIRED"
   },
   "lanes": [
     {
@@ -107,10 +131,14 @@
       "tasks": [
         "P2-004",
         "P2-005",
-        "P2-006"
+        "P2-006",
+        "P2-016"
       ],
       "feature_flags": [
-        "HUMAN_WORKBENCH_V2_ENABLED"
+        "HUMAN_WORKBENCH_V2_ENABLED",
+        "TICKET_LIFECYCLE_WORKBENCH_ENABLED",
+        "REPORTER_TIMELINE_ENABLED",
+        "WECOM_TEMPLATE_CARD_ENABLED"
       ],
       "mock_dependencies": [
         "conversation API fixture",
@@ -120,15 +148,18 @@
     },
     {
       "id": "P2-C",
-      "name": "AI Orchestrator",
+      "name": "Rule-first and Optional AI Orchestrator",
       "branch": "phase2/ai-orchestrator",
       "tasks": [
         "P2-007",
+        "P2-015",
         "P2-008",
         "P2-009",
         "P2-010"
       ],
       "feature_flags": [
+        "RULE_FIRST_ORCHESTRATION_ENABLED",
+        "MANUAL_REVIEW_QUEUE_ENABLED",
         "AI_TRIAGE_ENABLED",
         "AI_CONVERSATION_ENABLED",
         "AI_AUTO_REPLY_ENABLED"
@@ -137,7 +168,7 @@
         "model provider stub",
         "redacted evaluation set"
       ],
-      "assembly_gate": "P2-G2/P2-G4"
+      "assembly_gate": "P2-G2/P2-G3/P2-G4"
     },
     {
       "id": "P2-D",
@@ -157,7 +188,7 @@
         "synthetic media",
         "incident fixtures"
       ],
-      "assembly_gate": "P2-G3/P2-G4"
+      "assembly_gate": "P2-G2/P2-G4/P2-G5"
     },
     {
       "id": "P3-A",
@@ -255,33 +286,49 @@
     },
     {
       "id": "P2-G2",
-      "name": "AI Shadow",
+      "name": "规则优先、人工兜底的完整服务闭环",
       "status": "NOT_STARTED",
       "requires": [
         "P2-G1",
+        "ARCH-005",
         "P2-007",
+        "P2-015",
+        "P2-016",
+        "P2-012"
+      ],
+      "required_flags_false": [
+        "AI_TRIAGE_ENABLED",
+        "AI_CONVERSATION_ENABLED",
+        "AI_AUTO_REPLY_ENABLED",
+        "OCR_ENABLED"
+      ]
+    },
+    {
+      "id": "P2-G3",
+      "name": "AI Shadow",
+      "status": "NOT_STARTED",
+      "requires": [
+        "P2-G2",
         "P2-008",
         "P2-009"
       ]
     },
     {
-      "id": "P2-G3",
-      "name": "Copilot Media Incident",
-      "status": "NOT_STARTED",
-      "requires": [
-        "P2-G1",
-        "P2-G2",
-        "P2-011",
-        "P2-012"
-      ]
-    },
-    {
       "id": "P2-G4",
-      "name": "Controlled Auto and Phase 2 Go",
+      "name": "Copilot and Media",
       "status": "NOT_STARTED",
       "requires": [
         "P2-G3",
         "P2-010",
+        "P2-011"
+      ]
+    },
+    {
+      "id": "P2-G5",
+      "name": "Controlled Auto and Phase 2 Go",
+      "status": "NOT_STARTED",
+      "requires": [
+        "P2-G4",
         "P2-013",
         "P2-014"
       ]
