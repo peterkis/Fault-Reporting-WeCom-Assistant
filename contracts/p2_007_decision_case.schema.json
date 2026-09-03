@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/p2-007/decision-case.schema.json",
+  "title": "P2-007 v1.2 Decision Fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id",
+    "category",
+    "source_kind",
+    "description",
+    "input",
+    "expected",
+    "must_not"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^D12-[0-9]{3}$"
+    },
+    "category": {
+      "enum": [
+        "ENTRY",
+        "CONTINUATION",
+        "IDENTITY",
+        "FRAGMENTED_DESCRIPTION",
+        "HUMAN_LIFECYCLE",
+        "INCIDENT",
+        "NOTIFICATION"
+      ]
+    },
+    "source_kind": {
+      "enum": [
+        "ANONYMIZED_GROUP_PATTERN_PLUS_PRODUCT_DESIGN",
+        "PRODUCT_DECISION_SYNTHETIC"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "input": {
+      "type": "object"
+    },
+    "expected": {
+      "type": "object"
+    },
+    "must_not": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z0-9_]{2,128}$"
+      }
+    }
+  }
+}

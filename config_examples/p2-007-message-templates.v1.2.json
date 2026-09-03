@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "template_set_version": "1.2.0",
+  "language": "zh-CN",
+  "privacy_policy": "NO_PATIENT_ACCOUNT_IP_OR_INTERNAL_ERROR_IN_GROUP",
+  "templates": [
+    {
+      "code": "GROUP_RECEIPT_V1",
+      "channel": "WECOM_GROUP",
+      "purpose": "GROUP_RECEIPT",
+      "strong_mention_capability": "UNVERIFIED",
+      "text": "已收到您的故障上报。系统已向您发送单聊消息，请在与机器人的单聊中继续补充故障地点和影响范围。"
+    },
+    {
+      "code": "DIRECT_GUIDANCE_FROM_GROUP_V1",
+      "channel": "WECOM_DIRECT",
+      "purpose": "DIRECT_GUIDANCE",
+      "text": "您好，我已收到您从“{{origin_group_safe_name}}”发起的报修。请先告诉我：哪个系统或设备出现了什么现象？您可以分几条消息发送，我会自动合并。"
+    },
+    {
+      "code": "DIRECT_ORGANIC_GUIDANCE_V1",
+      "channel": "WECOM_DIRECT",
+      "purpose": "DIRECT_GUIDANCE",
+      "text": "您好，请描述您遇到的系统或设备故障。您可以分多条消息发送，我会自动合并。"
+    },
+    {
+      "code": "ASK_USER_TO_SELECT_JOURNEY_V1",
+      "channel": "WECOM_DIRECT",
+      "purpose": "CLARIFICATION",
+      "text": "您目前有多个正在补充的问题，请回复序号选择本次要继续的问题：\n{{safe_journey_options}}"
+    },
+    {
+      "code": "INCIDENT_GROUP_NOTICE_V1",
+      "channel": "WECOM_GROUP",
+      "purpose": "INCIDENT_GROUP_NOTICE",
+      "precondition": "INCIDENT_CONFIRMED",
+      "text": "【公共故障通知】\n{{safe_service_name}}当前出现异常，信息管理部正在处理。请勿反复提交或频繁重启，恢复情况将继续通知。"
+    },
+    {
+      "code": "INCIDENT_PRIVATE_NOTICE_V1",
+      "channel": "WECOM_DIRECT",
+      "purpose": "INCIDENT_PRIVATE_NOTICE",
+      "precondition": "INCIDENT_CONFIRMED",
+      "text": "您上报的问题已关联公共故障。\n事故尾号：{{incident_display_suffix}}\n当前状态：处理中\n影响服务：{{safe_service_name}}\n恢复后将通过本单聊通知您。"
+    }
+  ],
+  "forbidden_placeholders": [
+    "patient_name",
+    "patient_id",
+    "internal_ip",
+    "staff_account",
+    "provider_raw_error",
+    "secret"
+  ]
+}

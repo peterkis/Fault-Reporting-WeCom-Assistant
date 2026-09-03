@@ -1,0 +1,839 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2-007-conversation-analysis-result.schema.json",
+  "title": "P2-007 Deterministic Conversation Analysis Result v1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "analysis_id",
+    "analysis_mode",
+    "catalog_version",
+    "rule_set_version",
+    "p1_request_type",
+    "domain_intent",
+    "service_candidates",
+    "symptom_facts",
+    "transaction_stage",
+    "scope",
+    "facts",
+    "conflicts",
+    "missing_fields",
+    "clarification_questions",
+    "routing",
+    "rule_hits",
+    "privacy",
+    "result_state",
+    "extension_rule_set_version",
+    "entry_journey",
+    "reporter_profile_snapshot",
+    "description_sufficiency",
+    "incident_candidate",
+    "notification_recommendations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.1.0"
+    },
+    "analysis_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{8,128}$"
+    },
+    "analysis_mode": {
+      "const": "DETERMINISTIC_ONLY"
+    },
+    "catalog_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "rule_set_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "conversation_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "session_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "p1_request_type": {
+      "enum": [
+        "INCIDENT",
+        "STATUS_QUERY",
+        "COMPLAINT",
+        "SERVICE_REQUEST",
+        "QUESTION",
+        "FOLLOW_UP",
+        "CHATTER",
+        "UNKNOWN"
+      ]
+    },
+    "domain_intent": {
+      "enum": [
+        "INCIDENT_REPORT",
+        "SERVICE_REQUEST",
+        "ACCESS_REQUEST",
+        "DATA_CORRECTION_REQUEST",
+        "HOW_TO_QUESTION",
+        "POLICY_QUESTION",
+        "CONFIG_CHANGE_REQUEST",
+        "STATUS_QUERY",
+        "ESCALATION_COMPLAINT",
+        "RECOVERY_UPDATE",
+        "SUPPLEMENT",
+        "ACKNOWLEDGEMENT",
+        "NON_IT_REQUEST",
+        "CHATTER",
+        "UNKNOWN"
+      ]
+    },
+    "service_candidates": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "service_code",
+          "selection_state",
+          "confidence_level",
+          "provenance_fact_ids"
+        ],
+        "properties": {
+          "service_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 96
+          },
+          "selection_state": {
+            "enum": [
+              "SELECTED",
+              "CANDIDATE",
+              "NEGATED",
+              "AMBIGUOUS"
+            ]
+          },
+          "confidence_level": {
+            "enum": [
+              "EXACT",
+              "STRONG",
+              "WEAK",
+              "UNKNOWN"
+            ]
+          },
+          "matched_aliases": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          "provenance_fact_ids": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            }
+          }
+        }
+      }
+    },
+    "selected_service_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 96
+    },
+    "symptom_facts": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "symptom_code",
+          "assertion",
+          "provenance_fact_ids"
+        ],
+        "properties": {
+          "symptom_code": {
+            "type": "string",
+            "maxLength": 96
+          },
+          "assertion": {
+            "enum": [
+              "AFFIRMED",
+              "NEGATED",
+              "UNCERTAIN"
+            ]
+          },
+          "provenance_fact_ids": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            }
+          }
+        }
+      }
+    },
+    "transaction_stage": {
+      "enum": [
+        "STARTUP",
+        "LOGIN",
+        "OPEN_MODULE",
+        "SELECT_PATIENT",
+        "OPEN_RECORD",
+        "EDIT_RECORD",
+        "SAVE_RECORD",
+        "CREATE_ORDER",
+        "RATIONAL_MEDICATION_CHECK",
+        "REVIEW",
+        "FINAL_SUBMIT",
+        "DIGITAL_SIGN",
+        "CANCEL_OR_DELETE",
+        "PRINT_PREVIEW",
+        "PRINT",
+        "VIEW_RESULT",
+        "REGISTRATION",
+        "CHECK_IN",
+        "QUEUE_CALL",
+        "APPOINTMENT",
+        "PAYMENT",
+        "REFUND",
+        "UNKNOWN"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "estimated_affected_count",
+        "provenance_fact_ids"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "SINGLE_PATIENT",
+            "SINGLE_USER",
+            "SINGLE_ENDPOINT",
+            "SINGLE_ROOM",
+            "MULTIPLE_ENDPOINTS",
+            "DEPARTMENT",
+            "BUILDING_FLOOR",
+            "MULTIPLE_DEPARTMENTS",
+            "OUTPATIENT_WIDE",
+            "HOSPITAL_WIDE",
+            "UNKNOWN"
+          ]
+        },
+        "estimated_affected_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "provenance_fact_ids": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    "occurrence_location": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "campus": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "building": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "floor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 32
+        },
+        "zone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 32
+        },
+        "department": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "room": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "sub_location": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "normalization_state": {
+          "enum": [
+            "EXACT",
+            "PARTIAL",
+            "AMBIGUOUS",
+            "UNKNOWN"
+          ]
+        },
+        "provenance_fact_ids": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      },
+      "required": [
+        "campus",
+        "building",
+        "floor",
+        "zone",
+        "department",
+        "room",
+        "sub_location",
+        "normalization_state",
+        "provenance_fact_ids"
+      ]
+    },
+    "reporter_context": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "department": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "role_group": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "source_kind": {
+          "enum": [
+            "AUTHORITATIVE_DIRECTORY",
+            "REPORTER_EXPLICIT",
+            "UNKNOWN"
+          ]
+        }
+      },
+      "required": [
+        "department",
+        "role_group",
+        "source_kind"
+      ]
+    },
+    "asset_hints": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hint_type",
+          "safe_value",
+          "sensitivity",
+          "provenance_fact_ids"
+        ],
+        "properties": {
+          "hint_type": {
+            "enum": [
+              "IP_ADDRESS",
+              "ASSET_ID",
+              "HOSTNAME",
+              "DEVICE_TYPE",
+              "ROOM_TERMINAL",
+              "UNKNOWN"
+            ]
+          },
+          "safe_value": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "sensitivity": {
+            "enum": [
+              "INTERNAL",
+              "SENSITIVE_INTERNAL"
+            ]
+          },
+          "provenance_fact_ids": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            }
+          }
+        }
+      }
+    },
+    "patient_context": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "present": {
+          "type": "boolean"
+        },
+        "secure_reference_present": {
+          "type": "boolean"
+        },
+        "sensitivity": {
+          "const": "PATIENT_SENSITIVE"
+        },
+        "external_egress_allowed": {
+          "const": false
+        }
+      },
+      "required": [
+        "present",
+        "secure_reference_present",
+        "sensitivity",
+        "external_egress_allowed"
+      ]
+    },
+    "impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clinical_impact_level",
+        "patients_waiting",
+        "active_clinic_blocked",
+        "single_point_of_failure",
+        "urgency_claim",
+        "provenance_fact_ids"
+      ],
+      "properties": {
+        "clinical_impact_level": {
+          "enum": [
+            "CRITICAL_REVIEW_REQUIRED",
+            "HIGH",
+            "MODERATE",
+            "LOW",
+            "UNKNOWN"
+          ]
+        },
+        "patients_waiting": {
+          "type": "boolean"
+        },
+        "active_clinic_blocked": {
+          "type": "boolean"
+        },
+        "single_point_of_failure": {
+          "type": "boolean"
+        },
+        "urgency_claim": {
+          "type": "boolean"
+        },
+        "patient_count_estimate": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "provenance_fact_ids": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    "cause_candidates": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cause_code",
+          "status",
+          "confidence_level",
+          "provenance_fact_ids"
+        ],
+        "properties": {
+          "cause_code": {
+            "enum": [
+              "CAUSE.UNKNOWN",
+              "CAUSE.ENDPOINT_LOCAL",
+              "CAUSE.HARDWARE",
+              "CAUSE.CONSUMABLE",
+              "CAUSE.NETWORK_ENDPOINT",
+              "CAUSE.NETWORK_DISTRIBUTION",
+              "CAUSE.APPLICATION_SERVICE",
+              "CAUSE.UPSTREAM_DEPENDENCY",
+              "CAUSE.CONCURRENCY_LICENSE",
+              "CAUSE.DATA_SYNC",
+              "CAUSE.MASTER_DATA",
+              "CAUSE.CONFIGURATION",
+              "CAUSE.FIELD_LENGTH_LIMIT",
+              "CAUSE.USER_WORKFLOW",
+              "CAUSE.POLICY"
+            ]
+          },
+          "status": {
+            "enum": [
+              "HYPOTHESIS",
+              "CONFIRMED",
+              "NEGATED"
+            ]
+          },
+          "confidence_level": {
+            "enum": [
+              "EXACT",
+              "STRONG",
+              "WEAK",
+              "UNKNOWN"
+            ]
+          },
+          "provenance_fact_ids": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            }
+          }
+        }
+      }
+    },
+    "workarounds": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "action_code",
+          "result",
+          "provenance_fact_ids"
+        ],
+        "properties": {
+          "action_code": {
+            "enum": [
+              "RESTART",
+              "RELOGIN",
+              "REFRESH",
+              "REPLUG_NETWORK",
+              "CHANGE_ENDPOINT",
+              "DELETE_AND_RECREATE",
+              "WAIT_AND_RETRY",
+              "OTHER"
+            ]
+          },
+          "result": {
+            "enum": [
+              "SUCCEEDED",
+              "FAILED",
+              "UNKNOWN"
+            ]
+          },
+          "provenance_fact_ids": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            }
+          }
+        }
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signal",
+        "ticket_state_effect"
+      ],
+      "properties": {
+        "signal": {
+          "enum": [
+            "NONE",
+            "REPORTER_OBSERVED_RECOVERED",
+            "OPERATOR_CLAIMED_RECOVERED",
+            "CONFLICTED"
+          ]
+        },
+        "ticket_state_effect": {
+          "const": "NONE"
+        }
+      }
+    },
+    "incident_candidate": {
+      "$ref": "p2-007-incident-candidate.schema.json"
+    },
+    "facts": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "p2-007-fact-provenance.schema.json"
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "p2-007-conflict-resolution.schema.json"
+      }
+    },
+    "missing_fields": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9_.-]{1,128}$"
+      }
+    },
+    "clarification_questions": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "question_code",
+          "priority",
+          "safe_channel_required"
+        ],
+        "properties": {
+          "question_code": {
+            "type": "string",
+            "pattern": "^Q_[A-Z0-9_]{3,64}$"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "safe_channel_required": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_suggestion",
+        "routing_state",
+        "requires_business_owner_approval"
+      ],
+      "properties": {
+        "owner_suggestion": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 96
+        },
+        "routing_state": {
+          "enum": [
+            "DIRECT",
+            "COORDINATED",
+            "NON_IT_ROUTE",
+            "UNKNOWN"
+          ]
+        },
+        "requires_business_owner_approval": {
+          "type": "boolean"
+        }
+      }
+    },
+    "rule_hits": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]+-[0-9]{3}$"
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "flags",
+        "external_egress_allowed",
+        "raw_identifiers_in_logs"
+      ],
+      "properties": {
+        "classification": {
+          "enum": [
+            "INTERNAL",
+            "SENSITIVE_INTERNAL",
+            "PERSONAL",
+            "PATIENT_SENSITIVE",
+            "SECRET"
+          ]
+        },
+        "flags": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "maxLength": 96
+          }
+        },
+        "external_egress_allowed": {
+          "type": "boolean"
+        },
+        "raw_identifiers_in_logs": {
+          "const": false
+        }
+      }
+    },
+    "result_state": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "AMBIGUOUS",
+        "NEEDS_DESCRIPTION",
+        "REQUIRES_HUMAN_REVIEW",
+        "REJECTED"
+      ]
+    },
+    "extension_rule_set_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "entry_journey": {
+      "$ref": "p2-007-contact-journey.schema.json"
+    },
+    "reporter_profile_snapshot": {
+      "$ref": "p2-007-reporter-profile-snapshot.schema.json"
+    },
+    "description_sufficiency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "known_minimum_fields",
+        "missing_priority_fields",
+        "recommended_next_step"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "EMPTY",
+            "PARTIAL",
+            "SUFFICIENT_FOR_INTAKE",
+            "SUFFICIENT_FOR_ROUTING",
+            "SENSITIVE_MOVE_TO_PRIVATE",
+            "CONFLICTED"
+          ]
+        },
+        "known_minimum_fields": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{1,96}$"
+          }
+        },
+        "missing_priority_fields": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{1,96}$"
+          }
+        },
+        "recommended_next_step": {
+          "enum": [
+            "ASK_ONE_CLARIFICATION",
+            "CONTINUE_INCREMENTAL_EXTRACTION",
+            "RECOMMEND_INTAKE_CREATION",
+            "RECOMMEND_ROUTING",
+            "RECOMMEND_PRIVATE_CONTINUATION",
+            "REQUIRE_HUMAN_REVIEW"
+          ]
+        }
+      }
+    },
+    "notification_recommendations": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "$ref": "p2-007-notification-recommendation.schema.json"
+      }
+    },
+    "lifecycle_audit_view": {
+      "anyOf": [
+        {
+          "$ref": "p2-007-lifecycle-audit-view.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

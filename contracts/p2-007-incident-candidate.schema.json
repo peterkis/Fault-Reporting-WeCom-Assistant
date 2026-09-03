@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2-007-incident-candidate.schema.json",
+  "title": "P2-007 Incident Candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "is_candidate",
+    "candidate_ref",
+    "cluster_key_hash",
+    "service_family",
+    "symptom_family",
+    "scope_candidate",
+    "clinical_severity_candidate",
+    "distinct_reporters",
+    "distinct_departments",
+    "distinct_locations",
+    "correlation_window_ms",
+    "first_seen_at",
+    "last_seen_at",
+    "reason_codes",
+    "evidence_fact_ids",
+    "same_reporter_cross_channel_deduplicated",
+    "promotion_recommendation",
+    "human_confirmation_required",
+    "creates_incident"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "is_candidate": {
+      "type": "boolean"
+    },
+    "candidate_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "cluster_key_hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "service_family": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 96
+    },
+    "symptom_family": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 96
+    },
+    "scope_candidate": {
+      "enum": [
+        "NONE",
+        "SINGLE",
+        "ROOM",
+        "DEPARTMENT",
+        "FLOOR",
+        "BUILDING",
+        "CAMPUS",
+        "MULTI_CAMPUS",
+        "HOSPITAL_WIDE",
+        "UNKNOWN"
+      ]
+    },
+    "clinical_severity_candidate": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL",
+        "UNKNOWN"
+      ]
+    },
+    "distinct_reporters": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100000
+    },
+    "distinct_departments": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "distinct_locations": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "correlation_window_ms": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 3600000
+    },
+    "first_seen_at": {
+      "anyOf": [
+        { "$ref": "./local_datetime.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "last_seen_at": {
+      "anyOf": [
+        { "$ref": "./local_datetime.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "enum": [
+          "MULTI_REPORTER_BURST",
+          "EXPLICIT_SHARED_SCOPE",
+          "COMMON_LOCATION",
+          "CROSS_DEPARTMENT",
+          "CROSS_BUILDING",
+          "CROSS_CAMPUS",
+          "COMMON_ERROR_FINGERPRINT",
+          "COMMON_INFRASTRUCTURE",
+          "MONITORING_CORROBORATED",
+          "WIDE_CLINICAL_IMPACT",
+          "ACTIVE_INCIDENT_MATCH"
+        ]
+      }
+    },
+    "evidence_fact_ids": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+      }
+    },
+    "same_reporter_cross_channel_deduplicated": {
+      "type": "boolean"
+    },
+    "promotion_recommendation": {
+      "enum": [
+        "NONE",
+        "REVIEW_LOCAL_INCIDENT",
+        "REVIEW_CAMPUS_INCIDENT",
+        "REVIEW_HOSPITAL_INCIDENT",
+        "LINK_TO_ACTIVE_INCIDENT"
+      ]
+    },
+    "human_confirmation_required": {
+      "const": true
+    },
+    "creates_incident": {
+      "const": false
+    }
+  }
+}

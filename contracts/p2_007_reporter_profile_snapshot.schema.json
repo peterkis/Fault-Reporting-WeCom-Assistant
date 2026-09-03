@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/p2-007/reporter-profile-snapshot.schema.json",
+  "title": "P2-007 Reporter Profile Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "person_id",
+    "lookup_status",
+    "profile_authority",
+    "external_identities",
+    "display_name_state",
+    "memberships",
+    "observed_at",
+    "fetched_at",
+    "snapshot_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "snapshot_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "person_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "lookup_status": {
+      "enum": [
+        "RESOLVED",
+        "PARTIAL",
+        "DEFERRED",
+        "NOT_FOUND",
+        "FAILED_SAFE"
+      ]
+    },
+    "profile_authority": {
+      "enum": [
+        "WECOM_DIRECTORY",
+        "HOSPITAL_PERSON_MASTER",
+        "NONE"
+      ]
+    },
+    "external_identities": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "external_subject_ref",
+          "status",
+          "valid_from"
+        ],
+        "properties": {
+          "source": {
+            "enum": [
+              "WECOM_DIRECTORY",
+              "HOSPITAL_PERSON_MASTER",
+              "HR",
+              "SSO"
+            ]
+          },
+          "external_subject_ref": {
+            "type": "string",
+            "pattern": "^opaque_[a-f0-9]{16,64}$"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "UNVERIFIED"
+            ]
+          },
+          "valid_from": {
+            "$ref": "./local_datetime.schema.json"
+          },
+          "valid_to": {
+            "anyOf": [
+              { "$ref": "./local_datetime.schema.json" },
+              { "type": "null" }
+            ]
+          }
+        }
+      }
+    },
+    "display_name_state": {
+      "enum": [
+        "KNOWN_INTERNAL",
+        "UNKNOWN",
+        "REDACTED"
+      ]
+    },
+    "display_name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "memberships": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "department_ref",
+          "department_name_state",
+          "is_primary",
+          "membership_role",
+          "source",
+          "valid_at"
+        ],
+        "properties": {
+          "department_ref": {
+            "type": "string",
+            "pattern": "^dept_[a-f0-9]{16,64}$"
+          },
+          "department_name_state": {
+            "enum": [
+              "KNOWN_INTERNAL",
+              "UNKNOWN",
+              "REDACTED"
+            ]
+          },
+          "department_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "is_primary": {
+            "type": "boolean"
+          },
+          "membership_role": {
+            "enum": [
+              "PRIMARY",
+              "SECONDARY",
+              "ROTATION",
+              "TEMPORARY",
+              "UNKNOWN"
+            ]
+          },
+          "source": {
+            "enum": [
+              "WECOM_DIRECTORY",
+              "HOSPITAL_PERSON_MASTER",
+              "HUMAN_CONFIRMED"
+            ]
+          },
+          "valid_at": {
+            "$ref": "./local_datetime.schema.json"
+          }
+        }
+      }
+    },
+    "observed_at": {
+      "$ref": "./local_datetime.schema.json"
+    },
+    "fetched_at": {
+      "$ref": "./local_datetime.schema.json"
+    },
+    "snapshot_hash": {
+      "type": "string",
+      "pattern": "^sha256_[a-f0-9]{64}$"
+    },
+    "directory_failure_blocked_intake": {
+      "const": false
+    }
+  }
+}

@@ -1,0 +1,1178 @@
+{
+  "schema_version": "1.0.0",
+  "analysis_id": "P2-007-CORPUS-ANALYSIS-20260902",
+  "analysis_method_version": "chat-md-heuristic-v1",
+  "source": {
+    "file_count": 4,
+    "entry_count": 7311,
+    "authored_message_count": 7047,
+    "group_system_event_count": 264,
+    "exact_sender_name_information_repair_count": 1164,
+    "other_sender_message_count": 5883,
+    "period": {
+      "from": "2025-08-01T09:49:46+08:00",
+      "to": "2026-08-31T08:31:58+08:00"
+    },
+    "sha256": {
+      "门诊工作联系群-聊天记录-01.md": "a0d251c779332a43e324877caa82ee0a3e70d803ef9126c9d55d18079da140c2",
+      "门诊工作联系群-聊天记录-02.md": "ef1476239cb6aac27b7e05119528bc60dc6bce4b0d8e5ce26c1cfb7fa3feb38b",
+      "门诊工作联系群-聊天记录-03.md": "cb2194d02956c4ea27726cb69a18af3cbb42276426356544f0d34a5ac8991516",
+      "门诊工作联系群-聊天记录-04.md": "173ebb94e630cb9b1524a84a1de97f3c214b81256bc0c283a75fb1230a97848f"
+    }
+  },
+  "parsing": {
+    "message_pattern": "**[HH:MM:SS] sender：** content",
+    "system_event_pattern": "- `HH:MM:SS` **sender** event",
+    "support_account_split_note": "仅按发送者名称精确等于“信息报修”做保守区分；其他人工工程师账号未被自动归为支持方。",
+    "quoted_message_note": "引用内容可能重复出现，词面统计不等同独立工单数。",
+    "media_note": "导出文件只保留媒体占位符，未对图片或视频做 OCR/视觉识别。"
+  },
+  "conversation_structure": {
+    "same_reporter_cluster_window_ms": 180000,
+    "same_reporter_cluster_count": 2906,
+    "multi_message_cluster_count": 1509,
+    "messages_in_multi_message_clusters": 4486,
+    "broad_it_contact_candidate_cluster_count": 1495,
+    "broad_candidate_definition": "服务、现象或带上下文的明确求助任一命中；只用于语料分析，不是金标准工单标签。",
+    "broad_candidate_multi_message_count": 1040,
+    "broad_candidate_with_media_count": 822,
+    "broad_candidate_media_first_count": 631,
+    "broad_candidate_ip_signal_count": 139,
+    "broad_candidate_location_signal_count": 120,
+    "broad_candidate_explicit_request_count": 588,
+    "broad_candidate_explicit_impact_count": 83,
+    "hour_distribution": {
+      "0": 3,
+      "7": 66,
+      "8": 379,
+      "9": 180,
+      "10": 144,
+      "11": 119,
+      "12": 47,
+      "13": 40,
+      "14": 200,
+      "15": 120,
+      "16": 104,
+      "17": 68,
+      "18": 15,
+      "19": 5,
+      "20": 1,
+      "21": 1,
+      "22": 3
+    },
+    "shift_start_07_to_10_count": 769,
+    "hour_08_count": 379
+  },
+  "media": {
+    "image_messages": 1512,
+    "video_messages": 39,
+    "file_messages": 16,
+    "empty_messages": 162,
+    "effectively_media_only_reporter_message_count": 1476,
+    "policy": "媒体占位符只能触发 NEEDS_DESCRIPTION；P2-011 前不得推断内容。"
+  },
+  "direct_service_signal_counts": {
+    "method": "在 broad IT contact candidate cluster 上做保守词面命中；类别可重叠。",
+    "counts": {
+      "PRINTER_SERVICE": 138,
+      "IDENTITY_ACCESS": 120,
+      "PRESCRIPTION_ORDER": 100,
+      "OUTPATIENT_WORKSTATION": 98,
+      "QUEUE_CALLING": 77,
+      "REGISTRATION_CHECKIN": 61,
+      "BILLING_PAYMENT": 60,
+      "NETWORK_ACCESS": 53,
+      "DISPLAY_DESKTOP": 51,
+      "IMAGING_PACS": 49,
+      "ORDER_ENTRY": 48,
+      "ROOM_APPOINTMENT": 48,
+      "INSURANCE_SPECIAL": 33,
+      "LAB_ORDER_RESULT": 23,
+      "POPUP_UI": 20,
+      "MEDICATION_REVIEW": 19,
+      "INTERNET_HOSPITAL": 14,
+      "INPATIENT_WORKSTATION": 8
+    }
+  },
+  "direct_symptom_signal_counts": {
+    "method": "在 broad IT contact candidate cluster 上做保守词面命中；类别可重叠。",
+    "counts": {
+      "UNAVAILABLE": 291,
+      "SLOW_OR_HANG": 200,
+      "SUBMIT_SAVE_CANCEL_FAILED": 109,
+      "MISSING_OR_BLANK": 96,
+      "CRASH_EXIT_BLACK": 82,
+      "PRINT_FAILED": 68,
+      "NETWORK_DOWN": 46,
+      "POPUP_BLOCKING": 23,
+      "AUTH_ACCESS": 18,
+      "DATA_SYNC_MISMATCH": 9
+    }
+  },
+  "common_phrase_occurrences": {
+    "method": "非“信息报修”发送者文本的简单词面出现次数；引用转发会导致重复，因此不等同独立事件。",
+    "counts": {
+      "信息报修": 576,
+      "打不开": 109,
+      "可以了": 80,
+      "好了": 68,
+      "进不去": 52,
+      "提交不了": 49,
+      "看不到": 44,
+      "提交不起": 43,
+      "麻烦处理一下": 41,
+      "还是不行": 37,
+      "登不上": 35,
+      "卡死了": 29,
+      "转圈圈": 27,
+      "麻烦看一下": 20,
+      "系统崩了": 18,
+      "一直转圈圈": 16,
+      "+1": 15,
+      "登录不上": 15,
+      "请帮忙": 12,
+      "帮忙看一下": 11,
+      "病人等到": 10,
+      "打印不了": 8,
+      "尽快处理": 7,
+      "同上": 6,
+      "电话打不通": 6,
+      "病人等着": 6,
+      "我的也是": 5,
+      "重启了还是不行": 3,
+      "患者等着": 2,
+      "搞快哦": 2,
+      "+10086": 1,
+      "不用看了": 1,
+      "搞快点": 1,
+      "重新登录也不行": 1
+    }
+  },
+  "support_clarification_signal_counts": {
+    "method": "发送者名称精确等于“信息报修”的消息上做词面命中；类别可重叠。",
+    "counts": {
+      "ASK_IP": 162,
+      "ASK_LOCATION": 12,
+      "ASK_PATIENT_ID": 27,
+      "ASK_SCOPE": 6,
+      "ASK_STAGE": 15,
+      "RESTART": 83,
+      "RELOGIN_REFRESH": 58,
+      "NETWORK_GUIDANCE": 32,
+      "ROUTE_PRINTER": 46,
+      "PROCESSING_STATUS": 93,
+      "RECOVERY_CHECK": 68
+    }
+  },
+  "multi_reporter_burst_candidates": {
+    "window_ms": 120000,
+    "threshold_distinct_reporters": 3,
+    "collapse_gap_ms": 900000,
+    "candidate_count": 34,
+    "warning": "这是候选风暴窗口，不是已确认 Incident 数量。",
+    "candidates": [
+      {
+        "candidate_id": "BURST-01",
+        "started_at": "2025-08-18T17:41:17+08:00",
+        "ended_at": "2025-08-18T17:45:28+08:00",
+        "distinct_reporter_count": 8,
+        "signal_message_count": 9,
+        "top_direct_service_signals": [
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 3
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "AUTH_ACCESS",
+            "count": 3
+          },
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 2
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 2
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 2
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-02",
+        "started_at": "2025-09-12T08:00:23+08:00",
+        "ended_at": "2025-09-12T08:01:20+08:00",
+        "distinct_reporter_count": 3,
+        "signal_message_count": 3,
+        "top_direct_service_signals": [],
+        "top_direct_symptom_signals": [
+          {
+            "code": "UNAVAILABLE",
+            "count": 3
+          },
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-03",
+        "started_at": "2025-09-18T09:10:48+08:00",
+        "ended_at": "2025-09-18T09:18:23+08:00",
+        "distinct_reporter_count": 17,
+        "signal_message_count": 20,
+        "top_direct_service_signals": [
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 1
+          },
+          {
+            "code": "INPATIENT_WORKSTATION",
+            "count": 1
+          },
+          {
+            "code": "NETWORK_ACCESS",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "UNAVAILABLE",
+            "count": 7
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 6
+          },
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 3
+          },
+          {
+            "code": "MISSING_OR_BLANK",
+            "count": 3
+          },
+          {
+            "code": "NETWORK_DOWN",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-04",
+        "started_at": "2025-09-25T10:07:02+08:00",
+        "ended_at": "2025-09-25T10:08:39+08:00",
+        "distinct_reporter_count": 7,
+        "signal_message_count": 9,
+        "top_direct_service_signals": [
+          {
+            "code": "PRESCRIPTION_ORDER",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 5
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 2
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 2
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-05",
+        "started_at": "2025-10-13T08:03:12+08:00",
+        "ended_at": "2025-10-13T08:17:11+08:00",
+        "distinct_reporter_count": 28,
+        "signal_message_count": 37,
+        "top_direct_service_signals": [
+          {
+            "code": "PRESCRIPTION_ORDER",
+            "count": 21
+          },
+          {
+            "code": "QUEUE_CALLING",
+            "count": 2
+          },
+          {
+            "code": "INPATIENT_WORKSTATION",
+            "count": 1
+          },
+          {
+            "code": "REGISTRATION_CHECKIN",
+            "count": 1
+          },
+          {
+            "code": "OUTPATIENT_WORKSTATION",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SUBMIT_SAVE_CANCEL_FAILED",
+            "count": 24
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 5
+          },
+          {
+            "code": "MISSING_OR_BLANK",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-06",
+        "started_at": "2025-10-15T10:31:07+08:00",
+        "ended_at": "2025-10-15T10:32:50+08:00",
+        "distinct_reporter_count": 3,
+        "signal_message_count": 3,
+        "top_direct_service_signals": [
+          {
+            "code": "NETWORK_ACCESS",
+            "count": 3
+          },
+          {
+            "code": "QUEUE_CALLING",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "NETWORK_DOWN",
+            "count": 3
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-07",
+        "started_at": "2025-10-20T17:20:39+08:00",
+        "ended_at": "2025-10-20T17:22:12+08:00",
+        "distinct_reporter_count": 4,
+        "signal_message_count": 5,
+        "top_direct_service_signals": [
+          {
+            "code": "OUTPATIENT_WORKSTATION",
+            "count": 1
+          },
+          {
+            "code": "MEDICATION_REVIEW",
+            "count": 1
+          },
+          {
+            "code": "PRESCRIPTION_ORDER",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 2
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-08",
+        "started_at": "2025-10-22T14:00:09+08:00",
+        "ended_at": "2025-10-22T14:09:02+08:00",
+        "distinct_reporter_count": 12,
+        "signal_message_count": 14,
+        "top_direct_service_signals": [
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 4
+          },
+          {
+            "code": "OUTPATIENT_WORKSTATION",
+            "count": 3
+          },
+          {
+            "code": "DISPLAY_DESKTOP",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "UNAVAILABLE",
+            "count": 8
+          },
+          {
+            "code": "MISSING_OR_BLANK",
+            "count": 1
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-09",
+        "started_at": "2025-10-22T15:01:57+08:00",
+        "ended_at": "2025-10-22T15:03:27+08:00",
+        "distinct_reporter_count": 3,
+        "signal_message_count": 3,
+        "top_direct_service_signals": [
+          {
+            "code": "PRINTER_SERVICE",
+            "count": 2
+          },
+          {
+            "code": "LAB_ORDER_RESULT",
+            "count": 2
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "PRINT_FAILED",
+            "count": 2
+          },
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-10",
+        "started_at": "2025-10-29T13:58:43+08:00",
+        "ended_at": "2025-10-29T13:59:46+08:00",
+        "distinct_reporter_count": 3,
+        "signal_message_count": 3,
+        "top_direct_service_signals": [],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 2
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-11",
+        "started_at": "2025-11-06T10:53:33+08:00",
+        "ended_at": "2025-11-06T10:54:58+08:00",
+        "distinct_reporter_count": 3,
+        "signal_message_count": 3,
+        "top_direct_service_signals": [],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SUBMIT_SAVE_CANCEL_FAILED",
+            "count": 2
+          },
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-12",
+        "started_at": "2025-11-08T16:29:27+08:00",
+        "ended_at": "2025-11-08T16:30:23+08:00",
+        "distinct_reporter_count": 4,
+        "signal_message_count": 4,
+        "top_direct_service_signals": [
+          {
+            "code": "NETWORK_ACCESS",
+            "count": 3
+          },
+          {
+            "code": "OUTPATIENT_WORKSTATION",
+            "count": 1
+          },
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "NETWORK_DOWN",
+            "count": 3
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-13",
+        "started_at": "2025-11-10T14:43:05+08:00",
+        "ended_at": "2025-11-10T14:48:01+08:00",
+        "distinct_reporter_count": 9,
+        "signal_message_count": 9,
+        "top_direct_service_signals": [
+          {
+            "code": "LAB_ORDER_RESULT",
+            "count": 4
+          },
+          {
+            "code": "OUTPATIENT_WORKSTATION",
+            "count": 1
+          },
+          {
+            "code": "PRINTER_SERVICE",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 3
+          },
+          {
+            "code": "PRINT_FAILED",
+            "count": 1
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-14",
+        "started_at": "2025-11-26T16:53:48+08:00",
+        "ended_at": "2025-11-26T16:55:04+08:00",
+        "distinct_reporter_count": 7,
+        "signal_message_count": 7,
+        "top_direct_service_signals": [
+          {
+            "code": "NETWORK_ACCESS",
+            "count": 2
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 4
+          },
+          {
+            "code": "NETWORK_DOWN",
+            "count": 2
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 1
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-15",
+        "started_at": "2025-12-01T08:20:04+08:00",
+        "ended_at": "2025-12-01T08:20:16+08:00",
+        "distinct_reporter_count": 3,
+        "signal_message_count": 3,
+        "top_direct_service_signals": [
+          {
+            "code": "MEDICATION_REVIEW",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 2
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-16",
+        "started_at": "2025-12-30T10:49:22+08:00",
+        "ended_at": "2025-12-30T10:50:36+08:00",
+        "distinct_reporter_count": 4,
+        "signal_message_count": 4,
+        "top_direct_service_signals": [
+          {
+            "code": "DISPLAY_DESKTOP",
+            "count": 4
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 4
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-17",
+        "started_at": "2026-01-09T08:41:28+08:00",
+        "ended_at": "2026-01-09T08:46:25+08:00",
+        "distinct_reporter_count": 17,
+        "signal_message_count": 17,
+        "top_direct_service_signals": [
+          {
+            "code": "OUTPATIENT_WORKSTATION",
+            "count": 2
+          },
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 12
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 5
+          },
+          {
+            "code": "MISSING_OR_BLANK",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-18",
+        "started_at": "2026-01-27T10:34:20+08:00",
+        "ended_at": "2026-01-27T10:41:34+08:00",
+        "distinct_reporter_count": 14,
+        "signal_message_count": 14,
+        "top_direct_service_signals": [
+          {
+            "code": "PRESCRIPTION_ORDER",
+            "count": 6
+          },
+          {
+            "code": "MEDICATION_REVIEW",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SUBMIT_SAVE_CANCEL_FAILED",
+            "count": 9
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 3
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-19",
+        "started_at": "2026-01-29T16:50:17+08:00",
+        "ended_at": "2026-01-29T16:54:34+08:00",
+        "distinct_reporter_count": 7,
+        "signal_message_count": 8,
+        "top_direct_service_signals": [],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 6
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 2
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-20",
+        "started_at": "2026-02-05T08:16:48+08:00",
+        "ended_at": "2026-02-05T08:20:37+08:00",
+        "distinct_reporter_count": 6,
+        "signal_message_count": 8,
+        "top_direct_service_signals": [
+          {
+            "code": "ORDER_ENTRY",
+            "count": 2
+          },
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 1
+          },
+          {
+            "code": "INPATIENT_WORKSTATION",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "UNAVAILABLE",
+            "count": 4
+          },
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 2
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-21",
+        "started_at": "2026-02-06T16:58:16+08:00",
+        "ended_at": "2026-02-06T17:00:48+08:00",
+        "distinct_reporter_count": 5,
+        "signal_message_count": 5,
+        "top_direct_service_signals": [],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 5
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-22",
+        "started_at": "2026-02-09T10:53:20+08:00",
+        "ended_at": "2026-02-09T10:57:00+08:00",
+        "distinct_reporter_count": 15,
+        "signal_message_count": 15,
+        "top_direct_service_signals": [
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 6
+          },
+          {
+            "code": "NETWORK_ACCESS",
+            "count": 5
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "NETWORK_DOWN",
+            "count": 5
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 4
+          },
+          {
+            "code": "AUTH_ACCESS",
+            "count": 2
+          },
+          {
+            "code": "MISSING_OR_BLANK",
+            "count": 2
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-23",
+        "started_at": "2026-03-02T11:59:16+08:00",
+        "ended_at": "2026-03-02T12:04:35+08:00",
+        "distinct_reporter_count": 9,
+        "signal_message_count": 9,
+        "top_direct_service_signals": [
+          {
+            "code": "NETWORK_ACCESS",
+            "count": 3
+          },
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 2
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "UNAVAILABLE",
+            "count": 4
+          },
+          {
+            "code": "NETWORK_DOWN",
+            "count": 3
+          },
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 2
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-24",
+        "started_at": "2026-03-05T11:12:07+08:00",
+        "ended_at": "2026-03-05T11:22:25+08:00",
+        "distinct_reporter_count": 12,
+        "signal_message_count": 18,
+        "top_direct_service_signals": [
+          {
+            "code": "IMAGING_PACS",
+            "count": 4
+          },
+          {
+            "code": "DISPLAY_DESKTOP",
+            "count": 3
+          },
+          {
+            "code": "MEDICATION_REVIEW",
+            "count": 2
+          },
+          {
+            "code": "ORDER_ENTRY",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 4
+          },
+          {
+            "code": "SUBMIT_SAVE_CANCEL_FAILED",
+            "count": 4
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 3
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-25",
+        "started_at": "2026-04-03T17:54:25+08:00",
+        "ended_at": "2026-04-03T17:55:58+08:00",
+        "distinct_reporter_count": 6,
+        "signal_message_count": 6,
+        "top_direct_service_signals": [
+          {
+            "code": "NETWORK_ACCESS",
+            "count": 5
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "NETWORK_DOWN",
+            "count": 5
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-26",
+        "started_at": "2026-04-06T09:28:48+08:00",
+        "ended_at": "2026-04-06T09:29:11+08:00",
+        "distinct_reporter_count": 3,
+        "signal_message_count": 3,
+        "top_direct_service_signals": [
+          {
+            "code": "PRESCRIPTION_ORDER",
+            "count": 2
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "UNAVAILABLE",
+            "count": 2
+          },
+          {
+            "code": "SUBMIT_SAVE_CANCEL_FAILED",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-27",
+        "started_at": "2026-05-06T08:10:22+08:00",
+        "ended_at": "2026-05-06T08:11:18+08:00",
+        "distinct_reporter_count": 3,
+        "signal_message_count": 3,
+        "top_direct_service_signals": [
+          {
+            "code": "QUEUE_CALLING",
+            "count": 2
+          },
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "UNAVAILABLE",
+            "count": 3
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-28",
+        "started_at": "2026-06-04T10:02:44+08:00",
+        "ended_at": "2026-06-04T10:03:17+08:00",
+        "distinct_reporter_count": 3,
+        "signal_message_count": 4,
+        "top_direct_service_signals": [
+          {
+            "code": "NETWORK_ACCESS",
+            "count": 2
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "NETWORK_DOWN",
+            "count": 2
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 2
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-29",
+        "started_at": "2026-07-03T10:27:07+08:00",
+        "ended_at": "2026-07-03T10:30:29+08:00",
+        "distinct_reporter_count": 6,
+        "signal_message_count": 9,
+        "top_direct_service_signals": [
+          {
+            "code": "MEDICATION_REVIEW",
+            "count": 3
+          },
+          {
+            "code": "PRESCRIPTION_ORDER",
+            "count": 2
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 4
+          },
+          {
+            "code": "SUBMIT_SAVE_CANCEL_FAILED",
+            "count": 3
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-30",
+        "started_at": "2026-07-29T08:16:19+08:00",
+        "ended_at": "2026-07-29T08:19:57+08:00",
+        "distinct_reporter_count": 9,
+        "signal_message_count": 9,
+        "top_direct_service_signals": [
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 1
+          },
+          {
+            "code": "MEDICATION_REVIEW",
+            "count": 1
+          },
+          {
+            "code": "INPATIENT_WORKSTATION",
+            "count": 1
+          },
+          {
+            "code": "PRESCRIPTION_ORDER",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SUBMIT_SAVE_CANCEL_FAILED",
+            "count": 5
+          },
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 2
+          },
+          {
+            "code": "UNAVAILABLE",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-31",
+        "started_at": "2026-07-30T14:41:02+08:00",
+        "ended_at": "2026-07-30T14:51:01+08:00",
+        "distinct_reporter_count": 14,
+        "signal_message_count": 18,
+        "top_direct_service_signals": [
+          {
+            "code": "PRESCRIPTION_ORDER",
+            "count": 4
+          },
+          {
+            "code": "MEDICATION_REVIEW",
+            "count": 1
+          },
+          {
+            "code": "ORDER_ENTRY",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SUBMIT_SAVE_CANCEL_FAILED",
+            "count": 16
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-32",
+        "started_at": "2026-08-09T11:24:28+08:00",
+        "ended_at": "2026-08-09T11:26:46+08:00",
+        "distinct_reporter_count": 9,
+        "signal_message_count": 9,
+        "top_direct_service_signals": [],
+        "top_direct_symptom_signals": [
+          {
+            "code": "UNAVAILABLE",
+            "count": 3
+          },
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 3
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 3
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-33",
+        "started_at": "2026-08-28T08:34:49+08:00",
+        "ended_at": "2026-08-28T08:44:00+08:00",
+        "distinct_reporter_count": 13,
+        "signal_message_count": 14,
+        "top_direct_service_signals": [
+          {
+            "code": "INSURANCE_SPECIAL",
+            "count": 1
+          },
+          {
+            "code": "NETWORK_ACCESS",
+            "count": 1
+          },
+          {
+            "code": "IDENTITY_ACCESS",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "UNAVAILABLE",
+            "count": 7
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 4
+          },
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 2
+          },
+          {
+            "code": "NETWORK_DOWN",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      },
+      {
+        "candidate_id": "BURST-34",
+        "started_at": "2026-08-28T09:16:58+08:00",
+        "ended_at": "2026-08-28T09:27:45+08:00",
+        "distinct_reporter_count": 9,
+        "signal_message_count": 13,
+        "top_direct_service_signals": [
+          {
+            "code": "PRESCRIPTION_ORDER",
+            "count": 1
+          }
+        ],
+        "top_direct_symptom_signals": [
+          {
+            "code": "SLOW_OR_HANG",
+            "count": 11
+          },
+          {
+            "code": "CRASH_EXIT_BLACK",
+            "count": 1
+          },
+          {
+            "code": "MISSING_OR_BLANK",
+            "count": 1
+          }
+        ],
+        "status": "HEURISTIC_CANDIDATE_NOT_CONFIRMED_INCIDENT"
+      }
+    ]
+  },
+  "limitations": [
+    "群聊并非工单系统，包含业务咨询、政策讨论、后勤请求、闲聊和重复转发。",
+    "图片、视频、文件内容不可见，错误码和界面细节被低估。",
+    "操作员回复中的原因可能是临时判断，不等同已验证根因。",
+    "同一故障可能被多人重复上报，也可能跨多个消息片段。",
+    "服务与症状词面统计存在重叠，不可直接作为故障率或 SLA 指标。",
+    "原始语料含患者和人员敏感信息，本分析输出不复制原值。"
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2-007-human-lifecycle-event.schema.json",
+  "title": "P2-007 Human Handling Lifecycle Event View",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_ref",
+    "event_type",
+    "case_ref",
+    "session_ref",
+    "actor_type",
+    "actor_ref",
+    "actor_role",
+    "occurred_at",
+    "result",
+    "authoritative_owner_before",
+    "authoritative_owner_after",
+    "source_fact_refs",
+    "derived_view_only"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "event_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "event_type": {
+      "enum": [
+        "INTAKE_ORIGIN_RECORDED",
+        "PRIVATE_OUTREACH_QUEUED",
+        "PRIVATE_OUTREACH_SENT",
+        "DIRECT_CONTINUATION_LINKED",
+        "REPORTER_PROFILE_RESOLVED",
+        "DESCRIPTION_SUFFICIENT",
+        "TICKET_CREATED",
+        "TAKEOVER_REQUESTED",
+        "TAKEOVER_ACCEPTED",
+        "TAKEOVER_REJECTED",
+        "HANDOFF_REQUESTED",
+        "HANDOFF_ACCEPTED",
+        "HANDOFF_RELEASED",
+        "HANDOFF_CANCELLED",
+        "TRANSFER_COMPLETED",
+        "HUMAN_REPLY_COMMITTED",
+        "INTERNAL_NOTE_COMMITTED",
+        "DELIVERY_ACKNOWLEDGED",
+        "DELIVERY_RECONCILIATION_REQUIRED",
+        "INCIDENT_CANDIDATE_EMITTED",
+        "INCIDENT_LINK_OBSERVED",
+        "REPORTER_RECOVERY_OBSERVED",
+        "TICKET_CLOSED_OBSERVED"
+      ]
+    },
+    "case_ref": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "session_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "actor_type": {
+      "enum": [
+        "REPORTER",
+        "AGENT",
+        "ADMIN",
+        "SYSTEM",
+        "AI"
+      ]
+    },
+    "actor_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "actor_role": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 64
+    },
+    "occurred_at": {
+      "$ref": "./local_datetime.schema.json"
+    },
+    "result": {
+      "enum": [
+        "COMMITTED",
+        "REJECTED",
+        "REPLAYED",
+        "FAILED",
+        "OBSERVED"
+      ]
+    },
+    "reason_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z0-9_]{3,96}$"
+    },
+    "authoritative_owner_before": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "authoritative_owner_after": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "aggregate_version_before": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "aggregate_version_after": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "communication_message_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "delivery_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+    },
+    "source_fact_refs": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._:-]{1,160}$"
+      }
+    },
+    "derived_view_only": {
+      "const": true
+    }
+  }
+}

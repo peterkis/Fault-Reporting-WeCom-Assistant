@@ -1,0 +1,2065 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "CD3H_P2_007_HOSPITAL_IT_SERVICE_CATALOG",
+  "catalog_version": "0.1.0-draft",
+  "status": "DRAFT_FOR_P2_007_IMPLEMENTATION",
+  "language": "zh-CN",
+  "effective_from": "2026-09-02",
+  "source_basis": {
+    "corpus_entry_count": 7311,
+    "authored_message_count": 7047,
+    "system_event_count": 264,
+    "source_period": {
+      "from": "2025-08-01 09:49:46",
+      "to": "2026-08-31 08:31:58"
+    },
+    "source_files_sha256": {
+      "门诊工作联系群-聊天记录-01.md": "a0d251c779332a43e324877caa82ee0a3e70d803ef9126c9d55d18079da140c2",
+      "门诊工作联系群-聊天记录-02.md": "ef1476239cb6aac27b7e05119528bc60dc6bce4b0d8e5ce26c1cfb7fa3feb38b",
+      "门诊工作联系群-聊天记录-03.md": "cb2194d02956c4ea27726cb69a18af3cbb42276426356544f0d34a5ac8991516",
+      "门诊工作联系群-聊天记录-04.md": "173ebb94e630cb9b1524a84a1de97f3c214b81256bc0c283a75fb1230a97848f"
+    },
+    "privacy_note": "原始群聊含人员、患者、账号、电话和内部网络标识；本目录与测试语料不复制这些原值。"
+  },
+  "governance": {
+    "code_stability": "service_code 一经进入已发布版本不得复用或改变语义；废弃时仅标记 deprecated。",
+    "unknown_policy": "无法唯一匹配时 selected_service_code 必须为 null，并保留候选及澄清问题。",
+    "ownership_status": "所有 default_owner_team 均为 P2-007 建议路由，不构成医院正式职责授权。",
+    "forbidden_effects": [
+      "不得创建 Ticket",
+      "不得修改 Ticket 状态",
+      "不得调用企业微信发送接口",
+      "不得调用大模型",
+      "不得把推测原因写成已确认根因"
+    ]
+  },
+  "domains": [
+    {
+      "domain_code": "CLINICAL_CORE",
+      "name_zh": "核心临床与病历工作流",
+      "services": [
+        {
+          "service_code": "CLINICAL.OUTPATIENT_WORKSTATION",
+          "name_zh": "门诊医生工作站",
+          "aliases": [
+            "门诊系统",
+            "门诊工作站",
+            "门诊医生工作站",
+            "一体化门诊",
+            "一体化系统",
+            "门诊一体化"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint",
+            "scope"
+          ],
+          "transaction_stages": [
+            "STARTUP",
+            "LOGIN",
+            "OPEN_MODULE",
+            "SELECT_PATIENT",
+            "OPEN_RECORD"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "PERFORMANCE.SLOW",
+            "PERFORMANCE.HANG_SPINNING",
+            "STABILITY.CRASH",
+            "UI.BLANK"
+          ],
+          "enabled": true,
+          "notes": "“一体化”可能指多个模块；只有上下文明确为门诊工作站时才唯一归一。",
+          "ambiguity_notes": [
+            "一体化",
+            "系统",
+            "工作站"
+          ]
+        },
+        {
+          "service_code": "CLINICAL.INPATIENT_WORKSTATION",
+          "name_zh": "住院医生工作站",
+          "aliases": [
+            "住院系统",
+            "住院工作站",
+            "病房系统",
+            "住院病历系统"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint",
+            "scope"
+          ],
+          "transaction_stages": [
+            "STARTUP",
+            "LOGIN",
+            "OPEN_MODULE",
+            "SELECT_PATIENT",
+            "OPEN_RECORD"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "PERFORMANCE.SLOW",
+            "PERFORMANCE.HANG_SPINNING",
+            "STABILITY.CRASH",
+            "UI.BLANK"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "CLINICAL.EMR_DOCUMENTATION",
+          "name_zh": "病历书写与保存",
+          "aliases": [
+            "门诊病历",
+            "病历系统",
+            "写病历",
+            "病例系统",
+            "病历保存",
+            "病情证明",
+            "诊断证明"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "transaction_stage",
+            "patient_scope"
+          ],
+          "transaction_stages": [
+            "OPEN_RECORD",
+            "EDIT_RECORD",
+            "SAVE_RECORD",
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "TRANSACTION.SAVE_FAILED",
+            "DATA.MISSING",
+            "UI.BLANK",
+            "PRINT.NO_OUTPUT",
+            "STABILITY.CRASH"
+          ],
+          "enabled": true,
+          "notes": "",
+          "ambiguity_notes": [
+            "病例系统/病历系统需结合门诊或住院上下文"
+          ]
+        },
+        {
+          "service_code": "CLINICAL.EXAM_ORDER_ENTRY",
+          "name_zh": "检查申请开立",
+          "aliases": [
+            "开检查",
+            "检查申请",
+            "检查单",
+            "影像检查开单",
+            "CT检查",
+            "核磁检查",
+            "超声检查"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "transaction_stage",
+            "patient_scope"
+          ],
+          "transaction_stages": [
+            "CREATE_ORDER",
+            "SAVE_RECORD",
+            "FINAL_SUBMIT",
+            "CANCEL_OR_DELETE",
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "TRANSACTION.SUBMIT_FAILED",
+            "TRANSACTION.SAVE_FAILED",
+            "TRANSACTION.CANCEL_FAILED",
+            "PERFORMANCE.HANG_SPINNING",
+            "PRINT.NO_OUTPUT"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "CLINICAL.LAB_ORDER_ENTRY",
+          "name_zh": "检验申请开立",
+          "aliases": [
+            "开检验",
+            "开化验",
+            "检验申请",
+            "化验申请",
+            "检验单",
+            "化验单"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "transaction_stage",
+            "patient_scope"
+          ],
+          "transaction_stages": [
+            "CREATE_ORDER",
+            "SAVE_RECORD",
+            "FINAL_SUBMIT",
+            "CANCEL_OR_DELETE",
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "TRANSACTION.SUBMIT_FAILED",
+            "TRANSACTION.SAVE_FAILED",
+            "PERFORMANCE.HANG_SPINNING",
+            "PRINT.NO_OUTPUT"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "CLINICAL.PRESCRIPTION_ENTRY",
+          "name_zh": "处方与用药医嘱开立",
+          "aliases": [
+            "处方",
+            "开药",
+            "药物提交",
+            "药品提交",
+            "中药处方",
+            "中草药",
+            "门特开药"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "CRITICAL",
+          "required_fields": [
+            "symptom_codes",
+            "transaction_stage",
+            "patient_scope",
+            "impact"
+          ],
+          "transaction_stages": [
+            "CREATE_ORDER",
+            "RATIONAL_MEDICATION_CHECK",
+            "REVIEW",
+            "FINAL_SUBMIT",
+            "CANCEL_OR_DELETE",
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "TRANSACTION.SUBMIT_FAILED",
+            "TRANSACTION.SAVE_FAILED",
+            "TRANSACTION.CANCEL_FAILED",
+            "PERFORMANCE.HANG_SPINNING",
+            "DATA.MISMATCH"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "CLINICAL.CONSULTATION_WORKFLOW",
+          "name_zh": "会诊工作流",
+          "aliases": [
+            "会诊",
+            "多科会诊",
+            "会诊意见",
+            "会诊消息"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "transaction_stage",
+            "patient_scope"
+          ],
+          "transaction_stages": [
+            "OPEN_MODULE",
+            "EDIT_RECORD",
+            "SAVE_RECORD",
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "UI.OVERLAY_BLOCKING",
+            "TRANSACTION.SAVE_FAILED",
+            "PRINT.NO_OUTPUT",
+            "DATA.MISSING"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "CLINICAL.CERTIFICATE_DOCUMENT",
+          "name_zh": "诊断证明与医疗文书打印",
+          "aliases": [
+            "诊断证明",
+            "病情证明",
+            "假条",
+            "住院证",
+            "回诊申请单",
+            "三日回诊单"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "symptom_codes",
+            "document_type",
+            "transaction_stage"
+          ],
+          "transaction_stages": [
+            "OPEN_MODULE",
+            "SAVE_RECORD",
+            "CANCEL_OR_DELETE",
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "TRANSACTION.SAVE_FAILED",
+            "PRINT.NO_OUTPUT",
+            "DATA.MISSING"
+          ],
+          "enabled": true,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "domain_code": "PATIENT_ACCESS",
+      "name_zh": "挂号、签到、叫号与诊间预约",
+      "services": [
+        {
+          "service_code": "ACCESS.REGISTRATION",
+          "name_zh": "挂号与号源",
+          "aliases": [
+            "挂号",
+            "号源",
+            "网上挂号",
+            "公众号挂号",
+            "小程序挂号"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "channel_context",
+            "scope"
+          ],
+          "transaction_stages": [
+            "REGISTRATION",
+            "PAYMENT"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "PERFORMANCE.HANG_SPINNING",
+            "DATA.MISSING",
+            "DATA.MISMATCH",
+            "TRANSACTION.TIMEOUT"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ACCESS.CHECK_IN",
+          "name_zh": "签到",
+          "aliases": [
+            "签到",
+            "复诊签到",
+            "远程签到",
+            "提前签到",
+            "签到机"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location",
+            "scope"
+          ],
+          "transaction_stages": [
+            "CHECK_IN"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "DATA.MISMATCH",
+            "POLICY.RESTRICTED"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ACCESS.QUEUE_CALLING",
+          "name_zh": "叫号与呼叫",
+          "aliases": [
+            "叫号器",
+            "呼叫器",
+            "叫号系统",
+            "呼叫系统",
+            "呼叫器系统"
+          ],
+          "default_owner_team": "IT_APPLICATION_OR_ENDPOINT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint",
+            "scope"
+          ],
+          "transaction_stages": [
+            "STARTUP",
+            "LOGIN",
+            "QUEUE_CALL"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "AUTH.LOGIN_FAILED",
+            "UI.MISSING_ENTRY",
+            "HARDWARE.NO_AUDIO",
+            "UI.RESOLUTION_LAYOUT"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ACCESS.IN_ROOM_APPOINTMENT",
+          "name_zh": "诊间预约",
+          "aliases": [
+            "诊间预约",
+            "诊间挂号",
+            "预约号",
+            "预约系统"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint",
+            "transaction_stage"
+          ],
+          "transaction_stages": [
+            "OPEN_MODULE",
+            "APPOINTMENT",
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "PERFORMANCE.HANG_SPINNING",
+            "TRANSACTION.SUBMIT_FAILED",
+            "PRINT.NO_OUTPUT",
+            "DATA.MISSING"
+          ],
+          "enabled": true,
+          "notes": "",
+          "ambiguity_notes": [
+            "“预约”未说明渠道时，可能是诊间预约或互联网挂号"
+          ]
+        },
+        {
+          "service_code": "ACCESS.PATIENT_LIST_SYNC",
+          "name_zh": "挂号后患者列表同步",
+          "aliases": [
+            "挂了号系统没名字",
+            "待接诊看不到",
+            "患者列表没有",
+            "病人信息没推过来",
+            "补推",
+            "系统没有这个人"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "patient_scope",
+            "channel_context"
+          ],
+          "transaction_stages": [
+            "REGISTRATION",
+            "CHECK_IN",
+            "SELECT_PATIENT"
+          ],
+          "common_symptom_codes": [
+            "DATA.NOT_SYNCED",
+            "DATA.MISSING",
+            "DATA.MISMATCH"
+          ],
+          "enabled": true,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "domain_code": "DIAGNOSTIC",
+      "name_zh": "检验与影像结果",
+      "services": [
+        {
+          "service_code": "DIAG.LAB_RESULT_VIEW",
+          "name_zh": "检验结果查看",
+          "aliases": [
+            "检验报告",
+            "化验报告",
+            "检验结果",
+            "历史检验",
+            "既往检验记录"
+          ],
+          "default_owner_team": "IT_APPLICATION_OR_VENDOR",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "patient_scope",
+            "scope"
+          ],
+          "transaction_stages": [
+            "VIEW_RESULT"
+          ],
+          "common_symptom_codes": [
+            "DATA.MISSING",
+            "DATA.NOT_SYNCED",
+            "AVAILABILITY.UNAVAILABLE",
+            "UI.BLANK"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "DIAG.LAB_RESULT_PRINT",
+          "name_zh": "检验结果打印",
+          "aliases": [
+            "检验单打印",
+            "化验打印",
+            "检验报告打印",
+            "化验单打印"
+          ],
+          "default_owner_team": "IT_APPLICATION_OR_VENDOR",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint",
+            "patient_scope"
+          ],
+          "transaction_stages": [
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "PRINT.NO_OUTPUT",
+            "PRINT.INCOMPLETE",
+            "PRINT.WRONG_FORMAT",
+            "DATA.MISSING"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "DIAG.IMAGING_VIEWER",
+          "name_zh": "影像浏览",
+          "aliases": [
+            "看片",
+            "片子",
+            "影像系统",
+            "看片系统",
+            "CT图像",
+            "PET CT图像",
+            "PACS"
+          ],
+          "default_owner_team": "IT_APPLICATION_OR_VENDOR",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "patient_scope",
+            "scope"
+          ],
+          "transaction_stages": [
+            "LOGIN",
+            "OPEN_MODULE",
+            "VIEW_RESULT"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "PERFORMANCE.SLOW",
+            "RESOURCE.LICENSE_EXHAUSTED",
+            "STABILITY.FLASH_EXIT",
+            "UI.BLANK"
+          ],
+          "enabled": true,
+          "notes": "",
+          "ambiguity_notes": [
+            "“片子/影像”可能是图像、报告或传输；需结合“报告能否看”等上下文"
+          ]
+        },
+        {
+          "service_code": "DIAG.IMAGING_REPORT",
+          "name_zh": "影像报告查看",
+          "aliases": [
+            "放射报告",
+            "影像报告",
+            "图文报告",
+            "彩超报告",
+            "核磁报告"
+          ],
+          "default_owner_team": "IT_APPLICATION_OR_VENDOR",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "patient_scope"
+          ],
+          "transaction_stages": [
+            "VIEW_RESULT",
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "DATA.MISSING",
+            "DATA.NOT_SYNCED",
+            "PRINT.NO_OUTPUT",
+            "UI.BLANK"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "DIAG.IMAGING_TRANSFER_SYNC",
+          "name_zh": "影像上传与补传",
+          "aliases": [
+            "影像上传",
+            "补传",
+            "片子没传上来",
+            "报告没传",
+            "影像传输"
+          ],
+          "default_owner_team": "IT_APPLICATION_OR_VENDOR",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "patient_scope",
+            "scope"
+          ],
+          "transaction_stages": [
+            "VIEW_RESULT"
+          ],
+          "common_symptom_codes": [
+            "DATA.NOT_SYNCED",
+            "DATA.MISSING",
+            "TRANSACTION.TIMEOUT"
+          ],
+          "enabled": true,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "domain_code": "PHARMACY_MEDICATION",
+      "name_zh": "药品、审方与合理用药",
+      "services": [
+        {
+          "service_code": "PHARM.RATIONAL_MEDICATION",
+          "name_zh": "合理用药校验",
+          "aliases": [
+            "合理用药",
+            "用药校验",
+            "药品审核",
+            "药物审核"
+          ],
+          "default_owner_team": "PHARMACY_AND_IT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "transaction_stage",
+            "patient_scope"
+          ],
+          "transaction_stages": [
+            "RATIONAL_MEDICATION_CHECK"
+          ],
+          "common_symptom_codes": [
+            "PERFORMANCE.HANG_SPINNING",
+            "TRANSACTION.TIMEOUT",
+            "POLICY.RESTRICTED",
+            "DATA.MISMATCH"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "PHARM.PRESCRIPTION_REVIEW",
+          "name_zh": "处方审方",
+          "aliases": [
+            "审方",
+            "审方系统",
+            "处方审核",
+            "药师审核"
+          ],
+          "default_owner_team": "PHARMACY_AND_IT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "transaction_stage",
+            "patient_scope"
+          ],
+          "transaction_stages": [
+            "REVIEW"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "PERFORMANCE.SLOW",
+            "TRANSACTION.TIMEOUT",
+            "DATA.MISMATCH"
+          ],
+          "enabled": true,
+          "notes": "",
+          "ambiguity_notes": [
+            "“审核”也可能是医保、门特或合理用药，不能只靠单词唯一归类"
+          ]
+        },
+        {
+          "service_code": "PHARM.DRUG_MASTER_DATA",
+          "name_zh": "药品主数据与开药规则",
+          "aliases": [
+            "药品单位",
+            "包装规格",
+            "拆零",
+            "整盒",
+            "药品频次",
+            "缺药",
+            "下柜",
+            "厂家",
+            "户头",
+            "药品权限"
+          ],
+          "default_owner_team": "PHARMACY_APPROVAL_THEN_IT",
+          "ownership_mode": "IT_COORDINATED_BUSINESS_OWNER_APPROVAL",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "drug_or_rule_reference",
+            "symptom_codes",
+            "business_context"
+          ],
+          "transaction_stages": [
+            "CREATE_ORDER",
+            "RATIONAL_MEDICATION_CHECK",
+            "FINAL_SUBMIT"
+          ],
+          "common_symptom_codes": [
+            "RESOURCE.MASTER_DATA_MISSING",
+            "POLICY.RESTRICTED",
+            "DATA.MISMATCH",
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "enabled": true,
+          "notes": "药品、频次、拆零、库存和用药规则应由药学业务确认，IT 只按授权维护。"
+        },
+        {
+          "service_code": "PHARM.DISPENSING",
+          "name_zh": "发药与药房工作流",
+          "aliases": [
+            "发药系统",
+            "发药界面",
+            "药房系统"
+          ],
+          "default_owner_team": "PHARMACY_AND_IT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "scope"
+          ],
+          "transaction_stages": [
+            "OPEN_MODULE",
+            "REVIEW",
+            "FINAL_SUBMIT"
+          ],
+          "common_symptom_codes": [
+            "PERFORMANCE.SLOW",
+            "STABILITY.CRASH",
+            "DATA.MISSING"
+          ],
+          "enabled": true,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "domain_code": "BILLING_INSURANCE",
+      "name_zh": "收费、支付、退费与医保",
+      "services": [
+        {
+          "service_code": "FIN.PAYMENT",
+          "name_zh": "门诊缴费与扫码支付",
+          "aliases": [
+            "缴费",
+            "交费",
+            "扫码缴费",
+            "手机缴费",
+            "挂号支付",
+            "支付不了"
+          ],
+          "default_owner_team": "FINANCE_AND_IT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "patient_scope",
+            "payment_channel"
+          ],
+          "transaction_stages": [
+            "PAYMENT"
+          ],
+          "common_symptom_codes": [
+            "TRANSACTION.SUBMIT_FAILED",
+            "TRANSACTION.TIMEOUT",
+            "DATA.MISSING",
+            "DATA.MISMATCH"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "FIN.REFUND",
+          "name_zh": "退费与退号",
+          "aliases": [
+            "退费",
+            "退号",
+            "窗口退不了",
+            "手机退不到"
+          ],
+          "default_owner_team": "OUTPATIENT_ADMIN_AND_FINANCE",
+          "ownership_mode": "IT_COORDINATED_BUSINESS_PROCESS",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "symptom_codes",
+            "patient_scope",
+            "business_state"
+          ],
+          "transaction_stages": [
+            "REFUND",
+            "CANCEL_OR_DELETE"
+          ],
+          "common_symptom_codes": [
+            "TRANSACTION.CANCEL_FAILED",
+            "DATA.MISMATCH",
+            "POLICY.RESTRICTED"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "FIN.CHARGE_SYNC",
+          "name_zh": "开单到收费信息同步",
+          "aliases": [
+            "收费处无信息",
+            "扫码看不见收费项目",
+            "系统显示未缴费",
+            "费用双倍",
+            "费用异常",
+            "开具和扫码不一致"
+          ],
+          "default_owner_team": "IT_APPLICATION_AND_FINANCE",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "patient_scope",
+            "transaction_stage"
+          ],
+          "transaction_stages": [
+            "FINAL_SUBMIT",
+            "PAYMENT",
+            "REFUND"
+          ],
+          "common_symptom_codes": [
+            "DATA.NOT_SYNCED",
+            "DATA.MISSING",
+            "DATA.DUPLICATED",
+            "DATA.MISMATCH"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "INSURANCE.OUTPATIENT_SPECIAL",
+          "name_zh": "门诊特殊疾病",
+          "aliases": [
+            "门特",
+            "市门特",
+            "特病",
+            "门特校验",
+            "门特备案"
+          ],
+          "default_owner_team": "INSURANCE_OFFICE_AND_IT",
+          "ownership_mode": "IT_COORDINATED_BUSINESS_OWNER",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "business_context",
+            "patient_scope"
+          ],
+          "transaction_stages": [
+            "REVIEW",
+            "FINAL_SUBMIT",
+            "PAYMENT"
+          ],
+          "common_symptom_codes": [
+            "TRANSACTION.TIMEOUT",
+            "POLICY.RESTRICTED",
+            "DATA.MISMATCH",
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "INSURANCE.ELIGIBILITY_AUDIT",
+          "name_zh": "医保与社保审核",
+          "aliases": [
+            "医保审核",
+            "社保审核",
+            "备案审核",
+            "智能审核",
+            "医保校验"
+          ],
+          "default_owner_team": "INSURANCE_OFFICE_AND_IT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "review_type",
+            "patient_scope"
+          ],
+          "transaction_stages": [
+            "REVIEW",
+            "FINAL_SUBMIT"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "PERFORMANCE.SLOW",
+            "TRANSACTION.TIMEOUT",
+            "POLICY.RESTRICTED"
+          ],
+          "enabled": true,
+          "notes": "",
+          "ambiguity_notes": [
+            "“审核”不能默认归为医保审核"
+          ]
+        }
+      ]
+    },
+    {
+      "domain_code": "INTERNET_HOSPITAL",
+      "name_zh": "互联网医院与线上服务",
+      "services": [
+        {
+          "service_code": "ONLINE.VISIT",
+          "name_zh": "在线问诊",
+          "aliases": [
+            "互联网医院",
+            "网上问诊",
+            "网络门诊",
+            "线上门诊"
+          ],
+          "default_owner_team": "IT_APPLICATION_AND_BUSINESS_OWNER",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "online_channel"
+          ],
+          "transaction_stages": [
+            "LOGIN",
+            "OPEN_MODULE",
+            "SELECT_PATIENT"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "AUTH.LOGIN_FAILED",
+            "PERFORMANCE.HANG_SPINNING"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ONLINE.PRESCRIPTION",
+          "name_zh": "线上处方",
+          "aliases": [
+            "网上开药",
+            "线上开药",
+            "互联网医院开处方",
+            "网络门诊开药"
+          ],
+          "default_owner_team": "IT_APPLICATION_AND_PHARMACY",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "transaction_stage",
+            "drug_or_rule_reference"
+          ],
+          "transaction_stages": [
+            "CREATE_ORDER",
+            "REVIEW",
+            "FINAL_SUBMIT",
+            "DIGITAL_SIGN"
+          ],
+          "common_symptom_codes": [
+            "TRANSACTION.SUBMIT_FAILED",
+            "AUTH.SIGNATURE_FAILED",
+            "POLICY.RESTRICTED",
+            "RESOURCE.MASTER_DATA_MISSING"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ONLINE.REGISTRATION",
+          "name_zh": "线上预约挂号",
+          "aliases": [
+            "微信预约挂号",
+            "手机挂号",
+            "小程序挂号",
+            "公众号挂号"
+          ],
+          "default_owner_team": "IT_APPLICATION_AND_OUTPATIENT_ADMIN",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "online_channel",
+            "scope"
+          ],
+          "transaction_stages": [
+            "REGISTRATION",
+            "PAYMENT"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "PERFORMANCE.HANG_SPINNING",
+            "TRANSACTION.TIMEOUT",
+            "DATA.MISSING"
+          ],
+          "enabled": true,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "domain_code": "ENDPOINT_PRINT",
+      "name_zh": "终端、显示与打印",
+      "services": [
+        {
+          "service_code": "ENDPOINT.COMPUTER",
+          "name_zh": "计算机终端",
+          "aliases": [
+            "电脑",
+            "主机",
+            "终端",
+            "这台机器",
+            "工作电脑"
+          ],
+          "default_owner_team": "IT_ENDPOINT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint"
+          ],
+          "transaction_stages": [
+            "STARTUP",
+            "LOGIN",
+            "OPEN_MODULE"
+          ],
+          "common_symptom_codes": [
+            "HARDWARE.NO_POWER",
+            "STABILITY.CRASH",
+            "STABILITY.BLACK_SCREEN",
+            "PERFORMANCE.SLOW",
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ENDPOINT.OPERATING_SYSTEM",
+          "name_zh": "操作系统与桌面环境",
+          "aliases": [
+            "操作系统",
+            "系统时间",
+            "电脑时间",
+            "桌面程序",
+            "内存不足",
+            "关机程序",
+            "重启程序"
+          ],
+          "default_owner_team": "IT_ENDPOINT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint"
+          ],
+          "transaction_stages": [
+            "STARTUP",
+            "LOGIN",
+            "OPEN_MODULE"
+          ],
+          "common_symptom_codes": [
+            "DATA.WRONG_TIME",
+            "RESOURCE.MEMORY_EXHAUSTED",
+            "UI.MISSING_ENTRY",
+            "STABILITY.CRASH"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ENDPOINT.DISPLAY",
+          "name_zh": "显示器与显示布局",
+          "aliases": [
+            "显示器",
+            "屏幕",
+            "双屏",
+            "分辨率",
+            "屏幕模糊",
+            "界面显示不全",
+            "花屏"
+          ],
+          "default_owner_team": "IT_ENDPOINT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint"
+          ],
+          "transaction_stages": [
+            "STARTUP",
+            "OPEN_MODULE"
+          ],
+          "common_symptom_codes": [
+            "UI.RESOLUTION_LAYOUT",
+            "STABILITY.BLACK_SCREEN",
+            "HARDWARE.DISPLAY_FAILURE",
+            "UI.BLANK"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ENDPOINT.INPUT_DEVICE",
+          "name_zh": "键盘、鼠标与输入",
+          "aliases": [
+            "键盘",
+            "鼠标",
+            "输不了字",
+            "不能输入字母",
+            "输入法"
+          ],
+          "default_owner_team": "IT_ENDPOINT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint"
+          ],
+          "transaction_stages": [
+            "EDIT_RECORD"
+          ],
+          "common_symptom_codes": [
+            "HARDWARE.INPUT_FAILURE",
+            "AVAILABILITY.UNAVAILABLE",
+            "DATA.MISMATCH"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "PRINT.PRINTER_DEVICE",
+          "name_zh": "打印机设备与耗材",
+          "aliases": [
+            "打印机",
+            "卡纸",
+            "夹纸",
+            "不吸纸",
+            "卷纸",
+            "硒鼓",
+            "墨盒",
+            "墨水",
+            "打印机没反应"
+          ],
+          "default_owner_team": "PRINTER_MAINTENANCE",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location",
+            "asset_hint"
+          ],
+          "transaction_stages": [
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "PRINT.NO_OUTPUT",
+            "PRINT.JAM",
+            "PRINT.INCOMPLETE",
+            "HARDWARE.NO_POWER",
+            "CONSUMABLE.EMPTY"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "PRINT.PRINT_RENDERING",
+          "name_zh": "应用打印内容与版式",
+          "aliases": [
+            "多一张空白页",
+            "空白单",
+            "处方打印不全",
+            "二维码打不全",
+            "打印格式不对",
+            "外语打印",
+            "打印缺行"
+          ],
+          "default_owner_team": "IT_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "document_type",
+            "scope"
+          ],
+          "transaction_stages": [
+            "PRINT_PREVIEW",
+            "PRINT"
+          ],
+          "common_symptom_codes": [
+            "PRINT.BLANK_PAGE",
+            "PRINT.EXTRA_PAGE",
+            "PRINT.INCOMPLETE",
+            "PRINT.WRONG_FORMAT",
+            "DATA.MISSING"
+          ],
+          "enabled": true,
+          "notes": "预览正常而纸张异常偏向设备；跨终端同一文书格式异常偏向应用打印。"
+        },
+        {
+          "service_code": "ENDPOINT.QUEUE_DISPLAY",
+          "name_zh": "候诊屏与叫号外设",
+          "aliases": [
+            "候诊屏",
+            "叫号屏",
+            "呼叫器没声音",
+            "叫号器不亮",
+            "喇叭"
+          ],
+          "default_owner_team": "IT_ENDPOINT_OR_VENDOR",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location",
+            "asset_hint"
+          ],
+          "transaction_stages": [
+            "STARTUP",
+            "QUEUE_CALL"
+          ],
+          "common_symptom_codes": [
+            "HARDWARE.NO_AUDIO",
+            "HARDWARE.NO_POWER",
+            "UI.MISSING_ENTRY",
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "enabled": true,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "domain_code": "NETWORK_INFRASTRUCTURE",
+      "name_zh": "网络与连接",
+      "services": [
+        {
+          "service_code": "NETWORK.ENDPOINT_ACCESS",
+          "name_zh": "终端网络接入",
+          "aliases": [
+            "断网",
+            "没网",
+            "没有网络",
+            "网不通",
+            "网线松了",
+            "没有流量"
+          ],
+          "default_owner_team": "IT_NETWORK",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint",
+            "scope"
+          ],
+          "transaction_stages": [
+            "STARTUP",
+            "LOGIN",
+            "OPEN_MODULE"
+          ],
+          "common_symptom_codes": [
+            "NETWORK.DISCONNECTED",
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "NETWORK.BUILDING_DISTRIBUTION",
+          "name_zh": "楼层与楼栋网络",
+          "aliases": [
+            "交换机",
+            "楼层网络",
+            "整层断网",
+            "多个楼层断网",
+            "楼栋网络"
+          ],
+          "default_owner_team": "IT_NETWORK",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "CRITICAL",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location",
+            "scope"
+          ],
+          "transaction_stages": [
+            "OPEN_MODULE"
+          ],
+          "common_symptom_codes": [
+            "NETWORK.DISCONNECTED",
+            "HARDWARE.NO_POWER"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "NETWORK.REMOTE_SUPPORT",
+          "name_zh": "远程协助连接",
+          "aliases": [
+            "远程看不到",
+            "连不过来",
+            "远程不了",
+            "远程协助"
+          ],
+          "default_owner_team": "IT_NETWORK_OR_ENDPOINT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "symptom_codes",
+            "asset_hint"
+          ],
+          "transaction_stages": [
+            "OPEN_MODULE"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE",
+            "NETWORK.DISCONNECTED"
+          ],
+          "enabled": true,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "domain_code": "IDENTITY_SECURITY",
+      "name_zh": "身份、签名与安全策略",
+      "services": [
+        {
+          "service_code": "IDENTITY.ACCOUNT_ACCESS",
+          "name_zh": "账号登录与锁定",
+          "aliases": [
+            "账号",
+            "工号",
+            "账号锁定",
+            "旧账号",
+            "新账号",
+            "登录口令"
+          ],
+          "default_owner_team": "IT_IDENTITY",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "account_ref_secure",
+            "system_context"
+          ],
+          "transaction_stages": [
+            "LOGIN"
+          ],
+          "common_symptom_codes": [
+            "AUTH.LOGIN_FAILED",
+            "AUTH.ACCOUNT_LOCKED",
+            "AUTH.PERMISSION_DENIED"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "IDENTITY.PASSWORD_RESET",
+          "name_zh": "密码重置",
+          "aliases": [
+            "重置密码",
+            "忘记密码",
+            "密码不正确",
+            "签名密码忘了"
+          ],
+          "default_owner_team": "IT_IDENTITY",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "account_ref_secure",
+            "system_context"
+          ],
+          "transaction_stages": [
+            "LOGIN",
+            "DIGITAL_SIGN"
+          ],
+          "common_symptom_codes": [
+            "AUTH.LOGIN_FAILED",
+            "AUTH.SIGNATURE_FAILED"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "IDENTITY.DIGITAL_SIGNATURE",
+          "name_zh": "电子签名",
+          "aliases": [
+            "签名失败",
+            "调用签名失败",
+            "签不起",
+            "签名密码"
+          ],
+          "default_owner_team": "IT_IDENTITY_OR_VENDOR",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "symptom_codes",
+            "system_context",
+            "transaction_stage"
+          ],
+          "transaction_stages": [
+            "DIGITAL_SIGN",
+            "FINAL_SUBMIT"
+          ],
+          "common_symptom_codes": [
+            "AUTH.SIGNATURE_FAILED",
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "SECURITY.WATERMARK",
+          "name_zh": "终端水印",
+          "aliases": [
+            "水印",
+            "屏幕水印",
+            "红色水印"
+          ],
+          "default_owner_team": "IT_SECURITY",
+          "ownership_mode": "SECURITY_POLICY_WITH_CLINICAL_USABILITY_REVIEW",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "domain_intent",
+            "impact"
+          ],
+          "transaction_stages": [
+            "OPEN_MODULE",
+            "VIEW_RESULT"
+          ],
+          "common_symptom_codes": [
+            "UI.OVERLAY_BLOCKING",
+            "POLICY.RESTRICTED"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "SECURITY.SCREEN_CAPTURE",
+          "name_zh": "截图能力",
+          "aliases": [
+            "截图工具",
+            "截不了图",
+            "键盘截图",
+            "屏幕截图"
+          ],
+          "default_owner_team": "IT_SECURITY_OR_ENDPOINT",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "LOW",
+          "required_fields": [
+            "domain_intent",
+            "occurrence_location_or_asset_hint"
+          ],
+          "transaction_stages": [
+            "OPEN_MODULE"
+          ],
+          "common_symptom_codes": [
+            "POLICY.RESTRICTED",
+            "UI.MISSING_ENTRY"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "SECURITY.FILE_SHARING",
+          "name_zh": "文件共享与外发",
+          "aliases": [
+            "共享文件",
+            "共享盘",
+            "文件共享"
+          ],
+          "default_owner_team": "IT_SECURITY",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "domain_intent",
+            "business_need"
+          ],
+          "transaction_stages": [
+            "OPEN_MODULE"
+          ],
+          "common_symptom_codes": [
+            "POLICY.RESTRICTED",
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "enabled": true,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "domain_code": "CONFIG_DATA",
+      "name_zh": "主数据、规则与客户端配置",
+      "services": [
+        {
+          "service_code": "CONFIG.MASTER_DATA",
+          "name_zh": "基础与业务主数据",
+          "aliases": [
+            "项目没有",
+            "没有单位",
+            "诊断没有",
+            "药品没有规格",
+            "科室选项没有",
+            "频次没有",
+            "项目维护"
+          ],
+          "default_owner_team": "BUSINESS_OWNER_APPROVAL_THEN_IT",
+          "ownership_mode": "IT_COORDINATED_BUSINESS_OWNER_APPROVAL",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "master_data_type",
+            "requested_value",
+            "business_owner"
+          ],
+          "transaction_stages": [
+            "CREATE_ORDER",
+            "OPEN_MODULE"
+          ],
+          "common_symptom_codes": [
+            "RESOURCE.MASTER_DATA_MISSING",
+            "DATA.MISMATCH"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "CONFIG.BUSINESS_RULE",
+          "name_zh": "业务规则与限制",
+          "aliases": [
+            "规则不对",
+            "提示不合理",
+            "说明书矛盾",
+            "限制条件",
+            "年龄限制",
+            "拆零规则",
+            "号源规则"
+          ],
+          "default_owner_team": "BUSINESS_OWNER_APPROVAL_THEN_IT",
+          "ownership_mode": "IT_COORDINATED_BUSINESS_OWNER_APPROVAL",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "rule_context",
+            "business_owner",
+            "domain_intent"
+          ],
+          "transaction_stages": [
+            "CREATE_ORDER",
+            "REVIEW",
+            "REGISTRATION"
+          ],
+          "common_symptom_codes": [
+            "POLICY.RESTRICTED",
+            "DATA.MISMATCH"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "CONFIG.CLIENT_COMPONENT",
+          "name_zh": "本地客户端组件",
+          "aliases": [
+            "快捷方式没有",
+            "图标没有",
+            "组件打不开",
+            "呼叫器快捷方式",
+            "本地程序"
+          ],
+          "default_owner_team": "IT_ENDPOINT_OR_APPLICATION",
+          "ownership_mode": "IT_OWNED_OR_COORDINATED",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "symptom_codes",
+            "occurrence_location_or_asset_hint"
+          ],
+          "transaction_stages": [
+            "STARTUP",
+            "OPEN_MODULE"
+          ],
+          "common_symptom_codes": [
+            "UI.MISSING_ENTRY",
+            "AVAILABILITY.UNAVAILABLE",
+            "STABILITY.CRASH"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "CONFIG.POPUP_NOTIFICATION",
+          "name_zh": "业务弹窗与提醒",
+          "aliases": [
+            "弹窗",
+            "会诊提示",
+            "危急值弹窗",
+            "传染病卡提示",
+            "右下角提醒"
+          ],
+          "default_owner_team": "IT_APPLICATION_AND_BUSINESS_OWNER",
+          "ownership_mode": "IT_COORDINATED_BUSINESS_OWNER_APPROVAL",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "symptom_codes",
+            "popup_type",
+            "business_state"
+          ],
+          "transaction_stages": [
+            "OPEN_RECORD",
+            "EDIT_RECORD",
+            "CREATE_ORDER"
+          ],
+          "common_symptom_codes": [
+            "UI.OVERLAY_BLOCKING",
+            "DATA.MISMATCH"
+          ],
+          "enabled": true,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "domain_code": "CROSS_DEPARTMENT_ROUTING",
+      "name_zh": "非 IT 与跨部门转办",
+      "services": [
+        {
+          "service_code": "ROUTE.OUTPATIENT_ADMIN",
+          "name_zh": "门诊业务管理与流程",
+          "aliases": [
+            "门诊办公室",
+            "门办",
+            "退号流程",
+            "导医",
+            "门诊秩序",
+            "诊室安排"
+          ],
+          "default_owner_team": "OUTPATIENT_ADMIN",
+          "ownership_mode": "NON_IT_ROUTE",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "domain_intent",
+            "business_context"
+          ],
+          "transaction_stages": [
+            "UNKNOWN"
+          ],
+          "common_symptom_codes": [
+            "POLICY.RESTRICTED"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ROUTE.PHARMACY",
+          "name_zh": "药学业务咨询与库存",
+          "aliases": [
+            "缺药",
+            "药房",
+            "药品库存",
+            "用药频次申请",
+            "拆零咨询"
+          ],
+          "default_owner_team": "PHARMACY",
+          "ownership_mode": "NON_IT_OR_IT_COORDINATED_ROUTE",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "domain_intent",
+            "drug_or_rule_reference"
+          ],
+          "transaction_stages": [
+            "UNKNOWN"
+          ],
+          "common_symptom_codes": [
+            "RESOURCE.MASTER_DATA_MISSING",
+            "POLICY.RESTRICTED"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ROUTE.FINANCE_BANK",
+          "name_zh": "财务、银行与支付通道",
+          "aliases": [
+            "银行问题",
+            "财务联系银行",
+            "支付通道"
+          ],
+          "default_owner_team": "FINANCE",
+          "ownership_mode": "IT_COORDINATED_EXTERNAL_ROUTE",
+          "clinical_criticality": "HIGH",
+          "required_fields": [
+            "domain_intent",
+            "payment_channel"
+          ],
+          "transaction_stages": [
+            "PAYMENT"
+          ],
+          "common_symptom_codes": [
+            "TRANSACTION.TIMEOUT",
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ROUTE.LOGISTICS_FACILITY",
+          "name_zh": "后勤设施与物资",
+          "aliases": [
+            "空调",
+            "停水",
+            "门锁",
+            "凳子",
+            "手消液",
+            "装修噪声",
+            "物资"
+          ],
+          "default_owner_team": "LOGISTICS",
+          "ownership_mode": "NON_IT_ROUTE",
+          "clinical_criticality": "LOW",
+          "required_fields": [
+            "domain_intent",
+            "occurrence_location"
+          ],
+          "transaction_stages": [
+            "UNKNOWN"
+          ],
+          "common_symptom_codes": [
+            "HARDWARE.NO_POWER"
+          ],
+          "enabled": true,
+          "notes": ""
+        },
+        {
+          "service_code": "ROUTE.VENDOR",
+          "name_zh": "厂商协同与维保",
+          "aliases": [
+            "厂家",
+            "工程师",
+            "维保",
+            "供应商"
+          ],
+          "default_owner_team": "VENDOR_COORDINATION",
+          "ownership_mode": "IT_COORDINATED_ROUTE",
+          "clinical_criticality": "MODERATE",
+          "required_fields": [
+            "service_candidate",
+            "symptom_codes"
+          ],
+          "transaction_stages": [
+            "UNKNOWN"
+          ],
+          "common_symptom_codes": [
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "enabled": true,
+          "notes": ""
+        }
+      ]
+    }
+  ],
+  "taxonomies": {
+    "domain_intents": [
+      "INCIDENT_REPORT",
+      "SERVICE_REQUEST",
+      "ACCESS_REQUEST",
+      "DATA_CORRECTION_REQUEST",
+      "HOW_TO_QUESTION",
+      "POLICY_QUESTION",
+      "CONFIG_CHANGE_REQUEST",
+      "STATUS_QUERY",
+      "ESCALATION_COMPLAINT",
+      "RECOVERY_UPDATE",
+      "SUPPLEMENT",
+      "ACKNOWLEDGEMENT",
+      "NON_IT_REQUEST",
+      "CHATTER",
+      "UNKNOWN"
+    ],
+    "symptom_codes": [
+      {
+        "code": "AVAILABILITY.UNAVAILABLE",
+        "name_zh": "完全不可用/打不开"
+      },
+      {
+        "code": "AVAILABILITY.INTERMITTENT",
+        "name_zh": "间歇性可用"
+      },
+      {
+        "code": "PERFORMANCE.SLOW",
+        "name_zh": "响应慢"
+      },
+      {
+        "code": "PERFORMANCE.HANG_SPINNING",
+        "name_zh": "卡住/持续转圈"
+      },
+      {
+        "code": "STABILITY.CRASH",
+        "name_zh": "系统崩溃"
+      },
+      {
+        "code": "STABILITY.FLASH_EXIT",
+        "name_zh": "闪退"
+      },
+      {
+        "code": "STABILITY.BLACK_SCREEN",
+        "name_zh": "黑屏"
+      },
+      {
+        "code": "AUTH.LOGIN_FAILED",
+        "name_zh": "登录失败"
+      },
+      {
+        "code": "AUTH.ACCOUNT_LOCKED",
+        "name_zh": "账号锁定"
+      },
+      {
+        "code": "AUTH.PERMISSION_DENIED",
+        "name_zh": "权限不足"
+      },
+      {
+        "code": "AUTH.SIGNATURE_FAILED",
+        "name_zh": "电子签名失败"
+      },
+      {
+        "code": "TRANSACTION.SUBMIT_FAILED",
+        "name_zh": "提交失败"
+      },
+      {
+        "code": "TRANSACTION.SAVE_FAILED",
+        "name_zh": "保存失败"
+      },
+      {
+        "code": "TRANSACTION.CANCEL_FAILED",
+        "name_zh": "撤销失败"
+      },
+      {
+        "code": "TRANSACTION.DELETE_FAILED",
+        "name_zh": "删除失败"
+      },
+      {
+        "code": "TRANSACTION.TIMEOUT",
+        "name_zh": "交易/接口超时"
+      },
+      {
+        "code": "DATA.MISSING",
+        "name_zh": "数据缺失"
+      },
+      {
+        "code": "DATA.NOT_SYNCED",
+        "name_zh": "数据未同步/未推送"
+      },
+      {
+        "code": "DATA.MISMATCH",
+        "name_zh": "数据不一致"
+      },
+      {
+        "code": "DATA.DUPLICATED",
+        "name_zh": "数据重复"
+      },
+      {
+        "code": "DATA.WRONG_TIME",
+        "name_zh": "系统或业务时间错误"
+      },
+      {
+        "code": "UI.BLANK",
+        "name_zh": "页面空白"
+      },
+      {
+        "code": "UI.MISSING_ENTRY",
+        "name_zh": "入口/图标/菜单缺失"
+      },
+      {
+        "code": "UI.OVERLAY_BLOCKING",
+        "name_zh": "弹窗遮挡或无法关闭"
+      },
+      {
+        "code": "UI.RESOLUTION_LAYOUT",
+        "name_zh": "分辨率/布局异常"
+      },
+      {
+        "code": "PRINT.NO_OUTPUT",
+        "name_zh": "无打印输出"
+      },
+      {
+        "code": "PRINT.JAM",
+        "name_zh": "卡纸/夹纸/进纸失败"
+      },
+      {
+        "code": "PRINT.BLANK_PAGE",
+        "name_zh": "打印为空白"
+      },
+      {
+        "code": "PRINT.EXTRA_PAGE",
+        "name_zh": "多打空白页/多页"
+      },
+      {
+        "code": "PRINT.INCOMPLETE",
+        "name_zh": "打印内容不全"
+      },
+      {
+        "code": "PRINT.WRONG_FORMAT",
+        "name_zh": "打印格式或语言异常"
+      },
+      {
+        "code": "NETWORK.DISCONNECTED",
+        "name_zh": "网络不通"
+      },
+      {
+        "code": "RESOURCE.LICENSE_EXHAUSTED",
+        "name_zh": "并发授权耗尽"
+      },
+      {
+        "code": "RESOURCE.MASTER_DATA_MISSING",
+        "name_zh": "主数据/规格/单位/项目缺失"
+      },
+      {
+        "code": "RESOURCE.MEMORY_EXHAUSTED",
+        "name_zh": "内存不足"
+      },
+      {
+        "code": "POLICY.RESTRICTED",
+        "name_zh": "业务或安全策略限制"
+      },
+      {
+        "code": "HARDWARE.NO_POWER",
+        "name_zh": "设备无法上电"
+      },
+      {
+        "code": "HARDWARE.INPUT_FAILURE",
+        "name_zh": "键鼠/输入故障"
+      },
+      {
+        "code": "HARDWARE.DISPLAY_FAILURE",
+        "name_zh": "显示硬件故障"
+      },
+      {
+        "code": "HARDWARE.NO_AUDIO",
+        "name_zh": "叫号外设无声音"
+      },
+      {
+        "code": "CONSUMABLE.EMPTY",
+        "name_zh": "耗材不足"
+      },
+      {
+        "code": "UNKNOWN",
+        "name_zh": "未知现象"
+      }
+    ],
+    "transaction_stages": [
+      "STARTUP",
+      "LOGIN",
+      "OPEN_MODULE",
+      "SELECT_PATIENT",
+      "OPEN_RECORD",
+      "EDIT_RECORD",
+      "SAVE_RECORD",
+      "CREATE_ORDER",
+      "RATIONAL_MEDICATION_CHECK",
+      "REVIEW",
+      "FINAL_SUBMIT",
+      "DIGITAL_SIGN",
+      "CANCEL_OR_DELETE",
+      "PRINT_PREVIEW",
+      "PRINT",
+      "VIEW_RESULT",
+      "REGISTRATION",
+      "CHECK_IN",
+      "QUEUE_CALL",
+      "APPOINTMENT",
+      "PAYMENT",
+      "REFUND",
+      "UNKNOWN"
+    ],
+    "scope_codes": [
+      "SINGLE_PATIENT",
+      "SINGLE_USER",
+      "SINGLE_ENDPOINT",
+      "SINGLE_ROOM",
+      "MULTIPLE_ENDPOINTS",
+      "DEPARTMENT",
+      "BUILDING_FLOOR",
+      "MULTIPLE_DEPARTMENTS",
+      "OUTPATIENT_WIDE",
+      "HOSPITAL_WIDE",
+      "UNKNOWN"
+    ],
+    "cause_codes": [
+      "CAUSE.UNKNOWN",
+      "CAUSE.ENDPOINT_LOCAL",
+      "CAUSE.HARDWARE",
+      "CAUSE.CONSUMABLE",
+      "CAUSE.NETWORK_ENDPOINT",
+      "CAUSE.NETWORK_DISTRIBUTION",
+      "CAUSE.APPLICATION_SERVICE",
+      "CAUSE.UPSTREAM_DEPENDENCY",
+      "CAUSE.CONCURRENCY_LICENSE",
+      "CAUSE.DATA_SYNC",
+      "CAUSE.MASTER_DATA",
+      "CAUSE.CONFIGURATION",
+      "CAUSE.FIELD_LENGTH_LIMIT",
+      "CAUSE.USER_WORKFLOW",
+      "CAUSE.POLICY"
+    ],
+    "clinical_impact_levels": [
+      "CRITICAL_REVIEW_REQUIRED",
+      "HIGH",
+      "MODERATE",
+      "LOW",
+      "UNKNOWN"
+    ]
+  }
+}

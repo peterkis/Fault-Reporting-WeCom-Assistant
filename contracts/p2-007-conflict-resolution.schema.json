@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2-007-conflict-resolution.schema.json",
+  "title": "P2-007 Fact Conflict",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "conflict_id",
+    "field_path",
+    "candidate_fact_ids",
+    "conflict_type",
+    "resolution_status",
+    "strategy",
+    "selected_fact_id",
+    "requires_human",
+    "explanation_code"
+  ],
+  "properties": {
+    "conflict_id": {
+      "type": "string",
+      "pattern": "^conflict_[A-Za-z0-9_-]{8,96}$"
+    },
+    "field_path": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.\\[\\]-]{1,127}$"
+    },
+    "candidate_fact_ids": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^fact_[A-Za-z0-9_-]{8,96}$"
+      }
+    },
+    "conflict_type": {
+      "enum": [
+        "VALUE_CONFLICT",
+        "NEGATION_CONFLICT",
+        "LOCATION_CONFLICT",
+        "SERVICE_CONFLICT",
+        "SCOPE_CONFLICT",
+        "RECOVERY_STATE_CONFLICT",
+        "DIRECTORY_FRESHNESS_CONFLICT",
+        "CONTEXT_ANCHOR_CONFLICT"
+      ]
+    },
+    "resolution_status": {
+      "enum": [
+        "UNRESOLVED",
+        "RESOLVED",
+        "DEFERRED_TO_HUMAN",
+        "KEPT_AS_DIFFERENT_DIMENSIONS"
+      ]
+    },
+    "strategy": {
+      "enum": [
+        "LATEST_EXPLICIT_CORRECTION",
+        "HUMAN_OPERATOR_CONFIRMATION",
+        "AUTHORITATIVE_WITH_FRESHNESS_CHECK",
+        "NEGATION_SUPERSEDES_HYPOTHESIS",
+        "CURRENT_REPORTER_OBSERVATION",
+        "KEEP_BOTH_DIFFERENT_DIMENSIONS",
+        "CONTEXT_ANCHOR_WITHIN_WINDOW",
+        "DO_NOT_RESOLVE_ASK_USER"
+      ]
+    },
+    "selected_fact_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^fact_[A-Za-z0-9_-]{8,96}$"
+    },
+    "requires_human": {
+      "type": "boolean"
+    },
+    "question_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^Q_[A-Z0-9_]{3,64}$"
+    },
+    "explanation_code": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_]{3,96}$"
+    }
+  }
+}

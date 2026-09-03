@@ -91,14 +91,19 @@ Source Adapter 在 Projector 写事务外读取事实，并输出
 | `item_type` / `sender_kind` / `visibility` | 完全复用 P2-001 枚举和语义 |
 | `text` | `null` 或最多 20,000 字符的已裁剪文本 |
 | `safe_content` | 最多 64 个属性的有界纯 JSON object |
-| `occurred_at` | RFC 3339 `date-time` |
+| `occurred_at` | Asia/Shanghai LocalDateTime，规范文本为 `YYYY-MM-DD HH:mm:ss` |
 | `source_ordinal` | `0..9223372036854775807` 的规范十进制字符串 |
 | `source_hash` | 64 位小写 SHA-256 |
 | `privacy_class` | 继承 P1 六级隐私枚举 |
-| `retention_until` | 继承来源的 `date-time` 留存截止时间 |
+| `retention_until` | Asia/Shanghai LocalDateTime 展示/审计值，规范文本为 `YYYY-MM-DD HH:mm:ss` |
+| `retention_until_epoch_ms` | 权威留存期限；引用 PhysicalEpochMs 契约并保持十进制字符串 |
 
 `source_ordinal` 保持为十进制字符串并以 BigInt 语义比较；PostgreSQL `BIGINT` 不能未经
 范围检查转换成 JavaScript `Number`。
+
+业务时间禁止 RFC 3339 offset、`Z` 和 `UTC`，也不得使用微秒或毫秒承担唯一排序职责。
+Timeline 的确定性业务顺序为 `occurred_at ASC, sequence_no ASC`；同一业务秒内必须依靠
+持久化的 `sequence_no`，不得依赖 timestamp 小数精度、插入顺序或数据库物理顺序。
 
 ### Source Hash 与控制信封
 

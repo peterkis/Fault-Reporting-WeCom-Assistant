@@ -1,0 +1,1211 @@
+{
+  "schema_version": "1.0.0",
+  "rule_set_id": "CD3H_P2_007_MULTICHANNEL_EXTENSION_RULES",
+  "rule_set_version": "0.2.0-draft",
+  "depends_on_rule_set_id": "CD3H_P2_007_DETERMINISTIC_RULES",
+  "status": "DRAFT_FOR_P2_007_IMPLEMENTATION",
+  "evaluation_order": "priority DESC, rule_id ASC",
+  "execution_mode": "PURE_FUNCTION_NO_SIDE_EFFECT",
+  "inputs": [
+    "normalized conversation turns",
+    "trusted channel/session metadata",
+    "contact journey context",
+    "optional authoritative reporter directory snapshot",
+    "P2-005 control event read model",
+    "P2-004 communication and delivery read model",
+    "safe cross-channel correlation context",
+    "time-window incident correlation context",
+    "optional authoritative monitoring corroboration"
+  ],
+  "outputs": [
+    "entry journey facts",
+    "reporter profile snapshot facts",
+    "cross-channel correlation decision",
+    "description sufficiency",
+    "lifecycle audit view",
+    "incident candidate only",
+    "notification recommendations only",
+    "explainable rule hits"
+  ],
+  "forbidden_actions": [
+    "CREATE_TICKET",
+    "UPDATE_TICKET_STATUS",
+    "CREATE_INCIDENT",
+    "LINK_TICKET_TO_INCIDENT",
+    "SEND_WECOM_MESSAGE",
+    "CALL_WECOM_SDK",
+    "CALL_LLM_PROVIDER",
+    "WRITE_PATIENT_IDENTIFIER_TO_LOG",
+    "WRITE_RAW_CHANNEL_IDENTIFIER_TO_PUBLIC_LOG"
+  ],
+  "rules": [
+    {
+      "rule_id": "ENTRY-001",
+      "version": "1.0.0",
+      "group": "ENTRY_JOURNEY",
+      "priority": 2000,
+      "description_zh": "群内 @Bot 且同一触发消息包含可用故障描述时，标记为群内直接描述入口。",
+      "when": {
+        "all": [
+          {
+            "field": "channel.type",
+            "eq": "WECOM_GROUP"
+          },
+          {
+            "field": "channel.bot_mentioned",
+            "eq": true
+          },
+          {
+            "field": "description.has_incident_signal",
+            "eq": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_ENTRY_MODE",
+          "value": "GROUP_MENTION_INLINE"
+        },
+        {
+          "action": "PRESERVE_ORIGIN",
+          "channel": "WECOM_GROUP"
+        }
+      ],
+      "explanation_template_zh": "群聊是不可变来源，即使后续转入单聊也不得改写来源。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ENTRY-002",
+      "version": "1.0.0",
+      "group": "ENTRY_JOURNEY",
+      "priority": 1999,
+      "description_zh": "群内仅 @Bot、问候或无有效描述时，建议建立单聊引导，但先保留 Intake 来源。",
+      "when": {
+        "all": [
+          {
+            "field": "channel.type",
+            "eq": "WECOM_GROUP"
+          },
+          {
+            "field": "channel.bot_mentioned",
+            "eq": true
+          },
+          {
+            "field": "description.has_incident_signal",
+            "eq": false
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_ENTRY_MODE",
+          "value": "GROUP_MENTION_TO_DIRECT_GUIDED"
+        },
+        {
+          "action": "SET_SUFFICIENCY",
+          "value": "EMPTY"
+        },
+        {
+          "action": "RECOMMEND_NOTIFICATION",
+          "purpose": "PRIVATE_GUIDANCE"
+        }
+      ],
+      "explanation_template_zh": "群内入口不等于已有故障事实；应先引导描述。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ENTRY-003",
+      "version": "1.0.0",
+      "group": "ENTRY_JOURNEY",
+      "priority": 1998,
+      "description_zh": "群内描述中出现患者敏感信息或需要患者标识时，建议转入受控单聊。",
+      "when": {
+        "all": [
+          {
+            "field": "channel.type",
+            "eq": "WECOM_GROUP"
+          },
+          {
+            "field": "privacy.patient_sensitive_detected",
+            "eq": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SUFFICIENCY",
+          "value": "SENSITIVE_MOVE_TO_PRIVATE"
+        },
+        {
+          "action": "RECOMMEND_NOTIFICATION",
+          "purpose": "PRIVATE_GUIDANCE"
+        },
+        {
+          "action": "MARK_GROUP_CONTENT",
+          "value": "DO_NOT_ECHO"
+        }
+      ],
+      "explanation_template_zh": "不得在群内继续追问患者号、姓名、电话或证件信息。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ENTRY-004",
+      "version": "1.0.0",
+      "group": "ENTRY_JOURNEY",
+      "priority": 1997,
+      "description_zh": "用户主动单聊 Bot 且没有可验证群聊延续关系时，标记为单聊自然入口。",
+      "when": {
+        "all": [
+          {
+            "field": "channel.type",
+            "eq": "WECOM_DIRECT"
+          },
+          {
+            "field": "correlation.explicit_link_present",
+            "eq": false
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_ENTRY_MODE",
+          "value": "DIRECT_ORGANIC"
+        },
+        {
+          "action": "PRESERVE_ORIGIN",
+          "channel": "WECOM_DIRECT"
+        }
+      ],
+      "explanation_template_zh": "单聊自然入口不得虚构群聊来源。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ENTRY-005",
+      "version": "1.0.0",
+      "group": "ENTRY_JOURNEY",
+      "priority": 1996,
+      "description_zh": "单聊消息携带 Provider reply context 或服务器 continuation_ref 时，精确关联群聊来源旅程。",
+      "when": {
+        "all": [
+          {
+            "field": "channel.type",
+            "eq": "WECOM_DIRECT"
+          },
+          {
+            "field": "correlation.verified_continuation",
+            "eq": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "APPEND_CHANNEL_LEG",
+          "role": "CONTINUATION"
+        },
+        {
+          "action": "SET_CORRELATION",
+          "state": "EXACT"
+        }
+      ],
+      "explanation_template_zh": "跨渠道关联依赖可验证引用，不依赖文本猜测。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ENTRY-006",
+      "version": "1.0.0",
+      "group": "ENTRY_JOURNEY",
+      "priority": 1995,
+      "description_zh": "同一用户同时存在多个待补充 Intake 且单聊没有关联引用时，禁止自动合并。",
+      "when": {
+        "all": [
+          {
+            "field": "channel.type",
+            "eq": "WECOM_DIRECT"
+          },
+          {
+            "field": "correlation.pending_intake_count",
+            "gt": 1
+          },
+          {
+            "field": "correlation.verified_continuation",
+            "eq": false
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_CORRELATION",
+          "state": "AMBIGUOUS"
+        },
+        {
+          "action": "ASK",
+          "question_code": "Q_SELECT_PENDING_INTAKE"
+        }
+      ],
+      "explanation_template_zh": "避免把两个故障错误合并。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ENTRY-007",
+      "version": "1.0.0",
+      "group": "ENTRY_JOURNEY",
+      "priority": 1994,
+      "description_zh": "仅凭相同用户和相近时间不得把群聊与单聊自动合并。",
+      "when": {
+        "all": [
+          {
+            "field": "correlation.same_user",
+            "eq": true
+          },
+          {
+            "field": "correlation.close_in_time",
+            "eq": true
+          },
+          {
+            "field": "correlation.explicit_link_present",
+            "eq": false
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_CORRELATION",
+          "state": "CANDIDATE"
+        },
+        {
+          "action": "SET_REQUIRES_HUMAN_CONFIRMATION",
+          "value": true
+        }
+      ],
+      "explanation_template_zh": "身份和时间只能产生候选，不能成为跨渠道事实。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "ENTRY-008",
+      "version": "1.0.0",
+      "group": "ENTRY_JOURNEY",
+      "priority": 1993,
+      "description_zh": "群内转单聊后，origin_channel 仍保持 WECOM_GROUP。",
+      "when": {
+        "all": [
+          {
+            "field": "entry_mode",
+            "eq": "GROUP_MENTION_TO_DIRECT_GUIDED"
+          },
+          {
+            "field": "current_channel",
+            "eq": "WECOM_DIRECT"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "ASSERT_ORIGIN_IMMUTABLE",
+          "value": "WECOM_GROUP"
+        }
+      ],
+      "explanation_template_zh": "当前渠道变化不改写最初来源。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "IDENT-001",
+      "version": "1.0.0",
+      "group": "REPORTER_IDENTITY",
+      "priority": 1900,
+      "description_zh": "上报人身份只从可信渠道元数据读取，不从正文中的姓名或账号猜测。",
+      "when": {
+        "field": "channel.trusted_reporter_ref",
+        "exists": true
+      },
+      "actions": [
+        {
+          "action": "EMIT_FACT",
+          "field_path": "reporter.reporter_ref",
+          "source_kind": "TRUSTED_CHANNEL_METADATA"
+        }
+      ],
+      "explanation_template_zh": "正文中的署名可能是转述、引用或患者姓名。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "IDENT-002",
+      "version": "1.0.0",
+      "group": "REPORTER_IDENTITY",
+      "priority": 1899,
+      "description_zh": "首次接触时查询权威目录并保留姓名、部门的时间点快照。",
+      "when": {
+        "field": "directory.lookup_status",
+        "eq": "RESOLVED"
+      },
+      "actions": [
+        {
+          "action": "CREATE_PROFILE_SNAPSHOT",
+          "source_kind": "DIRECTORY_PROFILE_SNAPSHOT"
+        }
+      ],
+      "explanation_template_zh": "快照用于审计，当前目录引用用于后续展示。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "IDENT-003",
+      "version": "1.0.0",
+      "group": "REPORTER_IDENTITY",
+      "priority": 1898,
+      "description_zh": "目录返回多个部门成员关系时全部保留，不擅自选择唯一部门。",
+      "when": {
+        "field": "directory.department_membership_count",
+        "gt": 1
+      },
+      "actions": [
+        {
+          "action": "PRESERVE_ALL_DEPARTMENT_MEMBERSHIPS"
+        },
+        {
+          "action": "MARK_PRIMARY_ONLY_IF_AUTHORITATIVE"
+        }
+      ],
+      "explanation_template_zh": "兼岗、轮转、借调和多科室身份不能被压扁。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "IDENT-004",
+      "version": "1.0.0",
+      "group": "REPORTER_IDENTITY",
+      "priority": 1897,
+      "description_zh": "目录查询失败时姓名和部门保持未知，业务仍可继续。",
+      "when": {
+        "field": "directory.lookup_status",
+        "in": [
+          "NOT_FOUND",
+          "UNAVAILABLE"
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_PROFILE_LOOKUP_STATUS",
+          "from": "directory.lookup_status"
+        },
+        {
+          "action": "DO_NOT_GUESS_PROFILE"
+        }
+      ],
+      "explanation_template_zh": "身份补全失败不能造成漏单，也不能从群名推断部门。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "IDENT-005",
+      "version": "1.0.0",
+      "group": "REPORTER_IDENTITY",
+      "priority": 1896,
+      "description_zh": "上报人所属部门与故障发生地点/科室分开建模。",
+      "when": {
+        "field": "reporter.department_present",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "ASSERT_SEPARATE_FIELD",
+          "left": "reporter.department",
+          "right": "occurrence_location.department"
+        }
+      ],
+      "explanation_template_zh": "医生可能替其他诊室、病区或患者报修。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "TIME-001",
+      "version": "1.0.0",
+      "group": "TIME_SEMANTICS",
+      "priority": 1880,
+      "description_zh": "reported_at 使用最早可信的用户发起消息时间。",
+      "when": {
+        "field": "journey.origin.occurred_at",
+        "exists": true
+      },
+      "actions": [
+        {
+          "action": "EMIT_FACT",
+          "field_path": "reported_at",
+          "value_from": "journey.origin.occurred_at"
+        }
+      ],
+      "explanation_template_zh": "转入单聊不应重写最初上报时间。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "TIME-002",
+      "version": "1.0.0",
+      "group": "TIME_SEMANTICS",
+      "priority": 1879,
+      "description_zh": "Provider 发送、Gateway 接收、Inbox 提交、Intake/Ticket 创建时间分别留存。",
+      "when": {
+        "field": "pipeline.timestamps",
+        "exists": true
+      },
+      "actions": [
+        {
+          "action": "PRESERVE_DISTINCT_TIMESTAMPS"
+        }
+      ],
+      "explanation_template_zh": "单一“报修时间”不能满足延迟分析和审计。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "TIME-003",
+      "version": "1.0.0",
+      "group": "TIME_SEMANTICS",
+      "priority": 1878,
+      "description_zh": "领域业务时间使用 Asia/Shanghai 本地秒，物理期限使用 epoch ms。",
+      "when": {
+        "field": "time.business_timezone",
+        "eq": "Asia/Shanghai"
+      },
+      "actions": [
+        {
+          "action": "ENFORCE_LOCAL_DATETIME_CONTRACT",
+          "value": "YYYY-MM-DD HH:mm:ss"
+        }
+      ],
+      "explanation_template_zh": "业务时间不依赖服务器时区；期限和 elapsed time 由 PhysicalEpochMs 承担。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "XAGG-001",
+      "version": "1.0.0",
+      "group": "MULTICHANNEL_AGGREGATION",
+      "priority": 1800,
+      "description_zh": "单聊引导会话按 Session 聚合，不受 P1 90 秒持久化窗口强制切断。",
+      "when": {
+        "all": [
+          {
+            "field": "channel.type",
+            "eq": "WECOM_DIRECT"
+          },
+          {
+            "field": "session.active",
+            "eq": true
+          },
+          {
+            "field": "context.explicit_new_report",
+            "eq": false
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "APPEND_TO_ACTIVE_ANALYSIS_WINDOW",
+          "relation": "SUPPLEMENT"
+        }
+      ],
+      "explanation_template_zh": "用户可能隔数分钟补 IP、诊室、影响和尝试结果。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "XAGG-002",
+      "version": "1.0.0",
+      "group": "MULTICHANNEL_AGGREGATION",
+      "priority": 1799,
+      "description_zh": "每条碎片消息立即入库并增量更新事实，不等待用户一次说完。",
+      "when": {
+        "field": "turn.accepted",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "INCREMENTAL_EXTRACT"
+        },
+        {
+          "action": "PRESERVE_SOURCE_TURN"
+        }
+      ],
+      "explanation_template_zh": "实时持久化优先，聚合只用于解释上下文。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "XAGG-003",
+      "version": "1.0.0",
+      "group": "MULTICHANNEL_AGGREGATION",
+      "priority": 1798,
+      "description_zh": "短暂停顿只用于 UI/规则评估防抖，不延迟高风险 Intake。",
+      "when": {
+        "field": "fragmentation.waiting_for_more",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "APPLY_DEBOUNCE",
+          "default_ms": 8000
+        },
+        {
+          "action": "BYPASS_DEBOUNCE_IF_HIGH_RISK"
+        }
+      ],
+      "explanation_template_zh": "防抖不是事务一致性或工单创建门槛。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "XAGG-004",
+      "version": "1.0.0",
+      "group": "MULTICHANNEL_AGGREGATION",
+      "priority": 1797,
+      "description_zh": "群聊和单聊 Leg 只能通过精确关联附加到同一 Intake。",
+      "when": {
+        "field": "correlation.link_state",
+        "eq": "EXACT"
+      },
+      "actions": [
+        {
+          "action": "LINK_CHANNEL_LEG_TO_INTAKE"
+        }
+      ],
+      "explanation_template_zh": "不得把两份原始时间线物理合并或覆盖。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "XAGG-005",
+      "version": "1.0.0",
+      "group": "MULTICHANNEL_AGGREGATION",
+      "priority": 1796,
+      "description_zh": "用户明确说另一个问题、新报修时创建新的分析窗口。",
+      "when": {
+        "field": "context.explicit_new_report",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "START_NEW_ANALYSIS_WINDOW",
+          "reason": "EXPLICIT_NEW_REPORT"
+        }
+      ],
+      "explanation_template_zh": "即使同一单聊 Session，也可能同时存在多个问题。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "XAGG-006",
+      "version": "1.0.0",
+      "group": "MULTICHANNEL_AGGREGATION",
+      "priority": 1795,
+      "description_zh": "描述已达到最小故障事实时建议继续建 Intake/路由，缺失字段后补。",
+      "when": {
+        "all": [
+          {
+            "field": "description.observable_symptom",
+            "exists": true
+          },
+          {
+            "any": [
+              {
+                "field": "description.service_or_object",
+                "exists": true
+              },
+              {
+                "field": "description.occurrence_location",
+                "exists": true
+              }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SUFFICIENCY",
+          "value": "SUFFICIENT_FOR_INTAKE"
+        },
+        {
+          "action": "RECOMMEND_INTAKE_CREATION"
+        }
+      ],
+      "explanation_template_zh": "医院故障不应因等待完美描述而漏报。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "HUMAN-001",
+      "version": "1.0.0",
+      "group": "HUMAN_LIFECYCLE",
+      "priority": 1700,
+      "description_zh": "每个 Session 同时只有一个权威责任坐席。",
+      "when": {
+        "field": "assignment.active_owner_count",
+        "gte": 0
+      },
+      "actions": [
+        {
+          "action": "ASSERT_MAX_ACTIVE_OWNER",
+          "value": 1
+        }
+      ],
+      "explanation_template_zh": "多人协作不等于多人同时拥有状态修改权。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "HUMAN-002",
+      "version": "1.0.0",
+      "group": "HUMAN_LIFECYCLE",
+      "priority": 1699,
+      "description_zh": "并发接管时成功和冲突尝试都进入审计视图。",
+      "when": {
+        "field": "control.concurrent_takeover_detected",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "EMIT_LIFECYCLE_EVENT",
+          "for": "TAKEOVER_ACCEPTED"
+        },
+        {
+          "action": "EMIT_LIFECYCLE_EVENT",
+          "for": "TAKEOVER_REJECTED"
+        }
+      ],
+      "explanation_template_zh": "失败尝试也解释了责任归属变化。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "HUMAN-003",
+      "version": "1.0.0",
+      "group": "HUMAN_LIFECYCLE",
+      "priority": 1698,
+      "description_zh": "其他坐席可作为协作者查看或写内部备注，但不自动成为责任人。",
+      "when": {
+        "field": "actor.is_collaborator",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "ADD_COLLABORATOR_TO_AUDIT_VIEW"
+        },
+        {
+          "action": "DO_NOT_CHANGE_AUTHORITATIVE_OWNER"
+        }
+      ],
+      "explanation_template_zh": "协作与所有权必须分离。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "HUMAN-004",
+      "version": "1.0.0",
+      "group": "HUMAN_LIFECYCLE",
+      "priority": 1697,
+      "description_zh": "每条人工回复必须绑定坐席、Session、Communication Message 和提交时间。",
+      "when": {
+        "field": "communication.author_type",
+        "eq": "AGENT"
+      },
+      "actions": [
+        {
+          "action": "EMIT_LIFECYCLE_EVENT",
+          "for": "HUMAN_REPLY_COMMITTED"
+        }
+      ],
+      "explanation_template_zh": "只记录“系统已回复”无法追责。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "HUMAN-005",
+      "version": "1.0.0",
+      "group": "HUMAN_LIFECYCLE",
+      "priority": 1696,
+      "description_zh": "每条内部备注必须绑定作者且明确 INTERNAL。",
+      "when": {
+        "field": "communication.purpose",
+        "eq": "INTERNAL_NOTE"
+      },
+      "actions": [
+        {
+          "action": "EMIT_LIFECYCLE_EVENT",
+          "for": "INTERNAL_NOTE_COMMITTED"
+        },
+        {
+          "action": "ASSERT_EXTERNAL_DELIVERY_COUNT",
+          "value": 0
+        }
+      ],
+      "explanation_template_zh": "内部备注不得进入用户消息或群播报。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "HUMAN-006",
+      "version": "1.0.0",
+      "group": "HUMAN_LIFECYCLE",
+      "priority": 1695,
+      "description_zh": "Handoff、Transfer、Release、Cancel 仅从 P2-005 控制事实构建追加式历史。",
+      "when": {
+        "field": "control.event_type",
+        "in": [
+          "HANDOFF_REQUESTED",
+          "HANDOFF_ACCEPTED",
+          "HANDOFF_RELEASED",
+          "HANDOFF_CANCELLED",
+          "TRANSFER_COMPLETED"
+        ]
+      },
+      "actions": [
+        {
+          "action": "APPEND_LIFECYCLE_EVENT_FROM_CONTROL_SOURCE"
+        }
+      ],
+      "explanation_template_zh": "P2-007 不复制第二套 Assignment/Handoff 表。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "HUMAN-007",
+      "version": "1.0.0",
+      "group": "HUMAN_LIFECYCLE",
+      "priority": 1694,
+      "description_zh": "管理员越权回复或强制转派必须显式标记 override 原因。",
+      "when": {
+        "field": "control.admin_override",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "REQUIRE_REASON_CODE"
+        },
+        {
+          "action": "EMIT_LIFECYCLE_EVENT",
+          "actor_type": "ADMIN"
+        }
+      ],
+      "explanation_template_zh": "管理员能力不能隐式冒充普通坐席。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INCX-001",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 1600,
+      "description_zh": "120 秒内至少 3 名不同上报人报告兼容服务/现象时产生公共故障候选。",
+      "when": {
+        "all": [
+          {
+            "field": "cluster.window_ms",
+            "lte": 120000
+          },
+          {
+            "field": "cluster.distinct_reporters",
+            "gte": 3
+          },
+          {
+            "field": "cluster.compatible_evidence_count",
+            "gte": 3
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_INCIDENT_CANDIDATE",
+          "value": true
+        },
+        {
+          "action": "SET_PROMOTION_RECOMMENDATION",
+          "value": "REVIEW_LOCAL_INCIDENT"
+        }
+      ],
+      "explanation_template_zh": "这里只产生候选，P2-012 才创建 Incident。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INCX-002",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 1599,
+      "description_zh": "同一上报人通过群聊和单聊重复说明，只计一个受影响上报人。",
+      "when": {
+        "field": "cluster.same_reporter_cross_channel_duplicates",
+        "gt": 0
+      },
+      "actions": [
+        {
+          "action": "DEDUPLICATE_REPORTER_COUNT"
+        },
+        {
+          "action": "PRESERVE_ALL_SOURCE_LEGS"
+        }
+      ],
+      "explanation_template_zh": "渠道数不能夸大影响人数。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INCX-003",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 1598,
+      "description_zh": "同楼层/科室/网段多终端集中故障推荐局部 Incident 复核。",
+      "when": {
+        "all": [
+          {
+            "field": "cluster.distinct_reporters",
+            "gte": 3
+          },
+          {
+            "field": "cluster.distinct_endpoints_or_rooms",
+            "gte": 2
+          },
+          {
+            "field": "cluster.common_locality",
+            "eq": true
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SCOPE_CANDIDATE",
+          "value": "DEPARTMENT_OR_FLOOR"
+        },
+        {
+          "action": "SET_PROMOTION_RECOMMENDATION",
+          "value": "REVIEW_LOCAL_INCIDENT"
+        }
+      ],
+      "explanation_template_zh": "局部范围与临床严重度分别判断。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INCX-004",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 1597,
+      "description_zh": "跨多个科室和楼栋的兼容故障推荐院级 Incident 复核。",
+      "when": {
+        "all": [
+          {
+            "field": "cluster.distinct_reporters",
+            "gte": 8
+          },
+          {
+            "field": "cluster.distinct_departments",
+            "gte": 3
+          },
+          {
+            "field": "cluster.distinct_buildings",
+            "gte": 2
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_SCOPE_CANDIDATE",
+          "value": "HOSPITAL_WIDE"
+        },
+        {
+          "action": "SET_PROMOTION_RECOMMENDATION",
+          "value": "REVIEW_HOSPITAL_INCIDENT"
+        }
+      ],
+      "explanation_template_zh": "阈值为可版本化草案，需试点校准。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INCX-005",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 1596,
+      "description_zh": "权威监控确认公共故障时可直接推荐人工复核，不受人数阈值限制。",
+      "when": {
+        "field": "monitoring.corroborated",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "SET_INCIDENT_CANDIDATE",
+          "value": true
+        },
+        {
+          "action": "ADD_REASON_CODE",
+          "value": "MONITORING_CORROBORATED"
+        }
+      ],
+      "explanation_template_zh": "监控仍不能绕过人工确认创建 Incident。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INCX-006",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 1595,
+      "description_zh": "患者标识和原始消息正文不得参与聚类键。",
+      "when": {
+        "field": "cluster.key_build_requested",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "EXCLUDE_FIELDS",
+          "fields": [
+            "patient_identifier",
+            "raw_message_text"
+          ]
+        },
+        {
+          "action": "USE_SAFE_HASHED_DIMENSIONS"
+        }
+      ],
+      "explanation_template_zh": "聚类键只使用安全服务、现象、时间、地点/资产等维度。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INCX-007",
+      "version": "1.0.0",
+      "group": "INCIDENT_CORRELATION",
+      "priority": 1594,
+      "description_zh": "已存在活动 Incident 时，新匹配上报建议关联和订阅，不删除原 Intake。",
+      "when": {
+        "field": "cluster.active_incident_match",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "SET_PROMOTION_RECOMMENDATION",
+          "value": "LINK_TO_ACTIVE_INCIDENT"
+        },
+        {
+          "action": "PRESERVE_INDIVIDUAL_INTAKE"
+        }
+      ],
+      "explanation_template_zh": "实际 Incident 关系和 Reporter Subscription 属于 P2-012。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NOTIFY-001",
+      "version": "1.0.0",
+      "group": "NOTIFICATION_RECOMMENDATION",
+      "priority": 1500,
+      "description_zh": "群聊来源的工单创建后，建议群内安全回执并通过单聊主动推送工单确认。",
+      "when": {
+        "all": [
+          {
+            "field": "ticket.created",
+            "eq": true
+          },
+          {
+            "field": "journey.origin.channel_type",
+            "eq": "WECOM_GROUP"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "RECOMMEND_NOTIFICATION",
+          "purpose": "GROUP_RECEIPT",
+          "channel": "WECOM_GROUP"
+        },
+        {
+          "action": "RECOMMEND_NOTIFICATION",
+          "purpose": "TICKET_ACKNOWLEDGEMENT",
+          "channel": "WECOM_DIRECT"
+        }
+      ],
+      "explanation_template_zh": "群内回执不依赖强 @；私人提醒是上报人确认的主路径。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NOTIFY-002",
+      "version": "1.0.0",
+      "group": "NOTIFICATION_RECOMMENDATION",
+      "priority": 1499,
+      "description_zh": "单聊自然来源的工单创建后，在同一单聊发送确认建议。",
+      "when": {
+        "all": [
+          {
+            "field": "ticket.created",
+            "eq": true
+          },
+          {
+            "field": "journey.origin.channel_type",
+            "eq": "WECOM_DIRECT"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "RECOMMEND_NOTIFICATION",
+          "purpose": "TICKET_ACKNOWLEDGEMENT",
+          "channel": "WECOM_DIRECT"
+        }
+      ],
+      "explanation_template_zh": "不需要虚构群聊回执。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NOTIFY-003",
+      "version": "1.0.0",
+      "group": "NOTIFICATION_RECOMMENDATION",
+      "priority": 1498,
+      "description_zh": "确认 Incident 后建议一次版本化群播报和对每位订阅上报人的私人更新。",
+      "when": {
+        "field": "incident.state",
+        "eq": "CONFIRMED"
+      },
+      "actions": [
+        {
+          "action": "RECOMMEND_NOTIFICATION",
+          "purpose": "INCIDENT_STATUS_UPDATE",
+          "audience": "ORIGIN_GROUP"
+        },
+        {
+          "action": "RECOMMEND_NOTIFICATION",
+          "purpose": "INCIDENT_STATUS_UPDATE",
+          "audience": "INCIDENT_SUBSCRIBERS"
+        }
+      ],
+      "explanation_template_zh": "实际 Fan-out 必须通过 P2-004 Outbox/Delivery 并使用幂等键。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NOTIFY-004",
+      "version": "1.0.0",
+      "group": "NOTIFICATION_RECOMMENDATION",
+      "priority": 1497,
+      "description_zh": "同一 Ticket/Incident 版本的重复触发必须生成相同幂等范围。",
+      "when": {
+        "field": "notification.trigger_replayed",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "DERIVE_IDEMPOTENCY_SCOPE",
+          "dimensions": [
+            "purpose",
+            "aggregate_ref",
+            "aggregate_version",
+            "reporter_ref",
+            "destination"
+          ]
+        }
+      ],
+      "explanation_template_zh": "防止群播报和私人提醒重复发送。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NOTIFY-005",
+      "version": "1.0.0",
+      "group": "NOTIFICATION_RECOMMENDATION",
+      "priority": 1496,
+      "description_zh": "内部备注只产生内部可见事实，不产生任何外部通知建议。",
+      "when": {
+        "field": "communication.purpose",
+        "eq": "INTERNAL_NOTE"
+      },
+      "actions": [
+        {
+          "action": "RECOMMEND_NOTIFICATION",
+          "purpose": "NO_EXTERNAL_NOTIFICATION",
+          "channel": "NONE"
+        },
+        {
+          "action": "ASSERT_EXTERNAL_DELIVERY_COUNT",
+          "value": 0
+        }
+      ],
+      "explanation_template_zh": "内部备注外泄必须为零。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "NOTIFY-006",
+      "version": "1.0.0",
+      "group": "NOTIFICATION_RECOMMENDATION",
+      "priority": 1495,
+      "description_zh": "Provider 调用后副作用不明确时只建议对账，不建议盲目重发。",
+      "when": {
+        "field": "delivery.side_effect_state",
+        "eq": "UNKNOWN"
+      },
+      "actions": [
+        {
+          "action": "RECOMMEND_NOTIFICATION",
+          "purpose": "DELIVERY_RECONCILIATION",
+          "audience": "ASSIGNED_AGENTS"
+        },
+        {
+          "action": "DO_NOT_RETRY_AUTOMATICALLY"
+        }
+      ],
+      "explanation_template_zh": "沿用 P2-004 Reconciliation 边界。",
+      "safety": [
+        "仅输出结构化事实、候选或通知建议，不产生业务副作用。"
+      ]
+    }
+  ]
+}

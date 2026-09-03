@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "view_model_version": "1.2.0",
+  "message_type": "template_card",
+  "precondition": "TICKET_COMMITTED",
+  "idempotency_key": "ticket:{ticket_id}:created:{person_id}:v1",
+  "template_card": {
+    "card_type": "text_notice",
+    "source": {
+      "desc": "三院 IT 服务"
+    },
+    "main_title": {
+      "title": "故障已受理",
+      "desc": "已进入处理流程"
+    },
+    "emphasis_content": {
+      "title": "4821",
+      "desc": "工单尾号"
+    },
+    "sub_title_text": "门诊工作站无法登录",
+    "horizontal_content_list": [
+      {
+        "keyname": "状态",
+        "value": "待接单"
+      },
+      {
+        "keyname": "来源",
+        "value": "门诊工作联系群"
+      },
+      {
+        "keyname": "时间",
+        "value": "09-03 08:42"
+      }
+    ],
+    "jump_list": [
+      {
+        "type": 1,
+        "title": "查看处理进度",
+        "url": "<AUTHENTICATED_OPAQUE_TIMELINE_URL>"
+      }
+    ],
+    "card_action": {
+      "type": 1,
+      "url": "<AUTHENTICATED_OPAQUE_TIMELINE_URL>"
+    },
+    "task_id": "ticket_<OPAQUE_PUBLIC_REF>_v1"
+  },
+  "security_assertions": {
+    "display_suffix_is_database_key": false,
+    "display_suffix_is_unique_identifier": false,
+    "display_suffix_is_authorization": false,
+    "timeline_requires_authentication": true,
+    "reporter_safe_view_only": true,
+    "patient_or_internal_identifier_present": false
+  },
+  "capability_state": "CONTRACT_EXAMPLE_ONLY_TEMPLATE_CARD_SENDER_PENDING"
+}

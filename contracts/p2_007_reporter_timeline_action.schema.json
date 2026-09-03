@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/p2-007/reporter-timeline-action.schema.json",
+  "title": "P2-007 Reporter-safe Timeline Action",
+  "type": "object",
+  "additionalProperties": false,
+  "dependentRequired": {
+    "expires_at": [
+      "expires_epoch_ms"
+    ],
+    "expires_epoch_ms": [
+      "expires_at"
+    ]
+  },
+  "required": [
+    "schema_version",
+    "action_ref",
+    "ticket_public_ref",
+    "requires_authentication",
+    "authorization_mode",
+    "reporter_safe_view",
+    "opaque_reference",
+    "display_suffix_accepted_as_credential"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "action_ref": {
+      "type": "string",
+      "pattern": "^timeline_[a-f0-9]{24,96}$"
+    },
+    "ticket_public_ref": {
+      "type": "string",
+      "pattern": "^ticketpub_[a-f0-9]{24,96}$"
+    },
+    "requires_authentication": {
+      "const": true
+    },
+    "authorization_mode": {
+      "enum": [
+        "WECOM_IDENTITY_SESSION",
+        "REPORTER_BOUND_SESSION",
+        "SHORT_LIVED_SIGNED_ACTION"
+      ]
+    },
+    "reporter_safe_view": {
+      "const": true
+    },
+    "opaque_reference": {
+      "const": true
+    },
+    "display_suffix_accepted_as_credential": {
+      "const": false
+    },
+    "expires_at": {
+      "anyOf": [
+        { "$ref": "./local_datetime.schema.json" },
+        { "type": "null" }
+      ]
+    },
+    "expires_epoch_ms": {
+      "anyOf": [
+        { "$ref": "./epoch_ms_string.schema.json" },
+        { "type": "null" }
+      ]
+    }
+  }
+}

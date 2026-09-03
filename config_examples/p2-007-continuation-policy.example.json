@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "policy_version": "1.2.0",
+  "strategy": "HYBRID",
+  "provider_context": {
+    "purpose": [
+      "TRANSPORT_EVIDENCE",
+      "DEDUPE",
+      "SAME_CHANNEL_REPLY"
+    ],
+    "cross_channel_authority": false
+  },
+  "continuation_ref": {
+    "cross_channel_authority": true,
+    "opaque": true,
+    "hash_at_rest": true,
+    "bound_to_reporter": true,
+    "bound_to_bot": true,
+    "single_use_for_binding": true,
+    "authorization_token": false,
+    "ttl_minutes": 120
+  },
+  "resolution_priority": [
+    "TEMPLATE_CARD_TASK_ID_OR_EVENT_KEY",
+    "EXISTING_DIRECT_CHANNEL_BINDING",
+    "EXPLICIT_CONTINUATION_REF",
+    "EXPLICIT_TICKET_OR_INTAKE_REFERENCE",
+    "EXACTLY_ONE_OPEN_JOURNEY_FOR_REPORTER",
+    "ASK_USER_TO_SELECT",
+    "CREATE_DIRECT_ORGANIC_JOURNEY"
+  ],
+  "same_user_and_time_only_is_sufficient": false
+}
