@@ -43,7 +43,7 @@ The machine-readable, per-table and per-column inventory is in `evidence/arch-00
 
 ## Owned schemas
 
-The active owned inventory is `channel`, `intake`, `pilot_ticket`, `notification`, `operations`, `conversation`, `communication`, and `platform`. `integration` is reserved for explicit registration when a future authorized migration creates it. PostgreSQL system schemas and third-party databases are excluded.
+The owned inventory is `channel`, `intake`, `pilot_ticket`, `notification`, `operations`, `conversation`, `communication`, `platform`, and the reserved future project schema `integration`. Registration does not create or authorize the future Integration schema. PostgreSQL system schemas and third-party databases are excluded.
 
 ## Ordering, hash, and rebuild risk
 

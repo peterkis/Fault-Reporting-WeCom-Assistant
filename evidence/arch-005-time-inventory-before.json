@@ -105,9 +105,9 @@
     "operations",
     "conversation",
     "communication",
-    "platform"
+    "platform",
+    "integration"
   ],
-  "future_owned_schema_registrations": ["integration"],
   "forbidden_type_inventory": [
     {
       "table": "channel.message_inbox",
