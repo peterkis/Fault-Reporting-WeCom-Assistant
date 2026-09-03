@@ -1,6 +1,10 @@
 # P2-015 规则优先受理编排、跨渠道接触旅程与人工审核
 
-- Status: TODO / REQUIRES_SEPARATE_AUTHORIZATION
+- Status: DONE
+- Authorized at: 2026-09-03
+- Authorization evidence: `evidence/p2-015-start-authorization.md`
+- Completed at: 2026-09-03
+- Completion evidence: `evidence/p2-015-rule-first-intake-orchestration-report.md`
 - Phase: P2
 - Lane: P2-C
 - Target Gate: P2-G2
@@ -35,4 +39,4 @@
 
 ## Stop line
 
-当前未授权、未实现。P2-015 完成也不授权 P2-016、P2-012、P2-G2 或 P2-008。
+P2-015 已独立完成，当前无活动任务或 Lane。P2-015 完成不授权 P2-016、P2-012、P2-G2 或 P2-008。

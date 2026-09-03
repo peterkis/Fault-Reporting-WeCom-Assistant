@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://hospital.local/contracts/p2_015_orchestration_result.schema.json",
+  "type": "object", "additionalProperties": false, "required": ["ok", "model_provider_calls"],
+  "properties": {
+    "ok": { "type": "boolean" }, "processed": { "type": "boolean" }, "reason": { "type": "string" },
+    "journey": { "$ref": "p2_015_contact_journey.schema.json" }, "leg": { "$ref": "p2_015_channel_leg.schema.json" },
+    "continuation": { "anyOf": [{ "$ref": "p2_015_continuation_ref.schema.json" }, { "type": "null" }] },
+    "decision": { "$ref": "p2_015_deterministic_decision.schema.json" }, "action_results": { "type": "array", "maxItems": 20 },
+    "model_provider_calls": { "const": 0 }, "sender_calls": { "const": 0 }, "incident_writes": { "const": 0 }
+  }
+}

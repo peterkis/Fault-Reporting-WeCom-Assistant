@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_015_contact_journey.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "origin_intake_id", "entry_mode", "origin_channel", "current_channel", "profile_resolution_status", "status", "row_version", "evaluation_due_at", "evaluation_due_epoch_ms", "reported_at", "last_activity_at", "retention_until", "retention_until_epoch_ms"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[0-9a-f-]{36}$" },
+    "origin_intake_id": { "type": "string", "pattern": "^[0-9a-f-]{36}$" },
+    "origin_session_id": { "type": ["string", "null"] },
+    "current_session_id": { "type": ["string", "null"] },
+    "linked_ticket_id": { "type": ["string", "null"] },
+    "entry_mode": { "enum": ["GROUP_MENTION_INLINE", "GROUP_MENTION_TO_DIRECT_GUIDED", "DIRECT_ORGANIC"] },
+    "origin_channel": { "enum": ["WECOM_GROUP", "WECOM_DIRECT"] },
+    "current_channel": { "enum": ["WECOM_GROUP", "WECOM_DIRECT"] },
+    "profile_resolution_status": { "enum": ["RESOLVED", "DEFERRED", "NOT_FOUND", "NOT_REQUIRED"] },
+    "status": { "enum": ["OPEN", "WAITING_DESCRIPTION", "WAITING_REVIEW", "TICKET_LINKED", "ENDED"] },
+    "row_version": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+    "evaluation_due_at": { "$ref": "local_datetime.schema.json" },
+    "evaluation_due_epoch_ms": { "$ref": "epoch_ms_string.schema.json" },
+    "reported_at": { "$ref": "local_datetime.schema.json" },
+    "last_activity_at": { "$ref": "local_datetime.schema.json" },
+    "ended_at": { "anyOf": [{ "$ref": "local_datetime.schema.json" }, { "type": "null" }] },
+    "retention_until": { "$ref": "local_datetime.schema.json" },
+    "retention_until_epoch_ms": { "$ref": "epoch_ms_string.schema.json" }
+  }
+}

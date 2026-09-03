@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://hospital.local/contracts/p2_015_safe_action_suggestion.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["id", "decision_id", "action_ordinal", "action_type", "execution_policy", "safe_payload", "payload_hash", "state", "row_version"],
+  "properties": {
+    "id": { "type": "string" }, "decision_id": { "type": "string" }, "action_ordinal": { "type": "integer", "minimum": 1 },
+    "action_type": { "enum": ["CREATE_MINIMAL_TICKET", "APPLY_INTAKE_CLASSIFICATION", "REQUEST_ONE_DESCRIPTION", "ENQUEUE_MANUAL_REVIEW", "APPEND_RELATED_FOLLOW_UP", "QUERY_AUTHORIZED_STATUS", "ROUTE_SERVICE_REQUEST", "ROUTE_BUSINESS_CONSULTATION", "SEND_FIXED_ACKNOWLEDGEMENT", "SEND_FIXED_SCOPE_NOTICE", "ENQUEUE_INCIDENT_REVIEW"] },
+    "execution_policy": { "enum": ["AUTO_SAFE_DB_ONLY", "HUMAN_CONFIRM_REQUIRED", "NO_EXECUTION_IN_P2_015"] },
+    "safe_payload": { "type": "object" }, "payload_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "state": { "enum": ["PROPOSED", "EXECUTED", "REPLAYED", "FAILED", "CANCELLED"] }, "row_version": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+    "executed_at": { "anyOf": [{ "$ref": "local_datetime.schema.json" }, { "type": "null" }] }
+  }
+}

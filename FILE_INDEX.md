@@ -18,7 +18,9 @@
 - `tasks/P2-G1_human_only_conversation_center_assembly.md`：P2-G1 Human-only Assembly 授权、验收和停止线；
 - `tasks/ARCH-005_asia_shanghai_local_business_time.md`：ARCH-005 独立授权、实现边界与目标现场重验停止线；
 - `tasks/ARCH-006_ai_optional_rule_first_service_loop.md`：ARCH-006 规则优先、AI 可选的 P2 重基线与停止线；
-- `tasks/P2-015_rule_first_intake_orchestration_manual_review.md`：未来规则受理编排、Contact Journey 与人工审核任务（未授权）；
+- `tasks/P2-015_rule_first_intake_orchestration_manual_review.md`：已完成的规则受理编排、Contact Journey 与人工审核任务；
+- `evidence/p2-015-start-authorization.md`：P2-015 独立授权、固定基线和严格停止线；
+- `evidence/p2-015-rule-first-intake-orchestration-report.md`：P2-015 完成验证、资源、隐私、回归和停止线 Evidence；
 - `tasks/P2-016_full_ticket_lifecycle_workbench_notifications.md`：未来完整 Ticket 工作台、Reporter Timeline 与通知任务（未授权）；
 - `evidence/arch-005-start-authorization.md`：ARCH-005 Gate、暂存分支隔离和迁移安全授权 Evidence；
 - `evidence/arch-005-time-inventory-before.json` / `.md`：迁移前时间资产、逐列分类、行数、catalog 指纹和备份事实；
@@ -90,9 +92,9 @@
 
 ## P2-G1 Assembly 状态
 
-- P2-003、P2-004、P2-005、P2-006：`DONE`；P2-G1：`PASSED`；当前无活动 Lane；
+- P2-003、P2-004、P2-005、P2-006、P2-015：`DONE`；P2-G1：`PASSED`；当前无活动 Lane；
 - `docs/42_p2_006_realtime_web_workbench.md`：Internal Alpha、REST/Auth、Query、Command、Delivery、SSE/Polling 与 UI 边界。
-- P2-007 保持 `DONE`；P2-015、P2-016、P2-012、P2-008 至 P2-014 继续为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；
+- P2-007 与 P2-015 保持 `DONE`；P2-016 为下一候选但未授权；P2-012、P2-008 至 P2-014 继续要求独立授权；
 - `P2-G1` 已完成真实测试 Workbench、企业微信 Sender、Replay Gap、恢复和资源现场 Gate；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 未启用生产 Workbench、模型或医院内网；本 Gate 通过不等同于 Phase 2 Go、生产或临床上线。
 
@@ -219,6 +221,15 @@
 - `docs/53_human_confirmed_incident_before_ai.md`：P2-012 人工确认 Incident 边界；
 - `docs/54_p2_g2_deterministic_full_service_loop_gate.md`：新 P2-G2 验收与后续 Gate；
 - `architecture/rule_first_service_loop.mmd`、`deterministic_intake_sequence.mmd`、`full_ticket_lifecycle.mmd`、`incident_human_confirmation.mmd`：ARCH-006 Mermaid 视图。
+
+## P2-015 实现
+
+- `database/migrations/030_p2_015_rule_first_intake_orchestration.sql`：六张 `intake.*` 表与 Intake Event Check 的权威增量迁移；
+- `contracts/p2_015_*.schema.json` / `p2_015_contracts.d.ts`：Journey、Leg、continuation、Decision、Review、Safe Action 与内部编排契约；
+- `src/p2-015-*.mjs`：确定性路由、持久化 Store、安全 Port/Executor、内部 Query 与单 Worker；
+- `scripts/p2-015-migrate.mjs` / `p2-015-reconcile.mjs` / `validate-p2-015-rule-first-intake.mjs`：迁移、catalog 对账和静态关闭线；
+- `tests/p2-015-*.test.mjs` / `tests/p2-015-*.integration.test.mjs`：纯函数、隔离 PostgreSQL、并发、kill/restart、容量、隐私和资源验证；
+- `tests/fixtures/p2-015/`：对冻结 P2-007 96 + 42 + 64 案例的 ID-only 人工金标引用。
 
 ## Evidence
 

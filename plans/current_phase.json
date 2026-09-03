@@ -6,7 +6,7 @@
   "phase_name": "Conversation Center 与 AI 协作",
   "status": "IN_PROGRESS",
   "started": true,
-  "last_completed_task": "P2-007",
+  "last_completed_task": "P2-015",
   "last_completed_gate": "P2-G1",
   "last_completed_architecture_task": "ARCH-006",
   "active_task": null,
@@ -18,10 +18,11 @@
     "P2-004",
     "P2-005",
     "P2-006",
-    "P2-007"
+    "P2-007",
+    "P2-015"
   ],
   "active_lane": null,
-  "implementation_authorization_status": "ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION",
+  "implementation_authorization_status": "P2_015_DONE_AWAITING_P2_016_AUTHORIZATION",
   "authorized_architecture_tasks": [
     "ARCH-005",
     "ARCH-006"
@@ -44,7 +45,11 @@
   "p2_g3_status": "NOT_STARTED",
   "p2_g4_status": "NOT_STARTED",
   "p2_g5_status": "NOT_STARTED",
-  "p2_015_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_015_status": "DONE",
+  "p2_015_authorized_at": "2026-09-03",
+  "p2_015_authorization_evidence": "evidence/p2-015-start-authorization.md",
+  "p2_015_completed_at": "2026-09-03",
+  "p2_015_completion_evidence": "evidence/p2-015-rule-first-intake-orchestration-report.md",
   "p2_016_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
   "p2_012_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
   "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
@@ -53,7 +58,7 @@
   "p2_011_status": "TODO",
   "p2_013_status": "TODO",
   "p2_014_status": "TODO",
-  "next_task_candidate": "P2-015",
+  "next_task_candidate": "P2-016",
   "next_task_authorized": false,
   "authorized_gates": [
     "P2-G1"
@@ -84,9 +89,9 @@
   "p2_006_completed_at": "2026-09-01",
   "p2_006_completion_evidence": "evidence/p2-006-realtime-workbench-report.md",
   "allowed_scope": [
-    "rebaseline architecture, plans, future tasks, gates, indexes, validators, architecture tests, diagrams, and ARCH-006 evidence only",
-    "preserve the completed ARCH-006 rule-first architecture baseline without starting future runtime tasks",
-    "keep P2-007 outputs advisory until separately authorized P2-015 assembly",
+    "preserve the completed P2-015 rule-first orchestration, Contact Journey, continuation, Manual Review, safe action, internal query, and worker evidence",
+    "consume the frozen P2-007 pure output only through the P2-015 adapter and preserve P1 committed facts",
+    "keep P2-015 disabled by default and stop before P2-016, P2-012, P2-G2, or P2-008",
     "inherit ARCH-005 LocalDateTime, PhysicalEpochMs, and explicit same-second ordering contracts",
     "keep every committed feature-flag default false and preserve completed P1 and P2-001 through P2-007 behavior"
   ],
@@ -103,7 +108,7 @@
     "historical ticket compatibility scope"
   ],
   "forbidden_without_task_authorization": [
-    "start P2-015, P2-016, P2-012, P2-008, or any later P2 task without separate authorization",
+    "start P2-016, P2-012, P2-008, or any later P2 task without separate authorization",
     "start any P3 task",
     "mark P2-G1 PASSED or GO without live WeCom evidence and project-owner approval",
     "start P2-G2 or any later gate",
@@ -136,7 +141,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION",
+    "activation_status": "P2_015_DONE_AWAITING_P2_016_AUTHORIZATION",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   }
 }

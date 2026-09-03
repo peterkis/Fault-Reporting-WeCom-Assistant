@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_015_channel_leg.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["id", "journey_id", "leg_ordinal", "leg_type", "source_intake_id", "status", "row_version", "opened_at"],
+  "properties": {
+    "id": { "type": "string" }, "journey_id": { "type": "string" },
+    "leg_ordinal": { "type": "integer", "minimum": 1 },
+    "leg_type": { "enum": ["GROUP_ORIGIN", "DIRECT_GUIDED", "DIRECT_ORGANIC", "GROUP_CONTINUATION"] },
+    "source_intake_id": { "type": "string" }, "conversation_thread_id": { "type": ["string", "null"] },
+    "conversation_session_id": { "type": ["string", "null"] }, "origin_channel_message_id": { "type": ["string", "null"], "pattern": "^[0-9]+$" },
+    "status": { "enum": ["OPEN", "CLOSED"] }, "row_version": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+    "opened_at": { "$ref": "local_datetime.schema.json" },
+    "closed_at": { "anyOf": [{ "$ref": "local_datetime.schema.json" }, { "type": "null" }] }
+  }
+}

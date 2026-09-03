@@ -16,7 +16,7 @@ test('ARCH-005 architecture validator freezes migrations and reports all hard st
   assert.equal(result.event_ordering_violation_count, 0);
 });
 
-test('P2-007 keeps the frozen ARCH-005 contract after ARCH-006 and P2-015 remains unauthorized', async () => {
+test('P2-007 and its authorized P2-015 successor keep the frozen ARCH-005 contract', async () => {
   const note = await readFile('docs/49_p2_007_time_contract_migration_note.md', 'utf8');
   const manifest = JSON.parse(await readFile('MANIFEST.json', 'utf8'));
   assert.match(note, /v1\.2\.1/u);
@@ -24,13 +24,15 @@ test('P2-007 keeps the frozen ARCH-005 contract after ARCH-006 and P2-015 remain
   assert.equal(manifest.last_completed_architecture_task, 'ARCH-006');
   assert.equal(manifest.arch_005_status, 'DONE');
   assert.equal(manifest.arch_006_status, 'DONE');
-  assert.equal(manifest.active_task, null);
-  assert.equal(manifest.active_lane, null);
-  assert.equal(manifest.last_completed_task, 'P2-007');
-  assert.equal(manifest.next_task_candidate, 'P2-015');
-  assert.equal(manifest.next_task_authorized, false);
+  assert.equal(['P2-007', 'P2-015'].includes(manifest.last_completed_task), true);
+  if (manifest.p2_015_status === 'AUTHORIZED') {
+    assert.equal(manifest.active_task, 'P2-015'); assert.equal(manifest.active_lane, 'P2-C');
+    assert.equal(manifest.next_task_candidate, 'P2-015'); assert.equal(manifest.next_task_authorized, true);
+  } else {
+    assert.equal(manifest.p2_015_status, 'DONE'); assert.equal(manifest.active_task, null); assert.equal(manifest.active_lane, null);
+    assert.equal(manifest.next_task_candidate, 'P2-016'); assert.equal(manifest.next_task_authorized, false);
+  }
   assert.equal(manifest.p2_007_status, 'DONE');
-  assert.equal(manifest.p2_015_status, 'TODO_REQUIRES_SEPARATE_AUTHORIZATION');
   assert.equal(manifest.p2_008_status, 'TODO_BLOCKED_BY_P2_G2');
   assert.equal(manifest.p2_g2_status, 'NOT_STARTED');
 });

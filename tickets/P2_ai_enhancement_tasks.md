@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006 已完成。当前无活动任务或 Lane；下一候选为 P2-015，但未授权。P2-015、P2-016、P2-012、P2-008 至 P2-014 和 P2-G2 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED` 与 ARCH-006 `DONE` 均不是 Phase 2 `GO`。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-G1、ARCH-005、ARCH-006 已完成。当前无活动任务或 Lane；下一候选 P2-016 未授权。P2-016、P2-012、P2-008 至 P2-014 和 P2-G2 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED`、ARCH-006/P2-015 `DONE` 均不是 Phase 2 `GO`。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 

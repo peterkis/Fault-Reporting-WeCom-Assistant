@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "gold_version": "p2-015-safe-route-gold-v1",
+  "curation": "Project-owner specification plus deterministic mapping of frozen synthetic P2-007 fixtures",
+  "source_case_counts": {
+    "hospital-it-evaluation-corpus.v1": 96,
+    "hospital-it-multichannel-evaluation-corpus.v1": 42,
+    "multichannel_decision_cases.v1.2": 64
+  },
+  "total_source_cases": 202,
+  "deduplication": "none; every frozen source case is referenced exactly once and raw messages are not copied",
+  "required_result_codes": [
+    "TICKET_ELIGIBLE", "NEEDS_DESCRIPTION", "MANUAL_REVIEW_REQUIRED",
+    "RELATED_FOLLOW_UP", "STATUS_QUERY", "SERVICE_REQUEST",
+    "BUSINESS_CONSULTATION", "ACKNOWLEDGEMENT", "OUT_OF_SCOPE",
+    "INCIDENT_REVIEW_CANDIDATE"
+  ],
+  "metrics": {
+    "deterministic_safe_route_coverage_minimum": 0.9,
+    "explicit_incident_report_missed": 0,
+    "clinical_high_risk_missed": 0,
+    "real_fault_auto_ignored": 0,
+    "unsupported_root_cause_confirmed": 0,
+    "manual_review_reachable_percent": 100,
+    "same_user_time_only_false_link": 0,
+    "determinism_mismatch": 0,
+    "model_provider_calls": 0
+  },
+  "privacy": "Synthetic references only; no raw group text, patient identifier, IP, userid, chatid, phone, or media URL."
+}

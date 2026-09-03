@@ -1,0 +1,8 @@
+export type P2015LocalDateTime = string;
+export type P2015EpochMsString = string;
+export type P2015ResultCode = 'TICKET_ELIGIBLE' | 'NEEDS_DESCRIPTION' | 'MANUAL_REVIEW_REQUIRED' | 'RELATED_FOLLOW_UP' | 'STATUS_QUERY' | 'SERVICE_REQUEST' | 'BUSINESS_CONSULTATION' | 'ACKNOWLEDGEMENT' | 'OUT_OF_SCOPE' | 'INCIDENT_REVIEW_CANDIDATE';
+export type P2015EntryMode = 'GROUP_MENTION_INLINE' | 'GROUP_MENTION_TO_DIRECT_GUIDED' | 'DIRECT_ORGANIC';
+export interface P2015OrchestrationInput { service_intake_id: string; trace_id?: string; feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED?: boolean | 'true' | 'false'; MANUAL_REVIEW_QUEUE_ENABLED?: boolean | 'true' | 'false' } }
+export interface P2015SafeRoute { result_code: P2015ResultCode; reason_code: string; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; input_hash: string; result_hash: string; manual_review_required: boolean; ticket_creation_recommended: boolean; incident_review_candidate: boolean }
+export interface ReporterDirectoryPort { resolve(input: Readonly<Record<string, unknown>>): Promise<Readonly<{ status: 'RESOLVED' | 'DEFERRED' | 'NOT_FOUND' | 'NOT_REQUIRED'; snapshot: Record<string, unknown> }>> }
+export interface P2015InternalApplicationPort { listManualReviews(input: unknown): Promise<unknown>; getManualReviewDetail(input: unknown): Promise<unknown>; resolveManualReview(input: unknown): Promise<unknown>; getContactJourney(input: unknown): Promise<unknown>; listJourneyLegs(input: unknown): Promise<unknown>; listJourneyDecisions(input: unknown): Promise<unknown>; processPersistedIntake(input: P2015OrchestrationInput): Promise<unknown>; processDueBatch(input: unknown): Promise<unknown>; replayDecision(input: unknown): Promise<unknown> }

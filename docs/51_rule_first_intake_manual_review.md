@@ -1,5 +1,7 @@
 # 51. 规则优先受理与人工审核结果契约
 
+> 实施进展（2026-09-03）：本契约已由 P2-015 在默认关闭的 Feature Flag 后实现；完成 Evidence 为 `evidence/p2-015-rule-first-intake-orchestration-report.md`。P2-016、P2-012、P2-G2 与生产启用仍未授权。
+
 ## 1. 决策输入
 
 所有输入必须引用已经持久化的 Channel Message、Service Intake、Journey/Leg 上下文、可选已有 Ticket/Incident Candidate、规则/目录版本和 ARCH-005 时间/显式顺序。输出必须持久化、带 `result_hash`、可重放且同输入产生同结果；规则层只产生安全动作建议。

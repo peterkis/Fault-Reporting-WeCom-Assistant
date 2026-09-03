@@ -106,6 +106,33 @@ const profiles = Object.freeze({
     p2007Status: 'DONE',
     p2g1Status: 'PASSED',
   }),
+  P2_015_AUTHORIZED: Object.freeze({
+    lastCompletedTask: 'P2-007',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: 'P2-015',
+    activeLane: 'P2-C',
+    candidate: 'P2-015',
+    candidateAuthorized: true,
+    authorizedTasks: Object.freeze(['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006', 'P2-007', 'P2-015']),
+    p2006Status: 'DONE',
+    p2007Status: 'DONE',
+    activeTaskStatus: 'AUTHORIZED',
+    p2g1Status: 'PASSED',
+  }),
+  P2_015_DONE_AWAITING_P2_016_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-015',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: null,
+    activeLane: null,
+    candidate: 'P2-016',
+    candidateAuthorized: false,
+    authorizedTasks: Object.freeze(['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006', 'P2-007', 'P2-015']),
+    p2006Status: 'DONE',
+    p2007Status: 'DONE',
+    p2g1Status: 'PASSED',
+  }),
 });
 
 test('V1.4 architecture validator passes', () => {
@@ -202,7 +229,17 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
   );
   assert.equal(backlog.tasks.filter((task) => task.phase === 'P3').every((task) => task.status === 'TODO'), true);
   if (profile.lastCompletedArchitectureTask === 'ARCH-006') {
-    assert.equal(backlog.tasks.find((task) => task.id === 'P2-015').status, 'TODO');
+    assert.equal(backlog.tasks.find((task) => task.id === 'P2-015').status,
+      status === 'P2_015_AUTHORIZED' ? 'AUTHORIZED' : status === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION' ? 'DONE' : 'TODO');
+    if (status === 'P2_015_AUTHORIZED' || status === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION') {
+      const done = status === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
+      assert.equal(fs.existsSync(path.join(root, 'evidence/p2-015-start-authorization.md')), true);
+      for (const view of [manifest, current, backlog, parallel, taskIndex, projectSummary.project]) {
+        assert.equal(view.p2_015_status, done ? 'DONE' : 'AUTHORIZED');
+        assert.equal(view.p2_015_authorization_evidence, 'evidence/p2-015-start-authorization.md');
+        if (done) assert.equal(view.p2_015_completion_evidence, 'evidence/p2-015-rule-first-intake-orchestration-report.md');
+      }
+    }
     assert.equal(backlog.tasks.find((task) => task.id === 'P2-016').status, 'TODO');
     assert.equal(backlog.tasks.find((task) => task.id === 'P2-012').authorization_status, 'REQUIRES_SEPARATE_AUTHORIZATION');
     assert.equal(backlog.tasks.find((task) => task.id === 'P2-008').authorization_status, 'BLOCKED_BY_P2_G2');
