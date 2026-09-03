@@ -12,12 +12,15 @@
   ],
   "last_completed_task": "P2-006",
   "last_completed_gate": "P2-G1",
-  "active_task": "ARCH-005",
-  "active_lane": "ARCHITECTURE",
-  "implementation_authorization_status": "ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION_P2_007_BLOCKED",
+  "last_completed_architecture_task": "ARCH-005",
+  "active_task": null,
+  "active_lane": null,
+  "implementation_authorization_status": "ARCH_005_COMPLETED_P2_007_REQUIRES_SEPARATE_AUTHORIZATION",
   "authorized_architecture_tasks": ["ARCH-005"],
-  "arch_005_status": "READY_FOR_TARGETED_LIVE_REVALIDATION",
-  "p2_007_status": "TODO_BLOCKED_BY_ARCH_005",
+  "arch_005_status": "DONE",
+  "arch_005_completed_at": "2026-09-03",
+  "arch_005_completion_evidence": "evidence/arch-005-targeted-live-revalidation.md",
+  "p2_007_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
   "p2_g1_status": "PASSED",
   "authorized_gates": [
     "P2-G1"
@@ -60,7 +63,7 @@
     "HOSPITAL_API_SOURCE_ENABLED": false,
     "MONITORING_SOURCE_ENABLED": false
   },
-  "rule": "P2-G1 is PASSED and ARCH-005 is the only active architecture lane. P2-007 is blocked by ARCH-005 and remains unauthorized; later tasks and P2-G2 and later gates remain unauthorized. Every committed P2 and P3 feature-flag default remains false; production or clinical enablement requires separate authorization.",
+  "rule": "P2-G1 is PASSED and ARCH-005 is complete. There is no active task or lane. P2-007 remains TODO and requires separate authorization; later tasks and P2-G2 and later gates remain unauthorized. Every committed P2 and P3 feature-flag default remains false; production or clinical enablement requires separate authorization.",
   "migration_number_reservations": {
     "P2-A": "010-019",
     "P2-B": "020-029",

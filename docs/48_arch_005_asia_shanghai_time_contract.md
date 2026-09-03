@@ -48,6 +48,6 @@ Every migrated deadline or elapsed anchor has an authoritative `*_epoch_ms` BIGI
 
 Workbench renders the server LocalDateTime text directly as `YYYY-MM-DD HH:mm`, so UTC, Asia/Tokyo, and America/New_York browser settings show the same value. New structured Evidence uses both `event_time` LocalDateTime and `event_epoch_ms` PhysicalEpochMs. Historical Evidence is not rewritten.
 
-## Stop line
+## Closure and stop line
 
-Automated acceptance advances ARCH-005 only to `READY_FOR_TARGETED_LIVE_REVALIDATION`. P2-007, DeepSeek, OCR, Incident, P2-G2/P3, production/clinical enablement, and all Feature Flags remain unauthorized.
+Automated acceptance advanced ARCH-005 only to `READY_FOR_TARGETED_LIVE_REVALIDATION`. The separately authorized targeted live revalidation passed on 2026-09-03; closure Evidence is `evidence/arch-005-targeted-live-revalidation.md`. P2-007 remains `TODO / REQUIRES_SEPARATE_AUTHORIZATION`; DeepSeek, OCR, Incident, P2-G2/P3, production/clinical enablement, and all Feature Flags remain unauthorized.

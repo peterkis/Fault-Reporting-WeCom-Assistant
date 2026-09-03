@@ -1,6 +1,6 @@
 # ARCH-005 Asia/Shanghai Local Business Time Contract
 
-- Status: READY_FOR_TARGETED_LIVE_REVALIDATION
+- Status: DONE
 - Phase: P2
 - Lane: ARCHITECTURE
 - Authorized at: 2026-09-03
@@ -20,6 +20,6 @@ Establish one Asia/Shanghai business-time contract across project-owned PostgreS
 
 ## Completion boundary
 
-Automated acceptance can only set `READY_FOR_TARGETED_LIVE_REVALIDATION`. Completion requires the separately executed minimum live revalidation and project-owner approval. P2-007 remains `TODO / BLOCKED_BY_ARCH_005`; DeepSeek, OCR, Incident, P2-G2/P3, production/clinical enablement, and all Feature Flags remain unauthorized and disabled.
+Automated acceptance first set `READY_FOR_TARGETED_LIVE_REVALIDATION`. The separately authorized minimum live revalidation passed on 2026-09-03 and is recorded in `evidence/arch-005-targeted-live-revalidation.md`. P2-007 remains `TODO / REQUIRES_SEPARATE_AUTHORIZATION`; DeepSeek, OCR, Incident, P2-G2/P3, production/clinical enablement, and all Feature Flags remain unauthorized and disabled.
 
-Automated migration, projection rehash/resequence, browser timezone matrix, and P1/P2/P2-G1 regressions passed on 2026-09-03. Targeted live revalidation has not been executed in this task.
+Automated migration, projection rehash/resequence, browser timezone matrix, and P1/P2/P2-G1 regressions passed on 2026-09-03. Targeted live revalidation also passed on 2026-09-03 with real test-group inbound, acknowledged human reply, Gateway fault/reconnect, a real Windows timezone matrix, and a 10-minute controlled resource observation. The controlled fault's expected Dead Letter Evidence is retained with zero Provider calls and zero unknown side effects.

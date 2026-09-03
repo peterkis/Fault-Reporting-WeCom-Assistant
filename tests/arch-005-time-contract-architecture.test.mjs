@@ -16,13 +16,16 @@ test('ARCH-005 architecture validator freezes migrations and reports all hard st
   assert.equal(result.event_ordering_violation_count, 0);
 });
 
-test('P2-007 staging conflict is documented without importing or authorizing implementation', async () => {
+test('P2-007 staging conflict remains documented and unauthorized after ARCH-005 closure', async () => {
   const note = await readFile('docs/49_p2_007_time_contract_migration_note.md', 'utf8');
   const manifest = JSON.parse(await readFile('MANIFEST.json', 'utf8'));
   assert.match(note, /v1\.2\.1/u);
   assert.match(note, /format: date-time/u);
-  assert.equal(manifest.active_task, 'ARCH-005');
+  assert.equal(manifest.last_completed_architecture_task, 'ARCH-005');
+  assert.equal(manifest.arch_005_status, 'DONE');
+  assert.equal(manifest.active_task, null);
+  assert.equal(manifest.active_lane, null);
   assert.equal(manifest.next_task_candidate, 'P2-007');
   assert.equal(manifest.next_task_authorized, false);
-  assert.equal(manifest.p2_007_status, 'TODO_BLOCKED_BY_ARCH_005');
+  assert.equal(manifest.p2_007_status, 'TODO_REQUIRES_SEPARATE_AUTHORIZATION');
 });

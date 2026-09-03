@@ -5,7 +5,8 @@
   "current_phase": "P2",
   "last_completed_task": "P2-006",
   "last_completed_gate": "P2-G1",
-  "active_task": "ARCH-005",
+  "last_completed_architecture_task": "ARCH-005",
+  "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -15,15 +16,17 @@
     "P2-005",
     "P2-006"
   ],
-  "active_lane": "ARCHITECTURE",
-  "implementation_authorization_status": "ARCH_005_READY_FOR_TARGETED_LIVE_REVALIDATION_P2_007_BLOCKED",
+  "active_lane": null,
+  "implementation_authorization_status": "ARCH_005_COMPLETED_P2_007_REQUIRES_SEPARATE_AUTHORIZATION",
   "authorized_architecture_tasks": [
     "ARCH-005"
   ],
-  "arch_005_status": "READY_FOR_TARGETED_LIVE_REVALIDATION",
+  "arch_005_status": "DONE",
   "arch_005_authorized_at": "2026-09-03",
   "arch_005_authorization_evidence": "evidence/arch-005-start-authorization.md",
-  "p2_007_status": "TODO_BLOCKED_BY_ARCH_005",
+  "arch_005_completed_at": "2026-09-03",
+  "arch_005_completion_evidence": "evidence/arch-005-targeted-live-revalidation.md",
+  "p2_007_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
   "p2_g1_status": "PASSED",
   "authorized_gates": [
     "P2-G1"
@@ -67,7 +70,7 @@
     "2C4G lightweight deployment is mandatory"
   ],
   "next_tasks": {
-    "current": "ARCH-005",
+    "current": null,
     "candidate": "P2-007",
     "candidate_authorized": false,
     "after_p1": [
