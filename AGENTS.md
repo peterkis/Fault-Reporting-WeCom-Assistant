@@ -17,7 +17,7 @@ P1 / P1-012 / DONE / GO
 P2 / P2-G1 / PASSED / NO_ACTIVE_LANE
 ```
 
-V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-09-01 独立授权并完成 P2-006，并于同日另行授权 P2-G1 Human-only Conversation Center Assembly；2026-09-02 在真实测试企业微信现场 Evidence、隔离 Replay Gap、60 分钟 controlled observation 和负责人明确批准全部完成后，P2-G1 更新为 `PASSED`。当前无活动任务或 Lane；P2-007 及以后任务、P2-G2 及以后 Gate 仍未授权，全部 P3 未启动。所有提交的 Feature Flag 默认值保持关闭。`P2-G1 PASSED` 不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
+V1.4 不改变 G0/P1 已完成事实。项目负责人已于 2026-09-01 独立授权并完成 P2-006，并于同日另行授权 P2-G1 Human-only Conversation Center Assembly；2026-09-02 在真实测试企业微信现场 Evidence、隔离 Replay Gap、60 分钟 controlled observation 和负责人明确批准全部完成后，P2-G1 更新为 `PASSED`。P2-007 Hospital IT Domain Model 已于 2026-09-03 完成纯领域实现；当前无活动任务或 Lane。P2-008 及以后任务、P2-G2 及以后 Gate 仍未授权，全部 P3 未启动。所有提交的 Feature Flag 默认值保持关闭。`P2-G1 PASSED` 与 `P2-007 DONE` 均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
 
 ## 2. 长期事实源
 
@@ -64,7 +64,7 @@ P1：
 
 ### Phase 2：Conversation Center 与 AI 协作
 
-P2 保持 `IN_PROGRESS`；P2-001 至 P2-006 均已完成，P2-G1 Human-only Assembly 已于 2026-09-02 通过。当前无活动 Lane；P2-007 及以后任务和 P2-G2 及以后 Gate 不得启动，所有提交的 Feature Flag 默认值保持 `false`。P2-G1 的通过 Evidence 不授权生产、临床、AI/OCR、Incident、P3 或后续任务。
+P2 保持 `IN_PROGRESS`；P2-001 至 P2-007 均已完成，P2-G1 Human-only Assembly 已于 2026-09-02 通过。当前无活动 Lane；P2-008 及以后任务和 P2-G2 及以后 Gate 不得启动，所有提交的 Feature Flag 默认值保持 `false`。P2-G1 与 P2-007 的完成 Evidence 不授权生产、临床、AI/OCR、Incident、P3 或后续任务。
 
 P2 必须按以下顺序：
 

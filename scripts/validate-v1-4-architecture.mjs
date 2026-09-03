@@ -120,6 +120,21 @@ const LIFECYCLE_PROFILES = Object.freeze({
     manifestStatus: 'P2_ARCH_005_COMPLETED_AWAITING_P2_007_AUTHORIZATION',
     projectStatus: 'p2_arch_005_completed_awaiting_p2_007_authorization',
   }),
+  P2_007_DONE_AWAITING_SEPARATE_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-007',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-005',
+    activeTask: null,
+    activeLane: null,
+    candidate: 'P2-008',
+    candidateAuthorized: false,
+    authorizedTasks: Object.freeze([...AUTHORIZED_TASKS, 'P2-007']),
+    p2006Status: 'DONE',
+    p2007Status: 'DONE',
+    p2g1Status: 'PASSED',
+    manifestStatus: 'P2_P2_007_DONE_AWAITING_SEPARATE_AUTHORIZATION',
+    projectStatus: 'p2_p2_007_done_awaiting_separate_authorization',
+  }),
 });
 
 const manifest = json('MANIFEST.json');
@@ -231,7 +246,7 @@ if (profile) {
     }
     check(view.activeTask === profile.activeTask, view.name + ' has the profile active task');
     check(view.activeLane === profile.activeLane, view.name + ' has the profile active lane');
-    check(sameArray(view.authorizedTasks, AUTHORIZED_TASKS), view.name + ' has the exact authorized task set');
+    check(sameArray(view.authorizedTasks, profile.authorizedTasks ?? AUTHORIZED_TASKS), view.name + ' has the exact authorized task set');
     check(sameArray(view.authorizedGates, AUTHORIZED_GATES), view.name + ' has the exact authorized gate set');
     check(view.lastCompletedTask === null || view.authorizedTasks.includes(view.lastCompletedTask), view.name + ' last completed task is authorized');
     check(view.lastCompletedGate === null || view.authorizedGates.includes(view.lastCompletedGate), view.name + ' last completed gate is authorized');
@@ -261,7 +276,8 @@ if (profile) {
     'all lifecycle views link ARCH-005 completion evidence');
   }
   if (profile.p2g1Status === 'PASSED') {
-    check(current.next_task_candidate === 'P2-007' && current.next_task_authorized === false, 'P2-007 remains the unauthorized next task candidate');
+    check(current.next_task_candidate === profile.candidate && current.next_task_authorized === profile.candidateAuthorized,
+      `${profile.candidate} remains the next task candidate with profile authorization`);
   }
 }
 
@@ -287,6 +303,7 @@ const p2003 = backlog.tasks.find((task) => task.id === 'P2-003');
 const p2004 = backlog.tasks.find((task) => task.id === 'P2-004');
 const p2005 = backlog.tasks.find((task) => task.id === 'P2-005');
 const p2006 = backlog.tasks.find((task) => task.id === 'P2-006');
+const p2007 = backlog.tasks.find((task) => task.id === 'P2-007');
 
 check(p1?.status === 'DONE' && p1?.go_decision === 'GO', 'P1 remains DONE with GO');
 check(p10012?.status === 'DONE' && p10012?.decision === 'GO', 'P1-012 remains DONE with GO');
@@ -316,8 +333,9 @@ check(p2006?.status === profile?.p2006Status, 'P2-006 task status matches the li
 check(p2006?.authorized_at === '2026-09-01'
   && p2006?.authorization_evidence === 'evidence/p2-006-start-authorization.md'
   && p2006?.task_file === 'tasks/P2-006_realtime_web_workbench_rest_authorization.md', 'P2-006 authorization metadata is linked');
-check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[7-9]|01[0-4])$/u.test(task.id))
-  .every((task) => task.status === 'TODO'), 'P2-007 through P2-014 remain TODO');
+check(p2007?.status === (profile?.p2007Status ?? 'TODO'), 'P2-007 task status matches the lifecycle profile');
+check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[8-9]|01[0-4])$/u.test(task.id))
+  .every((task) => task.status === 'TODO'), 'P2-008 through P2-014 remain TODO');
 check(sameArray(backlog.tasks.filter((task) => task.status === (profile?.activeTaskStatus ?? 'IN_PROGRESS')).map((task) => task.id),
   profile?.activeTask?.startsWith('P2-0') || profile?.activeTask?.startsWith('ARCH-') ? [profile.activeTask] : []), 'the exact active task set matches the lifecycle profile');
 check(p3?.status === 'TODO', 'P3 remains TODO');
