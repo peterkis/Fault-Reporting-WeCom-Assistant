@@ -13,21 +13,24 @@ test('ARCH-006 validator passes', () => {
   assert.equal(result.status, 0, result.stdout + result.stderr);
 });
 
-test('machine state preserves completed facts and leaves future work unauthorized', () => {
+test('machine state preserves ARCH-006 facts and permits only the P2-015 successor lifecycle', () => {
   const current = json('plans/current_phase.json');
   const backlog = json('plans/master_backlog.json');
-  assert.equal(current.last_completed_task, 'P2-007');
+  assert.equal(['P2-007', 'P2-015'].includes(current.last_completed_task), true);
   assert.equal(current.last_completed_gate, 'P2-G1');
   assert.equal(current.last_completed_architecture_task, 'ARCH-006');
   assert.equal(current.arch_005_status, 'DONE');
   assert.equal(current.arch_006_status, 'DONE');
   assert.equal(current.p2_007_status, 'DONE');
   assert.equal(current.p2_g1_status, 'PASSED');
-  assert.equal(current.active_task, null);
-  assert.equal(current.active_lane, null);
-  assert.equal(current.next_task_candidate, 'P2-015');
-  assert.equal(current.next_task_authorized, false);
-  for (const id of ['P2-015', 'P2-016', 'P2-012']) {
+  if (current.p2_015_status === 'AUTHORIZED') {
+    assert.equal(current.active_task, 'P2-015'); assert.equal(current.active_lane, 'P2-C');
+    assert.equal(current.next_task_candidate, 'P2-015'); assert.equal(current.next_task_authorized, true);
+  } else {
+    assert.equal(current.p2_015_status, 'DONE'); assert.equal(current.active_task, null); assert.equal(current.active_lane, null);
+    assert.equal(current.next_task_candidate, 'P2-016'); assert.equal(current.next_task_authorized, false);
+  }
+  for (const id of ['P2-016', 'P2-012']) {
     const task = backlog.tasks.find((entry) => entry.id === id);
     assert.equal(task.status, 'TODO');
     assert.equal(task.authorization_status, 'REQUIRES_SEPARATE_AUTHORIZATION');

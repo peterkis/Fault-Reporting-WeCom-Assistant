@@ -1,8 +1,10 @@
 # 50. ARCH-006 AI-Optional Rule-First Full Service Loop
 
+> 实施进展（2026-09-03）：P2-015 已独立完成；P2-016、P2-012 与 P2-G2 仍未授权。本架构完成事实与历史 Evidence 保持不变。
+
 ## 1. 基线结论
 
-ARCH-006 把 Phase 2 的主线重排为“规则优先、人工兜底、AI 后置”。本文件只冻结架构，不实现 P2-015、P2-016、P2-012、P2-008 或任一 Gate。
+ARCH-006 把 Phase 2 的主线重排为“规则优先、人工兜底、AI 后置”。ARCH-006 本身只冻结架构；后续独立授权的 P2-015 已完成，但本文件不授权 P2-016、P2-012、P2-008 或任一 Gate。
 
 ```text
 durable Channel Message

@@ -27,6 +27,12 @@ human-confirmed Incident boundary, read `docs/50_arch_006_ai_optional_rule_first
 through `docs/54_p2_g2_deterministic_full_service_loop_gate.md` before changing a future
 Contract, migration, Runtime, UI, task dependency, or Gate.
 
+P2-015 is implemented behind default-false flags. For its persisted Journey/Leg,
+continuation, deterministic Decision, Manual Review, Safe Action, internal Query/Command
+Port, or Worker behavior, read `docs/55_p2_015_rule_first_intake_orchestration.md` through
+`docs/57_p2_015_manual_review_and_safe_actions.md`. This implementation does not authorize
+P2-016 UI/REST, P2-012 Incident, P2-G2, AI/OCR, or production enablement.
+
 ## Conversation identity
 
 **Channel Account**:

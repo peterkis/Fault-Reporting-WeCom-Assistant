@@ -1,14 +1,14 @@
 # V1.4 分阶段路线图
 
-- 当前阶段：P2 / P2-015 / AUTHORIZED / P2-C
-- 当前候选：P2-015 / AUTHORIZED；P3 / 未启动
+- 当前阶段：P2 / P2-015 / DONE / 无活动 Lane
+- 下一候选：P2-016 / TODO / REQUIRES_SEPARATE_AUTHORIZATION；P3 / 未启动
 - 长期事实源：Unified Ticket Core
 - P3 前提：没有历史业务 Ticket，采用绿地内网接入
 
 ```text
 Gate 0 企业微信能力验证（DONE）
 → Phase 1 企业微信外网试点（DONE / GO）
-→ Phase 2 规则优先服务闭环与可选 AI 协作（IN_PROGRESS / P2-015 AUTHORIZED / P2-C）
+→ Phase 2 规则优先服务闭环与可选 AI 协作（IN_PROGRESS / P2-015 DONE / 无活动 Lane）
 → Phase 3 医院内网新来源接入与统一运营
 ```
 
@@ -59,7 +59,7 @@ P3-G1 Contract + Outbound Transport
 
 ## 阶段纪律
 
-1. P1-012 已完成并保留 `GO`；P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006 已完成；P2-015 及后续 Runtime 和 P3 仍须另行授权；
+1. P1-012 已完成并保留 `GO`；P2-001 至 P2-007、P2-015、P2-G1、ARCH-005、ARCH-006 已完成；P2-016 及后续 Runtime 和 P3 仍须另行授权；
 2. P2 必须先 Human-only，再完成 AI-off 规则/人工服务闭环；
 3. AI 自动回复必须独立 Gate；
 4. P3 先 Contract 和 Simulator，再真实来源；

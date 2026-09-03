@@ -39,13 +39,22 @@ const parallel = json(stateFiles[3]);
 const taskIndex = json(stateFiles[4]);
 const summary = json(stateFiles[5]);
 const views = [manifest, current, backlog, parallel, taskIndex, summary.project];
+const lifecycleState = current.implementation_authorization_status;
+const successor = lifecycleState === 'P2_015_AUTHORIZED' || lifecycleState === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
+const completed = lifecycleState === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
+const expectedLastTask = completed ? 'P2-015' : 'P2-007';
+const expectedActiveTask = lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-015' : null;
+const expectedActiveLane = lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-C' : null;
+const expectedCandidate = completed ? 'P2-016' : 'P2-015';
+const expectedCandidateAuthorized = lifecycleState === 'P2_015_AUTHORIZED';
+const expectedP2015Status = completed ? 'DONE' : successor ? 'AUTHORIZED' : 'TODO_REQUIRES_SEPARATE_AUTHORIZATION';
 
 for (const view of views) {
-  check(view.last_completed_task === 'P2-007', 'last_completed_task remains P2-007');
+  check(view.last_completed_task === expectedLastTask, 'last_completed_task preserves ARCH-006 or authorized successor state');
   check(view.last_completed_gate === 'P2-G1', 'last_completed_gate remains P2-G1');
   check(view.last_completed_architecture_task === 'ARCH-006', 'last_completed_architecture_task is ARCH-006');
-  check(view.active_task === null && view.active_lane === null, 'no active task or lane remains');
-  check(view.implementation_authorization_status === 'ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION', 'ARCH-006 terminal lifecycle status is consistent');
+  check(view.active_task === expectedActiveTask && view.active_lane === expectedActiveLane, 'active task and lane match the authorized successor state');
+  check(view.implementation_authorization_status === lifecycleState, 'ARCH-006 and successor lifecycle status is consistent');
   check(view.arch_005_status === 'DONE', 'ARCH-005 remains DONE');
   check(view.arch_006_status === 'DONE', 'ARCH-006 is DONE');
   check(view.p2_007_status === 'DONE', 'P2-007 remains DONE');
@@ -53,7 +62,7 @@ for (const view of views) {
   for (const gate of ['p2_g2_status', 'p2_g3_status', 'p2_g4_status', 'p2_g5_status']) {
     check(view[gate] === 'NOT_STARTED', gate + ' remains NOT_STARTED');
   }
-  check(view.p2_015_status === 'TODO_REQUIRES_SEPARATE_AUTHORIZATION', 'P2-015 machine status is exact');
+  check(view.p2_015_status === expectedP2015Status, 'P2-015 machine status is exact');
   check(view.p2_016_status === 'TODO_REQUIRES_SEPARATE_AUTHORIZATION', 'P2-016 machine status is exact');
   check(view.p2_012_status === 'TODO_REQUIRES_SEPARATE_AUTHORIZATION', 'P2-012 machine status is exact');
   check(view.p2_008_status === 'TODO_BLOCKED_BY_P2_G2', 'P2-008 machine status is exact');
@@ -62,21 +71,22 @@ for (const view of views) {
   }
 }
 
-check(manifest.status === 'P2_ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION', 'manifest terminal status is exact');
-check(summary.project.status === 'p2_arch_006_done_awaiting_p2_015_authorization', 'project terminal status is exact');
+check(manifest.status === (completed ? 'P2_P2_015_DONE_AWAITING_P2_016_AUTHORIZATION' : successor ? 'P2_P2_015_AUTHORIZED' : 'P2_ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION'), 'manifest lifecycle status is exact');
+check(summary.project.status === (completed ? 'p2_p2_015_done_awaiting_p2_016_authorization' : successor ? 'p2_p2_015_authorized' : 'p2_arch_006_done_awaiting_p2_015_authorization'), 'project lifecycle status is exact');
 check(current.phase_id === 'P2' && current.status === 'IN_PROGRESS', 'Phase P2 remains IN_PROGRESS');
-check(views.every((view) => (view.next_task_candidate ?? view.next_task) === 'P2-015'), 'next candidate is P2-015 in every full state view');
-check(taskIndex.next_tasks.current === null && taskIndex.next_tasks.candidate === 'P2-015', 'task index has no active task and P2-015 candidate');
-check(views.every((view) => (view.next_task_authorized ?? false) === false), 'next candidate remains unauthorized');
+check(views.every((view) => (view.next_task_candidate ?? view.next_task) === expectedCandidate), 'next candidate matches the successor lifecycle');
+check(taskIndex.next_tasks.current === expectedActiveTask && taskIndex.next_tasks.candidate === expectedCandidate, 'task index matches active and next tasks');
+check(views.every((view) => (view.next_task_authorized ?? false) === expectedCandidateAuthorized), 'next candidate authorization is exact');
 
 const byId = new Map(backlog.tasks.map((task) => [task.id, task]));
 const p2015 = byId.get('P2-015');
 const p2016 = byId.get('P2-016');
 const p2012 = byId.get('P2-012');
 const p2008 = byId.get('P2-008');
-check(p2015?.status === 'TODO' && p2015?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-015 is unauthorized TODO');
+check(p2015?.status === (completed ? 'DONE' : successor ? 'AUTHORIZED' : 'TODO')
+  && p2015?.authorization_status === (successor ? 'AUTHORIZED' : 'REQUIRES_SEPARATE_AUTHORIZATION'), 'P2-015 lifecycle is exact');
 check(same(p2015?.depends_on, ['P2-G1', 'ARCH-005', 'P2-007', 'P1-004', 'P1-005', 'P2-004']), 'P2-015 dependencies are exact');
-check(p2015?.migration_reservation === '030', 'P2-015 reserves migration 030 without SQL');
+check(p2015?.migration_reservation === '030', 'P2-015 owns migration 030 reservation');
 check(p2016?.status === 'TODO' && p2016?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-016 is unauthorized TODO');
 check(same(p2016?.depends_on, ['P2-015', 'P1-006', 'P2-004', 'P2-005', 'P2-006']), 'P2-016 dependencies are exact');
 check(p2016?.migration_reservation === '031_IF_REQUIRED', 'P2-016 conditionally reserves migration 031');
@@ -162,7 +172,8 @@ check(inventory.existing_capabilities.length === 9, 'inventory proves nine exist
 check(inventory.gaps.length === 13, 'inventory records thirteen required gaps');
 check(inventory.runtime_changes === 0 && inventory.migration_changes === 0 && inventory.model_provider_calls === 0, 'inventory records zero Runtime Migration and model changes');
 
-check(!fs.existsSync(path.join(root, 'database/migrations/030_p2_015_rule_first.sql')), 'migration 030 was not created');
+check(successor ? fs.existsSync(path.join(root, 'database/migrations/030_p2_015_rule_first_intake_orchestration.sql'))
+  : !fs.existsSync(path.join(root, 'database/migrations/030_p2_015_rule_first_intake_orchestration.sql')), 'migration 030 presence matches P2-015 authorization');
 check(!fs.existsSync(path.join(root, 'database/migrations/031_p2_016_ticket_workbench.sql')), 'migration 031 was not created');
 
 let changedPaths = [];
@@ -172,11 +183,12 @@ try {
 } catch {
   errors.push('unable to inspect changed paths against origin/main');
 }
-const forbidden = changedPaths.filter((relativePath) => /^(?:database\/migrations\/|src\/p1-|src\/p2-004|src\/p2-005|src\/p2-006|src\/p2-007|web\/|archive\/|\.env\.pilot$)/u.test(relativePath));
+const forbidden = changedPaths.filter((relativePath) => /^(?:database\/migrations\/(?:00[1-9]|01[0-2]|020|021|022)_|src\/p1-|src\/p2-004|src\/p2-005|src\/p2-006|src\/p2-007|web\/|archive\/|\.env\.pilot$)/u.test(relativePath));
 check(forbidden.length === 0, 'no forbidden Runtime Migration web archive or secret path changed');
 const historicalEvidence = changedPaths.filter((relativePath) => relativePath.startsWith('evidence/')
   && !['evidence/arch-006-start-authorization.md', 'evidence/arch-006-capability-gap-inventory.md',
-    'evidence/arch-006-capability-gap-inventory.json', 'evidence/arch-006-rule-first-service-loop-rebaseline-report.md'].includes(relativePath));
+    'evidence/arch-006-capability-gap-inventory.json', 'evidence/arch-006-rule-first-service-loop-rebaseline-report.md',
+    'evidence/p2-015-start-authorization.md', 'evidence/p2-015-rule-first-intake-orchestration-report.md'].includes(relativePath));
 check(historicalEvidence.length === 0, 'no historical Evidence was rewritten');
 
 if (errors.length) {

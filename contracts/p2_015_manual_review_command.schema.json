@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://hospital.local/contracts/p2_015_manual_review_command.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["review_id", "expected_row_version", "client_command_id", "resolution_code", "resolution_reason_code", "resolved_at"],
+  "properties": {
+    "review_id": { "type": "string" }, "expected_row_version": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+    "client_command_id": { "type": "string" },
+    "resolution_code": { "enum": ["CONFIRM_TICKET_ELIGIBLE", "REQUEST_DESCRIPTION", "CLASSIFY_SERVICE_REQUEST", "CLASSIFY_BUSINESS_CONSULTATION", "ACKNOWLEDGE", "MARK_OUT_OF_SCOPE", "LINK_EXISTING_JOURNEY", "KEEP_INCIDENT_REVIEW_CANDIDATE", "CANCEL_REVIEW"] },
+    "resolution_reason_code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$" },
+    "resolved_at": { "$ref": "local_datetime.schema.json" }
+  }
+}

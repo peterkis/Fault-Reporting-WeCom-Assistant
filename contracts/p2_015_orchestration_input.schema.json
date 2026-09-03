@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://hospital.local/contracts/p2_015_orchestration_input.schema.json",
+  "type": "object", "additionalProperties": false, "required": ["service_intake_id", "feature_flags"],
+  "properties": {
+    "service_intake_id": { "type": "string" }, "trace_id": { "type": "string", "maxLength": 128 },
+    "feature_flags": { "type": "object", "additionalProperties": false,
+      "properties": { "RULE_FIRST_ORCHESTRATION_ENABLED": { "enum": [true, false, "true", "false"] }, "MANUAL_REVIEW_QUEUE_ENABLED": { "enum": [true, false, "true", "false"] } } }
+  }
+}

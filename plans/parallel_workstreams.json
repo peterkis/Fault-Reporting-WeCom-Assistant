@@ -12,12 +12,12 @@
     "P2-007",
     "P2-015"
   ],
-  "last_completed_task": "P2-007",
+  "last_completed_task": "P2-015",
   "last_completed_gate": "P2-G1",
   "last_completed_architecture_task": "ARCH-006",
-  "active_task": "P2-015",
-  "active_lane": "P2-C",
-  "implementation_authorization_status": "P2_015_AUTHORIZED",
+  "active_task": null,
+  "active_lane": null,
+  "implementation_authorization_status": "P2_015_DONE_AWAITING_P2_016_AUTHORIZATION",
   "authorized_architecture_tasks": ["ARCH-005", "ARCH-006"],
   "arch_005_status": "DONE",
   "arch_005_completed_at": "2026-09-03",
@@ -58,9 +58,11 @@
   "p2_g3_status": "NOT_STARTED",
   "p2_g4_status": "NOT_STARTED",
   "p2_g5_status": "NOT_STARTED",
-  "p2_015_status": "AUTHORIZED",
+  "p2_015_status": "DONE",
   "p2_015_authorized_at": "2026-09-03",
   "p2_015_authorization_evidence": "evidence/p2-015-start-authorization.md",
+  "p2_015_completed_at": "2026-09-03",
+  "p2_015_completion_evidence": "evidence/p2-015-rule-first-intake-orchestration-report.md",
   "p2_016_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
   "p2_012_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
   "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
@@ -69,8 +71,8 @@
   "p2_011_status": "TODO",
   "p2_013_status": "TODO",
   "p2_014_status": "TODO",
-  "next_task_candidate": "P2-015",
-  "next_task_authorized": true,
+  "next_task_candidate": "P2-016",
+  "next_task_authorized": false,
   "feature_flags_enabled": [],
   "feature_flag_defaults": {
     "CONVERSATION_CENTER_ENABLED": false,
@@ -92,7 +94,7 @@
     ,"REPORTER_TIMELINE_ENABLED": false
     ,"WECOM_TEMPLATE_CARD_ENABLED": false
   },
-  "rule": "P2-015 alone is AUTHORIZED in active lane P2-C. P2-G1 remains PASSED, ARCH-005/ARCH-006/P2-007 remain DONE. P2-016 and P2-012 require separate authorization. P2-008 is blocked until P2-G2 PASSED. Every committed P2 and P3 feature-flag default remains false.",
+  "rule": "P2-015 is DONE and no lane is active. P2-G1 remains PASSED and ARCH-005/ARCH-006 remain DONE. P2-016 is the next candidate but requires separate authorization; P2-012 is unauthorized and P2-008 is blocked until P2-G2 PASSED. Every committed P2 and P3 feature-flag default remains false.",
   "migration_number_reservations": {
     "P2-A": "010-019",
     "P2-B": "020-029",
@@ -104,7 +106,7 @@
     "P3-D": "080-089"
   },
   "task_migration_reservations": {
-    "P2-015": "030_AUTHORIZED",
+    "P2-015": "030_IMPLEMENTED",
     "P2-016": "031_ONLY_IF_NEW_PERSISTENCE_IS_REQUIRED"
   },
   "lanes": [

@@ -166,6 +166,21 @@ const LIFECYCLE_PROFILES = Object.freeze({
     manifestStatus: 'P2_P2_015_AUTHORIZED',
     projectStatus: 'p2_p2_015_authorized',
   }),
+  P2_015_DONE_AWAITING_P2_016_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-015',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: null,
+    activeLane: null,
+    candidate: 'P2-016',
+    candidateAuthorized: false,
+    authorizedTasks: Object.freeze([...AUTHORIZED_TASKS, 'P2-007', 'P2-015']),
+    p2006Status: 'DONE',
+    p2007Status: 'DONE',
+    p2g1Status: 'PASSED',
+    manifestStatus: 'P2_P2_015_DONE_AWAITING_P2_016_AUTHORIZATION',
+    projectStatus: 'p2_p2_015_done_awaiting_p2_016_authorization',
+  }),
 });
 
 const manifest = json('MANIFEST.json');
@@ -381,16 +396,24 @@ check(p2007?.status === (profile?.p2007Status ?? 'TODO'), 'P2-007 task status ma
 check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[8-9]|01[0-4])$/u.test(task.id))
   .every((task) => task.status === 'TODO'), 'P2-008 through P2-014 remain TODO');
 if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
-  if (lifecycleStatus === 'P2_015_AUTHORIZED') {
-    check(p2015?.status === 'AUTHORIZED' && p2015?.authorization_status === 'AUTHORIZED'
+  if (lifecycleStatus === 'P2_015_AUTHORIZED' || lifecycleStatus === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION') {
+    const p2015Done = lifecycleStatus === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
+    check(p2015?.status === (p2015Done ? 'DONE' : 'AUTHORIZED') && p2015?.authorization_status === 'AUTHORIZED'
       && p2015?.authorized_at === '2026-09-03'
       && p2015?.authorization_evidence === 'evidence/p2-015-start-authorization.md', 'P2-015 is independently authorized');
     check(fs.existsSync(path.join(root, 'evidence/p2-015-start-authorization.md')), 'P2-015 authorization evidence exists');
     check([manifest, current, backlog, parallel, taskIndex, projectSummary.project]
-      .every((view) => view.p2_015_status === 'AUTHORIZED'
+      .every((view) => view.p2_015_status === (p2015Done ? 'DONE' : 'AUTHORIZED')
         && view.p2_015_authorized_at === '2026-09-03'
         && view.p2_015_authorization_evidence === 'evidence/p2-015-start-authorization.md'),
     'all lifecycle views link P2-015 authorization');
+    if (p2015Done) {
+      const completion = 'evidence/p2-015-rule-first-intake-orchestration-report.md';
+      check(fs.existsSync(path.join(root, completion)), 'P2-015 completion evidence exists');
+      check([manifest, current, backlog, parallel, taskIndex, projectSummary.project]
+        .every((view) => view.p2_015_completed_at === '2026-09-03' && view.p2_015_completion_evidence === completion),
+      'all lifecycle views link P2-015 completion');
+    }
   } else {
     check(p2015?.status === 'TODO' && p2015?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-015 remains unauthorized TODO');
   }

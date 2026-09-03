@@ -9,7 +9,7 @@
 - P1-001 至 P1-011 保持既有验收结论；
 - P1-012 已完成真实测试群 E2E、客户端观察、故障演练和 Go/No-Go，状态为 `DONE`；
 - Phase 2 保持 `IN_PROGRESS`；`P2-001` 至 `P2-005` 均已完成；
-- P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006 已完成。ARCH-006 已将 Phase 2 重排为规则优先、人工兜底、AI 后置；当前仅 P2-015 获独立授权并在 Lane `P2-C` 活动。P2-016、P2-012、P2-008 及以后 Runtime 任务、P2-G2 至 P2-G5 与全部 P3 任务均须单独授权，所有 Feature Flag 默认 `false`；
+- P2-001 至 P2-007、P2-015、P2-G1、ARCH-005、ARCH-006 已完成。ARCH-006 已将 Phase 2 重排为规则优先、人工兜底、AI 后置；当前无活动任务或 Lane，下一候选 P2-016 未授权。P2-016、P2-012、P2-008 及以后 Runtime 任务、P2-G2 至 P2-G5 与全部 P3 任务均须单独授权，所有 Feature Flag 默认 `false`；
 - 本次 Phase 2 启动授权不等同于生产上线、临床上线或 AI 自动回复批准，不启用真实外发、SSE、模型、OCR、医院身份连接或内网 Connector。
 
 ## V1.4 核心纠偏
@@ -62,7 +62,7 @@ P1 保持零医院内网依赖；真实企业微信闭环和试点评审已完�
 
 ## Phase 2：Conversation Center 与 AI 协作
 
-P2 保持 `IN_PROGRESS`。P2-001 至 P2-007 均已完成；P2-006 是默认关闭的 Human-only Internal Alpha，P2-007 仅是确定性纯函数。P2-G1 已通过，ARCH-006 已完成重基线。现有结论不授权生产、临床、最终生产前端、P2-015、P2-016、P2-012、P2-008、P2-G2、DeepSeek、AI/OCR 或真实 Incident Runtime。后续能力仍须另行授权。
+P2 保持 `IN_PROGRESS`。P2-001 至 P2-007 与 P2-015 均已完成；P2-006 是默认关闭的 Human-only Internal Alpha，P2-007 是确定性纯函数，P2-015 是默认关闭的持久化装配。P2-G1 已通过，ARCH-006 已完成重基线。现有结论不授权生产、临床、最终生产前端、P2-016、P2-012、P2-008、P2-G2、DeepSeek、AI/OCR 或真实 Incident Runtime。后续能力仍须另行授权。
 
 ```text
 Persisted Channel Message / Service Intake

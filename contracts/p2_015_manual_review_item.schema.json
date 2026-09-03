@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://hospital.local/contracts/p2_015_manual_review_item.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["id", "review_key", "journey_id", "decision_id", "service_intake_id", "review_reason_code", "priority", "status", "row_version", "created_at"],
+  "properties": {
+    "id": { "type": "string" }, "review_key": { "type": "string" }, "journey_id": { "type": "string" }, "decision_id": { "type": "string" }, "service_intake_id": { "type": "string" },
+    "linked_ticket_id": { "type": ["string", "null"] }, "review_reason_code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$" },
+    "priority": { "enum": ["LOW", "NORMAL", "HIGH", "URGENT"] }, "status": { "enum": ["PENDING", "RESOLVED", "CANCELLED"] },
+    "row_version": { "type": "string", "pattern": "^[1-9][0-9]*$" }, "created_at": { "$ref": "local_datetime.schema.json" },
+    "resolved_at": { "anyOf": [{ "$ref": "local_datetime.schema.json" }, { "type": "null" }] }
+  }
+}

@@ -1,5 +1,8 @@
 -- ============================================================================
 -- V1.4 CONCEPTUAL SCHEMA DRAFT
+-- P2-015 navigation note: database/migrations/030_p2_015_rule_first_intake_orchestration.sql
+-- is authoritative for Contact Journey, Channel Leg, continuation_ref, deterministic
+-- Decision, Manual Review, and Safe Action persistence. This draft is not executable authority.
 -- ============================================================================
 -- This file is NOT a production migration. NEVER execute or apply this file as
 -- a whole, manually or automatically. Apply only reviewed numbered migrations.

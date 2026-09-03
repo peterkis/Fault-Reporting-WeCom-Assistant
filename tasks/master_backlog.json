@@ -3,10 +3,10 @@
   "architecture_baseline": "V1.4",
   "canonical_source": "plans/master_backlog.json",
   "current_phase": "P2",
-  "last_completed_task": "P2-007",
+  "last_completed_task": "P2-015",
   "last_completed_gate": "P2-G1",
   "last_completed_architecture_task": "ARCH-006",
-  "active_task": "P2-015",
+  "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -18,8 +18,8 @@
     "P2-007",
     "P2-015"
   ],
-  "active_lane": "P2-C",
-  "implementation_authorization_status": "P2_015_AUTHORIZED",
+  "active_lane": null,
+  "implementation_authorization_status": "P2_015_DONE_AWAITING_P2_016_AUTHORIZATION",
   "authorized_architecture_tasks": [
     "ARCH-005",
     "ARCH-006"
@@ -42,9 +42,11 @@
   "p2_g3_status": "NOT_STARTED",
   "p2_g4_status": "NOT_STARTED",
   "p2_g5_status": "NOT_STARTED",
-  "p2_015_status": "AUTHORIZED",
+  "p2_015_status": "DONE",
   "p2_015_authorized_at": "2026-09-03",
   "p2_015_authorization_evidence": "evidence/p2-015-start-authorization.md",
+  "p2_015_completed_at": "2026-09-03",
+  "p2_015_completion_evidence": "evidence/p2-015-rule-first-intake-orchestration-report.md",
   "p2_016_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
   "p2_012_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
   "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
@@ -53,8 +55,8 @@
   "p2_011_status": "TODO",
   "p2_013_status": "TODO",
   "p2_014_status": "TODO",
-  "next_task_candidate": "P2-015",
-  "next_task_authorized": true,
+  "next_task_candidate": "P2-016",
+  "next_task_authorized": false,
   "authorized_gates": [
     "P2-G1"
   ],
@@ -97,9 +99,9 @@
     "2C4G lightweight deployment is mandatory"
   ],
   "next_tasks": {
-    "current": "P2-015",
-    "candidate": "P2-015",
-    "candidate_authorized": true,
+    "current": null,
+    "candidate": "P2-016",
+    "candidate_authorized": false,
     "after_p1": [
       "P2-001"
     ],

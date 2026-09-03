@@ -1,0 +1,140 @@
+import {
+  P2_015_ERROR_CODES,
+  P2_015_LIMITS,
+  failP2015,
+  freezePublic,
+  normalizeLimit,
+  safeHash,
+  snapshotP2015Json,
+} from './p2-015-domain-contracts.mjs';
+
+const RESOLUTIONS = new Set(['CONFIRM_TICKET_ELIGIBLE','REQUEST_DESCRIPTION','CLASSIFY_SERVICE_REQUEST',
+  'CLASSIFY_BUSINESS_CONSULTATION','ACKNOWLEDGE','MARK_OUT_OF_SCOPE','LINK_EXISTING_JOURNEY',
+  'KEEP_INCIDENT_REVIEW_CANDIDATE','CANCEL_REVIEW']);
+const RESULT_BY_RESOLUTION = Object.freeze({
+  CONFIRM_TICKET_ELIGIBLE: 'TICKET_ELIGIBLE', REQUEST_DESCRIPTION: 'NEEDS_DESCRIPTION',
+  CLASSIFY_SERVICE_REQUEST: 'SERVICE_REQUEST', CLASSIFY_BUSINESS_CONSULTATION: 'BUSINESS_CONSULTATION',
+  ACKNOWLEDGE: 'ACKNOWLEDGEMENT', MARK_OUT_OF_SCOPE: 'OUT_OF_SCOPE',
+  LINK_EXISTING_JOURNEY: 'RELATED_FOLLOW_UP', KEEP_INCIDENT_REVIEW_CANDIDATE: 'INCIDENT_REVIEW_CANDIDATE',
+  CANCEL_REVIEW: 'MANUAL_REVIEW_REQUIRED',
+});
+
+export function createManualReviewStore({ authorizer = null } = {}) {
+  const allowedJourneyIds = async (input) => {
+    if (!authorizer || typeof authorizer.authorizedJourneyIds !== 'function') failP2015(P2_015_ERROR_CODES.authorizationDenied);
+    const ids = await authorizer.authorizedJourneyIds(snapshotP2015Json(input));
+    if (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string')) failP2015(P2_015_ERROR_CODES.authorizationDenied);
+    return ids;
+  };
+  return Object.freeze({
+    async enqueue({ transaction, input }) {
+      const value = snapshotP2015Json(input);
+      const reviewKey = `review_v1_${safeHash({ decision_id: value.decision_id, reason: value.review_reason_code })}`;
+      const result = await transaction.query(
+        `INSERT INTO intake.manual_review_item (
+           review_key,journey_id,decision_id,service_intake_id,linked_ticket_id,review_reason_code,priority
+         ) VALUES ($1,$2::uuid,$3::uuid,$4::uuid,$5::uuid,$6,$7)
+         ON CONFLICT (review_key) DO UPDATE SET review_key=EXCLUDED.review_key
+         RETURNING id::text,review_key,journey_id::text,decision_id::text,service_intake_id::text,
+           linked_ticket_id::text,review_reason_code,priority,status,row_version::text,created_at`,
+        [reviewKey, value.journey_id, value.decision_id, value.service_intake_id,
+          value.linked_ticket_id ?? null, value.review_reason_code, value.priority ?? 'NORMAL'],
+      );
+      return freezePublic(result.rows[0]);
+    },
+
+    async list({ transaction, principal, cursor = null, limit }) {
+      const ids = await allowedJourneyIds({ principal, operation: 'LIST_MANUAL_REVIEWS' });
+      const pageLimit = normalizeLimit(limit, P2_015_LIMITS.defaultReviewPage, P2_015_LIMITS.maximumReviewPage);
+      if (ids.length === 0) return freezePublic({ items: [], next_cursor: null });
+      const value = cursor === null ? null : snapshotP2015Json(cursor);
+      const result = await transaction.query(
+        `SELECT id::text,review_key,journey_id::text,decision_id::text,service_intake_id::text,
+                linked_ticket_id::text,review_reason_code,priority,status,row_version::text,created_at
+           FROM intake.manual_review_item
+          WHERE journey_id=ANY($1::uuid[]) AND status='PENDING'
+            AND ($2::integer IS NULL OR ((CASE priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END),created_at,id)
+              > ($2::integer,$3::timestamp without time zone,$4::uuid))
+          ORDER BY (CASE priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END),created_at,id LIMIT $5`,
+        [ids, value?.priority_rank ?? null, value?.created_at ?? null, value?.id ?? null, pageLimit + 1],
+      );
+      const rows = result.rows.slice(0, pageLimit);
+      const last = rows.at(-1);
+      const rank = (priority) => ({ URGENT: 1, HIGH: 2, NORMAL: 3, LOW: 4 })[priority];
+      return freezePublic({ items: rows, next_cursor: result.rows.length > pageLimit ? { priority_rank: rank(last.priority), created_at: last.created_at, id: last.id } : null });
+    },
+
+    async get({ transaction, principal, review_id: reviewId }) {
+      const ids = await allowedJourneyIds({ principal, operation: 'GET_MANUAL_REVIEW', review_id: reviewId });
+      const result = await transaction.query(
+        `SELECT review.id::text,review.review_key,review.journey_id::text,review.decision_id::text,
+                review.service_intake_id::text,review.linked_ticket_id::text,review.review_reason_code,
+                review.priority,review.status,review.row_version::text,review.created_at,decision.safe_result
+           FROM intake.manual_review_item review JOIN intake.deterministic_decision decision ON decision.id=review.decision_id
+          WHERE review.id=$1::uuid AND review.journey_id=ANY($2::uuid[])`, [reviewId, ids],
+      );
+      if (result.rowCount !== 1) failP2015(P2_015_ERROR_CODES.authorizationDenied);
+      return freezePublic(result.rows[0]);
+    },
+
+    async resolve({ transaction, principal, command }) {
+      const value = snapshotP2015Json(command);
+      if (!RESOLUTIONS.has(value.resolution_code)) failP2015(P2_015_ERROR_CODES.inputInvalid);
+      const ids = await allowedJourneyIds({ principal, operation: 'RESOLVE_MANUAL_REVIEW', review_id: value.review_id });
+      const selected = await transaction.query(
+        `SELECT review.*,decision.safe_result,decision.channel_leg_id,decision.conversation_session_id,
+                decision.source_window_start_sequence,decision.source_window_end_sequence,
+                decision.source_message_count,decision.source_hash,decision.catalog_version,
+                decision.rule_set_version,decision.engine_version,decision.decision_policy_version,
+                decision.input_hash,decision.observed_at
+           FROM intake.manual_review_item review JOIN intake.deterministic_decision decision ON decision.id=review.decision_id
+          WHERE review.id=$1::uuid AND review.journey_id=ANY($2::uuid[]) FOR UPDATE OF review`, [value.review_id, ids],
+      );
+      if (selected.rowCount !== 1) failP2015(P2_015_ERROR_CODES.authorizationDenied);
+      const row = selected.rows[0];
+      const commandHash = safeHash({ review_id: value.review_id, resolution_code: value.resolution_code,
+        resolution_reason_code: value.resolution_reason_code, expected_row_version: value.expected_row_version });
+      if (row.status !== 'PENDING') {
+        if (row.resolution_command_id === value.client_command_id && row.resolution_command_hash === commandHash) return freezePublic({ review_id: value.review_id, status: row.status, replayed: true });
+        failP2015(P2_015_ERROR_CODES.commandConflict);
+      }
+      if (String(row.row_version) !== String(value.expected_row_version)) failP2015(P2_015_ERROR_CODES.versionConflict);
+      const ordinal = await transaction.query('SELECT COALESCE(max(decision_ordinal),0)::integer+1 AS ordinal FROM intake.deterministic_decision WHERE journey_id=$1::uuid', [row.journey_id]);
+      const safeResult = { ...row.safe_result, result_code: RESULT_BY_RESOLUTION[value.resolution_code],
+        reason_code: value.resolution_reason_code, manual_review_required: false,
+        human_override: { resolution_code: value.resolution_code, principal_id: principal.principal_id } };
+      const resultHash = safeHash(safeResult);
+      const override = await transaction.query(
+        `INSERT INTO intake.deterministic_decision (
+           journey_id,channel_leg_id,service_intake_id,conversation_session_id,linked_ticket_id,
+           decision_ordinal,decision_key,source_window_start_sequence,source_window_end_sequence,
+           source_message_count,source_hash,catalog_version,rule_set_version,engine_version,
+           decision_policy_version,result_code,reason_code,input_hash,result_hash,safe_result,
+           requires_manual_review,ticket_creation_recommended,incident_review_candidate,status,observed_at
+         ) VALUES ($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::uuid,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,
+           $16,$17,$18,$19,$20::jsonb,false,$21,$22,'HUMAN_OVERRIDDEN',$23::timestamp without time zone)
+         RETURNING id::text`,
+        [row.journey_id,row.channel_leg_id,row.service_intake_id,row.conversation_session_id,row.linked_ticket_id,
+          ordinal.rows[0].ordinal,`human_v1_${safeHash({ review: value.review_id, command: value.client_command_id })}`,
+          row.source_window_start_sequence,row.source_window_end_sequence,row.source_message_count,row.source_hash,
+          row.catalog_version,row.rule_set_version,row.engine_version,row.decision_policy_version,
+          RESULT_BY_RESOLUTION[value.resolution_code],value.resolution_reason_code,row.input_hash,resultHash,
+          JSON.stringify(safeResult),['TICKET_ELIGIBLE','SERVICE_REQUEST','INCIDENT_REVIEW_CANDIDATE'].includes(RESULT_BY_RESOLUTION[value.resolution_code]),
+          RESULT_BY_RESOLUTION[value.resolution_code] === 'INCIDENT_REVIEW_CANDIDATE',row.observed_at],
+      );
+      const status = value.resolution_code === 'CANCEL_REVIEW' ? 'CANCELLED' : 'RESOLVED';
+      const updated = await transaction.query(
+        `UPDATE intake.manual_review_item SET status=$2,row_version=row_version+1,
+           resolution_command_id=$3::uuid,resolution_command_hash=$4,resolution_code=$5,
+           resolution_reason_code=$6,resolved_by_principal_id=$7::uuid,resolution_decision_id=$8::uuid,
+           resolved_at=$9::timestamp without time zone,updated_at=$9::timestamp without time zone
+         WHERE id=$1::uuid AND status='PENDING' AND row_version=$10
+         RETURNING id::text,status,row_version::text,resolution_decision_id::text`,
+        [value.review_id,status,value.client_command_id,commandHash,value.resolution_code,
+          value.resolution_reason_code,principal.principal_id,override.rows[0].id,value.resolved_at,value.expected_row_version],
+      );
+      if (updated.rowCount !== 1) failP2015(P2_015_ERROR_CODES.versionConflict);
+      return freezePublic({ ...updated.rows[0], replayed: false });
+    },
+  });
+}

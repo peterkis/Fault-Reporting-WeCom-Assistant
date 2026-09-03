@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_015_deterministic_decision.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["id", "journey_id", "decision_ordinal", "result_code", "reason_code", "catalog_version", "rule_set_version", "engine_version", "decision_policy_version", "input_hash", "result_hash", "safe_result", "observed_at"],
+  "properties": {
+    "id": { "type": "string" }, "journey_id": { "type": "string" }, "decision_ordinal": { "type": "integer", "minimum": 1 },
+    "result_code": { "enum": ["TICKET_ELIGIBLE", "NEEDS_DESCRIPTION", "MANUAL_REVIEW_REQUIRED", "RELATED_FOLLOW_UP", "STATUS_QUERY", "SERVICE_REQUEST", "BUSINESS_CONSULTATION", "ACKNOWLEDGEMENT", "OUT_OF_SCOPE", "INCIDENT_REVIEW_CANDIDATE"] },
+    "reason_code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$" },
+    "catalog_version": { "type": "string" }, "rule_set_version": { "type": "string" }, "engine_version": { "type": "string" }, "decision_policy_version": { "type": "string" },
+    "input_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "result_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "safe_result": { "type": "object" }, "observed_at": { "$ref": "local_datetime.schema.json" }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_015_continuation_ref.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["id", "journey_id", "origin_leg_id", "purpose", "state", "row_version", "issued_at", "issued_epoch_ms", "expires_at", "expires_epoch_ms"],
+  "properties": {
+    "id": { "type": "string" }, "journey_id": { "type": "string" }, "origin_leg_id": { "type": "string" },
+    "target_leg_id": { "type": ["string", "null"] },
+    "purpose": { "enum": ["GROUP_TO_DIRECT_GUIDANCE", "USER_SELECTION", "EXPLICIT_CONTINUATION"] },
+    "state": { "enum": ["ISSUED", "BOUND", "CONSUMED", "REVOKED", "EXPIRED"] },
+    "row_version": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+    "issued_at": { "$ref": "local_datetime.schema.json" }, "issued_epoch_ms": { "$ref": "epoch_ms_string.schema.json" },
+    "expires_at": { "$ref": "local_datetime.schema.json" }, "expires_epoch_ms": { "$ref": "epoch_ms_string.schema.json" },
+    "consumed_at": { "anyOf": [{ "$ref": "local_datetime.schema.json" }, { "type": "null" }] },
+    "consumed_epoch_ms": { "anyOf": [{ "$ref": "epoch_ms_string.schema.json" }, { "type": "null" }] },
+    "revoked_at": { "anyOf": [{ "$ref": "local_datetime.schema.json" }, { "type": "null" }] },
+    "revoked_epoch_ms": { "anyOf": [{ "$ref": "epoch_ms_string.schema.json" }, { "type": "null" }] }
+  }
+}

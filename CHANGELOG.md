@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-03 - P2-015 completed
+
+- 完成规则优先后置编排、三入口 Contact Journey/独立 Channel Leg、一次性 continuation_ref、十类确定性 Decision/Provenance、安全动作与一等 Manual Review。
+- 新增权威 migration 030（仅六张 `intake.*` 表）、内部 Query/Command Port、PostgreSQL 单 Worker、固定 text/markdown Communication Adapter、金标引用和隔离集成/kill-restart/短时容量测试。
+- P2-007 Runtime 与 migration 001 至 022 未修改；模型、Sender、OCR、真实 Incident 写入均为 0，所有 Feature Flag 继续为 `false`。
+- P2-015 状态为 `DONE`；当前无活动任务或 Lane，下一候选 P2-016 未授权。未 push、merge、tag 或 release。
+
 ## 2026-09-03 - P2-015 independently authorized
 
 - 项目负责人只授权 P2-015 规则优先受理编排、Contact Journey、Channel Leg、continuation_ref 与 Manual Review；活动任务为 `P2-015`，活动 Lane 为 `P2-C`。
