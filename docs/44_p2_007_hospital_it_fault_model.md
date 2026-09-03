@@ -78,13 +78,17 @@ Bot 每次只问一个信息量高的问题，并明确告知用户可以分多�
 
 ## 6. 明确报修尽早建单
 
-当“技术故障意图”已经明确，即使地点或范围未知，也应先由 Unified Ticket Core 创建最小 Ticket，并进入 `WAITING_USER`。规则层不拥有 Ticket 状态，也不直接执行创建。
+当“技术故障意图”已经明确，即使地点、服务或根因未知，也应由未来 P2-015 经 Unified Ticket Command Port 尽早创建最小 Ticket，并可进入 `NEW / WAITING_REQUESTER`。规则层不拥有 Ticket 状态，也不直接执行创建。
 
 ## 7. 责任边界
 
 P2-007：目录、别名、规则、字段、来源、冲突、候选和推荐。
 
-P2-008：DeepSeek Provider、安全出域和严格 Schema。
+P2-015：持久化规则编排、Contact Journey、continuation_ref 与人工审核队列。
+
+P2-016：完整 Ticket Action Workbench、Reporter-safe Timeline 和可靠通知。
+
+P2-008：仅在 P2-G2 通过后才允许候选的 DeepSeek Provider、安全出域和严格 Schema。
 
 P2-012：真实 Incident、ReporterSubscription、人工确认、link/unlink 和公共通知。
 

@@ -2,7 +2,7 @@
 
 > 文件名为兼容既有索引保留。V1.4 的 P2 已不只是 AI Enhancement。
 
-> 状态（2026-09-02）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-006 均已完成；P2-G1 Human-only Assembly 已通过真实现场 Gate 和项目负责人批准。当前无活动 Lane；P2-007 至 P2-014、P2-G2 及以后 Gate 均为 `REQUIRES_SEPARATE_AUTHORIZATION`。所有提交的 P2/P3 Feature Flag 默认值保持 `false`。
+> 状态（2026-09-03）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-G1、ARCH-005 与 ARCH-006 已完成。当前无活动任务或 Lane；下一候选为 P2-015，但未授权。P2-015、P2-016、P2-012、P2-008 至 P2-014 及 P2-G2 至 P2-G5 均须单独授权，所有 Feature Flag 默认 `false`。
 
 ## 阶段目标
 
@@ -13,7 +13,8 @@
 - REST + SSE 坐席 Workbench；
 - 人工接管、分配、已读游标和内部备注；
 - 人工、AI 和系统通知统一可靠出站；
-- DeepSeek 多轮上下文、摘要和结构化记忆；
+- AI 完全关闭时可用的规则优先受理、人工审核、完整 Ticket 生命周期、Reporter-safe Timeline、可靠通知和人工确认 Incident；
+- 可选的 DeepSeek 多轮上下文、摘要和结构化记忆；
 - Shadow、Copilot、Controlled Auto；
 - 私有媒体/OCR；
 - Incident 和运营指标。
@@ -31,13 +32,13 @@
 | Lane | 内容 | 可独立开发方式 |
 |---|---|---|
 | P2-A | Thread、Session、Timeline、SSE | PostgreSQL + fixture Channel Message |
-| P2-B | Communication Outbox、Handoff、Workbench | mock Conversation API / mock WeCom sender |
-| P2-C | Rules、DeepSeek、Context、Memory、AI Mode | 脱敏固定集 + mock Provider |
+| P2-B | Communication Outbox、Handoff、完整 Ticket Workbench/通知 | mock Conversation API / mock WeCom sender |
+| P2-C | Rules、Journey、Manual Review、DeepSeek、Context、Memory、AI Mode | 脱敏固定集 + mock Provider |
 | P2-D | Storage/OCR、Incident、Metrics | 测试对象存储 + 合成数据 |
 
 ## 任务总览
 
-当前完成项为 P2-001 至 P2-006，P2-G1 已通过；当前无活动 Gate 或 Lane。下表的依赖和目标 Gate 只表达
+当前完成项为 P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006；当前无活动 Gate 或 Lane。下表的依赖和目标 Gate 只表达
 规划关系，不构成后续任务或 Assembly Gate 的启动授权。
 
 | ID | 标题 | Lane | 依赖 | 目标 Gate |
@@ -48,14 +49,16 @@
 | P2-004 | 统一 Communication Message / Outbox / Delivery | P2-B | P2-001 | P2-G1 |
 | P2-005 | 坐席分配、Read Cursor、Handoff 与 Generation Fence | P2-B | P2-001, P2-004 | P2-G1 |
 | P2-006 | 实时 Web Workbench、REST Command 与权限 | P2-B | P2-002, P2-003, P2-005 | P2-G1 |
-| P2-007 | 服务目录、确定性规则与对话字段模型 | P2-C | P1-012 | P2-G2 |
-| P2-008 | DeepSeek Provider Adapter、脱敏与安全闸门 | P2-C | P2-007 | P2-G2 |
-| P2-009 | Context Builder、Rolling Memory、AI Job 与 AI Run | P2-C | P2-001, P2-008 | P2-G2 |
+| P2-007 | 服务目录、确定性规则与对话字段模型（DONE） | P2-C | P1-012 | P2-G2 |
+| P2-015 | 规则优先受理编排、跨渠道接触旅程与人工审核 | P2-C | P2-G1, ARCH-005, P2-007, P1-004, P1-005, P2-004 | P2-G2 |
+| P2-016 | 完整工单生命周期工作台、上报人时间线与可靠通知 | P2-B | P2-015, P1-006, P2-004, P2-005, P2-006 | P2-G2 |
+| P2-012 | Incident、Reporter Subscription 与人工确认 | P2-D | P2-007, P2-015, P2-016 | P2-G2 |
+| P2-008 | DeepSeek Provider Adapter、脱敏与安全闸门 | P2-C | P2-G2, P2-007 | P2-G3 |
+| P2-009 | Context Builder、Rolling Memory、AI Job 与 AI Run | P2-C | P2-001, P2-008 | P2-G3 |
 | P2-010 | AI Shadow、Copilot、受控自动回复与评估 | P2-C | P2-006, P2-009 | P2-G4 |
-| P2-011 | 私有媒体、StoragePort、OCR 与敏感文本处理 | P2-D | P1-012 | P2-G3 |
-| P2-012 | Incident、Reporter Subscription 与人工确认 | P2-D | P2-007 | P2-G3 |
-| P2-013 | Conversation、AI、Ticket、Incident 运营指标与月报 | P2-D | P2-006, P2-010, P2-012 | P2-G4 |
-| P2-014 | P2 组装、2C4G 性能、安全、降级与 Go/No-Go | ASSEMBLY | P2-010, P2-011, P2-012, P2-013 | P2-G4 |
+| P2-011 | 私有媒体、StoragePort、OCR 与敏感文本处理 | P2-D | P1-012 | P2-G4 |
+| P2-013 | Conversation、AI、Ticket、Incident 运营指标与月报 | P2-D | P2-G4, P2-010, P2-012 | P2-G5 |
+| P2-014 | P2 组装、2C4G 性能、安全、降级与 Go/No-Go | ASSEMBLY | P2-G4, P2-010, P2-011, P2-012, P2-013 | P2-G5 |
 
 ## Gate 验收
 
@@ -72,25 +75,31 @@
 - 重复点击、并发接管和发送失败通过；
 - 2C4G 无 OOM。
 
-### P2-G2 AI Shadow
+### P2-G2 规则优先、人工兜底的完整服务闭环
 
-- DeepSeek 只产生后台结果；
-- 脱敏和出域审查；
-- Context/Memory 可追溯；
-- generation fence；
-- 固定评估集；
-- AI 停止不影响 G1。
+- 依赖 P2-G1、ARCH-005、P2-007、P2-015、P2-016、P2-012；
+- 三种入口先持久化，确定性安全路由覆盖率至少 90%；
+- 完整 Ticket Action UI、双责任、Reporter-safe Timeline 和通知链通过；
+- Incident 只由人工确认，错误关联可解除；
+- 全部 AI/OCR Flag 关闭，模型调用为 0；
+- 真实 PostgreSQL、受控真实企业微信、至少 60 分钟观察和项目负责人批准。
 
-### P2-G3 Copilot + Media/Incident
+### P2-G3 AI Shadow
 
-- AI 草稿必须人工确认；
-- 草稿编辑差异可审计；
-- 媒体/OCR 可降级；
-- Incident 默认人工确认；
-- 群聊不同申报人隔离；
+- 依赖 P2-G2、P2-008、P2-009；
+- DeepSeek 只产生后台结果，不参与受理、Ticket、Incident 或通知正确性；
+- 脱敏、Schema、Context/Memory、成本和 Generation Fence 可追溯；
+- AI 停止时 P2-G2 完整闭环继续通过。
+
+### P2-G4 Copilot + Media
+
+- 依赖 P2-G3、P2-010、P2-011；
+- AI 草稿必须人工确认，编辑差异可审计；
+- 媒体/OCR 可关闭和降级；
+- Incident 已在 P2-G2 前完成人工路径，不依赖本 Gate；
 - 敏感附件不外泄。
 
-### P2-G4 Controlled Auto
+### P2-G5 Controlled Auto + Phase 2 Go
 
 - 仅批准低风险意图；
 - 白名单和小流量；

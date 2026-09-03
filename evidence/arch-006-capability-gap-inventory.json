@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "inventory_id": "ARCH-006-CAPABILITY-GAP-INVENTORY",
+  "inventory_date": "2026-09-03",
+  "baseline_commit": "0a163528a94a15c5cbe6bc5e1e2063f5e0d746de",
+  "classification_rule": "Contracts, recommendations, pure functions, mocks, projections, and plans are not assembled production capabilities.",
+  "existing_capabilities": [
+    {"id": "CAP-01", "name": "P1 Channel Message persist-first", "status": "IMPLEMENTED_AND_ASSEMBLED", "evidence": ["src/p1-003-channel-message-inbox.mjs", "evidence/p1-003-channel-message-inbox-report.md", "evidence/p2-g1-project-owner-approval.md"]},
+    {"id": "CAP-02", "name": "P1 Service Intake basic classification and 90-second aggregation", "status": "IMPLEMENTED_COMPATIBILITY_RUNTIME", "evidence": ["src/p1-004-service-intake.mjs", "evidence/p1-004-service-intake-report.md"]},
+    {"id": "CAP-03", "name": "Unified Ticket Core and Ticket Action state machine", "status": "IMPLEMENTED_AUTHORITATIVE_COMPATIBILITY_RUNTIME", "evidence": ["src/p1-005-pilot-ticket-core.mjs", "src/p1-006-ticket-state-actions.mjs"]},
+    {"id": "CAP-04", "name": "Ticket Event version and audit", "status": "IMPLEMENTED", "evidence": ["src/p1-006-ticket-state-actions.mjs"]},
+    {"id": "CAP-05", "name": "Communication Message Outbox Delivery", "status": "IMPLEMENTED_HUMAN_TEXT_ASSEMBLED", "evidence": ["src/p2-004-communication-core.mjs", "src/p2-004-communication-delivery-worker.mjs", "evidence/p2-g1-project-owner-approval.md"]},
+    {"id": "CAP-06", "name": "Conversation takeover Handoff Read Cursor", "status": "IMPLEMENTED_AND_ASSEMBLED", "evidence": ["src/p2-005-conversation-control.mjs", "evidence/p2-g1-project-owner-approval.md"]},
+    {"id": "CAP-07", "name": "Workbench conversation list Timeline human reply internal note", "status": "IMPLEMENTED_INTERNAL_ALPHA", "evidence": ["src/p2-006-workbench-http.mjs", "src/p2-006-workbench-command-facade.mjs", "src/p2-006-workbench-query.mjs"]},
+    {"id": "CAP-08", "name": "P2-G1 real Human-only chain", "status": "PASSED", "evidence": ["evidence/p2-g1-project-owner-approval.md"]},
+    {"id": "CAP-09", "name": "P2-007 deterministic domain computation", "status": "DONE_PURE_FUNCTION_NOT_ASSEMBLED", "evidence": ["src/p2-007-rule-engine.mjs", "evidence/p2-007-implementation-report.md"]}
+  ],
+  "gaps": [
+    {"id": "GAP-01", "name": "P2-007 persistent main-chain assembly", "owner": "P2-015"},
+    {"id": "GAP-02", "name": "Rule decision to safe action Orchestrator", "owner": "P2-015"},
+    {"id": "GAP-03", "name": "First-class MANUAL_REVIEW_REQUIRED queue", "owner": "P2-015"},
+    {"id": "GAP-04", "name": "Three-mode Contact Journey runtime assembly", "owner": "P2-015"},
+    {"id": "GAP-05", "name": "Persisted continuation_ref and multi-open Journey selection", "owner": "P2-015"},
+    {"id": "GAP-06", "name": "Full Ticket Action Workbench API", "owner": "P2-016"},
+    {"id": "GAP-07", "name": "Conversation and Ticket dual responsibility view", "owner": "P2-016"},
+    {"id": "GAP-08", "name": "Complete Ticket lifecycle UI", "owner": "P2-016"},
+    {"id": "GAP-09", "name": "Reporter-safe Timeline runtime", "owner": "P2-016"},
+    {"id": "GAP-10", "name": "Actual template_card Sender", "owner": "P2-016"},
+    {"id": "GAP-11", "name": "Ticket Event-based user notification policy", "owner": "P2-016"},
+    {"id": "GAP-12", "name": "Real Incident and Reporter Subscription", "owner": "P2-012"},
+    {"id": "GAP-13", "name": "AI Shadow incorrectly precedes full human service loop", "owner": "ARCH-006"}
+  ],
+  "rebaseline": {
+    "next_task_candidate": "P2-015",
+    "next_task_authorized": false,
+    "pre_ai_sequence": ["P2-015", "P2-016", "P2-012", "P2-G2"],
+    "ai_sequence": ["P2-008", "P2-009", "P2-G3", "P2-010", "P2-011", "P2-G4", "P2-013", "P2-014", "P2-G5"]
+  },
+  "runtime_changes": 0,
+  "migration_changes": 0,
+  "model_provider_calls": 0,
+  "feature_flags_enabled": []
+}

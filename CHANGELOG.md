@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased] - ARCH-006 AI-Optional Rule-First Full Service Loop
+
+- 2026-09-03 独立授权并完成 ARCH-006；仅重基线架构、计划、任务、Gate、索引、Validator、Architecture Test 和新增 Evidence，无业务 Runtime 或 Migration 变更。
+- 新增 P2-015 规则优先受理编排/Contact Journey/Manual Review 和 P2-016 完整 Ticket 生命周期 Workbench/Reporter Timeline/可靠通知；两者均为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`，仅预留 migration 030 和条件式 031。
+- P2-012 保留原 ID，调整为依赖 P2-007/P2-015/P2-016 并在 P2-008 前执行；真实 Incident 必须人工确认，模型调用为 0。
+- P2-G2 改为“规则优先、人工兜底的完整服务闭环”；原 AI Shadow、Copilot+Media、Controlled Auto 顺延为 P2-G3、P2-G4、P2-G5。
+- 正式冻结确定性安全路由覆盖率至少 90% 的含义：人工标注测试集中至少 90% 输入进入安全明确的下一步；Manual Review 是合法结果，不是失败，也不代表自动建单/关闭率。
+- 所有新增及既有 Feature Flag 默认 `false`；P2-007/P2-G1/ARCH-005 保持原完成结论，P2-008/P2-G2 未启动，未接入 DeepSeek、未 push/merge/tag/release。
+
 ## [Unreleased] - ARCH-005 Asia/Shanghai time baseline
 
 - 项目负责人于 2026-09-03 独立授权 ARCH-005；当前唯一活动 Lane 为 `ARCHITECTURE`，自动化完成后最多进入 `READY_FOR_TARGETED_LIVE_REVALIDATION`。
