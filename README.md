@@ -9,7 +9,7 @@
 - P1-001 至 P1-011 保持既有验收结论；
 - P1-012 已完成真实测试群 E2E、客户端观察、故障演练和 Go/No-Go，状态为 `DONE`；
 - Phase 2 保持 `IN_PROGRESS`；`P2-001` 至 `P2-005` 均已完成；
-- P2-001 至 P2-007 已完成；P2-G1 Human-only Assembly 已完成真实测试企业微信现场验证、隔离 Replay Gap、60 分钟 controlled observation 和项目负责人批准，状态为 `PASSED`。ARCH-005 已于 2026-09-03 完成自动化和目标现场重验；P2-007 同日完成纯领域实现。当前无活动任务或 Lane；P2-008 及以后任务、P2-G2 及以后 Gate 与全部 P3 任务未授权，所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
+- P2-001 至 P2-007 已完成；P2-G1 Human-only Assembly 已完成真实测试企业微信现场验证、隔离 Replay Gap、60 分钟 controlled observation 和项目负责人批准，状态为 `PASSED`。ARCH-005 已于 2026-09-03 完成自动化和目标现场重验；P2-007 同日完成纯领域实现。当前唯一活动任务为 `ARCH-006 / ARCHITECTURE`，只授权架构、计划、任务与 Gate 重基线；P2-008 及以后 Runtime 任务、P2-G2 及以后 Gate 与全部 P3 任务未授权，所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 本次 Phase 2 启动授权不等同于生产上线、临床上线或 AI 自动回复批准，不启用真实外发、SSE、模型、OCR、医院身份连接或内网 Connector。
 
 ## V1.4 核心纠偏

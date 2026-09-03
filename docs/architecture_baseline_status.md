@@ -5,12 +5,12 @@
 - 状态：ACTIVE
 - 当前阶段：P2 / IN_PROGRESS
 - 最近完成任务：P2-006 / DONE
-- 当前活动 Lane：无
+- 当前活动 Lane：ARCHITECTURE
 - 最后完成任务：P2-007（2026-09-03）
 - 最后完成 Gate：P2-G1（2026-09-02）
 - 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001 至 P2-006；P2-G1
 - 最后完成架构任务：ARCH-005（2026-09-03）
-- 当前活动任务与 Lane：无
+- 当前活动任务与 Lane：ARCH-006 / ARCHITECTURE（仅架构重基线）
 - 当前 Gate：P2-G1 / PASSED
 - 下一任务候选：P2-008（`TODO / REQUIRES_SEPARATE_AUTHORIZATION`，未授权）
 - P2-G1：PASSED（不是 Phase 2 GO、生产或临床批准）
@@ -19,7 +19,7 @@
 - 上一基线：V1.3
 - 关键决策：ADR-0010、ADR-0011、ADR-0012
 
-ARCH-005 于 2026-09-03 独立授权，仅校正 Asia/Shanghai Local Business Time Contract；自动化、Pilot migration 022、正式投影重算、全量回归和目标现场重验均已完成。关闭 Evidence 为 `evidence/arch-005-targeted-live-revalidation.md`。P2-007 已于同日完成纯领域实现；DeepSeek、OCR、真实 Incident、P2-008、P2-G2/P3 与生产/临床启用均未授权。
+ARCH-005 于 2026-09-03 独立授权，仅校正 Asia/Shanghai Local Business Time Contract；自动化、Pilot migration 022、正式投影重算、全量回归和目标现场重验均已完成。关闭 Evidence 为 `evidence/arch-005-targeted-live-revalidation.md`。P2-007 已于同日完成纯领域实现；ARCH-006 随后获得仅限架构、计划、任务和 Gate 重基线的独立授权，授权 Evidence 为 `evidence/arch-006-start-authorization.md`。DeepSeek、OCR、真实 Incident、P2-008、P2-G2/P3 与生产/临床启用均未授权。
 
 ## 1. V1.4 变化
 
@@ -97,7 +97,7 @@ P1 退出条件为：漏单 0、重复单 0、状态/事件/通知一致、真�
 
 ## 6. Phase 2
 
-P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 至 P2-007 均已完成；P2-G1 Human-only Assembly 于 2026-09-02 完成真实现场 Gate 并取得项目负责人批准，完成 Evidence 为 `evidence/p2-g1-project-owner-approval.md`。ARCH-005 与 P2-007 已完成，当前无活动任务或 Lane；P2-008 及以后任务和 P2-G2 及以后 Gate 仍须另行授权。所有提交的 Feature Flag 默认值保持关闭。
+P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 至 P2-007 均已完成；P2-G1 Human-only Assembly 于 2026-09-02 完成真实现场 Gate 并取得项目负责人批准，完成 Evidence 为 `evidence/p2-g1-project-owner-approval.md`。ARCH-005 与 P2-007 已完成；当前唯一活动任务为 `ARCH-006 / ARCHITECTURE`，只授权架构重基线。P2-008 及以后 Runtime 任务和 P2-G2 及以后 Gate 仍须另行授权。所有提交的 Feature Flag 默认值保持关闭。
 
 固定顺序：
 

@@ -3,12 +3,12 @@
   "version": "1.4.0",
   "architecture_baseline": "V1.4",
   "baseline_date": "2026-08-30",
-  "status": "P2_P2_007_DONE_AWAITING_SEPARATE_AUTHORIZATION",
+  "status": "P2_ARCH_006_IN_PROGRESS",
   "current_phase": "P2",
   "last_completed_task": "P2-007",
   "last_completed_gate": "P2-G1",
   "last_completed_architecture_task": "ARCH-005",
-  "active_task": null,
+  "active_task": "ARCH-006",
   "authorized_tasks": [
     "P2-001",
     "P2-002",
@@ -18,16 +18,20 @@
     "P2-006",
     "P2-007"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "P2_007_DONE_AWAITING_SEPARATE_AUTHORIZATION",
+  "active_lane": "ARCHITECTURE",
+  "implementation_authorization_status": "ARCH_006_IN_PROGRESS_NO_RUNTIME_AUTHORIZATION",
   "authorized_architecture_tasks": [
-    "ARCH-005"
+    "ARCH-005",
+    "ARCH-006"
   ],
   "arch_005_status": "DONE",
   "arch_005_authorized_at": "2026-09-03",
   "arch_005_authorization_evidence": "evidence/arch-005-start-authorization.md",
   "arch_005_completed_at": "2026-09-03",
   "arch_005_completion_evidence": "evidence/arch-005-targeted-live-revalidation.md",
+  "arch_006_status": "IN_PROGRESS",
+  "arch_006_authorized_at": "2026-09-03",
+  "arch_006_authorization_evidence": "evidence/arch-006-start-authorization.md",
   "p2_g1_status": "PASSED",
   "p2_g2_status": "NOT_STARTED",
   "authorized_gates": [
