@@ -181,6 +181,22 @@ const LIFECYCLE_PROFILES = Object.freeze({
     manifestStatus: 'P2_P2_015_DONE_AWAITING_P2_016_AUTHORIZATION',
     projectStatus: 'p2_p2_015_done_awaiting_p2_016_authorization',
   }),
+  P2_016_AUTHORIZED: Object.freeze({
+    lastCompletedTask: 'P2-015',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: 'P2-016',
+    activeLane: 'P2-B',
+    candidate: 'P2-016',
+    candidateAuthorized: true,
+    authorizedTasks: Object.freeze([...AUTHORIZED_TASKS, 'P2-007', 'P2-015', 'P2-016']),
+    p2006Status: 'DONE',
+    p2007Status: 'DONE',
+    activeTaskStatus: 'AUTHORIZED',
+    p2g1Status: 'PASSED',
+    manifestStatus: 'P2_P2_016_AUTHORIZED',
+    projectStatus: 'p2_p2_016_authorized',
+  }),
 });
 
 const manifest = json('MANIFEST.json');
@@ -396,8 +412,8 @@ check(p2007?.status === (profile?.p2007Status ?? 'TODO'), 'P2-007 task status ma
 check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[8-9]|01[0-4])$/u.test(task.id))
   .every((task) => task.status === 'TODO'), 'P2-008 through P2-014 remain TODO');
 if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
-  if (lifecycleStatus === 'P2_015_AUTHORIZED' || lifecycleStatus === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION') {
-    const p2015Done = lifecycleStatus === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
+  if (lifecycleStatus === 'P2_015_AUTHORIZED' || profile.lastCompletedTask === 'P2-015') {
+    const p2015Done = profile.lastCompletedTask === 'P2-015';
     check(p2015?.status === (p2015Done ? 'DONE' : 'AUTHORIZED') && p2015?.authorization_status === 'AUTHORIZED'
       && p2015?.authorized_at === '2026-09-03'
       && p2015?.authorization_evidence === 'evidence/p2-015-start-authorization.md', 'P2-015 is independently authorized');
@@ -417,7 +433,48 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
   } else {
     check(p2015?.status === 'TODO' && p2015?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-015 remains unauthorized TODO');
   }
-  check(p2016?.status === 'TODO' && p2016?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-016 remains unauthorized TODO');
+  if (lifecycleStatus === 'P2_016_AUTHORIZED') {
+    const authorization = 'evidence/p2-016-start-authorization.md';
+    const p2View = projectSummary.phase_model.find((phase) => phase.id === 'P2');
+    check(p2016?.status === 'AUTHORIZED' && p2016?.authorization_status === 'AUTHORIZED'
+      && p2016?.authorized_at === '2026-09-04'
+      && p2016?.authorization_evidence === authorization, 'P2-016 task is independently authorized');
+    check([manifest, current, backlog, parallel, taskIndex, projectSummary.project, p2View]
+      .every((view) => view?.p2_016_status === 'AUTHORIZED'
+        && view.p2_016_authorized_at === '2026-09-04'
+        && view.p2_016_authorization_evidence === authorization
+        && !Object.hasOwn(view, 'p2_016_completed_at')
+        && !Object.hasOwn(view, 'p2_016_completion_evidence')),
+    'P2-016 authorization is synchronized and does not claim completion');
+    check(p2View?.active_task === 'P2-016' && p2View?.active_lane === 'P2-B'
+      && p2View?.implementation_authorization_status === lifecycleStatus
+      && p2View?.next_task_candidate === 'P2-016' && p2View?.next_task_authorized === true,
+    'nested P2 summary mirrors authorization');
+    check(fs.existsSync(path.join(root, authorization)), 'P2-016 authorization evidence exists');
+    if (fs.existsSync(path.join(root, authorization))) {
+      const receipt = read(authorization);
+      check(receipt.includes('## Historical ledger reconciliation')
+        && receipt.includes('aa1153881fdf9f692d497b1850feda70c0ed45b8')
+        && receipt.includes('b1b8e4deb14e6290ca45aea12d92baaef4728c11'),
+      'P2-016 evidence records historical reconciliation and fixed identities');
+      check(receipt.includes('READY_FOR_TARGETED_LIVE_VALIDATION')
+        && receipt.includes('不创建第二提交'), 'P2-016 preserves the live-validation stop line');
+    }
+    const ledger = read('tickets/P2_ai_enhancement_tasks.md');
+    const p2015Section = ledger.split('## P2-015 ')[1]?.split('\n## ')[0] ?? '';
+    const p2016Section = ledger.split('## P2-016 ')[1]?.split('\n## ')[0] ?? '';
+    check(/^- 状态：DONE（2026-09-03）$/mu.test(p2015Section)
+      && p2015Section.includes('evidence/p2-015-rule-first-intake-orchestration-report.md')
+      && p2015Section.includes('aa1153881fdf9f692d497b1850feda70c0ed45b8')
+      && !/TODO|REQUIRES_SEPARATE_AUTHORIZATION/u.test(p2015Section),
+    'historical P2-015 ledger agrees with completed facts');
+    check(/^- 状态：AUTHORIZED（2026-09-04）$/mu.test(p2016Section)
+      && p2016Section.includes(authorization), 'P2-016 Markdown ledger agrees with authorization');
+    check(/^- Status: AUTHORIZED$/mu.test(read(p2016.task_file)),
+      'P2-016 task document agrees with authorization');
+  } else {
+    check(p2016?.status === 'TODO' && p2016?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-016 remains unauthorized TODO');
+  }
   check(p2012?.status === 'TODO' && p2012?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-012 remains unauthorized TODO');
   check(p2008?.status === 'TODO' && p2008?.authorization_status === 'BLOCKED_BY_P2_G2', 'P2-008 is blocked by P2-G2');
   check(sameArray(p2015?.depends_on, ['P2-G1', 'ARCH-005', 'P2-007', 'P1-004', 'P1-005', 'P2-004']), 'P2-015 dependencies are frozen');

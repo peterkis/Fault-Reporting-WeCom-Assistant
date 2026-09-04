@@ -33,6 +33,10 @@ Port, or Worker behavior, read `docs/55_p2_015_rule_first_intake_orchestration.m
 `docs/57_p2_015_manual_review_and_safe_actions.md`. This implementation does not authorize
 P2-016 UI/REST, P2-012 Incident, P2-G2, AI/OCR, or production enablement.
 
+P2-016 is independently authorized in lane P2-B; read
+`evidence/p2-016-start-authorization.md` for its exact scope and live-validation stop line.
+P2-015 remains completed; its implementation and historical evidence are unchanged.
+
 ## Conversation identity
 
 **Channel Account**:

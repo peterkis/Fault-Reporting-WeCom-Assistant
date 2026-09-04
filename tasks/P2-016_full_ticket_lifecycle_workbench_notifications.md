@@ -1,6 +1,8 @@
 # P2-016 完整工单生命周期工作台、上报人时间线与可靠通知
 
-- Status: TODO / REQUIRES_SEPARATE_AUTHORIZATION
+- Status: AUTHORIZED
+- Authorized at: 2026-09-04
+- Authorization evidence: `evidence/p2-016-start-authorization.md`
 - Phase: P2
 - Lane: P2-B
 - Target Gate: P2-G2
@@ -36,4 +38,4 @@
 
 ## Stop line
 
-当前未授权、未实现。P2-016 完成也不授权 P2-012、P2-G2 或 P2-008。
+当前已独立授权，活动 Lane 为 `P2-B`；尚未实现或验收。自动化通过后先停在 `READY_FOR_TARGETED_LIVE_VALIDATION`，真实现场验证和负责人明确批准前不标记 DONE、不创建第二提交。P2-016 完成也不授权 P2-012、P2-G2 或 P2-008。

@@ -21,7 +21,7 @@
 - `tasks/P2-015_rule_first_intake_orchestration_manual_review.md`：已完成的规则受理编排、Contact Journey 与人工审核任务；
 - `evidence/p2-015-start-authorization.md`：P2-015 独立授权、固定基线和严格停止线；
 - `evidence/p2-015-rule-first-intake-orchestration-report.md`：P2-015 完成验证、资源、隐私、回归和停止线 Evidence；
-- `tasks/P2-016_full_ticket_lifecycle_workbench_notifications.md`：未来完整 Ticket 工作台、Reporter Timeline 与通知任务（未授权）；
+- `tasks/P2-016_full_ticket_lifecycle_workbench_notifications.md`：完整 Ticket 工作台、Reporter Timeline 与通知任务（AUTHORIZED，Lane P2-B）；
 - `evidence/arch-005-start-authorization.md`：ARCH-005 Gate、暂存分支隔离和迁移安全授权 Evidence；
 - `evidence/arch-005-time-inventory-before.json` / `.md`：迁移前时间资产、逐列分类、行数、catalog 指纹和备份事实；
 - `docs/48_arch_005_asia_shanghai_time_contract.md`：LocalDate/LocalTime/LocalDateTime/PhysicalEpochMs、数据库与 UI 统一契约；
@@ -90,11 +90,15 @@
 - 所有 P2/P3 Feature Flag 保持 `false`；
 - 完成状态不等同于生产、临床或 Assembly Gate 验收。
 
+## P2-016 独立授权
+
+- `evidence/p2-016-start-authorization.md`：P2-016 授权范围、历史 P2-015 账本纠偏依据及现场验证停止线；无 Runtime 变更。
+
 ## P2-G1 Assembly 状态
 
-- P2-003、P2-004、P2-005、P2-006、P2-015：`DONE`；P2-G1：`PASSED`；当前无活动 Lane；
+- P2-003、P2-004、P2-005、P2-006、P2-015：`DONE`；P2-G1：`PASSED`；当前唯一活动任务 P2-016（Lane P2-B）；
 - `docs/42_p2_006_realtime_web_workbench.md`：Internal Alpha、REST/Auth、Query、Command、Delivery、SSE/Polling 与 UI 边界。
-- P2-007 与 P2-015 保持 `DONE`；P2-016 为下一候选但未授权；P2-012、P2-008 至 P2-014 继续要求独立授权；
+- P2-007 与 P2-015 保持 `DONE`；P2-016 为唯一已授权活动任务（Lane P2-B）；P2-012、P2-008 至 P2-014 继续要求独立授权；
 - `P2-G1` 已完成真实测试 Workbench、企业微信 Sender、Replay Gap、恢复和资源现场 Gate；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 未启用生产 Workbench、模型或医院内网；本 Gate 通过不等同于 Phase 2 Go、生产或临床上线。
 

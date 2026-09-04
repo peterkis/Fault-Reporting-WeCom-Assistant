@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-04 - P2-016 independently authorized
+
+- 仅授权 P2-016，活动任务为 `P2-016`、Lane 为 `P2-B`；P2-015 保持 2026-09-03 的 `DONE` 结论。
+- 根据原完成报告和实现提交修正 Phase 2 任务账本中 P2-015 的陈旧状态；这是历史状态账本纠偏，不是重新完成或修改 P2-015 实现。
+- 本提交仅含授权、状态账本、索引和架构门禁；全部 Feature Flag 保持 `false`，P2-012/P2-G2/P2-008 未启动，真实现场另需明确批准。
+
 ## 2026-09-03 - P2-015 completed
 
 - 完成规则优先后置编排、三入口 Contact Journey/独立 Channel Leg、一次性 continuation_ref、十类确定性 Decision/Provenance、安全动作与一等 Manual Review。
