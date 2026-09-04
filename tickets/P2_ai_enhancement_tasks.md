@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-G1、ARCH-005、ARCH-006 已完成。P2-016 已于 2026-09-04 经真实定向现场、回归和负责人批准完成。当前无活动任务或 Lane；下一候选 P2-012 未授权。P2-012、P2-008 至 P2-014 和 P2-G2 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED`、ARCH-006/P2-015 `DONE` 均不是 Phase 2 `GO`。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-G1、ARCH-005、ARCH-006 已完成。P2-016 已于 2026-09-04 经真实定向现场、回归和负责人批准完成。本轮独立授权 P2-012，唯一活动任务为 P2-012 / P2-D；自动化完成后须停在定向真实验证批准点。P2-008 至 P2-014 中除 P2-012 外的任务 和 P2-G2 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED`、ARCH-006/P2-015 `DONE` 均不是 Phase 2 `GO`。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -593,7 +593,10 @@ AI worker 并发 1；任务由 PostgreSQL durable queue 管理。
 
 ## P2-012 Incident、Reporter Subscription 与人工确认
 
-- 状态：TODO / REQUIRES_SEPARATE_AUTHORIZATION
+- 状态：AUTHORIZED（2026-09-04）
+- 授权 Evidence：`evidence/p2-012-start-authorization.md`
+- Task：`tasks/P2-012_incident_reporter_subscription_human_confirmation.md`
+- Migration：032（本任务独立编号例外，001–031 冻结）
 - Lane：P2-D
 - 目标 Gate：P2-G2
 - 依赖：P2-007, P2-015, P2-016
@@ -619,7 +622,7 @@ AI worker 并发 1；任务由 PostgreSQL durable queue 管理。
 - duplicate subscription；
 - wrong link/unlink；
 - notice rate limit；
-- resolved/reopened incident。
+- resolved/closed Incident；reopen 不在本任务授权内。
 
 ### 验收
 

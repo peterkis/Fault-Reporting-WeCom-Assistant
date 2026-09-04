@@ -181,6 +181,13 @@ const LIFECYCLE_PROFILES = Object.freeze({
     manifestStatus: 'P2_P2_015_DONE_AWAITING_P2_016_AUTHORIZATION',
     projectStatus: 'p2_p2_015_done_awaiting_p2_016_authorization',
   }),
+  P2_012_AUTHORIZED: Object.freeze({
+    lastCompletedTask: 'P2-016', lastCompletedGate: 'P2-G1', lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: 'P2-012', activeLane: 'P2-D', candidate: 'P2-012', candidateAuthorized: true,
+    authorizedTasks: Object.freeze(['P2-001','P2-002','P2-003','P2-004','P2-005','P2-006','P2-007','P2-015','P2-016','P2-012']),
+    p2006Status: 'DONE', p2007Status: 'DONE', p2g1Status: 'PASSED', p2016Status: 'DONE', p2012Status: 'AUTHORIZED',
+    activeTaskStatus: 'AUTHORIZED', manifestStatus: 'P2_P2_012_AUTHORIZED', projectStatus: 'p2_p2_012_authorized',
+  }),
   P2_016_AUTHORIZED: Object.freeze({
     lastCompletedTask: 'P2-015',
     lastCompletedGate: 'P2-G1',
@@ -425,8 +432,8 @@ check(p2006?.authorized_at === '2026-09-01'
   && p2006?.authorization_evidence === 'evidence/p2-006-start-authorization.md'
   && p2006?.task_file === 'tasks/P2-006_realtime_web_workbench_rest_authorization.md', 'P2-006 authorization metadata is linked');
 check(p2007?.status === (profile?.p2007Status ?? 'TODO'), 'P2-007 task status matches the lifecycle profile');
-check(backlog.tasks.filter((task) => task.phase === 'P2' && /^P2-(00[8-9]|01[0-4])$/u.test(task.id))
-  .every((task) => task.status === 'TODO'), 'P2-008 through P2-014 remain TODO');
+check(backlog.tasks.filter((task) => task.phase === 'P2' && task.id !== 'P2-012' && /^P2-(00[8-9]|01[0-4])$/u.test(task.id))
+  .every((task) => task.status === 'TODO'), 'P2-008 through P2-014 except independently authorized P2-012 remain TODO');
 if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
   if (lifecycleStatus === 'P2_015_AUTHORIZED' || ['P2-015','P2-016'].includes(profile.lastCompletedTask)) {
     const p2015Done = ['P2-015','P2-016'].includes(profile.lastCompletedTask);
@@ -449,7 +456,7 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
   } else {
     check(p2015?.status === 'TODO' && p2015?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-015 remains unauthorized TODO');
   }
-  if (['P2_016_AUTHORIZED', 'P2_016_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_016_DONE_AWAITING_P2_012_AUTHORIZATION'].includes(lifecycleStatus)) {
+  if (profile.p2016Status === 'DONE' || ['P2_016_AUTHORIZED', 'P2_016_READY_FOR_TARGETED_LIVE_VALIDATION'].includes(lifecycleStatus)) {
     const authorization = 'evidence/p2-016-start-authorization.md';
     const p2016Done=profile.p2016Status==='DONE',p2016Status=profile.p2016Status??profile.activeTaskStatus;
     const p2View = projectSummary.phase_model.find((phase) => phase.id === 'P2');
@@ -498,7 +505,21 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
   } else {
     check(p2016?.status === 'TODO' && p2016?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-016 remains unauthorized TODO');
   }
-  check(p2012?.status === 'TODO' && p2012?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-012 remains unauthorized TODO');
+  if (profile.p2012Status) {
+    const auth='evidence/p2-012-start-authorization.md';
+    check(p2012?.status===profile.p2012Status && p2012?.authorization_status==='AUTHORIZED'
+      && p2012?.authorized_at==='2026-09-04' && p2012?.authorization_evidence===auth
+      && p2012?.migration_reservation==='032', 'P2-012 has exact independent authorization');
+    check(fs.existsSync(path.join(root,auth)) && read(auth).includes('30a394e85973f5a300b841b23d2c358998796ba6')
+      && read(auth).includes('不创建第二提交'), 'P2-012 records baseline and targeted-live stop line');
+    check([manifest,current,backlog,parallel,taskIndex,projectSummary.project,projectSummary.phase_model.find(p=>p.id==='P2')]
+      .every(v=>v.p2_012_status===profile.p2012Status && v.p2_012_authorization_evidence===auth
+        && v.p2_012_authorized_at==='2026-09-04' && !Object.hasOwn(v,'p2_012_completed_at')
+        && v.p2_008_status==='TODO_BLOCKED_BY_P2_G2'
+        && ['p2_g2_status','p2_g3_status','p2_g4_status','p2_g5_status'].every(key=>v[key]==='NOT_STARTED')),
+      'P2-012 authorization synchronized without claiming completion');
+    check(read(p2012.task_file).includes('- Status: '+profile.p2012Status), 'P2-012 task document agrees with authorization');
+  } else check(p2012?.status === 'TODO' && p2012?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-012 remains unauthorized TODO');
   check(p2008?.status === 'TODO' && p2008?.authorization_status === 'BLOCKED_BY_P2_G2', 'P2-008 is blocked by P2-G2');
   check(sameArray(p2015?.depends_on, ['P2-G1', 'ARCH-005', 'P2-007', 'P1-004', 'P1-005', 'P2-004']), 'P2-015 dependencies are frozen');
   check(sameArray(p2016?.depends_on, ['P2-015', 'P1-006', 'P2-004', 'P2-005', 'P2-006']), 'P2-016 dependencies are frozen');

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-04 - P2-012 independently authorized
+
+- 独立授权仅 P2-012 / P2-D；保留 P2-016 DONE、P2-G1 PASSED、ARCH-006 DONE，所有默认开关 false。
+- 固定基线 30a394e85973f5a300b841b23d2c358998796ba6；第一提交仅治理，migration 032 为本任务编号例外。
+- 自动化 READY 后停止等待定向现场批准，不创建第二提交；P2-G2/P2-008/AI/OCR/P3 和远端发布未授权。
+
 ## 2026-09-04 - P2-016 completed with explicit owner approval
 
 - 负责人已批准本次定向现场通过、DONE 收口和唯一第二个本地实现提交。完成与批准见 `evidence/p2-016-ticket-lifecycle-workbench-report.md` 和 `evidence/p2-016-project-owner-approval.md`。
