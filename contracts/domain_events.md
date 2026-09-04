@@ -225,3 +225,17 @@ Integration Reconciliation 只用于新来源事件、Binding、Cursor 和外部
 P2-006 不新增 Domain Event 或数据库事实。Workbench 列表/详情只读现有 Conversation、Unified Ticket
 Core、Communication 与 Control 投影；命令只调用 P2-004/P2-005 Port。SSE 继续消费 P2-003
 `CONVERSATION_WORKBENCH` 事件，Realtime Event 不是业务事实源，Polling/Refetch 不取得状态所有权。
+
+## P2-016 生命周期投影扩展（默认关闭）
+
+新增权威事件仅为 `ticket.assignment_transferred`：追加到原 Ticket Event，包含旧/新处理人和团队的受限 metadata；不创建第二份 Assignment 事实。
+
+以下事件是原事实的内部 durable SSE 投影，不是外部通知或新的业务状态：
+
+- `manual_review.created`、`manual_review.resolved`：仅携带 Review ref、状态和版本；
+- `ticket.command.committed`、`ticket.status.changed`、`ticket.assignment.changed`：仅携带 Ticket/Event ref 与版本；
+- `ticket.notification.created`、`ticket.notification.delivery_changed`：仅携带 Ticket/Delivery ref 与状态。
+
+有 Session 时按既有 Session Scope 裁剪，否则仅发 SYSTEM scope（内部 ADMIN/DISPATCHER）；HANDLER 仍通过授权查询与 5 秒轮询恢复。载荷没有正文、患者、账号、原始 Provider 错误或 Grant。旧十三种事件和九种 source/aggregate 保留，Migration 031 添加七种事件与 MANUAL_REVIEW source/aggregate。
+
+P2-016 装配使用单调的发布 envelope 时间；业务发生时间仍由原 Ticket/Event/Journey 保存。过期来源不延长保留期，wakeup 失败不回滚已提交事实。Reporter 仅使用独立绑定会话下的只读时间线，不复用内部 SSE 权限。

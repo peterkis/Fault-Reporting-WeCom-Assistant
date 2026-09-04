@@ -1,0 +1,278 @@
+{
+  "task": "P2-016",
+  "run_id": "3bdbe965-c4df-414b-bd5a-05d5f010ad53",
+  "runtime_input_sha256": "3752596720f20524ff989ee9cf913b9e104e32a4c2095c48fc83804e7e75f863",
+  "kind": "TARGETED_LIVE_FACTS_NOT_OWNER_ACCEPTANCE",
+  "timezone": "Asia/Shanghai",
+  "database_name": "p2_016_live_8d164bec_8e71_4c77_b329_4469ff36385e",
+  "client_observation_source": "USER_PERFORMED_NATIVE_UI_AND_REPORTED_RESULTS_IN_THREAD",
+  "final_ticket": {
+    "ticket_no": "IT-20260904-0001",
+    "status": "REOPENED",
+    "version": 11,
+    "created_at": "2026-09-04 16:18:46",
+    "updated_at": "2026-09-04 16:59:39"
+  },
+  "events": [
+    {
+      "event_type": "ticket.created",
+      "aggregate_version": 1,
+      "event_ordinal": 1,
+      "created_at": "2026-09-04 16:18:46",
+      "has_internal_note": false,
+      "has_external_note": false
+    },
+    {
+      "event_type": "ticket.accepted",
+      "aggregate_version": 2,
+      "event_ordinal": 2,
+      "created_at": "2026-09-04 16:25:33",
+      "has_internal_note": false,
+      "has_external_note": false
+    },
+    {
+      "event_type": "ticket.note_added",
+      "aggregate_version": 3,
+      "event_ordinal": 3,
+      "created_at": "2026-09-04 16:34:41",
+      "has_internal_note": true,
+      "has_external_note": false
+    },
+    {
+      "event_type": "ticket.started",
+      "aggregate_version": 4,
+      "event_ordinal": 4,
+      "created_at": "2026-09-04 16:39:05",
+      "has_internal_note": false,
+      "has_external_note": false
+    },
+    {
+      "event_type": "ticket.waiting_vendor",
+      "aggregate_version": 5,
+      "event_ordinal": 5,
+      "created_at": "2026-09-04 16:41:39",
+      "has_internal_note": false,
+      "has_external_note": false
+    },
+    {
+      "event_type": "ticket.resumed",
+      "aggregate_version": 6,
+      "event_ordinal": 6,
+      "created_at": "2026-09-04 16:49:43",
+      "has_internal_note": false,
+      "has_external_note": false
+    },
+    {
+      "event_type": "ticket.waiting_requester",
+      "aggregate_version": 7,
+      "event_ordinal": 7,
+      "created_at": "2026-09-04 16:50:23",
+      "has_internal_note": false,
+      "has_external_note": false
+    },
+    {
+      "event_type": "ticket.resumed",
+      "aggregate_version": 8,
+      "event_ordinal": 8,
+      "created_at": "2026-09-04 16:53:14",
+      "has_internal_note": false,
+      "has_external_note": false
+    },
+    {
+      "event_type": "ticket.resolved",
+      "aggregate_version": 9,
+      "event_ordinal": 9,
+      "created_at": "2026-09-04 16:53:26",
+      "has_internal_note": false,
+      "has_external_note": false
+    },
+    {
+      "event_type": "ticket.closed",
+      "aggregate_version": 10,
+      "event_ordinal": 10,
+      "created_at": "2026-09-04 16:55:35",
+      "has_internal_note": false,
+      "has_external_note": false
+    },
+    {
+      "event_type": "ticket.reopened",
+      "aggregate_version": 11,
+      "event_ordinal": 11,
+      "created_at": "2026-09-04 16:59:39",
+      "has_internal_note": false,
+      "has_external_note": false
+    }
+  ],
+  "journey": {
+    "count": 1,
+    "entry_mode": "GROUP_MENTION_TO_DIRECT_GUIDED",
+    "origin_channel": "WECOM_GROUP",
+    "current_channel": "WECOM_DIRECT",
+    "status": "TICKET_LINKED",
+    "channel_legs": 2
+  },
+  "communication": {
+    "delivery_count": 13,
+    "sent": 13,
+    "pending": 0,
+    "dead_letter": 0,
+    "reconciliation_required": 0,
+    "attempt_count_distribution": [
+      {
+        "attempt_count": 1,
+        "deliveries": 11
+      },
+      {
+        "attempt_count": 2,
+        "deliveries": 1
+      },
+      {
+        "attempt_count": 4,
+        "deliveries": 1
+      }
+    ],
+    "attempt_audit": [
+      {
+        "outcome": "RECONCILIATION_REQUIRED",
+        "side_effect_state": "UNKNOWN",
+        "error_code": "COMMUNICATION_SEND_TIMEOUT",
+        "count": 1
+      },
+      {
+        "outcome": "RETRY_SCHEDULED",
+        "side_effect_state": "NOT_ATTEMPTED",
+        "error_code": "GATEWAY_UNAVAILABLE",
+        "count": 3
+      },
+      {
+        "outcome": "SENT",
+        "side_effect_state": "ACKNOWLEDGED",
+        "error_code": "OPERATOR_VERIFIED",
+        "count": 1
+      },
+      {
+        "outcome": "SENT",
+        "side_effect_state": "ACKNOWLEDGED",
+        "error_code": null,
+        "count": 12
+      }
+    ],
+    "ticket_notification_bindings": 11,
+    "person_ticket_bindings": 10,
+    "group_ticket_bindings": 1,
+    "note_notification_bindings": 0,
+    "first_card_provider_ack": "ACTUAL_ACK_WITHHELD_ONCE_ON_LOCAL_IPC",
+    "first_card_reconciled_by": "WORKBENCH_ADMIN_CONFIRMED_SENT",
+    "first_card_second_attempt_is": "ADMIN_RECONCILIATION_AUDIT_NOT_PROVIDER_RESEND"
+  },
+  "reporter": {
+    "grant_count": 10,
+    "consumed_grants": 1,
+    "issued_grants": 9,
+    "active_sessions": 1,
+    "exchange_succeeded": 1,
+    "exchange_at": "2026-09-04 16:22:57",
+    "last_seen_at": "2026-09-04 16:59:41",
+    "timeline_reads": 16,
+    "final_client_reported_timeline_ordinal": 10,
+    "internal_note_visible": false
+  },
+  "manual_review_items": 0,
+  "faults": {
+    "controlled_ipc_ack_loss_events": 1,
+    "gateway_disconnect_at": "2026-09-04 16:41:39",
+    "gateway_reauthenticated_at": "2026-09-04 16:41:44",
+    "pending_delivery_recovered_without_manual_retry": true,
+    "original_unknown_not_resent_across_reauthentication": true,
+    "command_replay_at": "2026-09-04 16:42:18",
+    "command_replayed": true,
+    "replay_extra_ticket_events": 0,
+    "replay_extra_deliveries": 0
+  },
+  "limits": [
+    "Synthetic test data only; not clinical or production.",
+    "Client receipts are human-reported, not automated screenshot observations.",
+    "ACK loss is controlled local IPC suppression, not a natural provider/network outage.",
+    "Successful cancellation, transfer, combined takeover, manual-review, concurrency and auto-close branches are automated native-browser/integration coverage, not all repeated in this live run.",
+    "Final regression and explicit owner acceptance are pending."
+  ],
+  "live_scenario_result": "TECHNICAL_CHECKS_COMPLETED_OWNER_ACCEPTANCE_PENDING",
+  "observation": {
+    "started_at": "2026-09-04 16:16:05",
+    "ended_at": "2026-09-04 17:02:26",
+    "observed_ms": 2780329,
+    "samples": 180,
+    "minimum_15_minutes_met": true,
+    "runtime_processes": 3,
+    "controller_processes": 1,
+    "role_pool_limits": [
+      4,
+      2,
+      1
+    ],
+    "controller_pool_limit": 1,
+    "persistent_pool_total_limit": 8,
+    "transient_readonly_audits": "Separate max=1 pool opened briefly and closed for each query; not a persistent role pool.",
+    "observed_database_connections_peak": 7,
+    "sse_min": 2,
+    "sse_max": 2,
+    "runtime_rss_peak_bytes": 247738368,
+    "runtime_rss_final_bytes": 236457984,
+    "runtime_and_controller_rss_peak_bytes": 326844416,
+    "runtime_heap_peak_bytes": 55783240,
+    "runtime_heap_final_bytes": 51810120,
+    "runtime_cpu_peak_percent": 18.85,
+    "pool_waiting_peak": 0,
+    "projection_backlog_peak": 0,
+    "projection_failures_peak": 0,
+    "role_timer_peaks": [
+      4,
+      2,
+      3
+    ],
+    "role_socket_peaks": [
+      14,
+      2,
+      3
+    ],
+    "gateway_manual_reauthentication": "Explicit DISCONNECT/RECONNECT events; gateway_reconnect_total metric counts automatic reconnects and stayed zero.",
+    "hardware_2c4g_certification": false,
+    "soak_24h": false
+  },
+  "cleanup": {
+    "at": "2026-09-04 17:02:27",
+    "driver_exit_code": 0,
+    "database_dropped": true,
+    "database_residual": 0,
+    "backend_residual": 0,
+    "role_processes": 0,
+    "controller_pool_closed": true,
+    "tls_closed": true,
+    "sse_closed": true,
+    "new_browser_profiles_removed": true,
+    "owned_runtime_and_browser_processes": 0,
+    "owned_listeners": 0,
+    "old_profiles_touched": false,
+    "persistent_env_edited": false,
+    "process_approvals_cleared": true,
+    "filesystem_cleanup_complete": false,
+    "retained_items": "Earlier policy-blocked roots/profiles and non-profile temporary roots retained; no deletion bypass.",
+    "wecom_user_windows": "Not closed by automation; Reporter service stopped."
+  },
+  "post_live_regression": {
+    "status": "PASS",
+    "tests": 533,
+    "pass": 533,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "duration_ms": 555687.2561,
+    "evidence": "evidence/p2-016-post-live-regression-report.json",
+    "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 tests/*.test.mjs",
+    "isolated_temp_root": "tmp/p2016-regression-final-e239f28ed5974ad9a98ce58e6af566b8"
+  },
+  "owner_final_acceptance": "PENDING",
+  "second_commit_created": false
+}

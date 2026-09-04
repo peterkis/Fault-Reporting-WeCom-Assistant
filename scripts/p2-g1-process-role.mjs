@@ -60,7 +60,7 @@ function configuredPrincipals() {
   return values;
 }
 
-async function runApp() {
+export async function runApp({runtimeFactory=createP2G1Runtime}={}) {
   const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
     max: 4,
@@ -69,7 +69,7 @@ async function runApp() {
   });
   const metrics = createP2G1ProcessMetrics({ role: 'APP' });
   const peer = { gatewayAuthenticated: !truth('P2_G1_REQUIRE_GATEWAY'), workerReady: false };
-  const runtime = createP2G1Runtime({
+  const runtime = runtimeFactory({
     pool,
     operationalIntake: createP2G1PilotOperationalIntake({ pool, identityHashKey: required('PILOT_LOG_IDENTITY_HASH_KEY', /^.{16,}$/u) }),
     principalIds: configuredPrincipals(),
@@ -114,7 +114,7 @@ async function runApp() {
   send({ type: 'role-ready', role: 'APP', address: started.address, cookies: started.cookies, pool_max: 4 });
 }
 
-async function runGateway() {
+export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake,senderFactory=createP2G1WeComCommunicationSender}={}) {
   const enabled = truth('P2_G1_GATEWAY_ENABLED');
   const senderEnabled = truth('P2_G1_SENDER_ENABLED');
   const pool = createPostgresPool({
@@ -127,7 +127,7 @@ async function runGateway() {
   let gateway;
   if (enabled) {
     const assembly = createP2G1HumanOnlyAssembly({
-      operationalIntake: createP2G1PilotOperationalIntake({ pool, identityHashKey: required('PILOT_LOG_IDENTITY_HASH_KEY', /^.{16,}$/u) }),
+      operationalIntake: intakeFactory({ pool, identityHashKey: required('PILOT_LOG_IDENTITY_HASH_KEY', /^.{16,}$/u) }),
       coordinator: null,
       projectAfterCommit: false,
     });
@@ -144,7 +144,7 @@ async function runGateway() {
   const allowedTargetHashes = enabled
     ? required('P2_G1_ALLOWED_TARGET_HASHES', /^[a-f0-9]{64}(?:,[a-f0-9]{64})*$/u).split(',')
     : [];
-  const sender = createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes, enabled: senderEnabled });
+  const sender = senderFactory({ pool, gateway, allowedTargetHashes, enabled: senderEnabled });
   let stopping = false;
   let lastStatus = '';
   function publishStatus() {
@@ -201,7 +201,7 @@ async function runGateway() {
   send({ type: 'role-ready', role: 'GATEWAY', authenticated, pool_max: 1 });
 }
 
-async function runWorker() {
+export async function runWorker({extensionFactory=null}={}) {
   const enabled = truth('P2_G1_SENDER_ENABLED');
   const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
@@ -230,13 +230,14 @@ async function runWorker() {
     },
   });
   const worker = createCommunicationDeliveryWorker({ pool, sender, enabled, batchSize: 20 });
+  const extension = extensionFactory?.({pool});
   let stopping = false;
   let running = false;
   let task = Promise.resolve();
   const timer = setInterval(() => {
-    if (stopping || running || !enabled) return;
+    if (stopping || running || (!enabled && !extension)) return;
     running = true;
-    task = worker.runOnce().catch(() => {}).finally(() => { running = false; });
+    task = (async () => { await extension?.runOnce(); if(enabled) await worker.runOnce(); })().catch(() => {}).finally(() => { running = false; });
   }, 250);
   async function stop() {
     if (stopping) return;

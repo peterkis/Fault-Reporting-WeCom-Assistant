@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">
+<title>工单与人工复核 · 信息保障工作台</title><link rel="stylesheet" href="/static/workbench/lifecycle.css"></head>
+<body>
+<header class="service-header"><div><p class="kicker">信息保障 / INTERNAL BETA</p><h1>服务处理工作台</h1></div>
+<div class="service-meta"><span id="lc-agent">验证坐席身份</span><span id="lc-connection" role="status">连接中</span><span>Asia/Shanghai</span></div></header>
+<p class="boundary">仅限受控测试 · 非生产 / 非临床上线 · AI 未启用 · Incident 未启用</p>
+<main class="layout">
+<nav class="navigation" aria-label="服务队列"><a href="/workbench/">会话与人工回复 ↗</a><h2>审核与分派</h2><div id="lc-navigation"></div>
+<p class="quiet">工单状态来自 Unified Ticket Core。<br>会话分配不改变工单归属。</p></nav>
+<section class="queue" aria-labelledby="lc-queue-title"><div class="section-heading"><h2 id="lc-queue-title">待分配工单</h2><button id="lc-refresh" type="button">刷新</button></div>
+<label id="lc-priority-label" hidden>审核优先级<select id="lc-priority"><option value="">全部优先级</option><option value="URGENT">紧急</option><option value="HIGH">高</option><option value="NORMAL">普通</option><option value="LOW">低</option></select></label>
+<ol id="lc-list" class="item-list" aria-label="当前队列"></ol><button id="lc-more" type="button" hidden>加载更多</button></section>
+<section id="lc-detail" class="detail" aria-label="处理详情"><p class="placeholder">选择一个工单或审核项<br><small>操作前将检查权限与当前版本。</small></p></section>
+</main>
+<div class="message-bar"><p id="lc-status" role="status" aria-live="polite">正在加载服务数据。</p><button id="lc-retry-command" type="button" hidden>核对并重试同一命令</button></div>
+<script type="module" src="/static/workbench/lifecycle.js"></script></body></html>

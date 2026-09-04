@@ -6,7 +6,7 @@
   "phase_name": "Conversation Center 与 AI 协作",
   "status": "IN_PROGRESS",
   "started": true,
-  "last_completed_task": "P2-015",
+  "last_completed_task": "P2-016",
   "last_completed_gate": "P2-G1",
   "last_completed_architecture_task": "ARCH-006",
   "active_task": null,
@@ -19,10 +19,11 @@
     "P2-005",
     "P2-006",
     "P2-007",
-    "P2-015"
+    "P2-015",
+    "P2-016"
   ],
   "active_lane": null,
-  "implementation_authorization_status": "P2_015_DONE_AWAITING_P2_016_AUTHORIZATION",
+  "implementation_authorization_status": "P2_016_DONE_AWAITING_P2_012_AUTHORIZATION",
   "authorized_architecture_tasks": [
     "ARCH-005",
     "ARCH-006"
@@ -50,7 +51,10 @@
   "p2_015_authorization_evidence": "evidence/p2-015-start-authorization.md",
   "p2_015_completed_at": "2026-09-03",
   "p2_015_completion_evidence": "evidence/p2-015-rule-first-intake-orchestration-report.md",
-  "p2_016_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+  "p2_016_status": "DONE",
+  "p2_016_authorized_at": "2026-09-04",
+  "p2_016_authorization_evidence": "evidence/p2-016-start-authorization.md",
+  "p2_016_automated_readiness_evidence": "evidence/p2-016-automated-readiness-report.json",
   "p2_012_status": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
   "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
   "p2_009_status": "TODO",
@@ -58,7 +62,7 @@
   "p2_011_status": "TODO",
   "p2_013_status": "TODO",
   "p2_014_status": "TODO",
-  "next_task_candidate": "P2-016",
+  "next_task_candidate": "P2-012",
   "next_task_authorized": false,
   "authorized_gates": [
     "P2-G1"
@@ -91,7 +95,7 @@
   "allowed_scope": [
     "preserve the completed P2-015 rule-first orchestration, Contact Journey, continuation, Manual Review, safe action, internal query, and worker evidence",
     "consume the frozen P2-007 pure output only through the P2-015 adapter and preserve P1 committed facts",
-    "keep P2-015 disabled by default and stop before P2-016, P2-012, P2-G2, or P2-008",
+    "preserve completed P2-016 Manual Review UI, Ticket lifecycle, dual responsibility, Reporter-safe Timeline and reliable notifications; no active task or lane; P2-012 requires separate authorization",
     "inherit ARCH-005 LocalDateTime, PhysicalEpochMs, and explicit same-second ordering contracts",
     "keep every committed feature-flag default false and preserve completed P1 and P2-001 through P2-007 behavior"
   ],
@@ -108,7 +112,7 @@
     "historical ticket compatibility scope"
   ],
   "forbidden_without_task_authorization": [
-    "start P2-016, P2-012, P2-008, or any later P2 task without separate authorization",
+    "start P2-012, P2-008, or any later P2 task without separate authorization",
     "start any P3 task",
     "mark P2-G1 PASSED or GO without live WeCom evidence and project-owner approval",
     "start P2-G2 or any later gate",
@@ -141,7 +145,10 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_015_DONE_AWAITING_P2_016_AUTHORIZATION",
+    "activation_status": "P2_016_DONE_AWAITING_P2_012_AUTHORIZATION",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
-  }
+  },
+  "p2_016_completed_at": "2026-09-04",
+  "p2_016_completion_evidence": "evidence/p2-016-ticket-lifecycle-workbench-report.md",
+  "p2_016_owner_approval_evidence": "evidence/p2-016-project-owner-approval.md"
 }

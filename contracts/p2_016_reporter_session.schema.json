@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_reporter_session.schema.json",
+  "title": "p2_016_reporter_session",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "public_ref",
+    "identity_mode",
+    "read_only"
+  ],
+  "properties": {
+    "public_ref": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 32,
+      "pattern": "^[A-Za-z0-9_-]{32}$"
+    },
+    "identity_mode": {
+      "const": "BOUND_ACCESS_SESSION"
+    },
+    "read_only": {
+      "const": true
+    }
+  },
+  "x-business-timezone": "Asia/Shanghai",
+  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys"
+}

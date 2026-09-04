@@ -1,0 +1,28 @@
+import { EXTERNAL_TICKET_STATUS } from './p1-005-pilot-ticket-core.mjs';
+import { exactP2016,failP2016,localP2016,publicP2016,versionP2016 } from './p2-016-domain-contracts.mjs';
+
+export function validateP2016CardModel(input) {
+  const v=exactP2016(input,['public_ref','suffix','status','occurred_at','version','notification_type','source']);
+  if(typeof v.public_ref!=='string'||typeof v.suffix!=='string'||typeof v.status!=='string'
+    ||!/^[A-Za-z0-9_-]{32}$/u.test(v.public_ref)||!/^[0-9]{4}$/u.test(v.suffix)
+    ||!Object.hasOwn(EXTERNAL_TICKET_STATUS,v.status)||!['GROUP','DIRECT'].includes(v.source)
+    ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_CLOSED','TICKET_REOPENED','TICKET_CANCELLED'].includes(v.notification_type))failP2016('CARD_INVALID');
+  versionP2016(v.version);localP2016(v.occurred_at);return publicP2016(v);
+}
+export function reporterCardLinkP2016({origin,allowedHosts,token,allowLocalHttp=false}) {
+  if(typeof origin!=='string'||!Array.isArray(allowedHosts)||typeof token!=='string'||!/^[A-Za-z0-9_-]{64}$/u.test(token))failP2016('CARD_URL_INVALID');
+  let url;try{url=new URL(origin);}catch{failP2016('CARD_URL_INVALID');}
+  if(url.username||url.password||url.pathname!=='/'||url.search||url.hash||!allowedHosts.includes(url.host)
+    ||(url.protocol!=='https:'&&!(allowLocalHttp===true&&url.protocol==='http:'&&['127.0.0.1','[::1]','localhost'].includes(url.hostname))))failP2016('CARD_URL_INVALID');
+  return url.origin+'/reporter/open#grant='+token;
+}
+export function buildP2016TemplateCard({model,origin,allowedHosts,token,allowLocalHttp=false}) {
+  const v=validateP2016CardModel(model),url=reporterCardLinkP2016({origin,allowedHosts,token,allowLocalHttp});
+  return publicP2016({msgtype:'template_card',template_card:{
+    card_type:'text_notice',source:{desc:v.source==='GROUP'?'群聊报修':'主动单聊',desc_color:0},
+    main_title:{title:v.notification_type==='TICKET_CREATED'?'工单已受理':'工单状态更新'},
+    emphasis_content:{title:v.suffix,desc:'工单尾号'},sub_title_text:'完整工单号与处理进度请通过下方入口查看。',
+    horizontal_content_list:[{keyname:'状态',value:EXTERNAL_TICKET_STATUS[v.status]},{keyname:'更新时间',value:v.occurred_at}],
+    jump_list:[{type:1,title:'查看处理进度',url}],card_action:{type:1,url},task_id:'ticket_'+v.public_ref+'_'+v.version,
+  }});
+}

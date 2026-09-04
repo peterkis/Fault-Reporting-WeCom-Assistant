@@ -14,12 +14,14 @@ P1 / P1-012 / DONE / GO
 当前阶段状态固定为：
 
 ```text
-P2 / P2-015 / DONE / NO_ACTIVE_LANE
+P2 / P2-016 / DONE / NO_ACTIVE_LANE
 ```
 
-V1.4 不改变 G0/P1 已完成事实。P2-G1 于 2026-09-02 在真实测试企业微信现场 Evidence、隔离 Replay Gap、60 分钟 controlled observation 和负责人明确批准后更新为 `PASSED`。ARCH-005、P2-007、ARCH-006 与 P2-015 已于 2026-09-03 完成。当前无活动任务或 Lane；下一候选为 P2-016，但未授权。P2-016、P2-012、P2-008 及以后 Runtime 任务、P2-G2 及以后 Gate 均未授权，全部 P3 未启动。所有 Feature Flag 默认关闭。上述状态均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
+V1.4 不改变 G0/P1 已完成事实。P2-G1 于 2026-09-02 在真实测试企业微信现场 Evidence、隔离 Replay Gap、60 分钟 controlled observation 和负责人明确批准后更新为 `PASSED`。ARCH-005、P2-007、ARCH-006 与 P2-015 已于 2026-09-03 完成。P2-016 已于 2026-09-04 经真实定向现场、回归和负责人批准完成。当前无活动任务或 Lane；下一候选 P2-012 未授权。P2-012、P2-008 及以后 Runtime 任务、P2-G2 及以后 Gate 均未授权，全部 P3 未启动。所有 Feature Flag 默认关闭。上述状态均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
 
 ## 2. 长期事实源
+
+P2-016 完成或交接核验时，读取 `evidence/p2-016-ticket-lifecycle-workbench-report.md` 与 `evidence/p2-016-project-owner-approval.md`。后续任务及新的现场运行须另行授权；当前所有 Feature Flag 默认关闭，P2-012/P2-G2/P2-008 保持停止线。
 
 本仓库 Unified Ticket Core 是唯一长期 Ticket 编号、状态、责任和事件事实源。
 
@@ -64,7 +66,7 @@ P1：
 
 ### Phase 2：Conversation Center 与 AI 协作
 
-P2 保持 `IN_PROGRESS`；P2-001 至 P2-007、P2-015、P2-G1、ARCH-005、ARCH-006 均已完成。当前无活动任务或 Lane；P2-016 为下一候选但未授权。P2-016、P2-012、P2-008 及以后 Runtime 任务和 P2-G2 及以后 Gate 不得启动，所有 Feature Flag 默认值保持 `false`。
+P2 保持 `IN_PROGRESS`；P2-001 至 P2-007、P2-015、P2-016、P2-G1、ARCH-005、ARCH-006 均已完成。P2-016 已于 2026-09-04 经真实定向现场、回归和负责人批准完成。当前无活动任务或 Lane；下一候选 P2-012 未授权。P2-012、P2-008 及以后 Runtime 任务和 P2-G2 及以后 Gate 不得启动，所有 Feature Flag 默认值保持 `false`。
 
 P2 必须按以下顺序：
 

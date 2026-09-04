@@ -711,3 +711,17 @@ CREATE TABLE IF NOT EXISTS integration.identity_binding (
 --    THEN connector sends and records delivery.
 --
 -- 5. No external API calls are allowed while holding these transactions.
+
+-- P2-016 authoritative runtime extension: 031_p2_016_ticket_lifecycle_workbench_notifications.sql.
+-- The migration, not this future-phase draft, owns executable DDL and exact catalog validation.
+-- Six new relations (all reference the existing pilot_ticket.ticket; no second Ticket Core):
+--   pilot_ticket.ticket_command_receipt: principal scope / command UUID / canonical hash / terminal receipt.
+--   communication.ticket_notification_binding: unique event / recipient / template -> existing Message/Outbox/Delivery.
+--   pilot_ticket.reporter_public_ref: random 192-bit opaque reference, never sufficient authorization.
+--   pilot_ticket.reporter_access_grant: bound one-use HMAC metadata and token hash; raw token never stored.
+--   pilot_ticket.reporter_access_session: hashed opaque cookie, bound Ticket, expiry and revocation.
+--   pilot_ticket.reporter_access_event: append-only access/revocation audit.
+-- Existing ticket_event gains assignment_metadata and assignment_transferred; ownership remains on Ticket.
+-- Existing realtime_event gains seven P2-016 wakeup types and MANUAL_REVIEW source/aggregate.
+-- No trigger/function/extension delta. Business timestamps are WITHOUT TIME ZONE with Asia/Shanghai semantics.
+-- All feature defaults remain false; migration presence is not live-send or P2-G2 authorization.

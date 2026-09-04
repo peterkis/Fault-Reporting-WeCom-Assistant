@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-G1、ARCH-005、ARCH-006 已完成。当前无活动任务或 Lane；下一候选 P2-016 未授权。P2-016、P2-012、P2-008 至 P2-014 和 P2-G2 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED`、ARCH-006/P2-015 `DONE` 均不是 Phase 2 `GO`。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-G1、ARCH-005、ARCH-006 已完成。P2-016 已于 2026-09-04 经真实定向现场、回归和负责人批准完成。当前无活动任务或 Lane；下一候选 P2-012 未授权。P2-012、P2-008 至 P2-014 和 P2-G2 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED`、ARCH-006/P2-015 `DONE` 均不是 Phase 2 `GO`。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -296,7 +296,7 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 - Task：`tasks/P2-G1_human_only_conversation_center_assembly.md`
 - 授权 Evidence：`evidence/p2-g1-start-authorization.md`
 - 完成 Evidence：`evidence/p2-g1-project-owner-approval.md`
-- Lane：ASSEMBLY（已关闭，当前无活动 Lane）
+- Lane：ASSEMBLY（该 Gate 已关闭；当前无活动任务或 Lane）
 - 依赖：P1、P2-001 至 P2-006
 - 数据库变更：无
 
@@ -346,12 +346,16 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 ## P2-015 规则优先受理编排、跨渠道接触旅程与人工审核
 
-- 状态：TODO / REQUIRES_SEPARATE_AUTHORIZATION
+- 状态：DONE（2026-09-03）
+- 授权 Evidence：`evidence/p2-015-start-authorization.md`
+- 完成 Evidence：`evidence/p2-015-rule-first-intake-orchestration-report.md`
+- 实现提交：`aa1153881fdf9f692d497b1850feda70c0ed45b8` — `feat(p2): implement P2-015 rule-first intake orchestration`
+- 账本纠偏：仅同步既有完成事实；不重新验收、重新完成或修改 P2-015 实现。
 - Task：`tasks/P2-015_rule_first_intake_orchestration_manual_review.md`
 - Lane：P2-C
 - 目标 Gate：P2-G2
 - 依赖：P2-G1, ARCH-005, P2-007, P1-004, P1-005, P2-004
-- Migration：预留 030；ARCH-006 不创建 SQL
+- Migration：030 已由 P2-015 实现；ARCH-006 不创建 SQL
 
 ### 目标
 
@@ -368,7 +372,10 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 
 ## P2-016 完整工单生命周期工作台、上报人时间线与可靠通知
 
-- 状态：TODO / REQUIRES_SEPARATE_AUTHORIZATION
+- 状态：DONE（2026-09-04）
+- 完成 Evidence：`evidence/p2-016-ticket-lifecycle-workbench-report.md`
+- 负责人批准：`evidence/p2-016-project-owner-approval.md`
+- 授权 Evidence：`evidence/p2-016-start-authorization.md`
 - Task：`tasks/P2-016_full_ticket_lifecycle_workbench_notifications.md`
 - Lane：P2-B
 - 目标 Gate：P2-G2

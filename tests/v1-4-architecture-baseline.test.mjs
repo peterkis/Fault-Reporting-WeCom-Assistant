@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { runInNewContext } from 'node:vm';
 
 const root = process.cwd();
 const json = (relativePath) => JSON.parse(fs.readFileSync(path.join(root, relativePath), 'utf8'));
@@ -133,6 +134,34 @@ const profiles = Object.freeze({
     p2007Status: 'DONE',
     p2g1Status: 'PASSED',
   }),
+  P2_016_AUTHORIZED: Object.freeze({
+    lastCompletedTask: 'P2-015',
+    lastCompletedGate: 'P2-G1',
+    lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: 'P2-016',
+    activeLane: 'P2-B',
+    candidate: 'P2-016',
+    candidateAuthorized: true,
+    authorizedTasks: Object.freeze(['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006', 'P2-007', 'P2-015', 'P2-016']),
+    p2006Status: 'DONE',
+    p2007Status: 'DONE',
+    activeTaskStatus: 'AUTHORIZED',
+    p2g1Status: 'PASSED',
+  }),
+  P2_016_DONE_AWAITING_P2_012_AUTHORIZATION: Object.freeze({
+    lastCompletedTask: 'P2-016', lastCompletedGate: 'P2-G1', lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: null, activeLane: null, candidate: 'P2-012', candidateAuthorized: false,
+    authorizedTasks: Object.freeze(['P2-001','P2-002','P2-003','P2-004','P2-005','P2-006','P2-007','P2-015','P2-016']),
+    p2006Status: 'DONE', p2007Status: 'DONE', p2g1Status: 'PASSED', p2016Status: 'DONE',
+    manifestStatus: 'P2_P2_016_DONE_AWAITING_P2_012_AUTHORIZATION',
+    projectStatus: 'p2_p2_016_done_awaiting_p2_012_authorization',
+  }),
+  P2_016_READY_FOR_TARGETED_LIVE_VALIDATION: Object.freeze({
+    lastCompletedTask: 'P2-015', lastCompletedGate: 'P2-G1', lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: 'P2-016', activeLane: 'P2-B', candidate: 'P2-016', candidateAuthorized: true,
+    authorizedTasks: Object.freeze(['P2-001','P2-002','P2-003','P2-004','P2-005','P2-006','P2-007','P2-015','P2-016']),
+    p2006Status: 'DONE', p2007Status: 'DONE', activeTaskStatus: 'READY_FOR_TARGETED_LIVE_VALIDATION', p2g1Status: 'PASSED',
+  }),
 });
 
 test('V1.4 architecture validator passes', () => {
@@ -230,9 +259,9 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
   assert.equal(backlog.tasks.filter((task) => task.phase === 'P3').every((task) => task.status === 'TODO'), true);
   if (profile.lastCompletedArchitectureTask === 'ARCH-006') {
     assert.equal(backlog.tasks.find((task) => task.id === 'P2-015').status,
-      status === 'P2_015_AUTHORIZED' ? 'AUTHORIZED' : status === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION' ? 'DONE' : 'TODO');
-    if (status === 'P2_015_AUTHORIZED' || status === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION') {
-      const done = status === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
+      status === 'P2_015_AUTHORIZED' ? 'AUTHORIZED' : ['P2-015','P2-016'].includes(profile.lastCompletedTask) ? 'DONE' : 'TODO');
+    if (status === 'P2_015_AUTHORIZED' || ['P2-015','P2-016'].includes(profile.lastCompletedTask)) {
+      const done = ['P2-015','P2-016'].includes(profile.lastCompletedTask);
       assert.equal(fs.existsSync(path.join(root, 'evidence/p2-015-start-authorization.md')), true);
       for (const view of [manifest, current, backlog, parallel, taskIndex, projectSummary.project]) {
         assert.equal(view.p2_015_status, done ? 'DONE' : 'AUTHORIZED');
@@ -240,7 +269,7 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
         if (done) assert.equal(view.p2_015_completion_evidence, 'evidence/p2-015-rule-first-intake-orchestration-report.md');
       }
     }
-    assert.equal(backlog.tasks.find((task) => task.id === 'P2-016').status, 'TODO');
+    assert.equal(backlog.tasks.find((task) => task.id === 'P2-016').status, profile.p2016Status ?? (profile.activeTask === 'P2-016' ? profile.activeTaskStatus : 'TODO'));
     assert.equal(backlog.tasks.find((task) => task.id === 'P2-012').authorization_status, 'REQUIRES_SEPARATE_AUTHORIZATION');
     assert.equal(backlog.tasks.find((task) => task.id === 'P2-008').authorization_status, 'BLOCKED_BY_P2_G2');
     assert.deepEqual(parallel.assembly_gates.filter((gate) => gate.id.startsWith('P2-')).map((gate) => gate.id),
@@ -422,4 +451,71 @@ test('2C4G limits remain conservative', () => {
   assert.equal(limits.processes.worker.communication_concurrency, 1);
   assert.equal(limits.processes.worker.integration_concurrency, 1);
   assert.equal(limits.not_required_on_host.includes('Chatwoot'), true);
+});
+
+test('P2-016 authorization reconciles only the historical P2-015 ledger', () => {
+  const current = json('plans/current_phase.json');
+  if (!['P2_016_AUTHORIZED', 'P2_016_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_016_DONE_AWAITING_P2_012_AUTHORIZATION'].includes(current.implementation_authorization_status)) return;
+  const stage = profiles[current.implementation_authorization_status].p2016Status ?? profiles[current.implementation_authorization_status].activeTaskStatus;
+  const summary = json('project_summary.json');
+  const views = [
+    current, json('MANIFEST.json'), json('plans/master_backlog.json'),
+    json('plans/parallel_workstreams.json'), json('tasks/master_backlog.json'),
+    summary.project, summary.phase_model.find((phase) => phase.id === 'P2'),
+  ];
+  for (const view of views) {
+    assert.equal(view.last_completed_task, stage==='DONE'?'P2-016':'P2-015');
+    assert.equal(view.last_completed_gate, 'P2-G1');
+    assert.equal(view.last_completed_architecture_task, 'ARCH-006');
+    assert.equal(view.active_task, stage==='DONE'?null:'P2-016');
+    assert.equal(view.active_lane, stage==='DONE'?null:'P2-B');
+    assert.equal(view.implementation_authorization_status, current.implementation_authorization_status);
+    assert.equal(view.p2_015_status, 'DONE');
+    assert.equal(view.p2_015_completed_at, '2026-09-03');
+    assert.equal(view.p2_015_completion_evidence, 'evidence/p2-015-rule-first-intake-orchestration-report.md');
+    assert.equal(view.p2_016_status, stage);
+    assert.equal(view.p2_016_authorized_at, '2026-09-04');
+    assert.equal(view.p2_016_authorization_evidence, 'evidence/p2-016-start-authorization.md');
+    assert.equal(Object.hasOwn(view, 'p2_016_completed_at'), stage==='DONE');
+    assert.equal(Object.hasOwn(view, 'p2_016_completion_evidence'), stage==='DONE');
+    if(stage==='DONE'){assert.equal(view.p2_016_completed_at,'2026-09-04');assert.equal(view.p2_016_owner_approval_evidence,'evidence/p2-016-project-owner-approval.md');assert.equal(view.next_task_candidate??view.next_task,'P2-012');assert.equal(view.next_task_authorized,false);}
+    assert.equal(view.p2_012_status, 'TODO_REQUIRES_SEPARATE_AUTHORIZATION');
+    assert.equal(view.p2_008_status, 'TODO_BLOCKED_BY_P2_G2');
+    for (const gate of ['p2_g2_status', 'p2_g3_status', 'p2_g4_status', 'p2_g5_status']) {
+      assert.equal(view[gate], 'NOT_STARTED');
+    }
+  }
+  const ledger = text('tickets/P2_ai_enhancement_tasks.md');
+  const completed = ledger.split('## P2-015 ')[1].split('\n## ')[0];
+  const authorized = ledger.split('## P2-016 ')[1].split('\n## ')[0];
+  assert.match(completed, /^- 状态：DONE（2026-09-03）$/mu);
+  assert.match(completed, /aa1153881fdf9f692d497b1850feda70c0ed45b8/u);
+  assert.match(completed, /evidence\/p2-015-rule-first-intake-orchestration-report\.md/u);
+  assert.doesNotMatch(completed, /TODO|REQUIRES_SEPARATE_AUTHORIZATION/u);
+  assert.match(authorized, new RegExp('^- 状态：' + stage + '（2026-09-04）$', 'mu'));
+  const receipt = text('evidence/p2-016-start-authorization.md');
+  assert.match(receipt, /## Historical ledger reconciliation/u);
+  assert.match(receipt, /READY_FOR_TARGETED_LIVE_VALIDATION/u);
+  assert.match(receipt, /不创建第二提交/u);
+});
+
+test('architecture validator rejects the historical P2-015 ledger drift', () => {
+  if (!['P2_016_AUTHORIZED', 'P2_016_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_016_DONE_AWAITING_P2_012_AUTHORIZATION'].includes(json('plans/current_phase.json').implementation_authorization_status)) return;
+  const ledgerPath = path.join(root, 'tickets/P2_ai_enhancement_tasks.md');
+  const original = text('tickets/P2_ai_enhancement_tasks.md');
+  // Normalize only the in-memory fixture; the repository is never mutated by this probe.
+  const normalizedOriginal = original.replaceAll('\r\n', '\n');
+  const fixture = normalizedOriginal.replace('- 状态：DONE（2026-09-03）\n- 授权 Evidence：`evidence/p2-015-start-authorization.md`',
+    '- 状态：TODO / REQUIRES_SEPARATE_AUTHORIZATION\n- 授权 Evidence：`evidence/p2-015-start-authorization.md`');
+  assert.notEqual(fixture, normalizedOriginal);
+  const errors = [];
+  const processView = { cwd: () => root, exitCode: undefined };
+  const source = text('scripts/validate-v1-4-architecture.mjs').replace(/^import .*;\r?\n/gmu, '');
+  runInNewContext(source, {
+    fs: { ...fs, readFileSync: (file, ...args) => file === ledgerPath ? fixture : fs.readFileSync(file, ...args) },
+    path, process: processView, console: { log() {}, error: (message) => errors.push(message) },
+  });
+  assert.equal(processView.exitCode, 1);
+  assert.ok(errors.includes('- historical P2-015 ledger agrees with completed facts'));
+  assert.equal(text('tickets/P2_ai_enhancement_tasks.md'), original);
 });

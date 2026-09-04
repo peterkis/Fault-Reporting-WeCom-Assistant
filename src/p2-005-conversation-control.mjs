@@ -166,16 +166,22 @@ export function createConversationControlService({ pool, enabled = false, author
   if (!pool || typeof pool.connect !== 'function' || typeof enabled !== 'boolean' || typeof realtimeAppender !== 'function' || typeof now !== 'function' || (onInternalError !== null && typeof onInternalError !== 'function')) throw new TypeError('Conversation control service configuration is invalid.');
   const guarded = async (operation) => { if (!enabled) return publicError(CONVERSATION_CONTROL_ERROR_CODES.disabled); try { return await operation(); } catch (error) { if (onInternalError) onInternalError(error); const codeValue = error instanceof ConversationControlError ? error.code : error?.message === CONVERSATION_CONTROL_ERROR_CODES.schemaDrift ? error.message : CONVERSATION_CONTROL_ERROR_CODES.storageFailed; return publicError(codeValue, codeValue === CONVERSATION_CONTROL_ERROR_CODES.storageFailed); } };
   const stamp = () => clockStamp(now);
-  async function execute(input, operation) {
-    return guarded(async () => {
+  async function execute(input, operation, transaction = null) {
+    const run = async () => {
       const command = normalizeConversationControlCommand(input); const hash = computeConversationControlCommandHash(command);
-      return withTransaction(pool, async (tx) => {
+      const inTransaction = async (tx) => {
         const session = await lockSession(tx, command.session_id);
         const replay = await eventReplay(tx, command, hash); if (replay) return replay;
         if (command.command_type !== 'ADVANCE_READ_CURSOR') assertVersion(session, command.expected_row_version);
         return operation({ tx, command, hash, session, occurredAt: stamp() });
-      });
-    });
+      };
+      return transaction === null ? withTransaction(pool, inTransaction) : inTransaction(transaction);
+    };
+    if (transaction !== null) {
+      if (!enabled) fail(CONVERSATION_CONTROL_ERROR_CODES.disabled);
+      return run();
+    }
+    return guarded(run);
   }
   async function appendRealtime(tx, commands) { for (const command of commands) await realtimeAppender({ transaction: tx, command }); }
   function projectionContext(event, session, occurredAt) { return { event, session_id: event.session_id ?? null, session, occurred_at: occurredAt, expires_at: expiryFrom(occurredAt) }; }
@@ -188,7 +194,7 @@ export function createConversationControlService({ pool, enabled = false, author
     return result({event,session:next,assignment:await currentAssignment(tx,command.session_id),handoff:inserted.rows[0]});
   }); }
 
-  async function takeoverSession(input) { return execute(input, async ({tx,command,hash,session,occurredAt}) => {
+  async function takeoverSession(input, transaction = null) { return execute(input, async ({tx,command,hash,session,occurredAt}) => {
     const assignment = await currentAssignment(tx,command.session_id,true); if (assignment?.assignment_status==='ASSIGNED' && assignment.assigned_principal_id===command.target_principal_id) return result({session,assignment,handoff:await activeHandoff(tx,command.session_id,true),replayed:true,noOp:true});
     await authorizeCall(authorize,'authorizeTakeover',{transaction:tx,command,session,assignment}); if (assignment?.assignment_status==='ASSIGNED') fail(CONVERSATION_CONTROL_ERROR_CODES.alreadyAssigned);
     const handoff = await activeHandoff(tx,command.session_id,true); if (command.handoff_id && handoff?.id!==command.handoff_id) fail(CONVERSATION_CONTROL_ERROR_CODES.handoffNotFound);
@@ -199,7 +205,7 @@ export function createConversationControlService({ pool, enabled = false, author
     if(handoff) events.push(mapControlRealtime('conversation.handoff.accepted','HANDOFF_EVENT',handoff.id,'HANDOFF_ACCEPTED','CONVERSATION_HANDOFF',command.session_id,next,{handoff_status:'ACCEPTED',handoff_row_version:Number(nextHandoff.row_version)},occurredAt));
     if(session.control_mode!=='HUMAN') events.push(mapControlRealtime('conversation.mode.changed','CONVERSATION_SESSION',command.session_id,'MODE_HUMAN','CONVERSATION_SESSION',command.session_id,next,{control_mode:'HUMAN'},occurredAt));
     await appendRealtime(tx,events); return result({event,session:next,assignment:nextAssignment.rows[0],handoff:nextHandoff});
-  }); }
+  }, transaction); }
 
   async function transferAssignment(input) { return execute(input, async ({tx,command,hash,session,occurredAt}) => {
     const assignment=await currentAssignment(tx,command.session_id,true); if(!assignment||assignment.assignment_status!=='ASSIGNED') fail(CONVERSATION_CONTROL_ERROR_CODES.assignmentConflict); if(assignment.assigned_principal_id===command.target_principal_id) fail(CONVERSATION_CONTROL_ERROR_CODES.targetInvalid);
@@ -242,7 +248,12 @@ export function createConversationControlService({ pool, enabled = false, author
   async function getHandoff({sessionId,actor}) { return guarded(async()=>{ const id=uuid(sessionId); return withTransaction(pool,async tx=>{const session=await lockSession(tx,id); await authorizeCall(authorize,'authorizeReadCursor',{transaction:tx,command:{actor_principal_id:uuid(actor?.principal_id),session_id:id},session}); return Object.freeze({ok:true,handoff:safeHandoff(await activeHandoff(tx,id))});});}); }
   async function getReadCursor({sessionId,principalId}) { return guarded(async()=>{const id=uuid(sessionId),pid=uuid(principalId);const q=await pool.query('SELECT last_read_sequence::text,row_version::text,created_at,updated_at FROM conversation.read_cursor WHERE principal_id=$1::uuid AND session_id=$2::uuid',[pid,id]);return Object.freeze({ok:true,cursor:safeCursor(q.rows[0])});}); }
   async function countUnreadItems({sessionId,principalId,audience='WORKBENCH'}) { return guarded(async()=>{const id=uuid(sessionId),pid=uuid(principalId);if(!['EXTERNAL','WORKBENCH','RESTRICTED_ADMIN'].includes(audience)) fail(CONVERSATION_CONTROL_ERROR_CODES.cursorInvalid);const q=await pool.query(`SELECT count(*)::integer AS unread_count FROM conversation.item i LEFT JOIN conversation.read_cursor c ON c.session_id=i.session_id AND c.principal_id=$2::uuid WHERE i.session_id=$1::uuid AND i.sequence_no>COALESCE(c.last_read_sequence,0) AND (i.visibility='EXTERNAL' OR ($3 IN ('WORKBENCH','RESTRICTED_ADMIN') AND i.visibility='INTERNAL') OR ($3='RESTRICTED_ADMIN' AND i.visibility='RESTRICTED'))`,[id,pid,audience]);return Object.freeze({ok:true,unread_count:q.rows[0].unread_count});}); }
-  return Object.freeze({requestHandoff,takeoverSession,transferAssignment,releaseAssignment,cancelHandoff,advanceReadCursor,invalidateGeneration,getAssignment,getHandoff,getReadCursor,countUnreadItems});
+  async function takeoverSessionInTransaction({ transaction, command }) {
+    if (!transaction || typeof transaction.query !== 'function'
+      || normalizeConversationControlCommand(command).command_type !== 'TAKEOVER') fail();
+    return takeoverSession(command, transaction);
+  }
+  return Object.freeze({requestHandoff,takeoverSession,takeoverSessionInTransaction,transferAssignment,releaseAssignment,cancelHandoff,advanceReadCursor,invalidateGeneration,getAssignment,getHandoff,getReadCursor,countUnreadItems});
 }
 
 function mapControlRealtime(eventType,sourceType,sourceId,variant,aggregateType,aggregateId,session,payload,occurredAt) {

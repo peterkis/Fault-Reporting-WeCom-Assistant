@@ -40,13 +40,16 @@ const taskIndex = json(stateFiles[4]);
 const summary = json(stateFiles[5]);
 const views = [manifest, current, backlog, parallel, taskIndex, summary.project];
 const lifecycleState = current.implementation_authorization_status;
-const successor = lifecycleState === 'P2_015_AUTHORIZED' || lifecycleState === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
-const completed = lifecycleState === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
-const expectedLastTask = completed ? 'P2-015' : 'P2-007';
-const expectedActiveTask = lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-015' : null;
-const expectedActiveLane = lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-C' : null;
-const expectedCandidate = completed ? 'P2-016' : 'P2-015';
-const expectedCandidateAuthorized = lifecycleState === 'P2_015_AUTHORIZED';
+const p2016Done=lifecycleState==='P2_016_DONE_AWAITING_P2_012_AUTHORIZATION';
+const p2016Authorized=p2016Done||['P2_016_AUTHORIZED','P2_016_READY_FOR_TARGETED_LIVE_VALIDATION'].includes(lifecycleState);
+const expectedP2016Status=p2016Done?'DONE':lifecycleState==='P2_016_READY_FOR_TARGETED_LIVE_VALIDATION'?'READY_FOR_TARGETED_LIVE_VALIDATION':p2016Authorized?'AUTHORIZED':'TODO_REQUIRES_SEPARATE_AUTHORIZATION';
+const successor = p2016Authorized || lifecycleState === 'P2_015_AUTHORIZED' || lifecycleState === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
+const completed = p2016Authorized || lifecycleState === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
+const expectedLastTask = p2016Done?'P2-016':completed ? 'P2-015' : 'P2-007';
+const expectedActiveTask = p2016Done?null:p2016Authorized?'P2-016':lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-015' : null;
+const expectedActiveLane = p2016Done?null:p2016Authorized?'P2-B':lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-C' : null;
+const expectedCandidate = p2016Done?'P2-012':completed ? 'P2-016' : 'P2-015';
+const expectedCandidateAuthorized = !p2016Done&&(p2016Authorized || lifecycleState === 'P2_015_AUTHORIZED');
 const expectedP2015Status = completed ? 'DONE' : successor ? 'AUTHORIZED' : 'TODO_REQUIRES_SEPARATE_AUTHORIZATION';
 
 for (const view of views) {
@@ -63,7 +66,7 @@ for (const view of views) {
     check(view[gate] === 'NOT_STARTED', gate + ' remains NOT_STARTED');
   }
   check(view.p2_015_status === expectedP2015Status, 'P2-015 machine status is exact');
-  check(view.p2_016_status === 'TODO_REQUIRES_SEPARATE_AUTHORIZATION', 'P2-016 machine status is exact');
+  check(view.p2_016_status === expectedP2016Status, 'P2-016 machine status is exact');
   check(view.p2_012_status === 'TODO_REQUIRES_SEPARATE_AUTHORIZATION', 'P2-012 machine status is exact');
   check(view.p2_008_status === 'TODO_BLOCKED_BY_P2_G2', 'P2-008 machine status is exact');
   for (const task of ['p2_009_status', 'p2_010_status', 'p2_011_status', 'p2_013_status', 'p2_014_status']) {
@@ -71,8 +74,8 @@ for (const view of views) {
   }
 }
 
-check(manifest.status === (completed ? 'P2_P2_015_DONE_AWAITING_P2_016_AUTHORIZATION' : successor ? 'P2_P2_015_AUTHORIZED' : 'P2_ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION'), 'manifest lifecycle status is exact');
-check(summary.project.status === (completed ? 'p2_p2_015_done_awaiting_p2_016_authorization' : successor ? 'p2_p2_015_authorized' : 'p2_arch_006_done_awaiting_p2_015_authorization'), 'project lifecycle status is exact');
+check(manifest.status === (p2016Authorized?'P2_'+lifecycleState:completed ? 'P2_P2_015_DONE_AWAITING_P2_016_AUTHORIZATION' : successor ? 'P2_P2_015_AUTHORIZED' : 'P2_ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION'), 'manifest lifecycle status is exact');
+check(summary.project.status === (p2016Authorized?'p2_'+lifecycleState.toLowerCase():completed ? 'p2_p2_015_done_awaiting_p2_016_authorization' : successor ? 'p2_p2_015_authorized' : 'p2_arch_006_done_awaiting_p2_015_authorization'), 'project lifecycle status is exact');
 check(current.phase_id === 'P2' && current.status === 'IN_PROGRESS', 'Phase P2 remains IN_PROGRESS');
 check(views.every((view) => (view.next_task_candidate ?? view.next_task) === expectedCandidate), 'next candidate matches the successor lifecycle');
 check(taskIndex.next_tasks.current === expectedActiveTask && taskIndex.next_tasks.candidate === expectedCandidate, 'task index matches active and next tasks');
@@ -87,7 +90,7 @@ check(p2015?.status === (completed ? 'DONE' : successor ? 'AUTHORIZED' : 'TODO')
   && p2015?.authorization_status === (successor ? 'AUTHORIZED' : 'REQUIRES_SEPARATE_AUTHORIZATION'), 'P2-015 lifecycle is exact');
 check(same(p2015?.depends_on, ['P2-G1', 'ARCH-005', 'P2-007', 'P1-004', 'P1-005', 'P2-004']), 'P2-015 dependencies are exact');
 check(p2015?.migration_reservation === '030', 'P2-015 owns migration 030 reservation');
-check(p2016?.status === 'TODO' && p2016?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-016 is unauthorized TODO');
+check(p2016?.status === (p2016Authorized?expectedP2016Status:'TODO') && p2016?.authorization_status === (p2016Authorized?'AUTHORIZED':'REQUIRES_SEPARATE_AUTHORIZATION'), 'P2-016 requires its independent authorization');
 check(same(p2016?.depends_on, ['P2-015', 'P1-006', 'P2-004', 'P2-005', 'P2-006']), 'P2-016 dependencies are exact');
 check(p2016?.migration_reservation === '031_IF_REQUIRED', 'P2-016 conditionally reserves migration 031');
 check(p2012?.status === 'TODO' && p2012?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-012 is unauthorized TODO');
@@ -175,20 +178,22 @@ check(inventory.runtime_changes === 0 && inventory.migration_changes === 0 && in
 check(successor ? fs.existsSync(path.join(root, 'database/migrations/030_p2_015_rule_first_intake_orchestration.sql'))
   : !fs.existsSync(path.join(root, 'database/migrations/030_p2_015_rule_first_intake_orchestration.sql')), 'migration 030 presence matches P2-015 authorization');
 check(!fs.existsSync(path.join(root, 'database/migrations/031_p2_016_ticket_workbench.sql')), 'migration 031 was not created');
+check(p2016Authorized || !fs.existsSync(path.join(root,'database/migrations/031_p2_016_ticket_lifecycle_workbench_notifications.sql')), 'runtime migration 031 requires P2-016 authorization');
 
 let changedPaths = [];
 try {
-  changedPaths = execFileSync('git', ['-c', 'safe.directory=D:/Projects/Fault-Reporting-WeCom-Assistant', 'diff', '--name-only', 'origin/main'], { cwd: root, encoding: 'utf8' })
+  changedPaths = execFileSync('git', ['-c', 'safe.directory=D:/Projects/Fault-Reporting-WeCom-Assistant', '-c','core.safecrlf=false','diff', '--name-only', 'origin/main'], { cwd: root, encoding: 'utf8' })
     .split(/\r?\n/u).filter(Boolean).map((value) => value.replaceAll('\\', '/'));
 } catch {
   errors.push('unable to inspect changed paths against origin/main');
 }
-const forbidden = changedPaths.filter((relativePath) => /^(?:database\/migrations\/(?:00[1-9]|01[0-2]|020|021|022)_|src\/p1-|src\/p2-004|src\/p2-005|src\/p2-006|src\/p2-007|web\/|archive\/|\.env\.pilot$)/u.test(relativePath));
+const p2016Seams=new Set(['src/p1-006-ticket-state-actions.mjs','src/p1-010-ticket-closure.mjs','src/p2-004-communication-delivery-worker.mjs',
+  'src/p2-005-conversation-control.mjs','src/p2-006-workbench-http.mjs','src/p2-006-workbench-authorization.mjs']);
+const forbidden = changedPaths.filter((relativePath) => /^(?:database\/migrations\/(?:00[1-9]|01[0-2]|020|021|022)_|src\/p1-|src\/p2-004|src\/p2-005|src\/p2-006|src\/p2-007|web\/|archive\/|\.env\.pilot$)/u.test(relativePath)
+  && !(p2016Authorized&&(p2016Seams.has(relativePath)||/^web\/p2-(?:workbench|reporter)\//u.test(relativePath))));
 check(forbidden.length === 0, 'no forbidden Runtime Migration web archive or secret path changed');
-const historicalEvidence = changedPaths.filter((relativePath) => relativePath.startsWith('evidence/')
-  && !['evidence/arch-006-start-authorization.md', 'evidence/arch-006-capability-gap-inventory.md',
-    'evidence/arch-006-capability-gap-inventory.json', 'evidence/arch-006-rule-first-service-loop-rebaseline-report.md',
-    'evidence/p2-015-start-authorization.md', 'evidence/p2-015-rule-first-intake-orchestration-report.md'].includes(relativePath));
+const historicalEvidence=execFileSync('git',['-c','safe.directory=D:/Projects/Fault-Reporting-WeCom-Assistant','-c','core.safecrlf=false',
+  'diff','--name-only','--diff-filter=MDR','origin/main','--','evidence'],{cwd:root,encoding:'utf8'}).split(/\r?\n/u).filter(Boolean);
 check(historicalEvidence.length === 0, 'no historical Evidence was rewritten');
 
 if (errors.length) {

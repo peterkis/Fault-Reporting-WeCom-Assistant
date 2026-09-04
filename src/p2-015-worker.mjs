@@ -23,8 +23,10 @@ async function withTransaction(pool, operation) {
 }
 
 export function createP2015Worker({ pool, orchestrator,
+  beforeClaim = null,
   pollMilliseconds = P2_015_LIMITS.recoveryPollMilliseconds } = {}) {
   if (!pool?.connect || !orchestrator?.preparePersistedIntake || !orchestrator?.processInTransaction
+    || (beforeClaim !== null && typeof beforeClaim !== 'function')
     || !Number.isInteger(pollMilliseconds) || pollMilliseconds < 100 || pollMilliseconds > 60_000) {
     failP2015(P2_015_ERROR_CODES.inputInvalid);
   }
@@ -43,10 +45,13 @@ export function createP2015Worker({ pool, orchestrator,
     const candidates = await pool.query(
       `SELECT intake.id::text
          FROM intake.service_intake AS intake
-         LEFT JOIN intake.contact_journey journey ON journey.origin_intake_id=intake.id
+         LEFT JOIN intake.channel_leg leg ON leg.source_intake_id=intake.id
+         LEFT JOIN intake.contact_journey journey ON journey.id=leg.journey_id
+           OR (leg.id IS NULL AND journey.origin_intake_id=intake.id)
          LEFT JOIN LATERAL (
            SELECT decision.source_window_end_sequence FROM intake.deterministic_decision decision
-            WHERE decision.journey_id=journey.id ORDER BY decision.decision_ordinal DESC LIMIT 1
+            WHERE decision.journey_id=journey.id AND decision.service_intake_id=intake.id
+            ORDER BY decision.decision_ordinal DESC LIMIT 1
          ) latest ON true
         WHERE (journey.id IS NULL OR (journey.status IN ('OPEN','WAITING_DESCRIPTION','WAITING_REVIEW','TICKET_LINKED')
           AND journey.evaluation_due_epoch_ms <= $1::bigint
@@ -59,6 +64,7 @@ export function createP2015Worker({ pool, orchestrator,
       if (value.signal?.aborted) break;
       const prepared = await orchestrator.preparePersistedIntake(candidate.id);
       const result = await withTransaction(pool, async (transaction) => {
+        if (beforeClaim) await beforeClaim(transaction);
         const claim = await transaction.query(
           `SELECT id::text FROM intake.service_intake WHERE id=$1::uuid FOR UPDATE SKIP LOCKED`, [candidate.id],
         );

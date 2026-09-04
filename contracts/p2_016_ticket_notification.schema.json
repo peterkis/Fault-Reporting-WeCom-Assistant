@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_ticket_notification.schema.json",
+  "title": "p2_016_ticket_notification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "notification_type",
+    "destination_type",
+    "delivery_id",
+    "status",
+    "side_effect_state",
+    "attempt_count",
+    "sent_at",
+    "created_at"
+  ],
+  "properties": {
+    "notification_type": {
+      "enum": [
+        "TICKET_CREATED",
+        "TICKET_ACCEPTED",
+        "TICKET_IN_PROGRESS",
+        "WAITING_REQUESTER",
+        "WAITING_VENDOR",
+        "TICKET_RESOLVED",
+        "TICKET_CLOSED",
+        "TICKET_REOPENED",
+        "TICKET_CANCELLED"
+      ]
+    },
+    "destination_type": {
+      "enum": [
+        "PERSON",
+        "GROUP"
+      ]
+    },
+    "delivery_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "status": {
+      "enum": [
+        "PENDING",
+        "LEASED",
+        "SENDING",
+        "SENT",
+        "DEAD_LETTER",
+        "RECONCILIATION_REQUIRED",
+        "CANCELLED"
+      ]
+    },
+    "side_effect_state": {
+      "enum": [
+        "NOT_ATTEMPTED",
+        "ACKNOWLEDGED",
+        "UNKNOWN"
+      ]
+    },
+    "attempt_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sent_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "created_at": {
+      "$ref": "local_datetime.schema.json"
+    }
+  },
+  "x-business-timezone": "Asia/Shanghai",
+  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys"
+}

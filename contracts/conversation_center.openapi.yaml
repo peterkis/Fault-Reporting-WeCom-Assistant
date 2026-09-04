@@ -360,7 +360,710 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RealtimeFallbackEnvelope"
+  /lifecycle/bootstrap:
+    get:
+      operationId: getP2016Bootstrap
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets:
+    get:
+      operationId: listP2016Tickets
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"query","name":"state","schema":{"type":"string","enum":["queued","accepted","in_progress","waiting_requester","waiting_vendor","resolved","closed","reopened","cancelled","unassigned","mine","failed_delivery"]}}
+        - {"in":"query","name":"cursor","schema":{"type":"string","minLength":10,"maxLength":2048}}
+        - {"in":"query","name":"limit","schema":{"type":"integer","minimum":1,"maximum":100,"default":30}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+          content:
+            application/json:
+              schema: {"$ref":"./p2_016_ticket_list.schema.json"}
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}:
+    get:
+      operationId: getP2016Ticket
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+          content:
+            application/json:
+              schema: {"$ref":"./p2_016_ticket_detail.schema.json"}
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/events:
+    get:
+      operationId: listP2016TicketEvents
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"in":"query","name":"cursor","schema":{"type":"string","minLength":10,"maxLength":2048}}
+        - {"in":"query","name":"limit","schema":{"type":"integer","minimum":1,"maximum":200,"default":30}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/responsibility:
+    get:
+      operationId: getP2016Responsibility
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+          content:
+            application/json:
+              schema: {"$ref":"./p2_016_responsibility_view.schema.json"}
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/eligible-principals:
+    get:
+      operationId: listP2016TransferTargets
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/deliveries:
+    get:
+      operationId: listP2016TicketDeliveries
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+          content:
+            application/json:
+              schema: {"type":"object","additionalProperties":false,"required":["items"],"properties":{"items":{"type":"array","maxItems":100,"items":{"$ref":"./p2_016_ticket_notification.schema.json"}}}}
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/queue:
+    post:
+      operationId: p2016TicketQueue
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/accept:
+    post:
+      operationId: p2016TicketAccept
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/start:
+    post:
+      operationId: p2016TicketStart
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/request-information:
+    post:
+      operationId: p2016TicketRequestInformation
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/wait-vendor:
+    post:
+      operationId: p2016TicketWaitVendor
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/resume:
+    post:
+      operationId: p2016TicketResume
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/resolve:
+    post:
+      operationId: p2016TicketResolve
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/confirm:
+    post:
+      operationId: p2016TicketConfirm
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/reopen:
+    post:
+      operationId: p2016TicketReopen
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/cancel:
+    post:
+      operationId: p2016TicketCancel
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/notes:
+    post:
+      operationId: p2016TicketNotes
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_action_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/transfer:
+    post:
+      operationId: p2016TicketTransfer
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_ticket_transfer_command.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /conversations/{sessionId}/takeover-and-accept-ticket:
+    post:
+      operationId: p2016TakeoverAndAcceptTicket
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"sessionId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_combined_takeover_accept.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /manual-reviews:
+    get:
+      operationId: listP2016ManualReviews
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"query","name":"status","schema":{"const":"PENDING"}}
+        - {"in":"query","name":"priority","schema":{"enum":["LOW","NORMAL","HIGH","URGENT"]}}
+        - {"in":"query","name":"cursor","schema":{"type":"string","minLength":10,"maxLength":2048}}
+        - {"in":"query","name":"limit","schema":{"type":"integer","minimum":1,"maximum":100,"default":30}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+          content:
+            application/json:
+              schema: {"$ref":"./p2_016_manual_review_list.schema.json"}
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /manual-reviews/{reviewId}:
+    get:
+      operationId: getP2016ManualReview
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"reviewId","required":true,"schema":{"type":"string","format":"uuid"}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+          content:
+            application/json:
+              schema: {"$ref":"./p2_016_manual_review_detail.schema.json"}
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /manual-reviews/{reviewId}/resolve:
+    post:
+      operationId: resolveP2016ManualReview
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"reviewId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+        - {"in":"header","name":"If-Match","required":true,"description":"Canonical expected version; must equal the body version.","schema":{"type":"string","minLength":1,"maxLength":21}}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"$ref":"./p2_016_manual_review_resolution.schema.json"}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /contact-journeys/{journeyId}:
+    get:
+      operationId: getP2016JourneySummary
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"journeyId","required":true,"schema":{"type":"string","format":"uuid"}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /contact-journeys/{journeyId}/legs:
+    get:
+      operationId: getP2016Journeylegs
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"journeyId","required":true,"schema":{"type":"string","format":"uuid"}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /contact-journeys/{journeyId}/decisions:
+    get:
+      operationId: getP2016Journeydecisions
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"journeyId","required":true,"schema":{"type":"string","format":"uuid"}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/deliveries/{deliveryId}/retry:
+    post:
+      operationId: p2016Deliveryretry
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"in":"path","name":"deliveryId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"required":["client_command_id","reason_code"],"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"}}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/deliveries/{deliveryId}/reconcile:
+    post:
+      operationId: p2016Deliveryreconcile
+      tags: [P2-016]
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {"in":"path","name":"ticketId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"in":"path","name":"deliveryId","required":true,"schema":{"type":"string","format":"uuid"}}
+        - {"$ref":"#/components/parameters/IdempotencyKey"}
+      description: "Existing internal authentication required. Cookie requests require exact Origin, SameSite and X-CSRF-Token. Receipt scope is the authenticated principal. No arbitrary destination or SYSTEM action."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"required":["client_command_id","reason_code","resolution"],"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"type":"string","pattern":"^[A-Z][A-Z0-9_]{0,63}$"},"resolution":{"enum":["CONFIRMED_SENT","CONFIRMED_NOT_SENT_REQUEUE","CANCEL"]}}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /reporter/access/exchange:
+    post:
+      operationId: exchangeP2016ReporterGrant
+      tags: [P2-016]
+      security: []
+      description: "Same-origin JSON POST; cross-site and URL query credentials are rejected."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"required":["grant"],"properties":{"grant":{"type":"string","pattern":"^[A-Za-z0-9_-]{64}$"}}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+          content:
+            application/json:
+              schema: {"type":"object","additionalProperties":false,"required":["public_ref","identity_mode"],"properties":{"public_ref":{"type":"string","pattern":"^[A-Za-z0-9_-]{32}$"},"identity_mode":{"const":"BOUND_ACCESS_SESSION"}}}
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /reporter/bootstrap:
+    get:
+      operationId: getP2016ReporterSession
+      tags: [P2-016]
+      security: [{ReporterSession: []}]
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+          content:
+            application/json:
+              schema: {"$ref":"./p2_016_reporter_session.schema.json"}
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /reporter/logout:
+    post:
+      operationId: logoutP2016Reporter
+      tags: [P2-016]
+      security: [{ReporterSession: []}]
+      description: "Same-origin JSON POST; cross-site and URL query credentials are rejected."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"required":[],"properties":{}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /reporter/tickets/{publicRef}:
+    get:
+      operationId: getP2016ReporterTicket
+      tags: [P2-016]
+      security: [{ReporterSession: []}]
+      parameters:
+        - {"in":"path","name":"publicRef","required":true,"schema":{"type":"string","pattern":"^[A-Za-z0-9_-]{32}$"}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+          content:
+            application/json:
+              schema: {"$ref":"./p2_016_reporter_ticket_view.schema.json"}
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
+  /reporter/tickets/{publicRef}/timeline:
+    get:
+      operationId: listP2016ReporterTimeline
+      tags: [P2-016]
+      security: [{ReporterSession: []}]
+      parameters:
+        - {"in":"path","name":"publicRef","required":true,"schema":{"type":"string","pattern":"^[A-Za-z0-9_-]{32}$"}}
+        - {"in":"query","name":"cursor","schema":{"type":"string","minLength":10,"maxLength":2048}}
+        - {"in":"query","name":"limit","schema":{"type":"integer","minimum":1,"maximum":100,"default":30}}
+      responses:
+        '200':
+          description: Safe bounded result; not Phase 2 Go or live acceptance
+          content:
+            application/json:
+              schema: {"$ref":"./p2_016_reporter_timeline.schema.json"}
+        '400': {description: Invalid or non-canonical input}
+        '401': {description: Missing or expired authentication}
+        '403': {description: Scope or CSRF denied}
+        '404': {description: Not found or not visible}
+        '409': {description: Version, command hash or state conflict}
+        '503': {description: Disabled or temporarily unavailable}
 components:
+  securitySchemes:
+    InternalSession: {type: apiKey, in: cookie, name: p2_g1_test, description: Existing configured internal test session; multi-agent suffixes are server configured.}
+    InternalBearer: {type: http, scheme: bearer, description: Existing authentication port only; never a query token.}
+    ReporterSession: {type: apiKey, in: cookie, name: p2016_reporter, description: HttpOnly Secure SameSite Strict cookie bound to exactly one Ticket.}
   parameters:
     SessionId:
       in: path
@@ -413,8 +1116,7 @@ components:
         replayed:
           type: boolean
         created_at:
-          type: string
-          pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]
+          $ref: "./local_datetime.schema.json"
     RealtimeEvent:
       $ref: "./conversation_realtime_event.schema.json"
     RealtimeFallback:
@@ -500,184 +1202,6 @@ components:
             - $ref: "#/components/schemas/ConversationItem"
             - type: "null"
     ConversationPage:
-      type: object
-      required: [items, next_cursor]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/ConversationSummary"
-        next_cursor:
-          type: [string, "null"]
+      $ref: "./workbench_conversation_page.schema.json"
     ConversationDetail:
-      type: object
-      required: [session, items]
-      properties:
-        session:
-          $ref: "#/components/schemas/ConversationSession"
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/ConversationItem"
-        ticket:
-          type: [object, "null"]
-        incident:
-          type: [object, "null"]
-
-
-          x-business-timezone: Asia/Shanghai
-
-          x-precision: second
-
-          x-offset-allowed: false
-    RealtimeEvent:
-      $ref: "./conversation_realtime_event.schema.json"
-    RealtimeFallback:
-      $ref: "./conversation_realtime_fallback.schema.json"
-    RealtimeFallbackEnvelope:
-      type: object
-      additionalProperties: false
-      required: [ok, error, fallback]
-      properties:
-        ok:
-          type: boolean
-          const: false
-        error:
-          type: object
-          additionalProperties: false
-          required: [code, retryable]
-          properties:
-            code:
-              type: string
-              minLength: 1
-              maxLength: 64
-            retryable:
-              type: boolean
-        fallback:
-          $ref: "#/components/schemas/RealtimeFallback"
-    ConversationSession:
-      description: >
-        Public workbench view of a Conversation Session. Provider participant
-        identifiers, scope digests, and creation idempotency keys are internal
-        contract fields and are intentionally excluded from this response.
-      type: object
-      additionalProperties: false
-      required:
-        - id
-        - thread_id
-        - service_intake_id
-        - status
-        - control_mode
-        - generation_version
-        - row_version
-        - last_activity_at
-      properties:
-        id:
-          type: string
-          format: uuid
-        thread_id:
-          type: string
-          format: uuid
-        service_intake_id:
-          type: [string, "null"]
-          format: uuid
-        status:
-          type: string
-          enum: [OPEN, WAITING_USER, ENDED]
-        control_mode:
-          type: string
-          enum: [AUTO, COPILOT, HUMAN]
-        generation_version:
-          type: integer
-          minimum: 1
-        row_version:
-          type: integer
-          minimum: 1
-        last_activity_at:
-          type: string
-          pattern: '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]
-    ConversationItem:
-      $ref: "./conversation_item.schema.json"
-    ConversationSummary:
-      type: object
-      required: [session, unread_count, last_item]
-      properties:
-        session:
-          $ref: "#/components/schemas/ConversationSession"
-        unread_count:
-          type: integer
-          minimum: 0
-        last_item:
-          anyOf:
-            - $ref: "#/components/schemas/ConversationItem"
-            - type: "null"
-    ConversationPage:
-      type: object
-      required: [items, next_cursor]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/ConversationSummary"
-        next_cursor:
-          type: [string, "null"]
-    ConversationDetail:
-      type: object
-      required: [session, items]
-      properties:
-        session:
-          $ref: "#/components/schemas/ConversationSession"
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/ConversationItem"
-        ticket:
-          type: [object, "null"]
-        incident:
-          type: [object, "null"]
-
-
-          x-business-timezone: Asia/Shanghai
-
-          x-precision: second
-
-          x-offset-allowed: false
-    ConversationItem:
-      $ref: "./conversation_item.schema.json"
-    ConversationSummary:
-      type: object
-      required: [session, unread_count, last_item]
-      properties:
-        session:
-          $ref: "#/components/schemas/ConversationSession"
-        unread_count:
-          type: integer
-          minimum: 0
-        last_item:
-          anyOf:
-            - $ref: "#/components/schemas/ConversationItem"
-            - type: "null"
-    ConversationPage:
-      type: object
-      required: [items, next_cursor]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/ConversationSummary"
-        next_cursor:
-          type: [string, "null"]
-    ConversationDetail:
-      type: object
-      required: [session, items]
-      properties:
-        session:
-          $ref: "#/components/schemas/ConversationSession"
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/ConversationItem"
-        ticket:
-          type: [object, "null"]
-        incident:
-          type: [object, "null"]
+      $ref: "./workbench_conversation_detail.schema.json"

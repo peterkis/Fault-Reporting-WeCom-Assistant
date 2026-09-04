@@ -9,7 +9,7 @@ import { createWorkbenchDeliveryControl } from './p2-006-workbench-delivery-cont
 import { closeConversationWorkbenchServer, createConversationWorkbenchHttpServer, listenConversationWorkbenchServer } from './p2-006-workbench-http.mjs';
 import { createConversationWorkbenchQueryService } from './p2-006-workbench-query.mjs';
 import { createP2G1HumanOnlyAssembly } from './p2-g1-human-only-assembly.mjs';
-import { createP2G1InboundProjectionCoordinator } from './p2-g1-inbound-projection-coordinator.mjs';
+import { createP2G1InboundProjectionCoordinator,createP2G1TimelineProjector } from './p2-g1-inbound-projection-coordinator.mjs';
 import { createP2G1Observability } from './p2-g1-observability.mjs';
 import { createP2G1TestAuthentication, P2_G1_TEST_AUTH_MAX_TTL_MS } from './p2-g1-test-authentication.mjs';
 import { createP2G1WeComGateway } from './p2-g1-wecom-gateway.mjs';
@@ -29,6 +29,10 @@ export function createP2G1Runtime({
   gatewayEnabled = false,
   senderEnabled = false,
   senderAdapter = null,
+  senderFactory = null,
+  extensionFactory = null,
+  realtimeAppender = appendRealtimeEvent,
+  realtimeScopeLimit = 5000,
   gatewayStatusProvider = null,
   communicationStatusProvider = null,
   requireGateway = gatewayEnabled,
@@ -44,6 +48,10 @@ export function createP2G1Runtime({
     || !Number.isInteger(projectionIntervalMs) || projectionIntervalMs < 50
     || !Number.isInteger(communicationIntervalMs) || communicationIntervalMs < 50
     || (senderAdapter !== null && typeof senderAdapter?.send !== 'function')
+    || (senderFactory !== null && typeof senderFactory !== 'function')
+    || (extensionFactory !== null && typeof extensionFactory !== 'function')
+    || typeof realtimeAppender !== 'function'
+    || !Number.isInteger(realtimeScopeLimit) || realtimeScopeLimit<1 || realtimeScopeLimit>5000
     || (gatewayStatusProvider !== null && typeof gatewayStatusProvider?.getStatus !== 'function')
     || (communicationStatusProvider !== null && typeof communicationStatusProvider?.isReady !== 'function')
     || typeof requireGateway !== 'boolean'
@@ -57,7 +65,7 @@ export function createP2G1Runtime({
     pool,
     enabled: true,
     authorize: controlAuthorization,
-    realtimeAppender: appendRealtimeEvent,
+    realtimeAppender,
   });
   const communicationService = createCommunicationService({
     pool,
@@ -79,7 +87,7 @@ export function createP2G1Runtime({
     authenticate: authenticate.authenticate,
     authorize: async (authContext) => {
       const principal = await authorization.resolvePrincipal(authContext);
-      return authorization.resolveRealtimeAuthorization(principal);
+      return authorization.resolveRealtimeAuthorization(principal,{limit:realtimeScopeLimit});
     },
   });
   let assembly;
@@ -91,10 +99,11 @@ export function createP2G1Runtime({
     clientFactory,
     onFrame: async (frame) => assembly.handleFrame(frame),
   });
-  const sender = senderAdapter ?? createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes, enabled: senderEnabled });
+  const sender = senderAdapter ?? (senderFactory ? senderFactory({gateway}) : createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes, enabled: senderEnabled }));
   const communicationWorkerEnabled = senderEnabled || senderAdapter !== null;
   const communicationWorker = createCommunicationDeliveryWorker({ pool, sender, enabled: communicationWorkerEnabled, batchSize: 20 });
-  const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20, wakeup: realtime.wakeup });
+  const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20, wakeup: realtime.wakeup,
+    projector:createP2G1TimelineProjector({pool,enabled:true,batchSize:20,realtimeAppender,wakeup:realtime.wakeup}) });
   const observedGateway = gatewayStatusProvider ?? gateway;
   const observability = createP2G1Observability({ pool, coordinator, gateway: observedGateway, realtime, enabled: true });
   assembly = createP2G1HumanOnlyAssembly({ operationalIntake, coordinator, observability });
@@ -111,6 +120,7 @@ export function createP2G1Runtime({
     authorize: authorization,
     enabled: true,
   });
+  const extension=extensionFactory?.({controlService,authorization,realtime,coordinator,queryService,commandFacade})??{};
   let listening = false;
   let stopping = false;
   let projectionTimer = null;
@@ -122,14 +132,17 @@ export function createP2G1Runtime({
   const healthProvider = {
     live: async () => Object.freeze({ ok: !stopping, service: 'P2_G1_HUMAN_ONLY' }),
     metrics: observability.metrics,
-    ready: async () => observability.readiness({
+    ready: async () => {
+      const base=await observability.readiness({
       httpListening: listening,
       workbenchEnabled: true,
       projectionEnabled: !stopping,
       communicationEnabled: !stopping && (communicationStatusProvider?.isReady?.() ?? (communicationWorkerEnabled || senderEnabled === false)),
       requireGateway,
       featureFlags: {},
-    }),
+      });
+      return extension.readiness?extension.readiness(base):base;
+    },
   };
   const server = createConversationWorkbenchHttpServer({
     enabled: true,
@@ -139,6 +152,9 @@ export function createP2G1Runtime({
     sseHandler: realtime,
     healthProvider,
     publicOrigin,
+    ...(extension.staticHandler?{staticHandler:extension.staticHandler}:{}),
+    authenticatedHandler:extension.authenticatedHandler??null,
+    unauthenticatedHandler:extension.unauthenticatedHandler??null,
   });
   server.maxConnections = 128;
 
@@ -146,7 +162,7 @@ export function createP2G1Runtime({
     projectionTimer = setInterval(() => {
       if (projectionRunning || stopping) return;
       projectionRunning = true;
-      projectionTask = coordinator.runOnce().then((result) => observability.recordProjection(result)).catch(() => {}).finally(() => { projectionRunning = false; });
+      projectionTask = coordinator.runOnce().then(async(result) => {observability.recordProjection(result);await extension.runOnce?.();}).catch(() => {}).finally(() => { projectionRunning = false; });
     }, projectionIntervalMs);
     if (communicationWorkerEnabled) {
       communicationTimer = setInterval(() => {
@@ -177,6 +193,7 @@ export function createP2G1Runtime({
     stopping = true;
     clearInterval(projectionTimer); clearInterval(communicationTimer);
     await Promise.allSettled([projectionTask, communicationTask]);
+    await extension.stop?.();
     await gateway.stop();
     await realtime.close();
     server.closeAllConnections?.();

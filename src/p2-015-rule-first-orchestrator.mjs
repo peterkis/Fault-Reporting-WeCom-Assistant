@@ -37,9 +37,11 @@ async function loadIntake(transaction, intakeId, lock = false) {
             intake.source_chat_id,intake.reporter_wecom_userid,intake.privacy_class,intake.retention_until,
             intake.retention_until_epoch_ms::text,intake.request_type,intake.status,intake.pilot_ticket_id::text,
             intake.primary_message_id::text,intake.last_message_at,intake.version,intake.created_at,
+            journey.entry_mode AS recorded_entry_mode,
             session.id::text AS session_id,thread.id::text AS thread_id,thread.provider AS thread_provider,
             thread.channel_account_id,thread.chat_type AS thread_chat_type,thread.external_thread_key
        FROM intake.service_intake AS intake
+       LEFT JOIN intake.contact_journey AS journey ON journey.origin_intake_id=intake.id
        LEFT JOIN conversation.session AS session ON session.service_intake_id=intake.id AND session.status<>'ENDED'
        LEFT JOIN conversation.thread AS thread ON thread.id=session.thread_id
       WHERE intake.id=$1::uuid ${lock ? 'FOR UPDATE OF intake' : ''}`,
@@ -70,8 +72,13 @@ async function loadWindow(transaction, intakeId) {
 }
 
 function entryMode(intake, window) {
+  // Entry is a persisted origin fact, not a classification of each later message window.
+  if (intake.recorded_entry_mode) return intake.recorded_entry_mode;
   if (intake.source_chat_type === 'single') return 'DIRECT_ORGANIC';
-  const generic = window.text.trim() === '' || /^(在吗|@?bot|系统不行)[!.。！ ]*$/iu.test(window.text.trim());
+  // A real WeCom callback retains the bot's display-name mention. Only classify the
+  // remaining description here; the persisted text and rule/provenance input stay intact.
+  const description = window.text.replace(/^@[^\s@]+(?:\s+|$)/u, '').trim();
+  const generic = description === '' || /^(在吗|@?bot|系统不行)[!.。！ ]*$/iu.test(description);
   return generic ? 'GROUP_MENTION_TO_DIRECT_GUIDED' : 'GROUP_MENTION_INLINE';
 }
 
@@ -106,9 +113,9 @@ function orchestrationContext({ intake, journey, window, traceId }) {
 
 export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPort = DeferredDirectory(),
   ruleEngine = null, journeyStore = createContactJourneyStore(), continuationService = createContinuationRefService(),
-  decisionStore = createDecisionStore(), safeActionExecutor } = {}) {
+  decisionStore = createDecisionStore(), safeActionExecutor, decisionOverride = null } = {}) {
   if (!pool?.connect || typeof identityHmacKey !== 'string' || identityHmacKey.length < 16
-    || !safeActionExecutor) failP2015(P2_015_ERROR_CODES.inputInvalid);
+    || !safeActionExecutor || (decisionOverride !== null && typeof decisionOverride !== 'function')) failP2015(P2_015_ERROR_CODES.inputInvalid);
   const engine = ruleEngine ?? createRuleEngine();
 
   async function processInTransaction({ transaction, intakeId, profile, reporterHash, flags, traceId }) {
@@ -155,8 +162,10 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
       conflicts: [],
       input_hash: safeHash({ source_hash: sourceHash }),
     };
-    let routed;
-    if (!window.bounded) {
+    let routed = decisionOverride ? await decisionOverride({ transaction, journey, routeContext }) : null;
+    if (routed !== null) {
+      routed = freezePublic(routed);
+    } else if (!window.bounded) {
       routed = routeRuleFailure({ ...routeContext, catalog_version: engine.catalog_version ?? 'UNAVAILABLE', rule_set_version: engine.rule_set_version ?? 'UNAVAILABLE' });
       routed = freezePublic({ ...routed, reason_code: 'MESSAGE_WINDOW_LIMIT_EXCEEDED', result_hash: safeHash({ ...routed, reason_code: 'MESSAGE_WINDOW_LIMIT_EXCEEDED' }) });
     } else {

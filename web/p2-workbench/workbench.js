@@ -17,6 +17,8 @@ const realtimeEventTypes = Object.freeze([
   'conversation.timeline.rebuilt', 'conversation.mode.changed', 'conversation.assigned',
   'conversation.handoff.requested', 'conversation.handoff.accepted', 'conversation.read_cursor.changed',
   'communication.delivery.changed', 'ticket.updated', 'incident.updated', 'gateway.connection.changed',
+  'manual_review.created', 'manual_review.resolved', 'ticket.command.committed', 'ticket.status.changed',
+  'ticket.assignment.changed', 'ticket.notification.created', 'ticket.notification.delivery_changed',
 ]);
 
 function setState(action) { state = reduceWorkbenchState(state, action); saveRefreshState(state); }
@@ -146,6 +148,7 @@ function connectRealtime() {
 
 async function boot() {
   bootstrap = await api('/api/workbench/bootstrap'); csrfToken = bootstrap.csrf_token ?? null;
+  void api('/api/lifecycle/bootstrap').then(()=>{document.getElementById('lifecycle-link').hidden=false;}).catch(()=>{});
   const testSession = location.hash.match(/^#test-agent-([A-D])$/u)?.[1] ?? null;
   if (testSession) {
     elements['test-session-label'].textContent = `测试窗口 ${testSession}`;
