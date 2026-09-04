@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_template_card_view_model.schema.json",
+  "title": "p2_016_template_card_view_model",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "public_ref",
+    "suffix",
+    "status",
+    "occurred_at",
+    "version",
+    "notification_type",
+    "source"
+  ],
+  "properties": {
+    "public_ref": {
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 32,
+      "pattern": "^[A-Za-z0-9_-]{32}$"
+    },
+    "suffix": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 4,
+      "pattern": "^[0-9]{4}$"
+    },
+    "status": {
+      "enum": [
+        "NEW",
+        "QUEUED",
+        "ACCEPTED",
+        "IN_PROGRESS",
+        "WAITING_REQUESTER",
+        "WAITING_VENDOR",
+        "RESOLVED",
+        "CLOSED",
+        "REOPENED",
+        "CANCELLED",
+        "DUPLICATE_LINKED"
+      ]
+    },
+    "occurred_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "notification_type": {
+      "enum": [
+        "TICKET_CREATED",
+        "TICKET_ACCEPTED",
+        "TICKET_IN_PROGRESS",
+        "WAITING_REQUESTER",
+        "WAITING_VENDOR",
+        "TICKET_RESOLVED",
+        "TICKET_CLOSED",
+        "TICKET_REOPENED",
+        "TICKET_CANCELLED"
+      ]
+    },
+    "source": {
+      "enum": [
+        "GROUP",
+        "DIRECT"
+      ]
+    }
+  },
+  "x-business-timezone": "Asia/Shanghai",
+  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys"
+}

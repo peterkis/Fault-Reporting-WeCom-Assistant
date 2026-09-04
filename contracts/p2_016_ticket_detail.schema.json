@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_ticket_detail.schema.json",
+  "title": "p2_016_ticket_detail",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "ticket_no",
+    "request_type",
+    "status",
+    "priority",
+    "resolver_team_id",
+    "assignee_id",
+    "version",
+    "created_at",
+    "updated_at",
+    "intake_id",
+    "external_status",
+    "allowed_actions"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "ticket_no": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "request_type": {
+      "enum": [
+        "INCIDENT",
+        "SERVICE_REQUEST"
+      ]
+    },
+    "status": {
+      "enum": [
+        "NEW",
+        "QUEUED",
+        "ACCEPTED",
+        "IN_PROGRESS",
+        "WAITING_REQUESTER",
+        "WAITING_VENDOR",
+        "RESOLVED",
+        "CLOSED",
+        "REOPENED",
+        "CANCELLED",
+        "DUPLICATE_LINKED"
+      ]
+    },
+    "priority": {
+      "enum": [
+        "LOW",
+        "NORMAL",
+        "HIGH",
+        "URGENT"
+      ]
+    },
+    "resolver_team_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+    },
+    "assignee_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 36,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "created_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "updated_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "intake_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "external_status": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "allowed_actions": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "enum": [
+          "queue",
+          "accept",
+          "start",
+          "request-information",
+          "wait-vendor",
+          "resume",
+          "resolve",
+          "confirm",
+          "reopen",
+          "cancel",
+          "add-note",
+          "transfer-assignment"
+        ]
+      }
+    }
+  },
+  "x-business-timezone": "Asia/Shanghai",
+  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys"
+}

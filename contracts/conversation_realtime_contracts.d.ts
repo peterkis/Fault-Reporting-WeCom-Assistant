@@ -24,7 +24,10 @@ export type RealtimeEventType =
   | 'communication.delivery.changed'
   | 'ticket.updated'
   | 'incident.updated'
-  | 'gateway.connection.changed';
+  | 'gateway.connection.changed'
+  | 'manual_review.created' | 'manual_review.resolved'
+  | 'ticket.command.committed' | 'ticket.status.changed' | 'ticket.assignment.changed'
+  | 'ticket.notification.created' | 'ticket.notification.delivery_changed';
 
 export type RealtimeSourceType =
   | 'CONVERSATION_SESSION'
@@ -35,7 +38,8 @@ export type RealtimeSourceType =
   | 'HANDOFF_EVENT'
   | 'READ_CURSOR'
   | 'INCIDENT_EVENT'
-  | 'GATEWAY_EVENT';
+  | 'GATEWAY_EVENT'
+  | 'MANUAL_REVIEW';
 
 export type RealtimeAggregateType =
   | 'CONVERSATION_SESSION'
@@ -46,7 +50,8 @@ export type RealtimeAggregateType =
   | 'CONVERSATION_HANDOFF'
   | 'CONVERSATION_READ_CURSOR'
   | 'INCIDENT'
-  | 'GATEWAY_CONNECTION';
+  | 'GATEWAY_CONNECTION'
+  | 'MANUAL_REVIEW';
 
 export type RealtimeAuthorizationScopeType = 'SESSION' | 'THREAD' | 'SYSTEM';
 

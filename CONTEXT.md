@@ -33,9 +33,13 @@ Port, or Worker behavior, read `docs/55_p2_015_rule_first_intake_orchestration.m
 `docs/57_p2_015_manual_review_and_safe_actions.md`. This implementation does not authorize
 P2-016 UI/REST, P2-012 Incident, P2-G2, AI/OCR, or production enablement.
 
-P2-016 is independently authorized in lane P2-B; read
-`evidence/p2-016-start-authorization.md` for its exact scope and live-validation stop line.
-P2-015 remains completed; its implementation and historical evidence are unchanged.
+P2-016 is DONE after owner-approved targeted live validation. For completion or handoff,
+read `evidence/p2-016-ticket-lifecycle-workbench-report.md` and
+`evidence/p2-016-project-owner-approval.md`. No task or lane is active; P2-012 requires separate authorization.
+P2-015 remains completed and its historical evidence is immutable. P2-016's separately
+authorized implementation reuses narrow backward-compatible seams; this is not a second
+P2-015 completion. For Workbench, Reporter access, and notification work, read
+`docs/58_p2_016_manual_review_workbench.md` through `docs/61_p2_016_wecom_notifications_template_card.md`.
 
 ## Conversation identity
 
@@ -216,3 +220,15 @@ _Avoid_: final production frontend, approved design system, production deploymen
 **Unified Ticket**:
 The authoritative record of service handling lifecycle, separate from conversation identity and communication history.
 _Avoid_: Conversation Session, Service Intake, second ticket
+
+**Reporter Access Grant**:
+A short-lived, single-use capability delivered to the original reporter for one Ticket's safe progress view.
+_Avoid_: Ticket number credential, permanent public link, hospital identity
+
+**Bound Reporter Session**:
+A read-only access session bound to one Reporter Access Grant and one Unified Ticket; it confers no internal Workbench role or Ticket action authority.
+_Avoid_: hospital SSO session, internal agent session, verified clinical identity
+
+**Ticket Command Receipt**:
+The durable outcome of one principal's identified Ticket command, preserving a single outcome when that command is retried.
+_Avoid_: Ticket Event, Delivery Attempt, global command ownership

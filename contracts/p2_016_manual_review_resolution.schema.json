@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_manual_review_resolution.schema.json",
+  "title": "p2_016_manual_review_resolution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "client_command_id",
+    "expected_row_version",
+    "resolution_code",
+    "resolution_reason_code"
+  ],
+  "properties": {
+    "client_command_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "expected_row_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19,
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "resolution_code": {
+      "enum": [
+        "CONFIRM_TICKET_ELIGIBLE",
+        "CLASSIFY_SERVICE_REQUEST",
+        "REQUEST_DESCRIPTION",
+        "CLASSIFY_BUSINESS_CONSULTATION",
+        "ACKNOWLEDGE",
+        "MARK_OUT_OF_SCOPE",
+        "KEEP_INCIDENT_REVIEW_CANDIDATE",
+        "CANCEL_REVIEW"
+      ]
+    },
+    "resolution_reason_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+    }
+  },
+  "x-business-timezone": "Asia/Shanghai",
+  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys"
+}

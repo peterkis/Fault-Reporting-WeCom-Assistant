@@ -43,7 +43,8 @@ export function createManualReviewStore({ authorizer = null } = {}) {
       return freezePublic(result.rows[0]);
     },
 
-    async list({ transaction, principal, cursor = null, limit }) {
+    async list({ transaction, principal, cursor = null, limit, priority = null }) {
+      if (priority !== null && !['LOW','NORMAL','HIGH','URGENT'].includes(priority)) failP2015(P2_015_ERROR_CODES.inputInvalid);
       const ids = await allowedJourneyIds({ principal, operation: 'LIST_MANUAL_REVIEWS' });
       const pageLimit = normalizeLimit(limit, P2_015_LIMITS.defaultReviewPage, P2_015_LIMITS.maximumReviewPage);
       if (ids.length === 0) return freezePublic({ items: [], next_cursor: null });
@@ -53,10 +54,11 @@ export function createManualReviewStore({ authorizer = null } = {}) {
                 linked_ticket_id::text,review_reason_code,priority,status,row_version::text,created_at
            FROM intake.manual_review_item
           WHERE journey_id=ANY($1::uuid[]) AND status='PENDING'
+            AND ($6::text IS NULL OR priority=$6::text)
             AND ($2::integer IS NULL OR ((CASE priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END),created_at,id)
               > ($2::integer,$3::timestamp without time zone,$4::uuid))
           ORDER BY (CASE priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END),created_at,id LIMIT $5`,
-        [ids, value?.priority_rank ?? null, value?.created_at ?? null, value?.id ?? null, pageLimit + 1],
+        [ids, value?.priority_rank ?? null, value?.created_at ?? null, value?.id ?? null, pageLimit + 1, priority],
       );
       const rows = result.rows.slice(0, pageLimit);
       const last = rows.at(-1);

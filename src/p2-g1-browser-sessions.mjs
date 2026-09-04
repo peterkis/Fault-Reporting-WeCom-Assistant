@@ -106,7 +106,7 @@ async function cleanupStaleProfiles() {
   }
 }
 
-async function launchOne({ executable, origin, cookie, label, headless }) {
+async function launchOne({ executable, origin, cookie, label, headless,initialPath='/workbench' }) {
   const profile = await mkdtemp(join(tmpdir(), 'p2-g1-live-browser-'));
   const argumentsList = [
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--new-window',
@@ -186,7 +186,7 @@ async function launchOne({ executable, origin, cookie, label, headless }) {
     if (typeof installed?.identifier !== 'string') throw new Error('P2_G1_TEST_BROWSER_TELEMETRY_FAILED');
     const currentDocument = await command('Runtime.evaluate', { expression: SAFE_TELEMETRY_SOURCE });
     if (currentDocument?.exceptionDetails) throw new Error('P2_G1_TEST_BROWSER_TELEMETRY_FAILED');
-    await command('Page.navigate', { url: `${origin}/workbench#test-agent-${label}` });
+    await command('Page.navigate', { url: `${origin}${initialPath}#test-agent-${label}` });
 
     async function safeTelemetry() {
       const evaluated = await command('Runtime.evaluate', {
@@ -287,9 +287,10 @@ async function launchOne({ executable, origin, cookie, label, headless }) {
   }
 }
 
-export async function launchP2G1TestBrowserSessions({ origin, cookies, headless = false } = {}) {
+export async function launchP2G1TestBrowserSessions({ origin, cookies, headless = false,initialPath='/workbench',requireCleanupSuccess=false } = {}) {
   if (typeof origin !== 'string' || !/^http:\/\/127\.0\.0\.1:[0-9]{4,5}$/u.test(origin)
-    || !Array.isArray(cookies) || cookies.length < 2 || cookies.length > 4 || typeof headless !== 'boolean') {
+    || !Array.isArray(cookies) || cookies.length < 2 || cookies.length > 4 || typeof headless !== 'boolean'
+    || !['/workbench','/workbench/lifecycle'].includes(initialPath)||typeof requireCleanupSuccess!=='boolean') {
     throw new TypeError('P2_G1_TEST_BROWSER_CONFIGURATION_INVALID');
   }
   await cleanupStaleProfiles();
@@ -297,7 +298,7 @@ export async function launchP2G1TestBrowserSessions({ origin, cookies, headless 
   const sessions = [];
   try {
     for (let index = 0; index < cookies.length; index += 1) {
-      sessions.push(await launchOne({ executable, origin, cookie: cookies[index], label: String.fromCharCode(65 + index), headless }));
+      sessions.push(await launchOne({ executable, origin, cookie: cookies[index], label: String.fromCharCode(65 + index), headless,initialPath }));
     }
   } catch (error) {
     await Promise.allSettled(sessions.map((session) => session.close()));
@@ -311,6 +312,9 @@ export async function launchP2G1TestBrowserSessions({ origin, cookies, headless 
       if (!Number.isInteger(sessionIndex) || sessionIndex < 0 || sessionIndex >= sessions.length) throw new TypeError('P2_G1_TEST_BROWSER_SESSION_INVALID');
       return sessions[sessionIndex].submitInternalNote(text);
     },
-    close: async () => { await Promise.allSettled(sessions.map((session) => session.close())); },
+    close: async () => {
+      const results=await Promise.allSettled(sessions.map((session) => session.close()));
+      if(requireCleanupSuccess&&results.some(r=>r.status==='rejected'))throw new Error('P2_G1_TEST_BROWSER_CLEANUP_FAILED');
+    },
   });
 }

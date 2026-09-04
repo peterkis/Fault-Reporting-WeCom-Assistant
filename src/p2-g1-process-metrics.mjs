@@ -37,6 +37,7 @@ export function createP2G1ProcessMetrics({ role } = {}) {
       cpu_percent: Number(Math.max(0, cpuPercent).toFixed(3)),
       event_loop_delay_p95_ms: Number(delay.percentile(95) / 1e6),
       active_resources: resources.length,
+      active_timers: resources.filter((name) => /Timeout|Timer/iu.test(name)).length,
       active_sockets: resources.filter((name) => /TCP|Socket|Pipe/iu.test(name)).length,
       active_file_handles: resources.filter((name) => /FSReq|FileHandle/iu.test(name)).length,
       active_handles: handles.length,

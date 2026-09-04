@@ -1,0 +1,376 @@
+{
+  "task": "P2-016",
+  "status": "READY_FOR_TARGETED_LIVE_VALIDATION",
+  "kind": "AUTOMATED_READINESS_NOT_COMPLETION",
+  "snapshot_scope": "HISTORICAL_PRE_LIVE_AUTOMATED_READINESS_SNAPSHOT",
+  "live_validation_field_scope": "NOT_RUN records the pre-live snapshot only; subsequent live facts are separate",
+  "subsequent_live_validation_evidence": "evidence/p2-016-targeted-live-validation.json",
+  "subsequent_post_live_regression_evidence": "evidence/p2-016-post-live-regression-report.json",
+  "date": "2026-09-04",
+  "timezone": "Asia/Shanghai",
+  "branch": "phase2/p2-016-ticket-lifecycle-workbench",
+  "authorization_commit": "3599fa479c752ed75cd4652e5ffdaee2b212ad24",
+  "baseline_commit": "b1b8e4deb14e6290ca45aea12d92baaef4728c11",
+  "runtime_input_sha256": "3752596720f20524ff989ee9cf913b9e104e32a4c2095c48fc83804e7e75f863",
+  "hash_scope": "LF-normalized sorted tracked and untracked nonignored src/web/contracts/scripts/tests/database/package files; governance and Evidence excluded",
+  "all_automated_checks_passed": true,
+  "regression": {
+    "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 tests/*.test.mjs",
+    "tests": 533,
+    "pass": 533,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "duration_ms": 598149.0886,
+    "temporary_directory_isolated": true,
+    "implementation_and_contract_validation": true,
+    "readiness_evidence_validated_after_report_generation": true
+  },
+  "prior_attempt": {
+    "tests": 523,
+    "pass": 522,
+    "fail": 1,
+    "skipped": 0,
+    "failure": "Browser ticket navigation readiness race; unique-ticket wait and confirmation-editing fence added; superseded by full successful regression"
+  },
+  "coverage": [
+    "P1-005",
+    "P1-006",
+    "P1-010",
+    "P1-012",
+    "P2-002",
+    "P2-003",
+    "P2-004",
+    "P2-005",
+    "P2-006",
+    "P2-G1",
+    "ARCH-005",
+    "P2-007",
+    "ARCH-006",
+    "P2-015",
+    "P2-016"
+  ],
+  "runtime": [
+    "Manual Review query/resolution and native UI",
+    "All explicit Ticket actions plus transfer and atomic takeover/accept",
+    "Reporter one-use grant and bound read-only session",
+    "Ticket Event to Communication Message/Outbox/Delivery",
+    "Template card SDK adapter and approved inbound/outbound scope",
+    "Durable realtime refetch and bounded polling",
+    "Separate App/Worker/Gateway live harness"
+  ],
+  "migration": {
+    "id": "031_p2_016_ticket_lifecycle_workbench_notifications",
+    "relations_added": 6,
+    "columns": 84,
+    "constraints": 145,
+    "indexes": 38,
+    "foreign_keys": 24,
+    "user_triggers": 0,
+    "catalog_sha256": "5521c4fc34481ef22e46cab4e0f3e1fdea232c995cef2f823008d0ea9142fb20",
+    "isolated_apply_check_rollback_repeat_drift": "PASS",
+    "historical_migrations_001_through_030": "UNCHANGED",
+    "configured_pilot_database": {
+      "inspection": "READ_ONLY",
+      "markers_030_031": [],
+      "status": "P2_016_REQUIRES_030",
+      "migrations_applied_by_this_task": false
+    }
+  },
+  "browser": {
+    "engine": "Native Edge/Chrome test harness",
+    "viewports": [
+      "1440x900",
+      "390x844"
+    ],
+    "timezone_cases": [
+      "UTC",
+      "Asia/Shanghai",
+      "America/New_York"
+    ],
+    "real_database_ticket_actions": "PASS",
+    "reporter_fragment_cookie_refresh_logout": "PASS",
+    "in_app_browser": "UNAVAILABLE_PRIVILEGED_BRIDGE; existing native harness used",
+    "real_wecom_client": "CURRENT_CANDIDATE_NOT_RUN; prior candidate failed Journey association"
+  },
+  "capacity": {
+    "tickets": 500,
+    "ticket_events": 5000,
+    "review_resolutions": 200,
+    "cards": 500,
+    "group_receipts": 400,
+    "reporter_sessions": 100,
+    "pool_max": 4,
+    "sse_max": 32,
+    "sse_after_stop": 0,
+    "heap_samples_bytes": [
+      14465976,
+      30262216,
+      27750872,
+      39432376,
+      69518216,
+      58362408,
+      24585456,
+      40355856,
+      18224768,
+      39739336,
+      20988312,
+      42828384,
+      23973264,
+      45696176,
+      26273072,
+      47995064,
+      28942200,
+      50434592,
+      26611760,
+      43693440,
+      59361456,
+      26704792,
+      46144384,
+      62372880,
+      30859056,
+      46803632,
+      61840568,
+      24743984,
+      43224544,
+      19387808
+    ],
+    "heap_peak_bytes": 69518216,
+    "heap_final_bytes": 19387808,
+    "heap_fall_or_stable": true,
+    "real_sdk_calls": 0,
+    "soak_24h": false
+  },
+  "process_topology": {
+    "app": 1,
+    "worker": 1,
+    "gateway_role": 1,
+    "gateway_live_connections_in_automated_test": 0,
+    "pool_limits": [
+      4,
+      2,
+      1
+    ],
+    "live_controller_pool": 1,
+    "live_total_pool_limit": 8
+  },
+  "recovery": {
+    "response_loss_receipt_replay": "PASS",
+    "killed_worker_unknown_reconciliation": "PASS",
+    "confirmed_not_sent_then_one_ack": "PASS",
+    "ack_restart_no_resend": "PASS",
+    "isolated_database_residual": 0,
+    "isolated_backend_residual": 0
+  },
+  "live_validation": "NOT_RUN",
+  "owner_approval": "FINAL_ACCEPTANCE_PENDING",
+  "second_commit_created": false,
+  "pushed": false,
+  "merged": false,
+  "tagged": false,
+  "feature_flags": {
+    "committed_defaults_all_false": true,
+    "configured_true_flags": [],
+    "noncanonical_values": []
+  },
+  "live_preconditions": {
+    "approval_fuses": [
+      false,
+      false,
+      false
+    ],
+    "reporter_configuration_present": false,
+    "approved_principal_scope_present": false,
+    "approved_database_030_031_ready": false,
+    "owner_delegated_local_test_setup": true,
+    "current_test_services_running": false
+  },
+  "limitations": [
+    "Internal Beta; not production, clinical use, hospital SSO, P2-G2 or Phase 2 Go",
+    "LINK_EXISTING_JOURNEY UI remains disabled because existing Store cannot relocate an already-bound Channel Leg",
+    "Actual WeCom title/suffix/status/time/button display, HTTPS click and fragment preservation require human observation",
+    "Actual representative single client notifications, disconnect/re-auth, UNKNOWN reconciliation, 15-minute observation and explicit owner approval remain required",
+    "Capacity test is short synthetic workload, not 24-hour soak or 2C4G hardware certification",
+    "Previous candidate live test failed group-to-direct association; new candidate requires fresh live validation",
+    "Policy-blocked old browser profiles and first regression temporary root remain; filesystem cleanup is not complete"
+  ],
+  "lifecycle": {
+    "active_task": "P2-016",
+    "active_lane": "P2-B",
+    "last_completed_task": "P2-015",
+    "last_completed_gate": "P2-G1",
+    "last_completed_architecture_task": "ARCH-006",
+    "P2_012": "TODO_REQUIRES_SEPARATE_AUTHORIZATION",
+    "P2_G2": "NOT_STARTED",
+    "P2_008": "BLOCKED_BY_P2_G2",
+    "P3": "NOT_STARTED"
+  },
+  "post_state_validation": {
+    "status": "STATIC_AND_AUTOMATED_PASS_FILESYSTEM_CLEANUP_PENDING",
+    "v1_4_architecture": {
+      "checks": 395,
+      "exit_code": 0
+    },
+    "v1_4_tests": {
+      "pass": 16,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0,
+      "exit_code": 0
+    },
+    "p2_016_architecture": {
+      "checks": 142,
+      "exit_code": 0,
+      "runtime_input_sha256": "3752596720f20524ff989ee9cf913b9e104e32a4c2095c48fc83804e7e75f863",
+      "readiness_evidence_checked": true
+    },
+    "arch_005": {
+      "exit_code": 0,
+      "contract_date_time_format_count": 0,
+      "api_offset_timestamp_leak_count": 0,
+      "direct_pg_factory_bypass_count": 0,
+      "browser_timezone_display_mismatch_count": 0,
+      "event_ordering_violation_count": 0
+    },
+    "arch_006": {
+      "checks": 260,
+      "exit_code": 0
+    },
+    "live_check": {
+      "exit_code": 1,
+      "expected_fail_closed": true,
+      "error_code": "P2_016_LIVE_APPROVAL_REQUIRED",
+      "provider_calls": 0,
+      "listener_started": false,
+      "network_started": false
+    },
+    "original_database": {
+      "markers_030_031": [],
+      "mutated": false
+    },
+    "cleanup": {
+      "isolated_databases": 0,
+      "isolated_backends": 0,
+      "scoped_runtime_and_test_processes": 0,
+      "loopback_listeners": 0,
+      "current_run_browser_profiles": 0,
+      "persistent_enabled_flags": 0,
+      "approval_variables_present": 0,
+      "filesystem_cleanup_complete": false,
+      "regression_roots_retained": 2,
+      "policy_blocked_regression_root": "tmp/p2016-regression-08ca035e45964a73ae9204bb513cd12d",
+      "other_regression_root": "tmp/p2016-regression-226d8c3552004b809d172857149ab127",
+      "earlier_policy_blocked_edge_profiles_untouched": true,
+      "other_app_processes_untouched": true
+    },
+    "git": {
+      "head": "3599fa479c752ed75cd4652e5ffdaee2b212ad24",
+      "origin_main": "b1b8e4deb14e6290ca45aea12d92baaef4728c11",
+      "index_empty": true,
+      "implementation_uncommitted": true,
+      "diff_check_exit_code": 0
+    }
+  },
+  "previous_automated_snapshot": {
+    "runtime_input_sha256": "0ecff720b9f5119895fcfa0a954131d3c43ccfdde191689ea7eb4d3b9c287f6a",
+    "regression": {
+      "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 tests/*.test.mjs",
+      "tests": 530,
+      "pass": 530,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exit_code": 0,
+      "duration_ms": 463963.8174
+    },
+    "post_state_validation": {
+      "status": "PASS",
+      "v1_4_architecture": {
+        "checks": 395,
+        "exit_code": 0
+      },
+      "v1_4_tests": {
+        "pass": 16,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "todo": 0,
+        "exit_code": 0
+      },
+      "p2_016_architecture": {
+        "checks": 142,
+        "exit_code": 0,
+        "runtime_input_sha256": "0ecff720b9f5119895fcfa0a954131d3c43ccfdde191689ea7eb4d3b9c287f6a"
+      },
+      "arch_005": {
+        "exit_code": 0,
+        "contract_date_time_format_count": 0,
+        "api_offset_timestamp_leak_count": 0,
+        "direct_pg_factory_bypass_count": 0,
+        "browser_timezone_display_mismatch_count": 0,
+        "event_ordering_violation_count": 0
+      },
+      "arch_006": {
+        "checks": 260,
+        "exit_code": 0
+      },
+      "live_check": {
+        "exit_code": 1,
+        "expected_fail_closed": true,
+        "error_code": "P2_016_LIVE_APPROVAL_REQUIRED",
+        "provider_calls": 0,
+        "listener_started": false,
+        "network_started": false
+      },
+      "migration_status": {
+        "exit_code": 1,
+        "expected_deployment_precondition": true,
+        "error_code": "P2_016_REQUIRES_030",
+        "configured_database_markers_030_031": [],
+        "mutated": false
+      },
+      "cleanup": {
+        "isolated_databases": 0,
+        "isolated_backends": 0,
+        "scoped_runtime_and_test_processes": 0,
+        "current_run_browser_profiles": 0,
+        "preexisting_browser_profiles_preserved": 4,
+        "preexisting_profile_date": "2026-09-01",
+        "other_app_processes_untouched": true
+      },
+      "git": {
+        "head": "3599fa479c752ed75cd4652e5ffdaee2b212ad24",
+        "origin_main": "b1b8e4deb14e6290ca45aea12d92baaef4728c11",
+        "index_empty": true,
+        "implementation_uncommitted": true,
+        "diff_check_exit_code": 0
+      }
+    }
+  },
+  "revalidation_attempt_1": {
+    "runtime_input_sha256": "b1755bb1504142f0d69e249486ba526afe8adc3fd796ff6e45c336ae22e66d34",
+    "tests": 532,
+    "pass": 531,
+    "fail": 1,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "exit_code": 1,
+    "duration_ms": 459941.3088,
+    "failure": "Stale readiness fingerprint; full regression cannot require its own future receipt. Implementation checking and mandatory default/live evidence checking were separated."
+  },
+  "prior_live_validation": {
+    "run_id": "eaf9e6fe-86bd-49de-b185-321ae4b0e7fb",
+    "runtime_input_sha256": "0ecff720b9f5119895fcfa0a954131d3c43ccfdde191689ea7eb4d3b9c287f6a",
+    "result": "FAILED_REQUIRES_FIX_AND_RERUN",
+    "evidence": "evidence/p2-016-targeted-live-validation-2026-09-04.json",
+    "observed_ms": 1018504,
+    "minimum_15_minutes_met": true
+  },
+  "repair_evidence": "evidence/p2-016-guided-journey-repair-2026-09-04.md",
+  "live_validation_scope": "CURRENT_RUNTIME_CANDIDATE"
+}

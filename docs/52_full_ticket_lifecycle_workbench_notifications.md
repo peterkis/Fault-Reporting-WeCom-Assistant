@@ -110,4 +110,4 @@ Ticket Event
 
 ## 8. 持久化与停止线
 
-P2-016 只在独立授权后判断是否确有新持久化需要，预留 migration `031`；ARCH-006 不创建 SQL。P2-016、Reporter Portal、Sender 与任何 Flag 当前均未实现、未启动。
+P2-016 经独立授权采用 migration 031，新增命令收据、Reporter 访问和通知绑定的六张辅助表，不新增 Ticket Core。实现说明见 docs/58–61；自动化报告为 evidence/p2-016-automated-readiness-report.md。P2-016 已经真实定向现场、回归及负责人批准收口为 DONE；完成记录见 evidence/p2-016-ticket-lifecycle-workbench-report.md。无活动任务，P2-012/P2-G2 未授权；全部 Feature Flag 保持 false。

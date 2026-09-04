@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-04 - P2-016 completed with explicit owner approval
+
+- 负责人已批准本次定向现场通过、DONE 收口和唯一第二个本地实现提交。完成与批准见 `evidence/p2-016-ticket-lifecycle-workbench-report.md` 和 `evidence/p2-016-project-owner-approval.md`。
+- last_completed_task 更新为 P2-016；Gate/architecture 指针保留 P2-G1/ARCH-006。active_task/active_lane 置空，下一候选 P2-012 未授权；P2-G2 未启动，P2-008 仍被 P2-G2 阻断。
+- 完成态门禁新增批准、现场时长、完整回归和冻结业务输入校验；377 个已验证输入仅有三个治理 Validator 与四个治理测试变化，没有改变已验收的业务代码。首个授权提交与历史完成 Evidence 不变。
+- 全部持久默认 Flag=false，无 AI/OCR/Incident/内网接入，无 push/PR/merge/tag/release。旧受限临时目录保留。
+
+## 2026-09-04 - P2-016 targeted live technical checks complete, owner acceptance pending
+
+- 负责人亲自操作真实企业微信与原生工作台，验证群转单聊同一 Journey、创建/关键状态单次卡片、Reporter 点击交换与刷新、内部备注隔离。
+- 受控 Gateway 断开/重认证后通知恢复；本机 IPC ACK 丢失进入 UNKNOWN，管理员核对成功后无重发；原命令重放无额外事件或通知。
+- 实际观察 2,780,329 ms / 180 样本。13 条 Delivery 全 SENT，最终 pending/dead-letter/UNKNOWN=0；临时数据库、连接、测试进程、监听和本轮 browser profile 清理为 0。
+- 现场后完整回归 533/533、exit=0、零跳过；证据见 `evidence/p2-016-targeted-live-validation.md` 与 `evidence/p2-016-post-live-regression-report.md`。旧失败与中断记录保留。
+- 继续 READY，负责人最终验收待确认，无第二提交与后续任务授权；持久 Flag 全 false。早先被策略阻止删除的临时目录/profile 未触碰，不声称完整文件系统清理。
+
+## 2026-09-04 - P2-016 ready for targeted live validation
+
+- 完成默认关闭的原生工单/复核 UI、双责任与原子接管接单、Reporter 绑定会话、可靠通知/模板卡片、031 辅助表及受控三角色现场入口。
+- 群转单聊现场失败已补真实入站回归：识别机器人显示名提及并保留已记录入口模式；不改写历史数据。修复后全量自动化 533/533，失败/取消/跳过均为 0；新候选仍待真实现场重跑，证据见 `evidence/p2-016-automated-readiness-report.md` / `.json`。
+- 当前仅 P2-016 / P2-B 为 `READY_FOR_TARGETED_LIVE_VALIDATION`。仍无第二提交、真实现场、负责人最终批准或 P2-G2 启动；所有 Flag 保持 false。历史授权提交与完成 Evidence 不改写。
+
 ## 2026-09-04 - P2-016 independently authorized
 
 - 仅授权 P2-016，活动任务为 `P2-016`、Lane 为 `P2-B`；P2-015 保持 2026-09-03 的 `DONE` 结论。

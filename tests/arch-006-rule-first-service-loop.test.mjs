@@ -13,10 +13,10 @@ test('ARCH-006 validator passes', () => {
   assert.equal(result.status, 0, result.stdout + result.stderr);
 });
 
-test('machine state preserves ARCH-006 facts and permits only the P2-015 successor lifecycle', () => {
+test('machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles', () => {
   const current = json('plans/current_phase.json');
   const backlog = json('plans/master_backlog.json');
-  assert.equal(['P2-007', 'P2-015'].includes(current.last_completed_task), true);
+  assert.equal(['P2-007', 'P2-015', 'P2-016'].includes(current.last_completed_task), true);
   assert.equal(current.last_completed_gate, 'P2-G1');
   assert.equal(current.last_completed_architecture_task, 'ARCH-006');
   assert.equal(current.arch_005_status, 'DONE');
@@ -26,12 +26,23 @@ test('machine state preserves ARCH-006 facts and permits only the P2-015 success
   if (current.p2_015_status === 'AUTHORIZED') {
     assert.equal(current.active_task, 'P2-015'); assert.equal(current.active_lane, 'P2-C');
     assert.equal(current.next_task_candidate, 'P2-015'); assert.equal(current.next_task_authorized, true);
+  } else if (current.p2_016_status==='DONE') {
+    assert.equal(current.last_completed_task,'P2-016');assert.equal(current.p2_015_status,'DONE');
+    assert.equal(current.active_task,null);assert.equal(current.active_lane,null);
+    assert.equal(current.next_task_candidate,'P2-012');assert.equal(current.next_task_authorized,false);
+  } else if (['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION'].includes(current.p2_016_status)) {
+    assert.equal(current.p2_015_status,'DONE');assert.equal(current.last_completed_task,'P2-015');
+    assert.equal(current.active_task,'P2-016');assert.equal(current.active_lane,'P2-B');
+    assert.equal(current.next_task_candidate,'P2-016');assert.equal(current.next_task_authorized,true);
   } else {
     assert.equal(current.p2_015_status, 'DONE'); assert.equal(current.active_task, null); assert.equal(current.active_lane, null);
     assert.equal(current.next_task_candidate, 'P2-016'); assert.equal(current.next_task_authorized, false);
   }
   for (const id of ['P2-016', 'P2-012']) {
     const task = backlog.tasks.find((entry) => entry.id === id);
+    if(id==='P2-016'&&['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION','DONE'].includes(current.p2_016_status)){
+      assert.equal(task.status,current.p2_016_status);assert.equal(task.authorization_status,'AUTHORIZED');continue;
+    }
     assert.equal(task.status, 'TODO');
     assert.equal(task.authorization_status, 'REQUIRES_SEPARATE_AUTHORIZATION');
   }

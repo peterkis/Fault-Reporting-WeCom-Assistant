@@ -31,7 +31,7 @@ function stableRoleMetrics(role, value) {
   if (!value || value.role !== role) throw new Error('P2_G1_PROCESS_METRICS_INVALID');
   const fields = [
     'rss_bytes','heap_used_bytes','heap_total_bytes','external_bytes','cpu_percent','event_loop_delay_p95_ms',
-    'active_resources','active_sockets','active_file_handles','active_handles','uptime_seconds',
+    'active_resources','active_timers','active_sockets','active_file_handles','active_handles','uptime_seconds',
     'pool_total','pool_idle','pool_waiting','pool_max',
   ];
   if (fields.some((field) => !Number.isFinite(value[field]) || value[field] < 0)) throw new Error('P2_G1_PROCESS_METRICS_INVALID');
@@ -43,6 +43,7 @@ export function createP2G1ProcessCluster(configuration = {}) {
     throw new TypeError('P2_G1_PROCESS_CLUSTER_CONFIGURATION_INVALID');
   }
   const origin = `http://127.0.0.1:${configuration.listenPort}`;
+  if (configuration.roleEnvironment !== undefined && typeof configuration.roleEnvironment !== 'function') throw new TypeError('P2_G1_PROCESS_ENVIRONMENT_INVALID');
   const roleScript = fileURLToPath(configuration.roleScriptUrl ?? new URL('../scripts/p2-g1-process-role.mjs', import.meta.url));
   const children = new Map();
   const ready = new Map();
@@ -61,6 +62,8 @@ export function createP2G1ProcessCluster(configuration = {}) {
       'P2_G1_LIVE_TEST_APPROVED','P2_G1_TEST_SCOPE_CONFIGURED','P2_G1_REAL_WECOM_SEND_APPROVED',
       'PILOT_LOG_IDENTITY_HASH_KEY',
     ]) delete inherited[name];
+    // Capability material for an optional P2-016 assembly is distributed explicitly by role, never inherited wholesale.
+    for (const name of Object.keys(inherited)) if (name.startsWith('P2_016_')) delete inherited[name];
     const common = {
       ...inherited,
       PILOT_DATABASE_URL: configuration.databaseUrl,
@@ -82,7 +85,7 @@ export function createP2G1ProcessCluster(configuration = {}) {
       common.WECOM_WS_URL = configuration.wsUrl;
       common.P2_G1_ALLOWED_TARGET_HASHES = configuration.allowedTargetHashes.join(',');
     }
-    return common;
+    return { ...common, ...(configuration.roleEnvironment?.(role) ?? {}) };
   }
 
   function sendRole(role, message) {

@@ -30,7 +30,7 @@ async function waitFor(fn, { timeoutMs = 30_000, intervalMs = 50 } = {}) {
   throw lastError ?? new Error('P2_006_BROWSER_WAIT_TIMEOUT');
 }
 
-export async function launchSystemBrowser({ url, width, height }) {
+export async function launchSystemBrowser({ url, width, height, cookies = [] }) {
   const executable = findSystemBrowser();
   const profile = await mkdtemp(join(tmpdir(), 'p2-006-browser-'));
   const child = spawn(executable, [
@@ -67,6 +67,10 @@ export async function launchSystemBrowser({ url, width, height }) {
     });
   }
   await command('Runtime.enable');
+  if(cookies.length){
+    assert.ok(Array.isArray(cookies)&&cookies.length<=4&&cookies.every(cookie=>new URL(cookie.url).origin===new URL(url).origin));
+    await command('Network.enable');await command('Network.setCookies',{cookies});await command('Page.reload');
+  }
   await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 600 });
   async function evaluate(expression, { awaitPromise = true } = {}) {
     const result = await command('Runtime.evaluate', { expression, awaitPromise, returnByValue: true });
@@ -97,5 +101,7 @@ export async function launchSystemBrowser({ url, width, height }) {
       catch (error) { if (!['EBUSY', 'EPERM', 'ENOTEMPTY'].includes(error?.code)) throw error; return false; }
     }, { timeoutMs: 8_000, intervalMs: 100 });
   }
-  return Object.freeze({ executable, evaluate, pressTab, setTimezone, waitFor: (expression, options) => waitFor(async () => evaluate(expression), options), close });
+  return Object.freeze({ executable, evaluate, pressTab, setTimezone,
+    screenshot:async()=> (await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})).data,
+    waitFor: (expression, options) => waitFor(async () => evaluate(expression), options), close });
 }

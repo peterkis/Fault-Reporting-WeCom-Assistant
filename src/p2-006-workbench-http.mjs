@@ -103,9 +103,12 @@ export function createWorkbenchAuthenticationPort({ authenticate } = {}) {
 }
 
 export function createConversationWorkbenchHttpServer({ enabled = false, queryService, commandFacade, authenticate,
-  sseHandler = null, healthProvider = null, publicOrigin = 'http://127.0.0.1', staticHandler = createWorkbenchStaticHandler({ enabled }) } = {}) {
+  sseHandler = null, healthProvider = null, publicOrigin = 'http://127.0.0.1', staticHandler = createWorkbenchStaticHandler({ enabled }),
+  unauthenticatedHandler = null, authenticatedHandler = null } = {}) {
   if (typeof authenticate !== 'function') throw new TypeError('WorkbenchAuthenticationPort authenticate is required.');
   if (!queryService || !commandFacade || typeof enabled !== 'boolean' || (sseHandler !== null && typeof sseHandler !== 'function')
+    || (unauthenticatedHandler !== null && typeof unauthenticatedHandler !== 'function')
+    || (authenticatedHandler !== null && typeof authenticatedHandler !== 'function')
     || (healthProvider !== null && (typeof healthProvider.live !== 'function' || typeof healthProvider.ready !== 'function'
       || (healthProvider.metrics !== undefined && typeof healthProvider.metrics !== 'function')))) {
     throw new TypeError('Workbench HTTP server configuration is invalid.');
@@ -116,6 +119,7 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
     try {
       if (Buffer.byteLength(request.url ?? '', 'utf8') > MAX_URL_BYTES) throw new WorkbenchError(WORKBENCH_ERROR_CODES.requestInvalid, 414);
       const url = new URL(request.url ?? '/', publicOrigin);
+      if (unauthenticatedHandler && await unauthenticatedHandler({ request, response, url })) return;
       if (request.method === 'GET' && url.pathname === '/health/live' && healthProvider !== null) {
         const result = await healthProvider.live(); json(response, result.ok ? 200 : 503, result); return;
       }
@@ -136,6 +140,8 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
       if (!authContext) throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
       if (authExpired(authContext)) throw new WorkbenchError(WORKBENCH_ERROR_CODES.authExpired, 401);
       authContext = Object.freeze({ ...authContext, public_origin: publicOrigin });
+      if (authenticatedHandler && await authenticatedHandler({ request, response, url, authContext,
+        readJson, validateWriteRequest, json })) return;
 
       if (request.method === 'GET' && url.pathname === '/api/realtime/events') {
         if (sseHandler === null) throw new WorkbenchError(WORKBENCH_ERROR_CODES.sseUnavailable, 503);

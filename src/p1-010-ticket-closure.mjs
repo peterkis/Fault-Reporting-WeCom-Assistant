@@ -118,7 +118,10 @@ export function createTicketClosureService({
   cardTtlMs = 48 * 60 * 60 * 1_000,
   autoCloseAfterMs = 48 * 60 * 60 * 1_000,
   autoCloseReminderLeadMs = 4 * 60 * 60 * 1_000,
+  beforeTransaction = null,
 } = {}) {
+  if(beforeTransaction!==null&&typeof beforeTransaction!=='function')throw new TypeError('beforeTransaction must be a function when supplied.');
+  const transact=operation=>withTransaction(pool,async transaction=>{if(beforeTransaction)await beforeTransaction(transaction);return operation(transaction);});
   if (outbox !== null && typeof outbox.enqueueTicketEvent !== 'function') {
     throw new TypeError('outbox must expose enqueueTicketEvent when supplied.');
   }
@@ -302,7 +305,7 @@ export function createTicketClosureService({
       if (!actionService || typeof actionService.performInTransaction !== 'function') {
         throw new TypeError('A Ticket Action service is required.');
       }
-      return await withTransaction(pool, async (transaction) => {
+      return await transact(async (transaction) => {
         const task = await transaction.query(
           `SELECT task_id::text, ticket_id::text, action_key, actor_wecom_user_id,
                    expected_version, expires_at, expires_epoch_ms::text, consumed_at
@@ -394,7 +397,7 @@ export function createTicketClosureService({
       throw new TypeError('limit must be an integer from 1 through 100.');
     }
     const closingAt = validNow(now);
-    return withTransaction(pool, async (transaction) => {
+    return transact(async (transaction) => {
       const selected = await transaction.query(
         `SELECT id::text, version
            FROM pilot_ticket.ticket
@@ -437,7 +440,7 @@ export function createTicketClosureService({
       }
       const reminderAt = validNow(now);
       const reminderDeadline = addEpochMilliseconds(reminderAt.epoch_ms, autoCloseReminderLeadMs);
-      return withTransaction(pool, async (transaction) => {
+      return transact(async (transaction) => {
         const selected = await transaction.query(
           `SELECT ${ticketFields()}
              FROM pilot_ticket.ticket AS ticket

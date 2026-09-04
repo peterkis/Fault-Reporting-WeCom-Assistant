@@ -1,0 +1,95 @@
+{
+  "task": "P2-016",
+  "status": "PASSED",
+  "owner_approval": "APPROVED",
+  "owner_approval_evidence": "evidence/p2-016-project-owner-approval.md",
+  "runtime_input_sha256": "3752596720f20524ff989ee9cf913b9e104e32a4c2095c48fc83804e7e75f863",
+  "date": "2026-09-04",
+  "timezone": "Asia/Shanghai",
+  "run_id": "3bdbe965-c4df-414b-bd5a-05d5f010ad53",
+  "details": "evidence/p2-016-human-assisted-live-3bdbe965.json",
+  "narrative": "evidence/p2-016-human-assisted-live-3bdbe965.md",
+  "resource_log": "evidence/p2-016-live-e2e.jsonl",
+  "client_observations": "USER_PERFORMED_REAL_WECOM_AND_NATIVE_WORKBENCH_UI; contemporaneous user reports retained in the task",
+  "scope": {
+    "synthetic": true,
+    "approved_group_count": 1,
+    "approved_user_count": 1,
+    "temporary_local_postgresql": true,
+    "reporter_https_origin": "https://localhost:43117",
+    "clinical_or_production": false
+  },
+  "checks": {
+    "group_receipt_and_direct_guidance": "PASS",
+    "group_to_direct_same_journey": "PASS",
+    "real_created_card_and_representative_status_cards": "PASS",
+    "reporter_card_click_exchange_refresh": "PASS",
+    "internal_note_external_leak": "ZERO",
+    "replayed_command_extra_events_and_notifications": "ZERO",
+    "gateway_disconnect_and_reauthentication": "PASS",
+    "not_attempted_notification_recovery": "PASS",
+    "controlled_ipc_ack_loss_unknown_no_blind_resend": "PASS",
+    "human_confirmed_sent_without_resend": "PASS",
+    "minimum_15_minutes_observation": "PASS",
+    "test_database_process_listener_browser_cleanup": "PASS",
+    "group_strong_mention": "UNVERIFIED_NOT_REQUIRED"
+  },
+  "summary": {
+    "observed_ms": 2780329,
+    "resource_samples": 180,
+    "tickets": 1,
+    "ticket_events": 11,
+    "internal_note_events": 1,
+    "reporter_milestones": 10,
+    "journeys": 1,
+    "channel_legs": 2,
+    "total_deliveries": 13,
+    "final_sent": 13,
+    "final_pending": 0,
+    "final_dead_letter": 0,
+    "final_unknown": 0,
+    "owner_final_acceptance": "APPROVED"
+  },
+  "post_live_regression": {
+    "status": "PASS",
+    "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 tests/*.test.mjs",
+    "tests": 533,
+    "pass": 533,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "duration_ms": 555687.2561,
+    "evidence": "evidence/p2-016-post-live-regression-report.json"
+  },
+  "constraints": {
+    "state": "DONE",
+    "feature_flag_persistent_defaults": "ALL_FALSE",
+    "implementation_commit_policy": "ONLY_THE_SECOND_LOCAL_COMMIT_AFTER_OWNER_APPROVAL_AND_CLOSEOUT_CHECKS",
+    "push_pr_merge_tag_release": false,
+    "P2_012": "UNAUTHORIZED",
+    "P2_G2": "NOT_STARTED",
+    "P2_008": "BLOCKED_BY_P2_G2",
+    "AI_OCR_model_calls": 0,
+    "Incident_created": 0
+  },
+  "limitations": [
+    "Controlled IPC ACK suppression is a lab fault, not a natural provider/network incident.",
+    "Cancellation, transfer, combined takeover, Manual Review, concurrency and auto-close branches are automated native-browser/integration coverage rather than all being repeated in this targeted live run.",
+    "Not 24-hour soak or 2C4G hardware certification.",
+    "Earlier policy-blocked profiles/roots and non-profile temporary roots remain; filesystem cleanup is not complete."
+  ],
+  "previous_runs": [
+    {
+      "run_id": "eaf9e6fe-86bd-49de-b185-321ae4b0e7fb",
+      "result": "FAILED_DIFFERENT_CANDIDATE",
+      "evidence": "evidence/p2-016-targeted-live-validation-2026-09-04.json"
+    },
+    {
+      "run_id": "8f6c6a55-56d2-4060-9f73-1cd883cbf4b2",
+      "result": "INTERRUPTED_201546_MS_NOT_PASS",
+      "evidence": "evidence/p2-016-targeted-live-rerun-2026-09-04-8f6c6a55.md"
+    }
+  ]
+}

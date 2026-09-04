@@ -1,0 +1,148 @@
+{
+  "task": "P2-016",
+  "kind": "CAPABILITY_INVENTORY_BEFORE",
+  "inspected_head": "3599fa479c752ed75cd4652e5ffdaee2b212ad24",
+  "baseline_commit": "b1b8e4deb14e6290ca45aea12d92baaef4728c11",
+  "authorization_evidence": "evidence/p2-016-start-authorization.md",
+  "runtime_implemented": false,
+  "live_validation_performed": false,
+  "existing": [
+    {
+      "id": "ticket_core",
+      "source": "src/p1-005-pilot-ticket-core.mjs",
+      "finding": "createForIntakeInTransaction creates/replays one Ticket per Intake; creation currently enters QUEUED, not NEW."
+    },
+    {
+      "id": "ticket_actions",
+      "source": "src/p1-006-ticket-state-actions.mjs",
+      "finding": "Twelve explicit actions, appendTicketEvent, aggregate version/ordinal, authorize callback, performInTransaction and afterAction already exist; transfer-assignment absent."
+    },
+    {
+      "id": "conversation_control",
+      "source": "src/p2-005-conversation-control.mjs",
+      "finding": "Assignment/Handoff and control-event idempotency exist; takeoverSession owns its transaction, no public caller-owned takeover seam."
+    },
+    {
+      "id": "communication",
+      "source": "src/p2-004-communication-core.mjs",
+      "finding": "appendCommunication uses caller-owned transaction and creates Message/Outbox/Delivery; public service rejects template_card as media not yet authorized."
+    },
+    {
+      "id": "delivery",
+      "source": "src/p2-004-communication-delivery-worker.mjs",
+      "finding": "Existing lease/retry/attempt/reconciliation worker is the delivery authority; no new delivery state owner is permitted."
+    },
+    {
+      "id": "workbench",
+      "source": "src/p2-006-workbench-http.mjs",
+      "finding": "Native internal reference UI, Cookie/Bearer boundary, CSRF, durable SSE and polling shell exist; no full Ticket or Manual Review routes."
+    },
+    {
+      "id": "manual_review",
+      "source": "src/p2-015-manual-review.mjs",
+      "finding": "Store list/get/resolve, version conflict and appended HUMAN_OVERRIDDEN Decision exist; resolve takes a caller transaction, query-service wrapper owns a transaction."
+    },
+    {
+      "id": "safe_action",
+      "source": "src/p2-015-safe-action-executor.mjs",
+      "finding": "Injected Intake/Ticket/Communication ports execute stored safe actions; fixed-send failure produces failed_safe result and review, so P2-016 atomic facade must reject it and roll back."
+    },
+    {
+      "id": "sender",
+      "source": "src/p2-g1-wecom-sender.mjs",
+      "finding": "Real text/markdown sender uses target hash allowlist, explicit errcode=0 ACK and UNKNOWN; text maps to SDK markdown."
+    },
+    {
+      "id": "card_probe",
+      "source": "src/g0-006-template-card.mjs",
+      "finding": "G0 card probe exists; not an assembled P2-016 sender or P2-016 client validation."
+    },
+    {
+      "id": "sdk",
+      "source": "node_modules/@wecom/aibot-node-sdk/dist/index.d.ts",
+      "finding": "Installed package 1.0.6: sendMessage(chatid, SendMsgBody); msgtype=template_card; template_card.card_type=text_notice, source/main_title/emphasis_content/sub_title_text/horizontal_content_list/jump_list/card_action/task_id."
+    },
+    {
+      "id": "time",
+      "source": "docs/48_arch_005_asia_shanghai_time_contract.md",
+      "finding": "Business LocalDateTime strings and timestamp without time zone; BIGINT epoch strings and explicit same-second source ordering."
+    }
+  ],
+  "gaps": [
+    {
+      "id": "manual_review_rest_ui",
+      "finding": "Authenticated bounded list/detail/resolve and Journey views absent."
+    },
+    {
+      "id": "atomic_resolution",
+      "finding": "Resolve plus resolution-specific stored Safe Action absent; command hash must include target/required input; failure must roll back resolution."
+    },
+    {
+      "id": "ticket_workbench",
+      "finding": "Ticket keyset list/detail/events/responsibility/deliveries and all legal action controls absent."
+    },
+    {
+      "id": "command_receipt",
+      "finding": "Durable browser Ticket command receipt with scope/id/hash and crash replay absent."
+    },
+    {
+      "id": "transfer",
+      "finding": "No current Ticket transfer action; narrowly add authoritative assignment/version/event behavior without second assignment table."
+    },
+    {
+      "id": "dual_responsibility",
+      "finding": "Conversation and Ticket assignment not displayed independently together."
+    },
+    {
+      "id": "combined_command",
+      "finding": "Atomic takeover plus accept absent; needs narrow backward-compatible caller-owned Conversation seam."
+    },
+    {
+      "id": "notification_binding",
+      "finding": "No versioned Ticket Event to Communication identity/binding; preserve P1 notification facts and avoid duplicate dispatch."
+    },
+    {
+      "id": "card_sender",
+      "finding": "No P2-016 composite card Sender; first version PERSON only and gated false by default."
+    },
+    {
+      "id": "reporter_access",
+      "finding": "No opaque public ref, one-time reconstructable HMAC grant, bound HttpOnly session, audit or Reporter page."
+    },
+    {
+      "id": "suffix_authorization",
+      "finding": "Need tests proving suffix never acts as key, identity or authorization and public ref alone cannot grant access."
+    },
+    {
+      "id": "group_direct",
+      "finding": "Journey/Safe Action guidance is not a proven atomic, idempotent group-safe receipt plus proactive person flow."
+    },
+    {
+      "id": "targeted_live",
+      "finding": "No P2-016 live WeCom/card/fragment evidence or owner approval; must stop after automated readiness before real sends."
+    }
+  ],
+  "migration": {
+    "required": true,
+    "reservation": "031",
+    "reason": "Restart-safe command receipts, event-to-message bindings and scoped Reporter access cannot be represented losslessly by the current tables.",
+    "maximum_new_tables": 6,
+    "tables": [
+      "pilot_ticket.ticket_command_receipt",
+      "pilot_ticket.reporter_public_ref",
+      "pilot_ticket.reporter_access_grant",
+      "pilot_ticket.reporter_access_session",
+      "pilot_ticket.reporter_access_event",
+      "communication.ticket_notification_binding"
+    ],
+    "old_migrations_modified": false
+  },
+  "boundaries": {
+    "model_calls": 0,
+    "ocr_calls": 0,
+    "incident_writes": 0,
+    "real_sends": 0,
+    "feature_flag_defaults": false,
+    "second_commit_allowed": false
+  }
+}

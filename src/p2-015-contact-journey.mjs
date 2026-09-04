@@ -165,7 +165,7 @@ export function createContactJourneyStore() {
           WHERE journey.reporter_identity_hash=$1 AND journey.status IN ('OPEN','WAITING_DESCRIPTION')
             AND continuation.purpose='GROUP_TO_DIRECT_GUIDANCE'
             AND continuation.state IN ('ISSUED','BOUND') AND continuation.expires_epoch_ms >= $2::bigint
-          ORDER BY journey.reported_at, journey.id LIMIT $3`,
+          ORDER BY journey.reported_at, journey.id::text LIMIT $3`,
         [reporterHash, nowEpochMs, limit],
       );
       return freezePublic(result.rows);

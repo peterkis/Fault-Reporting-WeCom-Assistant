@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { types as utilTypes } from 'node:util';
 import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import { EXTERNAL_TICKET_STATUS, publicPilotTicket } from './p1-005-pilot-ticket-core.mjs';
 import { assertLocalDateTime } from './platform/time-contract.mjs';
@@ -197,19 +198,39 @@ export async function appendTicketEvent({
   reasonCode = null,
   attachmentIds = [],
   traceId,
+  assignmentMetadata,
 }) {
   if (!transaction || typeof transaction.query !== 'function' || !ticket) {
     throw new TypeError('A Ticket and transaction are required.');
+  }
+  if (assignmentMetadata !== undefined) {
+    const keys=['old_assignee_id','new_assignee_id','old_team_id','new_team_id'];
+    if (!assignmentMetadata || utilTypes.isProxy(assignmentMetadata)
+      || ![Object.prototype,null].includes(Object.getPrototypeOf(assignmentMetadata))
+      || Reflect.ownKeys(assignmentMetadata).length!==4
+      || Reflect.ownKeys(assignmentMetadata).some(key=>!keys.includes(key))
+      || eventType!=='ticket.assignment_transferred') throw new TicketActionError('VALIDATION_FAILED');
+    const copy={};
+    for (const key of keys) {
+      const descriptor=Object.getOwnPropertyDescriptor(assignmentMetadata,key);
+      if (!descriptor || !Object.hasOwn(descriptor,'value')) throw new TicketActionError('VALIDATION_FAILED');
+      const value=descriptor.value;
+      const nullable=key==='old_assignee_id';
+      const pattern=key.endsWith('assignee_id')?/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu:/^[A-Z][A-Z0-9_]{0,63}$/u;
+      if (!(nullable&&value===null) && (typeof value!=='string'||!pattern.test(value))) throw new TicketActionError('VALIDATION_FAILED');
+      copy[key]=value;
+    }
+    assignmentMetadata=copy;
   }
   const inserted = await transaction.query(
     `INSERT INTO pilot_ticket.ticket_event (
         ticket_id, event_type, old_status, new_status, aggregate_version,
         event_ordinal, operator_type, operator_id, internal_note, external_note,
-        reason_code, attachment_ids, trace_id
+        reason_code, attachment_ids, trace_id${assignmentMetadata === undefined ? '' : ', assignment_metadata'}
      )
      SELECT $1::uuid, $2, $3, $4, $5,
             COALESCE(MAX(event_ordinal), 0) + 1,
-            $6, $7, $8, $9, $10, $11::jsonb, $12
+            $6, $7, $8, $9, $10, $11::jsonb, $12${assignmentMetadata === undefined ? '' : ', $13::jsonb'}
        FROM pilot_ticket.ticket_event
       WHERE ticket_id = $1::uuid
      RETURNING event_id::text, event_type, ticket_id::text, old_status, new_status,
@@ -229,6 +250,7 @@ export async function appendTicketEvent({
       reasonCode,
       JSON.stringify(attachmentIds),
       traceId,
+      ...(assignmentMetadata === undefined ? [] : [JSON.stringify(assignmentMetadata)]),
     ],
   );
   return publicTicketEvent(inserted.rows[0]);
@@ -353,4 +375,11 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
 
 export function externalTicketStatus(status) {
   return EXTERNAL_TICKET_STATUS[status] ?? null;
+}
+
+export function getTicketActionTransitions() {
+  return Object.freeze(Object.entries(ACTIONS).map(([action, transition]) => Object.freeze({
+    action, from: Object.freeze([...transition.from]), to: transition.to ?? null,
+    event_type: transition.eventType,
+  })));
 }

@@ -159,8 +159,9 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool } = {}) {
     })));
   }
 
-  async function resolveRealtimeAuthorization(principal) {
+  async function resolveRealtimeAuthorization(principal, { limit = 5000 } = {}) {
     if (!isWorker(principal)) return null;
+    if(!Number.isInteger(limit)||limit<1||limit>5000)throw new TypeError('Invalid realtime scope limit.');
     const predicate = sessionAccessPredicate(principal, { start: 1 });
     const result = await pool.query(
       `SELECT s.id::text AS session_id, s.thread_id::text
@@ -169,8 +170,8 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool } = {}) {
          LEFT JOIN pilot_ticket.ticket AS t ON t.source_intake_id = s.service_intake_id
         WHERE ${predicate.sql}
         ORDER BY s.id
-        LIMIT 5000`,
-      predicate.values,
+        LIMIT $${predicate.values.length+1}`,
+      [...predicate.values,limit],
     );
     return Object.freeze({
       allowed_session_ids: freezeArray(result.rows.map((row) => row.session_id)),

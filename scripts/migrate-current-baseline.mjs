@@ -3,6 +3,14 @@ import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import { migrateP2015 } from './p2-015-migrate.mjs';
+import { migrateP2016,p2016CatalogHash } from './p2-016-migrate.mjs';
+
+async function p2016Tail({databaseUrl,mode,PoolFactory,p2015}) {
+  if(['READY_FOR_030','CHECK_ROLLBACK_SUCCEEDED'].includes(p2015.status))
+    return Object.freeze({status:'REQUIRES_COMMITTED_030_FOR_031',mode});
+  const result=await migrateP2016({databaseUrl,mode,PoolFactory});
+  return Object.freeze({status:result.status,mode,catalog_sha256:result.inventory?p2016CatalogHash(result.inventory):null});
+}
 
 const ARCH005_ID = '022_arch_005_asia_shanghai_time_contract';
 const ARCH005_URL = new URL('../database/migrations/022_arch_005_asia_shanghai_time_contract.sql', import.meta.url);
@@ -139,7 +147,8 @@ export async function migrateCurrentBaseline({
     const marker = await arch005Marker(client);
     if (marker !== null) {
       const verified = await validateAppliedArch005(client, checksum);
-      const p2015 = mode === 'status' ? null : await migrateP2015({ databaseUrl, mode: mode === 'check' ? 'check' : 'apply', PoolFactory });
+      const p2015 = await migrateP2015({ databaseUrl, mode, PoolFactory });
+      const p2016 = await p2016Tail({databaseUrl,mode,PoolFactory,p2015});
       return Object.freeze({
         status: 'NOOP_ALREADY_APPLIED',
         mode,
@@ -149,6 +158,7 @@ export async function migrateCurrentBaseline({
         legacy_applied: Object.freeze([]),
         forbidden_type_count: 0,
         p2_015: p2015,
+        p2_016: p2016,
       });
     }
 
@@ -177,6 +187,7 @@ export async function migrateCurrentBaseline({
     }
     const verified = await validateAppliedArch005(client, checksum);
     const p2015 = await migrateP2015({ databaseUrl, mode: 'apply', PoolFactory });
+    const p2016 = await p2016Tail({databaseUrl,mode:'apply',PoolFactory,p2015});
     return Object.freeze({
       status: 'APPLIED',
       mode,
@@ -186,6 +197,7 @@ export async function migrateCurrentBaseline({
       legacy_applied: legacyApplied,
       forbidden_type_count: 0,
       p2_015: p2015,
+      p2_016: p2016,
     });
   } finally {
     client?.release?.();

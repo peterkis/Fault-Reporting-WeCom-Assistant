@@ -350,7 +350,7 @@ export function createCommunicationReconciliationPort({ pool, now = () => new Da
   if (!pool || typeof pool.connect !== 'function' || typeof now !== 'function'
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function')) throw new TypeError('Reconciliation port configuration is invalid.');
   return Object.freeze({
-    async reconcileUnknownDelivery({ deliveryId, expectedStatus, resolution, reasonCode, authorized = false }) {
+    async reconcileUnknownDelivery({ deliveryId, expectedStatus, resolution, reasonCode, authorized = false, transaction = null }) {
       if (authorized !== true) return publicError(COMMUNICATION_ERROR_CODES.reconciliationUnauthorized);
       if (expectedStatus !== 'RECONCILIATION_REQUIRED' || !RESOLUTIONS.has(resolution)
         || typeof deliveryId !== 'string' || !UUID_PATTERN.test(deliveryId)
@@ -358,7 +358,8 @@ export function createCommunicationReconciliationPort({ pool, now = () => new Da
         return publicError(COMMUNICATION_ERROR_CODES.commandInvalid);
       }
       const reconciledAt = validClock(nowEpochMs, now);
-      return withTransaction(pool, async (transaction) => {
+      const execute=transaction===null?operation=>withTransaction(pool,operation):operation=>operation(transaction);
+      return execute(async (transaction) => {
         const selected = await transaction.query(
           `SELECT id::text, outbox_id::text, status, provider, attempt_count,
                   last_error_code, side_effect_state, sent_at, sent_epoch_ms::text
@@ -407,14 +408,15 @@ export function createCommunicationDeliveryOperatorPort({ pool, now = () => new 
   if (!pool || typeof pool.connect !== 'function' || typeof now !== 'function'
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function')) throw new TypeError('Delivery operator port configuration is invalid.');
   return Object.freeze({
-    async scheduleRetry({ deliveryId, authorized = false, reasonCode = 'OPERATOR_RETRY' }) {
+    async scheduleRetry({ deliveryId, authorized = false, reasonCode = 'OPERATOR_RETRY', transaction = null }) {
       if (authorized !== true) return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
       if (typeof deliveryId !== 'string' || !UUID_PATTERN.test(deliveryId)
         || typeof reasonCode !== 'string' || !/^[A-Z0-9_]{1,128}$/u.test(reasonCode)) {
         return publicError(COMMUNICATION_ERROR_CODES.commandInvalid);
       }
       const occurredAt = validClock(nowEpochMs, now);
-      return withTransaction(pool, async (transaction) => {
+      const execute=transaction===null?operation=>withTransaction(pool,operation):operation=>operation(transaction);
+      return execute(async (transaction) => {
         const selected = await transaction.query(
           `SELECT id::text,outbox_id::text,status,provider,attempt_count,last_error_code,side_effect_state,sent_at,sent_epoch_ms::text
              FROM communication.delivery WHERE id=$1::uuid FOR UPDATE`, [deliveryId]);
@@ -429,8 +431,8 @@ export function createCommunicationDeliveryOperatorPort({ pool, now = () => new 
         const updated = await transaction.query(
           `UPDATE communication.delivery
               SET status='PENDING',side_effect_state='NOT_ATTEMPTED',attempt_count=$2,
-                  next_attempt_epoch_ms=$3::bigint,lease_token=NULL,lease_expires_epoch_ms=NULL,
-                  send_started_epoch_ms=NULL,last_error_code=$4,updated_at=$5::timestamp without time zone
+                  next_attempt_epoch_ms=$3::bigint,lease_token=NULL,lease_expires_at=NULL,lease_expires_epoch_ms=NULL,
+                  send_started_at=NULL,send_started_epoch_ms=NULL,last_error_code=$4,updated_at=$5::timestamp without time zone
             WHERE id=$1::uuid
             RETURNING id::text,outbox_id::text,status,provider,attempt_count,last_error_code,side_effect_state,sent_at,sent_epoch_ms::text`,
           [deliveryId, attemptNo, occurredAt.epoch_ms, reasonCode, occurredAt.local_datetime],

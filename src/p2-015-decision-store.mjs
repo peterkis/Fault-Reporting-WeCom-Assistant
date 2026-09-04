@@ -33,9 +33,43 @@ async function readActions(transaction, decisionId) {
   );
   return result.rows;
 }
+async function insertActions(transaction, row, decisionKey, suggestions) {
+  const actions = [];
+  for (const suggestion of suggestions) {
+    const actionKey = `action_v1_${safeHash({ decision_key: decisionKey, ordinal: suggestion.action_ordinal, type: suggestion.action_type, payload_hash: suggestion.payload_hash })}`;
+    const action = await transaction.query(
+      `INSERT INTO intake.safe_action_suggestion (
+         decision_id,action_ordinal,action_key,action_type,execution_policy,safe_payload,payload_hash
+       ) VALUES ($1::uuid,$2,$3,$4,$5,$6::jsonb,$7)
+       RETURNING id::text,decision_id::text,action_ordinal,action_key,action_type,execution_policy,
+         safe_payload,payload_hash,state,row_version::text`,
+      [row.id, suggestion.action_ordinal, actionKey, suggestion.action_type,
+        suggestion.execution_policy, JSON.stringify(suggestion.safe_payload), suggestion.payload_hash],
+    );
+    actions.push(action.rows[0]);
+  }
+  return actions;
+}
 
-export function createDecisionStore() {
+export function createDecisionStore({sourceWindowScope='JOURNEY'}={}) {
+  if(!['JOURNEY','CHANNEL_LEG'].includes(sourceWindowScope))failP2015(P2_015_ERROR_CODES.inputInvalid);
   return Object.freeze({
+    async ensureHumanActions({ transaction, decisionId, suggestions }) {
+      const value = snapshotP2015Json(suggestions);
+      if (!Array.isArray(value) || value.length > 4) failP2015(P2_015_ERROR_CODES.inputInvalid);
+      const selected = await transaction.query('SELECT * FROM intake.deterministic_decision WHERE id=$1::uuid FOR UPDATE', [decisionId]);
+      const row = selected.rows[0];
+      if (!row || row.status !== 'HUMAN_OVERRIDDEN') failP2015(P2_015_ERROR_CODES.authorizationDenied);
+      let actions = await readActions(transaction, decisionId);
+      if (actions.length) {
+        if (actions.length !== value.length || actions.some((action, i) =>
+          action.action_type !== value[i].action_type || action.payload_hash !== value[i].payload_hash)) {
+          failP2015(P2_015_ERROR_CODES.commandConflict);
+        }
+      } else actions = await insertActions(transaction, row, row.decision_key, value);
+      return publicDecision(row, actions, false);
+    },
+
     async record({ transaction, input }) {
       if (!transaction?.query) failP2015(P2_015_ERROR_CODES.storageFailed);
       const value = snapshotP2015Json(input);
@@ -48,7 +82,14 @@ export function createDecisionStore() {
         engine_version: value.engine_version,
         decision_policy_version: value.decision_policy_version,
       };
-      const decisionKey = `decision_v1_${safeHash(identity)}`;
+      let keyVersion='v1';
+      if(sourceWindowScope==='CHANNEL_LEG'){
+        const leg=await transaction.query('SELECT leg_ordinal FROM intake.channel_leg WHERE id=$1::uuid AND journey_id=$2::uuid',[value.channel_leg_id,value.journey_id]);
+        if(leg.rowCount!==1)failP2015(P2_015_ERROR_CODES.inputInvalid);
+        // Retain every historical/origin-leg key. Only additional channel legs use a new scoped identity.
+        if(leg.rows[0].leg_ordinal>1){identity.channel_leg_id=value.channel_leg_id;keyVersion='v2';}
+      }
+      const decisionKey = `decision_${keyVersion}_${safeHash(identity)}`;
       const existing = await transaction.query(
         `SELECT id::text,journey_id::text,channel_leg_id::text,service_intake_id::text,
                 conversation_session_id::text,linked_ticket_id::text,decision_ordinal,decision_key,
@@ -93,20 +134,7 @@ export function createDecisionStore() {
           value.ticket_creation_recommended, value.incident_review_candidate, value.observed_at],
       );
       const row = inserted.rows[0];
-      const actions = [];
-      for (const suggestion of value.safe_action_suggestions ?? []) {
-        const actionKey = `action_v1_${safeHash({ decision_key: decisionKey, ordinal: suggestion.action_ordinal, type: suggestion.action_type, payload_hash: suggestion.payload_hash })}`;
-        const action = await transaction.query(
-          `INSERT INTO intake.safe_action_suggestion (
-             decision_id,action_ordinal,action_key,action_type,execution_policy,safe_payload,payload_hash
-           ) VALUES ($1::uuid,$2,$3,$4,$5,$6::jsonb,$7)
-           RETURNING id::text,decision_id::text,action_ordinal,action_key,action_type,execution_policy,
-             safe_payload,payload_hash,state,row_version::text`,
-          [row.id, suggestion.action_ordinal, actionKey, suggestion.action_type,
-            suggestion.execution_policy, JSON.stringify(suggestion.safe_payload), suggestion.payload_hash],
-        );
-        actions.push(action.rows[0]);
-      }
+      const actions = await insertActions(transaction, row, decisionKey, value.safe_action_suggestions ?? []);
       return publicDecision(row, actions, false);
     },
 

@@ -8,6 +8,8 @@
 
 ARCH-006 只定义本 Gate，不启动或执行它。
 
+P2-016 的自动化准备、定向现场验证与本 Gate 分别记账。P2-016 已独立收口为 `DONE`，本 Gate 仍为 `NOT_STARTED`；还须 P2-012 独立完成、P2-G2 独立授权及至少 60 分钟完整闭环现场观察。
+
 ## 2. 功能覆盖
 
 1. 三入口 `GROUP_MENTION_INLINE`、`GROUP_MENTION_TO_DIRECT_GUIDED`、`DIRECT_ORGANIC` 全部先持久化；

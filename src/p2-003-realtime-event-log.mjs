@@ -57,6 +57,13 @@ export const REALTIME_EVENT_TYPES = Object.freeze([
   'ticket.updated',
   'incident.updated',
   'gateway.connection.changed',
+  'manual_review.created',
+  'manual_review.resolved',
+  'ticket.command.committed',
+  'ticket.status.changed',
+  'ticket.assignment.changed',
+  'ticket.notification.created',
+  'ticket.notification.delivery_changed',
 ]);
 
 export const REALTIME_SOURCE_TYPES = Object.freeze([
@@ -69,6 +76,7 @@ export const REALTIME_SOURCE_TYPES = Object.freeze([
   'READ_CURSOR',
   'INCIDENT_EVENT',
   'GATEWAY_EVENT',
+  'MANUAL_REVIEW',
 ]);
 
 export const REALTIME_AGGREGATE_TYPES = Object.freeze([
@@ -81,6 +89,7 @@ export const REALTIME_AGGREGATE_TYPES = Object.freeze([
   'CONVERSATION_READ_CURSOR',
   'INCIDENT',
   'GATEWAY_CONNECTION',
+  'MANUAL_REVIEW',
 ]);
 
 export const REALTIME_AUTHORIZATION_SCOPE_TYPES = Object.freeze([
@@ -654,7 +663,7 @@ export function normalizeRealtimeEventCommand(input) {
     pattern: /^[A-Z][A-Z0-9_]*$/u,
   });
   const eventType = enumValue(snapshot.event_type, EVENT_TYPE_SET);
-  if (!/^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9_]*)+$/u.test(eventType)) {
+  if (!/^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$/u.test(eventType)) {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
   const aggregateType = enumValue(snapshot.aggregate_type, AGGREGATE_TYPE_SET);

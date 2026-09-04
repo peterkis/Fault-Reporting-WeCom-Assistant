@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/contracts/p2_016_reporter_access_grant.schema.json",
+  "title": "p2_016_reporter_access_grant",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "grant_id",
+    "ticket_id",
+    "public_ref_id",
+    "delivery_id",
+    "message_id",
+    "reporter_binding_hash",
+    "nonce",
+    "token_hash",
+    "purpose",
+    "state",
+    "issued_at",
+    "issued_epoch_ms",
+    "expires_at",
+    "expires_epoch_ms",
+    "row_version",
+    "consumed_at",
+    "revoked_at",
+    "consumed_epoch_ms",
+    "revoked_epoch_ms"
+  ],
+  "properties": {
+    "grant_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "ticket_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "public_ref_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "delivery_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "message_id": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "reporter_binding_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 43,
+      "maxLength": 43,
+      "pattern": "^[A-Za-z0-9_-]{43}$"
+    },
+    "token_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "purpose": {
+      "const": "REPORTER_TIMELINE"
+    },
+    "state": {
+      "enum": [
+        "ISSUED",
+        "CONSUMED",
+        "REVOKED",
+        "EXPIRED"
+      ]
+    },
+    "issued_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "issued_epoch_ms": {
+      "$ref": "epoch_ms_string.schema.json"
+    },
+    "expires_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "expires_epoch_ms": {
+      "$ref": "epoch_ms_string.schema.json"
+    },
+    "row_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19,
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "consumed_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "revoked_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "consumed_epoch_ms": {
+      "anyOf": [
+        {
+          "$ref": "epoch_ms_string.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "revoked_epoch_ms": {
+      "anyOf": [
+        {
+          "$ref": "epoch_ms_string.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "x-business-timezone": "Asia/Shanghai",
+  "x-runtime-boundary": "bounded plain JSON; no Proxy/accessor/symbol/toJSON/cycle/prototype keys",
+  "description": "Private persistence contract, NEVER an HTTP response. No raw token is stored. Epoch fields are strings at boundaries."
+}

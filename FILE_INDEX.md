@@ -21,7 +21,7 @@
 - `tasks/P2-015_rule_first_intake_orchestration_manual_review.md`：已完成的规则受理编排、Contact Journey 与人工审核任务；
 - `evidence/p2-015-start-authorization.md`：P2-015 独立授权、固定基线和严格停止线；
 - `evidence/p2-015-rule-first-intake-orchestration-report.md`：P2-015 完成验证、资源、隐私、回归和停止线 Evidence；
-- `tasks/P2-016_full_ticket_lifecycle_workbench_notifications.md`：完整 Ticket 工作台、Reporter Timeline 与通知任务（AUTHORIZED，Lane P2-B）；
+- `tasks/P2-016_full_ticket_lifecycle_workbench_notifications.md`：完整 Ticket 工作台、Reporter Timeline 与通知任务（DONE，当前无活动 Lane）；
 - `evidence/arch-005-start-authorization.md`：ARCH-005 Gate、暂存分支隔离和迁移安全授权 Evidence；
 - `evidence/arch-005-time-inventory-before.json` / `.md`：迁移前时间资产、逐列分类、行数、catalog 指纹和备份事实；
 - `docs/48_arch_005_asia_shanghai_time_contract.md`：LocalDate/LocalTime/LocalDateTime/PhysicalEpochMs、数据库与 UI 统一契约；
@@ -94,11 +94,42 @@
 
 - `evidence/p2-016-start-authorization.md`：P2-016 授权范围、历史 P2-015 账本纠偏依据及现场验证停止线；无 Runtime 变更。
 
+## P2-016 完成与验证
+
+- `evidence/p2-016-ticket-lifecycle-workbench-report.md` / `.json`：P2-016 完成报告、最终状态、验证范围与停止线。
+- `evidence/p2-016-project-owner-approval.md`：负责人对现场通过、DONE 收口和第二个本地提交的明确批准。
+- `evidence/p2-016-validated-candidate-inventory.json`：收口前377个已验证输入的哈希清单；仅放行七个治理校验/测试文件差异。
+
+- `evidence/p2-016-targeted-live-validation.md` / `.json`：最新现场技术结果、旧轮次引用与负责人最终验收停止线。
+- `evidence/p2-016-human-assisted-live-3bdbe965.md` / `.json`：负责人操作的逐步客户端观察、独立数据库核验、46 分 20.329 秒资源观察与隔离库清理。
+- `evidence/p2-016-post-live-regression-report.md` / `.json`：现场后完整 533/533 回归、容量、静态门禁与清理核验；不替代负责人批准。
+- `evidence/p2-016-closeout-regression-interruption.md`：主机休眠中断的失败轮次、未修改代码的3/3诊断及535/535全量重跑、清理核验。
+- `evidence/p2-016-targeted-live-rerun-2026-09-04-8f6c6a55.md`：此前因 Computer Use 网址识别策略中断的 201,546 ms 运行；不是通过记录。
+- `evidence/p2-016-capability-inventory-before.md` / `.json`：实现前能力盘点，不回填为完成 Evidence。
+- `evidence/p2-016-targeted-live-validation-2026-09-04.md` / `.json` 与 `evidence/p2-016-live-e2e.jsonl`：原候选真实现场失败、已观察结果及清理边界；不作为新候选通过凭证。
+- `evidence/p2-016-guided-journey-repair-2026-09-04.md`：真实入站复现、入口/历史模式修正与重新验证记录。
+- `evidence/p2-016-automated-readiness-report.md` / `.json`：修复后 533/533 回归、代码指纹、资源/恢复、兼容扩展、现场前置条件与 READY 停止线。
+- `docs/58_p2_016_manual_review_workbench.md`：人工复核与 Journey 关联边界。
+- `docs/59_p2_016_ticket_lifecycle_and_responsibility.md`：完整动作、Command Receipt、独立双责任与资源上限。
+- `docs/60_p2_016_reporter_timeline_security.md`：Reporter Grant、绑定 Session、只读时间线与 HTTPS 边界。
+- `docs/61_p2_016_wecom_notifications_template_card.md`：通知策略、Sender、现场配置/命令与关闭方式。
+- `contracts/p2_016_*.schema.json`（15 份）与 `contracts/p2_016_contracts.d.ts`：闭合请求/响应及私有存储契约；REST 在既有 OpenAPI 内扩展。
+- `database/migrations/031_p2_016_ticket_lifecycle_workbench_notifications.sql`、`scripts/p2-016-migrate.mjs`：精确目录校验、事务式应用、只读状态和回滚检查。
+- `src/p2-016-ticket-query.mjs`、`p2-016-ticket-command-facade.mjs`、`p2-016-ticket-command-ledger.mjs`、`p2-016-ticket-assignment.mjs`：原 Ticket Core 的查询/显式命令与责任适配。
+- `src/p2-016-manual-review-facade.mjs`、`p2-016-guided-journey.mjs`、`p2-016-orchestration-adapters.mjs`：既有规则/复核 Port 的工作台装配。
+- `src/p2-016-reporter-*.mjs`、`p2-016-ticket-notification-*.mjs`、`p2-016-template-card-builder.mjs`、`p2-016-wecom-sender.mjs`：Reporter 与可靠通知。
+- `src/p2-016-runtime.mjs`、`p2-016-workbench-*.mjs`、`p2-016-realtime-*.mjs`、`p2-016-delivery-control.mjs`、`p2-016-domain-contracts.mjs`：同一 HTTP/SSE 服务和受限事务命令。
+- `src/p2-016-inbound-scope.mjs`、`p2-016-live-configuration.mjs`、`p2-016-live-cluster.mjs`、`scripts/p2-016-process-role.mjs`：批准范围及 App/Worker/Gateway 三角色。
+- `scripts/p2-016-live-check.mjs`、`scripts/p2-016-live-e2e.mjs`：默认不发送、必须由负责人审批的现场入口；不生成虚假客户端或批准 Evidence。
+- `scripts/validate-p2-016-ticket-lifecycle-workbench.mjs`：冻结历史、默认关闭、契约、READY/DONE 指纹、负责人批准及两阶段提交门禁。
+- `web/p2-workbench/lifecycle.*`、`web/p2-reporter/*`：原生 Internal Beta 及 Reporter-only 页面。
+- `tests/p2-016-*.test.mjs`、`tests/helpers/p2-016-*.mjs`：Contract、Unit、真实 PostgreSQL/Browser、崩溃恢复、容量与现场失败关闭测试。
+
 ## P2-G1 Assembly 状态
 
-- P2-003、P2-004、P2-005、P2-006、P2-015：`DONE`；P2-G1：`PASSED`；当前唯一活动任务 P2-016（Lane P2-B）；
+- P2-003、P2-004、P2-005、P2-006、P2-015、P2-016：`DONE`；P2-G1：`PASSED`；当前无活动任务或 Lane；
 - `docs/42_p2_006_realtime_web_workbench.md`：Internal Alpha、REST/Auth、Query、Command、Delivery、SSE/Polling 与 UI 边界。
-- P2-007 与 P2-015 保持 `DONE`；P2-016 为唯一已授权活动任务（Lane P2-B）；P2-012、P2-008 至 P2-014 继续要求独立授权；
+- P2-007、P2-015、P2-016 保持 `DONE`；下一候选 P2-012 未授权，P2-008 至 P2-014 继续保持原停止线；
 - `P2-G1` 已完成真实测试 Workbench、企业微信 Sender、Replay Gap、恢复和资源现场 Gate；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 未启用生产 Workbench、模型或医院内网；本 Gate 通过不等同于 Phase 2 Go、生产或临床上线。
 
