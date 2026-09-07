@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch } from '../scripts/validate-p2-012-human-confirmed-incident.mjs';
+import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch,p2012ReviewPathsValid,p2012ReviewHardeningValid } from '../scripts/validate-p2-012-human-confirmed-incident.mjs';
 import { checkP2012Live } from '../scripts/p2-012-live-check.mjs';
 import { p2012LiveDuration } from '../scripts/p2-012-live-e2e.mjs';
 import { P2012_LIVE_FUSES,readP2012LiveConfiguration } from '../src/p2-012-live-configuration.mjs';
@@ -59,4 +59,24 @@ test('P2-012 frozen candidate permits only the explicit closeout governance set'
   assert.equal(p2012FrozenInputsMatch(before,[before[0],{...before[1],sha256:'c'.repeat(64)}]),true);
   assert.equal(p2012FrozenInputsMatch(before,[{...before[0],sha256:'d'.repeat(64)},before[1]]),false);
   assert.equal(p2012FrozenInputsMatch(before.slice(1),before),false);
+});
+
+test('P2-012 review hardening preserves exact paths and requires independent current regression evidence',()=>{
+  assert.equal(p2012ReviewPathsValid(['src/p2-012-live-reporter-scope.mjs','scripts/p2-012-process-role.mjs']),true);
+  for(const path of ['src/p2-012-incident-command-service.mjs','src/p2-015-rule-first-orchestrator.mjs',
+    'database/migrations/032_p2_012_human_confirmed_incident.sql','evidence/p2-012-live-e2e.jsonl','plans/current_phase.json','.env.pilot']){
+    assert.equal(p2012ReviewPathsValid([path]),false);
+  }
+  assert.equal(p2012ReviewPathsValid([]),false);
+  const hash='f'.repeat(64),good={baseline_commit:'044ce68dce5422b377d27cbbb432e78f94797478',
+    commit_subject:'fix(p2): require direct leg and expire due incident candidates',status:'PASS',runtime_input_sha256:hash,live_validation:'NOT_RUN',
+    regression:{exit_code:0,tests:561,pass:561,fail:0,cancelled:0,skipped:0,todo:0},
+    cleanup:{database_count:0,backend_count:0,child_count:0,listener_count:0,browser_profile_count:0}};
+  assert.equal(p2012ReviewHardeningValid(good,hash),true);
+  for(const patch of [{status:'VALIDATING'},{baseline_commit:'wrong'},{commit_subject:'wrong'},{runtime_input_sha256:'a'.repeat(64)},{live_validation:'PASSED'}]){
+    assert.equal(p2012ReviewHardeningValid({...good,...patch},hash),false);
+  }
+  for(const key of ['exit_code','fail','cancelled','skipped','todo'])assert.equal(p2012ReviewHardeningValid({...good,regression:{...good.regression,[key]:1}},hash),false);
+  assert.equal(p2012ReviewHardeningValid({...good,regression:{...good.regression,tests:560,pass:560}},hash),false);
+  for(const key of Object.keys(good.cleanup))assert.equal(p2012ReviewHardeningValid({...good,cleanup:{...good.cleanup,[key]:1}},hash),false);
 });

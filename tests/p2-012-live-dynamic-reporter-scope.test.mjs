@@ -33,13 +33,28 @@ test('dynamic Sender rechecks the persisted approved-group Reporter before each 
   const discovered = 'normal-unconfigured-reporter';
   const groupHash = textHashP2016('dedicated-p2-012-test-group');
   const providerTargets = [];
-  const pool = { query: async (_sql, values) => ({ rowCount: values[1] === discovered ? 1 : 0, rows: [] }) };
+  let directEstablished = false;
+  const pool = { query: async (sql, values) => {
+    assert.equal(values[0], 'approved-test-bot');
+    if (sql.includes('FROM channel.message_inbox')) return { rowCount: values[1] === discovered ? 1 : 0, rows: [] };
+    assert.match(sql, /FROM intake.channel_leg leg/u);
+    assert.match(sql, /DIRECT_GUIDED','DIRECT_ORGANIC/u);
+    assert.match(sql, /leg.reporter_identity_hash=journey.reporter_identity_hash/u);
+    return { rowCount: directEstablished && values[1] === discovered ? 1 : 0, rows: [] };
+  } };
   const gateway = { getAuthenticatedClient: () => ({ sendMessage: async (target) => { providerTargets.push(target); return { errcode: 0, headers: { req_id: 'safe-provider-request' } }; } }) };
   const sender = createP2012DynamicWeComSender({ pool, gateway, enabled: true, cardEnabled: false,
     allowedTargetHashes: [groupHash], approvedGroupHashes: [groupHash], botId: 'approved-test-bot' });
   const request = (target) => ({ provider: 'WECOM_AIBOT', channel_account_id: 'approved-test-bot', target_type: 'PERSON', target_id: target,
     delivery_id: '10000000-0000-4000-8000-000000000001', idempotency_key: 'p2-012-dynamic-sender-test',
     message: { message_type: 'text', content: { text: '【P2-012测试】固定通知' } }, signal: new AbortController().signal });
+  assert.equal((await sender.send(request(discovered))).error_code, 'P2_012_SEND_SCOPE_FORBIDDEN');
+  const explicitSender = createP2012DynamicWeComSender({ pool, gateway, enabled: true,
+    allowedTargetHashes: [groupHash, textHashP2016(discovered)], approvedGroupHashes: [groupHash], botId: 'approved-test-bot' });
+  assert.equal((await explicitSender.send(request(discovered))).error_code, 'P2_012_SEND_SCOPE_FORBIDDEN');
+  assert.deepEqual(providerTargets, []);
+  directEstablished = true;
+  assert.equal((await sender.send({ ...request(discovered), channel_account_id: 'wrong-bot' })).error_code, 'P2_012_SEND_SCOPE_FORBIDDEN');
   assert.equal((await sender.send(request(discovered))).outcome, 'ACKNOWLEDGED');
   assert.equal((await sender.send(request('never-observed-outsider'))).error_code, 'P2_012_SEND_SCOPE_FORBIDDEN');
   assert.deepEqual(providerTargets, [discovered]);
@@ -51,11 +66,13 @@ test('approved test group discovers an unconfigured Reporter before their direct
   const outsider = 'never-observed-outsider';
   const approvedGroup = 'dedicated-p2-012-test-group';
   const observed = new Set();
+  const direct = new Set();
   const scope = createP2012LiveReporterScope({
     bot_id: 'approved-test-bot',
     person_hashes: [textHashP2016(configured)],
     group_hashes: [textHashP2016(approvedGroup)],
     isApprovedGroupReporter: async ({ sender_user_id }) => observed.has(sender_user_id),
+    hasMatchingDirectLeg: async ({ reporter_user_id, bot_id }) => bot_id === 'approved-test-bot' && direct.has(reporter_user_id),
     require_test_label: true,
   });
 
@@ -63,6 +80,9 @@ test('approved test group discovers an unconfigured Reporter before their direct
   assert.equal(await scope.accepts(message({ sender: discovered, chatType: 'single' })), false);
   observed.add(discovered);
   assert.equal(await scope.accepts(message({ sender: discovered, chatType: 'single' })), true);
+  assert.equal(await scope.authorizesDestination({ target_type: 'PERSON', target_id: discovered }), false);
+  assert.equal(await scope.authorizesDestination({ target_type: 'PERSON', target_id: configured }), false);
+  direct.add(discovered);
   assert.equal(await scope.authorizesDestination({ target_type: 'PERSON', target_id: discovered }), true);
   assert.equal(await scope.authorizesDestination({ target_type: 'GROUP', target_id: approvedGroup }), true);
   assert.equal(await scope.accepts(message({ sender: outsider, chatType: 'single' })), false);

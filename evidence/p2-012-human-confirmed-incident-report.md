@@ -5,7 +5,8 @@
 - 分支：`phase2/p2-012-human-confirmed-incident`。
 - 基线：`30a394e85973f5a300b841b23d2c358998796ba6`。
 - 授权提交：`f8d29caf50816ab90f3debf14995085158460784` — `chore(p2): authorize P2-012 human-confirmed incident`。
-- 实现提交：包含本报告的唯一第二个本地提交 — `feat(p2): implement P2-012 human-confirmed incident and notifications`。自引用提交 SHA 不写回本文件；用 `git log --format=fuller 30a394e85973f5a300b841b23d2c358998796ba6..HEAD` 解析。
+- 实现提交：第二个提交（功能实现）`044ce68dce5422b377d27cbbb432e78f94797478` — `feat(p2): implement P2-012 human-confirmed incident and notifications`。
+- PR review hardening：独立授权的第三个本地修复提交，标题 `fix(p2): require direct leg and expire due incident candidates`；验证与提交状态见 `evidence/p2-012-pr-review-hardening.md`。不写入本提交自身 SHA；用 `git log --format=fuller 30a394e85973f5a300b841b23d2c358998796ba6..HEAD` 解析三段历史。
 - 负责人已明确批准，见 `evidence/p2-012-project-owner-approval.md`。
 - 第二提交候选共 123 个文件：新增 79、修改 44、删除 0；其中 Evidence 新增 25 个，历史完成 Evidence 修改 0。
 
@@ -29,7 +30,7 @@ P2-007 仍只产生候选；创建、Link/Unlink、主 Ticket、范围、处理�
 
 `/workbench/incidents` 提供候选、活动/完成 Incident、冻结来源证据、显式 scope/owner/Primary Ticket、Link/Unlink、个人恢复和订阅暂停/恢复。复用现有认证、CSRF、Idempotency-Key、If-Match、durable SSE 与第 33 个客户端 polling fallback。Reporter 只见本人仍 LINKED Ticket 的四种安全里程碑，不见内部原因、其他 Reporter、原始身份或 Provider 错误。
 
-真实现场采用 `APPROVED_GROUP_PARTICIPANTS`：只配置批准群 hash，人员 hash 数为 0。成员必须先以带测试标签的批准群 Frame 建立事实；direct 入站和 PERSON Delivery 再按同一 Bot/Reporter 与实际 direct leg 回查，不形成全局 allowlist。
+真实现场采用 `APPROVED_GROUP_PARTICIPANTS`：只配置批准群 hash，人员 hash 数为 0。成员先以带测试标签的批准群 Frame 建立受控入站范围事实。PR #6 审查发现原 PERSON 出站实现没有落实真实 direct leg 条件；本次修复明确分离入站与出站，第一条 tagged direct 入站不要求已有 Leg，PERSON 出站则要求范围事实与同 Bot/Reporter 的持久化 Direct Leg 同时成立，详见审查修复 Evidence。
 
 ## 真实定向现场
 
@@ -53,4 +54,10 @@ Incident 通知 10/10 SENT：群 2、私人 8，pending/UNKNOWN/dead-letter 均�
 
 现场数据库与 backend、三个角色进程、43112–43114 监听、浏览器 profile 和 5 个现场临时文件均为 0。最终完成态回归后再次核验 P2-012 测试库、backend、所属 Node 进程、监听和 browser profile 为 0；单独 TEMP 根 `tmp/p2012-regression-closeout-final2-dc4d1011f551418c89cdc5e30d498d7f` 保留 7 个非 profile 项，不声称文件系统全部清理。六个现场/现场后 Evidence 对 10 个本机敏感配置值精确匹配为 0；完整候选中的两次配置匹配仅来自 `.env.example` 的公开 Provider endpoint，不包含密码、Secret、Token、HMAC 或目标 ID。
 
-P2 继续 IN_PROGRESS；last_completed_task=P2-012，last_completed_gate=P2-G1，last_completed_architecture_task=ARCH-006；active_task/active_lane=null。下一候选 P2-G2，next_task_authorized=false；P2-008 继续被 P2-G2 阻断，P3 未启动。所有持久默认 Feature Flag=false。唯一第二个本地提交后立即停止；未 push、PR、merge、tag 或 release。
+P2 继续 IN_PROGRESS；last_completed_task=P2-012，last_completed_gate=P2-G1，last_completed_architecture_task=ARCH-006；active_task/active_lane=null。下一候选 P2-G2，next_task_authorized=false；P2-008 继续被 P2-G2 阻断，P3 未启动。所有持久默认 Feature Flag=false。功能实现收口时在第二个本地提交后停止；上文现场与完成态数字均为该历史阶段事实。
+
+## PR #6 Review hardening
+
+本次只修复 PERSON Direct Leg 授权与 Candidate maintenance 自动过期，另经用户明确授权补齐真实 App/Worker 装配和相应门禁、测试。没有数据库迁移，001–032 未改。历史现场 JSONL、Provider ACK、负责人批准及完成态 TAP 保持原样；JSON 完成报告保留原字段，新增独立 `pr_review_hardening` 字段记录当前候选的验证，不把旧现场通过声明用于当前代码。
+
+无 Direct Leg 的 Ticket 通知在 Message/Outbox/Delivery/Grant 创建前返回 `DIRECT_DESTINATION_NOT_ESTABLISHED`；群建单保留一次安全回执。维护从 PostgreSQL 扫描到期 CANDIDATE，经私有 SYSTEM 命令过期，复用事件、幂等收据与 Realtime，不创建 Incident 或通知。当前回归、清理和停止线以 `evidence/p2-012-pr-review-hardening.md` 为准；第三个本地提交后停止，不 push、force-push、merge、tag，不启动 P2-G2/P2-008，也不执行真实企业微信发送。

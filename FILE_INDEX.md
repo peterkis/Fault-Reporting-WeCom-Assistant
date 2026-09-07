@@ -2,6 +2,7 @@
 
 ## 权威入口
 
+- `evidence/p2-012-pr-review-hardening.md`：PR #6 两项限定修复、独立回归、清理与第三个本地提交证据；不替代历史现场批准。
 - `AGENTS.md`：不可违反的规则和阶段边界；
 - `README.md`：架构摘要；
 - `docs/architecture_baseline_status.md`：唯一有效架构状态；

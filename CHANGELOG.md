@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-07 - P2-012 PR #6 review hardening
+
+- PERSON 出站要求批准范围与真实匹配 Direct Leg；Ticket 通知增加可选目的地授权检查，无通道时不创建 PERSON 通知或 Reporter Grant，群建单保留一次安全引导回执。
+- Candidate maintenance 每轮按到期时间、ID 扫描最多 20 条，经私有幂等 SYSTEM 命令过期；人工竞争重新读取判定，维护失败不静默吞掉。
+- 形成独立第三个本地修复提交；原现场与完成态 Evidence 保留，当前验证见 `evidence/p2-012-pr-review-hardening.md`。无 Migration、真实发送或后续 Gate 启动，所有持久默认开关 false。
+
 ## 2026-09-07 - P2-012 completed with explicit owner approval
 
 - 两次群公开通知和两名 Reporter 各四次私人通知均获客户端确认；Incident 通知 10/10 SENT，负责人明确接受另行披露的 1 条非 Incident PERSON dead-letter 并批准收口。

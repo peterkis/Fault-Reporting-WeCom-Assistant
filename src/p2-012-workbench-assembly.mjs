@@ -23,7 +23,8 @@ export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},tes
   const f=flags(featureFlags),enabled=f.INCIDENT_CORRELATION_ENABLED,query=createP2012IncidentQuery({pool,enabled});
   const projector=createP2012RealtimeProjector({pool,enabled,wakeup:realtime?.wakeup});
   const notifications=createP2012NotificationPolicy({enabled,publicEnabled:f.INCIDENT_PUBLIC_NOTICE_ENABLED,privateEnabled:f.INCIDENT_PRIVATE_NOTICE_ENABLED,testLabel});
-  const commands=createP2012IncidentCommandService({pool,enabled,query,notifications,realtime:projector});
+  const commands=createP2012IncidentCommandService({pool,enabled,query,notifications,realtime:projector,maintenanceEnabled:false});
+  const maintenance=createP2012IncidentCommandService({pool,enabled,query,realtime:projector,maintenanceEnabled:true});
   const importer=createP2012CandidateReviewStore({pool,enabled});
   return Object.freeze({query,commands,enabled,
     async ready(){if(!enabled)return true;try{return (await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount===1;}catch{return false;}},
@@ -40,8 +41,24 @@ export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},tes
       const candidates=await pool.query(`SELECT d.id FROM intake.deterministic_decision d WHERE d.result_code='INCIDENT_REVIEW_CANDIDATE'
         AND (d.safe_result ? 'incident_candidate' OR d.safe_result->>'incident_review_candidate'='true') AND NOT EXISTS(SELECT 1 FROM incident.candidate_review c WHERE c.source_decision_id=d.id AND c.source_result_hash=d.result_hash)
         ORDER BY d.created_at,d.id LIMIT 20`);
-      for(const d of candidates.rows)await importer.importDecision({decisionId:d.id});
-      return projector.runOnce();
+      let imported=0,expired=0,expiration_replayed=0,expiration_race_lost=0;
+      for(const d of candidates.rows)if((await importer.importDecision({decisionId:d.id})).created)imported++;
+      const due=await pool.query(`SELECT id::text,row_version::text,expires_epoch_ms::text FROM incident.candidate_review
+        WHERE status='CANDIDATE' AND expires_epoch_ms<=platform.physical_epoch_ms()
+        ORDER BY expires_epoch_ms,id LIMIT 20`);
+      for(const candidate of due.rows){
+        const result=await maintenance.expireCandidate({action:'EXPIRE_CANDIDATE',candidate_review_id:candidate.id,
+          expected_row_version:candidate.row_version,client_command_id:candidate.id,reason_code:'MAINTENANCE_EXPIRED'});
+        if(result.ok){if(result.replayed)expiration_replayed++;else expired++;continue;}
+        if(['P2_012_VERSION_CONFLICT','P2_012_STATE_CONFLICT','P2_012_EXPIRY_CONFLICT'].includes(result.error.code)){
+          const current=await pool.query(`SELECT status,expires_epoch_ms<=platform.physical_epoch_ms() AS due
+            FROM incident.candidate_review WHERE id=$1::uuid`,[candidate.id]);
+          if(current.rowCount===1&&(current.rows[0].status!=='CANDIDATE'||!current.rows[0].due)){expiration_race_lost++;continue;}
+        }
+        fail('COMMAND_FAILED',503);
+      }
+      const projected=await projector.runOnce();
+      return {...projected,imported,expired,expiration_replayed,expiration_race_lost,projected:projected.processed};
     },
   });
 }
