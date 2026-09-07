@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_012_reporter_subscription.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "incident_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "reporter_identity_hash": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "representative_report_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "direct_channel_leg_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PENDING_DESTINATION",
+        "ACTIVE",
+        "PAUSED",
+        "ENDED"
+      ]
+    },
+    "impact_state": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "IMPACTED",
+        "RECOVERED"
+      ]
+    },
+    "row_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 19
+    },
+    "last_notified_incident_version": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 19
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "created_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "updated_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "ended_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "incident_id",
+    "reporter_identity_hash",
+    "representative_report_id",
+    "direct_channel_leg_id",
+    "status",
+    "impact_state",
+    "row_version",
+    "last_notified_incident_version",
+    "created_at",
+    "updated_at",
+    "ended_at"
+  ]
+}

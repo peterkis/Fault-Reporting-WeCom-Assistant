@@ -131,7 +131,10 @@ test('rule failure reaches review; authorized keyset query and concurrent human 
     assert.equal((await resolveCommand(winning)).replayed, true);
     assert.equal((await pool.query(`SELECT count(*)::integer AS count FROM intake.deterministic_decision WHERE journey_id=$1::uuid AND status='HUMAN_OVERRIDDEN'`, [result.journey.id])).rows[0].count, 1);
     assert.equal((await pool.query('SELECT count(*)::integer AS count FROM intake.manual_review_item WHERE status<>\'PENDING\'')).rows[0].count, 1);
-    assert.equal((await pool.query("SELECT count(*)::integer AS count FROM information_schema.tables WHERE table_schema='incident'")).rows[0].count, 0);
+    // The current baseline includes authorized 032; P2-015 still cannot create Incident facts.
+    assert.equal((await pool.query('SELECT count(*)::integer AS count FROM incident.incident')).rows[0].count, 0);
+    assert.equal((await pool.query('SELECT count(*)::integer AS count FROM incident.candidate_review')).rows[0].count, 0);
+    assert.equal((await pool.query('SELECT count(*)::integer AS count FROM communication.incident_notification_binding')).rows[0].count, 0);
   } });
 });
 

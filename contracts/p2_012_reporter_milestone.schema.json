@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_012_reporter_milestone.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ref": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    "milestone": {
+      "enum": [
+        "PUBLIC_INCIDENT_CONFIRMED",
+        "PUBLIC_INCIDENT_INVESTIGATING",
+        "PUBLIC_INCIDENT_RESOLVED",
+        "PUBLIC_INCIDENT_CLOSED"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "incident_no": {
+      "type": "string",
+      "pattern": "^INC-[A-F0-9]{32}$"
+    },
+    "service_family": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+    },
+    "confirmed_scope": {
+      "enum": [
+        "LOCAL",
+        "BUILDING",
+        "CAMPUS",
+        "HOSPITAL_WIDE"
+      ]
+    },
+    "public_status": {
+      "enum": [
+        "CONFIRMED_LOCAL",
+        "CONFIRMED_BUILDING",
+        "CONFIRMED_CAMPUS",
+        "CONFIRMED_HOSPITAL_WIDE",
+        "INVESTIGATING",
+        "RESOLVED",
+        "CLOSED"
+      ]
+    },
+    "occurred_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "source_rank": {
+      "const": 1
+    },
+    "source_ordinal": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    }
+  },
+  "required": [
+    "ref",
+    "milestone",
+    "text",
+    "incident_no",
+    "service_family",
+    "confirmed_scope",
+    "public_status",
+    "occurred_at",
+    "source_rank",
+    "source_ordinal"
+  ]
+}

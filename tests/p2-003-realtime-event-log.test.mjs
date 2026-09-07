@@ -58,6 +58,20 @@ const EXPECTED_EVENT_TYPES = [
   'communication.delivery.changed',
   'ticket.updated',
   'incident.updated',
+  // P2-012 additive vocabulary; original relative order and spelling remain frozen.
+  'incident.candidate.review_started',
+  'incident.candidate.rejected',
+  'incident.candidate.expired',
+  'incident.candidate.confirmed',
+  'incident.confirmed',
+  'incident.status.changed',
+  'incident.scope.changed',
+  'incident.primary_ticket.changed',
+  'incident.report.linked',
+  'incident.report.unlinked',
+  'incident.report.recovered',
+  'incident.subscription.changed',
+  'incident.notification.changed',
   'gateway.connection.changed',
   // P2-016 additive vocabulary; all thirteen original entries retain their order and spelling.
   'manual_review.created',
@@ -91,6 +105,7 @@ const EXPECTED_AGGREGATE_TYPES = [
   'CONVERSATION_HANDOFF',
   'CONVERSATION_READ_CURSOR',
   'INCIDENT',
+  'INCIDENT_CANDIDATE',
   'GATEWAY_CONNECTION',
   'MANUAL_REVIEW',
 ];
@@ -289,9 +304,9 @@ test('Realtime vocabularies freeze all event, source, aggregate, scope and visib
   assert.deepEqual(schema.$defs.aggregate_type.enum, EXPECTED_AGGREGATE_TYPES);
   assert.deepEqual(schema.$defs.authorization_scope_type.enum, ['SESSION', 'THREAD', 'SYSTEM']);
   assert.deepEqual(schema.$defs.visibility_scope.enum, ['WORKBENCH', 'RESTRICTED_ADMIN']);
-  assert.equal(new Set(EXPECTED_EVENT_TYPES).size, 20);
+  assert.equal(new Set(EXPECTED_EVENT_TYPES).size, 33);
   assert.equal(new Set(EXPECTED_SOURCE_TYPES).size, 10);
-  assert.equal(new Set(EXPECTED_AGGREGATE_TYPES).size, 10);
+  assert.equal(new Set(EXPECTED_AGGREGATE_TYPES).size, 11);
   assert.deepEqual(REALTIME_SAFE_JSON_LIMITS, {
     maximum_depth: 6,
     maximum_nodes: 4096,

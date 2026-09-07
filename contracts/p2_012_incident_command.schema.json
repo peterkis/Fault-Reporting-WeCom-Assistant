@@ -1,0 +1,1152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_012_incident_command.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "enum": [
+        "START_REVIEW",
+        "REJECT_CANDIDATE",
+        "EXPIRE_CANDIDATE",
+        "CONFIRM_INCIDENT",
+        "START_INVESTIGATING",
+        "CORRECT_SCOPE",
+        "SET_PRIMARY_TICKET",
+        "LINK_REPORT",
+        "UNLINK_REPORT",
+        "MARK_REPORTER_RECOVERED",
+        "PAUSE_SUBSCRIPTION",
+        "RESUME_SUBSCRIPTION",
+        "RESOLVE_INCIDENT",
+        "CLOSE_INCIDENT"
+      ]
+    },
+    "client_command_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "reason_code": {
+      "enum": [
+        "OPERATOR_REVIEWED",
+        "CONFIRMED_SHARED_FAULT",
+        "INCORRECT_ASSOCIATION",
+        "RECOVERY_CONFIRMED",
+        "SUBSCRIPTION_REQUEST",
+        "SCOPE_CORRECTION",
+        "MAINTENANCE_EXPIRED",
+        "WORKBENCH_CONFIRMED"
+      ]
+    },
+    "candidate_review_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "incident_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "expected_row_version": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "expected_candidate_version": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "confirmed_scope": {
+      "enum": [
+        "LOCAL",
+        "BUILDING",
+        "CAMPUS",
+        "HOSPITAL_WIDE"
+      ]
+    },
+    "owner_principal_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "owner_team_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+    },
+    "primary_ticket_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "selected_report_refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "source_decision_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "incident_report_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "expected_report_version": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "subscription_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "expected_subscription_version": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "direct_channel_leg_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "action",
+    "client_command_id",
+    "reason_code"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "START_REVIEW"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "candidate_review_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "candidate_review_id",
+          "expected_row_version"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "REJECT_CANDIDATE"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "candidate_review_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "candidate_review_id",
+          "expected_row_version"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "EXPIRE_CANDIDATE"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "candidate_review_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "candidate_review_id",
+          "expected_row_version"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "CONFIRM_INCIDENT"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "candidate_review_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_candidate_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "confirmed_scope": {
+            "enum": [
+              "LOCAL",
+              "BUILDING",
+              "CAMPUS",
+              "HOSPITAL_WIDE"
+            ]
+          },
+          "owner_principal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "selected_report_refs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "owner_team_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+          },
+          "primary_ticket_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "candidate_review_id",
+          "expected_candidate_version",
+          "confirmed_scope",
+          "owner_principal_id",
+          "selected_report_refs"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "START_INVESTIGATING"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "incident_id",
+          "expected_row_version"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "CORRECT_SCOPE"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "confirmed_scope": {
+            "enum": [
+              "LOCAL",
+              "BUILDING",
+              "CAMPUS",
+              "HOSPITAL_WIDE"
+            ]
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "incident_id",
+          "expected_row_version",
+          "confirmed_scope"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "SET_PRIMARY_TICKET"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "primary_ticket_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "incident_id",
+          "expected_row_version",
+          "primary_ticket_id"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "LINK_REPORT"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "source_decision_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "incident_id",
+          "expected_row_version",
+          "source_decision_id"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "UNLINK_REPORT"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "incident_report_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_report_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "incident_id",
+          "expected_row_version",
+          "incident_report_id",
+          "expected_report_version"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "MARK_REPORTER_RECOVERED"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "incident_report_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_report_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "incident_id",
+          "expected_row_version",
+          "incident_report_id",
+          "expected_report_version"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "PAUSE_SUBSCRIPTION"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "subscription_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_subscription_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "incident_id",
+          "expected_row_version",
+          "subscription_id",
+          "expected_subscription_version"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "RESUME_SUBSCRIPTION"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "subscription_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_subscription_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "direct_channel_leg_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "incident_id",
+          "expected_row_version",
+          "subscription_id",
+          "expected_subscription_version"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "RESOLVE_INCIDENT"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "incident_id",
+          "expected_row_version"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "const": "CLOSE_INCIDENT"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "START_REVIEW",
+              "REJECT_CANDIDATE",
+              "EXPIRE_CANDIDATE",
+              "CONFIRM_INCIDENT",
+              "START_INVESTIGATING",
+              "CORRECT_SCOPE",
+              "SET_PRIMARY_TICKET",
+              "LINK_REPORT",
+              "UNLINK_REPORT",
+              "MARK_REPORTER_RECOVERED",
+              "PAUSE_SUBSCRIPTION",
+              "RESUME_SUBSCRIPTION",
+              "RESOLVE_INCIDENT",
+              "CLOSE_INCIDENT"
+            ]
+          },
+          "client_command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason_code": {
+            "enum": [
+              "OPERATOR_REVIEWED",
+              "CONFIRMED_SHARED_FAULT",
+              "INCORRECT_ASSOCIATION",
+              "RECOVERY_CONFIRMED",
+              "SUBSCRIPTION_REQUEST",
+              "SCOPE_CORRECTION",
+              "MAINTENANCE_EXPIRED",
+              "WORKBENCH_CONFIRMED"
+            ]
+          },
+          "incident_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        },
+        "required": [
+          "action",
+          "client_command_id",
+          "reason_code",
+          "incident_id",
+          "expected_row_version"
+        ]
+      }
+    }
+  ]
+}

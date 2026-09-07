@@ -1,0 +1,126 @@
+{
+  "task": "P2-012",
+  "status": "PASSED",
+  "date": "2026-09-07",
+  "timezone": "Asia/Shanghai",
+  "run_id": "fd4c9d42-dcae-4f63-acdb-7750c747390a",
+  "runtime_input_sha256": "55b89664e18c761d31b073fc2e279991e8543507b99ef55080d2ed9f6e2e6740",
+  "start_approval": "evidence/p2-012-live-start-approval.md",
+  "resource_log": "evidence/p2-012-live-e2e.jsonl",
+  "scope": {
+    "synthetic": true,
+    "approved_group_count": 1,
+    "reporter_scope_mode": "APPROVED_GROUP_PARTICIPANTS",
+    "configured_person_hash_count": 0,
+    "selected_reporters": 2,
+    "selected_reports": 4,
+    "same_reporter_group_direct": true,
+    "unselected_group_only_reporters": 1,
+    "temporary_local_postgresql": true,
+    "raw_identifier_recorded": false,
+    "clinical_or_production": false
+  },
+  "matrix": {
+    "incident_status": "CLOSED",
+    "incident_reports": 4,
+    "reporter_subscriptions": 2,
+    "recovered_subscriptions": 1,
+    "impacted_subscriptions": 1,
+    "incident_notification_bindings": 10,
+    "incident_sent": 10,
+    "incident_pending": 0,
+    "incident_unknown": 0,
+    "incident_dead_letter": 0,
+    "confirmed_group_sent": 1,
+    "confirmed_direct_sent": 2,
+    "investigating_direct_sent": 2,
+    "resolved_group_sent": 1,
+    "resolved_direct_sent": 2,
+    "closed_direct_sent": 2,
+    "provider_ack_explicit": true,
+    "public_group_dedupe": true,
+    "direct_reporter_dedupe": true,
+    "unlinked_reports": 1,
+    "unlinked_ticket_rows_preserved": 1,
+    "unlinked_intake_rows_preserved": 1,
+    "unlinked_ticket_milestones": 0,
+    "linked_ticket_milestones": 4,
+    "timeline_internal_reason_visible": false,
+    "auto_closed_tickets": 0,
+    "native_workbench_closed_visible": true
+  },
+  "non_incident_delivery_audit": {
+    "sent": 9,
+    "pending": 0,
+    "unknown": 0,
+    "dead_letter": 1,
+    "dead_letter_scope": "UNSELECTED_GROUP_ONLY_PARTICIPANT_EARLY_TICKET_OR_GUIDANCE_PERSON_DELIVERY",
+    "incident_acceptance_isolated": true,
+    "blind_retry_performed": false,
+    "owner_explicitly_accepted": true
+  },
+  "observation": {
+    "observed_ms": 1708934.3873,
+    "minimum_15_minutes": "PASS",
+    "resource_samples": 112,
+    "process_count": 3,
+    "total_rss_peak_bytes": 227713024,
+    "total_heap_used_peak_bytes": 58059280,
+    "sse_clients_peak": 2,
+    "projection_backlog_peak": 0,
+    "projection_failures_peak": 0,
+    "reconciliation_required_peak": 0,
+    "postgres_connection_utilization_percent_peak": 7,
+    "gateway_reconnect_total": 1,
+    "fragment_lost": false
+  },
+  "cleanup": {
+    "live_database_count": 0,
+    "live_database_backend_count": 0,
+    "live_process_count": 0,
+    "live_listener_count": 0,
+    "live_browser_profile_count": 0,
+    "owned_live_temp_file_count": 0,
+    "cleanup_passed": true
+  },
+  "post_live_regression": {
+    "status": "PASS",
+    "tests": 559,
+    "pass": 559,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "duration_ms": 604744.0796,
+    "evidence": "evidence/p2-012-post-live-regression-report.json"
+  },
+  "client_observations": {
+    "native_workbench": "PASS",
+    "wecom_group_visible": "CONFIRMED_BY_PROJECT_OWNER",
+    "wecom_reporter_private_visible": "CONFIRMED_BY_PROJECT_OWNER"
+  },
+  "owner_approval": "APPROVED",
+  "owner_approval_evidence": "evidence/p2-012-project-owner-approval.md",
+  "state": "DONE_CLOSEOUT_AUTHORIZED",
+  "second_commit_created": false,
+  "boundaries": {
+    "persistent_feature_flags": "ALL_FALSE",
+    "p2_g2": "NOT_STARTED",
+    "p2_008": "TODO_BLOCKED_BY_P2_G2",
+    "p3": "NOT_STARTED",
+    "push_pr_merge_tag_release": false,
+    "production": false,
+    "clinical": false
+  },
+  "previous_runs": [
+    {
+      "run_id": "33d681c4-91c3-4069-8c78-3aa14476d9d8",
+      "result": "BLOCKED_STATIC_SECOND_REPORTER_TARGET_NOT_CONFIGURED"
+    },
+    {
+      "run_id": "3b9eac4a-cc30-48d1-b782-ead9eead86fc",
+      "result": "INCOMPLETE_NO_LIVE_MATRIX"
+    }
+  ]
+}

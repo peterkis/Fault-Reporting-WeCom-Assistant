@@ -193,6 +193,408 @@ paths:
           description: WebSocket authenticated and core dependencies ready
         '503':
           description: Not ready
+  /api/incident-candidates/{candidateId}/start-review:
+    post:
+      summary: P2-012 START_REVIEW（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: candidateId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"}},"required":["client_command_id","reason_code","expected_row_version"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incident-candidates/{candidateId}/reject:
+    post:
+      summary: P2-012 REJECT_CANDIDATE（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: candidateId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"}},"required":["client_command_id","reason_code","expected_row_version"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incident-candidates/{candidateId}/confirm:
+    post:
+      summary: P2-012 CONFIRM_INCIDENT（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: candidateId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_candidate_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},"confirmed_scope":{"enum":["LOCAL","BUILDING","CAMPUS","HOSPITAL_WIDE"]},"owner_principal_id":{"type":"string","format":"uuid"},"selected_report_refs":{"type":"array","minItems":1,"maxItems":100,"uniqueItems":true,"items":{"type":"string","format":"uuid"}},"owner_team_id":{"type":["string","null"],"pattern":"^[A-Z][A-Z0-9_]{0,63}$"},"primary_ticket_id":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}]}},"required":["client_command_id","reason_code","expected_candidate_version","confirmed_scope","owner_principal_id","selected_report_refs"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/start-investigating:
+    post:
+      summary: P2-012 START_INVESTIGATING（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"}},"required":["client_command_id","reason_code","expected_row_version"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/correct-scope:
+    post:
+      summary: P2-012 CORRECT_SCOPE（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},"confirmed_scope":{"enum":["LOCAL","BUILDING","CAMPUS","HOSPITAL_WIDE"]}},"required":["client_command_id","reason_code","expected_row_version","confirmed_scope"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/primary-ticket:
+    post:
+      summary: P2-012 SET_PRIMARY_TICKET（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},"primary_ticket_id":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}]}},"required":["client_command_id","reason_code","expected_row_version","primary_ticket_id"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/reports/link:
+    post:
+      summary: P2-012 LINK_REPORT（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},"source_decision_id":{"type":"string","format":"uuid"}},"required":["client_command_id","reason_code","expected_row_version","source_decision_id"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/reports/{reportId}/unlink:
+    post:
+      summary: P2-012 UNLINK_REPORT（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: path, name: reportId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},"expected_report_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"}},"required":["client_command_id","reason_code","expected_row_version","expected_report_version"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/reports/{reportId}/mark-recovered:
+    post:
+      summary: P2-012 MARK_REPORTER_RECOVERED（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: path, name: reportId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},"expected_report_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"}},"required":["client_command_id","reason_code","expected_row_version","expected_report_version"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/subscriptions/{subscriptionId}/pause:
+    post:
+      summary: P2-012 PAUSE_SUBSCRIPTION（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: path, name: subscriptionId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},"expected_subscription_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"}},"required":["client_command_id","reason_code","expected_row_version","expected_subscription_version"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/subscriptions/{subscriptionId}/resume:
+    post:
+      summary: P2-012 RESUME_SUBSCRIPTION（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: path, name: subscriptionId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},"expected_subscription_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"},"direct_channel_leg_id":{"anyOf":[{"type":"string","format":"uuid"},{"type":"null"}]}},"required":["client_command_id","reason_code","expected_row_version","expected_subscription_version"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/resolve:
+    post:
+      summary: P2-012 RESOLVE_INCIDENT（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"}},"required":["client_command_id","reason_code","expected_row_version"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/close:
+    post:
+      summary: P2-012 CLOSE_INCIDENT（显式人工命令）
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: If-Match, required: true, schema: {type: string}}
+        - {in: header, name: Idempotency-Key, required: true, schema: {type: string, format: uuid}}
+        - {in: header, name: X-CSRF-Token, description: Required for cookie authentication, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {"type":"object","additionalProperties":false,"properties":{"client_command_id":{"type":"string","format":"uuid"},"reason_code":{"enum":["OPERATOR_REVIEWED","CONFIRMED_SHARED_FAULT","INCORRECT_ASSOCIATION","RECOVERY_CONFIRMED","SUBSCRIPTION_REQUEST","SCOPE_CORRECTION","MAINTENANCE_EXPIRED","WORKBENCH_CONFIRMED"]},"expected_row_version":{"type":"string","pattern":"^[1-9][0-9]{0,18}$"}},"required":["client_command_id","reason_code","expected_row_version"]}
+      responses:
+        "200": {description: Committed or same-command replay}
+        "401": {description: Authentication required}
+        "403": {description: Current role or scope denied}
+        "409": {description: Version, state or command conflict}
+        "503": {description: Feature disabled}
+  /api/incident-candidates:
+    get:
+      summary: P2-012 authorized incident-candidates
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 30}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        "200": {description: Closed safe DTO, authorization filtered before pagination}
+        "401": {description: Authentication required}
+        "403": {description: Role denied}
+        "404": {description: Resource outside authorized scope}
+        "503": {description: Feature disabled}
+  /api/incident-candidates/{candidateId}:
+    get:
+      summary: P2-012 authorized incident-candidates/{candidateId}
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: candidateId, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 30}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        "200": {description: Closed safe DTO, authorization filtered before pagination}
+        "401": {description: Authentication required}
+        "403": {description: Role denied}
+        "404": {description: Resource outside authorized scope}
+        "503": {description: Feature disabled}
+  /api/incidents:
+    get:
+      summary: P2-012 authorized incidents
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 30}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        "200": {description: Closed safe DTO, authorization filtered before pagination}
+        "401": {description: Authentication required}
+        "403": {description: Role denied}
+        "404": {description: Resource outside authorized scope}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}:
+    get:
+      summary: P2-012 authorized incidents/{incidentId}
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 30}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        "200": {description: Closed safe DTO, authorization filtered before pagination}
+        "401": {description: Authentication required}
+        "403": {description: Role denied}
+        "404": {description: Resource outside authorized scope}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/reports:
+    get:
+      summary: P2-012 authorized incidents/{incidentId}/reports
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 30}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        "200": {description: Closed safe DTO, authorization filtered before pagination}
+        "401": {description: Authentication required}
+        "403": {description: Role denied}
+        "404": {description: Resource outside authorized scope}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/subscriptions:
+    get:
+      summary: P2-012 authorized incidents/{incidentId}/subscriptions
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 30}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        "200": {description: Closed safe DTO, authorization filtered before pagination}
+        "401": {description: Authentication required}
+        "403": {description: Role denied}
+        "404": {description: Resource outside authorized scope}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/notifications:
+    get:
+      summary: P2-012 authorized incidents/{incidentId}/notifications
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 30}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        "200": {description: Closed safe DTO, authorization filtered before pagination}
+        "401": {description: Authentication required}
+        "403": {description: Role denied}
+        "404": {description: Resource outside authorized scope}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/events:
+    get:
+      summary: P2-012 authorized incidents/{incidentId}/events
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 200, default: 30}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        "200": {description: Closed safe DTO, authorization filtered before pagination}
+        "401": {description: Authentication required}
+        "403": {description: Role denied}
+        "404": {description: Resource outside authorized scope}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/linkable-reports:
+    get:
+      summary: P2-012 authorized incidents/{incidentId}/linkable-reports
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 30}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        "200": {description: Closed safe DTO, authorization filtered before pagination}
+        "401": {description: Authentication required}
+        "403": {description: Role denied}
+        "404": {description: Resource outside authorized scope}
+        "503": {description: Feature disabled}
+  /api/incidents/{incidentId}/direct-destinations:
+    get:
+      summary: P2-012 authorized incidents/{incidentId}/direct-destinations
+      x-feature-flag: INCIDENT_CORRELATION_ENABLED
+      parameters:
+        - {in: path, name: incidentId, required: true, schema: {type: string, format: uuid}}
+        - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 30}}
+        - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
+      responses:
+        "200": {description: Closed safe DTO, authorization filtered before pagination}
+        "401": {description: Authentication required}
+        "403": {description: Role denied}
+        "404": {description: Resource outside authorized scope}
+        "503": {description: Feature disabled}
 components:
   parameters:
     TicketId:

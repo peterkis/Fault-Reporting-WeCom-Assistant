@@ -90,10 +90,12 @@
 - 所有 P2/P3 Feature Flag 保持 `false`；
 - 完成状态不等同于生产、临床或 Assembly Gate 验收。
 
-## P2-012 独立授权
+## P2-012 完成与授权
 
 - `evidence/p2-012-start-authorization.md`：独立授权、固定基线、032 编号例外及自动化 READY 后的现场停止线。
 - `tasks/P2-012_incident_reporter_subscription_human_confirmation.md`：Candidate Review、Incident、Report、Subscription、通知、工作台与验证要求。
+- `evidence/p2-012-human-confirmed-incident-report.md`、`evidence/p2-012-project-owner-approval.md`：完成态与负责人批准。
+- `evidence/p2-012-targeted-live-validation.md`、`evidence/p2-012-post-live-regression-report.md`：真实现场、客户端确认与完整回归。
 
 ## P2-016 独立授权
 
@@ -132,9 +134,9 @@
 
 ## P2-G1 Assembly 状态
 
-- P2-003、P2-004、P2-005、P2-006、P2-015、P2-016：`DONE`；P2-G1：`PASSED`；当前活动任务为 P2-012 / P2-D；
+- P2-003、P2-004、P2-005、P2-006、P2-015、P2-016、P2-012：`DONE`；P2-G1：`PASSED`；当前无活动任务；
 - `docs/42_p2_006_realtime_web_workbench.md`：Internal Alpha、REST/Auth、Query、Command、Delivery、SSE/Polling 与 UI 边界。
-- P2-007、P2-015、P2-016 保持 `DONE`；P2-012 / P2-D 已独立授权，其他任务继续保持原停止线；
+- P2-007、P2-015、P2-016、P2-012 保持 `DONE`；P2-G2 未授权，其他任务继续保持原停止线；
 - `P2-G1` 已完成真实测试 Workbench、企业微信 Sender、Replay Gap、恢复和资源现场 Gate；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 未启用生产 Workbench、模型或医院内网；本 Gate 通过不等同于 Phase 2 Go、生产或临床上线。
 
@@ -275,3 +277,24 @@
 
 - `evidence/v1-3-architecture-increment-report.md`：历史 V1.3 报告，已标记 Superseded；
 - `evidence/v1-4-architecture-increment-report.md`：V1.4 当前报告。
+
+## P2-012 人工确认 Incident 实现
+
+- docs/62_p2_012_human_confirmed_incident_lifecycle.md：权限、状态与事务边界。
+- docs/63_p2_012_candidate_review_link_unlink.md：来源摘要缺口、候选审核与关联。
+- docs/64_p2_012_reporter_subscription_recovery.md：HMAC 订阅、个人恢复和 Reporter 安全投影。
+- docs/65_p2_012_incident_notifications_workbench.md：固定通知、原生 UI、五项现场熔断与关闭。
+- database/migrations/032_p2_012_human_confirmed_incident.sql：七表唯一 DDL，catalog 精确核验。
+- src/p2-012-*.mjs、web/p2-workbench/incidents.*：在现有工作台和 Sender 边界内组装。
+- contracts/p2_012_*.schema.json、contracts/p2_012_contracts.d.ts：闭合输入输出 Contract。
+- tests/p2-012-*.test.mjs、tests/fixtures/p2-012/：合成 Contract/Integration/Browser/恢复与容量验证。
+- scripts/validate-p2-012-human-confirmed-incident.mjs、scripts/p2-012-live-check.mjs、scripts/p2-012-live-e2e.mjs：自动化核验与另行审批现场入口。
+- evidence/p2-012-capability-inventory-before.md、evidence/p2-012-capability-inventory-before.json：第一提交后的能力盘点。
+
+- evidence/p2-012-automated-readiness-report.md / .json：完整自动化回归、资源清理与现场停止线。
+- evidence/p2-012-validated-candidate-inventory.json / p2-012-final-regression.tap：冻结输入与完整实际结果。
+- evidence/p2-012-live-e2e.jsonl、p2-012-targeted-live-validation.md / .json：真实现场追加日志与批准结果。
+- evidence/p2-012-post-live-regression-report.md / .json、p2-012-post-live-regression.tap：现场后完整回归。
+- evidence/p2-012-project-owner-approval.md、p2-012-human-confirmed-incident-report.md / .json：负责人批准与完成态。
+- evidence/p2-012-closeout-regression.tap：DONE 完成态 561/561 全量回归原始结果。
+- evidence/p2-012-closeout-regression-failure.tap、p2-012-closeout-reconnect-diagnostic.tap：保留的 560/561 重连超时与精确 1/1 诊断证据。

@@ -16,7 +16,7 @@ test('ARCH-006 validator passes', () => {
 test('machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles', () => {
   const current = json('plans/current_phase.json');
   const backlog = json('plans/master_backlog.json');
-  assert.equal(['P2-007', 'P2-015', 'P2-016'].includes(current.last_completed_task), true);
+  assert.equal(['P2-007', 'P2-015', 'P2-016', 'P2-012'].includes(current.last_completed_task), true);
   assert.equal(current.last_completed_gate, 'P2-G1');
   assert.equal(current.last_completed_architecture_task, 'ARCH-006');
   assert.equal(current.arch_005_status, 'DONE');
@@ -26,6 +26,15 @@ test('machine state preserves ARCH-006 facts and separately authorized P2-015/P2
   if (current.p2_015_status === 'AUTHORIZED') {
     assert.equal(current.active_task, 'P2-015'); assert.equal(current.active_lane, 'P2-C');
     assert.equal(current.next_task_candidate, 'P2-015'); assert.equal(current.next_task_authorized, true);
+  } else if (current.p2_012_status==='DONE') {
+    assert.equal(current.last_completed_task,'P2-012');assert.equal(current.p2_016_status,'DONE');
+    assert.equal(current.active_task,null);assert.equal(current.active_lane,null);
+    assert.equal(current.next_task_candidate,'P2-G2');assert.equal(current.next_task_authorized,false);
+  } else if (['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION'].includes(current.p2_012_status)) {
+    assert.equal(current.last_completed_task,'P2-016');assert.equal(current.p2_016_status,'DONE');
+    assert.equal(current.active_task,'P2-012');assert.equal(current.active_lane,'P2-D');
+    assert.equal(current.next_task_candidate,current.p2_012_status==='AUTHORIZED'?'P2-012':'P2-012-LIVE');
+    assert.equal(current.next_task_authorized,current.p2_012_status==='AUTHORIZED');
   } else if (current.p2_016_status==='DONE') {
     assert.equal(current.last_completed_task,'P2-016');assert.equal(current.p2_015_status,'DONE');
     assert.equal(current.active_task,null);assert.equal(current.active_lane,null);
@@ -43,6 +52,7 @@ test('machine state preserves ARCH-006 facts and separately authorized P2-015/P2
     if(id==='P2-016'&&['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION','DONE'].includes(current.p2_016_status)){
       assert.equal(task.status,current.p2_016_status);assert.equal(task.authorization_status,'AUTHORIZED');continue;
     }
+    if(id==='P2-012'&&['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION','DONE'].includes(current.p2_012_status)){assert.equal(task.status,current.p2_012_status);assert.equal(task.authorization_status,'AUTHORIZED');continue;}
     assert.equal(task.status, 'TODO');
     assert.equal(task.authorization_status, 'REQUIRES_SEPARATE_AUTHORIZATION');
   }
@@ -76,7 +86,7 @@ test('Incident remains human-confirmed and AI-independent', () => {
   assert.match(contract, /自动创建 Incident/u);
   assert.match(contract, /模型调用必须为 0/u);
   assert.match(contract, /错误关联必须可 unlink/u);
-  assert.match(contract, /一名用户恢复只更新其个人 Ticket\/Subscription，不关闭共享 Incident/u);
+  assert.match(contract, /一名用户恢复只更新其个人 Report\/Subscription，不关闭共享 Incident，也不改变 Ticket/u);
 });
 
 test('AI-off readiness and feature flags are closed by default', () => {

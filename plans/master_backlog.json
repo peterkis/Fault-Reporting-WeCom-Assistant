@@ -5,10 +5,10 @@
   "baseline_date": "2026-08-30",
   "source_base_commit": "1c18d5653b17e4368b5fa057d513e1af1a8b4622",
   "current_phase": "P2",
-  "last_completed_task": "P2-016",
+  "last_completed_task": "P2-012",
   "last_completed_gate": "P2-G1",
   "last_completed_architecture_task": "ARCH-006",
-  "active_task": "P2-012",
+  "active_task": null,
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -22,8 +22,8 @@
     "P2-016",
     "P2-012"
   ],
-  "active_lane": "P2-D",
-  "implementation_authorization_status": "P2_012_AUTHORIZED",
+  "active_lane": null,
+  "implementation_authorization_status": "P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION",
   "authorized_architecture_tasks": [
     "ARCH-005",
     "ARCH-006"
@@ -55,15 +55,15 @@
   "p2_016_authorized_at": "2026-09-04",
   "p2_016_authorization_evidence": "evidence/p2-016-start-authorization.md",
   "p2_016_automated_readiness_evidence": "evidence/p2-016-automated-readiness-report.json",
-  "p2_012_status": "AUTHORIZED",
+  "p2_012_status": "DONE",
   "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
   "p2_009_status": "TODO",
   "p2_010_status": "TODO",
   "p2_011_status": "TODO",
   "p2_013_status": "TODO",
   "p2_014_status": "TODO",
-  "next_task_candidate": "P2-012",
-  "next_task_authorized": true,
+  "next_task_candidate": "P2-G2",
+  "next_task_authorized": false,
   "authorized_gates": [
     "P2-G1"
   ],
@@ -574,13 +574,19 @@
       "lane": "P2-D",
       "gate": "P2-G2",
       "phase": "P2",
-      "status": "AUTHORIZED",
+      "status": "DONE",
       "authorization_status": "AUTHORIZED",
       "model_provider_calls": 0,
       "authorized_at": "2026-09-04",
       "authorization_evidence": "evidence/p2-012-start-authorization.md",
       "task_file": "tasks/P2-012_incident_reporter_subscription_human_confirmation.md",
-      "migration_reservation": "032"
+      "migration_reservation": "032",
+      "automated_readiness_evidence": "evidence/p2-012-automated-readiness-report.json",
+      "completed_at": "2026-09-07",
+      "evidence": "evidence/p2-012-human-confirmed-incident-report.md",
+      "owner_approval_evidence": "evidence/p2-012-project-owner-approval.md",
+      "targeted_live_evidence": "evidence/p2-012-targeted-live-validation.json",
+      "post_live_regression_evidence": "evidence/p2-012-post-live-regression-report.json"
     },
     {
       "id": "P2-008",
@@ -806,5 +812,11 @@
   "p2_016_completion_evidence": "evidence/p2-016-ticket-lifecycle-workbench-report.md",
   "p2_016_owner_approval_evidence": "evidence/p2-016-project-owner-approval.md",
   "p2_012_authorized_at": "2026-09-04",
-  "p2_012_authorization_evidence": "evidence/p2-012-start-authorization.md"
+  "p2_012_authorization_evidence": "evidence/p2-012-start-authorization.md",
+  "p2_012_automated_readiness_evidence": "evidence/p2-012-automated-readiness-report.json",
+  "p2_012_completed_at": "2026-09-07",
+  "p2_012_completion_evidence": "evidence/p2-012-human-confirmed-incident-report.md",
+  "p2_012_owner_approval_evidence": "evidence/p2-012-project-owner-approval.md",
+  "p2_012_targeted_live_evidence": "evidence/p2-012-targeted-live-validation.json",
+  "p2_012_post_live_regression_evidence": "evidence/p2-012-post-live-regression-report.json"
 }

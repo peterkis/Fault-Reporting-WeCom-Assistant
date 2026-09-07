@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-G1、ARCH-005、ARCH-006 已完成。P2-016 已于 2026-09-04 经真实定向现场、回归和负责人批准完成。本轮独立授权 P2-012，唯一活动任务为 P2-012 / P2-D；自动化完成后须停在定向真实验证批准点。P2-008 至 P2-014 中除 P2-012 外的任务 和 P2-G2 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED`、ARCH-006/P2-015 `DONE` 均不是 Phase 2 `GO`。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 已完成。P2-012 已于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。当前无活动任务，下一候选 P2-G2 未授权；P2-008 至 P2-014 中除已完成 P2-012 外的任务和 P2-G2 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED` 和各任务 `DONE` 均不是 Phase 2 `GO`。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -593,8 +593,10 @@ AI worker 并发 1；任务由 PostgreSQL durable queue 管理。
 
 ## P2-012 Incident、Reporter Subscription 与人工确认
 
-- 状态：AUTHORIZED（2026-09-04）
+- 状态：DONE（2026-09-07）
 - 授权 Evidence：`evidence/p2-012-start-authorization.md`
+- 完成 Evidence：`evidence/p2-012-human-confirmed-incident-report.md`
+- 负责人批准：`evidence/p2-012-project-owner-approval.md`
 - Task：`tasks/P2-012_incident_reporter_subscription_human_confirmation.md`
 - Migration：032（本任务独立编号例外，001–031 冻结）
 - Lane：P2-D

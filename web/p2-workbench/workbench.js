@@ -16,7 +16,8 @@ const realtimeEventTypes = Object.freeze([
   'conversation.session.created', 'conversation.session.updated', 'conversation.item.created',
   'conversation.timeline.rebuilt', 'conversation.mode.changed', 'conversation.assigned',
   'conversation.handoff.requested', 'conversation.handoff.accepted', 'conversation.read_cursor.changed',
-  'communication.delivery.changed', 'ticket.updated', 'incident.updated', 'gateway.connection.changed',
+  'communication.delivery.changed', 'ticket.updated', 'incident.updated',
+    'incident.candidate.review_started', 'incident.candidate.rejected', 'incident.candidate.expired', 'incident.candidate.confirmed', 'incident.confirmed', 'incident.status.changed', 'incident.scope.changed', 'incident.primary_ticket.changed', 'incident.report.linked', 'incident.report.unlinked', 'incident.report.recovered', 'incident.subscription.changed', 'incident.notification.changed', 'gateway.connection.changed',
   'manual_review.created', 'manual_review.resolved', 'ticket.command.committed', 'ticket.status.changed',
   'ticket.assignment.changed', 'ticket.notification.created', 'ticket.notification.delivery_changed',
 ]);

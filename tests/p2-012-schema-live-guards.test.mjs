@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch } from '../scripts/validate-p2-012-human-confirmed-incident.mjs';
+import { checkP2012Live } from '../scripts/p2-012-live-check.mjs';
+import { p2012LiveDuration } from '../scripts/p2-012-live-e2e.mjs';
+import { P2012_LIVE_FUSES,readP2012LiveConfiguration } from '../src/p2-012-live-configuration.mjs';
+
+test('P2-012 static authorization, frozen predecessors, scope, schemas and synthetic fixture gate',async()=>{
+  const r=await validateP2012({includeReadinessEvidence:false});assert.deepEqual(r.errors,[]);assert.ok(r.checks>=150);
+  assert.equal(r.readiness_evidence_checked,false);await assert.rejects(validateP2012({includeReadinessEvidence:'false'}),/P2_012_VALIDATION_MODE_INVALID/u);
+  const text=await readFile('tests/fixtures/p2-012/incident-scenarios.v1.jsonl','utf8'),manifest=JSON.parse(await readFile('tests/fixtures/p2-012/incident-scenarios-manifest.v1.json','utf8'));
+  assert.equal(createHash('sha256').update(text).digest('hex'),manifest.sha256);assert.equal(text.trim().split('\n').length,13);
+  for(const row of text.trim().split('\n').map(JSON.parse)){assert.equal(row.synthetic,true);assert.equal(row.automatic_incident,false);assert.equal(row.human_confirmation_required,true);assert.equal(row.model_calls,0);}
+});
+
+test('P2-012 live runner fails before network/listener unless all five independent fuses and verified evidence exist',async()=>{
+  for(let mask=0;mask<31;mask++){
+    const env=Object.fromEntries(P2012_LIVE_FUSES.map((key,n)=>[key,mask&(1<<n)?'true':'false']));
+    assert.throws(()=>readP2012LiveConfiguration(env),/P2_012_LIVE_APPROVAL_REQUIRED/u);
+  }
+  assert.throws(()=>readP2012LiveConfiguration(Object.fromEntries(P2012_LIVE_FUSES.map(k=>[k,'true']))),/P2_012_LIVE_CONFIGURATION_INVALID/u);
+  const r=await checkP2012Live({});assert.equal(r.ok,false);assert.equal(r.network_started,false);assert.equal(r.listener_started,false);assert.equal(r.provider_calls,0);
+  assert.equal(p2012LiveDuration(['--observe-seconds=900']),900000);assert.equal(p2012LiveDuration(['--observe-seconds=3600']),3600000);
+  for(const args of [[],['--observe-seconds=899'],['--observe-seconds=3601'],['--observe-seconds=900','--run']])assert.throws(()=>p2012LiveDuration(args));
+});
+
+test('P2-012 readiness cannot be fabricated from partial regression, skips, changed inputs or live claims',()=>{
+  const hash='a'.repeat(64),good={status:'READY_FOR_TARGETED_LIVE_VALIDATION',all_automated_checks_passed:true,runtime_input_sha256:hash,live_validation:'NOT_RUN',second_commit_created:false,
+    regression:{exit_code:0,pass:535,tests:535,fail:0,cancelled:0,skipped:0,todo:0},cleanup:{database_count:0,backend_count:0,child_count:0}};
+  assert.equal(p2012ReadinessValid(good,hash),true);
+  for(const patch of [{status:'DONE'},{all_automated_checks_passed:false},{runtime_input_sha256:'b'.repeat(64)},{live_validation:'PASSED'},{second_commit_created:true}])assert.equal(p2012ReadinessValid({...good,...patch},hash),false);
+  for(const key of ['exit_code','fail','cancelled','skipped','todo'])assert.equal(p2012ReadinessValid({...good,regression:{...good.regression,[key]:1}},hash),false);
+  assert.equal(p2012ReadinessValid({...good,regression:{...good.regression,pass:534}},hash),false);
+  for(const key of ['database_count','backend_count','child_count'])assert.equal(p2012ReadinessValid({...good,cleanup:{...good.cleanup,[key]:1}},hash),false);
+});
+
+test('P2-012 DONE requires the approved live candidate, client confirmation, clean Incident deliveries and complete regressions',()=>{
+  const liveHash='55b89664e18c761d31b073fc2e279991e8543507b99ef55080d2ed9f6e2e6740',hash='c'.repeat(64);
+  const zero={fail:0,cancelled:0,skipped:0,todo:0};
+  const completion={status:'DONE',runtime_input_sha256:hash,validated_live_candidate_sha256:liveHash,owner_approval:'APPROVED',
+    closeout_regression:{status:'PASS',exit_code:0,tests:561,pass:561,...zero}};
+  const live={status:'PASSED',runtime_input_sha256:liveHash,owner_approval:'APPROVED',observation:{observed_ms:900000},
+    matrix:{incident_sent:10,incident_pending:0,incident_unknown:0,incident_dead_letter:0},
+    non_incident_delivery_audit:{owner_explicitly_accepted:true},client_observations:{wecom_group_visible:'CONFIRMED_BY_PROJECT_OWNER',wecom_reporter_private_visible:'CONFIRMED_BY_PROJECT_OWNER'}};
+  const postLive={status:'PASS',runtime_input_sha256:liveHash,exit_code:0,tests:559,pass:559,...zero,cleanup:{cleanup_passed:true}};
+  const ownerText=`P2_012_TARGETED_LIVE_VALIDATION=APPROVED ${liveHash}`;
+  const valid=input=>p2012CompletionEvidenceValid({completion,live,postLive,ownerText,hash,...input});
+  assert.equal(valid({}),true);
+  assert.equal(valid({live:{...live,status:'PENDING'}}),false);
+  assert.equal(valid({live:{...live,matrix:{...live.matrix,incident_dead_letter:1}}}),false);
+  assert.equal(valid({postLive:{...postLive,skipped:1}}),false);
+  assert.equal(valid({completion:{...completion,owner_approval:'PENDING'}}),false);
+});
+
+test('P2-012 frozen candidate permits only the explicit closeout governance set',()=>{
+  const before=[{path:'src/p2-012-incident-query.mjs',sha256:'a'.repeat(64)},{path:'scripts/validate-p2-012-human-confirmed-incident.mjs',sha256:'b'.repeat(64)}];
+  assert.equal(p2012FrozenInputsMatch(before,[before[0],{...before[1],sha256:'c'.repeat(64)}]),true);
+  assert.equal(p2012FrozenInputsMatch(before,[{...before[0],sha256:'d'.repeat(64)},before[1]]),false);
+  assert.equal(p2012FrozenInputsMatch(before.slice(1),before),false);
+});

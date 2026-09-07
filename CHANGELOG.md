@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-07 - P2-012 completed with explicit owner approval
+
+- 两次群公开通知和两名 Reporter 各四次私人通知均获客户端确认；Incident 通知 10/10 SENT，负责人明确接受另行披露的 1 条非 Incident PERSON dead-letter 并批准收口。
+- 现场观察约 28 分 29 秒；现场后完整回归 559/559。完成态回归、冻结输入、清理和唯一第二个本地提交见 `evidence/p2-012-human-confirmed-incident-report.md`。
+- last_completed_task 更新为 P2-012；active_task/active_lane 置空，下一候选 P2-G2 未授权；P2-008 继续被 P2-G2 阻断，所有持久默认开关 false。
+- 未 push、PR、merge、tag 或 release，未启动 P2-G2/P2-008/P3。
+
+## 2026-09-05 - P2-012 automated readiness
+
+- 555 个测试通过，fail/cancelled/skipped/todo=0；七表032、原生工作台、个人订阅/恢复、可靠通知与恢复/容量验证完成。
+- 状态 READY_FOR_TARGETED_LIVE_VALIDATION；last_completed_task=P2-016，活动 P2-012/P2-D；P2-012-LIVE 尚未授权。所有默认开关 false。
+- Evidence：`evidence/p2-012-automated-readiness-report.md`；历史候选摘要缺失值显式保留，P2-007阈值未改。真实现场、第二提交与远端发布均未执行。
+
 ## 2026-09-04 - P2-012 independently authorized
 
 - 独立授权仅 P2-012 / P2-D；保留 P2-016 DONE、P2-G1 PASSED、ARCH-006 DONE，所有默认开关 false。

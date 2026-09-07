@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_012_incident_notification.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "incident_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "incident_event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "audience_type": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "audience_binding_hash": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "reporter_subscription_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "origin_channel_leg_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "template_code": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "template_version": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "communication_message_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "created_at": {
+      "$ref": "local_datetime.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "incident_id",
+    "incident_event_id",
+    "audience_type",
+    "audience_binding_hash",
+    "reporter_subscription_id",
+    "origin_channel_leg_id",
+    "template_code",
+    "template_version",
+    "communication_message_id",
+    "created_at"
+  ]
+}

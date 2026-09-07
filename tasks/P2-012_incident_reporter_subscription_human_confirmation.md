@@ -1,6 +1,6 @@
 # P2-012 Incident、IncidentReport、ReporterSubscription 与人工确认
 
-- Status: AUTHORIZED
+- Status: DONE
 - Authorized at: 2026-09-04
 - Authorization evidence: `evidence/p2-012-start-authorization.md`
 - Phase: P2 / IN_PROGRESS
@@ -54,4 +54,10 @@ Contract/Unit/PostgreSQL Integration/Browser 必须覆盖：fresh/existing/no-op
 
 自动化完成后停在 READY_FOR_TARGETED_LIVE_VALIDATION；不创建第二提交。真实定向现场另获负责人批准，五项 live/send/public/private 审批全满足，带【P2-012测试】，至少 2 个 Reporter/Report、15 分钟观察、ACK/客户端观察/数据库核验/负责人批准分开记录。现场与最终回归通过后才 DONE 并作唯一第二本地提交；P2-G2 仍未启动。
 
+专用测试群现场采用 `APPROVED_GROUP_PARTICIPANTS`：批准群成员可由真实带标签群 Frame 动态建立 Reporter 范围，不要求预配个人 userid；单聊和私人通知必须回查同一 Reporter 的批准群事实并使用实际 DIRECT leg。群外、无标签、未先进入批准群或未建立 DIRECT leg 的用户仍失败关闭。
+
 关闭方式：所有持久默认 Flag=false，关闭新增 Route/Policy，保留追加事实，不破坏性 down migration。完成后立即停止，不 push、PR、merge、tag 或 release。
+
+## 自动化阶段交接
+
+自动化就绪快照见 `evidence/p2-012-automated-readiness-report.md`。真实定向现场、客户端确认、独立非 Incident 死信接受、现场后回归和负责人批准见 `evidence/p2-012-targeted-live-validation.md`、`evidence/p2-012-post-live-regression-report.md` 与 `evidence/p2-012-project-owner-approval.md`。完成态与唯一第二个本地提交见 `evidence/p2-012-human-confirmed-incident-report.md`。当前无活动任务，下一候选 P2-G2 未授权；所有默认 Flag=false。

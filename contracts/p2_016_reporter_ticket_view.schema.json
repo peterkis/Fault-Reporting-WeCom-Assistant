@@ -57,6 +57,13 @@
     },
     "guidance": {
       "const": "如未解决，请在企业微信机器人单聊中回复。"
+    },
+    "incident_milestones": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "p2_012_reporter_milestone.schema.json"
+      }
     }
   },
   "x-business-timezone": "Asia/Shanghai",

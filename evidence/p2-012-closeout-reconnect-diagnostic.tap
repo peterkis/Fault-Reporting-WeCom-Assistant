@@ -1,0 +1,16 @@
+{"test_id":"P1-012","event":"p1_012_wss_connect_requested","phase":"P1","environment":"development","public_listener_required":false,"ai_triage_enabled":false,"ocr_enabled":false,"hospital_tickets_enabled":false,"scenario":"RECONNECT_GROUP_TEXT","timeout_ms":10000}
+{"test_id":"P1-012","event":"p1_012_live_e2e_ready","phase":"P1","environment":"development","public_listener_required":false,"ai_triage_enabled":false,"ocr_enabled":false,"hospital_tickets_enabled":false,"scenario":"RECONNECT_GROUP_TEXT"}
+{"test_id":"P1-012","event":"p1_012_wss_disconnected","phase":"P1","environment":"development","public_listener_required":false,"ai_triage_enabled":false,"ocr_enabled":false,"hospital_tickets_enabled":false,"scenario":"RECONNECT_GROUP_TEXT"}
+{"test_id":"P1-012","event":"p1_012_wss_reconnect_requested","phase":"P1","environment":"development","public_listener_required":false,"ai_triage_enabled":false,"ocr_enabled":false,"hospital_tickets_enabled":false,"scenario":"RECONNECT_GROUP_TEXT"}
+{"test_id":"P1-012","event":"p1_012_wss_reauthenticated","phase":"P1","environment":"development","public_listener_required":false,"ai_triage_enabled":false,"ocr_enabled":false,"hospital_tickets_enabled":false,"scenario":"RECONNECT_GROUP_TEXT"}
+{"test_id":"P1-012","event":"p1_012_post_reconnect_message_ready","phase":"P1","environment":"development","public_listener_required":false,"ai_triage_enabled":false,"ocr_enabled":false,"hospital_tickets_enabled":false,"scenario":"RECONNECT_GROUP_TEXT","reauthenticated":true}
+{"test_id":"P1-012","event":"p1_012_live_message_result","outcome":"processed","scenario":"RECONNECT_GROUP_TEXT","core":{"accepted":true,"ticket_created":true,"intake_status":"TICKET_CREATED","within_target":true},"passive_reply":{"acknowledged":true,"outcome":"ACKED","within_target":true},"delivery":{"attempted":true,"status":"SENT"},"run_id":"00a6818921f65162ed60059ca2d33214","reconnect":{"reauthenticated_before_callback":true}}
+✔ P1-012 forces reauthentication before accepting one scoped group-text callback (281.3033ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 477.7173

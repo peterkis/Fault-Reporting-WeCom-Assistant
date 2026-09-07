@@ -7,24 +7,25 @@ P2-007 只产生 `INCIDENT_REVIEW_CANDIDATE`。P2-015 只持久化候选和安�
 ## 2. 状态机
 
 ```text
-CANDIDATE
-→ UNDER_REVIEW
-→ CONFIRMED_LOCAL / CONFIRMED_CAMPUS / CONFIRMED_HOSPITAL_WIDE
+CandidateReview: CANDIDATE → UNDER_REVIEW → CONFIRMED
+也可 REJECTED；只有未进入审核的到期候选可由 SYSTEM 维护标记 EXPIRED。
+
+Incident: CONFIRMED_LOCAL / CONFIRMED_BUILDING / CONFIRMED_CAMPUS / CONFIRMED_HOSPITAL_WIDE
 → INVESTIGATING
 → RESOLVED
 → CLOSED
 
-或：REJECTED / UNLINKED
+IncidentReport: LINKED / UNLINKED；UNLINKED 不是 Incident 状态。
 ```
 
 所有确认、拒绝、link、unlink、状态变更和订阅均需显式人工命令、Authentication、Authorization、expected version、Idempotency-Key 和追加式审计。禁止 Candidate 自动创建 Incident、自动链接或自动广播。
 
 ## 3. 身份、保留与解除
 
-- 按 internal `person_id` 跨群/单聊渠道去重，不用原始 WeCom userid、姓名或手机号作为聚类键；
+- 按 P2-015 权威 `reporter_identity_hash` HMAC binding 跨群/单聊渠道去重，不用原始 WeCom userid、姓名或手机号作为聚类键；
 - 每个 Reporter 的 Intake 和 Ticket 保留，Incident 聚合不删除、不覆盖、不转移其事实所有权；
 - 错误关联必须可 unlink，且 link/unlink 都保留审计；
-- 一名用户恢复只更新其个人 Ticket/Subscription，不关闭共享 Incident；
+- 一名用户恢复只更新其个人 Report/Subscription，不关闭共享 Incident，也不改变 Ticket；
 - 每位 Reporter Subscription 独立、幂等、可审计；
 - 群播报和主动单聊都必须经过 Communication Message/Outbox/Delivery。
 
@@ -36,11 +37,11 @@ CANDIDATE
 | 自动创建 Incident | 0 |
 | 人工确认 | Candidate → UNDER_REVIEW → 一个明确 confirmed scope |
 | 错误关联 | 可 unlink；个人 Intake/Ticket 不删除 |
-| 跨渠道同一上报人 | internal person 去重，Subscription 不重复 |
+| 跨渠道同一上报人 | P2-015 HMAC binding 去重，Subscription 不重复 |
 | 多用户共享故障 | 每人保留个人 Ticket；一人恢复不关闭共享 Incident |
 | 通知 | 人工确认后按订阅经 Outbox；群与单聊目标隔离 |
 | AI/Provider 不可用 | Incident 人工确认、解除、订阅和通知仍完整通过 |
 
 ## 5. P2-012 新依赖和顺序
 
-P2-012 保留原 ID 与 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`，依赖调整为 `P2-007 → P2-015 → P2-016`，并在 P2-008 之前执行。目标 Gate 改为 P2-G2。ARCH-006 不实现任何 P2-012 Runtime 或数据库结构。
+ARCH-006 当时保留 P2-012 原 ID 与 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`；当前 P2-012 已获独立实施授权，依赖保持 `P2-007 → P2-015 → P2-016`，并在 P2-008 之前执行。目标 Gate 改为 P2-G2。ARCH-006 不实现任何 P2-012 Runtime 或数据库结构。

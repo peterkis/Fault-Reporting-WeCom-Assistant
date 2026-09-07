@@ -35,7 +35,7 @@ P2-016 UI/REST, P2-012 Incident, P2-G2, AI/OCR, or production enablement.
 
 P2-016 is DONE after owner-approved targeted live validation. For completion or handoff,
 read `evidence/p2-016-ticket-lifecycle-workbench-report.md` and
-`evidence/p2-016-project-owner-approval.md`. P2-012 / P2-D is independently authorized by evidence/p2-012-start-authorization.md; targeted live validation requires separate approval.
+`evidence/p2-016-project-owner-approval.md`. P2-012 is DONE after owner-approved targeted live validation. Read `evidence/p2-012-human-confirmed-incident-report.md`, `evidence/p2-012-project-owner-approval.md`, and docs 62–65 for implementation and source-summary limitations. P2-G2 remains NOT_STARTED and requires separate authorization.
 P2-015 remains completed and its historical evidence is immutable. P2-016's separately
 authorized implementation reuses narrow backward-compatible seams; this is not a second
 P2-015 completion. For Workbench, Reporter access, and notification work, read

@@ -1,0 +1,132 @@
+{
+  "task": "P2-012",
+  "status": "DONE",
+  "date": "2026-09-07",
+  "timezone": "Asia/Shanghai",
+  "base_commit": "30a394e85973f5a300b841b23d2c358998796ba6",
+  "authorization_commit": "f8d29caf50816ab90f3debf14995085158460784",
+  "implementation_commit_subject": "feat(p2): implement P2-012 human-confirmed incident and notifications",
+  "runtime_input_sha256": "db7b59ab799172c1781f147aa19ef4632cc8049abe6b120163fefa614b2ed7ce",
+  "validated_live_candidate_sha256": "55b89664e18c761d31b073fc2e279991e8543507b99ef55080d2ed9f6e2e6740",
+  "owner_approval": "APPROVED",
+  "owner_approval_evidence": "evidence/p2-012-project-owner-approval.md",
+  "targeted_live_evidence": "evidence/p2-012-targeted-live-validation.json",
+  "post_live_regression_evidence": "evidence/p2-012-post-live-regression-report.json",
+  "frozen_input_inventory": "evidence/p2-012-validated-candidate-inventory.json",
+  "delivery_scope": {
+    "second_commit_files": 123,
+    "added": 79,
+    "modified": 44,
+    "deleted": 0,
+    "evidence_added": 25,
+    "historical_evidence_modified": 0
+  },
+  "database": {
+    "migration": "032_p2_012_human_confirmed_incident",
+    "relations": 7,
+    "columns": 135,
+    "constraints": 241,
+    "indexes": 28,
+    "new_triggers": 0,
+    "new_persistent_routines": 0,
+    "new_extensions": 0
+  },
+  "live": {
+    "run_id": "fd4c9d42-dcae-4f63-acdb-7750c747390a",
+    "observed_ms": 1708934.3873,
+    "resource_samples": 112,
+    "reporters": 2,
+    "reports": 4,
+    "incident_sent": 10,
+    "incident_pending": 0,
+    "incident_unknown": 0,
+    "incident_dead_letter": 0,
+    "group_client_visibility": "CONFIRMED_BY_PROJECT_OWNER",
+    "private_client_visibility": "CONFIRMED_BY_PROJECT_OWNER",
+    "non_incident_dead_letter": 1,
+    "non_incident_dead_letter_owner_accepted": true
+  },
+  "post_live_regression": {
+    "tests": 559,
+    "pass": 559,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0
+  },
+  "closeout_regression": {
+    "status": "PASS",
+    "tests": 561,
+    "pass": 561,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "duration_ms": 652089.1098,
+    "evidence": "evidence/p2-012-closeout-regression.tap",
+    "evidence_sha256": "ae33e5a7ad06537b2c26af81647d0d3e36a3dfba3632c9d4c2d50dc3f5df2b99"
+  },
+  "closeout_retry_evidence": {
+    "failed_full_run": {
+      "tests": 561,
+      "pass": 560,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exit_code": 1,
+      "failure": "P1_012_RECONNECT_GROUP_TEXT_TIMEOUT",
+      "evidence": "evidence/p2-012-closeout-regression-failure.tap",
+      "evidence_sha256": "ebe0765fff2da0135f0b4ca7a20448722df9293667acefda3fec30a6991b26bc"
+    },
+    "failed_test_diagnostic": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "exit_code": 0,
+      "evidence": "evidence/p2-012-closeout-reconnect-diagnostic.tap",
+      "evidence_sha256": "058d3c8e4801e009206b88c078ac6c799bfeb2e22fd3858aeabb88720415974e"
+    },
+    "business_code_changed_after_failure": false,
+    "test_timeout_or_assertion_changed": false
+  },
+  "cleanup": {
+    "live_database_count": 0,
+    "live_backend_count": 0,
+    "live_process_count": 0,
+    "live_listener_count": 0,
+    "live_browser_profile_count": 0,
+    "live_temp_file_count": 0,
+    "closeout_test_database_count": 0,
+    "closeout_test_backend_count": 0,
+    "closeout_owned_node_process_count": 0,
+    "closeout_listener_count": 0,
+    "closeout_browser_profile_count": 0,
+    "closeout_temp_root": "tmp/p2012-regression-closeout-final2-dc4d1011f551418c89cdc5e30d498d7f",
+    "closeout_remaining_non_profile_items": 7,
+    "cleanup_passed": true
+  },
+  "security_scan": {
+    "live_evidence_files": 6,
+    "configured_sensitive_values_checked": 10,
+    "live_evidence_sensitive_match_count": 0,
+    "full_candidate_secret_password_token_hmac_target_id_match_count": 0,
+    "documented_public_provider_endpoint_matches": 2,
+    "raw_values_printed": false
+  },
+  "boundaries": {
+    "state": "DONE",
+    "last_completed_task": "P2-012",
+    "active_task": null,
+    "next_task_candidate": "P2-G2",
+    "next_task_authorized": false,
+    "p2_g2": "NOT_STARTED",
+    "p2_008": "TODO_BLOCKED_BY_P2_G2",
+    "persistent_feature_flags": "ALL_FALSE",
+    "push_pr_merge_tag_release": false,
+    "production": false,
+    "clinical": false
+  }
+}

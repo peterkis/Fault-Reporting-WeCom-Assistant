@@ -40,16 +40,20 @@ const taskIndex = json(stateFiles[4]);
 const summary = json(stateFiles[5]);
 const views = [manifest, current, backlog, parallel, taskIndex, summary.project];
 const lifecycleState = current.implementation_authorization_status;
-const p2016Done=lifecycleState==='P2_016_DONE_AWAITING_P2_012_AUTHORIZATION';
+const p2012Authorized=['P2_012_AUTHORIZED','P2_012_READY_FOR_TARGETED_LIVE_VALIDATION'].includes(lifecycleState);
+const p2012Ready=lifecycleState==='P2_012_READY_FOR_TARGETED_LIVE_VALIDATION';
+const p2012Done=lifecycleState==='P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION';
+const expectedP2012Status=p2012Done?'DONE':p2012Ready?'READY_FOR_TARGETED_LIVE_VALIDATION':p2012Authorized?'AUTHORIZED':'TODO_REQUIRES_SEPARATE_AUTHORIZATION';
+const p2016Done=p2012Authorized||p2012Done||lifecycleState==='P2_016_DONE_AWAITING_P2_012_AUTHORIZATION';
 const p2016Authorized=p2016Done||['P2_016_AUTHORIZED','P2_016_READY_FOR_TARGETED_LIVE_VALIDATION'].includes(lifecycleState);
 const expectedP2016Status=p2016Done?'DONE':lifecycleState==='P2_016_READY_FOR_TARGETED_LIVE_VALIDATION'?'READY_FOR_TARGETED_LIVE_VALIDATION':p2016Authorized?'AUTHORIZED':'TODO_REQUIRES_SEPARATE_AUTHORIZATION';
 const successor = p2016Authorized || lifecycleState === 'P2_015_AUTHORIZED' || lifecycleState === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
 const completed = p2016Authorized || lifecycleState === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
-const expectedLastTask = p2016Done?'P2-016':completed ? 'P2-015' : 'P2-007';
-const expectedActiveTask = p2016Done?null:p2016Authorized?'P2-016':lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-015' : null;
-const expectedActiveLane = p2016Done?null:p2016Authorized?'P2-B':lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-C' : null;
-const expectedCandidate = p2016Done?'P2-012':completed ? 'P2-016' : 'P2-015';
-const expectedCandidateAuthorized = !p2016Done&&(p2016Authorized || lifecycleState === 'P2_015_AUTHORIZED');
+const expectedLastTask = p2012Done?'P2-012':p2016Done?'P2-016':completed ? 'P2-015' : 'P2-007';
+const expectedActiveTask = p2012Authorized?'P2-012':p2016Done?null:p2016Authorized?'P2-016':lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-015' : null;
+const expectedActiveLane = p2012Authorized?'P2-D':p2016Done?null:p2016Authorized?'P2-B':lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-C' : null;
+const expectedCandidate = p2012Done?'P2-G2':p2012Ready?'P2-012-LIVE':p2016Done?'P2-012':completed ? 'P2-016' : 'P2-015';
+const expectedCandidateAuthorized = p2012Authorized?!p2012Ready:!p2016Done&&(p2016Authorized || lifecycleState === 'P2_015_AUTHORIZED');
 const expectedP2015Status = completed ? 'DONE' : successor ? 'AUTHORIZED' : 'TODO_REQUIRES_SEPARATE_AUTHORIZATION';
 
 for (const view of views) {
@@ -67,15 +71,15 @@ for (const view of views) {
   }
   check(view.p2_015_status === expectedP2015Status, 'P2-015 machine status is exact');
   check(view.p2_016_status === expectedP2016Status, 'P2-016 machine status is exact');
-  check(view.p2_012_status === 'TODO_REQUIRES_SEPARATE_AUTHORIZATION', 'P2-012 machine status is exact');
+  check(view.p2_012_status === expectedP2012Status, 'P2-012 machine status is exact');
   check(view.p2_008_status === 'TODO_BLOCKED_BY_P2_G2', 'P2-008 machine status is exact');
   for (const task of ['p2_009_status', 'p2_010_status', 'p2_011_status', 'p2_013_status', 'p2_014_status']) {
     check(view[task] === 'TODO', task + ' remains TODO');
   }
 }
 
-check(manifest.status === (p2016Authorized?'P2_'+lifecycleState:completed ? 'P2_P2_015_DONE_AWAITING_P2_016_AUTHORIZATION' : successor ? 'P2_P2_015_AUTHORIZED' : 'P2_ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION'), 'manifest lifecycle status is exact');
-check(summary.project.status === (p2016Authorized?'p2_'+lifecycleState.toLowerCase():completed ? 'p2_p2_015_done_awaiting_p2_016_authorization' : successor ? 'p2_p2_015_authorized' : 'p2_arch_006_done_awaiting_p2_015_authorization'), 'project lifecycle status is exact');
+check(manifest.status === (p2016Authorized||p2012Done?'P2_'+lifecycleState:completed ? 'P2_P2_015_DONE_AWAITING_P2_016_AUTHORIZATION' : successor ? 'P2_P2_015_AUTHORIZED' : 'P2_ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION'), 'manifest lifecycle status is exact');
+check(summary.project.status === (p2016Authorized||p2012Done?'p2_'+lifecycleState.toLowerCase():completed ? 'p2_p2_015_done_awaiting_p2_016_authorization' : successor ? 'p2_p2_015_authorized' : 'p2_arch_006_done_awaiting_p2_015_authorization'), 'project lifecycle status is exact');
 check(current.phase_id === 'P2' && current.status === 'IN_PROGRESS', 'Phase P2 remains IN_PROGRESS');
 check(views.every((view) => (view.next_task_candidate ?? view.next_task) === expectedCandidate), 'next candidate matches the successor lifecycle');
 check(taskIndex.next_tasks.current === expectedActiveTask && taskIndex.next_tasks.candidate === expectedCandidate, 'task index matches active and next tasks');
@@ -93,7 +97,7 @@ check(p2015?.migration_reservation === '030', 'P2-015 owns migration 030 reserva
 check(p2016?.status === (p2016Authorized?expectedP2016Status:'TODO') && p2016?.authorization_status === (p2016Authorized?'AUTHORIZED':'REQUIRES_SEPARATE_AUTHORIZATION'), 'P2-016 requires its independent authorization');
 check(same(p2016?.depends_on, ['P2-015', 'P1-006', 'P2-004', 'P2-005', 'P2-006']), 'P2-016 dependencies are exact');
 check(p2016?.migration_reservation === '031_IF_REQUIRED', 'P2-016 conditionally reserves migration 031');
-check(p2012?.status === 'TODO' && p2012?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-012 is unauthorized TODO');
+check(p2012?.status === (p2012Authorized||p2012Done?expectedP2012Status:'TODO') && p2012?.authorization_status === (p2012Authorized||p2012Done?'AUTHORIZED':'REQUIRES_SEPARATE_AUTHORIZATION'), 'P2-012 lifecycle is exact');
 check(same(p2012?.depends_on, ['P2-007', 'P2-015', 'P2-016']) && p2012?.gate === 'P2-G2', 'P2-012 precedes AI with exact dependencies');
 check(backlog.tasks.filter((task) => task.id === 'P2-012').length === 1, 'P2-012 is not duplicated');
 check(p2008?.status === 'TODO' && p2008?.authorization_status === 'BLOCKED_BY_P2_G2'
@@ -140,7 +144,7 @@ check(lifecycle.includes('Ticket Event') && lifecycle.includes('Notification Pol
 
 const incident = read('docs/53_human_confirmed_incident_before_ai.md');
 for (const state of ['CANDIDATE', 'UNDER_REVIEW', 'CONFIRMED_LOCAL', 'CONFIRMED_CAMPUS', 'CONFIRMED_HOSPITAL_WIDE', 'INVESTIGATING', 'RESOLVED', 'CLOSED', 'REJECTED', 'UNLINKED']) check(incident.includes(state), 'Incident state ' + state + ' is frozen');
-check(incident.includes('模型调用必须为 0') && incident.includes('一名用户恢复只更新其个人 Ticket/Subscription，不关闭共享 Incident'), 'Incident is human-confirmed and AI-independent');
+check(incident.includes('模型调用必须为 0') && incident.includes('一名用户恢复只更新其个人 Report/Subscription，不关闭共享 Incident'), 'Incident is human-confirmed and AI-independent');
 
 const expectedFlags = [
   'RULE_FIRST_ORCHESTRATION_ENABLED', 'MANUAL_REVIEW_QUEUE_ENABLED',

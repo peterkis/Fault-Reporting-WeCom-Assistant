@@ -126,7 +126,15 @@
     "validate:architecture:v1.3": "node scripts/validate-v1-4-architecture.mjs",
     "test:architecture:v1.3": "node --test tests/v1-3-architecture-baseline.test.mjs",
     "validate:architecture:v1.4": "node scripts/validate-v1-4-architecture.mjs",
-    "test:architecture:v1.4": "node --test tests/v1-4-architecture-baseline.test.mjs"
+    "test:architecture:v1.4": "node --test tests/v1-4-architecture-baseline.test.mjs",
+    "p2:012:migrate": "node --env-file=.env.pilot scripts/p2-012-migrate.mjs",
+    "p2:012:migrate:check": "node --env-file=.env.pilot scripts/p2-012-migrate.mjs --check",
+    "p2:012:live:check": "node --env-file=.env.pilot scripts/p2-012-live-check.mjs",
+    "p2:012:live": "node --env-file=.env.pilot scripts/p2-012-live-e2e.mjs --observe-seconds=900",
+    "validate:p2:012": "node scripts/validate-p2-012-human-confirmed-incident.mjs",
+    "test:p2:012": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 tests/p2-012-*.test.mjs",
+    "test:p2:012:integration": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 tests/p2-012-*.integration.test.mjs",
+    "test:p2:012:browser": "node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-012-*-browser.test.mjs"
   },
   "dependencies": {
     "@wecom/aibot-node-sdk": "1.0.6",

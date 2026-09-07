@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_012_incident_list.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "p2_012_incident_public_view.schema.json"
+          },
+          {
+            "$ref": "p2_012_candidate_review.schema.json"
+          }
+        ]
+      }
+    },
+    "next_cursor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 2048
+    }
+  },
+  "required": [
+    "items",
+    "next_cursor"
+  ]
+}
