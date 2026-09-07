@@ -68,10 +68,13 @@ test('P2-016 bounded capacity: 500 Tickets / 5000 events / 200 review resolution
     const runtime=createP2016Runtime({pool,principalId:principal.id,publicOrigin:origin,listenPort,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true}}),streams=[];
     try{
       const started=await runtime.start(),cookie=started.cookie.name+'='+started.cookie.value;
-      for(let i=0;i<32;i++){const controller=new AbortController();const response=await fetch(origin+'/api/realtime/events',{headers:{cookie},signal:controller.signal});assert.equal(response.status,200);streams.push({controller,response});}
+      for(let i=0;i<32;i++){const controller=new AbortController();const response=await fetch(origin+'/api/realtime/events',{headers:{cookie},signal:controller.signal});assert.equal(response.status,200);const reader=response.body.getReader(),stream={controller,reader,bytes:0,endedUnexpectedly:false,error:null};
+        // Capacity clients consume replay like EventSource; a non-reader tests the separate slow-client policy.
+        stream.draining=(async()=>{try{for(;;){const part=await reader.read();if(part.done){if(!controller.signal.aborted)stream.endedUnexpectedly=true;break;}stream.bytes+=part.value.byteLength;}}catch(e){if(!controller.signal.aborted)stream.error=e.name;}})();streams.push(stream);}
       const rejected=await fetch(origin+'/api/realtime/events',{headers:{cookie}});assert.equal(rejected.status,503);assert.equal((await rejected.json()).fallback.reason,'CAPACITY_REACHED');
       const metrics=await runtime.observability.metrics();assert.equal(metrics.sse_clients,32);assert.ok(metrics.pool_total<=4);sample();
-    }finally{for(const s of streams){s.controller.abort();await s.response.body.cancel().catch(()=>{});}await runtime.stop();}
+    }finally{for(const s of streams){s.controller.abort();await s.reader.cancel().catch(()=>{});await s.draining;}await runtime.stop();}
+    assert.ok(streams.every(s=>!s.endedUnexpectedly&&!s.error),JSON.stringify(streams.map(s=>({ended:s.endedUnexpectedly,error:s.error,bytes:s.bytes}))));
     assert.equal(runtime.server.listening,false);assert.equal((await runtime.observability.metrics()).sse_clients,0);assert.equal(pool.options.max,4);
     global.gc?.();sample();const peak=Math.max(...samples),last=samples.at(-1),tail=samples.slice(-4),stable=peak-last>0||Math.max(...tail)-Math.min(...tail)<16*1024*1024;
     assert.ok(peak<256*1024*1024);assert.ok(stable);

@@ -2,7 +2,7 @@
 
 > 文件名为兼容既有索引保留。V1.4 的 P2 已不只是 AI Enhancement。
 
-> 状态（2026-09-04）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-G1、ARCH-005 与 ARCH-006 已完成。P2-016 已于 2026-09-04 经真实定向现场、回归和负责人批准完成。当前无活动任务或 Lane；下一候选 P2-012 未授权。P2-012、P2-008 至 P2-014 及 P2-G2 至 P2-G5 均须单独授权，所有 Feature Flag 默认 `false`。
+> 状态（2026-09-07）：Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005 与 ARCH-006 已完成。P2-012 已经真实定向现场、回归、客户端确认和负责人批准完成。当前无活动任务，下一候选 P2-G2 未授权；P2-008 至 P2-014 中除已完成 P2-012 外的任务及 P2-G2 至 P2-G5 均须单独授权，所有 Feature Flag 默认 `false`。
 
 ## 阶段目标
 
@@ -38,7 +38,7 @@
 
 ## 任务总览
 
-当前完成项为 P2-001 至 P2-007、P2-015、P2-016、P2-G1、ARCH-005、ARCH-006；P2-016 已完成，当前无活动任务、Lane 或 Gate；下一候选 P2-012 未授权。下表的依赖和目标 Gate 只表达
+当前完成项为 P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006；P2-G2 未启动且未授权。下表的依赖和目标 Gate 只表达
 规划关系，不构成后续任务或 Assembly Gate 的启动授权。
 
 | ID | 标题 | Lane | 依赖 | 目标 Gate |
@@ -52,7 +52,7 @@
 | P2-007 | 服务目录、确定性规则与对话字段模型（DONE） | P2-C | P1-012 | P2-G2 |
 | P2-015 | 规则优先受理编排、跨渠道接触旅程与人工审核（DONE） | P2-C | P2-G1, ARCH-005, P2-007, P1-004, P1-005, P2-004 | P2-G2 |
 | P2-016 | 完整工单生命周期工作台、上报人时间线与可靠通知（DONE） | P2-B | P2-015, P1-006, P2-004, P2-005, P2-006 | P2-G2 |
-| P2-012 | Incident、Reporter Subscription 与人工确认 | P2-D | P2-007, P2-015, P2-016 | P2-G2 |
+| P2-012 | Incident、Reporter Subscription 与人工确认（DONE） | P2-D | P2-007, P2-015, P2-016 | P2-G2 |
 | P2-008 | DeepSeek Provider Adapter、脱敏与安全闸门 | P2-C | P2-G2, P2-007 | P2-G3 |
 | P2-009 | Context Builder、Rolling Memory、AI Job 与 AI Run | P2-C | P2-001, P2-008 | P2-G3 |
 | P2-010 | AI Shadow、Copilot、受控自动回复与评估 | P2-C | P2-006, P2-009 | P2-G4 |

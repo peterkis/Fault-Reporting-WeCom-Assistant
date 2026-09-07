@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "synthetic": true,
+  "source": "authored task fixtures; no raw chat transcripts",
+  "count": 13,
+  "sha256": "94605b7db8295e3c86a403123f037ed09e5c516e84a8a4f8ee2aada554cff5d5",
+  "scenarios": [
+    "LOCAL",
+    "BUILDING",
+    "CAMPUS",
+    "HOSPITAL_WIDE",
+    "MONITORING_CORROBORATED",
+    "same_reporter_group_direct",
+    "same_service_different_symptom",
+    "same_symptom_different_service",
+    "multiple_independent_incidents",
+    "one_reporter_recovered",
+    "wrong_link_unlink",
+    "candidate_reject",
+    "active_incident_match_still_human"
+  ]
+}

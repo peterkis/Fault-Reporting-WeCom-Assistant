@@ -725,3 +725,12 @@ CREATE TABLE IF NOT EXISTS integration.identity_binding (
 -- Existing realtime_event gains seven P2-016 wakeup types and MANUAL_REVIEW source/aggregate.
 -- No trigger/function/extension delta. Business timestamps are WITHOUT TIME ZONE with Asia/Shanghai semantics.
 -- All feature defaults remain false; migration presence is not live-send or P2-G2 authorization.
+
+-- P2-012 executable DDL authority: 032_p2_012_human_confirmed_incident.sql.
+-- Exactly seven relations: incident.candidate_review, incident.incident,
+-- incident.incident_report, incident.reporter_subscription, incident.command_receipt,
+-- incident.incident_event, communication.incident_notification_binding.
+-- Candidate review is not an Incident; report UNLINKED is not an Incident status.
+-- P2-015 reporter HMAC binding is reused; Ticket and Communication remain sole authorities.
+-- LocalDateTime seconds / BIGINT epoch strings. No new function, trigger or extension.
+-- Legacy Candidate summary fields remain NULL when absent; no threshold reconstruction.

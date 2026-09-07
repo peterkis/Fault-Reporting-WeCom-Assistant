@@ -1,0 +1,114 @@
+{
+  "task": "P2-012",
+  "phase": "BEFORE_RUNTIME",
+  "business_timezone": "Asia/Shanghai",
+  "recorded_date": "2026-09-04",
+  "baseline": "30a394e85973f5a300b841b23d2c358998796ba6",
+  "authorization_commit": "f8d29caf50816ab90f3debf14995085158460784",
+  "evidence_kind": "REPOSITORY_INSPECTION_NOT_LIVE_DATABASE_OR_CLIENT_OBSERVATION",
+  "sources": {
+    "candidate": {
+      "path": "src/p2-007-incident-candidate.mjs",
+      "sha256": "3d29f087fdb5da7a18e349f3ae97006b0444c9f13d9f28c040a4d83dea773a84"
+    },
+    "decision": {
+      "path": "src/p2-015-decision-router.mjs",
+      "sha256": "f29d9c239763a54377b0d8a5ebefc43d5481f8be52d9a0667ef6059a490a437e"
+    },
+    "decisionStore": {
+      "path": "src/p2-015-decision-store.mjs",
+      "sha256": "3407610c4fed9a1ab749791283bf6cb7696cf1c50db1c35b1b7c954502829963"
+    },
+    "review": {
+      "path": "src/p2-015-manual-review.mjs",
+      "sha256": "6f6c961a8f11248d0d857f584c8d1a95be68423ead1aef07814a01f319e5eeab"
+    },
+    "actions": {
+      "path": "src/p2-015-safe-action-executor.mjs",
+      "sha256": "e0c2cba3b8e89aa7c846fc529324f938e7c2b56ef7b715e054eac61a8e5c309f"
+    },
+    "workbench": {
+      "path": "web/p2-workbench/lifecycle.js",
+      "sha256": "d79a4a823f5a5c6dbf1c029941d2c20f5a768fdb8ad65e0ae5130995ec0f6476"
+    },
+    "ticket": {
+      "path": "src/p2-016-ticket-command-facade.mjs",
+      "sha256": "7a7ec0c9d8c46de816343602e84db0f0ccbcac8381ae5b6b99c8ce8e0b8acaab"
+    },
+    "communication": {
+      "path": "src/p2-004-communication-core.mjs",
+      "sha256": "f5b194fcc3a1426498bef2cc42d56a7f60b09868ba1eb78b2838b6b3b5f10f05"
+    },
+    "delivery": {
+      "path": "src/p2-004-communication-delivery-worker.mjs",
+      "sha256": "9c27ad0511cb09e738a496a872dd74fd047cfab160687ea3680c079582fe7b44"
+    },
+    "sender": {
+      "path": "src/p2-016-wecom-sender.mjs",
+      "sha256": "00cd5abb8346911691bd4c88c6475253d792a2c108573ad0ed5da2e74b645b74"
+    },
+    "reporter": {
+      "path": "src/p2-016-reporter-timeline.mjs",
+      "sha256": "07766bc3cd526d9a60746d599818a171c4a67fb64910d15cb2e6e0843df533ee"
+    },
+    "realtime": {
+      "path": "src/p2-003-realtime-event-log.mjs",
+      "sha256": "6353894bcad36aa67a683ab9b7bf2094f18d250047c6fcf02df8d75ead4e1fa3"
+    },
+    "thresholdAdr": {
+      "path": "adr/0015_p2_007_incident_candidate_human_confirmation.md",
+      "sha256": "9ec19a2c468c18ed4275b47915ce5353d959c75874d637562373b6a0be70f303"
+    }
+  },
+  "existing": {
+    "p2_007_candidate": true,
+    "p2_007_creates_incident": false,
+    "p2_015_persisted_candidate_result_code": true,
+    "p2_015_decision_manual_review_safe_action": true,
+    "p2_016_manual_review_ui": true,
+    "p2_016_ticket_lifecycle_ui": true,
+    "p2_004_communication_outbox_delivery": true,
+    "p2_016_template_card_sender": true,
+    "p2_016_reporter_safe_timeline": true,
+    "p2_003_durable_sse": true,
+    "real_incident_aggregate": false,
+    "reporter_subscription": false,
+    "automatic_incident_creation_paths": 0,
+    "automatic_ticket_link_paths": 0,
+    "automatic_public_broadcast_paths": 0
+  },
+  "gaps": [
+    "Candidate Review state",
+    "Incident Aggregate",
+    "IncidentReport",
+    "ReporterSubscription",
+    "command receipt and idempotency",
+    "append-only Incident Event",
+    "primary Ticket reference",
+    "human confirm/reject",
+    "manual link/unlink",
+    "individual reporter recovery",
+    "Incident Workbench",
+    "public/private notification policy",
+    "Reporter-safe Incident milestone",
+    "separately approved targeted live validation",
+    "P2-015 transport of complete frozen Candidate fields"
+  ],
+  "threshold_drift": {
+    "adr_minutes": 5,
+    "runtime_correlation_window_ms": 120000,
+    "runtime_modified": false,
+    "reimplemented_thresholds": false,
+    "calibration_authorized": false
+  },
+  "identity_authority": "Existing P2-015 reporterIdentityHash: HMAC of provider, bot and external reporter binding; no SYSTEM_PERSON_ID master table",
+  "limitations": [
+    "Current P2-015 safe_result contains candidate boolean and safe facts but omits full Candidate counts/fingerprint/window. Add a backward-compatible adapter for new decisions; never backfill old decisions or invent missing evidence.",
+    "P2-016 Ticket functionality is not Incident functionality.",
+    "No live database query, real sender or client observation is represented by this inventory."
+  ],
+  "runtime_writes": 0,
+  "model_provider_calls": 0,
+  "ocr_calls": 0,
+  "rag_calls": 0
+}

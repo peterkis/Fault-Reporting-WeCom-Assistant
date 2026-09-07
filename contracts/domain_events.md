@@ -239,3 +239,11 @@ Core、Communication 与 Control 投影；命令只调用 P2-004/P2-005 Port。S
 有 Session 时按既有 Session Scope 裁剪，否则仅发 SYSTEM scope（内部 ADMIN/DISPATCHER）；HANDLER 仍通过授权查询与 5 秒轮询恢复。载荷没有正文、患者、账号、原始 Provider 错误或 Grant。旧十三种事件和九种 source/aggregate 保留，Migration 031 添加七种事件与 MANUAL_REVIEW source/aggregate。
 
 P2-016 装配使用单调的发布 envelope 时间；业务发生时间仍由原 Ticket/Event/Journey 保存。过期来源不延长保留期，wakeup 失败不回滚已提交事实。Reporter 仅使用独立绑定会话下的只读时间线，不复用内部 SSE 权限。
+
+## P2-012 人工 Incident 事件
+
+Candidate 事件：candidate.review_started / rejected / expired / confirmed，仅 expired 允许 SYSTEM。
+Incident 事件：incident.confirmed / investigating / resolved / closed / scope.corrected / primary_ticket_changed；incident.report.linked / unlinked / recovered；incident.subscription.created / activated / paused / ended。
+
+所有事件写入 incident.incident_event，关联原 incident.command_receipt，使用 event_ordinal、payload_hash、无时区秒精度 occurred_at。Candidate 与 Incident 资源严格二选一。旧事件不可更新或删除。内部 SSE 只携带安全 ref/version/status，使用原 conversation.realtime_event，不成为业务事实源。
+Reporter 只投影四类人工生命周期 milestone。任何 Incident 命令都不会发布 Ticket 状态变化。完整字段见 p2_012_incident_event.schema.json。

@@ -1,0 +1,39 @@
+{
+  "task": "P2-012",
+  "status": "PASS",
+  "date": "2026-09-07",
+  "timezone": "Asia/Shanghai",
+  "live_run_id": "fd4c9d42-dcae-4f63-acdb-7750c747390a",
+  "runtime_input_sha256": "55b89664e18c761d31b073fc2e279991e8543507b99ef55080d2ed9f6e2e6740",
+  "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 --test-reporter=tap tests/*.test.mjs",
+  "exit_code": 0,
+  "tests": 559,
+  "pass": 559,
+  "fail": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "todo": 0,
+  "duration_ms": 604744.0796,
+  "tap": "evidence/p2-012-post-live-regression.tap",
+  "tap_sha256": "e10e985330ef98856ebd00dcc29aaecb0b02f748b72d744513468ea8bfdf6004",
+  "cleanup": {
+    "p2_012_test_database_pattern_count": 0,
+    "p2_012_test_backend_count": 0,
+    "owned_node_processes": 0,
+    "listener_count": 0,
+    "browser_profile_count": 0,
+    "temp_root": "tmp/p2012-regression-post-live-7aad811a35f8425eb152a5f2b3c9002b",
+    "remaining_non_profile_items": 7,
+    "cleanup_passed": true
+  },
+  "security_scan": {
+    "evidence_files": 6,
+    "configured_sensitive_values_checked": 10,
+    "sensitive_match_count": 0,
+    "raw_values_printed": false
+  },
+  "owner_approval": "APPROVED_AFTER_THIS_SNAPSHOT",
+  "owner_approval_evidence": "evidence/p2-012-project-owner-approval.md",
+  "second_commit_created": false,
+  "p2_g2": "NOT_STARTED"
+}

@@ -169,6 +169,6 @@ try{
   const saved=new URLSearchParams(location.hash.slice(1));if(Object.hasOwn(queues,saved.get('queue')))queue=saved.get('queue');
   if(/^[0-9a-f-]{36}$/iu.test(saved.get('selected')??''))selected=saved.get('selected');
   if(['URGENT','HIGH','NORMAL','LOW'].includes(saved.get('priority')))priority=saved.get('priority');$('lc-priority').value=priority;
-  bootstrap=await api('/api/lifecycle/bootstrap');$('lc-agent').textContent=bootstrap.display_name+' · 内部坐席';navigation();await refresh();
+  bootstrap=await api('/api/lifecycle/bootstrap');void api('/api/incidents?limit=1').then(()=>{$('incident-link').hidden=false;document.querySelector('.boundary').textContent='仅限受控测试 · 非生产 / 非临床上线 · AI 未启用 · Incident 须人工确认';}).catch(()=>{});$('lc-agent').textContent=bootstrap.display_name+' · 内部坐席';navigation();await refresh();
   if(!stopped){connect();timer=setInterval(()=>{if(!document.hidden)void refresh();},5000);say('服务数据已加载；请选择队列与处理项目。');}
 }catch{if(!stopped){$('lc-connection').textContent='工作台不可用';say('P2-016 未启用或坐席访问不可用。');}}

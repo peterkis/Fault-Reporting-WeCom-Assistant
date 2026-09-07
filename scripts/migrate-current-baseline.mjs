@@ -4,12 +4,23 @@ import { pathToFileURL } from 'node:url';
 import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import { migrateP2015 } from './p2-015-migrate.mjs';
 import { migrateP2016,p2016CatalogHash } from './p2-016-migrate.mjs';
+import { migrateP2012,p2012CatalogHash } from './p2-012-migrate.mjs';
 
 async function p2016Tail({databaseUrl,mode,PoolFactory,p2015}) {
+  const probe=PoolFactory({connectionString:databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'p2_012_baseline_probe'});
+  let successor=false;try{successor=(await probe.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount===1;}finally{await probe.end();}
+  if(successor){const result=await migrateP2012({databaseUrl,mode,PoolFactory});return Object.freeze({status:'NOOP_ALREADY_APPLIED',mode,successor:'032',catalog_sha256:p2012CatalogHash(result.inventory)});}
   if(['READY_FOR_030','CHECK_ROLLBACK_SUCCEEDED'].includes(p2015.status))
     return Object.freeze({status:'REQUIRES_COMMITTED_030_FOR_031',mode});
   const result=await migrateP2016({databaseUrl,mode,PoolFactory});
   return Object.freeze({status:result.status,mode,catalog_sha256:result.inventory?p2016CatalogHash(result.inventory):null});
+}
+
+
+async function p2012Tail({databaseUrl,mode,PoolFactory,p2016}) {
+  if(!['APPLIED','NOOP_ALREADY_APPLIED'].includes(p2016.status))return Object.freeze({status:'REQUIRES_COMMITTED_031_FOR_032',mode});
+  const result=await migrateP2012({databaseUrl,mode,PoolFactory});
+  return Object.freeze({status:result.status,mode,catalog_sha256:result.inventory?p2012CatalogHash(result.inventory):null});
 }
 
 const ARCH005_ID = '022_arch_005_asia_shanghai_time_contract';
@@ -159,6 +170,7 @@ export async function migrateCurrentBaseline({
         forbidden_type_count: 0,
         p2_015: p2015,
         p2_016: p2016,
+        p2_012: await p2012Tail({databaseUrl,mode,PoolFactory,p2016}),
       });
     }
 
@@ -198,6 +210,7 @@ export async function migrateCurrentBaseline({
       forbidden_type_count: 0,
       p2_015: p2015,
       p2_016: p2016,
+      p2_012: await p2012Tail({databaseUrl,mode,PoolFactory,p2016}),
     });
   } finally {
     client?.release?.();

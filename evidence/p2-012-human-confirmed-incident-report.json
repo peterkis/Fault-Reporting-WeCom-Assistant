@@ -1,0 +1,906 @@
+{
+  "task": "P2-012",
+  "status": "DONE",
+  "date": "2026-09-07",
+  "timezone": "Asia/Shanghai",
+  "base_commit": "30a394e85973f5a300b841b23d2c358998796ba6",
+  "authorization_commit": "f8d29caf50816ab90f3debf14995085158460784",
+  "implementation_commit_subject": "feat(p2): implement P2-012 human-confirmed incident and notifications",
+  "runtime_input_sha256": "db7b59ab799172c1781f147aa19ef4632cc8049abe6b120163fefa614b2ed7ce",
+  "validated_live_candidate_sha256": "55b89664e18c761d31b073fc2e279991e8543507b99ef55080d2ed9f6e2e6740",
+  "owner_approval": "APPROVED",
+  "owner_approval_evidence": "evidence/p2-012-project-owner-approval.md",
+  "targeted_live_evidence": "evidence/p2-012-targeted-live-validation.json",
+  "post_live_regression_evidence": "evidence/p2-012-post-live-regression-report.json",
+  "frozen_input_inventory": "evidence/p2-012-validated-candidate-inventory.json",
+  "delivery_scope": {
+    "second_commit_files": 123,
+    "added": 79,
+    "modified": 44,
+    "deleted": 0,
+    "evidence_added": 25,
+    "historical_evidence_modified": 0
+  },
+  "database": {
+    "migration": "032_p2_012_human_confirmed_incident",
+    "relations": 7,
+    "columns": 135,
+    "constraints": 241,
+    "indexes": 28,
+    "new_triggers": 0,
+    "new_persistent_routines": 0,
+    "new_extensions": 0
+  },
+  "live": {
+    "run_id": "fd4c9d42-dcae-4f63-acdb-7750c747390a",
+    "observed_ms": 1708934.3873,
+    "resource_samples": 112,
+    "reporters": 2,
+    "reports": 4,
+    "incident_sent": 10,
+    "incident_pending": 0,
+    "incident_unknown": 0,
+    "incident_dead_letter": 0,
+    "group_client_visibility": "CONFIRMED_BY_PROJECT_OWNER",
+    "private_client_visibility": "CONFIRMED_BY_PROJECT_OWNER",
+    "non_incident_dead_letter": 1,
+    "non_incident_dead_letter_owner_accepted": true
+  },
+  "post_live_regression": {
+    "tests": 559,
+    "pass": 559,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0
+  },
+  "closeout_regression": {
+    "status": "PASS",
+    "tests": 561,
+    "pass": 561,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "duration_ms": 652089.1098,
+    "evidence": "evidence/p2-012-closeout-regression.tap",
+    "evidence_sha256": "ae33e5a7ad06537b2c26af81647d0d3e36a3dfba3632c9d4c2d50dc3f5df2b99"
+  },
+  "closeout_retry_evidence": {
+    "failed_full_run": {
+      "tests": 561,
+      "pass": 560,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exit_code": 1,
+      "failure": "P1_012_RECONNECT_GROUP_TEXT_TIMEOUT",
+      "evidence": "evidence/p2-012-closeout-regression-failure.tap",
+      "evidence_sha256": "ebe0765fff2da0135f0b4ca7a20448722df9293667acefda3fec30a6991b26bc"
+    },
+    "failed_test_diagnostic": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "exit_code": 0,
+      "evidence": "evidence/p2-012-closeout-reconnect-diagnostic.tap",
+      "evidence_sha256": "058d3c8e4801e009206b88c078ac6c799bfeb2e22fd3858aeabb88720415974e"
+    },
+    "business_code_changed_after_failure": false,
+    "test_timeout_or_assertion_changed": false
+  },
+  "cleanup": {
+    "live_database_count": 0,
+    "live_backend_count": 0,
+    "live_process_count": 0,
+    "live_listener_count": 0,
+    "live_browser_profile_count": 0,
+    "live_temp_file_count": 0,
+    "closeout_test_database_count": 0,
+    "closeout_test_backend_count": 0,
+    "closeout_owned_node_process_count": 0,
+    "closeout_listener_count": 0,
+    "closeout_browser_profile_count": 0,
+    "closeout_temp_root": "tmp/p2012-regression-closeout-final2-dc4d1011f551418c89cdc5e30d498d7f",
+    "closeout_remaining_non_profile_items": 7,
+    "cleanup_passed": true
+  },
+  "security_scan": {
+    "live_evidence_files": 6,
+    "configured_sensitive_values_checked": 10,
+    "live_evidence_sensitive_match_count": 0,
+    "full_candidate_secret_password_token_hmac_target_id_match_count": 0,
+    "documented_public_provider_endpoint_matches": 2,
+    "raw_values_printed": false
+  },
+  "boundaries": {
+    "state": "DONE",
+    "last_completed_task": "P2-012",
+    "active_task": null,
+    "next_task_candidate": "P2-G2",
+    "next_task_authorized": false,
+    "p2_g2": "NOT_STARTED",
+    "p2_008": "TODO_BLOCKED_BY_P2_G2",
+    "persistent_feature_flags": "ALL_FALSE",
+    "push_pr_merge_tag_release": false,
+    "production": false,
+    "clinical": false
+  },
+  "pr_review_hardening": {
+    "baseline_commit": "044ce68dce5422b377d27cbbb432e78f94797478",
+    "commit_subject": "fix(p2): require direct leg and expire due incident candidates",
+    "status": "PASS",
+    "runtime_input_sha256": "fe83efee6b417f3c4a2add448f67c2826ba12a9ffb3075343beeb078e8c74e3d",
+    "live_validation": "NOT_RUN",
+    "evidence": "evidence/p2-012-pr-review-hardening.md",
+    "targeted": {
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 105965.4813,
+      "exit_code": 0,
+      "stdout_sha256": "34f7a44d72eb24c3c9bdbfa36a05795dc6d78898de5a92518c955d871978088b"
+    },
+    "p2_016_regression": {
+      "tests": 71,
+      "pass": 71,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 281568.2275,
+      "exit_code": 0,
+      "stdout_sha256": "74dce829a85ee00fd88c147d053d36e9eb4e2e5214b990f998d64640d33121dc"
+    },
+    "static_gates": {
+      "p2_012_core_checks": 237,
+      "p2_016_checks": 146,
+      "arch_006_checks": 260,
+      "v1_4_checks": 403,
+      "v1_4_tests": 17,
+      "p2_016_verification_revision": "30a394e85973f5a300b841b23d2c358998796ba6",
+      "p2_012_final_checks": 238
+    },
+    "first_full_regression": {
+      "tests": 566,
+      "pass": 565,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 926051.2244,
+      "exit_code": 1,
+      "failure": "P2_012_HEAP_RECOVERY_ASSERTION",
+      "stdout_sha256": "d4b1e06ebf921f5f3ee4c1541593894559b758611281812c1590d3a59629dcbf",
+      "code_changed_after_failure": false,
+      "timeout_or_assertion_changed": false
+    },
+    "capacity_diagnostic": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 40723.0928,
+      "exit_code": 0,
+      "stdout_sha256": "ee860ca92d52d93e77727bc2c329d8604301e321d684435e8f7648fb91ba1e1d",
+      "code_changed": false,
+      "timeout_or_assertion_changed": false
+    },
+    "regression": {
+      "tests": 566,
+      "pass": 566,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 745329.1568,
+      "exit_code": 0,
+      "stdout_sha256": "c947f884790059fdaa9db90a2672ff1f73e2b67c4b408c88556fc49b0b2f8319",
+      "embedded_tap_sha256": "c947f884790059fdaa9db90a2672ff1f73e2b67c4b408c88556fc49b0b2f8319"
+    },
+    "cleanup": {
+      "database_count": 0,
+      "backend_count": 0,
+      "child_count": 0,
+      "browser_process_count": 0,
+      "listener_count": 0,
+      "browser_profile_count": 0,
+      "test_runner_count": 0,
+      "retained_non_profile_temp_files": 356,
+      "temporary_file_removal": "POLICY_BLOCKED",
+      "temporary_file_removal_reason": "blocked by policy",
+      "historical_screenshots_restored": 3,
+      "generated_screenshots_preserved": 6
+    },
+    "modified_files": [
+      "CHANGELOG.md",
+      "FILE_INDEX.md",
+      "MANIFEST.json",
+      "evidence/p2-012-human-confirmed-incident-report.json",
+      "evidence/p2-012-human-confirmed-incident-report.md",
+      "evidence/p2-012-pr-review-hardening.md",
+      "scripts/p2-012-process-role.mjs",
+      "scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "src/p2-012-live-cluster.mjs",
+      "src/p2-012-live-reporter-scope.mjs",
+      "src/p2-012-workbench-assembly.mjs",
+      "src/p2-016-runtime.mjs",
+      "src/p2-016-ticket-notification-projector.mjs",
+      "tests/p2-012-incident.integration.test.mjs",
+      "tests/p2-012-live-dynamic-reporter-scope.test.mjs",
+      "tests/p2-012-process-assembly.integration.test.mjs",
+      "tests/p2-012-schema-live-guards.test.mjs",
+      "tests/p2-012-scope-candidate.integration.test.mjs"
+    ],
+    "boundaries": {
+      "persistent_feature_flags": "ALL_FALSE",
+      "migration_changes": 0,
+      "ai_ocr_rag_calls": 0,
+      "incident_auto_create": 0,
+      "ticket_auto_link": 0,
+      "p2_g2": "NOT_STARTED",
+      "p2_008": "TODO_BLOCKED_BY_P2_G2",
+      "real_wecom_send": false,
+      "push": false,
+      "force_push": false,
+      "merge": false,
+      "tag": false
+    },
+    "security_scan": {
+      "sensitive_values_checked": 5,
+      "sensitive_match_count": 0,
+      "raw_values_printed": false
+    }
+  },
+  "pr_review_http_openapi_hardening": {
+    "task": "P2-012",
+    "date": "2026-09-07",
+    "timezone": "Asia/Shanghai",
+    "baseline_commit": "14557b9f6191a08434652550127f42360c97bffe",
+    "commit_subject": "fix(p2): preserve service errors and align destination OpenAPI",
+    "review_comment_ids": [
+      3948007171,
+      3948007180
+    ],
+    "status": "PASS",
+    "runtime_input_sha256": "b4019636255f66dc4367013de7b7175f7e9b0746f8af7042987543a13aa2b536",
+    "live_validation": "NOT_RUN",
+    "openapi_sha256": {
+      "contracts/openapi.yaml": "63e39f90e376da5a8729f67e5ab7818d8915dabc169ccc870aa1687bb467d164",
+      "contracts/conversation_center.openapi.yaml": "675ff62443339a56017745b5f584c68f98c267bc428c0e1885dcbaac052d535f"
+    },
+    "regression": {
+      "tests": 570,
+      "pass": 570,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 672469.4451,
+      "exit_code": 0,
+      "raw_tap_path": "tmp/p2012-http-openapi/full.tap",
+      "raw_tap_sha256": "6554fd3186d43b10b25b20b72263e7c804be6fd558ce8713a7f90bbb7e11a05c",
+      "embedded_tap_sha256": "3736b435cb790efb61b418a3aba21f3b5fb803bf5315a067002fb2fc5cdc5e3a"
+    },
+    "cleanup": {
+      "database_count": 0,
+      "backend_count": 0,
+      "child_count": 0,
+      "new_node_process_count": 17,
+      "browser_process_count": 0,
+      "listener_count": 0,
+      "browser_profile_count": 0,
+      "retained_non_profile_files": 23,
+      "retained_screenshots": 3,
+      "unrelated_host_node_processes_retained": true,
+      "scope": "P2-012 test runtimes; host Codex/MCP processes are not test children",
+      "historical_protected_directories_touched": false,
+      "historical_356_non_profile_files_touched": false,
+      "retained_temp_root": "tmp/p2012-http-openapi"
+    },
+    "baseline_red": {
+      "test": "actual HTTP preserves notification failure",
+      "actual_http_status": 409,
+      "expected_http_status": 503,
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "exit_code": 1
+    },
+    "boundaries": {
+      "p2_012": "DONE",
+      "p2_g2": "NOT_STARTED",
+      "p2_008": "TODO_BLOCKED_BY_P2_G2",
+      "persistent_feature_flags": "ALL_FALSE",
+      "ai_calls": 0,
+      "ocr_calls": 0,
+      "rag_calls": 0,
+      "automatic_incident_creation": 0,
+      "automatic_ticket_link": 0,
+      "live_send": false,
+      "push": false,
+      "merge": false,
+      "tag": false,
+      "release": false
+    },
+    "targeted": {
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 28210.1931,
+      "exit_code": 0,
+      "raw_tap_path": "tmp/p2012-http-openapi/targeted-ready.tap",
+      "raw_tap_sha256": "268d86acb04912000a5ae1960fc148e1638df74ac9b6e056d903d787e02ea1ed",
+      "embedded_tap_sha256": "698f1745755b8eadb879d3c1eb2bfa2b2d13a9e8a8be880776d7e4594f94fcbb"
+    },
+    "security_scan": {
+      "files_checked": 19,
+      "sensitive_values_checked": 5,
+      "sensitive_match_count": 0,
+      "matches": [],
+      "raw_values_printed": false
+    },
+    "stable_error_http_status": {
+      "P2_012_COMMAND_CONFLICT": 409,
+      "P2_012_COMMAND_FAILED": 503,
+      "P2_012_CURSOR_INVALID": 400,
+      "P2_012_DIRECT_DESTINATION_REQUIRED": 409,
+      "P2_012_DISABLED": 503,
+      "P2_012_EXPIRY_CONFLICT": 409,
+      "P2_012_FLAG_INVALID": 503,
+      "P2_012_FORBIDDEN": 403,
+      "P2_012_INPUT_INVALID": 400,
+      "P2_012_LIMIT_INVALID": 400,
+      "P2_012_LIVE_APPROVAL_REQUIRED": 403,
+      "P2_012_NOTIFICATION_EVENT_INVALID": 503,
+      "P2_012_NOTIFICATION_FAILED": 503,
+      "P2_012_NOT_FOUND": 404,
+      "P2_012_OWNER_INVALID": 409,
+      "P2_012_PRIMARY_NOT_LINKED": 409,
+      "P2_012_PRIMARY_STILL_LINKED": 409,
+      "P2_012_REPORT_ALREADY_LINKED": 409,
+      "P2_012_SOURCE_CONFLICT": 409,
+      "P2_012_SOURCE_EVIDENCE_INCOMPLETE": 409,
+      "P2_012_SOURCE_NOT_FOUND": 404,
+      "P2_012_STATE_CONFLICT": 409,
+      "P2_012_TICKET_ALREADY_LINKED": 409,
+      "P2_012_VERSION_CONFLICT": 409
+    },
+    "http_notification_failure": {
+      "actual_server_and_postgresql": true,
+      "fault": "Second Communication append returns a conflict at the existing readExistingCommand seam; first append writes real facts",
+      "first_status": 503,
+      "error_code": "P2_012_NOTIFICATION_FAILED",
+      "failed_receipt_count": 1,
+      "retryable": false,
+      "rollback_delta": {
+        "incident": 0,
+        "report": 0,
+        "event": 0,
+        "subscription": 0,
+        "binding": 0,
+        "message": 0,
+        "outbox": 0,
+        "delivery": 0,
+        "realtime_event": 0
+      },
+      "candidate_status": "UNDER_REVIEW",
+      "candidate_version": "2",
+      "replay_status": 503,
+      "replayed": true,
+      "replay_additional_append_calls": 0,
+      "recovery_uses_new_command_id": true,
+      "recovery_status": 200,
+      "recovery_confirmation_facts": {
+        "incidents": 1,
+        "reports": 4,
+        "subscriptions": 4,
+        "notification_bindings": 3,
+        "messages": 3,
+        "outboxes": 3,
+        "deliveries": 3
+      },
+      "version_conflict_status": 409,
+      "state_conflict_status": 409,
+      "role_denied_status": 403,
+      "missing_resource_status": 404,
+      "invalid_input_status": 400
+    },
+    "nested_route": {
+      "path": "/api/incidents/{incidentId}/subscriptions/{subscriptionId}/direct-destinations",
+      "operation_id": "listP2012SubscriptionDirectDestinations",
+      "documents_each_occurrence": 1,
+      "parser": "installed Python / PyYAML 6.0.3; UTF-8 input; full document and duplicate path keys parsed",
+      "admin_status": 200,
+      "dispatcher_status": 403,
+      "handler_status": 403,
+      "inaccessible_incident_status": 404,
+      "unknown_or_other_incident_subscription": {
+        "status": 200,
+        "items": []
+      },
+      "safe_item_fields": [
+        "id",
+        "subscription_id",
+        "source_intake_no"
+      ],
+      "page_fields": [
+        "items",
+        "next_cursor"
+      ],
+      "limit": {
+        "default": 30,
+        "min": 1,
+        "max": 100
+      },
+      "cursor_max_length": 2048,
+      "outer_oversized_uri_status": 414,
+      "incident_level_route_retained": true,
+      "ui_uses_nested_route": true,
+      "actual_subscription_and_incident_isolation": true,
+      "generated_client_discovery": "GET path, operationId, parameters and resolvable security schemes are present; no client generation/build was executed; existing description-only response style retained"
+    },
+    "ui": {
+      "viewports": [
+        [
+          1440,
+          900
+        ],
+        [
+          1366,
+          768
+        ],
+        [
+          390,
+          844
+        ]
+      ],
+      "injected_http_status": 503,
+      "authoritative_database_refetch": true,
+      "observed_post_count": 1,
+      "automatic_retry": false,
+      "optimistic_success": false,
+      "message": "服务暂时不可用，本次业务未提交。请刷新确认状态后稍后重试。",
+      "unknown_network_reconciliation_unchanged": true
+    },
+    "targeted_development_failure": {
+      "tests": 15,
+      "pass": 14,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 21597.8473,
+      "exit_code": 1,
+      "raw_tap_path": "tmp/p2012-http-openapi/targeted.tap",
+      "raw_tap_sha256": "20705777c46acb8744ef293de0c80a2264a1bb797bb5d7ce48f7ec35c927078d",
+      "embedded_tap_sha256": "b390cff19f1540ab10cd80403339388b240dae9732a9dc74b4abb2e6ff2ed772",
+      "cause": "New subscription activation browser probe clicked before the asynchronously loaded button existed",
+      "fix": "Wait for the existing button within the unchanged browser timeout; no original assertion removed"
+    },
+    "frozen_paths_proof": {
+      "baseline_commit": "14557b9f6191a08434652550127f42360c97bffe",
+      "git_diff_exit_code": 0,
+      "migrations_001_through_032_unchanged": true,
+      "database_catalog_sources_unchanged": true,
+      "p2_007_unchanged": true,
+      "direct_leg_unchanged": true,
+      "candidate_maintenance_unchanged": true,
+      "command_transaction_unchanged": true,
+      "notification_policy_unchanged": true,
+      "query_unchanged": true,
+      "live_evidence_unchanged": true,
+      "owner_approval_unchanged": true,
+      "historical_screenshots_unchanged": true,
+      "v1_evidence_sha256": "46893a985f41615d21010273e84ecdba6d69b703415037f8bbfc5114193ffc1d",
+      "original_completion_and_v1_appendix_unchanged": true
+    },
+    "modified_files": [
+      "CHANGELOG.md",
+      "FILE_INDEX.md",
+      "MANIFEST.json",
+      "contracts/conversation_center.openapi.yaml",
+      "contracts/openapi.yaml",
+      "evidence/p2-012-human-confirmed-incident-report.json",
+      "evidence/p2-012-pr-review-http-openapi-hardening.json",
+      "evidence/p2-012-pr-review-http-openapi-hardening.md",
+      "scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "src/p2-012-domain-contracts.mjs",
+      "src/p2-012-workbench-http.mjs",
+      "tests/p2-012-domain-contracts.test.mjs",
+      "tests/p2-012-schema-live-guards.test.mjs",
+      "tests/p2-012-workbench-browser.test.mjs",
+      "tests/p2-012-workbench.integration.test.mjs",
+      "web/p2-workbench/incidents.js"
+    ],
+    "database_changes": "NONE; isolated tests apply existing migrations only; no new catalog objects in the application baseline",
+    "resource_limits": "No new resident process, timer, worker, pool or socket; isolated harness max=4; serial tests",
+    "rollback": "Keep the three persistent Incident flags false to disable the feature. No down migration. Reverting the fourth commit would be a separate authorized action.",
+    "persistent_flags_check": {
+      "canonical_count": 20,
+      "canonical_all_false": true,
+      "configured_true_count": 0,
+      "invalid_boolean_count": 0
+    },
+    "static_gates": {
+      "status": "PASS",
+      "exit_codes": {
+        "p2_012": 0,
+        "p2_016": 0,
+        "arch_006": 0,
+        "v1_4": 0,
+        "v1_4_tests": 0
+      },
+      "p2_012_checks": 247,
+      "p2_016_checks": 146,
+      "p2_016_verification_revision": "30a394e85973f5a300b841b23d2c358998796ba6",
+      "arch_006_checks": 260,
+      "v1_4_checks": 403,
+      "v1_4_tests": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "exit_code": 0
+      }
+    }
+  },
+  "pr_review_subscription_contract_hardening": {
+    "baseline_commit": "21414a42ecc454a0079ab60801148acab0d7f247",
+    "commit_subject": "fix(p2): align subscription retention and client contracts",
+    "review_comment_ids": [
+      3950900504,
+      3950900513,
+      3950900523,
+      3950900528
+    ],
+    "status": "PASS",
+    "runtime_input_sha256": "ba5e3a9d597072c0d90dac88c015281484cafe6a6b3623ac05a1f7015e32940b",
+    "live_validation": "NOT_RUN",
+    "regression": {
+      "tests": 574,
+      "pass": 574,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 663011.632,
+      "exit_code": 0,
+      "tap": "tmp/p2012-review3/full-final.tap",
+      "sha256": "b79675a4032c3217ce134ad51e2b7978800c34f6295cfb49c0b52e74b823ea28",
+      "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 --test-reporter=tap tests/*.test.mjs"
+    },
+    "cleanup": {
+      "database_count": 0,
+      "backend_count": 0,
+      "child_count": 0,
+      "browser_process_count": 0,
+      "listener_count": 0,
+      "browser_profile_count": 0
+    },
+    "authorization": "User goal explicitly authorizes P2 review fixes, individual replies/resolution, push, fresh Codex review and merge only after no findings.",
+    "boundaries": {
+      "p2_012": "DONE",
+      "p2_g2": "NOT_STARTED",
+      "p2_008": "BLOCKED_BY_P2_G2",
+      "persistent_flags": "ALL_FALSE",
+      "ai_ocr_rag_calls": 0,
+      "live_send": false,
+      "migration_changes": 0
+    },
+    "targeted": {
+      "tests": 38,
+      "pass": 38,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 167383.0828,
+      "exit_code": 0,
+      "tap": "tmp/p2012-review3/targeted.tap",
+      "sha256": "5f33f1a7f4b230dab307156e1900670b5b991207b962b70359307632d02e70d3"
+    },
+    "first_full_regression": {
+      "tests": 574,
+      "pass": 573,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 790931.5224,
+      "exit_code": 1,
+      "tap": "tmp/p2012-review3/full.tap",
+      "sha256": "7f929a77fc33d94b2995408d2b3e4f4b9ec6b9d82875976ef22948d6354e23fc",
+      "failure": "Existing capacity assertion: peak>last || peak-initial<16MiB, with global.gc unavailable"
+    },
+    "capacity_diagnostic": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 77717.1591,
+      "exit_code": 0,
+      "tap": "tmp/p2012-review3/capacity-diagnostic.tap",
+      "sha256": "e52a375d2da9482da298c2e8f70138015e1c00952930f5cc00af48eacd66a1c5",
+      "gc_exposed": true,
+      "peak_heap_bytes": 85215384,
+      "final_heap_bytes": 18117144,
+      "code_or_assertions_or_timeouts_changed": false,
+      "basis": "Existing package test:p2:012 and test:p2:016 scripts already expose GC; capacity test calls global.gc?.()"
+    },
+    "fixes": {
+      "retention": "Unexpired matching Journey required for resume, initial link eligibility, destination reads and private notice projection; expiry after activation creates no new private notice.",
+      "reopening": "ENDED to PENDING_DESTINATION starts a new logical subscription period using subscription.created plus explicit PENDING_DESTINATION payload. Only ACTIVE reopens use activated. No migration.",
+      "types": "IncidentList.next_cursor is string|null; optional owner_team_id also string|null instead of never. Strict real TypeScript consumer compiles and numeric cursor is rejected.",
+      "state_filter": "Both OpenAPI documents declare optional state with ACTIVE, FINISHED and all seven actual Incident states; parsed enum equals runtime."
+    },
+    "modified_files": [
+      "CHANGELOG.md",
+      "FILE_INDEX.md",
+      "MANIFEST.json",
+      "contracts/conversation_center.openapi.yaml",
+      "contracts/openapi.yaml",
+      "contracts/p2_012_contracts.d.ts",
+      "docs/64_p2_012_reporter_subscription_recovery.md",
+      "evidence/p2-012-human-confirmed-incident-report.json",
+      "evidence/p2-012-pr-review-subscription-contract-hardening.json",
+      "evidence/p2-012-pr-review-subscription-contract-hardening.md",
+      "scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "src/p2-012-incident-command-service.mjs",
+      "src/p2-012-incident-query.mjs",
+      "src/p2-012-notification-policy.mjs",
+      "tests/p2-012-client-contract-review.test.mjs",
+      "tests/p2-012-schema-live-guards.test.mjs",
+      "tests/p2-012-subscription-review.integration.test.mjs"
+    ],
+    "frozen": {
+      "migrations_001_032": true,
+      "catalog_sources": true,
+      "p2_007": true,
+      "live_sender_authorization": true,
+      "live_evidence": true,
+      "owner_approval": true,
+      "v1_review_evidence": true,
+      "v2_review_evidence": true,
+      "original_completion_except_new_appendix": true
+    },
+    "github_review": {
+      "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6",
+      "fresh_current_head_review_required_before_merge": true,
+      "merge_method": "merge commit; preserve original commits"
+    },
+    "resource_limits": "No new persistent processes, pools, timers or catalog objects. Existing test pool maximum4. Full serial test workload unchanged.",
+    "rollback": "Default Incident feature flags remain false. No down migration; any future revert is a separate explicit command.",
+    "security_scan": {
+      "files": 21,
+      "values": 5,
+      "matches": 0,
+      "raw_values_printed": false
+    },
+    "persistent_flag_count": 20,
+    "static_gates": {
+      "p2_012": 252,
+      "p2_016": 146,
+      "arch_006": 260,
+      "v1_4": 403,
+      "v1_4_tests": 17,
+      "all_exit_codes": 0
+    }
+  },
+  "pr_review_paused_destination_hardening": {
+    "baseline_commit": "711269b8780e8edfad3011e78df5e2e6e986c9af",
+    "commit_subject": "fix(p2): replace paused subscription destinations",
+    "review_comment_id": 3951285976,
+    "status": "PASS",
+    "runtime_input_sha256": "94b988e47ce96859acdd9333808c2b8a1db27cdee54c583b19d4aae6eb29dddc",
+    "live_validation": "NOT_RUN",
+    "regression": {
+      "tests": 575,
+      "pass": 575,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 705259.2772,
+      "exit_code": 0,
+      "tap": "tmp/p2012-review4/full.tap",
+      "sha256": "614a35e04c52b6a77f89df2a41dd663ac8019a97d68228e473a4a836b80b829a",
+      "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 --test-reporter=tap tests/*.test.mjs"
+    },
+    "cleanup": {
+      "database_count": 0,
+      "backend_count": 0,
+      "browser_profile_count": 0,
+      "browser_process_count": 0,
+      "child_count": 0,
+      "listener_count": 0
+    },
+    "authorization": "Continued user goal: address all PR6 P2 findings, reply/resolve, obtain fresh clean Codex review and merge.",
+    "boundaries": {
+      "p2_012": "DONE",
+      "p2_g2": "NOT_STARTED",
+      "p2_008": "BLOCKED_BY_P2_G2",
+      "persistent_flags": "ALL_FALSE",
+      "live_send": false,
+      "ai_ocr_rag_calls": 0,
+      "migration_changes": 0
+    },
+    "targeted": {
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 36477.7005,
+      "exit_code": 0,
+      "tap": "tmp/p2012-review4/targeted.tap",
+      "sha256": "9425f1b84ed1bb11cc35f93d62964c09194ed789b62def3de60ce6286fcbb205"
+    },
+    "fix": "PAUSED and PENDING_DESTINATION both load the existing nested server-filtered destination chooser before resume. No backend or migration changes.",
+    "browser_validation": {
+      "viewports": [
+        "1440x900",
+        "1366x768",
+        "390x844"
+      ],
+      "baseline_red": "Paused subscription did not display the destination chooser (false !== true).",
+      "green": "For each viewport: pause active subscription, expire old Journey, create fresh direct leg for same synthetic Reporter via real orchestrator, offer only fresh leg, submit exactly one POST with both expected versions 2, verify ACTIVE and new leg in PostgreSQL."
+    },
+    "modified_files": [
+      "CHANGELOG.md",
+      "FILE_INDEX.md",
+      "MANIFEST.json",
+      "evidence/p2-012-human-confirmed-incident-report.json",
+      "evidence/p2-012-pr-review-paused-destination-hardening.json",
+      "evidence/p2-012-pr-review-paused-destination-hardening.md",
+      "scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "tests/p2-012-schema-live-guards.test.mjs",
+      "tests/p2-012-workbench-browser.test.mjs",
+      "web/p2-workbench/incidents.js"
+    ],
+    "frozen": {
+      "previous_evidence": true,
+      "original_completion_except_new_appendix": true,
+      "migrations_001_032": true,
+      "backend": true,
+      "flags": true,
+      "live_authorization": true,
+      "owner_approval": true
+    },
+    "resource_limits": "No new persistent process, pool, timer or database relation; existing isolated test pool max 4.",
+    "rollback": "Incident flags remain false; no database rollback required.",
+    "static_gates": {
+      "p2_016": 146,
+      "arch_006": 260,
+      "v1_4": 403,
+      "all_exit_codes": 0,
+      "p2_012": 259
+    },
+    "github_review": {
+      "fresh_current_head_review_required_before_merge": true,
+      "merge_method": "merge commit; preserve original commits"
+    },
+    "security_scan": {
+      "files": 12,
+      "values": 2,
+      "matches": 0,
+      "raw_values_printed": false
+    },
+    "persistent_flag_count": 20
+  },
+  "pr_review_reporter_refresh_hardening": {
+    "baseline_commit": "724085ed09c07fdd3adbd0c998dd46794dca446a",
+    "commit_subject": "fix(p2): retry incomplete reporter refreshes",
+    "review_comment_id": 3951493832,
+    "status": "PASS",
+    "runtime_input_sha256": "2a4094a8cdc58265c830c59b03201c0f87e2b69e35ee078023545a3d0b60f078",
+    "live_validation": "NOT_RUN",
+    "regression": {
+      "tests": 577,
+      "pass": 577,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 686682.9366,
+      "exit_code": 0,
+      "tap": "tmp/p2012-review5/full.tap",
+      "sha256": "56d1995202de35707c984e718ca812f67e3bc9a4acc62cef05e9327cc2e8cc98",
+      "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 --test-reporter=tap tests/*.test.mjs"
+    },
+    "cleanup": {
+      "database_count": 0,
+      "backend_count": 0,
+      "browser_process_count": 0,
+      "listener_count": 0,
+      "browser_profile_count": 0,
+      "child_count": 0
+    },
+    "authorization": "Continued user goal: resolve all PR6 P2 findings, fresh clean Codex review then merge.",
+    "boundaries": {
+      "p2_012": "DONE",
+      "p2_g2": "NOT_STARTED",
+      "p2_008": "BLOCKED_BY_P2_G2",
+      "persistent_flags": "ALL_FALSE",
+      "live_send": false,
+      "ai_ocr_rag_calls": 0,
+      "migration_changes": 0
+    },
+    "targeted": {
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 23021.7324,
+      "exit_code": 0,
+      "tap": "tmp/p2012-review5/targeted.tap",
+      "sha256": "6d1fe9b6ba28e973cb6033cda5837502088afde945c19f96cc2effa661af22a4"
+    },
+    "fix": "Commit the Reporter detail ETag only after timeline and Incident milestone rendering succeeds, so incomplete refreshes retry the same detail version.",
+    "browser_validation": {
+      "viewport": "390x844",
+      "baseline_red": "After a timeline 503, the next detail request incorrectly used the new ETag instead of retrying the prior ETag.",
+      "green": "Actual production Reporter assets in real Edge with synthetic local HTTP fault injection: milestone addition and removal each recover after timeline 503, then a successful render permits 304 without another timeline request.",
+      "database_in_fault_injection_test": false
+    },
+    "modified_files": [
+      "CHANGELOG.md",
+      "FILE_INDEX.md",
+      "MANIFEST.json",
+      "evidence/p2-012-human-confirmed-incident-report.json",
+      "evidence/p2-012-pr-review-reporter-refresh-hardening.json",
+      "evidence/p2-012-pr-review-reporter-refresh-hardening.md",
+      "scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "tests/p2-012-reporter-refresh-browser.test.mjs",
+      "tests/p2-012-schema-live-guards.test.mjs",
+      "web/p2-reporter/reporter.js"
+    ],
+    "frozen": {
+      "previous_evidence": true,
+      "original_completion_except_new_appendix": true,
+      "migrations_001_032": true,
+      "backend": true,
+      "flags": true,
+      "live_authorization": true,
+      "owner_approval": true
+    },
+    "resource_limits": "No new persistent process, pool, timer or database relation; existing isolated test pool max 4.",
+    "rollback": "Incident flags remain false; no database rollback required.",
+    "static_gates": {
+      "p2_016": 146,
+      "arch_006": 260,
+      "v1_4": 403,
+      "all_exit_codes": 0,
+      "p2_012": 264
+    },
+    "github_review": {
+      "fresh_current_head_review_required_before_merge": true,
+      "merge_method": "merge commit; preserve original commits"
+    },
+    "persistent_flag_count": 20,
+    "security_scan": {
+      "files": 10,
+      "values": 5,
+      "matches": 0,
+      "raw_values_printed": false
+    }
+  }
+}

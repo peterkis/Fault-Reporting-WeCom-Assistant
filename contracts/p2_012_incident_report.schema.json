@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_012_incident_report.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "candidate_review_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "incident_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_decision_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "journey_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "service_intake_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "ticket_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reporter_identity_hash": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "origin_channel_leg_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "direct_channel_leg_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "link_state": {
+      "type": "string",
+      "enum": [
+        "CANDIDATE",
+        "LINKED",
+        "UNLINKED",
+        "REJECTED"
+      ]
+    },
+    "impact_state": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "IMPACTED",
+        "RECOVERED"
+      ]
+    },
+    "link_reason_code": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "unlink_reason_code": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "recovery_reason_code": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "linked_by_principal_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "unlinked_by_principal_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "recovered_by_principal_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "row_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 19
+    },
+    "linked_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "unlinked_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "recovered_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "created_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "updated_at": {
+      "$ref": "local_datetime.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "candidate_review_id",
+    "incident_id",
+    "source_decision_id",
+    "journey_id",
+    "service_intake_id",
+    "ticket_id",
+    "reporter_identity_hash",
+    "origin_channel_leg_id",
+    "direct_channel_leg_id",
+    "link_state",
+    "impact_state",
+    "link_reason_code",
+    "unlink_reason_code",
+    "recovery_reason_code",
+    "linked_by_principal_id",
+    "unlinked_by_principal_id",
+    "recovered_by_principal_id",
+    "row_version",
+    "linked_at",
+    "unlinked_at",
+    "recovered_at",
+    "created_at",
+    "updated_at"
+  ]
+}

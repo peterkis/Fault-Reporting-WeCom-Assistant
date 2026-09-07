@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-07 - P2-012 PR #6 review hardening
+
+- PERSON 出站要求批准范围与真实匹配 Direct Leg；Ticket 通知增加可选目的地授权检查，无通道时不创建 PERSON 通知或 Reporter Grant，群建单保留一次安全引导回执。
+- Candidate maintenance 每轮按到期时间、ID 扫描最多 20 条，经私有幂等 SYSTEM 命令过期；人工竞争重新读取判定，维护失败不静默吞掉。
+- 形成独立第三个本地修复提交；原现场与完成态 Evidence 保留，当前验证见 `evidence/p2-012-pr-review-hardening.md`。无 Migration、真实发送或后续 Gate 启动，所有持久默认开关 false。
+
+## 2026-09-07 - P2-012 completed with explicit owner approval
+
+- 两次群公开通知和两名 Reporter 各四次私人通知均获客户端确认；Incident 通知 10/10 SENT，负责人明确接受另行披露的 1 条非 Incident PERSON dead-letter 并批准收口。
+- 现场观察约 28 分 29 秒；现场后完整回归 559/559。完成态回归、冻结输入、清理和唯一第二个本地提交见 `evidence/p2-012-human-confirmed-incident-report.md`。
+- last_completed_task 更新为 P2-012；active_task/active_lane 置空，下一候选 P2-G2 未授权；P2-008 继续被 P2-G2 阻断，所有持久默认开关 false。
+- 未 push、PR、merge、tag 或 release，未启动 P2-G2/P2-008/P3。
+
+## 2026-09-05 - P2-012 automated readiness
+
+- 555 个测试通过，fail/cancelled/skipped/todo=0；七表032、原生工作台、个人订阅/恢复、可靠通知与恢复/容量验证完成。
+- 状态 READY_FOR_TARGETED_LIVE_VALIDATION；last_completed_task=P2-016，活动 P2-012/P2-D；P2-012-LIVE 尚未授权。所有默认开关 false。
+- Evidence：`evidence/p2-012-automated-readiness-report.md`；历史候选摘要缺失值显式保留，P2-007阈值未改。真实现场、第二提交与远端发布均未执行。
+
+## 2026-09-04 - P2-012 independently authorized
+
+- 独立授权仅 P2-012 / P2-D；保留 P2-016 DONE、P2-G1 PASSED、ARCH-006 DONE，所有默认开关 false。
+- 固定基线 30a394e85973f5a300b841b23d2c358998796ba6；第一提交仅治理，migration 032 为本任务编号例外。
+- 自动化 READY 后停止等待定向现场批准，不创建第二提交；P2-G2/P2-008/AI/OCR/P3 和远端发布未授权。
+
 ## 2026-09-04 - P2-016 completed with explicit owner approval
 
 - 负责人已批准本次定向现场通过、DONE 收口和唯一第二个本地实现提交。完成与批准见 `evidence/p2-016-ticket-lifecycle-workbench-report.md` 和 `evidence/p2-016-project-owner-approval.md`。
@@ -255,3 +280,20 @@
 ### Source Preservation
 
 - 原始文档保留在 `source/企业微信智能机器人方案.docx`。
+
+## 2026-09-07 — P2-012 PR #6 HTTP / OpenAPI hardening
+
+保留失败命令收据的稳定 HTTP 分类；通知入队失败与同 ID 重放返回 503，UI 提示刷新权威状态后显式操作。两个 OpenAPI 文档声明 Subscription-scoped canonical direct-destinations GET，保留 ADMIN Incident-level 诊断读取。独立 v2 Evidence、路径门禁与真实数据库/HTTP/浏览器回归；P2-012 仍 DONE，P2-G2/P2-008 未授权。
+
+## 2026-09-07 — P2-012 subscription / client contract review
+
+拒绝已过保留期的 Direct Leg 激活；查询、关联与通知投影沿用同一有效期边界。重新打开无可用单聊渠道的订阅时记录 PENDING_DESTINATION 周期，而非 activated。修复 TypeScript nullable cursor/owner team 类型，并在两个 OpenAPI 声明 Incident state 筛选。保留全部既有 Evidence，无 migration、真实发送或后续 Gate 启动。
+
+## 2026-09-08 — P2-012 paused destination replacement
+
+暂停订阅恢复时也加载 Subscription-scoped 目的地选择器，可显式选择新的有效单聊渠道。真实浏览器验证暂停、旧渠道过期、新渠道出现、单次恢复提交与持久化 ACTIVE；保持后端授权/保留期检查不变。
+
+## 2026-09-08 - Reporter refresh review hardening
+
+- Reporter 仅在时间线与公共故障里程碑完成渲染后保存 ETag；瞬时失败保留旧 ETag，以便下一次轮询重新获取并恢复。
+- 浏览器故障注入覆盖里程碑新增与移除、一次 503 后恢复及正常 304；历史现场与 review 证据保持不变。

@@ -35,7 +35,7 @@ P2-016 UI/REST, P2-012 Incident, P2-G2, AI/OCR, or production enablement.
 
 P2-016 is DONE after owner-approved targeted live validation. For completion or handoff,
 read `evidence/p2-016-ticket-lifecycle-workbench-report.md` and
-`evidence/p2-016-project-owner-approval.md`. No task or lane is active; P2-012 requires separate authorization.
+`evidence/p2-016-project-owner-approval.md`. P2-012 is DONE after owner-approved targeted live validation. Read `evidence/p2-012-human-confirmed-incident-report.md`, `evidence/p2-012-project-owner-approval.md`, and docs 62–65 for implementation and source-summary limitations. P2-G2 remains NOT_STARTED and requires separate authorization.
 P2-015 remains completed and its historical evidence is immutable. P2-016's separately
 authorized implementation reuses narrow backward-compatible seams; this is not a second
 P2-015 completion. For Workbench, Reporter access, and notification work, read
@@ -232,3 +232,25 @@ _Avoid_: hospital SSO session, internal agent session, verified clinical identit
 **Ticket Command Receipt**:
 The durable outcome of one principal's identified Ticket command, preserving a single outcome when that command is retried.
 _Avoid_: Ticket Event, Delivery Attempt, global command ownership
+
+## Human-confirmed Incident
+
+**Incident Candidate Review**:
+The internal review of one persisted deterministic Decision and its immutable result hash; confirmation requires a human decision about scope and selected reports.
+_Avoid_: Incident, automatic merge, cluster hash identity
+
+**Incident**:
+A human-confirmed shared fault with its own scope, responsibility and lifecycle. It preserves each reporter's individual Intake and Ticket.
+_Avoid_: primary Ticket, merged Ticket, Candidate
+
+**Incident Report**:
+One individual report's audited relationship to a Candidate Review or Incident, with independent link and impact states.
+_Avoid_: deduplicated reporter, Subscription, shared recovery
+
+**Reporter Subscription**:
+One reporter's notification relationship to an Incident across their reports and channels, using the established internal reporter binding.
+_Avoid_: personnel master record, raw WeCom identity, Ticket ownership
+
+**Primary Ticket Reference**:
+An optional, explicitly selected linked Ticket that serves as the Incident's internal handling reference.
+_Avoid_: only surviving Ticket, Incident owner, automatic Ticket closure

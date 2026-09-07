@@ -1,0 +1,512 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_012_candidate_review.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "candidate_key": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "source_decision_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "source_manual_review_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cluster_key_hash": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_result_hash": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "service_family": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "symptom_family": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "scope_candidate": {
+      "enum": [
+        "UNKNOWN",
+        "ROOM",
+        "DEPARTMENT",
+        "CAMPUS",
+        "HOSPITAL_WIDE"
+      ]
+    },
+    "clinical_severity_candidate": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "distinct_reporters": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "distinct_departments": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "distinct_locations": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "correlation_window_ms": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "first_seen_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "last_seen_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+      }
+    },
+    "evidence_fact_ids": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "type": "string",
+        "pattern": "^fact_[A-Za-z0-9_-]{8,96}$"
+      }
+    },
+    "source_versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "catalog_version": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "rule_set_version": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "engine_version": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "decision_policy_version": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "source_hash": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "input_hash": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "result_hash": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "catalog_version",
+        "rule_set_version",
+        "engine_version",
+        "decision_policy_version",
+        "source_hash",
+        "input_hash",
+        "result_hash"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "CANDIDATE",
+        "UNDER_REVIEW",
+        "CONFIRMED",
+        "REJECTED",
+        "EXPIRED"
+      ]
+    },
+    "row_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 19
+    },
+    "event_ordinal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 19
+    },
+    "opened_by_principal_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "opened_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "confirmed_incident_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "created_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "updated_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "expires_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "expires_epoch_ms": {
+      "$ref": "epoch_ms_string.schema.json"
+    },
+    "report_sources": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_decision_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          },
+          "ticket_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ticket_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "service_intake_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          },
+          "journey_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "source_decision_id",
+          "journey_id",
+          "ticket_id",
+          "ticket_no",
+          "service_intake_id"
+        ]
+      }
+    },
+    "eligible_owners": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "id",
+          "display_name"
+        ]
+      }
+    },
+    "roles": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "enum": [
+          "ADMIN",
+          "DISPATCHER",
+          "HANDLER"
+        ]
+      }
+    },
+    "source_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "result_code": {
+          "const": "INCIDENT_REVIEW_CANDIDATE"
+        },
+        "reason_code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+        },
+        "catalog_version": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "rule_set_version": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "engine_version": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "decision_policy_version": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "input_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "result_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "source_refs": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      },
+      "required": [
+        "id",
+        "result_code",
+        "reason_code",
+        "catalog_version",
+        "rule_set_version",
+        "engine_version",
+        "decision_policy_version",
+        "input_hash",
+        "result_hash",
+        "source_refs"
+      ]
+    },
+    "manual_review": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "enum": [
+                "PENDING",
+                "RESOLVED",
+                "CANCELLED"
+              ]
+            },
+            "priority": {
+              "enum": [
+                "LOW",
+                "NORMAL",
+                "HIGH",
+                "URGENT"
+              ]
+            },
+            "review_reason_code": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "row_version": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,18}$"
+            },
+            "resolution_code": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "$ref": "local_datetime.schema.json"
+            },
+            "resolved_at": {
+              "anyOf": [
+                {
+                  "$ref": "local_datetime.schema.json"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "status",
+            "priority",
+            "review_reason_code",
+            "row_version",
+            "resolution_code",
+            "created_at",
+            "resolved_at"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "candidate_key",
+    "source_decision_id",
+    "source_manual_review_id",
+    "cluster_key_hash",
+    "source_result_hash",
+    "service_family",
+    "symptom_family",
+    "scope_candidate",
+    "clinical_severity_candidate",
+    "distinct_reporters",
+    "distinct_departments",
+    "distinct_locations",
+    "correlation_window_ms",
+    "first_seen_at",
+    "last_seen_at",
+    "reason_codes",
+    "evidence_fact_ids",
+    "source_versions",
+    "status",
+    "row_version",
+    "event_ordinal",
+    "opened_by_principal_id",
+    "opened_at",
+    "confirmed_incident_id",
+    "created_at",
+    "updated_at",
+    "expires_at",
+    "expires_epoch_ms"
+  ]
+}

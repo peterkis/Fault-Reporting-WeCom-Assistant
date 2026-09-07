@@ -4,7 +4,7 @@ const MILESTONES=Object.freeze({'ticket.created':'工单已受理','ticket.queue
   'ticket.started':'正在处理','ticket.resumed':'已恢复处理','ticket.waiting_requester':'等待您补充信息',
   'ticket.waiting_vendor':'已联系厂商协助','ticket.resolved':'已处理，等待确认','ticket.closed':'工单已关闭',
   'ticket.reopened':'已重新受理','ticket.cancelled':'工单已撤销'});
-export function createP2016ReporterTimeline({pool,access,enabled=false}) {
+export function createP2016ReporterTimeline({pool,access,enabled=false,incidentAdapter=null}) {
   async function scope(sessionToken,publicRef) {guardP2016(enabled);return access.authenticate(sessionToken,{publicRef});}
   return Object.freeze({
     async bootstrap({sessionToken}) {const s=await scope(sessionToken,null);return publicP2016({public_ref:s.public_ref,identity_mode:'BOUND_ACCESS_SESSION',read_only:true});},
@@ -15,7 +15,8 @@ export function createP2016ReporterTimeline({pool,access,enabled=false}) {
       return publicP2016({public_ref:publicRef,ticket_no:t.ticket_no,suffix:t.ticket_no.slice(-4),
         title:t.request_type==='SERVICE_REQUEST'?'信息服务申请':'信息系统故障报修',external_status:EXTERNAL_TICKET_STATUS[t.status],
         created_at:localP2016(t.created_at),updated_at:localP2016(t.updated_at),version:t.version,
-        guidance:'如未解决，请在企业微信机器人单聊中回复。'});
+        guidance:'如未解决，请在企业微信机器人单聊中回复。',
+        ...(incidentAdapter?{incident_milestones:await incidentAdapter.milestones({ticketId:s.ticket_id})}:{})});
     },
     async timeline({sessionToken,publicRef,cursor=null,limit}) {
       const s=await scope(sessionToken,publicRef),n=limitP2016(limit,100);

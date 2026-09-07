@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_012_incident_event.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "event_key": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "incident_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "candidate_review_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "event_ordinal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 19
+    },
+    "event_type": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "actor_kind": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "actor_principal_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "old_status": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "new_status": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "old_scope": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "new_scope": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_command_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "safe_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reason_code": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "confirmed_scope": {
+          "enum": [
+            "LOCAL",
+            "BUILDING",
+            "CAMPUS",
+            "HOSPITAL_WIDE"
+          ]
+        },
+        "report_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "ticket_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "subscription_id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "status": {
+          "enum": [
+            "ACTIVE",
+            "PENDING_DESTINATION",
+            "PAUSED",
+            "ENDED"
+          ]
+        }
+      },
+      "required": []
+    },
+    "payload_hash": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "occurred_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "created_at": {
+      "$ref": "local_datetime.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "event_key",
+    "incident_id",
+    "candidate_review_id",
+    "event_ordinal",
+    "event_type",
+    "actor_kind",
+    "actor_principal_id",
+    "old_status",
+    "new_status",
+    "old_scope",
+    "new_scope",
+    "source_command_id",
+    "safe_payload",
+    "payload_hash",
+    "occurred_at",
+    "created_at"
+  ]
+}

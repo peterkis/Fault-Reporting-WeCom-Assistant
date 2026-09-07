@@ -151,6 +151,19 @@
         "communication.delivery.changed",
         "ticket.updated",
         "incident.updated",
+        "incident.candidate.review_started",
+        "incident.candidate.rejected",
+        "incident.candidate.expired",
+        "incident.candidate.confirmed",
+        "incident.confirmed",
+        "incident.status.changed",
+        "incident.scope.changed",
+        "incident.primary_ticket.changed",
+        "incident.report.linked",
+        "incident.report.unlinked",
+        "incident.report.recovered",
+        "incident.subscription.changed",
+        "incident.notification.changed",
         "gateway.connection.changed",
         "manual_review.created",
         "manual_review.resolved",
@@ -191,6 +204,7 @@
         "CONVERSATION_HANDOFF",
         "CONVERSATION_READ_CURSOR",
         "INCIDENT",
+        "INCIDENT_CANDIDATE",
         "GATEWAY_CONNECTION",
         "MANUAL_REVIEW"
       ]
@@ -251,7 +265,10 @@
       "type": "string",
       "minLength": 20,
       "maxLength": 35,
-      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", "x-business-timezone": "Asia/Shanghai", "x-precision": "second", "x-offset-allowed": false
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+      "x-business-timezone": "Asia/Shanghai",
+      "x-precision": "second",
+      "x-offset-allowed": false
     },
     "sha256_hex": {
       "type": "string",

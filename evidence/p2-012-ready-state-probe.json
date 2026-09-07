@@ -1,0 +1,39 @@
+{
+  "task": "P2-012",
+  "mode": "IN_MEMORY_ONLY",
+  "checks": [
+    {
+      "change": null,
+      "expected_exit_code": 0,
+      "passed": true
+    },
+    {
+      "change": {
+        "p2_012_status": "DONE"
+      },
+      "expected_exit_code": 1,
+      "passed": true
+    },
+    {
+      "change": {
+        "last_completed_task": "P2-012"
+      },
+      "expected_exit_code": 1,
+      "passed": true
+    },
+    {
+      "change": {
+        "p2_g2_status": "PASSED"
+      },
+      "expected_exit_code": 1,
+      "passed": true
+    },
+    {
+      "change": {
+        "next_task_authorized": true
+      },
+      "expected_exit_code": 1,
+      "passed": true
+    }
+  ]
+}

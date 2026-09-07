@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "p2_012_incident.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "incident_no": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "CONFIRMED_LOCAL",
+        "CONFIRMED_BUILDING",
+        "CONFIRMED_CAMPUS",
+        "CONFIRMED_HOSPITAL_WIDE",
+        "INVESTIGATING",
+        "RESOLVED",
+        "CLOSED"
+      ]
+    },
+    "confirmed_scope": {
+      "type": "string",
+      "enum": [
+        "LOCAL",
+        "BUILDING",
+        "CAMPUS",
+        "HOSPITAL_WIDE"
+      ]
+    },
+    "service_family": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "symptom_family": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "severity": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "safe_title": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "safe_public_summary_code": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "owner_principal_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "owner_team_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 256
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "primary_ticket_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "row_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 19
+    },
+    "event_ordinal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 19
+    },
+    "confirmed_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "investigating_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "resolved_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "closed_at": {
+      "anyOf": [
+        {
+          "$ref": "local_datetime.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "created_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "updated_at": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "retention_until": {
+      "$ref": "local_datetime.schema.json"
+    },
+    "retention_until_epoch_ms": {
+      "$ref": "epoch_ms_string.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "incident_no",
+    "status",
+    "confirmed_scope",
+    "service_family",
+    "symptom_family",
+    "severity",
+    "safe_title",
+    "safe_public_summary_code",
+    "owner_principal_id",
+    "owner_team_id",
+    "primary_ticket_id",
+    "row_version",
+    "event_ordinal",
+    "confirmed_at",
+    "investigating_at",
+    "resolved_at",
+    "closed_at",
+    "created_at",
+    "updated_at",
+    "retention_until",
+    "retention_until_epoch_ms"
+  ]
+}
