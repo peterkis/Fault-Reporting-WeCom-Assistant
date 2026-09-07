@@ -305,3 +305,5 @@
 - evidence/p2-012-pr-review-subscription-contract-hardening.md / .json：PR #6 第三轮订阅保留期、审计状态与客户端 Contract 修复及独立验证。
 
 - evidence/p2-012-pr-review-paused-destination-hardening.md / .json：暂停订阅替换过期目的地的浏览器闭环与独立回归。
+
+- evidence/p2-012-pr-review-reporter-refresh-hardening.md / .json：Reporter 时间线瞬时失败后的 ETag 与公共故障里程碑恢复证据。

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch,p2012ReviewPathsValid,p2012ReviewHardeningValid,p2012HttpOpenApiHardeningPathsValid,p2012HttpOpenApiHardeningEvidenceValid,p2012SubscriptionReviewPathsValid,p2012SubscriptionReviewEvidenceValid,p2012PausedReviewPathsValid,p2012PausedReviewEvidenceValid } from '../scripts/validate-p2-012-human-confirmed-incident.mjs';
+import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch,p2012ReviewPathsValid,p2012ReviewHardeningValid,p2012HttpOpenApiHardeningPathsValid,p2012HttpOpenApiHardeningEvidenceValid,p2012SubscriptionReviewPathsValid,p2012SubscriptionReviewEvidenceValid,p2012PausedReviewPathsValid,p2012PausedReviewEvidenceValid,p2012RefreshReviewPathsValid,p2012RefreshReviewEvidenceValid } from '../scripts/validate-p2-012-human-confirmed-incident.mjs';
 import { checkP2012Live } from '../scripts/p2-012-live-check.mjs';
 import { p2012LiveDuration } from '../scripts/p2-012-live-e2e.mjs';
 import { P2012_LIVE_FUSES,readP2012LiveConfiguration } from '../src/p2-012-live-configuration.mjs';
@@ -160,4 +160,16 @@ test('P2-012 paused destination review is bounded and preserves previous full re
   assert.equal(p2012PausedReviewEvidenceValid({...good,baseline_commit:'bad'},hash),false);
   for(const key of ['fail','cancelled','skipped','todo','exit_code'])assert.equal(p2012PausedReviewEvidenceValid({...good,regression:{...good.regression,[key]:1}},hash),false);
   for(const key of Object.keys(good.cleanup))assert.equal(p2012PausedReviewEvidenceValid({...good,cleanup:{...good.cleanup,[key]:1}},hash),false);
+});
+
+test('P2-012 reporter refresh review is bounded and preserves previous full regression evidence',()=>{
+  assert.equal(p2012RefreshReviewPathsValid(['web/p2-reporter/reporter.js']),true);
+  for(const path of ['src/p2-012-incident-command-service.mjs','database/migrations/032_p2_012_human_confirmed_incident.sql','evidence/p2-012-pr-review-subscription-contract-hardening.json'])assert.equal(p2012RefreshReviewPathsValid([path]),false);
+  const hash='c'.repeat(64),good={baseline_commit:'724085ed09c07fdd3adbd0c998dd46794dca446a',commit_subject:'fix(p2): retry incomplete reporter refreshes',review_comment_id:3951493832,
+    status:'PASS',runtime_input_sha256:hash,live_validation:'NOT_RUN',regression:{tests:577,pass:577,fail:0,cancelled:0,skipped:0,todo:0,exit_code:0},
+    cleanup:{database_count:0,backend_count:0,child_count:0,listener_count:0,browser_process_count:0,browser_profile_count:0}};
+  assert.equal(p2012RefreshReviewEvidenceValid(good,hash),true);
+  assert.equal(p2012RefreshReviewEvidenceValid({...good,baseline_commit:'bad'},hash),false);
+  for(const key of ['fail','cancelled','skipped','todo','exit_code'])assert.equal(p2012RefreshReviewEvidenceValid({...good,regression:{...good.regression,[key]:1}},hash),false);
+  for(const key of Object.keys(good.cleanup))assert.equal(p2012RefreshReviewEvidenceValid({...good,cleanup:{...good.cleanup,[key]:1}},hash),false);
 });

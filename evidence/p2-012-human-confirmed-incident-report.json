@@ -803,5 +803,104 @@
       "raw_values_printed": false
     },
     "persistent_flag_count": 20
+  },
+  "pr_review_reporter_refresh_hardening": {
+    "baseline_commit": "724085ed09c07fdd3adbd0c998dd46794dca446a",
+    "commit_subject": "fix(p2): retry incomplete reporter refreshes",
+    "review_comment_id": 3951493832,
+    "status": "PASS",
+    "runtime_input_sha256": "2a4094a8cdc58265c830c59b03201c0f87e2b69e35ee078023545a3d0b60f078",
+    "live_validation": "NOT_RUN",
+    "regression": {
+      "tests": 577,
+      "pass": 577,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 686682.9366,
+      "exit_code": 0,
+      "tap": "tmp/p2012-review5/full.tap",
+      "sha256": "56d1995202de35707c984e718ca812f67e3bc9a4acc62cef05e9327cc2e8cc98",
+      "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 --test-reporter=tap tests/*.test.mjs"
+    },
+    "cleanup": {
+      "database_count": 0,
+      "backend_count": 0,
+      "browser_process_count": 0,
+      "listener_count": 0,
+      "browser_profile_count": 0,
+      "child_count": 0
+    },
+    "authorization": "Continued user goal: resolve all PR6 P2 findings, fresh clean Codex review then merge.",
+    "boundaries": {
+      "p2_012": "DONE",
+      "p2_g2": "NOT_STARTED",
+      "p2_008": "BLOCKED_BY_P2_G2",
+      "persistent_flags": "ALL_FALSE",
+      "live_send": false,
+      "ai_ocr_rag_calls": 0,
+      "migration_changes": 0
+    },
+    "targeted": {
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 23021.7324,
+      "exit_code": 0,
+      "tap": "tmp/p2012-review5/targeted.tap",
+      "sha256": "6d1fe9b6ba28e973cb6033cda5837502088afde945c19f96cc2effa661af22a4"
+    },
+    "fix": "Commit the Reporter detail ETag only after timeline and Incident milestone rendering succeeds, so incomplete refreshes retry the same detail version.",
+    "browser_validation": {
+      "viewport": "390x844",
+      "baseline_red": "After a timeline 503, the next detail request incorrectly used the new ETag instead of retrying the prior ETag.",
+      "green": "Actual production Reporter assets in real Edge with synthetic local HTTP fault injection: milestone addition and removal each recover after timeline 503, then a successful render permits 304 without another timeline request.",
+      "database_in_fault_injection_test": false
+    },
+    "modified_files": [
+      "CHANGELOG.md",
+      "FILE_INDEX.md",
+      "MANIFEST.json",
+      "evidence/p2-012-human-confirmed-incident-report.json",
+      "evidence/p2-012-pr-review-reporter-refresh-hardening.json",
+      "evidence/p2-012-pr-review-reporter-refresh-hardening.md",
+      "scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "tests/p2-012-reporter-refresh-browser.test.mjs",
+      "tests/p2-012-schema-live-guards.test.mjs",
+      "web/p2-reporter/reporter.js"
+    ],
+    "frozen": {
+      "previous_evidence": true,
+      "original_completion_except_new_appendix": true,
+      "migrations_001_032": true,
+      "backend": true,
+      "flags": true,
+      "live_authorization": true,
+      "owner_approval": true
+    },
+    "resource_limits": "No new persistent process, pool, timer or database relation; existing isolated test pool max 4.",
+    "rollback": "Incident flags remain false; no database rollback required.",
+    "static_gates": {
+      "p2_016": 146,
+      "arch_006": 260,
+      "v1_4": 403,
+      "all_exit_codes": 0,
+      "p2_012": 264
+    },
+    "github_review": {
+      "fresh_current_head_review_required_before_merge": true,
+      "merge_method": "merge commit; preserve original commits"
+    },
+    "persistent_flag_count": 20,
+    "security_scan": {
+      "files": 10,
+      "values": 5,
+      "matches": 0,
+      "raw_values_printed": false
+    }
   }
 }

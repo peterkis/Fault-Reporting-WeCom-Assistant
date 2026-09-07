@@ -19,10 +19,11 @@ async function refresh(){
   if(busy||stopped||document.hidden)return;busy=true;
   try{
     const result=await request('/api/reporter/tickets/'+ref,{headers:etag?{'If-None-Match':etag}:{}});
-    if(result){const t=result.body;etag=result.etag;el('title').textContent=t.title;el('number').textContent=t.ticket_no+' · 尾号 '+t.suffix;
+    if(result){const t=result.body;el('title').textContent=t.title;el('number').textContent=t.ticket_no+' · 尾号 '+t.suffix;
       el('state').textContent=t.external_status;el('times').replaceChildren(line('dt','上报时间'),line('dd',t.created_at),line('dt','最近更新'),line('dd',t.updated_at));await loadTimeline();
       document.getElementById('incident-milestones')?.remove();
       if(t.incident_milestones?.length){const section=line('section','');section.id='incident-milestones';section.append(line('h3','关联公共故障'));for(const item of t.incident_milestones){section.append(line('p',item.text),line('time',item.occurred_at));}el('timeline').after(section);}
+      etag=result.etag;
     }
     el('status').textContent='已验证绑定访问会话；页面每 5 秒检查进度。';el('ticket').hidden=false;
   }catch(error){el('status').textContent=error.status?error.message:'网络暂不可用，将在 5 秒后重试。';

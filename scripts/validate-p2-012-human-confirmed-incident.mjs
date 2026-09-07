@@ -10,6 +10,18 @@ const IMPLEMENTATION='044ce68dce5422b377d27cbbb432e78f94797478';
 const REVIEW_SUBJECT='fix(p2): require direct leg and expire due incident candidates';
 const HTTP_BASE='14557b9f6191a08434652550127f42360c97bffe';
 const HTTP_SUBJECT='fix(p2): preserve service errors and align destination OpenAPI';
+const REFRESH_BASE='724085ed09c07fdd3adbd0c998dd46794dca446a';
+const REFRESH_SUBJECT='fix(p2): retry incomplete reporter refreshes';
+const REFRESH_EVIDENCE='evidence/p2-012-pr-review-reporter-refresh-hardening.json';
+const refreshPaths=new Set(['CHANGELOG.md','FILE_INDEX.md','MANIFEST.json',COMPLETION,REFRESH_EVIDENCE,
+  'evidence/p2-012-pr-review-reporter-refresh-hardening.md','web/p2-reporter/reporter.js',
+  'tests/p2-012-reporter-refresh-browser.test.mjs','tests/p2-012-schema-live-guards.test.mjs','scripts/validate-p2-012-human-confirmed-incident.mjs']);
+export const p2012RefreshReviewPathsValid=paths=>Array.isArray(paths)&&paths.length>0&&paths.every(p=>refreshPaths.has(p));
+export function p2012RefreshReviewEvidenceValid(r,hash){return r?.baseline_commit===REFRESH_BASE&&r.commit_subject===REFRESH_SUBJECT
+  &&r.review_comment_id===3951493832&&r.status==='PASS'&&r.runtime_input_sha256===hash&&r.live_validation==='NOT_RUN'
+  &&Number.isSafeInteger(r.regression?.tests)&&r.regression.tests>=576&&r.regression.pass===r.regression.tests
+  &&['fail','cancelled','skipped','todo','exit_code'].every(k=>r.regression[k]===0)
+  &&['database_count','backend_count','child_count','listener_count','browser_process_count','browser_profile_count'].every(k=>r.cleanup?.[k]===0);}
 const PAUSED_BASE='711269b8780e8edfad3011e78df5e2e6e986c9af';
 const PAUSED_SUBJECT='fix(p2): replace paused subscription destinations';
 const PAUSED_EVIDENCE='evidence/p2-012-pr-review-paused-destination-hardening.json';
@@ -133,7 +145,7 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
   if(typeof includeReadinessEvidence!=='boolean')throw new Error('P2_012_VALIDATION_MODE_INVALID');
   const errors=[];let checks=0;const check=(ok,message)=>{checks++;if(!ok)errors.push(message);};
   const state=await json('plans/current_phase.json'),ready=state.p2_012_status==='READY_FOR_TARGETED_LIVE_VALIDATION',done=state.p2_012_status==='DONE';
-  const completion=done?await json(COMPLETION):null,hardening=completion?.pr_review_hardening,httpHardening=completion?.pr_review_http_openapi_hardening,subHardening=completion?.pr_review_subscription_contract_hardening,pausedHardening=completion?.pr_review_paused_destination_hardening;
+  const completion=done?await json(COMPLETION):null,hardening=completion?.pr_review_hardening,httpHardening=completion?.pr_review_http_openapi_hardening,subHardening=completion?.pr_review_subscription_contract_hardening,pausedHardening=completion?.pr_review_paused_destination_hardening,refreshHardening=completion?.pr_review_reporter_refresh_hardening;
   check(['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION','DONE'].includes(state.p2_012_status),'P2-012 has a recognized lifecycle state');
   const files=['MANIFEST.json','plans/current_phase.json','plans/master_backlog.json','plans/parallel_workstreams.json','tasks/master_backlog.json','project_summary.json'];
   for(const p of files){const data=await json(p),v=p==='project_summary.json'?data.project:data;
@@ -154,7 +166,9 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
         ||subHardening&&subjects.length===5&&subjects[2]===REVIEW_SUBJECT&&subjects[3]===HTTP_SUBJECT&&subjects[4]===SUB_SUBJECT
           &&git('merge-base',SUB_BASE,'HEAD').trim()===SUB_BASE
         ||pausedHardening&&subjects.length===6&&subjects[2]===REVIEW_SUBJECT&&subjects[3]===HTTP_SUBJECT&&subjects[4]===SUB_SUBJECT&&subjects[5]===PAUSED_SUBJECT
-          &&git('merge-base',PAUSED_BASE,'HEAD').trim()===PAUSED_BASE)),
+          &&git('merge-base',PAUSED_BASE,'HEAD').trim()===PAUSED_BASE
+        ||refreshHardening&&subjects.length===7&&subjects[2]===REVIEW_SUBJECT&&subjects[3]===HTTP_SUBJECT&&subjects[4]===SUB_SUBJECT&&subjects[5]===PAUSED_SUBJECT&&subjects[6]===REFRESH_SUBJECT
+          &&git('merge-base',REFRESH_BASE,'HEAD').trim()===REFRESH_BASE)),
     'exact authorization, implementation and optional independently authorized review-fix commit');
   check(git('rev-parse',AUTH+'^').trim()===BASE,'first commit starts from approved P2-016 merge');
   check(git('show','-s','--format=%s',AUTH).trim()==='chore(p2): authorize P2-012 human-confirmed incident','exact authorization commit subject');
@@ -166,7 +180,7 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
     const reviewChanged=httpHardening?git('diff','--name-only',IMPLEMENTATION,HTTP_BASE).trim().split(/\r?\n/u)
       :[...git('diff','--name-only',IMPLEMENTATION).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean);
     check(p2012ReviewPathsValid(reviewChanged),'review changes stay within the exact approved path set, including all migrations and historical Evidence');
-    const {pr_review_hardening,pr_review_http_openapi_hardening,pr_review_subscription_contract_hardening,pr_review_paused_destination_hardening,...historical}=completion;
+    const {pr_review_hardening,pr_review_http_openapi_hardening,pr_review_subscription_contract_hardening,pr_review_paused_destination_hardening,pr_review_reporter_refresh_hardening,...historical}=completion;
     check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',IMPLEMENTATION+':'+COMPLETION))),'review evidence does not rewrite historical completion facts');
   }
   if(httpHardening){
@@ -174,7 +188,7 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
     const paths=subHardening?git('diff','--name-only',HTTP_BASE,SUB_BASE).trim().split(/\r?\n/u):[...new Set([...git('diff','--name-only',HTTP_BASE).trim().split(/\r?\n/u),
       ...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
     check(p2012HttpOpenApiHardeningPathsValid(paths),'v2 exact path allowlist freezes migrations 001-032, catalog, live evidence, Direct Leg and maintenance');
-    const {pr_review_http_openapi_hardening,pr_review_subscription_contract_hardening,pr_review_paused_destination_hardening,...historical}=completion;
+    const {pr_review_http_openapi_hardening,pr_review_subscription_contract_hardening,pr_review_paused_destination_hardening,pr_review_reporter_refresh_hardening,...historical}=completion;
     check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',HTTP_BASE+':'+COMPLETION))),'v2 only appends evidence and preserves all v1 and original completion facts');
     check(JSON.stringify(httpHardening)===JSON.stringify(await json(HTTP_EVIDENCE)),'v2 standalone evidence equals completion appendix');
     check((await read('evidence/p2-012-pr-review-hardening.md')).replaceAll('\r\n','\n')===git('show',HTTP_BASE+':evidence/p2-012-pr-review-hardening.md').replaceAll('\r\n','\n'),'v1 hardening evidence remains immutable');
@@ -183,16 +197,23 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
   if(subHardening){
     const changed=pausedHardening?git('diff','--name-only',SUB_BASE,PAUSED_BASE).trim().split(/\r?\n/u):[...new Set([...git('diff','--name-only',SUB_BASE).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
     check(p2012SubscriptionReviewPathsValid(changed),'v3 exact subscription/client review scope');
-    const {pr_review_subscription_contract_hardening,pr_review_paused_destination_hardening,...historical}=completion;
+    const {pr_review_subscription_contract_hardening,pr_review_paused_destination_hardening,pr_review_reporter_refresh_hardening,...historical}=completion;
     check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',SUB_BASE+':'+COMPLETION))),'v3 preserves all preceding completion and review evidence');
     check(JSON.stringify(subHardening)===JSON.stringify(await json(SUB_EVIDENCE)),'v3 standalone evidence matches its appendix');
   }
   if(pausedHardening){
-    const changed=[...new Set([...git('diff','--name-only',PAUSED_BASE).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
+    const changed=refreshHardening?git('diff','--name-only',PAUSED_BASE,REFRESH_BASE).trim().split(/\r?\n/u):[...new Set([...git('diff','--name-only',PAUSED_BASE).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
     check(p2012PausedReviewPathsValid(changed),'v4 exact UI destination replacement scope');
-    const {pr_review_paused_destination_hardening,...historical}=completion;
+    const {pr_review_paused_destination_hardening,pr_review_reporter_refresh_hardening,...historical}=completion;
     check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',PAUSED_BASE+':'+COMPLETION))),'v4 preserves all previous evidence');
     check(JSON.stringify(pausedHardening)===JSON.stringify(await json(PAUSED_EVIDENCE)),'v4 standalone evidence matches appendix');
+  }
+  if(refreshHardening){
+    const changed=[...new Set([...git('diff','--name-only',REFRESH_BASE).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
+    check(p2012RefreshReviewPathsValid(changed),'v5 exact reporter refresh scope');
+    const {pr_review_reporter_refresh_hardening,...historical}=completion;
+    check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',REFRESH_BASE+':'+COMPLETION))),'v5 preserves all previous evidence');
+    check(JSON.stringify(refreshHardening)===JSON.stringify(await json(REFRESH_EVIDENCE)),'v5 standalone evidence matches appendix');
   }
   for(const p of git('ls-tree','-r','--name-only',BASE,'database/migrations','src').trim().split(/\r?\n/u).filter(p=>/^database\/migrations\/(?:00[1-9]|0[12][0-9]|03[01])_|^src\/p2-007/u.test(p))){
     check((await read(p)).replaceAll('\r\n','\n')===git('show',BASE+':'+p).replaceAll('\r\n','\n'),'frozen predecessor '+p);
@@ -250,10 +271,11 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
     'DONE requires approved live evidence, client confirmation, complete regressions and cleanup');
   }
   if(subHardening){const subHash=pausedHardening?historicalInputHash(PAUSED_BASE):hash;check(subHardening.runtime_input_sha256===subHash,'v3 input identity');if(includeReadinessEvidence)check(p2012SubscriptionReviewEvidenceValid(subHardening,subHash),'v3 full regression and cleanup');}
-  if(pausedHardening){check(pausedHardening.runtime_input_sha256===hash,'v4 current input identity');if(includeReadinessEvidence)check(p2012PausedReviewEvidenceValid(pausedHardening,hash),'v4 full regression and cleanup');}
+  if(pausedHardening){const pausedHash=refreshHardening?historicalInputHash(REFRESH_BASE):hash;check(pausedHardening.runtime_input_sha256===pausedHash,'v4 input identity');if(includeReadinessEvidence)check(p2012PausedReviewEvidenceValid(pausedHardening,pausedHash),'v4 full regression and cleanup');}
+  if(refreshHardening){check(refreshHardening.runtime_input_sha256===hash,'v5 current input identity');if(includeReadinessEvidence)check(p2012RefreshReviewEvidenceValid(refreshHardening,hash),'v5 full regression and cleanup');}
   return {task:'P2-012',state:state.p2_012_status,ok:errors.length===0,checks,errors,runtime_input_sha256:hash,
     readiness_evidence_checked:checked,completion_evidence_checked:done,review_evidence_checked:Boolean(hardening)&&includeReadinessEvidence,
     live_validation:done&&!hardening?'PASSED':'NOT_RUN',historical_live_validation:done?'PASSED':'NOT_RUN',
-    second_commit_created:subjects.length>=2,review_fix_commit_created:subjects.length>=3,http_openapi_review_fix_commit_created:subjects.length>=4,subscription_review_fix_commit_created:subjects.length>=5,paused_destination_fix_commit_created:subjects.length>=6};
+    second_commit_created:subjects.length>=2,review_fix_commit_created:subjects.length>=3,http_openapi_review_fix_commit_created:subjects.length>=4,subscription_review_fix_commit_created:subjects.length>=5,paused_destination_fix_commit_created:subjects.length>=6,reporter_refresh_fix_commit_created:subjects.length>=7};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){try{const r=await validateP2012();console.log(JSON.stringify(r));if(!r.ok)process.exitCode=1;}catch{console.log(JSON.stringify({task:'P2-012',ok:false,error_code:'P2_012_VALIDATION_FAILED'}));process.exitCode=1;}}

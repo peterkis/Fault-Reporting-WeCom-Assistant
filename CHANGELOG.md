@@ -292,3 +292,8 @@
 ## 2026-09-08 — P2-012 paused destination replacement
 
 暂停订阅恢复时也加载 Subscription-scoped 目的地选择器，可显式选择新的有效单聊渠道。真实浏览器验证暂停、旧渠道过期、新渠道出现、单次恢复提交与持久化 ACTIVE；保持后端授权/保留期检查不变。
+
+## 2026-09-08 - Reporter refresh review hardening
+
+- Reporter 仅在时间线与公共故障里程碑完成渲染后保存 ETag；瞬时失败保留旧 ETag，以便下一次轮询重新获取并恢复。
+- 浏览器故障注入覆盖里程碑新增与移除、一次 503 后恢复及正常 304；历史现场与 review 证据保持不变。
