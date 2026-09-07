@@ -280,3 +280,7 @@
 ### Source Preservation
 
 - 原始文档保留在 `source/企业微信智能机器人方案.docx`。
+
+## 2026-09-07 — P2-012 PR #6 HTTP / OpenAPI hardening
+
+保留失败命令收据的稳定 HTTP 分类；通知入队失败与同 ID 重放返回 503，UI 提示刷新权威状态后显式操作。两个 OpenAPI 文档声明 Subscription-scoped canonical direct-destinations GET，保留 ADMIN Incident-level 诊断读取。独立 v2 Evidence、路径门禁与真实数据库/HTTP/浏览器回归；P2-012 仍 DONE，P2-G2/P2-008 未授权。

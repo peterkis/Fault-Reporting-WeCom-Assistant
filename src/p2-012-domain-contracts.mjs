@@ -11,6 +11,30 @@ export const ACTIONS=Object.freeze(['START_REVIEW','REJECT_CANDIDATE','EXPIRE_CA
 export const LIMITS=Object.freeze({pool:4,list:30,maximumList:100,events:200,sse:32});
 export const ERROR_CODES=Object.freeze(["P2_012_COMMAND_CONFLICT","P2_012_COMMAND_FAILED","P2_012_CURSOR_INVALID","P2_012_DIRECT_DESTINATION_REQUIRED","P2_012_DISABLED","P2_012_EXPIRY_CONFLICT","P2_012_FLAG_INVALID","P2_012_FORBIDDEN","P2_012_INPUT_INVALID","P2_012_LIMIT_INVALID","P2_012_LIVE_APPROVAL_REQUIRED","P2_012_NOTIFICATION_EVENT_INVALID","P2_012_NOTIFICATION_FAILED","P2_012_NOT_FOUND","P2_012_OWNER_INVALID","P2_012_PRIMARY_NOT_LINKED","P2_012_PRIMARY_STILL_LINKED","P2_012_REPORT_ALREADY_LINKED","P2_012_SOURCE_CONFLICT","P2_012_SOURCE_EVIDENCE_INCOMPLETE","P2_012_SOURCE_NOT_FOUND","P2_012_STATE_CONFLICT","P2_012_TICKET_ALREADY_LINKED","P2_012_VERSION_CONFLICT"]);
 export function fail(code='INPUT_INVALID',status=400){const value='P2_012_'+code;throw new WorkbenchError(ERROR_CODES.includes(value)?value:'P2_012_INPUT_INVALID',status);}
+const HTTP_ERROR_STATUS=Object.freeze(Object.fromEntries(Object.entries({
+  400:['INPUT_INVALID','LIMIT_INVALID','CURSOR_INVALID'],
+  403:['FORBIDDEN','LIVE_APPROVAL_REQUIRED'],
+  404:['NOT_FOUND','SOURCE_NOT_FOUND'],
+  409:['COMMAND_CONFLICT','VERSION_CONFLICT','STATE_CONFLICT','EXPIRY_CONFLICT','SOURCE_CONFLICT','OWNER_INVALID',
+    'PRIMARY_NOT_LINKED','PRIMARY_STILL_LINKED','REPORT_ALREADY_LINKED','TICKET_ALREADY_LINKED','DIRECT_DESTINATION_REQUIRED','SOURCE_EVIDENCE_INCOMPLETE'],
+  503:['NOTIFICATION_FAILED','COMMAND_FAILED','NOTIFICATION_EVENT_INVALID','DISABLED','FLAG_INVALID'],
+}).flatMap(([status,codes])=>codes.map(code=>['P2_012_'+code,Number(status)]))));
+export function p2012HttpStatusForErrorCode(code){
+  return typeof code==='string'&&Object.hasOwn(HTTP_ERROR_STATUS,code)?HTTP_ERROR_STATUS[code]:503;
+}
+export function p2012HttpStatusForCommandResult(result){
+  try{
+    const r=snapshot(result);
+    if(r?.ok===false){
+      exact(r,['ok','error','replayed']);exact(r.error,['code','retryable']);
+      if(typeof r.replayed!=='boolean'||r.error.retryable!==false)return 503;
+      return p2012HttpStatusForErrorCode(r.error.code);
+    }
+    exact(r,['ok','result_ref_type','result_ref_id','result_row_version','result_event_id','replayed']);
+    if(r.ok!==true||typeof r.replayed!=='boolean'||!['INCIDENT','CANDIDATE'].includes(r.result_ref_type))return 503;
+    uuid(r.result_ref_id);uuid(r.result_event_id);version(r.result_row_version);return 200;
+  }catch{return 503;}
+}
 export function snapshot(value){try{return assertPlainJson(value,{maxDepth:12,maxNodes:12000,maxArrayLength:1000,maxStringLength:4096});}catch{fail();}}
 export const frozen=value=>deepFreeze(snapshot(value));
 export function exact(input,keys,required=keys){const v=snapshot(input);if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).some(k=>!keys.includes(k))||required.some(k=>!Object.hasOwn(v,k)))fail();return v;}

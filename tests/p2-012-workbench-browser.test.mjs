@@ -23,6 +23,16 @@ for(const [width,height] of [[1440,900],[1366,768],[390,844]])test('P2-012 datab
       assert.equal(await browser.evaluate("document.querySelector('#detail').textContent.includes('P2-015 Decision')&&document.querySelector('#detail').textContent.includes('Manual Review')"),true);
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
       await browser.pressTab();assert.notEqual(await browser.evaluate('document.activeElement.tagName'),'BODY');
+      await browser.evaluate(`window.originalFetch=window.fetch;window.postCount=0;window.readCount=0;
+        window.fetch=async(path,options)=>{if(options?.method==='POST'){window.postCount++;return new Response(JSON.stringify({ok:false,error:{code:'P2_012_NOTIFICATION_FAILED',retryable:false},replayed:false}),{status:503});}
+          window.readCount++;return window.originalFetch(path,options);};`);
+      await click('开始审核');await click('确认：开始审核');
+      await browser.waitFor("document.querySelector('#status').textContent.includes('服务暂时不可用')&&!document.querySelector('#detail form')");
+      assert.equal(await browser.evaluate("document.querySelector('#status').textContent.includes('版本或状态已变化')||document.querySelector('#status').textContent.includes('已提交')"),false);
+      assert.equal(await browser.evaluate("document.querySelector('#detail').textContent.includes('待审核')"),true);
+      assert.equal(await browser.evaluate('window.postCount'),1);assert.ok(await browser.evaluate('window.readCount')>=2);
+      assert.equal((await pool.query('SELECT row_version::text FROM incident.candidate_review WHERE id=$1',[candidate.id])).rows[0].row_version,'1');
+      await browser.evaluate('window.fetch=window.originalFetch');
       await click('开始审核');assert.equal(await browser.evaluate("document.querySelector('select[name=reason_code]').required"),true);await click('确认：开始审核');
       await browser.waitFor("Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='确认公共故障')");
       await click('确认公共故障');
@@ -35,10 +45,16 @@ for(const [width,height] of [[1440,900],[1366,768],[390,844]])test('P2-012 datab
       await click('进行中的公共故障');await browser.waitFor("document.querySelector('#list strong')?.textContent.startsWith('INC-')");
       await browser.evaluate("document.querySelector('#list button').click()");await browser.waitFor("document.querySelector('#detail').textContent.includes('个人上报与恢复')");
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
+      await browser.evaluate(`window.destinationPaths=[];window.fetch=(path,options)=>{if(String(path).includes('direct-destinations'))window.destinationPaths.push(path);return window.originalFetch(path,options);};`);
+      await browser.waitFor("Array.from(document.querySelectorAll('#detail button')).some(b=>b.textContent==='恢复通知')");
+      await click('恢复通知');await browser.waitFor("Array.from(document.querySelectorAll('#detail label')).some(n=>n.textContent.includes('选择已验证的本人单聊报修渠道'))");
+      const destinations=await browser.evaluate('window.destinationPaths');assert.equal(destinations.length,1);
+      assert.match(destinations[0],/^\/api\/incidents\/[a-f0-9-]{36}\/subscriptions\/[a-f0-9-]{36}\/direct-destinations\?limit=100$/u);
+      await click('取消');await browser.evaluate('window.fetch=window.originalFetch');
       await click('开始调查处理');await click('确认：开始调查处理');await browser.waitFor("document.querySelector('#detail').textContent.includes('调查处理中')");
       await browser.evaluate('location.reload()',{awaitPromise:false});await browser.waitFor("document.querySelector('#detail').textContent.includes('调查处理中')");
       assert.equal(await browser.evaluate("document.querySelectorAll('#detail script,#detail img').length"),0);
-      await mkdir('evidence/p2-012-browser',{recursive:true});await writeFile('evidence/p2-012-browser/workbench-'+width+'x'+height+'.png',Buffer.from(await browser.screenshot(),'base64'));
+      await mkdir('tmp/p2012-http-openapi-browser',{recursive:true});await writeFile('tmp/p2012-http-openapi-browser/workbench-'+width+'x'+height+'.png',Buffer.from(await browser.screenshot(),'base64'));
       await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[f.admin.id]);
       await click('刷新');await browser.waitFor("document.querySelector('#status').textContent.includes('访问')");
     }finally{await browser?.close();await runtime.stop();}

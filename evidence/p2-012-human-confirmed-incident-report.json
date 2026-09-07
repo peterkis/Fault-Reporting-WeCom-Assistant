@@ -259,5 +259,303 @@
       "sensitive_match_count": 0,
       "raw_values_printed": false
     }
+  },
+  "pr_review_http_openapi_hardening": {
+    "task": "P2-012",
+    "date": "2026-09-07",
+    "timezone": "Asia/Shanghai",
+    "baseline_commit": "14557b9f6191a08434652550127f42360c97bffe",
+    "commit_subject": "fix(p2): preserve service errors and align destination OpenAPI",
+    "review_comment_ids": [
+      3948007171,
+      3948007180
+    ],
+    "status": "PASS",
+    "runtime_input_sha256": "b4019636255f66dc4367013de7b7175f7e9b0746f8af7042987543a13aa2b536",
+    "live_validation": "NOT_RUN",
+    "openapi_sha256": {
+      "contracts/openapi.yaml": "63e39f90e376da5a8729f67e5ab7818d8915dabc169ccc870aa1687bb467d164",
+      "contracts/conversation_center.openapi.yaml": "675ff62443339a56017745b5f584c68f98c267bc428c0e1885dcbaac052d535f"
+    },
+    "regression": {
+      "tests": 570,
+      "pass": 570,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 672469.4451,
+      "exit_code": 0,
+      "raw_tap_path": "tmp/p2012-http-openapi/full.tap",
+      "raw_tap_sha256": "6554fd3186d43b10b25b20b72263e7c804be6fd558ce8713a7f90bbb7e11a05c",
+      "embedded_tap_sha256": "3736b435cb790efb61b418a3aba21f3b5fb803bf5315a067002fb2fc5cdc5e3a"
+    },
+    "cleanup": {
+      "database_count": 0,
+      "backend_count": 0,
+      "child_count": 0,
+      "new_node_process_count": 17,
+      "browser_process_count": 0,
+      "listener_count": 0,
+      "browser_profile_count": 0,
+      "retained_non_profile_files": 23,
+      "retained_screenshots": 3,
+      "unrelated_host_node_processes_retained": true,
+      "scope": "P2-012 test runtimes; host Codex/MCP processes are not test children",
+      "historical_protected_directories_touched": false,
+      "historical_356_non_profile_files_touched": false,
+      "retained_temp_root": "tmp/p2012-http-openapi"
+    },
+    "baseline_red": {
+      "test": "actual HTTP preserves notification failure",
+      "actual_http_status": 409,
+      "expected_http_status": 503,
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "exit_code": 1
+    },
+    "boundaries": {
+      "p2_012": "DONE",
+      "p2_g2": "NOT_STARTED",
+      "p2_008": "TODO_BLOCKED_BY_P2_G2",
+      "persistent_feature_flags": "ALL_FALSE",
+      "ai_calls": 0,
+      "ocr_calls": 0,
+      "rag_calls": 0,
+      "automatic_incident_creation": 0,
+      "automatic_ticket_link": 0,
+      "live_send": false,
+      "push": false,
+      "merge": false,
+      "tag": false,
+      "release": false
+    },
+    "targeted": {
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 28210.1931,
+      "exit_code": 0,
+      "raw_tap_path": "tmp/p2012-http-openapi/targeted-ready.tap",
+      "raw_tap_sha256": "268d86acb04912000a5ae1960fc148e1638df74ac9b6e056d903d787e02ea1ed",
+      "embedded_tap_sha256": "698f1745755b8eadb879d3c1eb2bfa2b2d13a9e8a8be880776d7e4594f94fcbb"
+    },
+    "security_scan": {
+      "files_checked": 19,
+      "sensitive_values_checked": 5,
+      "sensitive_match_count": 0,
+      "matches": [],
+      "raw_values_printed": false
+    },
+    "stable_error_http_status": {
+      "P2_012_COMMAND_CONFLICT": 409,
+      "P2_012_COMMAND_FAILED": 503,
+      "P2_012_CURSOR_INVALID": 400,
+      "P2_012_DIRECT_DESTINATION_REQUIRED": 409,
+      "P2_012_DISABLED": 503,
+      "P2_012_EXPIRY_CONFLICT": 409,
+      "P2_012_FLAG_INVALID": 503,
+      "P2_012_FORBIDDEN": 403,
+      "P2_012_INPUT_INVALID": 400,
+      "P2_012_LIMIT_INVALID": 400,
+      "P2_012_LIVE_APPROVAL_REQUIRED": 403,
+      "P2_012_NOTIFICATION_EVENT_INVALID": 503,
+      "P2_012_NOTIFICATION_FAILED": 503,
+      "P2_012_NOT_FOUND": 404,
+      "P2_012_OWNER_INVALID": 409,
+      "P2_012_PRIMARY_NOT_LINKED": 409,
+      "P2_012_PRIMARY_STILL_LINKED": 409,
+      "P2_012_REPORT_ALREADY_LINKED": 409,
+      "P2_012_SOURCE_CONFLICT": 409,
+      "P2_012_SOURCE_EVIDENCE_INCOMPLETE": 409,
+      "P2_012_SOURCE_NOT_FOUND": 404,
+      "P2_012_STATE_CONFLICT": 409,
+      "P2_012_TICKET_ALREADY_LINKED": 409,
+      "P2_012_VERSION_CONFLICT": 409
+    },
+    "http_notification_failure": {
+      "actual_server_and_postgresql": true,
+      "fault": "Second Communication append returns a conflict at the existing readExistingCommand seam; first append writes real facts",
+      "first_status": 503,
+      "error_code": "P2_012_NOTIFICATION_FAILED",
+      "failed_receipt_count": 1,
+      "retryable": false,
+      "rollback_delta": {
+        "incident": 0,
+        "report": 0,
+        "event": 0,
+        "subscription": 0,
+        "binding": 0,
+        "message": 0,
+        "outbox": 0,
+        "delivery": 0,
+        "realtime_event": 0
+      },
+      "candidate_status": "UNDER_REVIEW",
+      "candidate_version": "2",
+      "replay_status": 503,
+      "replayed": true,
+      "replay_additional_append_calls": 0,
+      "recovery_uses_new_command_id": true,
+      "recovery_status": 200,
+      "recovery_confirmation_facts": {
+        "incidents": 1,
+        "reports": 4,
+        "subscriptions": 4,
+        "notification_bindings": 3,
+        "messages": 3,
+        "outboxes": 3,
+        "deliveries": 3
+      },
+      "version_conflict_status": 409,
+      "state_conflict_status": 409,
+      "role_denied_status": 403,
+      "missing_resource_status": 404,
+      "invalid_input_status": 400
+    },
+    "nested_route": {
+      "path": "/api/incidents/{incidentId}/subscriptions/{subscriptionId}/direct-destinations",
+      "operation_id": "listP2012SubscriptionDirectDestinations",
+      "documents_each_occurrence": 1,
+      "parser": "installed Python / PyYAML 6.0.3; UTF-8 input; full document and duplicate path keys parsed",
+      "admin_status": 200,
+      "dispatcher_status": 403,
+      "handler_status": 403,
+      "inaccessible_incident_status": 404,
+      "unknown_or_other_incident_subscription": {
+        "status": 200,
+        "items": []
+      },
+      "safe_item_fields": [
+        "id",
+        "subscription_id",
+        "source_intake_no"
+      ],
+      "page_fields": [
+        "items",
+        "next_cursor"
+      ],
+      "limit": {
+        "default": 30,
+        "min": 1,
+        "max": 100
+      },
+      "cursor_max_length": 2048,
+      "outer_oversized_uri_status": 414,
+      "incident_level_route_retained": true,
+      "ui_uses_nested_route": true,
+      "actual_subscription_and_incident_isolation": true,
+      "generated_client_discovery": "GET path, operationId, parameters and resolvable security schemes are present; no client generation/build was executed; existing description-only response style retained"
+    },
+    "ui": {
+      "viewports": [
+        [
+          1440,
+          900
+        ],
+        [
+          1366,
+          768
+        ],
+        [
+          390,
+          844
+        ]
+      ],
+      "injected_http_status": 503,
+      "authoritative_database_refetch": true,
+      "observed_post_count": 1,
+      "automatic_retry": false,
+      "optimistic_success": false,
+      "message": "服务暂时不可用，本次业务未提交。请刷新确认状态后稍后重试。",
+      "unknown_network_reconciliation_unchanged": true
+    },
+    "targeted_development_failure": {
+      "tests": 15,
+      "pass": 14,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 21597.8473,
+      "exit_code": 1,
+      "raw_tap_path": "tmp/p2012-http-openapi/targeted.tap",
+      "raw_tap_sha256": "20705777c46acb8744ef293de0c80a2264a1bb797bb5d7ce48f7ec35c927078d",
+      "embedded_tap_sha256": "b390cff19f1540ab10cd80403339388b240dae9732a9dc74b4abb2e6ff2ed772",
+      "cause": "New subscription activation browser probe clicked before the asynchronously loaded button existed",
+      "fix": "Wait for the existing button within the unchanged browser timeout; no original assertion removed"
+    },
+    "frozen_paths_proof": {
+      "baseline_commit": "14557b9f6191a08434652550127f42360c97bffe",
+      "git_diff_exit_code": 0,
+      "migrations_001_through_032_unchanged": true,
+      "database_catalog_sources_unchanged": true,
+      "p2_007_unchanged": true,
+      "direct_leg_unchanged": true,
+      "candidate_maintenance_unchanged": true,
+      "command_transaction_unchanged": true,
+      "notification_policy_unchanged": true,
+      "query_unchanged": true,
+      "live_evidence_unchanged": true,
+      "owner_approval_unchanged": true,
+      "historical_screenshots_unchanged": true,
+      "v1_evidence_sha256": "46893a985f41615d21010273e84ecdba6d69b703415037f8bbfc5114193ffc1d",
+      "original_completion_and_v1_appendix_unchanged": true
+    },
+    "modified_files": [
+      "CHANGELOG.md",
+      "FILE_INDEX.md",
+      "MANIFEST.json",
+      "contracts/conversation_center.openapi.yaml",
+      "contracts/openapi.yaml",
+      "evidence/p2-012-human-confirmed-incident-report.json",
+      "evidence/p2-012-pr-review-http-openapi-hardening.json",
+      "evidence/p2-012-pr-review-http-openapi-hardening.md",
+      "scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "src/p2-012-domain-contracts.mjs",
+      "src/p2-012-workbench-http.mjs",
+      "tests/p2-012-domain-contracts.test.mjs",
+      "tests/p2-012-schema-live-guards.test.mjs",
+      "tests/p2-012-workbench-browser.test.mjs",
+      "tests/p2-012-workbench.integration.test.mjs",
+      "web/p2-workbench/incidents.js"
+    ],
+    "database_changes": "NONE; isolated tests apply existing migrations only; no new catalog objects in the application baseline",
+    "resource_limits": "No new resident process, timer, worker, pool or socket; isolated harness max=4; serial tests",
+    "rollback": "Keep the three persistent Incident flags false to disable the feature. No down migration. Reverting the fourth commit would be a separate authorized action.",
+    "persistent_flags_check": {
+      "canonical_count": 20,
+      "canonical_all_false": true,
+      "configured_true_count": 0,
+      "invalid_boolean_count": 0
+    },
+    "static_gates": {
+      "status": "PASS",
+      "exit_codes": {
+        "p2_012": 0,
+        "p2_016": 0,
+        "arch_006": 0,
+        "v1_4": 0,
+        "v1_4_tests": 0
+      },
+      "p2_012_checks": 247,
+      "p2_016_checks": 146,
+      "p2_016_verification_revision": "30a394e85973f5a300b841b23d2c358998796ba6",
+      "arch_006_checks": 260,
+      "v1_4_checks": 403,
+      "v1_4_tests": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "exit_code": 0
+      }
+    }
   }
 }

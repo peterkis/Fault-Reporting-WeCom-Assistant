@@ -19,7 +19,7 @@ async function execute(path,body,id=crypto.randomUUID()){
   if(busy||stopped)return;busy=true;editing=false;
   const controls=[...$('detail').querySelectorAll('button,select,input')];controls.forEach(x=>x.disabled=true);
   try{await api(path,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':id,'X-CSRF-Token':bootstrap.csrf_token??'','If-Match':'"'+(body.expected_candidate_version??body.expected_row_version)+'"'},body:JSON.stringify({...body,client_command_id:id})});retry=null;say('已提交；状态与通知以持久记录为准。');}
-  catch(e){if(!e.status){retry={path,body,id};say('响应未确认，请核对同一命令，不要重复操作。');}else{retry=null;say(e.status===409?'版本或状态已变化，请刷新后重新核对。':e.status===403?'当前坐席无权执行。':'操作未完成。');}}
+  catch(e){if(!e.status){retry={path,body,id};say('响应未确认，请核对同一命令，不要重复操作。');}else{retry=null;say(e.status===409?'版本或状态已变化，请刷新后重新核对。':e.status===403?'当前坐席无权执行。':e.status===503?'服务暂时不可用，本次业务未提交。请刷新确认状态后稍后重试。':'操作未完成。');}}
   finally{busy=false;$('retry').hidden=!retry;controls.forEach(x=>x.disabled=false);if(!stopped)await refresh();}
 }
 const reasonOptions=[['','请选择原因'],['OPERATOR_REVIEWED','已核对并执行'],['CONFIRMED_SHARED_FAULT','确认共享故障'],['INCORRECT_ASSOCIATION','纠正错误关联'],['RECOVERY_CONFIRMED','已确认个人恢复'],['SUBSCRIPTION_REQUEST','订阅人明确请求'],['SCOPE_CORRECTION','纠正影响范围'],['WORKBENCH_CONFIRMED','工作台人工确认']];

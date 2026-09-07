@@ -2,10 +2,42 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch,p2012ReviewPathsValid,p2012ReviewHardeningValid } from '../scripts/validate-p2-012-human-confirmed-incident.mjs';
+import { execFileSync } from 'node:child_process';
+import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch,p2012ReviewPathsValid,p2012ReviewHardeningValid,p2012HttpOpenApiHardeningPathsValid,p2012HttpOpenApiHardeningEvidenceValid } from '../scripts/validate-p2-012-human-confirmed-incident.mjs';
 import { checkP2012Live } from '../scripts/p2-012-live-check.mjs';
 import { p2012LiveDuration } from '../scripts/p2-012-live-e2e.mjs';
 import { P2012_LIVE_FUSES,readP2012LiveConfiguration } from '../src/p2-012-live-configuration.mjs';
+
+test('P2-012 both parsed OpenAPI documents declare canonical subscription destinations and service failures',async()=>{
+  const path='/api/incidents/{incidentId}/subscriptions/{subscriptionId}/direct-destinations';
+  for(const file of ['contracts/openapi.yaml','contracts/conversation_center.openapi.yaml']){
+    const text=await readFile(file,'utf8');
+    // Installed PyYAML parses the entire document; retain duplicate path keys
+    // separately so a duplicate cannot disappear into the parsed mapping.
+    const parsed=JSON.parse(execFileSync('python',['-c',
+      'import sys,json,yaml; s=sys.stdin.buffer.read().decode("utf-8"); d=yaml.safe_load(s); n=yaml.compose(s); p=next(v for k,v in n.value if k.value=="paths"); print(json.dumps({"document":d,"paths":[k.value for k,v in p.value]}))'],{input:text,encoding:'utf8'}));
+    assert.equal(parsed.paths.filter(p=>p===path).length,1);
+    const get=parsed.document.paths[path].get;assert.ok(get);assert.equal(get.operationId,'listP2012SubscriptionDirectDestinations');
+    assert.deepEqual(get.security,[{InternalSession:[]},{InternalBearer:[]}]);assert.deepEqual(get['x-roles'],['ADMIN']);
+    assert.equal(parsed.document.components.securitySchemes.InternalSession.in,'cookie');
+    assert.equal(parsed.document.components.securitySchemes.InternalBearer.scheme,'bearer');
+    assert.equal(get['x-feature-flag'],'INCIDENT_CORRELATION_ENABLED');
+    for(const name of ['incidentId','subscriptionId'])assert.deepEqual(get.parameters.find(p=>p.name===name),{in:'path',name,required:true,schema:{type:'string',format:'uuid'}});
+    assert.deepEqual(get.parameters.find(p=>p.name==='limit').schema,{type:'integer',minimum:1,maximum:100,default:30});
+    assert.deepEqual(get.parameters.find(p=>p.name==='cursor').schema,{type:'string',maxLength:2048});
+    for(const status of [200,400,401,403,404,503])assert.deepEqual(Object.keys(get.responses[status]),['description']);
+    assert.match(get.description,/empty 200/);assert.match(get.description,/PENDING_DESTINATION/);
+    assert.ok(parsed.document.paths['/api/incidents/{incidentId}/direct-destinations'].get);
+    for(const [route,item] of Object.entries(parsed.document.paths))if(/^\/api\/(incidents|incident-candidates)(\/|$)/u.test(route)&&item.post){
+      assert.match(item.post.responses[503].description,/temporarily unavailable; business mutation was not committed/);
+      for(const status of [400,403,404,409,503])assert.ok(item.post.responses[status]);
+      assert.deepEqual(item.post.responses[409],{description:'Version, state or command conflict'});
+    }
+  }
+  const ui=await readFile('web/p2-workbench/incidents.js','utf8'),query=await readFile('src/p2-012-incident-query.mjs','utf8');
+  assert.ok(ui.includes("root+'/subscriptions/'+s.id+'/direct-destinations?limit=100'"));
+  assert.ok(query.includes('subscriptions\\/([a-f0-9-]{36})\\/direct-destinations'));
+});
 
 test('P2-012 static authorization, frozen predecessors, scope, schemas and synthetic fixture gate',async()=>{
   const r=await validateP2012({includeReadinessEvidence:false});assert.deepEqual(r.errors,[]);assert.ok(r.checks>=150);
@@ -79,4 +111,26 @@ test('P2-012 review hardening preserves exact paths and requires independent cur
   for(const key of ['exit_code','fail','cancelled','skipped','todo'])assert.equal(p2012ReviewHardeningValid({...good,regression:{...good.regression,[key]:1}},hash),false);
   assert.equal(p2012ReviewHardeningValid({...good,regression:{...good.regression,tests:560,pass:560}},hash),false);
   for(const key of Object.keys(good.cleanup))assert.equal(p2012ReviewHardeningValid({...good,cleanup:{...good.cleanup,[key]:1}},hash),false);
+});
+
+test('P2-012 v2 HTTP OpenAPI hardening has an independent closed allowlist and complete regression gate',()=>{
+  assert.equal(p2012HttpOpenApiHardeningPathsValid(['src/p2-012-domain-contracts.mjs','contracts/openapi.yaml']),true);
+  for(const path of ['database/migrations/032_p2_012_human_confirmed_incident.sql','database/schema_draft.sql',
+    'src/p2-012-incident-command-service.mjs','src/p2-012-notification-policy.mjs','src/p2-012-incident-query.mjs',
+    'src/p2-012-workbench-assembly.mjs','src/p2-012-live-reporter-scope.mjs','src/p2-016-ticket-notification-projector.mjs',
+    'src/p2-007-domain-utils.mjs','evidence/p2-012-pr-review-hardening.md','evidence/p2-012-project-owner-approval.md',
+    'evidence/p2-012-targeted-live-validation.json','plans/current_phase.json'])assert.equal(p2012HttpOpenApiHardeningPathsValid([path]),false);
+  assert.equal(p2012HttpOpenApiHardeningPathsValid([]),false);
+  assert.equal(p2012HttpOpenApiHardeningPathsValid(['contracts/openapi.yaml','contracts/openapi.yaml']),false);
+  const hash='a'.repeat(64),good={baseline_commit:'14557b9f6191a08434652550127f42360c97bffe',
+    commit_subject:'fix(p2): preserve service errors and align destination OpenAPI',status:'PASS',runtime_input_sha256:hash,
+    live_validation:'NOT_RUN',review_comment_ids:[3948007171,3948007180],
+    regression:{exit_code:0,tests:566,pass:566,fail:0,cancelled:0,skipped:0,todo:0},
+    cleanup:{database_count:0,backend_count:0,child_count:0,listener_count:0,browser_process_count:0,browser_profile_count:0}};
+  assert.equal(p2012HttpOpenApiHardeningEvidenceValid(good,hash),true);
+  for(const patch of [{baseline_commit:'wrong'},{commit_subject:'wrong'},{status:'VALIDATING'},{runtime_input_sha256:'b'.repeat(64)},
+    {review_comment_ids:[3948007171]},{live_validation:'PASSED'}])assert.equal(p2012HttpOpenApiHardeningEvidenceValid({...good,...patch},hash),false);
+  for(const key of ['exit_code','fail','cancelled','skipped','todo'])assert.equal(p2012HttpOpenApiHardeningEvidenceValid({...good,regression:{...good.regression,[key]:1}},hash),false);
+  for(const patch of [{tests:565,pass:565},{pass:565},{tests:567}])assert.equal(p2012HttpOpenApiHardeningEvidenceValid({...good,regression:{...good.regression,...patch}},hash),false);
+  for(const key of Object.keys(good.cleanup))assert.equal(p2012HttpOpenApiHardeningEvidenceValid({...good,cleanup:{...good.cleanup,[key]:1}},hash),false);
 });

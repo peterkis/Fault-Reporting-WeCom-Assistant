@@ -1,4 +1,4 @@
-import { guard,fail,exact } from './p2-012-domain-contracts.mjs';
+import { guard,fail,p2012HttpStatusForCommandResult } from './p2-012-domain-contracts.mjs';
 const ROUTES=Object.freeze({'start-review':'START_REVIEW',reject:'REJECT_CANDIDATE',confirm:'CONFIRM_INCIDENT',
   'start-investigating':'START_INVESTIGATING','correct-scope':'CORRECT_SCOPE','primary-ticket':'SET_PRIMARY_TICKET',
   'reports/link':'LINK_REPORT',resolve:'RESOLVE_INCIDENT',close:'CLOSE_INCIDENT'});
@@ -28,7 +28,7 @@ export function createP2012WorkbenchHttp({query,commands,enabled=false}){
       if(!action||candidate!==['START_REVIEW','REJECT_CANDIDATE','CONFIRM_INCIDENT'].includes(action))fail('NOT_FOUND',404);
       if(['action','incident_id','candidate_review_id','incident_report_id','subscription_id'].some(k=>Object.hasOwn(body,k)))fail();
       const result=await commands.perform({authContext,command:{...body,...extra,action,[candidate?'candidate_review_id':'incident_id']:match[1]}});
-      json(response,result.ok?200:409,result);return true;
+      json(response,p2012HttpStatusForCommandResult(result),result);return true;
     }
     fail('NOT_FOUND',404);
   };

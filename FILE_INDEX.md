@@ -299,3 +299,5 @@
 - evidence/p2-012-project-owner-approval.md、p2-012-human-confirmed-incident-report.md / .json：负责人批准与完成态。
 - evidence/p2-012-closeout-regression.tap：DONE 完成态 561/561 全量回归原始结果。
 - evidence/p2-012-closeout-regression-failure.tap、p2-012-closeout-reconnect-diagnostic.tap：保留的 560/561 重连超时与精确 1/1 诊断证据。
+
+- evidence/p2-012-pr-review-http-openapi-hardening.md / .json：PR #6 第二轮 HTTP 分类、Subscription 目的地 OpenAPI 与独立回归证据。
