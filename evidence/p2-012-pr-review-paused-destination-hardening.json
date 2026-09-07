@@ -1,0 +1,102 @@
+{
+  "baseline_commit": "711269b8780e8edfad3011e78df5e2e6e986c9af",
+  "commit_subject": "fix(p2): replace paused subscription destinations",
+  "review_comment_id": 3951285976,
+  "status": "PASS",
+  "runtime_input_sha256": "94b988e47ce96859acdd9333808c2b8a1db27cdee54c583b19d4aae6eb29dddc",
+  "live_validation": "NOT_RUN",
+  "regression": {
+    "tests": 575,
+    "pass": 575,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 705259.2772,
+    "exit_code": 0,
+    "tap": "tmp/p2012-review4/full.tap",
+    "sha256": "614a35e04c52b6a77f89df2a41dd663ac8019a97d68228e473a4a836b80b829a",
+    "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 --test-reporter=tap tests/*.test.mjs"
+  },
+  "cleanup": {
+    "database_count": 0,
+    "backend_count": 0,
+    "browser_profile_count": 0,
+    "browser_process_count": 0,
+    "child_count": 0,
+    "listener_count": 0
+  },
+  "authorization": "Continued user goal: address all PR6 P2 findings, reply/resolve, obtain fresh clean Codex review and merge.",
+  "boundaries": {
+    "p2_012": "DONE",
+    "p2_g2": "NOT_STARTED",
+    "p2_008": "BLOCKED_BY_P2_G2",
+    "persistent_flags": "ALL_FALSE",
+    "live_send": false,
+    "ai_ocr_rag_calls": 0,
+    "migration_changes": 0
+  },
+  "targeted": {
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 36477.7005,
+    "exit_code": 0,
+    "tap": "tmp/p2012-review4/targeted.tap",
+    "sha256": "9425f1b84ed1bb11cc35f93d62964c09194ed789b62def3de60ce6286fcbb205"
+  },
+  "fix": "PAUSED and PENDING_DESTINATION both load the existing nested server-filtered destination chooser before resume. No backend or migration changes.",
+  "browser_validation": {
+    "viewports": [
+      "1440x900",
+      "1366x768",
+      "390x844"
+    ],
+    "baseline_red": "Paused subscription did not display the destination chooser (false !== true).",
+    "green": "For each viewport: pause active subscription, expire old Journey, create fresh direct leg for same synthetic Reporter via real orchestrator, offer only fresh leg, submit exactly one POST with both expected versions 2, verify ACTIVE and new leg in PostgreSQL."
+  },
+  "modified_files": [
+    "CHANGELOG.md",
+    "FILE_INDEX.md",
+    "MANIFEST.json",
+    "evidence/p2-012-human-confirmed-incident-report.json",
+    "evidence/p2-012-pr-review-paused-destination-hardening.json",
+    "evidence/p2-012-pr-review-paused-destination-hardening.md",
+    "scripts/validate-p2-012-human-confirmed-incident.mjs",
+    "tests/p2-012-schema-live-guards.test.mjs",
+    "tests/p2-012-workbench-browser.test.mjs",
+    "web/p2-workbench/incidents.js"
+  ],
+  "frozen": {
+    "previous_evidence": true,
+    "original_completion_except_new_appendix": true,
+    "migrations_001_032": true,
+    "backend": true,
+    "flags": true,
+    "live_authorization": true,
+    "owner_approval": true
+  },
+  "resource_limits": "No new persistent process, pool, timer or database relation; existing isolated test pool max 4.",
+  "rollback": "Incident flags remain false; no database rollback required.",
+  "static_gates": {
+    "p2_016": 146,
+    "arch_006": 260,
+    "v1_4": 403,
+    "all_exit_codes": 0,
+    "p2_012": 259
+  },
+  "github_review": {
+    "fresh_current_head_review_required_before_merge": true,
+    "merge_method": "merge commit; preserve original commits"
+  },
+  "security_scan": {
+    "files": 12,
+    "values": 2,
+    "matches": 0,
+    "raw_values_printed": false
+  },
+  "persistent_flag_count": 20
+}

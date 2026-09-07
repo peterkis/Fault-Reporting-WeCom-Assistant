@@ -129,5 +129,6 @@
   "p2_012_targeted_live_evidence": "evidence/p2-012-targeted-live-validation.json",
   "p2_012_post_live_regression_evidence": "evidence/p2-012-post-live-regression-report.json",
   "p2_012_http_openapi_hardening_evidence": "evidence/p2-012-pr-review-http-openapi-hardening.json",
-  "p2_012_subscription_contract_review_evidence": "evidence/p2-012-pr-review-subscription-contract-hardening.json"
+  "p2_012_subscription_contract_review_evidence": "evidence/p2-012-pr-review-subscription-contract-hardening.json",
+  "p2_012_paused_destination_review_evidence": "evidence/p2-012-pr-review-paused-destination-hardening.json"
 }

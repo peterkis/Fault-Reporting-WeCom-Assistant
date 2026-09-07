@@ -288,3 +288,7 @@
 ## 2026-09-07 — P2-012 subscription / client contract review
 
 拒绝已过保留期的 Direct Leg 激活；查询、关联与通知投影沿用同一有效期边界。重新打开无可用单聊渠道的订阅时记录 PENDING_DESTINATION 周期，而非 activated。修复 TypeScript nullable cursor/owner team 类型，并在两个 OpenAPI 声明 Incident state 筛选。保留全部既有 Evidence，无 migration、真实发送或后续 Gate 启动。
+
+## 2026-09-08 — P2-012 paused destination replacement
+
+暂停订阅恢复时也加载 Subscription-scoped 目的地选择器，可显式选择新的有效单聊渠道。真实浏览器验证暂停、旧渠道过期、新渠道出现、单次恢复提交与持久化 ACTIVE；保持后端授权/保留期检查不变。

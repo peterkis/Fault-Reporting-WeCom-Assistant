@@ -75,7 +75,7 @@ async function detail(){
   if(manager){const [subs,notices]=await Promise.all([childPage(root,'subscriptions'),childPage(root,'notifications')]);if(turn!==generation)return;
     const subSection=section('个人通知订阅');for(const [i,s] of subs.items.entries()){
       const box=node('div');box.className='delivery';facts(box,[['订阅',i+1],['状态',s.status],['个人影响',s.impact_state]]);
-      if(admin&&d.status!=='CLOSED'&&s.status!=='ENDED')action(box,s.status==='ACTIVE'?'暂停通知':'恢复通知',root+'/subscriptions/'+s.id+'/'+(s.status==='ACTIVE'?'pause':'resume'),{expected_row_version:d.row_version,expected_subscription_version:s.row_version},s.status==='PENDING_DESTINATION'?async form=>{const destinations=await api(root+'/subscriptions/'+s.id+'/direct-destinations?limit=100');const direct=select(form,'选择已验证的本人单聊报修渠道',destinations.items.filter(x=>x.subscription_id===s.id).map(x=>[x.id,x.source_intake_no]));direct.required=true;return ()=>({direct_channel_leg_id:direct.value});}:null);
+      if(admin&&d.status!=='CLOSED'&&s.status!=='ENDED')action(box,s.status==='ACTIVE'?'暂停通知':'恢复通知',root+'/subscriptions/'+s.id+'/'+(s.status==='ACTIVE'?'pause':'resume'),{expected_row_version:d.row_version,expected_subscription_version:s.row_version},['PENDING_DESTINATION','PAUSED'].includes(s.status)?async form=>{const destinations=await api(root+'/subscriptions/'+s.id+'/direct-destinations?limit=100');const direct=select(form,'选择已验证的本人单聊报修渠道',destinations.items.filter(x=>x.subscription_id===s.id).map(x=>[x.id,x.source_intake_no]));direct.required=true;return ()=>({direct_channel_leg_id:direct.value});}:null);
       subSection.append(box);
     }
     pager(subSection,'subscriptions',subs);

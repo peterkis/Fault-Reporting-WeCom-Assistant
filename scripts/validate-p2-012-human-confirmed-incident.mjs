@@ -10,6 +10,18 @@ const IMPLEMENTATION='044ce68dce5422b377d27cbbb432e78f94797478';
 const REVIEW_SUBJECT='fix(p2): require direct leg and expire due incident candidates';
 const HTTP_BASE='14557b9f6191a08434652550127f42360c97bffe';
 const HTTP_SUBJECT='fix(p2): preserve service errors and align destination OpenAPI';
+const PAUSED_BASE='711269b8780e8edfad3011e78df5e2e6e986c9af';
+const PAUSED_SUBJECT='fix(p2): replace paused subscription destinations';
+const PAUSED_EVIDENCE='evidence/p2-012-pr-review-paused-destination-hardening.json';
+const pausedPaths=new Set(['CHANGELOG.md','FILE_INDEX.md','MANIFEST.json',COMPLETION,PAUSED_EVIDENCE,
+  'evidence/p2-012-pr-review-paused-destination-hardening.md','web/p2-workbench/incidents.js',
+  'tests/p2-012-workbench-browser.test.mjs','tests/p2-012-schema-live-guards.test.mjs','scripts/validate-p2-012-human-confirmed-incident.mjs']);
+export const p2012PausedReviewPathsValid=paths=>Array.isArray(paths)&&paths.length>0&&paths.every(p=>pausedPaths.has(p));
+export function p2012PausedReviewEvidenceValid(r,hash){return r?.baseline_commit===PAUSED_BASE&&r.commit_subject===PAUSED_SUBJECT
+  &&r.review_comment_id===3951285976&&r.status==='PASS'&&r.runtime_input_sha256===hash&&r.live_validation==='NOT_RUN'
+  &&Number.isSafeInteger(r.regression?.tests)&&r.regression.tests>=574&&r.regression.pass===r.regression.tests
+  &&['fail','cancelled','skipped','todo','exit_code'].every(k=>r.regression[k]===0)
+  &&['database_count','backend_count','child_count','listener_count','browser_process_count','browser_profile_count'].every(k=>r.cleanup?.[k]===0);}
 const SUB_BASE='21414a42ecc454a0079ab60801148acab0d7f247';
 const SUB_SUBJECT='fix(p2): align subscription retention and client contracts';
 const SUB_EVIDENCE='evidence/p2-012-pr-review-subscription-contract-hardening.json';
@@ -78,6 +90,7 @@ function implementationInputs(revision=IMPLEMENTATION){
   }
   return files;
 }
+function historicalInputHash(revision){const digest=createHash('sha256');for(const [p,content] of implementationInputs(revision)){digest.update(p+'\0');digest.update(content.replaceAll('\r\n','\n'));digest.update('\0');}return digest.digest('hex');}
 export function p2012InputPaths(){return [...new Set(git('ls-files','--cached','--others','--exclude-standard').trim().split(/\r?\n/u))].filter(isInput).sort();}
 export async function p2012CandidateHash(){const h=createHash('sha256');for(const p of p2012InputPaths()){h.update(p+'\0');h.update((await read(p)).replaceAll('\r\n','\n'));h.update('\0');}return h.digest('hex');}
 export function p2012ReadinessValid(report,hash){return report?.status==='READY_FOR_TARGETED_LIVE_VALIDATION'&&report.all_automated_checks_passed===true
@@ -120,7 +133,7 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
   if(typeof includeReadinessEvidence!=='boolean')throw new Error('P2_012_VALIDATION_MODE_INVALID');
   const errors=[];let checks=0;const check=(ok,message)=>{checks++;if(!ok)errors.push(message);};
   const state=await json('plans/current_phase.json'),ready=state.p2_012_status==='READY_FOR_TARGETED_LIVE_VALIDATION',done=state.p2_012_status==='DONE';
-  const completion=done?await json(COMPLETION):null,hardening=completion?.pr_review_hardening,httpHardening=completion?.pr_review_http_openapi_hardening,subHardening=completion?.pr_review_subscription_contract_hardening;
+  const completion=done?await json(COMPLETION):null,hardening=completion?.pr_review_hardening,httpHardening=completion?.pr_review_http_openapi_hardening,subHardening=completion?.pr_review_subscription_contract_hardening,pausedHardening=completion?.pr_review_paused_destination_hardening;
   check(['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION','DONE'].includes(state.p2_012_status),'P2-012 has a recognized lifecycle state');
   const files=['MANIFEST.json','plans/current_phase.json','plans/master_backlog.json','plans/parallel_workstreams.json','tasks/master_backlog.json','project_summary.json'];
   for(const p of files){const data=await json(p),v=p==='project_summary.json'?data.project:data;
@@ -139,7 +152,9 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
         ||hardening&&subjects.length===3&&subjects[2]===REVIEW_SUBJECT&&git('rev-parse','HEAD').trim()===HTTP_BASE
         ||hardening&&httpHardening&&subjects.length===4&&subjects[2]===REVIEW_SUBJECT&&subjects[3]===HTTP_SUBJECT&&git('rev-parse','HEAD^').trim()===HTTP_BASE
         ||subHardening&&subjects.length===5&&subjects[2]===REVIEW_SUBJECT&&subjects[3]===HTTP_SUBJECT&&subjects[4]===SUB_SUBJECT
-          &&git('merge-base',SUB_BASE,'HEAD').trim()===SUB_BASE)),
+          &&git('merge-base',SUB_BASE,'HEAD').trim()===SUB_BASE
+        ||pausedHardening&&subjects.length===6&&subjects[2]===REVIEW_SUBJECT&&subjects[3]===HTTP_SUBJECT&&subjects[4]===SUB_SUBJECT&&subjects[5]===PAUSED_SUBJECT
+          &&git('merge-base',PAUSED_BASE,'HEAD').trim()===PAUSED_BASE)),
     'exact authorization, implementation and optional independently authorized review-fix commit');
   check(git('rev-parse',AUTH+'^').trim()===BASE,'first commit starts from approved P2-016 merge');
   check(git('show','-s','--format=%s',AUTH).trim()==='chore(p2): authorize P2-012 human-confirmed incident','exact authorization commit subject');
@@ -151,7 +166,7 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
     const reviewChanged=httpHardening?git('diff','--name-only',IMPLEMENTATION,HTTP_BASE).trim().split(/\r?\n/u)
       :[...git('diff','--name-only',IMPLEMENTATION).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean);
     check(p2012ReviewPathsValid(reviewChanged),'review changes stay within the exact approved path set, including all migrations and historical Evidence');
-    const {pr_review_hardening,pr_review_http_openapi_hardening,pr_review_subscription_contract_hardening,...historical}=completion;
+    const {pr_review_hardening,pr_review_http_openapi_hardening,pr_review_subscription_contract_hardening,pr_review_paused_destination_hardening,...historical}=completion;
     check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',IMPLEMENTATION+':'+COMPLETION))),'review evidence does not rewrite historical completion facts');
   }
   if(httpHardening){
@@ -159,18 +174,25 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
     const paths=subHardening?git('diff','--name-only',HTTP_BASE,SUB_BASE).trim().split(/\r?\n/u):[...new Set([...git('diff','--name-only',HTTP_BASE).trim().split(/\r?\n/u),
       ...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
     check(p2012HttpOpenApiHardeningPathsValid(paths),'v2 exact path allowlist freezes migrations 001-032, catalog, live evidence, Direct Leg and maintenance');
-    const {pr_review_http_openapi_hardening,pr_review_subscription_contract_hardening,...historical}=completion;
+    const {pr_review_http_openapi_hardening,pr_review_subscription_contract_hardening,pr_review_paused_destination_hardening,...historical}=completion;
     check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',HTTP_BASE+':'+COMPLETION))),'v2 only appends evidence and preserves all v1 and original completion facts');
     check(JSON.stringify(httpHardening)===JSON.stringify(await json(HTTP_EVIDENCE)),'v2 standalone evidence equals completion appendix');
     check((await read('evidence/p2-012-pr-review-hardening.md')).replaceAll('\r\n','\n')===git('show',HTTP_BASE+':evidence/p2-012-pr-review-hardening.md').replaceAll('\r\n','\n'),'v1 hardening evidence remains immutable');
     for(const p of ['contracts/openapi.yaml','contracts/conversation_center.openapi.yaml'])check(httpHardening.openapi_sha256?.[p]===sha((subHardening?git('show',SUB_BASE+':'+p):await read(p)).replaceAll('\r\n','\n')),'v2 exact OpenAPI hash '+p);
   }
   if(subHardening){
-    const changed=[...new Set([...git('diff','--name-only',SUB_BASE).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
+    const changed=pausedHardening?git('diff','--name-only',SUB_BASE,PAUSED_BASE).trim().split(/\r?\n/u):[...new Set([...git('diff','--name-only',SUB_BASE).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
     check(p2012SubscriptionReviewPathsValid(changed),'v3 exact subscription/client review scope');
-    const {pr_review_subscription_contract_hardening,...historical}=completion;
+    const {pr_review_subscription_contract_hardening,pr_review_paused_destination_hardening,...historical}=completion;
     check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',SUB_BASE+':'+COMPLETION))),'v3 preserves all preceding completion and review evidence');
     check(JSON.stringify(subHardening)===JSON.stringify(await json(SUB_EVIDENCE)),'v3 standalone evidence matches its appendix');
+  }
+  if(pausedHardening){
+    const changed=[...new Set([...git('diff','--name-only',PAUSED_BASE).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
+    check(p2012PausedReviewPathsValid(changed),'v4 exact UI destination replacement scope');
+    const {pr_review_paused_destination_hardening,...historical}=completion;
+    check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',PAUSED_BASE+':'+COMPLETION))),'v4 preserves all previous evidence');
+    check(JSON.stringify(pausedHardening)===JSON.stringify(await json(PAUSED_EVIDENCE)),'v4 standalone evidence matches appendix');
   }
   for(const p of git('ls-tree','-r','--name-only',BASE,'database/migrations','src').trim().split(/\r?\n/u).filter(p=>/^database\/migrations\/(?:00[1-9]|0[12][0-9]|03[01])_|^src\/p2-007/u.test(p))){
     check((await read(p)).replaceAll('\r\n','\n')===git('show',BASE+':'+p).replaceAll('\r\n','\n'),'frozen predecessor '+p);
@@ -227,10 +249,11 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
       postLive:await json('evidence/p2-012-post-live-regression-report.json'),ownerText:await read('evidence/p2-012-project-owner-approval.md'),hash:completionHash}),
     'DONE requires approved live evidence, client confirmation, complete regressions and cleanup');
   }
-  if(subHardening){check(subHardening.runtime_input_sha256===hash,'v3 current input identity');if(includeReadinessEvidence)check(p2012SubscriptionReviewEvidenceValid(subHardening,hash),'v3 full regression and cleanup');}
+  if(subHardening){const subHash=pausedHardening?historicalInputHash(PAUSED_BASE):hash;check(subHardening.runtime_input_sha256===subHash,'v3 input identity');if(includeReadinessEvidence)check(p2012SubscriptionReviewEvidenceValid(subHardening,subHash),'v3 full regression and cleanup');}
+  if(pausedHardening){check(pausedHardening.runtime_input_sha256===hash,'v4 current input identity');if(includeReadinessEvidence)check(p2012PausedReviewEvidenceValid(pausedHardening,hash),'v4 full regression and cleanup');}
   return {task:'P2-012',state:state.p2_012_status,ok:errors.length===0,checks,errors,runtime_input_sha256:hash,
     readiness_evidence_checked:checked,completion_evidence_checked:done,review_evidence_checked:Boolean(hardening)&&includeReadinessEvidence,
     live_validation:done&&!hardening?'PASSED':'NOT_RUN',historical_live_validation:done?'PASSED':'NOT_RUN',
-    second_commit_created:subjects.length>=2,review_fix_commit_created:subjects.length>=3,http_openapi_review_fix_commit_created:subjects.length>=4,subscription_review_fix_commit_created:subjects.length>=5};
+    second_commit_created:subjects.length>=2,review_fix_commit_created:subjects.length>=3,http_openapi_review_fix_commit_created:subjects.length>=4,subscription_review_fix_commit_created:subjects.length>=5,paused_destination_fix_commit_created:subjects.length>=6};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){try{const r=await validateP2012();console.log(JSON.stringify(r));if(!r.ok)process.exitCode=1;}catch{console.log(JSON.stringify({task:'P2-012',ok:false,error_code:'P2_012_VALIDATION_FAILED'}));process.exitCode=1;}}
