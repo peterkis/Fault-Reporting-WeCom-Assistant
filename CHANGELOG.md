@@ -284,3 +284,7 @@
 ## 2026-09-07 — P2-012 PR #6 HTTP / OpenAPI hardening
 
 保留失败命令收据的稳定 HTTP 分类；通知入队失败与同 ID 重放返回 503，UI 提示刷新权威状态后显式操作。两个 OpenAPI 文档声明 Subscription-scoped canonical direct-destinations GET，保留 ADMIN Incident-level 诊断读取。独立 v2 Evidence、路径门禁与真实数据库/HTTP/浏览器回归；P2-012 仍 DONE，P2-G2/P2-008 未授权。
+
+## 2026-09-07 — P2-012 subscription / client contract review
+
+拒绝已过保留期的 Direct Leg 激活；查询、关联与通知投影沿用同一有效期边界。重新打开无可用单聊渠道的订阅时记录 PENDING_DESTINATION 周期，而非 activated。修复 TypeScript nullable cursor/owner team 类型，并在两个 OpenAPI 声明 Incident state 筛选。保留全部既有 Evidence，无 migration、真实发送或后续 Gate 启动。

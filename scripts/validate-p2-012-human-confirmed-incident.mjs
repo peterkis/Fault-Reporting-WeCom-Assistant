@@ -10,6 +10,22 @@ const IMPLEMENTATION='044ce68dce5422b377d27cbbb432e78f94797478';
 const REVIEW_SUBJECT='fix(p2): require direct leg and expire due incident candidates';
 const HTTP_BASE='14557b9f6191a08434652550127f42360c97bffe';
 const HTTP_SUBJECT='fix(p2): preserve service errors and align destination OpenAPI';
+const SUB_BASE='21414a42ecc454a0079ab60801148acab0d7f247';
+const SUB_SUBJECT='fix(p2): align subscription retention and client contracts';
+const SUB_EVIDENCE='evidence/p2-012-pr-review-subscription-contract-hardening.json';
+const subPaths=new Set(['CHANGELOG.md','FILE_INDEX.md','MANIFEST.json',COMPLETION,SUB_EVIDENCE,
+  'evidence/p2-012-pr-review-subscription-contract-hardening.md','scripts/validate-p2-012-human-confirmed-incident.mjs',
+  'src/p2-012-incident-command-service.mjs','src/p2-012-incident-query.mjs','src/p2-012-notification-policy.mjs',
+  'contracts/p2_012_contracts.d.ts','contracts/openapi.yaml','contracts/conversation_center.openapi.yaml',
+  'docs/64_p2_012_reporter_subscription_recovery.md','tests/p2-012-subscription-review.integration.test.mjs',
+  'tests/p2-012-client-contract-review.test.mjs','tests/p2-012-schema-live-guards.test.mjs']);
+export const p2012SubscriptionReviewPathsValid=paths=>Array.isArray(paths)&&paths.length>0&&paths.every(p=>subPaths.has(p));
+export function p2012SubscriptionReviewEvidenceValid(r,hash){return r?.baseline_commit===SUB_BASE&&r.commit_subject===SUB_SUBJECT
+  &&r.status==='PASS'&&r.runtime_input_sha256===hash&&r.live_validation==='NOT_RUN'
+  &&JSON.stringify(r.review_comment_ids)===JSON.stringify([3950900504,3950900513,3950900523,3950900528])
+  &&Number.isSafeInteger(r.regression?.tests)&&r.regression.tests>=570&&r.regression.tests===r.regression.pass&&r.regression.exit_code===0
+  &&['fail','cancelled','skipped','todo'].every(k=>r.regression[k]===0)
+  &&['database_count','backend_count','child_count','listener_count','browser_profile_count','browser_process_count'].every(k=>r.cleanup?.[k]===0);}
 const HTTP_EVIDENCE='evidence/p2-012-pr-review-http-openapi-hardening.json';
 const httpPaths=new Set(['CHANGELOG.md','FILE_INDEX.md','MANIFEST.json',
   'contracts/openapi.yaml','contracts/conversation_center.openapi.yaml',
@@ -104,7 +120,7 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
   if(typeof includeReadinessEvidence!=='boolean')throw new Error('P2_012_VALIDATION_MODE_INVALID');
   const errors=[];let checks=0;const check=(ok,message)=>{checks++;if(!ok)errors.push(message);};
   const state=await json('plans/current_phase.json'),ready=state.p2_012_status==='READY_FOR_TARGETED_LIVE_VALIDATION',done=state.p2_012_status==='DONE';
-  const completion=done?await json(COMPLETION):null,hardening=completion?.pr_review_hardening,httpHardening=completion?.pr_review_http_openapi_hardening;
+  const completion=done?await json(COMPLETION):null,hardening=completion?.pr_review_hardening,httpHardening=completion?.pr_review_http_openapi_hardening,subHardening=completion?.pr_review_subscription_contract_hardening;
   check(['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION','DONE'].includes(state.p2_012_status),'P2-012 has a recognized lifecycle state');
   const files=['MANIFEST.json','plans/current_phase.json','plans/master_backlog.json','plans/parallel_workstreams.json','tasks/master_backlog.json','project_summary.json'];
   for(const p of files){const data=await json(p),v=p==='project_summary.json'?data.project:data;
@@ -115,13 +131,15 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
     if(done)check(v.p2_012_completed_at==='2026-09-07'&&v.p2_012_completion_evidence==='evidence/p2-012-human-confirmed-incident-report.md'
       &&v.p2_012_owner_approval_evidence==='evidence/p2-012-project-owner-approval.md',p+' links approved completion');
   }
-  const subjects=git('log','--reverse','--format=%s',BASE+'..HEAD').trim().split(/\r?\n/u);
+  const subjects=git('log','--no-merges','--reverse','--format=%s',BASE+'..HEAD').trim().split(/\r?\n/u);
   check(subjects[0]==='chore(p2): authorize P2-012 human-confirmed incident'
     &&(subjects.length===1&&git('rev-parse','HEAD').trim()===AUTH||done
       &&subjects[1]==='feat(p2): implement P2-012 human-confirmed incident and notifications'
       &&(subjects.length===2&&git('rev-parse','HEAD^').trim()===AUTH
         ||hardening&&subjects.length===3&&subjects[2]===REVIEW_SUBJECT&&git('rev-parse','HEAD').trim()===HTTP_BASE
-        ||hardening&&httpHardening&&subjects.length===4&&subjects[2]===REVIEW_SUBJECT&&subjects[3]===HTTP_SUBJECT&&git('rev-parse','HEAD^').trim()===HTTP_BASE)),
+        ||hardening&&httpHardening&&subjects.length===4&&subjects[2]===REVIEW_SUBJECT&&subjects[3]===HTTP_SUBJECT&&git('rev-parse','HEAD^').trim()===HTTP_BASE
+        ||subHardening&&subjects.length===5&&subjects[2]===REVIEW_SUBJECT&&subjects[3]===HTTP_SUBJECT&&subjects[4]===SUB_SUBJECT
+          &&git('merge-base',SUB_BASE,'HEAD').trim()===SUB_BASE)),
     'exact authorization, implementation and optional independently authorized review-fix commit');
   check(git('rev-parse',AUTH+'^').trim()===BASE,'first commit starts from approved P2-016 merge');
   check(git('show','-s','--format=%s',AUTH).trim()==='chore(p2): authorize P2-012 human-confirmed incident','exact authorization commit subject');
@@ -133,19 +151,26 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
     const reviewChanged=httpHardening?git('diff','--name-only',IMPLEMENTATION,HTTP_BASE).trim().split(/\r?\n/u)
       :[...git('diff','--name-only',IMPLEMENTATION).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean);
     check(p2012ReviewPathsValid(reviewChanged),'review changes stay within the exact approved path set, including all migrations and historical Evidence');
-    const {pr_review_hardening,pr_review_http_openapi_hardening,...historical}=completion;
+    const {pr_review_hardening,pr_review_http_openapi_hardening,pr_review_subscription_contract_hardening,...historical}=completion;
     check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',IMPLEMENTATION+':'+COMPLETION))),'review evidence does not rewrite historical completion facts');
   }
   if(httpHardening){
     check(git('merge-base',HTTP_BASE,'HEAD').trim()===HTTP_BASE,'v2 descends from the exact third PR commit');
-    const paths=[...new Set([...git('diff','--name-only',HTTP_BASE).trim().split(/\r?\n/u),
+    const paths=subHardening?git('diff','--name-only',HTTP_BASE,SUB_BASE).trim().split(/\r?\n/u):[...new Set([...git('diff','--name-only',HTTP_BASE).trim().split(/\r?\n/u),
       ...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
     check(p2012HttpOpenApiHardeningPathsValid(paths),'v2 exact path allowlist freezes migrations 001-032, catalog, live evidence, Direct Leg and maintenance');
-    const {pr_review_http_openapi_hardening,...historical}=completion;
+    const {pr_review_http_openapi_hardening,pr_review_subscription_contract_hardening,...historical}=completion;
     check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',HTTP_BASE+':'+COMPLETION))),'v2 only appends evidence and preserves all v1 and original completion facts');
     check(JSON.stringify(httpHardening)===JSON.stringify(await json(HTTP_EVIDENCE)),'v2 standalone evidence equals completion appendix');
     check((await read('evidence/p2-012-pr-review-hardening.md')).replaceAll('\r\n','\n')===git('show',HTTP_BASE+':evidence/p2-012-pr-review-hardening.md').replaceAll('\r\n','\n'),'v1 hardening evidence remains immutable');
-    for(const p of ['contracts/openapi.yaml','contracts/conversation_center.openapi.yaml'])check(httpHardening.openapi_sha256?.[p]===sha((await read(p)).replaceAll('\r\n','\n')),'v2 exact OpenAPI hash '+p);
+    for(const p of ['contracts/openapi.yaml','contracts/conversation_center.openapi.yaml'])check(httpHardening.openapi_sha256?.[p]===sha((subHardening?git('show',SUB_BASE+':'+p):await read(p)).replaceAll('\r\n','\n')),'v2 exact OpenAPI hash '+p);
+  }
+  if(subHardening){
+    const changed=[...new Set([...git('diff','--name-only',SUB_BASE).trim().split(/\r?\n/u),...git('ls-files','--others','--exclude-standard').trim().split(/\r?\n/u)].filter(Boolean))];
+    check(p2012SubscriptionReviewPathsValid(changed),'v3 exact subscription/client review scope');
+    const {pr_review_subscription_contract_hardening,...historical}=completion;
+    check(JSON.stringify(historical)===JSON.stringify(JSON.parse(git('show',SUB_BASE+':'+COMPLETION))),'v3 preserves all preceding completion and review evidence');
+    check(JSON.stringify(subHardening)===JSON.stringify(await json(SUB_EVIDENCE)),'v3 standalone evidence matches its appendix');
   }
   for(const p of git('ls-tree','-r','--name-only',BASE,'database/migrations','src').trim().split(/\r?\n/u).filter(p=>/^database\/migrations\/(?:00[1-9]|0[12][0-9]|03[01])_|^src\/p2-007/u.test(p))){
     check((await read(p)).replaceAll('\r\n','\n')===git('show',BASE+':'+p).replaceAll('\r\n','\n'),'frozen predecessor '+p);
@@ -183,8 +208,10 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
         'review candidate has its own exact input identity, separate from approved live inputs');
       if(includeReadinessEvidence)check(p2012ReviewHardeningValid(hardening,reviewHash),'review fix requires its own full serial regression and cleanup; live validation is not rerun');
       if(httpHardening){
-        check(httpHardening.baseline_commit===HTTP_BASE&&httpHardening.commit_subject===HTTP_SUBJECT&&httpHardening.runtime_input_sha256===hash,'v2 has independent current input identity');
-        if(includeReadinessEvidence)check(p2012HttpOpenApiHardeningEvidenceValid(httpHardening,hash),'v2 requires at least 566 full serial passes and independent cleanup; no live rerun');
+        let httpHash=hash;
+        if(subHardening){const digest=createHash('sha256');for(const [p,content] of implementationInputs(SUB_BASE)){digest.update(p+'\0');digest.update(content.replaceAll('\r\n','\n'));digest.update('\0');}httpHash=digest.digest('hex');}
+        check(httpHardening.baseline_commit===HTTP_BASE&&httpHardening.commit_subject===HTTP_SUBJECT&&httpHardening.runtime_input_sha256===httpHash,'v2 has independent current input identity');
+        if(includeReadinessEvidence)check(p2012HttpOpenApiHardeningEvidenceValid(httpHardening,httpHash),'v2 requires at least 566 full serial passes and independent cleanup; no live rerun');
       }
     }else for(const p of p2012InputPaths())actual.push({path:p,sha256:sha(await read(p))});
     // The old inventory hashes raw working-tree bytes (including mixed CRLF/LF).
@@ -200,9 +227,10 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
       postLive:await json('evidence/p2-012-post-live-regression-report.json'),ownerText:await read('evidence/p2-012-project-owner-approval.md'),hash:completionHash}),
     'DONE requires approved live evidence, client confirmation, complete regressions and cleanup');
   }
+  if(subHardening){check(subHardening.runtime_input_sha256===hash,'v3 current input identity');if(includeReadinessEvidence)check(p2012SubscriptionReviewEvidenceValid(subHardening,hash),'v3 full regression and cleanup');}
   return {task:'P2-012',state:state.p2_012_status,ok:errors.length===0,checks,errors,runtime_input_sha256:hash,
     readiness_evidence_checked:checked,completion_evidence_checked:done,review_evidence_checked:Boolean(hardening)&&includeReadinessEvidence,
     live_validation:done&&!hardening?'PASSED':'NOT_RUN',historical_live_validation:done?'PASSED':'NOT_RUN',
-    second_commit_created:subjects.length>=2,review_fix_commit_created:subjects.length>=3,http_openapi_review_fix_commit_created:subjects.length===4};
+    second_commit_created:subjects.length>=2,review_fix_commit_created:subjects.length>=3,http_openapi_review_fix_commit_created:subjects.length>=4,subscription_review_fix_commit_created:subjects.length>=5};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){try{const r=await validateP2012();console.log(JSON.stringify(r));if(!r.ok)process.exitCode=1;}catch{console.log(JSON.stringify({task:'P2-012',ok:false,error_code:'P2_012_VALIDATION_FAILED'}));process.exitCode=1;}}

@@ -11,3 +11,5 @@ ReporterSubscription 在 Incident + P2-015 reporter_identity_hash 上唯一。�
 Reporter 身份继续由 P2-016 一次性 HMAC grant 和绑定 session 校验。Incident Adapter 只接收已认证 Ticket ID，输出当前仍 LINKED 报告对应的公共确认/调查/恢复/关闭四类里程碑，最多最近100条，按业务时间和 ordinal 展示。候选、责任人、聚类 hash、其他上报人、内部原因、原文、目标地址、Provider 错误均不输出。解除关联后停止展示该 Incident；个人工单和原时间线保留。
 
 现有详情 ETag 包含里程碑结果，因此 Incident 变化/解除关联会让刷新失效缓存。前端不用本地时区 Date 转换，不保存能力 token，不通过 Ticket ID 或 Incident ID 绕过 Reporter 会话。
+
+PR review 修正：候选单聊目的地、确认/关联时的自动订阅资格、显式恢复与通知投影均要求匹配 Journey 的保留期尚未到期。ENDED 行重新用于订阅时属于新的订阅周期；无可用单聊渠道以 incident.subscription.created + status=PENDING_DESTINATION 记录新周期，有可用单聊渠道才记录 activated。created 描述业务订阅周期的建立，不要求分配新的物理行 ID。

@@ -515,6 +515,7 @@ paths:
       summary: P2-012 authorized incidents
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
       parameters:
+        - {in: query, name: state, schema: {type: string, enum: [ACTIVE, FINISHED, CONFIRMED_LOCAL, CONFIRMED_BUILDING, CONFIRMED_CAMPUS, CONFIRMED_HOSPITAL_WIDE, INVESTIGATING, RESOLVED, CLOSED]}}
         - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 30}}
         - {in: query, name: cursor, schema: {type: string, maxLength: 2048}}
       responses:

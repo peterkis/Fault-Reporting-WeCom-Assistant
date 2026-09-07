@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch,p2012ReviewPathsValid,p2012ReviewHardeningValid,p2012HttpOpenApiHardeningPathsValid,p2012HttpOpenApiHardeningEvidenceValid } from '../scripts/validate-p2-012-human-confirmed-incident.mjs';
+import { validateP2012,p2012ReadinessValid,p2012CompletionEvidenceValid,p2012FrozenInputsMatch,p2012ReviewPathsValid,p2012ReviewHardeningValid,p2012HttpOpenApiHardeningPathsValid,p2012HttpOpenApiHardeningEvidenceValid,p2012SubscriptionReviewPathsValid,p2012SubscriptionReviewEvidenceValid } from '../scripts/validate-p2-012-human-confirmed-incident.mjs';
 import { checkP2012Live } from '../scripts/p2-012-live-check.mjs';
 import { p2012LiveDuration } from '../scripts/p2-012-live-e2e.mjs';
 import { P2012_LIVE_FUSES,readP2012LiveConfiguration } from '../src/p2-012-live-configuration.mjs';
@@ -133,4 +133,18 @@ test('P2-012 v2 HTTP OpenAPI hardening has an independent closed allowlist and c
   for(const key of ['exit_code','fail','cancelled','skipped','todo'])assert.equal(p2012HttpOpenApiHardeningEvidenceValid({...good,regression:{...good.regression,[key]:1}},hash),false);
   for(const patch of [{tests:565,pass:565},{pass:565},{tests:567}])assert.equal(p2012HttpOpenApiHardeningEvidenceValid({...good,regression:{...good.regression,...patch}},hash),false);
   for(const key of Object.keys(good.cleanup))assert.equal(p2012HttpOpenApiHardeningEvidenceValid({...good,cleanup:{...good.cleanup,[key]:1}},hash),false);
+});
+
+
+test('P2-012 subscription review preserves its baseline, scope and independent regression',()=>{
+  assert.equal(p2012SubscriptionReviewPathsValid(['src/p2-012-incident-command-service.mjs']),true);
+  for(const path of ['database/migrations/032_p2_012_human_confirmed_incident.sql','evidence/p2-012-pr-review-http-openapi-hardening.json','src/p2-012-live-reporter-scope.mjs','plans/current_phase.json'])assert.equal(p2012SubscriptionReviewPathsValid([path]),false);
+  const hash='b'.repeat(64),good={baseline_commit:'21414a42ecc454a0079ab60801148acab0d7f247',commit_subject:'fix(p2): align subscription retention and client contracts',
+    review_comment_ids:[3950900504,3950900513,3950900523,3950900528],status:'PASS',runtime_input_sha256:hash,live_validation:'NOT_RUN',
+    regression:{tests:574,pass:574,exit_code:0,fail:0,cancelled:0,skipped:0,todo:0},
+    cleanup:{database_count:0,backend_count:0,child_count:0,listener_count:0,browser_profile_count:0,browser_process_count:0}};
+  assert.equal(p2012SubscriptionReviewEvidenceValid(good,hash),true);
+  for(const patch of [{baseline_commit:'bad'},{status:'PENDING'},{live_validation:'PASSED'},{review_comment_ids:[]}])assert.equal(p2012SubscriptionReviewEvidenceValid({...good,...patch},hash),false);
+  for(const key of ['fail','cancelled','skipped','todo','exit_code'])assert.equal(p2012SubscriptionReviewEvidenceValid({...good,regression:{...good.regression,[key]:1}},hash),false);
+  for(const key of Object.keys(good.cleanup))assert.equal(p2012SubscriptionReviewEvidenceValid({...good,cleanup:{...good.cleanup,[key]:1}},hash),false);
 });

@@ -73,6 +73,7 @@ export function createP2012IncidentQuery({pool,enabled=false,authorization=creat
         values.push(directSubscription?uuid(directSubscription[1]):null);
         sql=`SELECT l.id,s.id AS subscription_id,i.intake_no AS source_intake_no FROM incident.reporter_subscription s
           JOIN intake.channel_leg l ON l.reporter_identity_hash=s.reporter_identity_hash
+          JOIN intake.contact_journey j ON j.id=l.journey_id AND j.reporter_identity_hash=l.reporter_identity_hash AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
           JOIN intake.service_intake i ON i.id=l.source_intake_id
           WHERE s.incident_id=$1::uuid AND ($4::uuid IS NULL OR s.id=$4::uuid) AND s.status<>'ENDED' AND l.leg_type IN ('DIRECT_GUIDED','DIRECT_ORGANIC')
             AND i.source_chat_type='single' AND ($2::uuid IS NULL OR l.id>$2::uuid) ORDER BY l.id LIMIT $3`;

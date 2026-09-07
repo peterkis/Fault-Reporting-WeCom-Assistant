@@ -301,3 +301,5 @@
 - evidence/p2-012-closeout-regression-failure.tap、p2-012-closeout-reconnect-diagnostic.tap：保留的 560/561 重连超时与精确 1/1 诊断证据。
 
 - evidence/p2-012-pr-review-http-openapi-hardening.md / .json：PR #6 第二轮 HTTP 分类、Subscription 目的地 OpenAPI 与独立回归证据。
+
+- evidence/p2-012-pr-review-subscription-contract-hardening.md / .json：PR #6 第三轮订阅保留期、审计状态与客户端 Contract 修复及独立验证。

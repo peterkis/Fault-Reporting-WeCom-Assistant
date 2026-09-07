@@ -25,6 +25,7 @@ export function createP2012NotificationPolicy({enabled=false,publicEnabled=false
         ORDER BY l.channel_identity_hash,l.id LIMIT 100`,[incident.id,after]):await tx.query(`SELECT s.id AS subscription_id,l.id AS leg_id,s.reporter_identity_hash AS binding,
         i.source_bot_id AS account,i.reporter_wecom_userid AS target FROM incident.reporter_subscription s
         JOIN intake.channel_leg l ON l.id=s.direct_channel_leg_id AND l.reporter_identity_hash=s.reporter_identity_hash
+        JOIN intake.contact_journey j ON j.id=l.journey_id AND j.reporter_identity_hash=l.reporter_identity_hash AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
         JOIN intake.service_intake i ON i.id=l.source_intake_id
         WHERE s.incident_id=$1::uuid AND s.status='ACTIVE' AND l.leg_type IN ('DIRECT_GUIDED','DIRECT_ORGANIC') AND i.source_chat_type='single' AND ($2::text IS NULL OR s.reporter_identity_hash>$2)
         ORDER BY s.reporter_identity_hash LIMIT 100`,[incident.id,after]);

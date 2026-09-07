@@ -49,16 +49,18 @@ export function createP2012IncidentCommandService({pool,enabled=false,query=crea
       status=$4,impact_state=$5,ended_at=NULL,row_version=row_version+1,updated_at=platform.local_now() WHERE id=$1::uuid RETURNING id`,[old.id,report.id,report.direct_channel_leg_id,status,report.impact_state]):
       await tx.query(`INSERT INTO incident.reporter_subscription(incident_id,reporter_identity_hash,representative_report_id,direct_channel_leg_id,status)
         VALUES($1::uuid,$2,$3::uuid,$4::uuid,$5) RETURNING id`,[ctx.incident.id,report.reporter_identity_hash,report.id,report.direct_channel_leg_id,status]);
-    await append(tx,ctx,old?'incident.subscription.activated':'incident.subscription.created',{payload:{subscription_id:result.rows[0].id,status}});
+    await append(tx,ctx,old&&status==='ACTIVE'?'incident.subscription.activated':'incident.subscription.created',{payload:{subscription_id:result.rows[0].id,status}});
   }
   async function link(tx,ctx,decisionId){
     const c=ctx.command,s=await query.source({tx,principal:ctx.principal,id:decisionId});
     const old=(await tx.query('SELECT * FROM incident.incident_report WHERE incident_id=$1::uuid AND source_decision_id=$2::uuid FOR UPDATE',[ctx.incident.id,decisionId])).rows[0];
     if(old?.link_state==='LINKED')fail('REPORT_ALREADY_LINKED',409);
     if(s.ticket_id&&(await tx.query("SELECT 1 FROM incident.incident_report r JOIN incident.incident i ON i.id=r.incident_id WHERE r.ticket_id=$1::uuid AND r.incident_id<>$2::uuid AND r.link_state='LINKED' AND i.status<>'CLOSED'",[s.ticket_id,ctx.incident.id])).rowCount)fail('TICKET_ALREADY_LINKED',409);
-    const legs=(await tx.query(`SELECT id,leg_type,source_intake_id FROM intake.channel_leg WHERE journey_id=$1::uuid
-      AND reporter_identity_hash=$2 ORDER BY leg_ordinal`,[s.journey_id,s.reporter_identity_hash])).rows;
-    const origin=legs.find(l=>l.source_intake_id===s.origin_intake_id),direct=legs.find(l=>['DIRECT_GUIDED','DIRECT_ORGANIC'].includes(l.leg_type));
+    const legs=(await tx.query(`SELECT l.id,l.leg_type,l.source_intake_id,
+      (j.retention_until_epoch_ms>platform.physical_epoch_ms() AND j.reporter_identity_hash=l.reporter_identity_hash AND i.source_chat_type='single') AS direct_eligible
+      FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id JOIN intake.service_intake i ON i.id=l.source_intake_id
+      WHERE l.journey_id=$1::uuid AND l.reporter_identity_hash=$2 ORDER BY l.leg_ordinal`,[s.journey_id,s.reporter_identity_hash])).rows;
+    const origin=legs.find(l=>l.source_intake_id===s.origin_intake_id),direct=legs.find(l=>l.direct_eligible&&['DIRECT_GUIDED','DIRECT_ORGANIC'].includes(l.leg_type));
     const r=old?await tx.query(`UPDATE incident.incident_report SET link_state='LINKED',linked_by_principal_id=$2::uuid,
       link_reason_code=$3,direct_channel_leg_id=$4::uuid,linked_at=platform.local_now(),row_version=row_version+1,updated_at=platform.local_now()
       WHERE id=$1::uuid RETURNING *`,[old.id,ctx.principal.principal_id,c.reason_code,direct?.id??null]):
@@ -154,7 +156,8 @@ export function createP2012IncidentCommandService({pool,enabled=false,query=crea
       const direct=c.direct_channel_leg_id??sub.direct_channel_leg_id;let status='PAUSED';
       if(c.action==='RESUME_SUBSCRIPTION'){
         if(!direct||(await tx.query(`SELECT 1 FROM intake.channel_leg l JOIN intake.service_intake i ON i.id=l.source_intake_id
-          WHERE l.id=$1::uuid AND l.reporter_identity_hash=$2 AND l.leg_type IN ('DIRECT_GUIDED','DIRECT_ORGANIC') AND i.source_chat_type='single'`,[direct,sub.reporter_identity_hash])).rowCount!==1)fail('DIRECT_DESTINATION_REQUIRED',409);
+          JOIN intake.contact_journey j ON j.id=l.journey_id AND j.reporter_identity_hash=l.reporter_identity_hash
+          WHERE j.retention_until_epoch_ms>platform.physical_epoch_ms() AND l.id=$1::uuid AND l.reporter_identity_hash=$2 AND l.leg_type IN ('DIRECT_GUIDED','DIRECT_ORGANIC') AND i.source_chat_type='single'`,[direct,sub.reporter_identity_hash])).rowCount!==1)fail('DIRECT_DESTINATION_REQUIRED',409);
         status='ACTIVE';
       }
       await tx.query('UPDATE incident.reporter_subscription SET status=$2,direct_channel_leg_id=$3::uuid,row_version=row_version+1,updated_at=platform.local_now() WHERE id=$1::uuid',[sub.id,status,direct]);

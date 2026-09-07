@@ -1,0 +1,144 @@
+{
+  "baseline_commit": "21414a42ecc454a0079ab60801148acab0d7f247",
+  "commit_subject": "fix(p2): align subscription retention and client contracts",
+  "review_comment_ids": [
+    3950900504,
+    3950900513,
+    3950900523,
+    3950900528
+  ],
+  "status": "PASS",
+  "runtime_input_sha256": "ba5e3a9d597072c0d90dac88c015281484cafe6a6b3623ac05a1f7015e32940b",
+  "live_validation": "NOT_RUN",
+  "regression": {
+    "tests": 574,
+    "pass": 574,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 663011.632,
+    "exit_code": 0,
+    "tap": "tmp/p2012-review3/full-final.tap",
+    "sha256": "b79675a4032c3217ce134ad51e2b7978800c34f6295cfb49c0b52e74b823ea28",
+    "command": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 --test-reporter=tap tests/*.test.mjs"
+  },
+  "cleanup": {
+    "database_count": 0,
+    "backend_count": 0,
+    "child_count": 0,
+    "browser_process_count": 0,
+    "listener_count": 0,
+    "browser_profile_count": 0
+  },
+  "authorization": "User goal explicitly authorizes P2 review fixes, individual replies/resolution, push, fresh Codex review and merge only after no findings.",
+  "boundaries": {
+    "p2_012": "DONE",
+    "p2_g2": "NOT_STARTED",
+    "p2_008": "BLOCKED_BY_P2_G2",
+    "persistent_flags": "ALL_FALSE",
+    "ai_ocr_rag_calls": 0,
+    "live_send": false,
+    "migration_changes": 0
+  },
+  "targeted": {
+    "tests": 38,
+    "pass": 38,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 167383.0828,
+    "exit_code": 0,
+    "tap": "tmp/p2012-review3/targeted.tap",
+    "sha256": "5f33f1a7f4b230dab307156e1900670b5b991207b962b70359307632d02e70d3"
+  },
+  "first_full_regression": {
+    "tests": 574,
+    "pass": 573,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 790931.5224,
+    "exit_code": 1,
+    "tap": "tmp/p2012-review3/full.tap",
+    "sha256": "7f929a77fc33d94b2995408d2b3e4f4b9ec6b9d82875976ef22948d6354e23fc",
+    "failure": "Existing capacity assertion: peak>last || peak-initial<16MiB, with global.gc unavailable"
+  },
+  "capacity_diagnostic": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "duration_ms": 77717.1591,
+    "exit_code": 0,
+    "tap": "tmp/p2012-review3/capacity-diagnostic.tap",
+    "sha256": "e52a375d2da9482da298c2e8f70138015e1c00952930f5cc00af48eacd66a1c5",
+    "gc_exposed": true,
+    "peak_heap_bytes": 85215384,
+    "final_heap_bytes": 18117144,
+    "code_or_assertions_or_timeouts_changed": false,
+    "basis": "Existing package test:p2:012 and test:p2:016 scripts already expose GC; capacity test calls global.gc?.()"
+  },
+  "fixes": {
+    "retention": "Unexpired matching Journey required for resume, initial link eligibility, destination reads and private notice projection; expiry after activation creates no new private notice.",
+    "reopening": "ENDED to PENDING_DESTINATION starts a new logical subscription period using subscription.created plus explicit PENDING_DESTINATION payload. Only ACTIVE reopens use activated. No migration.",
+    "types": "IncidentList.next_cursor is string|null; optional owner_team_id also string|null instead of never. Strict real TypeScript consumer compiles and numeric cursor is rejected.",
+    "state_filter": "Both OpenAPI documents declare optional state with ACTIVE, FINISHED and all seven actual Incident states; parsed enum equals runtime."
+  },
+  "modified_files": [
+    "CHANGELOG.md",
+    "FILE_INDEX.md",
+    "MANIFEST.json",
+    "contracts/conversation_center.openapi.yaml",
+    "contracts/openapi.yaml",
+    "contracts/p2_012_contracts.d.ts",
+    "docs/64_p2_012_reporter_subscription_recovery.md",
+    "evidence/p2-012-human-confirmed-incident-report.json",
+    "evidence/p2-012-pr-review-subscription-contract-hardening.json",
+    "evidence/p2-012-pr-review-subscription-contract-hardening.md",
+    "scripts/validate-p2-012-human-confirmed-incident.mjs",
+    "src/p2-012-incident-command-service.mjs",
+    "src/p2-012-incident-query.mjs",
+    "src/p2-012-notification-policy.mjs",
+    "tests/p2-012-client-contract-review.test.mjs",
+    "tests/p2-012-schema-live-guards.test.mjs",
+    "tests/p2-012-subscription-review.integration.test.mjs"
+  ],
+  "frozen": {
+    "migrations_001_032": true,
+    "catalog_sources": true,
+    "p2_007": true,
+    "live_sender_authorization": true,
+    "live_evidence": true,
+    "owner_approval": true,
+    "v1_review_evidence": true,
+    "v2_review_evidence": true,
+    "original_completion_except_new_appendix": true
+  },
+  "github_review": {
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6",
+    "fresh_current_head_review_required_before_merge": true,
+    "merge_method": "merge commit; preserve original commits"
+  },
+  "resource_limits": "No new persistent processes, pools, timers or catalog objects. Existing test pool maximum4. Full serial test workload unchanged.",
+  "rollback": "Default Incident feature flags remain false. No down migration; any future revert is a separate explicit command.",
+  "security_scan": {
+    "files": 21,
+    "values": 5,
+    "matches": 0,
+    "raw_values_printed": false
+  },
+  "persistent_flag_count": 20,
+  "static_gates": {
+    "p2_012": 252,
+    "p2_016": 146,
+    "arch_006": 260,
+    "v1_4": 403,
+    "v1_4_tests": 17,
+    "all_exit_codes": 0
+  }
+}
