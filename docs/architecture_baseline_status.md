@@ -4,21 +4,21 @@
 - 生效日期：2026-08-30
 - 状态：ACTIVE
 - 当前阶段：P2 / IN_PROGRESS
-- 当前活动 Lane：P2-D
+- 当前活动 Lane：ASSEMBLY
 - 最后完成任务：P2-012（2026-09-07）
 - 最后完成 Gate：P2-G1（2026-09-02）
 - 已完成任务：G0 全部冻结项；P1-001 至 P1-012；ARCH-004；P2-001 至 P2-007；P2-015；P2-016；P2-012；P2-G1
 - 最后完成架构任务：ARCH-006（2026-09-03）
-- 当前活动任务与 Lane：无
-- 当前 Gate：P2-G1 / PASSED
-- 最近完成任务：P2-012（`DONE`）；下一候选 P2-G2 未授权
+- 当前活动任务与 Lane：P2-G2 / ASSEMBLY
+- 当前 Gate：P2-G2 / IN_PROGRESS；最后完成 Gate 为 P2-G1 / PASSED
+- 最近完成任务：P2-012（`DONE`）；当前 P2-G2 仅准备授权
 - P2-G1：PASSED（不是 Phase 2 GO、生产或临床批准）
 - P2/P3 Feature Flags：全部 `false`
 - P3：TODO / 未启动
 - 上一基线：V1.3
 - 关键决策：ADR-0010、ADR-0011、ADR-0012、ADR-0017
 
-ARCH-005 于 2026-09-03 完成 Asia/Shanghai 时间契约和目标现场重验；P2-007 同日完成纯确定性领域实现，ARCH-006 随后完成规则优先重基线，P2-015 已完成持久化规则编排、Contact Journey、continuation_ref 与 Manual Review。P2-016 已于 2026-09-04 完成并获负责人最终批准；DeepSeek、OCR、P2-008、P2-G2/P3 与生产/临床启用仍未授权。
+ARCH-005 于 2026-09-03 完成 Asia/Shanghai 时间契约和目标现场重验；P2-007 同日完成纯确定性领域实现，ARCH-006 随后完成规则优先重基线，P2-015 已完成持久化规则编排、Contact Journey、continuation_ref 与 Manual Review。P2-016 已于 2026-09-04 完成并获负责人最终批准；DeepSeek、OCR、P2-008、P2-G2-LIVE/P3 与生产/临床启用仍未授权。
 
 ## 1. V1.4 变化
 
@@ -96,7 +96,7 @@ P1 退出条件为：漏单 0、重复单 0、状态/事件/通知一致、真�
 
 ## 6. Phase 2
 
-P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 至 P2-007、P2-015、P2-016 与 P2-012 均已完成；P2-G1 Human-only Assembly 于 2026-09-02 通过，ARCH-005、P2-007、ARCH-006、P2-015 于 2026-09-03 完成，P2-016 于 2026-09-04 完成。P2-012 已于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。当前无活动任务，下一候选 P2-G2 未授权；P2-008 及以后 Runtime 和 P2-G2 至 P2-G5 仍须另行授权。所有 Feature Flag 默认关闭。
+P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 至 P2-007、P2-015、P2-016 与 P2-012 均已完成；P2-G1 Human-only Assembly 于 2026-09-02 通过，ARCH-005、P2-007、ARCH-006、P2-015 于 2026-09-03 完成，P2-016 于 2026-09-04 完成。P2-012 已于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。当前仅 P2-G2 / ASSEMBLY 获独立准备授权，执行到 READY_FOR_LIVE_E2E 后停止；真实发送、云主机变更、现场写库、正式观察及 Gate 批准均须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 及以后 Runtime 和 P2-G3 至 P2-G5 仍须另行授权。所有 Feature Flag 默认关闭。
 
 固定顺序：
 
@@ -144,7 +144,7 @@ P3 非目标：历史导入、未完结切换、旧编号/状态/附件兼容、
 
 ## 9. 并行开发
 
-架构上定义八条产品 Lane。P2-A 的 P2-001/002/003、P2-B 的 P2-004/005/006/P2-016、P2-C 的 P2-007/P2-015、P2-D 的 P2-012 已完成；P2-G1 已通过，ARCH-005 与 ARCH-006 已完成。当前无活动任务；P2-G2、P2-008 及其他后续任务和 P3 均未获授权，所有 Feature Flag 默认关闭。P2-008 仅在 P2-G2 `PASSED` 后才可成为候选。
+架构上定义八条产品 Lane。P2-A 的 P2-001/002/003、P2-B 的 P2-004/005/006/P2-016、P2-C 的 P2-007/P2-015、P2-D 的 P2-012 已完成；P2-G1 已通过，ARCH-005 与 ARCH-006 已完成。当前仅 P2-G2 / ASSEMBLY 获独立准备授权，执行到 READY_FOR_LIVE_E2E 后停止；真实发送、云主机变更、现场写库、正式观察及 Gate 批准均须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 仅在 P2-G2 `PASSED` 后才可成为候选。
 
 ## 10. 已废弃设计
 

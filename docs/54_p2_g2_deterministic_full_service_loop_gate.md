@@ -2,13 +2,14 @@
 
 ## 1. 状态与依赖
 
-- 状态：`NOT_STARTED / REQUIRES_SEPARATE_AUTHORIZATION`
+- 状态：`IN_PROGRESS / P2_G2_ASSEMBLY_AUTHORIZED`
+- 独立授权：`evidence/p2-g2-start-authorization.md`；本轮任务：`tasks/P2-G2_rule_first_service_loop_gate.md`。准备完成即停在 READY_FOR_LIVE_E2E，现场另行批准。
 - 依赖：`P2-G1`、`ARCH-005`、`P2-007`、`P2-015`、`P2-016`、`P2-012`
 - 要求：全部 AI/OCR Flag 关闭；模型 Provider 调用为 0
 
 ARCH-006 只定义本 Gate，不启动或执行它。
 
-P2-016 的自动化准备、定向现场验证与本 Gate 分别记账。P2-016 已独立收口为 `DONE`，本 Gate 仍为 `NOT_STARTED`；还须 P2-012 独立完成、P2-G2 独立授权及至少 60 分钟完整闭环现场观察。
+P2-016、P2-012 已独立收口为 DONE；其历史定向现场与本 Gate 分别记账。本 Gate 于 2026-09-08 获准备授权；正式通过仍须本候选独立现场批准、真实 2C4G 整栈、自然 GC 下至少 60 分钟完整闭环观察及负责人验收。577 历史回归使用 --expose-gc，不能替代正式资源证据。
 
 ## 2. 功能覆盖
 

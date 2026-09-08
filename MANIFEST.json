@@ -3,12 +3,12 @@
   "version": "1.4.0",
   "architecture_baseline": "V1.4",
   "baseline_date": "2026-08-30",
-  "status": "P2_P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION",
+  "status": "P2_P2_G2_ASSEMBLY_AUTHORIZED",
   "current_phase": "P2",
   "last_completed_task": "P2-012",
   "last_completed_gate": "P2-G1",
   "last_completed_architecture_task": "ARCH-006",
-  "active_task": null,
+  "active_task": "P2-G2",
   "authorized_tasks": [
     "P2-001",
     "P2-002",
@@ -21,8 +21,8 @@
     "P2-016",
     "P2-012"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION",
+  "active_lane": "ASSEMBLY",
+  "implementation_authorization_status": "P2_G2_ASSEMBLY_AUTHORIZED",
   "authorized_architecture_tasks": [
     "ARCH-005",
     "ARCH-006"
@@ -38,7 +38,7 @@
   "arch_006_completed_at": "2026-09-03",
   "arch_006_completion_evidence": "evidence/arch-006-rule-first-service-loop-rebaseline-report.md",
   "p2_g1_status": "PASSED",
-  "p2_g2_status": "NOT_STARTED",
+  "p2_g2_status": "IN_PROGRESS",
   "p2_g3_status": "NOT_STARTED",
   "p2_g4_status": "NOT_STARTED",
   "p2_g5_status": "NOT_STARTED",
@@ -60,7 +60,8 @@
   "p2_013_status": "TODO",
   "p2_014_status": "TODO",
   "authorized_gates": [
-    "P2-G1"
+    "P2-G1",
+    "P2-G2"
   ],
   "p2_g1_authorized_at": "2026-09-01",
   "p2_g1_authorization_evidence": "evidence/p2-g1-start-authorization.md",
@@ -87,7 +88,7 @@
   "p2_007_completed_at": "2026-09-03",
   "p2_007_completion_evidence": "evidence/p2-007-implementation-report.md",
   "next_task_candidate": "P2-G2",
-  "next_task_authorized": false,
+  "next_task_authorized": true,
   "p2_007_status": "DONE",
   "source_repository": "peterkis/Fault-Reporting-WeCom-Assistant",
   "source_base_commit": "1c18d5653b17e4368b5fa057d513e1af1a8b4622",
@@ -131,5 +132,8 @@
   "p2_012_http_openapi_hardening_evidence": "evidence/p2-012-pr-review-http-openapi-hardening.json",
   "p2_012_subscription_contract_review_evidence": "evidence/p2-012-pr-review-subscription-contract-hardening.json",
   "p2_012_paused_destination_review_evidence": "evidence/p2-012-pr-review-paused-destination-hardening.json",
-  "p2_012_reporter_refresh_review_evidence": "evidence/p2-012-pr-review-reporter-refresh-hardening.json"
+  "p2_012_reporter_refresh_review_evidence": "evidence/p2-012-pr-review-reporter-refresh-hardening.json",
+  "p2_g2_authorized_at": "2026-09-08",
+  "p2_g2_authorization_evidence": "evidence/p2-g2-start-authorization.md",
+  "p2_g2_base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3"
 }

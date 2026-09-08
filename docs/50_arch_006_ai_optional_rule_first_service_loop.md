@@ -90,3 +90,7 @@ model_provider_calls                0
 ## 6. 关闭 AI 的强制验收
 
 以下条件必须同时成立：`AI_TRIAGE_ENABLED=false`、`AI_CONVERSATION_ENABLED=false`、`AI_AUTO_REPLY_ENABLED=false`、DeepSeek Key 不存在、模型网络不可达。此时启动、ready、报修受理、人工审核、完整 Ticket Action、Reporter-safe Timeline、Incident 人工确认和可靠通知仍全部通过，模型调用为 0。
+
+## 当前授权状态（2026-09-08）
+
+上文阶段授权描述保留其历史时点；当前 P2-007、P2-015、P2-016、P2-012 已完成。当前仅 P2-G2 / ASSEMBLY 获独立准备授权，执行到 READY_FOR_LIVE_E2E 后停止；真实发送、云主机变更、现场写库、正式观察及 Gate 批准均须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。依据 `evidence/p2-g2-start-authorization.md`；未改变本文件的领域契约或历史完成 Evidence。

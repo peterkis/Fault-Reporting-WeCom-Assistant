@@ -1,5 +1,10 @@
 # V1.4 文件索引
 
+## P2-G2 独立准备授权
+
+- `evidence/p2-g2-start-authorization.md`：冻结 merge/tree、开始门禁、有限装配与自动化授权及 READY 停止线。
+- `tasks/P2-G2_rule_first_service_loop_gate.md`：Gate 输入输出、验证矩阵、资源、关闭与现场边界。
+
 ## 权威入口
 
 - `evidence/p2-012-pr-review-hardening.md`：PR #6 两项限定修复、独立回归、清理与第三个本地提交证据；不替代历史现场批准。
@@ -135,9 +140,9 @@
 
 ## P2-G1 Assembly 状态
 
-- P2-003、P2-004、P2-005、P2-006、P2-015、P2-016、P2-012：`DONE`；P2-G1：`PASSED`；当前无活动任务；
+- P2-003、P2-004、P2-005、P2-006、P2-015、P2-016、P2-012：`DONE`；P2-G1：`PASSED`；当前仅 P2-G2 准备获授权；
 - `docs/42_p2_006_realtime_web_workbench.md`：Internal Alpha、REST/Auth、Query、Command、Delivery、SSE/Polling 与 UI 边界。
-- P2-007、P2-015、P2-016、P2-012 保持 `DONE`；P2-G2 未授权，其他任务继续保持原停止线；
+- P2-007、P2-015、P2-016、P2-012 保持 `DONE`；P2-G2 准备已授权，P2-G2-LIVE 与其他任务继续保持原停止线；
 - `P2-G1` 已完成真实测试 Workbench、企业微信 Sender、Replay Gap、恢复和资源现场 Gate；所有提交的 P2/P3 Feature Flag 默认值保持 `false`；
 - 未启用生产 Workbench、模型或医院内网；本 Gate 通过不等同于 Phase 2 Go、生产或临床上线。
 

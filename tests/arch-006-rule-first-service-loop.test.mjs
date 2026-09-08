@@ -26,6 +26,13 @@ test('machine state preserves ARCH-006 facts and separately authorized P2-015/P2
   if (current.p2_015_status === 'AUTHORIZED') {
     assert.equal(current.active_task, 'P2-015'); assert.equal(current.active_lane, 'P2-C');
     assert.equal(current.next_task_candidate, 'P2-015'); assert.equal(current.next_task_authorized, true);
+  } else if (['IN_PROGRESS','READY_FOR_LIVE_E2E'].includes(current.p2_g2_status)) {
+    assert.equal(current.last_completed_task,'P2-012');assert.equal(current.p2_016_status,'DONE');
+    assert.equal(current.active_task,'P2-G2');assert.equal(current.active_lane,'ASSEMBLY');
+    assert.equal(current.next_task_candidate,current.p2_g2_status==='IN_PROGRESS'?'P2-G2':'P2-G2-LIVE');
+    assert.equal(current.next_task_authorized,current.p2_g2_status==='IN_PROGRESS');
+    assert.deepEqual(current.authorized_gates,['P2-G1','P2-G2']);
+    assert.equal(current.authorized_tasks.includes('P2-G2'),false);
   } else if (current.p2_012_status==='DONE') {
     assert.equal(current.last_completed_task,'P2-012');assert.equal(current.p2_016_status,'DONE');
     assert.equal(current.active_task,null);assert.equal(current.active_lane,null);

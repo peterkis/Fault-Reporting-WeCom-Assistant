@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-08 - P2-G2 independently authorized for preparation
+
+- 从冻结 PR #6 merge 8c332710 开始，仅授权规则优先 AI-off 服务闭环准备，活动 P2-G2 / ASSEMBLY。
+- 本轮两段本地提交，准备完成停在 READY_FOR_LIVE_E2E；现场发送、部署、正式观察、负责人批准和 Gate 关闭另行授权。
+- P2-012 DONE、P2-G1 PASSED、历史日期/证据、001–032、P2-007 与默认 false 开关保持；P2-008 仍阻断。
+
+
 ## 2026-09-07 - P2-012 PR #6 review hardening
 
 - PERSON 出站要求批准范围与真实匹配 Direct Leg；Ticket 通知增加可选目的地授权检查，无通道时不创建 PERSON 通知或 Reporter Grant，群建单保留一次安全引导回执。

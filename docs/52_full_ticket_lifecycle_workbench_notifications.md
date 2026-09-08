@@ -111,3 +111,7 @@ Ticket Event
 ## 8. 持久化与停止线
 
 P2-016 经独立授权采用 migration 031，新增命令收据、Reporter 访问和通知绑定的六张辅助表，不新增 Ticket Core。实现说明见 docs/58–61；自动化报告为 evidence/p2-016-automated-readiness-report.md。P2-016 已经真实定向现场、回归及负责人批准收口为 DONE；完成记录见 evidence/p2-016-ticket-lifecycle-workbench-report.md。无活动任务，P2-012/P2-G2 未授权；全部 Feature Flag 保持 false。
+
+## 当前授权状态（2026-09-08）
+
+上文阶段授权描述保留其历史时点；当前 P2-007、P2-015、P2-016、P2-012 已完成。当前仅 P2-G2 / ASSEMBLY 获独立准备授权，执行到 READY_FOR_LIVE_E2E 后停止；真实发送、云主机变更、现场写库、正式观察及 Gate 批准均须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。依据 `evidence/p2-g2-start-authorization.md`；未改变本文件的领域契约或历史完成 Evidence。
