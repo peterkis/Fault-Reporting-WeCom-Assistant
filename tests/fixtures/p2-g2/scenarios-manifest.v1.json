@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "gate": "P2-G2",
+  "count": 37,
+  "path": "tests/fixtures/p2-g2/scenarios.v1.jsonl",
+  "sha256": "0d4789a040ba46064662f8f17dd40663f00417db99171f5f7b357350b66b08d4",
+  "interpretation": "Frozen obligations; this fixture does not constitute execution or PASS. Approved overlays are recorded in evidence/p2-g2-three-entry-business-profile.md and evidence/p2-g2-notification-policy-repair.md."
+}

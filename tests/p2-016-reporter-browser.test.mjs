@@ -9,7 +9,7 @@ import { transactionP2016 } from '../src/p2-016-domain-contracts.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
 import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
-import { launchSystemBrowser } from './helpers/p2-006-browser-harness.mjs';
+import { launchSystemBrowser,closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
 for(const [width,height] of [[1440,900],[390,844]])test('Reporter browser '+width+'x'+height+' real DB/session, fragment removal, refresh, timezone, safe data and logout',{timeout:90000},async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016browser',run:async({pool,databaseUrl})=>{
     await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});
@@ -17,13 +17,14 @@ for(const [width,height] of [[1440,900],[390,844]])test('Reporter browser '+widt
     const probe=createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const listenPort=probe.address().port;await new Promise(r=>probe.close(r));
     const origin='http://127.0.0.1:'+listenPort,runtime=createP2016Runtime({pool,principalId:principal.id,publicOrigin:origin,listenPort,
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},
+      ticketNotificationAdditionalEvents:['ticket.created'],
       allowLocalHttp:true,reporterHmacSecret:'synthetic-only-reporter-browser-secret-32bytes'});
     const intake=await seedPersistedIntake({pool,text:'<img src=x onerror=window.reporter_xss=1> patient-test 10.0.0.2',requestType:'INCIDENT',status:'RECEIVED'});
     const ticket=(await createPilotTicketCore({pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'synthetic-browser'})).ticket;
     const notification=await transactionP2016(pool,async tx=>{const event=await appendTicketEvent({transaction:tx,ticket,eventType:'ticket.created',actor:{type:'SYSTEM',id:null},traceId:'synthetic-browser'});return runtime.notifications.project({transaction:tx,ticket,event});});
-    const grant=await runtime.reporterAccess.deliveryGrant({deliveryId:notification.delivery_id});let browser;
+    const grant=await runtime.reporterAccess.deliveryGrant({deliveryId:notification.delivery_id});let browser,primaryError=null;
     try{
-      await runtime.start();browser=await launchSystemBrowser({url:origin+'/reporter/open#grant='+grant.token,width,height});
+      await runtime.start();browser=await launchSystemBrowser({url:origin+'/reporter/open#grant='+grant.token,width,height,redirectPaths:['/reporter/']});
       await browser.waitFor("document.querySelector('#ticket').hidden===false");
       assert.equal(await browser.evaluate('location.hash'),'');assert.equal(await browser.evaluate('location.pathname'),'/reporter/');
       assert.equal(await browser.evaluate('localStorage.length+sessionStorage.length'),0);assert.equal(await browser.evaluate('document.cookie.includes("p2016_reporter")'),false);
@@ -35,6 +36,15 @@ for(const [width,height] of [[1440,900],[390,844]])test('Reporter browser '+widt
       const csrf=await fetch(origin+'/api/reporter/logout',{method:'POST',headers:{origin:'https://attacker.invalid','content-type':'application/json'},body:'{}'});assert.equal(csrf.status,403);
       await browser.evaluate('document.querySelector("#logout").click()');await browser.waitFor("document.querySelector('#status').textContent==='已退出访问。'");
       await browser.evaluate('location.reload()',{awaitPromise:false});await browser.waitFor("document.querySelector('#status').textContent.includes('访问已失效')");
-    }finally{await browser?.close();await runtime.stop();}
+      if(width===1440){
+        const before=await browser.evaluate("performance.getEntriesByType('resource').filter(e=>e.name.includes('/api/reporter/')).map(e=>e.name)");
+        assert.equal(before.some(url=>url.includes('/access/exchange')),false,'reload after logout must not replay a consumed Grant');
+        await new Promise(resolve=>setTimeout(resolve,5500));
+        const after=await browser.evaluate("performance.getEntriesByType('resource').filter(e=>e.name.includes('/api/reporter/')).map(e=>e.name)");
+        assert.deepEqual(after,before,'401 stops polling and produces no further exchange/logout POST');
+        assert.equal(await browser.evaluate('location.hash'), '');
+        assert.equal(await browser.evaluate('localStorage.length+sessionStorage.length'),0);
+      }
+    }catch(error){primaryError=error;}finally{await closeBrowserTestResources([()=>browser?.close(),()=>runtime.stop()],primaryError);}
   }});
 });

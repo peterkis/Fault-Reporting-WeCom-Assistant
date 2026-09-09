@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "task": "P2-G2",
+  "status": "CURRENT_RUNBOOKS_PUBLISHED",
+  "files": [
+    {
+      "source": "docs/runbooks/p2-g2-cloud-deployment-operations.md",
+      "remote_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-cloud-deployment-operations.md",
+      "sha256": "b721aa298f0d71ad879fcc4479e131a02a9d13912d76c83bc29749047824fdc9",
+      "verified": true
+    },
+    {
+      "source": "docs/runbooks/p2-g2-postgresql-deployment-decision.md",
+      "remote_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-postgresql-deployment-decision.md",
+      "sha256": "58668c829cd4f2c0442c08faa083ef2eb79656ff2a72101325237f9119cabf1c",
+      "verified": true
+    },
+    {
+      "source": "docs/runbooks/p2-g2-approved-live-container.md",
+      "remote_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-approved-live-container.md",
+      "sha256": "6daa7d8e8bb2afc7111a1fc584ef3666e946ec0d11bd065826078c7591629813",
+      "verified": true
+    },
+    {
+      "source": "prompts/P2-G2_rule_first_service_loop_runbook.md",
+      "remote_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/P2-G2_rule_first_service_loop_runbook.md",
+      "sha256": "3e058578fec13986db4a73157a99a3f2e121bd0b6ad0bb598390d4bbb42663da",
+      "verified": true
+    },
+    {
+      "source": "evidence/p2-g2-automated-readiness-report.md",
+      "remote_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-automated-readiness-report.md",
+      "sha256": "27217b2d33ebe18adb9c379bbff5b8e3aa92a4154e221990f7bdccb61c4cc6c7",
+      "verified": true
+    },
+    {
+      "source": "evidence/p2-g2-cloud-ready-deployment-record.json",
+      "remote_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-cloud-ready-deployment-record.json",
+      "sha256": "7843bc028a014419213eb47ec1cea9389d991e1318ca69e571195804fc6aed80",
+      "verified": true
+    },
+    {
+      "source": "evidence/p2-g2-modified-existing-modules.json",
+      "remote_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-modified-existing-modules.json",
+      "sha256": "1199dda64cd095a74033c8518cd7d9c560f2a8ca8b4e29544d144696a66a16ab",
+      "verified": true
+    },
+    {
+      "source": "evidence/p2-g2-classification-metrics.json",
+      "remote_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-classification-metrics.json",
+      "sha256": "4ca7c6f738aaf909b582e44552de56c7a14e7df6c3040f9e41ad6c2f4c0db2f4",
+      "verified": true
+    }
+  ],
+  "parser": {
+    "bash_blocks": 4,
+    "exit_codes": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "live_commands_executed": false
+  },
+  "release_snapshot_untouched": true,
+  "business_processes_started": false,
+  "local_env_uploaded": false,
+  "source_record": {
+    "path": "tmp/p2-g2-preparation-20260908-01a07e70/cloud-ready-runbook-publish-result.json",
+    "sha256": "e3b61eee733620bcd53dc6eb1aeb1fbed8769aa7c32e3b4ac46eaa8ddf9ae1dc"
+  }
+}

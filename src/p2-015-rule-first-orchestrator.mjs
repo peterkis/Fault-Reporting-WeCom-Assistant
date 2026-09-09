@@ -1,4 +1,5 @@
 import { createRuleEngine } from './p2-007-rule-engine.mjs';
+import { parseExplicitContinuation } from './p2-015-explicit-continuation.mjs';
 import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
 import {
   P2_015_ERROR_CODES,
@@ -12,7 +13,8 @@ import {
 } from './p2-015-domain-contracts.mjs';
 import { createContactJourneyStore, DeferredDirectory, reporterIdentityHash } from './p2-015-contact-journey.mjs';
 import { createContinuationRefService } from './p2-015-continuation-ref.mjs';
-import { routeP2007Decision, routeRuleFailure } from './p2-015-decision-router.mjs';
+import { routeP2007Decision, routeRuleFailure, P2_015_ENGINE_VERSION, P2_015_DECISION_POLICY_VERSION } from './p2-015-decision-router.mjs';
+import { readGroupCorroboration, assessGroupCorroborationSafety } from './p2-015-group-corroboration.mjs';
 import { createDecisionStore } from './p2-015-decision-store.mjs';
 
 async function withTransaction(pool, operation) {
@@ -37,10 +39,14 @@ async function loadIntake(transaction, intakeId, lock = false) {
             intake.source_chat_id,intake.reporter_wecom_userid,intake.privacy_class,intake.retention_until,
             intake.retention_until_epoch_ms::text,intake.request_type,intake.status,intake.pilot_ticket_id::text,
             intake.primary_message_id::text,intake.last_message_at,intake.version,intake.created_at,
+            CASE WHEN primary_message.provider_create_epoch_ms IS NOT NULL
+              AND primary_message.provider_create_epoch_ms<=primary_message.received_epoch_ms
+              THEN primary_message.create_time ELSE primary_message.received_at END AS origin_reported_at,
             journey.entry_mode AS recorded_entry_mode,
             session.id::text AS session_id,thread.id::text AS thread_id,thread.provider AS thread_provider,
             thread.channel_account_id,thread.chat_type AS thread_chat_type,thread.external_thread_key
        FROM intake.service_intake AS intake
+       JOIN channel.message_inbox primary_message ON primary_message.id=intake.primary_message_id
        LEFT JOIN intake.contact_journey AS journey ON journey.origin_intake_id=intake.id
        LEFT JOIN conversation.session AS session ON session.service_intake_id=intake.id AND session.status<>'ENDED'
        LEFT JOIN conversation.thread AS thread ON thread.id=session.thread_id
@@ -54,7 +60,7 @@ async function loadIntake(transaction, intakeId, lock = false) {
 async function loadWindow(transaction, intakeId) {
   const result = await transaction.query(
     `SELECT relation.sequence_no,message.id::text AS message_id,message.clean_text,message.msg_type,
-            message.normalized_message,message.received_at
+            message.normalized_message,message.received_at,message.received_epoch_ms::text
        FROM intake.service_intake_message relation
        JOIN channel.message_inbox message ON message.id=relation.channel_message_id
       WHERE relation.intake_id=$1::uuid ORDER BY relation.sequence_no LIMIT $2`,
@@ -62,11 +68,12 @@ async function loadWindow(transaction, intakeId) {
   );
   if (result.rows.length === 0) failP2015(P2_015_ERROR_CODES.storageFailed);
   const texts = result.rows.map((row) => row.clean_text ?? '').filter((text) => text.length > 0);
-  const total = texts.reduce((sum, text) => sum + text.length, 0);
+  const joinedText = texts.join('\n');
+  const total = joinedText.length;
   return {
     rows: result.rows,
     bounded: result.rows.length <= P2_015_LIMITS.messageWindowTurns && total <= P2_015_LIMITS.evaluatedTextCharacters,
-    text: texts.join('\n'),
+    text: joinedText,
     total,
   };
 }
@@ -121,7 +128,15 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
   async function processInTransaction({ transaction, intakeId, profile, reporterHash, flags, traceId }) {
     const intake = await loadIntake(transaction, intakeId, true);
     const window = await loadWindow(transaction, intakeId);
+    if(intake.source_chat_type==='group') {
+      // A bot display-name mention is addressing metadata, not a fault claim.
+      // Keep the original rows for source hashes and persisted provenance.
+      window.text=window.rows.map(row=>(row.clean_text??'').replace(/^@[^\s@]+(?:\s+|$)/u,'')).filter(Boolean).join('\n');
+    }
     const mode = entryMode(intake, window);
+    if(intake.source_chat_type==='single')window.text=window.rows.map(row=>{
+      const text=row.clean_text??'';return parseExplicitContinuation(text)?.description??text;
+    }).filter(Boolean).join('\n');
     const observedAt = intake.last_message_at;
     const observedEpochMs = shanghaiLocalToEpochMs(observedAt);
     const dueEpochMs = String(BigInt(observedEpochMs) + (mode === 'GROUP_MENTION_TO_DIRECT_GUIDED' ? 3_000n : 0n));
@@ -129,7 +144,7 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
       origin_intake_id: intake.id, session_id: intake.session_id, linked_ticket_id: intake.pilot_ticket_id,
       entry_mode: mode, reporter_identity_hash: reporterHash, profile_resolution_status: profile.status,
       profile_snapshot: profile.snapshot, evaluation_due_at: formatEpochMsToShanghaiLocal(dueEpochMs),
-      evaluation_due_epoch_ms: dueEpochMs, reported_at: intake.created_at,
+      evaluation_due_epoch_ms: dueEpochMs, reported_at: intake.origin_reported_at,last_activity_at:intake.last_message_at,
       privacy_class: intake.privacy_class, retention_until: intake.retention_until,
       retention_until_epoch_ms: intake.retention_until_epoch_ms,
     } });
@@ -154,15 +169,31 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
     const sourceHash = safeHash(window.rows.map((row) => ({ sequence_no: row.sequence_no, message_id: row.message_id, clean_text_hash: safeHash({ text: row.clean_text ?? '', type: row.msg_type }) })));
     const routeContext = {
       service_intake_id: intake.id, journey_ref: journey.id,
+      ...(journey.association_reason?{journey_association:{method:journey.association_reason,
+        journey_ref:journey.id,channel_leg_ref:leg.id}}:{}),
       source_refs: sourceRefs, message_sequence_window: {
         start: window.rows[0].sequence_no, end: window.rows.at(-1).sequence_no, count: window.rows.length,
       },
-      safe_normalized_text: window.text,
+      // An oversized window goes to Review without evaluating a truncated prefix.
+      safe_normalized_text: window.bounded ? window.text : '',
       reliable_follow_up: false,
+      ...(profile.status === 'RESOLVED' && profile.snapshot?.source === 'WECOM_DIRECTORY'
+        && typeof profile.snapshot.version === 'string' && profile.snapshot.version.length > 0
+        && profile.snapshot.account_status === 'INACTIVE' ? {
+          identity_review_required: true, directory_snapshot_hash: safeHash(profile.snapshot),
+          directory_assertion: { source: 'WECOM_DIRECTORY', account_status: 'INACTIVE', version: profile.snapshot.version,
+            valid_at: profile.snapshot.valid_at ?? null, fetched_at: profile.snapshot.fetched_at ?? null },
+        } : {}),
       conflicts: [],
       input_hash: safeHash({ source_hash: sourceHash }),
     };
     let routed = decisionOverride ? await decisionOverride({ transaction, journey, routeContext }) : null;
+    if (['MULTIPLE_GUIDED_JOURNEYS','EXPLICIT_REFERENCE_REJECTED'].includes(routed?.reason_code)) {
+      // Association uncertainty does not suppress recognition of this Intake's own fault.
+      routeContext.association_review_required = true;
+      routeContext.association_review_reason = routed.reason_code;
+      routed = null;
+    }
     if (routed !== null) {
       routed = freezePublic(routed);
     } else if (!window.bounded) {
@@ -170,10 +201,26 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
       routed = freezePublic({ ...routed, reason_code: 'MESSAGE_WINDOW_LIMIT_EXCEEDED', result_hash: safeHash({ ...routed, reason_code: 'MESSAGE_WINDOW_LIMIT_EXCEEDED' }) });
     } else {
       try {
-        const output = engine.evaluate({ text: window.text, source_ref: `intake:${intake.id}`, observed_at: observedAt,
+        let output = engine.evaluate({ text: window.text, source_ref: `intake:${intake.id}`, observed_at: observedAt,
           context: { existing_ticket: intake.pilot_ticket_id !== null } });
-        routed = routeP2007Decision({ rule_output: output, context: routeContext });
-      } catch {
+        const prior=await transaction.query(`SELECT safe_result,input_hash,result_hash,source_hash FROM intake.deterministic_decision
+          WHERE service_intake_id=$1::uuid AND source_window_start_sequence=$2 AND source_window_end_sequence=$3
+            AND catalog_version=$4 AND rule_set_version=$5 AND engine_version=$6 AND decision_policy_version=$7
+          ORDER BY decision_ordinal DESC LIMIT 1`,[intake.id,window.rows[0].sequence_no,window.rows.at(-1).sequence_no,
+            output.catalog_version,output.rule_set_version,P2_015_ENGINE_VERSION,P2_015_DECISION_POLICY_VERSION]);
+        if(prior.rowCount){
+          const p=prior.rows[0];if(p.source_hash!==sourceHash)failP2015(P2_015_ERROR_CODES.decisionConflict);
+          routed=freezePublic({...p.safe_result,input_hash:p.input_hash,result_hash:p.result_hash});
+        }else{
+          const anchor=await readGroupCorroboration({transaction,intake,window,reporterHash,catalogVersion:output.catalog_version,ruleVersion:output.rule_set_version});
+          if(anchor)output=engine.evaluate({text:window.text,source_ref:`intake:${intake.id}`,observed_at:observedAt,
+            context:{existing_ticket:intake.pilot_ticket_id!==null,anchor_compatible:true,
+              anchor_age_ms:Number(BigInt(anchor.reply_received_epoch_ms)-BigInt(anchor.root_received_epoch_ms)),corroboration_anchor:anchor}});
+          routeContext.group_corroboration_safety=assessGroupCorroborationSafety({intake,window,output});
+          routed = routeP2007Decision({ rule_output: output, context: routeContext });
+        }
+      } catch (error) {
+        if(error?.code===P2_015_ERROR_CODES.decisionConflict)throw error;
         routed = routeRuleFailure({ ...routeContext, catalog_version: engine.catalog_version ?? 'UNAVAILABLE', rule_set_version: engine.rule_set_version ?? 'UNAVAILABLE' });
       }
     }
@@ -213,7 +260,8 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
     const preload = await loadIntake(pool, intakeId, false);
     const reporterHash = reporterIdentityHash({ provider: preload.source_provider, bot_id: preload.source_bot_id,
       reporter_external_id: preload.reporter_wecom_userid, hmac_key: identityHmacKey });
-    const profile = await directoryPort.resolve({ reporter_identity_hash: reporterHash, source: 'WECOM_DIRECTORY' });
+    const profile = await directoryPort.resolve({ reporter_identity_hash: reporterHash, source: 'WECOM_DIRECTORY',
+      bot_id:preload.source_bot_id,reporter_external_id:preload.reporter_wecom_userid });
     return freezePublic({ service_intake_id: preload.id, primary_message_id: preload.primary_message_id,
       reporter_hash: reporterHash, profile });
   }

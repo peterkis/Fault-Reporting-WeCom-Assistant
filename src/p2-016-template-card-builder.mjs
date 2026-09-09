@@ -20,7 +20,7 @@ export function buildP2016TemplateCard({model,origin,allowedHosts,token,allowLoc
   const v=validateP2016CardModel(model),url=reporterCardLinkP2016({origin,allowedHosts,token,allowLocalHttp});
   return publicP2016({msgtype:'template_card',template_card:{
     card_type:'text_notice',source:{desc:v.source==='GROUP'?'群聊报修':'主动单聊',desc_color:0},
-    main_title:{title:v.notification_type==='TICKET_CREATED'?'工单已受理':'工单状态更新'},
+    main_title:{title:v.notification_type==='TICKET_CREATED'?'工单已受理':v.notification_type==='TICKET_ACCEPTED'?'已有人员处理您的工单':v.notification_type==='TICKET_CLOSED'?'工单已处理完成':'工单状态更新'},
     emphasis_content:{title:v.suffix,desc:'工单尾号'},sub_title_text:'完整工单号与处理进度请通过下方入口查看。',
     horizontal_content_list:[{keyname:'状态',value:EXTERNAL_TICKET_STATUS[v.status]},{keyname:'更新时间',value:v.occurred_at}],
     jump_list:[{type:1,title:'查看处理进度',url}],card_action:{type:1,url},task_id:'ticket_'+v.public_ref+'_'+v.version,

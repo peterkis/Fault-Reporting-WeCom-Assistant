@@ -202,8 +202,14 @@ try {
 }
 const p2016Seams=new Set(['src/p1-006-ticket-state-actions.mjs','src/p1-010-ticket-closure.mjs','src/p2-004-communication-delivery-worker.mjs',
   'src/p2-005-conversation-control.mjs','src/p2-006-workbench-http.mjs','src/p2-006-workbench-authorization.mjs']);
+// These exact predecessor seams have separately recorded P2-G2 repair authorization.
+const p2g2RepairSeams=new Set(['src/p1-004-service-intake.mjs','src/p2-006-workbench-command-facade.mjs','src/p2-007-rule-engine.mjs']);
+const p2g2RepairAuthorized=p2g2Authorized&&['evidence/p2-g2-gold-repair-authorization.md',
+  'evidence/p2-g2-direct-session-repair-authorization.md','evidence/p2-g2-continuing-gap-repair-authorization.md']
+  .every(file=>fs.existsSync(path.join(root,file)));
 const forbidden = changedPaths.filter((relativePath) => /^(?:database\/migrations\/(?:00[1-9]|01[0-2]|020|021|022)_|src\/p1-|src\/p2-004|src\/p2-005|src\/p2-006|src\/p2-007|web\/|archive\/|\.env\.pilot$)/u.test(relativePath)
-  && !(p2016Authorized&&(p2016Seams.has(relativePath)||/^web\/p2-(?:workbench|reporter)\//u.test(relativePath))));
+  && !(p2016Authorized&&(p2016Seams.has(relativePath)||/^web\/p2-(?:workbench|reporter)\//u.test(relativePath)))
+  && !(p2g2RepairAuthorized&&p2g2RepairSeams.has(relativePath)));
 check(forbidden.length === 0, 'no forbidden Runtime Migration web archive or secret path changed');
 const historicalEvidence=execFileSync('git',['-c','safe.directory=D:/Projects/Fault-Reporting-WeCom-Assistant','-c','core.safecrlf=false',
   'diff','--name-only','--diff-filter=MDR','origin/main','--','evidence'],{cwd:root,encoding:'utf8'}).split(/\r?\n/u).filter(Boolean);

@@ -1,0 +1,3544 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "620e8f1db6322341a99df23f57ad216fc3c6629705422cf93f639bbe1e3fd3b9",
+  "run_suite": "g2",
+  "tap_sha256": "1c6dbbe3fa70d5fb993bc403a9e718a0d39c81711182c8bb12be9a99e01bcab5",
+  "source_and_adjudication_hashes": {
+    "tests/fixtures/p2-015/rule-first-safe-route-gold.v1.jsonl": "723b169fd4843563ee33132435ef01e4bd43054541cd91f97de40d10c8197899",
+    "tests/fixtures/p2-007/hospital-it-evaluation-corpus.v1.jsonl": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+    "tests/fixtures/p2-007/hospital-it-multichannel-evaluation-corpus.v1.jsonl": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+    "tests/fixtures/p2-007/multichannel_decision_cases.v1.2.jsonl": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+    "tests/fixtures/p2-g2/multichannel-adjudications.v1.json": "221a990202a41ac7b2204c18f63b3bbbf934121f007bd814b6a1ef18031d55d7",
+    "tests/fixtures/p2-g2/gold-adjudications.v1.jsonl": "b59092c6f13e887ccdd697a7a75782bf1c2d718e8a67433ccda0b34d4370d15a",
+    "tests/fixtures/p2-g2/mechanism-adjudications.v1.json": "93fbf9bd361ae90daa53e651ef2e8f55ee2933fd24850d258dd77943c0147ed3"
+  },
+  "total_source_cases": 202,
+  "normal_input_cases": 122,
+  "mechanism_and_other_cases": 80,
+  "observed_normal_pass_cases": 35,
+  "observed_normal_test_coverage_percent": 28.688524590163933,
+  "accounting_complete": false,
+  "execution_missing": [
+    "P2-007-C002",
+    "P2-007-C003",
+    "P2-007-C004",
+    "P2-007-C005",
+    "P2-007-C006",
+    "P2-007-C008",
+    "P2-007-C009",
+    "P2-007-C010",
+    "P2-007-C011",
+    "P2-007-C012",
+    "P2-007-C013",
+    "P2-007-C014",
+    "P2-007-C015",
+    "P2-007-C016",
+    "P2-007-C017",
+    "P2-007-C018",
+    "P2-007-C019",
+    "P2-007-C020",
+    "P2-007-C021",
+    "P2-007-C022",
+    "P2-007-C023",
+    "P2-007-C024",
+    "P2-007-C025",
+    "P2-007-C026",
+    "P2-007-C027",
+    "P2-007-C028",
+    "P2-007-C032",
+    "P2-007-C033",
+    "P2-007-C035",
+    "P2-007-C036",
+    "P2-007-C037",
+    "P2-007-C038",
+    "P2-007-C039",
+    "P2-007-C040",
+    "P2-007-C041",
+    "P2-007-C042",
+    "P2-007-C043",
+    "P2-007-C045",
+    "P2-007-C046",
+    "P2-007-C047",
+    "P2-007-C048",
+    "P2-007-C049",
+    "P2-007-C050",
+    "P2-007-C051",
+    "P2-007-C052",
+    "P2-007-C053",
+    "P2-007-C055",
+    "P2-007-C056",
+    "P2-007-C057",
+    "P2-007-C058",
+    "P2-007-C059",
+    "P2-007-C060",
+    "P2-007-C061",
+    "P2-007-C062",
+    "P2-007-C063",
+    "P2-007-C064",
+    "P2-007-C065",
+    "P2-007-C066",
+    "P2-007-C067",
+    "P2-007-C068",
+    "P2-007-C069",
+    "P2-007-C070",
+    "P2-007-C071",
+    "P2-007-C072",
+    "P2-007-C073",
+    "P2-007-C074",
+    "P2-007-C075",
+    "P2-007-C076",
+    "P2-007-C077",
+    "P2-007-C078",
+    "P2-007-C079",
+    "P2-007-C080",
+    "P2-007-C081",
+    "P2-007-C082",
+    "P2-007-C083",
+    "P2-007-C084",
+    "P2-007-C085",
+    "P2-007-C086",
+    "P2-007-C087",
+    "P2-007-C088",
+    "P2-007-C089",
+    "P2-007-C091",
+    "P2-007-C092",
+    "P2-007-C093",
+    "P2-007-C094",
+    "P2-007-C095",
+    "P2-007-C096"
+  ],
+  "expected_manual_review_cases": 25,
+  "manual_review_observation_missing": [
+    "P2-007-C065",
+    "P2-007-C066",
+    "P2-007-C068",
+    "P2-007-C069",
+    "P2-007-C070",
+    "P2-007-C071",
+    "P2-007-C072",
+    "P2-007-C073",
+    "P2-007-C074",
+    "P2-007-C075",
+    "P2-007-C076",
+    "P2-007-C077",
+    "P2-007-C078",
+    "P2-007-C079",
+    "P2-007-C080",
+    "P2-007-C082",
+    "P2-007-C083",
+    "P2-007-C085",
+    "P2-007-C087",
+    "P2-007-C089",
+    "P2-007-C091",
+    "P2-007-C092"
+  ],
+  "original_semantics_all_passed": false,
+  "semantic_review_required": true,
+  "cases": [
+    {
+      "source_case_id": "P2-007-C001",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "cbbe3549898850838ff2009b26d4dfdbb4c28a5c806be3502a36d3a55a76bc73",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "REFERENCE_LABEL_CONFLICT",
+      "original_expected_result_code": "SERVICE_REQUEST",
+      "proofs": [
+        {
+          "test_name": "P2-G2 frozen gold through normal ingress: P2-007-C001",
+          "test_number": 76,
+          "tap_block_sha256": "5feb8270c687a89a1598b0cae6d59da6fcd93b4833ea8b205920d3338b31c296",
+          "diagnostic_sha256": "0543fff9db88f66650e6974a85e89f90d347dd9c33503e8b0ba1d35aa290847e",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-C002",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "8f9e91b94aaa03d516bfb4d3e149184349f3d706237cb18427b5578ea5d62d0e",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C003",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "2616f2ff1ee8456e799e1819e02b4137443c40edabe76200668d5b31182443d3",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C004",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "577e8b293c0d9895890c1cfdcc3d286687606c9df6f133aeda49493d352c944c",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C005",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "5a7a0f8a1be2a311f14649a5c5f6288244f43c1daf6c49639c9a116f651b1b5e",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C006",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "413c4ada191d42e1c0029b2d3071755cee3c74bef7b90fb0b8bfed90aafbf0d8",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C007",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "717886678804747c482750c4214d9d6c12abffb51adac4cd76ea1761832fa953",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "DETERMINISTIC_RECOGNITION_GAP",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": [
+        {
+          "test_name": "P2-G2 frozen gold through normal ingress: P2-007-C007",
+          "test_number": 77,
+          "tap_block_sha256": "fbc49ce362a75206a971177d84adfcae538503bb7acf0244e384d0d713413a85",
+          "diagnostic_sha256": "dad01930557d0972ce3dd2ef228cedcaf3bef43dea5f49eb69e670ff26fbd7f7",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-C008",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "b3228523b63bd481795c033fdd1a88d65fdb84adbaa886ddee4380d695fd918d",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C009",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "bafd43863ec8d9c50e1160418d004ac71d7ce6e0f60c0defd936a43bdcaa9bfa",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C010",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "53f472a9543393e9adcaee2dede0fc4cd982523eacbbfaeffd33dc3f6891cad0",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C011",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "e85e595c12536b259a7d7829fb187e9ed1a05f593886627fdf41bfcc4a0eb25e",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C012",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "31d517b469c4998d100ce64b81cabacc3ed431ab5660b4dace9ed59a40fa59d9",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C013",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "70e390551c24c18e076bd72978944eef6c270367e784602f5f15f1de27b0dbf5",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C014",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "263afc960a7299bbef69b593f67452e3ee89866952af7f39938d547356626958",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C015",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "6fb26c44dee2bad0f3ad10611ee3e92c06e57a344c402f24ae055d6fe0e131cf",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C016",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "ca124236cf7d6fa2bebf7bca06ac3ff41215aceaad3217083f13b0bbfd64693c",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C017",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "289a0695fe70d2c13506be7e923886bfd1fe5d294ad6b72da5e34934c349c2fe",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C018",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "efb019a3ab2b33ac975679c8eb96aa62d56403436d437839b103382b34fe003c",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C019",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "189f3c12a35dd3e0a13f62ed6eb0a4ce85d6f930787bc99a188eab3028b96723",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C020",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "ef641cbfed2813cf722b06f421451a2c111102c017deccae9b75d39b3bb627ad",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C021",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "377d7b243292510cd961529cdfe685c738a64ea57d3dc01d6ffdf6a79b26a254",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C022",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "724bf48d89606aa4aa6d178e39bd9c6b47654775fe75f9567ee14c9384a052a9",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C023",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "b4e423ee1c13ce8f186e5335f4f3276b9fa7f110dba8ce0f4f6b6010085a97f1",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C024",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "463c5658ee6b7911a7ada466ebec2122708539492b5f38504a9dd9cd945e975b",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C025",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "43e6e99388aac0904a6efe9279bdbe2fe4edaf940cd76a4ba35695553d704cfe",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C026",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "932f4bcfda330991be6b4fe635e2d67fc9916f475cbb8ef5ce685713df6dee80",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C027",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "acf058dc1e1611b13f3c95f7cca8b509ceba10f3e180e2ed72858d187f653140",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C028",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "50de7a8844657e73d394d08322ee0b63bdebd40174aebbc11ec68cc49558353a",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C029",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "1b0828776dbb95c78e763d2e95f6fd0d3b23deecc1d0f0c968a760f809918c63",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "C029 actual image without OCR asks for description, with no fabricated text or Ticket",
+          "test_number": 219,
+          "tap_block_sha256": "a1e2a629594aa4fa83ab14ca7c09dcbc627e5ec6f9905b3fa343c181316c2c0c",
+          "diagnostic_sha256": "3911201987e420b31976c393b1c05fb91f61641bd8d14717ac8cb816f37ae39f",
+          "observed_results": [
+            "NEEDS_DESCRIPTION"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-C030",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "91d9b823f667cd3f0016bb4068637ad3439405fc2486b7d992cacba9f88a8700",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": [
+        {
+          "test_name": "normal group corroboration keeps independent Ticket and source: P2-007-C030",
+          "test_number": 120,
+          "tap_block_sha256": "4037a3ef6895cd99136b02b8df8d7eb146e67f0537f08184aedb3bc9c988eb51",
+          "diagnostic_sha256": "0f417aa0f10158f37bca1e5eeb40537a877528ad168038cd80df7540c3996e92",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-C031",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "0e06064f99748fe4ae7feda978bbe11a9cf661441ef0955d52a575d1af42b345",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": [
+        {
+          "test_name": "normal group corroboration keeps independent Ticket and source: P2-007-C031",
+          "test_number": 121,
+          "tap_block_sha256": "a918200455a8a44460baece1be7abe065a219b96de6fe4258b7ada5fd73efbec",
+          "diagnostic_sha256": "2bdf6437df93417415ded4f53870032fa67f0d0d243bae71a68053a4202c7b5a",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-C032",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "1b16ad4f7540bf62859a1c62157c4b1bf60616025f36caf608ea6603d2b6dd66",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C033",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "fb52c6702497e8fbb55a0dc4ce52e0390ca63654105ebc6e437d023ae8bc766a",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C034",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "4012ab7aefed9d0bd9085f67f7434bd7ff8581a83e7dfddb8cf5b157a5434b81",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "ROLE_QUALIFIED_PURE_FACT_CONFLICT_NOT_NORMAL_REPORTER_INGRESS",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "C034 role-qualified conflicting service facts remain separate; no scope or Ticket is invented by the pure mechanism",
+          "test_number": 222,
+          "tap_block_sha256": "5da18c117ebe031bdebe8c944369d5d172f3f27142f311b26bbcc050b09f52bd",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-C035",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "fe3c78ea06de86d345be0cd9a04b8868d02338c9e2e177b3db23774d25f0df26",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C036",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "cbaa29f82042537914b5161f8ae6b10e0686757fd8b40c4ec03cd2e2c0ad514c",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C037",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "355cfa53fef09ce8148d8ddddcfd9f49ff860be4f7ea8b286a70654a6ede0227",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C038",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "f782a4dcb2f4605200aea99a79eda9a7c3ff44b8c11f1cd6bb02aea1950dd627",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C039",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "7f5cd95d12700d2f3a75e808b35acc6bda15eb6b6e85c31af72a397933954fb0",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C040",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "9df29d6a9057a3b2252e4f96d710e3bde567cb4f935be114b7d17023d1e45eba",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C041",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "a1c01c43d8d4f34f70368fdd8249502579704ff5bc011820c280ee8cfce75f45",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C042",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "ef4ad4ea52cbb34336bf197518ff1d199dd50696f0aa299b8eb409589702c25b",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C043",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "b7e5f5c23f2fee860928d9f926df98c707af82166cb9da8f892bc486dffc62a1",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C044",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "cffd707d90a1a51fd38443c95c753bae845ba1ca0ecddfbac1cb6ce656184f05",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "C044 source has two trusted people, not three; each fault retains its own Ticket",
+          "test_number": 220,
+          "tap_block_sha256": "4cea0fb1ba9adc28b24640081d0613f01aedc84885489dbd6c686a9e1fe3d43c",
+          "diagnostic_sha256": "ab8affbbd5e91cc44d02c85518c4b69ed3491ae43ca284cc3d10d3784166b01e",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-C045",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "197468572101cebbd0915d5aafa6930a031c72e4073c4b7b5001f068dfec21ad",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C046",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "f439522db3519b2653aba30f3767e2c5cf3d08c0c2f60e9277424d2ec7838bc1",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C047",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "316882db1cf2832bed5136dbde042a1ecf44686b9bf02c5f197b816745f2a00a",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C048",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "b218a17b386b58cd55b00838389f2d01f9732306f6b5363ea729f3b8ce01bf0a",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C049",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "e9b9dab653011edc5aaa85bc165f2f392c447fb5a5ec2589e125c9c2479a581d",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C050",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "6f2cad116f7b099d8cca902b6b2451f99aeaa8ae1544b1d52ce78c810ffceecd",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C051",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "b5d0207b40d6dc6d77fa84934918fcc8b6263d60cb02877378cd8b9dcc95e127",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C052",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "15a289773ae09cdf1a7e5aaf8536202ccae69c6696762bdf3c836dcb6ea7aa14",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C053",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "7d3e12c705ac99f44250daf9a59a7065f4f2def0e9add478642e06f76a2eae67",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C054",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "9ca174825491a5c23fc838bd35454708255e63ff8201f6e7bd38ed208995da64",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": [
+        {
+          "test_name": "C054 real prior Ticket survives an authorized internal recovery note and Reporter still-failing reply",
+          "test_number": 221,
+          "tap_block_sha256": "4e0ace3b8d2b906d51a259959924f155518927130b169b884be10fa1dd64db05",
+          "diagnostic_sha256": "47b7740fabfa21693ef66ededc8968e82c72e086efaedf202065b3e3bdc41660",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-C055",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "8a035b56682d3e81094605b781f3a0089735d2406d1f8998f1f4180b6530f6fa",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C056",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "47e5a3c6d5a880453d3a3ee05133cff0075ba9a32dc20652711ff063b10ac912",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C057",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "276ebfa66a7acbafee406ab7fc75aada71a7aaf4e46e877137d1ead0218b6c07",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C058",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "95c01d69653aafbccb0563665a3ce2e0526df8368deefd1aff09e3e2a4f7fc03",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C059",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "29d6d899cc99402a1c66ffc54c8b5e8eee7c66bef632ed7784065d818ffa2549",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C060",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "31a5ec0b96785311016bb49eb0f6b58e83bf48a3cd955ca993aee5476bd80b8b",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C061",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "242e085f4e87cefd5ccf4696426c2706b29970b949269d76903f922983f8f4f9",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C062",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "fd6067e91b85c6fb6b216e01e4797602be0a807e11568938244b344b70498f66",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "OUT_OF_SCOPE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C063",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "13c552d0b1363cca1443436eca5c3781a4f2e222e8428c12f3ba96dd52936604",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "OUT_OF_SCOPE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C064",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "4c2a25de99bf1315e2947a0690c2d3e8292f59c6f61318bc7832bc709e4e301d",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "OUT_OF_SCOPE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C065",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "8d21ea25e5f773f976b8080997ecf6628f27e303328e669b3c29d4c1de751a3b",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C066",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "167d816f130a618558f2d18e69a10867d1880643f699042c4cb2da058fa82d43",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C067",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "8ff0dd4349fb537055214590701d27d95796aea5acf2878b4ad89a93e9505a76",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C068",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "e031787685eb991b38a93f254eceae7bb10f196e97b12e64c9cdfa88f9d8cbe9",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C069",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "beadbc86a4ca22e2054f70561d5800866549714ea1f85e10eaa33363e7ac2e07",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C070",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "eb24f3b6d6363accfcfeceba04c145aa0e9aa6641f32e081ae88535c5e91cd0d",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C071",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "5ca2b80bb1403b59624671d53a67427018c03b23baac10d9a6177c9b5bce6277",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C072",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "e14257ad9936dc9c34dad5f4fd0ac516914b7d3f1725460992dc9ee686ad642f",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C073",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "6f11491712ada59004b2d31901a976fa07a0e4c0a1daf8d9edcfce71de6b0538",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C074",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "698cff25835576d3a9bcf9be40ce11c39930f0fa395fc0b9da0428fd25fcb59e",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C075",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "98207af02c273d035e100acf024eeead81ca55562ab45042463435d2242d7863",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C076",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "a79ee47a87b00fac0076a5a49d93229c44b92bc0b22d0ffe683b91204a2b23aa",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C077",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "782604635c1879cc7489e4189372fe35804ba677fe55dbef60275c41e20945d9",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C078",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "dc1404e53b1a370ca71699ea6f330d3e09a0b70ac239af5307b0fc7125f4995f",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C079",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "dc73fb33a5c6446df1f535e6ca0233c7ed13c50a7fb3aa842972834a73860abd",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C080",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "3b2376ddf0ba6109132b1f8e0f70a8d5a82d62c27a65fb6104e2c4a3a6391ee3",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C081",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "d62881609d7770c0ed70c7bbaddf7481ce772029e539f3bf8ebb728adf633510",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C082",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "65ef1f5a62a051e8c60a42b926e6e8ba1df7412ebfac21edc2f1c162ca5e1c16",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C083",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "94eb19ff61ffd89b6115d13a42cdf06e2541a84a1c7f8e6e1939d3b87e0d4edf",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C084",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "3a596b61a9456c5c743bd8aba05001b2125b48b2efaa6dfc8051eed063274955",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C085",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "630271895e50fb3407d1487a4d3d7281a713315b164cde3b6d4afdf58d27eeab",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C086",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "9bb691480442000895617a41bdd1597199dc2f6634f154d27afeaae852fdc57a",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C087",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "385f0ac8e1735a9fbf986e5e36ec6866cfc1d5acabf5457c4fe7580613aa6098",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "REFERENCE_LABEL_CONFLICT",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C088",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "078b4436f354ad1bbc1fe328335045b98aa213e4c0d3d794136c7fe266811032",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C089",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "8aeccf9482191e06791f177753179c42b7b7e09a5032c4ad35e878168f9328e5",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C090",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "703f12d32d6f3ab6507ca4238fae342a7424d40ba646aa3688e89b30b5b27181",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "BUILD_TIME_PRIVACY_NOT_RUNTIME_ROUTING",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "C090 build-time corpus privacy executes provenance and identifier rejection, not a fake runtime Review",
+          "test_number": 223,
+          "tap_block_sha256": "154e8b900d9299ef5a0e8c67cc365998664d49d9677dda17c7e7033c27a47a80",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-C091",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "737b0f594e14856d17d20a3fb6624528974c4f93bcd4cd402cfdd866f92a5aa6",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "STATUS_QUERY",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C092",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "6d92e2eccd68e03a9dabfbcd025db17b7a55842199e97d9687282bc00bbec176",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C093",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "3092c5af1310cd0e0dbac1c93d445288ad71bb41bf9e4140a2f714a311d08870",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C094",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "3ef0d23e6f9dcbde17bdaa56117c27ac823bac73100edce673aa12dc4bd212da",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C095",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "edf450e8aec79eeebd54a2bfba88ae8c863f4a74764275416a60216b7bfc5396",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-C096",
+      "source_fixture": "hospital-it-evaluation-corpus.v1",
+      "source_file_sha256": "03d81b800e9b0792d5a555d9172ebaa630b4ee9a4ce8645b9c919efc2fc7b9cf",
+      "source_case_sha256": "40dd671cb35156e1e0d9da86e89d7c95dc4d741c647b87a57caac86884fd172f",
+      "normal_input_denominator": true,
+      "status": "EXECUTION_MISSING",
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": []
+    },
+    {
+      "source_case_id": "P2-007-X001",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "06793472688d2fee8871ce5e95dcb1a63bf2f71123d659d5d7c711fcc8a7ffac",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "independent multichannel source: P2-007-X001",
+          "test_number": 155,
+          "tap_block_sha256": "32caee1ca9d020793b67c5969ea9fd4dcdf06e01b4dead38d68fdf5ca09a88cf",
+          "diagnostic_sha256": "0249a18fc35ff21f67b28eb6e584f088ec457dbb44df3ddd85818dce06b2efd3",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X002",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "a09db476461a7ac7b128cfb513ac89da8fe4a34b48c6b8bbab7cd10b7fc6e0b7",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NONE",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "independent multichannel source: P2-007-X002",
+          "test_number": 156,
+          "tap_block_sha256": "574fb4fc9cd39209e4fdc33862741bd3c6bdffc40d414e39f36d0151f55ac1bc",
+          "diagnostic_sha256": "1a8495f47f64b895bc71eb19469e14281ebb7b20a9549fad0af3ef5f11ed3ea3",
+          "observed_results": [
+            "NEEDS_DESCRIPTION"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X003",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "0e60952fbeca51a17c085b36ef3cd58853ce81046eae437960783ab6158845e0",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "independent multichannel source: P2-007-X003",
+          "test_number": 157,
+          "tap_block_sha256": "cc207574558393478ce49a32896e5aeb0a63a4d4db058cf4b1f39fca490f3969",
+          "diagnostic_sha256": "54103bc0fab61072cfb38ae038e14dfdc86dc1d97a20da75b5eb9087e993676f",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X004",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "90b901080209f33b044e77c5920d20fed66e57d936d1d37d579f7963a04c3812",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "independent multichannel source: P2-007-X004",
+          "test_number": 158,
+          "tap_block_sha256": "086c0a493e4cd995f4a374d5f678d6b47b55a908e83aa48bed5d0529a0361fd2",
+          "diagnostic_sha256": "24c5914d40948de729f78b2bf7fdfc9a9ce4e355b148bb5d6bffc73057b16022",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X005",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "4752a6940ea488e64a581ddbc6af943d752f07aef05a4811f7d8338027b86845",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_REPLY_PRECONDITION",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "original explicit continuation source X005",
+          "test_number": 72,
+          "tap_block_sha256": "594c1d1ddf1087e0a63b326fdb22f9a67c21eb07b94275124a860ce3b97fcc00",
+          "diagnostic_sha256": "251bb7c0d33d37bdb9cc0544ebaee55493490e5bb45c72ee6ceb60141fd218a9",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X006",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "0b4103f571485d466eb25f8ab21ba1d8210cd19820a63ce1fa6b72c8474384af",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "MISSING_AUTHORITY_PRECONDITION_AND_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "G2-J01 ambiguous association preserves current report admission: 我有两个待补充问题，不知道这条属于哪一个。",
+          "test_number": 6,
+          "tap_block_sha256": "c1a2a9060296f1caad679e3d2024443656741bb3a60a7ef6542f7a00fb1515bf",
+          "diagnostic_sha256": "e7dd7179bde5a19ed7b4ad4ef4ccdfefc9b969ad3e84051b41222f4158455743",
+          "observed_results": [
+            "MANUAL_REVIEW_REQUIRED"
+          ],
+          "actual_manual_review_action": true
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X007",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "f27b0daf731d88d836adf97ea4ccdaa6fbfbe90d784ec7ceeae23ed30bf7e01a",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "original temporal/session source X007",
+          "test_number": 215,
+          "tap_block_sha256": "8fb86ae048f093e1e6bdd83edbe047f0dc918d3e0896e295def77255a1cb3bb9",
+          "diagnostic_sha256": "8b566b401cee47ab568df28c7ab7399c27502165d8f6d1f7f807d864b037545c",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X008",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "f2421367be1db4fee9724b9c6cebb0cd94c345dfa3b9a0b3c0e7560e1edb8d3e",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_CONTINUATION_PRECONDITION",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "original explicit continuation source X008",
+          "test_number": 73,
+          "tap_block_sha256": "c1300ae6926b276d29df2ea865fcb5bba40843cfedf7c98318d94ca09ee566b3",
+          "diagnostic_sha256": "095031c519fd22b9858d14cab11386595ea2e50ca5bc36641d0e25eefb7f5b85",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        },
+        {
+          "test_name": "G2 original X008/X030 explicit unavailability is a fault while hypothetical and recovered variants are not",
+          "test_number": 185,
+          "tap_block_sha256": "22271b92cf7b52d853ab261f95a398c018422ed1115ba486a7a541ff2f21c82f",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X009",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "a167be128d141c8155fbd6dc6fc3571c6cbfbe3d9e51a790fac986fa666f4d79",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "original temporal/session source X009",
+          "test_number": 216,
+          "tap_block_sha256": "55b7a4206a0b45861243786bb7a2afb3685bb415ea8b42a23383735927f7f75b",
+          "diagnostic_sha256": "d85a216f624d78c65facb545cbd1d5db68db816ce7b2456691ad1cb7c5867ebb",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X010",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "837bf929f7cb7a69564e8e3e034e81d8a8e8a26affaa389eca67af034875b308",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "independent multichannel source: P2-007-X010",
+          "test_number": 159,
+          "tap_block_sha256": "a8ddd7cf65f9c6903c72768b654ef2cd1fee1dcc11e9678c2d682863c0a53adf",
+          "diagnostic_sha256": "e7fb99ac6e74c41321179241cb31f90286affa83d71d9d504958f2408e3dfcf1",
+          "observed_results": [
+            "NEEDS_DESCRIPTION",
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X011",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "7684a67870955d53c457c7b57003197706de565d74936f377c93fc2f550cfbfa",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "original temporal/session source X011",
+          "test_number": 217,
+          "tap_block_sha256": "ad672a76efb5e96feaf6460b62aa71a7287ef360488abfda458dc510756c8256",
+          "diagnostic_sha256": "e540f17eed61e2952a21f48be372aae1967c36563733a27bf6348d613076bace",
+          "observed_results": [
+            "TICKET_ELIGIBLE",
+            "MANUAL_REVIEW_REQUIRED"
+          ],
+          "actual_manual_review_action": true
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X012",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "ec32dfd62b25af8976f634dba4cf6639d67d893e93376f0ab2e890acaaf1108b",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_CONTINUATION_PRECONDITION",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "original explicit continuation source X012",
+          "test_number": 74,
+          "tap_block_sha256": "0ba96cd917965cdba4c01bd1db7ed239b80d6c048fde4b0b7c3dea75174b3d48",
+          "diagnostic_sha256": "eaaa22f3a079898c48cf6b9a21fa65ba723c1862350fe6c1451657c1bac2c86c",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X013",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "a015dd973b61635b80cf9f5bfaf649813a3df94806f531f5cf87d27feddad4b7",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "original temporal/session source X013",
+          "test_number": 218,
+          "tap_block_sha256": "6f7c56d8b6b07a2185167c36fe22dc34e777a8648d5d244c766f3ead65f8c2b6",
+          "diagnostic_sha256": "13a926d9ee4d7415f8971731152cbf8916d476748f055fcc017bc5df6d97b887",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X014",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "21f9bc126d36bb1419a683470ed5b7f765fee7c5a3edb4b82bf67432f30c0ea8",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "independent multichannel source: P2-007-X014",
+          "test_number": 160,
+          "tap_block_sha256": "1a8c673c724d477e5bbab9b42b3106474caf0a9a399ac578a37f05549b9c2953",
+          "diagnostic_sha256": "7b06e5b9eb798f1c3817f654f2b940cbb1cc1db09c7143cdd0d1eac968d593a6",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X015",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "702b841520486713f49fbbfc76b4916613791e6be7de5aab4be7a1deb8bb49a3",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "independent multichannel source: P2-007-X015",
+          "test_number": 161,
+          "tap_block_sha256": "ce7a422eafc42aa26af532c4969d4f761d1f3d34af71e59d0c7b84a145c624a7",
+          "diagnostic_sha256": "e3827181fbb71dc3366d7f4e9eb477c3c0a964689bd426419e9ff3a7d92a0811",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X016",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "b2bdccd5d2dc1de0cafa23d6cdc7a3c90d0d2509e1ecd838bd17d6b4878be8da",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_DIRECTORY_PRECONDITION",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "original directory source X016",
+          "test_number": 211,
+          "tap_block_sha256": "7dbc99ddef3884bdbd5b6b8c35ccbdd6a1ce17d30539553aa03755681c5708f2",
+          "diagnostic_sha256": "31050ca9788e00db85835f3e4745e67b973b905f0ddba7dc85ff35a8c6587668",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X017",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "470a2fe72a9fe00e6077bd95a31ea13d1f0994cae726eb51d1a7012ba071cd64",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_DIRECTORY_PRECONDITION",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "original directory source X017",
+          "test_number": 212,
+          "tap_block_sha256": "aac257a0075d7b9173628d12475d8bcd231887476a4827bb425c3476a90efbeb",
+          "diagnostic_sha256": "bf39d285c2feb613b0a62c5096669bb769f96c3bfa240765f13f30c2cf131ccc",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X018",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "9cc0e20fd51ab09c18ddfcfe0a6db5672c96074d94d9dd24949aa9e49f43b721",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "original directory source X018",
+          "test_number": 213,
+          "tap_block_sha256": "d5c4087ffa5a16b91a693d3ea25159bbc01ba06e08cdfa135c5076bcb9f2fc8f",
+          "diagnostic_sha256": "361dc4e25b18f3eeb9c84fa463ee1af11f4cfc7ce87a32fbf9c6ff718e3a6e0b",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X019",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "01e88077278add84b0eb7f03bb038bb02ffcd8d76214a84173ebdd350a592265",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_AUTHORITY_PRECONDITION",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "original directory source X019",
+          "test_number": 214,
+          "tap_block_sha256": "14daafb5e0cbf61cfb41192575f75c69a1f61b5653e29f38c3839a8e51683f12",
+          "diagnostic_sha256": "d77805eb74ca5326823c05bb7023184bddfbf397270e5f9d7653de3193d7c445",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X020",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "10d8dfddcb230df851e1e6004afa15343eb253d91f4adce7ead233d198d05c39",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_TIME_PRECONDITION",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "original X020 preserves earliest Provider report time across actual explicit Direct continuation",
+          "test_number": 209,
+          "tap_block_sha256": "7e59d56f3e22baf7baab64013a907b984138be2a53e9207b67297a00dd1a023f",
+          "diagnostic_sha256": "8d5a581188435534377a8fb9242646de6319752d300f3eb6350f018b40da80d9",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X021",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "4ff6acbb8442d13737fe16223450649f0891d831853b4d1dd8d67aade295cb18",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "original X021 keeps Provider, receipt, durable Inbox, Intake and Ticket timestamps separate",
+          "test_number": 210,
+          "tap_block_sha256": "f3e601093b146c614ae2c7c654ca3b06bda0dc91caac8eb84c1fabe4db6c0fa8",
+          "diagnostic_sha256": "d33a4b36156610c9c61fe645183a340089167b2a033be4e6f8ee0c3646cd8dfb",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X022",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "5c5c97e5938fe9c77d4cd5151caa0835a80500230b37c61287824944c6e505d3",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X022/D12-035",
+          "test_number": 124,
+          "tap_block_sha256": "d46c0dbfff9411a61dc72f19e1868b1929b60ce5d5dca24441a2a298f6ae78c9",
+          "diagnostic_sha256": "edee910c9f4e5aa1630f11ce7536ff807cf7f1890d01ba24a594dcbffcf023de",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X023",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "4292bc17c899f7bba1112fe14d6970520a954e368598d938a38412fc463fd149",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X023/D12-036",
+          "test_number": 125,
+          "tap_block_sha256": "6791a576bb4ea14512176b40a971a2d2abe528b44f99c1553afbbb61866efb97",
+          "diagnostic_sha256": "0d1aff6adf5008687a32caf08ac9fd35f640871f7a17c66362973ed9865de034",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X024",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "e21ddbba037f906bb0ca7410175c6d46e754feb43743b1201ad48cde0a2efbb9",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X024/D12-040",
+          "test_number": 126,
+          "tap_block_sha256": "e637b677224339e038386823f577d5c9c115a0d38b8c0f2fe36074b32785aab5",
+          "diagnostic_sha256": "614b432490f06865cbc51ee87217f4646ed15c86e815a87165c733c7d1c657ff",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X025",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "fc66a0ed2e124525303f9374754e60b8696e32607baba6a454d53cdd799315fe",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X025/P2-007-X041/D12-037",
+          "test_number": 127,
+          "tap_block_sha256": "136cadfa6c8e6025384dd148693caa59d725ea29a485428cf56921aae9ece158",
+          "diagnostic_sha256": "55fb94c38ee6f1e21d494c030b375c5c59660d36896dc459f4c94ba590a06ac5",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X026",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "17c63f5df52eac57509b72035e7f92fcf85f50e5b12356ab6d63050545edf1d4",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X026/D12-038",
+          "test_number": 128,
+          "tap_block_sha256": "7e4050c73a9aba11c1410fca7c40ca26f34a6b3b8fe29f5349364e8f7a987c75",
+          "diagnostic_sha256": "9bbea6eea0518db2cea16ad8d41a50cb74721fc1580a88456fee5d0d338c0c5e",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X027",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "3ce32df2b985b6a59141321589244401d19b93cd6455fd9529e50109c1800012",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X027/D12-039",
+          "test_number": 129,
+          "tap_block_sha256": "0af9f7103d637dbb77c49dbd7bdb32098ff6041e54e7888bb43a3b25cd0207e3",
+          "diagnostic_sha256": "2f4885cef2304d47da01fb49a2d9434022036be77ecb015478719718ffa33b7b",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X028",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "4acb93b4af90dd0f3ad3568abe5ad531e991ac5c70b12f97a973f3837048d68f",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X028",
+          "test_number": 130,
+          "tap_block_sha256": "421d119062446bacbfa6b7cdb41fe5ea96250a9fc82051c4fdf7dfabc50bbcde",
+          "diagnostic_sha256": "771d75c0050ab4d96ad3d15f3155b596481264a682f6823a9811d69a3709818f",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X029",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "072992114965e15499cf0367a0b7f9c34d26f90a4ef956c0ee246f7e7759cd3f",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "SOURCE_AND_P2015_CANDIDATE_UNSUPPORTED_WITHOUT_BINDING",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "independent multichannel source: P2-007-X029",
+          "test_number": 162,
+          "tap_block_sha256": "ab4346db6f425f8782e4c386bf9767311a94d654afbc419f76725ce5760456d0",
+          "diagnostic_sha256": "71aa950b86440403464f1e3a72d136de66b229c820a1b37ad277a0a449665d97",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X030",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "fa67b127abdd5b3b587c4437d99d50c3a79b6d3495238ff571e9667ddec6fd0a",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "P2015_CONTRADICTS_SOURCE_FALSE_CANDIDATE",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "original explicit continuation source X030",
+          "test_number": 75,
+          "tap_block_sha256": "3e2cc792ea77640a7831e25d23c950898dbd377390d2a246ff6642ec2edbd03b",
+          "diagnostic_sha256": "2660ce41fc371359e6dcd2c8439aa2c586aca700596f18de98975ba7ce991462",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        },
+        {
+          "test_name": "G2 original X008/X030 explicit unavailability is a fault while hypothetical and recovered variants are not",
+          "test_number": 185,
+          "tap_block_sha256": "22271b92cf7b52d853ab261f95a398c018422ed1115ba486a7a541ff2f21c82f",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X031",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "067877842a0e1c0c939b115f5dc39827b5dffbf2b8ca006d626fde035e06c8a3",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "FROZEN_DISTINCT_REPORTER_COUNTS_WITH_UNKNOWN_DEPARTMENT_AND_LOCATION",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "X031 three real independent reports generate one review candidate from persisted facts",
+          "test_number": 21,
+          "tap_block_sha256": "d798a545cd939b6d9036d64d3456a6f2e5a8dcf4abf74d8df507bdb509b87386",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        },
+        {
+          "test_name": "independent multichannel source: P2-007-X031",
+          "test_number": 163,
+          "tap_block_sha256": "8fc5437e11fd382ad65303767e5dd8d258ab4923575f9998caf0c04f7d228315",
+          "diagnostic_sha256": "f5fc41b2984c6ff0e9ec5bba03575b0e41a07e7c3e44f47fa47ffcdfee7c962c",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X032",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "17a8b7f6644a7f03590f873b62d038da0b8893f0794b82ab0444fe8bc8969073",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "SOURCE_AND_P2015_HOSPITAL_CANDIDATE_UNSUPPORTED",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "independent multichannel source: P2-007-X032",
+          "test_number": 164,
+          "tap_block_sha256": "5c380ef186a0bbf17efa29ebcb71ef3ea264353452e73c5893167be06d5f4af7",
+          "diagnostic_sha256": "089072577c7162ee11d1e3faeffcd781024e53d1375ca997b50bc084cd7ecf6b",
+          "observed_results": [
+            "TICKET_ELIGIBLE",
+            "NEEDS_DESCRIPTION"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X033",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "01f25d679198023f7137adfd3b91f736ed05db06534bbeeb565de7f1a9fd35dc",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "P2015_TICKET_UNSUPPORTED_AND_WRONG_SURFACE",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "X033/D12-046 trusted monitor mechanism is recommendation only; Reporter prose is not monitoring authority",
+          "test_number": 228,
+          "tap_block_sha256": "320b9b957779ba3575059bf4a8a8ddb8f0fe32d1084e756aba2934403d14affd",
+          "diagnostic_sha256": "bf70dde44878fe6c891c0c0c158a82a1a48b6c9fc5f1c8a9d6fec1878a4d3bb0",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X034",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "b478f4964791f3404feb7712d43b98a71732d0f67bd596c0aebc6dd1cb12744b",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "P2015_CANDIDATE_NOT_IN_SOURCE",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "independent multichannel source: P2-007-X034",
+          "test_number": 165,
+          "tap_block_sha256": "4d7849c2ccade5679811d00fcc78114c6a9a441a8a0f79a2e7d7e1c9ecbdab73",
+          "diagnostic_sha256": "7505f35079eef021fd70044195d65fd996de8ad528cec637d67b2898b8eed277",
+          "observed_results": [
+            "MANUAL_REVIEW_REQUIRED",
+            "NEEDS_DESCRIPTION"
+          ],
+          "actual_manual_review_action": true
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X035",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "f1b79e30f7fa5511bfcf275233c99bfe7298c7458b92db562103a3c4e1513ef2",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "P2015_CONTRADICTS_SOURCE_FALSE_CANDIDATE",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "X035 explicit critical endpoint fault accepted from UNKNOWN Intake reaches a real human queue without a public Incident",
+          "test_number": 20,
+          "tap_block_sha256": "e41df19afd0e8fb96cb290d0ae38739f2d2e46b078a7cf865e74222a59ebea2d",
+          "diagnostic_sha256": "8298339a729d507c06d1e2fa6d8236024caa613f0d8d3ff3d4d10e0c6ec4dba6",
+          "observed_results": [
+            "MANUAL_REVIEW_REQUIRED"
+          ],
+          "actual_manual_review_action": true
+        },
+        {
+          "test_name": "independent multichannel source: P2-007-X035",
+          "test_number": 166,
+          "tap_block_sha256": "8cd7fb17baabda3740d4038076a46e58628e248bf96768ae5e217957cb6c81fd",
+          "diagnostic_sha256": "3dce77fbafb46f9bce1c73cc4447eb0e81d934eb672656c962dcc43b9d42b650",
+          "observed_results": [
+            "MANUAL_REVIEW_REQUIRED"
+          ],
+          "actual_manual_review_action": true
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X036",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "0703ca5dd238760a0cf2c27b97a90cfac3aca72ef136e8e99d6039467a6712b1",
+      "normal_input_denominator": true,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "P2015_CONFLATES_EXISTING_INCIDENT_WITH_NEW_CANDIDATE",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "X036 known Incident needs an explicit human link while new personal fault remains independently admitted",
+          "test_number": 229,
+          "tap_block_sha256": "91919e29f6f5eb6e2b573a4e692b8e7080eae7ca040a52ce0415ff4395b4d488",
+          "diagnostic_sha256": "7eb9907f8d810288969bef3b9150afda8a6ad918ad25d752afc979841266d9cb",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X037",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "8d644f52c1f09489103ebd28d33e632d6b001a889e7ea795606ef65cd80e8b99",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "ACKNOWLEDGEMENT",
+      "proofs": [
+        {
+          "test_name": "original Ticket notification source group",
+          "test_number": 176,
+          "tap_block_sha256": "78fd2a0ed741d54533ae97a626230bc058d483b3f77efaa17b35b235a83e38cf",
+          "diagnostic_sha256": "9ed31879a509c73a5996dbb6eb42eb88e614c7343079b19cdd9ea2b8ed7a476d",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X038",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "4ec36105022ff3b1634d038e5280bb9f626cf840d02156bf86f7e5c9c98aa83b",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "ACKNOWLEDGEMENT",
+      "proofs": [
+        {
+          "test_name": "original Ticket notification source single",
+          "test_number": 177,
+          "tap_block_sha256": "90f146e5f7574c947691cd094823693148a1d6f7e27452c3f7d209682ec6100b",
+          "diagnostic_sha256": "e95c0fb7e178830ea08c5c1b0d55aa99d7656006dd319c86c0285518e6333942",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X039",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "0bcc280f41e7f50026a80e93a2b1c8189a8da230dc7be4eb9a3cc7c6b738ae15",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "ACKNOWLEDGEMENT",
+      "proofs": [
+        {
+          "test_name": "original Incident notification sources use actual confirmation, version four event and replay",
+          "test_number": 178,
+          "tap_block_sha256": "64b07bbca8f67587ea9795c86dbb7f681734e81cc369c2cca342f6e6f26413e7",
+          "diagnostic_sha256": "8bc2a975851b75c3b69a65344c60e3641708f698f7fe4b75102c3320874ae577",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X040",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "f08b60c9cd71d80b1be911ebd72e65784c8d1ec77084734f5a71af53dc72c0ee",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "ACKNOWLEDGEMENT",
+      "proofs": [
+        {
+          "test_name": "original Incident notification sources use actual confirmation, version four event and replay",
+          "test_number": 178,
+          "tap_block_sha256": "64b07bbca8f67587ea9795c86dbb7f681734e81cc369c2cca342f6e6f26413e7",
+          "diagnostic_sha256": "8bc2a975851b75c3b69a65344c60e3641708f698f7fe4b75102c3320874ae577",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X041",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "35ca99ea4a3956793118524e50835ef34cc1fc6bd27bb9d77af7bb225cc7090c",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "ACKNOWLEDGEMENT",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X025/P2-007-X041/D12-037",
+          "test_number": 127,
+          "tap_block_sha256": "136cadfa6c8e6025384dd148693caa59d725ea29a485428cf56921aae9ece158",
+          "diagnostic_sha256": "55fb94c38ee6f1e21d494c030b375c5c59660d36896dc459f4c94ba590a06ac5",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "P2-007-X042",
+      "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+      "source_file_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+      "source_case_sha256": "582260d8591b13fafe064f636e63967df936679da9ca69ad82df5ce7b0990fab",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "NOT_A_CLASSIFICATION_SURFACE",
+      "original_expected_result_code": "ACKNOWLEDGEMENT",
+      "proofs": [
+        {
+          "test_name": "original UNKNOWN source requires reconciliation after a real Outbox attempt",
+          "test_number": 179,
+          "tap_block_sha256": "9e46519a3c94e3ab4bc52c354c52d62afe55632b4845a03aef342e0b423c7ab8",
+          "diagnostic_sha256": "e9b4ea1b36cc40c12d8df1bbe91633d8d6ee9e4967826588c466e6275211f8f7",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-001",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "0c393b2dcb0cbd574bfa55626245b57cb3e3ba22c8a4824c5d24347f8dfdafb8",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-001",
+          "test_number": 135,
+          "tap_block_sha256": "5acb88145507b878d6155aceb0b1428f268c8f95a1b6b11867d799a20454ed51",
+          "diagnostic_sha256": "c79f92817dccb124ac9e0acb5fae20a5ba75a5d5d06ab5f85ec6d5c7bcc15e54",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-002",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "4384e962be31f42d48ce06a2832496cb07d4826fbc4c645ea36693f0c812ed45",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-002",
+          "test_number": 136,
+          "tap_block_sha256": "27a6ea84cd1d66032f107f3987869fecca94ac0649626d278d546a1990530707",
+          "diagnostic_sha256": "3d6644531d61c05029cde44e58c5e3d7e3f81758af90e95600230f2e0c0ac690",
+          "observed_results": [
+            "NEEDS_DESCRIPTION"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-003",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "8626fe781975f98ec69e59da149613aaeeb11b247114db150b3569c2e21faa0e",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-003",
+          "test_number": 137,
+          "tap_block_sha256": "8b0214a1d77552e61d4adeb9a70889850ac416fec15d2952cd86569a6f608f02",
+          "diagnostic_sha256": "7650b79bb19e6731de7db7b9738b0c904f0c096ff84b44a608e0d6b9b32c11c3",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-004",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "2bd09f047098258ca5a9e3e5efc71027f20ec9e6d545a3d1fbab0cb007d29c7e",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-004",
+          "test_number": 138,
+          "tap_block_sha256": "84c9e5f41f0fd3a1a246c607d856812d361d32a31ba732d19144ad51ee656dd1",
+          "diagnostic_sha256": "ee6ecf9e3c559c746688bc5c02911f960b4c2d5c26ba3e3dffb12b5be47971fc",
+          "observed_results": [
+            "NEEDS_DESCRIPTION"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-005",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "0c6a36ff52b385cea660d2891dbb9f0df04e7a18dbac674e632ca87e16748d02",
+      "normal_input_denominator": false,
+      "status": "ORIGINAL_SEMANTICS_NOT_VERIFIED",
+      "adjudication": "SDK_CONTEXT_HAS_NO_RELIABLE_NON_MENTION_INDICATOR",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": []
+    },
+    {
+      "source_case_id": "D12-006",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "60c600fe02f217a38bf91e514a03711dd1264fc8cfe03ea9350b0bf9d21044ac",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-006",
+          "test_number": 139,
+          "tap_block_sha256": "79af44d13de448619f3744bcc230ef5ce21b1f822fbcec0c51f2604ae4121ea3",
+          "diagnostic_sha256": "00613db40ebbc135d6e177fbeca59c9fac99778d6e68993bfda2816b0a592cc0",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-007",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "ec1e9844c4744a499fc0ad314d05f0a992eba1daba205cf072328f1d300bd641",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "D12-007/014 originally guided Ticket retains channel origin and an audited unique association",
+          "test_number": 70,
+          "tap_block_sha256": "fac37ae032d750ef2eb8474541e2e7a419e066e908494796f30f298120fedf35",
+          "diagnostic_sha256": "41ffe5f2fc697d5b523fe1b64ddf3a6d2b2600738c8b118467cc291e1b669b5c",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-008",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "286ccc10e96826ac716560cc0d37b76f8d7eb6559fcad5643a6f42beffd7d0ea",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": [
+        {
+          "test_name": "D12-008 P2-G2 Direct Session never resumes expired Journey retention",
+          "test_number": 42,
+          "tap_block_sha256": "40d7725c1fdd15706b0b495e48a190f6bc5a765b95f29b9f37a7e83a3e2e5e36",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-009",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "5c64dec088a4388239fe91f079c5ecd6f72a932878f870af8ebc8e8b21952732",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "G2-J01 continuation wrong Bot/Reporter, expired, revoked and reused token reject against real normal-ingress prerequisites",
+          "test_number": 4,
+          "tap_block_sha256": "5bdd91197328eeb9b988cb5ad84c26b93811728abbd4f5df9fc4c14c5e3f176d",
+          "diagnostic_sha256": "c417014ba082be02d11405f4c30057d3316aa1ff63f70239ab86794f32c275e3",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-010",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "0333ad2fef28c761c813df96b4a7e16b32124c4df6ab55a78d4620fdd5e21073",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "G2-J01 continuation wrong Bot/Reporter, expired, revoked and reused token reject against real normal-ingress prerequisites",
+          "test_number": 4,
+          "tap_block_sha256": "5bdd91197328eeb9b988cb5ad84c26b93811728abbd4f5df9fc4c14c5e3f176d",
+          "diagnostic_sha256": "c417014ba082be02d11405f4c30057d3316aa1ff63f70239ab86794f32c275e3",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-011",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "dd439b450309278cddf679c105058f7d7911c6dc11b111dd1322ce7849274dfb",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "G2-J01 continuation wrong Bot/Reporter, expired, revoked and reused token reject against real normal-ingress prerequisites",
+          "test_number": 4,
+          "tap_block_sha256": "5bdd91197328eeb9b988cb5ad84c26b93811728abbd4f5df9fc4c14c5e3f176d",
+          "diagnostic_sha256": "c417014ba082be02d11405f4c30057d3316aa1ff63f70239ab86794f32c275e3",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-012",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "b40f9583681753e7fdea86397f3d4d4d265ed7a36b5a0291415dc27290dfa52b",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "G2-J01 continuation wrong Bot/Reporter, expired, revoked and reused token reject against real normal-ingress prerequisites",
+          "test_number": 4,
+          "tap_block_sha256": "5bdd91197328eeb9b988cb5ad84c26b93811728abbd4f5df9fc4c14c5e3f176d",
+          "diagnostic_sha256": "c417014ba082be02d11405f4c30057d3316aa1ff63f70239ab86794f32c275e3",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-013",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "75482626b6568ed4bfb58a1092b127f751f26de44d30b44ef6de97c377040ba2",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "G2-J01 ambiguous association preserves current report admission: 我有两个待补充问题，不知道这条属于哪一个。",
+          "test_number": 6,
+          "tap_block_sha256": "c1a2a9060296f1caad679e3d2024443656741bb3a60a7ef6542f7a00fb1515bf",
+          "diagnostic_sha256": "e7dd7179bde5a19ed7b4ad4ef4ccdfefc9b969ad3e84051b41222f4158455743",
+          "observed_results": [
+            "MANUAL_REVIEW_REQUIRED"
+          ],
+          "actual_manual_review_action": true
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-014",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "16f53dd5b1bd0fdc9cad277803d5c62dac2058fd33db9697f7b5606313adf02c",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "D12-007/014 originally guided Ticket retains channel origin and an audited unique association",
+          "test_number": 70,
+          "tap_block_sha256": "fac37ae032d750ef2eb8474541e2e7a419e066e908494796f30f298120fedf35",
+          "diagnostic_sha256": "41ffe5f2fc697d5b523fe1b64ddf3a6d2b2600738c8b118467cc291e1b669b5c",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-015",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "629ef6f78dc83489e51a362d70d0bdfcdc71b39ae2a407e4953cd6f966db1509",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "G2-J01 ambiguous association preserves current report admission: 我有两个待补充问题，不知道这条属于哪一个。",
+          "test_number": 6,
+          "tap_block_sha256": "c1a2a9060296f1caad679e3d2024443656741bb3a60a7ef6542f7a00fb1515bf",
+          "diagnostic_sha256": "e7dd7179bde5a19ed7b4ad4ef4ccdfefc9b969ad3e84051b41222f4158455743",
+          "observed_results": [
+            "MANUAL_REVIEW_REQUIRED"
+          ],
+          "actual_manual_review_action": true
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-016",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "5595d195565def07ed9f94d7cf3b62f7ae3ca01145e8017f563bc5b91a9e42e2",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "URL_GRANT_ALTERNATIVE_VERIFIED_CARD_EVENT_ASSOCIATION_NOT_IMPLEMENTED",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "D12-016/058/059/060/061 three real Ticket grants isolate Reporter HTTP access; card event callback stays unsupported",
+          "test_number": 195,
+          "tap_block_sha256": "3da82f135766c9a24871cd8b2e24610a26e1aab29adffa72dc4bec2536bc0682",
+          "diagnostic_sha256": "c8ad0d45cab7291fd43aa1ef239e4d14c551b639c1f94020e1a49ac73e201bab",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-017",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "0ccaaa995189f8d9bee53ace8b431bb4640039eabe6146452a81732a720d859a",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "D12-017 existing Direct association wins implicit precedence; explicit new-topic command creates a separate binding",
+          "test_number": 61,
+          "tap_block_sha256": "39152f4df0ae670d6a126e7ac48d454e6fdbed7d6958aa8c65a6b9e0216797fb",
+          "diagnostic_sha256": "7adda3f602d8978d5f7073e283a2378fbe6454874e2d254b576366f29f97ea9c",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-018",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "5d191c8f8ccd57e38e81f162f49a5d5a9982bf540d647e547b6ce8f0b7d4d788",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "G2 explicit reference comes from actual group Outbox and binds a fresh Direct Leg without a second Ticket",
+          "test_number": 62,
+          "tap_block_sha256": "9fae9dde7e4a0d66c7dcd884773d9d503b60cf3c14814c31f5cc719d0ef6ab4f",
+          "diagnostic_sha256": "99980c0072e03196ffbc0cfd05610f131263b05e8a4e0b8d572e1d46e8ab9162",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-019",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "543e9004ba5330d66fa39aabcaf0d6bb0dc8f7ef34071655164d3bc3b8f1f950",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "DIRECTORY_SNAPSHOT_ONLY_SYSTEM_PERSON_ID_NOT_IMPLEMENTED",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-019/021/022/026 directory snapshot and occurrence evidence remain independent and HTTP excludes internal profile",
+          "test_number": 53,
+          "tap_block_sha256": "36f22abd0a9e37d1a84ee9e7ec3e078fe8b91551997b2374a52007388b836bf8",
+          "diagnostic_sha256": "f54d6b7d38b2fd5237447b216adf228163722fc5c67f1daa1f3813d82ad8793a",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-020",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "4746c97409cf6548fa5b24d34e1c93666496ea0c5df5c77d8cffb05fd7f8c20e",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-020 unresolved directory call defers within deadline without growing pending calls",
+          "test_number": 52,
+          "tap_block_sha256": "32551819185a5e630a01536a55ea7e713a7ab4d2b45e4230b057ec1a81757ee7",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        },
+        {
+          "test_name": "D12-020 actually unresolved directory does not prevent persisted Intake and minimal Ticket",
+          "test_number": 54,
+          "tap_block_sha256": "c4d8e68407a18a8ba69ba8493d2110e7781c96b87273ff8392236e9f7844d55a",
+          "diagnostic_sha256": "ccb47b6f77d024b14bd8f2fb63651ee12a0c26695dac50b5e128966af094af45",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-021",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "dc9f15f71a2f5292ce44803996177403c03e3824eea4333b762474267185ddff",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-019/021/022/026 directory snapshot and occurrence evidence remain independent and HTTP excludes internal profile",
+          "test_number": 53,
+          "tap_block_sha256": "36f22abd0a9e37d1a84ee9e7ec3e078fe8b91551997b2374a52007388b836bf8",
+          "diagnostic_sha256": "f54d6b7d38b2fd5237447b216adf228163722fc5c67f1daa1f3813d82ad8793a",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-022",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "cd630865c924a7aa028dff8568b65546c873d1a8c3fa6a7b0337d6e1b6c50a24",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-019/021/022/026 directory snapshot and occurrence evidence remain independent and HTTP excludes internal profile",
+          "test_number": 53,
+          "tap_block_sha256": "36f22abd0a9e37d1a84ee9e7ec3e078fe8b91551997b2374a52007388b836bf8",
+          "diagnostic_sha256": "f54d6b7d38b2fd5237447b216adf228163722fc5c67f1daa1f3813d82ad8793a",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-023",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "c93a4f2cef65d349750770dc0d3992b51eb93845baf31dce2e889470059e0842",
+      "normal_input_denominator": false,
+      "status": "FUTURE_P3_NOT_IMPLEMENTED",
+      "adjudication": "NO_HOSPITAL_MASTER_IDENTITY_BINDING_IN_P2",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": []
+    },
+    {
+      "source_case_id": "D12-024",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "b7f3069a237d2164dc7a1f53b87674f2e00e148a15eee54254ae2c8ffbc514ee",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-024 inactive directory account retains fault Ticket and enqueues actual identity review",
+          "test_number": 55,
+          "tap_block_sha256": "1c563f36e9d06046ed489692145117c590dc4cb69f86f0bc10d12152834c7ea9",
+          "diagnostic_sha256": "e68543088eb142212e8ab232b61a4a75763866b1e9e6aa3df5cde3ba9d5a1832",
+          "observed_results": [
+            "MANUAL_REVIEW_REQUIRED"
+          ],
+          "actual_manual_review_action": true
+        },
+        {
+          "test_name": "D12-024 later inactive directory assertion stays auditable without replacing report snapshot",
+          "test_number": 57,
+          "tap_block_sha256": "4bd4cb28f32ff0e4a16103edeab67c629ea85d241e40f0effa93eb81128999ba",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-025",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "f32991886427951bf425140538fedbacf6790d611e20fdcb7c975147881c73ca",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-025 directory refresh never overwrites previous Journey report-time snapshot",
+          "test_number": 56,
+          "tap_block_sha256": "694912056b7a2dab1c604ea93900fcf0db3fba3f07a992a0665837329c4d5c96",
+          "diagnostic_sha256": "21084dc356183839c7dd67723fa361a215d698f7a337c64cfa9d1d5257d23782",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-026",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "c6ea16011b56b53c1fe88543e8433b77243eb5e91a1a82c3941b862f1c09142e",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-019/021/022/026 directory snapshot and occurrence evidence remain independent and HTTP excludes internal profile",
+          "test_number": 53,
+          "tap_block_sha256": "36f22abd0a9e37d1a84ee9e7ec3e078fe8b91551997b2374a52007388b836bf8",
+          "diagnostic_sha256": "f54d6b7d38b2fd5237447b216adf228163722fc5c67f1daa1f3813d82ad8793a",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-027",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "f6aaa2a80d3299eb0c57d456bee57028b5a0192cccce7c04e628a780f0221920",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-027",
+          "test_number": 140,
+          "tap_block_sha256": "e5ba522e6e9b014f598ff7104746ee9827c7ca9261ac57353960a742614d9ee4",
+          "diagnostic_sha256": "d1ef44b0995eddb0dc8fdbbe520f0e7be76e465f8203fda8099a676cbe29d57a",
+          "observed_results": [
+            "NEEDS_DESCRIPTION"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-028",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "0518892d56def7667017ac90930efb2f7a6429288d9935cd45111b614d7109e5",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-028",
+          "test_number": 141,
+          "tap_block_sha256": "dd73d220ebf07d19f89efb4312a4bfe21c509339655859618cd91836e10101ce",
+          "diagnostic_sha256": "7d3bbe9290669f9291837fd1cf808bffe33b51b6fd9464eb7497acead9a93bf3",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-029",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "d4e16173a6cfd0ce60d65d7d690b0828a7709e934093958919df55ffc40b8c23",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-029",
+          "test_number": 142,
+          "tap_block_sha256": "caf1016a369099ae496990fa0ada58cd3390a5a566be59f5ec520bd45b85976e",
+          "diagnostic_sha256": "6103be96b5e6abf0881c9f4f69e99690a611024988309eecc5e19859c7f21290",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-030",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "eb57c564833e737ff0f66daf891183f7a56d45276a190a45b505db3cb3720689",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "P2-G2 D12-030 active Direct session survives the P1 90-second fragment window",
+          "test_number": 31,
+          "tap_block_sha256": "f4afb91c364bf5f18fbb168d339a8f3f4537d1baa091a1b312a3bbc280c92f24",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-031",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "f058f0b3620edb31704d14827567f6d69fd64257ef8fd8101b8b80d1e3457865",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "P2-G2 D12-031 explicit additional fault creates its own Journey and Ticket",
+          "test_number": 32,
+          "tap_block_sha256": "ec0850af940154c93901062f6c908a22f3022674bce90d8f5c706e8d0bfc69e6",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        },
+        {
+          "test_name": "source mechanism via actual ingress: D12-031",
+          "test_number": 143,
+          "tap_block_sha256": "848e926c021a628a69c482fc8eb8936913454d686207c135b9e54215d1087cb7",
+          "diagnostic_sha256": "6cb697caced125556b07dc536a2c816e5b1962037371ea9c0e53ff478537d5ec",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-032",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "944e32c2b94e1033c2374d19e0081fb2024a7b23fd1d9860f33470817ebd47c9",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-032",
+          "test_number": 144,
+          "tap_block_sha256": "dc36e944e3cffdd96bb55dcc78db12f6657e54b95e7c3bf37cfb348dbed8e0dd",
+          "diagnostic_sha256": "06e5acd6344c97058319a6f219f6d33dd964e1fb24cb58710caff8be50abf210",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-033",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "7e29e48460928283156fd31336cefe7b99b45eab6587274cbdb15a475d8c7f3d",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-033",
+          "test_number": 145,
+          "tap_block_sha256": "ca7ba9cbfdaef7fdfeb457b968ec9e259c3c0509fac1af7a76f0fe8e04474234",
+          "diagnostic_sha256": "929ff5da2a8f327fc59eaaf1d2db8329a57fb04ae25d247ba54088e8d6539357",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-034",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "3f3b2977f42deded567c332219f2934c42eb2d0399254b454b45c3a01e9a6fae",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "proofs": [
+        {
+          "test_name": "source mechanism via actual ingress: D12-034",
+          "test_number": 146,
+          "tap_block_sha256": "b85b55c67789eb4ce88aeed44d468b4a196a856a22cf042c010588ca842c02d8",
+          "diagnostic_sha256": "a240d9cc7e1510872b3ce7a0a7c2dd497d683b3bc840d2d6645c50b6cc8984df",
+          "observed_results": [
+            "TICKET_ELIGIBLE"
+          ],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-035",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "25c345e668add0d2b651655893aea5804ae13854c68c22bbc7c91d8573801dd7",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X022/D12-035",
+          "test_number": 124,
+          "tap_block_sha256": "d46c0dbfff9411a61dc72f19e1868b1929b60ce5d5dca24441a2a298f6ae78c9",
+          "diagnostic_sha256": "edee910c9f4e5aa1630f11ce7536ff807cf7f1890d01ba24a594dcbffcf023de",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-036",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "b901ba95b36a8873686eae2fad27c75b869d6d76c8a3de76d8b36ff7b5b771ca",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X023/D12-036",
+          "test_number": 125,
+          "tap_block_sha256": "6791a576bb4ea14512176b40a971a2d2abe528b44f99c1553afbbb61866efb97",
+          "diagnostic_sha256": "0d1aff6adf5008687a32caf08ac9fd35f640871f7a17c66362973ed9865de034",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-037",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "4d607fccd3c598a588321f4d497af189541181abc28167a47fa0580d11094a5d",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X025/P2-007-X041/D12-037",
+          "test_number": 127,
+          "tap_block_sha256": "136cadfa6c8e6025384dd148693caa59d725ea29a485428cf56921aae9ece158",
+          "diagnostic_sha256": "55fb94c38ee6f1e21d494c030b375c5c59660d36896dc459f4c94ba590a06ac5",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-038",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "0c954a60e743055622d98f3c41e323110b425af39b4cdfae2bd914d708d80aef",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X026/D12-038",
+          "test_number": 128,
+          "tap_block_sha256": "7e4050c73a9aba11c1410fca7c40ca26f34a6b3b8fe29f5349364e8f7a987c75",
+          "diagnostic_sha256": "9bbea6eea0518db2cea16ad8d41a50cb74721fc1580a88456fee5d0d338c0c5e",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-039",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "10f1d1055d523efd0d0d6bf217afd10ab1860054d48485502f6bcd5f856f3311",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X027/D12-039",
+          "test_number": 129,
+          "tap_block_sha256": "0af9f7103d637dbb77c49dbd7bdb32098ff6041e54e7888bb43a3b25cd0207e3",
+          "diagnostic_sha256": "2f4885cef2304d47da01fb49a2d9434022036be77ecb015478719718ffa33b7b",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-040",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "b492032aeec684ecadf2dcafd2d2f43b5c61ecaee53013d565653e7b54ddb8f5",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: P2-007-X024/D12-040",
+          "test_number": 126,
+          "tap_block_sha256": "e637b677224339e038386823f577d5c9c115a0d38b8c0f2fe36074b32785aab5",
+          "diagnostic_sha256": "614b432490f06865cbc51ee87217f4646ed15c86e815a87165c733c7d1c657ff",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-041",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "43e72c27d96debbde938de36e04372dc5e0aca8eebbbbc29fb4e166f1b92aaaa",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "original UNKNOWN source requires reconciliation after a real Outbox attempt",
+          "test_number": 179,
+          "tap_block_sha256": "9e46519a3c94e3ab4bc52c354c52d62afe55632b4845a03aef342e0b423c7ab8",
+          "diagnostic_sha256": "e9b4ea1b36cc40c12d8df1bbe91633d8d6ee9e4967826588c466e6275211f8f7",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-042",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "a36706c7586b96ca0e668daa6b3286104fdc885091048d13e1c2435966c92a54",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "proofs": [
+        {
+          "test_name": "real human command source: D12-042",
+          "test_number": 131,
+          "tap_block_sha256": "7b945e3e808ae6667a6e57e472602c8e9f4782c4d30ff50827db1eefcc830375",
+          "diagnostic_sha256": "56a6ceb6e72f3836250ebfdc2e0a395bdd2187d273dc04ef6c3c5735099b3811",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-043",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "add3824e9577b01679b08dd4513151a3a1c69a5efeb89150f271f1c5e1a25677",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "FROZEN_120_SECONDS_DEPARTMENT_INSTEAD_OF_SOURCE_LOCAL_300_SECONDS",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "D12-043 actual independent reports use trusted primary memberships without inventing locations",
+          "test_number": 11,
+          "tap_block_sha256": "42d965e5b7ee0707ca7ce2bd63ffd82f0b366bcf9c6685c3999eec6a972c535d",
+          "diagnostic_sha256": "3ddf7506af72706782ffbb08ddead462d54bea63f49b5fd489eab4d9bd733991",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-044",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "5c14519c1bbdea584c158b97e4e5ac1c4a69dbf529c09f53c231229e540f798f",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "FROZEN_120_SECONDS_CAMPUS_INSTEAD_OF_SOURCE_CROSS_DEPARTMENT",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "D12-044 actual independent reports use trusted primary memberships without inventing locations",
+          "test_number": 12,
+          "tap_block_sha256": "da89acf6c1c1ec3828978662e8495d363c7a0e180b65e26b11502bffa23524d1",
+          "diagnostic_sha256": "1fa1c3dc2eab6a632dd7257541d5944338ff36c1b336fe5d809665e07a0bdb90",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-045",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "7ca1d37d25ddc9c9d3d96788002536921f9da5cde2669249289f0e1b0015e44d",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CAMPUS_WITH_ZERO_TRUSTED_LOCATIONS_NOT_SOURCE_HOSPITAL_WIDE",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "D12-045 actual independent reports use trusted primary memberships without inventing locations",
+          "test_number": 13,
+          "tap_block_sha256": "5615fe8521d9c10d37f219006b56772b8e11893df15a5a0afc06bfacbd30e626",
+          "diagnostic_sha256": "d18731acdb676778897e8f1ec14398ba2d0e013264277a83c465b4c8c6bf42d6",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-046",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "7228ee203e78bedda07f13c87b1d1403fd99d1bc928ce6f780592f761ce1128a",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "X033/D12-046 trusted monitor mechanism is recommendation only; Reporter prose is not monitoring authority",
+          "test_number": 228,
+          "tap_block_sha256": "320b9b957779ba3575059bf4a8a8ddb8f0fe32d1084e756aba2934403d14affd",
+          "diagnostic_sha256": "bf70dde44878fe6c891c0c0c158a82a1a48b6c9fc5f1c8a9d6fec1878a4d3bb0",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-047",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "2158e0b7a9cb07a5ca69e1e86f3139de4c836e23292601fd5b0bcd3d8488c59c",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "D12-047/048 trusted reporter identity deduplicates group/direct and incoming replay below three reporters",
+          "test_number": 22,
+          "tap_block_sha256": "291ac0649c5651925af8276b22e537f599e91ad00eca3197d6a350f40f3e5ddc",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-048",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "306ea8243755c144793abf31cd143823bfc1a1032e4aec76f6d2e1400b556df6",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "D12-047/048 trusted reporter identity deduplicates group/direct and incoming replay below three reporters",
+          "test_number": 22,
+          "tap_block_sha256": "291ac0649c5651925af8276b22e537f599e91ad00eca3197d6a350f40f3e5ddc",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-049",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "a49ca21a1d6d6ca6f5d83df6edc1aff9d1c4d50edda1be4a092117f9762422d6",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "D12-049 different services and incompatible symptoms never borrow each other reporters",
+          "test_number": 24,
+          "tap_block_sha256": "80d1c22da76a2453174548a1f70590237fd6ce0c4abb8dfdf333ff88686dc888",
+          "diagnostic_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-050",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "6cd7afb34dca1f356eee79eb5dbf4a73f37f487d80b14e8253ef493bc07a4594",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+          "test_number": 204,
+          "tap_block_sha256": "15130b9dc7c0ae92683a22113837813e508409dd01331a8504df8b22cc56aecc",
+          "diagnostic_sha256": "b2760719c4fc6955d1b10b8ef38789adea24036649a9d86aa3119026bb4a347e",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-051",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "2247791bb854a4c11dfe06fc029dda002ae157d31bd1fb85cc64157e9091b87e",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "D12-043 actual independent reports use trusted primary memberships without inventing locations",
+          "test_number": 11,
+          "tap_block_sha256": "42d965e5b7ee0707ca7ce2bd63ffd82f0b366bcf9c6685c3999eec6a972c535d",
+          "diagnostic_sha256": "3ddf7506af72706782ffbb08ddead462d54bea63f49b5fd489eab4d9bd733991",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        },
+        {
+          "test_name": "D12-044 actual independent reports use trusted primary memberships without inventing locations",
+          "test_number": 12,
+          "tap_block_sha256": "da89acf6c1c1ec3828978662e8495d363c7a0e180b65e26b11502bffa23524d1",
+          "diagnostic_sha256": "1fa1c3dc2eab6a632dd7257541d5944338ff36c1b336fe5d809665e07a0bdb90",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        },
+        {
+          "test_name": "D12-045 actual independent reports use trusted primary memberships without inventing locations",
+          "test_number": 13,
+          "tap_block_sha256": "5615fe8521d9c10d37f219006b56772b8e11893df15a5a0afc06bfacbd30e626",
+          "diagnostic_sha256": "d18731acdb676778897e8f1ec14398ba2d0e013264277a83c465b4c8c6bf42d6",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-052",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "0bcff1ebc4e8797c8e3a34398238bff71903134974ec7a8b8f04e093969557a4",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "proofs": [
+        {
+          "test_name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+          "test_number": 204,
+          "tap_block_sha256": "15130b9dc7c0ae92683a22113837813e508409dd01331a8504df8b22cc56aecc",
+          "diagnostic_sha256": "b2760719c4fc6955d1b10b8ef38789adea24036649a9d86aa3119026bb4a347e",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-053",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "7b3923489b798727c334970a625be2eda2b02bf3bd809097ab8ae3d47bee65e3",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "PROACTIVE_OUTBOX_ALTERNATIVE_VERIFIED_CALLBACK_RECEIPT_NOT_IMPLEMENTED",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-053/054/055/056/064 actual clarification and optional creation card use Outbox; internal note stays internal",
+          "test_number": 172,
+          "tap_block_sha256": "268c696bf4c658744843a8347bc6feef8de92a8a9b2ab9dd373c63e2d8b18bef",
+          "diagnostic_sha256": "c33f26aca31dfb9048d570d7200bfd9039cf20a6a52edeff31188b3222ec29f3",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-054",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "6d458aacceba6adc764b0df868f45868990e6cc63a086bd411ae10948d411cff",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-053/054/055/056/064 actual clarification and optional creation card use Outbox; internal note stays internal",
+          "test_number": 172,
+          "tap_block_sha256": "268c696bf4c658744843a8347bc6feef8de92a8a9b2ab9dd373c63e2d8b18bef",
+          "diagnostic_sha256": "c33f26aca31dfb9048d570d7200bfd9039cf20a6a52edeff31188b3222ec29f3",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-055",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "b4a98f9b142fc1800c9357f039f4557c970323d8fdece923b4c3961bcd84b6c0",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "PRIVATE_GUIDANCE_REQUIRES_ACTUAL_DIRECT_LEG",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-053/054/055/056/064 actual clarification and optional creation card use Outbox; internal note stays internal",
+          "test_number": 172,
+          "tap_block_sha256": "268c696bf4c658744843a8347bc6feef8de92a8a9b2ab9dd373c63e2d8b18bef",
+          "diagnostic_sha256": "c33f26aca31dfb9048d570d7200bfd9039cf20a6a52edeff31188b3222ec29f3",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-056",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "031da1ef84bb7792bf1139401c3866f908d5d8d1d39e416d81ce0311a2a2f491",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CREATED_CARD_OPTIONAL_DEFAULT_OFF",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-053/054/055/056/064 actual clarification and optional creation card use Outbox; internal note stays internal",
+          "test_number": 172,
+          "tap_block_sha256": "268c696bf4c658744843a8347bc6feef8de92a8a9b2ab9dd373c63e2d8b18bef",
+          "diagnostic_sha256": "c33f26aca31dfb9048d570d7200bfd9039cf20a6a52edeff31188b3222ec29f3",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-057",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "f35fc240dd8b13b4e1827994466ecf919639696e51eb7fac0b2e8860f88ef00c",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-057 real rollback after notification append leaves accepted Inbox but no Ticket/card delivery",
+          "test_number": 194,
+          "tap_block_sha256": "9fd59f6557c4221fc96abb191e75f7e01d86bc887ff5170c859814410a0ae66d",
+          "diagnostic_sha256": "e3085cdd1b540fede3efa04676a17a41965b570c86367abbcd2f0b510b938cfb",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-058",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "e5eccc01340d08375d66d7c16879f9c7a06a81c89bfbfc67855d249571f8df36",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-016/058/059/060/061 three real Ticket grants isolate Reporter HTTP access; card event callback stays unsupported",
+          "test_number": 195,
+          "tap_block_sha256": "3da82f135766c9a24871cd8b2e24610a26e1aab29adffa72dc4bec2536bc0682",
+          "diagnostic_sha256": "c8ad0d45cab7291fd43aa1ef239e4d14c551b639c1f94020e1a49ac73e201bab",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-059",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "22c8995fb8ca9f456fbab7969040db9a8a9f215ff03dad0591d81672032d16e3",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-016/058/059/060/061 three real Ticket grants isolate Reporter HTTP access; card event callback stays unsupported",
+          "test_number": 195,
+          "tap_block_sha256": "3da82f135766c9a24871cd8b2e24610a26e1aab29adffa72dc4bec2536bc0682",
+          "diagnostic_sha256": "c8ad0d45cab7291fd43aa1ef239e4d14c551b639c1f94020e1a49ac73e201bab",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-060",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "9b1824eaa6c043e4ee096209a27171518a8336e5ef374f6682d954611dacb631",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-016/058/059/060/061 three real Ticket grants isolate Reporter HTTP access; card event callback stays unsupported",
+          "test_number": 195,
+          "tap_block_sha256": "3da82f135766c9a24871cd8b2e24610a26e1aab29adffa72dc4bec2536bc0682",
+          "diagnostic_sha256": "c8ad0d45cab7291fd43aa1ef239e4d14c551b639c1f94020e1a49ac73e201bab",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-061",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "42c51f1ee25b466403f525956189fb72a1b5e8243e6083cf9ca6693e74e07150",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CARD_IMPLEMENTED_LOCAL_VALIDATION_NOT_HISTORICAL_PENDING_OR_LIVE_PASS",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-016/058/059/060/061 three real Ticket grants isolate Reporter HTTP access; card event callback stays unsupported",
+          "test_number": 195,
+          "tap_block_sha256": "3da82f135766c9a24871cd8b2e24610a26e1aab29adffa72dc4bec2536bc0682",
+          "diagnostic_sha256": "c8ad0d45cab7291fd43aa1ef239e4d14c551b639c1f94020e1a49ac73e201bab",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-062",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "e5e51183dc82e9f53b2b1d671f5447c399f9fc7cf51720a12a8d7309cbc154f5",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "RESUMED_NOTIFICATION_OPTIONAL_DEFAULT_OFF",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-062 version seven notification remains single across three committed event replays",
+          "test_number": 173,
+          "tap_block_sha256": "03fe2c67a05ea10ddc6ebf37a70fbc93bbe1a1d2e6ec8fbbe7bd12faa41404dc",
+          "diagnostic_sha256": "ff85ab66d56b7ecd27ebab53d9c6e10594a506714295c8cc259265eb3802a185",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-063",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "f036278789c615e1e541579c86c2e9b3acb6daaed48ea5f7c337f913be2c353a",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "ACTUAL_CONFIRMATION_VERSION_ONE_NOT_SEEDED_VERSION_TWO",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-063 four actual Direct-qualified subscriptions produce version-idempotent Incident notices",
+          "test_number": 180,
+          "tap_block_sha256": "5ef945f02fabe36869764f8c1fa3ebab1d494e28d861e7ec7c2f29fecf27d68c",
+          "diagnostic_sha256": "c47b57ce22f885baba03bc172e5b36e631bc0a51f593b6abafa441af57ac68ec",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    },
+    {
+      "source_case_id": "D12-064",
+      "source_fixture": "multichannel_decision_cases.v1.2",
+      "source_file_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+      "source_case_sha256": "6d99c35a66d87107beb059310d42b5a5f69de6b5c2b78e6af4212c6536c8519e",
+      "normal_input_denominator": false,
+      "status": "PASS_TEST_OBSERVED_PENDING_SEMANTIC_REVIEW",
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "proofs": [
+        {
+          "test_name": "D12-053/054/055/056/064 actual clarification and optional creation card use Outbox; internal note stays internal",
+          "test_number": 172,
+          "tap_block_sha256": "268c696bf4c658744843a8347bc6feef8de92a8a9b2ab9dd373c63e2d8b18bef",
+          "diagnostic_sha256": "c33f26aca31dfb9048d570d7200bfd9039cf20a6a52edeff31188b3222ec29f3",
+          "observed_results": [],
+          "actual_manual_review_action": false
+        }
+      ]
+    }
+  ]
+}

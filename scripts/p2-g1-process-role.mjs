@@ -114,7 +114,7 @@ export async function runApp({runtimeFactory=createP2G1Runtime}={}) {
   send({ type: 'role-ready', role: 'APP', address: started.address, cookies: started.cookies, pool_max: 4 });
 }
 
-export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake,senderFactory=createP2G1WeComCommunicationSender}={}) {
+export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake,senderFactory=createP2G1WeComCommunicationSender,gatewayFactory=createP2G1WeComGateway}={}) {
   const enabled = truth('P2_G1_GATEWAY_ENABLED');
   const senderEnabled = truth('P2_G1_SENDER_ENABLED');
   const pool = createPostgresPool({
@@ -131,7 +131,7 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake
       coordinator: null,
       projectAfterCommit: false,
     });
-    gateway = createP2G1WeComGateway({
+    gateway = gatewayFactory({
       enabled: true,
       botId: required('WECOM_BOT_ID'),
       secret: required('WECOM_BOT_SECRET'),
@@ -139,7 +139,7 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake
       onFrame: async (frame) => assembly.handleFrame(frame),
     });
   } else {
-    gateway = createP2G1WeComGateway({ enabled: false });
+    gateway = gatewayFactory({ enabled: false });
   }
   const allowedTargetHashes = enabled
     ? required('P2_G1_ALLOWED_TARGET_HASHES', /^[a-f0-9]{64}(?:,[a-f0-9]{64})*$/u).split(',')
@@ -201,7 +201,7 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake
   send({ type: 'role-ready', role: 'GATEWAY', authenticated, pool_max: 1 });
 }
 
-export async function runWorker({extensionFactory=null}={}) {
+export async function runWorker({extensionFactory=null,reportCycleHealth=false}={}) {
   const enabled = truth('P2_G1_SENDER_ENABLED');
   const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
@@ -234,10 +234,15 @@ export async function runWorker({extensionFactory=null}={}) {
   let stopping = false;
   let running = false;
   let task = Promise.resolve();
+  let failureCount = 0;
+  let lastErrorCode = null;
+  const publishHealth = ready => { if (reportCycleHealth) send({ type: 'worker-status', role: 'WORKER', ready, failure_count: failureCount, last_error_code: lastErrorCode }); };
   const timer = setInterval(() => {
     if (stopping || running || (!enabled && !extension)) return;
     running = true;
-    task = (async () => { await extension?.runOnce(); if(enabled) await worker.runOnce(); })().catch(() => {}).finally(() => { running = false; });
+    task = (async () => { await extension?.runOnce(); if(enabled) await worker.runOnce(); publishHealth(true); })()
+      .catch(error => { failureCount++; lastErrorCode = /^(?:[0-9A-Z]{5}|P[12]_[A-Z0-9_]{1,80})$/u.test(error?.code ?? '') ? error.code : 'WORKER_CYCLE_FAILED';
+        publishHealth(false); }).finally(() => { running = false; });
   }, 250);
   async function stop() {
     if (stopping) return;
@@ -265,7 +270,7 @@ export async function runWorker({extensionFactory=null}={}) {
     if (message.type === 'stop') void stop().then(() => process.exit(0));
   });
   process.once('SIGTERM', () => void stop().then(() => process.exit(0)));
-  send({ type: 'role-ready', role: 'WORKER', enabled, pool_max: 2 });
+  send({ type: 'role-ready', role: 'WORKER', enabled, pool_max: 2, ...(reportCycleHealth ? { worker_ready: false } : {}) });
 }
 
 export async function main(argv = process.argv.slice(2)) {

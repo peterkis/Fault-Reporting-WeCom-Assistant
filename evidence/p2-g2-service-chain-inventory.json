@@ -1,0 +1,359 @@
+{
+  "task": "P2-G2",
+  "status": "READY_FOR_LIVE_E2E",
+  "base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
+  "authorization_commit": "d7311cdbfe30c66f37d22a553a3e8f0e04e27cd1",
+  "scope": "Current source/targeted real PostgreSQL, HTTP, browser and three-process Mock SDK coverage; full candidate readiness and formal live acceptance are separate.",
+  "nodes": [
+    {
+      "node": "INBOUND",
+      "module": "src/p2-g1-human-only-assembly.mjs",
+      "export_or_method": "createP2G1HumanOnlyAssembly.handleFrame",
+      "caller": "P2-016 Runtime assembly / Gateway callback",
+      "transaction_boundary": "Inbox owns commit; projection after commit",
+      "durable_tables": "channel.message_inbox",
+      "flag_and_authorization": "G2 scope admission, one Gateway; all required deterministic flags enabled only in test/live manifest",
+      "idempotency": "provider + msg_id",
+      "failure_result": "stable adapter/inbox error; no rule work before durable commit",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "9c07ebccf21aad8115e0c2c4814ee0bc26f83d65f3917d0fadc8fe02bf870b4b",
+      "gate_scenarios": [
+        "G2-E01",
+        "G2-E03",
+        "G2-E04",
+        "G2-E08"
+      ],
+      "current_implementation": "Normal group/direct Frames and duplicate concurrent ingress use one persistent path; current full run pending."
+    },
+    {
+      "node": "INTAKE",
+      "module": "src/p1-004-service-intake.mjs",
+      "export_or_method": "createServiceIntakeProcessor",
+      "caller": "Inbox.accept processor",
+      "transaction_boundary": "same Inbox transaction",
+      "durable_tables": "intake.service_intake; intake.service_intake_message; intake.service_intake_event",
+      "flag_and_authorization": "P2 Runtime uses Intake processor without P1 eager Ticket pipeline",
+      "idempotency": "channel_message_id; ordered sequence; explicit aggregation boundary",
+      "failure_result": "rollback leaves no half-committed intake",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "cd0c5dbe4a050dc28430d8f21ff60b2033591aff5f14deca8fe610342720fd22",
+      "gate_scenarios": [
+        "G2-E05",
+        "G2-E08",
+        "G2-J01"
+      ],
+      "current_implementation": "Source-ordered same-second ingress, explicit new fault, bounded Direct session and group continuation implemented; no eager second Ticket path."
+    },
+    {
+      "node": "CONVERSATION",
+      "module": "src/p2-g1-runtime.mjs",
+      "export_or_method": "createP2G1Runtime / coordinator",
+      "caller": "after committed Inbox and App scheduled projection",
+      "transaction_boundary": "existing projector transactions",
+      "durable_tables": "conversation.thread; conversation.session; conversation.realtime_event",
+      "flag_and_authorization": "existing internal Workbench authorization",
+      "idempotency": "source event identity and projection checkpoint",
+      "failure_result": "projection deferred; original input remains",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "0e1c04dca2e9d2f2c008c3e8d67bcafeeb7742a44686f680ced6403e93d163ef",
+      "gate_scenarios": [
+        "G2-E08",
+        "G2-F04"
+      ],
+      "current_implementation": "Late projection fills only null bindings with identity checks and bounded cursor; 12-way replay and rollback tested."
+    },
+    {
+      "node": "DECISION",
+      "module": "src/p2-015-rule-first-orchestrator.mjs",
+      "export_or_method": "createRuleFirstOrchestrator.processInTransaction",
+      "caller": "P2-016 Worker through P2-015 Worker",
+      "transaction_boundary": "Worker transaction with intake lock",
+      "durable_tables": "intake.contact_journey; intake.channel_leg; intake.deterministic_decision",
+      "flag_and_authorization": "RULE_FIRST_ORCHESTRATION_ENABLED + MANUAL_REVIEW_QUEUE_ENABLED; optional explicitly approved member directory otherwise DEFERRED",
+      "idempotency": "journey/leg + source sequence window + versioned decision_key",
+      "failure_result": "rule evaluation errors route to Review",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "220a9ebbe0f64b0b0b40857c4db81609596c968ab6b29465fa1a18c3f50672df",
+      "gate_scenarios": [
+        "G2-E06",
+        "G2-E07",
+        "G2-I01"
+      ],
+      "current_implementation": "202 frozen source references accounted separately; 122 normal input cases and original-path limitations require current TAP/source audit and semantic review."
+    },
+    {
+      "node": "SAFE_ACTION",
+      "module": "src/p2-015-safe-action-executor.mjs",
+      "export_or_method": "createSafeActionExecutor.execute",
+      "caller": "rule-first orchestrator",
+      "transaction_boundary": "same Decision transaction",
+      "durable_tables": "intake.safe_action_suggestion",
+      "flag_and_authorization": "existing Intake/Ticket/Communication/Review Ports",
+      "idempotency": "action_key + command_hash",
+      "failure_result": "fixed communication failure marks FAILED and enqueues Review",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "f67df5704e890b947260d53d6f5e2fea9753ff4fbdd0c12957104c499f7ec323",
+      "gate_scenarios": [
+        "G2-E07",
+        "G2-F03"
+      ],
+      "current_implementation": "STATUS_QUERY and BUSINESS_CONSULTATION reach human fallback; Review enqueue failure preserves Inbox and rolls back the current Decision/Action/Ticket transaction."
+    },
+    {
+      "node": "MANUAL_REVIEW",
+      "module": "src/p2-016-manual-review-facade.mjs",
+      "export_or_method": "createP2016ManualReviewFacade.listManualReviews / resolveManualReview",
+      "caller": "P2-016 HTTP / lifecycle.js",
+      "transaction_boundary": "command ledger plus review/journey locks for mutation",
+      "durable_tables": "intake.manual_review_item; intake.deterministic_decision; pilot_ticket.ticket_command_receipt",
+      "flag_and_authorization": "TICKET_LIFECYCLE_WORKBENCH_ENABLED; scoped principal/CSRF/version",
+      "idempotency": "client_command_id + hash + expected_row_version",
+      "failure_result": "scope deny/conflict or rollback",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "8b2c63bf6e62f4b611e4868972bed381ace98d08b6124bc1b7ebfbe9977d4890",
+      "gate_scenarios": [
+        "G2-E07",
+        "G2-J01"
+      ],
+      "current_implementation": "Actual high-risk normal inbound Review is resolved via browser without rewriting original Decision/Ticket."
+    },
+    {
+      "node": "TICKET",
+      "module": "src/p2-016-orchestration-adapters.mjs",
+      "export_or_method": "createP2016OrchestrationWorker ticketCommandPort",
+      "caller": "Safe Action Executor",
+      "transaction_boundary": "same intake/decision transaction",
+      "durable_tables": "pilot_ticket.ticket; pilot_ticket.ticket_event",
+      "flag_and_authorization": "existing PilotTicketCore plus notification/realtime ports",
+      "idempotency": "source_intake_id uniqueness; action_key",
+      "failure_result": "transaction rollback on failure",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "bc079ad666c91cc41ebcda2ce0741223661bad8d4ebd6d2189b74ae90f329cf0",
+      "gate_scenarios": [
+        "G2-T01",
+        "G2-T02"
+      ],
+      "current_implementation": "Normal-source browser lifecycle and independent Ticket/Conversation responsibility exercised."
+    },
+    {
+      "node": "HUMAN_ACTION",
+      "module": "src/p2-016-ticket-command-facade.mjs",
+      "export_or_method": "createP2016TicketCommandFacade",
+      "caller": "P2-016 Workbench HTTP",
+      "transaction_boundary": "existing command ledger/action transaction",
+      "durable_tables": "pilot_ticket.ticket; pilot_ticket.ticket_event; pilot_ticket.ticket_command_receipt",
+      "flag_and_authorization": "principal role/team + version + CSRF",
+      "idempotency": "client_command_id and command hash",
+      "failure_result": "stable FAILED receipt/conflict",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "7c00c1860f929e52353b01d889b0fb2ee4b800e5706d964abdacf9f2af6e78fa",
+      "gate_scenarios": [
+        "G2-T01",
+        "G2-T03",
+        "G2-T04"
+      ],
+      "current_implementation": "Existing explicit human and SYSTEM commands, durable replay, rollback and uncertain response preserved."
+    },
+    {
+      "node": "PRIVATE_PERMISSION",
+      "module": "src/p2-012-live-reporter-scope.mjs",
+      "export_or_method": "createP2012PersonDestinationAuthorizer; createP2012DynamicWeComSender",
+      "caller": "Ticket notification generation and Gateway send",
+      "transaction_boundary": "read-only matching Direct Leg in supplied transaction; Gateway recheck",
+      "durable_tables": "intake.channel_leg; intake.contact_journey; intake.service_intake; channel.message_inbox",
+      "flag_and_authorization": "approved reporter/group membership AND matching retained single Leg for PERSON",
+      "idempotency": "existing downstream message/delivery keys",
+      "failure_result": "query errors propagate; unauthorized destination rejected",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "676f8284224d8196c4032b8d29a607f67b2eca073c7fc522c8872f8d20543c57",
+      "gate_scenarios": [
+        "G2-N01",
+        "G2-N02"
+      ],
+      "current_implementation": "Shared retained Direct Leg authorizer at generation and actual Gateway Guard; first inbound admission remains independent."
+    },
+    {
+      "node": "FIXED_GUIDANCE",
+      "module": "src/p2-016-orchestration-adapters.mjs",
+      "export_or_method": "communicationPort.appendFixed inside createP2016OrchestrationWorker",
+      "caller": "REQUEST_ONE_DESCRIPTION Safe Action",
+      "transaction_boundary": "same Worker transaction",
+      "durable_tables": "communication.message; communication.outbox; communication.delivery",
+      "flag_and_authorization": "Existing flags plus shared personDestinationAuthorizer before any private artifact",
+      "idempotency": "action.id; derived guidanceId",
+      "failure_result": "communication failure Review path",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "bc079ad666c91cc41ebcda2ce0741223661bad8d4ebd6d2189b74ae90f329cf0",
+      "gate_scenarios": [
+        "G2-E02",
+        "G2-N01"
+      ],
+      "current_implementation": "Group-only clarification and App manual-review route suppress all private artifacts before Direct Leg; actual eligible guidance uses existing sender."
+    },
+    {
+      "node": "HUMAN_REPLY",
+      "module": "src/p2-006-workbench-command-facade.mjs",
+      "export_or_method": "createConversationWorkbenchCommandFacade.reply",
+      "caller": "Workbench HTTP / workbench.js",
+      "transaction_boundary": "Communication Service commit transaction",
+      "durable_tables": "communication.message; communication.outbox; communication.delivery",
+      "flag_and_authorization": "Session authorization + expected version; Gateway PERSON guard at send",
+      "idempotency": "client_command_id",
+      "failure_result": "stable authorization/version/communication failure",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "92e881de54c911fa14360bcde44eb86c47d7c08527635acf64cccf4dbc5eeee5",
+      "gate_scenarios": [
+        "G2-N01",
+        "G2-T03"
+      ],
+      "current_implementation": "Existing Communication reply path now applies shared generation guard and actual three-process transport binding."
+    },
+    {
+      "node": "INCIDENT_CANDIDATE",
+      "module": "src/p2-012-candidate-source-adapter.mjs",
+      "export_or_method": "createP2012CandidateReviewStore.importDecision",
+      "caller": "P2-012 Workbench extension / maintenance",
+      "transaction_boundary": "existing candidate store transaction",
+      "durable_tables": "incident.candidate_review; intake.deterministic_decision",
+      "flag_and_authorization": "incident feature flags; persisted rule candidate provenance",
+      "idempotency": "source Decision binding",
+      "failure_result": "reject noncandidate; idempotent import",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "c463727447a5a841343e305cc38c5fe302a07bf3b7972d6c3ce82f006483b1be",
+      "gate_scenarios": [
+        "G2-I01",
+        "G2-I04"
+      ],
+      "current_implementation": "Three independent normal reports derive candidate from persisted source decisions; private bounded expiry maintenance retained."
+    },
+    {
+      "node": "INCIDENT_COMMAND",
+      "module": "src/p2-012-incident-command-service.mjs",
+      "export_or_method": "createP2012IncidentCommandService",
+      "caller": "Incident Workbench HTTP",
+      "transaction_boundary": "existing command transaction including reports/subscriptions/notices",
+      "durable_tables": "incident.incident; incident.incident_report; incident.reporter_subscription; incident.incident_event; incident.command_receipt",
+      "flag_and_authorization": "explicit human command; role/version/scope; per-notice flags",
+      "idempotency": "client_command_id + canonical command hash",
+      "failure_result": "rollback/FAILED receipt or conflict",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "9ce5014b4b4915f58882f27fd18d5dedc793dc5ce221bebbb2343f3ddbb83825",
+      "gate_scenarios": [
+        "G2-I01",
+        "G2-I02",
+        "G2-I03",
+        "G2-I05",
+        "G2-I06",
+        "G2-I07"
+      ],
+      "current_implementation": "Human confirm/link/unlink/recovery preserve personal Tickets; retention/PAUSED/ENDED semantics exercised via existing HTTP/browser."
+    },
+    {
+      "node": "NOTIFICATION",
+      "module": "src/p2-016-ticket-notification-projector.mjs",
+      "export_or_method": "createP2016TicketNotificationProjector.project",
+      "caller": "Ticket create/action/closure",
+      "transaction_boundary": "same Ticket transaction for durable generation",
+      "durable_tables": "communication.ticket_notification_binding; communication.message; communication.outbox; communication.delivery",
+      "flag_and_authorization": "Ticket/Reporter/Card flags; personDestinationAuthorizer",
+      "idempotency": "Ticket event/destination binding",
+      "failure_result": "generation failure rolls back command; later send failure separate",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "3e183148353f18c53e307499b62df37809a3d6965df177535d954de63eb7dcdb",
+      "gate_scenarios": [
+        "G2-N01",
+        "G2-N02",
+        "G2-N04"
+      ],
+      "current_implementation": "Group created and Webhook closed profile; private accepted/closed defaults, optional explicit extra events; no old created-card backfill."
+    },
+    {
+      "node": "DELIVERY",
+      "module": "src/p2-004-communication-delivery-worker.mjs",
+      "export_or_method": "createCommunicationDeliveryWorker; createCommunicationReconciliationPort",
+      "caller": "Worker role → Gateway sender",
+      "transaction_boundary": "claim/result persistence; SDK boundary outside business command",
+      "durable_tables": "communication.delivery; existing delivery-attempt facts",
+      "flag_and_authorization": "G2 SendGuard, approved scope, retained Direct Leg, immutable budget, active fresh approval",
+      "idempotency": "delivery lease and attempts; explicit unknown reconciliation",
+      "failure_result": "numeric ACK only; UNKNOWN not blindly resent",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "752e82552cb4fc21e1768f82903ce1f983820ab03a19a9e10c402fa84f0063c4",
+      "gate_scenarios": [
+        "G2-N03",
+        "G2-F01",
+        "G2-F02"
+      ],
+      "current_implementation": "Mock SDK numeric ACK, disconnect/reconnect and UNKNOWN separate; actual receipt journal cannot manufacture client observation."
+    },
+    {
+      "node": "REPORTER",
+      "module": "src/p2-016-reporter-timeline.mjs",
+      "export_or_method": "createP2016ReporterTimeline",
+      "caller": "Reporter HTTP; P2-012 Incident adapter; reporter.js",
+      "transaction_boundary": "authorized read; Grant/session exchange uses existing access store",
+      "durable_tables": "pilot_ticket.reporter_access_grant; pilot_ticket.reporter_access_session; Ticket/Event/Incident facts",
+      "flag_and_authorization": "Reporter flag and retained bound credentials",
+      "idempotency": "existing Grant one-time exchange; ETag/refresh",
+      "failure_result": "deny expired scope; incomplete fetch must not adopt new ETag",
+      "current_test_type": "TARGETED_POSTGRES_HTTP_BROWSER_OR_PROCESS",
+      "gap": "Real WeCom/client/2C4G 60-minute evidence NOT_RUN; automated preparation verified in current full run.",
+      "module_sha256": "14f61ec5c14f5caa11763379833f0295c2602db3eb41a7c07cb4dfe0060a390d",
+      "gate_scenarios": [
+        "G2-R01",
+        "G2-R02",
+        "G2-R03"
+      ],
+      "current_implementation": "Real grants/session and actual browser full-render ETag add/remove retry, unauthorized polling stop and re-exchange tested."
+    }
+  ],
+  "full_loop_pass": false,
+  "additional_modules": [
+    {
+      "path": "src/p2-016-conversation-binding.mjs",
+      "sha256": "aa14463fd53399aa71bf0fd4ff9d7d57b2d094900c70dac42b48d65597129ed1"
+    },
+    {
+      "path": "src/p2-016-direct-intake.mjs",
+      "sha256": "e0539fec39152dcb02efe10cb8833af4205b0d26e614ddd258e9ec88d084934c"
+    },
+    {
+      "path": "src/p2-015-incident-correlation.mjs",
+      "sha256": "0b51a31e611f9f21f571f3b8e5ea193ffebdbe04385d6de0c9f933c99458008c"
+    },
+    {
+      "path": "src/p2-015-group-corroboration.mjs",
+      "sha256": "7ae9bd6be65439145fa10fc18942bec174a0493d9da384cec976d9a55312b9f6"
+    },
+    {
+      "path": "src/p2-g2-service-loop-assembly.mjs",
+      "sha256": "1c781069f1117d105a142d2761dad3b9ce5e521005f858e6df7beb808748f2b8"
+    },
+    {
+      "path": "src/p2-g2-send-guard.mjs",
+      "sha256": "341bb77e746aa522fd17cdab4a9eeb20dc8e59f3e9c001113f529ab1fedf1a15"
+    },
+    {
+      "path": "src/p2-g2-reconciliation.mjs",
+      "sha256": "d5553a1aedc5bdc785da6184c5d5dc6bde9e90c45a3ca5557b6d0bf7b3dc0ef5"
+    }
+  ],
+  "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+  "full_regression_ref": "evidence/p2-g2-full-regression-run.json",
+  "independent_review_ref": "evidence/p2-g2-review-summary.json"
+}

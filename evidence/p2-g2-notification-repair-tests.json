@@ -1,0 +1,41 @@
+{
+  "args": [
+    "--expose-gc",
+    "--test",
+    "--test-concurrency=1",
+    "--test-reporter=tap",
+    "tests/p2-016-contracts.test.mjs",
+    "tests/p2-g2-notification-source.integration.test.mjs",
+    "tests/p2-g2-notification-frequency.integration.test.mjs",
+    "tests/p2-g2-webhook-configuration.test.mjs",
+    "tests/p2-g2-recognition-boundaries.test.mjs"
+  ],
+  "files": [
+    {
+      "path": "tests/p2-016-contracts.test.mjs",
+      "sha256": "351c03cb944dba08284f944a10a97f355ee9a7dde31634f0a01338aad75bcb3b"
+    },
+    {
+      "path": "tests/p2-g2-notification-source.integration.test.mjs",
+      "sha256": "f11bfac0752de33f31ede758064ed1fa08f3f9c6e4ddc15ee0e8d55d22c85d25"
+    },
+    {
+      "path": "tests/p2-g2-notification-frequency.integration.test.mjs",
+      "sha256": "7258810352dd67c660b805f5c0fec4fafb131447755a8f70d0ba6f66ea3b5bdb"
+    },
+    {
+      "path": "tests/p2-g2-webhook-configuration.test.mjs",
+      "sha256": "54ad6cba287d5b4592f27bb972c85e7daf2176b0c5897b8f7386d579192ecc4b"
+    },
+    {
+      "path": "tests/p2-g2-recognition-boundaries.test.mjs",
+      "sha256": "2e4dee681c07afc1913f6b47e6e895d29914d8f5f90d75f8371b5090fd50e580"
+    }
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error": null,
+  "stdout_sha256": "cfb15354ff492dfdfd0156c473376613c4d498c591bcee5f67b0013dbf28c518",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "directory": "tmp/p2-g2-tests-657236af-5231-47e4-b02c-24ce6bfe2a83"
+}

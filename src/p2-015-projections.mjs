@@ -15,6 +15,8 @@ export function projectContactJourney(row, { restricted = false } = {}) {
 
 export function projectDecision(row) {
   const value = snapshotP2015Json(row);
+  // Directory version/time assertions are restricted to the authorized review detail.
+  if (value.safe_result?.identity_review) delete value.safe_result.identity_review.directory_assertion;
   return freezePublic({ id: value.id, journey_id: value.journey_id, decision_ordinal: value.decision_ordinal,
     result_code: value.result_code, reason_code: value.reason_code, safe_result: value.safe_result,
     requires_manual_review: value.requires_manual_review,

@@ -14,19 +14,28 @@ const ENTRY_CHANNEL = Object.freeze({
   DIRECT_ORGANIC: 'WECOM_DIRECT',
 });
 
-export function createReporterDirectoryPort({ resolveProfile } = {}) {
+export function createReporterDirectoryPort({ resolveProfile, timeoutMs = 500 } = {}) {
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2000) failP2015(P2_015_ERROR_CODES.inputInvalid);
+  let inFlight = false;
   return Object.freeze({
     async resolve(input) {
-      if (typeof resolveProfile !== 'function') return freezePublic({ status: 'DEFERRED', snapshot: {} });
+      if (typeof resolveProfile !== 'function' || inFlight) return freezePublic({ status: 'DEFERRED', snapshot: {} });
+      const controller = new AbortController();
+      let timer;
+      inFlight = true;
       try {
-        const result = snapshotP2015Json(await resolveProfile(snapshotP2015Json(input)));
+        const pending = Promise.resolve().then(() => resolveProfile(snapshotP2015Json(input), { signal: controller.signal }))
+          .finally(() => { inFlight = false; });
+        const result = snapshotP2015Json(await Promise.race([pending, new Promise(resolve => {
+          timer = setTimeout(() => { controller.abort(); resolve({ status: 'DEFERRED' }); }, timeoutMs);
+        })]));
         if (!['RESOLVED', 'DEFERRED', 'NOT_FOUND', 'NOT_REQUIRED'].includes(result.status)) failP2015(P2_015_ERROR_CODES.inputInvalid);
         const snapshot = result.status === 'RESOLVED' ? snapshotP2015Json(result.snapshot ?? {}) : {};
         return freezePublic({ status: result.status, snapshot });
       } catch (error) {
         if (error?.code === P2_015_ERROR_CODES.inputInvalid) throw error;
         return freezePublic({ status: 'DEFERRED', snapshot: {} });
-      }
+      } finally { clearTimeout(timer); }
     },
   });
 }
@@ -100,7 +109,7 @@ export function createContactJourneyStore() {
            privacy_class, retention_until, retention_until_epoch_ms
          ) VALUES ($1,$2::uuid,$3::uuid,$3::uuid,$4::uuid,$5,$6,$6,$7,$8,$9::jsonb,$10,'OPEN',
            $11::timestamp without time zone,$12::bigint,$13::timestamp without time zone,
-           $13::timestamp without time zone,$14,$15::timestamp without time zone,$16::bigint)
+           $17::timestamp without time zone,$14,$15::timestamp without time zone,$16::bigint)
          RETURNING id::text, origin_intake_id::text, origin_session_id::text, current_session_id::text,
            linked_ticket_id::text, entry_mode, origin_channel, current_channel,
            profile_resolution_status, status, row_version::text, evaluation_due_at,
@@ -109,7 +118,7 @@ export function createContactJourneyStore() {
         [creationKey, value.origin_intake_id, value.session_id ?? null, value.linked_ticket_id ?? null,
           value.entry_mode, originChannel, value.reporter_identity_hash, value.profile_resolution_status,
           JSON.stringify(profileSnapshot), profileHash, value.evaluation_due_at, value.evaluation_due_epoch_ms,
-          value.reported_at, value.privacy_class, value.retention_until, value.retention_until_epoch_ms],
+          value.reported_at, value.privacy_class, value.retention_until, value.retention_until_epoch_ms,value.last_activity_at??value.reported_at],
       );
       return publicJourney(inserted.rows[0], false);
     },

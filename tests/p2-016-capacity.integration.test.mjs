@@ -25,7 +25,7 @@ test('P2-016 bounded capacity: 500 Tickets / 5000 events / 200 review resolution
     const principal=await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'synthetic-capacity-admin',displayName:'合成容量测试坐席',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
     const authContext={principal_id:principal.id},key='synthetic-only-capacity-reporter-key-32bytes';
     const access=createP2016ReporterAccess({pool,enabled:true,hmacSecret:key});
-    const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access});
+    const notifications=createP2016TicketNotificationProjector({additionalEventTypes:['ticket.created'],enabled:true,cardEnabled:true,reporterAccess:access});
     const realtime=createP2016RealtimeProjector({pool,enabled:true}),base=createRuleEngine();
     const worker=createP2016OrchestrationWorker({pool,identityHmacKey:'synthetic-capacity-identity-key',notifications,realtime,
       ruleEngine:{catalog_version:base.catalog_version,rule_set_version:base.rule_set_version,evaluate(input){

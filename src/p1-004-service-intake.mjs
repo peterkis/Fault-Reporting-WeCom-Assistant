@@ -193,10 +193,12 @@ export async function applyServiceIntakeMigration({ pool }) {
 
 export function createServiceIntakeProcessor({
   aggregationWindowMs = DEFAULT_AGGREGATION_WINDOW_MS,
+  existingIntakeSelector = null,
 } = {}) {
   if (!Number.isInteger(aggregationWindowMs) || aggregationWindowMs < 1) {
     throw new TypeError('aggregationWindowMs must be a positive integer.');
   }
+  if (existingIntakeSelector !== null && typeof existingIntakeSelector !== 'function') throw new TypeError('An Intake selector must be a function.');
 
   return async function processServiceIntake({ channelMessageId, message, transaction }) {
     if (
@@ -221,7 +223,7 @@ export function createServiceIntakeProcessor({
     const cleanText = cleanMessageText(message);
     const requestType = classifyRequest(cleanText);
     const status = initialStatus(requestType, cleanText);
-    const explicitAggregationBoundary = NEW_REPORT_PATTERN.test(cleanText)
+    let explicitAggregationBoundary = NEW_REPORT_PATTERN.test(cleanText)
       || OTHER_TICKET_PATTERN.test(cleanText);
     const summary = cleanText.length === 0 ? null : cleanText.slice(0, 500);
     const sourceChannel = message.chat_type === 'group' ? 'WECOM_GROUP' : 'WECOM_DIRECT';
@@ -233,7 +235,12 @@ export function createServiceIntakeProcessor({
     );
 
     let existing = { rowCount: 0, rows: [] };
-    if (!explicitAggregationBoundary) {
+    // Optional P2 association runs inside this same durable Inbox transaction.
+    // null means use the P1 fragment window; {id:null} explicitly forbids reuse.
+    const selection = !explicitAggregationBoundary && existingIntakeSelector
+      ? await existingIntakeSelector({ transaction, message, cleanText }) : null;
+    if (selection?.explicitBoundary === true) explicitAggregationBoundary = true;
+    if (!explicitAggregationBoundary && selection?.id !== null) {
       existing = await transaction.query(
         `SELECT candidate.id::text, candidate.intake_no, candidate.source_channel,
                 candidate.reporter_wecom_userid, candidate.request_type, candidate.summary,
@@ -251,8 +258,9 @@ export function createServiceIntakeProcessor({
             AND candidate.source_chat_id IS NOT DISTINCT FROM $4
             AND candidate.reporter_wecom_userid = $5
             AND candidate.status IN ('RECEIVED', 'WAITING_DESCRIPTION', 'WAITING_TRIAGE', 'TICKET_CREATED')
-            AND candidate.last_message_at >= $6::timestamp without time zone - ($7 * INTERVAL '1 millisecond')
-            AND candidate.last_message_at <= $6::timestamp without time zone + ($7 * INTERVAL '1 millisecond')
+            AND (candidate.id = $8::uuid OR ($8::uuid IS NULL
+              AND candidate.last_message_at >= $6::timestamp without time zone - ($7 * INTERVAL '1 millisecond')
+              AND candidate.last_message_at <= $6::timestamp without time zone + ($7 * INTERVAL '1 millisecond')))
             AND (
                 NOT candidate.explicit_aggregation_boundary
                 OR primary_message.received_at <= $6::timestamp without time zone
@@ -270,6 +278,7 @@ export function createServiceIntakeProcessor({
           message.sender_user_id,
           message.received_at,
           aggregationWindowMs,
+          selection?.id ?? null,
         ],
       );
     }
@@ -428,13 +437,14 @@ export function createServiceIntakeProcessor({
       intake,
       occurredAt: message.received_at,
       traceId,
-      payload: {
-        intake_id: intake.id,
-        channel_message_id: channelMessageId,
-        source_channel: sourceChannel,
-        reporter_wecom_userid: message.sender_user_id,
-        explicit_aggregation_boundary: explicitAggregationBoundary,
-        request_type: requestType,
+        payload: {
+          intake_id: intake.id,
+          channel_message_id: channelMessageId,
+          source_channel: sourceChannel,
+          reporter_wecom_userid: message.sender_user_id,
+          explicit_aggregation_boundary: explicitAggregationBoundary,
+          ...(selection?.boundaryReason ? { session_boundary_reason: selection.boundaryReason } : {}),
+          request_type: requestType,
         status,
       },
     });

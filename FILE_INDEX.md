@@ -312,3 +312,50 @@
 - evidence/p2-012-pr-review-paused-destination-hardening.md / .json：暂停订阅替换过期目的地的浏览器闭环与独立回归。
 
 - evidence/p2-012-pr-review-reporter-refresh-hardening.md / .json：Reporter 时间线瞬时失败后的 ETag 与公共故障里程碑恢复证据。
+
+## P2-G2 早期准备与云部署索引（历史阶段）
+
+- `evidence/p2-g2-domain-gap-report.md`、`p2-g2-service-chain-inventory.md/json`：部分链路盘点、实际PostgreSQL/HTTP反例及独立修复停止线。
+- `tests/p2-g2-service-route-readiness.integration.test.mjs`、`scripts/p2-g2-route-preflight.mjs`：四个正常入站前置用例及已授权Manual Review修复验证，强制本地隔离数据库；历史RED保留。
+- `evidence/p2-g2-service-route-red.tap`、`p2-g2-service-route-red-run.json`、`p2-g2-service-route-attempt1.tap`、`p2-g2-service-route-attempt2.tap`：失败与对照、清理和运行绑定，不是Gate PASS。
+- `scripts/p2-g2-cloud-package.mjs`：无凭据、停止态代码包及逐文件指纹。
+- `scripts/p2-g2-postgres-native.sh`：新Ubuntu24.04主机上的原生PostgreSQL18基础安装/只读检查，不创建应用库或运行仓库迁移。
+- `docs/runbooks/p2-g2-cloud-deployment-operations.md`、`p2-g2-postgresql-deployment-decision.md`：实际部署、启动停止、选型、数据位置、巡检升级/备份/回滚与业务激活缺项。
+- `evidence/p2-g2-cloud-deployment-record.json`、`p2-g2-cloud-deployment-authorization.md`：新增云部署授权、原生PG/停止态代码/依赖与远端验证记录。
+- `src/p2-g2-validation-config.mjs`、`p2-g2-candidate.mjs`、`p2-g2-evidence.mjs`、`p2-g2-gate-evaluator.mjs`：当前候选绑定、配置校验、追加证据与纯判定；现已包括各类source-reader与现场CLI；READY仍须当前完整回归/独立审查。
+- `src/p2-g2-service-loop-assembly.mjs`、`scripts/p2-g2-process-role.mjs`：有限三角色合成装配；真实发送入口保持拒绝。
+- `contracts/p2_g2_validation_manifest.schema.json`、`p2_g2_evidence_record.schema.json`、`p2_g2_gate_result.schema.json`、`config_examples/p2-g2-validation-policy.example.json`：准备中的Gate契约与默认关闭策略。
+- `tests/p2-g2-gate-evaluator.test.mjs`、`p2-g2-evidence.test.mjs`、`p2-g2-validation-config.test.mjs`：纯模块反例与配置边界。
+- `tests/p2-g2-process-assembly.integration.test.mjs`、`p2-g2-inbound-label.integration.test.mjs`、`p2-g2-direct-leg.integration.test.mjs`、`p2-g2-openapi-routing.integration.test.mjs`、`p2-g2-command-outcome-browser.test.mjs`：实际进程、PostgreSQL、HTTP/浏览器和已有通知资格验证。
+- `tests/p2-g2-single-text-gold.integration.test.mjs`、`p2-g2-frozen-gold.integration.test.mjs`、`p2-g2-spinning-recognition.test.mjs`、`p2-g2-recognition-boundaries.test.mjs`、`tests/fixtures/p2-g2/gold-adjudications.v1.jsonl`：原始语料的有限独立裁决及识别修复，不代表202条完整通过。
+- `tests/p2-g2-direct-session-boundary.integration.test.mjs`、`evidence/p2-g2-direct-session-gap.md`：关联语义缺口的原始RED、21项获批修复边界验证；历史失败保留。
+- `evidence/p2-g2-domain-repair-authorization.md`、`p2-g2-gold-repair-authorization.md`、`p2-g2-recognition-repair.md`、`p2-g2-repair-progress.md`、`p2-g2-assembly-hardening.md`、`p2-g2-evaluator-hardening.md`：追加授权、有限修复和实际验证范围。
+- `src/p2-016-direct-intake.mjs`、`evidence/p2-g2-direct-session-repair-authorization.md`、`p2-g2-direct-session-repair.md`：获批的活动Direct Session续接、已提交未投影边界、明确新故障及真实RED/GREEN。
+- `src/p2-g2-send-budget.mjs`、`p2-g2-send-guard.mjs`、`p2-g2-communication-append.mjs`、`p2-g2-database-scope.mjs`：持久预算、发送/群标签、空库与独占控制器边界。
+- `tests/p2-g2-send-budget.test.mjs`、`p2-g2-approval-binding.test.mjs`、`p2-g2-send-guard.integration.test.mjs`、`evidence/p2-g2-send-hardening.md`：预算/审批反例、真实数据库绑定、ACK重放拦截及三进程有限验证。
+- `tests/p2-g2-multi-turn-gold.integration.test.mjs`、`p2-g2-critical-intake.integration.test.mjs`、`tests/helpers/p2-g2-gold-observation.mjs`：原始分条/媒体入站、实际Action与差量、critical受理原子性；裁决表共89条，未冒充202条已完成。
+- `evidence/p2-g2-multi-turn-recognition-repair.md`、`p2-g2-cross-reporter-correlation-gap.md`：新增识别/安全Action修复与多Reporter领域缺口、实际RED及独立授权停止线。
+- `evidence/p2-g2-pre-correlation-regression.json`：236/236定向回归、实际测试清单与回归后工作源码指纹；非完整基线或READY候选。
+- `evidence/p2-g2-continuing-gap-repair-authorization.md`：跨Intake聚合及原目标内后续必要缺口持续授权；无需重复逐项确认，原停止线保留。
+
+## P2-G2 当前准备交付补充索引
+
+- `prompts/P2-G2_rule_first_service_loop_runbook.md`：已实现命令、私有批准清单、三角色控制、客户端延迟实测、同候选Windows回归交接、各类源proof与结束核对。
+- `scripts/validate-p2-g2-service-loop.mjs`、`tests/fixtures/p2-g2/scenarios.v1.jsonl`、`scenarios-manifest.v1.json`：离线治理/候选校验和37项原始场景义务。
+- `src/p2-g2-provider-receipts.mjs`、`p2-g2-webhook-receipts.mjs`、`p2-g2-control-evidence.mjs`、`p2-g2-live-evidence.mjs`、`p2-g2-evidence-files.mjs`：实际来源采集、完整manifest绑定和不可覆盖文件。
+- `src/p2-g2-reconciliation.mjs`、`p2-g2-delivery-evidence.mjs`、`p2-g2-manual-evidence.mjs`、`p2-g2-finalization-evidence.mjs`、`p2-g2-test-evidence.mjs`：只读数据库事实、逐场景ACK、人工源、停止清理及当前全回归的严格编译/验证。
+- `src/p2-g2-source-audit.mjs`、`scripts/p2-g2-source-audit.mjs`：202来源和122正常入站实际TAP逐项分账，不把机制fixture当正常Frame。
+- `src/p2-016-conversation-binding.mjs`、`tests/helpers/p2-g2-late-binding-harness.mjs`、`tests/p2-g2-conversation-binding-boundaries.integration.test.mjs`：晚到投影NULL补齐、20项有界游标、并发与事务故障。
+- `evidence/p2-g2-explicit-new-fault-boundary-repair.md`、`p2-g2-late-conversation-binding-repair.md`、`p2-g2-operational-evidence-repair.md`：真实反例、最小修复与验证边界。
+
+## P2-G2 就绪候选最终证据
+
+- `evidence/p2-g2-automated-readiness-report.md/json`：READY、954/954、环境/GC和停止线。
+- `evidence/p2-g2-full-regression.tap`、`p2-g2-full-regression-run.json`、`p2-g2-validation-run-index.json`：唯一完整TAP、151文件/hash、全部保留runner轮次。
+- `evidence/p2-g2-source-execution-final.json`、`p2-g2-classification-metrics.json`：202/122来源分账、实测可比较分类/人工审核/建单指标及限制。
+- `evidence/p2-g2-scenario-matrix.json`、`p2-g2-pr6-review-invariants.json`：37场景与10项PR修复对应当前通过的测试。
+- `evidence/p2-g2-review-spec.json`、`p2-g2-review-standards.json`、`p2-g2-review-summary.json`：独立审查及候选/源证据绑定。
+- `evidence/p2-g2-validated-candidate-inventory.json`、`p2-g2-modified-existing-modules.json`、`p2-g2-precommit-checks.json`、`p2-g2-preparation-cleanup.json`：564候选文件、36旧模块必要性、READY治理校验和清理界限。
+- `evidence/p2-g2-cloud-ready-deployment-record.json`、`p2-g2-cloud-ready-runbook-publish.json`、`p2-g2-cloud-command-review.json`：当前云端停止态651文件、断网校验、手册发布/语法审查，无业务激活。
+- `docs/runbooks/p2-g2-approved-live-container.md`：仅独立许可后的Linux容器模板与原生PG/代理资源可观测条件。
+- `.gitattributes`：仅G2证据原字节保留，避免换行转换破坏源hash。

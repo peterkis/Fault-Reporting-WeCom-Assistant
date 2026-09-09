@@ -47,6 +47,7 @@ export function createConversationWorkbenchCommandFacade({ controlService, commu
     const action = COMMAND_ACTION[commandType];
     if (!action) invalid();
     const force = body.force === true;
+    if(force&&commandType==='TRANSFER'&&typeof body.reason_code!=='string')invalid();
     const authorizationAction = force && commandType === 'TRANSFER' ? 'FORCE_TRANSFER' : action;
     if (!await authorize.authorizeSession({ principal: actor, sessionId: id, action: authorizationAction })) {
       throw new WorkbenchError(WORKBENCH_ERROR_CODES.notFound, 404);

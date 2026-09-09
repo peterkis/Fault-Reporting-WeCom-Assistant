@@ -28,6 +28,13 @@ test('P2-007 and its authorized P2-015 successor keep the frozen ARCH-005 contra
   if (manifest.p2_015_status === 'AUTHORIZED') {
     assert.equal(manifest.active_task, 'P2-015'); assert.equal(manifest.active_lane, 'P2-C');
     assert.equal(manifest.next_task_candidate, 'P2-015'); assert.equal(manifest.next_task_authorized, true);
+  } else if (['P2_G2_ASSEMBLY_AUTHORIZED','P2_G2_READY_FOR_LIVE_E2E'].includes(manifest.implementation_authorization_status)) {
+    const ready=manifest.implementation_authorization_status==='P2_G2_READY_FOR_LIVE_E2E';
+    assert.equal(manifest.last_completed_task,'P2-012');assert.equal(manifest.p2_016_status,'DONE');
+    assert.equal(manifest.active_task,'P2-G2');assert.equal(manifest.active_lane,'ASSEMBLY');
+    assert.equal(manifest.next_task_candidate,ready?'P2-G2-LIVE':'P2-G2');assert.equal(manifest.next_task_authorized,!ready);
+    assert.equal(manifest.p2_g2_status,ready?'READY_FOR_LIVE_E2E':'IN_PROGRESS');
+    assert.deepEqual(manifest.authorized_gates,['P2-G1','P2-G2']);
   } else if (manifest.p2_012_status==='DONE') {
     assert.equal(manifest.last_completed_task,'P2-012');assert.equal(manifest.p2_016_status,'DONE');
     assert.equal(manifest.active_task,null);assert.equal(manifest.active_lane,null);
@@ -51,5 +58,5 @@ test('P2-007 and its authorized P2-015 successor keep the frozen ARCH-005 contra
   }
   assert.equal(manifest.p2_007_status, 'DONE');
   assert.equal(manifest.p2_008_status, 'TODO_BLOCKED_BY_P2_G2');
-  assert.equal(manifest.p2_g2_status, 'NOT_STARTED');
+  if(!['P2_G2_ASSEMBLY_AUTHORIZED','P2_G2_READY_FOR_LIVE_E2E'].includes(manifest.implementation_authorization_status))assert.equal(manifest.p2_g2_status, 'NOT_STARTED');
 });

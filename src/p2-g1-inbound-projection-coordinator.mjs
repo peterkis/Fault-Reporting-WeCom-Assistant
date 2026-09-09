@@ -201,19 +201,24 @@ async function resolveChannelSession(pool, row) {
       && (active.service_intake_id ?? null) === (row.service_intake_id ?? null);
     if (sameIntake) return active.id;
     if (active !== null) {
+      const boundary = await transaction.query(`SELECT payload->>'session_boundary_reason' AS reason
+        FROM intake.service_intake_event WHERE intake_id=$1::uuid AND event_type='intake.received'
+        ORDER BY event_ordinal LIMIT 1`, [row.service_intake_id]);
+      const closeReason = ['IDLE_TIMEOUT', 'EXPLICIT_USER_NEW_TOPIC'].includes(boundary.rows[0]?.reason)
+        ? boundary.rows[0].reason : 'DIFFERENT_INTAKE';
       const ended = await transaction.query(
         `UPDATE conversation.session
             SET status='ENDED',
                 ended_at=GREATEST(last_activity_at,$2::timestamp without time zone),
                 last_activity_at=GREATEST(last_activity_at,$2::timestamp without time zone),
                 last_activity_epoch_ms=GREATEST(last_activity_epoch_ms,$3::bigint),
-                close_reason='DIFFERENT_INTAKE',
+                close_reason=$4,
                 generation_version=generation_version+1,
                 row_version=row_version+1,
                 updated_at=date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
           WHERE id=$1::uuid AND status<>'ENDED'
           RETURNING id::text`,
-        [active.id, row.received_at, row.received_epoch_ms ?? shanghaiLocalToEpochMs(row.received_at)],
+        [active.id, row.received_at, row.received_epoch_ms ?? shanghaiLocalToEpochMs(row.received_at), closeReason],
       );
       if (ended.rowCount !== 1) throw new Error(P2_G1_PROJECTION_ERROR_CODES.storageFailed);
     }
@@ -226,8 +231,8 @@ async function resolveChannelSession(pool, row) {
     const inserted = await transaction.query(
       `INSERT INTO conversation.session(
          thread_id,participant_key,service_intake_id,session_scope_key,
-         creation_idempotency_key,status,control_mode,last_activity_at,last_activity_epoch_ms
-       ) VALUES($1::uuid,$2,$3::uuid,$4,$5,'OPEN','HUMAN',$6::timestamp without time zone,$7::bigint)
+         creation_idempotency_key,status,control_mode,started_at,last_activity_at,last_activity_epoch_ms
+       ) VALUES($1::uuid,$2,$3::uuid,$4,$5,'OPEN','HUMAN',$6::timestamp without time zone,$6::timestamp without time zone,$7::bigint)
        ON CONFLICT(creation_idempotency_key) DO UPDATE
          SET creation_idempotency_key=EXCLUDED.creation_idempotency_key
        RETURNING id::text`,

@@ -1,0 +1,59 @@
+TAP version 13
+# Subtest: synthetic evidence fixture: SENT alone, unrelated attempt, seeded startup and organic prior-group cannot prove live receipt
+not ok 1 - synthetic evidence fixture: SENT alone, unrelated attempt, seeded startup and organic prior-group cannot prove live receipt
+  ---
+  duration_ms: 17.2186
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-delivery-evidence.test.mjs:13:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception: one unrelated ACK cannot establish G2-N02'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'throws'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-delivery-evidence.test.mjs:36:12)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: read-only reconciliation preserves actual Delivery/attempt ledger without identity, content or invented ACK
+ok 2 - read-only reconciliation preserves actual Delivery/attempt ledger without identity, content or invented ACK
+  ---
+  duration_ms: 2940.281
+  type: 'test'
+  ...
+# Subtest: approved group Reporter plus actual Direct Leg remains within reconciliation scope when absent from explicit person hashes
+not ok 3 - approved group Reporter plus actual Direct Leg remains within reconciliation scope when absent from explicit person hashes
+  ---
+  duration_ms: 3016.9711
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-reconciliation.integration.test.mjs:27:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    withG2Runtime.reporterCount (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-reconciliation.integration.test.mjs:37:86)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-g2-runtime-harness.mjs:72:9)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async withG2Runtime (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-g2-runtime-harness.mjs:20:5)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-reconciliation.integration.test.mjs:28:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 1
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6572.9167

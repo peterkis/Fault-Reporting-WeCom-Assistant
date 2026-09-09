@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: P2-G2 ten-route prerequisite: committed decisions have an executable next step
+    # Subtest: fault-control
+    ok 1 - fault-control
+      ---
+      duration_ms: 220.9754
+      type: 'test'
+      ...
+    # {"case_id":"fault-control","persist_before_route":{"messages":1,"intakes":1,"decisions":0},"actions":[{"result_code":"TICKET_ELIGIBLE","requires_manual_review":false,"action_type":"APPLY_INTAKE_CLASSIFICATION","execution_policy":"AUTO_SAFE_DB_ONLY","state":"EXECUTED","result_ref_type":"INTAKE","error_code":null,"retryable":null,"pending_reviews":0},{"result_code":"TICKET_ELIGIBLE","requires_manual_review":false,"action_type":"CREATE_MINIMAL_TICKET","execution_policy":"AUTO_SAFE_DB_ONLY","state":"EXECUTED","result_ref_type":"TICKET","error_code":null,"retryable":null,"pending_reviews":0}],"http_manual_review_visible":false,"restart_batch_processed":0,"tickets":1,"sessions":1,"test_type":"LOCAL_REAL_POSTGRES_HTTP_NORMAL_INGRESS","gateway_enabled":false,"sender_enabled":false}
+    # Subtest: review-control
+    not ok 2 - review-control
+      ---
+      duration_ms: 59.7845
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-service-route-readiness.integration.test.mjs:39:63'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        + actual - expected
+
+        + 'NEEDS_DESCRIPTION'
+        - 'MANUAL_REVIEW_REQUIRED'
+
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 'MANUAL_REVIEW_REQUIRED'
+      actual: 'NEEDS_DESCRIPTION'
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-service-route-readiness.integration.test.mjs:54:18)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-service-route-readiness.integration.test.mjs:39:55)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-service-route-readiness.integration.test.mjs:18:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: status-query
+    not ok 3 - status-query
+      ---
+      duration_ms: 91.7998
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-service-route-readiness.integration.test.mjs:39:63'
+      failureType: 'testCodeFailure'
+      error: 'P2_G2_EXECUTABLE_NEXT_STEP_REQUIRED: a PROPOSED suggestion without an executable handler or reachable Review is not a completed safe route'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-service-route-readiness.integration.test.mjs:80:18)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-service-route-readiness.integration.test.mjs:39:55)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-service-route-readiness.integration.test.mjs:18:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # {"case_id":"status-query","persist_before_route":{"messages":1,"intakes":1,"decisions":0},"actions":[{"result_code":"STATUS_QUERY","requires_manual_review":false,"action_type":"QUERY_AUTHORIZED_STATUS","execution_policy":"HUMAN_CONFIRM_REQUIRED","state":"PROPOSED","result_ref_type":null,"error_code":null,"retryable":null,"pending_reviews":0}],"http_manual_review_visible":false,"restart_batch_processed":0,"tickets":0,"sessions":1,"test_type":"LOCAL_REAL_POSTGRES_HTTP_NORMAL_INGRESS","gateway_enabled":false,"sender_enabled":false}
+    # Subtest: business-consultation
+    not ok 4 - business-consultation
+      ---
+      duration_ms: 66.9865
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-service-route-readiness.integration.test.mjs:39:63'
+      failureType: 'testCodeFailure'
+      error: 'P2_G2_EXECUTABLE_NEXT_STEP_REQUIRED: a PROPOSED suggestion without an executable handler or reachable Review is not a completed safe route'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-service-route-readiness.integration.test.mjs:80:18)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-service-route-readiness.integration.test.mjs:39:55)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-service-route-readiness.integration.test.mjs:18:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # {"case_id":"business-consultation","persist_before_route":{"messages":1,"intakes":1,"decisions":0},"actions":[{"result_code":"BUSINESS_CONSULTATION","requires_manual_review":false,"action_type":"ROUTE_BUSINESS_CONSULTATION","execution_policy":"HUMAN_CONFIRM_REQUIRED","state":"PROPOSED","result_ref_type":null,"error_code":null,"retryable":null,"pending_reviews":0}],"http_manual_review_visible":false,"restart_batch_processed":0,"tickets":0,"sessions":1,"test_type":"LOCAL_REAL_POSTGRES_HTTP_NORMAL_INGRESS","gateway_enabled":false,"sender_enabled":false}
+    1..4
+not ok 1 - P2-G2 ten-route prerequisite: committed decisions have an executable next step
+  ---
+  duration_ms: 3111.8155
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-service-route-readiness.integration.test.mjs:12:1'
+  failureType: 'subtestsFailed'
+  error: '3 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# {"cleanup":{"database_count":0,"backend_count":0},"cleanup_passed":true}
+1..1
+# tests 5
+# suites 0
+# pass 1
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5355.3861

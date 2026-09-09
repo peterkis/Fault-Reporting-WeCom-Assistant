@@ -19,7 +19,7 @@ test('Ticket delivery operator commands authorize before receipt, persist idempo
     const admin=await principal('ADMIN'),dispatcher=await principal('DISPATCHER'),handler=await principal('HANDLER');
     const input=await seedPersistedIntake({pool,text:'合成故障',chatType:'single',requestType:'INCIDENT',status:'RECEIVED'});
     const ticket=(await createPilotTicketCore({pool}).createForIntake({intakeId:input.intakeId,occurredAt:input.receivedAt,traceId:'synthetic-dc'})).ticket;
-    const n=await transactionP2016(pool,async tx=>{const event=await appendTicketEvent({transaction:tx,ticket,eventType:'ticket.created',actor:{type:'SYSTEM',id:null},traceId:'synthetic-dc'});return createP2016TicketNotificationProjector({enabled:true}).project({transaction:tx,ticket,event});});
+    const n=await transactionP2016(pool,async tx=>{const event=await appendTicketEvent({transaction:tx,ticket,eventType:'ticket.created',actor:{type:'SYSTEM',id:null},traceId:'synthetic-dc'});return createP2016TicketNotificationProjector({additionalEventTypes:['ticket.created'],enabled:true}).project({transaction:tx,ticket,event});});
     let mode='REJECTED_NOT_APPLIED',calls=0;
     const worker=createCommunicationDeliveryWorker({pool,enabled:true,sender:{send:async()=>{calls++;return {outcome:mode,provider_message_id:mode==='ACKNOWLEDGED'?'synthetic-ack':null,error_code:mode==='ACKNOWLEDGED'?null:'SYNTHETIC_NO_ACK',retryable:false};}}});
     assert.equal((await worker.deliver({deliveryId:n.delivery_id})).status,'DEAD_LETTER');

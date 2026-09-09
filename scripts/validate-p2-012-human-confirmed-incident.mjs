@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { P2012_RELATIONS,p2012CatalogHash } from './p2-012-migrate.mjs';
+import {isG2SuccessorState,verifyG2Predecessor} from '../src/p2-g2-predecessor-verification.mjs';
 const BASE='30a394e85973f5a300b841b23d2c358998796ba6',AUTH='f8d29caf50816ab90f3debf14995085158460784';
 const LIVE='55b89664e18c761d31b073fc2e279991e8543507b99ef55080d2ed9f6e2e6740';
 const COMPLETION='evidence/p2-012-human-confirmed-incident-report.json';
@@ -145,6 +146,7 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
   if(typeof includeReadinessEvidence!=='boolean')throw new Error('P2_012_VALIDATION_MODE_INVALID');
   const errors=[];let checks=0;const check=(ok,message)=>{checks++;if(!ok)errors.push(message);};
   const state=await json('plans/current_phase.json'),ready=state.p2_012_status==='READY_FOR_TARGETED_LIVE_VALIDATION',done=state.p2_012_status==='DONE';
+  if(isG2SuccessorState(state))return verifyG2Predecessor('P2-012',includeReadinessEvidence);
   const completion=done?await json(COMPLETION):null,hardening=completion?.pr_review_hardening,httpHardening=completion?.pr_review_http_openapi_hardening,subHardening=completion?.pr_review_subscription_contract_hardening,pausedHardening=completion?.pr_review_paused_destination_hardening,refreshHardening=completion?.pr_review_reporter_refresh_hardening;
   check(['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION','DONE'].includes(state.p2_012_status),'P2-012 has a recognized lifecycle state');
   const files=['MANIFEST.json','plans/current_phase.json','plans/master_backlog.json','plans/parallel_workstreams.json','tasks/master_backlog.json','project_summary.json'];

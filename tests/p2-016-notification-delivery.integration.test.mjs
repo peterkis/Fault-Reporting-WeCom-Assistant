@@ -18,7 +18,7 @@ test('P2-016 persisted card delivery, HMAC grants, one-use sessions and reporter
   await withP2016IsolatedDatabase({databaseUrl,purpose:'p2016notify',run:async({pool,databaseUrl:isolated})=>{
     await applyThrough030({pool,databaseUrl:isolated});await migrateP2016({databaseUrl:isolated});
     const access=createP2016ReporterAccess({pool,enabled:true,hmacSecret:'synthetic-only-reporter-hmac-secret-at-least-32'});
-    const projector=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access});
+    const projector=createP2016TicketNotificationProjector({additionalEventTypes:['ticket.created'],enabled:true,cardEnabled:true,reporterAccess:access});
     const seed=await seedPersistedIntake({pool,text:'synthetic',requestType:'INCIDENT',status:'RECEIVED'});
     const ticket=(await createPilotTicketCore({pool}).createForIntake({intakeId:seed.intakeId,occurredAt:seed.receivedAt,traceId:'synthetic'})).ticket;
     let event;

@@ -154,11 +154,33 @@ paths:
   /conversations/{sessionId}/transfer:
     post:
       operationId: transferConversation
+      description: Admin force transfer requires an explicit nonempty reason_code.
       parameters:
         - $ref: "#/components/parameters/SessionId"
         - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [client_command_id, expected_row_version, target_principal_id]
+              properties:
+                client_command_id: { type: string, format: uuid }
+                expected_row_version: { type: integer, minimum: 1 }
+                target_principal_id: { type: string, format: uuid }
+                force: { type: boolean, default: false }
+                reason_code: { type: string, pattern: '^[A-Z0-9_]{1,128}$' }
+              if:
+                required: [force]
+                properties:
+                  force: { const: true }
+              then:
+                required: [reason_code]
       responses:
         "200": { description: Assignment transferred }
+        "400": { description: Invalid command or missing explicit force-transfer reason }
   /conversations/{sessionId}/release:
     post:
       operationId: releaseConversation
@@ -451,6 +473,21 @@ paths:
         '404': {description: Not found or not visible}
         '409': {description: Version, command hash or state conflict}
         '503': {description: Disabled or temporarily unavailable}
+  /tickets/{ticketId}/reporter-contact:
+    get:
+      operationId: getP2G2InternalReporterContact
+      tags: [P2-016]
+      description: Internal report-time directory snapshot, scoped by existing Ticket visibility. Never part of Reporter or ordinary Journey projections. Missing profile does not prevent admission.
+      security: [{InternalSession: []}, {InternalBearer: []}]
+      parameters:
+        - {in: path, name: ticketId, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Allowlisted contact fields or DEFERRED; Cache-Control no-store
+        '401': {description: Missing or expired authentication}
+        '403': {description: Inactive or forbidden principal}
+        '404': {description: Ticket not found or not visible}
+        '503': {description: Feature disabled}
   /tickets/{ticketId}/eligible-principals:
     get:
       operationId: listP2016TransferTargets
@@ -1060,6 +1097,8 @@ paths:
         '409': {description: Version, command hash or state conflict}
         '503': {description: Disabled or temporarily unavailable}
   /api/incident-candidates/{candidateId}/start-review:
+    servers:
+      - url: /
     post:
       summary: P2-012 START_REVIEW（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1082,6 +1121,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incident-candidates/{candidateId}/reject:
+    servers:
+      - url: /
     post:
       summary: P2-012 REJECT_CANDIDATE（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1104,6 +1145,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incident-candidates/{candidateId}/confirm:
+    servers:
+      - url: /
     post:
       summary: P2-012 CONFIRM_INCIDENT（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1126,6 +1169,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incidents/{incidentId}/start-investigating:
+    servers:
+      - url: /
     post:
       summary: P2-012 START_INVESTIGATING（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1148,6 +1193,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incidents/{incidentId}/correct-scope:
+    servers:
+      - url: /
     post:
       summary: P2-012 CORRECT_SCOPE（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1170,6 +1217,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incidents/{incidentId}/primary-ticket:
+    servers:
+      - url: /
     post:
       summary: P2-012 SET_PRIMARY_TICKET（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1192,6 +1241,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incidents/{incidentId}/reports/link:
+    servers:
+      - url: /
     post:
       summary: P2-012 LINK_REPORT（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1214,6 +1265,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incidents/{incidentId}/reports/{reportId}/unlink:
+    servers:
+      - url: /
     post:
       summary: P2-012 UNLINK_REPORT（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1237,6 +1290,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incidents/{incidentId}/reports/{reportId}/mark-recovered:
+    servers:
+      - url: /
     post:
       summary: P2-012 MARK_REPORTER_RECOVERED（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1260,6 +1315,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incidents/{incidentId}/subscriptions/{subscriptionId}/pause:
+    servers:
+      - url: /
     post:
       summary: P2-012 PAUSE_SUBSCRIPTION（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1283,6 +1340,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incidents/{incidentId}/subscriptions/{subscriptionId}/resume:
+    servers:
+      - url: /
     post:
       summary: P2-012 RESUME_SUBSCRIPTION（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1306,6 +1365,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incidents/{incidentId}/resolve:
+    servers:
+      - url: /
     post:
       summary: P2-012 RESOLVE_INCIDENT（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1328,6 +1389,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incidents/{incidentId}/close:
+    servers:
+      - url: /
     post:
       summary: P2-012 CLOSE_INCIDENT（显式人工命令）
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1350,6 +1413,8 @@ paths:
         "409": {description: "Version, state or command conflict"}
         "503": {description: "Feature disabled or temporarily unavailable; business mutation was not committed."}
   /api/incident-candidates:
+    servers:
+      - url: /
     get:
       summary: P2-012 authorized incident-candidates
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1363,6 +1428,8 @@ paths:
         "404": {description: Resource outside authorized scope}
         "503": {description: Feature disabled}
   /api/incident-candidates/{candidateId}:
+    servers:
+      - url: /
     get:
       summary: P2-012 authorized incident-candidates/{candidateId}
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1377,6 +1444,8 @@ paths:
         "404": {description: Resource outside authorized scope}
         "503": {description: Feature disabled}
   /api/incidents:
+    servers:
+      - url: /
     get:
       summary: P2-012 authorized incidents
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1391,6 +1460,8 @@ paths:
         "404": {description: Resource outside authorized scope}
         "503": {description: Feature disabled}
   /api/incidents/{incidentId}:
+    servers:
+      - url: /
     get:
       summary: P2-012 authorized incidents/{incidentId}
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1405,6 +1476,8 @@ paths:
         "404": {description: Resource outside authorized scope}
         "503": {description: Feature disabled}
   /api/incidents/{incidentId}/reports:
+    servers:
+      - url: /
     get:
       summary: P2-012 authorized incidents/{incidentId}/reports
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1419,6 +1492,8 @@ paths:
         "404": {description: Resource outside authorized scope}
         "503": {description: Feature disabled}
   /api/incidents/{incidentId}/subscriptions:
+    servers:
+      - url: /
     get:
       summary: P2-012 authorized incidents/{incidentId}/subscriptions
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1433,6 +1508,8 @@ paths:
         "404": {description: Resource outside authorized scope}
         "503": {description: Feature disabled}
   /api/incidents/{incidentId}/notifications:
+    servers:
+      - url: /
     get:
       summary: P2-012 authorized incidents/{incidentId}/notifications
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1447,6 +1524,8 @@ paths:
         "404": {description: Resource outside authorized scope}
         "503": {description: Feature disabled}
   /api/incidents/{incidentId}/events:
+    servers:
+      - url: /
     get:
       summary: P2-012 authorized incidents/{incidentId}/events
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1461,6 +1540,8 @@ paths:
         "404": {description: Resource outside authorized scope}
         "503": {description: Feature disabled}
   /api/incidents/{incidentId}/linkable-reports:
+    servers:
+      - url: /
     get:
       summary: P2-012 authorized incidents/{incidentId}/linkable-reports
       x-feature-flag: INCIDENT_CORRELATION_ENABLED
@@ -1475,6 +1556,8 @@ paths:
         "404": {description: Resource outside authorized scope}
         "503": {description: Feature disabled}
   /api/incidents/{incidentId}/direct-destinations:
+    servers:
+      - url: /
     get:
       summary: P2-012 ADMIN incident-wide destination diagnostics
       description: Administrative incident-wide read; single subscription activation uses the nested canonical route.
@@ -1493,6 +1576,8 @@ paths:
         "404": {description: "Resource outside authorized scope"}
         "503": {description: "Feature disabled or temporarily unavailable"}
   /api/incidents/{incidentId}/subscriptions/{subscriptionId}/direct-destinations:
+    servers:
+      - url: /
     get:
       operationId: listP2012SubscriptionDirectDestinations
       summary: P2-012 ADMIN subscription-scoped direct destinations

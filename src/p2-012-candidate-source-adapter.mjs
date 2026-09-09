@@ -5,11 +5,11 @@ import { guard,uuid,hash,validateCandidate,frozen,fail,transaction } from './p2-
 // threshold selection, raw-message reading or existing Decision mutation happens here.
 export function createP2012CandidateSourceAdapter({pool,enabled=false}){
   const store=createDecisionStore();
-  return Object.freeze({async record({sourceDecisionId,candidate,reportDecisionIds}){
+  return Object.freeze({async record({sourceDecisionId,candidate,reportDecisionIds,transaction:providedTransaction=null}){
     guard(enabled);sourceDecisionId=uuid(sourceDecisionId);const safe=validateCandidate(candidate);
     if(!Array.isArray(reportDecisionIds)||!reportDecisionIds.length||reportDecisionIds.length>100)fail();
     const ids=[...new Set(reportDecisionIds.map(uuid))].sort();
-    return transaction(pool,async tx=>{
+    const record=async tx=>{
       const q=await tx.query('SELECT * FROM intake.deterministic_decision WHERE id=$1::uuid',[sourceDecisionId]);
       if(q.rowCount!==1)fail('SOURCE_NOT_FOUND',404);const source=q.rows[0];
       await tx.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[source.journey_id]);
@@ -23,7 +23,8 @@ export function createP2012CandidateSourceAdapter({pool,enabled=false}){
         decision_policy_version:'candidate/1/'+identity.slice(0,40),result_code:'INCIDENT_REVIEW_CANDIDATE',
         reason_code:'INCIDENT_CANDIDATE_HUMAN_CONFIRMATION',input_hash:identity,result_hash:hash(payload),safe_result:payload,
         requires_manual_review:true,ticket_creation_recommended:false,incident_review_candidate:true,safe_action_suggestions:[]}});
-    });
+    };
+    return providedTransaction ? record(providedTransaction) : transaction(pool,record);
   }});
 }
 

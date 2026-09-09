@@ -1,0 +1,1389 @@
+{
+  "schema_version": 1,
+  "gate": "P2-G2",
+  "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+  "scenario_count": 37,
+  "regression_run": "tmp/p2-g2-tests-e7e8038b-3c23-406b-b8a8-ac6b5da55098/run.json",
+  "regression_tap_sha256": "884e95b112b4cb42d7e2e4841256c7f5c149957ea282b2f51dc715eb2e0de3dc",
+  "status": "AUTOMATED_PREPARATION_VERIFIED_LIVE_NOT_RUN",
+  "scenarios": [
+    {
+      "scenario_id": "G2-E01",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 409,
+        "text": "| G2-E01 | GROUP_MENTION_INLINE | 明确故障先持久化，规则/人工后唯一Ticket，group-only不私发 | DB+HTTP+真实群 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "POSTGRES_HTTP_INTEGRATION",
+      "test_names": [
+        "independent multichannel source: P2-007-X001",
+        "P2-G2 group clarification does not create private artifacts before a real Direct Leg"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-multichannel-source.integration.test.mjs",
+          "file_sha256": "f9672f3fd80035980381ee9bd485616c11cbd32af01d097ffa684db2dc73921c",
+          "test_name": "independent multichannel source: P2-007-X001",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+          "file_sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5",
+          "test_name": "P2-G2 group clarification does not create private artifacts before a real Direct Leg",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Explicit group faults have own Ticket and source observations; no Direct Leg means no private artifacts.",
+      "remaining_boundary_or_gap": "Current-candidate real WeCom group receipt remains live-only. Group-clarification guard test supplements, not replaces, explicit-fault admission assertion.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-E02",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 410,
+        "text": "| G2-E02 | 群内只@/无描述 | 可执行群引导；无Direct Leg不生成私人引导artifact | DB+Worker+真实群 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "POSTGRES_HTTP_INTEGRATION",
+      "test_names": [
+        "P2-G2 group clarification does not create private artifacts before a real Direct Leg",
+        "G2 business profile one completes group clarification, admission and human conversation without any Direct Leg"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+          "file_sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5",
+          "test_name": "P2-G2 group clarification does not create private artifacts before a real Direct Leg",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-three-entry-profile.integration.test.mjs",
+          "file_sha256": "3a3927f16c0c5cfca843decc228dcd7a0e89df773647616e2ad5c69de83db0f2",
+          "test_name": "G2 business profile one completes group clarification, admission and human conversation without any Direct Leg",
+          "surface": "NORMAL_FRAME_HTTP_REAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Real group clarification/outbox; no private Delivery/Grant; group conversation can continue.",
+      "remaining_boundary_or_gap": "Live group display still pending. Latest three-entry profile makes Direct optional; retain original matrix wording with explicit overlay.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-E03",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 411,
+        "text": "| G2-E03 | 群转单聊 | 首条single可进入；一个Journey、两个Leg，独立Thread/Session；可靠关联非时间猜测 | DB+真实群/单聊 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "POSTGRES_HTTP_INTEGRATION",
+      "test_names": [
+        "G2 explicit reference comes from actual group Outbox and binds a fresh Direct Leg without a second Ticket",
+        "P2-016 real-format group wakeup and direct description remain one Journey through public queries"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-explicit-continuation.integration.test.mjs",
+          "file_sha256": "40478fd2b3335419f76e7f3015d3099fa2490e9b0272a0d6f2aacde40b0aa53e",
+          "test_name": "G2 explicit reference comes from actual group Outbox and binds a fresh Direct Leg without a second Ticket",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-016-guided-journey.integration.test.mjs",
+          "file_sha256": "d01030593570d48d6d69eef1ea93be99693971c89bad2258ef2c5623f8c86d4b",
+          "test_name": "P2-016 real-format group wakeup and direct description remain one Journey through public queries",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Actual generated public reference and first single callback establish two Legs, immutable source, one Journey/Ticket; replay no duplicate.",
+      "remaining_boundary_or_gap": "Live group-to-Direct interaction pending. URL/ref path is not unsupported SDK card-event/quote binding.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-E04",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 412,
+        "text": "| G2-E04 | DIRECT_ORGANIC | 无任何先前群事实的批准测试用户直接单聊报修成功 | DB+真实单聊 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+        "independent multichannel source: P2-007-X004"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+          "file_sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9",
+          "test_name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+          "surface": "NORMAL_FRAME_REAL_PROCESSES_MOCK_PROVIDER"
+        },
+        {
+          "file": "tests/p2-g2-multichannel-source.integration.test.mjs",
+          "file_sha256": "f9672f3fd80035980381ee9bd485616c11cbd32af01d097ffa684db2dc73921c",
+          "test_name": "independent multichannel source: P2-007-X004",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Organic Reporter has no prior group Intake; actual three-role synthetic Frame creates Direct Organic context and Ticket.",
+      "remaining_boundary_or_gap": "Real approved organic user/client observation pending.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-E05",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 413,
+        "text": "| G2-E05 | 同人分段上报 | 系统/位置/现象补充不重复建单；显式新故障分开 | DB+UI+现场 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "POSTGRES_HTTP_INTEGRATION",
+      "test_names": [
+        "P2-G2 D12-030 active Direct session survives the P1 90-second fragment window",
+        "group active session continues after 120 seconds but respects Reporter, explicit new fault and idle boundaries",
+        "original same-Reporter fragments use normal media/text Frames and one persistent Direct Session",
+        "explicit new-fault Direct report does not consume an unrelated pending group guidance Journey"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-direct-session-boundary.integration.test.mjs",
+          "file_sha256": "f49cc529fdc9b7058112887f8939a88fb706ec3e9a4e146906f3719423bac1ec",
+          "test_name": "P2-G2 D12-030 active Direct session survives the P1 90-second fragment window",
+          "surface": "NORMAL_FRAME_CONTROLLED_CLOCK_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-three-entry-profile.integration.test.mjs",
+          "file_sha256": "3a3927f16c0c5cfca843decc228dcd7a0e89df773647616e2ad5c69de83db0f2",
+          "test_name": "group active session continues after 120 seconds but respects Reporter, explicit new fault and idle boundaries",
+          "surface": "NORMAL_FRAME_CONTROLLED_CLOCK_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-multi-turn-gold.integration.test.mjs",
+          "file_sha256": "d9ad681347c3823e390835aefb20d04841ecc933b018d8560bdfe157f664c469",
+          "test_name": "original same-Reporter fragments use normal media/text Frames and one persistent Direct Session",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-direct-session-boundary.integration.test.mjs",
+          "file_sha256": "f49cc529fdc9b7058112887f8939a88fb706ec3e9a4e146906f3719423bac1ec",
+          "test_name": "explicit new-fault Direct report does not consume an unrelated pending group guidance Journey",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Fragments preserve individual Ticket;120s continuation/new issue/identity/idle boundaries; per-turn actions and source windows.",
+      "remaining_boundary_or_gap": "Do not treat immediate multi-turn replay as elapsed-time proof; actual scene UI/live timing remains separate.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-E06",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 414,
+        "text": "| G2-E06 | 谢谢/咨询/无关 | 没有虚构故障Ticket；含真实故障的谢谢不被忽略 | 金标+实际入站 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-G2 original single-Reporter texts reach their independently adjudicated safe route via real Inbox and Worker",
+        "P2-G2 thanks with a current fault remains an accepted fault; recovery does not close or create a Ticket",
+        "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-single-text-gold.integration.test.mjs",
+          "file_sha256": "3440f77c4602c281ae1197be213e6674aa47447e45e598bdd7208c4a1039b96b",
+          "test_name": "P2-G2 original single-Reporter texts reach their independently adjudicated safe route via real Inbox and Worker",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-recognition-boundaries.test.mjs",
+          "file_sha256": "2e4dee681c07afc1913f6b47e6e895d29914d8f5f90d75f8371b5090fd50e580",
+          "test_name": "P2-G2 thanks with a current fault remains an accepted fault; recovery does not close or create a Ticket",
+          "surface": "PURE_RULE_NEGATIVE"
+        },
+        {
+          "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+          "file_sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b",
+          "test_name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES_BROWSER"
+        }
+      ],
+      "assertion_interpretation": "Source-adjudicated Ticket/Review/action outcomes; thanks with fault admitted; actual RESOLVED Ticket remains RESOLVED after thanks.",
+      "remaining_boundary_or_gap": "Full fixed122 source audit and current TAP binding must establish each case, not one parent PASS.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-E07",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 415,
+        "text": "| G2-E07 | 规则异常/高风险 | 入站不丢，Review可见，人工决议与Safe Action原子 | 故障注入+DB+UI |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "X035 explicit critical endpoint fault accepted from UNKNOWN Intake reaches a real human queue without a public Incident",
+        "G2-E07/J01 independent inactive/association evidence survives RULE_EXCEPTION",
+        "G2-J01 review enqueue database fault rolls back current Ticket/Decision/actions while preserving Inbox",
+        "G2-E07 the actual high-risk inbound Review is visible and resolved in the browser while its original Decision and Ticket survive"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-critical-intake.integration.test.mjs",
+          "file_sha256": "f2ec0dc825acc7f6bbee1905c0790e2611f27291a6bc226d9840b31f494dcda7",
+          "test_name": "X035 explicit critical endpoint fault accepted from UNKNOWN Intake reaches a real human queue without a public Incident",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-association-boundary.integration.test.mjs",
+          "file_sha256": "9d9aa31182ec29322a3251d39de320f9cbf5d4d3238172968d74432513e34d49",
+          "test_name": "G2-E07/J01 independent inactive/association evidence survives RULE_EXCEPTION",
+          "surface": "NORMAL_FRAME_SYNTHETIC_FAULT_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-association-boundary.integration.test.mjs",
+          "file_sha256": "9d9aa31182ec29322a3251d39de320f9cbf5d4d3238172968d74432513e34d49",
+          "test_name": "G2-J01 review enqueue database fault rolls back current Ticket/Decision/actions while preserving Inbox",
+          "surface": "NORMAL_FRAME_SYNTHETIC_DB_FAULT_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-review-real-browser.integration.test.mjs",
+          "file_sha256": "48e4b404d8f42b0698ba282e1ebec32217232037d5c02e4787107cd71fa31732",
+          "test_name": "G2-E07 the actual high-risk inbound Review is visible and resolved in the browser while its original Decision and Ticket survive",
+          "surface": "NORMAL_FRAME_HIGH_RISK_REAL_POSTGRES_BROWSER"
+        }
+      ],
+      "assertion_interpretation": "Same actual high-risk Review from normal Frame is opened and resolved in real browser; original Decision/Ticket preserved. Rule exception/window/identity context and Review rollback retain separate direct assertions.",
+      "remaining_boundary_or_gap": "Local automated gap closed by dedicated same-case browser test; real live evidence remains separate.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-E08",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 416,
+        "text": "| G2-E08 | 重复/乱序/重启 | 同消息不重复Message/Intake/Ticket；同秒显式顺序 | PostgreSQL+进程 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-G1 P1 commit, durable projection recovery, duplicate idempotency, participant isolation and catalog invariance",
+        "crash before commit leaves no partial facts; crash after commit restarts as replay",
+        "reversed lock acquisition still aggregates bounded timestamp inversion and preserves valid update time",
+        "Channel Message replay returns the original Intake result without duplicate relations or events",
+        "G2-E08 twelve reverse-ordered normal Frames in one local second preserve durable arrival sequence and one Ticket after duplicate replay",
+        "late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket",
+        "bounded binding scan advances beyond twenty invalid HMAC rows and twelve concurrent cycles never rewrite accepted facts"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g1-human-only-assembly.integration.test.mjs",
+          "file_sha256": "6047e455751e79d49b29377b08180e32d35867484039c0ddb967d8ad1e0eca55",
+          "test_name": "P2-G1 P1 commit, durable projection recovery, duplicate idempotency, participant isolation and catalog invariance",
+          "surface": "NORMAL_INBOX_POSTGRES_WITH_PROJECTION_FAULT"
+        },
+        {
+          "file": "tests/p2-015-worker-restart.integration.test.mjs",
+          "file_sha256": "33bd435af30415b35e7fd215c95f99d142cbca40ade3df2e7a2cc8c7c1594223",
+          "test_name": "crash before commit leaves no partial facts; crash after commit restarts as replay",
+          "surface": "SEEDED_SOURCE_REAL_PROCESS_FAULT"
+        },
+        {
+          "file": "tests/p1-004-service-intake.test.mjs",
+          "file_sha256": "e9350b8fd677fc38e4ea8263bf7c7de822c1b2617c2faed00511d0236af5ab18",
+          "test_name": "reversed lock acquisition still aggregates bounded timestamp inversion and preserves valid update time",
+          "surface": "NORMAL_INBOX_POSTGRES_CONTROLLED_CONCURRENCY"
+        },
+        {
+          "file": "tests/p1-004-service-intake.test.mjs",
+          "file_sha256": "e9350b8fd677fc38e4ea8263bf7c7de822c1b2617c2faed00511d0236af5ab18",
+          "test_name": "Channel Message replay returns the original Intake result without duplicate relations or events",
+          "surface": "NORMAL_INBOX_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-same-second-ingress.integration.test.mjs",
+          "file_sha256": "a1c2edf6b14c6577ccb530104db45ddaef01302fc0b3b6dc0d92379dd478bf2e",
+          "test_name": "G2-E08 twelve reverse-ordered normal Frames in one local second preserve durable arrival sequence and one Ticket after duplicate replay",
+          "surface": "NORMAL_FRAME_SAME_SECOND_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-late-conversation-binding.integration.test.mjs",
+          "file_sha256": "cf68b236e4da79a089fe54c0f2bb2f053e6f7895870a28e6e322ba16a56bec2e",
+          "test_name": "late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket",
+          "surface": "NORMAL_FRAME_DELAYED_PROJECTION_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-conversation-binding-boundaries.integration.test.mjs",
+          "file_sha256": "d92907f5c020c3bc85fad393f9ce0977b4249a1e5f40dec8adc407bff7ea39b1",
+          "test_name": "bounded binding scan advances beyond twenty invalid HMAC rows and twelve concurrent cycles never rewrite accepted facts",
+          "surface": "NORMAL_FRAME_SETUP_SYNTHETIC_HMAC_FAULT_REAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Twelve reverse-ordered normal Frames share one local second; durable arrival sequence and one Ticket survive twelve duplicates. Late projection binding and concurrent idempotent fill have separate source assertions.",
+      "remaining_boundary_or_gap": "Earlier same-second whole-chain mapping gap now has dedicated normal Frame test; no claim of final full regression execution.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-J01",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 417,
+        "text": "| G2-J01 | continuation安全 | 错Bot/Reporter、过期/撤销/复用拒绝，多候选不猜 | Contract+DB+UI |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "POSTGRES_HTTP_INTEGRATION",
+      "test_names": [
+        "G2-J01 continuation wrong Bot/Reporter, expired, revoked and reused token reject against real normal-ingress prerequisites",
+        "G2-J01 ambiguous association preserves current report admission: 处方提交不了",
+        "explicit new-fault Direct report does not consume an unrelated pending group guidance Journey"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-association-boundary.integration.test.mjs",
+          "file_sha256": "9d9aa31182ec29322a3251d39de320f9cbf5d4d3238172968d74432513e34d49",
+          "test_name": "G2-J01 continuation wrong Bot/Reporter, expired, revoked and reused token reject against real normal-ingress prerequisites",
+          "surface": "NORMAL_INGRESS_PREREQUISITES_TOKEN_MECHANISM"
+        },
+        {
+          "file": "tests/p2-g2-association-boundary.integration.test.mjs",
+          "file_sha256": "9d9aa31182ec29322a3251d39de320f9cbf5d4d3238172968d74432513e34d49",
+          "test_name": "G2-J01 ambiguous association preserves current report admission: 处方提交不了",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-direct-session-boundary.integration.test.mjs",
+          "file_sha256": "f49cc529fdc9b7058112887f8939a88fb706ec3e9a4e146906f3719423bac1ec",
+          "test_name": "explicit new-fault Direct report does not consume an unrelated pending group guidance Journey",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Actual issued token wrong Bot/Reporter/expiry/revoke/reuse rejected; ambiguous Direct fault gets own Ticket+Review without binding old Journey;12-way replay stable.",
+      "remaining_boundary_or_gap": "Token-service mechanism is not SDK callback token integration. Actual multi-candidate selection UI remains distinct; current implementation intentionally keeps association undecided.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-J02",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 418,
+        "text": "| G2-J02 | 身份源缺失 | 不编造姓名/科室；部门和故障位置不混同，不因此漏受理 | DB+UI |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "D12-020 actually unresolved directory does not prevent persisted Intake and minimal Ticket",
+        "D12-019/021/022/026 directory snapshot and occurrence evidence remain independent and HTTP excludes internal profile",
+        "unavailable profile leaves admitted fault accessible with explicit missing contact",
+        "group fault exposes trusted contact only through authorized internal ticket endpoint"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-directory-source.integration.test.mjs",
+          "file_sha256": "a2f1c52e4043fbe3c3103f7d7ae92d7bac40175a601756a33d6151c9e9c43310",
+          "test_name": "D12-020 actually unresolved directory does not prevent persisted Intake and minimal Ticket",
+          "surface": "NORMAL_FRAME_DIRECTORY_SIMULATOR_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-directory-source.integration.test.mjs",
+          "file_sha256": "a2f1c52e4043fbe3c3103f7d7ae92d7bac40175a601756a33d6151c9e9c43310",
+          "test_name": "D12-019/021/022/026 directory snapshot and occurrence evidence remain independent and HTTP excludes internal profile",
+          "surface": "NORMAL_FRAME_DIRECTORY_SIMULATOR_HTTP"
+        },
+        {
+          "file": "tests/p2-g2-member-contact.integration.test.mjs",
+          "file_sha256": "835d8bf12f4359ec75be63fe69378a8319f01fc140615fb239da3946d481a4bf",
+          "test_name": "unavailable profile leaves admitted fault accessible with explicit missing contact",
+          "surface": "NORMAL_FRAME_DIRECTORY_SIMULATOR_HTTP"
+        },
+        {
+          "file": "tests/p2-g2-member-contact.integration.test.mjs",
+          "file_sha256": "835d8bf12f4359ec75be63fe69378a8319f01fc140615fb239da3946d481a4bf",
+          "test_name": "group fault exposes trusted contact only through authorized internal ticket endpoint",
+          "surface": "NORMAL_FRAME_DIRECTORY_MOCK_REAL_HTTP_BROWSER"
+        }
+      ],
+      "assertion_interpretation": "Real authorized browser shows directory contact/membership separately from occurrence location; missing profile renders explicit unavailable text with Ticket retained.",
+      "remaining_boundary_or_gap": "Simulator does not prove live directory network or SYSTEM_PERSON_ID; current field-specific UI assertions close earlier UI mapping gap.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-T01",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 419,
+        "text": "| G2-T01 | 完整Ticket主路径 | 等待/恢复/解决/关闭/重新打开均有Event和权限 | 实际UI+DB+现场 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+        "P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+          "file_sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b",
+          "test_name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES_BROWSER"
+        },
+        {
+          "file": "tests/p2-016-ticket-lifecycle.integration.test.mjs",
+          "file_sha256": "5da8f34c9acb8efcad4deb3a150e03c44a9e4a63ab7a91189d71ede68d4caffe",
+          "test_name": "P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility",
+          "surface": "SEEDED_MECHANICAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Normal-created Ticket traverses actual browser actions; each step DB status and Event delta checked; baseline additionally checks invalid state/auth rules.",
+      "remaining_boundary_or_gap": "Current-candidate real client/live path pending.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-T02",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 420,
+        "text": "| G2-T02 | 取消/自动关闭/拒绝解决 | system-only关闭；谢谢不等于确认；拒绝有来源留痕 | HTTP+Worker+UI |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+        "Real DB internal browser traverses every user lifecycle action, transfer and atomic takeover/accept",
+        "P2-016 existing rule worker creates Ticket notifications, safe group/direct guidance and SYSTEM-only timeout closure",
+        "supplement, card confirmation, duplicate card protection, close, and reopen preserve a real Ticket lifecycle"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+          "file_sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b",
+          "test_name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES_BROWSER"
+        },
+        {
+          "file": "tests/p2-016-ticket-browser.integration.test.mjs",
+          "file_sha256": "79416cd5fc18de6b011dea22b6395f106726fe005658f4cc416700adfdf582e9",
+          "test_name": "Real DB internal browser traverses every user lifecycle action, transfer and atomic takeover/accept",
+          "surface": "SEEDED_MECHANICAL_REAL_BROWSER"
+        },
+        {
+          "file": "tests/p2-016-orchestration.integration.test.mjs",
+          "file_sha256": "a3ceb8575b89e714292294c7e173437e800aaefe01582c1d55dfaa1ccc0c6b9c",
+          "test_name": "P2-016 existing rule worker creates Ticket notifications, safe group/direct guidance and SYSTEM-only timeout closure",
+          "surface": "SEEDED_MECHANICAL_WORKER_POSTGRES"
+        },
+        {
+          "file": "tests/p1-010-ticket-closure.test.mjs",
+          "file_sha256": "10528daf48b5c9b3919b53e6790dfe63f44e7003c3f6671a48201e656d31d44d",
+          "test_name": "supplement, card confirmation, duplicate card protection, close, and reopen preserve a real Ticket lifecycle",
+          "surface": "NORMAL_INBOX_BASELINE_CLOSURE_MECHANISM"
+        }
+      ],
+      "assertion_interpretation": "Normal RESOLVED+thanks remains unresolved; browser cancel and no auto-close control; SYSTEM-only timeout closure; baseline still_broken card records and duplicate protection.",
+      "remaining_boundary_or_gap": "Current P2 Reporter UI reject-resolution/source-history path not directly demonstrated by a legacy card test.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-T03",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 421,
+        "text": "| G2-T03 | 双责任/接力 | 会话坐席与工单处理人独立；转派、复合命令原子 | 两身份UI+DB |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "G2-T03 two isolated agent browsers transfer Ticket responsibility while Conversation owner remains independent",
+        "P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-responsibility-browser.integration.test.mjs",
+          "file_sha256": "1499a376bd4bc25859940381a54783df7f731e01e6f2e2376dc6611da6aa1ef9",
+          "test_name": "G2-T03 two isolated agent browsers transfer Ticket responsibility while Conversation owner remains independent",
+          "surface": "NORMAL_FRAME_TWO_BROWSER_POSTGRES"
+        },
+        {
+          "file": "tests/p2-016-ticket-lifecycle.integration.test.mjs",
+          "file_sha256": "5da8f34c9acb8efcad4deb3a150e03c44a9e4a63ab7a91189d71ede68d4caffe",
+          "test_name": "P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility",
+          "surface": "SEEDED_MECHANICAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Two isolated agent browser contexts verify Ticket transfer and independent Conversation owner; baseline composite command rollback checks assignment/event absence.",
+      "remaining_boundary_or_gap": "No extra gap inferred from seeded atomicity fixture; bind current full rerun.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-T04",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 422,
+        "text": "| G2-T04 | 并发/重复命令 | 12路一赢家/一次提交，冲突refetch、无乐观假成功 | 并发+浏览器 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility",
+        "confirmation survives realtime refetch and rejects a stale version instead of overwriting the form",
+        "P2-G2 generic proxy 503 after commit keeps the command id for reconciliation; stable failure and conflict stay distinct"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-016-ticket-lifecycle.integration.test.mjs",
+          "file_sha256": "5da8f34c9acb8efcad4deb3a150e03c44a9e4a63ab7a91189d71ede68d4caffe",
+          "test_name": "P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility",
+          "surface": "SEEDED_MECHANICAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-016-workbench-browser.test.mjs",
+          "file_sha256": "7bdc201862f876a51d747ce953da2d648276371290cb102a6b80cb704e6af10e",
+          "test_name": "confirmation survives realtime refetch and rejects a stale version instead of overwriting the form",
+          "surface": "BROWSER_COMMAND_MECHANISM"
+        },
+        {
+          "file": "tests/p2-g2-command-outcome-browser.test.mjs",
+          "file_sha256": "af3b1eb165a0b2f14de88d06a990c7af9f4593763e3da4c4784b7fd606161fd4",
+          "test_name": "P2-G2 generic proxy 503 after commit keeps the command id for reconciliation; stable failure and conflict stay distinct",
+          "surface": "REAL_HTTP_BROWSER_FAULT_ON_MECHANICAL_CANDIDATE"
+        }
+      ],
+      "assertion_interpretation": "12 identical commands one non-replay/Event; conflicting actor accepts one winner; stale UI refetch; proxy503 keeps original command ID and no false rollback claim.",
+      "remaining_boundary_or_gap": "Incident command-outcome browser coverage is not automatically every Ticket command; preserve narrower mapping.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-N01",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 423,
+        "text": "| G2-N01 | 生成与发送双围栏 | Ticket/固定引导/人工Reply/Incident逐路校验 | Port+DB+Provider计数 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-G2 App manual-review clarification uses the same Direct Leg generation guard",
+        "Gate guard checks actual PostgreSQL Delivery binding and preserves existing Direct Leg and numeric ACK sender",
+        "SDK boundary rechecks a revoked approval after asynchronous destination/grant work",
+        "real human command source: P2-007-X024/D12-040",
+        "late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket",
+        "bounded binding scan advances beyond twenty invalid HMAC rows and twelve concurrent cycles never rewrite accepted facts",
+        "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+          "file_sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5",
+          "test_name": "P2-G2 App manual-review clarification uses the same Direct Leg generation guard",
+          "surface": "NORMAL_FRAME_HTTP_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-send-guard.integration.test.mjs",
+          "file_sha256": "aede8722d5d637f2f0acec2f185b3864a2c7309c3a61bd9f20be7fa40a4265d8",
+          "test_name": "Gate guard checks actual PostgreSQL Delivery binding and preserves existing Direct Leg and numeric ACK sender",
+          "surface": "NORMAL_FRAME_REAL_DELIVERY_MOCK_PROVIDER"
+        },
+        {
+          "file": "tests/p2-g2-approval-binding.test.mjs",
+          "file_sha256": "de4d9ec5d89a6507a933886bcf309a07d80ce3ed1171ca930efee36a1aec4853",
+          "test_name": "SDK boundary rechecks a revoked approval after asynchronous destination/grant work",
+          "surface": "SEND_BOUNDARY_MECHANISM"
+        },
+        {
+          "file": "tests/p2-g2-human-source.integration.test.mjs",
+          "file_sha256": "ef142cf017c1758d90a5fdcaed83428121d40a4c4856119be2b14798a77709d9",
+          "test_name": "real human command source: P2-007-X024/D12-040",
+          "surface": "NORMAL_FRAME_AUTHENTICATED_HTTP"
+        },
+        {
+          "file": "tests/p2-g2-late-conversation-binding.integration.test.mjs",
+          "file_sha256": "cf68b236e4da79a089fe54c0f2bb2f053e6f7895870a28e6e322ba16a56bec2e",
+          "test_name": "late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket",
+          "surface": "NORMAL_FRAME_DELAYED_PROJECTION_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-conversation-binding-boundaries.integration.test.mjs",
+          "file_sha256": "d92907f5c020c3bc85fad393f9ce0977b4249a1e5f40dec8adc407bff7ea39b1",
+          "test_name": "bounded binding scan advances beyond twenty invalid HMAC rows and twelve concurrent cycles never rewrite accepted facts",
+          "surface": "NORMAL_FRAME_SETUP_SYNTHETIC_HMAC_FAULT_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+          "file_sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9",
+          "test_name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+          "surface": "NORMAL_FRAME_REAL_PROCESSES_MOCK_PROVIDER"
+        }
+      ],
+      "assertion_interpretation": "Current three-process test sends actual guidance, Ticket, human Reply and3 private Incident notices through Guard; Incident candidate is bound to exactly3 normal source Decision IDs. Source-generation and before-send guards remain separately mapped.",
+      "remaining_boundary_or_gap": "Mock SDK/HTTP only; not real Provider delivery or client observation. Webhook transport has distinct approved routing and receipt semantics.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-N02",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 424,
+        "text": "| G2-N02 | 无Leg→有Leg | 旧事件不私自回补；新事件可通知，用户实际收到 | 当前候选现场 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "POSTGRES_HTTP_INTEGRATION",
+      "test_names": [
+        "P2-G2 establishing Direct Leg never backfills old Ticket cards; new events can notify"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+          "file_sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5",
+          "test_name": "P2-G2 establishing Direct Leg never backfills old Ticket cards; new events can notify",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Old Ticket event/card not backfilled after real Direct Leg; new configured event may notify.",
+      "remaining_boundary_or_gap": "Explicit current-candidate live receipt and user-visible observation required, including latest accepted/closed-only policy.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-N03",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 425,
+        "text": "| G2-N03 | ACK/未知副作用 | 数值ACK才SENT，UNKNOWN不盲重发，独立核对 | 注入+DB+批准现场 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "POSTGRES_HTTP_INTEGRATION",
+      "test_names": [
+        "numeric SDK receipts survive restart, preserve errors and exclude SDK payload and identity",
+        "original UNKNOWN source requires reconciliation after a real Outbox attempt",
+        "ACK, UNKNOWN and crash between reservation and result never authorize resend"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-provider-receipts.test.mjs",
+          "file_sha256": "d03d9c270d29beead0a499166597862bf8cecc3b65de1706ea30455a6bdcca24",
+          "test_name": "numeric SDK receipts survive restart, preserve errors and exclude SDK payload and identity",
+          "surface": "MOCK_PROVIDER_PERSISTED_RECEIPT"
+        },
+        {
+          "file": "tests/p2-g2-notification-source.integration.test.mjs",
+          "file_sha256": "e5f019627bb4c5910c29f82e38f973374afac52ed362aa8e4a416e20bb6fd43b",
+          "test_name": "original UNKNOWN source requires reconciliation after a real Outbox attempt",
+          "surface": "NORMAL_OUTBOX_MOCK_TRANSPORT_FAULT"
+        },
+        {
+          "file": "tests/p2-g2-send-budget.test.mjs",
+          "file_sha256": "8429f109c659cf6c2dcae4ce02a0619a0e762edc5bff86dcb472ae63f661146a",
+          "test_name": "ACK, UNKNOWN and crash between reservation and result never authorize resend",
+          "surface": "DURABLE_BUDGET_FAULT_MECHANISM"
+        }
+      ],
+      "assertion_interpretation": "Numeric provider receipts and stable errors; actual attempt enters UNKNOWN, no blind resend; reservation restart does not authorize another send.",
+      "remaining_boundary_or_gap": "Real WeCom UNKNOWN must not be claimed from mock injection; authorized live ACK/reconciliation/client evidence pending.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-N04",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 426,
+        "text": "| G2-N04 | 模板卡片 | 安全尾号非凭据，点击/Grant交换/刷新成功 | 真实客户端+浏览器 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "D12-016/058/059/060/061 three real Ticket grants isolate Reporter HTTP access; card event callback stays unsupported",
+        "Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-reporter-source.integration.test.mjs",
+          "file_sha256": "0e6d21b4b31e8dd8ccc349041f7161fa8c027154afc4fb1f346c6cabc09d4037",
+          "test_name": "D12-016/058/059/060/061 three real Ticket grants isolate Reporter HTTP access; card event callback stays unsupported",
+          "surface": "NORMAL_TICKET_HTTP_GRANT_MECHANISM"
+        },
+        {
+          "file": "tests/p2-016-reporter-browser.test.mjs",
+          "file_sha256": "6a4680d01f8c796670a325a04059cb2ea1aacbe95117cb88a3da496e4a07a109",
+          "test_name": "Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout",
+          "surface": "SEEDED_TICKET_REAL_BROWSER"
+        }
+      ],
+      "assertion_interpretation": "Three generated grants isolate tickets/reporters; opaque suffix not auth; actual browser fragment exchange/refresh/logout.",
+      "remaining_boundary_or_gap": "Real card client rendering/click pending. URL card is not D12-016 callback path; record explicit alternate-surface adjudication.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-I01",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 427,
+        "text": "| G2-I01 | 候选产生与审核 | 当前规则候选有真实Provenance，人工确认前Incident=0 | 正常管线+UI+DB |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "X031 three real independent reports generate one review candidate from persisted facts",
+        "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-cross-reporter.integration.test.mjs",
+          "file_sha256": "411df835bae2f01e0a569fc51c45ee60ab75fe509d9c59874492127a501a99fe",
+          "test_name": "X031 three real independent reports generate one review candidate from persisted facts",
+          "surface": "NORMAL_FRAME_REAL_CANDIDATE_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+          "file_sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b",
+          "test_name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES_BROWSER"
+        }
+      ],
+      "assertion_interpretation": "Normal3Reporter provenance -> actual Candidate -> real browser review/confirm; Incident0 before confirmation; no seeded business Candidate.",
+      "remaining_boundary_or_gap": "Live client confirmation remains pending; cannot reuse older candidate fixture as this source-chain proof.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-I02",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 428,
+        "text": "| G2-I02 | Incident关联/解除 | 主Ticket边界、个人Ticket不删除、不被隐式关闭 | UI+DB+现场 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+        "P2-012 real database human confirmation, idempotency, recovery isolation and notification facts"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+          "file_sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b",
+          "test_name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES_BROWSER"
+        },
+        {
+          "file": "tests/p2-012-incident.integration.test.mjs",
+          "file_sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc",
+          "test_name": "P2-012 real database human confirmation, idempotency, recovery isolation and notification facts",
+          "surface": "SEEDED_MECHANICAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Normal-source browser links third report, primary-linked report cannot unlink, explicit clear-primary permits unlink; personal Ticket IDs/status unchanged.",
+      "remaining_boundary_or_gap": "Current live scenario pending.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-I03",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 429,
+        "text": "| G2-I03 | 个体恢复 | 一人恢复不改变其他人或共享Incident | UI+DB+现场 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+        "P2-012 real database human confirmation, idempotency, recovery isolation and notification facts"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+          "file_sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b",
+          "test_name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+          "surface": "NORMAL_FRAME_REAL_POSTGRES_BROWSER"
+        },
+        {
+          "file": "tests/p2-012-incident.integration.test.mjs",
+          "file_sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc",
+          "test_name": "P2-012 real database human confirmation, idempotency, recovery isolation and notification facts",
+          "surface": "SEEDED_MECHANICAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Actual browser changes exactly one reporter impact state; shared Incident and other personal Tickets unchanged.",
+      "remaining_boundary_or_gap": "Current live scenario pending.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-I04",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 430,
+        "text": "| G2-I04 | 候选到期维护 | 扫描LIMIT20、幂等SYSTEM、并发审核最多一次变更，无通知 | DB+进程 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-012 maintenance expires a bounded ordered batch through private SYSTEM commands without notifications",
+        "P2-012 maintenance replays concurrent scans, handles human/time races and surfaces a still-due failure",
+        "P2-012 network-off three-role assembly serves Incident and closes children, sockets and pools",
+        "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-012-incident.integration.test.mjs",
+          "file_sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc",
+          "test_name": "P2-012 maintenance expires a bounded ordered batch through private SYSTEM commands without notifications",
+          "surface": "SEEDED_MECHANICAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-012-incident.integration.test.mjs",
+          "file_sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc",
+          "test_name": "P2-012 maintenance replays concurrent scans, handles human/time races and surfaces a still-due failure",
+          "surface": "SEEDED_MECHANICAL_POSTGRES_FAULT"
+        },
+        {
+          "file": "tests/p2-012-process-assembly.integration.test.mjs",
+          "file_sha256": "cda895a9d268ba0e3cec5d91558a361859c9103824493c445fa64fde81795480",
+          "test_name": "P2-012 network-off three-role assembly serves Incident and closes children, sockets and pools",
+          "surface": "SEEDED_CANDIDATE_REAL_PROCESSES"
+        },
+        {
+          "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+          "file_sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9",
+          "test_name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+          "surface": "NORMAL_FRAME_REAL_PROCESSES_MOCK_PROVIDER"
+        }
+      ],
+      "assertion_interpretation": "Ordered LIMIT20, SYSTEM-only/one change, concurrency/races, no notification delta; real process expires imported fixture.",
+      "remaining_boundary_or_gap": "Legitimate synthetic expiration fixture, not normal candidate recognition.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-I05",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 431,
+        "text": "| G2-I05 | 订阅保留期 | 查询/初次关联/恢复/通知均拒绝过期目的地 | DB+HTTP |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+        "P2-012 real direct-leg eligibility suppresses group-only Ticket artifacts and validates persisted destination scope",
+        "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-012-subscription-review.integration.test.mjs",
+          "file_sha256": "4f4b80cf23efcba6897b957caf55e8c2e95b7d395d48653ab040a20030495a2e",
+          "test_name": "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+          "surface": "SEEDED_MECHANICAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-012-scope-candidate.integration.test.mjs",
+          "file_sha256": "edcb259277a473f448a98ca95c0606e97f928f14f36aa3619ce85088dde7aea1",
+          "test_name": "P2-012 real direct-leg eligibility suppresses group-only Ticket artifacts and validates persisted destination scope",
+          "surface": "SEEDED_MECHANICAL_AUTHORIZATION_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+          "file_sha256": "c6c5ad17d4400745207ea407c0ee97df252d175c8e92e82338d69cdfe9dad2a6",
+          "test_name": "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation",
+          "surface": "SEEDED_MECHANICAL_RETENTION_REAL_HTTP_BROWSER"
+        }
+      ],
+      "assertion_interpretation": "Actual HTTP rejects expired destination list/resume and re-link remains pending; notification delta checked after synthetic expiry.",
+      "remaining_boundary_or_gap": "Synthetic retention fault is legitimate mechanical coverage, not normal recognition or live expiry incident.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-I06",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 432,
+        "text": "| G2-I06 | ENDED重启到PENDING | 未有有效目的地不记为activated，不发送假通知 | DB+Event+UI |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+        "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-012-subscription-review.integration.test.mjs",
+          "file_sha256": "4f4b80cf23efcba6897b957caf55e8c2e95b7d395d48653ab040a20030495a2e",
+          "test_name": "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+          "surface": "SEEDED_MECHANICAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+          "file_sha256": "c6c5ad17d4400745207ea407c0ee97df252d175c8e92e82338d69cdfe9dad2a6",
+          "test_name": "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation",
+          "surface": "SEEDED_MECHANICAL_RETENTION_REAL_HTTP_BROWSER"
+        }
+      ],
+      "assertion_interpretation": "ENDED re-link yields PENDING_DESTINATION created event without activated event; actual browser displays waiting for reliable Direct channel and not receiving-notifications state.",
+      "remaining_boundary_or_gap": "Synthetic retention setup; current full regression still needs binding.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-I07",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 433,
+        "text": "| G2-I07 | PAUSED更换目的地 | 旧Leg过期后可选同Reporter新Leg，版本检查和跨人拒绝 | DB+实际浏览器 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-012 database-backed browser 1440x900 human confirmation, refresh and accessibility",
+        "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+        "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-012-workbench-browser.test.mjs",
+          "file_sha256": "dbf8268cfc72a70831119e214afa9a63a21e9a9127a13c3b5834c03d8c478395",
+          "test_name": "P2-012 database-backed browser 1440x900 human confirmation, refresh and accessibility",
+          "surface": "SEEDED_MECHANICAL_REAL_BROWSER"
+        },
+        {
+          "file": "tests/p2-012-subscription-review.integration.test.mjs",
+          "file_sha256": "4f4b80cf23efcba6897b957caf55e8c2e95b7d395d48653ab040a20030495a2e",
+          "test_name": "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+          "surface": "SEEDED_MECHANICAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+          "file_sha256": "c6c5ad17d4400745207ea407c0ee97df252d175c8e92e82338d69cdfe9dad2a6",
+          "test_name": "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation",
+          "surface": "SEEDED_MECHANICAL_RETENTION_REAL_HTTP_BROWSER"
+        }
+      ],
+      "assertion_interpretation": "Actual HTTP wrong Reporter Leg and stale subscription version return409 without mutation/notification; actual browser positive replacement remains separately mapped.",
+      "remaining_boundary_or_gap": "Mechanical candidate prerequisites are seeded and must not be counted as normal candidate generation.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-C01",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 434,
+        "text": "| G2-C01 | HTTP错误与收据 | 入队失败503+回滚；FAILED同ID仍503；409是冲突 | 实际HTTP+DB |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-012 actual HTTP preserves notification failure, rollback and durable replay before explicit recovery",
+        "P2-G2 generic proxy 503 after commit keeps the command id for reconciliation; stable failure and conflict stay distinct"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-012-workbench.integration.test.mjs",
+          "file_sha256": "0401889cbfd232492733303d08f97322d3b5da2c1f4d680353e064cb071edd68",
+          "test_name": "P2-012 actual HTTP preserves notification failure, rollback and durable replay before explicit recovery",
+          "surface": "SEEDED_MECHANICAL_HTTP_DB_FAULT"
+        },
+        {
+          "file": "tests/p2-g2-command-outcome-browser.test.mjs",
+          "file_sha256": "af3b1eb165a0b2f14de88d06a990c7af9f4593763e3da4c4784b7fd606161fd4",
+          "test_name": "P2-G2 generic proxy 503 after commit keeps the command id for reconciliation; stable failure and conflict stay distinct",
+          "surface": "REAL_HTTP_BROWSER_FAULT_ON_MECHANICAL_CANDIDATE"
+        }
+      ],
+      "assertion_interpretation": "Real HTTP notification failure rollback and receipt replay;409 distinct; proxy503 after commit preserves same ID and reconciles.",
+      "remaining_boundary_or_gap": "Bind current static assets and final TAP; not every503 means known rollback.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-C02",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 435,
+        "text": "| G2-C02 | 双OpenAPI/TS | nested Route、state枚举、next_cursor、nullable团队一致 | Parser+真实TS消费者 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "POSTGRES_HTTP_INTEGRATION",
+      "test_names": [
+        "P2-G2 parsed OpenAPI server and Incident paths resolve to the actual authenticated HTTP route",
+        "P2-012 real TypeScript consumers accept nullable cursors and optional owner teams",
+        "P2-012 parsed OpenAPI incident state filters match all runtime states and queue aliases"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-openapi-routing.integration.test.mjs",
+          "file_sha256": "920b0ff4e0a7eb4bc9c4482fa19cf2073bbda6024ec0e9b727efcbeded16b422",
+          "test_name": "P2-G2 parsed OpenAPI server and Incident paths resolve to the actual authenticated HTTP route",
+          "surface": "PARSED_OPENAPI_ACTUAL_HTTP"
+        },
+        {
+          "file": "tests/p2-012-client-contract-review.test.mjs",
+          "file_sha256": "b1146d72ba3554b6558debf2d18dd68eb6f8e9765cfb4163f0bece568ffe1b89",
+          "test_name": "P2-012 real TypeScript consumers accept nullable cursors and optional owner teams",
+          "surface": "CONTRACT_TYPESCRIPT_REVIEW"
+        },
+        {
+          "file": "tests/p2-012-client-contract-review.test.mjs",
+          "file_sha256": "b1146d72ba3554b6558debf2d18dd68eb6f8e9765cfb4163f0bece568ffe1b89",
+          "test_name": "P2-012 parsed OpenAPI incident state filters match all runtime states and queue aliases",
+          "surface": "PARSED_DUAL_OPENAPI_CONTRACT"
+        }
+      ],
+      "assertion_interpretation": "Actual OpenAPI route requests; real tsc --noEmit --strict consumer accepts nullable cursors/optional owner teams and rejects numeric cursors; both parsed OpenAPI documents match runtime Incident states/aliases.",
+      "remaining_boundary_or_gap": "Source coverage includes actual TypeScript compilation rather than schema text matching; bind its current successful execution in final runner.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-R01",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 436,
+        "text": "| G2-R01 | Reporter安全时间线 | 仅本人Ticket/LINKED Incident；internal note等不外泄 | DB+授权+浏览器 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "Reporter grant expiry, HMAC rotation, one-consume concurrency, session expiry/revocation and cross-ticket isolation",
+        "P2-012 Reporter HTTP preserves bound grants, refresh ETag, safe milestones and unlink visibility",
+        "Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-016-reporter-surface.integration.test.mjs",
+          "file_sha256": "71bbc95bd5a1679d165a5790ba66b4e7a0dc12022b7a2a5bf324bb51f6999bce",
+          "test_name": "Reporter grant expiry, HMAC rotation, one-consume concurrency, session expiry/revocation and cross-ticket isolation",
+          "surface": "SEEDED_MECHANICAL_AUTHORIZATION_POSTGRES"
+        },
+        {
+          "file": "tests/p2-012-reporter-http.integration.test.mjs",
+          "file_sha256": "a129b0582fdd12e592708f494424d047f83699ff6c444b3e05a84d234fe64dfa",
+          "test_name": "P2-012 Reporter HTTP preserves bound grants, refresh ETag, safe milestones and unlink visibility",
+          "surface": "SEEDED_INCIDENT_ACTUAL_HTTP"
+        },
+        {
+          "file": "tests/p2-016-reporter-browser.test.mjs",
+          "file_sha256": "6a4680d01f8c796670a325a04059cb2ea1aacbe95117cb88a3da496e4a07a109",
+          "test_name": "Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout",
+          "surface": "SEEDED_TICKET_REAL_BROWSER"
+        }
+      ],
+      "assertion_interpretation": "Wrong ticket denied; internal data excluded; LINKED Incident milestone appears and unlink removes visibility; real Reporter browser access.",
+      "remaining_boundary_or_gap": "No claim that generic Workbench authorization is Reporter authorization.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-R02",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 437,
+        "text": "| G2-R02 | Reporter ETag失败恢复 | timeline503不提前接受新ETag；下一轮能补齐新增/移除里程碑 | 当前资产+HTTP故障 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "Reporter browser retries incomplete ETag render after transient timeline failure for milestone addition and removal"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-012-reporter-refresh-browser.test.mjs",
+          "file_sha256": "26ae9631dc7686acbb147012e6932ee242172ea32617266c9e0ef78100a529f2",
+          "test_name": "Reporter browser retries incomplete ETag render after transient timeline failure for milestone addition and removal",
+          "surface": "CURRENT_ASSET_BROWSER_HTTP_FAULT"
+        }
+      ],
+      "assertion_interpretation": "Timeline503 after detail200 preserves retry until both added/removed milestone render; ETag not prematurely accepted.",
+      "remaining_boundary_or_gap": "Fixture HTTP fault is synthetic, no live outage claim.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-R03",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 438,
+        "text": "| G2-R03 | Grant/session失效 | 一次交换、过期撤销拒绝、token不留storage、失效不误重试写 | HTTP+浏览器 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "Reporter grant expiry, HMAC rotation, one-consume concurrency, session expiry/revocation and cross-ticket isolation",
+        "Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-016-reporter-surface.integration.test.mjs",
+          "file_sha256": "71bbc95bd5a1679d165a5790ba66b4e7a0dc12022b7a2a5bf324bb51f6999bce",
+          "test_name": "Reporter grant expiry, HMAC rotation, one-consume concurrency, session expiry/revocation and cross-ticket isolation",
+          "surface": "SEEDED_MECHANICAL_AUTHORIZATION_POSTGRES"
+        },
+        {
+          "file": "tests/p2-016-reporter-browser.test.mjs",
+          "file_sha256": "6a4680d01f8c796670a325a04059cb2ea1aacbe95117cb88a3da496e4a07a109",
+          "test_name": "Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout",
+          "surface": "SEEDED_TICKET_REAL_BROWSER"
+        }
+      ],
+      "assertion_interpretation": "Real DB/browser checks grant fragment/storage removal, one exchange, expiry/revocation/logout; after401 no further polling or exchange/logout POST.",
+      "remaining_boundary_or_gap": "Reporter page has no Ticket mutation flow; do not invent one to satisfy this row. Live client access remains separate.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-F01",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 439,
+        "text": "| G2-F01 | Gateway断连 | 已持久化业务可处理；恢复不重复发送，UI提示可靠 | 故障恢复+现场 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+        "gateway permits one active WSClient, gates readiness on authentication, reconnects and shuts down cleanly"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+          "file_sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9",
+          "test_name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+          "surface": "NORMAL_FRAME_REAL_PROCESSES_MOCK_PROVIDER"
+        },
+        {
+          "file": "tests/p2-g1-human-only-assembly.test.mjs",
+          "file_sha256": "f5a7213c67141e1018522e2411a6d8f5f8685c8ddcc06ce777a959b0643e8f44",
+          "test_name": "gateway permits one active WSClient, gates readiness on authentication, reconnects and shuts down cleanly",
+          "surface": "MOCK_SDK_LIFECYCLE"
+        }
+      ],
+      "assertion_interpretation": "Real G2 Gateway disconnect causes ready503 while actual browser accepts already-persisted Ticket; UI delivery pending, no SDK call. Reconnect yields exactlyone new Mock SDK call and actual SENT; replay no duplicate.",
+      "remaining_boundary_or_gap": "Current actual-process automated gap closed. Real WeCom disconnect/client observation still NOT_RUN here.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-F02",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 440,
+        "text": "| G2-F02 | App/Worker重启 | 通过DB继续、提交后响应丢失同ID重放、不假成功 | 真实进程 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+        "P2-016 real process crash/restart: response loss replays receipt; unknown send reconciles and ACK never resends",
+        "crash before commit leaves no partial facts; crash after commit restarts as replay",
+        "late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket",
+        "bounded binding scan advances beyond twenty invalid HMAC rows and twelve concurrent cycles never rewrite accepted facts"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+          "file_sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9",
+          "test_name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+          "surface": "NORMAL_FRAME_REAL_PROCESSES_MOCK_PROVIDER"
+        },
+        {
+          "file": "tests/p2-016-restart.integration.test.mjs",
+          "file_sha256": "ebb8c887e03062aebc40eee2a280a5c710d480a9bdf81a3750ad8f334412ca22",
+          "test_name": "P2-016 real process crash/restart: response loss replays receipt; unknown send reconciles and ACK never resends",
+          "surface": "SEEDED_MECHANICAL_REAL_PROCESSES"
+        },
+        {
+          "file": "tests/p2-015-worker-restart.integration.test.mjs",
+          "file_sha256": "33bd435af30415b35e7fd215c95f99d142cbca40ade3df2e7a2cc8c7c1594223",
+          "test_name": "crash before commit leaves no partial facts; crash after commit restarts as replay",
+          "surface": "SEEDED_SOURCE_REAL_PROCESS_FAULT"
+        },
+        {
+          "file": "tests/p2-g2-late-conversation-binding.integration.test.mjs",
+          "file_sha256": "cf68b236e4da79a089fe54c0f2bb2f053e6f7895870a28e6e322ba16a56bec2e",
+          "test_name": "late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket",
+          "surface": "NORMAL_FRAME_DELAYED_PROJECTION_REAL_POSTGRES"
+        },
+        {
+          "file": "tests/p2-g2-conversation-binding-boundaries.integration.test.mjs",
+          "file_sha256": "d92907f5c020c3bc85fad393f9ce0977b4249a1e5f40dec8adc407bff7ea39b1",
+          "test_name": "bounded binding scan advances beyond twenty invalid HMAC rows and twelve concurrent cycles never rewrite accepted facts",
+          "surface": "NORMAL_FRAME_SETUP_SYNTHETIC_HMAC_FAULT_REAL_POSTGRES"
+        }
+      ],
+      "assertion_interpretation": "Worker killed while Inbox still commits; restart creates one Ticket; actual process response-loss replay and no duplicate acknowledged send.",
+      "remaining_boundary_or_gap": "Process child fault proof is real local execution with mock Provider, not production restart.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-F03",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 441,
+        "text": "| G2-F03 | DB短时失败 | 稳定错误、无部分事实/虚假回执，恢复后可继续 | 隔离DB故障 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "POSTGRES_HTTP_INTEGRATION",
+      "test_names": [
+        "G2-J01 review enqueue database fault rolls back current Ticket/Decision/actions while preserving Inbox",
+        "P2-012 actual HTTP preserves notification failure, rollback and durable replay before explicit recovery",
+        "post-acceptance binding failure rolls back both references and explicitly preserves the already committed new Ticket"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-association-boundary.integration.test.mjs",
+          "file_sha256": "9d9aa31182ec29322a3251d39de320f9cbf5d4d3238172968d74432513e34d49",
+          "test_name": "G2-J01 review enqueue database fault rolls back current Ticket/Decision/actions while preserving Inbox",
+          "surface": "NORMAL_FRAME_SYNTHETIC_DB_FAULT_POSTGRES"
+        },
+        {
+          "file": "tests/p2-012-workbench.integration.test.mjs",
+          "file_sha256": "0401889cbfd232492733303d08f97322d3b5da2c1f4d680353e064cb071edd68",
+          "test_name": "P2-012 actual HTTP preserves notification failure, rollback and durable replay before explicit recovery",
+          "surface": "SEEDED_MECHANICAL_HTTP_DB_FAULT"
+        },
+        {
+          "file": "tests/p2-g2-conversation-binding-boundaries.integration.test.mjs",
+          "file_sha256": "d92907f5c020c3bc85fad393f9ce0977b4249a1e5f40dec8adc407bff7ea39b1",
+          "test_name": "post-acceptance binding failure rolls back both references and explicitly preserves the already committed new Ticket",
+          "surface": "NORMAL_FRAME_SETUP_SYNTHETIC_DB_CONSTRAINT_FAULT"
+        }
+      ],
+      "assertion_interpretation": "Real owned DB constraint/append failure leaves Inbox while route transaction rolls back; repair/retry completes; HTTP stable errors.",
+      "remaining_boundary_or_gap": "Do not equate constraint injection with stopping DB server/network connectivity. Broader temporary connection outage needs separate source if claimed.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-F04",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 442,
+        "text": "| G2-F04 | SSE断线/410/慢客户端 | 授权replay、gap refetch、第33降级、慢客户端不阻塞命令 | 浏览器+32连接 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-G1 isolated PostgreSQL Replay Gap drives real Edge through Last-Event-ID, 410 and refetch",
+        "P2-003 localhost SSE admits 32 clients, rejects 33, heartbeats, delivers and releases resources",
+        "P2-003 real paused slow client is isolated while normal delivery and append continue",
+        "P2-G1 system browser preserves native SSE reconnect and sends Last-Event-ID"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g1-human-only-assembly.integration.test.mjs",
+          "file_sha256": "6047e455751e79d49b29377b08180e32d35867484039c0ddb967d8ad1e0eca55",
+          "test_name": "P2-G1 isolated PostgreSQL Replay Gap drives real Edge through Last-Event-ID, 410 and refetch",
+          "surface": "SEEDED_TIMELINE_REAL_BROWSER_POSTGRES"
+        },
+        {
+          "file": "tests/p2-003-realtime-event-log.integration.test.mjs",
+          "file_sha256": "08bc4d28ef3194b36785d8eeabfc841036a4c09836f3dec2bc6ba23aa1890b9f",
+          "test_name": "P2-003 localhost SSE admits 32 clients, rejects 33, heartbeats, delivers and releases resources",
+          "surface": "SEEDED_MECHANICAL_HTTP_SSE"
+        },
+        {
+          "file": "tests/p2-003-realtime-event-log.integration.test.mjs",
+          "file_sha256": "08bc4d28ef3194b36785d8eeabfc841036a4c09836f3dec2bc6ba23aa1890b9f",
+          "test_name": "P2-003 real paused slow client is isolated while normal delivery and append continue",
+          "surface": "SEEDED_MECHANICAL_REAL_SOCKET"
+        },
+        {
+          "file": "tests/p2-g1-human-only-assembly-browser.test.mjs",
+          "file_sha256": "7be094f12894142313bed32fe3116bbf7d8e7674e631d0572db54239cce80812",
+          "test_name": "P2-G1 system browser preserves native SSE reconnect and sends Last-Event-ID",
+          "surface": "REAL_BROWSER_SSE_MECHANISM"
+        }
+      ],
+      "assertion_interpretation": "Real Edge410/refetch and Last-Event-ID;32+1 admission; paused socket isolated while normal append/delivery continues.",
+      "remaining_boundary_or_gap": "32+1/slow socket and browser tests are separate; do not claim one combined37-row UI scenario without explicit linkage.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-A01",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 443,
+        "text": "| G2-A01 | AI彻底不可用 | 无Key/无模型网络/Provider调用0仍跑完整链 | 三角色+网络计数 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+        "process HTTP policy permits owned health traffic and blocks model endpoints, redirects and option overrides"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+          "file_sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9",
+          "test_name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+          "surface": "NORMAL_FRAME_REAL_PROCESSES_MOCK_PROVIDER"
+        },
+        {
+          "file": "tests/p2-g2-cli-network.test.mjs",
+          "file_sha256": "e6958e879d6f8dc1953ae8f0e89b439e14f249b2348c3f2511f8d299f2068f28",
+          "test_name": "process HTTP policy permits owned health traffic and blocks model endpoints, redirects and option overrides",
+          "surface": "NETWORK_POLICY_MOCK_FETCH"
+        }
+      ],
+      "assertion_interpretation": "Three role environment excludes model keys/old approvals/manualGC;6 blocked model HTTP probes; actual synthetic business chain model calls0.",
+      "remaining_boundary_or_gap": "No formal one-hour AI-off observation from this short process test.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-A02",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 444,
+        "text": "| G2-A02 | 所需业务Flag缺失 | 准备失败而非将no-op算闭环通过；默认配置仍全false | 配置负向测试 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "UNIT_CONTRACT",
+      "test_names": [
+        "P2-G2 missing required flags and every AI/P3 activation fail before assembly",
+        "P2-G2 environment allowlist strips model secrets, old approvals and accidental Node hooks"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-validation-config.test.mjs",
+          "file_sha256": "d1fa1d74bc266d517c3cd513d9d4dc0c0b9b0fd6adbff4786ce62cd33896f2e1",
+          "test_name": "P2-G2 missing required flags and every AI/P3 activation fail before assembly",
+          "surface": "PURE_CONFIGURATION_NEGATIVE"
+        },
+        {
+          "file": "tests/p2-g2-validation-config.test.mjs",
+          "file_sha256": "d1fa1d74bc266d517c3cd513d9d4dc0c0b9b0fd6adbff4786ce62cd33896f2e1",
+          "test_name": "P2-G2 environment allowlist strips model secrets, old approvals and accidental Node hooks",
+          "surface": "PURE_CONFIGURATION_NEGATIVE"
+        }
+      ],
+      "assertion_interpretation": "Each required flag absent rejects, every AI/P3 enabled rejects; allowlist drops accidental model/secrets/hooks.",
+      "remaining_boundary_or_gap": "Configuration tests do not replace actual missing-role readiness; process test503 supplements.",
+      "real_live_status": "NOT_RUN"
+    },
+    {
+      "scenario_id": "G2-O01",
+      "original_spec": {
+        "file": "D:/Projects/P2-G2_Rule_First_AI_Off_Service_Loop_Complete_Codex_Prompt_v1.0.md",
+        "line": 445,
+        "text": "| G2-O01 | 2C4G持续观察 | ≥60分钟、真实限制、无OOM/无界积压、自然GC、资源清理 | 环境证据+时间序列 |"
+      },
+      "preparation_status": "VERIFIED",
+      "automated_evidence_type": "SYNTHETIC_PROCESS_BROWSER",
+      "test_names": [
+        "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+        "P2-G2 approved Gateway fault requires recovery and excludes both adjacent intervals from the steady hour",
+        "P2-G2 has no latency percentile before a client observation, and requires a real measurement by the end"
+      ],
+      "tests": [
+        {
+          "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+          "file_sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9",
+          "test_name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+          "surface": "NORMAL_FRAME_REAL_PROCESSES_MOCK_PROVIDER"
+        },
+        {
+          "file": "tests/p2-g2-gate-evaluator.test.mjs",
+          "file_sha256": "d060229adb374c55ac5e38a419fb9316a07b8718c24381e4acfefcc0c24f0580",
+          "test_name": "P2-G2 approved Gateway fault requires recovery and excludes both adjacent intervals from the steady hour",
+          "surface": "IN_MEMORY_EVALUATOR_NOT_LIVE"
+        },
+        {
+          "file": "tests/p2-g2-gate-evaluator.test.mjs",
+          "file_sha256": "d060229adb374c55ac5e38a419fb9316a07b8718c24381e4acfefcc0c24f0580",
+          "test_name": "P2-G2 has no latency percentile before a client observation, and requires a real measurement by the end",
+          "surface": "IN_MEMORY_EVALUATOR_NOT_LIVE"
+        }
+      ],
+      "assertion_interpretation": "Preparation metrics/sampler marks development environment INCOMPLETE; mock evaluator tests clock continuity and effective3600000ms, no false percentile before samples.",
+      "remaining_boundary_or_gap": "FORMAL_60_MINUTE_NOT_RUN. No verified whole-stack2C4G run, no current live60min/noOOM/no-backlog/cleanup acceptance. Evaluator fixture PASS is never observation evidence.",
+      "real_live_status": "NOT_RUN"
+    }
+  ]
+}

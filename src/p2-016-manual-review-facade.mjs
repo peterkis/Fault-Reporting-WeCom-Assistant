@@ -19,7 +19,8 @@ const ACTIONS=Object.freeze({
 });
 function derivedCommand(id) {const h=textHashP2016('P2016_PERSON_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
 export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2016TicketQuery({pool,enabled}),notificationProjector=null,realtimeProjector=null,
-  communicationAppend=appendCommunication,now=()=>String(Date.now())}) {
+  communicationAppend=appendCommunication,now=()=>String(Date.now()),personDestinationAuthorizer=null}) {
+  if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016();
   const ledger=createP2016CommandLedger({pool}),decisions=createDecisionStore(),core=createPilotTicketCore({pool});
   function storeFor(principal,transaction=pool) {
     const predicate=ticketPredicateP2016(principal);
@@ -90,11 +91,12 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
         const fixed=createP2004FixedCommunicationPort({append:async input=>{
           const group=source.source_chat_type==='group';
           const guided=group&&v.resolution_code==='REQUEST_DESCRIPTION';
+          const personAllowed=guided&&(personDestinationAuthorizer===null||await personDestinationAuthorizer({transaction,bot_id:source.source_bot_id,reporter_user_id:source.reporter_wecom_userid})===true);
           const primary={...input.command,...(source.session_id?{expected_row_version:source.row_version}:{}),
-            content:guided?{text:'已收到您的故障上报。系统已向您发送单聊消息，请在单聊中继续补充。'}:input.command.content};
+            content:guided?{text:'已收到您的消息。可直接在群里补充故障情况，也可选择机器人单聊。请勿在群内提供患者、账号或联系方式等敏感信息。'}:input.command.content};
           const result=await communicationAppend({...input,command:primary});
           if(result.error)failP2016('ACTION_FAILED',503);
-          if(guided) {
+          if(personAllowed) {
             const direct=await communicationAppend({...input,command:{...primary,client_command_id:derivedCommand(primary.client_command_id),
               content:input.command.content},resolvedDestinations:[{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,target_type:'PERSON',target_id:source.reporter_wecom_userid}]});
             if(direct.error)failP2016('ACTION_FAILED',503);

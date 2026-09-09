@@ -20,7 +20,7 @@ test('P2-012 expired direct destinations cannot activate subscriptions and pendi
     const run=async(action,extra={})=>perform({action,incident_id:id,expected_row_version:(await query.detail({authContext,id})).row_version,...extra});
     const direct=(await pool.query("SELECT * FROM incident.reporter_subscription WHERE incident_id=$1 AND status='ACTIVE'",[id])).rows[0];
     await pool.query(`WITH clock AS(SELECT platform.physical_epoch_ms()-1000 AS expiry)
-      UPDATE intake.contact_journey SET reported_at=platform.local_from_epoch_ms(clock.expiry)-interval '1 day',retention_until_epoch_ms=clock.expiry,retention_until=platform.local_from_epoch_ms(clock.expiry)
+      UPDATE intake.contact_journey SET reported_at=LEAST(reported_at,platform.local_from_epoch_ms(clock.expiry)-interval '1 day'),retention_until_epoch_ms=clock.expiry,retention_until=platform.local_from_epoch_ms(clock.expiry)
       FROM clock WHERE id=(SELECT journey_id FROM intake.channel_leg WHERE id=$1)`,[direct.direct_channel_leg_id]);
     const messages=async()=>(await pool.query('SELECT count(*)::int AS n FROM communication.message')).rows[0].n;
     const before=await messages();assert.equal(before,1);

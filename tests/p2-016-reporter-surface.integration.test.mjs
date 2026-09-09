@@ -16,7 +16,7 @@ test('Reporter grant expiry, HMAC rotation, one-consume concurrency, session exp
     await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});
     let clock=String(Date.now());const key='synthetic-only-p2016-hmac-test-key-32-bytes';
     const access=createP2016ReporterAccess({pool,enabled:true,hmacSecret:key,now:()=>clock,grantTtlMs:1000,sessionTtlMs:2000});
-    const projector=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access,now:()=>clock});
+    const projector=createP2016TicketNotificationProjector({additionalEventTypes:['ticket.created'],enabled:true,cardEnabled:true,reporterAccess:access,now:()=>clock});
     const timeline=createP2016ReporterTimeline({pool,access,enabled:true});
     async function seed(){
       const intake=await seedPersistedIntake({pool,text:'synthetic patient-name 10.0.0.1',requestType:'INCIDENT',status:'RECEIVED'});

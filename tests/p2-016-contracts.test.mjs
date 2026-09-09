@@ -26,7 +26,7 @@ test('P2-016 strict command, versions, closed keys and bounded lists',()=>{
   assert.doesNotThrow(()=>createP2016ReporterAccess({enabled:false}));
 });
 const transitions=[['created','QUEUED'],['accepted','ACCEPTED'],['started','IN_PROGRESS'],['resumed','IN_PROGRESS'],['waiting_requester','WAITING_REQUESTER'],['waiting_vendor','WAITING_VENDOR'],['resolved','RESOLVED'],['closed','CLOSED'],['reopened','REOPENED'],['cancelled','CANCELLED']];
-for(const [event,status] of transitions)test('notification policy includes '+event,()=>{const p=ticketNotificationP2016({event_type:'ticket.'+event,new_status:status});assert.ok(p.external_status);assert.ok(Object.isFrozen(p));});
+for(const [event,status] of transitions)test('notification policy retains configurable '+event,()=>{const p=ticketNotificationP2016({event_type:'ticket.'+event,new_status:status},{additionalEventTypes:['ticket.'+event]});assert.ok(p.external_status);assert.ok(Object.isFrozen(p));});
 test('notes and assignment changes never become external free-text notifications',()=>{for(const type of ['note_added','information_added','assignment_transferred'])assert.equal(ticketNotificationP2016({event_type:'ticket.'+type,new_status:'IN_PROGRESS'}),null);});
 test('template card exact shape, last-four and safe immutable view',()=>{
   const card=buildP2016TemplateCard({model:model(),origin:'https://reporter.example.test',allowedHosts:['reporter.example.test'],token:'g'.repeat(64)});

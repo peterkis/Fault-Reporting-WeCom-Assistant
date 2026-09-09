@@ -1,0 +1,3248 @@
+{
+  "schema_version": 1,
+  "authority": "INDEPENDENT_SOURCE_SPEC_REVIEW",
+  "implementation_imported": false,
+  "source_path": "tests/fixtures/p2-007/hospital-it-multichannel-evaluation-corpus.v1.jsonl",
+  "source_sha256": "3aca7e503d28d78b96843c0d3acea777d629ce13a3abc07dfe3184710cc2aec2",
+  "original_gold_path": "tests/fixtures/p2-015/rule-first-safe-route-gold.v1.jsonl",
+  "original_gold_sha256": "723b169fd4843563ee33132435ef01e4bd43054541cd91f97de40d10c8197899",
+  "requested_range": "X001-X048",
+  "actual_source_count": 42,
+  "source_absent": [
+    "X043",
+    "X044",
+    "X045",
+    "X046",
+    "X047",
+    "X048"
+  ],
+  "interpretation": {
+    "ticket_delta": "Increment caused by the scenario; excludes explicitly required setup. null means per-turn adjudication required, never arbitrary acceptance.",
+    "review": "No unconditional safe fallback for clear normal faults. Any allowed manual route must have a reachable and handleable actual Review.",
+    "candidate": "New Incident candidate, not Journey-link candidate or already-confirmed Incident. Candidate review is distinct from intake ManualReview.",
+    "mechanisms": "Do not feed human/system events as Reporter text or count mechanism fixtures as normal recognition. Missing real preconditions are NOT_RUN/UNAVAILABLE, not PASS.",
+    "scopes": "Fixed120000ms current correlation. No borrowed cross-Reporter service identity or invented directory/location facts.",
+    "evidence": "This is an oracle, not measured success or a claim all scenarios are implemented."
+  },
+  "known_gaps_and_followups": [
+    {
+      "cases": [
+        "X029",
+        "X032"
+      ],
+      "kind": "MISSING_SOURCE_PRECONDITIONS",
+      "detail": "Cannot justify shared canonical service for all reporters or wide scope from the supplied texts. Preserve original expected labels and separate this adjudication; do not pass fabricated aggregation."
+    },
+    {
+      "cases": [
+        "X031"
+      ],
+      "kind": "SOURCE_SCOPE_CONFLICT",
+      "detail": "Floor wording does not create trusted location membership. Frozen generator/runtime scope and120s remain authoritative; normal3Reporter local candidate is separately testable."
+    },
+    {
+      "cases": [
+        "X033",
+        "X036"
+      ],
+      "kind": "TRUSTED_MONITOR_OR_ACTIVE_INCIDENT_SEAM_REQUIRED",
+      "detail": "Trusted monitor and active Incident matching require explicit real/synthetic authoritative adapters; user prose alone insufficient. No production P3 activation."
+    },
+    {
+      "cases": [
+        "X005",
+        "X008",
+        "X012",
+        "X020",
+        "X030"
+      ],
+      "kind": "ACTUAL_CONTINUATION_REQUIRED",
+      "detail": "Replace fixture placeholder with actually issued authorized continuation or real reply association. Validate scope/replay/expiry; BOT turns are outbound events."
+    },
+    {
+      "cases": [
+        "X016",
+        "X017",
+        "X019"
+      ],
+      "kind": "DIRECTORY_SIMULATOR_REQUIRED",
+      "detail": "Expected directory facts cannot originate in body text or assertions. Provider simulator must supply and persist them; no real hospital connection."
+    },
+    {
+      "cases": [
+        "X035"
+      ],
+      "kind": "PREVIOUS_MEASURED_FAILURE_REQUIRES_CURRENT_GREEN",
+      "detail": "Earlier captured ACTION_FAILED with zero Ticket/Review remains historical RED at result.jsonl; current fix needs current source-bound test, not stale failure claim."
+    },
+    {
+      "cases": [
+        "X043",
+        "X044",
+        "X045",
+        "X046",
+        "X047",
+        "X048"
+      ],
+      "kind": "SOURCE_ABSENT",
+      "detail": "Not present in either supplied source or original P2015 references."
+    }
+  ],
+  "records": [
+    {
+      "case_id": "P2-007-X001",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_INGRESS",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Fresh group Reporter; valid group mention metadata.",
+      "independent_assertion": "Explicit paper jam must be accepted immediately; no private send eligibility inferred.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "bot_mentioned": true,
+          "text": "@故障助手 诊室打印机卡纸，重启后仍无反应。"
+        }
+      ],
+      "source_expected": {
+        "entry_mode": "GROUP_MENTION_INLINE",
+        "origin_channel": "WECOM_GROUP",
+        "journey_link_state": "EXACT",
+        "required_rule_hits": [
+          "ENTRY-001"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X001",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X002",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_INGRESS",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "NEEDS_DESCRIPTION"
+      ],
+      "required_real_preconditions": "Fresh group Reporter; no existing Direct Leg.",
+      "independent_assertion": "One safe description/guidance action; persist message. No private Delivery until real Direct Leg exists.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "bot_mentioned": true,
+          "text": "@故障助手 在吗？"
+        }
+      ],
+      "source_expected": {
+        "entry_mode": "GROUP_MENTION_TO_DIRECT_GUIDED",
+        "description_sufficiency": "EMPTY",
+        "notification_purpose": [
+          "PRIVATE_GUIDANCE"
+        ],
+        "required_rule_hits": [
+          "ENTRY-002"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X002",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": false,
+      "conflict_kind": "NONE",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X003",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_INGRESS",
+      "expected_ticket_delta": 1,
+      "review_requirement": "SOURCE_SENSITIVE_REVIEW_ALLOWED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "required_real_preconditions": "Fresh group Reporter; privacy-safe synthetic text; real Direct Leg before any personal send.",
+      "independent_assertion": "Observed patient-related data invisibility is accepted before optional identifiers. Move sensitive description to private; no group echo. Any manual route must have actual accessible Review.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "bot_mentioned": true,
+          "text": "@故障助手 这个患者的就诊标识在群里不方便发，系统看不到。"
+        }
+      ],
+      "source_expected": {
+        "entry_mode": "GROUP_MENTION_TO_DIRECT_GUIDED",
+        "description_sufficiency": "SENSITIVE_MOVE_TO_PRIVATE",
+        "group_echo_patient_data": false,
+        "required_rule_hits": [
+          "ENTRY-003"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X003",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X004",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_INGRESS",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Fresh organic Direct Reporter without group origin.",
+      "independent_assertion": "Known software persistently spinning is an explicit fault; no invented group association.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "门诊工作站一直转圈，麻烦处理。"
+        }
+      ],
+      "source_expected": {
+        "entry_mode": "DIRECT_ORGANIC",
+        "origin_channel": "WECOM_DIRECT",
+        "journey_link_state": "UNLINKED",
+        "required_rule_hits": [
+          "ENTRY-004"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X004",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X005",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_PREREQUISITES",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "required_real_preconditions": "Create initial group report through real ingress; establish qualifying Direct Leg; create approved fixed guidance through Communication; reply must reference its actual authorized message/Journey.",
+      "independent_assertion": "First broken-printer report already has Ticket. Direct supplement preserves its Ticket and origin. Literal reply_context=true is not authorization. BOT turn is produced by application, never spoofed inbound.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "bot_mentioned": true,
+          "text": "@故障助手 打印机坏了。"
+        },
+        {
+          "offset_ms": 30000,
+          "channel": "WECOM_DIRECT",
+          "speaker": "BOT",
+          "text": "请回复本消息继续补充，受理号为安全引用。"
+        },
+        {
+          "offset_ms": 45000,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "reply_context": true,
+          "text": "地点是测试门诊二楼，打一张卡一次。"
+        }
+      ],
+      "source_expected": {
+        "entry_mode": "GROUP_MENTION_TO_DIRECT_GUIDED",
+        "origin_channel": "WECOM_GROUP",
+        "current_channel": "WECOM_DIRECT",
+        "journey_link_state": "EXACT",
+        "required_rule_hits": [
+          "ENTRY-005",
+          "ENTRY-008"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X005",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_REPLY_PRECONDITION",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X006",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_PREREQUISITES",
+      "expected_ticket_delta": 0,
+      "review_requirement": "REQUIRED_ASSOCIATION_REVIEW",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "required_real_preconditions": "Two distinct open pending Journeys for same Bot/Reporter, created through normal explicit new-topic ingress; no continuation reference.",
+      "independent_assertion": "Do not select arbitrarily. User claim of two pending issues alone does not create those facts. Review/authorized selection must resolve ambiguity without new fault Ticket.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "我有两个待补充问题，不知道这条属于哪一个。"
+        }
+      ],
+      "source_expected": {
+        "journey_link_state": "AMBIGUOUS",
+        "clarification_question": "Q_SELECT_PENDING_INTAKE",
+        "required_rule_hits": [
+          "ENTRY-006"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X006",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "MISSING_AUTHORITY_PRECONDITION_AND_REVIEW",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X007",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_PREREQUISITES",
+      "expected_ticket_delta": 2,
+      "review_requirement": "ONLY_IF_ASSOCIATION_IS_PROPOSED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Initial group queue-device fault; subsequent Direct mouse fault from same Reporter but no authorized continuation.",
+      "independent_assertion": "Both explicit distinct faults need separate Tickets. No automatic merge. Source journey_link_state=CANDIDATE is a Journey association candidate, not Incident Candidate; any proposed link needs confirmation.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "bot_mentioned": true,
+          "text": "@故障助手 叫号器打不开。"
+        },
+        {
+          "offset_ms": 10000,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "另外电脑鼠标没反应。"
+        }
+      ],
+      "source_expected": {
+        "auto_merge": false,
+        "journey_link_state": "CANDIDATE",
+        "requires_human_confirmation": true,
+        "required_rule_hits": [
+          "ENTRY-007"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X007",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X008",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_PREREQUISITES",
+      "expected_ticket_delta": 1,
+      "review_requirement": "REQUIRED_IF_WIDE_SCOPE_REVIEW",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "required_real_preconditions": "First group network fault persisted; real single-use continuation authorized for same Bot/Reporter and Journey; Direct Leg established.",
+      "independent_assertion": "Preserve one personal Ticket, immutable group origin and two Legs. Replace SAFE-INTAKE-001 with issued opaque ref. One Reporter cannot satisfy multi-Reporter threshold.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "bot_mentioned": true,
+          "text": "@故障助手 网络断了。"
+        },
+        {
+          "offset_ms": 20000,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "continuation_ref": "SAFE-INTAKE-001",
+          "text": "测试楼层多个诊室都断网。"
+        }
+      ],
+      "source_expected": {
+        "origin_channel": "WECOM_GROUP",
+        "origin_is_immutable": true,
+        "channel_leg_count": 2,
+        "required_rule_hits": [
+          "ENTRY-005",
+          "ENTRY-008"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X008",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_CONTINUATION_PRECONDITION",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X009",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_PREREQUISITES",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "required_real_preconditions": "Controlled test clock preserves 0/180000/300000 offsets within live Direct idle limit; no changes to host/DB clocks.",
+      "independent_assertion": "First unavailable-system report already accepted; address/supplement must not split Ticket after 90 seconds. Do not expose address in normal logs.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "系统进不去。"
+        },
+        {
+          "offset_ms": 180000,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "IP 是 192.0.2.11。"
+        },
+        {
+          "offset_ms": 300000,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "重启两次还是不行。"
+        }
+      ],
+      "source_expected": {
+        "same_analysis_window": true,
+        "aggregation_basis": "ACTIVE_SESSION",
+        "required_rule_hits": [
+          "XAGG-001",
+          "XAGG-002"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X009",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X010",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_INGRESS",
+      "expected_ticket_delta": 1,
+      "review_requirement": "REQUIRED_IF_CLINICAL_RISK_RULE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "required_real_preconditions": "First turn actual image Frame with group mention; subsequent two text Frames same Reporter/window; no OCR or media fetch.",
+      "independent_assertion": "Image-only first turn requests description. Second explicit print failure already creates Ticket. Third waiting-patient detail updates impact without duplicate Ticket. Each supported fact must retain source.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "bot_mentioned": true,
+          "text": "@故障助手 [图片]"
+        },
+        {
+          "offset_ms": 4000,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "text": "打印机打不出来。"
+        },
+        {
+          "offset_ms": 9000,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "text": "测试诊室，病人正在等。"
+        }
+      ],
+      "source_expected": {
+        "same_analysis_window": true,
+        "incremental_fact_updates": 3,
+        "description_sufficiency": "SUFFICIENT_FOR_INTAKE",
+        "required_rule_hits": [
+          "XAGG-002",
+          "XAGG-003",
+          "XAGG-006"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X010",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X011",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_PREREQUISITES",
+      "expected_ticket_delta": 1,
+      "review_requirement": "REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "required_real_preconditions": "Actual per-turn due scheduling with controlled clock; second turn explicit emergency examination workflow failure.",
+      "independent_assertion": "By second turn accept Ticket and accessible Review; prove scheduling bypass separately from eventually pumping after debounce. Source label HIGH may map to stricter critical review, never lower risk.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "系统卡。"
+        },
+        {
+          "offset_ms": 2000,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "急诊正在接诊，无法开检查。"
+        }
+      ],
+      "source_expected": {
+        "debounce_bypassed": true,
+        "clinical_risk": "HIGH",
+        "required_rule_hits": [
+          "XAGG-003"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X011",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X012",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_PREREQUISITES",
+      "expected_ticket_delta": 1,
+      "review_requirement": "REQUIRED_IF_CLINICAL_RISK_RULE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "required_real_preconditions": "Group login failure and actual issued continuation for same identity; Direct supplement linked through authorized binding.",
+      "independent_assertion": "One personal Ticket; raw channel timelines remain separate. All patients does not mean multiple Reporters or hospital-wide Incident.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "bot_mentioned": true,
+          "text": "@故障助手 门诊系统登不上。"
+        },
+        {
+          "offset_ms": 15000,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "continuation_ref": "SAFE-INTAKE-002",
+          "text": "所有病人都一样。"
+        }
+      ],
+      "source_expected": {
+        "same_intake": true,
+        "raw_timelines_destructively_merged": false,
+        "required_rule_hits": [
+          "XAGG-004"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X012",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_CONTINUATION_PRECONDITION",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X013",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_PREREQUISITES",
+      "expected_ticket_delta": 2,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Controlled 240000ms gap; original Direct Session still within idle limit.",
+      "independent_assertion": "Explicit another problem creates second Ticket and Session boundary despite active original Session.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "打印机不能用。"
+        },
+        {
+          "offset_ms": 240000,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "另一个问题，诊间预约也打不开。"
+        }
+      ],
+      "source_expected": {
+        "analysis_window_count": 2,
+        "required_rule_hits": [
+          "XAGG-005"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X013",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X014",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_INGRESS",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Fresh Reporter.",
+      "independent_assertion": "Unavailable workstation is accepted even with missing location/scope. Do not use ManualReview as normal-score fallback.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "门诊工作站打不开。"
+        }
+      ],
+      "source_expected": {
+        "description_sufficiency": "SUFFICIENT_FOR_INTAKE",
+        "missing_fields": [
+          "occurrence_location_or_asset",
+          "affected_scope"
+        ],
+        "required_rule_hits": [
+          "XAGG-006"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X014",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X015",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_INGRESS",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Trusted channel sender mapped to a synthetic stable Reporter; valid group eligibility established separately.",
+      "independent_assertion": "Body name is reported text, never authoritative Reporter identity. Explicit unavailability still accepted.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "trusted_reporter_ref": "user_ref_001",
+          "text": "我叫测试医生乙，系统进不去。"
+        }
+      ],
+      "source_expected": {
+        "reporter_ref_source": "TRUSTED_CHANNEL_METADATA",
+        "body_name_is_identity_source": false,
+        "required_rule_hits": [
+          "IDENT-001"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X015",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X016",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_SYNTHETIC_DIRECTORY",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Explicitly injected authoritative directory Simulator response keyed by trusted Reporter; no real hospital directory.",
+      "independent_assertion": "Persist RESOLVED profile snapshot from Simulator response and accept no-network fault. The source text alone cannot prove directory resolution.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "trusted_reporter_ref": "user_ref_002",
+          "text": "电脑没网。"
+        }
+      ],
+      "source_expected": {
+        "profile_lookup_status": "RESOLVED",
+        "profile_snapshot_created": true,
+        "profile_source": "HOSPITAL_DIRECTORY",
+        "required_rule_hits": [
+          "IDENT-002"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X016",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_DIRECTORY_PRECONDITION",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X017",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_SYNTHETIC_DIRECTORY",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Authoritative Simulator returns two memberships and either a real primary designation or none.",
+      "independent_assertion": "Preserve both memberships; never choose primary from first array element. Explicit slowness accepted independently of directory facts.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "系统太慢。"
+        }
+      ],
+      "source_expected": {
+        "department_memberships_preserved": 2,
+        "primary_department_only_if_authoritative": true,
+        "required_rule_hits": [
+          "IDENT-003"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X017",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_DIRECTORY_PRECONDITION",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X018",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_SYNTHETIC_DIRECTORY",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Directory Simulator returns unavailable/error; no saved authoritative profile.",
+      "independent_assertion": "Name/department remain null; paper jam accepted. Directory outage must not become admission dependency.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "打印机卡纸。"
+        }
+      ],
+      "source_expected": {
+        "profile_lookup_status": "UNAVAILABLE",
+        "display_name": null,
+        "department": null,
+        "intake_can_continue": true,
+        "required_rule_hits": [
+          "IDENT-004"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X018",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X019",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_SYNTHETIC_DIRECTORY",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Trusted directory Simulator establishes Reporter department. Occurrence imaging area is separately source-labeled Reporter assertion.",
+      "independent_assertion": "Do not turn body self-introduction into authoritative department. Imaging-system unavailability accepted; Reporter affiliation and fault location remain distinct.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "我是测试内科人员，替测试影像区报告看片系统打不开。"
+        }
+      ],
+      "source_expected": {
+        "reporter_department": "TEST_INTERNAL_MEDICINE",
+        "occurrence_department": "TEST_IMAGING_AREA",
+        "fields_are_separate": true,
+        "required_rule_hits": [
+          "IDENT-005"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X019",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_AUTHORITY_PRECONDITION",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X020",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_CONTROLLED_TIME_AND_BINDING",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "required_real_preconditions": "Valid trusted provider envelope timestamps; controlled test receive clock; actual authorized continuation; retention valid for test run.",
+      "independent_assertion": "Original report timestamp immutable across Direct supplement. Retain provider, receive and commit times separately; literal provider_sent_at in user text is insufficient. Historical literal dates require synthetic labeling.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "REPORTER",
+          "provider_sent_at": "2026-09-02 09:00:00",
+          "text": "@故障助手 诊间预约打不开。"
+        },
+        {
+          "offset_ms": 60000,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "provider_sent_at": "2026-09-02 09:01:00",
+          "continuation_ref": "SAFE-INTAKE-003",
+          "text": "测试二楼。"
+        }
+      ],
+      "source_expected": {
+        "reported_at": "2026-09-02 09:00:00",
+        "direct_continuation_rewrites_reported_at": false,
+        "required_rule_hits": [
+          "TIME-001"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X020",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_TIME_PRECONDITION",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X021",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_PREREQUISITES",
+      "expected_ticket_delta": 1,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Provider Simulator supplies genuine timestamp metadata; actual receive/commit/Intake/Ticket events.",
+      "independent_assertion": "Preserve distinct timestamp provenance. Absent provider timestamp remains unknown rather than copied from gateway time.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "REPORTER",
+          "text": "处方提交不了。"
+        }
+      ],
+      "source_expected": {
+        "required_timestamps": [
+          "provider_sent_at",
+          "gateway_received_at",
+          "inbox_committed_at",
+          "intake_created_at",
+          "ticket_created_at"
+        ],
+        "single_report_time_field_only": false,
+        "required_rule_hits": [
+          "TIME-002",
+          "TIME-003"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X021",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X022",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "HUMAN_COMMAND",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Existing Session plus two authorized agents with same expected version and distinct command IDs.",
+      "independent_assertion": "Concurrent takeover: exactly one succeeds, ownership count one, loser stable conflict. No fabricated Reporter turn or new Ticket.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "AGENT_A",
+          "event": "TAKEOVER_REQUESTED"
+        },
+        {
+          "offset_ms": 1,
+          "speaker": "AGENT_B",
+          "event": "TAKEOVER_REQUESTED"
+        }
+      ],
+      "source_expected": {
+        "authoritative_owner_count": 1,
+        "accepted_count": 1,
+        "rejected_count": 1,
+        "required_rule_hits": [
+          "HUMAN-001",
+          "HUMAN-002"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X022",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X023",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "HUMAN_COMMAND",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Existing authorized Session, current owner and separate collaborator identities.",
+      "independent_assertion": "Commit actual internal note then read as agent B; ownership unchanged, collaboration fact attributable. No new Ticket.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "AGENT_A",
+          "event": "INTERNAL_NOTE_COMMITTED"
+        },
+        {
+          "offset_ms": 1000,
+          "speaker": "AGENT_B",
+          "event": "READ"
+        }
+      ],
+      "source_expected": {
+        "authoritative_owner_changed": false,
+        "collaborator_count": 1,
+        "required_rule_hits": [
+          "HUMAN-003"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X023",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X024",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "HUMAN_COMMAND",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Existing owned Session and approved synthetic Communication destination/context.",
+      "independent_assertion": "Actual human reply command retains actor and Communication reference; use fake transport/no real send.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "AGENT_A",
+          "event": "HUMAN_REPLY_COMMITTED",
+          "message_ref": "comm_msg_001"
+        }
+      ],
+      "source_expected": {
+        "reply_actor_ref_required": true,
+        "communication_message_ref_required": true,
+        "required_rule_hits": [
+          "HUMAN-004"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X024",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X025",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "HUMAN_COMMAND",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Existing authorized Session; normal internal-note command.",
+      "independent_assertion": "Note remains INTERNAL; new Outbox and Delivery both zero.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "AGENT_B",
+          "event": "INTERNAL_NOTE_COMMITTED"
+        }
+      ],
+      "source_expected": {
+        "note_visibility": "INTERNAL",
+        "outbox_count": 0,
+        "delivery_count": 0,
+        "required_rule_hits": [
+          "HUMAN-005",
+          "NOTIFY-005"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X025",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X026",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "HUMAN_COMMAND",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Existing owned Session and authorized handoff participants/versions.",
+      "independent_assertion": "Execute supported request/accept/release semantics using P2-005 event authority; preserve append-only history, no second ownership table. Do not replay source event labels as user text.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "AGENT_A",
+          "event": "HANDOFF_REQUESTED"
+        },
+        {
+          "offset_ms": 5000,
+          "speaker": "AGENT_B",
+          "event": "HANDOFF_ACCEPTED"
+        },
+        {
+          "offset_ms": 20000,
+          "speaker": "AGENT_A",
+          "event": "HANDOFF_RELEASED"
+        }
+      ],
+      "source_expected": {
+        "history_is_append_only": true,
+        "source_of_truth": "P2_005_CONTROL_EVENT",
+        "required_rule_hits": [
+          "HUMAN-006"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X026",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X027",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "HUMAN_COMMAND",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Existing Session; authenticated ADMIN; valid transfer target and mandatory override reason.",
+      "independent_assertion": "Missing reason rejected; authorized override records actual ADMIN actor.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "ADMIN",
+          "event": "TRANSFER_COMPLETED",
+          "override": true
+        }
+      ],
+      "source_expected": {
+        "override_reason_required": true,
+        "actor_type": "ADMIN",
+        "required_rule_hits": [
+          "HUMAN-007"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X027",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X028",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "HUMAN_COMMAND",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Existing Session; agents A/B; authorized transfer between real reply commands.",
+      "independent_assertion": "Two replies and authors retained with authoritative ownership transition; no duplicate audit table.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "AGENT_A",
+          "event": "HUMAN_REPLY_COMMITTED"
+        },
+        {
+          "offset_ms": 10000,
+          "speaker": "AGENT_B",
+          "event": "TRANSFER_COMPLETED"
+        },
+        {
+          "offset_ms": 12000,
+          "speaker": "AGENT_B",
+          "event": "HUMAN_REPLY_COMMITTED"
+        }
+      ],
+      "source_expected": {
+        "human_reply_count": 2,
+        "distinct_reply_authors": 2,
+        "ownership_transition_recorded": true,
+        "duplicate_audit_table_created": false,
+        "required_rule_hits": [
+          "HUMAN-004",
+          "HUMAN-006"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X028",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X029",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_MULTI_REPORTER",
+      "expected_ticket_delta": 3,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Three distinct trusted Reporter bindings; honor group/direct metadata; preserve offsets within fixed120000ms.",
+      "independent_assertion": "All three observable faults accepted, including blank workbench without known service. Reporter3 lacks canonical outpatient service proof; never borrow Reporter1/2 service identity. Thus no 3-person compatible cluster from these raw turns alone.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "REPORTER_1",
+          "channel": "WECOM_GROUP",
+          "text": "门诊系统崩了。"
+        },
+        {
+          "offset_ms": 30000,
+          "speaker": "REPORTER_2",
+          "channel": "WECOM_DIRECT",
+          "text": "门诊系统进不去。"
+        },
+        {
+          "offset_ms": 70000,
+          "speaker": "REPORTER_3",
+          "channel": "WECOM_GROUP",
+          "text": "工作台全空白。"
+        }
+      ],
+      "source_expected": {
+        "incident_candidate": true,
+        "distinct_reporters": 3,
+        "promotion_recommendation": "REVIEW_LOCAL_INCIDENT",
+        "required_rule_hits": [
+          "INCX-001"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X029",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "SOURCE_AND_P2015_CANDIDATE_UNSUPPORTED_WITHOUT_BINDING",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15",
+        "evidence/p2-g2-cross-reporter-correlation-contract.md"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X030",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_MULTI_REPORTER_WITH_BINDING",
+      "expected_ticket_delta": 2,
+      "review_requirement": "NOT_REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "required_real_preconditions": "Reporter1 actual issued continuation links group/direct; Reporter2 separate identity.",
+      "independent_assertion": "Two people, not three messages/Legs. Second Reporter clinic-appointment failure accepted; no Incident Candidate under3 threshold.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "REPORTER_1",
+          "channel": "WECOM_GROUP",
+          "text": "诊间预约打不开。"
+        },
+        {
+          "offset_ms": 10000,
+          "speaker": "REPORTER_1",
+          "channel": "WECOM_DIRECT",
+          "continuation_ref": "SAFE-INTAKE-004",
+          "text": "还是打不开。"
+        },
+        {
+          "offset_ms": 20000,
+          "speaker": "REPORTER_2",
+          "channel": "WECOM_DIRECT",
+          "text": "诊间预约也不行。"
+        }
+      ],
+      "source_expected": {
+        "distinct_reporters": 2,
+        "same_reporter_cross_channel_deduplicated": true,
+        "incident_candidate": false,
+        "required_rule_hits": [
+          "INCX-002"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X030",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "P2015_CONTRADICTS_SOURCE_FALSE_CANDIDATE",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15",
+        "evidence/p2-g2-cross-reporter-correlation-contract.md"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X031",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_MULTI_REPORTER",
+      "expected_ticket_delta": 3,
+      "review_requirement": "INCIDENT_CANDIDATE_REVIEW_REQUIRED",
+      "incident_candidate_expected": true,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE"
+      ],
+      "required_real_preconditions": "Three independently persisted compatible network faults within120000ms, real Fact IDs, trusted identity hashes.",
+      "independent_assertion": "Candidate generated normally and remains human-confirmed. Without authoritative department/location evidence counts are0 and fixed generator scope ROOM; DEPARTMENT only with actual department fact. Source FLOOR cannot override frozen scope/120-second contract.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "REPORTER_1",
+          "text": "测试三楼一个诊室断网。"
+        },
+        {
+          "offset_ms": 30000,
+          "speaker": "REPORTER_2",
+          "text": "测试三楼另一个诊室也断网。"
+        },
+        {
+          "offset_ms": 60000,
+          "speaker": "REPORTER_3",
+          "text": "测试三楼护士站也断网。"
+        }
+      ],
+      "source_expected": {
+        "incident_candidate": true,
+        "incident_scope": "FLOOR",
+        "promotion_recommendation": "REVIEW_LOCAL_INCIDENT",
+        "required_rule_hits": [
+          "INCX-001",
+          "INCX-003"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X031",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "P2015_REVIEW_LABEL_INCOMPLETE_AND_SOURCE_SCOPE_CONFLICT",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15",
+        "evidence/p2-g2-cross-reporter-correlation-contract.md"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X032",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_MULTI_REPORTER",
+      "expected_ticket_delta": null,
+      "review_requirement": "ONLY_SOURCE_SUPPORTED_RISK_OR_ASSOCIATION",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Eight independent Reporter identities; no implicit cross-Reporter service/location inheritance.",
+      "independent_assertion": "Accept explicit observed failures from R1/R2/R4/R5/R6; ask R3/R7/R8 for concrete object/symptom when unavailable. No demonstrated common canonical service for8 reporters, compatible symptom family, or authoritative3departments/2locations. Hospital-wide Candidate is unsupported by raw text alone. Do not synthesize directory/context from expected label.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "REPORTER_1",
+          "text": "测试一号楼门诊系统崩了。"
+        },
+        {
+          "offset_ms": 10000,
+          "speaker": "REPORTER_2",
+          "text": "测试二号楼也进不去。"
+        },
+        {
+          "offset_ms": 20000,
+          "speaker": "REPORTER_3",
+          "text": "测试三号楼病区也不行。"
+        },
+        {
+          "offset_ms": 30000,
+          "speaker": "REPORTER_4",
+          "text": "测试科室四工作台空白。"
+        },
+        {
+          "offset_ms": 40000,
+          "speaker": "REPORTER_5",
+          "text": "测试科室五提交不了。"
+        },
+        {
+          "offset_ms": 50000,
+          "speaker": "REPORTER_6",
+          "text": "测试科室六登录失败。"
+        },
+        {
+          "offset_ms": 60000,
+          "speaker": "REPORTER_7",
+          "text": "测试科室七也崩了。"
+        },
+        {
+          "offset_ms": 70000,
+          "speaker": "REPORTER_8",
+          "text": "测试科室八无法工作。"
+        }
+      ],
+      "source_expected": {
+        "incident_candidate": true,
+        "incident_scope": "HOSPITAL_WIDE",
+        "promotion_recommendation": "REVIEW_HOSPITAL_INCIDENT",
+        "required_rule_hits": [
+          "INCX-001",
+          "INCX-004"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X032",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "SOURCE_AND_P2015_HOSPITAL_CANDIDATE_UNSUPPORTED",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15",
+        "evidence/p2-g2-cross-reporter-correlation-contract.md"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X033",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "PURE_MECHANISM_WITH_TRUSTED_MONITOR_SIMULATOR",
+      "expected_ticket_delta": 0,
+      "review_requirement": "INCIDENT_CANDIDATE_REVIEW_REQUIRED_IF_PRODUCED",
+      "incident_candidate_expected": true,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "An authenticated synthetic monitoring adapter supplies an authoritative core-service signal and service/symptom references; never ordinary Reporter prose.",
+      "independent_assertion": "Evaluate monitoring override as isolated mechanism only. No live P3 monitoring integration; not normal user-recognition score. If adapter absent mark prerequisite unavailable, not PASS.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "SYSTEM_MONITOR",
+          "text": "安全监控引用：核心服务不可用。"
+        }
+      ],
+      "source_expected": {
+        "incident_candidate": true,
+        "reason_codes": [
+          "MONITORING_CORROBORATED"
+        ],
+        "human_confirmation_required": true,
+        "required_rule_hits": [
+          "INCX-005"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X033",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "P2015_TICKET_UNSUPPORTED_AND_WRONG_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15",
+        "evidence/p2-g2-cross-reporter-correlation-contract.md"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X034",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_MULTI_REPORTER_PLUS_PRIVACY_MECHANISM",
+      "expected_ticket_delta": 1,
+      "review_requirement": "SOURCE_SENSITIVE_REVIEW_ALLOWED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "TICKET_ELIGIBLE",
+        "MANUAL_REVIEW_REQUIRED",
+        "NEEDS_DESCRIPTION"
+      ],
+      "required_real_preconditions": "Two distinct Reporter identities; synthetic patient placeholder; no real patient IDs.",
+      "independent_assertion": "R1 explicit charge-record mismatch accepted; R2 vague fee problem needs description. No3person Candidate. Verify privacy-safe correlation inputs even when no cluster is emitted; absence of hash alone is not full privacy proof.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "REPORTER_1",
+          "text": "患者标识占位符的收费记录不一致。"
+        },
+        {
+          "offset_ms": 10000,
+          "speaker": "REPORTER_2",
+          "text": "另一个患者也有费用问题。"
+        }
+      ],
+      "source_expected": {
+        "cluster_key_contains_patient_identifier": false,
+        "cluster_key_contains_raw_text": false,
+        "required_rule_hits": [
+          "INCX-006"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X034",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "P2015_CANDIDATE_NOT_IN_SOURCE",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15",
+        "evidence/p2-g2-cross-reporter-correlation-contract.md"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X035",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_INGRESS",
+      "expected_ticket_delta": 1,
+      "review_requirement": "REQUIRED",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "required_real_preconditions": "Single trusted Reporter; fresh emergency sole-terminal fault.",
+      "independent_assertion": "Accept one personal Ticket plus reachable Review; severity HIGH or stricter is safe. Do not inflate scope or create public Candidate from severity.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "REPORTER_1",
+          "text": "急诊唯一叫号终端坏了。"
+        }
+      ],
+      "source_expected": {
+        "clinical_severity": "HIGH",
+        "incident_candidate": false,
+        "scope": "SINGLE_ENDPOINT",
+        "required_rule_hits": [],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X035",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "P2015_CONTRADICTS_SOURCE_FALSE_CANDIDATE",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15",
+        "evidence/p2-g2-cross-reporter-correlation-contract.md"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X036",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "NORMAL_WITH_CONFIRMED_INCIDENT_AND_HUMAN_COMMAND",
+      "expected_ticket_delta": 1,
+      "review_requirement": "REQUIRED_ASSOCIATION_CONFIRMATION",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Actual approved Incident created via P2-012 commands from real prior reports; authorized selection/reference binds new personal report to it.",
+      "independent_assertion": "Preserve separate personal Intake/Ticket; linking is explicit P2-012 human command, not P2-007 write. Text alone cannot establish active Incident match. Mechanism recommendation may reference known Incident without creating a new Candidate.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "REPORTER_1",
+          "text": "当前已知公共故障仍在发生，我这里也受影响。"
+        }
+      ],
+      "source_expected": {
+        "active_incident_match": true,
+        "promotion_recommendation": "LINK_TO_ACTIVE_INCIDENT",
+        "preserve_individual_intake": true,
+        "required_rule_hits": [
+          "INCX-007"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X036",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "P2015_CONFLATES_EXISTING_INCIDENT_WITH_NEW_CANDIDATE",
+      "counts_toward_normal_ingress_recognition": true,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15",
+        "evidence/p2-g2-cross-reporter-correlation-contract.md"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X037",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "PURE_NOTIFICATION_POLICY_WITH_REAL_EVENT_SETUP",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Ticket created through normal group intake in setup; existing authorized audience and actual Ticket Event.",
+      "independent_assertion": "Measure notification delta only: fixed group receipt policy and personal eligibility checked separately. Rules never send. Ticket delta excludes setup.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_GROUP",
+          "speaker": "SYSTEM",
+          "event": "TICKET_CREATED"
+        }
+      ],
+      "source_expected": {
+        "notification_purposes": [
+          "GROUP_RECEIPT",
+          "TICKET_ACKNOWLEDGEMENT"
+        ],
+        "preferred_private_channel": "WECOM_DIRECT",
+        "group_strong_mention_required": false,
+        "send_authorized_by_rules": false,
+        "required_rule_hits": [
+          "NOTIFY-001"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X037",
+        "expected_result_code": "ACKNOWLEDGEMENT",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ACK",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X038",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "PURE_NOTIFICATION_POLICY_WITH_REAL_EVENT_SETUP",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Ticket created through normal organic Direct intake in setup; actual Ticket Event.",
+      "independent_assertion": "Private acknowledgement intent, no group receipt. Outbox/Delivery admission uses real destination authorization.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "channel": "WECOM_DIRECT",
+          "speaker": "SYSTEM",
+          "event": "TICKET_CREATED"
+        }
+      ],
+      "source_expected": {
+        "notification_purposes": [
+          "TICKET_ACKNOWLEDGEMENT"
+        ],
+        "preferred_channel": "WECOM_DIRECT",
+        "group_receipt": false,
+        "required_rule_hits": [
+          "NOTIFY-002"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X038",
+        "expected_result_code": "ACKNOWLEDGEMENT",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ACK",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X039",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "HUMAN_COMMAND_AND_NOTIFICATION_POLICY",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Actual candidate review and human Incident confirmation; approved origin group and opted-in subscriptions; version3 reached through commands.",
+      "independent_assertion": "Versioned notifications to authorized audiences only; no inferred subscriptions or direct SDK invocation.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "SYSTEM",
+          "event": "INCIDENT_CONFIRMED",
+          "incident_version": 3
+        }
+      ],
+      "source_expected": {
+        "notification_audiences": [
+          "ORIGIN_GROUP",
+          "INCIDENT_SUBSCRIBERS"
+        ],
+        "versioned": true,
+        "execution_owner": "P2_004_COMMUNICATION_OUTBOX_DELIVERY",
+        "required_rule_hits": [
+          "NOTIFY-003"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X039",
+        "expected_result_code": "ACKNOWLEDGEMENT",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ACK",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X040",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "PURE_NOTIFICATION_REPLAY_WITH_REAL_EVENT_SETUP",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Existing Incident and actual update version4; replay identical authoritative event/idempotency key.",
+      "independent_assertion": "Second identical event creates zero additional notification intent/outbox/delivery; no actual send required.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "SYSTEM",
+          "event": "INCIDENT_UPDATED",
+          "incident_version": 4
+        },
+        {
+          "offset_ms": 10,
+          "speaker": "SYSTEM",
+          "event": "INCIDENT_UPDATED",
+          "incident_version": 4
+        }
+      ],
+      "source_expected": {
+        "same_idempotency_scope": true,
+        "duplicate_send_recommendation_count": 0,
+        "required_rule_hits": [
+          "NOTIFY-004"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X040",
+        "expected_result_code": "ACKNOWLEDGEMENT",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ACK",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X041",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "HUMAN_COMMAND",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Existing authorized Session or Ticket; real internal-note command.",
+      "independent_assertion": "External notification/Outbox/Delivery deltas zero.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "AGENT_A",
+          "event": "INTERNAL_NOTE_CREATED",
+          "text": "仅内部可见。"
+        }
+      ],
+      "source_expected": {
+        "external_notification": "NONE",
+        "outbox_count": 0,
+        "delivery_count": 0,
+        "required_rule_hits": [
+          "NOTIFY-005"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X041",
+        "expected_result_code": "ACKNOWLEDGEMENT",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ACK",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X042",
+      "status": "SOURCE_SPEC_ADJUDICATED_NOT_EXECUTED",
+      "execution_surface": "PURE_DELIVERY_FAULT_AND_RECONCILIATION_COMMAND",
+      "expected_ticket_delta": 0,
+      "review_requirement": "NOT_APPLICABLE",
+      "incident_candidate_expected": false,
+      "allowed_normal_result_codes": [],
+      "required_real_preconditions": "Legitimate synthetic Outbox/Delivery created via real commands; mock transport produces UNKNOWN once.",
+      "independent_assertion": "No blind automatic resend; reconciliation required and performed through existing authorized action. Explicitly SYNTHETIC_FAULT, never fabricated real Provider UNKNOWN.",
+      "source_turns": [
+        {
+          "offset_ms": 0,
+          "speaker": "SYSTEM",
+          "event": "DELIVERY_UNKNOWN"
+        }
+      ],
+      "source_expected": {
+        "automatic_retry": false,
+        "reconciliation_required": true,
+        "required_rule_hits": [
+          "NOTIFY-006"
+        ],
+        "must_not": [
+          "UPDATE_TICKET_STATUS",
+          "CREATE_INCIDENT",
+          "LINK_TICKET_TO_INCIDENT",
+          "SEND_WECOM_MESSAGE",
+          "CALL_WECOM_SDK",
+          "CALL_LLM_PROVIDER"
+        ]
+      },
+      "original_p2015": {
+        "source_fixture": "hospital-it-multichannel-evaluation-corpus.v1",
+        "source_case_id": "P2-007-X042",
+        "expected_result_code": "ACKNOWLEDGEMENT",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ACK",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "p2015_label_conflict": true,
+      "conflict_kind": "NOT_A_CLASSIFICATION_SURFACE",
+      "counts_toward_normal_ingress_recognition": false,
+      "counts_toward_denominator": true,
+      "spec_basis": [
+        "docs/51_rule_first_intake_manual_review.md:13-22",
+        "docs/57_p2_015_manual_review_and_safe_actions.md:5-15"
+      ],
+      "prohibited_actions": [
+        "NO_REAL_SEND",
+        "NO_EXPECTED_DERIVED_RULE_OUTPUT",
+        "NO_SEEDED_SUCCESS_DECISION_OR_CANDIDATE",
+        "NO_AUTO_INCIDENT_CONFIRM_OR_LINK",
+        "NO_INTERNAL_NOTE_EGRESS",
+        "NO_AI_OR_OCR"
+      ]
+    },
+    {
+      "case_id": "P2-007-X043",
+      "status": "SOURCE_ABSENT",
+      "execution_surface": null,
+      "expected_ticket_delta": null,
+      "review_requirement": null,
+      "incident_candidate_expected": null,
+      "original_p2015": null,
+      "counts_toward_denominator": false,
+      "reason": "The referenced source and P2015 fixture contain X001-X042 only. No invented source/expectation."
+    },
+    {
+      "case_id": "P2-007-X044",
+      "status": "SOURCE_ABSENT",
+      "execution_surface": null,
+      "expected_ticket_delta": null,
+      "review_requirement": null,
+      "incident_candidate_expected": null,
+      "original_p2015": null,
+      "counts_toward_denominator": false,
+      "reason": "The referenced source and P2015 fixture contain X001-X042 only. No invented source/expectation."
+    },
+    {
+      "case_id": "P2-007-X045",
+      "status": "SOURCE_ABSENT",
+      "execution_surface": null,
+      "expected_ticket_delta": null,
+      "review_requirement": null,
+      "incident_candidate_expected": null,
+      "original_p2015": null,
+      "counts_toward_denominator": false,
+      "reason": "The referenced source and P2015 fixture contain X001-X042 only. No invented source/expectation."
+    },
+    {
+      "case_id": "P2-007-X046",
+      "status": "SOURCE_ABSENT",
+      "execution_surface": null,
+      "expected_ticket_delta": null,
+      "review_requirement": null,
+      "incident_candidate_expected": null,
+      "original_p2015": null,
+      "counts_toward_denominator": false,
+      "reason": "The referenced source and P2015 fixture contain X001-X042 only. No invented source/expectation."
+    },
+    {
+      "case_id": "P2-007-X047",
+      "status": "SOURCE_ABSENT",
+      "execution_surface": null,
+      "expected_ticket_delta": null,
+      "review_requirement": null,
+      "incident_candidate_expected": null,
+      "original_p2015": null,
+      "counts_toward_denominator": false,
+      "reason": "The referenced source and P2015 fixture contain X001-X042 only. No invented source/expectation."
+    },
+    {
+      "case_id": "P2-007-X048",
+      "status": "SOURCE_ABSENT",
+      "execution_surface": null,
+      "expected_ticket_delta": null,
+      "review_requirement": null,
+      "incident_candidate_expected": null,
+      "original_p2015": null,
+      "counts_toward_denominator": false,
+      "reason": "The referenced source and P2015 fixture contain X001-X042 only. No invented source/expectation."
+    }
+  ]
+}

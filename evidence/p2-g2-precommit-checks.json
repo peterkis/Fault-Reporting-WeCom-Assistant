@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+  "directory": "tmp/p2-g2-ready-checks-1d71bc3f-0a70-4cc7-b50a-647b4f1562c8",
+  "ok": true,
+  "checks": [
+    {
+      "name": "g2",
+      "args": [
+        "scripts/validate-p2-g2-service-loop.mjs",
+        "--require-ready"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error": null,
+      "stdout_sha256": "76ecdb02d75c10d8cd308da81aff280e6dec94dc605c5715b35374a74d4ce3c3",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "v14",
+      "args": [
+        "scripts/validate-v1-4-architecture.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error": null,
+      "stdout_sha256": "ac1058ab8ed14699e2fa28e83e269153aa710adcaebb1dc701ffa9e6969c1981",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "arch006",
+      "args": [
+        "scripts/validate-arch-006-rule-first-service-loop.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error": null,
+      "stdout_sha256": "359a30988433ed102b00956b6e7a0a776c5cb045837783b3d22883e26b045a37",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "arch005",
+      "args": [
+        "scripts/validate-arch-005-time-contract.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error": null,
+      "stdout_sha256": "8a0bc90d5771e6f715c91ca4fda95d739d768a0bf495114493e478a2b009e0c1",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "p2016",
+      "args": [
+        "scripts/validate-p2-016-ticket-lifecycle-workbench.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error": null,
+      "stdout_sha256": "5cf7acc40ffd089577cd626f3d8636efcbcb2517303fbc0ffe48922561b89f09",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "p2012",
+      "args": [
+        "scripts/validate-p2-012-human-confirmed-incident.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error": null,
+      "stdout_sha256": "d4d8ec3ae4a2f3d2c8881d99af45cb440c6f6eb90eb0f5ad69ce13b1bd4af284",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "governance-tests",
+      "args": [
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "tests/v1-4-architecture-baseline.test.mjs",
+        "tests/arch-006-rule-first-service-loop.test.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error": null,
+      "stdout_sha256": "1e67272e98756020e859b790b398a4369cb1ca8a0c31a730e92ce0325171576b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

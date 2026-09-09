@@ -1,6 +1,7 @@
 import { createCommunicationSenderPort } from './p2-004-communication-sender-port.mjs';
 import { snapshotP2016, textHashP2016 } from './p2-016-domain-contracts.mjs';
 import { createP2016WeComSender } from './p2-016-wecom-sender.mjs';
+import { createP2016GroupClosureWebhookSender } from './p2-016-group-closure-webhook.mjs';
 
 const HASH = /^[a-f0-9]{64}$/u;
 const TEST_LABEL = '【p2-012测试】';
@@ -9,13 +10,14 @@ const hashes = (values, { required = false } = {}) => Array.isArray(values)
   && (!required || values.length >= 1) && values.length <= 20
   && new Set(values).size === values.length && values.every((value) => typeof value === 'string' && HASH.test(value));
 
-function tagged(message) {
+const validLabel = (label, source) => ['【p2-012测试】', '【p2-g2测试】'].includes(label) && ['clean', 'raw'].includes(source);
+function tagged(message, testLabel = TEST_LABEL, labelSource = 'clean') {
   return Array.isArray(message.content) && message.content.some((item) => item?.kind === 'text'
-    && typeof item.text?.clean === 'string' && item.text.clean.normalize('NFKC').toLowerCase().includes(TEST_LABEL));
+    && typeof item.text?.[labelSource] === 'string' && item.text[labelSource].normalize('NFKC').toLowerCase().includes(testLabel));
 }
 
-export function createP2012ApprovedGroupReporterRegistry({ pool, botId, groupHashes } = {}) {
-  if (!pool || typeof pool.query !== 'function' || typeof botId !== 'string' || !botId || !hashes(groupHashes, { required: true })) {
+export function createP2012ApprovedGroupReporterRegistry({ pool, botId, groupHashes, testLabel = TEST_LABEL, labelSource = 'clean' } = {}) {
+  if (!pool || typeof pool.query !== 'function' || typeof botId !== 'string' || !botId || !hashes(groupHashes, { required: true }) || !validLabel(testLabel, labelSource)) {
     throw new TypeError('P2_012_REPORTER_REGISTRY_CONFIGURATION_INVALID');
   }
   return Object.freeze({
@@ -40,17 +42,17 @@ export function createP2012ApprovedGroupReporterRegistry({ pool, botId, groupHas
       const result = await transaction.query(`SELECT 1 FROM channel.message_inbox
         WHERE provider='WECOM_AIBOT' AND bot_id=$1 AND chat_type='group' AND sender_user_id=$2
           AND encode(sha256(convert_to(chat_id,'UTF8')),'hex')=ANY($3::text[])
-          AND position('【p2-012测试】' in clean_text)>0
-        LIMIT 1`, [botId, sender_user_id, groupHashes]);
+          AND position($4 in ${labelSource === 'raw' ? 'raw_text' : 'clean_text'})>0
+        LIMIT 1`, [botId, sender_user_id, groupHashes, testLabel]);
       return result.rowCount === 1;
     },
   });
 }
 
 export function createP2012LiveReporterScope({ bot_id, person_hashes = [], group_hashes,
-  isApprovedGroupReporter, hasMatchingDirectLeg = async () => false, require_test_label = true } = {}) {
+  isApprovedGroupReporter, hasMatchingDirectLeg = async () => false, require_test_label = true, testLabel = TEST_LABEL, labelSource = 'clean' } = {}) {
   if (typeof bot_id !== 'string' || !bot_id || !hashes(person_hashes) || !hashes(group_hashes, { required: true })
-    || typeof isApprovedGroupReporter !== 'function' || typeof hasMatchingDirectLeg !== 'function' || require_test_label !== true) {
+    || typeof isApprovedGroupReporter !== 'function' || typeof hasMatchingDirectLeg !== 'function' || require_test_label !== true || !validLabel(testLabel, labelSource)) {
     throw new TypeError('P2_012_LIVE_REPORTER_SCOPE_INVALID');
   }
   const people = new Set(person_hashes);
@@ -64,7 +66,7 @@ export function createP2012LiveReporterScope({ bot_id, person_hashes = [], group
       let message;
       try { message = snapshotP2016(input); } catch { return false; }
       if (message?.provider !== 'WECOM_AIBOT' || message.bot_id !== bot_id
-        || typeof message.sender_user_id !== 'string' || !tagged(message)) return false;
+        || typeof message.sender_user_id !== 'string' || !tagged(message, testLabel, labelSource)) return false;
       if (message.chat_type === 'group') {
         return typeof message.chat_id === 'string' && groups.has(textHashP2016(message.chat_id));
       }
@@ -81,27 +83,29 @@ export function createP2012LiveReporterScope({ bot_id, person_hashes = [], group
   });
 }
 
-export function createP2012PersonDestinationAuthorizer({ pool, botId, personHashes = [], groupHashes } = {}) {
-  const registry = createP2012ApprovedGroupReporterRegistry({ pool, botId, groupHashes });
+export function createP2012PersonDestinationAuthorizer({ pool, botId, personHashes = [], groupHashes, testLabel = TEST_LABEL, labelSource = 'clean' } = {}) {
+  const registry = createP2012ApprovedGroupReporterRegistry({ pool, botId, groupHashes, testLabel, labelSource });
   const scope = createP2012LiveReporterScope({ bot_id: botId, person_hashes: personHashes, group_hashes: groupHashes,
-    isApprovedGroupReporter: registry.isApprovedGroupReporter, hasMatchingDirectLeg: registry.hasMatchingDirectLeg });
+    isApprovedGroupReporter: registry.isApprovedGroupReporter, hasMatchingDirectLeg: registry.hasMatchingDirectLeg, testLabel, labelSource });
   return async ({ transaction, bot_id, reporter_user_id }) => bot_id === botId
     && await scope.authorizesDestination({ target_type: 'PERSON', target_id: reporter_user_id, transaction });
 }
 
 export function createP2012DynamicWeComSender({ pool, gateway, allowedTargetHashes = [], approvedGroupHashes,
-  botId, enabled = false, cardEnabled = false, reporterAccess, origin, allowedHosts = [], allowLocalHttp = false } = {}) {
+  botId, enabled = false, cardEnabled = false, reporterAccess, origin, allowedHosts = [], allowLocalHttp = false, testLabel = TEST_LABEL, labelSource = 'clean',groupClosureWebhook=null } = {}) {
   if (!enabled) return createCommunicationSenderPort(async () => rejected('P2_012_SENDER_DISABLED'));
-  const registry = createP2012ApprovedGroupReporterRegistry({ pool, botId, groupHashes: approvedGroupHashes });
+  const closureSender=groupClosureWebhook?createP2016GroupClosureWebhookSender({pool,...groupClosureWebhook}):null;
+  const registry = createP2012ApprovedGroupReporterRegistry({ pool, botId, groupHashes: approvedGroupHashes, testLabel, labelSource });
   const scope = createP2012LiveReporterScope({ bot_id: botId, person_hashes: allowedTargetHashes.filter((value) => !approvedGroupHashes.includes(value)),
     group_hashes: approvedGroupHashes, isApprovedGroupReporter: registry.isApprovedGroupReporter,
-    hasMatchingDirectLeg: registry.hasMatchingDirectLeg, require_test_label: true });
+    hasMatchingDirectLeg: registry.hasMatchingDirectLeg, require_test_label: true, testLabel, labelSource });
   return createCommunicationSenderPort(async (request) => {
     if (request.provider !== 'WECOM_AIBOT' || request.channel_account_id !== botId
       || !await scope.authorizesDestination({ target_type: request.target_type, target_id: request.target_id })) {
       return rejected('P2_012_SEND_SCOPE_FORBIDDEN');
     }
     const targetHash = textHashP2016(request.target_id);
+    if(request.message.content?.transport==='WECOM_GROUP_WEBHOOK')return closureSender?closureSender.send(request):rejected('P2_016_WEBHOOK_ROUTE_MISSING');
     const sender = createP2016WeComSender({ gateway, enabled, cardEnabled, reporterAccess, origin, allowedHosts, allowLocalHttp,
       allowedTargetHashes: [...new Set([...allowedTargetHashes, targetHash])] });
     return sender.send(request);

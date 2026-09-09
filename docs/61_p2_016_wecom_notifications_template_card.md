@@ -6,6 +6,12 @@ P2-016 实现说明；不是真实发送批准。所有默认 Flag 为 false；P
 
 ## 通知事实与幂等
 
+2026-09-09 P2-G2 准备期业务修订覆盖下述旧默认策略：当前默认单聊进度推送仅 `ticket.accepted`（已有人员处理）和 `ticket.closed`（处理完成），其余既有节点通过服务端 `ticketNotificationAdditionalEvents` 显式配置，默认空数组；在 G2 manifest 中对应 `scope.ticket_notification_additional_events`，App 与 Worker 使用同一批准配置。模板保留授权进度链接，`ticket.resolved` 是待确认解决，默认不推送。重开后新关闭事件仍可通知，同一事件重放不重复投递。历史节点测试通过显式开启继续验证既有能力，历史现场结论不改写。
+
+群内受理回执和澄清仍为交互回复，允许全程在群内补充及人工 Reply。无符合条件的 Direct Leg 时，只有最终关闭生成群进度通知，固定使用 `WECOM_GROUP_WEBHOOK` 传输、原群和唯一原报修人 `mentioned_list`；有 Direct 资格时走单聊，不重复群推送。路由在关闭事件的通知事务中确定，之后不能根据新的 Direct Leg 静默改投或同时发两路；私聊资格失效仍在发送处失败关闭，需通过原有 Delivery 控制显式处理。这里复用的是 `evidence/g0-webhook-message-capability-matrix.md` 的文本 @ 能力，当前链路仅已完成本地 mock 验证。
+
+Webhook 私有映射由 `P2_G2_GROUP_WEBHOOK_ROUTES` 提供（每项 `group_id`、`url`）；批准 manifest 的 `scope.group_webhook_routes` 只保存 `group_hash` 与规范化 URL 的 `endpoint_hash`。Key 不进入持久消息或 manifest。Gateway 在固定模板和真实关闭事件绑定通过后，经过同一发送预算及紧邻 HTTP 的批准复核才可调用官方 HTTPS Webhook；重定向禁止，UNKNOWN 不盲重发。原始数值 `provider_errcode`、稳定内部码、outbox/attempt 与结果一起写入私有运行目录的 `webhook-receipts.jsonl`，追加、校验链及 fsync 后保留。群与 Webhook 的实际对应关系及客户端原生 @ 闭环仍须后续现场验证。
+
 版本 `p2-016-ticket-notification/1` 从已提交/同事务的 Ticket Event 决定固定通知：创建、接单、处理中、等待上报人/厂商、解决、关闭、重新打开、取消；既有关闭前提醒复用待确认状态模板。内部备注与 Assignment 不进入外部通知。
 
 同一 Ticket Event、通知类型、Reporter binding、destination 与模板版本只有一个 `ticket_notification_binding`，关联 P2-004 Message/Outbox/Delivery。创建事件锁下先检查既有 P1 outbox 所有权；已有 P1 通知不会再次投递。需要通知的 Ticket 事务同时提交全部事实，任何通知持久化失败撤销业务部分。发送失败则不撤销已提交 Ticket。

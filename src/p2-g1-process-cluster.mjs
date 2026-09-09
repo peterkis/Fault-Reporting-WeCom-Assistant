@@ -5,6 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { P2_G1_TEST_AUTH_MAX_TTL_MS } from './p2-g1-test-authentication.mjs';
 
 const ROLES = Object.freeze(['APP', 'WORKER', 'GATEWAY']);
+const ROLE_METRIC_FIELDS = Object.freeze(['rss_bytes','heap_used_bytes','heap_total_bytes','external_bytes','cpu_percent','event_loop_delay_p95_ms',
+  'active_resources','active_timers','active_sockets','active_file_handles','active_handles','uptime_seconds',
+  'pool_total','pool_idle','pool_waiting','pool_max']);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const HASH = /^[a-f0-9]{64}$/u;
 
@@ -29,11 +32,7 @@ function validConfiguration(value) {
 
 function stableRoleMetrics(role, value) {
   if (!value || value.role !== role) throw new Error('P2_G1_PROCESS_METRICS_INVALID');
-  const fields = [
-    'rss_bytes','heap_used_bytes','heap_total_bytes','external_bytes','cpu_percent','event_loop_delay_p95_ms',
-    'active_resources','active_timers','active_sockets','active_file_handles','active_handles','uptime_seconds',
-    'pool_total','pool_idle','pool_waiting','pool_max',
-  ];
+  const fields = ROLE_METRIC_FIELDS;
   if (fields.some((field) => !Number.isFinite(value[field]) || value[field] < 0)) throw new Error('P2_G1_PROCESS_METRICS_INVALID');
   return Object.freeze(Object.fromEntries(fields.map((field) => [field, Number(value[field])])));
 }
@@ -44,6 +43,10 @@ export function createP2G1ProcessCluster(configuration = {}) {
   }
   const origin = `http://127.0.0.1:${configuration.listenPort}`;
   if (configuration.roleEnvironment !== undefined && typeof configuration.roleEnvironment !== 'function') throw new TypeError('P2_G1_PROCESS_ENVIRONMENT_INVALID');
+  if (configuration.baseEnvironment !== undefined && (!configuration.baseEnvironment || Array.isArray(configuration.baseEnvironment)
+    || Object.values(configuration.baseEnvironment).some(v => typeof v !== 'string'))) throw new TypeError('P2_G1_PROCESS_ENVIRONMENT_INVALID');
+  const controlledTypes = configuration.controlledMessageTypes ?? [];
+  if (!Array.isArray(controlledTypes) || controlledTypes.length > 8 || controlledTypes.some(t => !/^g2-[a-z-]{1,48}$/u.test(t))) throw new TypeError('P2_G1_PROCESS_CONTROL_INVALID');
   const roleScript = fileURLToPath(configuration.roleScriptUrl ?? new URL('../scripts/p2-g1-process-role.mjs', import.meta.url));
   const children = new Map();
   const ready = new Map();
@@ -51,12 +54,14 @@ export function createP2G1ProcessCluster(configuration = {}) {
   const exits = new Map();
   const gatewayStatus = { enabled: configuration.gatewayEnabled, authenticated: false, reconnect_total: 0 };
   let workerReady = false;
+  let workerFailureCount = 0;
+  let workerLastError = null;
   let started = false;
   let stopping = false;
   let appCookies = null;
 
   function childEnvironment(role) {
-    const inherited = { ...process.env };
+    const inherited = { ...(configuration.baseEnvironment ?? process.env) };
     for (const name of [
       'WECOM_BOT_ID','WECOM_BOT_SECRET','WECOM_WS_URL','P2_G1_ALLOWED_TARGET_HASHES','P2_G1_TEST_PRINCIPAL_IDS',
       'P2_G1_LIVE_TEST_APPROVED','P2_G1_TEST_SCOPE_CONFIGURED','P2_G1_REAL_WECOM_SEND_APPROVED',
@@ -90,7 +95,7 @@ export function createP2G1ProcessCluster(configuration = {}) {
 
   function sendRole(role, message) {
     const child = children.get(role);
-    if (!child || child.connected !== true || child.exitCode !== null) throw new Error(`P2_G1_${role}_PROCESS_UNAVAILABLE`);
+    if (!child || child.connected !== true || child.exitCode !== null || child.signalCode !== null) throw new Error(`P2_G1_${role}_PROCESS_UNAVAILABLE`);
     child.send(message);
   }
 
@@ -100,9 +105,9 @@ export function createP2G1ProcessCluster(configuration = {}) {
     app.send({ type: 'peer-status', gateway_authenticated: gatewayStatus.authenticated, worker_ready: workerReady });
   }
 
-  function resolvePending(message) {
+  function resolvePending(role, message) {
     const request = pending.get(message.request_id);
-    if (!request) return false;
+    if (!request || request.role !== role) return false;
     pending.delete(message.request_id);
     clearTimeout(request.timer);
     if (message.ok === false) request.reject(new Error(message.error_code ?? 'P2_G1_PROCESS_REQUEST_FAILED'));
@@ -114,7 +119,7 @@ export function createP2G1ProcessCluster(configuration = {}) {
     if (!message || typeof message !== 'object') return;
     if (message.type === 'role-ready' && message.role === role) {
       if (role === 'APP') appCookies = message.cookies;
-      if (role === 'WORKER') workerReady = true;
+      if (role === 'WORKER') workerReady = message.worker_ready !== false;
       if (role === 'GATEWAY') gatewayStatus.authenticated = message.authenticated === true;
       ready.get(role)?.resolve(message);
       relayPeerStatus();
@@ -125,6 +130,12 @@ export function createP2G1ProcessCluster(configuration = {}) {
       gatewayStatus.reconnect_total = Number(message.status?.reconnect_total ?? 0);
       relayPeerStatus();
       return;
+    }
+    if (message.type === 'worker-status' && role === 'WORKER' && configuration.workerHealthEvents === true) {
+      workerReady = message.ready === true;
+      workerFailureCount = Math.max(workerFailureCount, Number(message.failure_count ?? 0));
+      workerLastError = message.last_error_code ?? null;
+      relayPeerStatus(); return;
     }
     if (message.type === 'provider-send-request' && role === 'WORKER') {
       if (!gatewayStatus.authenticated) {
@@ -139,7 +150,7 @@ export function createP2G1ProcessCluster(configuration = {}) {
       return;
     }
     if (['metrics-response','control-response'].includes(message.type)) {
-      resolvePending(message);
+      resolvePending(role, message);
       return;
     }
     if (message.type === 'role-failed') {
@@ -216,17 +227,20 @@ export function createP2G1ProcessCluster(configuration = {}) {
     const requestId = randomUUID();
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => { pending.delete(requestId); reject(new Error('P2_G1_PROCESS_REQUEST_TIMEOUT')); }, timeoutMs);
-      pending.set(requestId, { resolve, reject, timer });
+      pending.set(requestId, { role, resolve, reject, timer });
       try { sendRole(role, { type, request_id: requestId, ...extra }); }
       catch (error) { clearTimeout(timer); pending.delete(requestId); reject(error); }
     });
   }
 
-  async function metrics() {
+  async function metrics({allowStoppedWorker=false}={}) {
     if (!started || stopping) throw new Error('P2_G1_PROCESS_CLUSTER_STATE_INVALID');
+    if(typeof allowStoppedWorker!=='boolean'||allowStoppedWorker&&configuration.allowRoleRestart!==true)throw new Error('P2_G1_PROCESS_METRICS_INVALID');
+    const workerChild=children.get('WORKER');
+    const workerStopped=allowStoppedWorker&&(!workerChild||workerChild.exitCode!==null||workerChild.signalCode!==null);
     const [app, worker, gateway, domainResponse] = await Promise.all([
       request('APP', 'metrics-request'),
-      request('WORKER', 'metrics-request'),
+      workerStopped?null:request('WORKER', 'metrics-request'),
       request('GATEWAY', 'metrics-request'),
       fetch(`${origin}/health/metrics`, { signal: AbortSignal.timeout(5_000) }),
     ]);
@@ -234,10 +248,11 @@ export function createP2G1ProcessCluster(configuration = {}) {
     const domain = await domainResponse.json();
     const roles = {
       APP: stableRoleMetrics('APP', app),
-      WORKER: stableRoleMetrics('WORKER', worker),
+      WORKER: workerStopped?Object.fromEntries(ROLE_METRIC_FIELDS.map(k=>[k,null])):stableRoleMetrics('WORKER', worker),
       GATEWAY: stableRoleMetrics('GATEWAY', gateway),
     };
-    const result = { process_count: 3, gateway_authenticated: gatewayStatus.authenticated ? 1 : 0, gateway_reconnect_total: gatewayStatus.reconnect_total };
+    const result = { process_count: workerStopped?2:3, gateway_authenticated: gatewayStatus.authenticated ? 1 : 0, gateway_reconnect_total: gatewayStatus.reconnect_total };
+    if (configuration.workerHealthEvents === true) Object.assign(result, { rule_worker_ready: workerReady ? 1 : 0, rule_worker_failure_count: workerFailureCount });
     for (const [currentRole, prefix] of [['APP','app'],['WORKER','worker'],['GATEWAY','gateway']]) {
       for (const [field, value] of Object.entries(roles[currentRole])) result[`${prefix}_${field}`] = value;
     }
@@ -260,31 +275,46 @@ export function createP2G1ProcessCluster(configuration = {}) {
     return Object.freeze({
       started,
       stopping,
-      process_count: [...children.values()].filter((child) => child.exitCode === null).length,
+      process_count: [...children.values()].filter((child) => child.exitCode === null && child.signalCode === null).length,
       gateway_authenticated: gatewayStatus.authenticated,
       worker_ready: workerReady,
+      ...(configuration.workerHealthEvents === true ? { worker_failure_count: workerFailureCount, worker_last_error_code: workerLastError } : {}),
       origin,
     });
   }
 
   async function stopRole(role) {
     const child = children.get(role);
-    if (!child || child.exitCode !== null) return;
+    if (!child || child.exitCode !== null || child.signalCode !== null) return;
     try { if (child.connected) child.send({ type: 'stop' }); } catch { /* bounded forced cleanup remains below */ }
     const exited = await Promise.race([exits.get(role).then(() => true), delay(10_000).then(() => false)]);
-    if (!exited && child.exitCode === null) child.kill();
+    if (!exited && child.exitCode === null && child.signalCode === null) child.kill();
     await Promise.race([exits.get(role), delay(5_000)]);
   }
 
   async function stop() {
-    if (stopping) return Object.freeze({ stopped: true, process_count: [...children.values()].filter((child) => child.exitCode === null).length });
+    if (stopping) return Object.freeze({ stopped: true, process_count: [...children.values()].filter((child) => child.exitCode === null && child.signalCode === null).length });
     stopping = true;
     await stopRole('WORKER');
     await stopRole('APP');
     await stopRole('GATEWAY');
     for (const value of pending.values()) { clearTimeout(value.timer); value.reject(new Error('P2_G1_PROCESS_CLUSTER_STOPPED')); }
     pending.clear();
-    return Object.freeze({ stopped: true, process_count: [...children.values()].filter((child) => child.exitCode === null).length });
+    return Object.freeze({ stopped: true, process_count: [...children.values()].filter((child) => child.exitCode === null && child.signalCode === null).length });
+  }
+
+  async function controlledStopRole(role) {
+    if (!started || stopping || configuration.allowRoleRestart !== true || !ROLES.includes(role)) throw new Error('P2_G1_PROCESS_CONTROL_INVALID');
+    if (role === 'WORKER') workerReady = false;
+    if (role === 'GATEWAY') gatewayStatus.authenticated = false;
+    relayPeerStatus(); await stopRole(role);
+    const child = children.get(role);
+    if (child && child.exitCode === null && child.signalCode === null) throw new Error('P2_G1_PROCESS_STOP_INCOMPLETE');
+  }
+  async function controlledRestartRole(role) {
+    await controlledStopRole(role);
+    const readyPromise = waitForRole(role); spawnRole(role); await readyPromise;
+    return waitForCombinedReady();
   }
 
   return Object.freeze({
@@ -292,6 +322,12 @@ export function createP2G1ProcessCluster(configuration = {}) {
     stop,
     status,
     metrics,
+    controlledRequest(role, type, extra = {}) {
+      if (!ROLES.includes(role) || !controlledTypes.includes(type)) throw new Error('P2_G1_PROCESS_CONTROL_INVALID');
+      return request(role, type, extra);
+    },
+    controlledStopRole,
+    controlledRestartRole,
     disconnectRealtimePrincipal: (principalIndex = 0) => request('APP', 'sse-disconnect', { principal_index: principalIndex }),
     disconnectGateway: () => request('GATEWAY', 'gateway-disconnect'),
     reconnectGateway: () => request('GATEWAY', 'gateway-reconnect', {}, 65_000),

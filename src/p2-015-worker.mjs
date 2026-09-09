@@ -24,9 +24,10 @@ async function withTransaction(pool, operation) {
 
 export function createP2015Worker({ pool, orchestrator,
   beforeClaim = null,
+  afterBatch = null,
   pollMilliseconds = P2_015_LIMITS.recoveryPollMilliseconds } = {}) {
   if (!pool?.connect || !orchestrator?.preparePersistedIntake || !orchestrator?.processInTransaction
-    || (beforeClaim !== null && typeof beforeClaim !== 'function')
+    || (beforeClaim !== null && typeof beforeClaim !== 'function') || (afterBatch !== null && typeof afterBatch !== 'function')
     || !Number.isInteger(pollMilliseconds) || pollMilliseconds < 100 || pollMilliseconds > 60_000) {
     failP2015(P2_015_ERROR_CODES.inputInvalid);
   }
@@ -78,6 +79,12 @@ export function createP2015Worker({ pool, orchestrator,
         results.push({ service_intake_id: candidate.id, decision_id: result.decision.id,
           result_code: result.decision.result_code, replayed: result.decision.replayed });
       }
+    }
+    if(afterBatch)try{await afterBatch();}catch{
+      // The intake transactions above have already committed. This maintenance
+      // failure must never be represented as a rollback of accepted reports.
+      const error=new Error('P2_015_POST_BATCH_MAINTENANCE_FAILED');error.code=error.message;
+      error.accepted_batch_committed=true;error.processed=processed;throw error;
     }
     return freezePublic({ processed, claimed: processed, disabled: false, results,
       model_provider_calls: 0, batch_size: batchSize });

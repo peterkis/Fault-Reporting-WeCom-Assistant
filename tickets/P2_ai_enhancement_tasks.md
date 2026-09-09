@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 已完成。P2-012 已于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。当前仅 P2-G2 / ASSEMBLY 获独立准备授权，执行到 READY_FOR_LIVE_E2E 后停止；真实发送、云主机变更、现场写库、正式观察及 Gate 批准均须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 至 P2-014 中除已完成 P2-012 外的任务和 P2-G3 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED` 和各任务 `DONE` 均不是 Phase 2 `GO`。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 已完成。P2-012 已于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。P2-G2 / ASSEMBLY 已达 READY_FOR_LIVE_E2E，当前自动化954/954及两轴独立审查通过；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 至 P2-014 中除已完成 P2-012 外的任务和 P2-G3 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED` 和各任务 `DONE` 均不是 Phase 2 `GO`。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 

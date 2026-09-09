@@ -1,6 +1,11 @@
 # P2-G2 规则优先、人工兜底、AI-off 完整服务闭环准备
 
-- Status: IN_PROGRESS
+- Status: READY_FOR_LIVE_E2E
+- Preparation result: READY_FOR_LIVE_E2E（2026-09-09；954/954完整回归，SPEC/STANDARDS独立审查通过）。
+- Current repair evidence: `evidence/p2-g2-direct-session-repair.md`；识别修复见 `evidence/p2-g2-recognition-repair.md`，判定器复核见 `evidence/p2-g2-evaluator-hardening.md`。原领域与冻结金标RED保留，不代表已授权修复仍未完成。
+- 后续有限验证：`evidence/p2-g2-send-hardening.md`与`evidence/p2-g2-multi-turn-recognition-repair.md`。202条原来源按正常入站、机制和人类命令分账，37项场景已建立源码/测试映射；实际全仓与最终独立审查已绑定，见 `evidence/p2-g2-automated-readiness-report.json`。
+- READY_FOR_LIVE_E2E依据：`evidence/p2-g2-automated-readiness-report.json`；现场手册：`prompts/P2-G2_rule_first_service_loop_runbook.md`。真实现场不在此状态中判为PASS。
+- 后续补充授权：云服务器部署与个人运维/PostgreSQL选型；已执行停止态代码准备和宿主机原生PostgreSQL基础安装，不激活业务服务、不运行现场业务迁移或真实发送。记录：`evidence/p2-g2-cloud-deployment-record.json`；手册：`docs/runbooks/p2-g2-cloud-deployment-operations.md`。
 - Lane: ASSEMBLY
 - Authorization: `evidence/p2-g2-start-authorization.md`
 - Base: `8c332710dad9b6cf3f6796f3344c04d1c710ddf3`
@@ -27,7 +32,7 @@ Gate 契约分别定义运行清单、追加式证据和判定结果。每条证
 
 ## 数据库、安全与资源
 
-无数据库结构变更。001–032 与 P2-007 冻结；只允许本 run 隔离自动化库使用现有迁移。所有真实发送在 SDK/写库/监听前要求独立 P2-G2 许可，旧 P2-012 许可无效。
+无数据库结构变更。001–032与原202语料冻结；P2-007仅按 `evidence/p2-g2-gold-repair-authorization.md` 作经独立裁决的最小识别修复。只允许本 run 隔离自动化库使用现有迁移。所有真实发送在 SDK/写库/监听前要求独立 P2-G2 许可，旧 P2-012 许可无效。
 
 保留既有权限、幂等、保留期、CSRF、隐私和稳定错误。日志不含原始身份、目标、密钥、连接串、IP/主机识别、SQL/SDK 原始错误。App/Worker/Gateway 各一进程，池上限 4/2/1；观测/迁移另计，SSE32、batch20、窗口50turn/20000字符、列表100。
 
@@ -37,6 +42,6 @@ Gate 契约分别定义运行清单、追加式证据和判定结果。每条证
 
 ## 后续现场与关闭方式
 
-本轮不进行真实发送/部署/现场写库/正式观察。现场另需绑定候选、范围、两个坐席和 ADMIN、至少三个 Reporter、2C4G 整栈/HTTPS/隔离DB、预冻结故障与预算、有效启动时段。最终须自然 GC 下至少60分钟有效业务观察、客户端确认、完整回归、清理和负责人批准。
+本轮不进行真实发送/现场业务写库/正式观察；云端停止态部署已有独立授权与核验记录。现场另需绑定候选、范围、两个坐席和 ADMIN、至少三个 Reporter、2C4G 整栈/HTTPS/隔离DB、预冻结故障与预算、有效启动时段。最终须自然 GC 下至少60分钟有效业务观察、客户端确认、完整回归、清理和负责人批准。
 
 关闭为停止本 run 所属进程并保持持久开关 false；不执行 down migration、历史投递删除/重放或广域清理。域缺口保留证据并 BLOCKED；P2-008 保持 TODO_BLOCKED_BY_P2_G2。

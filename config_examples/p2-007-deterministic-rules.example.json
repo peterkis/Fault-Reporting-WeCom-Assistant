@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "rule_set_id": "CD3H_P2_007_DETERMINISTIC_RULES",
-  "rule_set_version": "0.1.0-draft",
+  "rule_set_version": "0.1.4-g2",
   "status": "DRAFT_FOR_P2_007_IMPLEMENTATION",
   "evaluation_order": "priority DESC, rule_id ASC",
   "execution_mode": "PURE_FUNCTION_NO_SIDE_EFFECT",
@@ -449,6 +449,277 @@
       ]
     },
     {
+      "rule_id": "SYM-001",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 801,
+      "description_zh": "已识别的软件服务持续转圈是可观察的阻塞现象；排除旋转设备、转发以及明确否定。",
+      "when": {
+        "all": [
+          {
+            "field": "selected_service_code",
+            "regex": "^(CLINICAL|PHARM|DIAG|ACCESS|FINANCE|ADMIN|PLATFORM)\\."
+          },
+          {
+            "field": "current_assertion_text",
+            "regex": "(?<!不再)(?<!没有)(?<!不是)(?<!不)一直转(?:圈|[。！？!?,，.]|$)"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "PERFORMANCE.HANG_SPINNING"
+        }
+      ],
+      "explanation_template_zh": "持续转圈说明软件操作未推进，不推断数据库、网络或其他根因。",
+      "safety": [
+        "仅输出带来源的症状；缺少其他字段不阻止后续最小受理。"
+      ]
+    },
+    {
+      "rule_id": "SYM-002",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 808,
+      "description_zh": "临床数据或已识别服务中的内容不可见，保留缺失现象。",
+      "when": {
+        "all": [
+          {
+            "any": [
+              {
+                "field": "selected_service_code",
+                "regex": "^(CLINICAL|PHARM|DIAG|ACCESS|FIN|ADMIN|PLATFORM)\\."
+              },
+              {
+                "field": "current_assertion_text",
+                "regex": "患者|病人|片子|影像|检验|处方|病历"
+              }
+            ]
+          },
+          {
+            "field": "current_assertion_text",
+            "regex": "(?<!不再)(?<!没有)(?:看不[到见了]|调不出)|待接诊.{0,8}没有(?:记录|名字)|打印.{0,8}没有诊断"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "DATA.MISSING"
+        }
+      ],
+      "explanation_template_zh": "临床数据或已识别服务中的内容不可见，保留缺失现象。",
+      "safety": [
+        "只识别可观察的技术现象；不确认根因、不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SYM-003",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 807,
+      "description_zh": "提交、保存、支付等操作明确失败，不因宾语或程度词分隔而漏识别。",
+      "when": {
+        "field": "current_assertion_text",
+        "regex": "(?<!没有)(?<!不是)(?<!不再)(?<!未)(?:提交|开检查|支付)[^。！？!?,，]{0,12}(?<!没有)(?<!不是)(?<!不再)(?<!未)失败"
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "TRANSACTION.SUBMIT_FAILED"
+        }
+      ],
+      "explanation_template_zh": "提交、保存、支付等操作明确失败，不因宾语或程度词分隔而漏识别。",
+      "safety": [
+        "只识别可观察的技术现象；不确认根因、不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SYM-004",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 806,
+      "description_zh": "明确报告打印额外空白页或不完整输出。",
+      "when": {
+        "field": "current_assertion_text",
+        "regex": "多打.{0,6}空白页|(?:纸上|打出来|打印).{0,12}(?:缺.{0,3}页|不完整|没有诊断)"
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "PRINT.INCOMPLETE"
+        }
+      ],
+      "explanation_template_zh": "明确报告打印额外空白页或不完整输出。",
+      "safety": [
+        "只识别可观察的技术现象；不确认根因、不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SYM-005",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 805,
+      "description_zh": "明确断网或电脑无网；相邻否定不会产生断网事实。",
+      "when": {
+        "field": "current_assertion_text",
+        "regex": "(?<!不是)(?<!没有)(?<!不再)(?<!不)断网|(?:电脑|网络)[^。！？!?,，]{0,8}没网|网络断了(?!时|的时候)"
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "NETWORK.DISCONNECTED"
+        }
+      ],
+      "explanation_template_zh": "明确断网或电脑无网；相邻否定不会产生断网事实。",
+      "safety": [
+        "只识别可观察的技术现象；不确认根因、不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SYM-006",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 804,
+      "description_zh": "软件入口从桌面消失属于可观察的入口缺失；安全工具操作咨询保持原路由。",
+      "when": {
+        "all": [
+          {
+            "field": "selected_service_code",
+            "regex": "^(CLINICAL|PHARM|DIAG|ACCESS|FIN|ADMIN|PLATFORM)\\."
+          },
+          {
+            "field": "current_assertion_text",
+            "regex": "(?:桌面|入口|叫号器).{0,12}找不到"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "UI.MISSING_ENTRY"
+        }
+      ],
+      "explanation_template_zh": "软件入口从桌面消失属于可观察的入口缺失；安全工具操作咨询保持原路由。",
+      "safety": [
+        "只识别可观察的技术现象；不确认根因、不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SYM-007",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 803,
+      "description_zh": "密码输入不正确为认证失败现象，不建议重置或猜测账号状态。",
+      "when": {
+        "field": "current_assertion_text",
+        "regex": "密码(?:输入)?(?:不正确|错误)"
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "AUTH.LOGIN_FAILED"
+        }
+      ],
+      "explanation_template_zh": "密码输入不正确为认证失败现象，不建议重置或猜测账号状态。",
+      "safety": [
+        "只识别可观察的技术现象；不确认根因、不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SYM-008",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 802,
+      "description_zh": "已识别软件服务等待很久或明显变慢，记录性能下降而非根因。",
+      "when": {
+        "all": [
+          {
+            "field": "selected_service_code",
+            "regex": "^(CLINICAL|PHARM|DIAG|ACCESS|FIN|ADMIN|PLATFORM)\\."
+          },
+          {
+            "field": "current_assertion_text",
+            "regex": "(?<!不用)(?<!无需)等很久|(?<!不是)(?<!不再)(?:太慢|很慢)"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "PERFORMANCE.SLOW"
+        }
+      ],
+      "explanation_template_zh": "已识别软件服务等待很久或明显变慢，记录性能下降而非根因。",
+      "safety": [
+        "只识别可观察的技术现象；不确认根因、不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SYM-009",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 801,
+      "description_zh": "身份字段不一致或与实际费用明显不符，记录数据完整性风险。",
+      "when": {
+        "field": "current_assertion_text",
+        "regex": "姓名[^。！？!?,，]{0,16}不一致|(?:收费|费用)记录不一致|费用[^。！？!?,，]{0,16}实际[^。！？!?,，]{0,12}两倍|(?:费用|收费金额)[^。！？!?,，]{0,10}重复"
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "DATA.MISMATCH"
+        }
+      ],
+      "explanation_template_zh": "身份字段不一致或与实际费用明显不符，记录数据完整性风险。",
+      "safety": [
+        "只识别可观察的技术现象；不确认根因、不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SYM-010",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 800,
+      "description_zh": "不能打印是明确的打印失败表述。",
+      "when": {
+        "field": "current_assertion_text",
+        "regex": "(?<!不是)(?<!不再)不能打印"
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "PRINT.NO_OUTPUT"
+        }
+      ],
+      "explanation_template_zh": "不能打印是明确的打印失败表述。",
+      "safety": [
+        "只识别可观察的技术现象；不确认根因、不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "SYM-011",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 801,
+      "description_zh": "保存操作明确失败，保留保存症状并排除相邻否定。",
+      "when": {
+        "field": "current_assertion_text",
+        "regex": "(?<!没有)(?<!不是)(?<!不再)(?<!未)保存[^。！？!?,，]{0,12}(?<!没有)(?<!不是)(?<!不再)(?<!未)失败"
+      },
+      "actions": [
+        {
+          "action": "ADD_SYMPTOM",
+          "symptom_code": "TRANSACTION.SAVE_FAILED"
+        }
+      ],
+      "explanation_template_zh": "保存失败是观察到的事务结果，不等同于最终提交失败或后台根因。",
+      "safety": [
+        "仅记录带来源的失败现象。"
+      ]
+    },
+    {
       "rule_id": "INT-001",
       "version": "1.0.0",
       "group": "INTENT",
@@ -456,6 +727,10 @@
       "description_zh": "明确不可用、报错、卡顿、失败等识别为故障上报。",
       "when": {
         "any": [
+          {
+            "field": "current_assertion_text",
+            "regex": "(?:打印机|电脑|计算机|系统|网络|终端|工作站|his|lis|pacs|emr|ris)(?:好像|似乎|现在|目前|又|也)?有问题(?![吗么])"
+          },
           {
             "field": "symptom_facts.count",
             "gte": 1
@@ -544,7 +819,7 @@
     },
     {
       "rule_id": "INT-004",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "group": "INTENT",
       "priority": 797,
       "description_zh": "“怎么/如何/为什么/请问”且无明确故障时识别为使用或政策问题。",
@@ -558,7 +833,9 @@
               "为什么",
               "请问",
               "能不能",
-              "可以吗"
+              "可以吗",
+              "应该找谁",
+              "怎么设置"
             ]
           },
           {
@@ -608,7 +885,7 @@
     },
     {
       "rule_id": "INT-006",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "group": "INTENT",
       "priority": 795,
       "description_zh": "无人响应、电话打不通、反复催办等识别为升级/投诉信号。",
@@ -620,12 +897,18 @@
           "有人没有",
           "催一下",
           "投诉",
-          "怎么还没来"
+          "怎么还没来",
+          "没人处理",
+          "电话一直打不通"
         ]
       },
       "actions": [
         {
           "action": "ADD_INTENT_SIGNAL",
+          "value": "ESCALATION_COMPLAINT"
+        },
+        {
+          "action": "SET_DOMAIN_INTENT_IF_NO_NEW_FAULT",
           "value": "ESCALATION_COMPLAINT"
         }
       ],
@@ -636,7 +919,7 @@
     },
     {
       "rule_id": "INT-007",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "group": "INTENT",
       "priority": 794,
       "description_zh": "“好了/可以了/不用看了/恢复了”识别为恢复更新。",
@@ -648,7 +931,9 @@
           "恢复了",
           "不用看了",
           "不用处理了",
-          "后面恢复正常了"
+          "后面恢复正常了",
+          "恢复正常了",
+          "现在没有问题了"
         ]
       },
       "actions": [
@@ -668,13 +953,13 @@
     },
     {
       "rule_id": "INT-008",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "group": "INTENT",
       "priority": 793,
       "description_zh": "纯感谢或寒暄识别为确认/闲聊。",
       "when": {
         "field": "normalized_text",
-        "full_match_regex": "^(谢谢|感谢|多谢|辛苦了|好的|收到|在吗|有人吗)[!！?？。.]*$"
+        "full_match_regex": "^(?:(?:谢谢|感谢|多谢|辛苦了|好的|收到)(?:老师|大家)?[ ,，!！?？。.]*?)+$"
       },
       "actions": [
         {
@@ -2261,6 +2546,135 @@
       "explanation_template_zh": "评估集只保留语言模式与结构，不复制原始数据。",
       "safety": [
         "仅输出分析事实/候选/澄清问题，不产生业务副作用。"
+      ]
+    },
+    {
+      "rule_id": "INT-009",
+      "version": "1.0.0",
+      "group": "INTENT",
+      "priority": 792,
+      "description_zh": "用药频次等业务配置申请进入政策审核，不自动修改临床配置。",
+      "when": {
+        "all": [
+          {
+            "field": "normalized_text",
+            "regex": "(?:增加|新增|调整|修改).{0,12}(?:用药频次|药品单位|用药规则)"
+          },
+          {
+            "field": "symptom_facts.count",
+            "eq": 0
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "SET_DOMAIN_INTENT",
+          "value": "CONFIG_CHANGE_REQUEST"
+        }
+      ],
+      "explanation_template_zh": "业务配置变更须由有权人员审核。",
+      "safety": [
+        "不提供用药建议，不执行配置变更。"
+      ]
+    },
+    {
+      "rule_id": "RISK-007",
+      "version": "1.0.0",
+      "group": "CLINICAL_RISK",
+      "priority": 494,
+      "description_zh": "明确的临床政策冲突、全门诊阻塞、敏感身份/秘密或诊断输出缺失需要人工复核。",
+      "when": {
+        "all": [
+          {
+            "field": "symptom_facts.count",
+            "gte": 1
+          },
+          {
+            "any": [
+              {
+                "field": "normalized_text",
+                "regex": "用药规则.{0,16}冲突|整个门诊.{0,16}所有|打印.{0,12}没有诊断|就诊号|病案号|我的密码"
+              },
+              {
+                "field": "symptom_codes",
+                "contains": "RESOURCE.MASTER_DATA_MISSING"
+              }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "action": "REQUIRE_HUMAN_REVIEW",
+          "reason": "CLINICAL_POLICY_OR_SENSITIVE_DATA_REVIEW"
+        }
+      ],
+      "explanation_template_zh": "最小受理保留，人工核实业务规则、数据完整性与敏感内容；不推断全院故障。",
+      "safety": [
+        "不自动修正临床数据或政策，不扩大故障范围。"
+      ]
+    },
+    {
+      "rule_id": "SYM-012",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 800,
+      "description_zh": "医保审核或审方明确无法操作，记录不可用现象，不推断审核政策或拒绝原因。",
+      "when": {
+        "field": "current_assertion_text",
+        "regex": "(?:医保审核|审方)(?:不了|不起|失败)(?!时|的时候)|诊间预约(?:也|还是)?不行(?!时|的时候)"
+      },
+      "actions": [{ "action": "ADD_SYMPTOM", "symptom_code": "AVAILABILITY.UNAVAILABLE" }],
+      "explanation_template_zh": "用户明确报告审核操作不可用，先最小受理。",
+      "safety": ["否定、假设和材料/政策咨询不作为技术故障；不确认根因。"]
+    },
+    {
+      "rule_id": "SYM-013",
+      "version": "1.0.0",
+      "group": "SYMPTOM",
+      "priority": 799,
+      "description_zh": "软件工作台或界面明确显示全空白，仅记录可观察现象。",
+      "when": { "field": "current_assertion_text", "regex": "(?:工作台|系统界面|软件界面)(?:显示|页面)?(?:全|一片|是)?空白" },
+      "actions": [{ "action": "ADD_SYMPTOM", "symptom_code": "UI.BLANK" }],
+      "explanation_template_zh": "软件界面空白故障先最小受理，服务身份未知时不从其他人继承。",
+      "safety": ["不识别纸张或物理桌面空白；否定、假设不建立故障事实。"]
+    },
+    {
+      "rule_id": "RISK-009",
+      "version": "1.0.0",
+      "group": "CLINICAL_RISK",
+      "priority": 492,
+      "description_zh": "用户明确自述图片中有患者检查结果，进入人工安全复核；不读取或推断图片。",
+      "when": {
+        "field": "current_assertion_text",
+        "regex": "(?:图(?:里|中)|图片).{0,12}(?:患者|病人).{0,8}(?:检查|检验|化验|影像)(?:结果|报告)"
+      },
+      "actions": [
+        { "action": "ADD_PRIVACY_FLAG", "value": "PATIENT_OR_PERSONAL_DATA" },
+        { "action": "REQUIRE_HUMAN_REVIEW", "reason": "REPORTED_PATIENT_RESULT_MEDIA" }
+      ],
+      "explanation_template_zh": "仅依据文本自述保留受理并人工复核患者资料，不执行OCR或诊疗解释。",
+      "safety": ["不声称识别图片内容或患者身份，不外发原始资料。"]
+    },
+    {
+      "rule_id": "RISK-008",
+      "version": "1.0.0",
+      "group": "CLINICAL_RISK",
+      "priority": 493,
+      "description_zh": "恢复指向不明确时保留已明确的故障，交由人工核对对象。",
+      "when": {
+        "field": "current_recovery_ambiguous",
+        "eq": true
+      },
+      "actions": [
+        {
+          "action": "REQUIRE_HUMAN_REVIEW",
+          "reason": "RECOVERY_TARGET_UNCLEAR"
+        }
+      ],
+      "explanation_template_zh": "另一设备恢复不能消除当前故障；对象不明不推断全局恢复。",
+      "safety": [
+        "保留当前故障并人工核对，不关闭Ticket。"
       ]
     }
   ]

@@ -54,6 +54,25 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
       return publicP2016({items,next_cursor:q.rows.length>n?cursorP2016({v:1,state,at:last.updated_at,id:last.id}):null});
     },
     async detail(input) {const {ticket,principal:p}=await authorizedTicket(input);return ticketViewP2016(ticket,p);},
+    async reporterContact(input) {
+      const {ticket}=await authorizedTicket(input);
+      const q=await pool.query(`SELECT j.profile_resolution_status,j.profile_snapshot FROM intake.channel_leg l
+        JOIN intake.contact_journey j ON j.id=l.journey_id
+        JOIN intake.service_intake i ON i.id=j.origin_intake_id
+        WHERE l.source_intake_id=$1::uuid AND l.reporter_identity_hash=j.reporter_identity_hash
+          AND j.retention_until_epoch_ms>platform.physical_epoch_ms()
+          AND i.retention_until_epoch_ms>platform.physical_epoch_ms() LIMIT 1`,[ticket.intake_id]);
+      const row=q.rows[0],snapshot=row?.profile_snapshot;
+      const string=value=>typeof value==='string'&&value.length>0&&value.length<=256?value:null;
+      if(row?.profile_resolution_status!=='RESOLVED'||snapshot?.source!=='WECOM_DIRECTORY'||!string(snapshot.version))
+        return publicP2016({status:'DEFERRED',contact:null,departments:[],fetched_at:null});
+      return publicP2016({status:'RESOLVED',contact:snapshot.contact?{
+        name:string(snapshot.contact.name),userid:string(snapshot.contact.userid),
+        mobile:string(snapshot.contact.mobile),telephone:string(snapshot.contact.telephone)}:null,
+        departments:(Array.isArray(snapshot.memberships)?snapshot.memberships:[]).slice(0,20).map(m=>({
+          name:string(m?.name),department_ref:string(m?.department_ref),role:['PRIMARY','SECONDARY','ROTATION'].includes(m?.role)?m.role:'UNKNOWN'})),
+        fetched_at:string(snapshot.fetched_at)});
+    },
     async events({cursor=null,limit,...input}) {
       const {ticket}=await authorizedTicket(input),n=limitP2016(limit,200);
       const page=cursor?decodeCursorP2016(cursor,['ticket','ordinal']):null;

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createP2016BrowserFixture } from './helpers/p2-016-browser-fixture.mjs';
-import { launchSystemBrowser } from './helpers/p2-006-browser-harness.mjs';
+import { launchSystemBrowser,closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
 for(const [width,height] of [[1440,900],[390,844]])test('P2-016 native browser '+width+'x'+height+' command, review, refresh, SSE, polling, XSS and auth-expiry',{timeout:90000},async()=>{
-  const fixture=await createP2016BrowserFixture();let browser;
+  const fixture=await createP2016BrowserFixture();let browser,primaryError=null;
   const click=label=>browser.evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent===${JSON.stringify(label)}).click()`);
   try{
     browser=await launchSystemBrowser({url:fixture.origin+'/workbench/lifecycle',width,height});
@@ -33,11 +33,11 @@ for(const [width,height] of [[1440,900],[390,844]])test('P2-016 native browser '
     assert.equal(fixture.calls.filter(c=>c.resolution_code).length,1);
     fixture.expire();await click('刷新');await browser.waitFor("document.querySelector('#lc-connection').textContent==='认证已失效'");
     assert.equal(await browser.evaluate("document.querySelector('#lc-detail').children.length"),0);
-  }finally{await browser?.close();await fixture.close();}
+  }catch(error){primaryError=error;}finally{await closeBrowserTestResources([()=>browser?.close(),()=>fixture.close()],primaryError);}
 });
 
 test('confirmation survives realtime refetch and rejects a stale version instead of overwriting the form',{timeout:60000},async()=>{
-  const fixture=await createP2016BrowserFixture();let browser;
+  const fixture=await createP2016BrowserFixture();let browser,primaryError=null;
   try{
     browser=await launchSystemBrowser({url:fixture.origin+'/workbench/lifecycle',width:1440,height:900});
     await browser.waitFor("document.querySelector('[data-resource-id]')!==null");await browser.evaluate("document.querySelector('[data-resource-id]').click()");
@@ -50,5 +50,5 @@ test('confirmation survives realtime refetch and rejects a stale version instead
     await browser.waitFor("document.querySelector('#lc-status').textContent.includes('状态已变化')");
     await browser.waitFor("document.querySelector('.detail-header .badge')?.textContent==='处理中'");
     assert.equal(fixture.calls.length,0);
-  }finally{await browser?.close();await fixture.close();}
+  }catch(error){primaryError=error;}finally{await closeBrowserTestResources([()=>browser?.close(),()=>fixture.close()],primaryError);}
 });

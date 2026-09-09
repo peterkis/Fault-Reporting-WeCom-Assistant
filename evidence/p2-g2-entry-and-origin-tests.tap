@@ -1,0 +1,315 @@
+TAP version 13
+# Subtest: P2-G2 D12-030 active Direct session survives the P1 90-second fragment window
+ok 1 - P2-G2 D12-030 active Direct session survives the P1 90-second fragment window
+  ---
+  duration_ms: 1988.3843
+  type: 'test'
+  ...
+# Subtest: P2-G2 D12-031 explicit additional fault creates its own Journey and Ticket
+ok 2 - P2-G2 D12-031 explicit additional fault creates its own Journey and Ticket
+  ---
+  duration_ms: 1840.6018
+  type: 'test'
+  ...
+# Subtest: P2-G2 existing explicit new-report boundary remains available
+ok 3 - P2-G2 existing explicit new-report boundary remains available
+  ---
+  duration_ms: 1803.0153
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes another Reporter
+ok 4 - P2-G2 Direct Session never resumes another Reporter
+  ---
+  duration_ms: 1923.4496
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes another Bot
+ok 5 - P2-G2 Direct Session never resumes another Bot
+  ---
+  duration_ms: 1832.7536
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes ended Session within fragment window
+ok 6 - P2-G2 Direct Session never resumes ended Session within fragment window
+  ---
+  duration_ms: 1782.2041
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes ended Journey within fragment window
+ok 7 - P2-G2 Direct Session never resumes ended Journey within fragment window
+  ---
+  duration_ms: 1778.1612
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes closed Direct Leg within fragment window
+ok 8 - P2-G2 Direct Session never resumes closed Direct Leg within fragment window
+  ---
+  duration_ms: 1855.4933
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes mismatched persisted Reporter binding
+ok 9 - P2-G2 Direct Session never resumes mismatched persisted Reporter binding
+  ---
+  duration_ms: 2039.8108
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes exact configured idle limit
+ok 10 - P2-G2 Direct Session never resumes exact configured idle limit
+  ---
+  duration_ms: 1860.5684
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes expired Intake retention
+ok 11 - P2-G2 Direct Session never resumes expired Intake retention
+  ---
+  duration_ms: 1769.0841
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes expired Journey retention
+ok 12 - P2-G2 Direct Session never resumes expired Journey retention
+  ---
+  duration_ms: 2296.2984
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外补充：打印机也打印不了
+ok 13 - P2-G2 additive supplement or negation does not create another report: 另外补充：打印机也打印不了
+  ---
+  duration_ms: 2316.1203
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外门诊系统也没有问题
+ok 14 - P2-G2 additive supplement or negation does not create another report: 另外门诊系统也没有问题
+  ---
+  duration_ms: 2192.5817
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外说明：打印机也打印不了
+ok 15 - P2-G2 additive supplement or negation does not create another report: 另外说明：打印机也打印不了
+  ---
+  duration_ms: 2740.2726
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外并不是门诊系统也登录不了。
+ok 16 - P2-G2 additive supplement or negation does not create another report: 另外并不是门诊系统也登录不了。
+  ---
+  duration_ms: 2494.7798
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外，如果门诊系统也登录不了怎么办？
+ok 17 - P2-G2 additive supplement or negation does not create another report: 另外，如果门诊系统也登录不了怎么办？
+  ---
+  duration_ms: 2208.3127
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外 补充打印机也打印不了
+ok 18 - P2-G2 additive supplement or negation does not create another report: 另外 补充打印机也打印不了
+  ---
+  duration_ms: 2327.0019
+  type: 'test'
+  ...
+# Subtest: P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=false; millisecond idle boundary=false
+ok 19 - P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=false; millisecond idle boundary=false
+  ---
+  duration_ms: 2582.2906
+  type: 'test'
+  ...
+# Subtest: P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=true; millisecond idle boundary=false
+ok 20 - P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=true; millisecond idle boundary=false
+  ---
+  duration_ms: 2371.8794
+  type: 'test'
+  ...
+# Subtest: P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=false; millisecond idle boundary=true
+ok 21 - P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=false; millisecond idle boundary=true
+  ---
+  duration_ms: 2323.7053
+  type: 'test'
+  ...
+# Subtest: G2 explicit reference comes from actual group Outbox and binds a fresh Direct Leg without a second Ticket
+ok 22 - G2 explicit reference comes from actual group Outbox and binds a fresh Direct Leg without a second Ticket
+  ---
+  duration_ms: 2764.4787
+  type: 'test'
+  ...
+# {"journeys":[{"status":"TICKET_LINKED","linked":true}],"ref_match":[{"matched":true}],"decisions":[{"reason_code":"EXPLICIT_TECHNICAL_FAULT"},{"reason_code":"EXPLICIT_TECHNICAL_FAULT"}]}
+# Subtest: G2 explicit reference refuses WRONG_REPORTER while preserving the current fault
+ok 23 - G2 explicit reference refuses WRONG_REPORTER while preserving the current fault
+  ---
+  duration_ms: 2208.9083
+  type: 'test'
+  ...
+# {"boundary":"WRONG_REPORTER","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses WRONG_BOT while preserving the current fault
+ok 24 - G2 explicit reference refuses WRONG_BOT while preserving the current fault
+  ---
+  duration_ms: 2241.0987
+  type: 'test'
+  ...
+# {"boundary":"WRONG_BOT","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses REVOKED while preserving the current fault
+ok 25 - G2 explicit reference refuses REVOKED while preserving the current fault
+  ---
+  duration_ms: 2274.3039
+  type: 'test'
+  ...
+# {"boundary":"REVOKED","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses EXPIRED while preserving the current fault
+ok 26 - G2 explicit reference refuses EXPIRED while preserving the current fault
+  ---
+  duration_ms: 2285.0165
+  type: 'test'
+  ...
+# {"boundary":"EXPIRED","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses TAIL while preserving the current fault
+ok 27 - G2 explicit reference refuses TAIL while preserving the current fault
+  ---
+  duration_ms: 2293.8238
+  type: 'test'
+  ...
+# {"boundary":"TAIL","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses UUID while preserving the current fault
+ok 28 - G2 explicit reference refuses UUID while preserving the current fault
+  ---
+  duration_ms: 2247.7183
+  type: 'test'
+  ...
+# {"boundary":"UUID","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses DIFFERENT_CASE while preserving the current fault
+ok 29 - G2 explicit reference refuses DIFFERENT_CASE while preserving the current fault
+  ---
+  duration_ms: 2249.0861
+  type: 'test'
+  ...
+# {"boundary":"DIFFERENT_CASE","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 originally guided Ticket replays its actual Direct source through ordinary and explicit continuation
+ok 30 - G2 originally guided Ticket replays its actual Direct source through ordinary and explicit continuation
+  ---
+  duration_ms: 2478.7702
+  type: 'test'
+  ...
+# Subtest: G2 latest exact Direct recovery blocks older group evidence from a new Incident candidate
+ok 31 - G2 latest exact Direct recovery blocks older group evidence from a new Incident candidate
+  ---
+  duration_ms: 2574.6327
+  type: 'test'
+  ...
+# Subtest: original explicit continuation source X005
+ok 32 - original explicit continuation source X005
+  ---
+  duration_ms: 2173.9201
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X005","surface":"ORIGINAL_TEXT_WITH_ACTUAL_PUBLIC_REF_APPLICATION_COMMAND","synthetic_provider_fields_added":0,"source_literal_ref_replaced":true,"original_text_preserved_in_command":true,"bot_prompt_adjudication":"ACTUAL_GROUP_OUTBOX_RECEIPT_NO_UNAUTHORIZED_PRIVATE_PROMPT","same_intake_adjudication":null,"origin_entry_mode":"GROUP_MENTION_INLINE","distinct_reporters":1,"provider_calls":0}
+# Subtest: original explicit continuation source X008
+ok 33 - original explicit continuation source X008
+  ---
+  duration_ms: 2289.7757
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X008","surface":"ORIGINAL_TEXT_WITH_ACTUAL_PUBLIC_REF_APPLICATION_COMMAND","synthetic_provider_fields_added":0,"source_literal_ref_replaced":true,"original_text_preserved_in_command":true,"bot_prompt_adjudication":null,"same_intake_adjudication":null,"origin_entry_mode":"GROUP_MENTION_INLINE","distinct_reporters":1,"provider_calls":0}
+# Subtest: original explicit continuation source X012
+ok 34 - original explicit continuation source X012
+  ---
+  duration_ms: 2246.1746
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X012","surface":"ORIGINAL_TEXT_WITH_ACTUAL_PUBLIC_REF_APPLICATION_COMMAND","synthetic_provider_fields_added":0,"source_literal_ref_replaced":true,"original_text_preserved_in_command":true,"bot_prompt_adjudication":null,"same_intake_adjudication":"TWO_IMMUTABLE_CHANNEL_INTAKES_ONE_JOURNEY_ONE_TICKET","origin_entry_mode":"GROUP_MENTION_INLINE","distinct_reporters":1,"provider_calls":0}
+# Subtest: original explicit continuation source X030
+ok 35 - original explicit continuation source X030
+  ---
+  duration_ms: 2382.0752
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X030","surface":"ORIGINAL_TEXT_WITH_ACTUAL_PUBLIC_REF_APPLICATION_COMMAND","synthetic_provider_fields_added":0,"source_literal_ref_replaced":true,"original_text_preserved_in_command":true,"bot_prompt_adjudication":null,"same_intake_adjudication":null,"origin_entry_mode":"GROUP_MENTION_INLINE","distinct_reporters":2,"provider_calls":0}
+# Subtest: original X020 preserves earliest Provider report time across actual explicit Direct continuation
+ok 36 - original X020 preserves earliest Provider report time across actual explicit Direct continuation
+  ---
+  duration_ms: 2458.2489
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X020","reported_at":"2026-09-02 09:00:00","provider_time_from_actual_frame":true,"continuation_source_adjudication":"SOURCE_PLACEHOLDER_REPLACED_WITH_ACTUAL_PUBLIC_REF_TEXT","journeys":1,"tickets":1,"legs":2,"provider_calls":0}
+# Subtest: original X021 keeps Provider, receipt, durable Inbox, Intake and Ticket timestamps separate
+ok 37 - original X021 keeps Provider, receipt, durable Inbox, Intake and Ticket timestamps separate
+  ---
+  duration_ms: 2167.358
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X021","surface":"NORMAL_SDK_CREATE_TIME_AND_REAL_PERSISTENCE","timestamp_columns":["provider_sent_at","gateway_received_at","inbox_committed_at","intake_created_at","ticket_created_at","provider_create_epoch_ms","received_epoch_ms"],"provider_time_distinct":true,"provider_calls":0}
+# Subtest: original directory source X016
+ok 38 - original directory source X016
+  ---
+  duration_ms: 2196.8574
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X016","surface":"ORIGINAL_FRAME_WITH_TRUSTED_DIRECTORY_SIMULATOR","counts":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":0,"outboxes":0,"deliveries":0,"incidents":0},"observations":[{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"5b2124bf5c86e1674d63dd244b492bb9337f0999a48e01a2853cda2fe0414abb","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"ff7c062da52e67fdbb1c755f060f047fbaaddab70b030a6d0eff33c6271b16cb","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-005","source_kind":"DETERMINISTIC_RULE","source_hash":"ff7c062da52e67fdbb1c755f060f047fbaaddab70b030a6d0eff33c6271b16cb","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-170","source_kind":"REPORTER_EXPLICIT","source_hash":"ff7c062da52e67fdbb1c755f060f047fbaaddab70b030a6d0eff33c6271b16cb","status":"ACTIVE"}]}],"hospital_directory_connected":false,"source_semantic_adjudication":"HOSPITAL_DIRECTORY_IS_FUTURE_SOURCE_CURRENT_PORT_WECOM_SIMULATOR","provider_calls":0}
+# Subtest: original directory source X017
+ok 39 - original directory source X017
+  ---
+  duration_ms: 2133.2456
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X017","surface":"ORIGINAL_FRAME_WITH_TRUSTED_DIRECTORY_SIMULATOR","counts":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":0,"outboxes":0,"deliveries":0,"incidents":0},"observations":[{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"b0a0eff25731027f4d65a01c6e89a9a537230173b0cc0f9229f7fd01120f8c6f","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-017","source_kind":"REPORTER_EXPLICIT","source_hash":"26bdfc1690ba8e3fc65f8bbd5a86c89a466e8a6a875e1bcfb04db3e1cf4de564","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"26bdfc1690ba8e3fc65f8bbd5a86c89a466e8a6a875e1bcfb04db3e1cf4de564","status":"ACTIVE"}]}],"hospital_directory_connected":false,"source_semantic_adjudication":null,"provider_calls":0}
+# Subtest: original directory source X018
+ok 40 - original directory source X018
+  ---
+  duration_ms: 2257.3717
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X018","surface":"ORIGINAL_FRAME_WITH_TRUSTED_DIRECTORY_SIMULATOR","counts":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":0,"outboxes":0,"deliveries":0,"incidents":0},"observations":[{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"c07befab01e3eb20c5101773235a3d5f9186bf5ff903263f22381d679f12aaa2","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"93256fe86eaf7beda7b5fd757852d842d86b6f20104f7657be7172e09d7628b4","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"93256fe86eaf7beda7b5fd757852d842d86b6f20104f7657be7172e09d7628b4","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-111","source_kind":"REPORTER_EXPLICIT","source_hash":"93256fe86eaf7beda7b5fd757852d842d86b6f20104f7657be7172e09d7628b4","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"93256fe86eaf7beda7b5fd757852d842d86b6f20104f7657be7172e09d7628b4","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-123","source_kind":"REPORTER_EXPLICIT","source_hash":"93256fe86eaf7beda7b5fd757852d842d86b6f20104f7657be7172e09d7628b4","status":"ACTIVE"}]}],"hospital_directory_connected":false,"source_semantic_adjudication":null,"provider_calls":0}
+# Subtest: original directory source X019
+ok 41 - original directory source X019
+  ---
+  duration_ms: 2163.3213
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X019","surface":"ORIGINAL_FRAME_WITH_TRUSTED_DIRECTORY_SIMULATOR","counts":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":0,"outboxes":0,"deliveries":0,"incidents":0},"observations":[{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"b3adc8739c74e3332df1b2bab7ab82378db1547a599fc4389ceb40bcb4a1b798","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"d775b290ae72eb1a2657b12f6324ec7a4955582a09908ca1c19703114e8e2c7f","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"d775b290ae72eb1a2657b12f6324ec7a4955582a09908ca1c19703114e8e2c7f","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-188","source_kind":"REPORTER_EXPLICIT","source_hash":"d775b290ae72eb1a2657b12f6324ec7a4955582a09908ca1c19703114e8e2c7f","status":"ACTIVE"}]}],"hospital_directory_connected":false,"source_semantic_adjudication":null,"provider_calls":0}
+# Subtest: original temporal/session source X007
+ok 42 - original temporal/session source X007
+  ---
+  duration_ms: 2183.2897
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X007","surface":"ORIGINAL_FRAME_WITH_OWNED_RECEIVE_CLOCK","source_offsets_honored":true,"host_or_database_clock_modified":false,"counts":{"inbox":2,"intakes":2,"tickets":2,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0},"observations":[{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"f6c0bc2c985f2bbbe1bcd48974bd5ab22aa252e3466a4331007a2ebf498530ea","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"17382b8b971c13582b167f6fe731a7c9121ec6c96a515dec786e1b65cf6e1b4e","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"17382b8b971c13582b167f6fe731a7c9121ec6c96a515dec786e1b65cf6e1b4e","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"17382b8b971c13582b167f6fe731a7c9121ec6c96a515dec786e1b65cf6e1b4e","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-056","source_kind":"REPORTER_EXPLICIT","source_hash":"17382b8b971c13582b167f6fe731a7c9121ec6c96a515dec786e1b65cf6e1b4e","status":"ACTIVE"}]},{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"5e5b68460fc00eec2a7703fc2acb097b7dce4b94fdb885079d2e7edec7b22878","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-177","source_kind":"REPORTER_EXPLICIT","source_hash":"792d5c45b96055cafd3102ad2f164d6add83b3693f046027b2cf05e0a7318ef6","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-145","source_kind":"REPORTER_EXPLICIT","source_hash":"792d5c45b96055cafd3102ad2f164d6add83b3693f046027b2cf05e0a7318ef6","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"792d5c45b96055cafd3102ad2f164d6add83b3693f046027b2cf05e0a7318ef6","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-011","source_kind":"REPORTER_EXPLICIT","source_hash":"792d5c45b96055cafd3102ad2f164d6add83b3693f046027b2cf05e0a7318ef6","status":"ACTIVE"}]}],"provider_calls":0}
+# Subtest: original temporal/session source X009
+ok 43 - original temporal/session source X009
+  ---
+  duration_ms: 2281.7872
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X009","surface":"ORIGINAL_FRAME_WITH_OWNED_RECEIVE_CLOCK","source_offsets_honored":true,"host_or_database_clock_modified":false,"counts":{"inbox":3,"intakes":1,"tickets":1,"reviews":0,"messages":0,"outboxes":0,"deliveries":0,"incidents":0},"observations":[{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"68acc3a3caefb96f3a3e2d622de5a046b3d7f697edf6efa8f9a7e29d0d359c17","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"87705cc50e0c3c3551eb3df8d07437b81a7a4783d78e8f127d7ce99c94b85e99","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-002","source_kind":"REPORTER_EXPLICIT","source_hash":"87705cc50e0c3c3551eb3df8d07437b81a7a4783d78e8f127d7ce99c94b85e99","status":"ACTIVE"}]},{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"782c862f0d63a7d337b675bca43b61d46c6bc970f50e41716cbb4a76505ee8b8","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-002","source_kind":"REPORTER_EXPLICIT","source_hash":"b5fb31e09634f653ec39b01d1a82b070c0b0fc73e087b53f7e7a7358b6c2970a","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"b5fb31e09634f653ec39b01d1a82b070c0b0fc73e087b53f7e7a7358b6c2970a","status":"ACTIVE"}]},{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"393fa52ff694a7343baefd05ed8cecaa4c6b82ffa7a92b388ba8b6ef1ef612c0","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"96d223f6b4f745150140ee428dc18b445fc747a56462b8844c33b9ff8be84a60","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-002","source_kind":"REPORTER_EXPLICIT","source_hash":"96d223f6b4f745150140ee428dc18b445fc747a56462b8844c33b9ff8be84a60","status":"ACTIVE"}]}],"provider_calls":0}
+# Subtest: original temporal/session source X011
+ok 44 - original temporal/session source X011
+  ---
+  duration_ms: 2361.7613
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X011","surface":"ORIGINAL_FRAME_WITH_OWNED_RECEIVE_CLOCK","source_offsets_honored":true,"host_or_database_clock_modified":false,"counts":{"inbox":2,"intakes":1,"tickets":1,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0},"observations":[{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"6d489ebbbbed13949b1b253075e543a875cbe6a170f9d99323f3c9f8fe63d9fe","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"d56daf875db5e2bda59c762c42b64edc5130180d0140561642f8111c711e101d","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"d56daf875db5e2bda59c762c42b64edc5130180d0140561642f8111c711e101d","status":"ACTIVE"}]},{"result_code":"MANUAL_REVIEW_REQUIRED","reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"70d95a750aa5d5c3150eb8b8c553a62cb1f40a16171c2e58039bb92e385d6edf","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"833b0b1177cecdb8b131cb6c06328994a1ca2c004d0c923c84f0e24749464966","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-101","source_kind":"REPORTER_EXPLICIT","source_hash":"833b0b1177cecdb8b131cb6c06328994a1ca2c004d0c923c84f0e24749464966","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"833b0b1177cecdb8b131cb6c06328994a1ca2c004d0c923c84f0e24749464966","status":"ACTIVE"}]}],"provider_calls":0}
+# Subtest: original temporal/session source X013
+ok 45 - original temporal/session source X013
+  ---
+  duration_ms: 2363.8311
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X013","surface":"ORIGINAL_FRAME_WITH_OWNED_RECEIVE_CLOCK","source_offsets_honored":true,"host_or_database_clock_modified":false,"counts":{"inbox":2,"intakes":2,"tickets":2,"reviews":0,"messages":0,"outboxes":0,"deliveries":0,"incidents":0},"observations":[{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"c75d218d10c8ba82e8af6959d09d36219748f5d00af40c8efe5d9a7bc29d16dd","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-123","source_kind":"REPORTER_EXPLICIT","source_hash":"8c5ba33cd33c2fc6a0da25bdd4800bb9e07bd50c7ed5a3cbb149f42118486e42","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"8c5ba33cd33c2fc6a0da25bdd4800bb9e07bd50c7ed5a3cbb149f42118486e42","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"8c5ba33cd33c2fc6a0da25bdd4800bb9e07bd50c7ed5a3cbb149f42118486e42","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-007","source_kind":"REPORTER_EXPLICIT","source_hash":"8c5ba33cd33c2fc6a0da25bdd4800bb9e07bd50c7ed5a3cbb149f42118486e42","status":"ACTIVE"}]},{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"20465c864f0cf43f574576b8e20bd7f3f18ebc90df02e5d57bbd0ad1c8c05be8","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"446fc846560efe16e901121faa0a9999b138af4050d540abec5101eb0160e7b7","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"446fc846560efe16e901121faa0a9999b138af4050d540abec5101eb0160e7b7","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-240","source_kind":"REPORTER_EXPLICIT","source_hash":"446fc846560efe16e901121faa0a9999b138af4050d540abec5101eb0160e7b7","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"446fc846560efe16e901121faa0a9999b138af4050d540abec5101eb0160e7b7","status":"ACTIVE"}]}],"provider_calls":0}
+# Subtest: group active session continues after 120 seconds but respects Reporter, explicit new fault and idle boundaries
+ok 46 - group active session continues after 120 seconds but respects Reporter, explicit new fault and idle boundaries
+  ---
+  duration_ms: 2491.3974
+  type: 'test'
+  ...
+# Subtest: G2 business profile one completes group clarification, admission and human conversation without any Direct Leg
+ok 47 - G2 business profile one completes group clarification, admission and human conversation without any Direct Leg
+  ---
+  duration_ms: 2510.4339
+  type: 'test'
+  ...
+# {"business_profile":"GROUP_ONLY","surface":"NORMAL_GROUP_FRAMES_AUTHENTICATED_HTTP_REAL_OUTBOX","ticket_count":1,"human_group_replies":2,"direct_legs":0,"private_deliveries":0,"grants":0,"provider_calls":0}
+1..47
+# tests 47
+# suites 0
+# pass 47
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 105944.5161
