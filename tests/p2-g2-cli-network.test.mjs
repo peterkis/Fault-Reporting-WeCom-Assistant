@@ -38,7 +38,7 @@ test('documented CLI help and no-argument live invocation never start a listener
 test('missing fresh live approval is rejected before any database connection even with a bound manifest and private configuration',()=>{
   const directory=mkdtempSync(path.join(G2_ROOT,'tmp','p2-g2-cli-boundary-'));
   try{
-    const {manifest,env}=configurationFixture();manifest.mode='live';manifest.reporter_origin='https://synthetic-g2.invalid';
+    const {manifest,env}=configurationFixture('live');manifest.reporter_origin='https://synthetic-g2.invalid';
     manifest.candidate_fingerprint=g2CandidateInventory().fingerprint;env.WECOM_WS_URL='wss://openws.work.weixin.qq.com';
     const manifestFile=path.join(directory,'manifest.json'),envFile=path.join(directory,'private.env');
     writeFileSync(manifestFile,JSON.stringify(manifest));

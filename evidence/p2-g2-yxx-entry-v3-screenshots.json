@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 21:54:59",
+  "event_epoch_ms": "1789134899690",
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "regression_run": {
+    "path": "evidence/p2-g2-yxx-entry-v3-regression-run.json",
+    "sha256": "5e72e0fde11b2b489a68e37b6ba7d559040b9c8f85a26e2b228116e8ea25cc94"
+  },
+  "scope": "The existing browser tests write fixed output paths. Current outputs were archived byte-for-byte after the full run, then the pre-repair historical paths were restored from the pinned Git blobs.",
+  "files": [
+    {
+      "run_output_path": "evidence/p2-g2-yxx-entry-screenshots/390.png",
+      "current_archive_path": "evidence/p2-g2-yxx-entry-v3-screenshots/390.png",
+      "current_sha256": "db4c93c4c9ab3fc7eeffdc8865fa9e627094a542803bac42234f5e5963ae683b",
+      "historical_source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "historical_sha256": "a3a092d1b70a5a39efe97d82043e46227f071a4ffd307988ccdf911a457b1b2e",
+      "historical_worktree_bytes_restored": true
+    },
+    {
+      "run_output_path": "evidence/p2-g2-yxx-entry-screenshots/1440.png",
+      "current_archive_path": "evidence/p2-g2-yxx-entry-v3-screenshots/1440.png",
+      "current_sha256": "be2da81cfb538af4cd420004273da01ffacb07d62489132c97e8db620be77fe0",
+      "historical_source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "historical_sha256": "2a4e6d80e733aeb796b531880c6936bd765d3543e56350695938d2b0f9bba1cf",
+      "historical_worktree_bytes_restored": true
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 21:32:13",
+  "event_epoch_ms": "1789133533424",
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "candidate_files": 609,
+  "status": "FROZEN_FOR_FULL_REGRESSION",
+  "previous_full_run": "evidence/p2-g2-yxx-entry-v3-second-regression-run.json",
+  "runtime_unchanged_since_topology_repeats": true,
+  "proof": "evidence/p2-g2-yxx-entry-v3-reload-provenance.json",
+  "source_review_axes": [
+    "SPEC_SOURCE_PASS",
+    "STANDARDS_SOURCE_PASS"
+  ],
+  "no_live_actions": true
+}

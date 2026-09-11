@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { G2_SCENARIO_IDS } from './p2-g2-gate-evaluator.mjs';
 import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
 import { g2Hash, failG2, validateG2Manifest } from './p2-g2-validation-config.mjs';
+import {requirePreparedYxxCandidate} from './p2-g2-yixiaoxiu-readiness.mjs';
+import {assertG2EvidenceTime} from './p2-g2-evidence-time.mjs';
 
 export const G2_ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const G2_CANDIDATE_ROOTS = Object.freeze(['src', 'scripts', 'web', 'contracts', 'config', 'config_examples', 'database/migrations', 'tests']);
@@ -80,6 +82,7 @@ export function requirePreparedG2Candidate(fingerprint, root=G2_ROOT){
     return raw.toString('utf8');
   };
   let r;try{r=JSON.parse(readFileSync(path.join(root,'evidence/p2-g2-automated-readiness-report.json'),'utf8'));}catch{reject();}
+  try{assertG2EvidenceTime(r);}catch{reject();}
   const f=r?.full_regression,keys=['tests','pass','fail','skipped','cancelled','todo'];
   if(r?.preparation_status!=='READY_FOR_LIVE_E2E'||r.candidate_fingerprint!==fingerprint||r.gold_reference_count!==202
     ||r.scenario_matrix_complete!==true||r.independent_review_passed!==true||!f
@@ -124,6 +127,9 @@ export function requirePreparedG2Candidate(fingerprint, root=G2_ROOT){
       ||source.source_execution_sha256!==r.source_evidence.source_execution.sha256
       ||source.scenario_matrix_sha256!==r.source_evidence.scenario_matrix.sha256
       ||!Array.isArray(source.findings)||source.findings.some(f=>f.resolved!==true))reject();
+  }
+  if(inventory.files.some(file=>file.path==='src/p2-g2-yixiaoxiu-authorizer.mjs')){
+    requirePreparedYxxCandidate({fingerprint,root,fullRegression:f,passedNames,verifiedRun:run,verifiedRunReference:r.source_evidence.regression_run});
   }
   return r;
 }

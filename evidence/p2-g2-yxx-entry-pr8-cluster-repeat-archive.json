@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 21:19:51",
+  "event_epoch_ms": "1789132791711",
+  "candidate_fingerprint": "3dd2cc4348d02c880c6ca4a02b6cda4344bbcfb318348e2b387057ce7a28c50a",
+  "source_record": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix.json",
+  "scope": "Byte-identical publication of each original topology repeat TAP. The source fingerprint was checked before the loop and rechecked at full-regression freeze; no intervening candidate edits.",
+  "files": [
+    {
+      "iteration": 1,
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-01.tap",
+      "sha256": "bbc258fbdc19e6cb048b35970f8680bb81165d3c96946065b89845b4e7cc368a",
+      "exit_code": 0
+    },
+    {
+      "iteration": 2,
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-02.tap",
+      "sha256": "fdc5a0b4889283af99a8094aa6ad23c9f009b49ad9079663ad9511921bf33f13",
+      "exit_code": 0
+    },
+    {
+      "iteration": 3,
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-03.tap",
+      "sha256": "2aa660287cc487994cb3caaf1e515ed8fac24dce7a9a7194d008ecd635bfffcd",
+      "exit_code": 0
+    },
+    {
+      "iteration": 4,
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-04.tap",
+      "sha256": "7bc48915620914680ca811e52e6deba947c2b4f506474242b83153ef15ae5d0a",
+      "exit_code": 0
+    },
+    {
+      "iteration": 5,
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-05.tap",
+      "sha256": "c3ea531fc2ca0ab98eb74e6567471f87b74d0f4da50c8c08d44f0ae0a163c910",
+      "exit_code": 0
+    },
+    {
+      "iteration": 6,
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-06.tap",
+      "sha256": "13862216e2663f527033ef6c6a6d0e3991b161d8e5cd02b15aad808a7eddea7e",
+      "exit_code": 0
+    },
+    {
+      "iteration": 7,
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-07.tap",
+      "sha256": "87280ece490548d09e9cf7adeccf257f478802fac29ecdcb3ffcbb148d53c50f",
+      "exit_code": 0
+    },
+    {
+      "iteration": 8,
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-08.tap",
+      "sha256": "ec4bd141ab0b885e52e1be8dbc67e38720b4b8dbdd68f2b18d2b405ca743cb1a",
+      "exit_code": 0
+    },
+    {
+      "iteration": 9,
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-09.tap",
+      "sha256": "f3b6f4e8f5ce8e0f30ca01745547b7fca2b8d6d22fc109fe913bec78b268a217",
+      "exit_code": 0
+    },
+    {
+      "iteration": 10,
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-10.tap",
+      "sha256": "f543416ba305b5af96a445b98e559712e66f5543745bf49fc419e69d433b93b4",
+      "exit_code": 0
+    }
+  ]
+}

@@ -1,0 +1,912 @@
+{
+  "schema_version": 1,
+  "work_item": "P2-G2-YXX-TICKET-ENTRY",
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "historical_pr7": "evidence/p2-g2-pr7-regression-history.json",
+  "records": [
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-green-final.tap",
+      "sha256": "cfe53d547345b33bcc71e70931f2fff81539b1f18d8adb7c3c9ed9a4e51c2f5c",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-green-reviewed.tap",
+      "sha256": "cc694b0266ad390f6c87f70af13210231ea79436a1beef47f0719fca8160b6fd",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-green.tap",
+      "sha256": "bc43985475985bafa2f33197d18a1215860fb3c13f5f5dd2b58613f5e032de0e",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-ready-red.tap",
+      "sha256": "f1db3765bf92d10a113864ed923d14c1a5a6731c4a1e0b103979239925a5ef69",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-snapshot-red.tap",
+      "sha256": "ba8bdc03760ee7985be47eea4a606ce32759bcbc900dfe01cd49ed29df4573d9",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-browser-first-run.tap",
+      "sha256": "4769d9ca89ecdf95a2ecdc6919fe8b95677eb29cdfc69007c406d9cb67923099",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-card-red.tap",
+      "sha256": "7ac235aa12193549a89c37aab5711105748720c30056f47c5dfb714b3e8bb875",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-contract-red.tap",
+      "sha256": "5ae8c44b062e0e4ee6f060bc9d9609d68189c14ccae99e76ec28e02a9aca2e98",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-evidence-and-continuation-red.tap",
+      "sha256": "e26476a8aaca62dbbf56a48c39b9c84c7e3ba2dc3890e101be10524b9be5a54d",
+      "counts": {
+        "tests": 6,
+        "pass": 0,
+        "fail": 6,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-final-contract-browser.tap",
+      "sha256": "8a034bf89ac46bbbe09aea8b993f44025e5d0ed126d975c3177d3a36a19d79c4",
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-final-review-green.tap",
+      "sha256": "33869d196eac1397f869c9da118f3d19a623b781221bc9c14121193f2b152547",
+      "counts": {
+        "tests": 36,
+        "pass": 36,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-final-review-red.tap",
+      "sha256": "463272952bee21738dd5243324af96311ab2032913a73b0058d2a7c6b2388270",
+      "counts": {
+        "tests": 3,
+        "pass": 0,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-initial-document-red.tap",
+      "sha256": "196cefd71b03dd0c6d767a5287cc97bef5eff6af189c383a54a143c498230a47",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-intermediate-regression.tap",
+      "sha256": "31df68fa00ae92cf71584b393a49b4c1826c0942a4261815364771299bad73da",
+      "counts": {
+        "tests": 1022,
+        "pass": 1022,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "SUPERSEDED_FULL_REGRESSION"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-member-first-run.tap",
+      "sha256": "c448fd76b58b9cb2e685a2c3aee48a8e9892258209c829d227acc9bd3e2c520e",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-member-matrix-first-run.tap",
+      "sha256": "7e76888cf60ba83d1e5116a762257387fe9740c014af402a8f7d7883303291e3",
+      "counts": {
+        "tests": 18,
+        "pass": 13,
+        "fail": 5,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-member-red.tap",
+      "sha256": "bd29e7a0790e8349929e105ca0b9cbc0eab2c2d940d13bd1db1eb12ccd99acd6",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-navigation-first-run.tap",
+      "sha256": "2231f4e7e8e5fa090ce493df60a02655f718ae87625f0d945f9e33bac80b6078",
+      "counts": {
+        "tests": 5,
+        "pass": 4,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-navigation-green.tap",
+      "sha256": "74b4fcbe995ba2ba8858eb571d5d262ee18842469fa5e0e61302c7d69a38f319",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-navigation-repeat.tap",
+      "sha256": "12dfddef18c70e34b99095dd43a1cd1baccc7eb7c48439b45e12a1bd5e13148c",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-oauth-red.tap",
+      "sha256": "903f830f1f0d50d871d199c545542060b529ca3f234185e7cef16b2304d1e55f",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-boundaries-first.tap",
+      "sha256": "1d7e8077dc455aa541c8dca2b70f7c804bd8504a62070572bc02c6b895737981",
+      "counts": {
+        "tests": 20,
+        "pass": 14,
+        "fail": 6,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-boundaries-green.tap",
+      "sha256": "16861deac6284bcdfa9e3677a3b0865e4de6bd0dc466199035662f9a3869a62c",
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-diagnostic.tap",
+      "sha256": "d9e8531c8f927506d2d3fa08ceecbc3f51eebcb8307488e1d4e555e44f40f3ca",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-01.tap",
+      "sha256": "bbc258fbdc19e6cb048b35970f8680bb81165d3c96946065b89845b4e7cc368a",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-02.tap",
+      "sha256": "fdc5a0b4889283af99a8094aa6ad23c9f009b49ad9079663ad9511921bf33f13",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-03.tap",
+      "sha256": "2aa660287cc487994cb3caaf1e515ed8fac24dce7a9a7194d008ecd635bfffcd",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-04.tap",
+      "sha256": "7bc48915620914680ca811e52e6deba947c2b4f506474242b83153ef15ae5d0a",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-05.tap",
+      "sha256": "c3ea531fc2ca0ab98eb74e6567471f87b74d0f4da50c8c08d44f0ae0a163c910",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-06.tap",
+      "sha256": "13862216e2663f527033ef6c6a6d0e3991b161d8e5cd02b15aad808a7eddea7e",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-07.tap",
+      "sha256": "87280ece490548d09e9cf7adeccf257f478802fac29ecdcb3ffcbb148d53c50f",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-08.tap",
+      "sha256": "ec4bd141ab0b885e52e1be8dbc67e38720b4b8dbdd68f2b18d2b405ca743cb1a",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-09.tap",
+      "sha256": "f3b6f4e8f5ce8e0f30ca01745547b7fca2b8d6d22fc109fe913bec78b268a217",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-cluster-postfix-10.tap",
+      "sha256": "f543416ba305b5af96a445b98e559712e66f5543745bf49fc419e69d433b93b4",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-evidence-targeted.tap",
+      "sha256": "397312260a15165f3b86ea73ad6cc018f06c3df7fe37e72337893bd6ebc72189",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-evidence-time-green.tap",
+      "sha256": "b423be5470284313a42bd2875ee42215b827d1711161d3ab889b0181c2017139",
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-evidence-time-red.tap",
+      "sha256": "65a230d883ddbf409c6b6883e5e90ce26a0b2692caff42446a695fc954749bbc",
+      "counts": {
+        "tests": 9,
+        "pass": 7,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-grant-expiry-green.tap",
+      "sha256": "5ea067d9106e43cff150583dd409db5bf45f1d832baac0f139327cfabd677a20",
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-grant-expiry-red.tap",
+      "sha256": "cebf71786636032d44052deba1674657fe1bbb2b64053d1724d4f52f556ef6a2",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-lock-order-confirmed-red.tap",
+      "sha256": "4f6137b9ec6aba32a6038b8d0a1a7c8b30b0a91e84aa9e65ae1baf91ca49ba51",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-lock-order-green.tap",
+      "sha256": "740b0c596c8a3653137ba5fe17b178c485efc53a8c6ed836ae4c46907139a91b",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-lock-order-red.tap",
+      "sha256": "293a1000569f245455f3378510c71daa3645b6fc1fcf33171f8ba56f8eeb863e",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "DIAGNOSTIC_OR_FIXTURE_FAILURE_NOT_PRODUCT_RED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-malformed-green.tap",
+      "sha256": "3a41b029912ade07c2ee33c08a99c8a1eadf5bc51e3a086ce4bbeab4a2df0d25",
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-malformed-red.tap",
+      "sha256": "23dbb80af7fb30a6dceaec6af396ee5ad91900b891624b03692e4ab3bdb99969",
+      "counts": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-parent-time-green.tap",
+      "sha256": "82ed1136f7c1c9ae0de1d47d93a8b9f16486865c17b2a11271cb7626abc5f4e4",
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-parent-time-red.tap",
+      "sha256": "d2662147f85a20d1dc69e2277d4b1915189f6a66c56bd9d32ba6b8e7a1f6041b",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-projection-targeted.tap",
+      "sha256": "66debee0ddcebcd8194256d785ad20eb9e57d93e4ef0bfa767eb4518c241dd2e",
+      "counts": {
+        "tests": 54,
+        "pass": 54,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-reload-document-green.tap",
+      "sha256": "a5423e3c877b30d7288521c3b0fd1fb51b32132f551d444282e96a342a49b964",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-reload-document-red.tap",
+      "sha256": "96cec0152ee43d0405160bb8e95e518200de8972aac88e4aba7c8660827f284d",
+      "counts": {
+        "tests": 5,
+        "pass": 3,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-reload-document-repeat.tap",
+      "sha256": "45e400180e81af057568c9e4b1f447a4776659e6679443fcbd06c87582b6f840",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-resolver-lock-red.tap",
+      "sha256": "8517cbd2107ed78d14961bc6a0870e3ab8c33bce09477a688b6875bb0d40e195",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "DIAGNOSTIC_OR_FIXTURE_FAILURE_NOT_PRODUCT_RED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-profile-first-run.tap",
+      "sha256": "014223be54674555a7cb34b470f00f02fd246d2807400e657fa6c881a34b7d75",
+      "counts": {
+        "tests": 4,
+        "pass": 3,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-provider-red.tap",
+      "sha256": "25cf9413bfda3529f6e2a9e84f0d92654d196b192e700cc7a8cc000b11963787",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 0,
+        "cancelled": 1,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-regression.tap",
+      "sha256": "f32499fe45bfe07360119820dfdf379d1350691253c75775b7cfeaa67ada16b7",
+      "counts": {
+        "tests": 1028,
+        "pass": 1028,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "SUPERSEDED_FULL_REGRESSION"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-review-replacement-red.tap",
+      "sha256": "14861bee6bf24b0ce7511929e0baa27b6520e70b3e9a2953ff830478d52d7eb7",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-targeted-regression.tap",
+      "sha256": "0a51ee2568854cda97eb6c327a3e2e2d2be3bcd5edab1ec3917e36eec8f981c1",
+      "counts": {
+        "tests": 51,
+        "pass": 51,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-first-regression.tap",
+      "sha256": "89907deb2599d081d7b334321c37cf115ffeabcbabea4aa284a53e1a9359a64f",
+      "counts": {
+        "tests": 1029,
+        "pass": 1028,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "SUPERSEDED_FULL_REGRESSION"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-regression.tap",
+      "sha256": "9578687048350ba16c0c81c3a14898970d8acf3ff814c67be414e8881cdaa9ff",
+      "counts": {
+        "tests": 1029,
+        "pass": 1029,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "SUPERSEDED_FULL_REGRESSION"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v3-first-regression.tap",
+      "sha256": "a2aa442cc4bd08ae01b292bc59a8c4fa6671814cb2608bffa9fee1312474fb4f",
+      "counts": {
+        "tests": 1043,
+        "pass": 1042,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "SUPERSEDED_FULL_REGRESSION"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v3-regression.tap",
+      "sha256": "ed96a75eeec81a7fb56c9927086ff092c4e768bcdb27e7fc5950abf94f5703af",
+      "counts": {
+        "tests": 1044,
+        "pass": 1044,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": true,
+      "scope": "FINAL_FULL_REGRESSION"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v3-second-regression.tap",
+      "sha256": "3f532c20482cc3b0236c69a158cb140f93ab1c8f0c3ed100a4f0a7a826955f13",
+      "counts": {
+        "tests": 1044,
+        "pass": 1043,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "SUPERSEDED_FULL_REGRESSION"
+    }
+  ],
+  "governance_failures": [
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-final-check-first-run.json",
+      "sha256": "42a73b97eba9d421b53f7e8d4284afdf0c4a673d58d348e54fd17d2211c88f07"
+    }
+  ],
+  "full_run_chain": [
+    {
+      "role": "SUPERSEDED_TTL_AND_EVIDENCE_FIXES",
+      "path": "evidence/p2-g2-yxx-entry-intermediate-regression-run.json",
+      "sha256": "29b7211a5f8711962ae8eeb37c04e31759930baadbdc492ba1698c1712d4284e"
+    },
+    {
+      "role": "SUPERSEDED_ARCH006_GOVERNANCE_RECONCILIATION",
+      "path": "evidence/p2-g2-yxx-entry-regression-run.json",
+      "sha256": "1b7d5eb8fbbe1c5393a8365406e59b1433fc5e075b214692456945436dda477d"
+    },
+    {
+      "role": "FAILED_BROWSER_INITIAL_NAVIGATION",
+      "path": "evidence/p2-g2-yxx-entry-v2-first-regression-run.json",
+      "sha256": "a0a56525d990e236c2f0513fdf595ed2057f97a63741d3c28f582b57126065b6"
+    },
+    {
+      "role": "SUPERSEDED_PR8_GRANT_AND_TIME_REPAIR",
+      "path": "evidence/p2-g2-yxx-entry-v2-regression-run.json",
+      "sha256": "8800496f6601787938ef804ea063aab597bfb290b188776f448efbe80d286114"
+    },
+    {
+      "role": "FAILED_EXISTING_THREE_PROCESS_READY_TIMEOUT",
+      "path": "evidence/p2-g2-yxx-entry-v3-first-regression-run.json",
+      "sha256": "f41ddbc8d712fcf10360f022c05b5db1a5164b694ae5cf256bd32f68250b86ef"
+    },
+    {
+      "role": "FAILED_OLD_DOCUMENT_RELOAD_WAIT",
+      "path": "evidence/p2-g2-yxx-entry-v3-second-regression-run.json",
+      "sha256": "9b9e50752d87240f7a1bcc10b36656555ffb840f85d32e2f51fa03a4e329df89"
+    },
+    {
+      "role": "CURRENT_CANDIDATE",
+      "path": "evidence/p2-g2-yxx-entry-v3-regression-run.json",
+      "sha256": "5e72e0fde11b2b489a68e37b6ba7d559040b9c8f85a26e2b228116e8ea25cc94"
+    }
+  ],
+  "recording_notes": [
+    "Only the final full run proves current readiness. Intermediate1022 PASS preceded confirmed TTL, continuation and evidence-binding fixes.",
+    "Synthetic browser tokens and a synthetic Grant URL in RED assertion output were redacted before publication; expected/actual behavior and failures are retained.",
+    "Earlier first-run failures and RED records are retained without relabeling them as passing acceptance."
+  ],
+  "event_time": "2026-09-11 21:58:21",
+  "event_epoch_ms": "1789135101174"
+}

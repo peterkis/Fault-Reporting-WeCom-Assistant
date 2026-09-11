@@ -34,6 +34,24 @@ export function createP2016ReporterAccess({pool,enabled=false,hmacSecret,now=()=
   }
   return Object.freeze({
     ensurePublicRefInTransaction,
+    // Internal member landing adapter: retain only a locator and digest, never the raw Grant.
+    legacyLocator(token){
+      guardP2016(enabled);const grantId=grantIdFromToken(token);
+      if(!grantId)failP2016('GRANT_INVALID',401);
+      try{uuidP2016(grantId);}catch{failP2016('GRANT_INVALID',401);}
+      return Object.freeze({grantId,tokenHash:textHashP2016(token)});
+    },
+    async locateLegacyInTransaction({transaction:tx,locator}){
+      guardP2016(enabled);uuidP2016(locator.grantId);
+      if(typeof locator.tokenHash!=='string'||!hashPattern.test(locator.tokenHash))failP2016('GRANT_INVALID',401);
+      const q=await tx.query(`SELECT g.*,r.public_ref,r.status AS ref_status FROM pilot_ticket.reporter_access_grant g
+        JOIN pilot_ticket.reporter_public_ref r ON r.id=g.public_ref_id AND r.ticket_id=g.ticket_id
+          AND r.reporter_binding_hash=g.reporter_binding_hash WHERE g.grant_id=$1::uuid FOR SHARE OF g,r`,[locator.grantId]);
+      const g=q.rows[0];
+      if(!g||!['ISSUED','CONSUMED','EXPIRED'].includes(g.state)||g.ref_status!=='ACTIVE'
+        ||!equal(locator.tokenHash,g.token_hash)||!equal(textHashP2016(tokenFor(g)),g.token_hash))failP2016('GRANT_INVALID',401);
+      return g.public_ref;
+    },
     async issueInTransaction({transaction:tx,ticketId,deliveryId,messageId,reporterBindingHash,journeyId=null}) {
       guardP2016(enabled);uuidP2016(ticketId);uuidP2016(deliveryId);uuidP2016(messageId);
       if(!hashPattern.test(reporterBindingHash))failP2016();
@@ -58,6 +76,35 @@ export function createP2016ReporterAccess({pool,enabled=false,hmacSecret,now=()=
         stamp.local,stamp.epoch,formatEpochMsToShanghaiLocal(expiry),expiry]);
       await audit(tx,'GRANT_ISSUED',{ticket:ticketId,grant:grant.grant_id});
       return {grant_id:grant.grant_id,public_ref:ref.public_ref,replayed:false};
+    },
+    // Sender-only authority for member cards; no capability or Grant lifecycle is involved.
+    async deliveryBinding({deliveryId}) {
+      guardP2016(enabled);uuidP2016(deliveryId);
+      const stamp=stampP2016(now);
+      const q=await pool.query(`SELECT r.public_ref,b.recipient_binding_hash,d.provider,d.channel_account_id,
+        d.target_id,d.target_hash,d.idempotency_key,m.content_hash,m.content,
+        i.source_provider,i.source_bot_id,i.reporter_wecom_userid
+        FROM communication.ticket_notification_binding b
+        JOIN communication.delivery d ON d.id=b.delivery_id AND d.outbox_id=b.outbox_id
+        JOIN communication.outbox o ON o.id=b.outbox_id AND o.message_id=b.message_id
+        JOIN communication.message m ON m.id=b.message_id
+        JOIN pilot_ticket.ticket t ON t.id=b.ticket_id
+        JOIN pilot_ticket.ticket_event e ON e.event_id=b.ticket_event_id AND e.ticket_id=t.id
+        JOIN intake.service_intake i ON i.id=t.source_intake_id
+        JOIN pilot_ticket.reporter_public_ref r ON r.ticket_id=t.id AND r.reporter_binding_hash=b.recipient_binding_hash
+        LEFT JOIN intake.contact_journey j ON j.id=r.journey_id
+        WHERE b.delivery_id=$1::uuid AND b.destination_type='PERSON' AND d.target_type='PERSON'
+          AND r.status='ACTIVE' AND m.message_type='template_card' AND m.visibility='EXTERNAL'
+          AND m.purpose='SYSTEM_NOTIFICATION' AND m.sender_system_code='TICKET_LIFECYCLE'
+          AND o.route_policy='P2_016_REPORTER' AND m.retention_until_epoch_ms>$2::bigint
+          AND i.retention_until_epoch_ms>$2::bigint
+          AND (r.journey_id IS NULL OR j.retention_until_epoch_ms>$2::bigint)`,[deliveryId,stamp.epoch]);
+      const b=q.rows[0];
+      if(q.rowCount!==1||b.provider!=='WECOM_AIBOT'||b.source_provider!==b.provider||b.source_bot_id!==b.channel_account_id
+        ||b.reporter_wecom_userid!==b.target_id||b.target_hash!==textHashP2016(b.target_id)
+        ||b.recipient_binding_hash!==textHashP2016(JSON.stringify([b.provider,b.channel_account_id,b.target_id]))
+        ||b.public_ref!==b.content?.public_ref)failP2016('REPORTER_BINDING_INVALID',403);
+      return b;
     },
     async deliveryGrant({deliveryId}) {
       guardP2016(enabled);uuidP2016(deliveryId);

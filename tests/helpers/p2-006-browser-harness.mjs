@@ -51,12 +51,14 @@ export async function closeBrowserTestResources(closers,primaryError=null){
   if(errors.length>1)throw new AggregateError(errors,'P2_006_BROWSER_TEST_AND_CLEANUP_FAILED');
 }
 
-export async function launchSystemBrowser({url,width,height,cookies=[],redirectPaths=[],signal}){
+export async function launchSystemBrowser({url,width,height,cookies=[],redirectPaths=[],signal,certificateSpki=null}){
+  assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
   const executable=findSystemBrowser(),profile=await mkdtemp(join(tmpdir(),'p2-006-browser-'));
   const child=spawn(executable,[
     '--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run',
     '--disable-default-apps','--disable-extensions','--disable-gpu','--disable-background-networking',
+    ...(certificateSpki?[`--ignore-certificate-errors-spki-list=${certificateSpki}`]:[]),
     `--window-size=${width},${height}`,url,
   ],{stdio:'ignore',windowsHide:true});
   let socket=null,sequence=0,closePromise=null,launchError=null;
@@ -65,12 +67,12 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
   const rejectPending=()=>{for(const request of pending.values()){
     clearTimeout(request.timer);request.reject(new Error('P2_006_BROWSER_DISCONNECTED'));
   }pending.clear();};
-  function command(method,params={}){
+  function command(method,params={},sessionId=null){
     const id=++sequence;
     return new Promise((resolveCommand,reject)=>{
       if(socket?.readyState!==WebSocket.OPEN){reject(new Error('P2_006_BROWSER_DISCONNECTED'));return;}
       const timer=setTimeout(()=>{pending.delete(id);reject(new Error('P2_006_BROWSER_COMMAND_TIMEOUT'));},10000);
-      pending.set(id,{resolve:resolveCommand,reject,timer});socket.send(JSON.stringify({id,method,params}));
+      pending.set(id,{resolve:resolveCommand,reject,timer});socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));
     });
   }
   async function dispose(){
@@ -138,7 +140,7 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     async function pressTab(){
       for(const type of ['rawKeyDown','keyUp'])await command('Input.dispatchKeyEvent',{type,key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
     }
-    return Object.freeze({executable,evaluate,pressTab,setTimezone:timezoneId=>command('Emulation.setTimezoneOverride',{timezoneId}),
+    return Object.freeze({executable,evaluate,pressTab,command,setTimezone:timezoneId=>command('Emulation.setTimezoneOverride',{timezoneId}),
       screenshot:async()=>(await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})).data,
       waitFor:(expression,options)=>waitFor(()=>evaluate(expression),options),close});
   }catch(error){await closeBrowserTestResources([close],error);}

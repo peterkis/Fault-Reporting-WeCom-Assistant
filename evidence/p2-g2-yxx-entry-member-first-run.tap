@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects
+not ok 1 - YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects
+  ---
+  duration_ms: 1973.7623
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-member.integration.test.mjs:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    421 !== 401
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 401
+  actual: 421
+  operator: 'strictEqual'
+  stack: |-
+    file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-member.integration.test.mjs:15:97
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-member.integration.test.mjs:8:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2170.6397

@@ -121,7 +121,25 @@
     "p2_g2_authorization_evidence": "evidence/p2-g2-start-authorization.md",
     "p2_g2_base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
     "p2_g2_automated_readiness_evidence": "evidence/p2-g2-automated-readiness-report.json",
-    "p2_g2_ready_at": "2026-09-09"
+    "p2_g2_ready_at": "2026-09-11",
+    "yixiaoxiu_member_ticket_entry": {
+      "work_item": "P2-G2-YXX-TICKET-ENTRY",
+      "status": "READY_FOR_TARGETED_LIVE_VALIDATION",
+      "scope": "LOCAL_IMPLEMENTATION_AND_ISOLATED_VALIDATION",
+      "parent_gate": "P2-G2",
+      "live_authorized": false,
+      "task": "tasks/P2-G2_yixiaoxiu_member_ticket_entry.md",
+      "authorization_evidence": "evidence/p2-g2-yxx-entry-start-authorization.md",
+      "enabled_by_default": false,
+      "identity_namespace_live_verified": false,
+      "review_repair_authorization": "evidence/p2-g2-yxx-entry-pr8-repair-authorization.md",
+      "implementation": "IMPLEMENTED",
+      "automation": "VERIFIED",
+      "entry_status": "IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING",
+      "completion_evidence": "evidence/p2-g2-yxx-entry-report.json",
+      "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048"
+    },
+    "p2_g2_live_authorized": false
   },
   "phase_model": [
     {

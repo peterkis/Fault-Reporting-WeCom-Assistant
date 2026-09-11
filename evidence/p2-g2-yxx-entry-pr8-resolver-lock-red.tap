@@ -1,0 +1,41 @@
+TAP version 13
+# Subtest: PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source
+ok 1 - PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source
+  ---
+  duration_ms: 1970.5495
+  type: 'test'
+  ...
+# {"phase":"TIMELINE","first_app_lock":"STREAM","sql_errors":[],"results":["fulfilled","fulfilled"]}
+# Subtest: PR8 session resolution cannot deadlock with the Worker fixed acknowledgement
+not ok 2 - PR8 session resolution cannot deadlock with the Worker fixed acknowledgement
+  ---
+  duration_ms: 4854.4262
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-016-projection-lock-order.integration.test.mjs:13:54'
+  failureType: 'testCodeFailure'
+  error: |-
+    force the actual Worker Session/Thread lock interleaving
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-016-projection-lock-order.integration.test.mjs:62:16)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-016-projection-lock-order.integration.test.mjs:16:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7102.4253

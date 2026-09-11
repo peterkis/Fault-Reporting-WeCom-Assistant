@@ -32,6 +32,7 @@ export function createP2G1Runtime({
   senderFactory = null,
   extensionFactory = null,
   realtimeAppender = appendRealtimeEvent,
+  projectionTransactionStart = null,
   realtimeScopeLimit = 5000,
   gatewayStatusProvider = null,
   communicationStatusProvider = null,
@@ -51,6 +52,7 @@ export function createP2G1Runtime({
     || (senderFactory !== null && typeof senderFactory !== 'function')
     || (extensionFactory !== null && typeof extensionFactory !== 'function')
     || typeof realtimeAppender !== 'function'
+    || (projectionTransactionStart !== null && typeof projectionTransactionStart !== 'function')
     || !Number.isInteger(realtimeScopeLimit) || realtimeScopeLimit<1 || realtimeScopeLimit>5000
     || (gatewayStatusProvider !== null && typeof gatewayStatusProvider?.getStatus !== 'function')
     || (communicationStatusProvider !== null && typeof communicationStatusProvider?.isReady !== 'function')
@@ -103,7 +105,7 @@ export function createP2G1Runtime({
   const communicationWorkerEnabled = senderEnabled || senderAdapter !== null;
   const communicationWorker = createCommunicationDeliveryWorker({ pool, sender, enabled: communicationWorkerEnabled, batchSize: 20 });
   const coordinator = createP2G1InboundProjectionCoordinator({ pool, enabled: true, batchSize: 20, wakeup: realtime.wakeup,
-    projector:createP2G1TimelineProjector({pool,enabled:true,batchSize:20,realtimeAppender,wakeup:realtime.wakeup}) });
+    projector:createP2G1TimelineProjector({pool,enabled:true,batchSize:20,realtimeAppender,transactionStartHook:projectionTransactionStart,wakeup:realtime.wakeup}) });
   const observedGateway = gatewayStatusProvider ?? gateway;
   const observability = createP2G1Observability({ pool, coordinator, gateway: observedGateway, realtime, enabled: true });
   assembly = createP2G1HumanOnlyAssembly({ operationalIntake, coordinator, observability });

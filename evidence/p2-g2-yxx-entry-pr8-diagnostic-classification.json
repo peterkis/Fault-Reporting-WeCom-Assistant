@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 20:58:12",
+  "event_epoch_ms": "1789131492247",
+  "records": [
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-lock-order-red.tap",
+      "classification": "FIXTURE_BARRIER_FAILURE_NOT_PRODUCT_RED",
+      "reason": "Proxy pool wrappers were rejected by existing resource guards; corrected to ordinary wrappers before the confirmed40P01 RED."
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-lock-order-confirmed-red.tap",
+      "classification": "CONFIRMED_PRODUCT_RED",
+      "reason": "Actual App/Worker transaction barrier produced PostgreSQL40P01; existing source and request handling executed."
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr8-resolver-lock-red.tap",
+      "classification": "UNCONFIRMED_HYPOTHESIS_PROBE_NOT_PRODUCT_RED",
+      "reason": "The attempted independent resolver Thread/Session interleaving did not obtain the hypothesized Worker Session lock; no deadlock was established and no resolver implementation change was made. Probe retained only in ignored diagnostic location."
+    }
+  ],
+  "current_repair": "Only the confirmed Timeline transaction lock-order reversal was repaired; readiness/failure counters/source ordering were preserved."
+}

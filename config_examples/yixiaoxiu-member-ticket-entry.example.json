@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "profile": "MEMBER_TICKET_READONLY",
+  "reporterPolicy": "MEMBER_REQUIRED",
+  "wecomWebOAuth": {
+    "enabled": false
+  },
+  "reporterMemberEntry": {
+    "enabled": false,
+    "identityMode": "UNVERIFIED",
+    "memberIdsConfirmed": false,
+    "proofRef": null,
+    "proofKind": null,
+    "corpId": null,
+    "agentId": null,
+    "botId": null,
+    "validationProfile": "DEPLOYMENT"
+  }
+}

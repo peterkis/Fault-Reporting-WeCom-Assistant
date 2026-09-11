@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900
+not ok 1 - YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900
+  ---
+  duration_ms: 4218.9022
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-browser.test.mjs:12:52'
+  failureType: 'testCodeFailure'
+  error: |-
+    wait for the new document, not the previous ready page
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-browser.test.mjs:36:16
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-browser.test.mjs:13:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844
+not ok 2 - YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844
+  ---
+  duration_ms: 3252.3629
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-browser.test.mjs:12:52'
+  failureType: 'testCodeFailure'
+  error: |-
+    wait for the new document, not the previous ready page
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-browser.test.mjs:36:16
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-browser.test.mjs:13:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag
+ok 3 - YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag
+  ---
+  duration_ms: 3449.9149
+  type: 'test'
+  ...
+# Subtest: YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge
+ok 4 - YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge
+  ---
+  duration_ms: 3418.1515
+  type: 'test'
+  ...
+# Subtest: YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data
+ok 5 - YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data
+  ---
+  duration_ms: 4437.4059
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 3
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18981.7993

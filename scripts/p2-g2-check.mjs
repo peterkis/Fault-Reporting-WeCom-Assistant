@@ -7,6 +7,7 @@ import { G2_ROOT, g2CandidateInventory, verifyG2Candidate, verifyG2ApprovalFile,
 import { G2_LIVE_FUSES, G2_REQUIRED_FLAGS, G2_FORBIDDEN_FLAGS, g2DatabaseIdentity, g2Hash,
   readG2Configuration, validateG2Manifest, minimalG2Environment, failG2 } from '../src/p2-g2-validation-config.mjs';
 import { inspectG2DatabaseScope } from '../src/p2-g2-database-scope.mjs';
+import {readYxxG2AppConfiguration,YXX_G2_ENV_KEYS} from '../src/p2-g2-yixiaoxiu-g2-config.mjs';
 
 export function parseG2Arguments(argv,allowed){
   const out={};for(const arg of argv){const m=/^--([a-z-]+)=(.+)$/u.exec(arg);
@@ -15,7 +16,7 @@ export function parseG2Arguments(argv,allowed){
 export function loadG2PrivateEnvironment(file='.env.pilot',environment=process.env){
   const saved=parseEnv(readFileSync(path.resolve(G2_ROOT,file),'utf8')),out=minimalG2Environment(environment);
   for(const k of ['PILOT_DATABASE_URL','WECOM_BOT_ID','WECOM_BOT_SECRET','WECOM_WS_URL',
-    'PILOT_LOG_IDENTITY_HASH_KEY','P2_G2_REPORTER_HMAC_SECRET','P2_012_REPORTER_HMAC_SECRET','P2_G2_GROUP_WEBHOOK_ROUTES','P2_G2_DIRECTORY_ACCESS_TOKEN'])if(saved[k])out[k]=saved[k];
+    'PILOT_LOG_IDENTITY_HASH_KEY','P2_G2_REPORTER_HMAC_SECRET','P2_012_REPORTER_HMAC_SECRET','P2_G2_GROUP_WEBHOOK_ROUTES','P2_G2_DIRECTORY_ACCESS_TOKEN',...YXX_G2_ENV_KEYS])if(saved[k])out[k]=saved[k];
   // Live switches are intentionally supplied for this invocation; old/file-stored approvals are not inherited.
   for(const k of G2_LIVE_FUSES)if(environment[k]!==undefined)out[k]=environment[k];
   return out;
@@ -37,6 +38,7 @@ export async function checkG2({mode='check',manifest=null,env=null}={}){
     if(mode==='live-check'){
       if(manifest.mode!=='live')failG2('LIVE_MANIFEST_REQUIRED');
       readG2Configuration({manifest,env,candidateFingerprint:candidate.fingerprint});
+      readYxxG2AppConfiguration({manifest,env});
       if((manifest.scope.group_webhook_routes??[]).length!==manifest.scope.group_hashes.length)failG2('GROUP_CLOSURE_ROUTES_REQUIRED');
       verifyG2ApprovalFile(manifest);requirePreparedG2Candidate(candidate.fingerprint);
     }

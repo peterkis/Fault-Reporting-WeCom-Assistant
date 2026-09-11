@@ -116,17 +116,20 @@ export function createP2G1TimelineProjector({
   enabled = false,
   batchSize = 20,
   realtimeAppender = appendRealtimeEvent,
+  transactionStartHook = null,
   wakeup = null,
 } = {}) {
   assertPool(pool);
   boundedBatchSize(batchSize);
-  if (typeof enabled !== 'boolean' || typeof realtimeAppender !== 'function' || (wakeup !== null && typeof wakeup !== 'function')) {
+  if (typeof enabled !== 'boolean' || typeof realtimeAppender !== 'function' || (wakeup !== null && typeof wakeup !== 'function')
+    || (transactionStartHook !== null && typeof transactionStartHook !== 'function')) {
     throw new TypeError(P2_G1_PROJECTION_ERROR_CODES.invalidConfiguration);
   }
   return createTimelineProjector({
     pool,
     enabled,
     batchSize,
+    transactionStartHook,
     async itemTransactionHook({ transaction, item, source_record: sourceRecord }) {
       if (sourceRecord.source_type === 'CHANNEL_MESSAGE') {
         const occurredEpochMs = shanghaiLocalToEpochMs(sourceRecord.occurred_at);

@@ -1,0 +1,433 @@
+{
+  "schema_version": 1,
+  "work_item": "P2-G2-YXX-TICKET-ENTRY",
+  "candidate_fingerprint": "a9a98feb4e48bed956d3fdce0ba6e93b52707f4956ef79ee7544356507c54e88",
+  "historical_pr7": "evidence/p2-g2-pr7-regression-history.json",
+  "records": [
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-green-final.tap",
+      "sha256": "cfe53d547345b33bcc71e70931f2fff81539b1f18d8adb7c3c9ed9a4e51c2f5c",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-green-reviewed.tap",
+      "sha256": "cc694b0266ad390f6c87f70af13210231ea79436a1beef47f0719fca8160b6fd",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-green.tap",
+      "sha256": "bc43985475985bafa2f33197d18a1215860fb3c13f5f5dd2b58613f5e032de0e",
+      "counts": {
+        "tests": 14,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-ready-red.tap",
+      "sha256": "f1db3765bf92d10a113864ed923d14c1a5a6731c4a1e0b103979239925a5ef69",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-snapshot-red.tap",
+      "sha256": "ba8bdc03760ee7985be47eea4a606ce32759bcbc900dfe01cd49ed29df4573d9",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-browser-first-run.tap",
+      "sha256": "4769d9ca89ecdf95a2ecdc6919fe8b95677eb29cdfc69007c406d9cb67923099",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-card-red.tap",
+      "sha256": "7ac235aa12193549a89c37aab5711105748720c30056f47c5dfb714b3e8bb875",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-contract-red.tap",
+      "sha256": "5ae8c44b062e0e4ee6f060bc9d9609d68189c14ccae99e76ec28e02a9aca2e98",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-evidence-and-continuation-red.tap",
+      "sha256": "e26476a8aaca62dbbf56a48c39b9c84c7e3ba2dc3890e101be10524b9be5a54d",
+      "counts": {
+        "tests": 6,
+        "pass": 0,
+        "fail": 6,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-final-contract-browser.tap",
+      "sha256": "8a034bf89ac46bbbe09aea8b993f44025e5d0ed126d975c3177d3a36a19d79c4",
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-final-review-green.tap",
+      "sha256": "33869d196eac1397f869c9da118f3d19a623b781221bc9c14121193f2b152547",
+      "counts": {
+        "tests": 36,
+        "pass": 36,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-final-review-red.tap",
+      "sha256": "463272952bee21738dd5243324af96311ab2032913a73b0058d2a7c6b2388270",
+      "counts": {
+        "tests": 3,
+        "pass": 0,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-initial-document-red.tap",
+      "sha256": "196cefd71b03dd0c6d767a5287cc97bef5eff6af189c383a54a143c498230a47",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-intermediate-regression.tap",
+      "sha256": "31df68fa00ae92cf71584b393a49b4c1826c0942a4261815364771299bad73da",
+      "counts": {
+        "tests": 1022,
+        "pass": 1022,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "SUPERSEDED_FULL_REGRESSION"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-member-first-run.tap",
+      "sha256": "c448fd76b58b9cb2e685a2c3aee48a8e9892258209c829d227acc9bd3e2c520e",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-member-matrix-first-run.tap",
+      "sha256": "7e76888cf60ba83d1e5116a762257387fe9740c014af402a8f7d7883303291e3",
+      "counts": {
+        "tests": 18,
+        "pass": 13,
+        "fail": 5,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-member-red.tap",
+      "sha256": "bd29e7a0790e8349929e105ca0b9cbc0eab2c2d940d13bd1db1eb12ccd99acd6",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-navigation-first-run.tap",
+      "sha256": "2231f4e7e8e5fa090ce493df60a02655f718ae87625f0d945f9e33bac80b6078",
+      "counts": {
+        "tests": 5,
+        "pass": 4,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-navigation-green.tap",
+      "sha256": "74b4fcbe995ba2ba8858eb571d5d262ee18842469fa5e0e61302c7d69a38f319",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-navigation-repeat.tap",
+      "sha256": "12dfddef18c70e34b99095dd43a1cd1baccc7eb7c48439b45e12a1bd5e13148c",
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-oauth-red.tap",
+      "sha256": "903f830f1f0d50d871d199c545542060b529ca3f234185e7cef16b2304d1e55f",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-profile-first-run.tap",
+      "sha256": "014223be54674555a7cb34b470f00f02fd246d2807400e657fa6c881a34b7d75",
+      "counts": {
+        "tests": 4,
+        "pass": 3,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-provider-red.tap",
+      "sha256": "25cf9413bfda3529f6e2a9e84f0d92654d196b192e700cc7a8cc000b11963787",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 0,
+        "cancelled": 1,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-regression.tap",
+      "sha256": "f32499fe45bfe07360119820dfdf379d1350691253c75775b7cfeaa67ada16b7",
+      "counts": {
+        "tests": 1028,
+        "pass": 1028,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "SUPERSEDED_FULL_REGRESSION"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-review-replacement-red.tap",
+      "sha256": "14861bee6bf24b0ce7511929e0baa27b6520e70b3e9a2953ff830478d52d7eb7",
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "RED_BEFORE_REPAIR"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-targeted-regression.tap",
+      "sha256": "0a51ee2568854cda97eb6c327a3e2e2d2be3bcd5edab1ec3917e36eec8f981c1",
+      "counts": {
+        "tests": 51,
+        "pass": 51,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "AUXILIARY_TARGETED_OR_FIRST_RUN"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-first-regression.tap",
+      "sha256": "89907deb2599d081d7b334321c37cf115ffeabcbabea4aa284a53e1a9359a64f",
+      "counts": {
+        "tests": 1029,
+        "pass": 1028,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": false,
+      "scope": "SUPERSEDED_FULL_REGRESSION"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-regression.tap",
+      "sha256": "9578687048350ba16c0c81c3a14898970d8acf3ff814c67be414e8881cdaa9ff",
+      "counts": {
+        "tests": 1029,
+        "pass": 1029,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_candidate_proof": true,
+      "scope": "FINAL_FULL_REGRESSION"
+    }
+  ],
+  "governance_failures": [
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-final-check-first-run.json",
+      "sha256": "42a73b97eba9d421b53f7e8d4284afdf0c4a673d58d348e54fd17d2211c88f07"
+    }
+  ],
+  "full_run_chain": [
+    {
+      "role": "SUPERSEDED_TTL_AND_EVIDENCE_FIXES",
+      "path": "evidence/p2-g2-yxx-entry-intermediate-regression-run.json",
+      "sha256": "29b7211a5f8711962ae8eeb37c04e31759930baadbdc492ba1698c1712d4284e"
+    },
+    {
+      "role": "SUPERSEDED_ARCH006_GOVERNANCE_RECONCILIATION",
+      "path": "evidence/p2-g2-yxx-entry-regression-run.json",
+      "sha256": "1b7d5eb8fbbe1c5393a8365406e59b1433fc5e075b214692456945436dda477d"
+    },
+    {
+      "role": "FAILED_BROWSER_INITIAL_NAVIGATION",
+      "path": "evidence/p2-g2-yxx-entry-v2-first-regression-run.json",
+      "sha256": "a0a56525d990e236c2f0513fdf595ed2057f97a63741d3c28f582b57126065b6"
+    },
+    {
+      "role": "CURRENT_CANDIDATE",
+      "path": "evidence/p2-g2-yxx-entry-v2-regression-run.json",
+      "sha256": "8800496f6601787938ef804ea063aab597bfb290b188776f448efbe80d286114"
+    }
+  ],
+  "recording_notes": [
+    "Only the final full run proves current readiness. Intermediate1022 PASS preceded confirmed TTL, continuation and evidence-binding fixes.",
+    "Synthetic browser tokens and a synthetic Grant URL in RED assertion output were redacted before publication; expected/actual behavior and failures are retained.",
+    "Earlier first-run failures and RED records are retained without relabeling them as passing acceptance."
+  ]
+}

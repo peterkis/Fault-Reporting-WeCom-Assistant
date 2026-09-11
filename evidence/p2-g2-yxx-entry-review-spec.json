@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "238e75165605015ceb844f140c5be4e79076cb3a1e65446c25615c02f4c13a2a",
+  "axis": "SPEC",
+  "reviewer": "/root/yxx_spec_review",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [
+    {
+      "id": "YXX-SPEC-01",
+      "severity": "P1",
+      "title": "Concurrent callback identity replacement retained prior session",
+      "resolved": true,
+      "resolution": "Server-owned browser binding group now invalidates every prior session on replacement; same-binding and initial-navigation-binding SQL race regression passes.",
+      "evidence_test_name": "YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read"
+    },
+    {
+      "id": "YXX-SPEC-02",
+      "severity": "P2",
+      "title": "Fresh authentication or legacy prepare could inherit an expiring browser binding",
+      "resolved": true,
+      "resolution": "Explicit begin/prepare refreshes recognized binding TTL without extending existing member sessions or polling lifetime; expired and logged-out bindings cannot revive.",
+      "evidence_test_name": "YXX-13 explicit fresh login refreshes browser binding without extending authentication or polling lifetime"
+    },
+    {
+      "id": "YXX-SPEC-03",
+      "severity": "P2",
+      "title": "Expired or restarted legacy continuation lacked original-card recovery instruction",
+      "resolved": true,
+      "resolution": "Generic 404 HTML directs a new original-card click without exposing Ticket facts; both OpenAPI declarations match.",
+      "evidence_test_name": "YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery"
+    }
+  ],
+  "source_execution_sha256": "927d52422742ccca7d407ff95623a15a6009e72ebaa9c64d57c6e82bfd1a79a9",
+  "scenario_matrix_sha256": "dd2f7dee9bedaf5499b4e5d130ab43e95eeef21e789faa969e026e79837c1bd8",
+  "source_worktree_parent_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "verification": {
+    "candidate_recomputed": true,
+    "candidate_file_count": 607,
+    "source_review": "Final executable, contract, browser, profile, G2 config, binder and checker sources independently inspected against supplied v1.0 spec and ADR0018.",
+    "artifact_hashes_verified": 10,
+    "raw_run_and_tap_equal_final_runner_outputs": true,
+    "tap_counts_recomputed": {
+      "tests": 1028,
+      "pass": 1028,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passing_tap_records": 1028,
+    "test_file_count": 165,
+    "test_file_hashes_verified": 165,
+    "pr7_baseline_files_covered": 158,
+    "member_scenarios_verified": 48,
+    "g2_scenarios_verified": 37,
+    "g2_test_references_verified": 107,
+    "source_audit_recomputed": true,
+    "source_cases": 202,
+    "normal_source_pass_cases": 122,
+    "manual_review_observation_missing": 0,
+    "pr6_invariants_verified": 10,
+    "pr6_test_references_verified": 27,
+    "classification_population_and_metrics_preserved": true,
+    "classification_current_proof_references_verified": true,
+    "route_count": 17,
+    "resource_measurement": {
+      "sessions": 100,
+      "concurrent_reads": 32,
+      "pool_peak": 4,
+      "pending_after": 0
+    },
+    "resolved_findings_present_in_final_tap": true,
+    "independent_earlier_sql_race_test": {
+      "tests": 1,
+      "pass": 1,
+      "exit_code": 0
+    },
+    "final_review_ran_tests": false
+  },
+  "limits": {
+    "scope": "LOCAL_IMPLEMENTATION_AND_ISOLATED_AUTOMATION",
+    "final_readiness_master_reports": "Await root assembly and requirePreparedG2Candidate check; this review is an input, not that gate execution.",
+    "identity_namespace_live_verified": false,
+    "entry_live_authorized": false,
+    "entry_live_result": "NOT_RUN",
+    "p2_g2_live_result": "NOT_RUN",
+    "no_live_approval": true,
+    "real_provider_calls_by_reviewer": 0,
+    "real_business_data_access_by_reviewer": false,
+    "formal_observation": "NOT_RUN",
+    "phase2_go": false
+  }
+}

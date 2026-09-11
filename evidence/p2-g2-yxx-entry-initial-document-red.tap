@@ -1,0 +1,27 @@
+TAP version 13
+# Subtest: YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844
+not ok 1 - YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844
+  ---
+  duration_ms: 11018.3632
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-browser.test.mjs:8:52'
+  failureType: 'testCodeFailure'
+  error: 'Uncaught'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    Object.evaluate (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:137:40)
+    async file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-browser.test.mjs:15:7
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-browser.test.mjs:9:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11539.1949

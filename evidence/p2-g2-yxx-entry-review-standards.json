@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "238e75165605015ceb844f140c5be4e79076cb3a1e65446c25615c02f4c13a2a",
+  "axis": "STANDARDS",
+  "reviewer": "/root/yxx_standards_review",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [
+    {
+      "id": "YXX-STANDARDS-01",
+      "priority": "P2",
+      "title": "Scenario evidence accepted unrelated passing test names",
+      "resolved": true,
+      "resolution": "The checker reconstructs exact names, requirement, assertion and file hashes from candidate-frozen definitions and the parent-verified run. Unrelated-name and unrelated-file RED cases are preserved; their repaired assertions pass in the final full TAP."
+    },
+    {
+      "id": "YXX-STANDARDS-02",
+      "priority": "P2",
+      "title": "Member regression receipt was not tied to the parent-verified run",
+      "resolved": true,
+      "resolution": "The caller now passes the parent-verified run and reference. The member checker requires identical path, SHA256 and parsed run content. Different TAP/file-hash RED cases are preserved and their repaired assertions pass in the final full TAP."
+    }
+  ],
+  "source_execution_sha256": "927d52422742ccca7d407ff95623a15a6009e72ebaa9c64d57c6e82bfd1a79a9",
+  "scenario_matrix_sha256": "dd2f7dee9bedaf5499b4e5d130ab43e95eeef21e789faa969e026e79837c1bd8",
+  "source_worktree_parent_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "verification": {
+    "method": "Independent source review plus read-only assertion scripts over actual final artifacts; reviewer did not rerun the full suite.",
+    "candidate_files": 607,
+    "test_files": 165,
+    "full_regression": {
+      "tests": 1028,
+      "pass": 1028,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exit_code": 0,
+      "candidate_unchanged": true
+    },
+    "all_binding_source_hashes_verified": true,
+    "run_tap_count_and_hash_verified": true,
+    "current_test_file_hashes_verified": true,
+    "prior_158_test_files_present": true,
+    "member_scenarios_exactly_reconstructed": 48,
+    "g2_scenarios_with_passing_names_and_current_hashes": 37,
+    "pr6_invariants_with_passing_names_and_current_hashes": 10,
+    "source_audit_recomputed": true,
+    "source_cases": 202,
+    "normal_input_cases": 122,
+    "mechanism_or_other_cases": 80,
+    "classification_populations_denominators_and_exclusions_unchanged": true,
+    "measured_current_vs_historical_diagnostic_proofs_compared": 223,
+    "source_review": [
+      "AGENTS.md, README.md, CONTEXT.md, architecture baseline, Accepted ADR-0018 and docs48/50/54/60/61",
+      "Shared safe transaction query, fail-closed policy, source Intake ownership and legacy Grant verification",
+      "OAuth browser groups, expiry renewal, stale-cookie replacement and logout late-response fences",
+      "32 read limit, bounded ephemeral maps, profile lifecycle and owned-pool shutdown",
+      "Preserved Direct Leg and Sender Grant/recipient checks; scoped G2 OAuth endpoint and credential wiring",
+      "Closed schemas, fixed redirects, static recovery HTML, no browser credential storage",
+      "Default example OAuth/member flags false, UNVERIFIED identity, no migration/package/lock/environment-example diff against baseline"
+    ],
+    "resource_evidence": {
+      "authenticated_sessions": 100,
+      "concurrent_reads": 32,
+      "pool_peak_connections": 4,
+      "pending_pool_after": 0,
+      "catalog_unchanged": true,
+      "business_tables_unchanged": true,
+      "formal_observation": false
+    },
+    "regression_run": {
+      "path": "evidence/p2-g2-yxx-entry-regression-run.json",
+      "sha256": "1b7d5eb8fbbe1c5393a8365406e59b1433fc5e075b214692456945436dda477d"
+    },
+    "regression_tap": {
+      "path": "evidence/p2-g2-yxx-entry-regression.tap",
+      "sha256": "f32499fe45bfe07360119820dfdf379d1350691253c75775b7cfeaa67ada16b7"
+    }
+  },
+  "limits": [
+    "Parent/member master readiness reports were awaiting final review assembly; final requirePreparedG2Candidate acceptance must run after assembly.",
+    "No real WeCom calls, sends, cloud actions, business-data access or live validation were performed by this reviewer.",
+    "Real OAuth-to-Bot identity namespace remains unverified; local synthetic proof is not live identity acceptance.",
+    "Resource evidence is a short isolated regression measurement, not a formal natural-GC 2C4G observation.",
+    "This PASS covers this exact executable candidate and inspected evidence, not P2-G2-LIVE, P2-008, Phase2 Go, production or clinical approval.",
+    "The user-owned .gitignore was not read or edited; only this reviewer output file is written."
+  ]
+}

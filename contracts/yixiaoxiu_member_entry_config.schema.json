@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "yixiaoxiu_member_entry_config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "enabled",
+    "identityMode",
+    "memberIdsConfirmed",
+    "proofRef",
+    "proofKind",
+    "corpId",
+    "agentId",
+    "botId",
+    "validationProfile"
+  ],
+  "properties": {
+    "enabled": {
+      "type": "boolean"
+    },
+    "identityMode": {
+      "enum": [
+        "UNVERIFIED",
+        "VERIFIED_SAME_NAMESPACE"
+      ]
+    },
+    "memberIdsConfirmed": {
+      "type": "boolean"
+    },
+    "proofRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_./-]{0,255}$"
+    },
+    "proofKind": {
+      "enum": [
+        null,
+        "LIVE",
+        "SYNTHETIC"
+      ]
+    },
+    "corpId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "agentId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9]{1,20}$"
+    },
+    "botId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "validationProfile": {
+      "enum": [
+        "DEPLOYMENT",
+        "ISOLATED_TEST"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "corpId": {
+            "type": "string"
+          },
+          "agentId": {
+            "type": "string"
+          },
+          "botId": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "identityMode": {
+            "const": "UNVERIFIED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "memberIdsConfirmed": {
+            "const": false
+          },
+          "proofRef": {
+            "const": null
+          },
+          "proofKind": {
+            "const": null
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "memberIdsConfirmed": {
+            "const": true
+          },
+          "proofRef": {
+            "type": "string"
+          },
+          "proofKind": {
+            "enum": [
+              "LIVE",
+              "SYNTHETIC"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proofKind": {
+            "const": "SYNTHETIC"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "validationProfile": {
+            "const": "ISOLATED_TEST"
+          }
+        }
+      }
+    }
+  ]
+}

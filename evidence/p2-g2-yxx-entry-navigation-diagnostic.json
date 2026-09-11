@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "observations": [
+    {
+      "iteration": 0,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 1,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 2,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 3,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 4,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 5,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 6,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 7,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 8,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 9,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 10,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 11,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 12,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 13,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 14,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 15,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 16,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 17,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 18,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    },
+    {
+      "iteration": 19,
+      "state": {
+        "protocol": "https:",
+        "pathname": "/wecom/yixiaoxiu/tickets/[PUBLIC_REF]",
+        "ready": "interactive"
+      }
+    }
+  ],
+  "real_provider_calls": 0
+}

@@ -1,0 +1,26 @@
+# ADR-0018: 医小修成员认证与单工单读取
+
+- Status: Accepted
+- Date: 2026-09-11
+- Scope: P2-G2-YXX-TICKET-ENTRY local implementation and isolated validation only.
+- Authority: user's independent v1.0 authorization; no live or Gate approval.
+
+MEMBER_REQUIRED separates member authentication from Ticket ownership. The configured enterprise/application/Bot scope and explicitly proven identity namespace must match the authoritative source Intake reporter and existing public-ref binding on every read. Unknown namespaces fail closed. A forwarded card does not confer permission.
+
+LEGACY_BOUND_GRANT preserves existing isolated compatibility contracts. MEMBER_REQUIRED never falls back to it when OAuth, entry or identity configuration fails. All Reporter endpoints, old cookies, bootstrap and 304 obey the server-selected policy.
+
+New cards point to `/wecom/yixiaoxiu/tickets/{public_ref}`. A public ref only locates. Both click regions use the same canonical URL. As clarified by the authorized PR #8 repair, member Sender checks the persisted notification/Delivery/Outbox/Message/Ticket/event/source Intake/public-ref bindings and retention without requiring a Grant. The legacy Sender retains its Grant binding and expiry checks. This removes an unrelated 30-minute delivery cutoff without changing access authorization or Grant/session constraints.
+
+Historical Grant links in member mode provide location only after OAuth and ownership: ISSUED, CONSUMED and EXPIRED may locate if current HMAC/digest and scope validate; REVOKED, rotated signing secrets, invalid signatures or bindings reject. They are not consumed or resurrected. The old mode retains its original one-use/expiry rules.
+
+Reuse a single safe detail/Timeline query core with server-produced trusted scope. Member reads run authorization and queries in one transaction, recheck the OAuth session before sending, and record access events with NULL persistent session/actor. No schema changes and no weakening of Grant or persistent Session constraints.
+
+PR #8 regression repair: the P2-016 App Timeline and Worker must acquire the shared Realtime stream lock before any Timeline checkpoint/Session lock. An optional transaction-start hook in the generic Timeline projector supplies this assembly-owned order, after transaction bounds are set and before lock acquisition; the default remains null. This also applies to its explicitly authorized rebuild transaction, without authorizing any rebuild. It prevents a confirmed App Session→Realtime versus Worker Realtime→Session deadlock from letting later Ticket projection overtake the earlier Channel source. Business times, append ordering, readiness and failure accounting remain unchanged.
+
+Each browser login holds independent bounded intents, with opaque one-use OAuth state and fixed callback. Logout invalidates pending and in-flight authentication as well as sessions. No global current Ticket, credentials in browser storage, or business side effects from authentication.
+
+OAUTH_ONLY stays zero DB; MEMBER_TICKET_READONLY mounts only authentication and Reporter reads; FULL_SERVICE_LOOP reuses the same extension under its separate Gate controls. A member Cookie is never a staff identity. Login establishes no Direct Leg or sending qualification.
+
+PR #7 readiness is historical input. While this candidate changes, P2-G2 preparation is IN_PROGRESS under the existing ASSEMBLY_AUTHORIZED governance profile. The profile's next candidate P2-G2 with authorization true refers only to local preparation. Explicit P2-G2-LIVE authorization remains false. Restore READY only after the complete new candidate evidence passes.
+
+The user's required current-readiness refresh authorizes replacement of exactly `evidence/p2-g2-automated-readiness-report.json` and `.md`. ARCH-006 must distinguish those two current pointers from immutable source evidence: require the active YXX authorization, byte-identical PR #7 snapshots against the fixed base, reject every other changed historical Evidence path, and require the current-candidate readiness guard when restoring READY. This is a narrow governance reconciliation, not a general Evidence exception. Prior candidate full-run and review artifacts remain immutable when a later validator repair changes the fingerprint.

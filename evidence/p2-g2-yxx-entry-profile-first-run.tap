@@ -1,0 +1,51 @@
+TAP version 13
+# Subtest: YXX-42 100 authenticated sessions and 32 simultaneous PostgreSQL HTTP reads stay bounded and preserve catalog
+ok 1 - YXX-42 100 authenticated sessions and 32 simultaneous PostgreSQL HTTP reads stay bounded and preserve catalog
+  ---
+  duration_ms: 2495.4614
+  type: 'test'
+  ...
+# YXX_RESOURCE {"authenticated_sessions":100,"concurrent_reads":32,"overload_status":503,"pool_peak_connections":4,"pending_pool_after":0,"elapsed_ms":347,"rss_before_bytes":91455488,"rss_after_bytes":98062336,"catalog_unchanged":true,"business_tables_unchanged":true,"formal_observation":false,"real_provider_calls":0}
+# Subtest: YXX-45 OAUTH_ONLY is zero DB and MEMBER_TICKET_READONLY exposes no business write or staff API
+ok 2 - YXX-45 OAUTH_ONLY is zero DB and MEMBER_TICKET_READONLY exposes no business write or staff API
+  ---
+  duration_ms: 1705.3098
+  type: 'test'
+  ...
+# Subtest: YXX-33 YXX-45 FULL_SERVICE_LOOP composes the same member policy and keeps member Cookie outside staff authority
+not ok 3 - YXX-33 YXX-45 FULL_SERVICE_LOOP composes the same member policy and keeps member Cookie outside staff authority
+  ---
+  duration_ms: 1866.7459
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-profile.integration.test.mjs:66:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_G1_TEST_AUTH_CONFIGURATION_INVALID'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    createP2G1TestAuthentication (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/src/p2-g1-test-authentication.mjs:70:11)
+    createP2G1Runtime (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/src/p2-g1-runtime.mjs:61:24)
+    createP2016Runtime (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/src/p2-016-runtime.mjs:55:17)
+    createP2012Runtime (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/src/p2-012-workbench-assembly.mjs:20:10)
+    createYxxProfile (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/src/p2-g2-yixiaoxiu-profile.mjs:13:12)
+    file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-profile.integration.test.mjs:70:19
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-profile.integration.test.mjs:67:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+  ...
+# Subtest: YXX-44 actual App process stop and restart loses ephemeral authentication then restores the canonical ref
+ok 4 - YXX-44 actual App process stop and restart loses ephemeral authentication then restores the canonical ref
+  ---
+  duration_ms: 2338.652
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 3
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8726.0403

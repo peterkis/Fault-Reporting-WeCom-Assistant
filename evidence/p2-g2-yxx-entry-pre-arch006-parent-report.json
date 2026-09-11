@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "gate": "P2-G2",
+  "recorded_at": "2026-09-11T07:02:55.285Z",
+  "preparation_status": "READY_FOR_LIVE_E2E",
+  "gate_status": "IN_PROGRESS",
+  "active_task": "P2-G2",
+  "active_lane": "ASSEMBLY",
+  "candidate_fingerprint": "238e75165605015ceb844f140c5be4e79076cb3a1e65446c25615c02f4c13a2a",
+  "candidate_file_count": 607,
+  "candidate_algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF",
+  "base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
+  "authorization_commit": "d7311cdbfe30c66f37d22a553a3e8f0e04e27cd1",
+  "baseline_reference_tests": 577,
+  "gold_reference_count": 202,
+  "normal_input_cases": 122,
+  "mechanism_and_other_references": 80,
+  "original_semantics_all_passed": false,
+  "source_semantic_limits": [
+    "D12-005 reliable non-mention SDK indication unavailable",
+    "D12-023 hospital master identity remains outside P2",
+    "D12-016 URL Grant replaces unsupported card-event association; D12-053 uses proactive Outbox alternative",
+    "Frozen 120000ms correlation and trusted available department/campus facts; original 300000ms/hospital-wide assumptions not imported"
+  ],
+  "scenario_matrix_complete": true,
+  "scenario_count": 37,
+  "independent_review_passed": true,
+  "pr6_review_invariants": 10,
+  "full_regression": {
+    "tests": 1028,
+    "pass": 1028,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "tap_path": "evidence/p2-g2-yxx-entry-regression.tap",
+    "tap_sha256": "f32499fe45bfe07360119820dfdf379d1350691253c75775b7cfeaa67ada16b7",
+    "baseline_test_files_covered": true,
+    "baseline_test_file_count": 92,
+    "test_file_count": 165,
+    "expose_gc": true,
+    "candidate_unchanged": true,
+    "exit_code": 0,
+    "baseline_test_file_count_scope": "ROOT_LEVEL_ONLY",
+    "baseline_recursive_test_file_count": 94
+  },
+  "source_evidence": {
+    "regression_run": {
+      "path": "evidence/p2-g2-yxx-entry-regression-run.json",
+      "sha256": "1b7d5eb8fbbe1c5393a8365406e59b1433fc5e075b214692456945436dda477d"
+    },
+    "source_execution": {
+      "path": "evidence/p2-g2-yxx-entry-source-execution.json",
+      "sha256": "927d52422742ccca7d407ff95623a15a6009e72ebaa9c64d57c6e82bfd1a79a9"
+    },
+    "scenario_matrix": {
+      "path": "evidence/p2-g2-yxx-entry-g2-scenario-matrix.json",
+      "sha256": "dd2f7dee9bedaf5499b4e5d130ab43e95eeef21e789faa969e026e79837c1bd8"
+    },
+    "independent_review": {
+      "path": "evidence/p2-g2-yxx-entry-review-summary.json",
+      "sha256": "50eac21513bb36bf9b448f2ebd5406b5e8e33c8def396c653baa091ed9bcac84"
+    },
+    "pr6_invariants": {
+      "path": "evidence/p2-g2-yxx-entry-pr6-invariants.json",
+      "sha256": "5edf74715801185dc3f0dc49ae524d7333db9c624800444a726964dd8b23a4af"
+    },
+    "candidate_inventory": {
+      "path": "evidence/p2-g2-yxx-entry-candidate-inventory.json",
+      "sha256": "92303d89da28533017ddeddfa0eab8ad14bbeb7247e94679c9c211cfc5dfab9d"
+    },
+    "classification_metrics": {
+      "path": "evidence/p2-g2-yxx-entry-classification-metrics.json",
+      "sha256": "810c7274c0fa35101b648e8d06cd1db6e22fd00f76d280a28fc1f3f9c0d3b0e5"
+    }
+  },
+  "environment": {
+    "node_version": "24.18.0",
+    "platform": "win32",
+    "architecture": "x64",
+    "postgres_version": "18.4",
+    "browser_version": "152.0.4191.66",
+    "os_release": "10.0.26200",
+    "formal_natural_gc_observation": false,
+    "whole_stack_2c4g_live_validation": "NOT_RUN"
+  },
+  "configured_resource_caps": {
+    "app_processes": 1,
+    "worker_processes": 1,
+    "gateway_connections": 1,
+    "postgres_instances": 1,
+    "app_pool": 4,
+    "worker_pool": 2,
+    "gateway_pool": 1,
+    "controller_pool": 1,
+    "sse_clients": 32,
+    "batch": 20,
+    "turns": 50,
+    "input_characters": 20000,
+    "list": 100
+  },
+  "persistent_flags_all_off": true,
+  "model_environment_keys_in_test_processes": 0,
+  "model_provider_calls": 0,
+  "ocr_calls": 0,
+  "rag_calls": 0,
+  "database_change": "NO_APPLICATION_SCHEMA_CHANGE_EXISTING_MIGRATIONS_UNCHANGED",
+  "shared_database_migrated": false,
+  "live_validation": "NOT_RUN",
+  "client_observation": "NOT_RUN",
+  "project_owner_approval": false,
+  "live_send_authorized": false,
+  "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
+  "next_task_candidate": "P2-G2-LIVE",
+  "next_task_authorized": false,
+  "runbook": "prompts/P2-G2_rule_first_service_loop_runbook.md",
+  "failure_history": "evidence/p2-g2-yxx-entry-regression-history.json",
+  "repair_report": "evidence/p2-g2-yxx-entry-review-remediation.md",
+  "service_chain_inventory": "evidence/p2-g2-service-chain-inventory.json",
+  "cleanup_limit": "Evidence, screenshots and ignored tmp diagnostic/source copies retained intentionally. No global Temp or historical profile cleanup.",
+  "cloud_environment_limit": "This member-entry task made no cloud changes or real provider calls. Historical stopped G2 and OAuth-only facts remain separate; current member candidate not deployed.",
+  "classification_metric_limits": "Classification comparison uses 106 comparable terminal observations; Ticket/Review ratios use 109 measured scenarios. Exclusions are explicit. Safe-route test coverage is not classification accuracy or a claim of original-202 label equality.",
+  "source_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "validation_scope": "P2_G2_YXX_MEMBER_ENTRY_AND_FULL_SERVICE_LOOP_PREPARATION",
+  "historical_readiness_snapshot": "evidence/p2-g2-yxx-entry-pr7-readiness-snapshot.json",
+  "persistent_flag_scope": "Repository business and member-entry defaults remain false; no runtime configuration was enabled by this task.",
+  "oauth_authentication": {
+    "status": "LIVE_VERIFIED",
+    "evidence": "evidence/p2-g2-wecom-web-oauth.md",
+    "business_service_loop_started": false
+  },
+  "historical_failure_history": "evidence/p2-g2-validation-run-index.json",
+  "source_worktree_parent_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "yixiaoxiu_member_ticket_entry": {
+    "path": "evidence/p2-g2-yxx-entry-report.json",
+    "sha256": "7ba443e0f6bf74ee973bad8c7331b174d02707e45f3038c4f5595b52a5b965c0"
+  }
+}

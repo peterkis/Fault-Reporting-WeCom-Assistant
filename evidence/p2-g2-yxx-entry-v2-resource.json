@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "a9a98feb4e48bed956d3fdce0ba6e93b52707f4956ef79ee7544356507c54e88",
+  "regression_tap_sha256": "9578687048350ba16c0c81c3a14898970d8acf3ff814c67be414e8881cdaa9ff",
+  "diagnostic_sha256": "64838f027847ad96420feee0fcbb6f1433a388e3d51af78ae69dea9ab7939d3c",
+  "measurement": {
+    "authenticated_sessions": 100,
+    "concurrent_reads": 32,
+    "overload_status": 503,
+    "pool_peak_connections": 4,
+    "pending_pool_after": 0,
+    "elapsed_ms": 346,
+    "rss_before_bytes": 92860416,
+    "rss_after_bytes": 99020800,
+    "catalog_unchanged": true,
+    "business_tables_unchanged": true,
+    "formal_observation": false,
+    "real_provider_calls": 0
+  }
+}

@@ -2,10 +2,14 @@ import { appendRealtimeEvent,computeRealtimeEventKey,normalizeRealtimeEventComma
 import { hashP2016,failP2016 } from './p2-016-domain-contracts.mjs';
 import { shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
 
+export function lockP2016Realtime(transaction){
+  return transaction.query("SELECT pg_advisory_xact_lock(hashtextextended('P2_003_REALTIME_STREAM:CONVERSATION_WORKBENCH',0))");
+}
+
 // P2-016 assembly seam: source facts retain their own time. The shared stream envelope uses publication time.
 export async function appendP2016Realtime({transaction:tx,command:input}) {
   const command=normalizeRealtimeEventCommand(input),key=computeRealtimeEventKey(command);
-  await tx.query("SELECT pg_advisory_xact_lock(hashtextextended('P2_003_REALTIME_STREAM:CONVERSATION_WORKBENCH',0))");
+  await lockP2016Realtime(tx);
   const found=await tx.query('SELECT * FROM conversation.realtime_event WHERE event_key=$1',[key]);
   if(found.rowCount){
     const old=found.rows[0],keys=Object.keys(command).filter(k=>!['schema_version','occurred_at','expires_at','expires_epoch_ms'].includes(k));

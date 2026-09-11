@@ -15,6 +15,9 @@ import { verifyG2Candidate, verifyG2ApprovalFile, requirePreparedG2Candidate } f
 import { createG2SendGuard, createG2ProviderGate, approvalCheck } from '../src/p2-g2-send-guard.mjs';
 import { appendG2Communication } from '../src/p2-g2-communication-append.mjs';
 import { installG2NetworkBoundary, probeG2NetworkBoundary } from '../src/p2-g2-network-boundary.mjs';
+import {readYxxG2AppConfiguration} from '../src/p2-g2-yixiaoxiu-g2-config.mjs';
+import {createWeComOAuthCodeResolver} from '../src/p2-g2-wecom-oauth-provider.mjs';
+import {createWeComAppTokenProvider} from '../src/p2-g2-wecom-app-token.mjs';
 
 export async function main(argv = process.argv.slice(2)) {
   if (typeof process.send !== 'function' || argv.length !== 1 || !['--role=app', '--role=worker', '--role=gateway'].includes(argv[0])) failG2('PROCESS_ROLE_INVALID');
@@ -27,7 +30,8 @@ export async function main(argv = process.argv.slice(2)) {
   verifyG2Candidate(manifest.candidate_fingerprint);
   verifyG2ApprovalFile(manifest);
   if(c.liveApproved)requirePreparedG2Candidate(manifest.candidate_fingerprint);
-  installG2NetworkBoundary(manifest);
+  const memberConfig=role==='APP'?readYxxG2AppConfiguration({manifest,env:process.env}):null;
+  installG2NetworkBoundary(manifest,{memberOAuthEnabled:memberConfig!==null});
   const send = (request, result, ok = true) => process.send?.({ type: 'control-response', role, request_id: request.request_id, ok,
     ...(ok ? { result } : { error_code: 'P2_G2_CONTROL_REJECTED' }) });
   process.on('message', async message => {
@@ -42,6 +46,8 @@ export async function main(argv = process.argv.slice(2)) {
   const authorizer = pool => createP2012PersonDestinationAuthorizer({ pool, botId: c.botId,
     personHashes: manifest.scope.person_hashes, groupHashes: manifest.scope.group_hashes, testLabel: G2_TEST_PREFIX, labelSource: 'raw' });
   if (role === 'APP') return runApp({ runtimeFactory: options => createP2012Runtime({ ...options,
+    reporterPolicy:c.reporterPolicy,...(memberConfig?{reporterMemberEntry:memberConfig,wecomWebOAuth:{enabled:true,
+      corpId:memberConfig.corpId,agentId:memberConfig.agentId,resolveCode:createWeComOAuthCodeResolver({accessTokenProvider:createWeComAppTokenProvider({corpId:memberConfig.corpId,appSecret:process.env.APP_SECRET})})}}:{}),
     flags: { TICKET_LIFECYCLE_WORKBENCH_ENABLED: true, REPORTER_TIMELINE_ENABLED: true, WECOM_TEMPLATE_CARD_ENABLED: true },
     incidentFlags: { INCIDENT_CORRELATION_ENABLED: true, INCIDENT_PUBLIC_NOTICE_ENABLED: true, INCIDENT_PRIVATE_NOTICE_ENABLED: true },
     incidentBackgroundMaintenance: false, communicationAppend: appendG2Communication,ticketNotificationAdditionalEvents:c.ticketNotificationAdditionalEvents,
@@ -96,7 +102,7 @@ export async function main(argv = process.argv.slice(2)) {
         gateway: createG2ProviderGate({ gateway: actualGateway, manifest, env: process.env,
           receiptFile:path.join(path.dirname(process.env.P2_G2_SEND_BUDGET_FILE),'provider-receipts.jsonl') }), botId: c.botId,
       approvedGroupHashes: manifest.scope.group_hashes, cardEnabled: true, reporterAccess: access(pool), origin: manifest.reporter_origin,
-      allowedHosts: [new URL(manifest.reporter_origin).host], allowLocalHttp: manifest.mode==='synthetic', testLabel: G2_TEST_PREFIX, labelSource: 'raw' }) }),
+      allowedHosts: [new URL(manifest.reporter_origin).host], allowLocalHttp: manifest.mode==='synthetic', testLabel: G2_TEST_PREFIX, labelSource: 'raw',linkMode:c.reporterPolicy }) }),
   });
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main().catch(error => {

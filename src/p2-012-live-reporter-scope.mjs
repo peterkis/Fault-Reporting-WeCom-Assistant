@@ -92,7 +92,7 @@ export function createP2012PersonDestinationAuthorizer({ pool, botId, personHash
 }
 
 export function createP2012DynamicWeComSender({ pool, gateway, allowedTargetHashes = [], approvedGroupHashes,
-  botId, enabled = false, cardEnabled = false, reporterAccess, origin, allowedHosts = [], allowLocalHttp = false, testLabel = TEST_LABEL, labelSource = 'clean',groupClosureWebhook=null } = {}) {
+  botId, enabled = false, cardEnabled = false, reporterAccess, origin, allowedHosts = [], allowLocalHttp = false, testLabel = TEST_LABEL, labelSource = 'clean',groupClosureWebhook=null,linkMode='LEGACY_BOUND_GRANT' } = {}) {
   if (!enabled) return createCommunicationSenderPort(async () => rejected('P2_012_SENDER_DISABLED'));
   const closureSender=groupClosureWebhook?createP2016GroupClosureWebhookSender({pool,...groupClosureWebhook}):null;
   const registry = createP2012ApprovedGroupReporterRegistry({ pool, botId, groupHashes: approvedGroupHashes, testLabel, labelSource });
@@ -106,7 +106,7 @@ export function createP2012DynamicWeComSender({ pool, gateway, allowedTargetHash
     }
     const targetHash = textHashP2016(request.target_id);
     if(request.message.content?.transport==='WECOM_GROUP_WEBHOOK')return closureSender?closureSender.send(request):rejected('P2_016_WEBHOOK_ROUTE_MISSING');
-    const sender = createP2016WeComSender({ gateway, enabled, cardEnabled, reporterAccess, origin, allowedHosts, allowLocalHttp,
+    const sender = createP2016WeComSender({ gateway, enabled, cardEnabled, reporterAccess, origin, allowedHosts, allowLocalHttp,linkMode,
       allowedTargetHashes: [...new Set([...allowedTargetHashes, targetHash])] });
     return sender.send(request);
   });

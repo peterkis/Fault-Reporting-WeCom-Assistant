@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900
+ok 1 - YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900
+  ---
+  duration_ms: 4566.4022
+  type: 'test'
+  ...
+# Subtest: YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844
+ok 2 - YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844
+  ---
+  duration_ms: 5864.6803
+  type: 'test'
+  ...
+# Subtest: YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag
+ok 3 - YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag
+  ---
+  duration_ms: 6632.4233
+  type: 'test'
+  ...
+# Subtest: YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge
+ok 4 - YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge
+  ---
+  duration_ms: 5873.942
+  type: 'test'
+  ...
+# Subtest: YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data
+ok 5 - YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data
+  ---
+  duration_ms: 7430.7443
+  type: 'test'
+  ...
+# Subtest: YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback
+ok 6 - YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback
+  ---
+  duration_ms: 5.1131
+  type: 'test'
+  ...
+# Subtest: YXX-01 member Sender still validates delivery Grant recipient binding before its mock SDK call
+ok 7 - YXX-01 member Sender still validates delivery Grant recipient binding before its mock SDK call
+  ---
+  duration_ms: 3.5448
+  type: 'test'
+  ...
+# Subtest: YXX-35 closed member schemas expose authentication mode without raw identity or nullable Ticket guessing
+ok 8 - YXX-35 closed member schemas expose authentication mode without raw identity or nullable Ticket guessing
+  ---
+  duration_ms: 14.8363
+  type: 'test'
+  ...
+# Subtest: YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint
+ok 9 - YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint
+  ---
+  duration_ms: 1.8521
+  type: 'test'
+  ...
+# Subtest: YXX-35 configuration refuses Proxy, accessors, toJSON, cycles and loose identity coercions
+ok 10 - YXX-35 configuration refuses Proxy, accessors, toJSON, cycles and loose identity coercions
+  ---
+  duration_ms: 0.9646
+  type: 'test'
+  ...
+# Subtest: YXX-01 both member card click regions use one canonical ref without a grant or identity
+ok 11 - YXX-01 both member card click regions use one canonical ref without a grant or identity
+  ---
+  duration_ms: 0.9596
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31177.2278

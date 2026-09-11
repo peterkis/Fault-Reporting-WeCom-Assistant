@@ -1,0 +1,43 @@
+TAP version 13
+# Subtest: PR8 member card Worker delivers after the legacy Grant expires without renewing it
+not ok 1 - PR8 member card Worker delivers after the legacy Grant expires without renewing it
+  ---
+  duration_ms: 2078.8387
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-016-notification-delivery.integration.test.mjs:17:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'DEAD_LETTER'
+    - 'SENT'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'SENT'
+  actual: 'DEAD_LETTER'
+  operator: 'strictEqual'
+  stack: |-
+    run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-016-notification-delivery.integration.test.mjs:38:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-016-notification-delivery.integration.test.mjs:18:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: P2-016 persisted card delivery, HMAC grants, one-use sessions and reporter-safe timeline
+ok 2 - P2-016 persisted card delivery, HMAC grants, one-use sessions and reporter-safe timeline
+  ---
+  duration_ms: 2115.6554
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4374.7013

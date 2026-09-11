@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "work_item": "P2-G2-YXX-TICKET-ENTRY",
+  "event_time": "2026-09-11 21:55:04",
+  "event_epoch_ms": "1789134904572",
+  "local_catalog_only": true,
+  "remaining_owned_yxx_fixture_databases": 0,
+  "no_business_tables_read": true,
+  "migrations_001_032_unchanged": true,
+  "new_migrations": 0,
+  "package_and_lock_unchanged": true,
+  "gitignore_bytes_sha256": "8852c9ee0697ae9926740b9fcce83326cfb88f2022a205e878bcd508c1c21233",
+  "gitignore_index_unchanged": true,
+  "gitignore_staged": false,
+  "fixture_cleanup": "Final passing tests awaited owned server/proxy/browser/process shutdown, database drop and ephemeral TLS/profile deletion; caller-owned pools preserved.",
+  "retained_files": "Evidence and ignored tmp diagnostics, official-document copies and preparation scripts intentionally retained; no broad Temp cleanup.",
+  "real_provider_calls": 0,
+  "real_sends": 0,
+  "formal_observation": "NOT_RUN",
+  "remaining_owned_tls_directories": 0,
+  "remaining_owned_app_or_full_runner_processes": 0,
+  "raw_log_retention": "Current full-run TAP retained in canonical Evidence and ignored runner directory; no deletion of historical logs or global Temp files."
+}

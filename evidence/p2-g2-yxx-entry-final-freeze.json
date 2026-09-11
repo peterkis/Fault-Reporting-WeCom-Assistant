@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "work_item": "P2-G2-YXX-TICKET-ENTRY",
+  "candidate_fingerprint": "238e75165605015ceb844f140c5be4e79076cb3a1e65446c25615c02f4c13a2a",
+  "candidate_file_count": 607,
+  "status": "FROZEN_FOR_FINAL_FULL_REGRESSION",
+  "live_authorized": false
+}

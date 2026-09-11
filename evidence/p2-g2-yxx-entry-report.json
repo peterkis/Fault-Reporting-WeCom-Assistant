@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "work_item": "P2-G2-YXX-TICKET-ENTRY",
+  "parent_gate": "P2-G2",
+  "recorded_at": "2026-09-11 21:58:21",
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "candidate_file_count": 609,
+  "candidate_algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF",
+  "branch": "phase2/yixiaoxiu-member-ticket-entry",
+  "base_commit": "4cecdb5551da455a8b0a6c877f7f0a63ffa6eec9",
+  "authorization_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "source_worktree_parent_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+  "review_repair_authorization": "evidence/p2-g2-yxx-entry-pr8-repair-authorization.md",
+  "implementation": "IMPLEMENTED",
+  "automation": "VERIFIED",
+  "entry_status": "IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING",
+  "entry_live_authorized": false,
+  "entry_live_result": "NOT_RUN",
+  "p2_g2_live_result": "NOT_RUN",
+  "identity_namespace_live_verified": false,
+  "persistent_flags_all_off": true,
+  "no_ddl": true,
+  "dependency_changes": false,
+  "real_provider_calls": 0,
+  "real_business_data_access": false,
+  "real_sends": 0,
+  "ai_calls": 0,
+  "ocr_calls": 0,
+  "rag_calls": 0,
+  "reporter_policy": "MEMBER_REQUIRED",
+  "full_regression": {
+    "tests": 1044,
+    "pass": 1044,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_file_count": 166,
+    "baseline_test_file_count": 158,
+    "baseline_test_files_covered": true,
+    "candidate_unchanged": true,
+    "exit_code": 0,
+    "tap_path": "evidence/p2-g2-yxx-entry-v3-regression.tap",
+    "tap_sha256": "ed96a75eeec81a7fb56c9927086ff092c4e768bcdb27e7fc5950abf94f5703af"
+  },
+  "sources": {
+    "scenario_matrix": {
+      "path": "evidence/p2-g2-yxx-entry-v3-scenario-matrix.json",
+      "sha256": "b9fde27801f65d29b276af15e5103cdb4881cd32268762b6c0af7ea0a3127906"
+    },
+    "route_audit": {
+      "path": "evidence/p2-g2-yxx-entry-v3-route-audit.json",
+      "sha256": "c3666ca505eeabf60c7916b3aa225109c6090f77d7adcbf62cc695d136673b50"
+    },
+    "regression_run": {
+      "path": "evidence/p2-g2-yxx-entry-v3-regression-run.json",
+      "sha256": "5e72e0fde11b2b489a68e37b6ba7d559040b9c8f85a26e2b228116e8ea25cc94"
+    },
+    "independent_review": {
+      "path": "evidence/p2-g2-yxx-entry-v3-review-summary.json",
+      "sha256": "e7ad6e186a1dd1a5ace7063710a0409d3ab446cf160bd6b5b8db7383bb4f9fa4"
+    },
+    "resource_measurement": {
+      "path": "evidence/p2-g2-yxx-entry-v3-resource.json",
+      "sha256": "5146f6090b0fd2ee38c2fb5f95068459036c18441a150f8905aeb34195710527"
+    },
+    "candidate_inventory": {
+      "path": "evidence/p2-g2-yxx-entry-v3-candidate-inventory.json",
+      "sha256": "2605099c130a3c1dde552b711f9118f4bab9c9f9932b56cf59fdcadb33baf036"
+    },
+    "cleanup": {
+      "path": "evidence/p2-g2-yxx-entry-v3-cleanup.json",
+      "sha256": "32de088e2f72dea7aaf8723f1255035b26024667d6a80955444ead2574f71879"
+    },
+    "visual_archive": {
+      "path": "evidence/p2-g2-yxx-entry-v3-screenshots.json",
+      "sha256": "d425ff432a672ff84cff3b3ff44a90331571b88e5ad26d479e6e11c8c4a6288f"
+    }
+  },
+  "identity_proof": {
+    "live": "UNVERIFIED",
+    "synthetic": "VERIFIED_ONLY_IN_ISOLATED_TEST",
+    "historical_oauth_only": "Authentication history only; no proof of Bot-to-application reporter namespace correspondence."
+  },
+  "preservation": {
+    "grant_consumption_unchanged": true,
+    "session_grant_id_not_null_unique": true,
+    "new_persistent_member_sessions": 0,
+    "new_login_grants": 0,
+    "direct_leg_created_by_login": false,
+    "private_send_eligibility_created_by_login": false,
+    "migrations_001_032_unchanged": true
+  },
+  "resource": {
+    "authenticated_sessions": 100,
+    "concurrent_reads": 32,
+    "overload_status": 503,
+    "pool_peak_connections": 4,
+    "pending_pool_after": 0,
+    "elapsed_ms": 331,
+    "rss_before_bytes": 92344320,
+    "rss_after_bytes": 98529280,
+    "catalog_unchanged": true,
+    "business_tables_unchanged": true,
+    "formal_observation": false,
+    "real_provider_calls": 0
+  },
+  "cleanup": {
+    "owned_test_resources": "Fixtures assert clean shutdown and database drop; see final TAP. External shared pools remain owned by callers.",
+    "retained_files": "Canonical full-run TAP retained in Evidence; ignored runner TAP retained for audit; screenshots and ignored run metadata/source copies retained. No global Temp or historical profile cleanup.",
+    "formal_natural_gc_observation": false,
+    "whole_stack_2c4g_live_validation": "NOT_RUN"
+  },
+  "gitignore": {
+    "bytes_sha256": "8852c9ee0697ae9926740b9fcce83326cfb88f2022a205e878bcd508c1c21233",
+    "index_blob": "942b2b8d94b4f1e9dda5369cbac0cbe31056d950",
+    "modified_by_task": false,
+    "working_tree_dirty": false,
+    "staged": false,
+    "committed_by_user_before_repair": true,
+    "user_change_preserved": true
+  },
+  "browser_limits": [
+    "Actual Edge desktop/mobile widths, multi-tab, actual history back and a synthetic persisted pageshow branch tested; no claim that Edge actually selected BFCache for that navigation."
+  ],
+  "runbook": "docs/runbooks/yixiaoxiu-member-ticket-entry.md",
+  "failure_history": "evidence/p2-g2-yxx-entry-v3-regression-history.json",
+  "stop_line": "Local implementation and isolated automation complete; wait for independent targeted-live authorization. P2-G2-LIVE, P2-008 and later Gates remain unauthorized.",
+  "event_time": "2026-09-11 21:58:21",
+  "event_epoch_ms": "1789135101222"
+}

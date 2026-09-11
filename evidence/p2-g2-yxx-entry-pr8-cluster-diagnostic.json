@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 20:37:01",
+  "event_epoch_ms": "1789130221354",
+  "scope": "Repeated existing real isolated three-process topology with unchanged candidate; temporary parent-side readiness observation, no production instrumentation.",
+  "records": [
+    {
+      "event_time": "2026-09-11 20:34:40",
+      "event_epoch_ms": "1789130080785",
+      "iteration": 1,
+      "exit_code": 0,
+      "duration_ms": 13682,
+      "path": "tmp/pr8-cluster-diagnostic-1.tap",
+      "observations": [
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}",
+        "# [DEBUG-pr8-cluster] {\"status\":200,\"body\":{\"ok\":true,\"base_service_ready\":true,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":true,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}"
+      ]
+    },
+    {
+      "event_time": "2026-09-11 20:34:54",
+      "event_epoch_ms": "1789130094339",
+      "iteration": 2,
+      "exit_code": 0,
+      "duration_ms": 13553,
+      "path": "tmp/pr8-cluster-diagnostic-2.tap",
+      "observations": [
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}",
+        "# [DEBUG-pr8-cluster] {\"status\":200,\"body\":{\"ok\":true,\"base_service_ready\":true,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":true,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}"
+      ]
+    },
+    {
+      "event_time": "2026-09-11 20:35:08",
+      "event_epoch_ms": "1789130108240",
+      "iteration": 3,
+      "exit_code": 0,
+      "duration_ms": 13900,
+      "path": "tmp/pr8-cluster-diagnostic-3.tap",
+      "observations": [
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}",
+        "# [DEBUG-pr8-cluster] {\"status\":200,\"body\":{\"ok\":true,\"base_service_ready\":true,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":true,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}"
+      ]
+    },
+    {
+      "event_time": "2026-09-11 20:35:21",
+      "event_epoch_ms": "1789130121888",
+      "iteration": 4,
+      "exit_code": 0,
+      "duration_ms": 13648,
+      "path": "tmp/pr8-cluster-diagnostic-4.tap",
+      "observations": [
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}",
+        "# [DEBUG-pr8-cluster] {\"status\":200,\"body\":{\"ok\":true,\"base_service_ready\":true,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":true,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}"
+      ]
+    },
+    {
+      "event_time": "2026-09-11 20:35:35",
+      "event_epoch_ms": "1789130135520",
+      "iteration": 5,
+      "exit_code": 0,
+      "duration_ms": 13632,
+      "path": "tmp/pr8-cluster-diagnostic-5.tap",
+      "observations": [
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}",
+        "# [DEBUG-pr8-cluster] {\"status\":200,\"body\":{\"ok\":true,\"base_service_ready\":true,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":true,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}"
+      ]
+    },
+    {
+      "event_time": "2026-09-11 20:35:48",
+      "event_epoch_ms": "1789130148983",
+      "iteration": 6,
+      "exit_code": 0,
+      "duration_ms": 13463,
+      "path": "tmp/pr8-cluster-diagnostic-6.tap",
+      "observations": [
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}",
+        "# [DEBUG-pr8-cluster] {\"status\":200,\"body\":{\"ok\":true,\"base_service_ready\":true,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":true,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}"
+      ]
+    },
+    {
+      "event_time": "2026-09-11 20:37:01",
+      "event_epoch_ms": "1789130221354",
+      "iteration": 7,
+      "exit_code": 1,
+      "duration_ms": 72371,
+      "path": "tmp/pr8-cluster-diagnostic-7.tap",
+      "observations": [
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}",
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":false,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}"
+      ]
+    }
+  ]
+}
