@@ -94,7 +94,9 @@ test('original UNKNOWN source requires reconciliation after a real Outbox attemp
 test('D12-063 four actual Direct-qualified subscriptions produce version-idempotent Incident notices',async t=>{
   await withG2Runtime(async f=>{
     const decisions=[];
-    for(const reporter of f.reporters){await f.inbound('测试诊室断网。',{reporter});const batch=await f.pump();decisions.push(batch.results[0].decision_id);}
+    for(const reporter of f.reporters){await f.inbound('测试诊室断网。',{reporter});const batch=await f.pump();decisions.push(batch.results[0].decision_id);
+      // Reproduce a normal background tick before the fourth report; the earlier candidate stays immutable.
+      if(decisions.length===3)await f.runtime.incidentExtension.runOnce();}
     const receipts=(await f.pool.query(`SELECT i.reporter_wecom_userid AS reporter,m.content->>'text' AS text
       FROM communication.ticket_notification_binding b JOIN communication.message m ON m.id=b.message_id
       JOIN pilot_ticket.ticket t ON t.id=b.ticket_id JOIN intake.service_intake i ON i.id=t.source_intake_id
@@ -102,12 +104,17 @@ test('D12-063 four actual Direct-qualified subscriptions produce version-idempot
     assert.equal(receipts.length,4);
     for(const r of receipts){const ref=r.text.match(/续接工单 ([A-Za-z0-9_-]{32})：/u)?.[1];assert.ok(ref);
       await f.inbound('续接工单 '+ref+'：补充，还是断网。',{chatType:'single',reporter:r.reporter});await f.pump();}
-    await f.runtime.incidentExtension.runOnce();const c=(await f.get('/api/incident-candidates')).items[0];assert.ok(c);
+    await f.runtime.incidentExtension.runOnce();
+    const candidates=(await f.get('/api/incident-candidates')).items;
+    assert.ok(candidates.some(candidate=>candidate.distinct_reporters===3));
+    const c=candidates.find(candidate=>candidate.distinct_reporters===4);assert.ok(c);
     const root='/api/incident-candidates/'+c.id;
     assert.equal((await f.post(root+'/start-review',{client_command_id:randomUUID(),expected_row_version:c.row_version,reason_code:'OPERATOR_REVIEWED'})).status,200);
-    const current=await f.get(root),command={client_command_id:randomUUID(),expected_candidate_version:current.row_version,
-      reason_code:'OPERATOR_REVIEWED',confirmed_scope:'LOCAL',owner_principal_id:f.admin.id,selected_report_refs:decisions};
-    const confirmed=await f.post(root+'/confirm',command,current.row_version);assert.equal(confirmed.status,200);
+    const current=await f.get(root);assert.equal(current.report_sources.length,4);
+    const command={client_command_id:randomUUID(),expected_candidate_version:current.row_version,
+      reason_code:'OPERATOR_REVIEWED',confirmed_scope:'LOCAL',owner_principal_id:f.admin.id,
+      selected_report_refs:current.report_sources.map(source=>source.source_decision_id)};
+    const confirmed=await f.post(root+'/confirm',command,current.row_version);assert.equal(confirmed.status,200,JSON.stringify(confirmed.body));
     const id=confirmed.body.result_ref_id;
     const subscriptions=(await f.pool.query('SELECT status FROM incident.reporter_subscription WHERE incident_id=$1',[id])).rows;
     assert.equal(subscriptions.length,4);assert.ok(subscriptions.every(s=>s.status==='ACTIVE'));
