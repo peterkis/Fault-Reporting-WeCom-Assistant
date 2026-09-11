@@ -29,14 +29,27 @@
     "all_seven_binding_artifact_hashes_verified": true,
     "source_execution_recomputed_from_tap": true,
     "frozen_sql_and_fixture_content_unchanged": true,
-    "attributes_change": "Only preserve raw checkout bytes for SQL 001-009 and frozen P2-012 fixture; existing evidence byte rules retained.",
+    "attributes_change": "Preserve raw checkout bytes for SQL 001-009, frozen P2-012 fixture and the two existing scripts/*.ps1 candidate inputs; existing evidence byte rules retained. No script, SQL or fixture content change.",
     "resolved_findings": [
       "Directory non-success response cancellation and terminal abort verified; 2/2 resource tests independently passed.",
       "Manual and automatic guided continuation share existing Ticket source lookup; no speculative abstraction.",
       "Authorized rule-engine frozen-check exception is narrow; D12-063 retains immutable candidates and four-report notification/replay assertions.",
       "OAuth deadline, invalid-code token isolation and HTTP response cleanup independently verified; 18/18 targeted tests passed."
     ],
-    "baseline_test_files_nested": 2
+    "baseline_test_files_nested": 2,
+    "checkout_metadata_followup": {
+      "verdict": "PASS",
+      "powershell_script_count": 2,
+      "primary_working_and_git_fingerprints_match": true,
+      "secondary_working_and_git_fingerprints_match": true,
+      "candidate_fingerprint": "64c5a08a11bb4d140b02cf0c5e43758ea57d01e76f6bfaa3b34f819c188d249e",
+      "secondary_require_ready_checks": 17,
+      "secondary_require_ready_errors": [],
+      "live_validation": "NOT_RUN",
+      "database_writes": false,
+      "provider_calls": 0,
+      "scope": "Independent read-only Git-byte comparisons in both worktrees and secondary readiness validation; no database or full regression rerun."
+    }
   },
   "limits": [
     "No database rerun in this binding review; inspected recorded current-candidate 976/976 full regression.",

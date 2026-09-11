@@ -6,3 +6,5 @@
 # These frozen artifacts are verified by raw-byte hashes, not normalized text hashes.
 /database/migrations/00[1-9]_*.sql -text
 /tests/fixtures/p2-012/incident-scenarios.v1.jsonl -text
+# The candidate inventory treats PowerShell scripts as byte-preserved inputs.
+/scripts/*.ps1 -text

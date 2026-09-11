@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "gate": "P2-G2",
-  "recorded_at": "2026-09-11 10:37:45",
+  "recorded_at": "2026-09-11 10:58:46",
   "preparation_status": "READY_FOR_LIVE_E2E",
   "gate_status": "IN_PROGRESS",
   "active_task": "P2-G2",
@@ -59,7 +59,7 @@
     },
     "independent_review": {
       "path": "evidence/p2-g2-pr7-review-summary.json",
-      "sha256": "8f0642e4d98995d9f62e4bc22b363fed9457c2848a61691474a04600ffb40b67"
+      "sha256": "267f477cc365448193353770efb8371358aefcd4c21d04114af4a8527f64441f"
     },
     "pr6_invariants": {
       "path": "evidence/p2-g2-pr7-pr6-invariants.json",
