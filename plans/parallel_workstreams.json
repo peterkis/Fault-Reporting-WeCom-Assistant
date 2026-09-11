@@ -19,7 +19,7 @@
   "last_completed_architecture_task": "ARCH-006",
   "active_task": "P2-G2",
   "active_lane": "ASSEMBLY",
-  "implementation_authorization_status": "P2_G2_READY_FOR_LIVE_E2E",
+  "implementation_authorization_status": "P2_G2_ASSEMBLY_AUTHORIZED",
   "authorized_architecture_tasks": [
     "ARCH-005",
     "ARCH-006"
@@ -60,7 +60,7 @@
   "p2_006_authorization_evidence": "evidence/p2-006-start-authorization.md",
   "p2_006_completed_at": "2026-09-01",
   "p2_006_completion_evidence": "evidence/p2-006-realtime-workbench-report.md",
-  "p2_g2_status": "READY_FOR_LIVE_E2E",
+  "p2_g2_status": "IN_PROGRESS",
   "p2_g3_status": "NOT_STARTED",
   "p2_g4_status": "NOT_STARTED",
   "p2_g5_status": "NOT_STARTED",
@@ -80,8 +80,8 @@
   "p2_011_status": "TODO",
   "p2_013_status": "TODO",
   "p2_014_status": "TODO",
-  "next_task_candidate": "P2-G2-LIVE",
-  "next_task_authorized": false,
+  "next_task_candidate": "P2-G2",
+  "next_task_authorized": true,
   "feature_flags_enabled": [],
   "feature_flag_defaults": {
     "CONVERSATION_CENTER_ENABLED": false,
@@ -306,7 +306,7 @@
     {
       "id": "P2-G2",
       "name": "规则优先、人工兜底的完整服务闭环",
-      "status": "READY_FOR_LIVE_E2E",
+      "status": "IN_PROGRESS",
       "requires": [
         "P2-G1",
         "ARCH-005",
@@ -415,5 +415,17 @@
   "p2_g2_authorization_evidence": "evidence/p2-g2-start-authorization.md",
   "p2_g2_base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
   "p2_g2_automated_readiness_evidence": "evidence/p2-g2-automated-readiness-report.json",
-  "p2_g2_ready_at": "2026-09-09"
+  "p2_g2_ready_at": "2026-09-09",
+  "yixiaoxiu_member_ticket_entry": {
+    "work_item": "P2-G2-YXX-TICKET-ENTRY",
+    "status": "AUTHORIZED",
+    "scope": "LOCAL_IMPLEMENTATION_AND_ISOLATED_VALIDATION",
+    "parent_gate": "P2-G2",
+    "live_authorized": false,
+    "task": "tasks/P2-G2_yixiaoxiu_member_ticket_entry.md",
+    "authorization_evidence": "evidence/p2-g2-yxx-entry-start-authorization.md",
+    "enabled_by_default": false,
+    "identity_namespace_live_verified": false
+  },
+  "p2_g2_live_authorized": false
 }
