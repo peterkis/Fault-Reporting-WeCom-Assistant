@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "a9a98feb4e48bed956d3fdce0ba6e93b52707f4956ef79ee7544356507c54e88",
+  "axis": "SPEC",
+  "reviewer": "/root/yxx_spec_review",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [
+    {
+      "id": "YXX-SPEC-01",
+      "severity": "P1",
+      "title": "Concurrent callback identity replacement retained prior session",
+      "resolved": true,
+      "resolution": "Server-owned browser binding group now invalidates every prior session on replacement; same-binding and initial-navigation-binding SQL race regression passes.",
+      "evidence_test_name": "YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read"
+    },
+    {
+      "id": "YXX-SPEC-02",
+      "severity": "P2",
+      "title": "Fresh authentication or legacy prepare could inherit an expiring browser binding",
+      "resolved": true,
+      "resolution": "Explicit begin/prepare refreshes recognized binding TTL without extending existing member sessions or polling lifetime; expired and logged-out bindings cannot revive.",
+      "evidence_test_name": "YXX-13 explicit fresh login refreshes browser binding without extending authentication or polling lifetime"
+    },
+    {
+      "id": "YXX-SPEC-03",
+      "severity": "P2",
+      "title": "Expired or restarted legacy continuation lacked original-card recovery instruction",
+      "resolved": true,
+      "resolution": "Generic 404 HTML directs a new original-card click without exposing Ticket facts; both OpenAPI declarations match.",
+      "evidence_test_name": "YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery"
+    }
+  ],
+  "source_execution_sha256": "8bad99aeeb2fd60e2138171140098c69e56d7a213c548b86dc33525a54bf0502",
+  "scenario_matrix_sha256": "0445d61aeac2e785018690c29a82a17165079d20809fc8a50520c101e7dc0aff",
+  "source_worktree_parent_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "verification": {
+    "candidate_recomputed": true,
+    "candidate_file_count": 607,
+    "artifact_hashes_verified": 10,
+    "raw_run_and_tap_equal_final_runner_outputs": true,
+    "tap_counts_recomputed": {
+      "tests": 1029,
+      "pass": 1029,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passing_tap_records": 1029,
+    "test_file_hashes_verified": 165,
+    "pr7_baseline_files_covered": 158,
+    "member_scenarios_verified": 48,
+    "g2_scenarios_verified": 37,
+    "g2_test_references_verified": 107,
+    "source_audit_recomputed": true,
+    "source_cases": 202,
+    "normal_source_pass_cases": 122,
+    "manual_review_observation_missing": 0,
+    "pr6_invariants_verified": 10,
+    "pr6_test_references_verified": 27,
+    "classification_population_and_metrics_preserved": true,
+    "classification_current_proof_references_verified": true,
+    "route_count": 17,
+    "resource_measurement": {
+      "sessions": 100,
+      "concurrent_reads": 32,
+      "pool_peak": 4,
+      "pending_after": 0
+    },
+    "resolved_findings_present_in_final_tap": true,
+    "arch006_narrow_guard": "Source reviewed: only two current-report M paths, active authorization and exact snapshots; READY verifier unconditional even with no differences and authorized=false; corresponding final TAP test passed.",
+    "authorization_bytes_match_fixed_commit": true,
+    "pr7_snapshot_bytes_match_origin_main": true,
+    "native_browser_delta": "Source reviewed: absolute CDP Page.navigate with errorText assertion; initial about:blank; held OAuth navigation awaited after controlled release; original security, identity, Timeline, timezone and layout assertions retained.",
+    "native_browser_cases_in_final_tap": [
+      "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+      "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844",
+      "YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag",
+      "YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge",
+      "YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data"
+    ],
+    "prior_spec_review_bytes_unchanged": true,
+    "prior_1028_receipt_retained": true,
+    "final_review_ran_tests": false
+  },
+  "limits": {
+    "scope": "LOCAL_IMPLEMENTATION_AND_ISOLATED_AUTOMATION",
+    "master_reports": "Await root current-report assembly and final requirePreparedG2Candidate check; this independent review is an input to that gate.",
+    "previous_browser_failure": "Initial relative navigation failure was not reproduced by20 ordinary replays; about:blank reproduces the error shape. Do not claim the original intermittent cause is conclusively established.",
+    "duplicate_raw_tap_cleanup": "Raw runner TAP and canonical v2 Evidence TAP were byte-identical at review time; reviewer deleted no files.",
+    "identity_namespace_live_verified": false,
+    "entry_live_authorized": false,
+    "entry_live_result": "NOT_RUN",
+    "p2_g2_live_result": "NOT_RUN",
+    "no_live_approval": true,
+    "real_provider_calls_by_reviewer": 0,
+    "real_business_data_access_by_reviewer": false,
+    "formal_observation": "NOT_RUN",
+    "phase2_go": false
+  }
+}

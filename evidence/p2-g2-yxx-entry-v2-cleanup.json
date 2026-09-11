@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "work_item": "P2-G2-YXX-TICKET-ENTRY",
+  "recorded_at": "2026-09-11T08:18:48.583Z",
+  "local_catalog_only": true,
+  "remaining_owned_yxx_fixture_databases": 0,
+  "no_business_tables_read": true,
+  "migrations_001_032_unchanged": true,
+  "new_migrations": 0,
+  "package_and_lock_unchanged": true,
+  "gitignore_bytes_sha256": "8852c9ee0697ae9926740b9fcce83326cfb88f2022a205e878bcd508c1c21233",
+  "gitignore_index_unchanged": true,
+  "gitignore_staged": false,
+  "fixture_cleanup": "Final passing tests awaited owned server/proxy/browser/process shutdown, database drop and ephemeral TLS/profile deletion; caller-owned pools preserved.",
+  "retained_files": "Evidence and ignored tmp diagnostics, official-document copies and preparation scripts intentionally retained; no broad Temp cleanup.",
+  "real_provider_calls": 0,
+  "real_sends": 0,
+  "formal_observation": "NOT_RUN",
+  "remaining_owned_tls_directories": 0,
+  "remaining_owned_app_or_full_runner_processes": 0,
+  "duplicate_full_tap_copies_removed": 4,
+  "canonical_full_tap_records": [
+    {
+      "canonical_path": "evidence/p2-g2-yxx-entry-intermediate-regression.tap",
+      "sha256": "31df68fa00ae92cf71584b393a49b4c1826c0942a4261815364771299bad73da"
+    },
+    {
+      "canonical_path": "evidence/p2-g2-yxx-entry-regression.tap",
+      "sha256": "f32499fe45bfe07360119820dfdf379d1350691253c75775b7cfeaa67ada16b7"
+    },
+    {
+      "canonical_path": "evidence/p2-g2-yxx-entry-v2-first-regression.tap",
+      "sha256": "89907deb2599d081d7b334321c37cf115ffeabcbabea4aa284a53e1a9359a64f"
+    },
+    {
+      "canonical_path": "evidence/p2-g2-yxx-entry-v2-regression.tap",
+      "sha256": "9578687048350ba16c0c81c3a14898970d8acf3ff814c67be414e8881cdaa9ff"
+    }
+  ],
+  "raw_log_retention": "Each full-run TAP retained once in canonical Evidence after byte-identical archive verification; ignored run metadata and stderr retained."
+}

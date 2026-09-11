@@ -4,7 +4,8 @@ import { syncBuiltinESMExports } from 'node:module';
 import { validateG2Manifest, failG2, g2Hash } from './p2-g2-validation-config.mjs';
 
 let installed=false;
-export function installG2NetworkBoundary(manifest){
+export function installG2NetworkBoundary(manifest,{memberOAuthEnabled=false}={}){
+  if(typeof memberOAuthEnabled!=='boolean')failG2('NETWORK_ENDPOINT_NOT_APPROVED');
   manifest=validateG2Manifest(manifest);if(installed)failG2('NETWORK_BOUNDARY_ALREADY_INSTALLED');
   const allowed=new Set(['http://127.0.0.1:'+manifest.listen_port,manifest.reporter_origin]);
   if(manifest.mode==='live')allowed.add('https://openws.work.weixin.qq.com');
@@ -32,7 +33,14 @@ export function installG2NetworkBoundary(manifest){
       &&parameters.size===2&&parameters.has('access_token')&&Boolean(parameters.get('access_token'))
       &&((target.pathname==='/cgi-bin/user/get'&&parameters.has('userid')&&manifest.scope.person_hashes.includes(g2Hash(parameters.get('userid'))))
         ||(target.pathname==='/cgi-bin/department/get'&&parameters.has('id')&&/^[1-9][0-9]{0,14}$/u.test(parameters.get('id'))));
-    if((!allowed.has(target.origin)&&!approvedWebhook&&!approvedDirectory)||target.username||target.password||value?.socketPath)failG2('NETWORK_ENDPOINT_NOT_APPROVED');
+    const approvedMemberOAuth=memberOAuthEnabled&&manifest.mode==='live'&&manifest.scope.reporter_access_policy==='MEMBER_REQUIRED'
+      &&target.origin==='https://qyapi.weixin.qq.com'&&!target.hash&&method==='GET'
+      &&(!overrides?.path||overrides.path===target.pathname+target.search)&&parameters.size===2
+      &&((target.pathname==='/cgi-bin/auth/getuserinfo'&&parameters.getAll('code').length===1&&parameters.getAll('access_token').length===1
+        &&Boolean(parameters.get('code'))&&Buffer.byteLength(parameters.get('code'))<=512&&Boolean(parameters.get('access_token'))&&parameters.get('access_token').length<=4096)
+        ||(target.pathname==='/cgi-bin/gettoken'&&parameters.getAll('corpid').length===1&&parameters.getAll('corpsecret').length===1
+          &&Boolean(parameters.get('corpid'))&&parameters.get('corpid').length<=128&&Boolean(parameters.get('corpsecret'))&&parameters.get('corpsecret').length<=512));
+    if((!allowed.has(target.origin)&&!approvedWebhook&&!approvedDirectory&&!approvedMemberOAuth)||target.username||target.password||value?.socketPath)failG2('NETWORK_ENDPOINT_NOT_APPROVED');
     const servername=overrides?.servername??value?.servername;
     if(servername&&servername!==target.hostname)failG2('NETWORK_ENDPOINT_NOT_APPROVED');
     const headers=overrides?.headers??value?.headers;

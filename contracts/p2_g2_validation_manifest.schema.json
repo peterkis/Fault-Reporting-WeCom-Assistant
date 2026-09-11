@@ -157,20 +157,78 @@
           "pattern": "^[a-f0-9]{64}$"
         },
         "ticket_notification_additional_events": {
-          "type": "array", "uniqueItems": true, "maxItems": 11,
-          "items": {"enum": ["ticket.created","ticket.accepted","ticket.started","ticket.resumed","ticket.waiting_requester","ticket.waiting_vendor","ticket.resolved","ticket.closed","ticket.reopened","ticket.cancelled","ticket.auto_close_reminder"]}
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 11,
+          "items": {
+            "enum": [
+              "ticket.created",
+              "ticket.accepted",
+              "ticket.started",
+              "ticket.resumed",
+              "ticket.waiting_requester",
+              "ticket.waiting_vendor",
+              "ticket.resolved",
+              "ticket.closed",
+              "ticket.reopened",
+              "ticket.cancelled",
+              "ticket.auto_close_reminder"
+            ]
+          }
         },
         "member_directory": {
-          "type": "object", "additionalProperties": false,
-          "required": ["enabled", "internal_member_ids_confirmed"],
-          "properties": {"enabled": {"type": "boolean", "default": false}, "internal_member_ids_confirmed": {"type": "boolean", "default": false}},
-          "if": {"properties": {"enabled": {"const": true}}},
-          "then": {"properties": {"internal_member_ids_confirmed": {"const": true}}}
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "internal_member_ids_confirmed"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "internal_member_ids_confirmed": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "internal_member_ids_confirmed": {
+                "const": true
+              }
+            }
+          }
         },
         "group_webhook_routes": {
-          "type": "array", "maxItems": 20,
-          "items": {"type": "object", "additionalProperties": false, "required": ["group_hash","endpoint_hash"],
-            "properties": {"group_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "endpoint_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}}
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "group_hash",
+              "endpoint_hash"
+            ],
+            "properties": {
+              "group_hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "endpoint_hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
         },
         "group_hashes": {
           "type": "array",
@@ -289,6 +347,16 @@
               "maximum": 1000
             }
           }
+        },
+        "reporter_access_policy": {
+          "enum": [
+            "LEGACY_BOUND_GRANT",
+            "MEMBER_REQUIRED"
+          ]
+        },
+        "member_entry_config_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
         }
       }
     },
@@ -347,5 +415,31 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "live"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "scope": {
+            "required": [
+              "reporter_access_policy",
+              "member_entry_config_sha256"
+            ],
+            "properties": {
+              "reporter_access_policy": {
+                "const": "MEMBER_REQUIRED"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

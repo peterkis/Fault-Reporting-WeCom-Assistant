@@ -1,0 +1,19 @@
+import {createHash} from 'node:crypto';
+import {validateYxxEntryConfig,failYxx} from './p2-g2-yixiaoxiu-contract.mjs';
+
+export const YXX_G2_ENV_KEYS=Object.freeze(['YIXIAOXIU_MEMBER_TICKET_ENTRY_ENABLED','YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG_JSON',
+  'WECOM_WEB_OAUTH_ENABLED','CORP_ID','APP_ID','APP_SECRET']);
+export function readYxxG2AppConfiguration({manifest,env}){
+  if(manifest.scope.reporter_access_policy!=='MEMBER_REQUIRED'){
+    if(manifest.mode==='live')failYxx('CONFIG_INVALID');return null;
+  }
+  if(env.YIXIAOXIU_MEMBER_TICKET_ENTRY_ENABLED!=='true'||env.WECOM_WEB_OAUTH_ENABLED!=='true')failYxx('CONFIG_INVALID');
+  let config;try{config=validateYxxEntryConfig(JSON.parse(env.YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG_JSON));}catch{failYxx('CONFIG_INVALID');}
+  if(!config.enabled||config.identityMode!=='VERIFIED_SAME_NAMESPACE')failYxx('IDENTITY_NAMESPACE_UNVERIFIED');
+  if(config.botId!==env.WECOM_BOT_ID||config.corpId!==env.CORP_ID||config.agentId!==env.APP_ID
+    ||typeof env.APP_SECRET!=='string'||!env.APP_SECRET||env.APP_SECRET.length>512
+    ||manifest.mode==='live'&&(config.validationProfile!=='DEPLOYMENT'||config.proofKind!=='LIVE'))failYxx('CONFIG_INVALID');
+  const hash=createHash('sha256').update(JSON.stringify(config)).digest('hex');
+  if(hash!==manifest.scope.member_entry_config_sha256)failYxx('CONFIG_INVALID');
+  return config;
+}

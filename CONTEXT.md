@@ -1,6 +1,6 @@
 # Conversation Center
 
-2026-09-11 P2-G2-YXX-TICKET-ENTRY 已独立授权本地实现与隔离验证；当前准备状态为 IN_PROGRESS，PR #7 的976项 READY仅为历史输入。实施/交接先读 `tasks/P2-G2_yixiaoxiu_member_ticket_entry.md`、`adr/0018_yixiaoxiu_member_ticket_entry.md` 和 `evidence/p2-g2-yxx-entry-start-authorization.md`。本轮不授权现场；P2-G2-LIVE、P2-008及所有真实调用/发送保持停止。
+2026-09-11 P2-G2-YXX-TICKET-ENTRY 本地实现与隔离自动化完成：当前候选1029/1029、165测试文件及两轴独立审查通过。PR #7的976项仅为历史输入；交接先读 `evidence/p2-g2-yxx-entry-report.json`、父就绪报告及 `docs/runbooks/yixiaoxiu-member-ticket-entry.md`。真实身份对应仍未证明（IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING），定向现场及P2-G2-LIVE未授权/未运行，P2-008继续阻断。
 
 This context defines the domain language for the lightweight Conversation Center in V1.4. It keeps conversation identity, service topics, timeline entries, and the authoritative ticket lifecycle distinct.
 
@@ -257,4 +257,4 @@ _Avoid_: personnel master record, raw WeCom identity, Ticket ownership
 An optional, explicitly selected linked Ticket that serves as the Incident's internal handling reference.
 _Avoid_: only surviving Ticket, Incident owner, automatic Ticket closure
 
-For P2-G2 readiness handoff or a separately authorized live run, read `evidence/p2-g2-automated-readiness-report.json`, `evidence/p2-g2-scenario-matrix.json`, and `prompts/P2-G2_rule_first_service_loop_runbook.md`. PR #7 preparation was READY_FOR_LIVE_E2E; current member-entry preparation is IN_PROGRESS; P2-G1 remains the last completed Gate, P2-G2-LIVE is not authorized, and P2-008 remains blocked.
+For P2-G2 readiness handoff or a separately authorized live run, read `evidence/p2-g2-automated-readiness-report.json`, its current `source_evidence` references and `evidence/p2-g2-yxx-entry-report.json`, and `prompts/P2-G2_rule_first_service_loop_runbook.md`. PR #7 preparation was READY_FOR_LIVE_E2E; current member-entry preparation is READY_FOR_LIVE_E2E with live identity correspondence and targeted-live authorization still pending; P2-G1 remains the last completed Gate, P2-G2-LIVE is not authorized, and P2-008 remains blocked.

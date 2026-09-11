@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "yixiaoxiu_legacy_prepared",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entry_path"
+  ],
+  "properties": {
+    "entry_path": {
+      "type": "string",
+      "pattern": "^/wecom/yixiaoxiu/continue/[a-f0-9]{64}$"
+    }
+  }
+}

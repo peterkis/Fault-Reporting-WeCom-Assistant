@@ -15,7 +15,7 @@ export function configurationFixture(mode = 'synthetic') {
     run_id: '10000000-0000-4000-8000-000000000001', candidate_fingerprint: 'a'.repeat(64),
     feature_flags: Object.fromEntries([...required.map(k => [k, true]), ...forbidden.map(k => [k, false])]),
     listen_port: 43122, reporter_origin: mode === 'live' ? 'https://reporter.invalid' : 'http://127.0.0.1:43122',
-    scope: { bot_hash: sha(env.WECOM_BOT_ID), group_hashes: [sha('synthetic-g2-group')],
+    scope: { reporter_access_policy:'LEGACY_BOUND_GRANT',bot_hash: sha(env.WECOM_BOT_ID), group_hashes: [sha('synthetic-g2-group')],
       person_hashes: ['reporter-a', 'reporter-b', 'reporter-c'].map(sha), direct_organic_person_hash: sha('reporter-c'),
       principal_ids: ['10000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000004'],
       database_identity_hash: sha(JSON.stringify({ hostname: '127.0.0.1', port: '5432', database: 'p2_015_g2runtime_1234' })),
@@ -25,5 +25,6 @@ export function configurationFixture(mode = 'synthetic') {
       send_budget: { group: 40, person: 120, total: 160 } },
     approval: { approved: false, authority: null, source_ref: null, source_sha256: null,
       valid_from_epoch_ms: '1788800000000', expires_epoch_ms: '1788807200000' } };
+  if(mode==='live')Object.assign(manifest.scope,{reporter_access_policy:'MEMBER_REQUIRED',member_entry_config_sha256:'d'.repeat(64)});
   return { manifest, env, candidateFingerprint: 'a'.repeat(64), nowEpochMs: '1788800100000' };
 }

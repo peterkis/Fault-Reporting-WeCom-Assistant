@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "76548b878ee7312d89b2f0b6b93f037b4cd8ca216c9ca815161846a21f64a4dd",
+  "candidate_file_count": 607,
+  "status": "FROZEN_FOR_FULL_REGRESSION_AFTER_ARCH006_RECONCILIATION",
+  "live_authorized": false
+}

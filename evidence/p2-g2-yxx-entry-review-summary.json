@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "238e75165605015ceb844f140c5be4e79076cb3a1e65446c25615c02f4c13a2a",
+  "preparation_only": true,
+  "live_validation": "NOT_RUN",
+  "project_owner_approval": false,
+  "reviews": [
+    {
+      "axis": "SPEC",
+      "reviewer": "/root/yxx_spec_review",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "source": {
+        "path": "evidence/p2-g2-yxx-entry-review-spec.json",
+        "sha256": "8be71d27da6bd7aaf16ca791cb4f543e423a7d72447c237343843c199112c252"
+      }
+    },
+    {
+      "axis": "STANDARDS",
+      "reviewer": "/root/yxx_standards_review",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "source": {
+        "path": "evidence/p2-g2-yxx-entry-review-standards.json",
+        "sha256": "8e48500faf68769991ac4b940add4f0625c9bfd5fbe7cedbbf7a32d4819d54b9"
+      }
+    }
+  ]
+}

@@ -34,6 +34,24 @@ export function createP2016ReporterAccess({pool,enabled=false,hmacSecret,now=()=
   }
   return Object.freeze({
     ensurePublicRefInTransaction,
+    // Internal member landing adapter: retain only a locator and digest, never the raw Grant.
+    legacyLocator(token){
+      guardP2016(enabled);const grantId=grantIdFromToken(token);
+      if(!grantId)failP2016('GRANT_INVALID',401);
+      try{uuidP2016(grantId);}catch{failP2016('GRANT_INVALID',401);}
+      return Object.freeze({grantId,tokenHash:textHashP2016(token)});
+    },
+    async locateLegacyInTransaction({transaction:tx,locator}){
+      guardP2016(enabled);uuidP2016(locator.grantId);
+      if(typeof locator.tokenHash!=='string'||!hashPattern.test(locator.tokenHash))failP2016('GRANT_INVALID',401);
+      const q=await tx.query(`SELECT g.*,r.public_ref,r.status AS ref_status FROM pilot_ticket.reporter_access_grant g
+        JOIN pilot_ticket.reporter_public_ref r ON r.id=g.public_ref_id AND r.ticket_id=g.ticket_id
+          AND r.reporter_binding_hash=g.reporter_binding_hash WHERE g.grant_id=$1::uuid FOR SHARE OF g,r`,[locator.grantId]);
+      const g=q.rows[0];
+      if(!g||!['ISSUED','CONSUMED','EXPIRED'].includes(g.state)||g.ref_status!=='ACTIVE'
+        ||!equal(locator.tokenHash,g.token_hash)||!equal(textHashP2016(tokenFor(g)),g.token_hash))failP2016('GRANT_INVALID',401);
+      return g.public_ref;
+    },
     async issueInTransaction({transaction:tx,ticketId,deliveryId,messageId,reporterBindingHash,journeyId=null}) {
       guardP2016(enabled);uuidP2016(ticketId);uuidP2016(deliveryId);uuidP2016(messageId);
       if(!hashPattern.test(reporterBindingHash))failP2016();

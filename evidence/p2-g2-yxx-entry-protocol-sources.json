@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-11",
+  "method": "Firecrawl connector maxAge=0; exact article body after last-updated anchor, not menu labels",
+  "status": "BODY_VERIFIED",
+  "sources": [
+    {
+      "url": "https://developer.work.weixin.qq.com/document/path/96440",
+      "body_sha256": "fc11189eb5d1507e5c016b9a5e0c2bd0b7ee90f543853729137eaa56553120c7",
+      "body_source": "tmp/p2-g2-yxx-entry-sources/document-96440.md",
+      "last_updated": "2024/07/22"
+    },
+    {
+      "url": "https://developer.work.weixin.qq.com/document/path/96441",
+      "body_sha256": "54ac2c60963875dd5593f7d55c3d88acc177fd4fffc35eefa5a992262674af00",
+      "body_source": "tmp/p2-g2-yxx-entry-sources/document-96441.md",
+      "last_updated": "2024/07/30"
+    },
+    {
+      "url": "https://developer.work.weixin.qq.com/document/path/96442",
+      "body_sha256": "be15d6bdfdd497524062c9847d79c86ab3369b7a087ae636bd8cb724a5c36e96",
+      "body_source": "tmp/p2-g2-yxx-entry-sources/document-96442.md",
+      "last_updated": "2026/04/22"
+    },
+    {
+      "url": "https://developer.work.weixin.qq.com/document/path/97164",
+      "body_sha256": "5b6ada06a358752dc2c1b7fa439ec49d0494be763e7a7e2531e4576324b5fd5b",
+      "body_source": "tmp/p2-g2-yxx-entry-sources/document-97164.md",
+      "last_updated": "2022/10/19"
+    },
+    {
+      "url": "https://developer.work.weixin.qq.com/document/path/97104",
+      "body_sha256": "72c402b4695043633dbe77896a4752166bab200d7bb96c50764ac6bcbbda1e44",
+      "body_source": "tmp/p2-g2-yxx-entry-sources/document-97104.md",
+      "last_updated": "2025/09/18"
+    },
+    {
+      "url": "https://developer.work.weixin.qq.com/document/path/97106",
+      "body_sha256": "c9c33bebfddc09e73fd488699cfecc79dab98f6699a01009fa79a9cdf014c5c5",
+      "body_source": "tmp/p2-g2-yxx-entry-sources/document-97106.md",
+      "last_updated": "2026/05/21"
+    }
+  ],
+  "real_provider_api_calls": 0,
+  "real_identity_mapping_verified": false
+}

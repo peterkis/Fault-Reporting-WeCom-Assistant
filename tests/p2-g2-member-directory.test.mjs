@@ -51,7 +51,7 @@ test('G2 directory configuration requires explicit internal ID confirmation and 
   assert.equal(readG2Configuration({...f,role:'GATEWAY'}).memberDirectoryAccessToken,null);
 });
 test('G2 directory HTTP scope permits only GET for approved members and department lookup',async()=>{
-  const f=configurationFixture();f.manifest.mode='live';f.manifest.reporter_origin='https://synthetic.invalid';
+  const f=configurationFixture('live');f.manifest.reporter_origin='https://synthetic.invalid';
   f.manifest.scope.member_directory={enabled:true,internal_member_ids_confirmed:true};
   const original=globalThis.fetch;let requests=0;
   globalThis.fetch=async()=>{requests++;return new Response('{}');};

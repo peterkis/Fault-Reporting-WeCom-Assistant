@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "238e75165605015ceb844f140c5be4e79076cb3a1e65446c25615c02f4c13a2a",
+  "check": "node scripts/validate-arch-006-rule-first-service-loop.mjs",
+  "exit_code": 1,
+  "error": "no historical Evidence was rewritten",
+  "changed_paths": [
+    "evidence/p2-g2-automated-readiness-report.json",
+    "evidence/p2-g2-automated-readiness-report.md"
+  ],
+  "pr7_snapshots_match_origin_main_bytes": true,
+  "full_regression": "1028/1028 PASS before this governance finding",
+  "current_preparation": "IN_PROGRESS"
+}

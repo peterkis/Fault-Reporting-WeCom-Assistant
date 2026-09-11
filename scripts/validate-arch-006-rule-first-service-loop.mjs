@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import {allowYxxReadinessReportRefresh} from '../src/p2-g2-yixiaoxiu-readiness.mjs';
+import {g2CandidateInventory,requirePreparedG2Candidate} from '../src/p2-g2-candidate.mjs';
 
 const root = process.cwd();
 const errors = [];
@@ -212,8 +214,25 @@ const forbidden = changedPaths.filter((relativePath) => /^(?:database\/migration
   && !(p2g2RepairAuthorized&&p2g2RepairSeams.has(relativePath)));
 check(forbidden.length === 0, 'no forbidden Runtime Migration web archive or secret path changed');
 const historicalEvidence=execFileSync('git',['-c','safe.directory=D:/Projects/Fault-Reporting-WeCom-Assistant','-c','core.safecrlf=false',
-  'diff','--name-only','--diff-filter=MDR','origin/main','--','evidence'],{cwd:root,encoding:'utf8'}).split(/\r?\n/u).filter(Boolean);
-check(historicalEvidence.length === 0, 'no historical Evidence was rewritten');
+  'diff','--name-status','--diff-filter=MDR','origin/main','--','evidence'],{cwd:root,encoding:'utf8'}).trim().split(/\r?\n/u).filter(Boolean)
+  .map(line=>{const [status,file]=line.split('\t');return {status,path:file};});
+const yxxAuthorized=p2g2Authorized&&views.every(v=>v.yixiaoxiu_member_ticket_entry?.work_item==='P2-G2-YXX-TICKET-ENTRY'
+  &&['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION'].includes(v.yixiaoxiu_member_ticket_entry.status)
+  &&v.yixiaoxiu_member_ticket_entry.live_authorized===false&&v.p2_g2_live_authorized===false
+  &&v.yixiaoxiu_member_ticket_entry.enabled_by_default===false&&v.yixiaoxiu_member_ticket_entry.identity_namespace_live_verified===false
+  &&v.yixiaoxiu_member_ticket_entry.authorization_evidence==='evidence/p2-g2-yxx-entry-start-authorization.md');
+const claimsReady=value=>value&&typeof value==='object'&&(value.p2_g2_status==='READY_FOR_LIVE_E2E'
+  ||value.implementation_authorization_status==='P2_G2_READY_FOR_LIVE_E2E'||Object.values(value).some(claimsReady));
+let preservedCurrentReports=allowYxxReadinessReportRefresh({changes:historicalEvidence,authorized:yxxAuthorized,
+  readBaseline:file=>execFileSync('git',['show','origin/main:'+file],{cwd:root}),readSnapshot:file=>fs.readFileSync(path.join(root,file)),
+  ready:stateFiles.some(file=>claimsReady(json(file))),verifyReady:()=>requirePreparedG2Candidate(g2CandidateInventory(root).fingerprint,root)});
+if(historicalEvidence.length&&preservedCurrentReports){
+  try{
+    const authorization='evidence/p2-g2-yxx-entry-start-authorization.md';
+    preservedCurrentReports=fs.readFileSync(path.join(root,authorization)).equals(execFileSync('git',['show','c1b33218521dc5dba3c07ce57452473c367e7ad6:'+authorization],{cwd:root}));
+  }catch{preservedCurrentReports=false;}
+}
+check(preservedCurrentReports, 'historical Evidence is immutable; authorized current reports require exact snapshots and current READY proof');
 
 if (errors.length) {
   console.error(`ARCH-006 validation failed with ${errors.length} error(s):`);

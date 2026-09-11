@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { exactP2016,failP2016,guardP2016,textHashP2016 } from './p2-016-domain-contracts.mjs';
+import {reporterAccessPolicy,failYxx} from './p2-g2-yixiaoxiu-contract.mjs';
 const assets=Object.freeze({
   '/reporter/':['index.html','text/html; charset=utf-8'],'/reporter/open':['index.html','text/html; charset=utf-8'],
   '/reporter/reporter.js':['reporter.js','text/javascript; charset=utf-8'],
@@ -19,7 +20,10 @@ async function body(request) {
   let size=0;const chunks=[];for await(const c of request){size+=c.length;if(size>1024)failP2016('BODY_TOO_LARGE',413);chunks.push(c);}
   try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{failP2016();}
 }
-export function createP2016ReporterHttp({access,timeline,enabled=false,publicOrigin,allowLocalHttp=false}) {
+export function createP2016ReporterHttp({access,timeline,enabled=false,publicOrigin,allowLocalHttp=false,accessPolicy='LEGACY_BOUND_GRANT',memberHandler=null}) {
+  if(reporterAccessPolicy(accessPolicy)==='MEMBER_REQUIRED'){
+    if(enabled!==true||typeof memberHandler!=='function')failYxx('CONFIG_INVALID');return memberHandler;
+  }
   if(!enabled)return async({url})=>{if(assets[url.pathname]||url.pathname.startsWith('/api/reporter/'))guardP2016(false);return false;};
   const parsed=new URL(publicOrigin),secure=parsed.protocol==='https:';
   if(parsed.origin!==publicOrigin||(!secure&&!(allowLocalHttp&&parsed.protocol==='http:'&&['127.0.0.1','localhost','[::1]'].includes(parsed.hostname))))failP2016('ORIGIN_INVALID');

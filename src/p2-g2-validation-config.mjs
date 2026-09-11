@@ -63,7 +63,10 @@ export function validateG2Manifest(manifest) {
   const s = m.scope;
   exact(s, ['bot_hash', 'group_hashes', 'person_hashes', 'direct_organic_person_hash', 'principal_ids', 'database_identity_hash',
     'test_prefix', 'approved_inputs', 'approved_replies', 'approved_templates', 'allowed_faults', 'send_budget',
-    ...['ticket_notification_additional_events','group_webhook_routes','member_directory'].filter(k=>Object.hasOwn(s,k))]);
+    ...['ticket_notification_additional_events','group_webhook_routes','member_directory','reporter_access_policy','member_entry_config_sha256'].filter(k=>Object.hasOwn(s,k))]);
+  if(s.reporter_access_policy!==undefined&&!['LEGACY_BOUND_GRANT','MEMBER_REQUIRED'].includes(s.reporter_access_policy))failG2('MEMBER_POLICY_REQUIRED');
+  if(m.mode==='live'&&s.reporter_access_policy!=='MEMBER_REQUIRED')failG2('MEMBER_POLICY_REQUIRED');
+  if(s.reporter_access_policy==='MEMBER_REQUIRED'&&!HASH.test(s.member_entry_config_sha256??''))failG2('MEMBER_POLICY_REQUIRED');
   if(s.member_directory!==undefined){
     exact(s.member_directory,['enabled','internal_member_ids_confirmed']);
     if(typeof s.member_directory.enabled!=='boolean'||typeof s.member_directory.internal_member_ids_confirmed!=='boolean'
@@ -146,7 +149,7 @@ export function readG2Configuration({ manifest, env = process.env, candidateFing
       seen.add(groupHash);return Object.freeze({botId,groupId:route.group_id,url:url.href});
     });
   }
-  return Object.freeze({ manifest: deepFreeze(m), liveApproved: m.mode === 'live', databaseUrl,
+  return Object.freeze({ manifest: deepFreeze(m), liveApproved: m.mode === 'live', databaseUrl,reporterPolicy:s.reporter_access_policy??'LEGACY_BOUND_GRANT',
     memberDirectoryEnabled:s.member_directory?.enabled===true,
     memberDirectoryAccessToken:['CONTROLLER','WORKER'].includes(role)&&s.member_directory?.enabled===true
       &&typeof env.P2_G2_DIRECTORY_ACCESS_TOKEN==='string'&&env.P2_G2_DIRECTORY_ACCESS_TOKEN.length>0

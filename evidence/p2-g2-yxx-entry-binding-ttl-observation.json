@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "b1b41ed109f2f23a13b61fb9e5e8fdd8a2f01bce0054b370ec68b3eba6bc3332",
+  "kind": "SYNTHETIC_CLOCK_SOURCE_REPRODUCTION",
+  "new_intent_elapsed_ms": 200,
+  "old_binding_boundary_crossed": true,
+  "observed_error": "WECOM_AUTH_REQUIRED",
+  "fix_status": "PENDING_FULL_RUN_COMPLETION",
+  "real_provider_calls": 0
+}

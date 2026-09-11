@@ -9,15 +9,17 @@ export function validateP2016CardModel(input) {
     ||!['TICKET_CREATED','TICKET_ACCEPTED','TICKET_IN_PROGRESS','WAITING_REQUESTER','WAITING_VENDOR','TICKET_RESOLVED','TICKET_CLOSED','TICKET_REOPENED','TICKET_CANCELLED'].includes(v.notification_type))failP2016('CARD_INVALID');
   versionP2016(v.version);localP2016(v.occurred_at);return publicP2016(v);
 }
-export function reporterCardLinkP2016({origin,allowedHosts,token,allowLocalHttp=false}) {
-  if(typeof origin!=='string'||!Array.isArray(allowedHosts)||typeof token!=='string'||!/^[A-Za-z0-9_-]{64}$/u.test(token))failP2016('CARD_URL_INVALID');
+export function reporterCardLinkP2016({origin,allowedHosts,token,publicRef,allowLocalHttp=false,linkMode='LEGACY_BOUND_GRANT'}) {
+  if(!['LEGACY_BOUND_GRANT','MEMBER_REQUIRED'].includes(linkMode)||typeof origin!=='string'||!Array.isArray(allowedHosts)
+    ||(linkMode==='LEGACY_BOUND_GRANT'?(typeof token!=='string'||!/^[A-Za-z0-9_-]{64}$/u.test(token)):
+      (typeof publicRef!=='string'||!/^[A-Za-z0-9_-]{32}$/u.test(publicRef))))failP2016('CARD_URL_INVALID');
   let url;try{url=new URL(origin);}catch{failP2016('CARD_URL_INVALID');}
   if(url.username||url.password||url.pathname!=='/'||url.search||url.hash||!allowedHosts.includes(url.host)
     ||(url.protocol!=='https:'&&!(allowLocalHttp===true&&url.protocol==='http:'&&['127.0.0.1','[::1]','localhost'].includes(url.hostname))))failP2016('CARD_URL_INVALID');
-  return url.origin+'/reporter/open#grant='+token;
+  return linkMode==='MEMBER_REQUIRED'?url.origin+'/wecom/yixiaoxiu/tickets/'+publicRef:url.origin+'/reporter/open#grant='+token;
 }
-export function buildP2016TemplateCard({model,origin,allowedHosts,token,allowLocalHttp=false}) {
-  const v=validateP2016CardModel(model),url=reporterCardLinkP2016({origin,allowedHosts,token,allowLocalHttp});
+export function buildP2016TemplateCard({model,origin,allowedHosts,token,allowLocalHttp=false,linkMode='LEGACY_BOUND_GRANT'}) {
+  const v=validateP2016CardModel(model),url=reporterCardLinkP2016({origin,allowedHosts,token,publicRef:v.public_ref,allowLocalHttp,linkMode});
   return publicP2016({msgtype:'template_card',template_card:{
     card_type:'text_notice',source:{desc:v.source==='GROUP'?'群聊报修':'主动单聊',desc_color:0},
     main_title:{title:v.notification_type==='TICKET_CREATED'?'工单已受理':v.notification_type==='TICKET_ACCEPTED'?'已有人员处理您的工单':v.notification_type==='TICKET_CLOSED'?'工单已处理完成':'工单状态更新'},

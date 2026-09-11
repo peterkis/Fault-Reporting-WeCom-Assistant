@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "gate": "P2-G2",
-  "recorded_at": "2026-09-11 10:58:46",
+  "recorded_at": "2026-09-11T08:20:48.049Z",
   "preparation_status": "READY_FOR_LIVE_E2E",
   "gate_status": "IN_PROGRESS",
   "active_task": "P2-G2",
   "active_lane": "ASSEMBLY",
-  "candidate_fingerprint": "64c5a08a11bb4d140b02cf0c5e43758ea57d01e76f6bfaa3b34f819c188d249e",
-  "candidate_file_count": 577,
+  "candidate_fingerprint": "a9a98feb4e48bed956d3fdce0ba6e93b52707f4956ef79ee7544356507c54e88",
+  "candidate_file_count": 607,
   "candidate_algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF",
   "base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
   "authorization_commit": "d7311cdbfe30c66f37d22a553a3e8f0e04e27cd1",
@@ -27,17 +27,17 @@
   "independent_review_passed": true,
   "pr6_review_invariants": 10,
   "full_regression": {
-    "tests": 976,
-    "pass": 976,
+    "tests": 1029,
+    "pass": 1029,
     "fail": 0,
     "cancelled": 0,
     "skipped": 0,
     "todo": 0,
-    "tap_path": "evidence/p2-g2-pr7-regression.tap",
-    "tap_sha256": "876314b240cc2b25022840ce198c6bc0e6d73f1634ddbf176ad63d282492c626",
+    "tap_path": "evidence/p2-g2-yxx-entry-v2-regression.tap",
+    "tap_sha256": "9578687048350ba16c0c81c3a14898970d8acf3ff814c67be414e8881cdaa9ff",
     "baseline_test_files_covered": true,
     "baseline_test_file_count": 92,
-    "test_file_count": 158,
+    "test_file_count": 165,
     "expose_gc": true,
     "candidate_unchanged": true,
     "exit_code": 0,
@@ -46,32 +46,32 @@
   },
   "source_evidence": {
     "regression_run": {
-      "path": "evidence/p2-g2-pr7-regression-run.json",
-      "sha256": "25d81926ff2dd9bccd50e1355f18fa6b171100dfc4b9fdf9608687abb3dface6"
+      "path": "evidence/p2-g2-yxx-entry-v2-regression-run.json",
+      "sha256": "8800496f6601787938ef804ea063aab597bfb290b188776f448efbe80d286114"
     },
     "source_execution": {
-      "path": "evidence/p2-g2-pr7-source-execution.json",
-      "sha256": "0fb750cc1d8b11b7d763f72f80092b5252b037ed4d083aa753a0d455d91670a1"
+      "path": "evidence/p2-g2-yxx-entry-v2-source-execution.json",
+      "sha256": "8bad99aeeb2fd60e2138171140098c69e56d7a213c548b86dc33525a54bf0502"
     },
     "scenario_matrix": {
-      "path": "evidence/p2-g2-pr7-scenario-matrix.json",
-      "sha256": "7e71b7e106442e086fac77392af6d59492c638d31b8583412edcb19cde9d2c59"
+      "path": "evidence/p2-g2-yxx-entry-v2-g2-scenario-matrix.json",
+      "sha256": "0445d61aeac2e785018690c29a82a17165079d20809fc8a50520c101e7dc0aff"
     },
     "independent_review": {
-      "path": "evidence/p2-g2-pr7-review-summary.json",
-      "sha256": "267f477cc365448193353770efb8371358aefcd4c21d04114af4a8527f64441f"
+      "path": "evidence/p2-g2-yxx-entry-v2-review-summary.json",
+      "sha256": "36a4aff6d69e5905389aa4da6f6f6ff8424640f96828102c83e910b943f266d8"
     },
     "pr6_invariants": {
-      "path": "evidence/p2-g2-pr7-pr6-invariants.json",
-      "sha256": "749a8f2dc25366594b37b3221238fcbda4d9afbcad79fa90dc0d3d07ac3df9b4"
+      "path": "evidence/p2-g2-yxx-entry-v2-pr6-invariants.json",
+      "sha256": "e8d9b869f6ef3c73a2081a2bfd38e8719dae1dfa633d3a97eec8208937482223"
     },
     "candidate_inventory": {
-      "path": "evidence/p2-g2-pr7-candidate-inventory.json",
-      "sha256": "ea618eac280b5819d4322c4a00f12774961c46100141cd2afc7187a757eca263"
+      "path": "evidence/p2-g2-yxx-entry-v2-candidate-inventory.json",
+      "sha256": "a6e662b871fe85a05a8ecaa0bc1d219a2b7d9a38a7f512e2bfe454bde914b50b"
     },
     "classification_metrics": {
-      "path": "evidence/p2-g2-pr7-classification-metrics.json",
-      "sha256": "2264827d68287d02c14203f0dc75e93cf9d812bdc0996479529baf6b315ef882"
+      "path": "evidence/p2-g2-yxx-entry-v2-classification-metrics.json",
+      "sha256": "98709c620cafaf54cdb4d4e7206933dc5e5a4f68664737cbe1ea1a83565052d4"
     }
   },
   "environment": {
@@ -114,20 +114,29 @@
   "next_task_candidate": "P2-G2-LIVE",
   "next_task_authorized": false,
   "runbook": "prompts/P2-G2_rule_first_service_loop_runbook.md",
-  "failure_history": "evidence/p2-g2-pr7-regression-history.json",
-  "repair_report": "evidence/p2-g2-pr7-review-remediation.md",
+  "failure_history": "evidence/p2-g2-yxx-entry-v2-regression-history.json",
+  "repair_report": "evidence/p2-g2-yxx-entry-v2-review-remediation.md",
   "service_chain_inventory": "evidence/p2-g2-service-chain-inventory.json",
-  "cleanup_limit": "Earlier policy-protected browser profile is preserved; no claim that all historical Temp directories were removed.",
-  "cloud_environment_limit": "The original stopped full-G2 cloud package remains the immutable 17ebc9bc snapshot; the current full-G2 candidate is not deployed. Independently authorized OAuth-only HTTPS authentication is verified. Formal business live observation and Gate approval remain NOT_RUN.",
+  "cleanup_limit": "Canonical full-run TAP retained once in Evidence after verified duplicate removal; screenshots and ignored run metadata/source copies retained. No global Temp or historical profile cleanup.",
+  "cloud_environment_limit": "This member-entry task made no cloud changes or real provider calls. Historical stopped G2 and OAuth-only facts remain separate; current member candidate not deployed.",
   "classification_metric_limits": "Classification comparison uses 106 comparable terminal observations; Ticket/Review ratios use 109 measured scenarios. Exclusions are explicit. Safe-route test coverage is not classification accuracy or a claim of original-202 label equality.",
-  "source_commit": "a03e7ad141777537207902124b32d2ce2e30445c",
-  "validation_scope": "P2_G2_FULL_SERVICE_LOOP_PREPARATION",
-  "historical_readiness_snapshot": "evidence/p2-g2-pre-oauth-readiness-report.json",
-  "persistent_flag_scope": "G2 business policy defaults; separately authorized OAuth-only runtime is enabled",
+  "source_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "validation_scope": "P2_G2_YXX_MEMBER_ENTRY_AND_FULL_SERVICE_LOOP_PREPARATION",
+  "historical_readiness_snapshot": "evidence/p2-g2-yxx-entry-pr7-readiness-snapshot.json",
+  "persistent_flag_scope": "Repository business and member-entry defaults remain false; no runtime configuration was enabled by this task.",
   "oauth_authentication": {
     "status": "LIVE_VERIFIED",
     "evidence": "evidence/p2-g2-wecom-web-oauth.md",
-    "business_service_loop_started": false
+    "business_service_loop_started": false,
+    "historical_only": true,
+    "applies_to_member_ticket_entry": false,
+    "namespace_correspondence_verified": false
   },
-  "historical_failure_history": "evidence/p2-g2-validation-run-index.json"
+  "historical_failure_history": "evidence/p2-g2-validation-run-index.json",
+  "source_worktree_parent_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "source_commit_role": "WORKTREE_PARENT_BEFORE_IMPLEMENTATION_COMMIT",
+  "yixiaoxiu_member_ticket_entry": {
+    "path": "evidence/p2-g2-yxx-entry-report.json",
+    "sha256": "cd41872f4eb1439182df628ba44f038c805bfd1d97db297b96f3d4052c6064f9"
+  }
 }

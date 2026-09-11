@@ -1,0 +1,140 @@
+TAP version 13
+# Subtest: YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery
+not ok 1 - YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery
+  ---
+  duration_ms: 2010.0666
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-member.integration.test.mjs:23:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /^text\/html/u. Input:
+    
+    'application/json; charset=utf-8'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'application/json; charset=utf-8'
+  operator: 'match'
+  stack: |-
+    file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-member.integration.test.mjs:35:14
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-member.integration.test.mjs:24:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: member readiness refuses old976, missing48, bypass gaps, missing baseline and false live claims
+    # Subtest: member readiness refuses unrelated passing names
+    not ok 1 - member readiness refuses unrelated passing names
+      ---
+      duration_ms: 6.9716
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-readiness.test.mjs:46:11'
+      failureType: 'testCodeFailure'
+      error: 'Missing expected exception.'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        code: 'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'
+      operator: 'throws'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-readiness.test.mjs:47:99)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        TestContext.test (node:internal/test_runner/test:382:20)
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-readiness.test.mjs:46:11)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17)
+      ...
+    # Subtest: member readiness refuses a different TAP receipt
+    not ok 2 - member readiness refuses a different TAP receipt
+      ---
+      duration_ms: 5.9715
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-readiness.test.mjs:49:11'
+      failureType: 'testCodeFailure'
+      error: 'Missing expected exception.'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        code: 'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'
+      operator: 'throws'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-readiness.test.mjs:50:77)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        TestContext.test (node:internal/test_runner/test:382:20)
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-readiness.test.mjs:49:11)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: member readiness refuses different regression file hashes
+    not ok 3 - member readiness refuses different regression file hashes
+      ---
+      duration_ms: 7.5983
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-readiness.test.mjs:52:11'
+      failureType: 'testCodeFailure'
+      error: 'Missing expected exception.'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        code: 'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'
+      operator: 'throws'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-readiness.test.mjs:53:102)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        TestContext.test (node:internal/test_runner/test:382:20)
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-readiness.test.mjs:52:11)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: member readiness refuses unrelated scenario files
+    not ok 4 - member readiness refuses unrelated scenario files
+      ---
+      duration_ms: 5.057
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-readiness.test.mjs:55:11'
+      failureType: 'testCodeFailure'
+      error: 'Missing expected exception.'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        code: 'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'
+      operator: 'throws'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-readiness.test.mjs:56:106)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1325:25)
+        Test.start (node:internal/test_runner/test:1191:17)
+        TestContext.test (node:internal/test_runner/test:382:20)
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-readiness.test.mjs:55:11)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    1..4
+not ok 2 - member readiness refuses old976, missing48, bypass gaps, missing baseline and false live claims
+  ---
+  duration_ms: 132.2265
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-readiness.test.mjs:16:1'
+  failureType: 'subtestsFailed'
+  error: '4 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..2
+# tests 6
+# suites 0
+# pass 0
+# fail 6
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2613.4946

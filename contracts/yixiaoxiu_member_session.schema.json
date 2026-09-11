@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "yixiaoxiu_member_session",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "identity_mode",
+    "authenticated",
+    "read_only"
+  ],
+  "properties": {
+    "identity_mode": {
+      "const": "MEMBER_REQUIRED"
+    },
+    "authenticated": {
+      "const": true
+    },
+    "read_only": {
+      "const": true
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "a9a98feb4e48bed956d3fdce0ba6e93b52707f4956ef79ee7544356507c54e88",
+  "candidate_file_count": 607,
+  "status": "FROZEN_FOR_FULL_REGRESSION_AFTER_NATIVE_BROWSER_NAVIGATION",
+  "live_authorized": false
+}

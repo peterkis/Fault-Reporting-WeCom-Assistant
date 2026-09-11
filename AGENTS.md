@@ -1,6 +1,6 @@
 # AGENTS.md
 
-2026-09-11 P2-G2-YXX-TICKET-ENTRY 已独立授权本地实现与隔离验证；当前准备状态为 IN_PROGRESS，PR #7 的976项 READY仅为历史输入。实施/交接先读 `tasks/P2-G2_yixiaoxiu_member_ticket_entry.md`、`adr/0018_yixiaoxiu_member_ticket_entry.md` 和 `evidence/p2-g2-yxx-entry-start-authorization.md`。本轮不授权现场；P2-G2-LIVE、P2-008及所有真实调用/发送保持停止。
+2026-09-11 P2-G2-YXX-TICKET-ENTRY 本地实现与隔离自动化完成：当前候选1029/1029、165测试文件及两轴独立审查通过。PR #7的976项仅为历史输入；交接先读 `evidence/p2-g2-yxx-entry-report.json`、父就绪报告及 `docs/runbooks/yixiaoxiu-member-ticket-entry.md`。真实身份对应仍未证明（IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING），定向现场及P2-G2-LIVE未授权/未运行，P2-008继续阻断。
 # 医院信息故障智能报修与统一工单平台开发规范 V1.4
 
 ## 1. 唯一有效基线
@@ -16,10 +16,10 @@ P1 / P1-012 / DONE / GO
 当前阶段状态固定为：
 
 ```text
-P2 / P2-012 / DONE / P2-G2 IN_PROGRESS
+P2 / P2-012 / DONE / P2-G2 READY_FOR_LIVE_E2E
 ```
 
-V1.4 不改变 G0/P1 已完成事实。P2-G1 于 2026-09-02 更新为 `PASSED`；ARCH-005、P2-007、ARCH-006 与 P2-015 已于 2026-09-03 完成；P2-016 已于 2026-09-04 完成。P2-012 已于 2026-09-07 经真实定向现场、现场后与完成态全量回归、客户端确认和负责人批准完成。PR #7 的 P2-G2 / ASSEMBLY 历史候选已达 READY_FOR_LIVE_E2E，历史自动化976/976及两轴独立审查通过；本轮成员入口新候选准备中（IN_PROGRESS）；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-G3 及以后 Gate 和全部 P3 未启动。所有 Feature Flag 默认关闭。上述状态均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
+V1.4 不改变 G0/P1 已完成事实。P2-G1 于 2026-09-02 更新为 `PASSED`；ARCH-005、P2-007、ARCH-006 与 P2-015 已于 2026-09-03 完成；P2-016 已于 2026-09-04 完成。P2-012 已于 2026-09-07 经真实定向现场、现场后与完成态全量回归、客户端确认和负责人批准完成。PR #7 的 P2-G2 / ASSEMBLY 历史候选已达 READY_FOR_LIVE_E2E，历史自动化976/976及两轴独立审查通过；本轮成员入口候选1029/1029及两轴独立审查通过，准备状态READY_FOR_LIVE_E2E，真实身份对应/定向现场仍待独立证明与授权；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-G3 及以后 Gate 和全部 P3 未启动。所有 Feature Flag 默认关闭。上述状态均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
 
 ## 2. 长期事实源
 
@@ -68,7 +68,7 @@ P1：
 
 ### Phase 2：Conversation Center 与 AI 协作
 
-P2 保持 `IN_PROGRESS`；P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 均已完成。P2-012 于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。PR #7 的 P2-G2 / ASSEMBLY 历史候选已达 READY_FOR_LIVE_E2E，历史自动化976/976及两轴独立审查通过；本轮成员入口新候选准备中（IN_PROGRESS）；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。
+P2 保持 `IN_PROGRESS`；P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 均已完成。P2-012 于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。PR #7 的 P2-G2 / ASSEMBLY 历史候选已达 READY_FOR_LIVE_E2E，历史自动化976/976及两轴独立审查通过；本轮成员入口候选1029/1029及两轴独立审查通过，准备状态READY_FOR_LIVE_E2E，真实身份对应/定向现场仍待独立证明与授权；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。
 
 P2 必须按以下顺序：
 

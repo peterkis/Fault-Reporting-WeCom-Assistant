@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { G2_SCENARIO_IDS } from './p2-g2-gate-evaluator.mjs';
 import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
 import { g2Hash, failG2, validateG2Manifest } from './p2-g2-validation-config.mjs';
+import {requirePreparedYxxCandidate} from './p2-g2-yixiaoxiu-readiness.mjs';
 
 export const G2_ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const G2_CANDIDATE_ROOTS = Object.freeze(['src', 'scripts', 'web', 'contracts', 'config', 'config_examples', 'database/migrations', 'tests']);
@@ -125,5 +126,6 @@ export function requirePreparedG2Candidate(fingerprint, root=G2_ROOT){
       ||source.scenario_matrix_sha256!==r.source_evidence.scenario_matrix.sha256
       ||!Array.isArray(source.findings)||source.findings.some(f=>f.resolved!==true))reject();
   }
+  if(inventory.files.some(file=>file.path==='src/p2-g2-yixiaoxiu-authorizer.mjs'))requirePreparedYxxCandidate({fingerprint,root,fullRegression:f,passedNames,verifiedRun:run,verifiedRunReference:r.source_evidence.regression_run});
   return r;
 }

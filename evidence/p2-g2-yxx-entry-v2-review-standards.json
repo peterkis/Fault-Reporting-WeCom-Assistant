@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "a9a98feb4e48bed956d3fdce0ba6e93b52707f4956ef79ee7544356507c54e88",
+  "axis": "STANDARDS",
+  "reviewer": "/root/yxx_standards_review",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [
+    {
+      "id": "YXX-STANDARDS-01",
+      "priority": "P2",
+      "title": "Scenario evidence accepted unrelated passing test names",
+      "resolved": true,
+      "resolution": "The checker reconstructs exact names, requirement, assertion and file hashes from candidate-frozen definitions and the parent-verified run. Unrelated-name and unrelated-file RED cases are preserved; their repaired assertions pass in the final full TAP."
+    },
+    {
+      "id": "YXX-STANDARDS-02",
+      "priority": "P2",
+      "title": "Member regression receipt was not tied to the parent-verified run",
+      "resolved": true,
+      "resolution": "The caller now passes the parent-verified run and reference. The member checker requires identical path, SHA256 and parsed run content. Different TAP/file-hash RED cases are preserved and their repaired assertions pass in the final full TAP."
+    },
+    {
+      "id": "YXX-STANDARDS-03",
+      "priority": "P2",
+      "title": "No-diff unauthorized READY skipped current-candidate verification",
+      "resolved": true,
+      "resolution": "The narrow ARCH-006 report-refresh seam now calls verifyReady whenever READY is claimed; exact negative case passes in current full regression. Exact two-path modification whitelist and byte-preserved snapshots remain enforced."
+    }
+  ],
+  "source_execution_sha256": "8bad99aeeb2fd60e2138171140098c69e56d7a213c548b86dc33525a54bf0502",
+  "scenario_matrix_sha256": "0445d61aeac2e785018690c29a82a17165079d20809fc8a50520c101e7dc0aff",
+  "source_worktree_parent_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "verification": {
+    "method": "Independent source review plus read-only assertion scripts over actual final artifacts; reviewer did not rerun the full suite.",
+    "candidate_files": 607,
+    "test_files": 165,
+    "full_regression": {
+      "tests": 1029,
+      "pass": 1029,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exit_code": 0,
+      "candidate_unchanged": true
+    },
+    "all_binding_source_hashes_verified": true,
+    "run_tap_count_and_hash_verified": true,
+    "current_test_file_hashes_verified": true,
+    "prior_158_test_files_present": true,
+    "member_scenarios_exactly_reconstructed": 48,
+    "g2_scenarios_with_passing_names_and_current_hashes": 37,
+    "pr6_invariants_with_passing_names_and_current_hashes": 10,
+    "source_audit_recomputed": true,
+    "source_cases": 202,
+    "normal_input_cases": 122,
+    "mechanism_or_other_cases": 80,
+    "classification_populations_denominators_and_exclusions_unchanged": true,
+    "measured_current_vs_historical_diagnostic_proofs_compared": 223,
+    "source_review": [
+      "AGENTS.md, README.md, CONTEXT.md, architecture baseline, Accepted ADR-0018 and docs48/50/54/60/61",
+      "Shared safe transaction query, fail-closed policy, source Intake ownership and legacy Grant verification",
+      "OAuth browser groups, expiry renewal, stale-cookie replacement and logout late-response fences",
+      "32 read limit, bounded ephemeral maps, profile lifecycle and owned-pool shutdown",
+      "Preserved Direct Leg and Sender Grant/recipient checks; scoped G2 OAuth endpoint and credential wiring",
+      "Closed schemas, fixed redirects, static recovery HTML, no browser credential storage",
+      "Default example OAuth/member flags false, UNVERIFIED identity, no migration/package/lock/environment-example diff against baseline",
+      "Narrow ARCH-006 current-report preservation exception, unconditional READY guard and native browser navigation test repair"
+    ],
+    "resource_evidence": {
+      "authenticated_sessions": 100,
+      "concurrent_reads": 32,
+      "pool_peak_connections": 4,
+      "pending_pool_after": 0,
+      "catalog_unchanged": true,
+      "business_tables_unchanged": true,
+      "formal_observation": false
+    },
+    "regression_run": {
+      "path": "evidence/p2-g2-yxx-entry-v2-regression-run.json",
+      "sha256": "8800496f6601787938ef804ea063aab597bfb290b188776f448efbe80d286114"
+    },
+    "regression_tap": {
+      "path": "evidence/p2-g2-yxx-entry-v2-regression.tap",
+      "sha256": "9578687048350ba16c0c81c3a14898970d8acf3ff814c67be414e8881cdaa9ff"
+    },
+    "raw_final_run_and_tap_byte_identical_to_canonical": true,
+    "arch006_snapshots_byte_equal_to_origin_main": true,
+    "arch006_no_diff_unauthorized_ready_negative_verified": true,
+    "browser_navigation_delta_review": "Absolute native CDP navigation checks errorText; desktop/mobile exercise about:blank; held OAuth navigation still awaited after release. Existing assertions and 90-second limits retained."
+  },
+  "limits": [
+    "Parent/member master readiness reports were awaiting final review assembly; final requirePreparedG2Candidate acceptance must run after assembly.",
+    "No real WeCom calls, sends, cloud actions, business-data access or live validation were performed by this reviewer.",
+    "Real OAuth-to-Bot identity namespace remains unverified; local synthetic proof is not live identity acceptance.",
+    "Resource evidence is a short isolated regression measurement, not a formal natural-GC 2C4G observation.",
+    "This PASS covers this exact executable candidate and inspected evidence, not P2-G2-LIVE, P2-008, Phase2 Go, production or clinical approval.",
+    "The user-owned .gitignore was not read or edited; only this reviewer output file is written.",
+    "Prior 1028-pass artifacts/review and failed 1028/1029 artifacts are historical; only this v2 candidate and 1029-pass evidence receive this PASS."
+  ]
+}

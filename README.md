@@ -1,6 +1,6 @@
 # 医院信息故障智能报修与统一工单平台 Agent 开发包 V1.4
 
-2026-09-11 P2-G2-YXX-TICKET-ENTRY 已独立授权本地实现与隔离验证；当前准备状态为 IN_PROGRESS，PR #7 的976项 READY仅为历史输入。实施/交接先读 `tasks/P2-G2_yixiaoxiu_member_ticket_entry.md`、`adr/0018_yixiaoxiu_member_ticket_entry.md` 和 `evidence/p2-g2-yxx-entry-start-authorization.md`。本轮不授权现场；P2-G2-LIVE、P2-008及所有真实调用/发送保持停止。
+2026-09-11 P2-G2-YXX-TICKET-ENTRY 本地实现与隔离自动化完成：当前候选1029/1029、165测试文件及两轴独立审查通过。PR #7的976项仅为历史输入；交接先读 `evidence/p2-g2-yxx-entry-report.json`、父就绪报告及 `docs/runbooks/yixiaoxiu-member-ticket-entry.md`。真实身份对应仍未证明（IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING），定向现场及P2-G2-LIVE未授权/未运行，P2-008继续阻断。
 
 本仓库当前唯一有效架构基线为 V1.4。权威状态见 `docs/architecture_baseline_status.md`。
 
@@ -13,12 +13,12 @@
 - P1-001 至 P1-011 保持既有验收结论；
 - P1-012 已完成真实测试群 E2E、客户端观察、故障演练和 Go/No-Go，状态为 `DONE`；
 - Phase 2 保持 `IN_PROGRESS`；`P2-001` 至 `P2-005` 均已完成；
-- P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 已完成。P2-012 已于 2026-09-07 经真实定向现场、完整回归、客户端确认和负责人批准完成。PR #7 的 P2-G2 / ASSEMBLY 历史候选已达 READY_FOR_LIVE_E2E，历史自动化976/976及两轴独立审查通过；本轮成员入口新候选准备中（IN_PROGRESS）；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 及以后 Runtime、P2-G3 至 P2-G5 与全部 P3 任务均须单独授权，所有 Feature Flag 默认 `false`；
+- P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 已完成。P2-012 已于 2026-09-07 经真实定向现场、完整回归、客户端确认和负责人批准完成。PR #7 的 P2-G2 / ASSEMBLY 历史候选已达 READY_FOR_LIVE_E2E，历史自动化976/976及两轴独立审查通过；本轮成员入口候选1029/1029及两轴独立审查通过，准备状态READY_FOR_LIVE_E2E，真实身份对应/定向现场仍待独立证明与授权；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 及以后 Runtime、P2-G3 至 P2-G5 与全部 P3 任务均须单独授权，所有 Feature Flag 默认 `false`；
 - 本次 Phase 2 启动授权不等同于生产上线、临床上线或 AI 自动回复批准，不启用真实外发、SSE、模型、OCR、医院身份连接或内网 Connector。
 
 ## V1.4 核心纠偏
 
-P2-G2准备已达 `READY_FOR_LIVE_E2E`：976/976全仓、158测试文件、202来源分账、37项矩阵与10项PR修复映射，SPEC/STANDARDS均PASS。当前就绪依据为 `evidence/p2-g2-automated-readiness-report.json`，现场操作见 `prompts/P2-G2_rule_first_service_loop_runbook.md`。云端停止态部署与真实现场分别记账，正式WeCom/60分钟/负责人Gate批准均未执行。
+P2-G2准备已达 `READY_FOR_LIVE_E2E`：1029/1029全仓、165测试文件（原976/158为历史结果）、202来源分账、37项矩阵与10项PR修复映射，SPEC/STANDARDS均PASS。当前就绪依据为 `evidence/p2-g2-automated-readiness-report.json`，现场操作见 `prompts/P2-G2_rule_first_service_loop_runbook.md`。云端停止态部署与真实现场分别记账，正式WeCom/60分钟/负责人Gate批准均未执行。
 
 本项目当前没有任何历史业务 Ticket，也不存在需要继续兼容、迁移或退役的旧工单系统。因此，P3 不再包含历史 Ticket 导入、未完结 Ticket 切换、旧状态映射、双系统并行或旧系统退役。
 
@@ -70,7 +70,7 @@ P1 保持零医院内网依赖；真实企业微信闭环和试点评审已完�
 
 P2 保持 `IN_PROGRESS`。P2-001 至 P2-007 与 P2-015 均已完成；P2-006 是默认关闭的 Human-only Internal Alpha，P2-007 是确定性纯函数，P2-015 是默认关闭的持久化装配。P2-G1 已通过，ARCH-006 已完成重基线。现有结论不授权生产、临床、最终生产前端、P2-008、P2-G2 现场、DeepSeek、AI/OCR 或生产 Incident 启用。后续能力仍须另行授权。
 
-P2-016 的独立授权见 `evidence/p2-016-start-authorization.md`；其默认关闭的完整工单/人工复核工作台、双责任、Reporter-safe Timeline 和可靠通知已经负责人批准并收口为 DONE。P2-012 的人工确认 Incident、Reporter Subscription 和可靠通知也已于 2026-09-07 完成，见 `evidence/p2-012-human-confirmed-incident-report.md` 与 `evidence/p2-012-project-owner-approval.md`。PR #7 的 P2-G2 / ASSEMBLY 历史候选已达 READY_FOR_LIVE_E2E，历史自动化976/976及两轴独立审查通过；本轮成员入口新候选准备中（IN_PROGRESS）；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。不构成 Phase 2 Go。
+P2-016 的独立授权见 `evidence/p2-016-start-authorization.md`；其默认关闭的完整工单/人工复核工作台、双责任、Reporter-safe Timeline 和可靠通知已经负责人批准并收口为 DONE。P2-012 的人工确认 Incident、Reporter Subscription 和可靠通知也已于 2026-09-07 完成，见 `evidence/p2-012-human-confirmed-incident-report.md` 与 `evidence/p2-012-project-owner-approval.md`。PR #7 的 P2-G2 / ASSEMBLY 历史候选已达 READY_FOR_LIVE_E2E，历史自动化976/976及两轴独立审查通过；本轮成员入口候选1029/1029及两轴独立审查通过，准备状态READY_FOR_LIVE_E2E，真实身份对应/定向现场仍待独立证明与授权；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。不构成 Phase 2 Go。
 
 自动化报告：`evidence/p2-016-automated-readiness-report.md` / `.json`。内部视图为 `/workbench/lifecycle`，原 `/workbench/` 会话入口保留。受控现场配置、命令、HTTPS 隔离和停止线见 `docs/61_p2_016_wecom_notifications_template_card.md`；未配置审批和目标库时，`npm run p2:016:live:check` 应失败关闭，不会自动发送。
 

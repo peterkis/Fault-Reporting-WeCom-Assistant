@@ -1,0 +1,319 @@
+TAP version 13
+# Subtest: P2-012 Reporter HTTP preserves bound grants, refresh ETag, safe milestones and unlink visibility
+ok 1 - P2-012 Reporter HTTP preserves bound grants, refresh ETag, safe milestones and unlink visibility
+  ---
+  duration_ms: 2221.224
+  type: 'test'
+  ...
+# Subtest: Reporter browser retries incomplete ETag render after transient timeline failure for milestone addition and removal
+ok 2 - Reporter browser retries incomplete ETag render after transient timeline failure for milestone addition and removal
+  ---
+  duration_ms: 1465.022
+  type: 'test'
+  ...
+# Subtest: Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout
+ok 3 - Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout
+  ---
+  duration_ms: 8984.6157
+  type: 'test'
+  ...
+# Subtest: Reporter browser 390x844 real DB/session, fragment removal, refresh, timezone, safe data and logout
+ok 4 - Reporter browser 390x844 real DB/session, fragment removal, refresh, timezone, safe data and logout
+  ---
+  duration_ms: 3470.3402
+  type: 'test'
+  ...
+# Subtest: Reporter grant expiry, HMAC rotation, one-consume concurrency, session expiry/revocation and cross-ticket isolation
+ok 5 - Reporter grant expiry, HMAC rotation, one-consume concurrency, session expiry/revocation and cross-ticket isolation
+  ---
+  duration_ms: 1985.9594
+  type: 'test'
+  ...
+# Subtest: YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900
+ok 6 - YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900
+  ---
+  duration_ms: 5665.2928
+  type: 'test'
+  ...
+# Subtest: YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844
+ok 7 - YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844
+  ---
+  duration_ms: 5368.3523
+  type: 'test'
+  ...
+# Subtest: YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag
+ok 8 - YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag
+  ---
+  duration_ms: 5144.6099
+  type: 'test'
+  ...
+# Subtest: YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge
+ok 9 - YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge
+  ---
+  duration_ms: 4969.8919
+  type: 'test'
+  ...
+# Subtest: YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data
+ok 10 - YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data
+  ---
+  duration_ms: 4827.2769
+  type: 'test'
+  ...
+# Subtest: YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback
+ok 11 - YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback
+  ---
+  duration_ms: 1.9422
+  type: 'test'
+  ...
+# Subtest: YXX-01 member Sender still validates delivery Grant recipient binding before its mock SDK call
+ok 12 - YXX-01 member Sender still validates delivery Grant recipient binding before its mock SDK call
+  ---
+  duration_ms: 1.9444
+  type: 'test'
+  ...
+# Subtest: YXX-35 closed member schemas expose authentication mode without raw identity or nullable Ticket guessing
+ok 13 - YXX-35 closed member schemas expose authentication mode without raw identity or nullable Ticket guessing
+  ---
+  duration_ms: 8.1034
+  type: 'test'
+  ...
+# Subtest: YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint
+ok 14 - YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint
+  ---
+  duration_ms: 0.844
+  type: 'test'
+  ...
+# Subtest: YXX-35 configuration refuses Proxy, accessors, toJSON, cycles and loose identity coercions
+ok 15 - YXX-35 configuration refuses Proxy, accessors, toJSON, cycles and loose identity coercions
+  ---
+  duration_ms: 0.4863
+  type: 'test'
+  ...
+# Subtest: YXX-01 both member card click regions use one canonical ref without a grant or identity
+ok 16 - YXX-01 both member card click regions use one canonical ref without a grant or identity
+  ---
+  duration_ms: 0.4444
+  type: 'test'
+  ...
+# Subtest: YXX-38 member-safe Incident milestones disappear on unlink without changing the other reporter facts
+ok 17 - YXX-38 member-safe Incident milestones disappear on unlink without changing the other reporter facts
+  ---
+  duration_ms: 2745.1551
+  type: 'test'
+  ...
+# Subtest: YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects
+ok 18 - YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects
+  ---
+  duration_ms: 2497.3079
+  type: 'test'
+  ...
+# Subtest: YXX member HTTP ownership, cookie bypass, retention, conditional responses and stable input matrix
+    # Subtest: YXX-03 member detail equals the complete legacy safe projection field for field
+    ok 1 - YXX-03 member detail equals the complete legacy safe projection field for field
+      ---
+      duration_ms: 22.5631
+      type: 'test'
+      ...
+    # Subtest: YXX-06 YXX-08 different Bot and malformed or unknown refs cannot broaden ownership
+    ok 2 - YXX-06 YXX-08 different Bot and malformed or unknown refs cannot broaden ownership
+      ---
+      duration_ms: 13.1509
+      type: 'test'
+      ...
+    # Subtest: YXX-30 YXX-31 YXX-32 old Reporter Cookie, anonymous exchange and bootstrap confer no member permission
+    ok 3 - YXX-30 YXX-31 YXX-32 old Reporter Cookie, anonymous exchange and bootstrap confer no member permission
+      ---
+      duration_ms: 11.2617
+      type: 'test'
+      ...
+    # Subtest: YXX-34 exact Origin, Host, CORS and POST boundaries reject contamination
+    ok 4 - YXX-34 exact Origin, Host, CORS and POST boundaries reject contamination
+      ---
+      duration_ms: 10.2851
+      type: 'test'
+      ...
+    # Subtest: YXX-17 YXX-18 callback pollution and arbitrary return query do not consume the valid intent
+    ok 5 - YXX-17 YXX-18 callback pollution and arbitrary return query do not consume the valid intent
+      ---
+      duration_ms: 4.2711
+      type: 'test'
+      ...
+    # Subtest: YXX-39 same-second pagination uses ordinals and rejects a cursor from another ref
+    ok 6 - YXX-39 same-second pagination uses ordinals and rejects a cursor from another ref
+      ---
+      duration_ms: 41.8941
+      type: 'test'
+      ...
+    # Subtest: YXX-11 closed retained Ticket stays readable and member query does not reopen it
+    ok 7 - YXX-11 closed retained Ticket stays readable and member query does not reopen it
+      ---
+      duration_ms: 77.8513
+      type: 'test'
+      ...
+    # Subtest: YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification
+    ok 8 - YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification
+      ---
+      duration_ms: 38.0965
+      type: 'test'
+      ...
+    # Subtest: YXX-10 Intake retention expiry removes eligibility using the actual persisted deadline
+    ok 9 - YXX-10 Intake retention expiry removes eligibility using the actual persisted deadline
+      ---
+      duration_ms: 20.7485
+      type: 'test'
+      ...
+    # Subtest: YXX-09 YXX-37 revoked ref denies a formerly matching ETag before 304
+    ok 10 - YXX-09 YXX-37 revoked ref denies a formerly matching ETag before 304
+      ---
+      duration_ms: 15.5077
+      type: 'test'
+      ...
+    # Subtest: YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code
+    ok 11 - YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code
+      ---
+      duration_ms: 35.9659
+      type: 'test'
+      ...
+    # Subtest: YXX-32 both logout aliases revoke member sessions and stop old-cookie fallback
+    ok 12 - YXX-32 both logout aliases revoke member sessions and stop old-cookie fallback
+      ---
+      duration_ms: 8.7512
+      type: 'test'
+      ...
+    1..12
+ok 19 - YXX member HTTP ownership, cookie bypass, retention, conditional responses and stable input matrix
+  ---
+  duration_ms: 2701.1759
+  type: 'test'
+  ...
+# Subtest: YXX-07 live namespace unknown stays denied after successful synthetic member authentication
+ok 20 - YXX-07 live namespace unknown stays denied after successful synthetic member authentication
+  ---
+  duration_ms: 2072.3203
+  type: 'test'
+  ...
+# Subtest: YXX-22 YXX-37 OAuth logout during real authorized SQL read prevents any late detail or 304 response
+ok 21 - YXX-22 YXX-37 OAuth logout during real authorized SQL read prevents any late detail or 304 response
+  ---
+  duration_ms: 2160.5026
+  type: 'test'
+  ...
+# Subtest: YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read
+ok 22 - YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read
+  ---
+  duration_ms: 2144.4946
+  type: 'test'
+  ...
+# Subtest: YXX legacy Grant adapter verifies signatures and ownership without consuming or resurrecting grants
+    # Subtest: YXX-25 YXX-29 anonymous old entry scanning prepares only context and requires real OAuth flow
+    ok 1 - YXX-25 YXX-29 anonymous old entry scanning prepares only context and requires real OAuth flow
+      ---
+      duration_ms: 10.9809
+      type: 'test'
+      ...
+    # Subtest: YXX-26 wrong member possession cannot consume or lock the original grant
+    ok 2 - YXX-26 wrong member possession cannot consume or lock the original grant
+      ---
+      duration_ms: 7.1795
+      type: 'test'
+      ...
+    # Subtest: YXX-27 consumed and expired signed grants locate only under fresh member ownership
+    ok 3 - YXX-27 consumed and expired signed grants locate only under fresh member ownership
+      ---
+      duration_ms: 1117.3033
+      type: 'test'
+      ...
+    # Subtest: YXX-28 revoked, forged and rotated-key grants reject without using a parsed UUID as proof
+    ok 4 - YXX-28 revoked, forged and rotated-key grants reject without using a parsed UUID as proof
+      ---
+      duration_ms: 14.119
+      type: 'test'
+      ...
+    1..4
+ok 23 - YXX legacy Grant adapter verifies signatures and ownership without consuming or resurrecting grants
+  ---
+  duration_ms: 3519.6371
+  type: 'test'
+  ...
+# Subtest: YXX-15 YXX-43 same-browser OAuth intents retain independent ticket destinations and bounded capacity
+ok 24 - YXX-15 YXX-43 same-browser OAuth intents retain independent ticket destinations and bounded capacity
+  ---
+  duration_ms: 6.7582
+  type: 'test'
+  ...
+# Subtest: YXX-16 YXX-17 YXX-18 YXX-43 opaque intents reject replay, foreign browser, arbitrary return paths and release expired slots
+ok 25 - YXX-16 YXX-17 YXX-18 YXX-43 opaque intents reject replay, foreign browser, arbitrary return paths and release expired slots
+  ---
+  duration_ms: 1.1369
+  type: 'test'
+  ...
+# Subtest: YXX-22 browser logout invalidates pending and in-flight callbacks without minting late sessions
+ok 26 - YXX-22 browser logout invalidates pending and in-flight callbacks without minting late sessions
+  ---
+  duration_ms: 0.7179
+  type: 'test'
+  ...
+# Subtest: YXX-05 OAuth rejects non-member, interconnected identity and accessor responses without invoking getters
+ok 27 - YXX-05 OAuth rejects non-member, interconnected identity and accessor responses without invoking getters
+  ---
+  duration_ms: 0.7944
+  type: 'test'
+  ...
+# Subtest: YXX-20 non-cooperative injected provider times out and remains fenced with no queued calls
+ok 28 - YXX-20 non-cooperative injected provider times out and remains fenced with no queued calls
+  ---
+  duration_ms: 5002.3783
+  type: 'test'
+  ...
+# Subtest: YXX-42 100 authenticated sessions and 32 simultaneous PostgreSQL HTTP reads stay bounded and preserve catalog
+ok 29 - YXX-42 100 authenticated sessions and 32 simultaneous PostgreSQL HTTP reads stay bounded and preserve catalog
+  ---
+  duration_ms: 2196.7509
+  type: 'test'
+  ...
+# YXX_RESOURCE {"authenticated_sessions":100,"concurrent_reads":32,"overload_status":503,"pool_peak_connections":4,"pending_pool_after":0,"elapsed_ms":365,"rss_before_bytes":93294592,"rss_after_bytes":100306944,"catalog_unchanged":true,"business_tables_unchanged":true,"formal_observation":false,"real_provider_calls":0}
+# Subtest: YXX-45 OAUTH_ONLY is zero DB and MEMBER_TICKET_READONLY exposes no business write or staff API
+ok 30 - YXX-45 OAUTH_ONLY is zero DB and MEMBER_TICKET_READONLY exposes no business write or staff API
+  ---
+  duration_ms: 1643.9165
+  type: 'test'
+  ...
+# Subtest: YXX-33 YXX-45 FULL_SERVICE_LOOP composes the same member policy and keeps member Cookie outside staff authority
+ok 31 - YXX-33 YXX-45 FULL_SERVICE_LOOP composes the same member policy and keeps member Cookie outside staff authority
+  ---
+  duration_ms: 1924.3688
+  type: 'test'
+  ...
+# Subtest: YXX-44 actual App process stop and restart loses ephemeral authentication then restores the canonical ref
+ok 32 - YXX-44 actual App process stop and restart loses ephemeral authentication then restores the canonical ref
+  ---
+  duration_ms: 3097.3432
+  type: 'test'
+  ...
+# Subtest: member readiness refuses old976, missing48, bypass gaps, missing baseline and false live claims
+ok 33 - member readiness refuses old976, missing48, bypass gaps, missing baseline and false live claims
+  ---
+  duration_ms: 56.1312
+  type: 'test'
+  ...
+# Subtest: YXX-33 complete G2 live configuration requires member policy and binds the server identity proof configuration
+ok 34 - YXX-33 complete G2 live configuration requires member policy and binds the server identity proof configuration
+  ---
+  duration_ms: 2.1885
+  type: 'test'
+  ...
+# Subtest: member App HTTP allowlist admits only fixed OAuth endpoints with bounded GET parameters through a local fake transport
+ok 35 - member App HTTP allowlist admits only fixed OAuth endpoints with bounded GET parameters through a local fake transport
+  ---
+  duration_ms: 3.618
+  type: 'test'
+  ...
+1..35
+# tests 51
+# suites 0
+# pass 51
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 78649.4634

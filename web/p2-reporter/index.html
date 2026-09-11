@@ -2,11 +2,13 @@
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
 <title>报修处理进度</title><link rel="stylesheet" href="/reporter/reporter.css"></head>
-<body><header><p>信息保障助手 · INTERNAL BETA</p><h1>报修处理进度</h1><span>Asia/Shanghai · 只读绑定访问</span></header>
+<body><header><p>医小修</p><h1>报修处理进度</h1><span>上海时间 · 只读访问</span></header>
 <main><p id="status" role="status" aria-live="polite">正在验证访问会话…</p>
 <section id="ticket" hidden aria-labelledby="title"><p id="number"></p><h2 id="title"></h2>
 <p id="state" class="state"></p><dl id="times"></dl><h3>处理记录</h3><ol id="timeline"></ol>
 <button id="more" type="button" hidden>加载更多处理记录</button>
 <p class="hint">如未解决，请在企业微信机器人单聊中回复。此页面不提供工单修改操作。</p>
-<button id="logout" type="button">退出本次访问</button></section></main>
+</section><nav class="controls" aria-label="访问操作"><button id="refresh" type="button">刷新进度</button>
+<a id="reauth" href="/wecom/yixiaoxiu/login" hidden>重新认证</a>
+<button id="logout" type="button">退出本次访问</button></nav></main>
 <script type="module" src="/reporter/reporter.js"></script></body></html>
