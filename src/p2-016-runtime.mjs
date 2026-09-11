@@ -20,13 +20,15 @@ import { appendP2016Realtime } from './p2-016-realtime-appender.mjs';
 import { createP2016OrchestrationWorker } from './p2-016-orchestration-adapters.mjs';
 import { normalizeP2015FeatureFlags } from './p2-015-domain-contracts.mjs';
 import { createP2016InboundScope } from './p2-016-inbound-scope.mjs';
+import { createWeComWebOAuth } from './p2-g2-wecom-web-oauth.mjs';
+import { createWeComOAuthHttp } from './p2-g2-wecom-oauth-http.mjs';
 
 // Explicit composition of the existing Workbench/API/SSE and Communication worker, not a second server.
 export function createP2016Runtime({pool,flags={},principalId,principalIds=null,publicOrigin,listenPort=0,
   reporterHmacSecret,reporterOrigin=publicOrigin,allowedHosts=[],allowedTargetHashes=[],allowLocalHttp=false,
   gatewayEnabled=false,senderEnabled=false,liveApproval=null,inboundScope=null,botId,secret,wsUrl,clientFactory,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,ruleEngine,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
-  gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend}={}) {
+  gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={}}={}) {
   const featureFlags=flagsP2016(flags),enabled=featureFlags.TICKET_LIFECYCLE_WORKBENCH_ENABLED;
   if(!enabled)return Object.freeze({disabled:true,start:async()=>({disabled:true}),stop:async()=>({stopped:true,disabled:true})});
   if((gatewayEnabled||senderEnabled)&&!(liveApproval?.live===true&&liveApproval?.scope===true&&liveApproval?.send===true))failP2016('LIVE_APPROVAL_REQUIRED',403);
@@ -34,6 +36,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   if(scope&&(inboundScope.bot_id!==botId||scope.allowed_target_hashes.some(h=>!allowedTargetHashes.includes(h))||allowedTargetHashes.some(h=>!scope.allowed_target_hashes.includes(h))))failP2016('LIVE_SCOPE_REQUIRED',403);
   if(featureFlags.WECOM_TEMPLATE_CARD_ENABLED&&!featureFlags.REPORTER_TIMELINE_ENABLED)failP2016('REPORTER_REQUIRED_FOR_CARD',503);
   const access=createP2016ReporterAccess({pool,enabled:featureFlags.REPORTER_TIMELINE_ENABLED,hmacSecret:reporterHmacSecret});
+  const webOAuth=createWeComWebOAuth({...wecomWebOAuth,publicOrigin:reporterOrigin});
+  const oauthHttp=createWeComOAuthHttp({oauth:webOAuth,publicOrigin:reporterOrigin});
   const notifications=createP2016TicketNotificationProjector({enabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,reporterAccess:access,explicitReferenceEnabled:featureFlags.REPORTER_TIMELINE_ENABLED,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents});
   const query=createP2016TicketQuery({pool,enabled});
   const ruleFlags=normalizeP2015FeatureFlags(ruleFirstFlags);
@@ -62,6 +66,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       incidentExtension=incidentExtensionFactory?.({pool,realtime,query})??null;
       const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
+      const reporterHttp=createP2016ReporterHttp({access,timeline:createP2016ReporterTimeline({pool,access,enabled:featureFlags.REPORTER_TIMELINE_ENABLED,incidentAdapter:incidentExtension?.reporterAdapter??null}),
+        enabled:featureFlags.REPORTER_TIMELINE_ENABLED,publicOrigin:reporterOrigin,allowLocalHttp});
       return {
         readiness:async base=>{
           let schema=false;try{schema=(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='031_p2_016_ticket_lifecycle_workbench_notifications'")).rowCount===1;}catch{/* dependency stays not ready */}
@@ -70,8 +76,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
             checks:{...base.checks,p2_016_schema:schema},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
         authenticatedHandler:async context=>(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
-        unauthenticatedHandler:createP2016ReporterHttp({access,timeline:createP2016ReporterTimeline({pool,access,enabled:featureFlags.REPORTER_TIMELINE_ENABLED,incidentAdapter:incidentExtension?.reporterAdapter??null}),
-          enabled:featureFlags.REPORTER_TIMELINE_ENABLED,publicOrigin:reporterOrigin,allowLocalHttp}),
+        unauthenticatedHandler:async context=>(await oauthHttp(context))||reporterHttp(context),
         staticHandler:async(pathname,response)=>(await incidentExtension?.staticHandler?.(pathname,response))||ticketStatic(pathname,response),
         runOnce:async()=>{if(orchestrationWorker)await orchestrationWorker.processDueBatch({feature_flags:ruleFirstFlags,batch_size:20});await realtimeProjector.runOnce();await incidentExtension?.runOnce?.();},
       };
@@ -79,6 +84,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   });
   const systemActions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:closure.afterTicketAction});
   return Object.freeze({...runtime,query,tickets,reviews,reporterAccess:access,notifications,realtimeProjector,orchestrationWorker,incidentExtension,
+    stop:async()=>{webOAuth.close?.();return runtime.stop();},
     // Explicit system job, never exposed as an HTTP/User/Reporter action. Scheduling belongs to the approved worker role.
     runAutoClose:async()=>closure.runAutoClose({actionService:systemActions,limit:20}),
     runAutoCloseReminders:async()=>closure.runAutoCloseReminders({limit:20})});

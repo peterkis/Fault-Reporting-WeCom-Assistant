@@ -7,6 +7,14 @@
   "last_completed_gate": "P2-G1",
   "last_completed_architecture_task": "ARCH-006",
   "active_task": "P2-G2",
+  "wecom_web_oauth_increment": {
+    "status": "DONE",
+    "task": "tasks/P2-G2_wecom_web_oauth.md",
+    "evidence": "evidence/p2-g2-wecom-web-oauth.md",
+    "enabled_by_default": false,
+    "oauth_only_cloud_deployed": true,
+    "live_authentication_verified": true
+  },
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",

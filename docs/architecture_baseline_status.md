@@ -1,5 +1,7 @@
 # Architecture Baseline Status
 
+2026-09-11 增量说明：用户授权实施医小修网页 OAuth，任务见 `tasks/P2-G2_wecom_web_oauth.md`，证据见 `evidence/p2-g2-wecom-web-oauth.md`。下述 READY_FOR_LIVE_E2E 与 954 项结论保留为原候选历史事实，不覆盖本次工作树增量。OAuth-only 云端入口已部署（代码默认关闭、独立运行配置启用），用户确认认证成功，服务端成功回调及成功页各 1；完整 G2 业务运行保持停止，不推进任何 Gate。
+
 - 基线版本：V1.4
 - 生效日期：2026-08-30
 - 状态：ACTIVE
