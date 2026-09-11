@@ -5,6 +5,16 @@ import { freezePublic,safeHash } from './p2-015-domain-contracts.mjs';
 import { failP2016 } from './p2-016-domain-contracts.mjs';
 import { resolveExplicitContinuation } from './p2-015-explicit-continuation.mjs';
 
+// Automatic and human-confirmed continuations must resolve the same immutable Ticket source.
+export async function p2016TicketSourceIntake({transaction,intakeId}){
+  const associated=await transaction.query(`SELECT ticket.source_intake_id FROM intake.channel_leg l
+    JOIN intake.contact_journey j ON j.id=l.journey_id
+    JOIN pilot_ticket.ticket ticket ON ticket.id=j.linked_ticket_id
+    JOIN intake.channel_leg source_leg ON source_leg.source_intake_id=ticket.source_intake_id AND source_leg.journey_id=j.id
+    WHERE l.source_intake_id=$1::uuid AND l.leg_type='DIRECT_GUIDED' AND j.linked_ticket_id IS NOT NULL`,[intakeId]);
+  return associated.rowCount===1?associated.rows[0].source_intake_id:intakeId;
+}
+
 // Only a unique, unexpired, same-provider/bot/reporter guided candidate can attach automatically.
 // Existing legs are immutable bindings; ambiguous candidates go to human review, never newest-journey guessing.
 export function createP2016GuidedJourneyStore({now=()=>String(Date.now())}={}){

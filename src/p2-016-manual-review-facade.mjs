@@ -3,6 +3,7 @@ import { createDecisionStore } from './p2-015-decision-store.mjs';
 import { createSafeActionExecutor,createP2004FixedCommunicationPort } from './p2-015-safe-action-executor.mjs';
 import { createServiceIntakeDecisionPort } from './p2-015-service-intake-decision-port.mjs';
 import { createPilotTicketCore } from './p1-005-pilot-ticket-core.mjs';
+import { p2016TicketSourceIntake } from './p2-016-guided-journey.mjs';
 import { appendTicketEvent } from './p1-006-ticket-state-actions.mjs';
 import { appendCommunication } from './p2-004-communication-core.mjs';
 import { safeHash } from './p2-015-domain-contracts.mjs';
@@ -104,7 +105,8 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
         }});
         const executor=createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),manualReviewStore:store,decisionStore:decisions,communicationPort:fixed,
           ticketCommandPort:{createMinimalTicket:async({transaction:tx,intake_id,occurred_at,trace_id})=>{
-            const result=await core.createForIntakeInTransaction({transaction:tx,intakeId:intake_id,occurredAt:occurred_at,traceId:trace_id});
+            const intakeId=await p2016TicketSourceIntake({transaction:tx,intakeId:intake_id});
+            const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id});
             if(result.created){const event=await appendTicketEvent({transaction:tx,ticket:result.ticket,eventType:'ticket.created',
               actor:{type:'PILOT_USER',id:principal.principal_id},traceId:trace_id});
               if(notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});

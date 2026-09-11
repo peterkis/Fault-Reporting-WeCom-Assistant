@@ -24,7 +24,7 @@ export function createWeComMemberDirectory({enabled=false,botId=null,memberIdsCo
       const url=new URL('https://qyapi.weixin.qq.com/cgi-bin/'+path);
       url.searchParams.set('access_token',token);url.searchParams.set(key,String(value));
       const response=await fetchImpl(url,{method:'GET',redirect:'error',signal});
-      if(!response.ok||!response.body)throw new Error('DIRECTORY_UNAVAILABLE');
+      if(!response.ok||!response.body){await response.body?.cancel().catch(()=>{});throw new Error('DIRECTORY_UNAVAILABLE');}
       const reader=response.body.getReader();let length=0;const chunks=[];
       try{for(;;){signal.throwIfAborted();const {done,value:chunk}=await reader.read();if(done)break;
         length+=chunk.byteLength;if(length>65536)throw new Error('DIRECTORY_UNAVAILABLE');chunks.push(Buffer.from(chunk));}}

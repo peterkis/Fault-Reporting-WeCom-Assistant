@@ -8,7 +8,7 @@ import { createPilotTicketCore } from './p1-005-pilot-ticket-core.mjs';
 import { appendTicketEvent } from './p1-006-ticket-state-actions.mjs';
 import { appendCommunication } from './p2-004-communication-core.mjs';
 import { textHashP2016,failP2016 } from './p2-016-domain-contracts.mjs';
-import { createP2016GuidedJourneyStore,p2016AssociationDecision } from './p2-016-guided-journey.mjs';
+import { createP2016GuidedJourneyStore,p2016AssociationDecision,p2016TicketSourceIntake } from './p2-016-guided-journey.mjs';
 import { reconcileP2016ConversationBindings } from './p2-016-conversation-binding.mjs';
 
 function guidanceId(id){const h=textHashP2016('P2016_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
@@ -32,13 +32,8 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio
   const executor=createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),decisionStore:decisions,communicationPort,
     manualReviewStore:{enqueue:async input=>{const review=await reviews.enqueue(input);await realtime.review({transaction:input.transaction,reviewId:review.id});return review;}},
     ticketCommandPort:{createMinimalTicket:async({transaction,intake_id,occurred_at,trace_id})=>{
-      const associated=await transaction.query(`SELECT ticket.source_intake_id FROM intake.channel_leg l
-        JOIN intake.contact_journey j ON j.id=l.journey_id
-        JOIN pilot_ticket.ticket ticket ON ticket.id=j.linked_ticket_id
-        JOIN intake.channel_leg source_leg ON source_leg.source_intake_id=ticket.source_intake_id AND source_leg.journey_id=j.id
-        WHERE l.source_intake_id=$1::uuid AND l.leg_type='DIRECT_GUIDED' AND j.linked_ticket_id IS NOT NULL`,[intake_id]);
-      if(associated.rowCount===1)return core.createForIntakeInTransaction({transaction,intakeId:associated.rows[0].source_intake_id,occurredAt:occurred_at,traceId:trace_id});
-      const result=await core.createForIntakeInTransaction({transaction,intakeId:intake_id,occurredAt:occurred_at,traceId:trace_id});
+      const intakeId=await p2016TicketSourceIntake({transaction,intakeId:intake_id});
+      const result=await core.createForIntakeInTransaction({transaction,intakeId,occurredAt:occurred_at,traceId:trace_id});
       if(result.created){const event=await appendTicketEvent({transaction,ticket:result.ticket,eventType:'ticket.created',actor:{type:'SYSTEM',id:null},traceId:trace_id});
         await notifications.project({transaction,ticket:result.ticket,event});await realtime.ticket({transaction,ticket:result.ticket,event});}
       return result;

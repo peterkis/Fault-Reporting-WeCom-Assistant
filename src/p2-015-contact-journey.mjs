@@ -35,7 +35,7 @@ export function createReporterDirectoryPort({ resolveProfile, timeoutMs = 500 } 
       } catch (error) {
         if (error?.code === P2_015_ERROR_CODES.inputInvalid) throw error;
         return freezePublic({ status: 'DEFERRED', snapshot: {} });
-      } finally { clearTimeout(timer); }
+      } finally { controller.abort(); clearTimeout(timer); }
     },
   });
 }
