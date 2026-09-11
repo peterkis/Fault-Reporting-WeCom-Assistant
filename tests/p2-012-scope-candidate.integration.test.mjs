@@ -114,7 +114,8 @@ test('P2-012 real direct-leg eligibility suppresses group-only Ticket artifacts 
     assert.equal(await explicit.authorizesDestination({target_type:'PERSON',target_id:reporter}),false);
     const access=createP2016ReporterAccess({pool,enabled:true,hmacSecret:'synthetic-only-review-hardening-secret-32bytes'});
     const personDestinationAuthorizer=createP2012PersonDestinationAuthorizer({pool,botId:bot,groupHashes:[groupHash]});
-    const projector=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access,personDestinationAuthorizer});
+    const projector=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access,personDestinationAuthorizer,
+      additionalEventTypes:['ticket.started']});
     const ticket=(await pool.query('SELECT * FROM pilot_ticket.ticket WHERE id=$1::uuid',[f.reports[0].ticketId])).rows[0];
     const event=await transactionP2016(pool,tx=>appendTicketEvent({transaction:tx,ticket,eventType:'ticket.created',actor:{type:'SYSTEM',id:null},traceId:'synthetic-hardening'}));
     const project=()=>transactionP2016(pool,tx=>projector.project({transaction:tx,ticket,event}));
@@ -130,7 +131,7 @@ test('P2-012 real direct-leg eligibility suppresses group-only Ticket artifacts 
     assert.deepEqual(await counts(),{messages:0,outboxes:0,deliveries:0,public_refs:0,grants:0,dead_letters:0});
     assert.equal((await pool.query("SELECT count(*)::int AS n FROM communication.delivery WHERE target_type='GROUP'")).rows[0].n,1);
     const receipt=(await pool.query("SELECT m.content FROM communication.message m JOIN communication.ticket_notification_binding b ON b.message_id=m.id WHERE b.destination_type='GROUP'")).rows[0].content;
-    assert.match(receipt.text,/请先在机器人单聊中发送消息/u);assert.doesNotMatch(receipt.text,/后续进度将通过机器人单聊通知/u);
+    assert.match(receipt.text,/可在群里继续补充，也可选择机器人单聊/u);assert.doesNotMatch(receipt.text,/后续进度将通过机器人单聊通知/u);
     let calls=0;
     const sender=createP2012DynamicWeComSender({pool,botId:bot,enabled:true,approvedGroupHashes:[groupHash],allowedTargetHashes:[groupHash],
       gateway:{getAuthenticatedClient:()=>({sendMessage:async()=>{calls++;return {errcode:0};}})}});

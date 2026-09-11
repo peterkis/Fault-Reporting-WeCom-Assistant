@@ -1,0 +1,274 @@
+TAP version 13
+# Subtest: ARCH-006 validator passes
+not ok 1 - ARCH-006 validator passes
+  ---
+  duration_ms: 153.2141
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\arch-006-rule-first-service-loop.test.mjs:11:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    ARCH-006 validation failed with 47 error(s):
+    - last_completed_task preserves ARCH-006 or authorized successor state
+    - active task and lane match the authorized successor state
+    - p2_g2_status remains NOT_STARTED
+    - P2-015 machine status is exact
+    - P2-016 machine status is exact
+    - P2-012 machine status is exact
+    - last_completed_task preserves ARCH-006 or authorized successor state
+    - active task and lane match the authorized successor state
+    - p2_g2_status remains NOT_STARTED
+    - P2-015 machine status is exact
+    - P2-016 machine status is exact
+    - P2-012 machine status is exact
+    - last_completed_task preserves ARCH-006 or authorized successor state
+    - active task and lane match the authorized successor state
+    - p2_g2_status remains NOT_STARTED
+    - P2-015 machine status is exact
+    - P2-016 machine status is exact
+    - P2-012 machine status is exact
+    - last_completed_task preserves ARCH-006 or authorized successor state
+    - active task and lane match the authorized successor state
+    - p2_g2_status remains NOT_STARTED
+    - P2-015 machine status is exact
+    - P2-016 machine status is exact
+    - P2-012 machine status is exact
+    - last_completed_task preserves ARCH-006 or authorized successor state
+    - active task and lane match the authorized successor state
+    - p2_g2_status remains NOT_STARTED
+    - P2-015 machine status is exact
+    - P2-016 machine status is exact
+    - P2-012 machine status is exact
+    - last_completed_task preserves ARCH-006 or authorized successor state
+    - active task and lane match the authorized successor state
+    - p2_g2_status remains NOT_STARTED
+    - P2-015 machine status is exact
+    - P2-016 machine status is exact
+    - P2-012 machine status is exact
+    - manifest lifecycle status is exact
+    - project lifecycle status is exact
+    - next candidate matches the successor lifecycle
+    - task index matches active and next tasks
+    - next candidate authorization is exact
+    - P2-015 lifecycle is exact
+    - P2-016 requires its independent authorization
+    - P2-012 lifecycle is exact
+    - only P2-G1 is passed
+    - migration 030 presence matches P2-015 authorization
+    - runtime migration 031 requires P2-016 authorization
+
+
+    1 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/arch-006-rule-first-service-loop.test.mjs:13:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.start (node:internal/test_runner/test:1191:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17)
+  ...
+# Subtest: machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles
+not ok 2 - machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles
+  ---
+  duration_ms: 0.8976
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\arch-006-rule-first-service-loop.test.mjs:16:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    'P2-G2' !== null
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual: 'P2-G2'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/arch-006-rule-first-service-loop.test.mjs:31:12)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: ten safe deterministic results are first-class and Manual Review is valid
+ok 3 - ten safe deterministic results are first-class and Manual Review is valid
+  ---
+  duration_ms: 0.4184
+  type: 'test'
+  ...
+# Subtest: Ticket lifecycle reuses authoritative actions and reliable notification boundary
+ok 4 - Ticket lifecycle reuses authoritative actions and reliable notification boundary
+  ---
+  duration_ms: 0.3688
+  type: 'test'
+  ...
+# Subtest: Incident remains human-confirmed and AI-independent
+ok 5 - Incident remains human-confirmed and AI-independent
+  ---
+  duration_ms: 0.2387
+  type: 'test'
+  ...
+# Subtest: AI-off readiness and feature flags are closed by default
+ok 6 - AI-off readiness and feature flags are closed by default
+  ---
+  duration_ms: 0.8288
+  type: 'test'
+  ...
+# Subtest: V1.4 architecture validator passes
+not ok 7 - V1.4 architecture validator passes
+  ---
+  duration_ms: 68.0372
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\v1-4-architecture-baseline.test.mjs:188:1'
+  failureType: 'testCodeFailure'
+  error: |-
+
+    V1.4 architecture validation failed with 5 error(s):
+    - current phase uses a recognized P2/P2-G1 lifecycle profile
+    - P2-006 task status matches the lifecycle profile
+    - P2-007 task status matches the lifecycle profile
+    - P2-G1 gate matches the lifecycle profile
+    - later assembly gates remain NOT_STARTED
+
+
+    1 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/v1-4-architecture-baseline.test.mjs:193:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.start (node:internal/test_runner/test:1191:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17)
+  ...
+# Subtest: P2/P2-G1 lifecycle state is internally consistent without changing P1
+not ok 8 - P2/P2-G1 lifecycle state is internally consistent without changing P1
+  ---
+  duration_ms: 3.9701
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\v1-4-architecture-baseline.test.mjs:196:1'
+  failureType: 'testCodeFailure'
+  error: 'recognized lifecycle profile'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/v1-4-architecture-baseline.test.mjs:206:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: P2-004 independent authorization and stop line are preserved
+ok 9 - P2-004 independent authorization and stop line are preserved
+  ---
+  duration_ms: 0.4816
+  type: 'test'
+  ...
+# Subtest: P2-005 independent authorization and stop line are recorded
+ok 10 - P2-005 independent authorization and stop line are recorded
+  ---
+  duration_ms: 0.3395
+  type: 'test'
+  ...
+# Subtest: P2-006 independent authorization and stop line are recorded
+ok 11 - P2-006 independent authorization and stop line are recorded
+  ---
+  duration_ms: 0.2513
+  type: 'test'
+  ...
+# Subtest: P2-004 completion artifacts preserve P1 notification and Ticket ownership
+ok 12 - P2-004 completion artifacts preserve P1 notification and Ticket ownership
+  ---
+  duration_ms: 1.2415
+  type: 'test'
+  ...
+# Subtest: P2-005 completion artifacts preserve frozen Session and identity ownership
+ok 13 - P2-005 completion artifacts preserve frozen Session and identity ownership
+  ---
+  duration_ms: 0.2659
+  type: 'test'
+  ...
+# Subtest: P2-006 completion has a runnable workbench and no migration 022
+ok 14 - P2-006 completion has a runnable workbench and no migration 022
+  ---
+  duration_ms: 0.6863
+  type: 'test'
+  ...
+# Subtest: P2-001 and P2-002 frozen artifacts remain present
+ok 15 - P2-001 and P2-002 frozen artifacts remain present
+  ---
+  duration_ms: 0.4852
+  type: 'test'
+  ...
+# Subtest: P3 remains greenfield and contains no historical ticket program
+ok 16 - P3 remains greenfield and contains no historical ticket program
+  ---
+  duration_ms: 1.6504
+  type: 'test'
+  ...
+# Subtest: future flags default off without legacy import flags
+ok 17 - future flags default off without legacy import flags
+  ---
+  duration_ms: 0.4452
+  type: 'test'
+  ...
+# Subtest: conceptual schema has no historical migration fields or second ticket core
+ok 18 - conceptual schema has no historical migration fields or second ticket core
+  ---
+  duration_ms: 0.6636
+  type: 'test'
+  ...
+# Subtest: new source example is non-authoritative
+ok 19 - new source example is non-authoritative
+  ---
+  duration_ms: 0.5432
+  type: 'test'
+  ...
+# Subtest: 2C4G limits remain conservative
+ok 20 - 2C4G limits remain conservative
+  ---
+  duration_ms: 0.9068
+  type: 'test'
+  ...
+# Subtest: P2-016 authorization reconciles only the historical P2-015 ledger
+ok 21 - P2-016 authorization reconciles only the historical P2-015 ledger
+  ---
+  duration_ms: 0.2963
+  type: 'test'
+  ...
+# Subtest: architecture validator rejects the historical P2-015 ledger drift
+ok 22 - architecture validator rejects the historical P2-015 ledger drift
+  ---
+  duration_ms: 0.2411
+  type: 'test'
+  ...
+# Subtest: P2-012 authorization rejects premature completion and next-gate authorization
+ok 23 - P2-012 authorization rejects premature completion and next-gate authorization
+  ---
+  duration_ms: 0.22
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 19
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 401.0797

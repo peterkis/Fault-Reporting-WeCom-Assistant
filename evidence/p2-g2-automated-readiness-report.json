@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "gate": "P2-G2",
+  "recorded_at": "2026-09-11 10:58:46",
+  "preparation_status": "READY_FOR_LIVE_E2E",
+  "gate_status": "IN_PROGRESS",
+  "active_task": "P2-G2",
+  "active_lane": "ASSEMBLY",
+  "candidate_fingerprint": "64c5a08a11bb4d140b02cf0c5e43758ea57d01e76f6bfaa3b34f819c188d249e",
+  "candidate_file_count": 577,
+  "candidate_algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF",
+  "base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
+  "authorization_commit": "d7311cdbfe30c66f37d22a553a3e8f0e04e27cd1",
+  "baseline_reference_tests": 577,
+  "gold_reference_count": 202,
+  "normal_input_cases": 122,
+  "mechanism_and_other_references": 80,
+  "original_semantics_all_passed": false,
+  "source_semantic_limits": [
+    "D12-005 reliable non-mention SDK indication unavailable",
+    "D12-023 hospital master identity remains outside P2",
+    "D12-016 URL Grant replaces unsupported card-event association; D12-053 uses proactive Outbox alternative",
+    "Frozen 120000ms correlation and trusted available department/campus facts; original 300000ms/hospital-wide assumptions not imported"
+  ],
+  "scenario_matrix_complete": true,
+  "scenario_count": 37,
+  "independent_review_passed": true,
+  "pr6_review_invariants": 10,
+  "full_regression": {
+    "tests": 976,
+    "pass": 976,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "tap_path": "evidence/p2-g2-pr7-regression.tap",
+    "tap_sha256": "876314b240cc2b25022840ce198c6bc0e6d73f1634ddbf176ad63d282492c626",
+    "baseline_test_files_covered": true,
+    "baseline_test_file_count": 92,
+    "test_file_count": 158,
+    "expose_gc": true,
+    "candidate_unchanged": true,
+    "exit_code": 0,
+    "baseline_test_file_count_scope": "ROOT_LEVEL_ONLY",
+    "baseline_recursive_test_file_count": 94
+  },
+  "source_evidence": {
+    "regression_run": {
+      "path": "evidence/p2-g2-pr7-regression-run.json",
+      "sha256": "25d81926ff2dd9bccd50e1355f18fa6b171100dfc4b9fdf9608687abb3dface6"
+    },
+    "source_execution": {
+      "path": "evidence/p2-g2-pr7-source-execution.json",
+      "sha256": "0fb750cc1d8b11b7d763f72f80092b5252b037ed4d083aa753a0d455d91670a1"
+    },
+    "scenario_matrix": {
+      "path": "evidence/p2-g2-pr7-scenario-matrix.json",
+      "sha256": "7e71b7e106442e086fac77392af6d59492c638d31b8583412edcb19cde9d2c59"
+    },
+    "independent_review": {
+      "path": "evidence/p2-g2-pr7-review-summary.json",
+      "sha256": "267f477cc365448193353770efb8371358aefcd4c21d04114af4a8527f64441f"
+    },
+    "pr6_invariants": {
+      "path": "evidence/p2-g2-pr7-pr6-invariants.json",
+      "sha256": "749a8f2dc25366594b37b3221238fcbda4d9afbcad79fa90dc0d3d07ac3df9b4"
+    },
+    "candidate_inventory": {
+      "path": "evidence/p2-g2-pr7-candidate-inventory.json",
+      "sha256": "ea618eac280b5819d4322c4a00f12774961c46100141cd2afc7187a757eca263"
+    },
+    "classification_metrics": {
+      "path": "evidence/p2-g2-pr7-classification-metrics.json",
+      "sha256": "2264827d68287d02c14203f0dc75e93cf9d812bdc0996479529baf6b315ef882"
+    }
+  },
+  "environment": {
+    "node_version": "24.18.0",
+    "platform": "win32",
+    "architecture": "x64",
+    "postgres_version": "18.4",
+    "browser_version": "152.0.4191.66",
+    "os_release": "10.0.26200",
+    "formal_natural_gc_observation": false,
+    "whole_stack_2c4g_live_validation": "NOT_RUN"
+  },
+  "configured_resource_caps": {
+    "app_processes": 1,
+    "worker_processes": 1,
+    "gateway_connections": 1,
+    "postgres_instances": 1,
+    "app_pool": 4,
+    "worker_pool": 2,
+    "gateway_pool": 1,
+    "controller_pool": 1,
+    "sse_clients": 32,
+    "batch": 20,
+    "turns": 50,
+    "input_characters": 20000,
+    "list": 100
+  },
+  "persistent_flags_all_off": true,
+  "model_environment_keys_in_test_processes": 0,
+  "model_provider_calls": 0,
+  "ocr_calls": 0,
+  "rag_calls": 0,
+  "database_change": "NO_APPLICATION_SCHEMA_CHANGE_EXISTING_MIGRATIONS_UNCHANGED",
+  "shared_database_migrated": false,
+  "live_validation": "NOT_RUN",
+  "client_observation": "NOT_RUN",
+  "project_owner_approval": false,
+  "live_send_authorized": false,
+  "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
+  "next_task_candidate": "P2-G2-LIVE",
+  "next_task_authorized": false,
+  "runbook": "prompts/P2-G2_rule_first_service_loop_runbook.md",
+  "failure_history": "evidence/p2-g2-pr7-regression-history.json",
+  "repair_report": "evidence/p2-g2-pr7-review-remediation.md",
+  "service_chain_inventory": "evidence/p2-g2-service-chain-inventory.json",
+  "cleanup_limit": "Earlier policy-protected browser profile is preserved; no claim that all historical Temp directories were removed.",
+  "cloud_environment_limit": "The original stopped full-G2 cloud package remains the immutable 17ebc9bc snapshot; the current full-G2 candidate is not deployed. Independently authorized OAuth-only HTTPS authentication is verified. Formal business live observation and Gate approval remain NOT_RUN.",
+  "classification_metric_limits": "Classification comparison uses 106 comparable terminal observations; Ticket/Review ratios use 109 measured scenarios. Exclusions are explicit. Safe-route test coverage is not classification accuracy or a claim of original-202 label equality.",
+  "source_commit": "a03e7ad141777537207902124b32d2ce2e30445c",
+  "validation_scope": "P2_G2_FULL_SERVICE_LOOP_PREPARATION",
+  "historical_readiness_snapshot": "evidence/p2-g2-pre-oauth-readiness-report.json",
+  "persistent_flag_scope": "G2 business policy defaults; separately authorized OAuth-only runtime is enabled",
+  "oauth_authentication": {
+    "status": "LIVE_VERIFIED",
+    "evidence": "evidence/p2-g2-wecom-web-oauth.md",
+    "business_service_loop_started": false
+  },
+  "historical_failure_history": "evidence/p2-g2-validation-run-index.json"
+}

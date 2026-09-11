@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { fileURLToPath,pathToFileURL } from 'node:url';
 import path from 'node:path';
+import {isG2SuccessorState,verifyG2Predecessor} from '../src/p2-g2-predecessor-verification.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const base='b1b8e4deb14e6290ca45aea12d92baaef4728c11',authorization='3599fa479c752ed75cd4652e5ffdaee2b212ad24';
 const git=(...args)=>execFileSync('git',['-c','safe.directory='+root.replaceAll('\\','/'),'-c','core.safecrlf=false',...args],{cwd:root,encoding:'utf8',maxBuffer:8000000});
@@ -40,6 +41,7 @@ export async function validateP2016({includeReadinessEvidence=true}={}){
   if(typeof includeReadinessEvidence!=='boolean')throw new Error('P2_016_VALIDATION_MODE_INVALID');
   const errors=[];let checks=0;const check=(ok,message)=>{checks++;if(!ok)errors.push(message);};
   const state=JSON.parse(await read('plans/current_phase.json'));
+  if(isG2SuccessorState(state))return verifyG2Predecessor('P2-016',includeReadinessEvidence);
   const successorActive=['P2_012_AUTHORIZED','P2_012_READY_FOR_TARGETED_LIVE_VALIDATION'].includes(state.implementation_authorization_status);
   const successorDone=state.implementation_authorization_status==='P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION';
   const successor=successorActive||successorDone;

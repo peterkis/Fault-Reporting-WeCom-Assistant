@@ -1,0 +1,36 @@
+{
+  "args": [
+    "--expose-gc",
+    "--test",
+    "--test-concurrency=1",
+    "--test-reporter=tap",
+    "tests/p2-g2-three-entry-profile.integration.test.mjs",
+    "tests/p2-g2-direct-session-boundary.integration.test.mjs",
+    "tests/p2-g2-source-context.integration.test.mjs",
+    "tests/p2-g2-explicit-continuation.integration.test.mjs"
+  ],
+  "files": [
+    {
+      "path": "tests/p2-g2-three-entry-profile.integration.test.mjs",
+      "sha256": "3a3927f16c0c5cfca843decc228dcd7a0e89df773647616e2ad5c69de83db0f2"
+    },
+    {
+      "path": "tests/p2-g2-direct-session-boundary.integration.test.mjs",
+      "sha256": "4abead1bf5052d6e78712f45e4423b74c9af951cbb9bfd7dc725fdbf2357ad3f"
+    },
+    {
+      "path": "tests/p2-g2-source-context.integration.test.mjs",
+      "sha256": "2551f495acdb11525ecc7972d55b6a9c42b999c2d603f10b52d1a046d1f4df85"
+    },
+    {
+      "path": "tests/p2-g2-explicit-continuation.integration.test.mjs",
+      "sha256": "9ee1366725ff8f61cf118b11811a09ef43427e04d6e661b6bdf74b32ac916187"
+    }
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error": null,
+  "stdout_sha256": "59c01f37d6c40fd7b07aef07fda39b2391f03fa0e1d38b277d8e480340654bc7",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "directory": "tmp/p2-g2-tests-0ea98488-ac96-4de6-97d9-ef0410a64cca"
+}

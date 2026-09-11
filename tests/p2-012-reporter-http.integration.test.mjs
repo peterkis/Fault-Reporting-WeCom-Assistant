@@ -14,7 +14,7 @@ test('P2-012 Reporter HTTP preserves bound grants, refresh ETag, safe milestones
   await withP2012Database({databaseUrl,purpose:'p2012report',run:async({pool,databaseUrl})=>{
     await applyThrough031({pool,databaseUrl});await migrateP2012({databaseUrl});const f=await fixtureP2012(pool,{reporters:2});
     const probe=createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const listenPort=probe.address().port;await new Promise(r=>probe.close(r));const origin='http://127.0.0.1:'+listenPort;
-    const runtime=createP2012Runtime({pool,principalId:f.admin.id,publicOrigin:origin,listenPort,reporterHmacSecret:'synthetic-only-report-session-hmac-at-least32',allowLocalHttp:true,
+    const runtime=createP2012Runtime({ticketNotificationAdditionalEvents:['ticket.created'],pool,principalId:f.admin.id,publicOrigin:origin,listenPort,reporterHmacSecret:'synthetic-only-report-session-hmac-at-least32',allowLocalHttp:true,
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true},incidentFlags:{INCIDENT_CORRELATION_ENABLED:true}});
     try{
       await runtime.start();const ticket=(await pool.query('SELECT * FROM pilot_ticket.ticket WHERE id=$1::uuid',[f.reports[1].ticketId])).rows[0];

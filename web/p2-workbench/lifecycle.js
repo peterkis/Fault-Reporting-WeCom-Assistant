@@ -79,10 +79,18 @@ function eventList(parent,rows,append=false){
   while(ol.children.length>200)ol.firstElementChild.remove();
 }
 async function renderTicket(ticket,version){
-  const [responsibility,events,deliveries,eligible]=await Promise.all(['responsibility','events','deliveries','eligible-principals'].map(p=>api('/api/tickets/'+ticket.id+'/'+p)));
+  const [responsibility,events,deliveries,eligible,contact]=await Promise.all(['responsibility','events','deliveries','eligible-principals','reporter-contact'].map(p=>api('/api/tickets/'+ticket.id+'/'+p)));
   if(version!==epoch||editing||pending)return;
   $('lc-detail').replaceChildren();const head=node('div',undefined,'detail-header');head.append(node('h2',ticket.ticket_no,'ticket-number'),node('span',title(ticket.status),'badge'));$('lc-detail').append(head);
   facts($('lc-detail'),[['优先级',title(ticket.priority)],['建立时间',ticket.created_at],['更新 / 版本',ticket.updated_at+' / '+ticket.version]]);
+  const contactSection=section('上报人联系资料');
+  if(contact.status==='RESOLVED'&&contact.contact){
+    const missing=value=>value??'暂未获取';
+    facts(contactSection,[['姓名',missing(contact.contact.name)],['企业微信 userid',missing(contact.contact.userid)],
+      ['所属部门',contact.departments.map(d=>(d.name??'部门名称暂未获取')+(d.role==='PRIMARY'?'（主部门）':'')).join('、')||'暂未获取'],
+      ['手机',missing(contact.contact.mobile)],['联系电话 / 分机',missing(contact.contact.telephone)],['资料获取时间',missing(contact.fetched_at)]]);
+    contactSection.append(node('p','报修时的企业微信资料；用于联系补充故障信息。','hint'));
+  }else contactSection.append(node('p','联系资料暂不可用，报修已正常受理。可通过会话联系上报人补充。','hint'));
   const owners=section('双责任 · 沟通与解决相互独立'),grid=node('div',undefined,'responsibilities'),conversation=node('div'),resolver=node('div');
   conversation.append(node('strong','沟通负责人'));for(const c of responsibility.conversations)conversation.append(node('p',c.conversation_principal_name??'未分配沟通坐席'));
   if(!responsibility.conversations.length)conversation.append(node('p','尚无关联会话'));resolver.append(node('strong','故障处理人'),node('p',responsibility.ticket_assignee_name??'待接单'),node('p',responsibility.resolver_team_name??responsibility.resolver_team_id));grid.append(conversation,resolver);owners.append(grid);

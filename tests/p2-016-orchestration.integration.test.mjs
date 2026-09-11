@@ -16,7 +16,7 @@ import { shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
 test('P2-016 existing rule worker creates Ticket notifications, safe group/direct guidance and SYSTEM-only timeout closure',async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016orch',run:async({pool,databaseUrl})=>{
     await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});
-    const notifications=createP2016TicketNotificationProjector({enabled:true}),realtime=createP2016RealtimeProjector({pool,enabled:true});
+    const notifications=createP2016TicketNotificationProjector({additionalEventTypes:['ticket.created'],enabled:true}),realtime=createP2016RealtimeProjector({pool,enabled:true});
     const worker=createP2016OrchestrationWorker({pool,notifications,realtime,identityHmacKey:'synthetic-only-identity-hmac-key',
       now:()=>shanghaiLocalToEpochMs('2026-09-03 15:00:00')});
     const report=await seedPersistedIntake({pool,text:'处方提交不了'});

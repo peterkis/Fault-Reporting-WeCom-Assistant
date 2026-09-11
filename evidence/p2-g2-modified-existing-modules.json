@@ -1,0 +1,1585 @@
+{
+  "schema_version": 1,
+  "kind": "CURRENT_CANDIDATE_EXISTING_MODULE_SCOPE_MAPPING",
+  "base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
+  "head": "d7311cdbfe30c66f37d22a553a3e8f0e04e27cd1",
+  "scope": [
+    "src",
+    "scripts",
+    "config",
+    "config_examples",
+    "contracts",
+    "web"
+  ],
+  "file_count": 36,
+  "untracked_files_included": false,
+  "migrations_in_scope": false,
+  "execution_status": "SOURCE_SCOPE_MAPPING_WITH_SEPARATE_CURRENT_FULL_REGRESSION",
+  "authorization_rule": "Current ongoing G2 gap-repair authorization applies; retain explicit per-gap scope/evidence and no live send/Gate close/next phase inference.",
+  "files": [
+    {
+      "file": "config_examples/p2-007-deterministic-rules.example.json",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Add versioned observed-symptom, intent, risk and same-group corroboration rules; correct authorized frozen-gold recognition gaps without rewriting original202 sources.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-gold-repair-authorization.md",
+          "exists": true,
+          "sha256": "1b8f4219341d34bd7146512477a2d6da87a0bc9623f3b466c4768ba96d918975"
+        },
+        {
+          "path": "evidence/p2-g2-recognition-repair.md",
+          "exists": true,
+          "sha256": "2a09e7b060c6fdedfd1049fd9f32c829cdaeb5017ea9d85ad3376d74dcab83e0"
+        },
+        {
+          "path": "evidence/p2-g2-multi-turn-recognition-repair.md",
+          "exists": true,
+          "sha256": "776b645b84b928460adb287f6d7973c292ec4af3b0329a70f785053e6beea5e6"
+        },
+        {
+          "path": "evidence/p2-g2-group-corroboration-contract.md",
+          "exists": true,
+          "sha256": "8cca1c09c81a2016ca4e2542c9a1fbff00137cb3152c1be049ff240e18193e11"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "RULE_BEHAVIOR_VERSIONED",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "fc1cf2d8f2ca9c84b14424c4f53110657db1d1c1692af07018db4c62a55e9f48",
+      "current_bytes_sha256": "4ae80b2632199075f7aeaf0405dfddb166159f449c29b789c6fa595e339fd3d3",
+      "diff_hunk_headers": [
+        "@@ -4 +4 @@",
+        "@@ -450,0 +451,271 @@",
+        "@@ -458,0 +730,4 @@",
+        "@@ -547 +822 @@",
+        "@@ -561 +836,3 @@",
+        "@@ -611 +888 @@",
+        "@@ -623 +900,3 @@",
+        "@@ -629,0 +909,4 @@",
+        "@@ -639 +922 @@",
+        "@@ -651 +934,3 @@",
+        "@@ -671 +956 @@",
+        "@@ -677 +962 @@",
+        "@@ -2264,0 +2550,129 @@"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "4ae80b2632199075f7aeaf0405dfddb166159f449c29b789c6fa595e339fd3d3"
+    },
+    {
+      "file": "contracts/conversation_center.openapi.yaml",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Document explicit force-transfer reason, internal reporter-contact GET and per-Incident root server overrides to match actual HTTP paths.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-human-command-repair.md",
+          "exists": true,
+          "sha256": "6045765b89c5e65638ce8f17d577902fa410ebeb98e64456d6873ee452eeff26"
+        },
+        {
+          "path": "evidence/p2-g2-member-contact-contract.md",
+          "exists": true,
+          "sha256": "42599c93d2efaf56bc95bf650feb29174ebc7eab62e612511c469f5dd9ae9814"
+        },
+        {
+          "path": "evidence/p2-g2-browser-and-association-repair.md",
+          "exists": true,
+          "sha256": "7339ba2eabbc01e76be223b6c36dc4c1ee9c545b281fbd95619ce77cad697708"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "CONTRACT_ONLY",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "8be6f1650f6c6394446fc028f0298206ef57f53e53f2597e70a9edacfe2940c3",
+      "current_bytes_sha256": "ad02e4d55aa11cc52852b849efc8cc760073b611334e7ce07776e761e2c1cc18",
+      "diff_hunk_headers": [
+        "@@ -156,0 +157 @@ paths:",
+        "@@ -159,0 +161,20 @@ paths:",
+        "@@ -161,0 +183 @@ paths:",
+        "@@ -453,0 +476,15 @@ paths:",
+        "@@ -1062,0 +1100,2 @@ paths:",
+        "@@ -1084,0 +1124,2 @@ paths:",
+        "@@ -1106,0 +1148,2 @@ paths:",
+        "@@ -1128,0 +1172,2 @@ paths:",
+        "@@ -1150,0 +1196,2 @@ paths:",
+        "@@ -1172,0 +1220,2 @@ paths:",
+        "@@ -1194,0 +1244,2 @@ paths:",
+        "@@ -1216,0 +1268,2 @@ paths:",
+        "@@ -1239,0 +1293,2 @@ paths:",
+        "@@ -1262,0 +1318,2 @@ paths:",
+        "@@ -1285,0 +1343,2 @@ paths:",
+        "@@ -1308,0 +1368,2 @@ paths:",
+        "@@ -1330,0 +1392,2 @@ paths:",
+        "@@ -1352,0 +1416,2 @@ paths:",
+        "@@ -1365,0 +1431,2 @@ paths:",
+        "@@ -1379,0 +1447,2 @@ paths:",
+        "@@ -1393,0 +1463,2 @@ paths:",
+        "@@ -1407,0 +1479,2 @@ paths:",
+        "@@ -1421,0 +1495,2 @@ paths:",
+        "@@ -1435,0 +1511,2 @@ paths:",
+        "@@ -1449,0 +1527,2 @@ paths:",
+        "@@ -1463,0 +1543,2 @@ paths:",
+        "@@ -1477,0 +1559,2 @@ paths:",
+        "@@ -1495,0 +1579,2 @@ paths:"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "03bb916df79bfaecf78e199a1f24748e66fcc38dadd7084b77024217899e69c5"
+    },
+    {
+      "file": "scripts/p2-012-process-role.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Extract existing Worker extension for G2 reuse; inject Direct-session Intake processor, private destination checks, communication append, notification opt-ins and directory adapter.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-direct-session-repair-authorization.md",
+          "exists": true,
+          "sha256": "d710342239fb5276e86c7e9f9dab991185865c8c8bb1c522f81954980701c228"
+        },
+        {
+          "path": "evidence/p2-g2-domain-repair-authorization.md",
+          "exists": true,
+          "sha256": "5158c65c460a63e5eceeeb59f2e51c4ef07916cc95bb7b7e7adf485b1efc5fc3"
+        },
+        {
+          "path": "evidence/p2-g2-three-entry-business-profile.md",
+          "exists": true,
+          "sha256": "4a213bf26b9c973da5c5ca0e012eeacd6cfcfa5d8c4432992b4a76d82a9b49d2"
+        },
+        {
+          "path": "evidence/p2-g2-member-contact-contract.md",
+          "exists": true,
+          "sha256": "42599c93d2efaf56bc95bf650feb29174ebc7eab62e612511c469f5dd9ae9814"
+        },
+        {
+          "path": "evidence/p2-g2-operational-evidence-repair.md",
+          "exists": true,
+          "sha256": "be5db60ccb6ecaf7fbc2a70233a184c079ceeb7a55a749445707c5977bd906e3"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "ASSEMBLY_SEAMS",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "4adcc81f386ce722cf0c470452ef5341415d7c34e71c217226450a965e2ee8d5",
+      "current_bytes_sha256": "c392eb1ce343a4b417ee7fb9c880e1a44ebef312797ccd091000c5d3551bbeab",
+      "diff_hunk_headers": [
+        "@@ -10 +10 @@ import { createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.m",
+        "@@ -19,0 +20,15 @@ const personAuthorizer=pool=>createP2012PersonDestinationAuthorizer({pool,botId:",
+        "@@ -35 +50 @@ export async function main(argv=process.argv.slice(2)){",
+        "@@ -42,14 +57,2 @@ export async function main(argv=process.argv.slice(2)){"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "c392eb1ce343a4b417ee7fb9c880e1a44ebef312797ccd091000c5d3551bbeab"
+    },
+    {
+      "file": "scripts/p2-016-process-role.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Inject P2 Direct-session processor with explicit30-minute idle bound instead of P1 fragment-only aggregation.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-direct-session-repair-authorization.md",
+          "exists": true,
+          "sha256": "d710342239fb5276e86c7e9f9dab991185865c8c8bb1c522f81954980701c228"
+        },
+        {
+          "path": "evidence/p2-g2-direct-session-repair.md",
+          "exists": true,
+          "sha256": "7e4ab3dc7e9eb77c8cd770276f71d667d1ba0ae570265654445f51078e7757a1"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "ASSEMBLY_SEAMS",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "c79c885d31a243a6ac441708811cc99222b86a355cb7ef29a3cf51a3a960006f",
+      "current_bytes_sha256": "fd448590d591344b053132eadc5b312ad772a6a14ec66cf6d0d79c4346f08431",
+      "diff_hunk_headers": [
+        "@@ -11 +11 @@ import { createChannelMessageInbox } from '../src/p1-003-channel-message-inbox.m",
+        "@@ -26 +26 @@ export async function main(argv=process.argv.slice(2)){"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "aabbc7069bb8a576bd836df79ee95de6f9517e175bb4545d7217defdf901f028"
+    },
+    {
+      "file": "scripts/p2-g1-process-role.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Allow Gateway factory injection and publish optional Worker-cycle readiness/failures instead of treating startup alone as successful work.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-start-authorization.md",
+          "exists": true,
+          "sha256": "4a1ac0649d683dc89e89393dfb83d878a30994e2f314935c62f85c1e4611dee4"
+        },
+        {
+          "path": "evidence/p2-g2-operational-evidence-repair.md",
+          "exists": true,
+          "sha256": "be5db60ccb6ecaf7fbc2a70233a184c079ceeb7a55a749445707c5977bd906e3"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "ASSEMBLY_OBSERVABILITY",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "a39f9909667962dd4657f25dae114eb80a8ec1700ff900a4e31bee021630e7c5",
+      "current_bytes_sha256": "c32de122ff57f746560fedcb78d3eeb63f40b52c84a6c8cfe35af3db77b7315d",
+      "diff_hunk_headers": [
+        "@@ -117 +117 @@ export async function runApp({runtimeFactory=createP2G1Runtime}={}) {",
+        "@@ -134 +134 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake",
+        "@@ -142 +142 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake",
+        "@@ -204 +204 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake",
+        "@@ -236,0 +237,3 @@ export async function runWorker({extensionFactory=null}={}) {",
+        "@@ -240 +243,3 @@ export async function runWorker({extensionFactory=null}={}) {",
+        "@@ -268 +273 @@ export async function runWorker({extensionFactory=null}={}) {"
+      ],
+      "implementation_evidence_limit": "Detailed necessity inferred from inspected diff and G2 start/operational scope. Not a per-file historical test verdict; final validator/process tests must verify current behavior.",
+      "canonical_candidate_sha256": "97202bb2c5eec44a039607c7cfe673dc8f4ee9d07c8db7e6c699ae9a060bc67c"
+    },
+    {
+      "file": "scripts/validate-arch-006-rule-first-service-loop.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Recognize authorized G2 preparation lifecycle; permit only three exact predecessor repair seams with three authorization artifacts.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-start-authorization.md",
+          "exists": true,
+          "sha256": "4a1ac0649d683dc89e89393dfb83d878a30994e2f314935c62f85c1e4611dee4"
+        },
+        {
+          "path": "evidence/p2-g2-continuing-gap-repair-authorization.md",
+          "exists": true,
+          "sha256": "73fed559d9dff16a216e8758c636b809326a3e6f51c7300b07f0a0fd3a0a7eb7"
+        },
+        {
+          "path": "evidence/p2-g2-gold-repair-authorization.md",
+          "exists": true,
+          "sha256": "1b8f4219341d34bd7146512477a2d6da87a0bc9623f3b466c4768ba96d918975"
+        },
+        {
+          "path": "evidence/p2-g2-direct-session-repair-authorization.md",
+          "exists": true,
+          "sha256": "d710342239fb5276e86c7e9f9dab991185865c8c8bb1c522f81954980701c228"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "GOVERNANCE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "508b701dff7985d40c764f34d640b7a945e0724c905eacb7d69465a9235bfcc1",
+      "current_bytes_sha256": "bce82421bb4b153ff03121d3470ea0af733be9095a39e23dd9ce8783f6db9546",
+      "diff_hunk_headers": [
+        "@@ -42,0 +43,3 @@ const lifecycleState = current.implementation_authorization_status;",
+        "@@ -45 +48 @@ const p2012Ready=lifecycleState==='P2_012_READY_FOR_TARGETED_LIVE_VALIDATION';",
+        "@@ -53,4 +56,4 @@ const expectedLastTask = p2012Done?'P2-012':p2016Done?'P2-016':completed ? 'P2-0",
+        "@@ -70 +73 @@ for (const view of views) {",
+        "@@ -80,0 +84,6 @@ for (const view of views) {",
+        "@@ -108 +117 @@ check(same(gates.map((gate) => gate.id), ['P2-G1', 'P2-G2', 'P2-G3', 'P2-G4', 'P",
+        "@@ -195,0 +205,5 @@ const p2016Seams=new Set(['src/p1-006-ticket-state-actions.mjs','src/p1-010-tick",
+        "@@ -197 +211,2 @@ const forbidden = changedPaths.filter((relativePath) => /^(?:database\\/migration"
+      ],
+      "implementation_evidence_limit": "Detailed necessity inferred from inspected diff and G2 start/operational scope. Not a per-file historical test verdict; final validator/process tests must verify current behavior.",
+      "canonical_candidate_sha256": "1cb6372494344b0c95c76bb680c4b87ee1f670792b0726fcf666428bfa83e870"
+    },
+    {
+      "file": "scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Delegate validation to G2 successor predecessor-verification when G2 state is active; retain legacy validation for other lifecycle states.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-start-authorization.md",
+          "exists": true,
+          "sha256": "4a1ac0649d683dc89e89393dfb83d878a30994e2f314935c62f85c1e4611dee4"
+        },
+        {
+          "path": "evidence/p2-g2-operational-evidence-repair.md",
+          "exists": true,
+          "sha256": "be5db60ccb6ecaf7fbc2a70233a184c079ceeb7a55a749445707c5977bd906e3"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "GOVERNANCE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "5ae8031c1d0c81d72e8daabd26521629937628f2f68f9a717628892608bc68c9",
+      "current_bytes_sha256": "7222a095dcfafd6d76cad9010d551408f8f3627abe1cc5c97839da30e71dbff0",
+      "diff_hunk_headers": [
+        "@@ -5,0 +6 @@ import { P2012_RELATIONS,p2012CatalogHash } from './p2-012-migrate.mjs';",
+        "@@ -147,0 +149 @@ export async function validateP2012({includeReadinessEvidence=true}={}){"
+      ],
+      "implementation_evidence_limit": "Detailed necessity inferred from inspected diff and G2 start/operational scope. Not a per-file historical test verdict; final validator/process tests must verify current behavior.",
+      "canonical_candidate_sha256": "07d41b88908bb41881ef8409c1294123ca5ab353f0c0c88f52ac8279b5892dcc"
+    },
+    {
+      "file": "scripts/validate-p2-016-ticket-lifecycle-workbench.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Use explicit G2 successor predecessor verification rather than wrongly applying old exact-runtime freeze to authorized successor edits.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-start-authorization.md",
+          "exists": true,
+          "sha256": "4a1ac0649d683dc89e89393dfb83d878a30994e2f314935c62f85c1e4611dee4"
+        },
+        {
+          "path": "evidence/p2-g2-operational-evidence-repair.md",
+          "exists": true,
+          "sha256": "be5db60ccb6ecaf7fbc2a70233a184c079ceeb7a55a749445707c5977bd906e3"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "GOVERNANCE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "16722c159ee3525566dd4bd89f84f299739e89ab275b344f1ff2942a59302290",
+      "current_bytes_sha256": "a0427842722b432eb4e5c25c5ca10ecdb947a8766ba63361381a300dee653e83",
+      "diff_hunk_headers": [
+        "@@ -5,0 +6 @@ import path from 'node:path';",
+        "@@ -42,0 +44 @@ export async function validateP2016({includeReadinessEvidence=true}={}){"
+      ],
+      "implementation_evidence_limit": "Detailed necessity inferred from inspected diff and G2 start/operational scope. Not a per-file historical test verdict; final validator/process tests must verify current behavior.",
+      "canonical_candidate_sha256": "a0427842722b432eb4e5c25c5ca10ecdb947a8766ba63361381a300dee653e83"
+    },
+    {
+      "file": "scripts/validate-v1-4-architecture.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Add ASSEMBLY_AUTHORIZED and READY_FOR_LIVE_E2E lifecycle profiles and exact authorization binding without declaring Gate completion.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-start-authorization.md",
+          "exists": true,
+          "sha256": "4a1ac0649d683dc89e89393dfb83d878a30994e2f314935c62f85c1e4611dee4"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "GOVERNANCE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "9824397b253c8627af9d25bfb5a65a9c338baf558a8baaeecdcaa595c531d345",
+      "current_bytes_sha256": "23a25dfa477a403ee0dad4d8acf40c14092d6111ba5fa07bcf43d9ba20209c24",
+      "diff_hunk_headers": [
+        "@@ -183,0 +184,18 @@ const LIFECYCLE_PROFILES = Object.freeze({",
+        "@@ -349 +367 @@ if (profile) {",
+        "@@ -391,0 +410,11 @@ if (profile) {",
+        "@@ -535 +564 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {",
+        "@@ -610 +639 @@ check(parallel.assembly_gates.find((gate) => gate.id === 'P2-G1')?.status === (p"
+      ],
+      "implementation_evidence_limit": "Detailed necessity inferred from inspected diff and G2 start/operational scope. Not a per-file historical test verdict; final validator/process tests must verify current behavior.",
+      "canonical_candidate_sha256": "787aa996a5fa363cc99cd2ca35618c4ca1a57b3947e7d26cc27ee35a54f7b5ef"
+    },
+    {
+      "file": "src/p1-004-service-intake.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Add optional same-transaction existing Intake selector; default retains P1 behavior. Record explicit/idle boundary reason in append event for asynchronous Session projection.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-direct-session-repair-authorization.md",
+          "exists": true,
+          "sha256": "d710342239fb5276e86c7e9f9dab991185865c8c8bb1c522f81954980701c228"
+        },
+        {
+          "path": "evidence/p2-g2-direct-session-repair.md",
+          "exists": true,
+          "sha256": "7e4ab3dc7e9eb77c8cd770276f71d667d1ba0ae570265654445f51078e7757a1"
+        },
+        {
+          "path": "evidence/p2-g2-explicit-continuation-contract.md",
+          "exists": true,
+          "sha256": "f22745965f8750c131ca8b108be879723577ccc78fb9b60abb5fe9db1c9ea3cd"
+        },
+        {
+          "path": "evidence/p2-g2-explicit-new-fault-boundary-repair.md",
+          "exists": true,
+          "sha256": "f6dad0c2929d871cc7f76a1977918b07de8d3e1860ccfc28a9a39ac56c9a09b3"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "INTAKE_ASSOCIATION_NOT_TICKET_STATE_MACHINE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "aef12992f1c91eb591443b09841cba7901032b5b4c72c6ab65114ff75870691d",
+      "current_bytes_sha256": "014404ca66321e8144bc77ef0a8b6076252e0fe32f4991e02848a5bf563fede0",
+      "diff_hunk_headers": [
+        "@@ -195,0 +196 @@ export function createServiceIntakeProcessor({",
+        "@@ -199,0 +201 @@ export function createServiceIntakeProcessor({",
+        "@@ -224 +226 @@ export function createServiceIntakeProcessor({",
+        "@@ -236 +238,6 @@ export function createServiceIntakeProcessor({",
+        "@@ -254,2 +261,3 @@ export function createServiceIntakeProcessor({",
+        "@@ -272,0 +281 @@ export function createServiceIntakeProcessor({",
+        "@@ -431,7 +440,8 @@ export function createServiceIntakeProcessor({"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "cd0c5dbe4a050dc28430d8f21ff60b2033591aff5f14deca8fe610342720fd22"
+    },
+    {
+      "file": "src/p2-006-workbench-command-facade.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Require explicit reason on forced TRANSFER before authorization/command dispatch.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-human-command-repair.md",
+          "exists": true,
+          "sha256": "6045765b89c5e65638ce8f17d577902fa410ebeb98e64456d6873ee452eeff26"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "COMMAND_VALIDATION_NO_STATE_TRANSITION_CHANGE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "1d347e681bd52c0a64f0750333d6b4368eca8f3d9686b5a70bc96faee48c3333",
+      "current_bytes_sha256": "a9c0a660daa7bd14b29429d78ee82f196b0901be72e42d4c5f69014888bc5890",
+      "diff_hunk_headers": [
+        "@@ -49,0 +50 @@ export function createConversationWorkbenchCommandFacade({ controlService, commu"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "92e881de54c911fa14360bcde44eb86c47d7c08527635acf64cccf4dbc5eeee5"
+    },
+    {
+      "file": "src/p2-007-rule-engine.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Track current positive assertions/subject-specific recovery, add rule-derived symptom provenance and taxonomy mapping; consume narrowly bound corroboration without side effects.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-gold-repair-authorization.md",
+          "exists": true,
+          "sha256": "1b8f4219341d34bd7146512477a2d6da87a0bc9623f3b466c4768ba96d918975"
+        },
+        {
+          "path": "evidence/p2-g2-recognition-repair.md",
+          "exists": true,
+          "sha256": "2a09e7b060c6fdedfd1049fd9f32c829cdaeb5017ea9d85ad3376d74dcab83e0"
+        },
+        {
+          "path": "evidence/p2-g2-multi-turn-recognition-repair.md",
+          "exists": true,
+          "sha256": "776b645b84b928460adb287f6d7973c292ec4af3b0329a70f785053e6beea5e6"
+        },
+        {
+          "path": "evidence/p2-g2-group-corroboration-contract.md",
+          "exists": true,
+          "sha256": "8cca1c09c81a2016ca4e2542c9a1fbff00137cb3152c1be049ff240e18193e11"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "RULE_BEHAVIOR_VERSIONED",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "3262edaeb2d95c9762a666a388b545ce66159bc243bccbe32fc121dfbbb993d9",
+      "current_bytes_sha256": "d9c0b56cd563792eb7b14017640ae719cfca90684592cfe8d1c171b341aaa922",
+      "diff_hunk_headers": [
+        "@@ -16 +16 @@ import { buildFactProvenance } from './p2-007-fact-provenance.mjs';",
+        "@@ -135,0 +136,32 @@ function inferTransactionStage(text, service) {",
+        "@@ -138,0 +171,9 @@ function applyAction(action, state) {",
+        "@@ -208,0 +250,20 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {",
+        "@@ -213,0 +275,2 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {",
+        "@@ -288 +351 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {",
+        "@@ -297,0 +361,15 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {",
+        "@@ -331 +409 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {",
+        "@@ -351,0 +430 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "9f987189e59fd98668302f3e1a09012919b387a145403241edcdd30b6eb2ce3c"
+    },
+    {
+      "file": "src/p2-012-candidate-source-adapter.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Accept an optional caller-owned transaction so authorized cross-Intake correlation can record Candidate source and associated evidence atomically; default still opens the original transaction.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-continuing-gap-repair-authorization.md",
+          "exists": true,
+          "sha256": "73fed559d9dff16a216e8758c636b809326a3e6f51c7300b07f0a0fd3a0a7eb7"
+        },
+        {
+          "path": "evidence/p2-g2-cross-reporter-correlation-repair.md",
+          "exists": true,
+          "sha256": "00141f43de7f08430397f5695fd29a341806e0c54ee158fb8f17475351a06f72"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "OPTIONAL_TRANSACTION_SEAM_NO_STATE_TRANSITION_CHANGE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "9285ddf480783c6f919c320dd6227a9e76cddec64c5c0744b02e463abaecc2b0",
+      "current_bytes_sha256": "c463727447a5a841343e305cc38c5fe302a07bf3b7972d6c3ce82f006483b1be",
+      "diff_hunk_headers": [
+        "@@ -8 +8 @@ export function createP2012CandidateSourceAdapter({pool,enabled=false}){",
+        "@@ -12 +12 @@ export function createP2012CandidateSourceAdapter({pool,enabled=false}){",
+        "@@ -26 +26,2 @@ export function createP2012CandidateSourceAdapter({pool,enabled=false}){"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "c463727447a5a841343e305cc38c5fe302a07bf3b7972d6c3ce82f006483b1be"
+    },
+    {
+      "file": "src/p2-012-live-reporter-scope.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Parameterize exact approved test label/source; keep PERSON approved scope AND Direct Leg; route only explicit closure webhook transport through dedicated sender.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-domain-repair-authorization.md",
+          "exists": true,
+          "sha256": "5158c65c460a63e5eceeeb59f2e51c4ef07916cc95bb7b7e7adf485b1efc5fc3"
+        },
+        {
+          "path": "evidence/p2-g2-three-entry-business-profile.md",
+          "exists": true,
+          "sha256": "4a213bf26b9c973da5c5ca0e012eeacd6cfcfa5d8c4432992b4a76d82a9b49d2"
+        },
+        {
+          "path": "evidence/p2-g2-notification-policy-repair.md",
+          "exists": true,
+          "sha256": "3ddfe334f5b59fcfee66a3680aca3570a2fd0eb962ef4968818dd5b56bba1ad1"
+        },
+        {
+          "path": "evidence/p2-g2-operational-evidence-repair.md",
+          "exists": true,
+          "sha256": "be5db60ccb6ecaf7fbc2a70233a184c079ceeb7a55a749445707c5977bd906e3"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "DIRECT_LEG_NOT_RELAXED_TRANSPORT_EXTENDED",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "f38eb29f70e9ff44fbebd9806481d91d9e7064b85d80cb7cf0fc26c9f59d1cd0",
+      "current_bytes_sha256": "676f8284224d8196c4032b8d29a607f67b2eca073c7fc522c8872f8d20543c57",
+      "diff_hunk_headers": [
+        "@@ -3,0 +4 @@ import { createP2016WeComSender } from './p2-016-wecom-sender.mjs';",
+        "@@ -12 +13,2 @@ const hashes = (values, { required = false } = {}) => Array.isArray(values)",
+        "@@ -14 +16 @@ function tagged(message) {",
+        "@@ -17,2 +19,2 @@ function tagged(message) {",
+        "@@ -43,2 +45,2 @@ export function createP2012ApprovedGroupReporterRegistry({ pool, botId, groupHas",
+        "@@ -51 +53 @@ export function createP2012LiveReporterScope({ bot_id, person_hashes = [], group",
+        "@@ -53 +55 @@ export function createP2012LiveReporterScope({ bot_id, person_hashes = [], group",
+        "@@ -67 +69 @@ export function createP2012LiveReporterScope({ bot_id, person_hashes = [], group",
+        "@@ -84,2 +86,2 @@ export function createP2012LiveReporterScope({ bot_id, person_hashes = [], group",
+        "@@ -87 +89 @@ export function createP2012PersonDestinationAuthorizer({ pool, botId, personHash",
+        "@@ -93 +95 @@ export function createP2012DynamicWeComSender({ pool, gateway, allowedTargetHash",
+        "@@ -95 +97,2 @@ export function createP2012DynamicWeComSender({ pool, gateway, allowedTargetHash",
+        "@@ -98 +101 @@ export function createP2012DynamicWeComSender({ pool, gateway, allowedTargetHash",
+        "@@ -104,0 +108 @@ export function createP2012DynamicWeComSender({ pool, gateway, allowedTargetHash"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "676f8284224d8196c4032b8d29a607f67b2eca073c7fc522c8872f8d20543c57"
+    },
+    {
+      "file": "src/p2-012-notification-policy.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Inject Communication append function so G2 run labels/guards apply to existing Incident notification pipeline.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-three-entry-business-profile.md",
+          "exists": true,
+          "sha256": "4a213bf26b9c973da5c5ca0e012eeacd6cfcfa5d8c4432992b4a76d82a9b49d2"
+        },
+        {
+          "path": "evidence/p2-g2-operational-evidence-repair.md",
+          "exists": true,
+          "sha256": "be5db60ccb6ecaf7fbc2a70233a184c079ceeb7a55a749445707c5977bd906e3"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "NOTIFICATION_ASSEMBLY_NO_INCIDENT_TRANSITION_CHANGE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "04e5fc2e6b35ec190cff4a86550edb4879621c7590eaa397e699297d3ea88ac7",
+      "current_bytes_sha256": "0e726208b86c1b32d0c29db7fc8fddd4d34adce5891d08c5f9bba3a922efc836",
+      "diff_hunk_headers": [
+        "@@ -11 +11 @@ export const incidentNotificationTemplates=type=>POLICY[type]??[];",
+        "@@ -43 +43 @@ export function createP2012NotificationPolicy({enabled=false,publicEnabled=false"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "ccd89542a5e5734a8fa8dc8aa5c0ccb3ca5cc019d01e814e09b22def1123ba5e"
+    },
+    {
+      "file": "src/p2-012-workbench-assembly.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Integrate bounded correlation before existing Candidate import/expiry; optional App maintenance suppression avoids duplicate assembly loops; inject append port.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-continuing-gap-repair-authorization.md",
+          "exists": true,
+          "sha256": "73fed559d9dff16a216e8758c636b809326a3e6f51c7300b07f0a0fd3a0a7eb7"
+        },
+        {
+          "path": "evidence/p2-g2-cross-reporter-correlation-repair.md",
+          "exists": true,
+          "sha256": "00141f43de7f08430397f5695fd29a341806e0c54ee158fb8f17475351a06f72"
+        },
+        {
+          "path": "evidence/p2-g2-operational-evidence-repair.md",
+          "exists": true,
+          "sha256": "be5db60ccb6ecaf7fbc2a70233a184c079ceeb7a55a749445707c5977bd906e3"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "CANDIDATE_MAINTENANCE_ASSEMBLY",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "5ab064e73d0de1bdab0d4d8923086058e9ff01ef9dbfcde75cf0a7f908ea06f9",
+      "current_bytes_sha256": "861e15c49eec3ed799063d7f30adb7eed66bcf793aa9ab805d1717d2435697e5",
+      "diff_hunk_headers": [
+        "@@ -11,0 +12 @@ import { createP2016Runtime } from './p2-016-runtime.mjs';",
+        "@@ -13,2 +14,2 @@ import { createP2016Runtime } from './p2-016-runtime.mjs';",
+        "@@ -20 +21 @@ export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,i",
+        "@@ -22 +23,2 @@ export function createP2012Runtime({incidentFlags={},incidentLiveApproval=null,i",
+        "@@ -25 +27 @@ export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},tes",
+        "@@ -28,0 +31 @@ export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},tes",
+        "@@ -40 +43,2 @@ export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},tes",
+        "@@ -61 +65 @@ export function createP2012WorkbenchExtension({pool,realtime,featureFlags={},tes"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "861e15c49eec3ed799063d7f30adb7eed66bcf793aa9ab805d1717d2435697e5"
+    },
+    {
+      "file": "src/p2-015-contact-journey.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Bound directory read with shared AbortSignal/single concurrency and timeout-to-DEFERRED while preserving immutable report-time snapshot and no live provider by default.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-directory-boundary-repair.md",
+          "exists": true,
+          "sha256": "5c5dfe3c48f9fc131c26415c119503a100fffd98a7668d10c540b697d9bd5e7b"
+        },
+        {
+          "path": "evidence/p2-g2-member-contact-contract.md",
+          "exists": true,
+          "sha256": "42599c93d2efaf56bc95bf650feb29174ebc7eab62e612511c469f5dd9ae9814"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "DIRECTORY_TIMEOUT_NO_PERSON_REGISTRY",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "987395da13b560f4478a9b317278d62e06fef16ec1c1af7c95a269e9bb85dd2a",
+      "current_bytes_sha256": "c7688b08220000b705342f85b99dad4fda85a7403de10420773c0773a3e2c176",
+      "diff_hunk_headers": [
+        "@@ -17 +17,3 @@ const ENTRY_CHANNEL = Object.freeze({",
+        "@@ -20 +22,4 @@ export function createReporterDirectoryPort({ resolveProfile } = {}) {",
+        "@@ -22 +27,5 @@ export function createReporterDirectoryPort({ resolveProfile } = {}) {",
+        "@@ -29 +38 @@ export function createReporterDirectoryPort({ resolveProfile } = {}) {",
+        "@@ -103 +112 @@ export function createContactJourneyStore() {",
+        "@@ -112 +121 @@ export function createContactJourneyStore() {"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "c1cfc36c98b61caa9075a148f8cfe9e91294f9a8b0e6692a33683eb8b56f7126"
+    },
+    {
+      "file": "src/p2-015-decision-router.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Version routing to preserve fault admission plus mandatory association/identity review; align minimal-Ticket boolean with actions; preserve trusted corroboration and privacy annotations.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-gold-repair-authorization.md",
+          "exists": true,
+          "sha256": "1b8f4219341d34bd7146512477a2d6da87a0bc9623f3b466c4768ba96d918975"
+        },
+        {
+          "path": "evidence/p2-g2-multi-turn-recognition-repair.md",
+          "exists": true,
+          "sha256": "776b645b84b928460adb287f6d7973c292ec4af3b0329a70f785053e6beea5e6"
+        },
+        {
+          "path": "evidence/p2-g2-directory-boundary-repair.md",
+          "exists": true,
+          "sha256": "5c5dfe3c48f9fc131c26415c119503a100fffd98a7668d10c540b697d9bd5e7b"
+        },
+        {
+          "path": "evidence/p2-g2-ambiguous-association-contract.md",
+          "exists": true,
+          "sha256": "db9da9a23d24bca4f0c5e6f3492cf0a34e165359e68103330af9043ec821dd0c"
+        },
+        {
+          "path": "evidence/p2-g2-explicit-continuation-contract.md",
+          "exists": true,
+          "sha256": "f22745965f8750c131ca8b108be879723577ccc78fb9b60abb5fe9db1c9ea3cd"
+        },
+        {
+          "path": "evidence/p2-g2-group-corroboration-contract.md",
+          "exists": true,
+          "sha256": "8cca1c09c81a2016ca4e2542c9a1fbff00137cb3152c1be049ff240e18193e11"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "RULE_ROUTING_NO_TICKET_TRANSITION_CHANGE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "84af91215ec74aa267a91e2f6a9c33e15b9c2d86acdb817a96e08ef81248e4e5",
+      "current_bytes_sha256": "3c56ebc9fd09435c4adabb3e5129220b88780fcdc65b4d2b2282571208ab8519",
+      "diff_hunk_headers": [
+        "@@ -12 +12 @@ export const P2_015_ENGINE_VERSION = 'p2-007-adapter/1.0.0';",
+        "@@ -46,0 +47,10 @@ function safeFacts(facts) {",
+        "@@ -47,0 +58,2 @@ function routeCode(output, context) {",
+        "@@ -53,0 +66 @@ function routeCode(output, context) {",
+        "@@ -64,0 +78,2 @@ function routeCode(output, context) {",
+        "@@ -111,0 +127,4 @@ export function routeP2007Decision({ rule_output: ruleOutput, context = {} }) {",
+        "@@ -119 +138 @@ export function routeP2007Decision({ rule_output: ruleOutput, context = {} }) {",
+        "@@ -124 +143,2 @@ export function routeP2007Decision({ rule_output: ruleOutput, context = {} }) {",
+        "@@ -145 +165,2 @@ export function routeRuleFailure(context = {}) {"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "0686277053edc18230f62655792c85d4991658a5fac48d333a5c47a4b5ec8bab"
+    },
+    {
+      "file": "src/p2-015-projections.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Remove restricted directory assertion from ordinary Decision public projection while preserving internal review evidence.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-directory-boundary-repair.md",
+          "exists": true,
+          "sha256": "5c5dfe3c48f9fc131c26415c119503a100fffd98a7668d10c540b697d9bd5e7b"
+        },
+        {
+          "path": "evidence/p2-g2-member-contact-contract.md",
+          "exists": true,
+          "sha256": "42599c93d2efaf56bc95bf650feb29174ebc7eab62e612511c469f5dd9ae9814"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "PRIVACY_RESTRICTION",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "65d0e18b0261609d7759e5debd22385075fa5c608c84df4d79e4eb77053d64db",
+      "current_bytes_sha256": "c297e712eebb029c8ece1a45c239343036f3eb01081dd80737d2b5436d247bf8",
+      "diff_hunk_headers": [
+        "@@ -17,0 +18,2 @@ export function projectDecision(row) {"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "883f809d4fa7abc6c827b2648612c864cca94b18afe17c6a6421be805e410926"
+    },
+    {
+      "file": "src/p2-015-rule-first-orchestrator.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Bound full message window; preserve sequence/time; parse explicit continuation description; consume trusted profile/association/corroboration facts; replay same source window rather than rederive changed authority.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-gold-repair-authorization.md",
+          "exists": true,
+          "sha256": "1b8f4219341d34bd7146512477a2d6da87a0bc9623f3b466c4768ba96d918975"
+        },
+        {
+          "path": "evidence/p2-g2-multi-turn-recognition-repair.md",
+          "exists": true,
+          "sha256": "776b645b84b928460adb287f6d7973c292ec4af3b0329a70f785053e6beea5e6"
+        },
+        {
+          "path": "evidence/p2-g2-directory-boundary-repair.md",
+          "exists": true,
+          "sha256": "5c5dfe3c48f9fc131c26415c119503a100fffd98a7668d10c540b697d9bd5e7b"
+        },
+        {
+          "path": "evidence/p2-g2-explicit-continuation-contract.md",
+          "exists": true,
+          "sha256": "f22745965f8750c131ca8b108be879723577ccc78fb9b60abb5fe9db1c9ea3cd"
+        },
+        {
+          "path": "evidence/p2-g2-group-corroboration-contract.md",
+          "exists": true,
+          "sha256": "8cca1c09c81a2016ca4e2542c9a1fbff00137cb3152c1be049ff240e18193e11"
+        },
+        {
+          "path": "evidence/p2-g2-ambiguous-association-contract.md",
+          "exists": true,
+          "sha256": "db9da9a23d24bca4f0c5e6f3492cf0a34e165359e68103330af9043ec821dd0c"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "ORCHESTRATION_AUTHORITY_AND_REPLAY",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "3c89a0dd1dd0a1c16614030732fb07cb40499aaaf39dbba31aa971a4b9202c2f",
+      "current_bytes_sha256": "59ecc6072cf575a4e0d7190920112bd601709327eb53534613c1802dca09ec7d",
+      "diff_hunk_headers": [
+        "@@ -1,0 +2 @@ import { createRuleEngine } from './p2-007-rule-engine.mjs';",
+        "@@ -15 +16,2 @@ import { createContinuationRefService } from './p2-015-continuation-ref.mjs';",
+        "@@ -39,0 +42,3 @@ async function loadIntake(transaction, intakeId, lock = false) {",
+        "@@ -43,0 +49 @@ async function loadIntake(transaction, intakeId, lock = false) {",
+        "@@ -57 +63 @@ async function loadWindow(transaction, intakeId) {",
+        "@@ -65 +71,2 @@ async function loadWindow(transaction, intakeId) {",
+        "@@ -69 +76 @@ async function loadWindow(transaction, intakeId) {",
+        "@@ -123,0 +131,5 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo",
+        "@@ -124,0 +137,3 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo",
+        "@@ -132 +147 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo",
+        "@@ -156,0 +172,2 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo",
+        "@@ -160 +177,2 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo",
+        "@@ -161,0 +180,7 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo",
+        "@@ -165,0 +191,6 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo",
+        "@@ -173 +204 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo",
+        "@@ -175,2 +206,18 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo",
+        "@@ -216 +263,2 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "220a9ebbe0f64b0b0b40857c4db81609596c968ab6b29465fa1a18c3f50672df"
+    },
+    {
+      "file": "src/p2-015-safe-action-executor.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Route QUERY_AUTHORIZED_STATUS and ROUTE_BUSINESS_CONSULTATION to actual ManualReview through existing executor instead of leaving PROPOSED and silently unhandled.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-domain-repair-authorization.md",
+          "exists": true,
+          "sha256": "5158c65c460a63e5eceeeb59f2e51c4ef07916cc95bb7b7e7adf485b1efc5fc3"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "SAFE_ACTION_COMPLETION_NO_NEW_ACTION_ENUM",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "8f912cc99d75633f915dbbbda592b57d984173157c6966f7cd8fa5bbd4637e9d",
+      "current_bytes_sha256": "f034ff3521f0df64fcbf2e0e55a629669c528e72899086a38694334a18110348",
+      "diff_hunk_headers": [
+        "@@ -99,0 +100,2 @@ export function createSafeActionExecutor({ intakeDecisionPort, ticketCommandPort",
+        "@@ -132,4 +133,0 @@ export function createSafeActionExecutor({ intakeDecisionPort, ticketCommandPort"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "f67df5704e890b947260d53d6f5e2fea9753ff4fbdd0c12957104c499f7ec323"
+    },
+    {
+      "file": "src/p2-015-worker.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Optional post-batch maintenance hook with explicit accepted_batch_committed failure semantics supports delayed Conversation reference binding after intake commit.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-late-conversation-binding-repair.md",
+          "exists": true,
+          "sha256": "920587535b92979cb80758d23e46e568328bd18034bb6d99c145b36dea987975"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "WORKER_MAINTENANCE_NO_NEW_PROCESS",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "c7b7f4d19d8a0638eae5e0882f8e4be12e2391a9f021b35d98476e48c520d764",
+      "current_bytes_sha256": "21cee5b9a90294d08658ac10d0c2615d6595b61c723b8e4145129e46944266c9",
+      "diff_hunk_headers": [
+        "@@ -26,0 +27 @@ export function createP2015Worker({ pool, orchestrator,",
+        "@@ -29 +30 @@ export function createP2015Worker({ pool, orchestrator,",
+        "@@ -81,0 +83,6 @@ export function createP2015Worker({ pool, orchestrator,"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "6caa24f203afab3a6fbd45b2512435cc619279cc6274d525286073ee704dbcb7"
+    },
+    {
+      "file": "src/p2-016-guided-journey.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Resolve authorized exact opaque reference before guessing candidates; preserve existing binding; create separate Direct Leg and route invalid/ambiguous association to Review.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-direct-session-repair.md",
+          "exists": true,
+          "sha256": "7e4ab3dc7e9eb77c8cd770276f71d667d1ba0ae570265654445f51078e7757a1"
+        },
+        {
+          "path": "evidence/p2-g2-explicit-continuation-contract.md",
+          "exists": true,
+          "sha256": "f22745965f8750c131ca8b108be879723577ccc78fb9b60abb5fe9db1c9ea3cd"
+        },
+        {
+          "path": "evidence/p2-g2-ambiguous-association-contract.md",
+          "exists": true,
+          "sha256": "db9da9a23d24bca4f0c5e6f3492cf0a34e165359e68103330af9043ec821dd0c"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "DIRECT_ASSOCIATION_NOT_PRIVATE_PERMISSION_WAIVER",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "9d1af87bdb4dfa790a66d5f86f768c0e4d0fe34488869741542c86864585b52b",
+      "current_bytes_sha256": "432f58e3e0097728a2ffadf60a573135e878ec06afe3e4deba025b81253c060a",
+      "diff_hunk_headers": [
+        "@@ -5,0 +6 @@ import { failP2016 } from './p2-016-domain-contracts.mjs';",
+        "@@ -11 +12 @@ export function createP2016GuidedJourneyStore({now=()=>String(Date.now())}={}){",
+        "@@ -18 +19,14 @@ export function createP2016GuidedJourneyStore({now=()=>String(Date.now())}={}){",
+        "@@ -25 +39 @@ export function createP2016GuidedJourneyStore({now=()=>String(Date.now())}={}){",
+        "@@ -39 +53 @@ export function createP2016GuidedJourneyStore({now=()=>String(Date.now())}={}){",
+        "@@ -47,0 +62,2 @@ export function createP2016GuidedJourneyStore({now=()=>String(Date.now())}={}){",
+        "@@ -49 +65 @@ export function createP2016GuidedJourneyStore({now=()=>String(Date.now())}={}){",
+        "@@ -65,2 +81,6 @@ export async function p2016AssociationDecision({transaction,journey,routeContext",
+        "@@ -68 +88 @@ export async function p2016AssociationDecision({transaction,journey,routeContext"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "409eaedfe0ede45674f89d99991b51e063f55ad71e908e046ddfa666ab05c263"
+    },
+    {
+      "file": "src/p2-016-manual-review-facade.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Precheck PERSON eligibility before private guidance; group clarification wording permits group continuation without pretending a private message was sent.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-domain-repair-authorization.md",
+          "exists": true,
+          "sha256": "5158c65c460a63e5eceeeb59f2e51c4ef07916cc95bb7b7e7adf485b1efc5fc3"
+        },
+        {
+          "path": "evidence/p2-g2-three-entry-business-profile.md",
+          "exists": true,
+          "sha256": "4a213bf26b9c973da5c5ca0e012eeacd6cfcfa5d8c4432992b4a76d82a9b49d2"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "DIRECT_LEG_ENFORCEMENT",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "f40cc8d3b49d15b518f55feb5829d2c42275cc5dd96e36065d3cbb9eec2ef4ff",
+      "current_bytes_sha256": "510d2656c64e011272148ad710fcbc5842c4792da1fa6d783d67452caf37589c",
+      "diff_hunk_headers": [
+        "@@ -22 +22,2 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2",
+        "@@ -92,0 +94 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2",
+        "@@ -94 +96 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2",
+        "@@ -97 +99 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "8b2c63bf6e62f4b611e4868972bed381ace98d08b6124bc1b7ebfbe9977d4890"
+    },
+    {
+      "file": "src/p2-016-orchestration-adapters.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Inject destination guard/append port; keep group clarification usable; reuse original Ticket command for explicitly associated guided Intake; add bounded late Conversation binding maintenance.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-domain-repair-authorization.md",
+          "exists": true,
+          "sha256": "5158c65c460a63e5eceeeb59f2e51c4ef07916cc95bb7b7e7adf485b1efc5fc3"
+        },
+        {
+          "path": "evidence/p2-g2-three-entry-business-profile.md",
+          "exists": true,
+          "sha256": "4a213bf26b9c973da5c5ca0e012eeacd6cfcfa5d8c4432992b4a76d82a9b49d2"
+        },
+        {
+          "path": "evidence/p2-g2-explicit-continuation-contract.md",
+          "exists": true,
+          "sha256": "f22745965f8750c131ca8b108be879723577ccc78fb9b60abb5fe9db1c9ea3cd"
+        },
+        {
+          "path": "evidence/p2-g2-late-conversation-binding-repair.md",
+          "exists": true,
+          "sha256": "920587535b92979cb80758d23e46e568328bd18034bb6d99c145b36dea987975"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "ORIGINAL_TICKET_PORT_REPLAY_NO_SECOND_CORE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "213a40a6dc13f41084c9c52106e03d033f82ec4b0242ac0ca5c260d7ca4b063b",
+      "current_bytes_sha256": "af062c81d3769c8ee2835c5c16a2618fb24a0ab383b666c99fc419d47830af1f",
+      "diff_hunk_headers": [
+        "@@ -11,0 +12 @@ import { createP2016GuidedJourneyStore,p2016AssociationDecision } from './p2-016",
+        "@@ -14 +15,2 @@ function guidanceId(id){const h=textHashP2016('P2016_GUIDANCE:'+id);return h.sli",
+        "@@ -18 +20 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio",
+        "@@ -24,2 +26,3 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio",
+        "@@ -31,0 +35,6 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio",
+        "@@ -41 +50,6 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "bc079ad666c91cc41ebcda2ce0741223661bad8d4ebd6d2189b74ae90f329cf0"
+    },
+    {
+      "file": "src/p2-016-runtime.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Wire Direct-session processor, directory/communication seams and guarded notification policy into actual App/runtime paths; select reference generation by existing Reporter flag.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-direct-session-repair-authorization.md",
+          "exists": true,
+          "sha256": "d710342239fb5276e86c7e9f9dab991185865c8c8bb1c522f81954980701c228"
+        },
+        {
+          "path": "evidence/p2-g2-domain-repair-authorization.md",
+          "exists": true,
+          "sha256": "5158c65c460a63e5eceeeb59f2e51c4ef07916cc95bb7b7e7adf485b1efc5fc3"
+        },
+        {
+          "path": "evidence/p2-g2-three-entry-business-profile.md",
+          "exists": true,
+          "sha256": "4a213bf26b9c973da5c5ca0e012eeacd6cfcfa5d8c4432992b4a76d82a9b49d2"
+        },
+        {
+          "path": "evidence/p2-g2-explicit-continuation-contract.md",
+          "exists": true,
+          "sha256": "f22745965f8750c131ca8b108be879723577ccc78fb9b60abb5fe9db1c9ea3cd"
+        },
+        {
+          "path": "evidence/p2-g2-member-contact-contract.md",
+          "exists": true,
+          "sha256": "42599c93d2efaf56bc95bf650feb29174ebc7eab62e612511c469f5dd9ae9814"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "ASSEMBLY_FLAGS_DEFAULT_OFF",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "73fff9b95b930a5d42dda1f77eab49264bb71d7935c8465066af07fb900adbc5",
+      "current_bytes_sha256": "48776a63e13291785c6110f38152619011550b380fe5c4cde9fc8a757f5852e4",
+      "diff_hunk_headers": [
+        "@@ -3 +3 @@ import { createChannelMessageInbox } from './p1-003-channel-message-inbox.mjs';",
+        "@@ -28,2 +28,2 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,",
+        "@@ -37 +37 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,",
+        "@@ -40 +40 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,",
+        "@@ -55 +55 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,",
+        "@@ -60 +60 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "872d4bcfb953377610e258d003f89e5997f010850b8173605b91d2cc9b3a265e"
+    },
+    {
+      "file": "src/p2-016-template-card-builder.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Use meaningful accepted/closed milestone titles matching the newly authorized two-default-notification business profile.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-three-entry-business-profile.md",
+          "exists": true,
+          "sha256": "4a213bf26b9c973da5c5ca0e012eeacd6cfcfa5d8c4432992b4a76d82a9b49d2"
+        },
+        {
+          "path": "evidence/p2-g2-notification-policy-repair.md",
+          "exists": true,
+          "sha256": "3ddfe334f5b59fcfee66a3680aca3570a2fd0eb962ef4968818dd5b56bba1ad1"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "PRESENTATION_ONLY",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "8cc9edb869df482bd5090e79f88dc95452ca7f8c3c950180baaa8a98e6e8c78a",
+      "current_bytes_sha256": "785417f0f251c9889cd9aae99eb3537cffce336b146a0b088b6eb0e72793a346",
+      "diff_hunk_headers": [
+        "@@ -23 +23 @@ export function buildP2016TemplateCard({model,origin,allowedHosts,token,allowLoc"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "d3fc0eb9b146e56f20f0b5da44441bef81973e1681efce38f3661f0e075bab73"
+    },
+    {
+      "file": "src/p2-016-ticket-notification-policy.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Default private progress events to accepted/closed; retain other recognized events only through explicit additionalEventTypes config.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-three-entry-business-profile.md",
+          "exists": true,
+          "sha256": "4a213bf26b9c973da5c5ca0e012eeacd6cfcfa5d8c4432992b4a76d82a9b49d2"
+        },
+        {
+          "path": "evidence/p2-g2-notification-policy-repair.md",
+          "exists": true,
+          "sha256": "3ddfe334f5b59fcfee66a3680aca3570a2fd0eb962ef4968818dd5b56bba1ad1"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "NOTIFICATION_POLICY_NOT_STATE_MACHINE",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "1c6cc31a8423a1a08e42b0d37d8d2fadace3fa5620c5be645337e284fc070dc3",
+      "current_bytes_sha256": "6d16c4fb926c0872d3d943c6936b79fbb1fcf57fb1a8b7f436ff77e374f99f58",
+      "diff_hunk_headers": [
+        "@@ -8 +8,2 @@ const TYPES=Object.freeze({'ticket.created':'TICKET_CREATED','ticket.accepted':'",
+        "@@ -10,0 +12 @@ export function ticketNotificationP2016(event) {"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "3d3691808cdc9af0ebc213bff5ef157ae4341aeb772475befeda57000089fee8"
+    },
+    {
+      "file": "src/p2-016-ticket-notification-projector.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Apply destination eligibility before private artifacts; persist exact nonsecret group reference; only final group closure selects webhook mention; opt-in other private milestones and shared append boundary. Group receipt deduplication is independent of the optional PERSON authorizer.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-domain-repair-authorization.md",
+          "exists": true,
+          "sha256": "5158c65c460a63e5eceeeb59f2e51c4ef07916cc95bb7b7e7adf485b1efc5fc3"
+        },
+        {
+          "path": "evidence/p2-g2-explicit-continuation-contract.md",
+          "exists": true,
+          "sha256": "f22745965f8750c131ca8b108be879723577ccc78fb9b60abb5fe9db1c9ea3cd"
+        },
+        {
+          "path": "evidence/p2-g2-three-entry-business-profile.md",
+          "exists": true,
+          "sha256": "4a213bf26b9c973da5c5ca0e012eeacd6cfcfa5d8c4432992b4a76d82a9b49d2"
+        },
+        {
+          "path": "evidence/p2-g2-notification-policy-repair.md",
+          "exists": true,
+          "sha256": "3ddfe334f5b59fcfee66a3680aca3570a2fd0eb962ef4968818dd5b56bba1ad1"
+        },
+        {
+          "path": "evidence/p2-g2-final-regression-repair.md",
+          "exists": true,
+          "sha256": "ba254c53cc61ca953550643f19fd37c294ad7c971d243f5bc209689d43a3f9b4"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "NOTIFICATION_SCOPE_CHANGED_BY_EXPLICIT_AUTHORIZATION",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "4243889ab0916b03f8e90e692100b223f74582dd57db293bb5a9cffa31264b36",
+      "current_bytes_sha256": "4e0df427b5e56673a63d51e0ce2a3a949a0b1d42269cbde5f65af4d70038d77f",
+      "diff_hunk_headers": [
+        "@@ -7,2 +7,2 @@ import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';",
+        "@@ -9,0 +10,2 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable",
+        "@@ -18 +20 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable",
+        "@@ -31,0 +34,2 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable",
+        "@@ -37,0 +42 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable",
+        "@@ -40 +45 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable",
+        "@@ -49,2 +54,3 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable",
+        "@@ -53,2 +59,4 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable",
+        "@@ -63,0 +72,2 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable",
+        "@@ -74 +84 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable",
+        "@@ -84 +94 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "3e183148353f18c53e307499b62df37809a3d6965df177535d954de63eb7dcdb"
+    },
+    {
+      "file": "src/p2-016-ticket-query.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Add internal reporterContact read after existing Ticket visibility authorization; whitelist contact snapshot fields and enforce source/Journey retention.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-member-contact-contract.md",
+          "exists": true,
+          "sha256": "42599c93d2efaf56bc95bf650feb29174ebc7eab62e612511c469f5dd9ae9814"
+        },
+        {
+          "path": "evidence/p2-g2-member-contact-repair.md",
+          "exists": true,
+          "sha256": "13ad59b11d4a5f005dd8089b29f6440f0dc7e58b5c2bf3404b30dfa8e131d2e0"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "AUTHORIZED_PRIVATE_READ",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "b1ae5c4ef9127d11f1c810fb1aa05d6dffa7eb5bb0c74420fb35ba5b5e1b6e1b",
+      "current_bytes_sha256": "2925420192839afe62c01e83faefd9d0a914c4d15704f92f335a792db866f707",
+      "diff_hunk_headers": [
+        "@@ -56,0 +57,19 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "f84d7ef8bc7605f071c4b929131cf0d624acf8e23f90b4a64a24c40d04f18271"
+    },
+    {
+      "file": "src/p2-016-wecom-sender.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Reject webhook-marked group closure from WSS sender so native mentioned_list transport cannot be silently replaced by ordinary WSS text.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-three-entry-business-profile.md",
+          "exists": true,
+          "sha256": "4a213bf26b9c973da5c5ca0e012eeacd6cfcfa5d8c4432992b4a76d82a9b49d2"
+        },
+        {
+          "path": "evidence/p2-g2-notification-policy-repair.md",
+          "exists": true,
+          "sha256": "3ddfe334f5b59fcfee66a3680aca3570a2fd0eb962ef4968818dd5b56bba1ad1"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "TRANSPORT_FAIL_CLOSED",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "9851df16ec8188b3dc8aee89bd4e499ea224b4e8fb3cc99c5001b10103b827c1",
+      "current_bytes_sha256": "a8672bd5be02b6bfe649151e9de3d8152e413a6b3da114a588132e23921dba29",
+      "diff_hunk_headers": [
+        "@@ -16,0 +17 @@ export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=fals"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "a8b429cb1b3c3f772865c8d863cfdf5510c4c980a2fe9fd9247d017cf3fd8e6d"
+    },
+    {
+      "file": "src/p2-016-workbench-http.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Expose authorized reporter-contact child GET through existing internal Ticket route with unchanged authentication envelope.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-member-contact-contract.md",
+          "exists": true,
+          "sha256": "42599c93d2efaf56bc95bf650feb29174ebc7eab62e612511c469f5dd9ae9814"
+        },
+        {
+          "path": "evidence/p2-g2-member-contact-repair.md",
+          "exists": true,
+          "sha256": "13ad59b11d4a5f005dd8089b29f6440f0dc7e58b5c2bf3404b30dfa8e131d2e0"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "HTTP_INTERNAL_READ",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "6312ed5632b7ed086d4ca7e6d58f1eb7c82439d50c7207d0692f12f8c96d7283",
+      "current_bytes_sha256": "d6dff185db5ea7af1dcc91bb4ddfdd64d5c93d37207d12f56c2488cb370f28a9",
+      "diff_hunk_headers": [
+        "@@ -19 +19 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,",
+        "@@ -22 +22 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "9dd2d6798f4f5c5ffd98141621d0806c59d68235c0dd8524f37ccb662b18139f"
+    },
+    {
+      "file": "src/p2-g1-inbound-projection-coordinator.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Propagate whitelisted Intake boundary reasons IDLE_TIMEOUT/EXPLICIT_USER_NEW_TOPIC into existing Session close_reason instead of flattening all to DIFFERENT_INTAKE. New Session logical started_at is its source message received_at, avoiding cross-second fragmentation.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-direct-session-repair-authorization.md",
+          "exists": true,
+          "sha256": "d710342239fb5276e86c7e9f9dab991185865c8c8bb1c522f81954980701c228"
+        },
+        {
+          "path": "evidence/p2-g2-direct-session-repair.md",
+          "exists": true,
+          "sha256": "7e4ab3dc7e9eb77c8cd770276f71d667d1ba0ae570265654445f51078e7757a1"
+        },
+        {
+          "path": "evidence/p2-g2-explicit-continuation-contract.md",
+          "exists": true,
+          "sha256": "f22745965f8750c131ca8b108be879723577ccc78fb9b60abb5fe9db1c9ea3cd"
+        },
+        {
+          "path": "evidence/p2-g2-final-regression-repair.md",
+          "exists": true,
+          "sha256": "ba254c53cc61ca953550643f19fd37c294ad7c971d243f5bc209689d43a3f9b4"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "SESSION_REASON_SEMANTICS_NO_NEW_STATUS",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "fb770e6a1def5c8057538325618baa5ca57cd34fca5edc194ca39ecb0f24af32",
+      "current_bytes_sha256": "6452ffb3e7040957aa20aa2d10fdec89ad2f1a2487e352d36033386a86e8f736",
+      "diff_hunk_headers": [
+        "@@ -203,0 +204,5 @@ async function resolveChannelSession(pool, row) {",
+        "@@ -210 +215 @@ async function resolveChannelSession(pool, row) {",
+        "@@ -216 +221 @@ async function resolveChannelSession(pool, row) {",
+        "@@ -229,2 +234,2 @@ async function resolveChannelSession(pool, row) {"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "5097ef08f5bf2a8177017e1fe57a7c29d8046d3931946d69f66f0bb53fa13830"
+    },
+    {
+      "file": "src/p2-g1-process-cluster.mjs",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Add optional minimal role environment/control seams, role-bound IPC responses, actual Worker health, stopped-worker metrics and controlled restart; improve signal-based process exit accounting.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-start-authorization.md",
+          "exists": true,
+          "sha256": "4a1ac0649d683dc89e89393dfb83d878a30994e2f314935c62f85c1e4611dee4"
+        },
+        {
+          "path": "evidence/p2-g2-operational-evidence-repair.md",
+          "exists": true,
+          "sha256": "be5db60ccb6ecaf7fbc2a70233a184c079ceeb7a55a749445707c5977bd906e3"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "PROCESS_CONTROL_FOR_AUTHORIZED_FAULTS",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "42b1300cb1815d2a7e35ba8e9b2887724491600f21762847687a2f3d4228c45e",
+      "current_bytes_sha256": "31f0de37a0b18854e1db625ab9de29477a46e5035f834a37f8474fc43e1f606e",
+      "diff_hunk_headers": [
+        "@@ -7,0 +8,3 @@ const ROLES = Object.freeze(['APP', 'WORKER', 'GATEWAY']);",
+        "@@ -32,5 +35 @@ function stableRoleMetrics(role, value) {",
+        "@@ -46,0 +46,4 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -53,0 +57,2 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -59 +64 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -93 +98 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -103 +108 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -105 +110 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -117 +122 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -128,0 +134,6 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -142 +153 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -219 +230 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -225 +236 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -226,0 +238,3 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -229 +243 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -237 +251 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -240 +254,2 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -263 +278 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -265,0 +281 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -272 +288 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -275 +291 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -280 +296 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -287 +303,15 @@ export function createP2G1ProcessCluster(configuration = {}) {",
+        "@@ -294,0 +325,6 @@ export function createP2G1ProcessCluster(configuration = {}) {"
+      ],
+      "implementation_evidence_limit": "Detailed necessity inferred from inspected diff and G2 start/operational scope. Not a per-file historical test verdict; final validator/process tests must verify current behavior.",
+      "canonical_candidate_sha256": "1d2a4597c6c744b0623cb2522b0551ba5712ebe9c20093bccb0601d139be62fd"
+    },
+    {
+      "file": "web/p2-workbench/incidents.js",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Keep original command id for unknown generic5xx; only recognized durable rolled-back result clears retry. Distinguish unknown commit from known service failure.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-browser-and-association-repair.md",
+          "exists": true,
+          "sha256": "7339ba2eabbc01e76be223b6c36dc4c1ee9c545b281fbd95619ce77cad697708"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "UI_RECONCILIATION_NO_BLIND_RETRY",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "be73591f7bce4ca357826347c2ffc229a13b8fbf50806f1e09f5e03766e932d9",
+      "current_bytes_sha256": "f672f089ca0879083885b9bc12df4869e16f1c2d3c743f48df0b049c4dd6b634",
+      "diff_hunk_headers": [
+        "@@ -10 +10,4 @@ async function api(path,options={}){const c=new AbortController();controllers.ad",
+        "@@ -22 +25 @@ async function execute(path,body,id=crypto.randomUUID()){"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "3c1deb4005657348ff0c58912bc5fd263ed34c9119c6c77e24bad64cd1456689"
+    },
+    {
+      "file": "web/p2-workbench/lifecycle.js",
+      "change_kind": "MODIFIED_EXISTING_TRACKED_FILE",
+      "necessity": "Render separate authorized contact section from dedicated endpoint using safe DOM fields; preserve ordinary Ticket view privacy.",
+      "authorization_and_repair_evidence": [
+        {
+          "path": "evidence/p2-g2-member-contact-contract.md",
+          "exists": true,
+          "sha256": "42599c93d2efaf56bc95bf650feb29174ebc7eab62e612511c469f5dd9ae9814"
+        },
+        {
+          "path": "evidence/p2-g2-member-contact-repair.md",
+          "exists": true,
+          "sha256": "13ad59b11d4a5f005dd8089b29f6440f0dc7e58b5c2bf3404b30dfa8e131d2e0"
+        }
+      ],
+      "source_mapping_status": "SOURCE_MAPPED_NOT_EXECUTION_APPROVAL",
+      "behavior_class": "UI_INTERNAL_CONTACT_ONLY",
+      "boundary_assessment": {
+        "database_migration": false,
+        "new_database_structure": "NO_CHANGE_IN_THIS_DIFF",
+        "ticket_or_incident_state_machine": "No transition table/status enum modified in this file; behavior/eligibility may change as explicitly described",
+        "direct_leg_outbound_relaxation": "No authorized waiver; public_ref lookup/new real Leg is distinct from PERSON send qualification",
+        "historical_evidence_rewrite": false,
+        "validation": "Current full954/954 and independent reviews are linked separately; this is a scope/necessity map, not coverage instrumentation."
+      },
+      "diff_sha256": "2ae062152eee80d04164be128f6ee055217dd4d5caba531ed14e0a89fa196564",
+      "current_bytes_sha256": "ce9995daffdaa728d837d4012ddfd6a9340de7ecbace4bfde2c2be6b93488e17",
+      "diff_hunk_headers": [
+        "@@ -82 +82 @@ async function renderTicket(ticket,version){",
+        "@@ -85,0 +86,8 @@ async function renderTicket(ticket,version){"
+      ],
+      "implementation_evidence_limit": "Source-grounded scope mapping only; cited report may describe an earlier working tree and does not alone validate this exact current hash.",
+      "canonical_candidate_sha256": "232e7d3d570170b5634a3d1da898f7f6b39f655b30e7c32f0eb1e944b6ef75fc"
+    }
+  ],
+  "migration_diff_verification": "git diff --name-only BASE -- database/migrations returned no paths during this review",
+  "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+  "full_regression_ref": "evidence/p2-g2-full-regression-run.json"
+}

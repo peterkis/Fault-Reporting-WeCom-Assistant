@@ -14,6 +14,7 @@ export function createP2016WeComSender({gateway,allowedTargetHashes,enabled=fals
   const unknown=()=>({outcome:'UNKNOWN',provider_message_id:null,error_code:'P2_016_PROVIDER_UNKNOWN',retryable:false});
   return createCommunicationSenderPort(async request=>{
     if(!enabled)return rejected('P2_016_SENDER_DISABLED');
+    if(request.message.content?.transport==='WECOM_GROUP_WEBHOOK')return rejected('P2_016_GROUP_WEBHOOK_TRANSPORT_REQUIRED');
     if(['text','markdown'].includes(request.message.message_type))return legacy.send(request);
     if(!cardEnabled)return rejected('P2_016_CARD_DISABLED');
     if(request.message.message_type!=='template_card'||request.provider!=='WECOM_AIBOT'||request.target_type!=='PERSON'

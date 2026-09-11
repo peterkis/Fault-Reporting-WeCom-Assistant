@@ -40,9 +40,12 @@ const taskIndex = json(stateFiles[4]);
 const summary = json(stateFiles[5]);
 const views = [manifest, current, backlog, parallel, taskIndex, summary.project];
 const lifecycleState = current.implementation_authorization_status;
+const p2g2Authorized=['P2_G2_ASSEMBLY_AUTHORIZED','P2_G2_READY_FOR_LIVE_E2E'].includes(lifecycleState);
+const p2g2Ready=lifecycleState==='P2_G2_READY_FOR_LIVE_E2E';
+const expectedP2g2Status=p2g2Authorized?(p2g2Ready?'READY_FOR_LIVE_E2E':'IN_PROGRESS'):'NOT_STARTED';
 const p2012Authorized=['P2_012_AUTHORIZED','P2_012_READY_FOR_TARGETED_LIVE_VALIDATION'].includes(lifecycleState);
 const p2012Ready=lifecycleState==='P2_012_READY_FOR_TARGETED_LIVE_VALIDATION';
-const p2012Done=lifecycleState==='P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION';
+const p2012Done=p2g2Authorized||lifecycleState==='P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION';
 const expectedP2012Status=p2012Done?'DONE':p2012Ready?'READY_FOR_TARGETED_LIVE_VALIDATION':p2012Authorized?'AUTHORIZED':'TODO_REQUIRES_SEPARATE_AUTHORIZATION';
 const p2016Done=p2012Authorized||p2012Done||lifecycleState==='P2_016_DONE_AWAITING_P2_012_AUTHORIZATION';
 const p2016Authorized=p2016Done||['P2_016_AUTHORIZED','P2_016_READY_FOR_TARGETED_LIVE_VALIDATION'].includes(lifecycleState);
@@ -50,10 +53,10 @@ const expectedP2016Status=p2016Done?'DONE':lifecycleState==='P2_016_READY_FOR_TA
 const successor = p2016Authorized || lifecycleState === 'P2_015_AUTHORIZED' || lifecycleState === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
 const completed = p2016Authorized || lifecycleState === 'P2_015_DONE_AWAITING_P2_016_AUTHORIZATION';
 const expectedLastTask = p2012Done?'P2-012':p2016Done?'P2-016':completed ? 'P2-015' : 'P2-007';
-const expectedActiveTask = p2012Authorized?'P2-012':p2016Done?null:p2016Authorized?'P2-016':lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-015' : null;
-const expectedActiveLane = p2012Authorized?'P2-D':p2016Done?null:p2016Authorized?'P2-B':lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-C' : null;
-const expectedCandidate = p2012Done?'P2-G2':p2012Ready?'P2-012-LIVE':p2016Done?'P2-012':completed ? 'P2-016' : 'P2-015';
-const expectedCandidateAuthorized = p2012Authorized?!p2012Ready:!p2016Done&&(p2016Authorized || lifecycleState === 'P2_015_AUTHORIZED');
+const expectedActiveTask = p2g2Authorized?'P2-G2':p2012Authorized?'P2-012':p2016Done?null:p2016Authorized?'P2-016':lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-015' : null;
+const expectedActiveLane = p2g2Authorized?'ASSEMBLY':p2012Authorized?'P2-D':p2016Done?null:p2016Authorized?'P2-B':lifecycleState === 'P2_015_AUTHORIZED' ? 'P2-C' : null;
+const expectedCandidate = p2g2Ready?'P2-G2-LIVE':p2012Done?'P2-G2':p2012Ready?'P2-012-LIVE':p2016Done?'P2-012':completed ? 'P2-016' : 'P2-015';
+const expectedCandidateAuthorized = p2g2Authorized?!p2g2Ready:p2012Authorized?!p2012Ready:!p2016Done&&(p2016Authorized || lifecycleState === 'P2_015_AUTHORIZED');
 const expectedP2015Status = completed ? 'DONE' : successor ? 'AUTHORIZED' : 'TODO_REQUIRES_SEPARATE_AUTHORIZATION';
 
 for (const view of views) {
@@ -67,7 +70,7 @@ for (const view of views) {
   check(view.p2_007_status === 'DONE', 'P2-007 remains DONE');
   check(view.p2_g1_status === 'PASSED', 'P2-G1 remains PASSED');
   for (const gate of ['p2_g2_status', 'p2_g3_status', 'p2_g4_status', 'p2_g5_status']) {
-    check(view[gate] === 'NOT_STARTED', gate + ' remains NOT_STARTED');
+    check(view[gate] === (gate==='p2_g2_status'?expectedP2g2Status:'NOT_STARTED'), gate + ' remains NOT_STARTED');
   }
   check(view.p2_015_status === expectedP2015Status, 'P2-015 machine status is exact');
   check(view.p2_016_status === expectedP2016Status, 'P2-016 machine status is exact');
@@ -76,6 +79,12 @@ for (const view of views) {
   for (const task of ['p2_009_status', 'p2_010_status', 'p2_011_status', 'p2_013_status', 'p2_014_status']) {
     check(view[task] === 'TODO', task + ' remains TODO');
   }
+}
+
+if(p2g2Authorized){
+  check(views.every(v=>same(v.authorized_gates,['P2-G1','P2-G2']) && !v.authorized_tasks.includes('P2-G2') && !v.authorized_tasks.includes('P2-008')), 'P2-G2 uses independent Gate authorization without AI Runtime');
+  check(views.every(v=>v.p2_g2_base_commit==='8c332710dad9b6cf3f6796f3344c04d1c710ddf3'
+    && v.p2_g2_authorization_evidence==='evidence/p2-g2-start-authorization.md'), 'P2-G2 frozen merge and authorization are exact');
 }
 
 check(manifest.status === (p2016Authorized||p2012Done?'P2_'+lifecycleState:completed ? 'P2_P2_015_DONE_AWAITING_P2_016_AUTHORIZATION' : successor ? 'P2_P2_015_AUTHORIZED' : 'P2_ARCH_006_DONE_AWAITING_P2_015_AUTHORIZATION'), 'manifest lifecycle status is exact');
@@ -105,7 +114,7 @@ check(p2008?.status === 'TODO' && p2008?.authorization_status === 'BLOCKED_BY_P2
 
 const gates = parallel.assembly_gates.filter((gate) => gate.id.startsWith('P2-'));
 check(same(gates.map((gate) => gate.id), ['P2-G1', 'P2-G2', 'P2-G3', 'P2-G4', 'P2-G5']), 'P2-G1 through P2-G5 are ordered');
-check(gates[0]?.status === 'PASSED' && gates.slice(1).every((gate) => gate.status === 'NOT_STARTED'), 'only P2-G1 is passed');
+check(gates[0]?.status === 'PASSED' && gates.slice(1).every((gate) => gate.status === (gate.id==='P2-G2'?expectedP2g2Status:'NOT_STARTED')), 'only P2-G1 is passed');
 check(gates[1]?.name === '规则优先、人工兜底的完整服务闭环'
   && same(gates[1].requires, ['P2-G1', 'ARCH-005', 'P2-007', 'P2-015', 'P2-016', 'P2-012']), 'P2-G2 definition is exact');
 check(gates[2]?.name === 'AI Shadow' && same(gates[2].requires, ['P2-G2', 'P2-008', 'P2-009']), 'P2-G3 definition is exact');
@@ -193,8 +202,14 @@ try {
 }
 const p2016Seams=new Set(['src/p1-006-ticket-state-actions.mjs','src/p1-010-ticket-closure.mjs','src/p2-004-communication-delivery-worker.mjs',
   'src/p2-005-conversation-control.mjs','src/p2-006-workbench-http.mjs','src/p2-006-workbench-authorization.mjs']);
+// These exact predecessor seams have separately recorded P2-G2 repair authorization.
+const p2g2RepairSeams=new Set(['src/p1-004-service-intake.mjs','src/p2-006-workbench-command-facade.mjs','src/p2-007-rule-engine.mjs']);
+const p2g2RepairAuthorized=p2g2Authorized&&['evidence/p2-g2-gold-repair-authorization.md',
+  'evidence/p2-g2-direct-session-repair-authorization.md','evidence/p2-g2-continuing-gap-repair-authorization.md']
+  .every(file=>fs.existsSync(path.join(root,file)));
 const forbidden = changedPaths.filter((relativePath) => /^(?:database\/migrations\/(?:00[1-9]|01[0-2]|020|021|022)_|src\/p1-|src\/p2-004|src\/p2-005|src\/p2-006|src\/p2-007|web\/|archive\/|\.env\.pilot$)/u.test(relativePath)
-  && !(p2016Authorized&&(p2016Seams.has(relativePath)||/^web\/p2-(?:workbench|reporter)\//u.test(relativePath))));
+  && !(p2016Authorized&&(p2016Seams.has(relativePath)||/^web\/p2-(?:workbench|reporter)\//u.test(relativePath)))
+  && !(p2g2RepairAuthorized&&p2g2RepairSeams.has(relativePath)));
 check(forbidden.length === 0, 'no forbidden Runtime Migration web archive or secret path changed');
 const historicalEvidence=execFileSync('git',['-c','safe.directory=D:/Projects/Fault-Reporting-WeCom-Assistant','-c','core.safecrlf=false',
   'diff','--name-only','--diff-filter=MDR','origin/main','--','evidence'],{cwd:root,encoding:'utf8'}).split(/\r?\n/u).filter(Boolean);

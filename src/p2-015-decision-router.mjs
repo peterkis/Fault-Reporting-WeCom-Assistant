@@ -9,7 +9,7 @@ import {
 } from './p2-015-domain-contracts.mjs';
 
 export const P2_015_ENGINE_VERSION = 'p2-007-adapter/1.0.0';
-export const P2_015_DECISION_POLICY_VERSION = 'p2-015-safe-route/1.0.0';
+export const P2_015_DECISION_POLICY_VERSION = 'p2-015-safe-route/1.0.9-g2';
 
 const ACTION_BY_RESULT = Object.freeze({
   TICKET_ELIGIBLE: ['APPLY_INTAKE_CLASSIFICATION', 'CREATE_MINIMAL_TICKET'],
@@ -44,13 +44,26 @@ function safeFacts(facts) {
   }));
 }
 
+function trustedReviewContext(context) {
+  return {
+    ...(['UNIQUE_GUIDED_JOURNEY','EXISTING_DIRECT_CHANNEL_BINDING','EXPLICIT_TICKET_REFERENCE','EXPLICIT_USER_NEW_TOPIC'].includes(context.journey_association?.method)
+      ?{journey_association:context.journey_association}:{}),
+    ...(context.identity_review_required === true ? { identity_review: { reason_code: 'DIRECTORY_ACCOUNT_INACTIVE',
+      directory_snapshot_hash: context.directory_snapshot_hash, directory_assertion: context.directory_assertion } } : {}),
+    ...(context.association_review_required === true ? { association_review: { reason_code: 'MULTIPLE_GUIDED_JOURNEYS' } } : {}),
+  };
+}
+
 function routeCode(output, context) {
+  if (context.association_review_required === true) return ['MANUAL_REVIEW_REQUIRED', context.association_review_reason === 'EXPLICIT_REFERENCE_REJECTED' ? 'EXPLICIT_REFERENCE_REJECTED' : 'MULTIPLE_GUIDED_JOURNEYS'];
+  if (context.identity_review_required === true) return ['MANUAL_REVIEW_REQUIRED', 'DIRECTORY_ACCOUNT_INACTIVE'];
   const text = (context.safe_normalized_text ?? '').toLocaleLowerCase('zh-CN');
   const hasFault = output.domain_intent === 'INCIDENT_REPORT' || (output.symptom_codes?.length ?? 0) > 0;
   if (hasFault && (output.requires_human_review || output.clinical_impact === 'CRITICAL_REVIEW_REQUIRED' || context.conflicts?.length > 0)) {
     return ['MANUAL_REVIEW_REQUIRED', 'FAULT_REQUIRES_SAFE_REVIEW'];
   }
   if (hasFault && output.incident_candidate) return ['INCIDENT_REVIEW_CANDIDATE', 'DETERMINISTIC_INCIDENT_CANDIDATE'];
+  if (hasFault && output.clinical_impact === 'HIGH') return ['MANUAL_REVIEW_REQUIRED', 'FAULT_REQUIRES_SAFE_REVIEW'];
   if (hasFault) return ['TICKET_ELIGIBLE', 'EXPLICIT_TECHNICAL_FAULT'];
   if (context.reliable_follow_up === true && (output.domain_intent === 'RECOVERY_UPDATE' || /还是不行|仍然不行|又不行/u.test(text))) {
     return ['RELATED_FOLLOW_UP', 'RELIABLE_EXISTING_JOURNEY'];
@@ -62,6 +75,8 @@ function routeCode(output, context) {
     return ['BUSINESS_CONSULTATION', 'BUSINESS_POLICY_NOT_GUESSED'];
   }
   if (output.domain_intent === 'ACKNOWLEDGEMENT_OR_CHATTER' || /^(谢谢|收到|好了|好的)[!.。！ ]*$/u.test(text)) return ['ACKNOWLEDGEMENT', 'ACK_WITHOUT_NEW_FAULT'];
+  if (output.domain_intent === 'RECOVERY_UPDATE') return ['ACKNOWLEDGEMENT', 'RECOVERY_WITHOUT_AUTHORIZED_TICKET'];
+  if (output.domain_intent === 'ESCALATION_COMPLAINT' || output.requires_human_review) return ['MANUAL_REVIEW_REQUIRED', 'HUMAN_FOLLOW_UP_REQUIRED'];
   if (output.clarification_needed || output.result_state === 'PARTIAL' || text === '' || /^(在吗|系统不行|@?bot)$/iu.test(text)) return ['NEEDS_DESCRIPTION', 'ONE_DESCRIPTION_REQUIRED'];
   return ['MANUAL_REVIEW_REQUIRED', 'SAFE_FALLBACK_UNKNOWN'];
 }
@@ -109,6 +124,10 @@ export function routeP2007Decision({ rule_output: ruleOutput, context = {} }) {
     source_refs: [...(safeContext.source_refs ?? [])],
     message_sequence_window: safeContext.message_sequence_window,
     fact_provenance: safeFacts(output.facts),
+    ...(output.corroboration_anchor?{corroboration_anchor:output.corroboration_anchor}:{}),
+    privacy_flags:output.privacy_flags??[],
+    ...trustedReviewContext(safeContext),
+    ...(safeContext.group_corroboration_safety?{group_corroboration_safety:safeContext.group_corroboration_safety}:{}),
     known_fields: {
       selected_service_code: output.selected_service_code ?? null,
       symptom_codes: output.symptom_codes ?? [],
@@ -116,12 +135,13 @@ export function routeP2007Decision({ rule_output: ruleOutput, context = {} }) {
       transaction_stage: output.transaction_stage ?? 'UNKNOWN',
       scope: output.scope ?? 'UNKNOWN',
     },
-    unknown_fields: output.missing_fields ?? [],
+    unknown_fields: [...new Set([...(output.missing_fields ?? []), ...(safeContext.association_review_required ? ['journey_selection'] : [])])],
     conflicts: safeContext.conflicts ?? [],
     clinical_safety_risk: output.clinical_impact ?? 'UNKNOWN',
     manual_review_required: resultCode === 'MANUAL_REVIEW_REQUIRED',
     ticket_creation_recommended: ['TICKET_ELIGIBLE', 'SERVICE_REQUEST', 'INCIDENT_REVIEW_CANDIDATE'].includes(resultCode)
-      || (resultCode === 'MANUAL_REVIEW_REQUIRED' && (output.symptom_codes?.length ?? 0) > 0),
+      || (resultCode === 'MANUAL_REVIEW_REQUIRED'
+        && (output.domain_intent === 'INCIDENT_REPORT' || (output.symptom_codes?.length ?? 0) > 0)),
     incident_review_candidate: resultCode === 'INCIDENT_REVIEW_CANDIDATE',
     safe_action_suggestions: [],
   };
@@ -142,7 +162,8 @@ export function routeRuleFailure(context = {}) {
     decision_policy_version: P2_015_DECISION_POLICY_VERSION,
     source_refs: safeContext.source_refs ?? [],
     message_sequence_window: safeContext.message_sequence_window,
-    fact_provenance: [], known_fields: {}, unknown_fields: ['rule_result'], conflicts: [],
+    fact_provenance: [], known_fields: {}, unknown_fields: ['rule_result', ...(safeContext.association_review_required ? ['journey_selection'] : [])], conflicts: [],
+    ...trustedReviewContext(safeContext),
     clinical_safety_risk: 'UNKNOWN', manual_review_required: true,
     ticket_creation_recommended: false, incident_review_candidate: false,
     safe_action_suggestions: actionSuggestions('MANUAL_REVIEW_REQUIRED', safeContext, {}),

@@ -30,7 +30,7 @@ test('P2-016 review resolution and Safe Action commit or roll back together',asy
       const result=await orchestrator.processPersistedIntake({service_intake_id:input.intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
       return {input,result};
     };
-    const f=createP2016ManualReviewFacade({pool,enabled:true,notificationProjector:createP2016TicketNotificationProjector({enabled:true})});
+    const f=createP2016ManualReviewFacade({pool,enabled:true,notificationProjector:createP2016TicketNotificationProjector({additionalEventTypes:['ticket.created'],enabled:true})});
     await seed();
     const first=(await f.listManualReviews({authContext})).items[0],before=await f.getManualReviewDetail({authContext,reviewId:first.id});
     await assertP2016Schema('p2_016_manual_review_list',await f.listManualReviews({authContext}));

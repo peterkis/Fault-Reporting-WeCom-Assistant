@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "gate": "P2-G2",
+  "preparation_result": "BLOCKED_BY_DOMAIN_GAP",
+  "head": "d7311cdbfe30c66f37d22a553a3e8f0e04e27cd1",
+  "candidate_fingerprint_after_regression": "cfa97ab5fa272a769948eb7c2d287e46d99b4f3ae0608a7218a5c5755253888c",
+  "candidate_file_count": 493,
+  "regression_scope": "ALL_NEW_G2_PLUS_SELECTED_AFFECTED_PREDECESSORS_NOT_FULL_BASELINE",
+  "tests": 236,
+  "pass": 236,
+  "fail": 0,
+  "skipped": 0,
+  "cancelled": 0,
+  "todo": 0,
+  "run": {
+    "args": [
+      "--expose-gc",
+      "--test",
+      "--test-concurrency=1",
+      "--test-reporter=tap",
+      "tests/p2-g2-validation-config.test.mjs",
+      "tests/p2-g2-spinning-recognition.test.mjs",
+      "tests/p2-g2-single-text-gold.integration.test.mjs",
+      "tests/p2-g2-service-route-readiness.integration.test.mjs",
+      "tests/p2-g2-send-guard.integration.test.mjs",
+      "tests/p2-g2-send-budget.test.mjs",
+      "tests/p2-g2-recognition-boundaries.test.mjs",
+      "tests/p2-g2-process-assembly.integration.test.mjs",
+      "tests/p2-g2-openapi-routing.integration.test.mjs",
+      "tests/p2-g2-multi-turn-gold.integration.test.mjs",
+      "tests/p2-g2-inbound-label.integration.test.mjs",
+      "tests/p2-g2-gate-evaluator.test.mjs",
+      "tests/p2-g2-frozen-gold.integration.test.mjs",
+      "tests/p2-g2-evidence.test.mjs",
+      "tests/p2-g2-direct-session-boundary.integration.test.mjs",
+      "tests/p2-g2-direct-leg.integration.test.mjs",
+      "tests/p2-g2-critical-intake.integration.test.mjs",
+      "tests/p2-g2-command-outcome-browser.test.mjs",
+      "tests/p2-g2-approval-binding.test.mjs",
+      "tests/p1-004-service-intake.test.mjs",
+      "tests/p2-015-rule-first-orchestration.test.mjs",
+      "tests/p2-015-rule-first-orchestration.integration.test.mjs",
+      "tests/p2-016-notification-delivery.integration.test.mjs",
+      "tests/p2-012-subscription-notification.integration.test.mjs"
+    ],
+    "files": [
+      {
+        "path": "tests/p2-g2-validation-config.test.mjs",
+        "sha256": "d1fa1d74bc266d517c3cd513d9d4dc0c0b9b0fd6adbff4786ce62cd33896f2e1"
+      },
+      {
+        "path": "tests/p2-g2-spinning-recognition.test.mjs",
+        "sha256": "6bb4f90c2623fd2201e66ac626d991852b0a57857f818cb9f24ddea06cd8a23c"
+      },
+      {
+        "path": "tests/p2-g2-single-text-gold.integration.test.mjs",
+        "sha256": "fc21bc4a0cfa062ea076d0d410cf1f1f1b03594118b2b0c3f3497641b38f4166"
+      },
+      {
+        "path": "tests/p2-g2-service-route-readiness.integration.test.mjs",
+        "sha256": "ff84ffa566b71707d91895aec799e1632edfc5ab14fae1eac33582102f90d52b"
+      },
+      {
+        "path": "tests/p2-g2-send-guard.integration.test.mjs",
+        "sha256": "3f71e607c0141d9f21359f6069daabf1e748d6fee8d62b3dce125ce7ffb7f168"
+      },
+      {
+        "path": "tests/p2-g2-send-budget.test.mjs",
+        "sha256": "8429f109c659cf6c2dcae4ce02a0619a0e762edc5bff86dcb472ae63f661146a"
+      },
+      {
+        "path": "tests/p2-g2-recognition-boundaries.test.mjs",
+        "sha256": "c3afb273c131dae65883f4b7b1282686d07c156225e667c974eb702f7721c73a"
+      },
+      {
+        "path": "tests/p2-g2-process-assembly.integration.test.mjs",
+        "sha256": "01cb2d912a32ee4fe2eca51ebcf4f35c963517f1516abe51befc4d82192b3c1d"
+      },
+      {
+        "path": "tests/p2-g2-openapi-routing.integration.test.mjs",
+        "sha256": "920b0ff4e0a7eb4bc9c4482fa19cf2073bbda6024ec0e9b727efcbeded16b422"
+      },
+      {
+        "path": "tests/p2-g2-multi-turn-gold.integration.test.mjs",
+        "sha256": "d9ad681347c3823e390835aefb20d04841ecc933b018d8560bdfe157f664c469"
+      },
+      {
+        "path": "tests/p2-g2-inbound-label.integration.test.mjs",
+        "sha256": "891c708f77f540d501f22354f746d7f3be10d37ec7fa3dd7192699a1cefa537c"
+      },
+      {
+        "path": "tests/p2-g2-gate-evaluator.test.mjs",
+        "sha256": "54106d0fc0fcc83112f07dcd1e5fff88937fa295efebfb8b817c92d082ad54b9"
+      },
+      {
+        "path": "tests/p2-g2-frozen-gold.integration.test.mjs",
+        "sha256": "175f63e4e7a56b9e8fc6a3dace96937b60ae044fb9de935888cb9967195f7109"
+      },
+      {
+        "path": "tests/p2-g2-evidence.test.mjs",
+        "sha256": "a42c6f241db090ac9ca9fd22ace02a4144881af7f792f8a70a702e17479755a9"
+      },
+      {
+        "path": "tests/p2-g2-direct-session-boundary.integration.test.mjs",
+        "sha256": "4abead1bf5052d6e78712f45e4423b74c9af951cbb9bfd7dc725fdbf2357ad3f"
+      },
+      {
+        "path": "tests/p2-g2-direct-leg.integration.test.mjs",
+        "sha256": "1258bd38e3c4ceb1da01328fd0a21f351aa36dc7eb2eb91a43510c8f1d66a803"
+      },
+      {
+        "path": "tests/p2-g2-critical-intake.integration.test.mjs",
+        "sha256": "f2ec0dc825acc7f6bbee1905c0790e2611f27291a6bc226d9840b31f494dcda7"
+      },
+      {
+        "path": "tests/p2-g2-command-outcome-browser.test.mjs",
+        "sha256": "39091c850e75f2262802789a7e8575de0c6f079162349d88751a2c752160c1a8"
+      },
+      {
+        "path": "tests/p2-g2-approval-binding.test.mjs",
+        "sha256": "de4d9ec5d89a6507a933886bcf309a07d80ce3ed1171ca930efee36a1aec4853"
+      },
+      {
+        "path": "tests/p1-004-service-intake.test.mjs",
+        "sha256": "0dcb67d2dec1fb069a80be8da490c13650ab644dba801500b098ff1321437bab"
+      },
+      {
+        "path": "tests/p2-015-rule-first-orchestration.test.mjs",
+        "sha256": "f6009aef3152f6ed7938e1ce97bf883a1ceab56d9cbe652d692c9aece6a8fa97"
+      },
+      {
+        "path": "tests/p2-015-rule-first-orchestration.integration.test.mjs",
+        "sha256": "33541e99bc0574710511c2410cd56010257d51d40302385670ed38e355ebf2c7"
+      },
+      {
+        "path": "tests/p2-016-notification-delivery.integration.test.mjs",
+        "sha256": "6a940bc76dc7b743e0d57539a0da7c94b0134d04a1ce3b738ff00e1b9be14e8d"
+      },
+      {
+        "path": "tests/p2-012-subscription-notification.integration.test.mjs",
+        "sha256": "4783c12bb4381e66f86bdb014bc0c7af1183222d2d52cedc7fc507df93bde01e"
+      }
+    ],
+    "exit_code": 0,
+    "signal": null,
+    "error": null,
+    "stdout_sha256": "53e7d2a9290a45f0ac34f1c1b8a72035f2b49f5b464a4322b5439f8dd7be21a8",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "directory": "tmp/p2-g2-tests-cd4fece0-024c-444c-bc8d-a5a8d78a0d1b"
+  },
+  "adjudicated_gold_rows": 89,
+  "original_gold_references": 202,
+  "ready_for_live": false,
+  "real_provider_send_started": false,
+  "second_candidate_commit_created": false,
+  "remaining_domain_gap": "CROSS_INTAKE_MULTI_REPORTER_CANDIDATE_AGGREGATION"
+}

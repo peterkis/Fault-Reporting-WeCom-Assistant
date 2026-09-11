@@ -35,7 +35,7 @@ P2-016 UI/REST, P2-012 Incident, P2-G2, AI/OCR, or production enablement.
 
 P2-016 is DONE after owner-approved targeted live validation. For completion or handoff,
 read `evidence/p2-016-ticket-lifecycle-workbench-report.md` and
-`evidence/p2-016-project-owner-approval.md`. P2-012 is DONE after owner-approved targeted live validation. Read `evidence/p2-012-human-confirmed-incident-report.md`, `evidence/p2-012-project-owner-approval.md`, and docs 62–65 for implementation and source-summary limitations. P2-G2 remains NOT_STARTED and requires separate authorization.
+`evidence/p2-016-project-owner-approval.md`. P2-012 is DONE after owner-approved targeted live validation. Read `evidence/p2-012-human-confirmed-incident-report.md`, `evidence/p2-012-project-owner-approval.md`, and docs 62–65 for implementation and source-summary limitations. P2-G2 preparation is independently authorized through READY_FOR_LIVE_E2E; read `evidence/p2-g2-start-authorization.md`. Live work and P2-008 require separate authorization.
 P2-015 remains completed and its historical evidence is immutable. P2-016's separately
 authorized implementation reuses narrow backward-compatible seams; this is not a second
 P2-015 completion. For Workbench, Reporter access, and notification work, read
@@ -254,3 +254,5 @@ _Avoid_: personnel master record, raw WeCom identity, Ticket ownership
 **Primary Ticket Reference**:
 An optional, explicitly selected linked Ticket that serves as the Incident's internal handling reference.
 _Avoid_: only surviving Ticket, Incident owner, automatic Ticket closure
+
+For P2-G2 readiness handoff or a separately authorized live run, read `evidence/p2-g2-automated-readiness-report.json`, `evidence/p2-g2-scenario-matrix.json`, and `prompts/P2-G2_rule_first_service_loop_runbook.md`. Current preparation is READY_FOR_LIVE_E2E; P2-G1 remains the last completed Gate, P2-G2-LIVE is not authorized, and P2-008 remains blocked.

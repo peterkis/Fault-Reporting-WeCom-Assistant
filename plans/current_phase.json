@@ -9,7 +9,7 @@
   "last_completed_task": "P2-012",
   "last_completed_gate": "P2-G1",
   "last_completed_architecture_task": "ARCH-006",
-  "active_task": null,
+  "active_task": "P2-G2",
   "next_phase_authorized": true,
   "authorized_tasks": [
     "P2-001",
@@ -23,8 +23,8 @@
     "P2-016",
     "P2-012"
   ],
-  "active_lane": null,
-  "implementation_authorization_status": "P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION",
+  "active_lane": "ASSEMBLY",
+  "implementation_authorization_status": "P2_G2_READY_FOR_LIVE_E2E",
   "authorized_architecture_tasks": [
     "ARCH-005",
     "ARCH-006"
@@ -43,7 +43,7 @@
   "p2_007_completed_at": "2026-09-03",
   "p2_007_completion_evidence": "evidence/p2-007-implementation-report.md",
   "p2_g1_status": "PASSED",
-  "p2_g2_status": "NOT_STARTED",
+  "p2_g2_status": "READY_FOR_LIVE_E2E",
   "p2_g3_status": "NOT_STARTED",
   "p2_g4_status": "NOT_STARTED",
   "p2_g5_status": "NOT_STARTED",
@@ -63,10 +63,11 @@
   "p2_011_status": "TODO",
   "p2_013_status": "TODO",
   "p2_014_status": "TODO",
-  "next_task_candidate": "P2-G2",
+  "next_task_candidate": "P2-G2-LIVE",
   "next_task_authorized": false,
   "authorized_gates": [
-    "P2-G1"
+    "P2-G1",
+    "P2-G2"
   ],
   "p2_g1_authorized_at": "2026-09-01",
   "p2_g1_authorization_evidence": "evidence/p2-g1-start-authorization.md",
@@ -94,11 +95,9 @@
   "p2_006_completed_at": "2026-09-01",
   "p2_006_completion_evidence": "evidence/p2-006-realtime-workbench-report.md",
   "allowed_scope": [
-    "preserve the completed P2-015 rule-first orchestration, Contact Journey, continuation, Manual Review, safe action, internal query, and worker evidence",
-    "consume the frozen P2-007 pure output only through the P2-015 adapter and preserve P1 committed facts",
-    "implement only P2-012 human-confirmed Incident, Report, Subscription, notifications and Workbench through backward-compatible P2-015/P2-016 seams",
-    "inherit ARCH-005 LocalDateTime, PhysicalEpochMs, and explicit same-second ordering contracts",
-    "keep every committed feature-flag default false and preserve completed P1 and P2-001 through P2-007 behavior"
+    "P2-G2 governance, finite assembly repairs, isolated AI-off automation, validation tools, candidate evidence and runbook preparation through READY_FOR_LIVE_E2E",
+    "reuse the completed Inbox, Intake, rule-first, Ticket, Conversation, Incident and Communication authorities",
+    "preserve migrations 001-032, P2-007 rules and fixtures, historical Evidence and every persistent feature flag default"
   ],
   "forbidden_before_exit": [
     "production Conversation Center enablement",
@@ -113,10 +112,10 @@
     "historical ticket compatibility scope"
   ],
   "forbidden_without_task_authorization": [
-    "start P2-012 live validation, P2-008, or any other P2 task without separate authorization",
+    "start P2-012 live validation, P2-008, or any other P2 runtime task without separate authorization",
     "start any P3 task",
     "mark P2-G1 PASSED or GO without live WeCom evidence and project-owner approval",
-    "start P2-G2 or any later gate",
+    "start P2-G2 live validation or any later gate",
     "enable Conversation Center, human delivery, realtime, SSE, AI, OCR, Incident, or integration feature flags",
     "enable production Conversation Center or AI",
     "enable production OCR",
@@ -146,7 +145,7 @@
     "ticket_backend": "Unified Ticket Core compatibility implementation (current pilot_ticket schema)",
     "hospital_ticket_dependency": false,
     "first_gate": "P2-G1 Human-only Conversation Center",
-    "activation_status": "P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION",
+    "activation_status": "P2_G2_READY_FOR_LIVE_E2E",
     "authorization_evidence": "evidence/p2-phase-start-authorization.md"
   },
   "p2_016_completed_at": "2026-09-04",
@@ -159,5 +158,10 @@
   "p2_012_completion_evidence": "evidence/p2-012-human-confirmed-incident-report.md",
   "p2_012_owner_approval_evidence": "evidence/p2-012-project-owner-approval.md",
   "p2_012_targeted_live_evidence": "evidence/p2-012-targeted-live-validation.json",
-  "p2_012_post_live_regression_evidence": "evidence/p2-012-post-live-regression-report.json"
+  "p2_012_post_live_regression_evidence": "evidence/p2-012-post-live-regression-report.json",
+  "p2_g2_authorized_at": "2026-09-08",
+  "p2_g2_authorization_evidence": "evidence/p2-g2-start-authorization.md",
+  "p2_g2_base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
+  "p2_g2_automated_readiness_evidence": "evidence/p2-g2-automated-readiness-report.json",
+  "p2_g2_ready_at": "2026-09-09"
 }

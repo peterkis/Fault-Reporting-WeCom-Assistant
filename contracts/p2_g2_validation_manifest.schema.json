@@ -1,0 +1,351 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "p2_g2_validation_manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "gate",
+    "mode",
+    "run_id",
+    "candidate_fingerprint",
+    "feature_flags",
+    "listen_port",
+    "reporter_origin",
+    "scope",
+    "approval"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "gate": {
+      "const": "P2-G2"
+    },
+    "mode": {
+      "enum": [
+        "synthetic",
+        "live"
+      ]
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+    },
+    "candidate_fingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "feature_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "CONVERSATION_CENTER_ENABLED",
+        "CONVERSATION_REALTIME_SSE_ENABLED",
+        "HUMAN_WORKBENCH_V2_ENABLED",
+        "RULE_FIRST_ORCHESTRATION_ENABLED",
+        "MANUAL_REVIEW_QUEUE_ENABLED",
+        "TICKET_LIFECYCLE_WORKBENCH_ENABLED",
+        "REPORTER_TIMELINE_ENABLED",
+        "WECOM_TEMPLATE_CARD_ENABLED",
+        "INCIDENT_CORRELATION_ENABLED",
+        "INCIDENT_PUBLIC_NOTICE_ENABLED",
+        "INCIDENT_PRIVATE_NOTICE_ENABLED",
+        "AI_TRIAGE_ENABLED",
+        "AI_CONVERSATION_ENABLED",
+        "AI_AUTO_REPLY_ENABLED",
+        "OCR_ENABLED",
+        "INTEGRATION_CONNECTOR_ENABLED",
+        "HOSPITAL_IDENTITY_ENABLED",
+        "INTRANET_PORTAL_SOURCE_ENABLED",
+        "HOSPITAL_API_SOURCE_ENABLED",
+        "MONITORING_SOURCE_ENABLED"
+      ],
+      "properties": {
+        "CONVERSATION_CENTER_ENABLED": {
+          "type": "boolean"
+        },
+        "CONVERSATION_REALTIME_SSE_ENABLED": {
+          "type": "boolean"
+        },
+        "HUMAN_WORKBENCH_V2_ENABLED": {
+          "type": "boolean"
+        },
+        "RULE_FIRST_ORCHESTRATION_ENABLED": {
+          "type": "boolean"
+        },
+        "MANUAL_REVIEW_QUEUE_ENABLED": {
+          "type": "boolean"
+        },
+        "TICKET_LIFECYCLE_WORKBENCH_ENABLED": {
+          "type": "boolean"
+        },
+        "REPORTER_TIMELINE_ENABLED": {
+          "type": "boolean"
+        },
+        "WECOM_TEMPLATE_CARD_ENABLED": {
+          "type": "boolean"
+        },
+        "INCIDENT_CORRELATION_ENABLED": {
+          "type": "boolean"
+        },
+        "INCIDENT_PUBLIC_NOTICE_ENABLED": {
+          "type": "boolean"
+        },
+        "INCIDENT_PRIVATE_NOTICE_ENABLED": {
+          "type": "boolean"
+        },
+        "AI_TRIAGE_ENABLED": {
+          "type": "boolean"
+        },
+        "AI_CONVERSATION_ENABLED": {
+          "type": "boolean"
+        },
+        "AI_AUTO_REPLY_ENABLED": {
+          "type": "boolean"
+        },
+        "OCR_ENABLED": {
+          "type": "boolean"
+        },
+        "INTEGRATION_CONNECTOR_ENABLED": {
+          "type": "boolean"
+        },
+        "HOSPITAL_IDENTITY_ENABLED": {
+          "type": "boolean"
+        },
+        "INTRANET_PORTAL_SOURCE_ENABLED": {
+          "type": "boolean"
+        },
+        "HOSPITAL_API_SOURCE_ENABLED": {
+          "type": "boolean"
+        },
+        "MONITORING_SOURCE_ENABLED": {
+          "type": "boolean"
+        }
+      }
+    },
+    "listen_port": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 65535
+    },
+    "reporter_origin": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bot_hash",
+        "group_hashes",
+        "person_hashes",
+        "direct_organic_person_hash",
+        "principal_ids",
+        "database_identity_hash",
+        "test_prefix",
+        "approved_inputs",
+        "approved_replies",
+        "approved_templates",
+        "allowed_faults",
+        "send_budget"
+      ],
+      "properties": {
+        "bot_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "ticket_notification_additional_events": {
+          "type": "array", "uniqueItems": true, "maxItems": 11,
+          "items": {"enum": ["ticket.created","ticket.accepted","ticket.started","ticket.resumed","ticket.waiting_requester","ticket.waiting_vendor","ticket.resolved","ticket.closed","ticket.reopened","ticket.cancelled","ticket.auto_close_reminder"]}
+        },
+        "member_directory": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled", "internal_member_ids_confirmed"],
+          "properties": {"enabled": {"type": "boolean", "default": false}, "internal_member_ids_confirmed": {"type": "boolean", "default": false}},
+          "if": {"properties": {"enabled": {"const": true}}},
+          "then": {"properties": {"internal_member_ids_confirmed": {"const": true}}}
+        },
+        "group_webhook_routes": {
+          "type": "array", "maxItems": 20,
+          "items": {"type": "object", "additionalProperties": false, "required": ["group_hash","endpoint_hash"],
+            "properties": {"group_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "endpoint_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}}
+        },
+        "group_hashes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "minItems": 1,
+          "maxItems": 20,
+          "uniqueItems": true
+        },
+        "person_hashes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "minItems": 3,
+          "maxItems": 20,
+          "uniqueItems": true
+        },
+        "direct_organic_person_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "principal_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
+          },
+          "minItems": 3,
+          "maxItems": 4,
+          "uniqueItems": true
+        },
+        "database_identity_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "test_prefix": {
+          "const": "【p2-g2测试】"
+        },
+        "approved_inputs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "minItems": 1,
+          "maxItems": 200,
+          "uniqueItems": true
+        },
+        "approved_replies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "minItems": 1,
+          "maxItems": 30,
+          "uniqueItems": true
+        },
+        "approved_templates": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "RULE_FIRST_ORCHESTRATOR",
+              "TICKET_LIFECYCLE",
+              "HUMAN_CONFIRMED_INCIDENT"
+            ]
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true
+        },
+        "allowed_faults": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "G2-F01",
+              "G2-F02",
+              "G2-F03",
+              "G2-F04",
+              "G2-N03",
+              "G2-R02"
+            ]
+          },
+          "minItems": 0,
+          "maxItems": 6,
+          "uniqueItems": true
+        },
+        "send_budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "group",
+            "person",
+            "total"
+          ],
+          "properties": {
+            "group": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000
+            },
+            "person": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000
+            }
+          }
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approved",
+        "authority",
+        "source_ref",
+        "source_sha256",
+        "valid_from_epoch_ms",
+        "expires_epoch_ms"
+      ],
+      "properties": {
+        "approved": {
+          "type": "boolean"
+        },
+        "authority": {
+          "anyOf": [
+            {
+              "const": "PROJECT_OWNER"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^evidence/p2-g2-live-start-approval(?:-[a-z0-9-]+)?\\.md$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "valid_from_epoch_ms": {
+          "$ref": "epoch_ms_string.schema.json"
+        },
+        "expires_epoch_ms": {
+          "$ref": "epoch_ms_string.schema.json"
+        }
+      }
+    }
+  }
+}

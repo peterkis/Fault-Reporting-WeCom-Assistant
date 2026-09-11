@@ -38,3 +38,7 @@ P2-015 只允许建议和调用既有边界：`UnifiedTicketCommandPort`、`Tick
 ## 5. 概念持久化（P2-015 / migration 030 保留）
 
 仅冻结概念，不创建 SQL：`contact_journey`、`channel_leg`、`continuation_ref`、`deterministic_decision`、`manual_review_item`、`safe_action_suggestion`。所有表必须引用既有事实 ID，不复制 Ticket 状态或责任；具体 Schema、索引、约束和回滚须在 P2-015 独立授权后确定。
+
+## 当前授权状态（2026-09-08）
+
+上文阶段授权描述保留其历史时点；当前 P2-007、P2-015、P2-016、P2-012 已完成。当前仅 P2-G2 / ASSEMBLY 获独立准备授权，执行到 READY_FOR_LIVE_E2E 后停止；真实发送、云主机变更、现场写库、正式观察及 Gate 批准均须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。依据 `evidence/p2-g2-start-authorization.md`；未改变本文件的领域契约或历史完成 Evidence。

@@ -1,0 +1,2945 @@
+{
+  "schema_version": 1,
+  "purpose": "Independent source-grounded D12 mechanism mapping; not execution or Gate evidence",
+  "source_fixture": "tests/fixtures/p2-007/multichannel_decision_cases.v1.2.jsonl",
+  "source_sha256": "15d1d8ae77aa5ac90cb03a2e0e0f7d0dfaf60c5f5ec7b5fbbd7e328076a9cc86",
+  "source_manifest": "tests/fixtures/p2-007/multichannel_decision_manifest.v1.2.json",
+  "case_count": 64,
+  "original_gold_test": {
+    "file": "tests/p2-015-rule-first-orchestration.test.mjs",
+    "line": 80,
+    "scope": "Only asserts 202 count, unique references, legal result-code coverage and prohibited-effects shape; does not execute each referenced D12 case"
+  },
+  "constraints": {
+    "candidate_window_seconds": 120,
+    "source_window_seconds_for_D12_043_044_045_047": 300,
+    "window_adjudication": "Preserve original source. Use all supported source events inside frozen120sec and separately test outside-boundary exclusion. Never change runtime120sec to300sec.",
+    "directory": "Existing Mock/Deferred/Faulting directory port only; no external directory or hospital master-index integration.",
+    "monitoring": "Pure trusted-input contract only; no fabricated normal-ingress monitoring authority or new connector.",
+    "normal_chain": "Frame -> Inbox/Intake -> Worker -> actual DB effects. No seeded successful Decision/Ticket/Candidate.",
+    "mechanism_chain": "Setup real prerequisites through owning commands; may inject declared fault or directory stub, never construct outcome under test.",
+    "metrics": "64 mechanisms are not64 independent natural-language classification successes. Track per-surface execution and explicit semantic adjudication; do not count enum validation as runtime safe-route coverage."
+  },
+  "cases": [
+    {
+      "case_id": "D12-001",
+      "category": "ENTRY",
+      "source_line": 1,
+      "description": "群内@Bot并直接描述明确故障",
+      "source_input": {
+        "channel": "GROUP",
+        "bot_mentioned": true,
+        "text": "门诊系统进不去了"
+      },
+      "source_expected": {
+        "entry_mode": "GROUP_MENTION_INLINE",
+        "origin_channel": "WECOM_GROUP",
+        "current_channel": "WECOM_GROUP",
+        "create_minimal_ticket_early": true,
+        "next_notification": [
+          "GROUP_RECEIPT",
+          "DIRECT_GUIDANCE"
+        ]
+      },
+      "must_not": [
+        "LOSE_GROUP_ORIGIN",
+        "WAIT_FOR_ALL_FIELDS_BEFORE_TICKET",
+        "SEND_PATIENT_DATA_IN_GROUP"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-001",
+        "expected_result_code": "TICKET_ELIGIBLE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Fresh approved group and Reporter; original fault text in real Frame.",
+      "required_execution_and_invariants": "Assert durable Inbox/Intake before Worker; Ticket1, group-origin Journey/Leg; inspect safe receipt/guidance actions and actual queued effects.",
+      "adjudication_and_no_shortcut": "Do not seed a TICKET_ELIGIBLE output. Source two-notification suggestion is policy context; actual mandatory effects require docs51/Direct-Leg adjudication.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-002",
+      "category": "ENTRY",
+      "source_line": 2,
+      "description": "群内只@Bot不描述",
+      "source_input": {
+        "channel": "GROUP",
+        "bot_mentioned": true,
+        "text": ""
+      },
+      "source_expected": {
+        "entry_mode": "GROUP_MENTION_TO_DIRECT_GUIDED",
+        "description_sufficiency": "EMPTY",
+        "create_ticket": false,
+        "next_notification": [
+          "GROUP_RECEIPT",
+          "DIRECT_GUIDANCE"
+        ],
+        "next_question": "ASK_SYSTEM_OR_DEVICE_AND_SYMPTOM"
+      },
+      "must_not": [
+        "GUESS_FAULT",
+        "CREATE_CONFIRMED_TICKET",
+        "INVOKE_OCR"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-002",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Fresh group callback with no description; transport addressing already established.",
+      "required_execution_and_invariants": "Assert Intake persists, no Ticket, guided mode and exactly one reachable clarification/manual fallback; preserve group origin.",
+      "adjudication_and_no_shortcut": "Do not inject EMPTY/NEEDS_DESCRIPTION.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-003",
+      "category": "ENTRY",
+      "source_line": 3,
+      "description": "用户主动单聊发起报修",
+      "source_input": {
+        "channel": "DIRECT",
+        "text": "打印机卡纸了"
+      },
+      "source_expected": {
+        "entry_mode": "DIRECT_ORGANIC",
+        "origin_channel": "WECOM_DIRECT",
+        "current_channel": "WECOM_DIRECT",
+        "create_minimal_ticket_early": true
+      },
+      "must_not": [
+        "FABRICATE_GROUP_ORIGIN",
+        "CREATE_CONTINUATION_REF_WITHOUT_NEED"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-003",
+        "expected_result_code": "TICKET_ELIGIBLE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Fresh explicit Reporter; no previous group Journey.",
+      "required_execution_and_invariants": "Original printer-jam Frame creates Direct Organic Journey and minimal Ticket; no fabricated group/ref.",
+      "adjudication_and_no_shortcut": "Do not prebind a group or create Direct Leg solely to admit first inbound.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-004",
+      "category": "ENTRY",
+      "source_line": 4,
+      "description": "重复群回调只形成一个Journey",
+      "source_input": {
+        "channel": "GROUP",
+        "bot_mentioned": true,
+        "provider_msg_ref": "opaque_msg_same",
+        "delivery_count": 2
+      },
+      "source_expected": {
+        "journey_count": 1,
+        "duplicate_result": "REPLAYED",
+        "group_receipt_count_max": 1,
+        "direct_guidance_count_max": 1
+      },
+      "must_not": [
+        "CREATE_DUPLICATE_JOURNEY",
+        "SEND_DUPLICATE_RECEIPT"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-004",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Identical authenticated callback identifiers delivered twice.",
+      "required_execution_and_invariants": "Real Inbox replay; one Journey; compare Message/Outbox/Delivery deltas and no duplicate send.",
+      "adjudication_and_no_shortcut": "Keep identical provider identity and msgid; changing msgid does not test replay.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-005",
+      "category": "ENTRY",
+      "source_line": 5,
+      "description": "群内未@Bot的普通聊天不触发机器人入口",
+      "source_input": {
+        "channel": "GROUP",
+        "bot_mentioned": false,
+        "text": "系统今天有点慢"
+      },
+      "source_expected": {
+        "triggered": false,
+        "journey_count": 0,
+        "notification_count": 0
+      },
+      "must_not": [
+        "CREATE_TICKET",
+        "START_DIRECT_GUIDANCE",
+        "ASSUME_BOT_ADDRESSING"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-005",
+        "expected_result_code": "TICKET_ELIGIBLE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Non-addressed group event at transport boundary.",
+      "required_execution_and_invariants": "Check existing Adapter/gateway acceptance surface; zero downstream business/notification effects if such event is available.",
+      "adjudication_and_no_shortcut": "Current SDK lacks reliable mention metadata and tenant filters callbacks: do not invent bot_mentioned support. If adapter cannot express it, report transport assumption/unavailable surface, not classifier PASS.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-006",
+      "category": "ENTRY",
+      "source_line": 6,
+      "description": "单聊用户连续分三条描述",
+      "source_input": {
+        "channel": "DIRECT",
+        "turns": [
+          "打印不了",
+          "门诊二楼",
+          "重启过还是不行"
+        ]
+      },
+      "source_expected": {
+        "entry_mode": "DIRECT_ORGANIC",
+        "message_facts_persisted": 3,
+        "single_active_journey": true,
+        "attempt_result": "FAILED"
+      },
+      "must_not": [
+        "CREATE_THREE_TICKETS",
+        "DROP_LATER_SUPPLEMENT",
+        "REPEAT_RESTART_ADVICE"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-006",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Same Reporter sends all three source turns; no business seeds.",
+      "required_execution_and_invariants": "Each turn persists; one active Journey/Ticket; later description and failed restart retained with source order.",
+      "adjudication_and_no_shortcut": "A static expected route or first-turn-only test cannot prove aggregation.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-007",
+      "category": "ENTRY",
+      "source_line": 7,
+      "description": "群转单聊后来源保持群聊",
+      "source_input": {
+        "entry_mode": "GROUP_MENTION_TO_DIRECT_GUIDED",
+        "new_message_channel": "DIRECT"
+      },
+      "source_expected": {
+        "origin_channel": "WECOM_GROUP",
+        "current_channel": "WECOM_DIRECT"
+      },
+      "must_not": [
+        "OVERWRITE_ORIGIN_AS_DIRECT",
+        "LOSE_ORIGIN_MESSAGE_REF"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-007",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Create group-origin Journey via ingress and issue valid guidance/ref using existing service; then direct ingress.",
+      "required_execution_and_invariants": "Direct binding points to original Journey; origin remains GROUP and current channel DIRECT; separate original/direct Legs remain.",
+      "adjudication_and_no_shortcut": "Input entry_mode is not a trusted persisted binding.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-008",
+      "category": "ENTRY",
+      "source_line": 8,
+      "description": "过期群Journey后用户主动报告新故障",
+      "source_input": {
+        "old_journey_state": "EXPIRED",
+        "channel": "DIRECT",
+        "text": "处方提交不了",
+        "continuation_ref": null
+      },
+      "source_expected": {
+        "entry_mode": "DIRECT_ORGANIC",
+        "create_new_journey": true
+      },
+      "must_not": [
+        "REOPEN_EXPIRED_GROUP_JOURNEY_BY_TIME_ONLY",
+        "LINK_TO_UNRELATED_OLD_FAULT"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-008",
+        "expected_result_code": "TICKET_ELIGIBLE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Create old group Journey normally, advance supported expiry boundary or use audited expiry mechanism.",
+      "required_execution_and_invariants": "New direct fault creates fresh Journey; old expired/ended object never reopened.",
+      "adjudication_and_no_shortcut": "Fixture EXPIRED maps to runtime ended/expired eligibility, not an invented Journey status.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-009",
+      "category": "CONTINUATION",
+      "source_line": 9,
+      "description": "合法continuation_ref建立DirectChannelBinding",
+      "source_input": {
+        "token": "<OPAQUE_CONTINUATION>",
+        "reporter": "<USER_A>",
+        "bot": "<BOT_A>",
+        "state": "PENDING",
+        "not_expired": true
+      },
+      "source_expected": {
+        "link_result": "BOUND",
+        "authoritative_method": "CONTINUATION_REF",
+        "consume_token": true,
+        "create_direct_channel_binding": true
+      },
+      "must_not": [
+        "LOG_RAW_TOKEN",
+        "USE_TOKEN_AS_AUTHORIZATION",
+        "BIND_SECOND_REPORTER"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-009",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Issue real one-use token for persisted Journey and Reporter/Bot, with valid expiry; first direct inbound exists.",
+      "required_execution_and_invariants": "Call bind with same identity; assert token hash stored, bound Direct Leg, single consume and replay/conflict.",
+      "adjudication_and_no_shortcut": "Token possession alone is not authority; use separate sender binding and never emit raw token.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-010",
+      "category": "CONTINUATION",
+      "source_line": 10,
+      "description": "continuation_ref与上报人不匹配",
+      "source_input": {
+        "token_owner": "<USER_A>",
+        "message_sender": "<USER_B>"
+      },
+      "source_expected": {
+        "link_result": "REJECTED",
+        "error_code": "CONTINUATION_REPORTER_MISMATCH",
+        "database_business_link_count": 0
+      },
+      "must_not": [
+        "LINK_CROSS_USER",
+        "DISCLOSE_OWNER_ID"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-010",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Issue token for A; submit bind as independently authenticated B.",
+      "required_execution_and_invariants": "Assert rejected, no business association, original token remains safe; stable runtime mismatch code mapping.",
+      "adjudication_and_no_shortcut": "Do not trust token_owner/message_sender strings as authorization or require legacy illustrative error spelling.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-011",
+      "category": "CONTINUATION",
+      "source_line": 11,
+      "description": "continuation_ref与Bot不匹配",
+      "source_input": {
+        "token_bot": "<BOT_A>",
+        "receiver_bot": "<BOT_B>"
+      },
+      "source_expected": {
+        "link_result": "REJECTED",
+        "error_code": "CONTINUATION_BOT_MISMATCH"
+      },
+      "must_not": [
+        "LINK_CROSS_BOT",
+        "REUSE_TOKEN"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-011",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Issue token under Bot A; attempt under Bot B.",
+      "required_execution_and_invariants": "Reject cross-Bot bind; zero new links or token reuse.",
+      "adjudication_and_no_shortcut": "Use actual two-Bot trusted metadata.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-012",
+      "category": "CONTINUATION",
+      "source_line": 12,
+      "description": "过期continuation_ref失败关闭",
+      "source_input": {
+        "state": "EXPIRED",
+        "channel": "DIRECT"
+      },
+      "source_expected": {
+        "link_result": "EXPIRED",
+        "ask_user_to_select_or_start_new": true
+      },
+      "must_not": [
+        "SILENTLY_BIND_EXPIRED_TOKEN",
+        "RESTORE_TOKEN_WITHOUT_AUTHORITY"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-012",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Issue token and evaluate exactly at/after its real expires_epoch_ms.",
+      "required_execution_and_invariants": "bind rejects expired; original fact remains and new/select route reachable.",
+      "adjudication_and_no_shortcut": "Do not pass state=EXPIRED as a fabricated result.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-013",
+      "category": "CONTINUATION",
+      "source_line": 13,
+      "description": "仅同一userid且时间接近不足以关联",
+      "source_input": {
+        "same_reporter": true,
+        "gap_seconds": 30,
+        "open_journey_count": 2,
+        "explicit_ref": null
+      },
+      "source_expected": {
+        "link_result": "AMBIGUOUS",
+        "next_action": "ASK_USER_TO_SELECT"
+      },
+      "must_not": [
+        "AUTO_PICK_NEAREST_JOURNEY",
+        "MERGE_TWO_FAULTS",
+        "SAME_USER_TIME_ONLY_LINK"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-013",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Create two same-Reporter open eligible guided Journeys, no explicit binding/ref.",
+      "required_execution_and_invariants": "Resolver and persisted orchestration yield selection/review, no nearest/latest auto-link.",
+      "adjudication_and_no_shortcut": "Thirty-second proximity is never sufficient proof.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-014",
+      "category": "CONTINUATION",
+      "source_line": 14,
+      "description": "同一用户只有一个开放Journey时可保守续接",
+      "source_input": {
+        "same_reporter": true,
+        "open_journey_count": 1,
+        "direct_binding": null
+      },
+      "source_expected": {
+        "link_result": "BOUND_WITH_SINGLE_OPEN_JOURNEY_RULE",
+        "requires_audit_reason": true
+      },
+      "must_not": [
+        "LINK_WITHOUT_REPORTER_MATCH",
+        "HIDE_LINK_METHOD"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-014",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Create exactly one same-identity unexpired eligible guided Journey plus required live issued ref under current P2-016 contract.",
+      "required_execution_and_invariants": "Unique guided association has recorded method/reason and actual immutable Leg binding.",
+      "adjudication_and_no_shortcut": "Original single-open phrase does not waive current reporter/Bot/retention/ref eligibility.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-015",
+      "category": "CONTINUATION",
+      "source_line": 15,
+      "description": "多个开放Journey列出安全摘要供选择",
+      "source_input": {
+        "open_journeys": [
+          {
+            "safe_label": "打印故障"
+          },
+          {
+            "safe_label": "处方提交故障"
+          }
+        ],
+        "text": "还是不行"
+      },
+      "source_expected": {
+        "link_result": "AMBIGUOUS",
+        "next_action": "ASK_USER_TO_SELECT",
+        "options_count": 2
+      },
+      "must_not": [
+        "SHOW_PATIENT_ID",
+        "SHOW_INTERNAL_IP",
+        "AUTO_PICK_LATEST"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-015",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Create two authorized open Journeys with different safe labels and private canaries.",
+      "required_execution_and_invariants": "Query actual options/review through authorized API; two choices, private data absent, no auto-selection.",
+      "adjudication_and_no_shortcut": "Returning ASK_USER_TO_SELECT enum alone does not prove options or authorization.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-016",
+      "category": "CONTINUATION",
+      "source_line": 16,
+      "description": "模板卡片task_id精确关联优先",
+      "source_input": {
+        "card_event": true,
+        "task_id": "ticket_<OPAQUE_PUBLIC_REF>_v1",
+        "open_journey_count": 3
+      },
+      "source_expected": {
+        "authoritative_method": "TEMPLATE_CARD_TASK_ID_OR_EVENT_KEY",
+        "selected_journey_count": 1
+      },
+      "must_not": [
+        "IGNORE_EXACT_CARD_CONTEXT",
+        "SELECT_BY_TIME_ONLY"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-016",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Create real Ticket/card grant via existing commands; three open Journeys; valid event key/task binding.",
+      "required_execution_and_invariants": "Actual card event/grant resolution selects exact authorized object; forged/replayed event rejects.",
+      "adjudication_and_no_shortcut": "No naked task_id -> injected journey id shortcut; if callback intake lacks this adapter report gap.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-017",
+      "category": "CONTINUATION",
+      "source_line": 17,
+      "description": "已建立DirectChannelBinding优先于新token",
+      "source_input": {
+        "direct_binding_active": true,
+        "new_token_present": true,
+        "same_reporter": true
+      },
+      "source_expected": {
+        "authoritative_method": "EXISTING_DIRECT_CHANNEL_BINDING",
+        "new_token_handling": "REJECT_OR_REQUIRE_EXPLICIT_NEW_ISSUE"
+      },
+      "must_not": [
+        "SILENTLY_REBIND_ACTIVE_DIRECT_THREAD",
+        "MERGE_UNRELATED_JOURNEY"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-017",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Existing active Direct Leg bound to Journey A; valid different ref for B.",
+      "required_execution_and_invariants": "Real resolver/store preserves A or rejects/explicit new-issue flow; binding immutable.",
+      "adjudication_and_no_shortcut": "Precedence pure-function unit complements but cannot replace persisted clash.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-018",
+      "category": "CONTINUATION",
+      "source_line": 18,
+      "description": "用户明确提供工单引用可关联",
+      "source_input": {
+        "channel": "DIRECT",
+        "ticket_public_ref": "<OPAQUE_TICKET_REF>",
+        "authorized_reporter": true
+      },
+      "source_expected": {
+        "authoritative_method": "EXPLICIT_TICKET_OR_INTAKE_REFERENCE",
+        "link_result": "BOUND"
+      },
+      "must_not": [
+        "ACCEPT_FOUR_DIGIT_SUFFIX_AS_AUTH",
+        "LINK_UNAUTHORIZED_REPORTER"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-018",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_MECHANISM",
+      "actual_interface": "createContinuationRefService.issue/consume + createP2016GuidedJourneyStore + resolveDirectJourneyAssociation",
+      "trusted_preconditions": "Create Ticket and public opaque ref; authenticate owner and separate nonowner.",
+      "required_execution_and_invariants": "Explicit reference resolution only links owner object; suffix and unauthorized ref reject.",
+      "adjudication_and_no_shortcut": "If no incoming explicit-ref association API exists, record missing adapter; Reporter read alone is not association proof.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-019",
+      "category": "IDENTITY",
+      "source_line": 19,
+      "description": "企业微信目录成功解析人员",
+      "source_input": {
+        "from_userid": "<WECOM_USER_REF>",
+        "directory_result": "RESOLVED"
+      },
+      "source_expected": {
+        "person_key": "SYSTEM_PERSON_ID",
+        "profile_authority": "WECOM_DIRECTORY",
+        "snapshot_at_report_time": true
+      },
+      "must_not": [
+        "USE_WECOM_USERID_AS_TICKET_PRIMARY_KEY",
+        "EXPOSE_RAW_USERID_PUBLICLY"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-019",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_DIRECTORY_STUB_AND_PERSISTED_SNAPSHOT",
+      "actual_interface": "createReporterDirectoryPort/MockResolvedDirectory/FaultingDirectory -> createContactJourneyStore; authorized public projection",
+      "trusted_preconditions": "Inject approved directory stub returning synthetic identity snapshot through actual directory port.",
+      "required_execution_and_invariants": "Snapshot retains source authority and lookup time; Ticket identity remains internal; no raw userid public.",
+      "adjudication_and_no_shortcut": "No new real directory calls or hospital Person implementation; unsupported person_key field is a scoped contract gap.",
+      "existing_related_tests": [
+        "tests/p2-015-contact-journey.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-020",
+      "category": "IDENTITY",
+      "source_line": 20,
+      "description": "目录超时不阻断受理",
+      "source_input": {
+        "from_userid": "<WECOM_USER_REF>",
+        "directory_result": "TIMEOUT"
+      },
+      "source_expected": {
+        "lookup_status": "DEFERRED",
+        "intake_accepted": true,
+        "ticket_creation_allowed": true,
+        "name_state": "UNKNOWN"
+      },
+      "must_not": [
+        "DROP_INTAKE",
+        "FABRICATE_NAME",
+        "FABRICATE_DEPARTMENT"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-020",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_DIRECTORY_STUB_AND_PERSISTED_SNAPSHOT",
+      "actual_interface": "createReporterDirectoryPort/MockResolvedDirectory/FaultingDirectory -> createContactJourneyStore; authorized public projection",
+      "trusted_preconditions": "FaultingDirectory/TIMEOUT stub and original explicit fault Frame.",
+      "required_execution_and_invariants": "Intake/Ticket still created; DEFERRED lookup, absent name/department preserved as unknown.",
+      "adjudication_and_no_shortcut": "Stub must throw/timeout through port, not prefill DEFERRED output.",
+      "existing_related_tests": [
+        "tests/p2-015-contact-journey.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-021",
+      "category": "IDENTITY",
+      "source_line": 21,
+      "description": "人员同时属于多个部门",
+      "source_input": {
+        "directory_memberships": [
+          "PRIMARY",
+          "SECONDARY",
+          "ROTATION"
+        ]
+      },
+      "source_expected": {
+        "membership_count": 3,
+        "preserve_roles": true,
+        "single_department_forced": false
+      },
+      "must_not": [
+        "DROP_SECONDARY_MEMBERSHIP",
+        "ARBITRARILY_PICK_LATEST"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-021",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_DIRECTORY_STUB_AND_PERSISTED_SNAPSHOT",
+      "actual_interface": "createReporterDirectoryPort/MockResolvedDirectory/FaultingDirectory -> createContactJourneyStore; authorized public projection",
+      "trusted_preconditions": "Resolved directory stub has three distinct memberships and roles.",
+      "required_execution_and_invariants": "Round-trip all memberships/roles through snapshot; no forced single department.",
+      "adjudication_and_no_shortcut": "Test actual snapshot persistence if claimed; array-length-only unit is narrower evidence.",
+      "existing_related_tests": [
+        "tests/p2-015-contact-journey.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-022",
+      "category": "IDENTITY",
+      "source_line": 22,
+      "description": "上报人科室与故障发生地点不同",
+      "source_input": {
+        "reporter_department": "<DEPT_A>",
+        "occurrence_department": "<DEPT_B>",
+        "location": "<ROOM_B>"
+      },
+      "source_expected": {
+        "preserve_reporter_department": true,
+        "preserve_occurrence_department": true,
+        "fields_equal_required": false
+      },
+      "must_not": [
+        "COPY_REPORTER_DEPARTMENT_TO_LOCATION",
+        "MARK_AS_CONFLICT_AUTOMATICALLY"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-022",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_DIRECTORY_STUB_AND_PERSISTED_SNAPSHOT",
+      "actual_interface": "createReporterDirectoryPort/MockResolvedDirectory/FaultingDirectory -> createContactJourneyStore; authorized public projection",
+      "trusted_preconditions": "Directory snapshot department A and separate Reporter explicit occurrence B/room B.",
+      "required_execution_and_invariants": "Persist both provenance scopes independently; no automatic equality or conflict requirement.",
+      "adjudication_and_no_shortcut": "Do not overwrite occurrence with directory profile.",
+      "existing_related_tests": [
+        "tests/p2-015-contact-journey.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-023",
+      "category": "IDENTITY",
+      "source_line": 23,
+      "description": "后期接入医院人员主索引",
+      "source_input": {
+        "existing_person_id": "<PERSON_A>",
+        "wecom_binding": "<WECOM_USER_REF>",
+        "new_master_binding": "<MASTER_REF>"
+      },
+      "source_expected": {
+        "person_id_unchanged": true,
+        "bindings_preserved": 2,
+        "reconciliation_audited": true
+      },
+      "must_not": [
+        "DESTRUCTIVE_REKEY",
+        "DELETE_WECOM_BINDING",
+        "REWRITE_HISTORICAL_TICKETS"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-023",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_DIRECTORY_STUB_AND_PERSISTED_SNAPSHOT",
+      "actual_interface": "createReporterDirectoryPort/MockResolvedDirectory/FaultingDirectory -> createContactJourneyStore; authorized public projection",
+      "trusted_preconditions": "Synthetic stable internal Person ref and two binding facts only in existing contract surface.",
+      "required_execution_and_invariants": "Pure immutable-binding/provenance check if supported; historical refs unchanged.",
+      "adjudication_and_no_shortcut": "FUTURE_P3_BOUNDARY: no current hospital master-index reconciliation endpoint; mark unsupported/deferred, do not build new entry or claim normal-ingress coverage.",
+      "existing_related_tests": [
+        "tests/p2-015-contact-journey.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-024",
+      "category": "IDENTITY",
+      "source_line": 24,
+      "description": "企业微信目录显示停用账号",
+      "source_input": {
+        "directory_status": "INACTIVE",
+        "incoming_message_exists": true
+      },
+      "source_expected": {
+        "identity_review_required": true,
+        "message_fact_preserved": true,
+        "automatic_person_merge": false
+      },
+      "must_not": [
+        "DELETE_MESSAGE",
+        "IMPERSONATE_ACTIVE_USER",
+        "SILENTLY_MERGE"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-024",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_DIRECTORY_STUB_AND_PERSISTED_SNAPSHOT",
+      "actual_interface": "createReporterDirectoryPort/MockResolvedDirectory/FaultingDirectory -> createContactJourneyStore; authorized public projection",
+      "trusted_preconditions": "Use RESOLVED directory snapshot with an inactive-account field through existing stub; incoming message uses trusted channel. Do not invent directory-result status INACTIVE, since port accepts only RESOLVED/DEFERRED/NOT_FOUND/NOT_REQUIRED.",
+      "required_execution_and_invariants": "Message persists and review reachable; no identity merge or deletion.",
+      "adjudication_and_no_shortcut": "INACTIVE is input profile status, not permission to fabricate a new active Person. If no current consumer interprets inactive snapshot as review, report that gap; a raw snapshot field is not verified routing.",
+      "existing_related_tests": [
+        "tests/p2-015-contact-journey.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-025",
+      "category": "IDENTITY",
+      "source_line": 25,
+      "description": "人员调科后审计历史工单",
+      "source_input": {
+        "report_snapshot_department": "<OLD_DEPT>",
+        "current_directory_department": "<NEW_DEPT>"
+      },
+      "source_expected": {
+        "historical_snapshot_department": "<OLD_DEPT>",
+        "current_profile_department": "<NEW_DEPT>"
+      },
+      "must_not": [
+        "OVERWRITE_HISTORICAL_SNAPSHOT",
+        "LOSE_VALID_AT"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-025",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_DIRECTORY_STUB_AND_PERSISTED_SNAPSHOT",
+      "actual_interface": "createReporterDirectoryPort/MockResolvedDirectory/FaultingDirectory -> createContactJourneyStore; authorized public projection",
+      "trusted_preconditions": "Persist old directory snapshot with first report; resolve newer snapshot in later operation.",
+      "required_execution_and_invariants": "Old report snapshot unchanged; new profile separate and timestamps/provenance retained.",
+      "adjudication_and_no_shortcut": "Do not rewrite historical source or compare two constructor literals only.",
+      "existing_related_tests": [
+        "tests/p2-015-contact-journey.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-026",
+      "category": "IDENTITY",
+      "source_line": 26,
+      "description": "公共视图隐藏原始userid与部门内部标识",
+      "source_input": {
+        "internal_profile_has_raw_provider_id": true,
+        "audience": "REPORTER_PUBLIC"
+      },
+      "source_expected": {
+        "raw_provider_id_visible": false,
+        "internal_department_ref_visible": false,
+        "display_name_policy": "MINIMUM_NECESSARY"
+      },
+      "must_not": [
+        "LEAK_RAW_USERID",
+        "LEAK_INTERNAL_DIRECTORY_PAYLOAD"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-026",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_DIRECTORY_STUB_AND_PERSISTED_SNAPSHOT",
+      "actual_interface": "createReporterDirectoryPort/MockResolvedDirectory/FaultingDirectory -> createContactJourneyStore; authorized public projection",
+      "trusted_preconditions": "Persist synthetic raw userid/internal department canaries; authenticate Reporter viewer.",
+      "required_execution_and_invariants": "Actual Reporter-safe HTTP projection contains no raw provider/internal department payload.",
+      "adjudication_and_no_shortcut": "Passing a public enum cannot prove redaction.",
+      "existing_related_tests": [
+        "tests/p2-015-contact-journey.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-027",
+      "category": "FRAGMENTED_DESCRIPTION",
+      "source_line": 27,
+      "description": "图片先发且无文字",
+      "source_input": {
+        "turns": [
+          "[图片]"
+        ],
+        "ocr_enabled": false
+      },
+      "source_expected": {
+        "description_sufficiency": "EMPTY",
+        "next_question": "ASK_TEXT_DESCRIPTION",
+        "media_present": true
+      },
+      "must_not": [
+        "INFER_IMAGE_CONTENT",
+        "INVOKE_OCR",
+        "CREATE_CONFIRMED_FAULT_CATEGORY"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-027",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Approved image-only synthetic media Frame, OCR off, no text invented.",
+      "required_execution_and_invariants": "Inbox media retained; Ticket0; actual one text-description question or reachable human fallback.",
+      "adjudication_and_no_shortcut": "Do not replace image with inferred symptom; no OCR/media download.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-028",
+      "category": "FRAGMENTED_DESCRIPTION",
+      "source_line": 28,
+      "description": "现象和地点分两条补充",
+      "source_input": {
+        "turns": [
+          "打印不了",
+          "门诊二楼216诊室"
+        ]
+      },
+      "source_expected": {
+        "single_journey": true,
+        "service_candidate": "PRINT",
+        "location_completeness": "PARTIAL_OR_COMPLETE",
+        "description_sufficiency": "SUFFICIENT_FOR_INTAKE"
+      },
+      "must_not": [
+        "CREATE_DUPLICATE_TICKET",
+        "DROP_LOCATION_SUPPLEMENT"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-028",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Same Reporter sends both source turns through ingress.",
+      "required_execution_and_invariants": "Single Journey/Ticket and persisted location supplement with sequence/source refs.",
+      "adjudication_and_no_shortcut": "First-turn Ticket alone is insufficient.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-029",
+      "category": "FRAGMENTED_DESCRIPTION",
+      "source_line": 29,
+      "description": "三到十五秒防抖后只问一次",
+      "source_input": {
+        "turn_intervals_seconds": [
+          0,
+          4,
+          9
+        ],
+        "turns": [
+          "门诊系统卡",
+          "一直转圈",
+          "其他病人也一样"
+        ]
+      },
+      "source_expected": {
+        "incremental_persist_count": 3,
+        "rule_evaluation_count_at_least": 1,
+        "model_call_count": 0,
+        "clarification_count_max": 1
+      },
+      "must_not": [
+        "WAIT_TO_PERSIST_UNTIL_DEBOUNCE",
+        "ASK_THREE_QUESTIONS_AT_ONCE"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-029",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Three actual receives with controlled received epochs 0/4/9 sec; Worker due/debounce scheduling exercised.",
+      "required_execution_and_invariants": "Every message committed before evaluation; at least one decision, model0, clarification<=1.",
+      "adjudication_and_no_shortcut": "Do not fabricate decision count or simulate delay only by passing three turns to classifier; synthetic time is not live observation.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-030",
+      "category": "FRAGMENTED_DESCRIPTION",
+      "source_line": 30,
+      "description": "Direct Session超过90秒仍可继续原问题",
+      "source_input": {
+        "gap_seconds": 120,
+        "same_active_journey": true,
+        "explicit_new_issue": false
+      },
+      "source_expected": {
+        "continue_same_journey": true,
+        "p1_window_used_as_direct_session_boundary": false
+      },
+      "must_not": [
+        "FORCE_NEW_FAULT_BY_90_SECOND_RULE"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-030",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Active Direct Session created through initial fault; 120sec later same-topic follow-up.",
+      "required_execution_and_invariants": "Same Journey/Ticket/Session; validate last-activity and configured30min idle boundary.",
+      "adjudication_and_no_shortcut": "P1 90sec must not create new fault; source gap120sec is independent from Candidate120sec window.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs",
+        "tests/p2-g2-direct-session-boundary.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-031",
+      "category": "FRAGMENTED_DESCRIPTION",
+      "source_line": 31,
+      "description": "用户明确说另一个问题时新建Journey",
+      "source_input": {
+        "active_journey": "打印机故障",
+        "new_turn": "另外门诊系统也登录不了"
+      },
+      "source_expected": {
+        "new_issue_boundary": true,
+        "new_journey_or_session_required": true
+      },
+      "must_not": [
+        "MERGE_DISTINCT_FAULTS_WITHOUT_CONFIRMATION"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-031",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Existing printer fault; new original additive fault text.",
+      "required_execution_and_invariants": "New Intake/Journey and Ticket, old Session ended and new active; delayed projection supplement follows latest committed Intake.",
+      "adjudication_and_no_shortcut": "Do not concatenate distinct issues into old Ticket; include negated/additive-supplement counterexamples.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs",
+        "tests/p2-g2-direct-session-boundary.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-032",
+      "category": "FRAGMENTED_DESCRIPTION",
+      "source_line": 32,
+      "description": "患者敏感信息需要转安全私聊/表单",
+      "source_input": {
+        "channel": "GROUP",
+        "text": "这个患者<PATIENT_REF>系统里看不到"
+      },
+      "source_expected": {
+        "sensitivity": "PATIENT_SENSITIVE",
+        "description_sufficiency": "SENSITIVE_MOVE_TO_PRIVATE",
+        "next_action": "SECURE_CHANNEL"
+      },
+      "must_not": [
+        "ECHO_PATIENT_REFERENCE_IN_GROUP",
+        "SEND_TO_EXTERNAL_MODEL",
+        "LOG_RAW_PATIENT_DATA"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-032",
+        "expected_result_code": "TICKET_ELIGIBLE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Approved group text containing synthetic patient reference canary.",
+      "required_execution_and_invariants": "Minimal acceptance retained; safe private/review route; no canary in group Delivery/logs/provider input.",
+      "adjudication_and_no_shortcut": "Input is not permission to put patient identifier in evidence output.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-033",
+      "category": "FRAGMENTED_DESCRIPTION",
+      "source_line": 33,
+      "description": "后续明确纠正早期系统判断",
+      "source_input": {
+        "turns": [
+          "审方卡了",
+          "不是审方，是最终提交卡住"
+        ]
+      },
+      "source_expected": {
+        "old_fact_status": "DISPROVED",
+        "new_service_candidate": "ORDER_ENTRY_FINAL_SUBMIT",
+        "conflict_audited": true
+      },
+      "must_not": [
+        "IGNORE_NEGATION",
+        "KEEP_BOTH_AS_ACTIVE_WITHOUT_SCOPE"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-033",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Original two correction turns, same Reporter, source order persisted.",
+      "required_execution_and_invariants": "Append correction; prior service fact superseded/rejected with reason; corrected current service; one Ticket.",
+      "adjudication_and_no_shortcut": "DISPROVED is illustrative; map explicitly to accepted runtime SUPERSEDED/REJECTED semantics, not silently equalize statuses.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-034",
+      "category": "FRAGMENTED_DESCRIPTION",
+      "source_line": 34,
+      "description": "记录重启失败且不机械重复建议",
+      "source_input": {
+        "turns": [
+          "工作站打不开",
+          "已经重启两次还是不行"
+        ]
+      },
+      "source_expected": {
+        "attempt_action": "RESTART",
+        "attempt_result": "FAILED",
+        "next_question_not": "RESTART_AGAIN"
+      },
+      "must_not": [
+        "DROP_ATTEMPT_HISTORY",
+        "REPEAT_IDENTICAL_RESTART_ADVICE"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-034",
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": "DESCRIBE_OBSERVED_BEHAVIOR",
+        "incident_candidate": false,
+        "notification_suggestion": "FIXED_ONE_QUESTION",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NORMAL_INGRESS",
+      "actual_interface": "createP2G1HumanOnlyAssembly.handleFrame -> createChannelMessageInbox.accept -> createP2016DirectIntakeProcessor -> coordinator.runOnce -> createP2016OrchestrationWorker.runOnce",
+      "trusted_preconditions": "Original failure then twice-restarted failed attempt.",
+      "required_execution_and_invariants": "Persist attempt provenance and FAILED; next clarification is not redundant restart advice.",
+      "adjudication_and_no_shortcut": "Do not create attempt history directly.",
+      "existing_related_tests": [
+        "tests/p2-015-rule-first-orchestration.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-035",
+      "category": "HUMAN_LIFECYCLE",
+      "source_line": 35,
+      "description": "两个坐席并发接管只允许一个权威Owner",
+      "source_input": {
+        "concurrent_takeovers": 2
+      },
+      "source_expected": {
+        "successful_takeovers": 1,
+        "rejected_takeovers": 1,
+        "single_authoritative_owner": true,
+        "both_attempts_audited": true
+      },
+      "must_not": [
+        "TWO_ACTIVE_OWNERS",
+        "DROP_REJECTED_AUDIT"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-035",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_COMMAND_HTTP",
+      "actual_interface": "P2-005 Conversation Control / P2-004 Communication Service through existing Workbench HTTP or real command port",
+      "trusted_preconditions": "Normal accepted Session; two authorized agents, same expected version, distinct command ids.",
+      "required_execution_and_invariants": "Concurrent takeover commands: exactly one success/current Owner, other conflict plus auditable rejection.",
+      "adjudication_and_no_shortcut": "Sequential calls or checking one Owner row alone do not prove concurrent conflict/audit.",
+      "existing_related_tests": [
+        "tests/p2-005-conversation-control.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-036",
+      "category": "HUMAN_LIFECYCLE",
+      "source_line": 36,
+      "description": "其他坐席作为协作者查看和写内部备注",
+      "source_input": {
+        "authoritative_owner": "<AGENT_A>",
+        "collaborator": "<AGENT_B>"
+      },
+      "source_expected": {
+        "owner_unchanged": true,
+        "collaborator_allowed_by_authorization": true,
+        "collaboration_audited": true
+      },
+      "must_not": [
+        "PROMOTE_COLLABORATOR_SILENTLY",
+        "BYPASS_AUTHORIZATION"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-036",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_COMMAND_HTTP",
+      "actual_interface": "P2-005 Conversation Control / P2-004 Communication Service through existing Workbench HTTP or real command port",
+      "trusted_preconditions": "Owner A, independently authorized collaborator B and unauthorized C.",
+      "required_execution_and_invariants": "B reads/adds internal note; owner unchanged; audit B; C rejected.",
+      "adjudication_and_no_shortcut": "Role enum without authorizer is not proof.",
+      "existing_related_tests": [
+        "tests/p2-005-conversation-control.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-037",
+      "category": "HUMAN_LIFECYCLE",
+      "source_line": 37,
+      "description": "内部备注永不外发",
+      "source_input": {
+        "command": "INTERNAL_NOTE"
+      },
+      "source_expected": {
+        "message_delta": 1,
+        "outbox_delta": 0,
+        "delivery_delta": 0,
+        "sender_calls": 0
+      },
+      "must_not": [
+        "CREATE_EXTERNAL_DELIVERY",
+        "SHOW_TO_REPORTER"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-037",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_COMMAND_HTTP",
+      "actual_interface": "P2-005 Conversation Control / P2-004 Communication Service through existing Workbench HTTP or real command port",
+      "trusted_preconditions": "Real Session/Ticket and authorized internal-note command with canary.",
+      "required_execution_and_invariants": "Message+1 Outbox0 Delivery0; actual Reporter projection excludes note; sender0.",
+      "adjudication_and_no_shortcut": "Do not seed note or test only notification recommendation.",
+      "existing_related_tests": [
+        "tests/p2-005-conversation-control.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-038",
+      "category": "HUMAN_LIFECYCLE",
+      "source_line": 38,
+      "description": "Handoff请求接受释放全留痕",
+      "source_input": {
+        "sequence": [
+          "HANDOFF_REQUESTED",
+          "HANDOFF_ACCEPTED",
+          "HANDOFF_RELEASED"
+        ]
+      },
+      "source_expected": {
+        "audit_event_count": 3,
+        "owner_transitions_reconstructable": true
+      },
+      "must_not": [
+        "DELETE_HANDOFF_HISTORY",
+        "EDIT_OLD_EVENT"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-038",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_COMMAND_HTTP",
+      "actual_interface": "P2-005 Conversation Control / P2-004 Communication Service through existing Workbench HTTP or real command port",
+      "trusted_preconditions": "Valid owned Session and agents; call request/accept/release commands in sequence.",
+      "required_execution_and_invariants": "Three append events and reconstructable before/after assignments; replay idempotent.",
+      "adjudication_and_no_shortcut": "No manual row updates or arbitrary three event literals.",
+      "existing_related_tests": [
+        "tests/p2-005-conversation-control.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-039",
+      "category": "HUMAN_LIFECYCLE",
+      "source_line": 39,
+      "description": "管理员强制转派需明确权限与原因",
+      "source_input": {
+        "actor_role": "ADMIN",
+        "force_transfer": true,
+        "reason_code": "OPERATIONAL_REBALANCE"
+      },
+      "source_expected": {
+        "allowed": true,
+        "control_event_committed": true,
+        "before_after_owner_recorded": true
+      },
+      "must_not": [
+        "ALLOW_NON_ADMIN_FORCE",
+        "OMIT_REASON_CODE"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-039",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_COMMAND_HTTP",
+      "actual_interface": "P2-005 Conversation Control / P2-004 Communication Service through existing Workbench HTTP or real command port",
+      "trusted_preconditions": "Admin actor plus nonadmin control, eligible target and explicit reason.",
+      "required_execution_and_invariants": "Real force-transfer command commits owner before/after and reason; nonadmin/missing reason fails.",
+      "adjudication_and_no_shortcut": "ADMIN string alone is not authorization.",
+      "existing_related_tests": [
+        "tests/p2-005-conversation-control.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-040",
+      "category": "HUMAN_LIFECYCLE",
+      "source_line": 40,
+      "description": "人工回复先提交Communication/Outbox/Delivery",
+      "source_input": {
+        "actor_is_authorized_owner": true,
+        "reply_text": "已收到，正在处理"
+      },
+      "source_expected": {
+        "message_delta": 1,
+        "outbox_delta": 1,
+        "delivery_delta": 1,
+        "sender_called_inside_transaction": false
+      },
+      "must_not": [
+        "CALL_SDK_BEFORE_COMMIT",
+        "SEND_WITHOUT_OUTBOX"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-040",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_COMMAND_HTTP",
+      "actual_interface": "P2-005 Conversation Control / P2-004 Communication Service through existing Workbench HTTP or real command port",
+      "trusted_preconditions": "Owner and approved reply text, real Direct Leg eligibility, Session active.",
+      "required_execution_and_invariants": "Communication command transaction creates Message/Outbox/Delivery; provider untouched until Worker runs.",
+      "adjudication_and_no_shortcut": "Mock success sender is only postcommit transport, never replace durable effects.",
+      "existing_related_tests": [
+        "tests/p2-005-conversation-control.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-041",
+      "category": "HUMAN_LIFECYCLE",
+      "source_line": 41,
+      "description": "发送副作用未知进入Reconciliation",
+      "source_input": {
+        "provider_called": true,
+        "ack_received": false
+      },
+      "source_expected": {
+        "delivery_state": "RECONCILIATION_REQUIRED",
+        "blind_retry": false,
+        "attempt_audited": true
+      },
+      "must_not": [
+        "MARK_SENT_WITHOUT_ACK",
+        "BLIND_RETRY_UNKNOWN_SIDE_EFFECT"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-041",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_COMMAND_HTTP",
+      "actual_interface": "P2-005 Conversation Control / P2-004 Communication Service through existing Workbench HTTP or real command port",
+      "trusted_preconditions": "Persist Delivery normally; sender records attempted call then throws/loses ACK.",
+      "required_execution_and_invariants": "Worker marks RECONCILIATION_REQUIRED and Attempt; subsequent run/restart makes no blind call.",
+      "adjudication_and_no_shortcut": "Do not inject UNKNOWN Delivery state; exercise timeout/kill boundary.",
+      "existing_related_tests": [
+        "tests/p2-005-conversation-control.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-042",
+      "category": "HUMAN_LIFECYCLE",
+      "source_line": 42,
+      "description": "每名坐席Read Cursor独立",
+      "source_input": {
+        "agent_count": 3,
+        "same_session": true,
+        "cursor_positions": [
+          10,
+          7,
+          3
+        ]
+      },
+      "source_expected": {
+        "cursor_count": 3,
+        "unread_counts_independent": true
+      },
+      "must_not": [
+        "USE_SHARED_GLOBAL_READ_CURSOR",
+        "OVERWRITE_OTHER_AGENT_CURSOR"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-042",
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "ticket_expected": false,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PERSISTED_COMMAND_HTTP",
+      "actual_interface": "P2-005 Conversation Control / P2-004 Communication Service through existing Workbench HTTP or real command port",
+      "trusted_preconditions": "Three authorized principals and at least10 real visible timeline sequence items.",
+      "required_execution_and_invariants": "Actual cursor updates10/7/3; independent unread queries, monotonic replay; no global cursor.",
+      "adjudication_and_no_shortcut": "Numbers must reference real per-view visible sequences.",
+      "existing_related_tests": [
+        "tests/p2-005-conversation-control.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-043",
+      "category": "INCIDENT",
+      "source_line": 43,
+      "description": "局部候选达到三人阈值",
+      "source_input": {
+        "window_seconds": 300,
+        "distinct_reporters": 3,
+        "compatible_service_symptom": true,
+        "departments": 1
+      },
+      "source_expected": {
+        "candidate_state": "CANDIDATE",
+        "scope_candidate": "LOCAL",
+        "human_confirmation_required": true
+      },
+      "must_not": [
+        "CREATE_INCIDENT",
+        "AUTO_LINK_TICKETS",
+        "PUBLIC_BROADCAST",
+        "AUTO_INCIDENT_CREATION",
+        "AUTO_TICKET_LINKING"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-043",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_CANDIDATE_PLUS_NORMAL_INGRESS",
+      "actual_interface": "generateIncidentCandidate; P2-015 incident correlation reader -> P2-012 candidate source adapter",
+      "trusted_preconditions": "Three distinct persisted Reporter decisions, compatible service/symptom, one trusted dept, within120sec.",
+      "required_execution_and_invariants": "Candidate only, local review; distinct Reporter count3; no Incident/link/public notice.",
+      "adjudication_and_no_shortcut": "Source window_seconds300 is superseded for Gate by frozen120; do not widen implementation or seed candidate.",
+      "existing_related_tests": [
+        "tests/p2-007/p2-007-domain-core.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-044",
+      "category": "INCIDENT",
+      "source_line": 44,
+      "description": "跨科室候选达到五人两科室",
+      "source_input": {
+        "window_seconds": 300,
+        "distinct_reporters": 5,
+        "departments": 2,
+        "compatible_service_symptom": true
+      },
+      "source_expected": {
+        "candidate_state": "CANDIDATE",
+        "scope_candidate": "CROSS_DEPARTMENT",
+        "recommended_review_role": "DISPATCHER"
+      },
+      "must_not": [
+        "AUTO_CONFIRM",
+        "AUTO_CLOSE_PERSONAL_TICKETS"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-044",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_CANDIDATE_PLUS_NORMAL_INGRESS",
+      "actual_interface": "generateIncidentCandidate; P2-015 incident correlation reader -> P2-012 candidate source adapter",
+      "trusted_preconditions": "Five independent Reporter decisions/two trusted departments, compatible signals within120sec.",
+      "required_execution_and_invariants": "Cross-department review recommendation under frozen policy; no auto-confirm or closure.",
+      "adjudication_and_no_shortcut": "Department refs require existing trusted snapshots; absent data stays unknown, never invent memberships.",
+      "existing_related_tests": [
+        "tests/p2-007/p2-007-domain-core.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-045",
+      "category": "INCIDENT",
+      "source_line": 45,
+      "description": "全院候选达到八人三科室",
+      "source_input": {
+        "window_seconds": 300,
+        "distinct_reporters": 8,
+        "departments": 3,
+        "buildings": 1
+      },
+      "source_expected": {
+        "candidate_state": "CANDIDATE",
+        "scope_candidate": "HOSPITAL_WIDE",
+        "recommended_review_role": "ADMIN"
+      },
+      "must_not": [
+        "AUTO_CONFIRM_HOSPITAL_WIDE",
+        "NOTIFY_EXTERNAL_BEFORE_CONFIRMATION"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-045",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_CANDIDATE_PLUS_NORMAL_INGRESS",
+      "actual_interface": "generateIncidentCandidate; P2-015 incident correlation reader -> P2-012 candidate source adapter",
+      "trusted_preconditions": "Eight distinct Reporters/three trusted departments and stated building data, within120sec.",
+      "required_execution_and_invariants": "Evaluate actual frozen location/department thresholds; broad candidate remains review-only.",
+      "adjudication_and_no_shortcut": "Source one-building condition may not meet runtime distinct-location threshold; record explicit contract adjudication, do not change threshold to fit source.",
+      "existing_related_tests": [
+        "tests/p2-007/p2-007-domain-core.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-046",
+      "category": "INCIDENT",
+      "source_line": 46,
+      "description": "权威监控可触发候选但仍人工确认",
+      "source_input": {
+        "monitoring_confirmation": true,
+        "distinct_reporters": 0,
+        "core_service": true
+      },
+      "source_expected": {
+        "candidate_state": "CANDIDATE",
+        "human_confirmation_required": true,
+        "reporter_threshold_waived": true
+      },
+      "must_not": [
+        "AUTO_CREATE_FROM_MONITORING",
+        "AUTO_BROADCAST"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-046",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_CANDIDATE_PLUS_NORMAL_INGRESS",
+      "actual_interface": "generateIncidentCandidate; P2-015 incident correlation reader -> P2-012 candidate source adapter",
+      "trusted_preconditions": "Pure generateIncidentCandidate input with separately attested authoritative-monitoring flag and evidence refs.",
+      "required_execution_and_invariants": "Recommendation only; zero business writes/Provider calls; no new monitor ingestion.",
+      "adjudication_and_no_shortcut": "PURE_FUTURE_SOURCE: monitoring truth cannot be forged in normal gate ingress; no P3 monitoring connector.",
+      "existing_related_tests": [
+        "tests/p2-007/p2-007-domain-core.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-047",
+      "category": "INCIDENT",
+      "source_line": 47,
+      "description": "未达到阈值不产生候选",
+      "source_input": {
+        "window_seconds": 300,
+        "distinct_reporters": 2,
+        "monitoring_confirmation": false
+      },
+      "source_expected": {
+        "candidate_state": "NONE"
+      },
+      "must_not": [
+        "INFLATE_REPORTER_COUNT",
+        "CREATE_INCIDENT"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-047",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_CANDIDATE_PLUS_NORMAL_INGRESS",
+      "actual_interface": "generateIncidentCandidate; P2-015 incident correlation reader -> P2-012 candidate source adapter",
+      "trusted_preconditions": "Two actual Reporter decisions within120sec, no monitoring.",
+      "required_execution_and_invariants": "No threshold Candidate/Incident; personal Tickets still accepted.",
+      "adjudication_and_no_shortcut": "Do not pass distinct_reporters:2 directly to declare database coverage.",
+      "existing_related_tests": [
+        "tests/p2-007/p2-007-domain-core.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-048",
+      "category": "INCIDENT",
+      "source_line": 48,
+      "description": "同一人群聊和单聊重复报告只计一次",
+      "source_input": {
+        "messages": [
+          {
+            "person": "<PERSON_A>",
+            "channel": "GROUP"
+          },
+          {
+            "person": "<PERSON_A>",
+            "channel": "DIRECT"
+          }
+        ]
+      },
+      "source_expected": {
+        "distinct_reporter_count": 1,
+        "message_count": 2
+      },
+      "must_not": [
+        "COUNT_CHANNEL_LEGS_AS_REPORTERS",
+        "COUNT_MESSAGES_AS_REPORTERS"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-048",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_CANDIDATE_PLUS_NORMAL_INGRESS",
+      "actual_interface": "generateIncidentCandidate; P2-015 incident correlation reader -> P2-012 candidate source adapter",
+      "trusted_preconditions": "Same authenticated Reporter sends group/direct reports with actual association or same hashed identity.",
+      "required_execution_and_invariants": "Two source messages, distinct Reporter1 across Legs; no candidate count inflation.",
+      "adjudication_and_no_shortcut": "Do not count Leg ids/message count as identity.",
+      "existing_related_tests": [
+        "tests/p2-007/p2-007-domain-core.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-049",
+      "category": "INCIDENT",
+      "source_line": 49,
+      "description": "同一系统但症状不兼容不自动聚类",
+      "source_input": {
+        "reports": [
+          {
+            "service": "OPD",
+            "symptom": "LOGIN_FAILED"
+          },
+          {
+            "service": "OPD",
+            "symptom": "PRINT_FORMAT_ERROR"
+          }
+        ]
+      },
+      "source_expected": {
+        "candidate_state": "NONE_OR_SEPARATE_CANDIDATES",
+        "automatic_merge": false
+      },
+      "must_not": [
+        "MERGE_BY_SERVICE_NAME_ONLY"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-049",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_CANDIDATE_PLUS_NORMAL_INGRESS",
+      "actual_interface": "generateIncidentCandidate; P2-015 incident correlation reader -> P2-012 candidate source adapter",
+      "trusted_preconditions": "Actual reports same service but distinct incompatible symptom families.",
+      "required_execution_and_invariants": "No merge merely by service; separate compatibility partitions; all personal Tickets retained.",
+      "adjudication_and_no_shortcut": "Pure candidate helper does not independently filter all report families: real reader must partition; no prefiltered success candidate shortcut.",
+      "existing_related_tests": [
+        "tests/p2-007/p2-007-domain-core.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-050",
+      "category": "INCIDENT",
+      "source_line": 50,
+      "description": "一名上报人恢复不关闭候选",
+      "source_input": {
+        "candidate_reporters": 5,
+        "recovered_reporters": 1
+      },
+      "source_expected": {
+        "candidate_state_remains": "CANDIDATE_OR_UNDER_REVIEW",
+        "recovered_reporter_session": "RECOVERED"
+      },
+      "must_not": [
+        "MARK_GLOBAL_RECOVERED",
+        "REMOVE_OTHER_REPORTERS"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-050",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_CANDIDATE_PLUS_NORMAL_INGRESS",
+      "actual_interface": "generateIncidentCandidate; P2-015 incident correlation reader -> P2-012 candidate source adapter",
+      "trusted_preconditions": "Create candidate from five actual Reporters then one original recovery message.",
+      "required_execution_and_invariants": "That Reporter evidence updates; other reports and Candidate remain; no global recovery/Incident close.",
+      "adjudication_and_no_shortcut": "Existing personal Session state mapping must be adjudicated; RECOVERED is not arbitrary invented DB status.",
+      "existing_related_tests": [
+        "tests/p2-007/p2-007-domain-core.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-051",
+      "category": "INCIDENT",
+      "source_line": 51,
+      "description": "候选阶段只产生内部Workbench告警",
+      "source_input": {
+        "candidate_state": "CANDIDATE"
+      },
+      "source_expected": {
+        "internal_alert_count": 1,
+        "group_notice_count": 0,
+        "direct_subscription_notice_count": 0
+      },
+      "must_not": [
+        "PUBLIC_BROADCAST",
+        "CREATE_REPORTER_SUBSCRIPTION"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-051",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_CANDIDATE_PLUS_NORMAL_INGRESS",
+      "actual_interface": "generateIncidentCandidate; P2-015 incident correlation reader -> P2-012 candidate source adapter",
+      "trusted_preconditions": "Generate persisted candidate by actual source decisions.",
+      "required_execution_and_invariants": "One idempotent internal review/Workbench event; zero public/private subscription sends and subscription creation.",
+      "adjudication_and_no_shortcut": "Candidate status literal alone does not prove internal projection.",
+      "existing_related_tests": [
+        "tests/p2-007/p2-007-domain-core.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-052",
+      "category": "INCIDENT",
+      "source_line": 52,
+      "description": "人工确认行为属于P2-012",
+      "source_input": {
+        "candidate_state": "UNDER_REVIEW",
+        "actor_role": "DISPATCHER",
+        "requested_action": "CONFIRM_LOCAL"
+      },
+      "source_expected": {
+        "p2_007_action": "RECOMMEND_ONLY",
+        "implementation_owner": "P2-012"
+      },
+      "must_not": [
+        "P2_007_CREATE_INCIDENT",
+        "P2_007_LINK_TICKET",
+        "P2_007_MUTATE_STATE"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-052",
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "ticket_expected": true,
+        "manual_review_expected": false,
+        "clarification_code": null,
+        "incident_candidate": true,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "PURE_CANDIDATE_PLUS_NORMAL_INGRESS",
+      "actual_interface": "generateIncidentCandidate; P2-015 incident correlation reader -> P2-012 candidate source adapter",
+      "trusted_preconditions": "Actual candidate from ingress; authorized Dispatcher calls P2-012 confirm command.",
+      "required_execution_and_invariants": "Pure P2-007 stays recommendation-only; actual human P2-012 command owns Incident transition.",
+      "adjudication_and_no_shortcut": "Distinguish no P2-007 side effect from authorized P2-012 creation; do not prohibit all Incident creation in assembly.",
+      "existing_related_tests": [
+        "tests/p2-007/p2-007-domain-core.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-053",
+      "category": "NOTIFICATION",
+      "source_line": 53,
+      "description": "群内安全回执首选Callback Reply",
+      "source_input": {
+        "origin": "GROUP_MENTION",
+        "journey_committed": true,
+        "callback_available": true
+      },
+      "source_expected": {
+        "purpose": "GROUP_RECEIPT",
+        "transport": "CALLBACK_REPLY",
+        "delivery_semantics": "BEST_EFFORT"
+      },
+      "must_not": [
+        "CLAIM_TICKET_BEFORE_COMMIT",
+        "INCLUDE_PATIENT_DATA",
+        "INCLUDE_INTERNAL_IP"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-053",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Committed group-origin Journey and bounded available callback request context.",
+      "required_execution_and_invariants": "Pure recommendation may prefer callback; actual supported transport must use Communication boundary and safe content.",
+      "adjudication_and_no_shortcut": "Historical callback preference cannot be claimed implemented if P2 sender only supports proactive send; explicit adjudication required.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-054",
+      "category": "NOTIFICATION",
+      "source_line": 54,
+      "description": "异步群回执使用主动群推送但强@未验证",
+      "source_input": {
+        "callback_window_closed": true,
+        "group_chat_ref_available": true
+      },
+      "source_expected": {
+        "purpose": "GROUP_RECEIPT",
+        "transport": "AIBOT_SEND_MSG",
+        "strong_user_mention_capability": "UNVERIFIED"
+      },
+      "must_not": [
+        "CLAIM_STRONG_MENTION_VERIFIED",
+        "MAKE_GROUP_ACK_SOLE_RELIABLE_PATH"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-054",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Committed group source; callback closed; approved group target.",
+      "required_execution_and_invariants": "Actual Outbox/Delivery active group send; no claim strong mention verified; reliable direct path remains separate.",
+      "adjudication_and_no_shortcut": "Do not use mocked receipt to claim native strong mention or real client visibility.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-055",
+      "category": "NOTIFICATION",
+      "source_line": 55,
+      "description": "主动单聊是可靠提醒路径",
+      "source_input": {
+        "origin_reporter_resolved": true,
+        "journey_committed": true
+      },
+      "source_expected": {
+        "purpose": "DIRECT_GUIDANCE",
+        "channel": "WECOM_DIRECT",
+        "target": "ORIGIN_REPORTER",
+        "transport": "AIBOT_SEND_MSG"
+      },
+      "must_not": [
+        "SEND_TO_ARBITRARY_GROUP_MEMBER",
+        "LOSE_GROUP_ORIGIN"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-055",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Group origin persisted; original Reporter identity resolved and qualifying Direct Leg established before outbound.",
+      "required_execution_and_invariants": "Guidance goes only to original Reporter through Outbox/Delivery; origin still group.",
+      "adjudication_and_no_shortcut": "Origin Reporter alone does not bypass Direct-Leg outbound authorization.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-056",
+      "category": "NOTIFICATION",
+      "source_line": 56,
+      "description": "Ticket提交后才生成创建卡片",
+      "source_input": {
+        "ticket_transaction": "COMMITTED"
+      },
+      "source_expected": {
+        "purpose": "TICKET_CREATED_CARD",
+        "card_type": "text_notice",
+        "eligible": true
+      },
+      "must_not": [
+        "SEND_BEFORE_TICKET_COMMIT",
+        "FABRICATE_TICKET_NUMBER"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-056",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Ticket created through command then transaction committed; valid Reporter grant/Direct Leg.",
+      "required_execution_and_invariants": "Ticket notification projector queues text_notice template_card using real Ticket number/public ref.",
+      "adjudication_and_no_shortcut": "Input ticket_transaction=COMMITTED is not database commit evidence.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-057",
+      "category": "NOTIFICATION",
+      "source_line": 57,
+      "description": "Ticket回滚时不发送卡片",
+      "source_input": {
+        "ticket_transaction": "ROLLED_BACK"
+      },
+      "source_expected": {
+        "purpose": "TICKET_CREATED_CARD",
+        "eligible": false,
+        "outbox_delta": 0
+      },
+      "must_not": [
+        "SEND_CARD",
+        "CLAIM_TICKET_CREATED"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-057",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Inject rollback during Ticket command/notification transaction.",
+      "required_execution_and_invariants": "No committed Ticket-created card Outbox/Delivery; sender0.",
+      "adjudication_and_no_shortcut": "Do not insert ROLLED_BACK label; cause real owned DB rollback.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-058",
+      "category": "NOTIFICATION",
+      "source_line": 58,
+      "description": "四位尾号只用于展示",
+      "source_input": {
+        "display_suffix": "4821"
+      },
+      "source_expected": {
+        "length": 4,
+        "is_database_key": false,
+        "is_unique_identifier": false,
+        "is_authorization": false
+      },
+      "must_not": [
+        "AUTHORIZE_BY_SUFFIX",
+        "BUILD_URL_WITH_SUFFIX_ONLY",
+        "FOUR_DIGIT_SUFFIX_AS_AUTH"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-058",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Real Ticket/public ref and displayed four-character suffix.",
+      "required_execution_and_invariants": "Display formatting only; suffix-only access and identifiers rejected; no suffix DB authority.",
+      "adjudication_and_no_shortcut": "Four-digit example is design-era display proposal, not change to frozen actual Ticket numbering.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-059",
+      "category": "NOTIFICATION",
+      "source_line": 59,
+      "description": "Timeline使用opaque ref和身份认证",
+      "source_input": {
+        "timeline_action_ref": "<OPAQUE_TIMELINE_REF>",
+        "reporter_authenticated": true,
+        "reporter_authorized": true
+      },
+      "source_expected": {
+        "access": "ALLOWED",
+        "reporter_safe_view": true
+      },
+      "must_not": [
+        "SHOW_INTERNAL_NOTE",
+        "SHOW_OTHER_REPORTER",
+        "SHOW_PROVIDER_RAW_ERROR"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-059",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Real opaque public ref/HMAC grant redeemed to authenticated authorized Reporter session.",
+      "required_execution_and_invariants": "GET Reporter Timeline passes and excludes notes/other Reporter/raw Provider errors.",
+      "adjudication_and_no_shortcut": "Do not inject reporter_authenticated=true; use real auth/grant flow.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-060",
+      "category": "NOTIFICATION",
+      "source_line": 60,
+      "description": "未认证用户不能通过卡片查看Timeline",
+      "source_input": {
+        "timeline_action_ref": "<OPAQUE_TIMELINE_REF>",
+        "reporter_authenticated": false
+      },
+      "source_expected": {
+        "access": "DENIED"
+      },
+      "must_not": [
+        "ALLOW_BY_KNOWING_SUFFIX",
+        "LEAK_TICKET_DETAIL"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-060",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Same valid opaque ref without authenticated grant/session; suffix-only guesses.",
+      "required_execution_and_invariants": "Actual HTTP denied with no Ticket detail or canary leaks.",
+      "adjudication_and_no_shortcut": "Deny enum is not access-control evidence.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-061",
+      "category": "NOTIFICATION",
+      "source_line": 61,
+      "description": "当前Sender尚未实现template_card",
+      "source_input": {
+        "current_sender": "P2_G1_TEXT_MARKDOWN_ONLY",
+        "requested_type": "template_card"
+      },
+      "source_expected": {
+        "capability_state": "IMPLEMENTATION_PENDING",
+        "requires_separate_authorization": true,
+        "live_test_required": true
+      },
+      "must_not": [
+        "CLAIM_TEMPLATE_CARD_PRODUCTION_READY",
+        "BYPASS_COMMUNICATION_PIPELINE"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-061",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Inspect historical P2-G1 sender limitation separately from current P2-016 enabled/disabled sender.",
+      "required_execution_and_invariants": "Current template-card implementation checked through approved flag/outbox/mocked numeric ACK; real-live capability remains independently gated.",
+      "adjudication_and_no_shortcut": "HISTORICAL_STATUS_CONFLICT: IMPLEMENTATION_PENDING describes old sender; preserve source and explicitly adjudicate current implemented-but-live-not-approved status.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-062",
+      "category": "NOTIFICATION",
+      "source_line": 62,
+      "description": "里程碑状态发送新卡片且按版本幂等",
+      "source_input": {
+        "ticket_version": 7,
+        "milestone": "IN_PROGRESS",
+        "duplicate_events": 3
+      },
+      "source_expected": {
+        "idempotent_card_count": 1,
+        "idempotency_key_contains_ticket_version": true
+      },
+      "must_not": [
+        "SEND_THREE_CARDS",
+        "DEPEND_ON_ARBITRARY_HISTORICAL_CARD_UPDATE"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-062",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Create actual Ticket lifecycle version7 using commands; deliver same milestone event3 times.",
+      "required_execution_and_invariants": "Single version-keyed Message/Outbox/Delivery; no arbitrary historical card edits.",
+      "adjudication_and_no_shortcut": "Do not seed version7 or compare generated key strings only.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-063",
+      "category": "NOTIFICATION",
+      "source_line": 63,
+      "description": "Incident确认后才允许群播报与订阅私信",
+      "source_input": {
+        "incident_state": "CONFIRMED_LOCAL",
+        "incident_version": 2,
+        "subscriptions": 4
+      },
+      "source_expected": {
+        "group_public_notice_eligible": true,
+        "private_notice_eligible_count": 4,
+        "idempotency_by_version": true
+      },
+      "must_not": [
+        "NOTIFY_UNSUBSCRIBED_USER",
+        "INCLUDE_PERSONAL_DETAILS_IN_GROUP"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-063",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "P2-012 human-confirmed Incident version2 with four authorized real subscriptions/Direct Legs from Reporter sources.",
+      "required_execution_and_invariants": "Group safe publication and four eligible private intents, version idempotent; non-subscribers denied.",
+      "adjudication_and_no_shortcut": "No preinserted CONFIRMED row; separate command projection from actual client send evidence.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    },
+    {
+      "case_id": "D12-064",
+      "category": "NOTIFICATION",
+      "source_line": 64,
+      "description": "所有通知通过Communication Outbox且内部备注仍零外发",
+      "source_input": {
+        "commands": [
+          "GROUP_RECEIPT",
+          "DIRECT_GUIDANCE",
+          "TICKET_CREATED_CARD",
+          "INTERNAL_NOTE"
+        ]
+      },
+      "source_expected": {
+        "external_commands_use_outbox": true,
+        "internal_note_message_delta": 1,
+        "internal_note_outbox_delta": 0,
+        "internal_note_delivery_delta": 0
+      },
+      "must_not": [
+        "DIRECT_SDK_CALL_FROM_P2_007",
+        "EXTERNALIZE_INTERNAL_NOTE",
+        "SEND_WITHOUT_DELIVERY_AUDIT",
+        "P2_007_SDK_CALL"
+      ],
+      "original_route_reference": {
+        "source_fixture": "multichannel_decision_cases.v1.2",
+        "source_case_id": "D12-064",
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "ticket_expected": false,
+        "manual_review_expected": true,
+        "clarification_code": null,
+        "incident_candidate": false,
+        "notification_suggestion": "NONE_OR_HUMAN_POLICY",
+        "prohibited_effects": [
+          "CALL_LLM_PROVIDER",
+          "CALL_WECOM_SDK",
+          "CREATE_INCIDENT",
+          "SEND_TEMPLATE_CARD"
+        ]
+      },
+      "surface": "NOTIFICATION_MECHANISM",
+      "actual_interface": "generateNotificationRecommendation -> existing Communication/Outbox/Delivery Worker or Reporter HTTP",
+      "trusted_preconditions": "Committed ingress/Ticket facts and authorized human note/reply actions.",
+      "required_execution_and_invariants": "Every external intent has Message/Outbox/Delivery; internal note only Message; no P2-007 SDK call.",
+      "adjudication_and_no_shortcut": "No synthetic ready-made recommendation list substituted for actual command effects.",
+      "existing_related_tests": [
+        "tests/p2-016-notification-delivery.integration.test.mjs"
+      ],
+      "validation_status": "MAPPING_ONLY_NOT_EXECUTED"
+    }
+  ]
+}

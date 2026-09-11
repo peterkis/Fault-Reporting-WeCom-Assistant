@@ -59,7 +59,7 @@ for(const [width,height] of [[1440,900],[1366,768],[390,844]])test('P2-012 datab
       await browser.waitFor("document.querySelector('#detail').textContent.includes('已暂停')");
       const paused=(await pool.query("SELECT id,direct_channel_leg_id FROM incident.reporter_subscription WHERE status='PAUSED'")).rows[0];
       await pool.query(`WITH clock AS(SELECT platform.physical_epoch_ms()-1000 AS expiry)
-        UPDATE intake.contact_journey SET reported_at=platform.local_from_epoch_ms(clock.expiry)-interval '1 day',
+        UPDATE intake.contact_journey SET reported_at=LEAST(reported_at,platform.local_from_epoch_ms(clock.expiry)-interval '1 day'),
           retention_until_epoch_ms=clock.expiry,retention_until=platform.local_from_epoch_ms(clock.expiry)
         FROM clock WHERE id=(SELECT journey_id FROM intake.channel_leg WHERE id=$1)`,[paused.direct_channel_leg_id]);
       const reporter=(await pool.query('SELECT reporter_wecom_userid FROM intake.service_intake WHERE id=$1',[f.reports[1].intakeId])).rows[0].reporter_wecom_userid;

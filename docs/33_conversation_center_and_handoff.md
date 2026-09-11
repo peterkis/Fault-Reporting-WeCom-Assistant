@@ -70,6 +70,8 @@ P2-001 冻结以下确定性边界原因：`EXPLICIT_USER_NEW_TOPIC`、
 必须作为正整数配置注入。每个 `(thread_id, participant_key)` 同时最多一个非
 `ENDED` Session；旧 Session 原子结束后才可创建新 Session，`ENDED` 不得复活。
 
+P2-G2准备期的Direct续接修复按负责人单独授权实施：P2入站在既有Inbox事务内优先选择同Provider/Bot/Reporter的唯一活动Direct Session，校验Intake/Journey留存和已有Leg身份绑定。已存在但结束、过期、超出空闲上限或绑定不唯一的Session不得回落到P1碎片窗口而复活。P2装配显式注入30分钟空闲上限；P1独立装配仍保持90秒聚合。用户明确“另外…也…故障现象”作为独立新故障分界；“另外补充…”及否定故障不因此切换。原消息和Intake追加/新建事件保留边界事实。
+
 Session 创建使用独立 `creation_idempotency_key`。同键同输入返回原 Session；同键
 不同输入返回稳定幂等冲突。不能只依赖“当前活动 Session”唯一约束，否则旧 Session
 结束后的消息重放会错误创建新 Session。

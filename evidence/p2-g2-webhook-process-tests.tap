@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK
+ok 1 - P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK
+  ---
+  duration_ms: 10422.6961
+  type: 'test'
+  ...
+# {"group_closure_surface":"REAL_THREE_PROCESS_HTTP_OUTBOX_MOCK_WEBHOOK","provider_receipt":{"binding":"83a127b8518cd6ac68b2dd7e4cc1ac4f5403ff059033b517ce078e5d51fc9895","previous":null,"record":{"event":"p2_016_group_closure_webhook_result","operation":"send_msg","transport":"WECOM_GROUP_WEBHOOK","delivery_ref_hash":"766d11c53c5629bd7a87506b365ee733fc38bef3f05bc403068003125758db25","outbox_id":"01a0844a-bb55-7c9a-8c4f-017d45b55e85","attempt_no":1,"provider_errcode":0,"internal_error_code":null,"outcome":"ACKED","retry_class":"NONE"},"hash":"97a324e4bfc656a2389adaf5bb05b4eefc4e953f71f6a4d2a86a442e0ba9607e"},"receipt_sha256":"e040a7ede355ff9490ae4d13b49dd35ebeeb127d354bb1d4fa30e8a5b18451ed"}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19995.5443

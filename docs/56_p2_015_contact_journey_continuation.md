@@ -18,4 +18,4 @@ Direct Leg 只有在真实 Direct Context 已持久化后才能绑定。continua
 
 ## Reporter Directory
 
-`ReporterDirectoryPort` 本轮只允许 Mock/Deferred/NotFound/Faulting Adapter，不进行真实企业微信目录网络调用。canonical reporter key 由注入 HMAC key 产生，不是 raw userid；失败降级为 `DEFERRED`，不阻止 Intake 或明确故障 Ticket。受控 Snapshot 可含多部门、source/version/fetched_at/valid_at，reporter department 与 occurrence department 分离；public view 和错误码不返回姓名、部门原文、userid 或 chatid。
+`ReporterDirectoryPort` 的 P2-015 完成态仅验证 Mock/Deferred/NotFound/Faulting Adapter。P2-G2 按负责人后续授权增加默认关闭的企业成员资料适配器准备，合同见 `evidence/p2-g2-member-contact-contract.md`；本地验证不进行真实企业微信目录网络调用。canonical reporter key 由注入 HMAC key 产生，不是 raw userid；失败降级为 `DEFERRED`，不阻止 Intake 或明确故障 Ticket。受控 Snapshot 可含多部门、source/version/fetched_at/valid_at，reporter department 与 occurrence department 分离；普通 public view 和错误码不返回姓名、部门原文、userid 或 chatid。联系资料仅通过现有 Ticket 权限控制的内部专用端点读取。

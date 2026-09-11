@@ -51,3 +51,7 @@ Workbench renders the server LocalDateTime text directly as `YYYY-MM-DD HH:mm`, 
 ## Closure and stop line
 
 Automated acceptance advanced ARCH-005 only to `READY_FOR_TARGETED_LIVE_REVALIDATION`. The separately authorized targeted live revalidation passed on 2026-09-03; closure Evidence is `evidence/arch-005-targeted-live-revalidation.md`. P2-007 remains `TODO / REQUIRES_SEPARATE_AUTHORIZATION`; DeepSeek, OCR, Incident, P2-G2/P3, production/clinical enablement, and all Feature Flags remain unauthorized.
+
+## 当前授权状态（2026-09-08）
+
+上文阶段授权描述保留其历史时点；当前 P2-007、P2-015、P2-016、P2-012 已完成。当前仅 P2-G2 / ASSEMBLY 获独立准备授权，执行到 READY_FOR_LIVE_E2E 后停止；真实发送、云主机变更、现场写库、正式观察及 Gate 批准均须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。依据 `evidence/p2-g2-start-authorization.md`；未改变本文件的领域契约或历史完成 Evidence。

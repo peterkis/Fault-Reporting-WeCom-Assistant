@@ -1,6 +1,6 @@
 # Phase 2 任务明细：Conversation Center 与 AI 协作
 
-> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 已完成。P2-012 已于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。当前无活动任务，下一候选 P2-G2 未授权；P2-008 至 P2-014 中除已完成 P2-012 外的任务和 P2-G2 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED` 和各任务 `DONE` 均不是 Phase 2 `GO`。
+> Phase 2 保持 `IN_PROGRESS`，P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 已完成。P2-012 已于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。P2-G2 / ASSEMBLY 已达 READY_FOR_LIVE_E2E，当前自动化954/954及两轴独立审查通过；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 至 P2-014 中除已完成 P2-012 外的任务和 P2-G3 至 P2-G5 均须另行授权。所有 Feature Flag 默认关闭；P2-G1 `PASSED` 和各任务 `DONE` 均不是 Phase 2 `GO`。
 
 ## P2-001 Conversation Thread、Session 与控制模式契约
 
@@ -296,11 +296,20 @@ SSE 初始上限 32；每客户端缓冲有硬上限。
 - Task：`tasks/P2-G1_human_only_conversation_center_assembly.md`
 - 授权 Evidence：`evidence/p2-g1-start-authorization.md`
 - 完成 Evidence：`evidence/p2-g1-project-owner-approval.md`
-- Lane：ASSEMBLY（该 Gate 已关闭；当前无活动任务或 Lane）
+- Lane：ASSEMBLY（P2-G1 已关闭；当前活动 Gate 见本文件顶部）
 - 依赖：P1、P2-001 至 P2-006
 - 数据库变更：无
 
 只组装 P1 与已冻结的 P2-001 至 P2-006 Human-only Contract。真实企业微信现场 Evidence、Replay Gap、60 分钟 controlled observation 和项目负责人批准已完成。所有提交的 Feature Flag 默认关闭；P2-007、P2-G2 及以后范围仍须独立授权。
+
+## P2-G2 规则优先、人工兜底、AI-off 服务闭环 Gate
+
+- 状态：IN_PROGRESS（2026-09-08 独立准备授权）
+- Lane：ASSEMBLY
+- Task：`tasks/P2-G2_rule_first_service_loop_gate.md`
+- 授权 Evidence：`evidence/p2-g2-start-authorization.md`
+- 数据库变更：无；001–032 冻结。
+- 本轮完成授权与就绪候选两个本地提交，停在 READY_FOR_LIVE_E2E；现场、正式观察及批准另行授权。
 
 ## P2-007 服务目录、确定性规则与对话字段模型
 

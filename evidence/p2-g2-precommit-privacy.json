@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "gate": "P2-G2",
+  "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+  "inspected_changed_files": 266,
+  "sensitive_value_matches": 0,
+  "forbidden_paths": [],
+  "historical_evidence_modified": false,
+  "migrations_dependency_lock_original_corpora_unchanged": true,
+  "live_owner_approval_or_gate_pass_file_created": false,
+  "scope": "Actual configured credential/URL/password/address values scanned in authorized changed files; secrets never printed or stored in this report."
+}

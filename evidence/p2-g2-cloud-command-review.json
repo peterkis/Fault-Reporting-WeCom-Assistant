@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "kind": "P2_G2_CLOUD_COMMAND_DOCUMENT_REVIEW",
+  "reviewer": "/root/recognition_standards_review",
+  "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+  "document": {
+    "path": "docs/runbooks/p2-g2-approved-live-container.md",
+    "sha256": "6daa7d8e8bb2afc7111a1fc584ef3666e946ec0d11bd065826078c7591629813"
+  },
+  "parser_evidence": {
+    "ref": "tmp/p2-g2-preparation-20260908-01a07e70/cloud-ready-runbook-publish-result.json",
+    "sha256": "e3b61eee733620bcd53dc6eb1aeb1fbed8769aa7c32e3b4ac46eaa8ddf9ae1dc",
+    "reported_execution": "Cloud bash -n, syntax only",
+    "bash_blocks": 4,
+    "exit_codes": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "independently_rerun_by_reviewer": false
+  },
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [
+    {
+      "id": "SUDO_ENV_FUSES",
+      "resolved": true,
+      "resolution": "All five Docker -e options now carry explicit=true values; sudo environment preservation is no longer required."
+    },
+    {
+      "id": "CONTAINER_DATA_UID",
+      "resolved": true,
+      "resolution": "Operator UID/GID are read, root is rejected, release owner must match, and Docker uses the same UID:GID that creates private run data."
+    }
+  ],
+  "preparation_only": true,
+  "live_validation": "NOT_RUN",
+  "live_commands_executed": false,
+  "gate_approval": false,
+  "scope": [
+    "Final source review of Bash container command template and CLI arguments",
+    "Read-only release plus per-run tmp/evidence mounts; host network/PID for native PostgreSQL and proxy metrics",
+    "Owner approval fuses, controlled stop and read-only reconciliation procedures",
+    "Document hash matches cloud-published entry; recorded bash -n results verified"
+  ],
+  "limits": [
+    "No container/live command executed by this reviewer.",
+    "Syntax validation is not live transport, runtime permissions, physical-resource or client-observation acceptance.",
+    "Business STANDARDS review JSON is unchanged."
+  ]
+}

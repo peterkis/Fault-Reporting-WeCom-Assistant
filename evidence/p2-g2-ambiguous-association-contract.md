@@ -1,0 +1,7 @@
+# P2-G2 ambiguous association does not suppress admission
+
+Continuing gap-repair authorization applies. Independent Spec review found that the previous `p2016AssociationDecision` bypassed recognition whenever multiple guided Journeys were possible. The prior integration assertion expected no Ticket even for the new Direct text “处方提交不了”. This contradicts docs51 and docs57: association uncertainty must not withhold minimal acceptance of an explicit fault. Docs56 requires that the association remain undecided; it does not require dropping the current report.
+
+The bounded correction must evaluate only the current Direct Intake's normal message window. Association uncertainty still creates an existing Manual Review item with reason `MULTIPLE_GUIDED_JOURNEYS`. If current recognition establishes an explicit fault, the same transaction creates its own minimal Ticket and real provenance. If no fault is established, it creates no Ticket. Existing candidate Journeys, Threads, Tickets and continuation bindings stay unchanged. No source facts may be borrowed merely to make the new text actionable. Replayed/concurrent callbacks must not duplicate the current Ticket or Review. Review failure rolls back the route actions while the previously committed Inbox remains.
+
+Identity/clinical review facts must be preserved alongside association uncertainty. This change does not implement user-selection merging, Ticket deletion, implicit rebinding or a second Ticket authority.

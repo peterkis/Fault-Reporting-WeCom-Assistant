@@ -16,6 +16,12 @@ resolve 使用 `expected_row_version + client_command_id + command_hash`。同�
 
 固定澄清一次只问一个问题，使用固定 template code、`sender_kind=SYSTEM` 和 text/markdown；相同 action key replay 不重复 Message/Outbox/Delivery。Communication Port 失败会标记动作失败并建立 Manual Review，不伪造发送成功；Sender 调用始终为 0。内部 Review 不外发，template_card 不执行。
 
+### P2-G2 独立授权的人工降级补齐（2026-09-08）
+
+QUERY_AUTHORIZED_STATUS和ROUTE_BUSINESS_CONSULTATION在当前没有自动授权查询/政策执行Port的装配中，通过既有ManualReviewStore入队；Action结果引用MANUAL_REVIEW，EXECUTED表示路由入队完成，不表示人工确认或外部回答完成。沿用原Decision、reason code和幂等键，Review写入失败回滚规则事务，入站事实保留。
+
+分类Decision中的requires_manual_review保留分类时的结果；实际待审核项以manual_review_item为准，不能用该分类标记代替队列查询。这与既有Communication失败后建立Review的降级方式一致。冻结202条分类引用及历史P2-015完成Evidence不改写；本Gate另验证真实动作、队列、人工决议和失败恢复。独立授权见 `evidence/p2-g2-domain-repair-authorization.md`。
+
 ## 数据库与时间
 
 权威结构是 `database/migrations/030_p2_015_rule_first_intake_orchestration.sql`，只创建六张 `intake.*` 表并扩展既有 Intake Event Check；不创建 Trigger、持久 Function、Extension、ORM、Redis 或 Broker。业务时间为 `YYYY-MM-DD HH:mm:ss`，TTL/claim/deadline 使用 BIGINT epoch 且 Node 保持 string；同秒顺序依赖 message sequence、leg/decision/action ordinal 与 row_version。

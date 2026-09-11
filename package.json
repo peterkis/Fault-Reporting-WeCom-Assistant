@@ -134,7 +134,18 @@
     "validate:p2:012": "node scripts/validate-p2-012-human-confirmed-incident.mjs",
     "test:p2:012": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 tests/p2-012-*.test.mjs",
     "test:p2:012:integration": "node --expose-gc --env-file=.env.pilot --test --test-concurrency=1 tests/p2-012-*.integration.test.mjs",
-    "test:p2:012:browser": "node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-012-*-browser.test.mjs"
+    "test:p2:012:browser": "node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-012-*-browser.test.mjs",
+    "p2:g2:check": "node scripts/p2-g2-check.mjs --mode=check",
+    "p2:g2:synthetic": "node scripts/p2-g2-synthetic-e2e.mjs",
+    "p2:g2:live:check": "node scripts/p2-g2-check.mjs --mode=live-check",
+    "p2:g2:live": "node scripts/p2-g2-live-e2e.mjs",
+    "p2:g2:resource": "node scripts/p2-g2-resource-observation.mjs",
+    "p2:g2:reconcile": "node scripts/p2-g2-reconcile.mjs",
+    "p2:g2:evaluate": "node scripts/p2-g2-evaluate.mjs",
+    "validate:p2:g2": "node scripts/validate-p2-g2-service-loop.mjs",
+    "test:p2:g2": "node scripts/p2-g2-synthetic-e2e.mjs --suite=g2",
+    "test:p2:g2:integration": "node scripts/p2-g2-synthetic-e2e.mjs --suite=integration",
+    "test:p2:g2:browser": "node scripts/p2-g2-synthetic-e2e.mjs --suite=browser"
   },
   "dependencies": {
     "@wecom/aibot-node-sdk": "1.0.6",

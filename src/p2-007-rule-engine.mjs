@@ -13,7 +13,7 @@ import {
   uniqueSorted,
 } from './p2-007-domain-utils.mjs';
 import { buildFactProvenance } from './p2-007-fact-provenance.mjs';
-import { createFaultTaxonomyResolver } from './p2-007-fault-taxonomy.mjs';
+import { createFaultTaxonomyResolver, faultTypeForSymptom } from './p2-007-fault-taxonomy.mjs';
 import { loadServiceCatalog } from './p2-007-service-catalog.mjs';
 
 export const DEFAULT_DETERMINISTIC_RULES_PATH = fileURLToPath(new URL(
@@ -133,9 +133,50 @@ function inferTransactionStage(text, service) {
   return service?.transaction_stages?.length === 1 ? service.transaction_stages[0] : 'UNKNOWN';
 }
 
+// The added symptom rules consume current assertions, not a negated example or a
+// condition in a how-to question. Keep the original window for provenance and
+// existing rules; a later explicit recovery clears earlier assertions here,
+// while an observed failure after that recovery starts a new current assertion.
+function currentAssertionText(alias) {
+  let current = [], ambiguousRecovery = false;
+  const subjects = clause => new Set(alias.matches.filter(m => m.canonical && clause.includes(m.normalized_alias)).map(m => m.canonical));
+  for (let clause of alias.normalized_text.split(/[，,。.!！？?；;\n]|但是|但|而是|并且|且|后(?:又|再次|再度)/u).map(s => s.trim()).filter(Boolean)) {
+    if (/(?:如果|假如|假设|一旦)|(?:错误|失败|断网|转圈)时.{0,12}(?:应该|怎么|如何|找谁|怎么办)/u.test(clause)) continue;
+    const recovered = /(?:恢复(?:正常)?了|恢复正常|现在没有问题了)/u.test(clause)
+      && !/(?:没|未|没有|不曾).{0,4}恢复/u.test(clause);
+    if (recovered) {
+      const target = subjects(clause), existing = new Set(current.flatMap(c => [...subjects(c)]));
+      const objectless = /^(?:(?:现在|目前|现已|已经|后来|后面|自己|已|都|也|重启后|处理后|终于|完全)\s*)*(?:恢复|正常了|现在没有问题了)/u.test(clause);
+      if (objectless && existing.size <= 1) current = [];
+      else if (target.size === 1) current = current.filter(c => {
+        const bound = subjects(c);
+        if (bound.size > 1) { ambiguousRecovery = true; return true; }
+        return bound.size !== 1 || !target.has([...bound][0]);
+      });
+      else if (current.length) ambiguousRecovery = true;
+      continue;
+    }
+    // Missing clinical records/fields are affirmative data-absence observations.
+    // A following negative impact ("多打空白页没有办法用") cannot erase
+    // the preceding positive symptom. Only the negated span is removed.
+    clause = clause.replace(/(?:没有(?!记录|名字|诊断|单位)|并非|不是|不再|未出现|未发生).*$/u, '').trim();
+    if (clause) current.push(clause);
+  }
+  return { text: current.join('。'), ambiguousRecovery };
+}
+
 function applyAction(action, state) {
   state.action_log.push(action.action);
   switch (action.action) {
+    case 'INHERIT_FACTS': {
+      const a=state.context.corroboration_anchor,age=state.context.anchor_age_ms;
+      if(!a||!Number.isSafeInteger(age)||age<0||age>600000||!state.context.anchor_compatible)break;
+      if(!/^[-a-f0-9]{36}$/u.test(a.source_decision_id??'')||!/^[a-f0-9]{64}$/u.test(a.source_result_hash??'')
+        ||!Array.isArray(a.symptom_codes)||!a.symptom_codes.length)break;
+      state.selected_service_code=a.service_code;state.symptom_codes=[...a.symptom_codes];
+      state.domain_intent='INCIDENT_REPORT';state.corroboration_anchor=a;
+      break;
+    }
     case 'SET_SELECTED_SERVICE': state.selected_service_code = action.value; break;
     case 'SELECT_SERVICE': state.selected_service_code = action.service_code; break;
     case 'SET_DOMAIN_INTENT': state.domain_intent = action.value; break;
@@ -206,11 +247,33 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
       }
       const alias = aliasResolver.resolve(safe.text);
       const taxonomy = taxonomyResolver.resolve(safe.text);
+      const anchor=safe.context?.corroboration_anchor;
+      if(anchor){
+        const keys=['source_decision_id','source_result_hash','source_reporter_hash','source_fact_ids','service_code','symptom_codes',
+          'catalog_version','rule_set_version','root_received_epoch_ms','reply_received_epoch_ms','reply_message_ref','reply_reporter_hash',
+          'source_privacy_class','safety_policy_version'];
+        const knownSymptoms=new Set(serviceCatalog.raw.taxonomies.symptom_codes.map(s=>s.code));
+        if(Object.keys(anchor).some(k=>!keys.includes(k))||keys.some(k=>!Object.hasOwn(anchor,k))
+          ||!serviceCatalog.lookupService(anchor.service_code)?.enabled||anchor.catalog_version!==serviceCatalog.catalog_version
+          ||anchor.rule_set_version!==safeRuleSet.rule_set_version||anchor.safety_policy_version!=='canonical-same-group/1'
+          ||!Array.isArray(anchor.symptom_codes)||!anchor.symptom_codes.length||anchor.symptom_codes.some(s=>!knownSymptoms.has(s)||s.startsWith('DATA.'))
+          ||!Array.isArray(anchor.source_fact_ids)||anchor.source_fact_ids.length<1||anchor.source_fact_ids.length>1000
+          ||anchor.source_fact_ids.some(id=>!/^fact_[A-Za-z0-9_-]{8,96}$/u.test(id))
+          ||['source_result_hash','source_reporter_hash','reply_reporter_hash'].some(k=>!/^[a-f0-9]{64}$/u.test(anchor[k]))
+          ||anchor.source_reporter_hash===anchor.reply_reporter_hash||!/^channel:\d+$/u.test(anchor.reply_message_ref)
+          ||!['PUBLIC','INTERNAL','SENSITIVE_INTERNAL','PERSONAL','PATIENT_SENSITIVE'].includes(anchor.source_privacy_class)
+          ||['root_received_epoch_ms','reply_received_epoch_ms'].some(k=>!/^\d{1,16}$/u.test(anchor[k])))failP2007(P2_007_ERROR_CODES.inputInvalid);
+        const age=BigInt(anchor.reply_received_epoch_ms)-BigInt(anchor.root_received_epoch_ms);
+        if(age<0n||age>600000n||Number(age)!==safe.context.anchor_age_ms)failP2007(P2_007_ERROR_CODES.inputInvalid);
+      }
+      const assertions = currentAssertionText(alias);
       const state = {
         ...safe,
         input: { exists: true },
         original_text: safe.text,
         normalized_text: alias.normalized_text,
+        current_assertion_text: assertions.text,
+        current_recovery_ambiguous: assertions.ambiguousRecovery,
         normalized_context: normalizeHospitalText(safe.normalized_context ?? safe.text),
         context: safe.context ?? {},
         turn: safe.turn ?? {},
@@ -285,7 +348,7 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
       });
 
       const facts = [];
-      if (state.selected_service_code) facts.push(buildFactProvenance(factInput(state, {
+      if (state.selected_service_code && !state.corroboration_anchor) facts.push(buildFactProvenance(factInput(state, {
         field_path: 'service.selected_service_code', value: state.selected_service_code,
         normalized_value: state.selected_service_code, source_kind: 'REPORTER_EXPLICIT',
         rule_id: alias.rule_id, confidence: 0.92,
@@ -295,6 +358,21 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
         normalized_value: match.symptom_code, source_kind: 'REPORTER_EXPLICIT',
         assertion: match.assertion, rule_id: match.rule_id, confidence: 0.9,
       })));
+      if(state.corroboration_anchor){
+        const a=state.corroboration_anchor;
+        for(const [field,value] of [['service.selected_service_code',a.service_code],...a.symptom_codes.map(s=>['fault.symptom_codes',s])])
+          facts.push(buildFactProvenance(factInput(state,{field_path:field,value,normalized_value:value,source_kind:'CONTEXT_INHERITANCE',
+            source_ref:'decision:'+a.source_decision_id,source_hash:a.source_result_hash,rule_id:'AGG-006',confidence:0.85})));
+      }
+      for (const rule of orderedRules.filter(rule => matchedRules.some(hit => hit.rule_id === rule.rule_id))) {
+        for (const action of rule.actions.filter(action => action.action === 'ADD_SYMPTOM')) {
+          if (!state.symptom_codes.includes(action.symptom_code)) continue;
+          facts.push(buildFactProvenance(factInput(state, {
+            field_path: 'fault.symptom_codes', value: action.symptom_code, normalized_value: action.symptom_code,
+            source_kind: 'DETERMINISTIC_RULE', assertion: 'AFFIRMED', rule_id: rule.rule_id, confidence: 0.85,
+          })));
+        }
+      }
       const ruleFactValues = [
         ['classification.domain_intent', state.domain_intent],
         ['classification.scope', state.scope],
@@ -328,7 +406,7 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
         selected_service_code: state.selected_service_code,
         service_candidates: alias.candidate_service_codes,
         symptom_codes: state.symptom_codes,
-        fault_types: taxonomy.fault_types,
+        fault_types: uniqueSorted(state.symptom_codes.map(faultTypeForSymptom)),
         domain_intent: state.domain_intent,
         p1_request_type: state.domain_intent === 'INCIDENT_REPORT' ? 'INCIDENT' : 'UNKNOWN',
         transaction_stage: state.transaction_stage,
@@ -349,6 +427,7 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
         attempt_result: state.attempt_result,
         forbidden_effects: uniqueSorted(state.forbidden_effects),
         side_effects: [],
+        ...(state.corroboration_anchor?{corroboration_anchor:state.corroboration_anchor}:{}),
       };
       return deepFreeze({ ...output, result_hash: sha256Canonical(output) });
     },

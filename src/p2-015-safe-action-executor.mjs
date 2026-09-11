@@ -97,6 +97,8 @@ export function createSafeActionExecutor({ intakeDecisionPort, ticketCommandPort
               break;
             case 'ENQUEUE_MANUAL_REVIEW':
             case 'ENQUEUE_INCIDENT_REVIEW':
+            case 'QUERY_AUTHORIZED_STATUS':
+            case 'ROUTE_BUSINESS_CONSULTATION':
               result = await manualReviewStore.enqueue({ transaction, input: {
                 journey_id: safeDecision.journey_id, decision_id: safeDecision.id,
                 service_intake_id: safeDecision.service_intake_id,
@@ -129,10 +131,6 @@ export function createSafeActionExecutor({ intakeDecisionPort, ticketCommandPort
             case 'APPEND_RELATED_FOLLOW_UP':
               refType = 'JOURNEY'; refId = safeDecision.journey_id; result = { appended: true };
               break;
-            case 'QUERY_AUTHORIZED_STATUS':
-            case 'ROUTE_BUSINESS_CONSULTATION':
-              results.push({ action_id: action.id, proposed_only: true });
-              continue;
             default:
               failP2015(P2_015_ERROR_CODES.inputInvalid);
           }

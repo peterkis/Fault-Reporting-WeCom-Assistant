@@ -16,10 +16,10 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
           internal_beta:true,ai_enabled:false,roles:principal.roles,polling_interval_ms:5000});return true;}
       if(url.pathname==='/api/tickets'){queryKeys(url,['state','cursor','limit']);json(response,200,await query.list({authContext,state:url.searchParams.get('state')??'queued',cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')}));return true;}
       if(url.pathname==='/api/manual-reviews'){queryKeys(url,['status','priority','cursor','limit']);json(response,200,await reviews.listManualReviews({authContext,status:url.searchParams.get('status')??'PENDING',priority:url.searchParams.get('priority'),cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')}));return true;}
-      const ticket=/^\/api\/tickets\/([0-9a-f-]{36})(?:\/(events|responsibility|deliveries|eligible-principals))?$/iu.exec(url.pathname);
+      const ticket=/^\/api\/tickets\/([0-9a-f-]{36})(?:\/(events|responsibility|deliveries|eligible-principals|reporter-contact))?$/iu.exec(url.pathname);
       if(ticket){
         queryKeys(url,ticket[2]==='events'?['cursor','limit']:[]);
-        const input={authContext,ticketId:ticket[1]},part=ticket[2]==='eligible-principals'?'eligiblePrincipals':ticket[2]??'detail';
+        const input={authContext,ticketId:ticket[1]},part=ticket[2]==='eligible-principals'?'eligiblePrincipals':ticket[2]==='reporter-contact'?'reporterContact':ticket[2]??'detail';
         const result=await query[part](part==='events'?{...input,cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')}:input);
         json(response,200,result,part==='detail'?{etag:'"'+result.version+'"'}:{});return true;
       }

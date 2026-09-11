@@ -134,6 +134,24 @@ const profiles = Object.freeze({
     p2007Status: 'DONE',
     p2g1Status: 'PASSED',
   }),
+  P2_G2_ASSEMBLY_AUTHORIZED: Object.freeze({
+    lastCompletedTask: 'P2-012', lastCompletedGate: 'P2-G1', lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: 'P2-G2', activeLane: 'ASSEMBLY', candidate: 'P2-G2', candidateAuthorized: true,
+    authorizedTasks: Object.freeze(['P2-001','P2-002','P2-003','P2-004','P2-005','P2-006','P2-007','P2-015','P2-016','P2-012']),
+    authorizedGates: Object.freeze(['P2-G1','P2-G2']),
+    p2006Status: 'DONE', p2007Status: 'DONE', p2g1Status: 'PASSED', p2016Status: 'DONE', p2012Status: 'DONE',
+    p2g2Status: 'IN_PROGRESS',
+    manifestStatus: 'P2_P2_G2_ASSEMBLY_AUTHORIZED', projectStatus: 'p2_p2_g2_assembly_authorized',
+  }),
+  P2_G2_READY_FOR_LIVE_E2E: Object.freeze({
+    lastCompletedTask: 'P2-012', lastCompletedGate: 'P2-G1', lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: 'P2-G2', activeLane: 'ASSEMBLY', candidate: 'P2-G2-LIVE', candidateAuthorized: false,
+    authorizedTasks: Object.freeze(['P2-001','P2-002','P2-003','P2-004','P2-005','P2-006','P2-007','P2-015','P2-016','P2-012']),
+    authorizedGates: Object.freeze(['P2-G1','P2-G2']),
+    p2006Status: 'DONE', p2007Status: 'DONE', p2g1Status: 'PASSED', p2016Status: 'DONE', p2012Status: 'DONE',
+    p2g2Status: 'READY_FOR_LIVE_E2E',
+    manifestStatus: 'P2_P2_G2_READY_FOR_LIVE_E2E', projectStatus: 'p2_p2_g2_ready_for_live_e2e',
+  }),
   P2_012_AUTHORIZED: Object.freeze({
     lastCompletedTask: 'P2-016', lastCompletedGate: 'P2-G1', lastCompletedArchitectureTask: 'ARCH-006',
     activeTask: 'P2-012', activeLane: 'P2-D', candidate: 'P2-012', candidateAuthorized: true,
@@ -234,7 +252,7 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
     assert.equal(candidate, profile.candidate);
     assert.equal(authorized, profile.candidateAuthorized);
     assert.deepEqual(tasks, profile.authorizedTasks ?? ['P2-001', 'P2-002', 'P2-003', 'P2-004', 'P2-005', 'P2-006']);
-    assert.deepEqual(gates, ['P2-G1']);
+    assert.deepEqual(gates, profile.authorizedGates ?? ['P2-G1']);
     assert.equal(tasks.includes(lastTask), true);
     assert.equal(gates.includes(lastGate), profile.lastCompletedGate !== null);
   }
@@ -297,7 +315,7 @@ test('P2/P2-G1 lifecycle state is internally consistent without changing P1', ()
       ['P2-G1', 'P2-G2', 'P2-G3', 'P2-G4', 'P2-G5']);
   }
   assert.equal(parallel.assembly_gates.find((gate) => gate.id === 'P2-G1').status, profile.p2g1Status ?? 'NOT_STARTED');
-  assert.equal(parallel.assembly_gates.filter((gate) => gate.id !== 'P2-G1').every((gate) => gate.status === 'NOT_STARTED'), true);
+  assert.equal(parallel.assembly_gates.filter((gate) => gate.id !== 'P2-G1').every((gate) => gate.status === (gate.id === 'P2-G2' ? (profile?.p2g2Status ?? 'NOT_STARTED') : 'NOT_STARTED')), true);
   assert.deepEqual(parallel.feature_flags_enabled, []);
   assert.equal(Object.values(parallel.feature_flag_defaults).every((value) => value === false), true);
   if (profile.p2g1Status === 'PASSED') {
@@ -476,7 +494,7 @@ test('2C4G limits remain conservative', () => {
 
 test('P2-016 authorization reconciles only the historical P2-015 ledger', () => {
   const current = json('plans/current_phase.json');
-  if (!['P2_016_AUTHORIZED', 'P2_016_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_016_DONE_AWAITING_P2_012_AUTHORIZATION', 'P2_012_AUTHORIZED', 'P2_012_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION'].includes(current.implementation_authorization_status)) return;
+  if (!['P2_016_AUTHORIZED', 'P2_016_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_016_DONE_AWAITING_P2_012_AUTHORIZATION', 'P2_012_AUTHORIZED', 'P2_012_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION', 'P2_G2_ASSEMBLY_AUTHORIZED', 'P2_G2_READY_FOR_LIVE_E2E'].includes(current.implementation_authorization_status)) return;
   const stage = profiles[current.implementation_authorization_status].p2016Status ?? profiles[current.implementation_authorization_status].activeTaskStatus;
   const p2012Done=profiles[current.implementation_authorization_status].p2012Status==='DONE';
   const summary = json('project_summary.json');
@@ -504,7 +522,7 @@ test('P2-016 authorization reconciles only the historical P2-015 ledger', () => 
     assert.equal(view.p2_012_status, profiles[current.implementation_authorization_status].p2012Status ?? 'TODO_REQUIRES_SEPARATE_AUTHORIZATION');
     assert.equal(view.p2_008_status, 'TODO_BLOCKED_BY_P2_G2');
     for (const gate of ['p2_g2_status', 'p2_g3_status', 'p2_g4_status', 'p2_g5_status']) {
-      assert.equal(view[gate], 'NOT_STARTED');
+      assert.equal(view[gate], gate === 'p2_g2_status' ? (profiles[current.implementation_authorization_status].p2g2Status ?? 'NOT_STARTED') : 'NOT_STARTED');
     }
   }
   const ledger = text('tickets/P2_ai_enhancement_tasks.md');
@@ -522,7 +540,7 @@ test('P2-016 authorization reconciles only the historical P2-015 ledger', () => 
 });
 
 test('architecture validator rejects the historical P2-015 ledger drift', () => {
-  if (!['P2_016_AUTHORIZED', 'P2_016_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_016_DONE_AWAITING_P2_012_AUTHORIZATION', 'P2_012_AUTHORIZED', 'P2_012_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION'].includes(json('plans/current_phase.json').implementation_authorization_status)) return;
+  if (!['P2_016_AUTHORIZED', 'P2_016_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_016_DONE_AWAITING_P2_012_AUTHORIZATION', 'P2_012_AUTHORIZED', 'P2_012_READY_FOR_TARGETED_LIVE_VALIDATION', 'P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION', 'P2_G2_ASSEMBLY_AUTHORIZED', 'P2_G2_READY_FOR_LIVE_E2E'].includes(json('plans/current_phase.json').implementation_authorization_status)) return;
   const ledgerPath = path.join(root, 'tickets/P2_ai_enhancement_tasks.md');
   const original = text('tickets/P2_ai_enhancement_tasks.md');
   // Normalize only the in-memory fixture; the repository is never mutated by this probe.
@@ -553,6 +571,31 @@ test('P2-012 authorization rejects premature completion and next-gate authorizat
     { p2_g2_status: 'PASSED' },
     { next_task_candidate: 'P2-008', next_task_authorized: true },
     { authorized_tasks: [...current.authorized_tasks, 'P2-008'] },
+  ]) {
+    const processView = { cwd: () => root, exitCode: undefined };
+    runInNewContext(source, {
+      fs: { ...fs, readFileSync: (file, ...args) => file === target ? JSON.stringify({ ...current, ...delta }) : fs.readFileSync(file, ...args) },
+      path, process: processView, console: { log() {}, error() {} },
+    });
+    assert.equal(processView.exitCode, 1, JSON.stringify(delta));
+  }
+});
+
+test('P2-G2 preparation rejects false PASS, Runtime authorization and missing independent permission', () => {
+  const current = json('plans/current_phase.json');
+  assert.ok(['P2_G2_ASSEMBLY_AUTHORIZED', 'P2_G2_READY_FOR_LIVE_E2E'].includes(current.implementation_authorization_status));
+  const target = path.join(root, 'plans/current_phase.json');
+  const source = text('scripts/validate-v1-4-architecture.mjs').replace(/^import .*;\r?\n/gmu, '');
+  for (const delta of [
+    { p2_g2_status: 'PASSED' },
+    { last_completed_gate: 'P2-G2' },
+    { next_task_candidate: 'P2-008', next_task_authorized: true },
+    { authorized_tasks: [...current.authorized_tasks, 'P2-008'] },
+    { authorized_tasks: [...current.authorized_tasks, 'P2-G2'] },
+    { authorized_gates: ['P2-G1'] },
+    { p2_g2_authorization_evidence: 'evidence/p2-012-project-owner-approval.md' },
+    { p2_g2_completed_at: '2026-09-08' },
+    { p2_g2_base_commit: '7767138ce1084ce03a3482f30cd31a523c8417f3' },
   ]) {
     const processView = { cwd: () => root, exitCode: undefined };
     runInNewContext(source, {

@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+  "axis": "STANDARDS",
+  "reviewer": "/root/recognition_standards_review",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [],
+  "source_execution_sha256": "3d2f981001f9cc680be78d65088e571266c8a4db2c5c828a58f13e7ff190729f",
+  "scenario_matrix_sha256": "a1bcaf12ac1b6d7d71cc889308799eb74a2d17579d8b11e1f83ef68294a2df68",
+  "preparation_only": true,
+  "live_validation": "NOT_RUN",
+  "gate_approval": false,
+  "review_scope": {
+    "base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
+    "candidate_file_count": 564,
+    "description": "Cumulative independent Standards review of authorized P2-G2 source/config/contracts/role assembly/notification and identity boundaries, source-proof compilers and preparation gates, plus final browser lifecycle, cleanup error propagation, source-time Session start, GROUP receipt idempotence, LF source audit and64 independent streams. Final check includes operational runbook and narrowly scoped evidence Git attributes.",
+    "standards": [
+      "AGENTS.md V1.4",
+      "README.md",
+      "docs/architecture_baseline_status.md",
+      "Accepted ADR-0017",
+      "Applicable docs33/51/56/57/60/61 and P2-G2 owner-authorized repair contracts"
+    ],
+    "authorization": "P2-G2 preparation and continuing necessary-gap repairs only; no production activation, Gate acceptance or user approval inferred."
+  },
+  "verified_evidence": {
+    "full_regression_run": "evidence/p2-g2-full-regression-run.json",
+    "full_regression_tap": "evidence/p2-g2-full-regression.tap",
+    "tap_sha256": "884e95b112b4cb42d7e2e4841256c7f5c149957ea282b2f51dc715eb2e0de3dc",
+    "recorded_counts": {
+      "tests": 954,
+      "pass": 954,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "recorded_exit_code": 0,
+    "recorded_signal": null,
+    "recorded_error": null,
+    "test_files": 151,
+    "current_test_file_hashes_match": true,
+    "source_audit_recomputed_equal": true,
+    "source_case_count": 202,
+    "normal_input_cases": 122,
+    "mechanism_and_other_cases": 80,
+    "execution_missing": [],
+    "manual_review_observation_missing": [],
+    "matrix_scenarios": 37,
+    "all_matrix_test_names_present_in_passing_tap": true,
+    "powershell_runbook_blocks_independently_parsed": 6,
+    "powershell_parse_error_count": 0,
+    "gitattributes_scope": "/evidence/p2-g2-* -text",
+    "historical_p2012_text_attribute": "unspecified",
+    "historical_p2012_evidence_and_migration_diff_empty": true
+  },
+  "limits": [
+    "Reviewer inspected and recomputed published full-run/audit/matrix bindings; did not independently rerun all954 tests in this final turn.",
+    "Source audit accounting is not a claim that all202 heterogeneous source cases are normal-ingress classifications;122 normal and80 mechanism/other cases remain distinguished.",
+    "No live SDK send, real enterprise client observation,60-minute natural-GC2C4G observation or project-owner Gate approval was executed or fabricated by this review.",
+    "This verdict applies to the stated preparation candidate and bound evidence only; changed candidate/source/matrix requires fresh review."
+  ]
+}

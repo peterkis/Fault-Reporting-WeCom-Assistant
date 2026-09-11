@@ -8,7 +8,7 @@ const POLICY=Object.freeze({'incident.confirmed':['INCIDENT_CONFIRMED_GROUP','IN
 const SERVICE=Object.freeze({HIS:'医院信息系统',LIS:'检验信息系统',RIS:'放射信息系统',PACS:'医学影像系统',EMR:'电子病历系统',NETWORK:'网络服务'});
 const SCOPE=Object.freeze({LOCAL:'局部',BUILDING:'楼宇',CAMPUS:'院区',HOSPITAL_WIDE:'全院'});
 export const incidentNotificationTemplates=type=>POLICY[type]??[];
-export function createP2012NotificationPolicy({enabled=false,publicEnabled=false,privateEnabled=false,testLabel=false}){
+export function createP2012NotificationPolicy({enabled=false,publicEnabled=false,privateEnabled=false,testLabel=false,communicationAppend=appendCommunication}){
   return Object.freeze({async project({transaction:tx,incident,event}){
     if(!enabled)return {created:0};
     const fact=await tx.query('SELECT id,event_type FROM incident.incident_event WHERE id=$1::uuid AND incident_id=$2::uuid',[event.id,incident.id]);
@@ -40,7 +40,7 @@ export function createP2012NotificationPolicy({enabled=false,publicEnabled=false
           investigating?'【IT故障通知】信息部门正在调查已确认的公共故障。':
           '【IT故障通知】已确认存在公共信息系统故障，信息部门正在处理。个人报修工单仍保留，请勿重复提交。')+
           '\n受影响服务：'+(SERVICE[incident.service_family]??'信息系统服务')+'\n影响范围：'+SCOPE[incident.confirmed_scope];
-        const result=await appendCommunication({transaction:tx,actor:null,command:{session_id:null,sender_kind:'SYSTEM',
+        const result=await communicationAppend({transaction:tx,actor:null,command:{session_id:null,sender_kind:'SYSTEM',
           sender_system_code:'HUMAN_CONFIRMED_INCIDENT',purpose:'SYSTEM_NOTIFICATION',message_type:'text',visibility:'EXTERNAL',
           client_command_id:randomUUID(),content:{text},destination_policy:'P2_012_FIXED_NOTICE',privacy_class:'INTERNAL',
           retention_until:incident.retention_until,retention_until_epoch_ms:String(incident.retention_until_epoch_ms)},

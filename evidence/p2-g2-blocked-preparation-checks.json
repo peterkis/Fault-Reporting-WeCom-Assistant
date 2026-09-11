@@ -1,0 +1,80 @@
+{
+  "scope": "PARTIAL_BLOCKED_PREPARATION_AND_CLOUD_TOOLING",
+  "ok": true,
+  "domain_route_tests": "RED_RECORDED_SEPARATELY",
+  "full_577_regression": "NOT_RUN",
+  "results": [
+    {
+      "id": "v1.4",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "matched": true
+    },
+    {
+      "id": "arch006",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "matched": true
+    },
+    {
+      "id": "governance-tests",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "matched": true
+    },
+    {
+      "id": "route-runner-syntax",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "matched": true
+    },
+    {
+      "id": "package-runner-syntax",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "matched": true
+    },
+    {
+      "id": "route-test-syntax",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "matched": true
+    },
+    {
+      "id": "route-default-help",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "matched": true
+    },
+    {
+      "id": "route-unknown-args-refused",
+      "exit_code": 2,
+      "expected_exit_code": 2,
+      "matched": true
+    },
+    {
+      "id": "package-unknown-args-refused",
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "matched": true
+    },
+    {
+      "id": "diff-check",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "matched": true
+    },
+    {
+      "id": "protected-source-diff",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "matched": true
+    },
+    {
+      "id": "new-file-secret-value-scan",
+      "matched": true,
+      "files": 16
+    }
+  ],
+  "log_sha256": "29d86ef9813d1e64a046e9cb2d860fbb145e7e0c82a062d29e3bd290e4675927"
+}

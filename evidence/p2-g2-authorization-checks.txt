@@ -1,0 +1,162 @@
+COMMAND node scripts/validate-v1-4-architecture.mjs
+V1.4 architecture validation passed (407 checks).
+EXIT_CODE 0
+COMMAND node scripts/validate-arch-006-rule-first-service-loop.mjs
+ARCH-006 rule-first service loop validation passed (262 checks).
+EXIT_CODE 0
+COMMAND node --test --test-concurrency=1 --test-reporter=tap tests/v1-4-architecture-baseline.test.mjs tests/arch-006-rule-first-service-loop.test.mjs
+TAP version 13
+# Subtest: ARCH-006 validator passes
+ok 1 - ARCH-006 validator passes
+  ---
+  duration_ms: 241.2688
+  type: 'test'
+  ...
+# Subtest: machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles
+ok 2 - machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles
+  ---
+  duration_ms: 2.0658
+  type: 'test'
+  ...
+# Subtest: ten safe deterministic results are first-class and Manual Review is valid
+ok 3 - ten safe deterministic results are first-class and Manual Review is valid
+  ---
+  duration_ms: 0.6367
+  type: 'test'
+  ...
+# Subtest: Ticket lifecycle reuses authoritative actions and reliable notification boundary
+ok 4 - Ticket lifecycle reuses authoritative actions and reliable notification boundary
+  ---
+  duration_ms: 0.631
+  type: 'test'
+  ...
+# Subtest: Incident remains human-confirmed and AI-independent
+ok 5 - Incident remains human-confirmed and AI-independent
+  ---
+  duration_ms: 1.2852
+  type: 'test'
+  ...
+# Subtest: AI-off readiness and feature flags are closed by default
+ok 6 - AI-off readiness and feature flags are closed by default
+  ---
+  duration_ms: 0.7987
+  type: 'test'
+  ...
+# Subtest: V1.4 architecture validator passes
+ok 7 - V1.4 architecture validator passes
+  ---
+  duration_ms: 119.5634
+  type: 'test'
+  ...
+# Subtest: P2/P2-G1 lifecycle state is internally consistent without changing P1
+ok 8 - P2/P2-G1 lifecycle state is internally consistent without changing P1
+  ---
+  duration_ms: 5.8755
+  type: 'test'
+  ...
+# Subtest: P2-004 independent authorization and stop line are preserved
+ok 9 - P2-004 independent authorization and stop line are preserved
+  ---
+  duration_ms: 1.5021
+  type: 'test'
+  ...
+# Subtest: P2-005 independent authorization and stop line are recorded
+ok 10 - P2-005 independent authorization and stop line are recorded
+  ---
+  duration_ms: 1.9787
+  type: 'test'
+  ...
+# Subtest: P2-006 independent authorization and stop line are recorded
+ok 11 - P2-006 independent authorization and stop line are recorded
+  ---
+  duration_ms: 1.2475
+  type: 'test'
+  ...
+# Subtest: P2-004 completion artifacts preserve P1 notification and Ticket ownership
+ok 12 - P2-004 completion artifacts preserve P1 notification and Ticket ownership
+  ---
+  duration_ms: 2.8203
+  type: 'test'
+  ...
+# Subtest: P2-005 completion artifacts preserve frozen Session and identity ownership
+ok 13 - P2-005 completion artifacts preserve frozen Session and identity ownership
+  ---
+  duration_ms: 0.4955
+  type: 'test'
+  ...
+# Subtest: P2-006 completion has a runnable workbench and no migration 022
+ok 14 - P2-006 completion has a runnable workbench and no migration 022
+  ---
+  duration_ms: 1.0556
+  type: 'test'
+  ...
+# Subtest: P2-001 and P2-002 frozen artifacts remain present
+ok 15 - P2-001 and P2-002 frozen artifacts remain present
+  ---
+  duration_ms: 0.5543
+  type: 'test'
+  ...
+# Subtest: P3 remains greenfield and contains no historical ticket program
+ok 16 - P3 remains greenfield and contains no historical ticket program
+  ---
+  duration_ms: 2.2313
+  type: 'test'
+  ...
+# Subtest: future flags default off without legacy import flags
+ok 17 - future flags default off without legacy import flags
+  ---
+  duration_ms: 1.2693
+  type: 'test'
+  ...
+# Subtest: conceptual schema has no historical migration fields or second ticket core
+ok 18 - conceptual schema has no historical migration fields or second ticket core
+  ---
+  duration_ms: 1.0715
+  type: 'test'
+  ...
+# Subtest: new source example is non-authoritative
+ok 19 - new source example is non-authoritative
+  ---
+  duration_ms: 0.8584
+  type: 'test'
+  ...
+# Subtest: 2C4G limits remain conservative
+ok 20 - 2C4G limits remain conservative
+  ---
+  duration_ms: 1.0869
+  type: 'test'
+  ...
+# Subtest: P2-016 authorization reconciles only the historical P2-015 ledger
+ok 21 - P2-016 authorization reconciles only the historical P2-015 ledger
+  ---
+  duration_ms: 4.0167
+  type: 'test'
+  ...
+# Subtest: architecture validator rejects the historical P2-015 ledger drift
+ok 22 - architecture validator rejects the historical P2-015 ledger drift
+  ---
+  duration_ms: 37.956
+  type: 'test'
+  ...
+# Subtest: P2-012 authorization rejects premature completion and next-gate authorization
+ok 23 - P2-012 authorization rejects premature completion and next-gate authorization
+  ---
+  duration_ms: 0.5092
+  type: 'test'
+  ...
+# Subtest: P2-G2 preparation rejects false PASS, Runtime authorization and missing independent permission
+ok 24 - P2-G2 preparation rejects false PASS, Runtime authorization and missing independent permission
+  ---
+  duration_ms: 252.2222
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 921.5698
+EXIT_CODE 0

@@ -14,6 +14,7 @@ export async function createP2016BrowserFixture(){
   const review=()=>({id:reviewId,journey_id:journeyId,status:reviewStatus,priority:'HIGH',review_reason_code:'CLINICAL_REVIEW_REQUIRED',row_version:'1',created_at:now,
     safe_result:{selected_service:'系统登录',known_fields:['服务'],unknown_fields:['症状'],provenance:'<img src=x onerror=window.p2016_xss=1>'},allowed_resolutions:['CONFIRM_TICKET_ELIGIBLE','REQUEST_DESCRIPTION','KEEP_INCIDENT_REVIEW_CANDIDATE']});
   const query={principal:async()=>({principal_id:principalId,display_name:'合成测试坐席',roles:['ADMIN']}),list:async()=>{listCalls++;return {items:[source()],next_cursor:null};},
+    reporterContact:async()=>({status:'DEFERRED',contact:null,departments:[],fetched_at:null}),
     detail:async()=>source(),responsibility:async()=>({ticket_assignee_name:version>1?'合成故障处理人':null,resolver_team_name:'信息技术组',conversations:[{session_id:randomUUID(),session_row_version:'1',conversation_principal_id:principalId,conversation_principal_name:'合成沟通坐席'}]}),
     events:async()=>({items:[{event_type:'ticket.created',new_status:state,created_at:now,has_internal_note:calls.some(c=>c.action==='add-note')}],next_cursor:null}),
     eligiblePrincipals:async()=>({items:[{principal_id:principalId,display_name:'合成故障处理人'}]}),deliveries:async()=>({items:[]})};

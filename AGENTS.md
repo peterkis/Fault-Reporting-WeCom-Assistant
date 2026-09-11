@@ -14,14 +14,14 @@ P1 / P1-012 / DONE / GO
 当前阶段状态固定为：
 
 ```text
-P2 / P2-012 / DONE / P2-G2 NOT_STARTED
+P2 / P2-012 / DONE / P2-G2 READY_FOR_LIVE_E2E
 ```
 
-V1.4 不改变 G0/P1 已完成事实。P2-G1 于 2026-09-02 更新为 `PASSED`；ARCH-005、P2-007、ARCH-006 与 P2-015 已于 2026-09-03 完成；P2-016 已于 2026-09-04 完成。P2-012 已于 2026-09-07 经真实定向现场、现场后与完成态全量回归、客户端确认和负责人批准完成。当前无活动任务；下一候选为 P2-G2，尚未授权。P2-008 及以后 Runtime、P2-G2 及以后 Gate 均未授权，全部 P3 未启动。所有 Feature Flag 默认关闭。上述状态均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
+V1.4 不改变 G0/P1 已完成事实。P2-G1 于 2026-09-02 更新为 `PASSED`；ARCH-005、P2-007、ARCH-006 与 P2-015 已于 2026-09-03 完成；P2-016 已于 2026-09-04 完成。P2-012 已于 2026-09-07 经真实定向现场、现场后与完成态全量回归、客户端确认和负责人批准完成。P2-G2 / ASSEMBLY 已达 READY_FOR_LIVE_E2E，当前自动化976/976及两轴独立审查通过；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-G3 及以后 Gate 和全部 P3 未启动。所有 Feature Flag 默认关闭。上述状态均不等同于 Phase 2 Go、生产上线、临床上线、最终生产前端或 AI 自动回复批准。
 
 ## 2. 长期事实源
 
-P2-016 完成或交接核验时，读取 `evidence/p2-016-ticket-lifecycle-workbench-report.md` 与 `evidence/p2-016-project-owner-approval.md`。P2-012 交接时读取 `evidence/p2-012-human-confirmed-incident-report.md`、`evidence/p2-012-project-owner-approval.md` 与 `evidence/p2-012-targeted-live-validation.md`。P2-012 已完成并形成唯一第二个本地提交；当前停止等待 P2-G2 的独立授权。所有 Feature Flag 默认关闭，P2-G2/P2-008 保持停止线。
+P2-016 完成或交接核验时，读取 `evidence/p2-016-ticket-lifecycle-workbench-report.md` 与 `evidence/p2-016-project-owner-approval.md`。P2-012 交接时读取 `evidence/p2-012-human-confirmed-incident-report.md`、`evidence/p2-012-project-owner-approval.md` 与 `evidence/p2-012-targeted-live-validation.md`。P2-012 已完成，PR #6 七个提交由 8c332710dad9b6cf3f6796f3344c04d1c710ddf3 合并。P2-G2交接先读取 `evidence/p2-g2-automated-readiness-report.json`、其中 `source_evidence` 指向的当前矩阵和独立审查，以及 `prompts/P2-G2_rule_first_service_loop_runbook.md`；核对当前候选，不沿用旧现场批准。P2-G2 授权与停止线见 `evidence/p2-g2-start-authorization.md` 和 `tasks/P2-G2_rule_first_service_loop_gate.md`。所有 Feature Flag 默认关闭，P2-G2-LIVE/P2-008 保持停止线。
 
 本仓库 Unified Ticket Core 是唯一长期 Ticket 编号、状态、责任和事件事实源。
 
@@ -66,7 +66,7 @@ P1：
 
 ### Phase 2：Conversation Center 与 AI 协作
 
-P2 保持 `IN_PROGRESS`；P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 均已完成。P2-012 于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。当前无活动任务；下一候选 P2-G2 未授权。P2-008 及以后 Runtime 和 P2-G2 及以后 Gate 不得启动，所有 Feature Flag 默认值保持 `false`。
+P2 保持 `IN_PROGRESS`；P2-001 至 P2-007、P2-015、P2-016、P2-012、P2-G1、ARCH-005、ARCH-006 均已完成。P2-012 于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。P2-G2 / ASSEMBLY 已达 READY_FOR_LIVE_E2E，当前自动化976/976及两轴独立审查通过；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。
 
 P2 必须按以下顺序：
 

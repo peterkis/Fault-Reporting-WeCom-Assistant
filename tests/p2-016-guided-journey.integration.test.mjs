@@ -68,7 +68,8 @@ test('P2-016 group-to-direct unique binding preserves Journey; ambiguous, consum
       assert.equal(binding.leg_type,'DIRECT_ORGANIC');assert.equal(binding.origin_intake_id,direct.intakeId);
       assert.equal((await pool.query('SELECT count(*)::integer AS n FROM pilot_ticket.ticket')).rows[0].n,1);
     }else{
-      assert.equal(binding.leg_type,'DIRECT_ORGANIC');assert.equal((await pool.query('SELECT count(*)::integer AS n FROM pilot_ticket.ticket')).rows[0].n,0);
+      // P2-G2 adjudication: leave association undecided while accepting the current explicit fault.
+      assert.equal(binding.leg_type,'DIRECT_ORGANIC');assert.equal((await pool.query('SELECT count(*)::integer AS n FROM pilot_ticket.ticket')).rows[0].n,1);
       const review=(await pool.query('SELECT review_reason_code FROM intake.manual_review_item WHERE service_intake_id=$1::uuid',[direct.intakeId])).rows[0];assert.equal(review.review_reason_code,'MULTIPLE_GUIDED_JOURNEYS');
     }
     assert.equal((await worker.processDueBatch({feature_flags:flags})).processed,0);

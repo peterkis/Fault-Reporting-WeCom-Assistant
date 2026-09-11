@@ -181,6 +181,24 @@ const LIFECYCLE_PROFILES = Object.freeze({
     manifestStatus: 'P2_P2_015_DONE_AWAITING_P2_016_AUTHORIZATION',
     projectStatus: 'p2_p2_015_done_awaiting_p2_016_authorization',
   }),
+  P2_G2_ASSEMBLY_AUTHORIZED: Object.freeze({
+    lastCompletedTask: 'P2-012', lastCompletedGate: 'P2-G1', lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: 'P2-G2', activeLane: 'ASSEMBLY', candidate: 'P2-G2', candidateAuthorized: true,
+    authorizedTasks: Object.freeze(['P2-001','P2-002','P2-003','P2-004','P2-005','P2-006','P2-007','P2-015','P2-016','P2-012']),
+    authorizedGates: Object.freeze(['P2-G1','P2-G2']),
+    p2006Status: 'DONE', p2007Status: 'DONE', p2g1Status: 'PASSED', p2016Status: 'DONE', p2012Status: 'DONE',
+    p2g2Status: 'IN_PROGRESS',
+    manifestStatus: 'P2_P2_G2_ASSEMBLY_AUTHORIZED', projectStatus: 'p2_p2_g2_assembly_authorized',
+  }),
+  P2_G2_READY_FOR_LIVE_E2E: Object.freeze({
+    lastCompletedTask: 'P2-012', lastCompletedGate: 'P2-G1', lastCompletedArchitectureTask: 'ARCH-006',
+    activeTask: 'P2-G2', activeLane: 'ASSEMBLY', candidate: 'P2-G2-LIVE', candidateAuthorized: false,
+    authorizedTasks: Object.freeze(['P2-001','P2-002','P2-003','P2-004','P2-005','P2-006','P2-007','P2-015','P2-016','P2-012']),
+    authorizedGates: Object.freeze(['P2-G1','P2-G2']),
+    p2006Status: 'DONE', p2007Status: 'DONE', p2g1Status: 'PASSED', p2016Status: 'DONE', p2012Status: 'DONE',
+    p2g2Status: 'READY_FOR_LIVE_E2E',
+    manifestStatus: 'P2_P2_G2_READY_FOR_LIVE_E2E', projectStatus: 'p2_p2_g2_ready_for_live_e2e',
+  }),
   P2_012_AUTHORIZED: Object.freeze({
     lastCompletedTask: 'P2-016', lastCompletedGate: 'P2-G1', lastCompletedArchitectureTask: 'ARCH-006',
     activeTask: 'P2-012', activeLane: 'P2-D', candidate: 'P2-012', candidateAuthorized: true,
@@ -346,7 +364,7 @@ if (profile) {
     check(view.activeTask === profile.activeTask, view.name + ' has the profile active task');
     check(view.activeLane === profile.activeLane, view.name + ' has the profile active lane');
     check(sameArray(view.authorizedTasks, profile.authorizedTasks ?? AUTHORIZED_TASKS), view.name + ' has the exact authorized task set');
-    check(sameArray(view.authorizedGates, AUTHORIZED_GATES), view.name + ' has the exact authorized gate set');
+    check(sameArray(view.authorizedGates, profile.authorizedGates ?? AUTHORIZED_GATES), view.name + ' has the exact authorized gate set');
     check(view.lastCompletedTask === null || view.authorizedTasks.includes(view.lastCompletedTask), view.name + ' last completed task is authorized');
     check(view.lastCompletedGate === null || view.authorizedGates.includes(view.lastCompletedGate), view.name + ' last completed gate is authorized');
     check(view.implementationStatus === lifecycleStatus, view.name + ' has the selected lifecycle status');
@@ -387,6 +405,17 @@ if (profile) {
     check(current.next_task_candidate === profile.candidate && current.next_task_authorized === profile.candidateAuthorized,
       `${profile.candidate} remains the next task candidate with profile authorization`);
   }
+}
+
+if (profile?.p2g2Status) {
+  const authorization = 'evidence/p2-g2-start-authorization.md';
+  const gateViews = [manifest,current,backlog,parallel,taskIndex,projectSummary.project,projectSummary.phase_model.find(p=>p.id==='P2')];
+  check(gateViews.every(v=>v.p2_g2_status===profile.p2g2Status && v.p2_g2_authorized_at==='2026-09-08'
+    && v.p2_g2_authorization_evidence===authorization && v.p2_g2_base_commit==='8c332710dad9b6cf3f6796f3344c04d1c710ddf3'), 'P2-G2 independent preparation authorization is synchronized');
+  check(fs.existsSync(path.join(root,authorization)) && read(authorization).includes('READY_FOR_LIVE_E2E')
+    && read(authorization).includes('本轮不授权真实企业微信发送'), 'P2-G2 preparation retains the independent live stop line');
+  check(!backlog.tasks.some(t=>t.id==='P2-G2') && !current.authorized_tasks.includes('P2-G2'), 'P2-G2 is authorized as a Gate, never a Runtime task');
+  check(gateViews.every(v=>!Object.hasOwn(v,'p2_g2_completed_at') && !Object.hasOwn(v,'p2_g2_owner_approval_evidence')), 'P2-G2 preparation cannot claim completion or owner acceptance');
 }
 
 check(manifest.architecture_baseline === 'V1.4', 'manifest baseline is V1.4');
@@ -532,7 +561,7 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
         && v.p2_012_authorized_at==='2026-09-04'
         &&(p2012Done?v.p2_012_completed_at==='2026-09-07'&&v.p2_012_completion_evidence===completion&&v.p2_012_owner_approval_evidence===owner:!Object.hasOwn(v,'p2_012_completed_at'))
         && v.p2_008_status==='TODO_BLOCKED_BY_P2_G2'
-        && ['p2_g2_status','p2_g3_status','p2_g4_status','p2_g5_status'].every(key=>v[key]==='NOT_STARTED')),
+        && ['p2_g2_status','p2_g3_status','p2_g4_status','p2_g5_status'].every(key=>v[key]===(key==='p2_g2_status'?(profile.p2g2Status??'NOT_STARTED'):'NOT_STARTED'))),
       'P2-012 authorization or approved completion is synchronized');
     check(read(p2012.task_file).includes('- Status: '+profile.p2012Status), 'P2-012 task document agrees with authorization');
     if(p2012Done)check(p2012.completed_at==='2026-09-07'&&p2012.evidence===completion&&p2012.owner_approval_evidence===owner
@@ -607,7 +636,7 @@ if(['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION','DONE'].includes(current.p
 check(sameArray(Object.keys(parallel.feature_flag_defaults ?? {}), expectedFeatureFlags), 'feature flag inventory remains frozen');
 check(Object.values(parallel.feature_flag_defaults ?? {}).every((value) => value === false), 'all feature flag defaults remain false');
 check(parallel.assembly_gates.find((gate) => gate.id === 'P2-G1')?.status === (profile?.p2g1Status ?? 'NOT_STARTED'), 'P2-G1 gate matches the lifecycle profile');
-check(parallel.assembly_gates.filter((gate) => gate.id !== 'P2-G1').every((gate) => gate.status === 'NOT_STARTED'), 'later assembly gates remain NOT_STARTED');
+check(parallel.assembly_gates.filter((gate) => gate.id !== 'P2-G1').every((gate) => gate.status === (gate.id === 'P2-G2' ? (profile?.p2g2Status ?? 'NOT_STARTED') : 'NOT_STARTED')), 'later assembly gates remain NOT_STARTED');
 if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
   check(sameArray(parallel.assembly_gates.filter((gate) => gate.id.startsWith('P2-')).map((gate) => gate.id),
     ['P2-G1', 'P2-G2', 'P2-G3', 'P2-G4', 'P2-G5']), 'P2 gate inventory includes the rebaselined P2-G5');

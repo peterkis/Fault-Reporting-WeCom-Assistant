@@ -1,0 +1,36 @@
+{
+  "status": "RUNBOOKS_PUBLISHED_AND_VERIFIED",
+  "files": [
+    {
+      "local_path": "docs/runbooks/p2-g2-cloud-deployment-operations.md",
+      "server_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-cloud-deployment-operations.md",
+      "sha256": "bd5f2e127e851887865471e14772618b49b0f85628f1b4486aef823bf0632608",
+      "bytes": 14690
+    },
+    {
+      "local_path": "docs/runbooks/p2-g2-postgresql-deployment-decision.md",
+      "server_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-postgresql-deployment-decision.md",
+      "sha256": "58668c829cd4f2c0442c08faa083ef2eb79656ff2a72101325237f9119cabf1c",
+      "bytes": 7574
+    },
+    {
+      "local_path": "evidence/p2-g2-cloud-deployment-authorization.md",
+      "server_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-cloud-deployment-authorization.md",
+      "sha256": "fba336dcc9f8aeeca0c37ce8ad44752a85f2d801672e9fe42c7dacf541ae78e1",
+      "bytes": 2031
+    },
+    {
+      "local_path": "evidence/p2-g2-domain-gap-report.md",
+      "server_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-domain-gap-report.md",
+      "sha256": "e6cb3e096498022b62c265fdd0ba3235da00b539356e43e1129645020eaee367",
+      "bytes": 7651
+    },
+    {
+      "local_path": "evidence/p2-g2-cloud-deployment-record.json",
+      "server_path": "/opt/fault-reporting-wecom/p2-g2/runbooks/p2-g2-cloud-deployment-record.json",
+      "sha256": "ab6b55dd74508155d82ff5f6d10501fc3feb2ba278995a3903caeebbe75b16b9",
+      "bytes": 21523
+    }
+  ],
+  "release_snapshot_modified": false
+}

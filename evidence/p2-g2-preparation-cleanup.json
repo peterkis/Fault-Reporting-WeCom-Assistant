@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "gate": "P2-G2",
+  "kind": "PREPARATION_READ_ONLY_CLEANUP_SNAPSHOT",
+  "observed_epoch_ms": "1788960124497",
+  "matching_test_role_connections": 0,
+  "test_namespace_database_count": 0,
+  "private_feature_flags_true": [],
+  "scope": "Read-only namespace snapshot; no database deletion or inference of ownership from prefix.",
+  "local_role_process_count": 0,
+  "older_policy_blocked_profile_exists": true,
+  "older_policy_blocked_profile_active_processes": 0,
+  "earlier_profile_deletion_review": "REJECTED_BLOCKED_BY_POLICY",
+  "earlier_profile_deleted": false,
+  "policy_bypass": false,
+  "source_record": {
+    "path": "tmp/p2-g2-review-correlation-20260908/local-cleanup-readonly.json",
+    "sha256": "dc5ee854e4a2d93052bf7fca7d6d07cf338ac93ca21431d53c2c9c6e15b2cf9b"
+  }
+}

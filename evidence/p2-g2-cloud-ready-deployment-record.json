@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "task": "P2-G2",
+  "status": "READY_CANDIDATE_STAGED_NOT_ACTIVATED",
+  "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+  "package": {
+    "directory": "tmp/p2-g2-ready-cloud-e12a6d4b-d417-4207-967b-525a612a0303",
+    "archive_sha256": "914d33ce766e5a9cbfdd9ded2a19f1f7f56384c0609a92eb49792dfd86e73828",
+    "release_id": "prep-17ebc9bc8862-e12a6d4b",
+    "files": 651,
+    "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+    "ready_candidate": true,
+    "secrets_included": false
+  },
+  "facts": {
+    "release_directory": "/opt/fault-reporting-wecom/p2-g2/releases/prep-17ebc9bc8862-e12a6d4b",
+    "release_id": "prep-17ebc9bc8862-e12a6d4b",
+    "verified_files": 651,
+    "archive_sha256": "914d33ce766e5a9cbfdd9ded2a19f1f7f56384c0609a92eb49792dfd86e73828",
+    "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+    "deployment_state": "STAGED_NOT_ACTIVATED",
+    "current_symlink_created": false,
+    "business_processes_started": false
+  },
+  "node_image": "node@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e",
+  "node_version": "v24.20.0",
+  "offline_check": {
+    "gate": "P2-G2",
+    "mode": "check",
+    "ok": true,
+    "database_connection_started": false,
+    "database_writes": false,
+    "listener_started": false,
+    "provider_calls": 0,
+    "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+    "candidate_file_count": 564,
+    "persistent_flags_off": true,
+    "live_scope_checked": false
+  },
+  "ready_evidence_check": {
+    "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+    "candidate_files": 564,
+    "preparation_status": "READY_FOR_LIVE_E2E",
+    "tests": 954,
+    "live_validation": "NOT_RUN"
+  },
+  "integrity": {
+    "verified_files": 651,
+    "local_env_uploaded": false
+  },
+  "temporary_upload_removed": true,
+  "remaining_owned_containers": 0,
+  "application_activated": false,
+  "business_database_migrated": false,
+  "wecom_provider_calls": 0,
+  "live_validation": "NOT_RUN",
+  "commands": [
+    {
+      "phase": "ready-cloud-image",
+      "command": "sudo -n docker image inspect node@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e --format '{{.Id}}'",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "duration_seconds": 0.661,
+      "stdout_sha256": "40cb15a738bc221459eba61d992136e8357f07e00e2f818f1a118d788068231c",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "phase": "ready-cloud-code-stage",
+      "command": "python3 -c '\nimport pathlib,sys,tarfile,hashlib,json,re,shutil\narchive=pathlib.Path(sys.argv[1]);expected=sys.argv[2];release_id=sys.argv[3];candidate=sys.argv[4]\nassert re.fullmatch(r'\"'\"'prep-[0-9a-f]{12}-[0-9a-f]{8}'\"'\"',release_id)\nassert re.fullmatch(r'\"'\"'[0-9a-f]{64}'\"'\"',candidate) and hashlib.sha256(archive.read_bytes()).hexdigest()==expected\nbase=pathlib.Path('\"'\"'/opt/fault-reporting-wecom/p2-g2'\"'\"')\nassert base.resolve()==base and (base/'\"'\"'.stage-owner'\"'\"').read_text()=='\"'\"'P2_G2_STOPPED_STAGE_V1\\n'\"'\"'\nwith tarfile.open(archive,'\"'\"'r:gz'\"'\"') as t:\n members=t.getmembers()\n assert all(m.isfile() and not pathlib.PurePosixPath(m.name).is_absolute() and '\"'\"'..'\"'\"' not in pathlib.PurePosixPath(m.name).parts for m in members)\n assert len({m.name for m in members})==len(members)\n manifest=json.load(t.extractfile('\"'\"'DEPLOYMENT-STAGE.json'\"'\"'))\n assert manifest['\"'\"'release_id'\"'\"']==release_id and manifest['\"'\"'candidate_fingerprint'\"'\"']==candidate\n assert manifest['\"'\"'ready_candidate'\"'\"'] is True and manifest['\"'\"'secrets_included'\"'\"'] is False and manifest['\"'\"'application_activated'\"'\"'] is False\n assert {m.name for m in members}=={f['\"'\"'path'\"'\"'] for f in manifest['\"'\"'files'\"'\"']}|{'\"'\"'DEPLOYMENT-STAGE.json'\"'\"'}\n release=base/'\"'\"'releases'\"'\"'/release_id;release.mkdir(mode=0o750)\n t.extractall(release,filter='\"'\"'data'\"'\"')\nfor f in manifest['\"'\"'files'\"'\"']:\n p=release/f['\"'\"'path'\"'\"'];assert p.is_file() and not p.is_symlink() and hashlib.sha256(p.read_bytes()).hexdigest()==f['\"'\"'sha256'\"'\"']\nfor source,name in [('\"'\"'docs/runbooks/p2-g2-cloud-deployment-operations.md'\"'\"','\"'\"'p2-g2-cloud-deployment-operations.md'\"'\"'),\n ('\"'\"'docs/runbooks/p2-g2-postgresql-deployment-decision.md'\"'\"','\"'\"'p2-g2-postgresql-deployment-decision.md'\"'\"'),\n ('\"'\"'prompts/P2-G2_rule_first_service_loop_runbook.md'\"'\"','\"'\"'P2-G2_rule_first_service_loop_runbook.md'\"'\"')]:\n shutil.copyfile(release/source,base/'\"'\"'runbooks'\"'\"'/name)\nprint(json.dumps({'\"'\"'release_directory'\"'\"':str(release),'\"'\"'release_id'\"'\"':release_id,'\"'\"'verified_files'\"'\"':len(manifest['\"'\"'files'\"'\"']),\n '\"'\"'archive_sha256'\"'\"':expected,'\"'\"'candidate_fingerprint'\"'\"':candidate,'\"'\"'deployment_state'\"'\"':'\"'\"'STAGED_NOT_ACTIVATED'\"'\"','\"'\"'current_symlink_created'\"'\"':False,'\"'\"'business_processes_started'\"'\"':False}))\n' /home/ubuntu/.cache/p2-g2-ready-stage-bdbca286cb9e408d9a58642ca821b9ad/source.tar.gz 914d33ce766e5a9cbfdd9ded2a19f1f7f56384c0609a92eb49792dfd86e73828 prep-17ebc9bc8862-e12a6d4b 17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "duration_seconds": 0.373,
+      "stdout_sha256": "ba749cb4e0ce90b9c96ea7b011ca0522413163aecbe3aa611780e32609739719",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "phase": "ready-cloud-npm-ci",
+      "command": "sudo -n docker run --rm --label com.fault-reporting.ready-run=prep-17ebc9bc8862-e12a6d4b --user 1000:1000 --memory 768m --cpus 1 --mount type=bind,source=/opt/fault-reporting-wecom/p2-g2/releases/prep-17ebc9bc8862-e12a6d4b,target=/app -w /app -e npm_config_cache=/tmp/npm-cache -e npm_config_fetch_retries=1 -e npm_config_fetch_timeout=60000 node@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e npm ci --ignore-scripts --omit=dev --no-audit --no-fund",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "duration_seconds": 1.941,
+      "stdout_sha256": "cd9f10ef3e9062ebbd3d8e1426bac402f2fbd2ae214badbf042f15dc72a59a4f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "phase": "ready-cloud-node-version",
+      "command": "sudo -n docker run --rm --network none --read-only --memory 256m --cpus 0.5 --label com.fault-reporting.ready-run=prep-17ebc9bc8862-e12a6d4b --mount type=bind,source=/opt/fault-reporting-wecom/p2-g2/releases/prep-17ebc9bc8862-e12a6d4b,target=/app,readonly -w /app node@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e node --version",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "duration_seconds": 0.321,
+      "stdout_sha256": "b67d0ced059f9313d861ddbbe734d2d1f9219106a9e036ae6d88407afa0846e6",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "phase": "ready-cloud-offline-check",
+      "command": "sudo -n docker run --rm --network none --read-only --memory 256m --cpus 0.5 --label com.fault-reporting.ready-run=prep-17ebc9bc8862-e12a6d4b --mount type=bind,source=/opt/fault-reporting-wecom/p2-g2/releases/prep-17ebc9bc8862-e12a6d4b,target=/app,readonly -w /app node@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e node scripts/p2-g2-check.mjs --mode=check",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "duration_seconds": 0.577,
+      "stdout_sha256": "b3c00939a8b74ce2689092a7ef858941d2ffd807064930f63b90486e0ec8dca1",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "phase": "ready-cloud-ready-evidence",
+      "command": "sudo -n docker run --rm --network none --read-only --memory 256m --cpus 0.5 --label com.fault-reporting.ready-run=prep-17ebc9bc8862-e12a6d4b --mount type=bind,source=/opt/fault-reporting-wecom/p2-g2/releases/prep-17ebc9bc8862-e12a6d4b,target=/app,readonly -w /app node@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e node --input-type=module -e 'import {g2CandidateInventory,requirePreparedG2Candidate} from '\"'\"'./src/p2-g2-candidate.mjs'\"'\"'; const c=g2CandidateInventory(),r=requirePreparedG2Candidate(c.fingerprint); console.log(JSON.stringify({candidate_fingerprint:c.fingerprint,candidate_files:c.file_count,preparation_status:r.preparation_status,tests:r.full_regression.tests,live_validation:r.live_validation}));'",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "duration_seconds": 0.773,
+      "stdout_sha256": "21fb70dc307bd322ee859ca5adcf3fe06d19dc559db1e83cbb859e6aae1ded8b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "phase": "ready-cloud-live-no-arguments",
+      "command": "sudo -n docker run --rm --network none --read-only --memory 256m --cpus 0.5 --label com.fault-reporting.ready-run=prep-17ebc9bc8862-e12a6d4b --mount type=bind,source=/opt/fault-reporting-wecom/p2-g2/releases/prep-17ebc9bc8862-e12a6d4b,target=/app,readonly -w /app node@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e node scripts/p2-g2-live-e2e.mjs",
+      "exit_code": 2,
+      "expected_exit_code": 2,
+      "duration_seconds": 0.421,
+      "stdout_sha256": "dbebe1ca856fa7667399140adb9d5abd583e8ef0542450b6286f80deb2c3a7ad",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "phase": "ready-cloud-source-after-install",
+      "command": "python3 -c 'import pathlib,json,hashlib; p=pathlib.Path('\"'\"'/opt/fault-reporting-wecom/p2-g2/releases/prep-17ebc9bc8862-e12a6d4b'\"'\"'); m=json.loads((p/'\"'\"'DEPLOYMENT-STAGE.json'\"'\"').read_text()); assert all(hashlib.sha256((p/f['\"'\"'path'\"'\"']).read_bytes()).hexdigest()==f['\"'\"'sha256'\"'\"'] for f in m['\"'\"'files'\"'\"']); print(json.dumps({'\"'\"'verified_files'\"'\"':len(m['\"'\"'files'\"'\"']),'\"'\"'local_env_uploaded'\"'\"':(p/'\"'\"'.env.pilot'\"'\"').exists()}))'",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "duration_seconds": 0.117,
+      "stdout_sha256": "db7a76c2246aa60e228cb40ad6bafa03ceba8fe5874f360fa163ed3c7c3dfd92",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "phase": "ready-cloud-container-cleanup",
+      "command": "sudo -n docker ps -a --filter label=com.fault-reporting.ready-run=prep-17ebc9bc8862-e12a6d4b --format '{{.Names}}'",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "duration_seconds": 0.067,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "recorded_at": "2026-09-09 21:05:26",
+  "authorization": "evidence/p2-g2-cloud-deployment-authorization.md",
+  "source_record": {
+    "path": "tmp/p2-g2-preparation-20260908-01a07e70/cloud-ready-stage-result.json",
+    "sha256": "0511ec9c85624cf472c1857634249896dda0edc051728a41c8341a1f570fca80"
+  }
+}

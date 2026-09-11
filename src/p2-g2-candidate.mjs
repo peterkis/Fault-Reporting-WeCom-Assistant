@@ -1,0 +1,129 @@
+import { readFileSync, readdirSync, lstatSync, existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { G2_SCENARIO_IDS } from './p2-g2-gate-evaluator.mjs';
+import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
+import { g2Hash, failG2, validateG2Manifest } from './p2-g2-validation-config.mjs';
+
+export const G2_ROOT = fileURLToPath(new URL('../', import.meta.url));
+export const G2_CANDIDATE_ROOTS = Object.freeze(['src', 'scripts', 'web', 'contracts', 'config', 'config_examples', 'database/migrations', 'tests']);
+export const G2_CANDIDATE_FILES = Object.freeze(['package.json', 'package-lock.json', '.env.example']);
+// This ignored local example is not read by a Runtime. .env.example and Gate manifest semantics are included.
+export const G2_EXCLUDED_LOCAL_FILES = Object.freeze(['config/pilot.env.example']);
+export function g2CandidateInventory(root = G2_ROOT) {
+  const files = [];
+  function add(relative) {
+    if(G2_EXCLUDED_LOCAL_FILES.includes(relative))return;
+    const absolute = path.join(root, relative), stat = lstatSync(absolute);
+    if (stat.isSymbolicLink()) failG2('CANDIDATE_SYMLINK_FORBIDDEN');
+    if (stat.isDirectory()) {
+      for (const name of readdirSync(absolute).sort()) add(relative + '/' + name);
+      return;
+    }
+    if (!stat.isFile() || stat.size > 16 * 1024 * 1024 || files.length >= 2048) failG2('CANDIDATE_INVENTORY_LIMIT');
+    const binary = !/\.(mjs|js|ts|json|jsonl|yaml|yml|sql|css|html|md|txt|sh|py)$/u.test(relative) && relative !== '.env.example';
+    const raw = readFileSync(absolute);
+    const content = binary ? raw : Buffer.from(new TextDecoder('utf-8', { fatal: true }).decode(raw).replaceAll('\r\n', '\n'));
+    files.push({ path: relative, sha256: g2Hash(content), bytes: content.length, encoding: binary ? 'BINARY' : 'UTF8_LF' });
+  }
+  for (const selected of [...G2_CANDIDATE_ROOTS, ...G2_CANDIDATE_FILES]) {
+    if(selected==='config'&&!existsSync(path.join(root,selected)))continue;
+    add(selected);
+  }
+  files.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  return Object.freeze({ schema_version: 1, gate: 'P2-G2', algorithm: 'SHA256_SORTED_PATH_CONTENT_UTF8_LF',
+    fingerprint: g2Hash(JSON.stringify(files)), file_count: files.length, excluded_local_files: G2_EXCLUDED_LOCAL_FILES, files });
+}
+export function verifyG2Candidate(expected, root = G2_ROOT) {
+  const inventory = g2CandidateInventory(root);
+  if (inventory.fingerprint !== expected) failG2('CANDIDATE_CHANGED');
+  return inventory;
+}
+export function g2ApprovalScopeHash(manifest) {
+  const m = validateG2Manifest(manifest);
+  // Exclude only the approval document's own path/hash to avoid a circular hash.
+  return g2Hash(JSON.stringify({ schema_version: m.schema_version, gate: m.gate, mode: m.mode,
+    run_id: m.run_id, candidate_fingerprint: m.candidate_fingerprint, feature_flags: m.feature_flags,
+    listen_port: m.listen_port, reporter_origin: m.reporter_origin, scope: m.scope,
+    valid_from_epoch_ms: m.approval.valid_from_epoch_ms, expires_epoch_ms: m.approval.expires_epoch_ms }));
+}
+export function verifyG2ApprovalFile(manifest, root = G2_ROOT) {
+  if (manifest.mode !== 'live') return;
+  const ref = manifest.approval.source_ref;
+  if (typeof ref !== 'string' || !/^evidence\/p2-g2-live-start-approval(?:-[a-z0-9-]+)?\.md$/u.test(ref)) failG2('OWNER_START_APPROVAL_REQUIRED');
+  const absolute = path.join(root, ref);
+  let bytes;
+  try {
+    const stat = lstatSync(absolute);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 65536) failG2('OWNER_START_APPROVAL_REQUIRED');
+    bytes = readFileSync(absolute);
+  } catch { failG2('OWNER_START_APPROVAL_REQUIRED'); }
+  if (g2Hash(bytes) !== manifest.approval.source_sha256) failG2('OWNER_APPROVAL_CHANGED');
+  // A file hash is an integrity check, not proof that a human observed the run.
+  // The owner must supply this file; no Gate command generates a positive approval.
+  const text = bytes.toString('utf8');
+  if (!text.includes(manifest.run_id) || !text.includes(manifest.candidate_fingerprint)
+    || !text.includes('P2-G2') || !text.includes('PROJECT_OWNER')
+    || !text.split(/\r?\n/u).includes('manifest_scope_sha256: ' + g2ApprovalScopeHash(manifest))) failG2('OWNER_APPROVAL_BINDING_MISMATCH');
+}
+
+export function requirePreparedG2Candidate(fingerprint, root=G2_ROOT){
+  const reject=()=>failG2('READY_CANDIDATE_REQUIRED');
+  const readEvidence=ref=>{
+    if(!ref||!/^evidence\/p2-g2-[a-z0-9-]+\.(json|tap|md)$/u.test(ref.path??''))reject();
+    let raw;try{
+      const file=path.join(root,ref.path),stat=lstatSync(file);
+      if(!stat.isFile()||stat.isSymbolicLink()||stat.size>64*1024*1024)reject();
+      raw=readFileSync(file);
+    }catch{reject();}
+    if(g2Hash(raw)!==ref.sha256)failG2('REGRESSION_EVIDENCE_CHANGED');
+    return raw.toString('utf8');
+  };
+  let r;try{r=JSON.parse(readFileSync(path.join(root,'evidence/p2-g2-automated-readiness-report.json'),'utf8'));}catch{reject();}
+  const f=r?.full_regression,keys=['tests','pass','fail','skipped','cancelled','todo'];
+  if(r?.preparation_status!=='READY_FOR_LIVE_E2E'||r.candidate_fingerprint!==fingerprint||r.gold_reference_count!==202
+    ||r.scenario_matrix_complete!==true||r.independent_review_passed!==true||!f
+    ||keys.some(k=>!Number.isSafeInteger(f[k])||f[k]<0)||f.tests<577||f.tests!==f.pass
+    ||f.baseline_test_files_covered!==true||keys.slice(2).some(k=>f[k]!==0))reject();
+  const tap=readEvidence({path:f.tap_path,sha256:f.tap_sha256}),counts={},passedNames=new Set();
+  for(const line of tap.split(/\r?\n/u)){
+    if(/^\s*not ok \d+/u.test(line))reject();
+    const passed=/^\s*ok \d+ - (.+)$/u.exec(line);if(passed)passedNames.add(passed[1]);
+    const m=/^# (tests|pass|fail|skipped|cancelled|todo) (\d+)$/u.exec(line);if(m)counts[m[1]]=Number(m[2]);
+  }
+  if(keys.some(k=>counts[k]!==f[k])||(tap.match(/^\s*ok \d+ - /gmu)??[]).length!==f.tests)reject();
+  let run,matrix,review,sourceAudit;try{
+    run=JSON.parse(readEvidence(r.source_evidence?.regression_run));
+    matrix=JSON.parse(readEvidence(r.source_evidence?.scenario_matrix));
+    review=JSON.parse(readEvidence(r.source_evidence?.independent_review));
+    sourceAudit=JSON.parse(readEvidence(r.source_evidence?.source_execution));
+  }catch(e){if(e?.code)throw e;reject();}
+  if([run,matrix,review,sourceAudit].some(v=>v?.candidate_fingerprint!==fingerprint))reject();
+  const inventory=g2CandidateInventory(root);
+  if(inventory.fingerprint!==fingerprint)failG2('CANDIDATE_CHANGED');
+  const files=inventory.files.filter(f=>/^tests\/(?:p2-007\/)?[^/]+\.test\.mjs$/u.test(f.path));
+  if(run.suite!=='full'||run.mode!=='SYNTHETIC_AUTOMATION'||run.exit_code!==0||run.error!==null
+    ||run.signal!==null||run.candidate_unchanged!==true||run.stdout_sha256!==f.tap_sha256
+    ||keys.some(k=>run.counts?.[k]!==f[k])||!Array.isArray(run.files)||run.files.length!==files.length
+    ||new Set(run.files.map(f=>f.path)).size!==files.length
+    ||files.some(f=>!run.files.some(actual=>actual.path===f.path&&actual.sha256===f.sha256)))reject();
+  let computedAudit;try{computedAudit=createG2SourceAudit({tap,run,root});}catch{reject();}
+  if(g2Hash(JSON.stringify(sourceAudit))!==g2Hash(JSON.stringify(computedAudit))||!computedAudit.accounting_complete
+    ||computedAudit.observed_normal_pass_cases!==122||computedAudit.manual_review_observation_missing.length)reject();
+  if(!Array.isArray(matrix.scenarios)||matrix.scenarios.length!==G2_SCENARIO_IDS.length
+    ||new Set(matrix.scenarios.map(s=>s.scenario_id)).size!==G2_SCENARIO_IDS.length
+    ||matrix.scenarios.some(s=>!G2_SCENARIO_IDS.includes(s.scenario_id)||s.preparation_status!=='VERIFIED'
+      ||!Array.isArray(s.test_names)||!s.test_names.length||s.test_names.some(name=>
+        typeof name!=='string'||!passedNames.has(name))))reject();
+  if(!Array.isArray(review.reviews)||review.reviews.length!==2
+    ||!['STANDARDS','SPEC'].every(axis=>review.reviews.some(v=>v.axis===axis&&v.verdict==='PASS'
+      &&v.unresolved_findings===0&&typeof v.reviewer==='string'&&v.reviewer.length>0)))reject();
+  for(const v of review.reviews){
+    let source;try{source=JSON.parse(readEvidence(v.source));}catch(e){if(e?.code)throw e;reject();}
+    if(source.candidate_fingerprint!==fingerprint||['axis','verdict','unresolved_findings','reviewer'].some(k=>source[k]!==v[k])
+      ||source.source_execution_sha256!==r.source_evidence.source_execution.sha256
+      ||source.scenario_matrix_sha256!==r.source_evidence.scenario_matrix.sha256
+      ||!Array.isArray(source.findings)||source.findings.some(f=>f.resolved!==true))reject();
+  }
+  return r;
+}
