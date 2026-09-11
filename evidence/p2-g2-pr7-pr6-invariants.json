@@ -1,0 +1,364 @@
+{
+  "schema_version": 1,
+  "kind": "PR6_INVARIANTS_CURRENT_FULL_REGRESSION",
+  "source_file": "tmp/p2-g2-preparation-20260908-01a07e70/pr6-comments.json",
+  "source_file_sha256": "6c68587aaffb99b0a30aeda56940771daabf1dd0a8596f949058d804eebc58ac",
+  "expected_source_sha256": "6c68587aaffb99b0a30aeda56940771daabf1dd0a8596f949058d804eebc58ac",
+  "comment_count": 10,
+  "mapped_count": 10,
+  "historical_evidence_scope": "Historical PR6 fixes only, not this candidate execution or this Gate现场.",
+  "current_run_status": "PASS",
+  "items": [
+    {
+      "review_comment_id": 3947087169,
+      "source_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6#discussion_r3947087169",
+      "source_body_sha256": "060a9e2e36f808782cfff5de58dad308775d67f3aa4eee89021ec9201900a0aa",
+      "source_path": "src/p2-012-live-reporter-scope.mjs",
+      "source_commit_id": "044ce68dce5422b377d27cbbb432e78f94797478",
+      "original_commit_id": "044ce68dce5422b377d27cbbb432e78f94797478",
+      "invariant": "PERSON qualification is approved Reporter scope AND a retained, same-Bot/same-Reporter genuine DIRECT_GUIDED or DIRECT_ORGANIC Leg. Group-only presence cannot authorize private sends; first Direct inbound must remain admissible without a pre-existing Leg.",
+      "tests": [
+        {
+          "file": "tests/p2-012-scope-candidate.integration.test.mjs",
+          "test_name": "P2-012 real direct-leg eligibility suppresses group-only Ticket artifacts and validates persisted destination scope",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "edcb259277a473f448a98ca95c0606e97f928f14f36aa3619ce85088dde7aea1"
+        },
+        {
+          "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+          "test_name": "P2-G2 group clarification does not create private artifacts before a real Direct Leg",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5"
+        },
+        {
+          "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+          "test_name": "P2-G2 App manual-review clarification uses the same Direct Leg generation guard",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5"
+        },
+        {
+          "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+          "test_name": "P2-G2 retained CLOSED Direct Leg permits a new group clarification",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5"
+        },
+        {
+          "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+          "test_name": "P2-G2 establishing Direct Leg never backfills old Ticket cards; new events can notify",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5"
+        }
+      ],
+      "gate_scenarios": [
+        "G2-N01",
+        "G2-N02",
+        "G2-E03",
+        "G2-E04"
+      ],
+      "gate_scenario_mapping_basis": "Original Prompt scenario obligations, current test assertion mapping and current full TAP.",
+      "remaining_boundaries": "Latest authorization permits capability-free public_ref in group receipt: do not carry forward historical zero-public_ref assertion. Private Delivery/Grant remains forbidden without Direct Leg. Current candidate full-run and actual three-role binding required.",
+      "execution_status": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+      "live_status": "NOT_RUN"
+    },
+    {
+      "review_comment_id": 3947087174,
+      "source_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6#discussion_r3947087174",
+      "source_body_sha256": "0d0afcbe99f2cdf579500e3796925cf60d818e6f9d03f0ed0ccd857924ebd9ba",
+      "source_path": "src/p2-012-workbench-assembly.mjs",
+      "source_commit_id": "044ce68dce5422b377d27cbbb432e78f94797478",
+      "original_commit_id": "044ce68dce5422b377d27cbbb432e78f94797478",
+      "invariant": "Assembled maintenance scans due Candidates in bounded deterministic batches and invokes private idempotent SYSTEM expiration; expired queue entries cannot remain indefinitely. Public commands/HTTP cannot acquire SYSTEM maintenance authority.",
+      "tests": [
+        {
+          "file": "tests/p2-012-incident.integration.test.mjs",
+          "test_name": "P2-012 maintenance expires a bounded ordered batch through private SYSTEM commands without notifications",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc"
+        },
+        {
+          "file": "tests/p2-012-incident.integration.test.mjs",
+          "test_name": "P2-012 maintenance replays concurrent scans, handles human/time races and surfaces a still-due failure",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc"
+        },
+        {
+          "file": "tests/p2-012-incident.integration.test.mjs",
+          "test_name": "P2-012 maintenance scans after import and expires an imported due candidate in the same iteration",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc"
+        },
+        {
+          "file": "tests/p2-012-process-assembly.integration.test.mjs",
+          "test_name": "P2-012 network-off three-role assembly serves Incident and closes children, sockets and pools",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "cda895a9d268ba0e3cec5d91558a361859c9103824493c445fa64fde81795480"
+        }
+      ],
+      "gate_scenarios": [
+        "G2-I04"
+      ],
+      "gate_scenario_mapping_basis": "Original Prompt scenario obligations, current test assertion mapping and current full TAP.",
+      "remaining_boundaries": "Require current real PostgreSQL batch20+5, time/state/concurrency and same-round import checks plus process restart Event/Receipt uniqueness. Exact standalone Gate scenario ID not recovered from local declaration; bind from original Prompt rather than guessing.",
+      "execution_status": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+      "live_status": "NOT_RUN"
+    },
+    {
+      "review_comment_id": 3948007171,
+      "source_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6#discussion_r3948007171",
+      "source_body_sha256": "4068b0bc2e4246f35b99b8eb6ba92ea9f2567e49de45a62f798aa6dab87c5a55",
+      "source_path": "src/p2-012-workbench-http.mjs",
+      "source_commit_id": "14557b9f6191a08434652550127f42360c97bffe",
+      "original_commit_id": "14557b9f6191a08434652550127f42360c97bffe",
+      "invariant": "Failed service/notification commands retain stable503 classification after business savepoint rollback; conflict409 is distinct. Same failed command ID replays original failure without re-execution; only explicit fresh command performs recovery.",
+      "tests": [
+        {
+          "file": "tests/p2-012-domain-contracts.test.mjs",
+          "test_name": "P2-012 stable HTTP matrix is exhaustive, deterministic and rejects hostile results without executing code",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "ebc35c6ffa7c4a751335d7500d62ad5fd84c5752cfd1660054f8482dc9fa5182"
+        },
+        {
+          "file": "tests/p2-012-workbench.integration.test.mjs",
+          "test_name": "P2-012 actual HTTP preserves notification failure, rollback and durable replay before explicit recovery",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "0401889cbfd232492733303d08f97322d3b5da2c1f4d680353e064cb071edd68"
+        },
+        {
+          "file": "tests/p2-g2-command-outcome-browser.test.mjs",
+          "test_name": "P2-G2 generic proxy 503 after commit keeps the command id for reconciliation; stable failure and conflict stay distinct",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "af3b1eb165a0b2f14de88d06a990c7af9f4593763e3da4c4784b7fd606161fd4"
+        }
+      ],
+      "gate_scenarios": [
+        "G2-C01",
+        "G2-F03",
+        "G2-T04"
+      ],
+      "gate_scenario_mapping_basis": "Original Prompt scenario obligations, current test assertion mapping and current full TAP.",
+      "remaining_boundaries": "Bind actual rollback deltas, durable receipt replay, and browser unknown-vs-failed UI to current candidate. N03 is related notification fault coverage, not sole proof of all HTTP status classes.",
+      "execution_status": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+      "live_status": "NOT_RUN"
+    },
+    {
+      "review_comment_id": 3948007180,
+      "source_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6#discussion_r3948007180",
+      "source_body_sha256": "aed6189d09c236b1b7f45f07429de7ac7f70ac96e7eefeb54c23583c116f51af",
+      "source_path": "contracts/openapi.yaml",
+      "source_commit_id": "7767138ce1084ce03a3482f30cd31a523c8417f3",
+      "original_commit_id": "14557b9f6191a08434652550127f42360c97bffe",
+      "invariant": "Both parsed OpenAPI documents expose the actual subscription-scoped direct-destinations endpoint with incidentId/subscriptionId, security and pagination, consistent with runtime authorization and UI.",
+      "tests": [
+        {
+          "file": "tests/p2-012-schema-live-guards.test.mjs",
+          "test_name": "P2-012 both parsed OpenAPI documents declare canonical subscription destinations and service failures",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "17218c43ac38e03ee693faf25329dc0152234d7c9bd9be4a90ab11d364b31463"
+        },
+        {
+          "file": "tests/p2-012-workbench.integration.test.mjs",
+          "test_name": "P2-012 actual HTTP preserves notification failure, rollback and durable replay before explicit recovery",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "0401889cbfd232492733303d08f97322d3b5da2c1f4d680353e064cb071edd68"
+        },
+        {
+          "file": "tests/p2-g2-openapi-routing.integration.test.mjs",
+          "test_name": "P2-G2 parsed OpenAPI server and Incident paths resolve to the actual authenticated HTTP route",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "920b0ff4e0a7eb4bc9c4482fa19cf2073bbda6024ec0e9b727efcbeded16b422"
+        }
+      ],
+      "gate_scenarios": [
+        "G2-C02",
+        "G2-I07"
+      ],
+      "gate_scenario_mapping_basis": "Original Prompt scenario obligations, current test assertion mapping and current full TAP.",
+      "remaining_boundaries": "Nested route correctness requires runtime ADMIN/nonadmin and foreign-Subscription checks, not only YAML existence; cross-cutting contract invariant relates to subscription scenarios.",
+      "execution_status": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+      "live_status": "NOT_RUN"
+    },
+    {
+      "review_comment_id": 3950900504,
+      "source_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6#discussion_r3950900504",
+      "source_body_sha256": "51f9fcccfe63fb010859b4b78545003e8b5a70f347d6a9eb45e14b6b02600b8b",
+      "source_path": "src/p2-012-incident-command-service.mjs",
+      "source_commit_id": "21414a42ecc454a0079ab60801148acab0d7f247",
+      "original_commit_id": "21414a42ecc454a0079ab60801148acab0d7f247",
+      "invariant": "Subscription activation/resume, destination queries, relink and private notification projection all reject expired Journey/Direct eligibility and inconsistent identity; already-ACTIVE then expired must enqueue no further private notification.",
+      "tests": [
+        {
+          "file": "tests/p2-012-subscription-review.integration.test.mjs",
+          "test_name": "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "4f4b80cf23efcba6897b957caf55e8c2e95b7d395d48653ab040a20030495a2e"
+        },
+        {
+          "file": "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+          "test_name": "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "c6c5ad17d4400745207ea407c0ee97df252d175c8e92e82338d69cdfe9dad2a6"
+        }
+      ],
+      "gate_scenarios": [
+        "G2-I05"
+      ],
+      "gate_scenario_mapping_basis": "Original Prompt scenario obligations, current test assertion mapping and current full TAP.",
+      "remaining_boundaries": "Keep expired origin and Direct Journey checks, wrong Reporter/Bot and no-private-notification after expiry. Fresh current candidate test evidence required; old completed现场 is not new evidence.",
+      "execution_status": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+      "live_status": "NOT_RUN"
+    },
+    {
+      "review_comment_id": 3950900513,
+      "source_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6#discussion_r3950900513",
+      "source_body_sha256": "abce9e0724b3eec47186ddc518fb6f11e32e8d6a196106f560f20fb2f7f9ef0e",
+      "source_path": "src/p2-012-incident-command-service.mjs",
+      "source_commit_id": "21414a42ecc454a0079ab60801148acab0d7f247",
+      "original_commit_id": "21414a42ecc454a0079ab60801148acab0d7f247",
+      "invariant": "Relinking the last previously unlinked group-only report reuses the physical subscription row but starts a new logical subscription cycle with subscription.created/PENDING_DESTINATION; activated may only describe actual ACTIVE state.",
+      "tests": [
+        {
+          "file": "tests/p2-012-subscription-review.integration.test.mjs",
+          "test_name": "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "4f4b80cf23efcba6897b957caf55e8c2e95b7d395d48653ab040a20030495a2e"
+        },
+        {
+          "file": "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+          "test_name": "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "c6c5ad17d4400745207ea407c0ee97df252d175c8e92e82338d69cdfe9dad2a6"
+        }
+      ],
+      "gate_scenarios": [
+        "G2-I06"
+      ],
+      "gate_scenario_mapping_basis": "Original Prompt scenario obligations, current test assertion mapping and current full TAP.",
+      "remaining_boundaries": "Assert event type, payload.status and persisted subscription status together; do not infer activation from successful LINK_REPORT or row reuse.",
+      "execution_status": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+      "live_status": "NOT_RUN"
+    },
+    {
+      "review_comment_id": 3950900523,
+      "source_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6#discussion_r3950900523",
+      "source_body_sha256": "9fcf39d44f4b2d60303b24de562804586b7d1ba4b8301538f1d6697157a1c47e",
+      "source_path": "contracts/p2_012_contracts.d.ts",
+      "source_commit_id": "21414a42ecc454a0079ab60801148acab0d7f247",
+      "original_commit_id": "21414a42ecc454a0079ab60801148acab0d7f247",
+      "invariant": "TypeScript client contract defines next_cursor as string|null and optional owner_team_id usable under strict compilation; numeric cursors must be rejected.",
+      "tests": [
+        {
+          "file": "tests/p2-012-client-contract-review.test.mjs",
+          "test_name": "P2-012 real TypeScript consumers accept nullable cursors and optional owner teams",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "b1146d72ba3554b6558debf2d18dd68eb6f8e9765cfb4163f0bece568ffe1b89"
+        }
+      ],
+      "gate_scenarios": [
+        "G2-C02"
+      ],
+      "gate_scenario_mapping_basis": "Original Prompt scenario obligations, current test assertion mapping and current full TAP.",
+      "remaining_boundaries": "Cross-cutting static consumer contract; no supported dedicated Gate scenario ID established locally. Run installed TypeScript strict consumer on current contracts; no live send requirement.",
+      "execution_status": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+      "live_status": "NOT_RUN"
+    },
+    {
+      "review_comment_id": 3950900528,
+      "source_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6#discussion_r3950900528",
+      "source_body_sha256": "7adb776bd8649df813d59e258af361e09041df4bd1af324d3a211ae951caad2b",
+      "source_path": "contracts/openapi.yaml",
+      "source_commit_id": "7767138ce1084ce03a3482f30cd31a523c8417f3",
+      "original_commit_id": "21414a42ecc454a0079ab60801148acab0d7f247",
+      "invariant": "Both OpenAPI incident list GET declarations support optional state query matching ACTIVE/FINISHED queue aliases and all seven runtime incident states.",
+      "tests": [
+        {
+          "file": "tests/p2-012-client-contract-review.test.mjs",
+          "test_name": "P2-012 parsed OpenAPI incident state filters match all runtime states and queue aliases",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "b1146d72ba3554b6558debf2d18dd68eb6f8e9765cfb4163f0bece568ffe1b89"
+        }
+      ],
+      "gate_scenarios": [
+        "G2-C02"
+      ],
+      "gate_scenario_mapping_basis": "Original Prompt scenario obligations, current test assertion mapping and current full TAP.",
+      "remaining_boundaries": "I01 is related Incident operator flow, while exact parsed enum equality is cross-cutting contract coverage. Do not replace two-document parse/runtime comparison with enum-count-only assertion.",
+      "execution_status": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+      "live_status": "NOT_RUN"
+    },
+    {
+      "review_comment_id": 3951285976,
+      "source_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6#discussion_r3951285976",
+      "source_body_sha256": "b481f29c350497a04d733cc6d70d2e53d3252df102dc0af944044b9fd48d6d73",
+      "source_path": "web/p2-workbench/incidents.js",
+      "source_commit_id": "711269b8780e8edfad3011e78df5e2e6e986c9af",
+      "original_commit_id": "711269b8780e8edfad3011e78df5e2e6e986c9af",
+      "invariant": "PAUSED as well as PENDING_DESTINATION must offer server-filtered fresh eligible destinations; resume can replace an expired old Leg with the selected valid Leg and required versions in one explicit POST.",
+      "tests": [
+        {
+          "file": "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+          "test_name": "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "c6c5ad17d4400745207ea407c0ee97df252d175c8e92e82338d69cdfe9dad2a6"
+        },
+        {
+          "file": "tests/p2-012-workbench-browser.test.mjs",
+          "test_name": "P2-012 database-backed browser 1440x900 human confirmation, refresh and accessibility",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "dbf8268cfc72a70831119e214afa9a63a21e9a9127a13c3b5834c03d8c478395"
+        },
+        {
+          "file": "tests/p2-012-workbench-browser.test.mjs",
+          "test_name": "P2-012 database-backed browser 1366x768 human confirmation, refresh and accessibility",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "dbf8268cfc72a70831119e214afa9a63a21e9a9127a13c3b5834c03d8c478395"
+        },
+        {
+          "file": "tests/p2-012-workbench-browser.test.mjs",
+          "test_name": "P2-012 database-backed browser 390x844 human confirmation, refresh and accessibility",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "dbf8268cfc72a70831119e214afa9a63a21e9a9127a13c3b5834c03d8c478395"
+        }
+      ],
+      "gate_scenarios": [
+        "G2-I07"
+      ],
+      "gate_scenario_mapping_basis": "Original Prompt scenario obligations, current test assertion mapping and current full TAP.",
+      "remaining_boundaries": "Also rerun all three expanded database-backed browser viewport tests listed separately. Require choice list excludes expired destination, POST count1, both expected versions and resulting ACTIVE/new Leg in PostgreSQL.",
+      "execution_status": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+      "live_status": "NOT_RUN"
+    },
+    {
+      "review_comment_id": 3951493832,
+      "source_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/6#discussion_r3951493832",
+      "source_body_sha256": "64eca24fc12e49e6018ab64f940217ed30219a77a87fee1d381cf65645468a38",
+      "source_path": "web/p2-reporter/reporter.js",
+      "source_commit_id": "7767138ce1084ce03a3482f30cd31a523c8417f3",
+      "original_commit_id": "724085ed09c07fdd3adbd0c998dd46794dca446a",
+      "invariant": "Reporter adopts a new detail ETag only after dependent timeline and Incident milestone rendering succeeds; transient timeline503 cannot strand added or removed milestones behind subsequent304.",
+      "tests": [
+        {
+          "file": "tests/p2-012-reporter-refresh-browser.test.mjs",
+          "test_name": "Reporter browser retries incomplete ETag render after transient timeline failure for milestone addition and removal",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "26ae9631dc7686acbb147012e6932ee242172ea32617266c9e0ef78100a529f2"
+        },
+        {
+          "file": "tests/p2-012-reporter-http.integration.test.mjs",
+          "test_name": "P2-012 Reporter HTTP preserves bound grants, refresh ETag, safe milestones and unlink visibility",
+          "validation": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+          "file_sha256": "a129b0582fdd12e592708f494424d047f83699ff6c444b3e05a84d234fe64dfa"
+        }
+      ],
+      "gate_scenarios": [
+        "G2-R02"
+      ],
+      "gate_scenario_mapping_basis": "Original Prompt scenario obligations, current test assertion mapping and current full TAP.",
+      "remaining_boundaries": "N04 is related Reporter access/template view coverage. Need actual browser addition AND removal failure/recovery, old ETag retry and304 only after successful render; actual WeCom client live observation is separately required.",
+      "execution_status": "VERIFIED_IN_CURRENT_FULL_REGRESSION",
+      "live_status": "NOT_RUN"
+    }
+  ],
+  "candidate_fingerprint": "64c5a08a11bb4d140b02cf0c5e43758ea57d01e76f6bfaa3b34f819c188d249e",
+  "regression_tap_sha256": "876314b240cc2b25022840ce198c6bc0e6d73f1634ddbf176ad63d282492c626",
+  "regression_run": "tmp/p2-g2-tests-c55091e1-f73b-4e24-9de2-284193343c56/run.json"
+}

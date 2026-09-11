@@ -1,6 +1,6 @@
 # Architecture Baseline Status
 
-2026-09-11 增量说明：用户授权实施医小修网页 OAuth，任务见 `tasks/P2-G2_wecom_web_oauth.md`，证据见 `evidence/p2-g2-wecom-web-oauth.md`。下述 READY_FOR_LIVE_E2E 与 954 项结论保留为原候选历史事实，不覆盖本次工作树增量。OAuth-only 云端入口已部署（代码默认关闭、独立运行配置启用），用户确认认证成功，服务端成功回调及成功页各 1；完整 G2 业务运行保持停止，不推进任何 Gate。
+2026-09-11 增量说明：用户授权实施医小修网页 OAuth，任务见 `tasks/P2-G2_wecom_web_oauth.md`，证据见 `evidence/p2-g2-wecom-web-oauth.md`。当前准备候选以 `evidence/p2-g2-automated-readiness-report.json` 及其引用证据为准，原 954 项报告单独保留为历史快照。OAuth-only 云端入口已部署（代码默认关闭、独立运行配置启用），用户确认认证成功，服务端成功回调及成功页各 1；完整 G2 业务运行保持停止，不推进任何 Gate。
 
 - 基线版本：V1.4
 - 生效日期：2026-08-30
@@ -14,7 +14,7 @@
 - 当前活动任务与 Lane：P2-G2 / ASSEMBLY
 - 当前 Gate：P2-G2 / READY_FOR_LIVE_E2E；最后完成 Gate 为 P2-G1 / PASSED
 - 最近完成任务：P2-012（`DONE`）；当前 P2-G2 仅准备授权
-- P2-G2 当前业务修订：三种入口均有效；群内最终闭环 @ 原报修人，单聊默认仅接单及最终关闭两次模板推送，其余节点可配置且默认关闭。故障受理不依赖资料补充成功。目标契约见 `evidence/p2-g2-three-entry-business-profile.md`，实现及954项完整回归已验证，就绪源证据另行绑定；真实现场未运行。
+- P2-G2 当前业务修订：三种入口均有效；群内最终闭环 @ 原报修人，单聊默认仅接单及最终关闭两次模板推送，其余节点可配置且默认关闭。故障受理不依赖资料补充成功。目标契约见 `evidence/p2-g2-three-entry-business-profile.md`，实现及976项完整回归已验证，就绪源证据另行绑定；真实现场未运行。
 - P2-G1：PASSED（不是 Phase 2 GO、生产或临床批准）
 - P2/P3 Feature Flags：全部 `false`
 - P3：TODO / 未启动
@@ -99,7 +99,7 @@ P1 退出条件为：漏单 0、重复单 0、状态/事件/通知一致、真�
 
 ## 6. Phase 2
 
-P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 至 P2-007、P2-015、P2-016 与 P2-012 均已完成；P2-G1 Human-only Assembly 于 2026-09-02 通过，ARCH-005、P2-007、ARCH-006、P2-015 于 2026-09-03 完成，P2-016 于 2026-09-04 完成。P2-012 已于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。P2-G2 / ASSEMBLY 已达 READY_FOR_LIVE_E2E，当前自动化954/954及两轴独立审查通过；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 及以后 Runtime 和 P2-G3 至 P2-G5 仍须另行授权。所有 Feature Flag 默认关闭。
+P2 保持 `IN_PROGRESS`，Phase 启动 Evidence 为 `evidence/p2-phase-start-authorization.md`。P2-001 至 P2-007、P2-015、P2-016 与 P2-012 均已完成；P2-G1 Human-only Assembly 于 2026-09-02 通过，ARCH-005、P2-007、ARCH-006、P2-015 于 2026-09-03 完成，P2-016 于 2026-09-04 完成。P2-012 已于 2026-09-07 经真实定向现场、回归、客户端确认和负责人批准完成。P2-G2 / ASSEMBLY 已达 READY_FOR_LIVE_E2E，当前自动化976/976及两轴独立审查通过；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 及以后 Runtime 和 P2-G3 至 P2-G5 仍须另行授权。所有 Feature Flag 默认关闭。
 
 固定顺序：
 
@@ -147,7 +147,7 @@ P3 非目标：历史导入、未完结切换、旧编号/状态/附件兼容、
 
 ## 9. 并行开发
 
-架构上定义八条产品 Lane。P2-A 的 P2-001/002/003、P2-B 的 P2-004/005/006/P2-016、P2-C 的 P2-007/P2-015、P2-D 的 P2-012 已完成；P2-G1 已通过，ARCH-005 与 ARCH-006 已完成。P2-G2 / ASSEMBLY 已达 READY_FOR_LIVE_E2E，当前自动化954/954及两轴独立审查通过；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 仅在 P2-G2 `PASSED` 后才可成为候选。
+架构上定义八条产品 Lane。P2-A 的 P2-001/002/003、P2-B 的 P2-004/005/006/P2-016、P2-C 的 P2-007/P2-015、P2-D 的 P2-012 已完成；P2-G1 已通过，ARCH-005 与 ARCH-006 已完成。P2-G2 / ASSEMBLY 已达 READY_FOR_LIVE_E2E，当前自动化976/976及两轴独立审查通过；最后完成 Gate 仍为 P2-G1。云端停止态部署按独立授权记录；P2-G2-LIVE 真实发送、现场业务写库、正式观察及负责人 Gate 批准仍须另行授权。P2-008 保持阻断，全部持久 Feature Flag 默认 false。P2-008 仅在 P2-G2 `PASSED` 后才可成为候选。
 
 ## 10. 已废弃设计
 

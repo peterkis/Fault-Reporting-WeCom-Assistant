@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "64c5a08a11bb4d140b02cf0c5e43758ea57d01e76f6bfaa3b34f819c188d249e",
+  "axis": "SPEC",
+  "reviewer": "/root/oauth_spec_review",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [],
+  "source_execution_sha256": "0fb750cc1d8b11b7d763f72f80092b5252b037ed4d083aa753a0d455d91670a1",
+  "scenario_matrix_sha256": "7e71b7e106442e086fac77392af6d59492c638d31b8583412edcb19cde9d2c59",
+  "source_commit": "a03e7ad141777537207902124b32d2ce2e30445c",
+  "scope": "Current-candidate ASSEMBLY automated preparation and PR7 remediation; not P2-G2 live acceptance.",
+  "verified_bindings": {
+    "regression_tap": {
+      "path": "evidence/p2-g2-pr7-regression.tap",
+      "sha256": "876314b240cc2b25022840ce198c6bc0e6d73f1634ddbf176ad63d282492c626"
+    },
+    "regression_run": {
+      "path": "evidence/p2-g2-pr7-regression-run.json",
+      "sha256": "25d81926ff2dd9bccd50e1355f18fa6b171100dfc4b9fdf9608687abb3dface6"
+    },
+    "source_execution": {
+      "path": "evidence/p2-g2-pr7-source-execution.json",
+      "sha256": "0fb750cc1d8b11b7d763f72f80092b5252b037ed4d083aa753a0d455d91670a1"
+    },
+    "scenario_matrix": {
+      "path": "evidence/p2-g2-pr7-scenario-matrix.json",
+      "sha256": "7e71b7e106442e086fac77392af6d59492c638d31b8583412edcb19cde9d2c59"
+    },
+    "pr6_invariants": {
+      "path": "evidence/p2-g2-pr7-pr6-invariants.json",
+      "sha256": "749a8f2dc25366594b37b3221238fcbda4d9afbcad79fa90dc0d3d07ac3df9b4"
+    },
+    "candidate_inventory": {
+      "path": "evidence/p2-g2-pr7-candidate-inventory.json",
+      "sha256": "ea618eac280b5819d4322c4a00f12774961c46100141cd2afc7187a757eca263"
+    },
+    "classification_metrics": {
+      "path": "evidence/p2-g2-pr7-classification-metrics.json",
+      "sha256": "2264827d68287d02c14203f0dc75e93cf9d812bdc0996479529baf6b315ef882"
+    }
+  },
+  "verification": {
+    "candidate_inventory_recomputed": true,
+    "candidate_files": 577,
+    "tap_counts_recomputed": {
+      "tests": 976,
+      "pass": 976,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "test_file_hashes_checked": 158,
+    "baseline_test_files_covered": 92,
+    "source_audit_recomputed_identical": true,
+    "source_cases": 202,
+    "normal_input_cases": 122,
+    "mechanism_and_other_cases": 80,
+    "manual_review_observation_missing": [],
+    "scenario_ids_checked": 37,
+    "scenario_test_links_checked": 107,
+    "pr6_invariant_items_checked": 10,
+    "source_and_adjudication_hashes_unchanged": true,
+    "measured_result_and_count_proofs_revalidated": 223,
+    "metric_formulas_recomputed": true,
+    "original_label_agreement": {
+      "matching": 59,
+      "denominator": 106
+    },
+    "adjudicated_singleton": {
+      "matching": 71,
+      "denominator": 71
+    },
+    "adjudicated_set_admissibility": {
+      "matching": 34,
+      "denominator": 34
+    },
+    "measured_review_rate": {
+      "numerator": 27,
+      "denominator": 109
+    },
+    "measured_ticket_creation_rate": {
+      "numerator": 88,
+      "denominator": 109
+    },
+    "prior_review_findings_resolved": [
+      "Manual guided continuation reuses the original Ticket source under the existing Journey lock; new intake path and created-only notification behavior preserved.",
+      "Directory failed response cancellation and terminal abort preserve bounded resources and single-flight fencing."
+    ],
+    "internal_note_reconciliation": "Existing INNER JOIN Outbox excludes private notes with no external artifact; production check retained and real-DB regression recorded."
+  },
+  "limits": [
+    "No repeat database tests were run by this reviewer; full-run TAP, file hashes and source diagnostics were independently rechecked.",
+    "122-case execution coverage is not classification accuracy; measured comparable and count subsets retain exclusions and unknown values.",
+    "D12-005 original non-mention semantics and D12-023 future P3 identity remain explicitly unverified/not implemented; original semantics are not universally passed.",
+    "Scenario matrix is preparation-only; current G2 real messaging, formal natural-GC 60-minute whole-stack 2C4G observation, cleanup acceptance and owner Gate approval are not established.",
+    "The separately observed OAuth member login does not approve Ticket access, business runtime, G2 Gate completion, P2-008 or later phases.",
+    "Canonical readiness publication is a subsequent parent-owned step and was not treated as already completed."
+  ]
+}

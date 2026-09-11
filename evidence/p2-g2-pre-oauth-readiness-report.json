@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "gate": "P2-G2",
-  "recorded_at": "2026-09-11 10:37:45",
+  "recorded_at": "2026-09-09 20:41:30",
   "preparation_status": "READY_FOR_LIVE_E2E",
   "gate_status": "IN_PROGRESS",
   "active_task": "P2-G2",
   "active_lane": "ASSEMBLY",
-  "candidate_fingerprint": "64c5a08a11bb4d140b02cf0c5e43758ea57d01e76f6bfaa3b34f819c188d249e",
-  "candidate_file_count": 577,
+  "candidate_fingerprint": "17ebc9bc8862b88c1405663b57d290155086ff6cefa2bbae2ab26ac25f3ee54c",
+  "candidate_file_count": 564,
   "candidate_algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF",
   "base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
   "authorization_commit": "d7311cdbfe30c66f37d22a553a3e8f0e04e27cd1",
@@ -27,51 +27,49 @@
   "independent_review_passed": true,
   "pr6_review_invariants": 10,
   "full_regression": {
-    "tests": 976,
-    "pass": 976,
+    "tests": 954,
+    "pass": 954,
     "fail": 0,
     "cancelled": 0,
     "skipped": 0,
     "todo": 0,
-    "tap_path": "evidence/p2-g2-pr7-regression.tap",
-    "tap_sha256": "876314b240cc2b25022840ce198c6bc0e6d73f1634ddbf176ad63d282492c626",
+    "tap_path": "evidence/p2-g2-full-regression.tap",
+    "tap_sha256": "884e95b112b4cb42d7e2e4841256c7f5c149957ea282b2f51dc715eb2e0de3dc",
     "baseline_test_files_covered": true,
     "baseline_test_file_count": 92,
-    "test_file_count": 158,
+    "test_file_count": 151,
     "expose_gc": true,
     "candidate_unchanged": true,
-    "exit_code": 0,
-    "baseline_test_file_count_scope": "ROOT_LEVEL_ONLY",
-    "baseline_recursive_test_file_count": 94
+    "exit_code": 0
   },
   "source_evidence": {
     "regression_run": {
-      "path": "evidence/p2-g2-pr7-regression-run.json",
-      "sha256": "25d81926ff2dd9bccd50e1355f18fa6b171100dfc4b9fdf9608687abb3dface6"
+      "path": "evidence/p2-g2-full-regression-run.json",
+      "sha256": "f2a822ab3b2bbd12e38b675b98231ef819daaef9274adbd39df5790fc2cb27dc"
     },
     "source_execution": {
-      "path": "evidence/p2-g2-pr7-source-execution.json",
-      "sha256": "0fb750cc1d8b11b7d763f72f80092b5252b037ed4d083aa753a0d455d91670a1"
+      "path": "evidence/p2-g2-source-execution-final.json",
+      "sha256": "3d2f981001f9cc680be78d65088e571266c8a4db2c5c828a58f13e7ff190729f"
     },
     "scenario_matrix": {
-      "path": "evidence/p2-g2-pr7-scenario-matrix.json",
-      "sha256": "7e71b7e106442e086fac77392af6d59492c638d31b8583412edcb19cde9d2c59"
+      "path": "evidence/p2-g2-scenario-matrix.json",
+      "sha256": "a1bcaf12ac1b6d7d71cc889308799eb74a2d17579d8b11e1f83ef68294a2df68"
     },
     "independent_review": {
-      "path": "evidence/p2-g2-pr7-review-summary.json",
-      "sha256": "8f0642e4d98995d9f62e4bc22b363fed9457c2848a61691474a04600ffb40b67"
+      "path": "evidence/p2-g2-review-summary.json",
+      "sha256": "14b0a6008903f892604f8322eb519490942df997996c077af21bd2e61cc476bc"
     },
     "pr6_invariants": {
-      "path": "evidence/p2-g2-pr7-pr6-invariants.json",
-      "sha256": "749a8f2dc25366594b37b3221238fcbda4d9afbcad79fa90dc0d3d07ac3df9b4"
+      "path": "evidence/p2-g2-pr6-review-invariants.json",
+      "sha256": "aff5efe19768b815236bbce537929217f98907e710a8deacb168dd95c70a0343"
     },
     "candidate_inventory": {
-      "path": "evidence/p2-g2-pr7-candidate-inventory.json",
-      "sha256": "ea618eac280b5819d4322c4a00f12774961c46100141cd2afc7187a757eca263"
+      "path": "evidence/p2-g2-validated-candidate-inventory.json",
+      "sha256": "4ab75c043b22c26f9e1eb51d4236108d310b41b75707cda1fd55b96249a736af"
     },
     "classification_metrics": {
-      "path": "evidence/p2-g2-pr7-classification-metrics.json",
-      "sha256": "2264827d68287d02c14203f0dc75e93cf9d812bdc0996479529baf6b315ef882"
+      "path": "evidence/p2-g2-classification-metrics.json",
+      "sha256": "4ca7c6f738aaf909b582e44552de56c7a14e7df6c3040f9e41ad6c2f4c0db2f4"
     }
   },
   "environment": {
@@ -114,20 +112,10 @@
   "next_task_candidate": "P2-G2-LIVE",
   "next_task_authorized": false,
   "runbook": "prompts/P2-G2_rule_first_service_loop_runbook.md",
-  "failure_history": "evidence/p2-g2-pr7-regression-history.json",
-  "repair_report": "evidence/p2-g2-pr7-review-remediation.md",
+  "failure_history": "evidence/p2-g2-validation-run-index.json",
+  "repair_report": "evidence/p2-g2-final-regression-repair.md",
   "service_chain_inventory": "evidence/p2-g2-service-chain-inventory.json",
   "cleanup_limit": "Earlier policy-protected browser profile is preserved; no claim that all historical Temp directories were removed.",
-  "cloud_environment_limit": "The original stopped full-G2 cloud package remains the immutable 17ebc9bc snapshot; the current full-G2 candidate is not deployed. Independently authorized OAuth-only HTTPS authentication is verified. Formal business live observation and Gate approval remain NOT_RUN.",
-  "classification_metric_limits": "Classification comparison uses 106 comparable terminal observations; Ticket/Review ratios use 109 measured scenarios. Exclusions are explicit. Safe-route test coverage is not classification accuracy or a claim of original-202 label equality.",
-  "source_commit": "a03e7ad141777537207902124b32d2ce2e30445c",
-  "validation_scope": "P2_G2_FULL_SERVICE_LOOP_PREPARATION",
-  "historical_readiness_snapshot": "evidence/p2-g2-pre-oauth-readiness-report.json",
-  "persistent_flag_scope": "G2 business policy defaults; separately authorized OAuth-only runtime is enabled",
-  "oauth_authentication": {
-    "status": "LIVE_VERIFIED",
-    "evidence": "evidence/p2-g2-wecom-web-oauth.md",
-    "business_service_loop_started": false
-  },
-  "historical_failure_history": "evidence/p2-g2-validation-run-index.json"
+  "cloud_environment_limit": "Previously authorized stopped deployment is separate; full live HTTPS/isolated business DB/start approval and 60-minute observation are not established by automation.",
+  "classification_metric_limits": "Classification comparison uses 106 comparable terminal observations; Ticket/Review ratios use 109 measured scenarios. Exclusions are explicit. Safe-route test coverage is not classification accuracy or a claim of original-202 label equality."
 }

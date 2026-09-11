@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "runs": [
+    {
+      "source_commit": "ded873eae9bfd864497ad5c3be3f3919ac6b81f3",
+      "original_directory": "tmp/p2-g2-tests-eb67da09-1735-4dab-8c6d-7dd824f19151",
+      "retained_directory": "tmp/p2-g2-live-preflight-20260909/retained-initial-publication",
+      "candidate_fingerprint": "b71d9793e8dffb5513e2312c6d0f6e9e3c63ad248036689c1a35d6b8dd5b407d",
+      "candidate_unchanged": true,
+      "counts": {
+        "tests": 972,
+        "pass": 970,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "exit_code": 1,
+      "tap_sha256": "474656727db4570049118031f4b8d29b7585a90d329ec270538919705cad0ed8",
+      "run_sha256": "634051299192f42e03e7587737535c777c45bd3e9cf65bbb82358a917b1d4746",
+      "failed_tests": [
+        "migration 001 through 022 and P2-007 runtime are unchanged from origin/main",
+        "D12-063 four actual Direct-qualified subscriptions produce version-idempotent Incident notices"
+      ],
+      "readiness_evidence": false
+    },
+    {
+      "source_commit": "331679207db7de6282ddd74a97209f15ffa5e5f6",
+      "original_directory": "tmp/p2-g2-tests-ac0dc265-eff1-4574-90a0-666f4e68a302",
+      "retained_directory": "tmp/p2-g2-live-preflight-20260909/retained-isolated-worktree",
+      "candidate_fingerprint": "2a3454f20a4d11d6789b094c0688e6af47957a39a55da3f689d7fa2ec9d6dfbf",
+      "candidate_unchanged": true,
+      "counts": {
+        "tests": 976,
+        "pass": 969,
+        "fail": 7,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "exit_code": 1,
+      "tap_sha256": "325874336bf1be699fa0c190193bc1f1c054a6978218c86d200c28fb99067f52",
+      "run_sha256": "66592170d429a491180ce84ae3c9c166584611927b9c34e297dc2d5477d3187b",
+      "failed_tests": [
+        "ARCH-005 architecture validator freezes migrations and reports all hard static counts at zero",
+        "P2-002 migration CLI runs only 011, is repeatable, and rolls check mode back",
+        "P2-002 migration CLI fails closed on incompatible read-only source dependencies",
+        "P2-002 real worker processes roll back before commit and replay after ACK loss",
+        "P2-012 static authorization, frozen predecessors, scope, schemas and synthetic fixture gate",
+        "migration 001 through 022 and P2-007 runtime are unchanged from origin/main",
+        "D12-063 four actual Direct-qualified subscriptions produce version-idempotent Incident notices"
+      ],
+      "readiness_evidence": false
+    },
+    {
+      "source_commit": "a03e7ad141777537207902124b32d2ce2e30445c",
+      "original_directory": "tmp/p2-g2-tests-c55091e1-f73b-4e24-9de2-284193343c56",
+      "candidate_fingerprint": "64c5a08a11bb4d140b02cf0c5e43758ea57d01e76f6bfaa3b34f819c188d249e",
+      "candidate_unchanged": true,
+      "counts": {
+        "tests": 976,
+        "pass": 976,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "exit_code": 0,
+      "tap_sha256": "876314b240cc2b25022840ce198c6bc0e6d73f1634ddbf176ad63d282492c626",
+      "run_sha256": "25d81926ff2dd9bccd50e1355f18fa6b171100dfc4b9fdf9608687abb3dface6",
+      "regression_run": "evidence/p2-g2-pr7-regression-run.json",
+      "regression_tap": "evidence/p2-g2-pr7-regression.tap",
+      "failed_tests": [],
+      "readiness_evidence": true
+    }
+  ],
+  "scope": "PR7 automated preparation only; failed runs preserved and excluded from readiness"
+}

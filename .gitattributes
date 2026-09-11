@@ -3,3 +3,6 @@
 # Verbatim runner output includes diagnostic indentation and terminal blank lines.
 /evidence/p2-g2-*.tap -whitespace
 /evidence/p2-g2-*.txt -whitespace
+# These frozen artifacts are verified by raw-byte hashes, not normalized text hashes.
+/database/migrations/00[1-9]_*.sql -text
+/tests/fixtures/p2-012/incident-scenarios.v1.jsonl -text
