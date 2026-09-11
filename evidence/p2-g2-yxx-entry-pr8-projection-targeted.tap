@@ -1,0 +1,343 @@
+TAP version 13
+# Subtest: P2-002 migration 011 first/repeat apply is exact and leaves P1/P2-001 unchanged
+ok 1 - P2-002 migration 011 first/repeat apply is exact and leaves P1/P2-001 unchanged
+  ---
+  duration_ms: 693.3041
+  type: 'test'
+  ...
+# Subtest: P2-002 migration CLI runs only 011, is repeatable, and rolls check mode back
+ok 2 - P2-002 migration CLI runs only 011, is repeatable, and rolls check mode back
+  ---
+  duration_ms: 1645.0865
+  type: 'test'
+  ...
+# {"child_process_runs":4,"child_exit_codes":[0,0,0,0],"preapply_check_created_tables":0,"migration_files_executed":1,"tables_added":3,"p1_p2_001_catalog_unchanged":true,"postapply_check_rolled_back":true,"temp_database_cleanup":true}
+# Subtest: P2-002 migration CLI fails closed on incompatible read-only source dependencies
+ok 3 - P2-002 migration CLI fails closed on incompatible read-only source dependencies
+  ---
+  duration_ms: 786.2042
+  type: 'test'
+  ...
+# {"child_exit_code":1,"stable_error":"P2_002_SCHEMA_DRIFT_REMEDIATION_REQUIRED","p2_tables_created":0,"temp_database_cleanup":true}
+# Subtest: P2-002 migration 011 fails closed on missing column
+ok 4 - P2-002 migration 011 fails closed on missing column
+  ---
+  duration_ms: 753.393
+  type: 'test'
+  ...
+# Subtest: P2-002 migration 011 fails closed on weakened CHECK constraint
+ok 5 - P2-002 migration 011 fails closed on weakened CHECK constraint
+  ---
+  duration_ms: 610.7711
+  type: 'test'
+  ...
+# Subtest: P2-002 migration 011 fails closed on wrong unique constraint columns
+ok 6 - P2-002 migration 011 fails closed on wrong unique constraint columns
+  ---
+  duration_ms: 535.6316
+  type: 'test'
+  ...
+# Subtest: P2-002 migration 011 fails closed on wrong index access method
+ok 7 - P2-002 migration 011 fails closed on wrong index access method
+  ---
+  duration_ms: 667.16
+  type: 'test'
+  ...
+# Subtest: P2-002 migration 011 fails closed on wrong partial-index predicate
+ok 8 - P2-002 migration 011 fails closed on wrong partial-index predicate
+  ---
+  duration_ms: 544.4616
+  type: 'test'
+  ...
+# Subtest: P2-002 P1 source adapter reads Channel/Intake/Ticket/Delivery facts without mutating them
+ok 9 - P2-002 P1 source adapter reads Channel/Intake/Ticket/Delivery facts without mutating them
+  ---
+  duration_ms: 2160.0515
+  type: 'test'
+  ...
+# {"source_record_count":4,"channel_message_count":1,"ticket_event_variant_count":2,"delivery_count":1,"source_snapshot_unchanged":true}
+# Subtest: P2-002 real worker processes roll back before commit and replay after ACK loss
+ok 10 - P2-002 real worker processes roll back before commit and replay after ACK loss
+  ---
+  duration_ms: 1503.967
+  type: 'test'
+  ...
+# {"before_commit_kill_exit":{"code":null,"signal":"SIGKILL","killed":true},"before_commit_backend_close_polls":1,"before_commit_restart_exit":{"code":0,"signal":null,"killed":false},"before_commit_restart_inserted":1,"after_commit_kill_exit":{"code":null,"signal":"SIGKILL","killed":true},"after_commit_backend_close_polls":1,"after_commit_restart_exit":{"code":0,"signal":null,"killed":false},"after_commit_restart_replayed":1,"final_item_count":1,"final_binding_count":1,"final_checkpoint_cursor":"1","temp_database_cleanup":true}
+# Subtest: P2-002 stale rebuild cannot delete a source committed after snapshot preparation
+ok 11 - P2-002 stale rebuild cannot delete a source committed after snapshot preparation
+  ---
+  duration_ms: 849.6093
+  type: 'test'
+  ...
+# {"connection_wait_polls":1,"stale_rebuild_error":"CONVERSATION_TIMELINE_REBUILD_FAILED","preserved_item_count":3,"preserved_binding_count":3,"preserved_checkpoint_cursor":"3","full_rebuild_item_count":3,"full_rebuild_hash":"dc7104c5640083e009aa30dfcc850a95675e8dd2ff2b21256d6345c966853cea","temp_database_cleanup":true}
+# Subtest: P2-002 projector is idempotent, concurrent, transactional, rebuildable, private, and restart safe
+ok 12 - P2-002 projector is idempotent, concurrent, transactional, rebuildable, private, and restart safe
+  ---
+  duration_ms: 5259.5638
+  type: 'test'
+  ...
+# {"same_source_concurrency":12,"different_source_concurrency":12,"bulk_item_count":2001,"bulk_batch_count":101,"bulk_max_batch_size":20,"bulk_peak_heap_delta_bytes":20108120,"bulk_heap_sample_count":101,"bulk_heap_segment_means_bytes":[18340350,22106449,25279068,23757890],"bulk_first_to_last_heap_trend_bytes":5417540,"bulk_max_adjacent_heap_trend_bytes":3766099,"bulk_interrupted_at_cursor":"20","bulk_restart_remaining_items":1981,"rebuild_canonical_hash":"55e7621a3d4bc1c38633d68cf6d1d741c0de6d1fa359cb83b571fca26c044caf","temp_database_cleanup":"verified-by-finally"}
+# Subtest: P2-002 suite leaves no random database or worker backend residual
+ok 13 - P2-002 suite leaves no random database or worker backend residual
+  ---
+  duration_ms: 63.8956
+  type: 'test'
+  ...
+# {"temp_database_count":0,"worker_backend_count":0,"isolated_source_data_residual":0,"isolated_projection_schema_residual":0}
+# Subtest: P2-002 uses the frozen P2-001 Conversation Item enums
+ok 14 - P2-002 uses the frozen P2-001 Conversation Item enums
+  ---
+  duration_ms: 7.7279
+  type: 'test'
+  ...
+# Subtest: projection source schema parses and freezes the five source types
+ok 15 - projection source schema parses and freezes the five source types
+  ---
+  duration_ms: 1.9928
+  type: 'test'
+  ...
+# Subtest: normalization rejects invalid source type, session UUID, date, ordinal and additions
+ok 16 - normalization rejects invalid source type, session UUID, date, ordinal and additions
+  ---
+  duration_ms: 2.6085
+  type: 'test'
+  ...
+# Subtest: date normalization rejects hostile Date/object paths without invoking or leaking them
+ok 17 - date normalization rejects hostile Date/object paths without invoking or leaking them
+  ---
+  duration_ms: 0.7215
+  type: 'test'
+  ...
+# Subtest: safe_content accepts only bounded plain JSON data properties
+ok 18 - safe_content accepts only bounded plain JSON data properties
+  ---
+  duration_ms: 0.5641
+  type: 'test'
+  ...
+# Subtest: toJSON, Proxy and prototype-pollution keys cannot bypass pure JSON checks
+ok 19 - toJSON, Proxy and prototype-pollution keys cannot bypass pure JSON checks
+  ---
+  duration_ms: 0.4301
+  type: 'test'
+  ...
+# Subtest: source_hash is stable across key order and detects semantic mutation
+ok 20 - source_hash is stable across key order and detects semantic mutation
+  ---
+  duration_ms: 0.5328
+  type: 'test'
+  ...
+# Subtest: privacy and retention controls can tighten without changing semantic source_hash
+ok 21 - privacy and retention controls can tighten without changing semantic source_hash
+  ---
+  duration_ms: 0.2515
+  type: 'test'
+  ...
+# Subtest: canonical order uses the frozen rank and exact deterministic tie-break tuple
+ok 22 - canonical order uses the frozen rank and exact deterministic tie-break tuple
+  ---
+  duration_ms: 0.825
+  type: 'test'
+  ...
+# Subtest: canonical order compares BIGINT ordinals numerically without Number conversion
+ok 23 - canonical order compares BIGINT ordinals numerically without Number conversion
+  ---
+  duration_ms: 0.9746
+  type: 'test'
+  ...
+# Subtest: source id and variant break otherwise identical timestamp/rank/ordinal ties
+ok 24 - source id and variant break otherwise identical timestamp/rank/ordinal ties
+  ---
+  duration_ms: 0.875
+  type: 'test'
+  ...
+# Subtest: CHANNEL_MESSAGE maps only clean_text and four safe flags
+ok 25 - CHANNEL_MESSAGE maps only clean_text and four safe flags
+  ---
+  duration_ms: 1.0379
+  type: 'test'
+  ...
+# Subtest: TICKET_EVENT splits STATUS, EXTERNAL_NOTE and INTERNAL_NOTE variants
+ok 26 - TICKET_EVENT splits STATUS, EXTERNAL_NOTE and INTERNAL_NOTE variants
+  ---
+  duration_ms: 0.5067
+  type: 'test'
+  ...
+# Subtest: TICKET_EVENT external variant cannot contain internal note or operator identity
+ok 27 - TICKET_EVENT external variant cannot contain internal note or operator identity
+  ---
+  duration_ms: 0.4045
+  type: 'test'
+  ...
+# Subtest: TICKET_EVENT omits absent note variants
+ok 28 - TICKET_EVENT omits absent note variants
+  ---
+  duration_ms: 0.2271
+  type: 'test'
+  ...
+# Subtest: DELIVERY is INTERNAL and excludes target/provider/raw error data
+ok 29 - DELIVERY is INTERNAL and excludes target/provider/raw error data
+  ---
+  duration_ms: 0.4346
+  type: 'test'
+  ...
+# Subtest: Communication Message fixture mapper requires an explicit fixture marker
+ok 30 - Communication Message fixture mapper requires an explicit fixture marker
+  ---
+  duration_ms: 0.3555
+  type: 'test'
+  ...
+# Subtest: Handoff fixture defaults to INTERNAL and never creates a future table dependency
+ok 31 - Handoff fixture defaults to INTERNAL and never creates a future table dependency
+  ---
+  duration_ms: 0.2098
+  type: 'test'
+  ...
+# Subtest: normalized safe_content deny-list blocks privacy and provider leakage fields
+ok 32 - normalized safe_content deny-list blocks privacy and provider leakage fields
+  ---
+  duration_ms: 0.4915
+  type: 'test'
+  ...
+# Subtest: feature flag is fail-closed before any database call
+ok 33 - feature flag is fail-closed before any database call
+  ---
+  duration_ms: 0.5079
+  type: 'test'
+  ...
+# Subtest: batchSize defaults to 20 and is bounded at construction and invocation
+ok 34 - batchSize defaults to 20 and is bounded at construction and invocation
+  ---
+  duration_ms: 0.5067
+  type: 'test'
+  ...
+# Subtest: runtime freezes every source and operation to the single timeline projector name
+ok 35 - runtime freezes every source and operation to the single timeline projector name
+  ---
+  duration_ms: 0.9321
+  type: 'test'
+  ...
+# Subtest: public storage failures contain only the stable code
+ok 36 - public storage failures contain only the stable code
+  ---
+  duration_ms: 0.3266
+  type: 'test'
+  ...
+# Subtest: database sequence uniqueness is deterministically mapped to the frozen sequence error
+ok 37 - database sequence uniqueness is deterministically mapped to the frozen sequence error
+  ---
+  duration_ms: 6.2628
+  type: 'test'
+  ...
+# Subtest: rebuild authorization and wrapper accessor validation fail before storage
+ok 38 - rebuild authorization and wrapper accessor validation fail before storage
+  ---
+  duration_ms: 1.7048
+  type: 'test'
+  ...
+# Subtest: rebuild stale-snapshot fence fails before DELETE for extra or foreign bindings
+ok 39 - rebuild stale-snapshot fence fails before DELETE for extra or foreign bindings
+  ---
+  duration_ms: 1.9485
+  type: 'test'
+  ...
+# Subtest: Canonical Timeline Hash excludes projected_at and physical input order
+ok 40 - Canonical Timeline Hash excludes projected_at and physical input order
+  ---
+  duration_ms: 0.5224
+  type: 'test'
+  ...
+# Subtest: Canonical Timeline Hash validates arrays and items before any caller property access
+ok 41 - Canonical Timeline Hash validates arrays and items before any caller property access
+  ---
+  duration_ms: 1.2523
+  type: 'test'
+  ...
+# Subtest: EXTERNAL audience uses SQL visibility filtering and defense-in-depth filtering
+ok 42 - EXTERNAL audience uses SQL visibility filtering and defense-in-depth filtering
+  ---
+  duration_ms: 0.6155
+  type: 'test'
+  ...
+# Subtest: WORKBENCH excludes RESTRICTED and RESTRICTED_ADMIN requires explicit authorization
+ok 43 - WORKBENCH excludes RESTRICTED and RESTRICTED_ADMIN requires explicit authorization
+  ---
+  duration_ms: 0.2679
+  type: 'test'
+  ...
+# Subtest: generic TimelineSourceAdapter maps rows outside projector transactions
+ok 44 - generic TimelineSourceAdapter maps rows outside projector transactions
+  ---
+  duration_ms: 0.4993
+  type: 'test'
+  ...
+# Subtest: public wrapper APIs reject Proxy/accessor arguments before invoking dependencies
+ok 45 - public wrapper APIs reject Proxy/accessor arguments before invoking dependencies
+  ---
+  duration_ms: 0.6005
+  type: 'test'
+  ...
+# Subtest: unknown Proxy/accessor error objects are sanitized without a second trap
+ok 46 - unknown Proxy/accessor error objects are sanitized without a second trap
+  ---
+  duration_ms: 0.1864
+  type: 'test'
+  ...
+# Subtest: worker reads a bounded batch before invoking the projector and preserves AbortSignal
+ok 47 - worker reads a bounded batch before invoking the projector and preserves AbortSignal
+  ---
+  duration_ms: 0.3209
+  type: 'test'
+  ...
+# Subtest: worker maps unknown adapter failures to the stable storage error
+ok 48 - worker maps unknown adapter failures to the stable storage error
+  ---
+  duration_ms: 0.1685
+  type: 'test'
+  ...
+# Subtest: checkpoint cursor accepts nullable expected values and enforces the shared 512 bound
+ok 49 - checkpoint cursor accepts nullable expected values and enforces the shared 512 bound
+  ---
+  duration_ms: 2.0659
+  type: 'test'
+  ...
+# Subtest: migration runner executes only migration 011 and sanitizes raw failures
+ok 50 - migration runner executes only migration 011 and sanitizes raw failures
+  ---
+  duration_ms: 3.2268
+  type: 'test'
+  ...
+# Subtest: the public error vocabulary contains exactly the eleven frozen stable codes
+ok 51 - the public error vocabulary contains exactly the eleven frozen stable codes
+  ---
+  duration_ms: 0.2656
+  type: 'test'
+  ...
+# Subtest: P1 source adapter reads current sources in one repeatable-read read-only transaction
+ok 52 - P1 source adapter reads current sources in one repeatable-read read-only transaction
+  ---
+  duration_ms: 0.4495
+  type: 'test'
+  ...
+# Subtest: P2-016 approved topology uses three real bounded processes, rule-first Worker and zero live SDK calls
+ok 53 - P2-016 approved topology uses three real bounded processes, rule-first Worker and zero live SDK calls
+  ---
+  duration_ms: 3972.9993
+  type: 'test'
+  ...
+# {"process_count":3,"pool_max":7,"live_provider_calls":0,"rule_first_worker":true}
+# Subtest: PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source
+ok 54 - PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source
+  ---
+  duration_ms: 2023.4094
+  type: 'test'
+  ...
+# {"forced_worker_stream_then_app_stream":true,"sql_errors":[],"results":["fulfilled","fulfilled"]}
+1..54
+# tests 54
+# suites 0
+# pass 54
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32508.4667

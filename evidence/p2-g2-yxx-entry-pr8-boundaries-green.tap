@@ -1,0 +1,131 @@
+TAP version 13
+# Subtest: PR8 member card Worker delivers after the legacy Grant expires without renewing it
+ok 1 - PR8 member card Worker delivers after the legacy Grant expires without renewing it
+  ---
+  duration_ms: 1966.7831
+  type: 'test'
+  ...
+# Subtest: P2-016 persisted card delivery, HMAC grants, one-use sessions and reporter-safe timeline
+ok 2 - P2-016 persisted card delivery, HMAC grants, one-use sessions and reporter-safe timeline
+  ---
+  duration_ms: 1909.8213
+  type: 'test'
+  ...
+# Subtest: PR8 member notifications enforce retained delivery authority and preserve retry versus unknown outcomes
+    # Subtest: CONSUMED Grant does not suppress a member notification
+    ok 1 - CONSUMED Grant does not suppress a member notification
+      ---
+      duration_ms: 104.6056
+      type: 'test'
+      ...
+    # Subtest: MISSING Grant does not suppress a member notification
+    ok 2 - MISSING Grant does not suppress a member notification
+      ---
+      duration_ms: 31.1473
+      type: 'test'
+      ...
+    # Subtest: revoked public reference rejects before SDK
+    ok 3 - revoked public reference rejects before SDK
+      ---
+      duration_ms: 33.4687
+      type: 'test'
+      ...
+    # Subtest: wrong reporter rejects before SDK
+    ok 4 - wrong reporter rejects before SDK
+      ---
+      duration_ms: 34.244
+      type: 'test'
+      ...
+    # Subtest: wrong Bot rejects before SDK
+    ok 5 - wrong Bot rejects before SDK
+      ---
+      duration_ms: 34.6201
+      type: 'test'
+      ...
+    # Subtest: forged content rejects before SDK
+    ok 6 - forged content rejects before SDK
+      ---
+      duration_ms: 34.1952
+      type: 'test'
+      ...
+    # Subtest: message retention elapsed rejects before SDK
+    ok 7 - message retention elapsed rejects before SDK
+      ---
+      duration_ms: 32.5738
+      type: 'test'
+      ...
+    # Subtest: intake retention elapsed rejects before SDK
+    ok 8 - intake retention elapsed rejects before SDK
+      ---
+      duration_ms: 32.0585
+      type: 'test'
+      ...
+    # Subtest: cross-linked notification Ticket rejects before SDK
+    ok 9 - cross-linked notification Ticket rejects before SDK
+      ---
+      duration_ms: 49.0148
+      type: 'test'
+      ...
+    # Subtest: pre-SDK database interruption retries safely and sends once
+    ok 10 - pre-SDK database interruption retries safely and sends once
+      ---
+      duration_ms: 38.7746
+      type: 'test'
+      ...
+    # Subtest: unknown provider receipt requires reconciliation and cannot auto-resend
+    ok 11 - unknown provider receipt requires reconciliation and cannot auto-resend
+      ---
+      duration_ms: 31.8173
+      type: 'test'
+      ...
+    1..11
+ok 3 - PR8 member notifications enforce retained delivery authority and preserve retry versus unknown outcomes
+  ---
+  duration_ms: 2282.9493
+  type: 'test'
+  ...
+# Subtest: YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback
+ok 4 - YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback
+  ---
+  duration_ms: 3.4267
+  type: 'test'
+  ...
+# Subtest: YXX-01 member Sender validates persisted delivery binding without reading a Grant before its mock SDK call
+ok 5 - YXX-01 member Sender validates persisted delivery binding without reading a Grant before its mock SDK call
+  ---
+  duration_ms: 2.17
+  type: 'test'
+  ...
+# Subtest: YXX-35 closed member schemas expose authentication mode without raw identity or nullable Ticket guessing
+ok 6 - YXX-35 closed member schemas expose authentication mode without raw identity or nullable Ticket guessing
+  ---
+  duration_ms: 5.5955
+  type: 'test'
+  ...
+# Subtest: YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint
+ok 7 - YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint
+  ---
+  duration_ms: 0.7865
+  type: 'test'
+  ...
+# Subtest: YXX-35 configuration refuses Proxy, accessors, toJSON, cycles and loose identity coercions
+ok 8 - YXX-35 configuration refuses Proxy, accessors, toJSON, cycles and loose identity coercions
+  ---
+  duration_ms: 0.4756
+  type: 'test'
+  ...
+# Subtest: YXX-01 both member card click regions use one canonical ref without a grant or identity
+ok 9 - YXX-01 both member card click regions use one canonical ref without a grant or identity
+  ---
+  duration_ms: 0.4217
+  type: 'test'
+  ...
+1..9
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6502.4305

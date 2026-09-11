@@ -1,0 +1,412 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 20:09:52",
+  "event_epoch_ms": "1789128592280",
+  "correction_scope": "Append-only ARCH-005 annotations. Top-level event time is this correction event, not an invented historical timestamp. Hashes identify Git blobs at source_commit; historical artifacts are not rewritten.",
+  "records": [
+    {
+      "path": "evidence/p2-g2-automated-readiness-report.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "943dcae1d6ac2d2eb944fef92f426c0cc7673e3d622df4227ead2fc37045b980",
+      "historical_bytes_unchanged": true,
+      "classification": "PRE_REPAIR_MUTABLE_REPORT_VERSION",
+      "original_field": "recorded_at",
+      "corrected_time": {
+        "event_time": "2026-09-11 16:20:48",
+        "event_epoch_ms": "1789114848049"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-arch006-final-check-first-run.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "42a73b97eba9d421b53f7e8d4284afdf0c4a673d58d348e54fd17d2211c88f07",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-binding-ttl-observation.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "b5db31139b5bb42677021a29e6cc42f80296572070bddc3b06a154f6dc93e535",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-candidate-inventory.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "92303d89da28533017ddeddfa0eab8ad14bbeb7247e94679c9c211cfc5dfab9d",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-change-inventory.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "e5f49d56845ca636b584ec732054b6a9fbc3e9b6ac7dbddff157bb33013200be",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-classification-metrics.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "810c7274c0fa35101b648e8d06cd1db6e22fd00f76d280a28fc1f3f9c0d3b0e5",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-cleanup.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "2ebf1a9d7f880083b7d72b870723714ba489d90ee365ee393f02c56c41460cea",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_field": "recorded_at",
+      "corrected_time": {
+        "event_time": "2026-09-11 14:57:54",
+        "event_epoch_ms": "1789109874895"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-final-freeze.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "673e410c348fd7064ce5d40daf1b8a0e4650ec9e442ac5aab9c3c97f45993723",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-freeze.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "de897dff89199af26784d2fd0f48ac22d8c2cb50ea452385adfd5490890095db",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-g2-scenario-matrix.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "dd2f7dee9bedaf5499b4e5d130ab43e95eeef21e789faa969e026e79837c1bd8",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-intermediate-regression-run.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "29b7211a5f8711962ae8eeb37c04e31759930baadbdc492ba1698c1712d4284e",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_field": "completed_physical_epoch_ms",
+      "corrected_time": {
+        "event_time": "2026-09-11 14:28:39",
+        "event_epoch_ms": "1789108119410"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-navigation-diagnostic.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "38a4f9d412c4c07ed9d5162f4d07cbd3960d221fa07fa6eeb8f3412e18d9ee82",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr6-invariants.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "5edf74715801185dc3f0dc49ae524d7333db9c624800444a726964dd8b23a4af",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pr7-readiness-snapshot.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "3cdff0bfca40cbd45ec0a7f5bd537fb43cf19689fc6ef99bdd773f8dafbe91dd",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_field": "recorded_at",
+      "corrected_time": {
+        "event_time": "2026-09-11 10:58:46",
+        "event_epoch_ms": "1789095526000"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pre-arch006-member-report.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "7ba443e0f6bf74ee973bad8c7331b174d02707e45f3038c4f5595b52a5b965c0",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_field": "recorded_at",
+      "corrected_time": {
+        "event_time": "2026-09-11 15:02:55",
+        "event_epoch_ms": "1789110175236"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-pre-arch006-parent-report.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "1663d7bd8f2612c3d647a2073ce2438bf3b247631285d4bdf29dc3e6b1473638",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_field": "recorded_at",
+      "corrected_time": {
+        "event_time": "2026-09-11 15:02:55",
+        "event_epoch_ms": "1789110175285"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-protocol-sources.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "0789927a753ec7cb387b35bee93e32dc0d5d5d54e66e2722b1914e728b241227",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-regression-history.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "230d5b45f7f56e3dc57bd6fb525440b456982ce8a8b5c7b11fb31803eae20912",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-regression-run.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "1b7d5eb8fbbe1c5393a8365406e59b1433fc5e075b214692456945436dda477d",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_field": "completed_physical_epoch_ms",
+      "corrected_time": {
+        "event_time": "2026-09-11 14:56:38",
+        "event_epoch_ms": "1789109798181"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-report.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "cd41872f4eb1439182df628ba44f038c805bfd1d97db297b96f3d4052c6064f9",
+      "historical_bytes_unchanged": true,
+      "classification": "PRE_REPAIR_MUTABLE_REPORT_VERSION",
+      "original_field": "recorded_at",
+      "corrected_time": {
+        "event_time": "2026-09-11 16:20:47",
+        "event_epoch_ms": "1789114847995"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-resource.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "38b9ad65eaf34e27758d2e9b5be9c82d784ea2a4fff22c3e5bd0f46c1e0d07ef",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-review-spec.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "8be71d27da6bd7aaf16ca791cb4f543e423a7d72447c237343843c199112c252",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-review-standards.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "8e48500faf68769991ac4b940add4f0625c9bfd5fbe7cedbbf7a32d4819d54b9",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-review-summary.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "50eac21513bb36bf9b448f2ebd5406b5e8e33c8def396c653baa091ed9bcac84",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-route-audit.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "a6365aaabc16ba7f2a2b8ec8d1f91213860f67ec316d796ecfc5c9caeb94fba2",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-scenario-matrix.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "10d1c16a92d6bed6ed3954b04dee270fdcf557a44ba46c865f0451a4faf76538",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-source-execution.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "927d52422742ccca7d407ff95623a15a6009e72ebaa9c64d57c6e82bfd1a79a9",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-candidate-inventory.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "a6e662b871fe85a05a8ecaa0bc1d219a2b7d9a38a7f512e2bfe454bde914b50b",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-classification-metrics.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "98709c620cafaf54cdb4d4e7206933dc5e5a4f68664737cbe1ea1a83565052d4",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-cleanup.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "f66a9007aae722d657d39fd53553da4658f33b1c96637bbab63ab9ee5add362d",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_field": "recorded_at",
+      "corrected_time": {
+        "event_time": "2026-09-11 16:18:48",
+        "event_epoch_ms": "1789114728583"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-final-checks.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "ef65432f7d217ca20707b3cc2512c992b1f215a5d78d7584dcf4368c3e8dc001",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-first-regression-run.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "a0a56525d990e236c2f0513fdf595ed2057f97a63741d3c28f582b57126065b6",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_field": "completed_physical_epoch_ms",
+      "corrected_time": {
+        "event_time": "2026-09-11 15:38:39",
+        "event_epoch_ms": "1789112319520"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-freeze.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "4253f90a34a8b50f554b1684fb5feb381335014ae63020249269c9f55fed06fd",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-g2-scenario-matrix.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "0445d61aeac2e785018690c29a82a17165079d20809fc8a50520c101e7dc0aff",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-navigation-freeze.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "e9d1fb675ee44648b1e6c6cacb1e9842d1864c9573b313d80c228a96ada8bd4b",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-pr6-invariants.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "e8d9b869f6ef3c73a2081a2bfd38e8719dae1dfa633d3a97eec8208937482223",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-regression-history.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "be2ab201f4a805246235c8723ee427ca4f37b3e4c4cf7ec2fe16f472a4ce7fc8",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-regression-run.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "8800496f6601787938ef804ea063aab597bfb290b188776f448efbe80d286114",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_field": "completed_physical_epoch_ms",
+      "corrected_time": {
+        "event_time": "2026-09-11 16:17:31",
+        "event_epoch_ms": "1789114651094"
+      }
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-resource.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "28f270950e8908ddb6471f537ccd2392930d5dd2a224e05691641343192955fb",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-review-spec.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "5a79e19db3e94a98d0286d7c6c438fb920a0d3b774ef029f3e50dd3405d60fb2",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-review-standards.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "4503f88158a96cae4c9d14adaa097db5dfc155cc8a51723a367085df0620ecc7",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-review-summary.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "36a4aff6d69e5905389aa4da6f6f6ff8424640f96828102c83e910b943f266d8",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-route-audit.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "27ea46fca5829455e91a9496542d85e5c813117f850433eba624110a726bc01f",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-scenario-matrix.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "e69bcae595760a1bd947d512d816a2f0a85cd7ec6c2c241a7ca5bc1a794ac12b",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v2-source-execution.json",
+      "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+      "sha256": "8bad99aeeb2fd60e2138171140098c69e56d7a213c548b86dc33525a54bf0502",
+      "historical_bytes_unchanged": true,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "original_event_time": "NOT_RECORDED_NO_HISTORICAL_TIME_INVENTED"
+    }
+  ]
+}

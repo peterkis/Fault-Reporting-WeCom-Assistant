@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "gate": "P2-G2",
-  "recorded_at": "2026-09-11T08:20:48.049Z",
+  "recorded_at": "2026-09-11 21:58:21",
   "preparation_status": "READY_FOR_LIVE_E2E",
   "gate_status": "IN_PROGRESS",
   "active_task": "P2-G2",
   "active_lane": "ASSEMBLY",
-  "candidate_fingerprint": "a9a98feb4e48bed956d3fdce0ba6e93b52707f4956ef79ee7544356507c54e88",
-  "candidate_file_count": 607,
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "candidate_file_count": 609,
   "candidate_algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF",
   "base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
   "authorization_commit": "d7311cdbfe30c66f37d22a553a3e8f0e04e27cd1",
@@ -27,17 +27,17 @@
   "independent_review_passed": true,
   "pr6_review_invariants": 10,
   "full_regression": {
-    "tests": 1029,
-    "pass": 1029,
+    "tests": 1044,
+    "pass": 1044,
     "fail": 0,
     "cancelled": 0,
     "skipped": 0,
     "todo": 0,
-    "tap_path": "evidence/p2-g2-yxx-entry-v2-regression.tap",
-    "tap_sha256": "9578687048350ba16c0c81c3a14898970d8acf3ff814c67be414e8881cdaa9ff",
+    "tap_path": "evidence/p2-g2-yxx-entry-v3-regression.tap",
+    "tap_sha256": "ed96a75eeec81a7fb56c9927086ff092c4e768bcdb27e7fc5950abf94f5703af",
     "baseline_test_files_covered": true,
     "baseline_test_file_count": 92,
-    "test_file_count": 165,
+    "test_file_count": 166,
     "expose_gc": true,
     "candidate_unchanged": true,
     "exit_code": 0,
@@ -46,32 +46,32 @@
   },
   "source_evidence": {
     "regression_run": {
-      "path": "evidence/p2-g2-yxx-entry-v2-regression-run.json",
-      "sha256": "8800496f6601787938ef804ea063aab597bfb290b188776f448efbe80d286114"
+      "path": "evidence/p2-g2-yxx-entry-v3-regression-run.json",
+      "sha256": "5e72e0fde11b2b489a68e37b6ba7d559040b9c8f85a26e2b228116e8ea25cc94"
     },
     "source_execution": {
-      "path": "evidence/p2-g2-yxx-entry-v2-source-execution.json",
-      "sha256": "8bad99aeeb2fd60e2138171140098c69e56d7a213c548b86dc33525a54bf0502"
+      "path": "evidence/p2-g2-yxx-entry-v3-source-execution.json",
+      "sha256": "8e6b15591e8fee5b78746802260ad1d155666b97583884a915822129cbf7a50a"
     },
     "scenario_matrix": {
-      "path": "evidence/p2-g2-yxx-entry-v2-g2-scenario-matrix.json",
-      "sha256": "0445d61aeac2e785018690c29a82a17165079d20809fc8a50520c101e7dc0aff"
+      "path": "evidence/p2-g2-yxx-entry-v3-g2-scenario-matrix.json",
+      "sha256": "e6ee403d712013d0762965c86f853f28e2346073b2e68879f9e24efc1d35f71d"
     },
     "independent_review": {
-      "path": "evidence/p2-g2-yxx-entry-v2-review-summary.json",
-      "sha256": "36a4aff6d69e5905389aa4da6f6f6ff8424640f96828102c83e910b943f266d8"
+      "path": "evidence/p2-g2-yxx-entry-v3-review-summary.json",
+      "sha256": "e7ad6e186a1dd1a5ace7063710a0409d3ab446cf160bd6b5b8db7383bb4f9fa4"
     },
     "pr6_invariants": {
-      "path": "evidence/p2-g2-yxx-entry-v2-pr6-invariants.json",
-      "sha256": "e8d9b869f6ef3c73a2081a2bfd38e8719dae1dfa633d3a97eec8208937482223"
+      "path": "evidence/p2-g2-yxx-entry-v3-pr6-invariants.json",
+      "sha256": "88ae8671170a80fe7c1259f6d447d41552d333a0074c0b612f770846563fcfc3"
     },
     "candidate_inventory": {
-      "path": "evidence/p2-g2-yxx-entry-v2-candidate-inventory.json",
-      "sha256": "a6e662b871fe85a05a8ecaa0bc1d219a2b7d9a38a7f512e2bfe454bde914b50b"
+      "path": "evidence/p2-g2-yxx-entry-v3-candidate-inventory.json",
+      "sha256": "2605099c130a3c1dde552b711f9118f4bab9c9f9932b56cf59fdcadb33baf036"
     },
     "classification_metrics": {
-      "path": "evidence/p2-g2-yxx-entry-v2-classification-metrics.json",
-      "sha256": "98709c620cafaf54cdb4d4e7206933dc5e5a4f68664737cbe1ea1a83565052d4"
+      "path": "evidence/p2-g2-yxx-entry-v3-classification-metrics.json",
+      "sha256": "80b4d5a39b957b868cf3d1f28d5ef9d99c86a437d46e366390a2823080459e29"
     }
   },
   "environment": {
@@ -114,13 +114,13 @@
   "next_task_candidate": "P2-G2-LIVE",
   "next_task_authorized": false,
   "runbook": "prompts/P2-G2_rule_first_service_loop_runbook.md",
-  "failure_history": "evidence/p2-g2-yxx-entry-v2-regression-history.json",
-  "repair_report": "evidence/p2-g2-yxx-entry-v2-review-remediation.md",
+  "failure_history": "evidence/p2-g2-yxx-entry-v3-regression-history.json",
+  "repair_report": "evidence/p2-g2-yxx-entry-v3-review-remediation.md",
   "service_chain_inventory": "evidence/p2-g2-service-chain-inventory.json",
-  "cleanup_limit": "Canonical full-run TAP retained once in Evidence after verified duplicate removal; screenshots and ignored run metadata/source copies retained. No global Temp or historical profile cleanup.",
+  "cleanup_limit": "Canonical full-run TAP retained in Evidence; ignored runner TAP retained for audit; screenshots and ignored run metadata/source copies retained. No global Temp or historical profile cleanup.",
   "cloud_environment_limit": "This member-entry task made no cloud changes or real provider calls. Historical stopped G2 and OAuth-only facts remain separate; current member candidate not deployed.",
   "classification_metric_limits": "Classification comparison uses 106 comparable terminal observations; Ticket/Review ratios use 109 measured scenarios. Exclusions are explicit. Safe-route test coverage is not classification accuracy or a claim of original-202 label equality.",
-  "source_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "source_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
   "validation_scope": "P2_G2_YXX_MEMBER_ENTRY_AND_FULL_SERVICE_LOOP_PREPARATION",
   "historical_readiness_snapshot": "evidence/p2-g2-yxx-entry-pr7-readiness-snapshot.json",
   "persistent_flag_scope": "Repository business and member-entry defaults remain false; no runtime configuration was enabled by this task.",
@@ -133,10 +133,12 @@
     "namespace_correspondence_verified": false
   },
   "historical_failure_history": "evidence/p2-g2-validation-run-index.json",
-  "source_worktree_parent_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
-  "source_commit_role": "WORKTREE_PARENT_BEFORE_IMPLEMENTATION_COMMIT",
+  "source_worktree_parent_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+  "source_commit_role": "WORKTREE_PARENT_BEFORE_PR8_REPAIR_COMMIT",
   "yixiaoxiu_member_ticket_entry": {
     "path": "evidence/p2-g2-yxx-entry-report.json",
-    "sha256": "cd41872f4eb1439182df628ba44f038c805bfd1d97db297b96f3d4052c6064f9"
-  }
+    "sha256": "b4018e1b9170cbe1f9ca458fddbac7263e3aa034a94ebc4d440f5be6e39316af"
+  },
+  "event_time": "2026-09-11 21:58:21",
+  "event_epoch_ms": "1789135101226"
 }

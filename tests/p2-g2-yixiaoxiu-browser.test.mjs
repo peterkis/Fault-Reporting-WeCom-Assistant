@@ -29,8 +29,12 @@ for(const [width,height] of [[1440,900],[390,844]])test('YXX-02 YXX-19 YXX-35 YX
       assert.doesNotMatch(visible,/synthetic-private-note|synthetic-A|userid|corpId|binding_hash/u);assert.ok(!visible.includes(a.ticket.id));
       const times=await browser.evaluate("document.querySelector('#times').textContent");
       for(const zone of ['UTC','Asia/Tokyo','America/New_York']){
-        await browser.setTimezone(zone);await browser.evaluate('location.reload()',{awaitPromise:false});
-        await browser.waitFor("document.querySelector('#ticket')?.hidden===false");assert.equal(await browser.evaluate("document.querySelector('#times').textContent"),times);
+        await browser.setTimezone(zone);
+        // Keep the previous ready document alive briefly to exercise the reload race deterministically.
+        await browser.evaluate("document.documentElement.dataset.yxxReloading='1';setTimeout(()=>location.reload(),100)",{awaitPromise:false});
+        await browser.waitFor("!document.documentElement.hasAttribute('data-yxx-reloading')&&document.querySelector('#ticket')?.hidden===false");
+        assert.equal(await browser.evaluate("document.documentElement.hasAttribute('data-yxx-reloading')"),false,'wait for the new document, not the previous ready page');
+        assert.equal(await browser.evaluate("document.querySelector('#times').textContent"),times);
       }
       assert.equal(fixture.providerCalls,1,'reload does not replay OAuth code');
       await browser.pressTab();assert.equal(await browser.evaluate("['refresh','logout','more'].includes(document.activeElement.id)"),true);

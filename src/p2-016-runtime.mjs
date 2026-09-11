@@ -16,7 +16,7 @@ import { createP2016DeliveryControl } from './p2-016-delivery-control.mjs';
 import { createP2016WorkbenchHttp } from './p2-016-workbench-http.mjs';
 import { createP2016WorkbenchStatic } from './p2-016-workbench-static.mjs';
 import { flagsP2016,failP2016 } from './p2-016-domain-contracts.mjs';
-import { appendP2016Realtime } from './p2-016-realtime-appender.mjs';
+import { appendP2016Realtime,lockP2016Realtime } from './p2-016-realtime-appender.mjs';
 import { createP2016OrchestrationWorker } from './p2-016-orchestration-adapters.mjs';
 import { normalizeP2015FeatureFlags } from './p2-015-domain-contracts.mjs';
 import { createP2016InboundScope } from './p2-016-inbound-scope.mjs';
@@ -56,6 +56,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
     botId,secret,wsUrl,allowedTargetHashes,gatewayEnabled,senderEnabled,senderAdapter,clientFactory,testAuthTtlMs,
     projectionIntervalMs:1000,communicationIntervalMs:1000,closePoolOnStop,gatewayStatusProvider,communicationStatusProvider,requireGateway,
     realtimeAppender:appendP2016Realtime,
+    projectionTransactionStart:({transaction})=>lockP2016Realtime(transaction),
     realtimeScopeLimit:256,
     senderFactory:({gateway})=>createP2016WeComSender({gateway,enabled:senderEnabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,
       reporterAccess:access,origin:reporterOrigin,allowedHosts,allowedTargetHashes,allowLocalHttp,linkMode:policy}),

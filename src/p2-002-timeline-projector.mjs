@@ -1785,6 +1785,7 @@ export function createTimelineProjector(options = {}) {
     restrictedAuthorizer = null,
     faultInjection = null,
     itemTransactionHook = null,
+    transactionStartHook = null,
   } = options;
   const configuredBatchSize = boundedInteger(batchSize, DEFAULT_BATCH_SIZE, MAX_BATCH_SIZE);
   if (enabled !== true && enabled !== false) {
@@ -1794,6 +1795,9 @@ export function createTimelineProjector(options = {}) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
   if (itemTransactionHook !== null && typeof itemTransactionHook !== 'function') {
+    fail(TIMELINE_ERROR_CODES.sourceInvalid);
+  }
+  if (transactionStartHook !== null && typeof transactionStartHook !== 'function') {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
   let beforeCommit = null;
@@ -1827,6 +1831,7 @@ export function createTimelineProjector(options = {}) {
     try {
       await client.query('BEGIN');
       await setProjectionTransactionBounds(client);
+      if (transactionStartHook !== null) await transactionStartHook(Object.freeze({ transaction: client }));
       await acquireAdvisoryLock(
         client,
         `P2_002_CHECKPOINT:${normalized.projectorName}:${normalized.sourceStream}`,
@@ -2141,6 +2146,7 @@ export function createTimelineProjector(options = {}) {
     try {
       await client.query('BEGIN');
       await setProjectionTransactionBounds(client);
+      if (transactionStartHook !== null) await transactionStartHook(Object.freeze({ transaction: client }));
       for (const sourceStream of sourceStreams) {
         await acquireAdvisoryLock(
           client,

@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 21:57:52",
+  "event_epoch_ms": "1789135072496",
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "axis": "SPEC",
+  "reviewer": "/root/yxx_spec_review",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [
+    {
+      "id": "YXX-SPEC-01",
+      "severity": "P1",
+      "title": "Concurrent callback identity replacement retained prior session",
+      "resolved": true,
+      "resolution": "Server-owned browser binding group now invalidates every prior session on replacement; same-binding and initial-navigation-binding SQL race regression passes.",
+      "evidence_test_name": "YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read"
+    },
+    {
+      "id": "YXX-SPEC-02",
+      "severity": "P2",
+      "title": "Fresh authentication or legacy prepare could inherit an expiring browser binding",
+      "resolved": true,
+      "resolution": "Explicit begin/prepare refreshes recognized binding TTL without extending existing member sessions or polling lifetime; expired and logged-out bindings cannot revive.",
+      "evidence_test_name": "YXX-13 explicit fresh login refreshes browser binding without extending authentication or polling lifetime"
+    },
+    {
+      "id": "YXX-SPEC-03",
+      "severity": "P2",
+      "title": "Expired or restarted legacy continuation lacked original-card recovery instruction",
+      "resolved": true,
+      "resolution": "Generic 404 HTML directs a new original-card click without exposing Ticket facts; both OpenAPI declarations match.",
+      "evidence_test_name": "YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery"
+    },
+    {
+      "id": "PR8-3987694573",
+      "severity": "P1",
+      "title": "Member card delivery depended on legacy Grant lifetime",
+      "resolved": true,
+      "resolution": "Member Sender now validates persisted notification/Delivery/Outbox/Message/Ticket/event/Intake/ref authority without reading or renewing Grant; expiry, consumed/missing Grant and worker outcome regressions pass."
+    },
+    {
+      "id": "PR8-SPEC-HASH",
+      "severity": "P2",
+      "title": "Malformed model hash exception escaped before-SDK classification",
+      "resolved": true,
+      "resolution": "Snapshot and content hash are protected before DB access; malformed33-element array returns permanent rejection with zero SDK calls."
+    },
+    {
+      "id": "PR8-SPEC-LOCK",
+      "severity": "P1",
+      "title": "Confirmed App Timeline Session/Realtime versus Worker Realtime/Session deadlock",
+      "resolved": true,
+      "resolution": "Optional transaction-start hook obtains P2-016 realtime lock before checkpoint/session locks in project and rebuild. Actual40P01 RED, barrier GREEN and final full test verified; source order/readiness counters unchanged."
+    },
+    {
+      "id": "PR8-SPEC-RELOAD-TEST",
+      "severity": "P2",
+      "title": "Timezone browser test could accept the previous ready document after reload",
+      "resolved": true,
+      "resolution": "Delayed reload deterministically exposes stale-document acceptance; waits require old marker removal plus new Ticket visibility and retain timezone equality assertions."
+    }
+  ],
+  "source_execution_sha256": "8e6b15591e8fee5b78746802260ad1d155666b97583884a915822129cbf7a50a",
+  "scenario_matrix_sha256": "e6ee403d712013d0762965c86f853f28e2346073b2e68879f9e24efc1d35f71d",
+  "source_worktree_parent_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+  "verification": {
+    "candidate_recomputed": true,
+    "candidate_file_count": 609,
+    "artifact_hashes_verified": 10,
+    "all_v3_structured_sources_have_valid_time_pair": true,
+    "raw_run_and_tap_equal_final_runner_outputs": true,
+    "tap_counts_recomputed": {
+      "tests": 1044,
+      "pass": 1044,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passing_tap_records": 1044,
+    "test_file_hashes_verified": 166,
+    "pr7_baseline_files_covered": 158,
+    "member_scenarios_verified": 48,
+    "g2_scenarios_verified": 37,
+    "g2_test_references_verified": 107,
+    "source_audit_recomputed": true,
+    "source_cases": 202,
+    "normal_source_pass_cases": 122,
+    "pr6_invariants_verified": 10,
+    "pr6_test_references_verified": 27,
+    "classification_population_and_metrics_preserved": true,
+    "classification_current_proof_references_verified": true,
+    "repair_tests_present_in_final_tap": [
+      "PR8 member card Worker delivers after the legacy Grant expires without renewing it",
+      "PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source",
+      "P2-016 approved topology uses three real bounded processes, rule-first Worker and zero live SDK calls",
+      "YXX-01 member Sender validates persisted delivery binding without reading a Grant before its mock SDK call"
+    ],
+    "source_review": "Member delivery authority, hash/idempotency/retention, pre-SDK retry versus UNKNOWN, evidence time helpers/guards, optional transaction lock hook and default behavior, real browser reload assertions reviewed before final freeze.",
+    "historical_full_failures_verified": [
+      {
+        "candidate": "ab99d88db2a8a66a68655b64e4637b4977514ae245bc0183d67e9f566f6fffff",
+        "tests": 1043,
+        "pass": 1042,
+        "cause": "Original three-process readiness failure; later forced barrier confirmed actual40P01."
+      },
+      {
+        "candidate": "3dd2cc4348d02c880c6ca4a02b6cda4344bbcfb318348e2b387057ce7a28c50a",
+        "tests": 1044,
+        "pass": 1043,
+        "cause": "Mobile timezone assertion accepted stale ready document; test wait repaired."
+      }
+    ],
+    "confirmed_deadlock_red_checked": true,
+    "nonproduct_red_classifications_preserved": true,
+    "topology_repeats": {
+      "passes": 10,
+      "candidate_fingerprint": "3dd2cc4348d02c880c6ca4a02b6cda4344bbcfb318348e2b387057ce7a28c50a",
+      "classification": "SUPPLEMENTAL_OLDER_CANDIDATE",
+      "runtime_unchanged_to_final_proven": true,
+      "proof": "Substituting only previous browser test Git blob reconstructs the entire previous fingerprint."
+    },
+    "final_review_ran_tests": false
+  },
+  "limits": {
+    "scope": "LOCAL_SOURCE_AND_ISOLATED_AUTOMATION_REVIEW",
+    "master_reports": "Root still assembles current readiness reports and executes final readiness guard; this review does not substitute for that step.",
+    "resolver_lock_hypothesis": "Attempted independent resolver probe did not establish the proposed interleaving or a product defect; no resolver fix is claimed.",
+    "historical_failures": "Preserved as failures; no retcon of setup/probe errors as product RED; ten older-candidate repeats do not replace this final1044/1044 run.",
+    "git_authorization": "User separately authorized review repair, push, remote review and conditional merge; this review alone does not confirm remote approval or all merge conditions.",
+    "entry_live_authorized": false,
+    "entry_live_result": "NOT_RUN",
+    "p2_g2_live_result": "NOT_RUN",
+    "identity_namespace_live_verified": false,
+    "no_live_approval": true,
+    "real_provider_calls_by_reviewer": 0,
+    "real_business_data_access_by_reviewer": false,
+    "formal_observation": "NOT_RUN",
+    "phase2_go": false
+  }
+}

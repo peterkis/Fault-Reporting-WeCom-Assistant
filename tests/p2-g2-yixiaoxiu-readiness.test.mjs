@@ -48,6 +48,7 @@ test('member readiness refuses old976, missing48, bypass gaps, missing baseline 
   const routes={candidate_fingerprint:fingerprint,access_policy:'MEMBER_REQUIRED',legacy_cookie_bypass:false,legacy_exchange_bypass:false,identity_namespace_live_verified:false,routes:Array.from({length:17},(_,i)=>({path:'/synthetic/'+i}))};
   const run={candidate_fingerprint:fingerprint,suite:'full',exit_code:0,candidate_unchanged:true,stdout_sha256:'b'.repeat(64),files:baseline,counts:{tests:977,pass:977,fail:0,skipped:0,cancelled:0,todo:0}};
   const review={candidate_fingerprint:fingerprint,reviews:['SPEC','STANDARDS'].map(axis=>({axis,verdict:'PASS',unresolved_findings:0}))};
+  for(const value of [report,matrix,routes,run,review])Object.assign(value,{event_time:'2026-09-11 12:00:00',event_epoch_ms:'1789099200000'});
   const verifiedRunReference={path:'evidence/p2-g2-yxx-entry-regression-run.json',sha256:sha(JSON.stringify(run))};
   const read=()=>requirePreparedYxxCandidate({fingerprint,root,fullRegression:{tests:977},passedNames:new Set([...names,name]),verifiedRun:run,verifiedRunReference});
   assert.throws(read,{code:'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'});
@@ -57,6 +58,13 @@ test('member readiness refuses old976, missing48, bypass gaps, missing baseline 
     }writeFileSync(path.join(root,'evidence/p2-g2-yxx-entry-report.json'),JSON.stringify({...r,sources}));
   };
   save();assert.equal(read().automation,'VERIFIED'); // Synthetic validation fixture; never copied to repository Evidence.
+  await t.test('PR8 current member readiness rejects missing or noncanonical evidence time pairs',()=>{
+    for(const patch of [{event_time:undefined},{event_epoch_ms:undefined},{event_time:'2026-09-11T04:00:00.000Z'},
+      {event_epoch_ms:1789099200000},{event_epoch_ms:'1789099201000'},{recorded_at:'2026-09-11T04:00:00Z'}]){
+      save({...report,...patch});assert.throws(read,{code:'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'});
+    }
+    save(report,{...matrix,event_time:'2026-09-11T04:00:00Z'});assert.throws(read,{code:'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'});
+  });
   await t.test('member readiness refuses unrelated passing names',()=>{
     save(report,{...matrix,scenarios:matrix.scenarios.map(s=>({...s,test_names:[name]}))});assert.throws(read,{code:'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'});
   });

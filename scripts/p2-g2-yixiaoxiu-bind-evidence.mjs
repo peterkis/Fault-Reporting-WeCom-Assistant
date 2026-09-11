@@ -2,6 +2,7 @@ import fs from 'node:fs';import path from 'node:path';import assert from 'node:a
 import {g2CandidateInventory,G2_ROOT} from '../src/p2-g2-candidate.mjs';
 import {createG2SourceAudit} from '../src/p2-g2-source-audit.mjs';
 import {g2Hash} from '../src/p2-g2-validation-config.mjs';
+import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 if(process.argv[2]==='--help'){console.log('Usage: node scripts/p2-g2-yixiaoxiu-bind-evidence.mjs tmp/p2-g2-tests-ID');process.exit(0);}
 const directory=process.argv[2];if(process.argv.length!==3||!/^tmp\/p2-g2-tests-[a-f0-9-]+$/u.test(directory??''))throw Error('YXX_ENTRY_BIND_ARGUMENT_INVALID');
 const read=file=>fs.readFileSync(path.join(G2_ROOT,file),'utf8');const json=file=>JSON.parse(read(file));
@@ -21,13 +22,15 @@ for(const scenario of matrix.scenarios){
 const invariants=json('evidence/p2-g2-pr7-pr6-invariants.json');
 Object.assign(invariants,{candidate_fingerprint:inventory.fingerprint,current_run_status:'PASS',regression_tap_sha256:run.stdout_sha256,regression_run:directory+'/run.json'});
 for(const item of invariants.items)for(const ref of item.tests){assert.ok(passed.has(ref.test_name),'INVARIANT_NOT_PASSED:'+ref.test_name);ref.file_sha256=inventory.files.find(file=>file.path===ref.file).sha256;}
-function write(file,value){const data=typeof value==='string'?value:JSON.stringify(value,null,2)+'\n';const target=path.join(G2_ROOT,file);
+function write(file,value){
+  if(typeof value!=='string')value={...value,...g2EvidenceTime(run.completed_physical_epoch_ms)};
+  const data=typeof value==='string'?value:JSON.stringify(value,null,2)+'\n';const target=path.join(G2_ROOT,file);
   if(fs.existsSync(target))assert.equal(fs.readFileSync(target,'utf8'),data,'OUTPUT_ALREADY_EXISTS:'+file);else fs.writeFileSync(target,data,{flag:'wx'});
   return {path:file,sha256:g2Hash(data)};
 }
-const sources={regression_tap:write('evidence/p2-g2-yxx-entry-v2-regression.tap',tap),regression_run:write('evidence/p2-g2-yxx-entry-v2-regression-run.json',read(directory+'/run.json')),
-  source_execution:write('evidence/p2-g2-yxx-entry-v2-source-execution.json',audit),scenario_matrix:write('evidence/p2-g2-yxx-entry-v2-g2-scenario-matrix.json',matrix),
-  pr6_invariants:write('evidence/p2-g2-yxx-entry-v2-pr6-invariants.json',invariants),candidate_inventory:write('evidence/p2-g2-yxx-entry-v2-candidate-inventory.json',inventory)};
+const sources={regression_tap:write('evidence/p2-g2-yxx-entry-v3-regression.tap',tap),regression_run:write('evidence/p2-g2-yxx-entry-v3-regression-run.json',read(directory+'/run.json')),
+  source_execution:write('evidence/p2-g2-yxx-entry-v3-source-execution.json',audit),scenario_matrix:write('evidence/p2-g2-yxx-entry-v3-g2-scenario-matrix.json',matrix),
+  pr6_invariants:write('evidence/p2-g2-yxx-entry-v3-pr6-invariants.json',invariants),candidate_inventory:write('evidence/p2-g2-yxx-entry-v3-candidate-inventory.json',inventory)};
 
 // Revalidate every measured historical metric against its current passing diagnostic block.
 // Expected/adjudicated labels remain frozen; differences stop publication rather than copying old measurements.
@@ -60,7 +63,7 @@ for(const item of metrics.cases){
 }
 Object.assign(metrics,{candidate_fingerprint:inventory.fingerprint,tap_sha256:run.stdout_sha256,source_execution_audit_sha256:sources.source_execution.sha256,
   refresh_method:'Every measured result/count proof revalidated against the matching current passing diagnostic; unchanged source labels, formulas and denominators.',measurement_proofs_revalidated:proofsChecked});
-sources.classification_metrics=write('evidence/p2-g2-yxx-entry-v2-classification-metrics.json',metrics);
+sources.classification_metrics=write('evidence/p2-g2-yxx-entry-v3-classification-metrics.json',metrics);
 const baselineRecursiveFiles=execFileSync('git',['ls-tree','-r','--name-only','8c332710dad9b6cf3f6796f3344c04d1c710ddf3','--','tests'],{cwd:G2_ROOT,encoding:'utf8',windowsHide:true}).trim().split(/\r?\n/u).filter(file=>file.endsWith('.test.mjs'));
 const baselineFiles=baselineRecursiveFiles.filter(file=>/^tests\/[^/]+\.test\.mjs$/u.test(file));
 assert.ok(baselineRecursiveFiles.every(file=>run.files.some(row=>row.path===file)));
@@ -75,7 +78,7 @@ const memberMatrix={schema_version:1,work_item:'P2-G2-YXX-TICKET-ENTRY',candidat
     return {scenario_id:s.scenario_id,requirement:s.requirement,required_assertion:s.required_assertion,automation:'VERIFIED',live_result:'NOT_RUN',test_names:names,test_files:files};
   })};
 assert.equal(memberMatrix.scenarios.length,48);
-sources.member_scenario_matrix=write('evidence/p2-g2-yxx-entry-v2-scenario-matrix.json',memberMatrix);
+sources.member_scenario_matrix=write('evidence/p2-g2-yxx-entry-v3-scenario-matrix.json',memberMatrix);
 const routes=[];
 for(const line of read('contracts/openapi.yaml').split(/\r?\n/u)){
   const match=/^  (\/(?:api\/reporter|reporter|wecom\/yixiaoxiu)[^:]*): (\{.+\})$/u.exec(line);if(!match)continue;
@@ -83,11 +86,11 @@ for(const line of read('contracts/openapi.yaml').split(/\r?\n/u)){
     responses:Object.keys(item[method].responses),description:item[method].description??null});
 }
 assert.equal(routes.length,17);
-sources.route_audit=write('evidence/p2-g2-yxx-entry-v2-route-audit.json',{schema_version:1,candidate_fingerprint:inventory.fingerprint,
+sources.route_audit=write('evidence/p2-g2-yxx-entry-v3-route-audit.json',{schema_version:1,candidate_fingerprint:inventory.fingerprint,
   access_policy:'MEMBER_REQUIRED',legacy_cookie_bypass:false,legacy_exchange_bypass:false,identity_namespace_live_verified:false,
   proof_scenarios:['YXX-30','YXX-31','YXX-32','YXX-33','YXX-34','YXX-45'],routes});
 const measurement=/^# YXX_RESOURCE (.+)$/mu.exec(tap);assert.ok(measurement,'RESOURCE_DIAGNOSTIC_MISSING');
-sources.resource_measurement=write('evidence/p2-g2-yxx-entry-v2-resource.json',{schema_version:1,candidate_fingerprint:inventory.fingerprint,
+sources.resource_measurement=write('evidence/p2-g2-yxx-entry-v3-resource.json',{schema_version:1,candidate_fingerprint:inventory.fingerprint,
   regression_tap_sha256:run.stdout_sha256,diagnostic_sha256:g2Hash(measurement[0]),measurement:JSON.parse(measurement[1])});
 const pr7=json('evidence/p2-g2-pr7-regression-run.json');assert.equal(pr7.files.length,158);assert.ok(pr7.files.every(f=>run.files.some(v=>v.path===f.path)));
 

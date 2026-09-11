@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import os from 'node:os';
 import { g2Hash, minimalG2Environment, failG2 } from '../src/p2-g2-validation-config.mjs';
 import { g2CandidateInventory, G2_ROOT } from '../src/p2-g2-candidate.mjs';
+import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 
 export function g2TestFiles(suite='g2') {
   if(!['g2','integration','browser','full'].includes(suite))failG2('TEST_SUITE_INVALID');
@@ -37,8 +38,9 @@ export async function runG2Tests({suite='g2',envFile='.env.pilot'}={}) {
   writeFileSync(path.join(absolute,'result.tap'),stdout,{mode:0o600});writeFileSync(path.join(absolute,'stderr.txt'),stderr,{mode:0o600});
   const counts={};for(const line of stdout.split(/\r?\n/u)){const m=/^# (tests|pass|fail|skipped|cancelled|todo) (\d+)$/u.exec(line);if(m)counts[m[1]]=Number(m[2]);}
   const unchanged=g2CandidateInventory().fingerprint===candidate.fingerprint;
+  const completed_physical_epoch_ms=String(Date.now());
   const record={schema_version:1,gate:'P2-G2',mode:'SYNTHETIC_AUTOMATION',suite,candidate_fingerprint:candidate.fingerprint,
-    started_physical_epoch_ms,completed_physical_epoch_ms:String(Date.now()),node_version:process.versions.node,os_platform:process.platform,os_release:os.release(),architecture:process.arch,
+    ...g2EvidenceTime(completed_physical_epoch_ms),started_physical_epoch_ms,completed_physical_epoch_ms,node_version:process.versions.node,os_platform:process.platform,os_release:os.release(),architecture:process.arch,
     candidate_unchanged:unchanged,expose_gc:true,formal_natural_gc_observation:false,model_environment_keys:0,
     args,files:files.map(file=>({path:file,sha256:candidate.files.find(entry=>entry.path===file).sha256})),
     exit_code:collected.exit_code,signal:collected.signal,error:collected.error,counts,

@@ -1,0 +1,95 @@
+TAP version 13
+# Subtest: prepared-candidate gate rejects missing, changed and incomplete regression evidence
+ok 1 - prepared-candidate gate rejects missing, changed and incomplete regression evidence
+  ---
+  duration_ms: 353.5579
+  type: 'test'
+  ...
+# Subtest: source audit uses the same canonical corpus hashes in Windows CRLF and Linux LF candidate checkouts
+ok 2 - source audit uses the same canonical corpus hashes in Windows CRLF and Linux LF candidate checkouts
+  ---
+  duration_ms: 76.2606
+  type: 'test'
+  ...
+# Subtest: source audit retains all 202 cases, fixed 122 denominator and explicit unsupported original surfaces
+ok 3 - source audit retains all 202 cases, fixed 122 denominator and explicit unsupported original surfaces
+  ---
+  duration_ms: 8.2087
+  type: 'test'
+  ...
+# Subtest: source audit never promotes enum presence, failed runs, changed TAP or absent cases
+ok 4 - source audit never promotes enum presence, failed runs, changed TAP or absent cases
+  ---
+  duration_ms: 7.3483
+  type: 'test'
+  ...
+# Subtest: source audit reads actual nested TAP child assertions and indented action diagnostics
+ok 5 - source audit reads actual nested TAP child assertions and indented action diagnostics
+  ---
+  duration_ms: 6.6226
+  type: 'test'
+  ...
+# Subtest: member readiness refresh permits only authorized modifications with exact preserved baseline bytes
+ok 6 - member readiness refresh permits only authorized modifications with exact preserved baseline bytes
+  ---
+  duration_ms: 0.9795
+  type: 'test'
+  ...
+# Subtest: member readiness refuses old976, missing48, bypass gaps, missing baseline and false live claims
+    # Subtest: PR8 current member readiness rejects missing or noncanonical evidence time pairs
+    ok 1 - PR8 current member readiness rejects missing or noncanonical evidence time pairs
+      ---
+      duration_ms: 17.3579
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses unrelated passing names
+    ok 2 - member readiness refuses unrelated passing names
+      ---
+      duration_ms: 13.7199
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses a different TAP receipt
+    ok 3 - member readiness refuses a different TAP receipt
+      ---
+      duration_ms: 6.0402
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses different regression file hashes
+    ok 4 - member readiness refuses different regression file hashes
+      ---
+      duration_ms: 4.8165
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses unrelated scenario files
+    ok 5 - member readiness refuses unrelated scenario files
+      ---
+      duration_ms: 14.2445
+      type: 'test'
+      ...
+    1..5
+ok 7 - member readiness refuses old976, missing48, bypass gaps, missing baseline and false live claims
+  ---
+  duration_ms: 195.4218
+  type: 'test'
+  ...
+# Subtest: YXX-33 complete G2 live configuration requires member policy and binds the server identity proof configuration
+ok 8 - YXX-33 complete G2 live configuration requires member policy and binds the server identity proof configuration
+  ---
+  duration_ms: 2.0233
+  type: 'test'
+  ...
+# Subtest: member App HTTP allowlist admits only fixed OAuth endpoints with bounded GET parameters through a local fake transport
+ok 9 - member App HTTP allowlist admits only fixed OAuth endpoints with bounded GET parameters through a local fake transport
+  ---
+  duration_ms: 4.3486
+  type: 'test'
+  ...
+1..9
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1086.9877

@@ -1,6 +1,7 @@
 import {readFileSync,lstatSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
+import {assertG2EvidenceTime} from './p2-g2-evidence-time.mjs';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const reject=()=>{throw Object.assign(new Error('YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'),{code:'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'});};
@@ -16,9 +17,10 @@ export function requirePreparedYxxCandidate({fingerprint,root,fullRegression,pas
   const evidence=ref=>{
     if(!ref||!/^evidence\/p2-g2-yxx-entry-[a-z0-9-]+\.(json|tap)$/u.test(ref.path??''))reject();
     let raw;try{const file=path.join(root,ref.path),stat=lstatSync(file);if(!stat.isFile()||stat.isSymbolicLink()||stat.size>64*1024*1024)reject();raw=readFileSync(file);}catch{reject();}
-    if(sha(raw)!==ref.sha256)reject();try{return JSON.parse(raw);}catch{reject();}
+    if(sha(raw)!==ref.sha256)reject();try{const value=JSON.parse(raw);assertG2EvidenceTime(value);return value;}catch{reject();}
   };
   let r;try{r=JSON.parse(readFileSync(path.join(root,'evidence/p2-g2-yxx-entry-report.json'),'utf8'));}catch{reject();}
+  try{assertG2EvidenceTime(r);}catch{reject();}
   if(r.work_item!=='P2-G2-YXX-TICKET-ENTRY'||r.candidate_fingerprint!==fingerprint||r.implementation!=='IMPLEMENTED'||r.automation!=='VERIFIED'
     ||r.entry_live_authorized!==false||r.entry_live_result!=='NOT_RUN'||r.p2_g2_live_result!=='NOT_RUN'
     ||r.identity_namespace_live_verified!==false||r.entry_status!=='IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING'

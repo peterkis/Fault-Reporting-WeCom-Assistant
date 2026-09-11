@@ -1,6 +1,7 @@
 import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import {g2Hash,failG2} from './p2-g2-validation-config.mjs';
+import {g2EvidenceTime} from './p2-g2-evidence-time.mjs';
 
 const keys=['tests','pass','fail','skipped','cancelled','todo'];
 const originalFiles={
@@ -106,7 +107,7 @@ export function createG2SourceAudit({tap,run,root}){
   const expectedManual=new Set([...c.filter(c=>c.manual_review_expected).map(c=>c.source_case_id),
     ...x.filter(r=>['REQUIRED','REQUIRED_ASSOCIATION_REVIEW'].includes(r.review_requirement)).map(r=>r.case_id)]);
   const missingManual=cases.filter(c=>expectedManual.has(c.source_case_id)&&!c.proofs.some(p=>p.actual_manual_review_action)).map(c=>c.source_case_id);
-  return {schema_version:1,candidate_fingerprint:run.candidate_fingerprint,run_suite:run.suite,
+  return {schema_version:1,...(run.completed_physical_epoch_ms?g2EvidenceTime(run.completed_physical_epoch_ms):{}),candidate_fingerprint:run.candidate_fingerprint,run_suite:run.suite,
     tap_sha256:run.stdout_sha256,source_and_adjudication_hashes:hashes,total_source_cases:202,
     normal_input_cases:122,mechanism_and_other_cases:80,observed_normal_pass_cases:normal.filter(c=>c.proofs.length).length,
     observed_normal_test_coverage_percent:100*normal.filter(c=>c.proofs.length).length/122,

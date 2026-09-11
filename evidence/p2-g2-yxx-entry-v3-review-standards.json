@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 21:57:11",
+  "event_epoch_ms": "1789135031058",
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "axis": "STANDARDS",
+  "reviewer": "/root/yxx_standards_review",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [
+    {
+      "id": "PR8-STANDARDS-TIME",
+      "priority": "P2",
+      "resolved": true,
+      "title": "New Evidence used UTC ISO timestamps",
+      "resolution": "Canonical paired Shanghai/epoch generation is shared by runner, binder and source audit. Both parent and member current-readiness checks reject missing, ISO or mismatched times; immutable historical versions receive hash-bound append-only corrections."
+    }
+  ],
+  "source_execution_sha256": "8e6b15591e8fee5b78746802260ad1d155666b97583884a915822129cbf7a50a",
+  "scenario_matrix_sha256": "e6ee403d712013d0762965c86f853f28e2346073b2e68879f9e24efc1d35f71d",
+  "source_worktree_parent_commit": "20af92bba7ddec0686639e9b50c7441ce3e4b392",
+  "verification": {
+    "candidate_files": 609,
+    "test_files": 166,
+    "full_regression": {
+      "tests": 1044,
+      "pass": 1044,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exit_code": 0,
+      "candidate_unchanged": true
+    },
+    "source_references_hash_verified": true,
+    "raw_run_and_tap_byte_identical": true,
+    "current_test_file_hashes_verified": true,
+    "prior_158_files_present": true,
+    "member_matrix_exactly_reconstructed": 48,
+    "g2_scenario_test_bindings": 37,
+    "pr6_invariant_test_bindings": 10,
+    "source_audit_recomputed": true,
+    "source_cases": 202,
+    "normal_cases": 122,
+    "other_cases": 80,
+    "unchanged_denominators_and_exclusions": true,
+    "diagnostic_measurement_proofs_compared": 223,
+    "new_and_current_json_time_pairs_checked": 24,
+    "historical_time_correction_git_hashes_verified": 45,
+    "old_topology_loops_verified": 10,
+    "old_topology_loop_candidate": "3dd2cc4348d02c880c6ca4a02b6cda4344bbcfb318348e2b387057ce7a28c50a",
+    "topology_scope": "Old loops remain bound to 3dd2cc; final 9e6aa8 full suite independently includes topology and lock regression.",
+    "source_review": [
+      "Sender uses durable notification/Delivery/Message/Ticket-event/source Intake/public-ref authority without Grant lifecycle dependency; retry-before-SDK and UNKNOWN reconciliation preserved.",
+      "Plain JSON validation and malformed content-hash rejection occur before SDK access.",
+      "Timeline optional transactionStartHook runs after transaction bounds and before checkpoint/session locks in project/rebuild; P2-016 selects shared Realtime lock first. Defaults remain null for other assemblies; no DDL/order/readiness relaxation.",
+      "Real barrier RED records40P01; ordinary-wrapper fix is distinguished from initial Proxy fixture failure and unconfirmed resolver hypothesis.",
+      "Browser native navigation and reload-document marker retain assertions and existing limits; no Runtime/UI changes for test races.",
+      "Evidence exact scenario/run binding and no-diff READY protection remain in force."
+    ],
+    "regression_run": {
+      "path": "evidence/p2-g2-yxx-entry-v3-regression-run.json",
+      "sha256": "5e72e0fde11b2b489a68e37b6ba7d559040b9c8f85a26e2b228116e8ea25cc94"
+    },
+    "regression_tap": {
+      "path": "evidence/p2-g2-yxx-entry-v3-regression.tap",
+      "sha256": "ed96a75eeec81a7fb56c9927086ff092c4e768bcdb27e7fc5950abf94f5703af"
+    }
+  },
+  "limits": [
+    "Current master reports and ledgers await root assembly; final require-ready checks must pass after assembly.",
+    "Review independently inspected sources/artifacts and executed read-only assertions; it did not rerun the full suite or access DB/live services.",
+    "Real identity correspondence, targeted live, P2-G2-LIVE and formal observation remain unverified/unperformed; no live approval is inferred.",
+    "Historical failed full runs, confirmed product RED, fixture failures and unconfirmed probes remain separate evidence classes.",
+    "Ten topology loops ran the prior source candidate; only the final full run attests the complete final test bytes.",
+    "Only the new v3 STANDARDS JSON and Markdown are owned outputs; prior reviews/evidence remain immutable."
+  ]
+}

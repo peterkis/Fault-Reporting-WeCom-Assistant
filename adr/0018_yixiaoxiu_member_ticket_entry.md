@@ -9,11 +9,13 @@ MEMBER_REQUIRED separates member authentication from Ticket ownership. The confi
 
 LEGACY_BOUND_GRANT preserves existing isolated compatibility contracts. MEMBER_REQUIRED never falls back to it when OAuth, entry or identity configuration fails. All Reporter endpoints, old cookies, bootstrap and 304 obey the server-selected policy.
 
-New cards point to `/wecom/yixiaoxiu/tickets/{public_ref}`. A public ref only locates. Both click regions use the same canonical URL. Sender still checks its existing delivery/recipient/Grant bindings.
+New cards point to `/wecom/yixiaoxiu/tickets/{public_ref}`. A public ref only locates. Both click regions use the same canonical URL. As clarified by the authorized PR #8 repair, member Sender checks the persisted notification/Delivery/Outbox/Message/Ticket/event/source Intake/public-ref bindings and retention without requiring a Grant. The legacy Sender retains its Grant binding and expiry checks. This removes an unrelated 30-minute delivery cutoff without changing access authorization or Grant/session constraints.
 
 Historical Grant links in member mode provide location only after OAuth and ownership: ISSUED, CONSUMED and EXPIRED may locate if current HMAC/digest and scope validate; REVOKED, rotated signing secrets, invalid signatures or bindings reject. They are not consumed or resurrected. The old mode retains its original one-use/expiry rules.
 
 Reuse a single safe detail/Timeline query core with server-produced trusted scope. Member reads run authorization and queries in one transaction, recheck the OAuth session before sending, and record access events with NULL persistent session/actor. No schema changes and no weakening of Grant or persistent Session constraints.
+
+PR #8 regression repair: the P2-016 App Timeline and Worker must acquire the shared Realtime stream lock before any Timeline checkpoint/Session lock. An optional transaction-start hook in the generic Timeline projector supplies this assembly-owned order, after transaction bounds are set and before lock acquisition; the default remains null. This also applies to its explicitly authorized rebuild transaction, without authorizing any rebuild. It prevents a confirmed App Session→Realtime versus Worker Realtime→Session deadlock from letting later Ticket projection overtake the earlier Channel source. Business times, append ordering, readiness and failure accounting remain unchanged.
 
 Each browser login holds independent bounded intents, with opaque one-use OAuth state and fixed callback. Logout invalidates pending and in-flight authentication as well as sessions. No global current Ticket, credentials in browser storage, or business side effects from authentication.
 

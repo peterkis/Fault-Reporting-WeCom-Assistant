@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "regression_tap_sha256": "ed96a75eeec81a7fb56c9927086ff092c4e768bcdb27e7fc5950abf94f5703af",
+  "diagnostic_sha256": "20630bed31d1b45d6448fc9fab950dbc4f63c9a4adcbb4f36146786895e6ac3e",
+  "measurement": {
+    "authenticated_sessions": 100,
+    "concurrent_reads": 32,
+    "overload_status": 503,
+    "pool_peak_connections": 4,
+    "pending_pool_after": 0,
+    "elapsed_ms": 331,
+    "rss_before_bytes": 92344320,
+    "rss_after_bytes": 98529280,
+    "catalog_unchanged": true,
+    "business_tables_unchanged": true,
+    "formal_observation": false,
+    "real_provider_calls": 0
+  },
+  "event_time": "2026-09-11 21:54:00",
+  "event_epoch_ms": "1789134840289"
+}

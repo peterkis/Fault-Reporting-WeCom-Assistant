@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 21:59:38",
+  "event_epoch_ms": "1789135178632",
+  "new_or_mutable_json_checked": [
+    "evidence/p2-g2-automated-readiness-report.json",
+    "evidence/p2-g2-yxx-entry-report.json",
+    "evidence/p2-g2-yxx-entry-pr8-cluster-diagnostic.json",
+    "evidence/p2-g2-yxx-entry-pr8-cluster-postfix.json",
+    "evidence/p2-g2-yxx-entry-pr8-cluster-projection-diagnostic.json",
+    "evidence/p2-g2-yxx-entry-pr8-cluster-repeat-archive.json",
+    "evidence/p2-g2-yxx-entry-pr8-diagnostic-classification.json",
+    "evidence/p2-g2-yxx-entry-pr8-historical-time-corrections.json",
+    "evidence/p2-g2-yxx-entry-v3-candidate-inventory.json",
+    "evidence/p2-g2-yxx-entry-v3-classification-metrics.json",
+    "evidence/p2-g2-yxx-entry-v3-cleanup.json",
+    "evidence/p2-g2-yxx-entry-v3-final-checks.json",
+    "evidence/p2-g2-yxx-entry-v3-first-regression-run.json",
+    "evidence/p2-g2-yxx-entry-v3-freeze.json",
+    "evidence/p2-g2-yxx-entry-v3-g2-scenario-matrix.json",
+    "evidence/p2-g2-yxx-entry-v3-pr6-invariants.json",
+    "evidence/p2-g2-yxx-entry-v3-regression-history.json",
+    "evidence/p2-g2-yxx-entry-v3-regression-run.json",
+    "evidence/p2-g2-yxx-entry-v3-reload-freeze.json",
+    "evidence/p2-g2-yxx-entry-v3-reload-provenance.json",
+    "evidence/p2-g2-yxx-entry-v3-resource.json",
+    "evidence/p2-g2-yxx-entry-v3-review-spec.json",
+    "evidence/p2-g2-yxx-entry-v3-review-standards.json",
+    "evidence/p2-g2-yxx-entry-v3-review-summary.json",
+    "evidence/p2-g2-yxx-entry-v3-route-audit.json",
+    "evidence/p2-g2-yxx-entry-v3-scenario-matrix.json",
+    "evidence/p2-g2-yxx-entry-v3-screenshots.json",
+    "evidence/p2-g2-yxx-entry-v3-second-regression-run.json",
+    "evidence/p2-g2-yxx-entry-v3-source-execution.json"
+  ],
+  "checks_passed": 29,
+  "historical_modified_paths": [
+    "evidence/p2-g2-automated-readiness-report.json",
+    "evidence/p2-g2-automated-readiness-report.md",
+    "evidence/p2-g2-yxx-entry-report.json",
+    "evidence/p2-g2-yxx-entry-report.md"
+  ],
+  "historical_allowlist": [
+    "evidence/p2-g2-automated-readiness-report.json",
+    "evidence/p2-g2-automated-readiness-report.md",
+    "evidence/p2-g2-yxx-entry-report.json",
+    "evidence/p2-g2-yxx-entry-report.md"
+  ],
+  "scope": "All new/current structured JSON evidence has matching Shanghai seconds and string PhysicalEpochMs; all other pre-repair Evidence files have unchanged Git bytes."
+}

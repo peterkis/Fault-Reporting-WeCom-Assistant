@@ -30,7 +30,7 @@ test('prepared-candidate gate rejects missing, changed and incomplete regression
     return '# Subtest: '+name+'\nok '+(i+1)+' - '+name+(ids[i]?'\n# '+JSON.stringify({source_case_id:ids[i],observation:{
       result_code:'MANUAL_REVIEW_REQUIRED',actual_actions:[{action_type:'ENQUEUE_MANUAL_REVIEW',state:'EXECUTED',result_ref_type:'MANUAL_REVIEW'}]}}):'');
   }).join('\n')+'\n# tests 577\n# pass 577\n# fail 0\n# skipped 0\n# cancelled 0\n# todo 0\n';
-  const report={preparation_status:'READY_FOR_LIVE_E2E',candidate_fingerprint:fingerprint,gold_reference_count:202,
+  const report={event_time:'2026-09-11 12:00:00',event_epoch_ms:'1789099200000',preparation_status:'READY_FOR_LIVE_E2E',candidate_fingerprint:fingerprint,gold_reference_count:202,
     scenario_matrix_complete:true,independent_review_passed:true,full_regression:{tests:577,pass:577,fail:0,
       skipped:0,cancelled:0,todo:0,baseline_test_files_covered:true,tap_path:'evidence/p2-g2-unit-regression.tap',tap_sha256:g2Hash(tap)}};
   writeFileSync(path.join(root,report.full_regression.tap_path),tap);
@@ -51,6 +51,10 @@ test('prepared-candidate gate rejects missing, changed and incomplete regression
     independent_review:source('unit-review.json',review),source_execution:sourceExecution};
   const save=r=>writeFileSync(reportPath,JSON.stringify(r));
   save(report);assert.deepEqual(requirePreparedG2Candidate(fingerprint,root),report);
+  for(const patch of [{event_time:undefined,event_epoch_ms:undefined},{event_time:'2026-09-11T04:00:00Z'},{event_epoch_ms:'1789099201000'}]){
+    save({...report,...patch});assert.throws(()=>requirePreparedG2Candidate(fingerprint,root),/READY_CANDIDATE_REQUIRED/u);
+  }
+  save(report);
   // Deliberately synthetic local fixture exercises the source adapter; these
   // files are removed with this unit-test root and never become live evidence.
   mkdirSync(path.join(root,run.directory),{recursive:true});writeFileSync(path.join(root,run.directory,'run.json'),JSON.stringify(run));

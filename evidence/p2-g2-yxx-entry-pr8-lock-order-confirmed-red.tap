@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source
+not ok 1 - PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source
+  ---
+  duration_ms: 2969.6327
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-016-projection-lock-order.integration.test.mjs:13:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    the actual cross-process transaction pattern must not deadlock
+    + actual - expected
+    
+    + [
+    +   {
+    +     code: '40P01',
+    +     role: 'APP'
+    +   }
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0:
+      role: 'APP'
+      code: '40P01'
+  operator: 'deepStrictEqual'
+  stack: |-
+    run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-016-projection-lock-order.integration.test.mjs:50:14)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-016-projection-lock-order.integration.test.mjs:14:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# {"forced_worker_stream_then_app_stream":true,"sql_errors":[{"role":"APP","code":"40P01"}],"results":["fulfilled","fulfilled"]}
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3259.6254

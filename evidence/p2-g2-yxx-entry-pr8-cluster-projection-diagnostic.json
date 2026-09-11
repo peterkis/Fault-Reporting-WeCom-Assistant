@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 20:41:10",
+  "event_epoch_ms": "1789130470265",
+  "scope": "Repeated existing real isolated three-process topology with unchanged candidate; temporary parent-side readiness observation, no production instrumentation.",
+  "records": [
+    {
+      "event_time": "2026-09-11 20:39:58",
+      "event_epoch_ms": "1789130398102",
+      "iteration": 1,
+      "exit_code": 0,
+      "duration_ms": 13487,
+      "path": "tmp/pr8-cluster-projection-1.tap",
+      "observations": [
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}",
+        "# [DEBUG-pr8-cluster] {\"status\":200,\"body\":{\"ok\":true,\"base_service_ready\":true,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":true,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}"
+      ]
+    },
+    {
+      "event_time": "2026-09-11 20:41:10",
+      "event_epoch_ms": "1789130470265",
+      "iteration": 2,
+      "exit_code": 1,
+      "duration_ms": 72161,
+      "path": "tmp/pr8-cluster-projection-2.tap",
+      "observations": [
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":true,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}",
+        "# [DEBUG-pr8-cluster] {\"status\":503,\"body\":{\"ok\":false,\"base_service_ready\":false,\"ai_enhancement_ready\":false,\"ai_enabled\":false,\"checks\":{\"postgres\":true,\"migrations_001_021\":true,\"app_http\":true,\"workbench\":true,\"projection_worker\":true,\"projection_backlog_drained\":false,\"projection_failures_zero\":false,\"communication_worker\":true,\"gateway_authenticated\":true,\"human_only_flags\":true,\"p2_016_schema\":true},\"scope\":\"INTERNAL_BETA_NOT_PHASE2_GO\"}}",
+        "# [DEBUG-pr8-projection] {\"backlog\":{\"channel_messages\":1,\"communication_messages\":0,\"communication_deliveries\":0,\"total\":1,\"disabled\":false},\"streams\":[{\"source_stream\":\"CHANNEL_MESSAGE_INBOX\",\"scanned\":1,\"inserted\":0,\"replayed\":0,\"failures\":[{\"code\":\"P2_G1_SESSION_REBUILD_REQUIRED\",\"isolated\":true,\"maintenance\":\"RUN_AUTHORIZED_SINGLE_SESSION_REBUILD\"}]},{\"source_stream\":\"PILOT_TICKET_EVENT\",\"scanned\":0,\"inserted\":0,\"replayed\":0,\"failures\":[]},{\"source_stream\":\"COMMUNICATION_MESSAGE\",\"scanned\":0,\"inserted\":0,\"replayed\":0,\"failures\":[]},{\"source_stream\":\"COMMUNICATION_DELIVERY\",\"scanned\":0,\"inserted\":0,\"replayed\":0,\"failures\":[]},{\"source_stream\":\"CONVERSATION_CONTROL_EVENT\",\"scanned\":0,\"inserted\":0,\"replayed\":0,\"failures\":[]}],\"item_order\":[{\"item_type\":\"TICKET_EVENT\",\"source_type\":\"TICKET_EVENT\",\"projection_variant\":\"STATUS\",\"occurred_at\":\"2026-09-11 20:40:00\",\"sequence_no\":\"1\"}]}"
+      ]
+    }
+  ]
+}

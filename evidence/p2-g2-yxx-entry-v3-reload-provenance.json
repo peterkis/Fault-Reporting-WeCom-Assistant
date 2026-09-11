@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 21:30:38",
+  "event_epoch_ms": "1789133438734",
+  "previous_candidate_fingerprint": "3dd2cc4348d02c880c6ca4a02b6cda4344bbcfb318348e2b387057ce7a28c50a",
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "only_candidate_change": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+  "proof": "Replacing only the browser test with its pre-refinement bytes exactly reconstructs the previous full-run inventory fingerprint. All runtime and other candidate files are unchanged.",
+  "previous_full_run": "evidence/p2-g2-yxx-entry-v3-second-regression-run.json",
+  "previous_topology_repeats": "evidence/p2-g2-yxx-entry-pr8-cluster-repeat-archive.json",
+  "current_browser_red": "evidence/p2-g2-yxx-entry-pr8-reload-document-red.tap",
+  "current_browser_green": "evidence/p2-g2-yxx-entry-pr8-reload-document-green.tap"
+}

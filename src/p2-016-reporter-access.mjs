@@ -77,6 +77,35 @@ export function createP2016ReporterAccess({pool,enabled=false,hmacSecret,now=()=
       await audit(tx,'GRANT_ISSUED',{ticket:ticketId,grant:grant.grant_id});
       return {grant_id:grant.grant_id,public_ref:ref.public_ref,replayed:false};
     },
+    // Sender-only authority for member cards; no capability or Grant lifecycle is involved.
+    async deliveryBinding({deliveryId}) {
+      guardP2016(enabled);uuidP2016(deliveryId);
+      const stamp=stampP2016(now);
+      const q=await pool.query(`SELECT r.public_ref,b.recipient_binding_hash,d.provider,d.channel_account_id,
+        d.target_id,d.target_hash,d.idempotency_key,m.content_hash,m.content,
+        i.source_provider,i.source_bot_id,i.reporter_wecom_userid
+        FROM communication.ticket_notification_binding b
+        JOIN communication.delivery d ON d.id=b.delivery_id AND d.outbox_id=b.outbox_id
+        JOIN communication.outbox o ON o.id=b.outbox_id AND o.message_id=b.message_id
+        JOIN communication.message m ON m.id=b.message_id
+        JOIN pilot_ticket.ticket t ON t.id=b.ticket_id
+        JOIN pilot_ticket.ticket_event e ON e.event_id=b.ticket_event_id AND e.ticket_id=t.id
+        JOIN intake.service_intake i ON i.id=t.source_intake_id
+        JOIN pilot_ticket.reporter_public_ref r ON r.ticket_id=t.id AND r.reporter_binding_hash=b.recipient_binding_hash
+        LEFT JOIN intake.contact_journey j ON j.id=r.journey_id
+        WHERE b.delivery_id=$1::uuid AND b.destination_type='PERSON' AND d.target_type='PERSON'
+          AND r.status='ACTIVE' AND m.message_type='template_card' AND m.visibility='EXTERNAL'
+          AND m.purpose='SYSTEM_NOTIFICATION' AND m.sender_system_code='TICKET_LIFECYCLE'
+          AND o.route_policy='P2_016_REPORTER' AND m.retention_until_epoch_ms>$2::bigint
+          AND i.retention_until_epoch_ms>$2::bigint
+          AND (r.journey_id IS NULL OR j.retention_until_epoch_ms>$2::bigint)`,[deliveryId,stamp.epoch]);
+      const b=q.rows[0];
+      if(q.rowCount!==1||b.provider!=='WECOM_AIBOT'||b.source_provider!==b.provider||b.source_bot_id!==b.channel_account_id
+        ||b.reporter_wecom_userid!==b.target_id||b.target_hash!==textHashP2016(b.target_id)
+        ||b.recipient_binding_hash!==textHashP2016(JSON.stringify([b.provider,b.channel_account_id,b.target_id]))
+        ||b.public_ref!==b.content?.public_ref)failP2016('REPORTER_BINDING_INVALID',403);
+      return b;
+    },
     async deliveryGrant({deliveryId}) {
       guardP2016(enabled);uuidP2016(deliveryId);
       const q=await pool.query(`SELECT g.*,r.public_ref,r.status AS ref_status FROM pilot_ticket.reporter_access_grant g

@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 21:59:15",
+  "event_epoch_ms": "1789135155840",
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "records": [
+    {
+      "command": [
+        "node",
+        "scripts/validate-p2-016-ticket-lifecycle-workbench.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "{\"task\":\"P2-016\",\"verification_revision\":\"8c332710dad9b6cf3f6796f3344c04d1c710ddf3\",\"successor_task\":\"P2-G2\",\"state\":\"DONE\",\"ok\":true,\"checks\":146,\"errors\":[],\"runtime_input_sha256\":\"b3592280fd02bb68cd9b63720f6d6b8fae88b86c81597bb730a3f7367e0f3117\",\"readiness_evidence_checked\":false,\"completion_evidence_checked\":true,\"historical_only\":true,\"current_runtime_verified\":false,\"successor_scope_checked\":true,\"frozen_checkout_cleanup_passed\":true}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/validate-p2-012-human-confirmed-incident.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "{\"task\":\"P2-012\",\"state\":\"DONE\",\"ok\":true,\"checks\":265,\"errors\":[],\"runtime_input_sha256\":\"2a4094a8cdc58265c830c59b03201c0f87e2b69e35ee078023545a3d0b60f078\",\"readiness_evidence_checked\":false,\"completion_evidence_checked\":true,\"review_evidence_checked\":true,\"live_validation\":\"NOT_RUN\",\"historical_live_validation\":\"PASSED\",\"second_commit_created\":true,\"review_fix_commit_created\":true,\"http_openapi_review_fix_commit_created\":true,\"subscription_review_fix_commit_created\":true,\"paused_destination_fix_commit_created\":true,\"reporter_refresh_fix_commit_created\":true,\"historical_only\":true,\"verification_revision\":\"8c332710dad9b6cf3f6796f3344c04d1c710ddf3\",\"successor_task\":\"P2-G2\",\"current_runtime_verified\":false,\"successor_scope_checked\":true,\"frozen_checkout_cleanup_passed\":true}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/validate-arch-006-rule-first-service-loop.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "ARCH-006 rule-first service loop validation passed (262 checks).\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/validate-v1-4-architecture.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "V1.4 architecture validation passed (407 checks).\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/p2-g2-check.mjs",
+        "--mode=check"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "{\"gate\":\"P2-G2\",\"mode\":\"check\",\"ok\":true,\"database_connection_started\":false,\"database_writes\":false,\"listener_started\":false,\"provider_calls\":0,\"candidate_fingerprint\":\"9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048\",\"candidate_file_count\":609,\"persistent_flags_off\":true,\"live_scope_checked\":false}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/validate-p2-g2-service-loop.mjs",
+        "--require-ready"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "{\"ok\":true,\"gate\":\"P2-G2\",\"checks\":17,\"errors\":[],\"candidate_fingerprint\":\"9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048\",\"readiness_checked\":true,\"live_validation\":\"NOT_RUN\",\"database_writes\":false,\"provider_calls\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "scripts/p2-g2-yixiaoxiu-check.mjs",
+        "--require-ready"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "{\"ok\":true,\"work_item\":\"P2-G2-YXX-TICKET-ENTRY\",\"check_scope\":\"CURRENT_READY\",\"candidate_fingerprint\":\"9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048\",\"persistent_defaults_off\":true,\"readiness_checked\":true,\"live_authorized\":false,\"database_connections\":0,\"provider_calls\":0}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "tests/v1-4-architecture-baseline.test.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "TAP version 13\n# Subtest: V1.4 architecture validator passes\nok 1 - V1.4 architecture validator passes\n  ---\n  duration_ms: 125.7812\n  type: 'test'\n  ...\n# Subtest: P2/P2-G1 lifecycle state is internally consistent without changing P1\nok 2 - P2/P2-G1 lifecycle state is internally consistent without changing P1\n  ---\n  duration_ms: 5.3395\n  type: 'test'\n  ...\n# Subtest: P2-004 independent authorization and stop line are preserved\nok 3 - P2-004 independent authorization and stop line are preserved\n  ---\n  duration_ms: 0.9682\n  type: 'test'\n  ...\n# Subtest: P2-005 independent authorization and stop line are recorded\nok 4 - P2-005 independent authorization and stop line are recorded\n  ---\n  duration_ms: 0.8239\n  type: 'test'\n  ...\n# Subtest: P2-006 independent authorization and stop line are recorded\nok 5 - P2-006 independent authorization and stop line are recorded\n  ---\n  duration_ms: 0.8669\n  type: 'test'\n  ...\n# Subtest: P2-004 completion artifacts preserve P1 notification and Ticket ownership\nok 6 - P2-004 completion artifacts preserve P1 notification and Ticket ownership\n  ---\n  duration_ms: 2.3964\n  type: 'test'\n  ...\n# Subtest: P2-005 completion artifacts preserve frozen Session and identity ownership\nok 7 - P2-005 completion artifacts preserve frozen Session and identity ownership\n  ---\n  duration_ms: 0.8119\n  type: 'test'\n  ...\n# Subtest: P2-006 completion has a runnable workbench and no migration 022\nok 8 - P2-006 completion has a runnable workbench and no migration 022\n  ---\n  duration_ms: 1.3321\n  type: 'test'\n  ...\n# Subtest: P2-001 and P2-002 frozen artifacts remain present\nok 9 - P2-001 and P2-002 frozen artifacts remain present\n  ---\n  duration_ms: 0.611\n  type: 'test'\n  ...\n# Subtest: P3 remains greenfield and contains no historical ticket program\nok 10 - P3 remains greenfield and contains no historical ticket program\n  ---\n  duration_ms: 1.9375\n  type: 'test'\n  ...\n# Subtest: future flags default off without legacy import flags\nok 11 - future flags default off without legacy import flags\n  ---\n  duration_ms: 1.1495\n  type: 'test'\n  ...\n# Subtest: conceptual schema has no historical migration fields or second ticket core\nok 12 - conceptual schema has no historical migration fields or second ticket core\n  ---\n  duration_ms: 0.9489\n  type: 'test'\n  ...\n# Subtest: new source example is non-authoritative\nok 13 - new source example is non-authoritative\n  ---\n  duration_ms: 0.799\n  type: 'test'\n  ...\n# Subtest: 2C4G limits remain conservative\nok 14 - 2C4G limits remain conservative\n  ---\n  duration_ms: 0.7225\n  type: 'test'\n  ...\n# Subtest: P2-016 authorization reconciles only the historical P2-015 ledger\nok 15 - P2-016 authorization reconciles only the historical P2-015 ledger\n  ---\n  duration_ms: 2.0645\n  type: 'test'\n  ...\n# Subtest: architecture validator rejects the historical P2-015 ledger drift\nok 16 - architecture validator rejects the historical P2-015 ledger drift\n  ---\n  duration_ms: 30.3211\n  type: 'test'\n  ...\n# Subtest: P2-012 authorization rejects premature completion and next-gate authorization\nok 17 - P2-012 authorization rejects premature completion and next-gate authorization\n  ---\n  duration_ms: 0.4408\n  type: 'test'\n  ...\n# Subtest: P2-G2 preparation rejects false PASS, Runtime authorization and missing independent permission\nok 18 - P2-G2 preparation rejects false PASS, Runtime authorization and missing independent permission\n  ---\n  duration_ms: 237.0476\n  type: 'test'\n  ...\n1..18\n# tests 18\n# suites 0\n# pass 18\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 530.8451\n",
+      "stderr": ""
+    }
+  ],
+  "historical_predecessor_validation_only": true,
+  "current_member_runtime_proof": {
+    "path": "evidence/p2-g2-yxx-entry-v3-regression-run.json",
+    "sha256": "5e72e0fde11b2b489a68e37b6ba7d559040b9c8f85a26e2b228116e8ea25cc94"
+  },
+  "real_provider_calls": 0,
+  "live_validation": "NOT_RUN"
+}

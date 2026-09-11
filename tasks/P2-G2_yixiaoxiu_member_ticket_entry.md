@@ -21,7 +21,12 @@ Feature flag: reporterMemberEntry.enabled is strict boolean, default false. Pers
 
 Rollback: stop the owned local profile, expire all ephemeral authentication/intent state, retain business facts. No down migration, broad cleanup or user-file restoration.
 
-Completion requires current full regression, all 48 assertions, evidence binding, independent review and cleanup. Unknown real identity namespace remains an explicit live prerequisite. No real WeCom calls/data/sends, cloud writes, formal observation, P2-G2-LIVE, P2-008, push, PR, merge, tag or release.
+Completion requires current full regression, all 48 assertions, evidence binding, independent review and cleanup. Unknown real identity namespace remains an explicit live prerequisite. No real WeCom calls/data/sends, cloud writes, formal observation, P2-G2-LIVE, P2-008, tag or release. Git repair/review/merge actions are separately authorized below.
 
 
-Current evidence: evidence/p2-g2-yxx-entry-report.json; 1029/1029 full regression over165files,48 member scenarios and both independent review axes PASS. Parent last-completed pointers remain unchanged; no targeted-live or Gate authorization is inferred.
+Historical pre-PR8 repair result: 1029/1029; superseded by the current evidence below.
+
+PR #8 review repair and merge authorization supersedes the original local-only Git stop line: `evidence/p2-g2-yxx-entry-pr8-repair-authorization.md`.
+
+
+Current evidence: evidence/p2-g2-yxx-entry-report.json; 1044/1044 full regression over166files,48 member scenarios and both independent review axes PASS. Parent last-completed pointers remain unchanged; no targeted-live or Gate authorization is inferred.

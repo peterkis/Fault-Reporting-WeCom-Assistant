@@ -2,11 +2,11 @@
 
 本子任务实现及隔离自动化完成，等待独立定向现场授权。状态为 READY_FOR_TARGETED_LIVE_VALIDATION / IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING。P2-G2 / ASSEMBLY 的当前候选准备证据已更新；父 Gate 未 PASSED，最后完成 Gate 仍为 P2-G1，P2-008 保持阻断。
 
-实际文件清单与字节摘要见 p2-g2-yxx-entry-change-inventory.json；完整候选输入见 evidence/p2-g2-yxx-entry-v2-candidate-inventory.json；完成态离线检查见 p2-g2-yxx-entry-v2-final-checks.json。
+实际文件清单与字节摘要见 p2-g2-yxx-entry-pr8-change-inventory.json；完整候选输入见 evidence/p2-g2-yxx-entry-v3-candidate-inventory.json；完成态离线检查见 p2-g2-yxx-entry-v3-final-checks.json。
 
-1. Git：分支 phase2/yixiaoxiu-member-ticket-entry；base 4cecdb5551da455a8b0a6c877f7f0a63ffa6eec9；独立授权提交 c1b33218521dc5dba3c07ce57452473c367e7ad6（chore(p2): authorize yixiaoxiu member ticket entry）。完整回归在该授权提交之上的未提交实现候选运行。实施提交为包含本报告的后续独立 feat(p2) 提交，实际 SHA/tree 由最终交付消息给出；不把授权提交当作实现源码提交。
+1. Git：分支 phase2/yixiaoxiu-member-ticket-entry；base 4cecdb5551da455a8b0a6c877f7f0a63ffa6eec9；独立授权提交 c1b33218521dc5dba3c07ce57452473c367e7ad6（chore(p2): authorize yixiaoxiu member ticket entry）。初始实现提交为661809ea261286b4218d3e74475ebb479f671318。本轮PR #8修复回归基于20af92bba7ddec0686639e9b50c7441ce3e4b392之上的修复树，实际修复提交由Git及最终消息给出。修复/远端审核/合并授权见p2-g2-yxx-entry-pr8-repair-authorization.md。
 
-2. 当前验证：候选 a9a98feb4e48bed956d3fdce0ba6e93b52707f4956ef79ee7544356507c54e88，607 文件；1029/1029 全量 PASS，165 测试文件，fail/cancelled/skipped/todo 均0，exit0，candidate_unchanged=true。命令 node scripts/p2-g2-synthetic-e2e.mjs --suite=full；原始目录 tmp/p2-g2-tests-a657effb-a0c8-4170-8618-b10ee2b8ae2d。原976项/158文件是 PR #7 历史结果；其全部158文件包含在本次运行，新增场景与测试并未替换旧基线。P2-012冻结基线92个根文件及2个P2-007嵌套文件也全部保留。
+2. 当前验证：候选 9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048，609 文件；1044/1044 全量 PASS，166 测试文件，fail/cancelled/skipped/todo 均0，exit0，candidate_unchanged=true。命令 node scripts/p2-g2-synthetic-e2e.mjs --suite=full；原始目录 tmp/p2-g2-tests-4ad1e37d-8f1e-4aa5-8b04-108e3f3fa0db。原976项/158文件是 PR #7 历史结果；其全部158文件包含在本次运行，新增场景与测试并未替换旧基线。P2-012冻结基线92个根文件及2个P2-007嵌套文件也全部保留。
 
 3. URL：新卡片两个点击区域均为 https://<批准域名>/wecom/yixiaoxiu/tickets/<32字符public_ref>，只定位、不授予权限。旧入口为 /reporter/open#grant=<旧凭据>，前端立即清除fragment，经 /api/reporter/member-entry/prepare 与 /wecom/yixiaoxiu/continue/<64字符entry_ref> 完成定位。/wecom/yixiaoxiu/ 是认证主页；/login 开始认证；/callback 只处理 OAuth code/state，固定跳回站内目的地。以上不是现场已部署地址。
 
@@ -18,9 +18,9 @@
 
 7. 旧Grant：ISSUED、CONSUMED、EXPIRED在当前HMAC/原始摘要仍有效且ref/归属/业务保留期有效时，仅作定位；不消费、不复活、不延长权限。REVOKED、签名伪造、密钥轮换失效、错误绑定拒绝。缺失、过期、重启后或跨浏览器continuation返回统一404 HTML，提示重新点击原卡片，不披露工单。
 
-8. 旧API：MEMBER_REQUIRED下exchange始终拒绝；bootstrap只返回安全成员状态；logout两个别名语义一致。旧Reporter Cookie、Grant、public_ref及混入另一账号Cookie均不能绕过当前成员归属。17条实际路由/方法与两个OpenAPI同步；Host、Origin、POST、query/body、重定向均闭集校验。详见 p2-g2-yxx-entry-v2-route-audit.json。
+8. 旧API：MEMBER_REQUIRED下exchange始终拒绝；bootstrap只返回安全成员状态；logout两个别名语义一致。旧Reporter Cookie、Grant、public_ref及混入另一账号Cookie均不能绕过当前成员归属。17条实际路由/方法与两个OpenAPI同步；Host、Origin、POST、query/body、重定向均闭集校验。详见 p2-g2-yxx-entry-v3-route-audit.json。
 
-9. 浏览器：真实Edge测试多标签、同浏览器并行首跳/回调、重复点击、认证过期、退出、账号替换及晚到SQL/页面响应。每个intent保留独立ref；服务端身份替换不依赖旧Cookie快照。显式begin/prepare刷新20分钟binding，15分钟Session不随轮询续期。实际history back与合成persisted pageshow分支均验证清空及重鉴权；没有声称Edge在该次导航实际命中BFCache。桌面1440和移动390截图保存在screenshots目录；Shanghai时间在UTC/Tokyo/NewYork浏览器保持一致。
+9. 浏览器：真实Edge测试多标签、同浏览器并行首跳/回调、重复点击、认证过期、退出、账号替换及晚到SQL/页面响应。每个intent保留独立ref；服务端身份替换不依赖旧Cookie快照。显式begin/prepare刷新20分钟binding，15分钟Session不随轮询续期。实际history back与合成persisted pageshow分支均验证清空及重鉴权；没有声称Edge在该次导航实际命中BFCache。桌面1440和移动390截图保存在evidence/p2-g2-yxx-entry-v3-screenshots目录；Shanghai时间在UTC/Tokyo/NewYork浏览器保持一致。
 
 10. 页面复用既有Reporter布局、安全详情及Safe Timeline，Incident里程碑经同一适配器按当前资格过滤。内部备注、原始消息和其他报告者信息不外露；关闭工单仍可在保留期内只读。五秒可见页轮询、单次在途、取消与generation fence防止旧内容回显；详情加Timeline都成功后才接受ETag，Timeline503恢复可补齐。
 
@@ -32,10 +32,10 @@
 
 14. 副作用：migrations001–032、package.json、package-lock.json无变更；目录含columns/constraints/indexes/functions/triggers/extensions前后摘要相同；业务表摘要相同（明确排除允许的访问审计）。网页登录不建立Direct Leg、不授予私人发送资格。真实企业微信接口/SDK、真实业务数据、真实发送及AI/OCR/RAG调用均0；持久Feature Flag默认false。仅隔离夹具使用测试开关。
 
-15. 资源与清理：100个认证会话、32个同时读取、33rd=503；pool峰值4，结束排队0；该短时测量346ms，RSS 92860416→99020800字节。用--expose-gc，非自然GC整栈2C4G/60分钟验收。测试finally关闭自有App、代理、浏览器、子进程、连接池并删除独立DB/TLS/profile；外部pool留给调用方。每轮完整TAP以Evidence为唯一保留副本，tmp重复TAP经原字节hash核对后移除；截图、忽略的tmp运行元数据/资料副本有意保留，历史受保护profile与全局Temp未清理。最终清理复核另见cleanup receipt。
+15. 资源与清理：100个认证会话、32个同时读取、33rd=503；pool峰值4，结束排队0；该短时测量331ms，RSS 92344320→98529280字节。用--expose-gc，非自然GC整栈2C4G/60分钟验收。测试finally关闭自有App、代理、浏览器、子进程、连接池并删除独立DB/TLS/profile；外部pool留给调用方。本轮完整TAP在Evidence和ignored tmp各保留一份；此前tmp重复TAP按原记录核验并移除；截图、忽略的tmp运行元数据/资料副本有意保留，历史受保护profile与全局Temp未清理。最终清理复核另见cleanup receipt。
 
-16. 用户.gitignore：工作区字节SHA256 8852c9ee0697ae9926740b9fcce83326cfb88f2022a205e878bcd508c1c21233；index blob f30bbeadaa0304c2436e8298514c76d550c51246。保持原用户修改，未修改、未暂存、未提交；其他源码和文档仅按明确allowlist提交。
+16. 用户.gitignore：工作区字节SHA256 8852c9ee0697ae9926740b9fcce83326cfb88f2022a205e878bcd508c1c21233；index blob 942b2b8d94b4f1e9dda5369cbac0cbe31056d950。用户已在20af92b提交其原修改；本轮修复保持该提交的字节和index，未修改或暂存.gitignore。修复源码和文档仅按明确allowlist提交。
 
 17. 后续最少许可：确切commit/tree/fingerprint、批准企业/应用/Agent/Bot身份对应证明、合成别名A/B与指定既有测试工单/保留期、只读数据范围、唯一App/proxy发布及回滚窗口、责任人和停止条件。发送新卡片需额外目标/数量许可；secret经受保护配置交付，不要求在聊天粘贴。完整模板见 docs/runbooks/yixiaoxiu-member-ticket-entry.md。
 
-18. 停止：本轮无push、PR、merge、tag、release、云端发布、真实发送、正式60分钟观察或负责人Gate批准。P2-G2-LIVE、P2-008、后续AI/OCR/RAG、医院内网、P3、Phase2 Go及生产/临床上线均未启动或授权。
+18. 停止：用户已授权本轮修复提交、push、PR远端审核及满足条件后的merge；执行结果以GitHub和最终消息为准。未授权tag/release、云端发布、真实发送、正式60分钟观察或负责人Gate批准。P2-G2-LIVE、P2-008、后续AI/OCR/RAG、医院内网、P3、Phase2 Go及生产/临床上线均未启动或授权。

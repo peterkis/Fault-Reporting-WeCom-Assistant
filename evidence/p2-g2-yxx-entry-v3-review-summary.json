@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 21:58:19",
+  "event_epoch_ms": "1789135099312",
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "preparation_only": true,
+  "live_validation": "NOT_RUN",
+  "project_owner_approval": false,
+  "reviews": [
+    {
+      "axis": "SPEC",
+      "reviewer": "/root/yxx_spec_review",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "source": {
+        "path": "evidence/p2-g2-yxx-entry-v3-review-spec.json",
+        "sha256": "830de628201f3afa7b59120a5f6067766761f82c653ed0d4e902556aa4303ffa"
+      }
+    },
+    {
+      "axis": "STANDARDS",
+      "reviewer": "/root/yxx_standards_review",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "source": {
+        "path": "evidence/p2-g2-yxx-entry-v3-review-standards.json",
+        "sha256": "7aa0a49d5158101a86f47200e34b9a1cbd663a4abeb87d57bdf01c304935b75e"
+      }
+    }
+  ]
+}

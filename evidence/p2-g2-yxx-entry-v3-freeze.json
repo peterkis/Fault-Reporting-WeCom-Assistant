@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-11 21:00:54",
+  "event_epoch_ms": "1789131654205",
+  "candidate_fingerprint": "3dd2cc4348d02c880c6ca4a02b6cda4344bbcfb318348e2b387057ce7a28c50a",
+  "candidate_files": 609,
+  "status": "FROZEN_FOR_FULL_REGRESSION",
+  "previous_full_run": "evidence/p2-g2-yxx-entry-v3-first-regression-run.json",
+  "confirmed_lock_order_repair": "evidence/p2-g2-yxx-entry-pr8-lock-order-green.tap",
+  "original_topology_rechecks": 10,
+  "source_review_axes": [
+    "SPEC_SOURCE_PASS",
+    "STANDARDS_SOURCE_PASS"
+  ],
+  "no_live_actions": true
+}
