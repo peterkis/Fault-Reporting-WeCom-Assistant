@@ -27,10 +27,11 @@ paths:
       parameters:
         - {$ref: '#/components/parameters/IdempotencyKey'}
         - {$ref: '#/components/parameters/Csrf'}
+      x-idempotency-body-header-equality: client_command_id must equal Idempotency-Key
       requestBody: {required: true, content: {application/json: {schema: {$ref: './yxx_self_service_request.schema.json'}}}}
       responses:
-        '202': {description: 'Durably accepted Web Request; no Ticket is implied', content: {application/json: {schema: {$ref: '#/components/schemas/AcceptedResponse'}}}}
-        '200': {description: 'Idempotent replay of the original receipt', content: {application/json: {schema: {$ref: '#/components/schemas/AcceptedResponse'}}}}
+        '202': {description: 'Durably accepted Web Request; no Ticket is implied', content: {application/json: {schema: {$ref: '#/components/schemas/AcceptedInitial'}}}}
+        '200': {description: 'Idempotent replay of the original receipt', content: {application/json: {schema: {$ref: '#/components/schemas/AcceptedReplay'}}}}
         '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
         '403': {$ref: '#/components/responses/Forbidden'}
@@ -71,11 +72,11 @@ paths:
       security: [{WeComMember: []}]
       parameters:
         - {$ref: '#/components/parameters/RequestRef'}
-        - {in: query, name: after, schema: {type: string, pattern: '^[0-9]+$'}}
-        - {in: query, name: before, schema: {type: string, pattern: '^[0-9]+$'}}
+        - {in: query, name: after, schema: {type: string, pattern: '^[0-9]+$'}, x-mutually-exclusive-with: before}
+        - {in: query, name: before, schema: {type: string, pattern: '^[0-9]+$'}, x-mutually-exclusive-with: after}
         - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
       responses:
-        '200': {description: 'Member-safe timeline without internal notes or identity', content: {application/json: {schema: {type: object}}}}
+        '200': {description: 'Member-safe timeline without internal notes or identity', content: {application/json: {schema: {$ref: './yxx_self_service_timeline.schema.json'}}}}
         '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
         '404': {$ref: '#/components/responses/NotFound'}
@@ -88,10 +89,11 @@ paths:
         - {$ref: '#/components/parameters/RequestRef'}
         - {$ref: '#/components/parameters/IdempotencyKey'}
         - {$ref: '#/components/parameters/Csrf'}
+      x-idempotency-body-header-equality: client_command_id must equal Idempotency-Key
       requestBody: {required: true, content: {application/json: {schema: {$ref: './yxx_self_service_supplement.schema.json'}}}}
       responses:
-        '202': {description: 'Durably accepted supplement', content: {application/json: {schema: {$ref: '#/components/schemas/AcceptedResponse'}}}}
-        '200': {description: 'Idempotent replay of the supplement receipt', content: {application/json: {schema: {$ref: '#/components/schemas/AcceptedResponse'}}}}
+        '202': {description: 'Durably accepted supplement', content: {application/json: {schema: {$ref: '#/components/schemas/AcceptedInitial'}}}}
+        '200': {description: 'Idempotent replay of the supplement receipt', content: {application/json: {schema: {$ref: '#/components/schemas/AcceptedReplay'}}}}
         '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
         '403': {$ref: '#/components/responses/Forbidden'}
@@ -132,14 +134,20 @@ components:
     RequestRef: {in: path, name: request_ref, required: true, schema: {type: string, pattern: '^[A-Za-z0-9_-]{32}$'}}
     IfNoneMatch: {in: header, name: If-None-Match, schema: {type: string, maxLength: 256}}
   schemas:
+    YxxSelfServiceProfile: {$ref: './yxx_self_service_profile.schema.json'}
     AcceptedResponse:
       type: object
+      additionalProperties: false
       required: [ok, replayed, receipt, location]
       properties:
         ok: {const: true}
         replayed: {type: boolean}
         receipt: {$ref: './yxx_self_service_receipt.schema.json'}
         location: {type: string, pattern: '^/wecom/yixiaoxiu/reports/[A-Za-z0-9_-]{32}$'}
+    AcceptedInitial:
+      allOf: [{ $ref: '#/components/schemas/AcceptedResponse' }, { type: object, properties: { replayed: { const: false } } }]
+    AcceptedReplay:
+      allOf: [{ $ref: '#/components/schemas/AcceptedResponse' }, { type: object, properties: { replayed: { const: true } } }]
     Error: {$ref: './yxx_self_service_error.schema.json'}
   responses:
     Invalid: {description: 'Closed input, cursor, content type, or origin error', content: {application/json: {schema: {$ref: './yxx_self_service_error.schema.json'}}}}

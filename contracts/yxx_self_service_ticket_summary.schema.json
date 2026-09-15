@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_ticket_summary.schema.json",
+  "title": "YXX member-safe ticket summary",
+  "type": "object", "additionalProperties": false,
+  "required": ["ticket_no", "status"],
+  "properties": {
+    "ticket_no": {"type": "string", "pattern": "^IT-[0-9]{8}-[0-9]{4,}$"},
+    "status": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+    "updated_at": {"$ref": "./local_datetime.schema.json"}
+  }
+}

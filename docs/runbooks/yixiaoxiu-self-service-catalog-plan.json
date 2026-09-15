@@ -6,13 +6,19 @@
     "intake.web_command_receipt"
   ],
   "shared_tables": {
-    "intake.service_intake": ["web_submission_id", "source_app_scope", "canonical_reporter_binding"],
-    "intake.contact_journey": ["entry_mode APP_WEB_SELF_SERVICE", "origin_channel PORTAL"],
-    "intake.channel_leg": ["leg_type WEB_FORM", "web_submission_id", "nullable Bot/session fields only on WEB branch"],
-    "intake.deterministic_decision": ["source_kind WEB", "basis_input_revision"],
-    "intake.manual_review_item": ["basis_input_revision"],
-    "pilot_ticket.ticket": ["no schema ownership change; existing core only"]
+    "intake.service_intake": {"alter": ["primary_web_submission_id UUID", "source_app_scope TEXT", "canonical_reporter_binding TEXT"], "web_nullable": ["source_bot_id", "source_chat_type", "source_chat_id", "reporter_wecom_userid", "primary_message_id"], "checks": ["WEB requires primary_web_submission_id, source_app_scope and canonical_reporter_binding", "WEB rejects Bot/chat/inbox fields", "Bot branch keeps every existing NOT NULL/FK"]},
+    "intake.contact_journey": {"alter": ["entry_mode add APP_WEB_SELF_SERVICE", "origin_channel/current_channel add PORTAL", "source_app_scope TEXT"], "checks": ["APP_WEB_SELF_SERVICE requires PORTAL and a WEB origin Intake", "existing three Bot modes and scope checks unchanged"]},
+    "intake.channel_leg": {"alter": ["leg_type add WEB_FORM", "web_submission_id UUID FK"], "checks": ["WEB_FORM requires web_submission_id and NULL thread/session/inbox", "Bot leg FK and single/group checks unchanged"]},
+    "intake.deterministic_decision": {"alter": ["source_kind add WEB", "primary_web_submission_id UUID FK", "basis_input_revision BIGINT"], "checks": ["WEB decision belongs to WEB_FORM leg", "Bot source window/hash uniqueness unchanged"]},
+    "intake.manual_review_item": {"alter": ["basis_input_revision BIGINT"], "checks": ["review still belongs to shared Intake/Journey and current member of staff"]},
+    "intake.safe_action_suggestion": {"alter": ["no new authority columns"], "checks": ["Web action set excludes external communication"]},
+    "intake.service_intake_event": {"alter": ["source_kind add WEB where required"], "checks": ["Web accept/supplement events append to the shared Intake stream"]},
+    "pilot_ticket.ticket": {"alter": [], "checks": ["no schema ownership change; create only through existing Ticket Core"]},
+    "pilot_ticket.reporter_public_ref": {"alter": [], "checks": ["Web does not create a Grant or public ref as a notification capability"]}
   },
+  "indexes": ["web_request_binding request_ref unique", "web_command_receipt scope_hash+client_command_id unique", "web_request_binding member+created_at keyset", "web_request_binding pending partial index"],
+  "foreign_keys": ["web_submission.intake_id -> service_intake.id", "web_request_binding.intake_id -> service_intake.id", "WEB_FORM.web_submission_id -> web_submission.id", "WEB decision -> WEB_FORM leg"],
+  "negative_constraints": ["WEB mixed with Bot fields", "Bot missing message/chat/session/inbox", "cross-member receipt or submission FK", "deferred idempotency unique constraints"],
   "preserved": ["migrations 001-032", "Bot foreign keys and non-null checks", "pilot_ticket_id", "version", "historical evidence"],
   "forbidden": ["second ticket table", "Bot inbox row for web", "conversation session for web", "external message/outbox/delivery", "production profile enablement"]
 }
