@@ -1,0 +1,1575 @@
+{
+  "readonly_app": {
+    "running": true,
+    "exit_code": 0
+  },
+  "oauth_app": {
+    "running": false,
+    "exit_code": 0
+  },
+  "proxy_sha256": "1cd9616e7ee04d0889dc77b56758fa530a8a02c937483434a461a7cb2252ee46",
+  "business_digest": {
+    "pilot_ticket.pilot_principal_role": "d41d8cd98f00b204e9800998ecf8427e",
+    "notification.card_action_receipt": "d41d8cd98f00b204e9800998ecf8427e",
+    "communication.outbox": "d41d8cd98f00b204e9800998ecf8427e",
+    "conversation.assignment": "d41d8cd98f00b204e9800998ecf8427e",
+    "conversation.control_event": "d41d8cd98f00b204e9800998ecf8427e",
+    "conversation.handoff": "d41d8cd98f00b204e9800998ecf8427e",
+    "conversation.item_source_binding": "d41d8cd98f00b204e9800998ecf8427e",
+    "conversation.projection_checkpoint": "d41d8cd98f00b204e9800998ecf8427e",
+    "conversation.read_cursor": "d41d8cd98f00b204e9800998ecf8427e",
+    "conversation.realtime_stream_state": "d41d8cd98f00b204e9800998ecf8427e",
+    "conversation.thread": "d41d8cd98f00b204e9800998ecf8427e",
+    "intake.service_intake_event": "41ec68bc01cacba51c957eb120c7bfec",
+    "intake.service_intake_message": "6071fceb66c0cf295951a10df589a2a8",
+    "notification.outbox": "d41d8cd98f00b204e9800998ecf8427e",
+    "pilot_ticket.pilot_principal": "d41d8cd98f00b204e9800998ecf8427e",
+    "pilot_ticket.pilot_team_member": "d41d8cd98f00b204e9800998ecf8427e",
+    "pilot_ticket.resolver_team": "7bbce5d74640a15f9251e610d95ffb6e",
+    "pilot_ticket.ticket_supplement": "d41d8cd98f00b204e9800998ecf8427e",
+    "channel.message_inbox": "52af56d461dbcdb77d84ef4f1e99efff",
+    "communication.delivery": "d41d8cd98f00b204e9800998ecf8427e",
+    "communication.delivery_attempt": "d41d8cd98f00b204e9800998ecf8427e",
+    "communication.message": "d41d8cd98f00b204e9800998ecf8427e",
+    "conversation.item": "d41d8cd98f00b204e9800998ecf8427e",
+    "conversation.session": "d41d8cd98f00b204e9800998ecf8427e",
+    "intake.service_intake": "99dd9f8c84f2b377779790a1b41f16a5",
+    "notification.card_action_task": "d41d8cd98f00b204e9800998ecf8427e",
+    "notification.delivery": "d41d8cd98f00b204e9800998ecf8427e",
+    "notification.delivery_attempt": "d41d8cd98f00b204e9800998ecf8427e",
+    "pilot_ticket.ticket": "0b3db067b179c0b531e1ac6695b83bdc",
+    "pilot_ticket.ticket_event": "9679a7cff189e9e0746aeb8d86938c94",
+    "conversation.realtime_event": "d41d8cd98f00b204e9800998ecf8427e",
+    "intake.contact_journey": "d41d8cd98f00b204e9800998ecf8427e",
+    "intake.channel_leg": "d41d8cd98f00b204e9800998ecf8427e",
+    "intake.continuation_ref": "d41d8cd98f00b204e9800998ecf8427e",
+    "intake.deterministic_decision": "d41d8cd98f00b204e9800998ecf8427e",
+    "intake.manual_review_item": "d41d8cd98f00b204e9800998ecf8427e",
+    "intake.safe_action_suggestion": "d41d8cd98f00b204e9800998ecf8427e",
+    "pilot_ticket.ticket_command_receipt": "d41d8cd98f00b204e9800998ecf8427e",
+    "pilot_ticket.reporter_public_ref": "8d58ea444a928b9cfd7bde723f901292",
+    "communication.ticket_notification_binding": "d41d8cd98f00b204e9800998ecf8427e",
+    "pilot_ticket.reporter_access_grant": "d41d8cd98f00b204e9800998ecf8427e",
+    "pilot_ticket.reporter_access_session": "d41d8cd98f00b204e9800998ecf8427e",
+    "incident.incident": "d41d8cd98f00b204e9800998ecf8427e",
+    "incident.candidate_review": "d41d8cd98f00b204e9800998ecf8427e",
+    "incident.incident_report": "d41d8cd98f00b204e9800998ecf8427e",
+    "incident.reporter_subscription": "d41d8cd98f00b204e9800998ecf8427e",
+    "incident.command_receipt": "d41d8cd98f00b204e9800998ecf8427e",
+    "incident.incident_event": "d41d8cd98f00b204e9800998ecf8427e",
+    "communication.incident_notification_binding": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "access_audit": [
+    {
+      "event_type": "ACCESS_DENIED",
+      "reason_code": "MEMBER_ENTRY_DENIED",
+      "count": 14
+    },
+    {
+      "event_type": "TIMELINE_READ",
+      "reason_code": "MEMBER_AUTHORIZED_QUERY",
+      "count": 29
+    }
+  ],
+  "restore_result": "success",
+  "event_time": "2026-09-15 14:41:33",
+  "event_epoch_ms": "1789454493022",
+  "events": [
+    {
+      "event_time": "2026-09-15 14:20:35",
+      "event_epoch_ms": "1789453235193",
+      "method": "GET",
+      "http_status": 302,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:20:36",
+      "event_epoch_ms": "1789453236027",
+      "method": "GET",
+      "http_status": 303,
+      "route": "CALLBACK"
+    },
+    {
+      "event_time": "2026-09-15 14:20:36",
+      "event_epoch_ms": "1789453236078",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:20:36",
+      "event_epoch_ms": "1789453236161",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:20:36",
+      "event_epoch_ms": "1789453236240",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:20:36",
+      "event_epoch_ms": "1789453236301",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:20:36",
+      "event_epoch_ms": "1789453236371",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:20:36",
+      "event_epoch_ms": "1789453236413",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:20:38",
+      "event_epoch_ms": "1789453238800",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:20:38",
+      "event_epoch_ms": "1789453238858",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:20:38",
+      "event_epoch_ms": "1789453238859",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:20:38",
+      "event_epoch_ms": "1789453238913",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:20:38",
+      "event_epoch_ms": "1789453238956",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:20:39",
+      "event_epoch_ms": "1789453239076",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:20:41",
+      "event_epoch_ms": "1789453241102",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:20:41",
+      "event_epoch_ms": "1789453241148",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:20:41",
+      "event_epoch_ms": "1789453241149",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:20:41",
+      "event_epoch_ms": "1789453241198",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:20:41",
+      "event_epoch_ms": "1789453241254",
+      "method": "GET",
+      "http_status": 404,
+      "route": "B1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:20:46",
+      "event_epoch_ms": "1789453246892",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:20:46",
+      "event_epoch_ms": "1789453246935",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:20:46",
+      "event_epoch_ms": "1789453246935",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:20:46",
+      "event_epoch_ms": "1789453246981",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:20:47",
+      "event_epoch_ms": "1789453247024",
+      "method": "GET",
+      "http_status": 404,
+      "route": "B2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:20:52",
+      "event_epoch_ms": "1789453252671",
+      "method": "POST",
+      "http_status": 200,
+      "route": "LOGOUT"
+    },
+    {
+      "event_time": "2026-09-15 14:20:54",
+      "event_epoch_ms": "1789453254867",
+      "method": "GET",
+      "http_status": 401,
+      "route": "B2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:20:56",
+      "event_epoch_ms": "1789453256540",
+      "method": "GET",
+      "http_status": 302,
+      "route": "B2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:20:57",
+      "event_epoch_ms": "1789453257386",
+      "method": "GET",
+      "http_status": 303,
+      "route": "CALLBACK"
+    },
+    {
+      "event_time": "2026-09-15 14:20:57",
+      "event_epoch_ms": "1789453257447",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:20:57",
+      "event_epoch_ms": "1789453257516",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:20:57",
+      "event_epoch_ms": "1789453257517",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:20:57",
+      "event_epoch_ms": "1789453257567",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:20:57",
+      "event_epoch_ms": "1789453257627",
+      "method": "GET",
+      "http_status": 404,
+      "route": "B2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:01",
+      "event_epoch_ms": "1789453261383",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:21:01",
+      "event_epoch_ms": "1789453261437",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:21:01",
+      "event_epoch_ms": "1789453261438",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:21:01",
+      "event_epoch_ms": "1789453261490",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:21:01",
+      "event_epoch_ms": "1789453261547",
+      "method": "GET",
+      "http_status": 404,
+      "route": "B2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:03",
+      "event_epoch_ms": "1789453263344",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:21:03",
+      "event_epoch_ms": "1789453263393",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:21:03",
+      "event_epoch_ms": "1789453263394",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:21:03",
+      "event_epoch_ms": "1789453263429",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:21:03",
+      "event_epoch_ms": "1789453263478",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:03",
+      "event_epoch_ms": "1789453263527",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:21:05",
+      "event_epoch_ms": "1789453265307",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:06",
+      "event_epoch_ms": "1789453266331",
+      "method": "POST",
+      "http_status": 200,
+      "route": "LOGOUT"
+    },
+    {
+      "event_time": "2026-09-15 14:21:07",
+      "event_epoch_ms": "1789453267633",
+      "method": "GET",
+      "http_status": 401,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:08",
+      "event_epoch_ms": "1789453268903",
+      "method": "GET",
+      "http_status": 302,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:21:09",
+      "event_epoch_ms": "1789453269570",
+      "method": "GET",
+      "http_status": 303,
+      "route": "CALLBACK"
+    },
+    {
+      "event_time": "2026-09-15 14:21:09",
+      "event_epoch_ms": "1789453269643",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:21:09",
+      "event_epoch_ms": "1789453269713",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:21:09",
+      "event_epoch_ms": "1789453269713",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:21:09",
+      "event_epoch_ms": "1789453269763",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:21:09",
+      "event_epoch_ms": "1789453269817",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:09",
+      "event_epoch_ms": "1789453269868",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:21:14",
+      "event_epoch_ms": "1789453274917",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:19",
+      "event_epoch_ms": "1789453279980",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:25",
+      "event_epoch_ms": "1789453285057",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:29",
+      "event_epoch_ms": "1789453289654",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:21:29",
+      "event_epoch_ms": "1789453289711",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:21:29",
+      "event_epoch_ms": "1789453289712",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:21:29",
+      "event_epoch_ms": "1789453289753",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:21:29",
+      "event_epoch_ms": "1789453289798",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:29",
+      "event_epoch_ms": "1789453289880",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:21:31",
+      "event_epoch_ms": "1789453291916",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:21:31",
+      "event_epoch_ms": "1789453291957",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:21:31",
+      "event_epoch_ms": "1789453291957",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:21:31",
+      "event_epoch_ms": "1789453291996",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:21:32",
+      "event_epoch_ms": "1789453292041",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:21:32",
+      "event_epoch_ms": "1789453292080",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:23:16",
+      "event_epoch_ms": "1789453396449",
+      "method": "GET",
+      "http_status": 302,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:23:17",
+      "event_epoch_ms": "1789453397143",
+      "method": "GET",
+      "http_status": 303,
+      "route": "CALLBACK"
+    },
+    {
+      "event_time": "2026-09-15 14:23:17",
+      "event_epoch_ms": "1789453397179",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:23:17",
+      "event_epoch_ms": "1789453397236",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:23:17",
+      "event_epoch_ms": "1789453397258",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:23:17",
+      "event_epoch_ms": "1789453397318",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:23:17",
+      "event_epoch_ms": "1789453397361",
+      "method": "GET",
+      "http_status": 404,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:23:20",
+      "event_epoch_ms": "1789453400722",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:23:20",
+      "event_epoch_ms": "1789453400759",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:23:20",
+      "event_epoch_ms": "1789453400759",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:23:20",
+      "event_epoch_ms": "1789453400799",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:23:20",
+      "event_epoch_ms": "1789453400824",
+      "method": "GET",
+      "http_status": 404,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:23:23",
+      "event_epoch_ms": "1789453403382",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:23:23",
+      "event_epoch_ms": "1789453403412",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:23:23",
+      "event_epoch_ms": "1789453403412",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:23:23",
+      "event_epoch_ms": "1789453403448",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:23:23",
+      "event_epoch_ms": "1789453403494",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:23:23",
+      "event_epoch_ms": "1789453403526",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B1_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:23:27",
+      "event_epoch_ms": "1789453407100",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:23:27",
+      "event_epoch_ms": "1789453407134",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:23:27",
+      "event_epoch_ms": "1789453407134",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:23:27",
+      "event_epoch_ms": "1789453407173",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:23:27",
+      "event_epoch_ms": "1789453407201",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:23:27",
+      "event_epoch_ms": "1789453407228",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B2_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:23:29",
+      "event_epoch_ms": "1789453409224",
+      "method": "POST",
+      "http_status": 200,
+      "route": "LOGOUT"
+    },
+    {
+      "event_time": "2026-09-15 14:23:30",
+      "event_epoch_ms": "1789453410871",
+      "method": "GET",
+      "http_status": 401,
+      "route": "B2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:23:31",
+      "event_epoch_ms": "1789453411469",
+      "method": "GET",
+      "http_status": 302,
+      "route": "B2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:23:32",
+      "event_epoch_ms": "1789453412071",
+      "method": "GET",
+      "http_status": 303,
+      "route": "CALLBACK"
+    },
+    {
+      "event_time": "2026-09-15 14:23:32",
+      "event_epoch_ms": "1789453412108",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:23:32",
+      "event_epoch_ms": "1789453412159",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:23:32",
+      "event_epoch_ms": "1789453412163",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:23:32",
+      "event_epoch_ms": "1789453412198",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:23:32",
+      "event_epoch_ms": "1789453412235",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:23:32",
+      "event_epoch_ms": "1789453412277",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B2_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:23:37",
+      "event_epoch_ms": "1789453417322",
+      "method": "GET",
+      "http_status": 304,
+      "route": "B2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:32:45",
+      "event_epoch_ms": "1789453965252",
+      "method": "GET",
+      "http_status": 302,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:33:08",
+      "event_epoch_ms": "1789453988591",
+      "method": "GET",
+      "http_status": 302,
+      "route": "LOGIN"
+    },
+    {
+      "event_time": "2026-09-15 14:34:15",
+      "event_epoch_ms": "1789454055432",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:34:15",
+      "event_epoch_ms": "1789454055502",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:34:15",
+      "event_epoch_ms": "1789454055532",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:34:15",
+      "event_epoch_ms": "1789454055582",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:34:15",
+      "event_epoch_ms": "1789454055644",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:34:15",
+      "event_epoch_ms": "1789454055696",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:34:17",
+      "event_epoch_ms": "1789454057562",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:34:17",
+      "event_epoch_ms": "1789454057602",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:34:17",
+      "event_epoch_ms": "1789454057602",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:34:17",
+      "event_epoch_ms": "1789454057646",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:34:17",
+      "event_epoch_ms": "1789454057695",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:34:17",
+      "event_epoch_ms": "1789454057732",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:34:22",
+      "event_epoch_ms": "1789454062806",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:34:27",
+      "event_epoch_ms": "1789454067866",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:34:32",
+      "event_epoch_ms": "1789454072914",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:34:37",
+      "event_epoch_ms": "1789454077976",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:34:40",
+      "event_epoch_ms": "1789454080392",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:34:40",
+      "event_epoch_ms": "1789454080442",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:34:40",
+      "event_epoch_ms": "1789454080442",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:34:40",
+      "event_epoch_ms": "1789454080492",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:34:40",
+      "event_epoch_ms": "1789454080537",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:34:40",
+      "event_epoch_ms": "1789454080591",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:34:45",
+      "event_epoch_ms": "1789454085645",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:34:48",
+      "event_epoch_ms": "1789454088802",
+      "method": "POST",
+      "http_status": 200,
+      "route": "LOGOUT"
+    },
+    {
+      "event_time": "2026-09-15 14:34:52",
+      "event_epoch_ms": "1789454092463",
+      "method": "GET",
+      "http_status": 302,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:34:53",
+      "event_epoch_ms": "1789454093192",
+      "method": "GET",
+      "http_status": 303,
+      "route": "CALLBACK"
+    },
+    {
+      "event_time": "2026-09-15 14:34:53",
+      "event_epoch_ms": "1789454093242",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:34:53",
+      "event_epoch_ms": "1789454093303",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:34:53",
+      "event_epoch_ms": "1789454093303",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:34:53",
+      "event_epoch_ms": "1789454093362",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:34:53",
+      "event_epoch_ms": "1789454093406",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:34:53",
+      "event_epoch_ms": "1789454093456",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:34:56",
+      "event_epoch_ms": "1789454096827",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:34:58",
+      "event_epoch_ms": "1789454098332",
+      "method": "POST",
+      "http_status": 200,
+      "route": "LOGOUT"
+    },
+    {
+      "event_time": "2026-09-15 14:35:01",
+      "event_epoch_ms": "1789454101070",
+      "method": "GET",
+      "http_status": 401,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:35:03",
+      "event_epoch_ms": "1789454103290",
+      "method": "GET",
+      "http_status": 302,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:35:03",
+      "event_epoch_ms": "1789454103925",
+      "method": "GET",
+      "http_status": 303,
+      "route": "CALLBACK"
+    },
+    {
+      "event_time": "2026-09-15 14:35:03",
+      "event_epoch_ms": "1789454103973",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:35:04",
+      "event_epoch_ms": "1789454104042",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:35:04",
+      "event_epoch_ms": "1789454104044",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:35:04",
+      "event_epoch_ms": "1789454104112",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:35:04",
+      "event_epoch_ms": "1789454104156",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:35:04",
+      "event_epoch_ms": "1789454104221",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:35:06",
+      "event_epoch_ms": "1789454106134",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:35:09",
+      "event_epoch_ms": "1789454109202",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:35:09",
+      "event_epoch_ms": "1789454109249",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:35:09",
+      "event_epoch_ms": "1789454109249",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:35:09",
+      "event_epoch_ms": "1789454109292",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:35:09",
+      "event_epoch_ms": "1789454109346",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:35:09",
+      "event_epoch_ms": "1789454109385",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:35:10",
+      "event_epoch_ms": "1789454110692",
+      "method": "POST",
+      "http_status": 200,
+      "route": "LOGOUT"
+    },
+    {
+      "event_time": "2026-09-15 14:35:13",
+      "event_epoch_ms": "1789454113012",
+      "method": "GET",
+      "http_status": 302,
+      "route": "B1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:35:13",
+      "event_epoch_ms": "1789454113692",
+      "method": "GET",
+      "http_status": 303,
+      "route": "CALLBACK"
+    },
+    {
+      "event_time": "2026-09-15 14:35:13",
+      "event_epoch_ms": "1789454113752",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:35:13",
+      "event_epoch_ms": "1789454113822",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:35:13",
+      "event_epoch_ms": "1789454113823",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:35:13",
+      "event_epoch_ms": "1789454113872",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:35:13",
+      "event_epoch_ms": "1789454113925",
+      "method": "GET",
+      "http_status": 404,
+      "route": "B1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:35:15",
+      "event_epoch_ms": "1789454115226",
+      "method": "GET",
+      "http_status": 404,
+      "route": "B1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:35:15",
+      "event_epoch_ms": "1789454115903",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:35:15",
+      "event_epoch_ms": "1789454115972",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:35:15",
+      "event_epoch_ms": "1789454115973",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:35:16",
+      "event_epoch_ms": "1789454116022",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:35:16",
+      "event_epoch_ms": "1789454116074",
+      "method": "GET",
+      "http_status": 404,
+      "route": "B1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:39:50",
+      "event_epoch_ms": "1789454390202",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:39:50",
+      "event_epoch_ms": "1789454390262",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:39:50",
+      "event_epoch_ms": "1789454390302",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:39:50",
+      "event_epoch_ms": "1789454390363",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:39:50",
+      "event_epoch_ms": "1789454390424",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:39:50",
+      "event_epoch_ms": "1789454390477",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:39:53",
+      "event_epoch_ms": "1789454393402",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:39:53",
+      "event_epoch_ms": "1789454393452",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:39:53",
+      "event_epoch_ms": "1789454393452",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:39:53",
+      "event_epoch_ms": "1789454393499",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:39:53",
+      "event_epoch_ms": "1789454393535",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:39:53",
+      "event_epoch_ms": "1789454393585",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:39:56",
+      "event_epoch_ms": "1789454396183",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:39:56",
+      "event_epoch_ms": "1789454396232",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:39:56",
+      "event_epoch_ms": "1789454396232",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:39:56",
+      "event_epoch_ms": "1789454396290",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:39:56",
+      "event_epoch_ms": "1789454396325",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:39:56",
+      "event_epoch_ms": "1789454396366",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A1_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:39:57",
+      "event_epoch_ms": "1789454397582",
+      "method": "POST",
+      "http_status": 200,
+      "route": "LOGOUT"
+    },
+    {
+      "event_time": "2026-09-15 14:40:03",
+      "event_epoch_ms": "1789454403419",
+      "method": "GET",
+      "http_status": 302,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404393",
+      "method": "GET",
+      "http_status": 303,
+      "route": "CALLBACK"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404457",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404522",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404522",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404584",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404636",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404676",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_TIMELINE"
+    },
+    {
+      "event_time": "2026-09-15 14:40:09",
+      "event_epoch_ms": "1789454409746",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:14",
+      "event_epoch_ms": "1789454414806",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:19",
+      "event_epoch_ms": "1789454419867",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:24",
+      "event_epoch_ms": "1789454424926",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:29",
+      "event_epoch_ms": "1789454429986",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:35",
+      "event_epoch_ms": "1789454435047",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:40",
+      "event_epoch_ms": "1789454440105",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:45",
+      "event_epoch_ms": "1789454445186",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:50",
+      "event_epoch_ms": "1789454450255",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:55",
+      "event_epoch_ms": "1789454455316",
+      "method": "GET",
+      "http_status": 304,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:41:00",
+      "event_epoch_ms": "1789454460122",
+      "method": "GET",
+      "http_status": 200,
+      "route": "B1_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:41:00",
+      "event_epoch_ms": "1789454460162",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:41:00",
+      "event_epoch_ms": "1789454460162",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:41:00",
+      "event_epoch_ms": "1789454460202",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:41:00",
+      "event_epoch_ms": "1789454460244",
+      "method": "GET",
+      "http_status": 404,
+      "route": "B1_DETAIL"
+    }
+  ],
+  "business_unchanged": true,
+  "user_report": {
+    "B_own_B1_B2": "CORRECT_TICKET_NUMBERS_AND_PAGES",
+    "B_other_A1_A2": "PERMISSION_DENIED_NO_CONTENT"
+  }
+}

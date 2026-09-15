@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 09:30:59",
+  "event_epoch_ms": "1789435859307",
+  "scope": "OFFLINE_CURRENT_AUTHORIZER_NAMESPACE_COMPATIBILITY",
+  "baseline_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+  "mode": "SYNTHETIC_TRANSACTION_STUB_NO_DB",
+  "control": {
+    "result": "ALLOWED",
+    "readerCalled": true
+  },
+  "cross_namespace": {
+    "result": "YXX_ENTRY_NOT_FOUND",
+    "readerCalled": false
+  },
+  "unverified": {
+    "result": "YXX_ENTRY_IDENTITY_NAMESPACE_UNVERIFIED",
+    "readerCalled": false
+  },
+  "result": "BLOCKED_FOR_LIVE_CROSS_NAMESPACE_MEMBER_ACCESS",
+  "reason": "Current authorizer requires raw userid equality and hashes the OAuth userid directly; official conversion is not integrated.",
+  "live_identity_evidence": {
+    "A": "evidence/p2-g2-yxx-identity-probe-observation-1789434282987.json",
+    "B": "evidence/p2-g2-yxx-identity-B-verified-1789435500033.json",
+    "B_config_update": "evidence/p2-g2-yxx-bot-identity-20260915-aabcab05.jsonl"
+  },
+  "required_next_scope": "Narrow official identity mapping adapter with tests and refreshed candidate evidence; no Ticket schema or original reporter binding rewrite.",
+  "real_database_access": false,
+  "provider_calls": 0,
+  "services_started": false,
+  "business_code_changed": false,
+  "real_sends": 0
+}

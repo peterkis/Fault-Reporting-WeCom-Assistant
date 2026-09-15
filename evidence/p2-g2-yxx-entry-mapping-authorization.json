@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 09:51:10",
+  "event_epoch_ms": "1789437070091",
+  "work_item": "P2-G2-YXX-DELEGATED-IDENTITY-REPAIR",
+  "user_authorization": "允许修补",
+  "base_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "base_tree": "33826803c02e058f6475a8a0c8b5abccf6a8aaa0",
+  "branch": "codex/yxx-delegated-identity-repair",
+  "candidate_fingerprint": "aca467fb773904f950257b1947cd50be93bd429090f077926d51ad6ffaa0eeb7",
+  "scope": "OFFICIAL_STARTUP_IDENTITY_MAPPING_FOR_STANDALONE_MEMBER_TICKET_READONLY",
+  "test_seams": [
+    "official conversion adapter",
+    "config and authorizer",
+    "readonly startup",
+    "member HTTP on isolated PostgreSQL"
+  ],
+  "database_change": "NONE",
+  "real_business_database_access": false,
+  "live_provider_calls_by_repair": 0,
+  "real_sends": 0,
+  "full_service_loop_started": false,
+  "p2_008_started": false,
+  "commit_push_merge_tag": false,
+  "gitignore_sha256": "0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092",
+  "frozen_history_policy": "APPEND_NEW_REPORTS_AND_SELECT_VIA_CURRENT_PHASE_POINTER",
+  "rollback": "Stop member App; restore approved OAuth-only release; no legacy fallback or identity rewrite",
+  "adr": "adr/0019_yixiaoxiu_delegated_identity_mapping.md"
+}

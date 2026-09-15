@@ -1,0 +1,8 @@
+{
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "isolated_test_cleanup": "Full run completed; each isolated fixture closes and removes its own database.",
+  "cloud_test_database": "Retained with existing schema and zero tickets before Gateway startup; no deletion authorized.",
+  "frozen_evidence": "No overwrite by targeted creation task.",
+  "event_time": "2026-09-15 11:46:41",
+  "event_epoch_ms": "1789444001680"
+}

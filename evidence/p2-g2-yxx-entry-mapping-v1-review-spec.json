@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9",
+  "axis": "SPEC",
+  "reviewer": "/root/mapping_spec",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [
+    {
+      "id": "OPTIONAL_INVALID_LIST",
+      "resolved": true,
+      "description": "Accept omitted empty invalid list only with complete bijective mapping; null, malformed, nonempty and partial results still reject.",
+      "red_evidence": "evidence/p2-g2-yxx-mapping-optional-list-red.json"
+    }
+  ],
+  "source_execution_sha256": "8582c3cf37fa8d26cb17a163b9d71722a2ae636332f082b1d12b00a44fc0a662",
+  "scenario_matrix_sha256": "aaf072ea9bd46ed7c529c0a63933ed06a50955bca7712c9584294f30f244f5f7",
+  "review_scope": "Independent source review of minimal mapping repair plus append-only readiness plumbing; no real Provider or DB activity by reviewers.",
+  "baseline_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "event_time": "2026-09-15 10:53:21",
+  "event_epoch_ms": "1789440801644"
+}

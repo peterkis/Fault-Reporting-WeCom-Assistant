@@ -1,0 +1,78 @@
+{
+  "event_time": "2026-09-15 14:43:15",
+  "event_epoch_ms": "1789454595821",
+  "source": "evidence/yxx-ro-dbac9f4fac91-result-1789454493022.json",
+  "user_report": "A clicked logout in A1, closed it, opened A2 and saw own ticket without a manual authentication prompt",
+  "status": "NEW_OAUTH_FLOW_OBSERVED_AFTER_LOGOUT",
+  "events": [
+    {
+      "event_time": "2026-09-15 14:39:57",
+      "event_epoch_ms": "1789454397582",
+      "method": "POST",
+      "http_status": 200,
+      "route": "LOGOUT"
+    },
+    {
+      "event_time": "2026-09-15 14:40:03",
+      "event_epoch_ms": "1789454403419",
+      "method": "GET",
+      "http_status": 302,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404393",
+      "method": "GET",
+      "http_status": 303,
+      "route": "CALLBACK"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404457",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_OPEN"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404522",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404522",
+      "method": "GET",
+      "http_status": 200,
+      "route": "OTHER"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404584",
+      "method": "GET",
+      "http_status": 200,
+      "route": "SESSION"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404636",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_DETAIL"
+    },
+    {
+      "event_time": "2026-09-15 14:40:04",
+      "event_epoch_ms": "1789454404676",
+      "method": "GET",
+      "http_status": 200,
+      "route": "A2_TIMELINE"
+    }
+  ],
+  "conclusion": "A2 entry returned 302 after logout, then OAuth callback 303 completed before authenticated session and ticket reads 200. No manual prompt was visible to user.",
+  "corrected_test_expectation": "Manual reauthentication UI is not required for snsapi_base flow; verify post-logout denial or redirect and a new OAuth callback before successful reads.",
+  "runtime_code_changed": false,
+  "business_unchanged": true,
+  "multi_tab_live": "NOT_RUN_MOBILE_LIMITATION",
+  "full_p2_g2_live": false
+}

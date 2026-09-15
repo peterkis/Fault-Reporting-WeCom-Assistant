@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 09:00:45",
+  "event_epoch_ms": "1789434045556",
+  "run_id": "20260915-35e193e2",
+  "scope": "LIVE_A_IDENTITY_CONVERSION_ONLY",
+  "reason": "Identify A after prior two-member result was incomplete; no repeated request for B.",
+  "endpoint": "batch/userid_to_openuserid",
+  "input_members": [
+    "A"
+  ],
+  "exit_code": 0,
+  "result": {
+    "status": "CONVERTED",
+    "errcode": 0,
+    "converted_count": 1,
+    "converted_aliases": [
+      "A"
+    ],
+    "invalid_count": 0
+  },
+  "raw_userids_logged": false,
+  "database_access": false,
+  "real_sends": 0,
+  "oauth_comparison": "PENDING"
+}

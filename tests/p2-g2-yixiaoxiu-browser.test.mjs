@@ -1,9 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
+import {randomUUID,createHash} from 'node:crypto';
+import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 import {withYxxDatabase,businessDigest} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 import {createYxxBrowserFixture,yxxTab,pollYxx} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
 import {closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+const screenshotPath='tmp/yxx-browser-screenshots-'+randomUUID();
 
 async function navigate(browser,origin,path){
   const result=await browser.command('Page.navigate',{url:new URL(path,origin).href});assert.equal(result.errorText,undefined);
@@ -38,8 +41,10 @@ for(const [width,height] of [[1440,900],[390,844]])test('YXX-02 YXX-19 YXX-35 YX
       }
       assert.equal(fixture.providerCalls,1,'reload does not replay OAuth code');
       await browser.pressTab();assert.equal(await browser.evaluate("['refresh','logout','more'].includes(document.activeElement.id)"),true);
-      await mkdir(new URL('../evidence/p2-g2-yxx-entry-screenshots/',import.meta.url),{recursive:true});
-      await writeFile(new URL('../evidence/p2-g2-yxx-entry-screenshots/'+width+'.png',import.meta.url),Buffer.from(await browser.screenshot(),'base64'));
+      await mkdir(new URL('../'+screenshotPath+'/',import.meta.url),{recursive:true});
+      const screenshot=Buffer.from(await browser.screenshot(),'base64'),output=screenshotPath+'/'+width+'.png';
+      await writeFile(new URL('../'+output,import.meta.url),screenshot,{flag:'wx'});
+      console.log('YXX_SCREENSHOT '+JSON.stringify({...g2EvidenceTime(),width,path:output,sha256:createHash('sha256').update(screenshot).digest('hex')}));
       assert.deepEqual(await businessDigest(pool),before);
     }catch(e){error=e;}finally{await closeBrowserTestResources([()=>browser?.close(),()=>fixture?.close()],error);}
   });

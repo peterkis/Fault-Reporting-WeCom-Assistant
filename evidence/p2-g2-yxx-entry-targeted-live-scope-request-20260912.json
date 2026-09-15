@@ -1,0 +1,280 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-12 09:04:32",
+  "event_epoch_ms": "1789175072689",
+  "status": "OWNER_CONFIRMATION_REQUIRED",
+  "scope": "OFFLINE_TARGETED_LIVE_SCOPE_PREPARATION_ONLY",
+  "baseline": {
+    "head": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+    "tree": "33826803c02e058f6475a8a0c8b5abccf6a8aaa0",
+    "branch": "main",
+    "parents": [
+      "4cecdb5551da455a8b0a6c877f7f0a63ffa6eec9",
+      "1396dfe2e7e18d730903dac087f0b0dc9933999b"
+    ],
+    "initial_worktree_clean": true,
+    "remote_checked": false
+  },
+  "candidate": {
+    "fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+    "file_count": 609,
+    "algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF"
+  },
+  "inputs": [
+    {
+      "path": "plans/current_phase.json",
+      "sha256": "9e55e6e8c9f8b0b074e11fa489ffefcbf7e1e8183e20faf7effc0525224ef3e1"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-member-ticket-entry.md",
+      "sha256": "84a27050934fede0bb08d0f8dc267648e845254fcaaaa4b9fa973d627494bc54"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-report.json",
+      "sha256": "b4018e1b9170cbe1f9ca458fddbac7263e3aa034a94ebc4d440f5be6e39316af"
+    },
+    {
+      "path": "evidence/p2-g2-automated-readiness-report.json",
+      "sha256": "c3880053310e233af9a541c0cc40f87220cfed75de8b3d26c0900d21ad03517a"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-v3-final-checks.json",
+      "sha256": "c0f59daace04fc4df1c04ceb29228e7688e2542fa79082b4bd826d2fdc938c3a"
+    }
+  ],
+  "checks": [
+    {
+      "event_time": "2026-09-12 09:04:32",
+      "event_epoch_ms": "1789175072772",
+      "record_time_semantics": "RESULT_COLLECTED_FOR_APPLICATION",
+      "command": [
+        "node",
+        "scripts/p2-g2-yixiaoxiu-check.mjs",
+        "--require-ready"
+      ],
+      "exit_code": 0,
+      "result": {
+        "ok": true,
+        "work_item": "P2-G2-YXX-TICKET-ENTRY",
+        "check_scope": "CURRENT_READY",
+        "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+        "persistent_defaults_off": true,
+        "readiness_checked": true,
+        "live_authorized": false,
+        "database_connections": 0,
+        "provider_calls": 0
+      }
+    },
+    {
+      "event_time": "2026-09-12 09:04:32",
+      "event_epoch_ms": "1789175072773",
+      "record_time_semantics": "RESULT_COLLECTED_FOR_APPLICATION",
+      "command": [
+        "node",
+        "scripts/validate-p2-g2-service-loop.mjs",
+        "--require-ready"
+      ],
+      "exit_code": 0,
+      "result": {
+        "ok": true,
+        "gate": "P2-G2",
+        "checks": 17,
+        "errors": [],
+        "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+        "readiness_checked": true,
+        "live_validation": "NOT_RUN",
+        "database_writes": false,
+        "provider_calls": 0
+      }
+    },
+    {
+      "event_time": "2026-09-12 09:04:32",
+      "event_epoch_ms": "1789175072773",
+      "record_time_semantics": "RESULT_COLLECTED_FOR_APPLICATION",
+      "command": [
+        "node",
+        "scripts/p2-g2-check.mjs",
+        "--mode=check"
+      ],
+      "exit_code": 0,
+      "result": {
+        "gate": "P2-G2",
+        "mode": "check",
+        "ok": true,
+        "database_connection_started": false,
+        "database_writes": false,
+        "listener_started": false,
+        "provider_calls": 0,
+        "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048",
+        "candidate_file_count": 609,
+        "persistent_flags_off": true,
+        "live_scope_checked": false
+      }
+    }
+  ],
+  "configuration_check": {
+    "event_time": "2026-09-12 09:04:32",
+    "event_epoch_ms": "1789175072773",
+    "command": [
+      "node",
+      "scripts/p2-g2-yixiaoxiu-serve.mjs",
+      "--check"
+    ],
+    "exit_code": 1,
+    "error_code": "YXX_ENTRY_CONFIG_INVALID",
+    "environment": "CURRENT_PROCESS_WITHOUT_DOTENV_LOADING",
+    "member_readonly_config_verified": false,
+    "presence": [
+      {
+        "event_time": "2026-09-12 09:04:32",
+        "event_epoch_ms": "1789175072689",
+        "source": "PROCESS_ENV",
+        "keys": {
+          "YIXIAOXIU_RUNTIME_PROFILE": false,
+          "WECOM_WEB_OAUTH_ORIGIN": false,
+          "WECOM_WEB_OAUTH_PORT": false,
+          "WECOM_WEB_OAUTH_ENABLED": false,
+          "YIXIAOXIU_MEMBER_TICKET_ENTRY_ENABLED": false,
+          "CORP_ID": false,
+          "APP_ID": false,
+          "APP_SECRET": false,
+          "YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG": false,
+          "PILOT_DATABASE_URL": false,
+          "P2_G2_REPORTER_HMAC_SECRET": false
+        },
+        "referenced_config_file_exists": false
+      },
+      {
+        "event_time": "2026-09-12 09:04:32",
+        "event_epoch_ms": "1789175072690",
+        "source": ".env",
+        "keys": {
+          "YIXIAOXIU_RUNTIME_PROFILE": false,
+          "WECOM_WEB_OAUTH_ORIGIN": false,
+          "WECOM_WEB_OAUTH_PORT": false,
+          "WECOM_WEB_OAUTH_ENABLED": false,
+          "YIXIAOXIU_MEMBER_TICKET_ENTRY_ENABLED": false,
+          "CORP_ID": false,
+          "APP_ID": false,
+          "APP_SECRET": false,
+          "YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG": false,
+          "PILOT_DATABASE_URL": true,
+          "P2_G2_REPORTER_HMAC_SECRET": false
+        },
+        "referenced_config_file_exists": false
+      },
+      {
+        "event_time": "2026-09-12 09:04:32",
+        "event_epoch_ms": "1789175072691",
+        "source": ".env.pilot",
+        "keys": {
+          "YIXIAOXIU_RUNTIME_PROFILE": false,
+          "WECOM_WEB_OAUTH_ORIGIN": false,
+          "WECOM_WEB_OAUTH_PORT": false,
+          "WECOM_WEB_OAUTH_ENABLED": false,
+          "YIXIAOXIU_MEMBER_TICKET_ENTRY_ENABLED": false,
+          "CORP_ID": true,
+          "APP_ID": true,
+          "APP_SECRET": true,
+          "YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG": false,
+          "PILOT_DATABASE_URL": true,
+          "P2_G2_REPORTER_HMAC_SECRET": false
+        },
+        "referenced_config_file_exists": false
+      }
+    ]
+  },
+  "readiness": {
+    "preparation": "READY_FOR_LIVE_E2E",
+    "entry": "READY_FOR_TARGETED_LIVE_VALIDATION",
+    "identity": "IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING",
+    "full_regression_rerun": false,
+    "historical_bound_tests": 1044,
+    "historical_bound_test_files": 166,
+    "live_authorized": false,
+    "live_result": "NOT_RUN",
+    "p2_008": "TODO_BLOCKED_BY_P2_G2"
+  },
+  "owner_confirmation": {
+    "owner": null,
+    "identity_verifier": null,
+    "operator": null,
+    "evidence_custodian": null,
+    "members": [
+      "A",
+      "B"
+    ],
+    "tickets": {
+      "A": [
+        "A1",
+        "A2"
+      ],
+      "B": [
+        "B1"
+      ]
+    },
+    "identities_confirmed": false,
+    "tickets_confirmed": false,
+    "identity_live_proof_ref": null,
+    "target_host": null,
+    "public_origin": null,
+    "loopback_port": null,
+    "config_digest": null,
+    "proxy_diff_ref": null,
+    "release_digest": null,
+    "oauth_only_rollback_digest": null,
+    "stopped_g2_digest": null,
+    "start_event_time": null,
+    "start_event_epoch_ms": null,
+    "end_event_time": null,
+    "end_event_epoch_ms": null,
+    "retention": null
+  },
+  "send_scope": {
+    "authorized": false,
+    "authorized_count": 0,
+    "proposed_count": 3,
+    "proposed_targets": [
+      {
+        "member": "A",
+        "ticket": "A1",
+        "count": 1
+      },
+      {
+        "member": "A",
+        "ticket": "A2",
+        "count": 1
+      },
+      {
+        "member": "B",
+        "ticket": "B1",
+        "count": 1
+      }
+    ],
+    "actual_count": 0,
+    "independent_permission_required": true,
+    "unknown_policy": "STOP_AND_RECONCILE_NO_BLIND_RETRY"
+  },
+  "boundaries": {
+    "ssh": false,
+    "cloud_change": false,
+    "real_oauth_sdk": false,
+    "real_database": false,
+    "service_start": false,
+    "real_send": false,
+    "business_code_change": false,
+    "migration_change": false,
+    "feature_flags_enabled": false,
+    "p2_g2_live": false,
+    "p2_008": false,
+    "push_merge_tag": false,
+    "frozen_evidence_rewritten": false
+  },
+  "gitignore": {
+    "sha256": "0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092",
+    "matches_current_head": true,
+    "restored_from_history": false
+  },
+  "document": "evidence/p2-g2-yxx-entry-targeted-live-scope-request-20260912.md",
+  "document_sha256": "79f549cad57f2d354719aa6b9107e18b7bc7d293f74399450693cd9ecb24d5d4"
+}

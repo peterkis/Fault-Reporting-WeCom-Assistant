@@ -1,0 +1,12 @@
+{
+  "event_time": "2026-09-15 11:54:56",
+  "event_epoch_ms": "1789444496698",
+  "failed_run": "yxx-create-2eb3ab2bfd30",
+  "failure": "OFFLINE_CONFIG_CHECK_REJECTED_BEFORE_GATEWAY",
+  "cause": "Windows Python stdin default gbk decoded UTF-8 JSON Chinese test text incorrectly",
+  "repair": "Explicit UTF-8 stdin; fresh run and private attempt directory; prior failed config retained",
+  "runtime_candidate_changed": false,
+  "current_run": "yxx-create-700f8e131641",
+  "result": "READY",
+  "prior_failure_evidence": "evidence/p2-g2-yxx-creation-2eb3ab2bfd30-startup.json"
+}

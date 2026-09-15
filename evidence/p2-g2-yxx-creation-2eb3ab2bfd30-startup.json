@@ -1,0 +1,34 @@
+{
+  "status": "FAILED",
+  "error_type": "RuntimeError",
+  "event_time": "2026-09-15 11:47:08",
+  "event_epoch_ms": "1789444028209",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "run_id": "yxx-create-2eb3ab2bfd30",
+  "cases": [
+    {
+      "id": "A1",
+      "member": "A",
+      "chatType": "group",
+      "text": "新故障：HIS无法登录，定向测试 2eb3ab2bfd30-A1"
+    },
+    {
+      "id": "A2",
+      "member": "A",
+      "chatType": "single",
+      "text": "新故障：HIS无法登录，定向测试 2eb3ab2bfd30-A2"
+    },
+    {
+      "id": "B1",
+      "member": "B",
+      "chatType": "group",
+      "text": "新故障：HIS无法登录，定向测试 2eb3ab2bfd30-B1"
+    },
+    {
+      "id": "B2",
+      "member": "B",
+      "chatType": "single",
+      "text": "新故障：HIS无法登录，定向测试 2eb3ab2bfd30-B2"
+    }
+  ]
+}

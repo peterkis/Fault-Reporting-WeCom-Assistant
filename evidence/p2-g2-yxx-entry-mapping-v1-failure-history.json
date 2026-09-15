@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9",
+  "scope": "PRE_FINAL_ATTEMPTS_PRESERVED_NOT_RELABELED_AS_PASS",
+  "records": [
+    {
+      "path": "evidence/p2-g2-yxx-mapping-red.tap",
+      "sha256": "92c12ec893dec6af3b143bfe67c6c0f39197fb81ad3870e86461b3bc117d5c11",
+      "reason": "Initial missing-module RED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-mapping-schema-red.tap",
+      "sha256": "413dd1d14ab5df525a9b8a55628b53f41796e538d5751044e2a0e210f95793a0",
+      "reason": "Schema support RED"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-mapping-targeted-1789436781025.tap",
+      "sha256": "eb59dbdf9c5b0f5c903361f7e13fc91978e814faac92c8a4e1ce15c83a089b44",
+      "reason": "Test request omitted required logout JSON body; test corrected"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-mapping-first-regression-run.json",
+      "sha256": "794dba3e54044d4a52ebeeda1ac829df9cf47cfbf23dc2517fba8b989d262981",
+      "reason": "First full1051/1052; temporary governance synchronization failure"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-mapping-optional-list-red.json",
+      "sha256": "406c10b6414169ad6710ec64cb9b2cb86753b88728a0bc95830e8bca0ef28574",
+      "reason": "Complete response without optional empty invalid list rejected before fix"
+    },
+    {
+      "path": "tmp/p2-g2-tests-c88fde13-4e8b-4822-bead-8b0018271ae5/run.json",
+      "sha256": "036c218224130810a55008986003a8f7f320723a4d2f2fcf7f25decf297b858d",
+      "reason": "Second run explicitly aborted upon frozen screenshot artifact violation"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-mapping-screenshot-restoration.json",
+      "sha256": "d6024bb5c6c75fd7ea875bee717a0facdb4a9cef147f42c5fb111ebf73e0e510",
+      "reason": "Generated copies preserved; frozen screenshot bytes restored exactly"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-mapping-aborted-cleanup.json",
+      "sha256": "86f5dbc7ce04903cc44d11e7ae2f6faa9e3ba5e336a62973662a05990a1b8983",
+      "reason": "Exact aborted-run temporary DB identified and cleaned; no roles deleted"
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-mapping-browser-1789439070028.tap.json",
+      "sha256": "90dac5d2fa9fc008bb92b693ef2ba5cdbd9f88cce6bf6e84f497beec30a8de87",
+      "reason": "Browser5/5 with frozen screenshots unchanged after output fix"
+    }
+  ],
+  "event_time": "2026-09-15 10:53:21",
+  "event_epoch_ms": "1789440801649"
+}

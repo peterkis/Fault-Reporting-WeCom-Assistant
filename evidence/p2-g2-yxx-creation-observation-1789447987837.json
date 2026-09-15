@@ -1,0 +1,119 @@
+{
+  "running": false,
+  "exit_code": 0,
+  "records": [
+    {
+      "event": "YXX_CREATION_READY",
+      "run_id": "yxx-create-c40e7c780f7c",
+      "end_epoch_ms": "1789448579727",
+      "max_tickets": 4,
+      "real_sends": 0,
+      "event_time": "2026-09-15 12:33:03",
+      "event_epoch_ms": "1789446783201"
+    },
+    {
+      "event": "YXX_CREATION_INBOUND",
+      "ok": true,
+      "run_id": "yxx-create-c40e7c780f7c",
+      "config_hash": "30f2fd8ae6bc87404c163e0280dcabe0e205e69f192aae3cb450a0fdb1fd3271",
+      "case_id": "A1",
+      "ticket_no": "IT-20260915-0001",
+      "public_ref": "vh8MXSCEqXzRu9f2nLabwulXr7pLsklW",
+      "duplicate": false,
+      "event_time": "2026-09-15 12:35:06",
+      "event_epoch_ms": "1789446906309"
+    },
+    {
+      "event": "YXX_CREATION_INBOUND",
+      "ok": true,
+      "run_id": "yxx-create-c40e7c780f7c",
+      "config_hash": "30f2fd8ae6bc87404c163e0280dcabe0e205e69f192aae3cb450a0fdb1fd3271",
+      "case_id": "A2",
+      "ticket_no": "IT-20260915-0002",
+      "public_ref": "XcWTVyEu5qtJbfw6oasITqlBZC8LqLdf",
+      "duplicate": false,
+      "event_time": "2026-09-15 12:35:13",
+      "event_epoch_ms": "1789446913811"
+    },
+    {
+      "event": "YXX_CREATION_INBOUND",
+      "ok": true,
+      "run_id": "yxx-create-c40e7c780f7c",
+      "config_hash": "30f2fd8ae6bc87404c163e0280dcabe0e205e69f192aae3cb450a0fdb1fd3271",
+      "case_id": "B1",
+      "ticket_no": "IT-20260915-0003",
+      "public_ref": "fbdanM_gba2CN6mnIhsKD1wmUoQ3AKO8",
+      "duplicate": false,
+      "event_time": "2026-09-15 12:36:47",
+      "event_epoch_ms": "1789447007720"
+    },
+    {
+      "event": "YXX_CREATION_INBOUND",
+      "ok": false,
+      "code": "YXX_CREATION_SCOPE_DENIED",
+      "event_time": "2026-09-15 12:37:02",
+      "event_epoch_ms": "1789447022954"
+    },
+    {
+      "event": "YXX_CREATION_INBOUND",
+      "ok": true,
+      "run_id": "yxx-create-c40e7c780f7c",
+      "config_hash": "30f2fd8ae6bc87404c163e0280dcabe0e205e69f192aae3cb450a0fdb1fd3271",
+      "case_id": "B2",
+      "ticket_no": "IT-20260915-0004",
+      "public_ref": "lNOmOsPXXiqHDxKjEdD5duvmzmmR2C9b",
+      "duplicate": false,
+      "event_time": "2026-09-15 12:42:44",
+      "event_epoch_ms": "1789447364296"
+    },
+    {
+      "event": "YXX_CREATION_STOPPED",
+      "reason": "ALL_CASES_COMPLETE",
+      "completed_cases": [
+        "A1",
+        "A2",
+        "B1",
+        "B2"
+      ],
+      "real_sends": 0,
+      "event_time": "2026-09-15 12:42:44",
+      "event_epoch_ms": "1789447364297"
+    }
+  ],
+  "counts": {
+    "tickets": 4,
+    "inbox": 4
+  },
+  "tickets": [
+    {
+      "case_id": "A1",
+      "ticket_no": "IT-20260915-0001",
+      "public_ref": "vh8MXSCEqXzRu9f2nLabwulXr7pLsklW",
+      "original_reporter_matches": true,
+      "created_events": 1
+    },
+    {
+      "case_id": "A2",
+      "ticket_no": "IT-20260915-0002",
+      "public_ref": "XcWTVyEu5qtJbfw6oasITqlBZC8LqLdf",
+      "original_reporter_matches": true,
+      "created_events": 1
+    },
+    {
+      "case_id": "B1",
+      "ticket_no": "IT-20260915-0003",
+      "public_ref": "fbdanM_gba2CN6mnIhsKD1wmUoQ3AKO8",
+      "original_reporter_matches": true,
+      "created_events": 1
+    },
+    {
+      "case_id": "B2",
+      "ticket_no": "IT-20260915-0004",
+      "public_ref": "lNOmOsPXXiqHDxKjEdD5duvmzmmR2C9b",
+      "original_reporter_matches": true,
+      "created_events": 1
+    }
+  ],
+  "event_time": "2026-09-15 12:53:07",
+  "event_epoch_ms": "1789447987837"
+}

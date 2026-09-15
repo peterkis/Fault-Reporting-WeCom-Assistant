@@ -1,0 +1,16 @@
+{
+  "status": "READONLY_READY",
+  "container": "yxx-ro-dbac9f4fac91",
+  "profile": "MEMBER_TICKET_READONLY",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "proxy_sha256": "64833a24fb6963b61b2b4bfb6fd0e9fcdc3908f39afe6eab1d4d7c59f29c2c20",
+  "rollback_timer": "yxx-ro-dbac9f4fac91-restore.timer",
+  "rollback_script": "/opt/fault-reporting-wecom/oauth/probes/yxx-ro-dbac9f4fac91/restore.sh",
+  "end_epoch_ms": "1789454954575",
+  "unauthenticated_session_http": 401,
+  "original_oauth_stopped": true,
+  "gateway_started": false,
+  "real_sends": 0,
+  "event_time": "2026-09-15 14:19:18",
+  "event_epoch_ms": "1789453158560"
+}

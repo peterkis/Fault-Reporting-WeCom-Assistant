@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 14:51:23",
+  "event_epoch_ms": "1789455083648",
+  "status": "TARGETED_MEMBER_READ_VERIFIED_WITH_REMAINING_ITEMS",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "regression": {
+    "tests": 1056,
+    "pass": 1056,
+    "test_files": 171,
+    "report": "evidence/p2-g2-yxx-entry-creation-v2-parent-report.json"
+  },
+  "identity": {
+    "mode": "VERIFIED_DELEGATED_MAPPING",
+    "raw_same_namespace": false,
+    "official_A_B_conversion": "VERIFIED"
+  },
+  "tests": {
+    "A_own_A1_A2": "PASS",
+    "A_other_B1_B2": "PASS_DENIED",
+    "B_own_B1_B2": "PASS",
+    "B_other_A1_A2": "PASS_DENIED",
+    "logout_new_oauth_recovery": "PASS",
+    "mobile_sequential_pages": "PASS",
+    "simultaneous_multiple_tabs": "NOT_RUN_MOBILE_ENVIRONMENT",
+    "legacy_grant_card_link": "NOT_RUN",
+    "real_card_send": "NOT_AUTHORIZED_NOT_RUN"
+  },
+  "sources": [
+    "evidence/p2-g2-yxx-creation-c40e7c780f7c-completion.json",
+    "evidence/yxx-ro-2a31c0dbede7-result-1789453138008.json",
+    "evidence/yxx-ro-dbac9f4fac91-result-1789454493022.json",
+    "evidence/p2-g2-yxx-logout-auto-reauth-1789454595821.json",
+    "evidence/p2-g2-yxx-targeted-live-close-1789454861160.json"
+  ],
+  "business_tables_unchanged_during_readonly": 49,
+  "real_sends": 0,
+  "cloud": {
+    "status": "RESTORED_OAUTH_ONLY",
+    "member_app_running": false,
+    "gateway_running": false,
+    "original_proxy_restored": true,
+    "test_tickets_retained": 4
+  },
+  "full_p2_g2_live": "NOT_RUN",
+  "p2_008": "BLOCKED",
+  "last_completed_gate": "P2-G1",
+  "project_owner_gate_approval": false,
+  "publication_authorization": "User explicitly requested commit, push, PR, Codex review, merge, and fast-forward local main after targeted tests"
+}

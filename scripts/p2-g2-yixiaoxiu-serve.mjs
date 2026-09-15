@@ -5,6 +5,7 @@ import {createWeComAppTokenProvider} from '../src/p2-g2-wecom-app-token.mjs';
 import {createWeComOAuthCodeResolver} from '../src/p2-g2-wecom-oauth-provider.mjs';
 import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
 import {validateYxxEntryConfig,failYxx} from '../src/p2-g2-yixiaoxiu-contract.mjs';
+import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 
 export async function main(argv=process.argv.slice(2),env=process.env){
   if(argv.length===1&&argv[0]==='--help'){
@@ -23,23 +24,26 @@ export async function main(argv=process.argv.slice(2),env=process.env){
     reporterMemberEntry=validateYxxEntryConfig(data.reporterMemberEntry);
     if(!reporterMemberEntry.enabled||reporterMemberEntry.validationProfile!=='DEPLOYMENT'
       ||reporterMemberEntry.corpId!==env.CORP_ID||reporterMemberEntry.agentId!==env.APP_ID)failYxx('CONFIG_INVALID');
-    if(reporterMemberEntry.identityMode!=='VERIFIED_SAME_NAMESPACE')failYxx('IDENTITY_NAMESPACE_UNVERIFIED');
+    if(!['VERIFIED_SAME_NAMESPACE','VERIFIED_DELEGATED_MAPPING'].includes(reporterMemberEntry.identityMode))failYxx('IDENTITY_NAMESPACE_UNVERIFIED');
     let database;try{database=new URL(env.PILOT_DATABASE_URL);}catch{failYxx('CONFIG_INVALID');}
     if(!['postgres:','postgresql:'].includes(database.protocol)||!database.pathname||database.pathname==='/'
       ||typeof env.P2_G2_REPORTER_HMAC_SECRET!=='string'||Buffer.byteLength(env.P2_G2_REPORTER_HMAC_SECRET)<32)failYxx('CONFIG_INVALID');
   }
+  const accessTokenProvider=enabled?createWeComAppTokenProvider({corpId:env.CORP_ID,appSecret:env.APP_SECRET}):null;
   const oauth=createWeComWebOAuth({enabled,publicOrigin,corpId:env.CORP_ID,agentId:env.APP_ID,
-    ...(enabled?{resolveCode:createWeComOAuthCodeResolver({accessTokenProvider:createWeComAppTokenProvider({corpId:env.CORP_ID,appSecret:env.APP_SECRET})})}:{})});
+    ...(enabled?{resolveCode:createWeComOAuthCodeResolver({accessTokenProvider})}:{})});
   if(argv[0]==='--check'){
     new URL(publicOrigin);oauth.close?.();console.log(JSON.stringify({ok:true,profile,configured:true,database_connections:0,provider_calls:0,listener_started:false,live_authorized:false}));return;
   }
   let pool,runtime;
   try{
+    const identityMapping=reporterMemberEntry?.identityMode==='VERIFIED_DELEGATED_MAPPING'
+      ?await createYxxDelegatedIdentityMapping({config:reporterMemberEntry,accessTokenProvider}):null;
     if(profile==='MEMBER_TICKET_READONLY'){
       const {createPostgresPool}=await import('../src/platform/postgres-pool.mjs');
       pool=createPostgresPool({connectionString:env.PILOT_DATABASE_URL,max:4,connectionTimeoutMillis:2000,application_name:'yixiaoxiu_member_readonly'});
     }
-    runtime=createYxxProfile({profile,pool,oauth,publicOrigin,listenPort,reporterMemberEntry,reporterHmacSecret:env.P2_G2_REPORTER_HMAC_SECRET});
+    runtime=createYxxProfile({profile,pool,oauth,publicOrigin,listenPort,reporterMemberEntry,identityMapping,reporterHmacSecret:env.P2_G2_REPORTER_HMAC_SECRET});
     await runtime.start();console.log(JSON.stringify({event:'YXX_ENTRY_LISTENING',profile}));
     let stopping;const stop=()=>stopping??=(async()=>{await runtime.stop();await pool?.end();})();
     process.once('SIGTERM',()=>void stop());process.once('SIGINT',()=>void stop());

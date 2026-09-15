@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "gate": "P2-G2",
+  "preparation_status": "READY_FOR_LIVE_E2E",
+  "gate_status": "IN_PROGRESS",
+  "active_task": "P2-G2",
+  "active_lane": "ASSEMBLY",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "candidate_file_count": 618,
+  "candidate_algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF",
+  "base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
+  "authorization_commit": "d7311cdbfe30c66f37d22a553a3e8f0e04e27cd1",
+  "baseline_reference_tests": 577,
+  "gold_reference_count": 202,
+  "normal_input_cases": 122,
+  "mechanism_and_other_references": 80,
+  "original_semantics_all_passed": false,
+  "source_semantic_limits": [
+    "D12-005 reliable non-mention SDK indication unavailable",
+    "D12-023 hospital master identity remains outside P2",
+    "D12-016 URL Grant replaces unsupported card-event association; D12-053 uses proactive Outbox alternative",
+    "Frozen 120000ms correlation and trusted available department/campus facts; original 300000ms/hospital-wide assumptions not imported"
+  ],
+  "scenario_matrix_complete": true,
+  "scenario_count": 37,
+  "independent_review_passed": true,
+  "pr6_review_invariants": 10,
+  "full_regression": {
+    "tests": 1056,
+    "pass": 1056,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_file_count": 171,
+    "baseline_test_file_count": 92,
+    "baseline_test_files_covered": true,
+    "candidate_unchanged": true,
+    "exit_code": 0,
+    "tap_path": "evidence/p2-g2-yxx-entry-creation-v1-regression.tap",
+    "tap_sha256": "22f6e878ad046855eb96607fec96124eb46e9379a0c0e0d92936f239e964386e",
+    "expose_gc": true,
+    "baseline_recursive_test_file_count": 94
+  },
+  "source_evidence": {
+    "regression_run": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v1-regression-run.json",
+      "sha256": "847bc1dab00ded13ad8f7b5d983f50c7e273627f963fbabca1f08fb83d85bee1"
+    },
+    "source_execution": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v1-source-execution.json",
+      "sha256": "55116cc012be3b190596cb3504a44d0cd8e277c5ac14e1c4f7386ffe0ea87b42"
+    },
+    "scenario_matrix": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v1-g2-scenario-matrix.json",
+      "sha256": "9870b254ead08574ccfdbb26cf09fa1016515e2ea7542e3019649ad3c7baae99"
+    },
+    "independent_review": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v1-review-summary.json",
+      "sha256": "eb7fa064e953ed00405e99c44b6800adc17a89b35fb4d3ea91eac8a98d017825"
+    },
+    "pr6_invariants": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v1-pr6-invariants.json",
+      "sha256": "6c52ceea02d4237051c4d01ed3d1b8716a0a5fc01d0160f218614692f928b114"
+    },
+    "candidate_inventory": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v1-candidate-inventory.json",
+      "sha256": "37fa1e724edd383356395378b8f2a67ac0c1e14190848c810b6994dcf38d7a91"
+    },
+    "classification_metrics": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v1-classification-metrics.json",
+      "sha256": "90fd66e72756a3f9a3d60cfbdf4069b094e8e4a8333cdc4829aa48cd3acf626d"
+    }
+  },
+  "environment": {
+    "node_version": "24.18.0",
+    "platform": "win32",
+    "architecture": "x64",
+    "os_release": "10.0.26200",
+    "formal_natural_gc_observation": false,
+    "whole_stack_2c4g_live_validation": "NOT_RUN"
+  },
+  "configured_resource_caps": {
+    "app_processes": 1,
+    "worker_processes": 1,
+    "gateway_connections": 1,
+    "postgres_instances": 1,
+    "app_pool": 4,
+    "worker_pool": 2,
+    "gateway_pool": 1,
+    "controller_pool": 1,
+    "sse_clients": 32,
+    "batch": 20,
+    "turns": 50,
+    "input_characters": 20000,
+    "list": 100
+  },
+  "persistent_flags_all_off": true,
+  "model_environment_keys_in_test_processes": 0,
+  "model_provider_calls": 0,
+  "ocr_calls": 0,
+  "rag_calls": 0,
+  "database_change": "NO_APPLICATION_SCHEMA_CHANGE_EXISTING_MIGRATIONS_UNCHANGED",
+  "shared_database_migrated": false,
+  "live_validation": "NOT_RUN",
+  "client_observation": "NOT_RUN",
+  "project_owner_approval": false,
+  "live_send_authorized": false,
+  "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
+  "next_task_candidate": "P2-G2-LIVE",
+  "next_task_authorized": false,
+  "runbook": "prompts/P2-G2_rule_first_service_loop_runbook.md",
+  "failure_history": "evidence/p2-g2-yxx-entry-mapping-v1-failure-history.json",
+  "repair_report": "adr/0020_yixiaoxiu_targeted_ticket_creation.md",
+  "service_chain_inventory": "evidence/p2-g2-service-chain-inventory.json",
+  "cleanup_limit": "evidence/p2-g2-yxx-entry-creation-v1-cleanup.json",
+  "cloud_environment_limit": "Current candidate staged stopped; existing migrations applied to receipt-bound empty test database. No Gateway start at report creation.",
+  "classification_metric_limits": "Classification comparison uses 106 comparable terminal observations; Ticket/Review ratios use 109 measured scenarios. Exclusions are explicit. Safe-route test coverage is not classification accuracy or a claim of original-202 label equality.",
+  "source_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "validation_scope": "LOCAL_FULL_REGRESSION_INCLUDING_TARGETED_CREATION",
+  "historical_readiness_snapshot": "evidence/p2-g2-automated-readiness-report.json",
+  "persistent_flag_scope": "Repository business and member-entry defaults remain false; no runtime configuration was enabled by this task.",
+  "oauth_authentication": {
+    "status": "LIVE_VERIFIED",
+    "evidence": "evidence/p2-g2-wecom-web-oauth.md",
+    "business_service_loop_started": false,
+    "historical_only": true,
+    "applies_to_member_ticket_entry": false,
+    "namespace_correspondence_verified": false
+  },
+  "historical_failure_history": "evidence/p2-g2-validation-run-index.json",
+  "source_worktree_parent_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "source_commit_role": "WORKTREE_PARENT_BEFORE_MAPPING_AND_TARGETED_CREATION",
+  "yixiaoxiu_member_ticket_entry": {
+    "path": "evidence/p2-g2-yxx-entry-creation-v1-report.json",
+    "sha256": "5b8a10b1a61016ba6fa00ceb55f2740253bffd8933ff3d5877f330edadc20976"
+  },
+  "event_time": "2026-09-15 11:46:03",
+  "event_epoch_ms": "1789443963787"
+}

@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "work_item": "P2-G2-YXX-TICKET-ENTRY",
+  "parent_gate": "P2-G2",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "candidate_file_count": 618,
+  "candidate_algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF",
+  "branch": "codex/yxx-delegated-identity-repair",
+  "base_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "authorization_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "source_worktree_parent_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "review_repair_authorization": "evidence/p2-g2-yxx-entry-mapping-authorization.json",
+  "implementation": "IMPLEMENTED",
+  "automation": "VERIFIED",
+  "entry_status": "DELEGATED_MAPPING_LIVE_VALIDATION_PENDING",
+  "entry_live_authorized": false,
+  "entry_live_result": "NOT_RUN",
+  "p2_g2_live_result": "NOT_RUN",
+  "identity_namespace_live_verified": false,
+  "persistent_flags_all_off": true,
+  "no_ddl": true,
+  "dependency_changes": false,
+  "real_provider_calls": 0,
+  "real_business_data_access": false,
+  "real_sends": 0,
+  "ai_calls": 0,
+  "ocr_calls": 0,
+  "rag_calls": 0,
+  "reporter_policy": "MEMBER_REQUIRED",
+  "full_regression": {
+    "tests": 1056,
+    "pass": 1056,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_file_count": 171,
+    "baseline_test_file_count": 158,
+    "baseline_test_files_covered": true,
+    "candidate_unchanged": true,
+    "exit_code": 0,
+    "tap_path": "evidence/p2-g2-yxx-entry-creation-v2-regression.tap",
+    "tap_sha256": "22f6e878ad046855eb96607fec96124eb46e9379a0c0e0d92936f239e964386e",
+    "expose_gc": true
+  },
+  "sources": {
+    "regression_run": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v2-regression-run.json",
+      "sha256": "847bc1dab00ded13ad8f7b5d983f50c7e273627f963fbabca1f08fb83d85bee1"
+    },
+    "scenario_matrix": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v2-scenario-matrix.json",
+      "sha256": "aa12b9b0f774795d69c463ad1d974f178e8817a7df5ff3be4b0b11d49e31f4f2"
+    },
+    "route_audit": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v2-route-audit.json",
+      "sha256": "287b62381b31e9a550de2f56be33ede2425c49811b55fe182b76091ab087f683"
+    },
+    "independent_review": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v2-review-summary.json",
+      "sha256": "844359b5b4d9949add8feaf02ea06a257245ac5ab1bff584d5fea0abda71c5a2"
+    },
+    "resource_measurement": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v2-resource.json",
+      "sha256": "984920d032b2d62c04914a633682a63be10cb7799354ca5a34d31daf41eaa10b"
+    },
+    "candidate_inventory": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v2-candidate-inventory.json",
+      "sha256": "37fa1e724edd383356395378b8f2a67ac0c1e14190848c810b6994dcf38d7a91"
+    },
+    "cleanup": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v2-cleanup.json",
+      "sha256": "f410efc0f8841ac735b5a24e586164b677a04b4ae27bc616b49c602a55554162"
+    },
+    "visual_archive": {
+      "path": "evidence/p2-g2-yxx-entry-creation-v2-screenshots.json",
+      "sha256": "281dde720f0350bfe7379df496ec3a41d6d05fb80ac9d350f58d4030d517e956"
+    }
+  },
+  "identity_proof": {
+    "live": "A_B_OFFICIAL_CONVERSION_CORRESPONDENCE_VERIFIED_BEFORE_REPAIR",
+    "raw_same_namespace": false,
+    "current_repaired_deployment": "NOT_RUN",
+    "evidence": [
+      "evidence/p2-g2-yxx-identity-probe-observation-1789434282987.json",
+      "evidence/p2-g2-yxx-identity-B-verified-1789435500033.json"
+    ]
+  },
+  "preservation": {
+    "grant_consumption_unchanged": true,
+    "session_grant_id_not_null_unique": true,
+    "new_persistent_member_sessions": 0,
+    "new_login_grants": 0,
+    "direct_leg_created_by_login": false,
+    "private_send_eligibility_created_by_login": false,
+    "migrations_001_032_unchanged": true,
+    "frozen_screenshot_transient_overwrite_restored": true,
+    "restoration_evidence": "evidence/p2-g2-yxx-entry-mapping-screenshot-restoration.json"
+  },
+  "resource": {
+    "authenticated_sessions": 100,
+    "concurrent_reads": 32,
+    "overload_status": 503,
+    "pool_peak_connections": 4,
+    "pending_pool_after": 0,
+    "elapsed_ms": 357,
+    "rss_before_bytes": 98115584,
+    "rss_after_bytes": 102924288,
+    "catalog_unchanged": true,
+    "business_tables_unchanged": true,
+    "formal_observation": false,
+    "real_provider_calls": 0
+  },
+  "cleanup": {
+    "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+    "isolated_test_cleanup": "Full run completed; each isolated fixture closes and removes its own database.",
+    "cloud_test_database": "Retained with existing schema and zero tickets before Gateway startup; no deletion authorized.",
+    "frozen_evidence": "No overwrite by targeted creation task.",
+    "event_time": "2026-09-15 11:46:41",
+    "event_epoch_ms": "1789444001680"
+  },
+  "gitignore": {
+    "bytes_sha256": "0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092",
+    "modified_by_task": false
+  },
+  "browser_limits": [
+    "Actual Edge desktop/mobile widths, multi-tab, actual history back and a synthetic persisted pageshow branch tested; no claim that Edge actually selected BFCache for that navigation."
+  ],
+  "runbook": "docs/runbooks/yixiaoxiu-member-ticket-entry.md",
+  "failure_history": "evidence/p2-g2-yxx-entry-mapping-v1-failure-history.json",
+  "stop_line": "Targeted creation code verified; separate current run evidence records startup and actual ticket results. Member readonly runtime not yet deployed. Full P2-G2-LIVE/P2-008 remain stopped.",
+  "event_time": "2026-09-15 11:46:41",
+  "event_epoch_ms": "1789444001681",
+  "authorization_commit_role": "HISTORICAL_PR8_MEMBER_ENTRY_AUTHORIZATION",
+  "mapping_repair": {
+    "status": "VERIFIED",
+    "mode": "VERIFIED_DELEGATED_MAPPING",
+    "readonly_profile_only": true,
+    "full_service_loop_mapping_supported": false,
+    "maximum_members": 32,
+    "provider_deadline_ms": 5000,
+    "response_limit_bytes": 65536,
+    "current_live_result": "NOT_RUN",
+    "identity_namespace_live_verified_semantics": "Raw same-namespace remains false; official converted correspondence is separately verified, not relabeled as raw equality."
+  },
+  "targeted_creation": {
+    "status": "LOCAL_VERIFIED",
+    "profile": "YXX_TARGETED_TICKET_CREATION",
+    "maximum_tickets": 4,
+    "maximum_inflight": 4,
+    "maximum_inbox": 16,
+    "maximum_window_ms": 1800000,
+    "real_sends": 0,
+    "live_result": "NOT_STARTED_AT_REPORT_TIME",
+    "task": "tasks/P2-G2_yixiaoxiu_targeted_ticket_creation.md"
+  }
+}

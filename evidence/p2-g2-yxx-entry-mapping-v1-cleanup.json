@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9",
+  "isolated_test_cleanup": "Existing fixtures close owned pools and drop owned synthetic databases; full TAP is authoritative.",
+  "retained": "Full TAP, prior failed TAP, private source evidence and previous live probes remain; no global Temp or frozen history cleanup.",
+  "real_runtime_changes_by_repair": false,
+  "event_time": "2026-09-15 10:53:21",
+  "event_epoch_ms": "1789440801646"
+}

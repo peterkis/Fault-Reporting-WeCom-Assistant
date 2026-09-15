@@ -1,0 +1,4485 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9",
+  "tap_sha256": "9d9dd3cddd82c431a3b6df3c72acb897d305048c5caedb5e476192c5da7c9cb3",
+  "source_execution_audit_sha256": "8582c3cf37fa8d26cb17a163b9d71722a2ae636332f082b1d12b00a44fc0a662",
+  "source_and_adjudication_hashes": {
+    "tests/fixtures/p2-015/rule-first-safe-route-gold.v1.jsonl": "80bf2c78ce6127a320571a72502da07fd0bc6a856e8bd57078084fbe45a39e03",
+    "tests/fixtures/p2-007/hospital-it-evaluation-corpus.v1.jsonl": "1bc5fbedb1602dfbd014ec690557591f0de7993c8c23ab2ee363b75768f2d5ed",
+    "tests/fixtures/p2-007/hospital-it-multichannel-evaluation-corpus.v1.jsonl": "284b7262a14ef32e5ffe292d899b5379fe63311f4f28b262ae4725d424b4cecc",
+    "tests/fixtures/p2-007/multichannel_decision_cases.v1.2.jsonl": "5f6d5395b944f8539d79d8b7d591eac4cb9f57bc09ea819fdfbdd36a37416cf5",
+    "tests/fixtures/p2-g2/multichannel-adjudications.v1.json": "221a990202a41ac7b2204c18f63b3bbbf934121f007bd814b6a1ef18031d55d7",
+    "tests/fixtures/p2-g2/gold-adjudications.v1.jsonl": "b59092c6f13e887ccdd697a7a75782bf1c2d718e8a67433ccda0b34d4370d15a",
+    "tests/fixtures/p2-g2/mechanism-adjudications.v1.json": "93fbf9bd361ae90daa53e651ef2e8f55ee2933fd24850d258dd77943c0147ed3"
+  },
+  "scope": "P2-G2 ASSEMBLY preparation; synthetic/local real PostgreSQL tests; no live acceptance or Gate approval.",
+  "measurement_method": [
+    "Measured enums and counts come only from matching source-case JSON diagnostics in SHA-bound passing TAP blocks; expected outputs and source assertions do not substitute for measurements.",
+    "One natural source scenario is one denominator unit. Mechanism and other cases do not count toward recognition metrics.",
+    "Single-Reporter multi-turn classification uses the last chronological logged decision. Multi-Reporter and mixed human-context scenarios are excluded from single-enum confusion matrices.",
+    "Singleton expectations contribute recall and confusion. Set-valued expectations contribute separate set admissibility. Original-label agreement remains separate from adjudicated metrics.",
+    "Review and automatic Ticket rates count scenarios with positive logged normal-pipeline database increments or complete scenario counts; duplicate proofs are not summed. A Ticket action alone may reuse an existing Ticket and does not prove creation.",
+    "Ticket creation and Review enqueue may coexist. Missing count diagnostics remain unknown; complete 122-case rates are not claimed."
+  ],
+  "population": {
+    "original_cases": 202,
+    "natural_input_cases": 122,
+    "mechanism_or_other_cases": 80,
+    "normal_execution_test_coverage_percent": 100,
+    "coverage_is_accuracy": false,
+    "classification_comparable_cases": 106,
+    "classification_excluded_cases": [
+      {
+        "source_case_id": "P2-007-C030",
+        "reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM"
+      },
+      {
+        "source_case_id": "P2-007-C031",
+        "reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM"
+      },
+      {
+        "source_case_id": "P2-007-C044",
+        "reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM"
+      },
+      {
+        "source_case_id": "P2-007-C054",
+        "reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM"
+      },
+      {
+        "source_case_id": "P2-007-X005",
+        "reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC"
+      },
+      {
+        "source_case_id": "P2-007-X006",
+        "reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC"
+      },
+      {
+        "source_case_id": "P2-007-X008",
+        "reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC"
+      },
+      {
+        "source_case_id": "P2-007-X012",
+        "reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC"
+      },
+      {
+        "source_case_id": "P2-007-X020",
+        "reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC"
+      },
+      {
+        "source_case_id": "P2-007-X021",
+        "reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC"
+      },
+      {
+        "source_case_id": "P2-007-X029",
+        "reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM"
+      },
+      {
+        "source_case_id": "P2-007-X030",
+        "reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM"
+      },
+      {
+        "source_case_id": "P2-007-X031",
+        "reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM"
+      },
+      {
+        "source_case_id": "P2-007-X032",
+        "reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM"
+      },
+      {
+        "source_case_id": "P2-007-X034",
+        "reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM"
+      },
+      {
+        "source_case_id": "P2-007-X036",
+        "reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM"
+      }
+    ],
+    "mechanism_excluded_case_ids": [
+      "P2-007-C034",
+      "P2-007-C090",
+      "P2-007-X022",
+      "P2-007-X023",
+      "P2-007-X024",
+      "P2-007-X025",
+      "P2-007-X026",
+      "P2-007-X027",
+      "P2-007-X028",
+      "P2-007-X033",
+      "P2-007-X037",
+      "P2-007-X038",
+      "P2-007-X039",
+      "P2-007-X040",
+      "P2-007-X041",
+      "P2-007-X042",
+      "D12-001",
+      "D12-002",
+      "D12-003",
+      "D12-004",
+      "D12-005",
+      "D12-006",
+      "D12-007",
+      "D12-008",
+      "D12-009",
+      "D12-010",
+      "D12-011",
+      "D12-012",
+      "D12-013",
+      "D12-014",
+      "D12-015",
+      "D12-016",
+      "D12-017",
+      "D12-018",
+      "D12-019",
+      "D12-020",
+      "D12-021",
+      "D12-022",
+      "D12-023",
+      "D12-024",
+      "D12-025",
+      "D12-026",
+      "D12-027",
+      "D12-028",
+      "D12-029",
+      "D12-030",
+      "D12-031",
+      "D12-032",
+      "D12-033",
+      "D12-034",
+      "D12-035",
+      "D12-036",
+      "D12-037",
+      "D12-038",
+      "D12-039",
+      "D12-040",
+      "D12-041",
+      "D12-042",
+      "D12-043",
+      "D12-044",
+      "D12-045",
+      "D12-046",
+      "D12-047",
+      "D12-048",
+      "D12-049",
+      "D12-050",
+      "D12-051",
+      "D12-052",
+      "D12-053",
+      "D12-054",
+      "D12-055",
+      "D12-056",
+      "D12-057",
+      "D12-058",
+      "D12-059",
+      "D12-060",
+      "D12-061",
+      "D12-062",
+      "D12-063",
+      "D12-064"
+    ]
+  },
+  "original_reference_label_agreement": {
+    "meaning": "Frozen-label agreement, not independently adjudicated recognition accuracy.",
+    "denominator": 106,
+    "matching_cases": 59,
+    "agreement_percent": 55.6604,
+    "confusion_matrix": [
+      {
+        "expected_result_code": "BUSINESS_CONSULTATION",
+        "expected_cases_in_122": 6,
+        "measured_denominator": 6,
+        "true_positive": 5,
+        "recall_percent": 83.3333,
+        "predicted_counts": {
+          "ACKNOWLEDGEMENT": 0,
+          "BUSINESS_CONSULTATION": 5,
+          "INCIDENT_REVIEW_CANDIDATE": 0,
+          "MANUAL_REVIEW_REQUIRED": 0,
+          "NEEDS_DESCRIPTION": 1,
+          "OUT_OF_SCOPE": 0,
+          "STATUS_QUERY": 0,
+          "TICKET_ELIGIBLE": 0
+        },
+        "excluded_case_ids": []
+      },
+      {
+        "expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+        "expected_cases_in_122": 22,
+        "measured_denominator": 15,
+        "true_positive": 2,
+        "recall_percent": 13.3333,
+        "predicted_counts": {
+          "ACKNOWLEDGEMENT": 0,
+          "BUSINESS_CONSULTATION": 0,
+          "INCIDENT_REVIEW_CANDIDATE": 2,
+          "MANUAL_REVIEW_REQUIRED": 2,
+          "NEEDS_DESCRIPTION": 1,
+          "OUT_OF_SCOPE": 0,
+          "STATUS_QUERY": 0,
+          "TICKET_ELIGIBLE": 10
+        },
+        "excluded_case_ids": [
+          "P2-007-C044",
+          "P2-007-X029",
+          "P2-007-X030",
+          "P2-007-X031",
+          "P2-007-X032",
+          "P2-007-X034",
+          "P2-007-X036"
+        ]
+      },
+      {
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "expected_cases_in_122": 16,
+        "measured_denominator": 13,
+        "true_positive": 2,
+        "recall_percent": 15.3846,
+        "predicted_counts": {
+          "ACKNOWLEDGEMENT": 1,
+          "BUSINESS_CONSULTATION": 0,
+          "INCIDENT_REVIEW_CANDIDATE": 0,
+          "MANUAL_REVIEW_REQUIRED": 2,
+          "NEEDS_DESCRIPTION": 1,
+          "OUT_OF_SCOPE": 0,
+          "STATUS_QUERY": 0,
+          "TICKET_ELIGIBLE": 9
+        },
+        "excluded_case_ids": [
+          "P2-007-X012",
+          "P2-007-X020",
+          "P2-007-X021"
+        ]
+      },
+      {
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "expected_cases_in_122": 10,
+        "measured_denominator": 7,
+        "true_positive": 3,
+        "recall_percent": 42.8571,
+        "predicted_counts": {
+          "ACKNOWLEDGEMENT": 0,
+          "BUSINESS_CONSULTATION": 0,
+          "INCIDENT_REVIEW_CANDIDATE": 0,
+          "MANUAL_REVIEW_REQUIRED": 0,
+          "NEEDS_DESCRIPTION": 3,
+          "OUT_OF_SCOPE": 0,
+          "STATUS_QUERY": 0,
+          "TICKET_ELIGIBLE": 4
+        },
+        "excluded_case_ids": [
+          "P2-007-X005",
+          "P2-007-X006",
+          "P2-007-X008"
+        ]
+      },
+      {
+        "expected_result_code": "OUT_OF_SCOPE",
+        "expected_cases_in_122": 3,
+        "measured_denominator": 3,
+        "true_positive": 3,
+        "recall_percent": 100,
+        "predicted_counts": {
+          "ACKNOWLEDGEMENT": 0,
+          "BUSINESS_CONSULTATION": 0,
+          "INCIDENT_REVIEW_CANDIDATE": 0,
+          "MANUAL_REVIEW_REQUIRED": 0,
+          "NEEDS_DESCRIPTION": 0,
+          "OUT_OF_SCOPE": 3,
+          "STATUS_QUERY": 0,
+          "TICKET_ELIGIBLE": 0
+        },
+        "excluded_case_ids": []
+      },
+      {
+        "expected_result_code": "RELATED_FOLLOW_UP",
+        "expected_cases_in_122": 2,
+        "measured_denominator": 2,
+        "true_positive": 0,
+        "recall_percent": 0,
+        "predicted_counts": {
+          "ACKNOWLEDGEMENT": 2,
+          "BUSINESS_CONSULTATION": 0,
+          "INCIDENT_REVIEW_CANDIDATE": 0,
+          "MANUAL_REVIEW_REQUIRED": 0,
+          "NEEDS_DESCRIPTION": 0,
+          "OUT_OF_SCOPE": 0,
+          "STATUS_QUERY": 0,
+          "TICKET_ELIGIBLE": 0
+        },
+        "excluded_case_ids": []
+      },
+      {
+        "expected_result_code": "SERVICE_REQUEST",
+        "expected_cases_in_122": 1,
+        "measured_denominator": 1,
+        "true_positive": 0,
+        "recall_percent": 0,
+        "predicted_counts": {
+          "ACKNOWLEDGEMENT": 0,
+          "BUSINESS_CONSULTATION": 0,
+          "INCIDENT_REVIEW_CANDIDATE": 0,
+          "MANUAL_REVIEW_REQUIRED": 0,
+          "NEEDS_DESCRIPTION": 0,
+          "OUT_OF_SCOPE": 0,
+          "STATUS_QUERY": 0,
+          "TICKET_ELIGIBLE": 1
+        },
+        "excluded_case_ids": []
+      },
+      {
+        "expected_result_code": "STATUS_QUERY",
+        "expected_cases_in_122": 1,
+        "measured_denominator": 1,
+        "true_positive": 1,
+        "recall_percent": 100,
+        "predicted_counts": {
+          "ACKNOWLEDGEMENT": 0,
+          "BUSINESS_CONSULTATION": 0,
+          "INCIDENT_REVIEW_CANDIDATE": 0,
+          "MANUAL_REVIEW_REQUIRED": 0,
+          "NEEDS_DESCRIPTION": 0,
+          "OUT_OF_SCOPE": 0,
+          "STATUS_QUERY": 1,
+          "TICKET_ELIGIBLE": 0
+        },
+        "excluded_case_ids": []
+      },
+      {
+        "expected_result_code": "TICKET_ELIGIBLE",
+        "expected_cases_in_122": 61,
+        "measured_denominator": 58,
+        "true_positive": 43,
+        "recall_percent": 74.1379,
+        "predicted_counts": {
+          "ACKNOWLEDGEMENT": 0,
+          "BUSINESS_CONSULTATION": 2,
+          "INCIDENT_REVIEW_CANDIDATE": 0,
+          "MANUAL_REVIEW_REQUIRED": 12,
+          "NEEDS_DESCRIPTION": 1,
+          "OUT_OF_SCOPE": 0,
+          "STATUS_QUERY": 0,
+          "TICKET_ELIGIBLE": 43
+        },
+        "excluded_case_ids": [
+          "P2-007-C030",
+          "P2-007-C031",
+          "P2-007-C054"
+        ]
+      }
+    ],
+    "mismatches": [
+      {
+        "source_case_id": "P2-007-C001",
+        "expected": "SERVICE_REQUEST",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C023",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "NEEDS_DESCRIPTION"
+      },
+      {
+        "source_case_id": "P2-007-C036",
+        "expected": "BUSINESS_CONSULTATION",
+        "actual": "NEEDS_DESCRIPTION"
+      },
+      {
+        "source_case_id": "P2-007-C037",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C038",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C039",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C040",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C042",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C043",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C045",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C046",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C047",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "NEEDS_DESCRIPTION"
+      },
+      {
+        "source_case_id": "P2-007-C051",
+        "expected": "RELATED_FOLLOW_UP",
+        "actual": "ACKNOWLEDGEMENT"
+      },
+      {
+        "source_case_id": "P2-007-C053",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "NEEDS_DESCRIPTION"
+      },
+      {
+        "source_case_id": "P2-007-C056",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C067",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-C069",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C070",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "BUSINESS_CONSULTATION"
+      },
+      {
+        "source_case_id": "P2-007-C072",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "BUSINESS_CONSULTATION"
+      },
+      {
+        "source_case_id": "P2-007-C073",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C074",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C075",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C076",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C077",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C078",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C079",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C080",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C082",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C083",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C085",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C087",
+        "expected": "TICKET_ELIGIBLE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      },
+      {
+        "source_case_id": "P2-007-C093",
+        "expected": "RELATED_FOLLOW_UP",
+        "actual": "ACKNOWLEDGEMENT"
+      },
+      {
+        "source_case_id": "P2-007-C096",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "ACKNOWLEDGEMENT"
+      },
+      {
+        "source_case_id": "P2-007-X001",
+        "expected": "NEEDS_DESCRIPTION",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X003",
+        "expected": "NEEDS_DESCRIPTION",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X004",
+        "expected": "NEEDS_DESCRIPTION",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X007",
+        "expected": "NEEDS_DESCRIPTION",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X009",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X010",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X013",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X014",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X015",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X016",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X017",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X018",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X019",
+        "expected": "MANUAL_REVIEW_REQUIRED",
+        "actual": "TICKET_ELIGIBLE"
+      },
+      {
+        "source_case_id": "P2-007-X035",
+        "expected": "INCIDENT_REVIEW_CANDIDATE",
+        "actual": "MANUAL_REVIEW_REQUIRED"
+      }
+    ],
+    "excluded_case_ids": [
+      "P2-007-C030",
+      "P2-007-C031",
+      "P2-007-C044",
+      "P2-007-C054",
+      "P2-007-X005",
+      "P2-007-X006",
+      "P2-007-X008",
+      "P2-007-X012",
+      "P2-007-X020",
+      "P2-007-X021",
+      "P2-007-X029",
+      "P2-007-X030",
+      "P2-007-X031",
+      "P2-007-X032",
+      "P2-007-X034",
+      "P2-007-X036"
+    ]
+  },
+  "adjudicated_singleton_classification": {
+    "meaning": "Recall against independently adjudicated singleton expectations on measured comparable subset.",
+    "denominator": 71,
+    "matching_cases": 71,
+    "agreement_percent": 100,
+    "confusion_matrix": [
+      {
+        "expected_result_code": "MANUAL_REVIEW_REQUIRED",
+        "expected_cases_in_122": 17,
+        "measured_denominator": 16,
+        "true_positive": 16,
+        "recall_percent": 100,
+        "predicted_counts": {
+          "MANUAL_REVIEW_REQUIRED": 16,
+          "NEEDS_DESCRIPTION": 0,
+          "OUT_OF_SCOPE": 0,
+          "TICKET_ELIGIBLE": 0
+        },
+        "excluded_case_ids": [
+          "P2-007-X006"
+        ]
+      },
+      {
+        "expected_result_code": "NEEDS_DESCRIPTION",
+        "expected_cases_in_122": 1,
+        "measured_denominator": 1,
+        "true_positive": 1,
+        "recall_percent": 100,
+        "predicted_counts": {
+          "MANUAL_REVIEW_REQUIRED": 0,
+          "NEEDS_DESCRIPTION": 1,
+          "OUT_OF_SCOPE": 0,
+          "TICKET_ELIGIBLE": 0
+        },
+        "excluded_case_ids": []
+      },
+      {
+        "expected_result_code": "OUT_OF_SCOPE",
+        "expected_cases_in_122": 3,
+        "measured_denominator": 3,
+        "true_positive": 3,
+        "recall_percent": 100,
+        "predicted_counts": {
+          "MANUAL_REVIEW_REQUIRED": 0,
+          "NEEDS_DESCRIPTION": 0,
+          "OUT_OF_SCOPE": 3,
+          "TICKET_ELIGIBLE": 0
+        },
+        "excluded_case_ids": []
+      },
+      {
+        "expected_result_code": "TICKET_ELIGIBLE",
+        "expected_cases_in_122": 54,
+        "measured_denominator": 51,
+        "true_positive": 51,
+        "recall_percent": 100,
+        "predicted_counts": {
+          "MANUAL_REVIEW_REQUIRED": 0,
+          "NEEDS_DESCRIPTION": 0,
+          "OUT_OF_SCOPE": 0,
+          "TICKET_ELIGIBLE": 51
+        },
+        "excluded_case_ids": [
+          "P2-007-X021",
+          "P2-007-X029",
+          "P2-007-X031"
+        ]
+      }
+    ],
+    "mismatches": [],
+    "excluded_case_ids": [
+      "P2-007-C021",
+      "P2-007-C022",
+      "P2-007-C023",
+      "P2-007-C024",
+      "P2-007-C025",
+      "P2-007-C026",
+      "P2-007-C027",
+      "P2-007-C028",
+      "P2-007-C029",
+      "P2-007-C030",
+      "P2-007-C031",
+      "P2-007-C032",
+      "P2-007-C033",
+      "P2-007-C035",
+      "P2-007-C036",
+      "P2-007-C041",
+      "P2-007-C042",
+      "P2-007-C043",
+      "P2-007-C044",
+      "P2-007-C047",
+      "P2-007-C048",
+      "P2-007-C051",
+      "P2-007-C053",
+      "P2-007-C054",
+      "P2-007-C056",
+      "P2-007-C065",
+      "P2-007-C066",
+      "P2-007-C067",
+      "P2-007-C068",
+      "P2-007-C070",
+      "P2-007-C071",
+      "P2-007-C072",
+      "P2-007-C089",
+      "P2-007-C091",
+      "P2-007-C093",
+      "P2-007-C096",
+      "P2-007-X003",
+      "P2-007-X005",
+      "P2-007-X006",
+      "P2-007-X008",
+      "P2-007-X009",
+      "P2-007-X010",
+      "P2-007-X012",
+      "P2-007-X020",
+      "P2-007-X021",
+      "P2-007-X029",
+      "P2-007-X030",
+      "P2-007-X031",
+      "P2-007-X032",
+      "P2-007-X034",
+      "P2-007-X036"
+    ]
+  },
+  "adjudicated_set_admissibility": {
+    "denominator": 34,
+    "matched": 34,
+    "percent": 100,
+    "meaning": "Membership in pre-adjudicated acceptable sets, not singleton accuracy.",
+    "cases": [
+      {
+        "source_case_id": "P2-007-C021",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "RELATED_FOLLOW_UP"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C022",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "RELATED_FOLLOW_UP"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C023",
+        "acceptable_results": [
+          "NEEDS_DESCRIPTION",
+          "BUSINESS_CONSULTATION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "NEEDS_DESCRIPTION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C024",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "RELATED_FOLLOW_UP"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C025",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "RELATED_FOLLOW_UP"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C026",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "RELATED_FOLLOW_UP"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C027",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "RELATED_FOLLOW_UP"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C028",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "RELATED_FOLLOW_UP"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C032",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "RELATED_FOLLOW_UP"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C033",
+        "acceptable_results": [
+          "RELATED_FOLLOW_UP",
+          "ACKNOWLEDGEMENT",
+          "TICKET_ELIGIBLE"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C035",
+        "acceptable_results": [
+          "NEEDS_DESCRIPTION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "NEEDS_DESCRIPTION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C036",
+        "acceptable_results": [
+          "NEEDS_DESCRIPTION",
+          "BUSINESS_CONSULTATION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "NEEDS_DESCRIPTION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C041",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "INCIDENT_REVIEW_CANDIDATE"
+        ],
+        "actual": "INCIDENT_REVIEW_CANDIDATE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C042",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "INCIDENT_REVIEW_CANDIDATE"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C043",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "INCIDENT_REVIEW_CANDIDATE"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C047",
+        "acceptable_results": [
+          "NEEDS_DESCRIPTION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "NEEDS_DESCRIPTION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C048",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "RELATED_FOLLOW_UP",
+          "INCIDENT_REVIEW_CANDIDATE"
+        ],
+        "actual": "INCIDENT_REVIEW_CANDIDATE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C051",
+        "acceptable_results": [
+          "ACKNOWLEDGEMENT",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "ACKNOWLEDGEMENT",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C053",
+        "acceptable_results": [
+          "NEEDS_DESCRIPTION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "NEEDS_DESCRIPTION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C056",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "INCIDENT_REVIEW_CANDIDATE"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C065",
+        "acceptable_results": [
+          "BUSINESS_CONSULTATION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "BUSINESS_CONSULTATION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C066",
+        "acceptable_results": [
+          "BUSINESS_CONSULTATION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "BUSINESS_CONSULTATION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C067",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "INCIDENT_REVIEW_CANDIDATE"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C068",
+        "acceptable_results": [
+          "BUSINESS_CONSULTATION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "BUSINESS_CONSULTATION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C070",
+        "acceptable_results": [
+          "BUSINESS_CONSULTATION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "BUSINESS_CONSULTATION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C071",
+        "acceptable_results": [
+          "BUSINESS_CONSULTATION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "BUSINESS_CONSULTATION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C072",
+        "acceptable_results": [
+          "BUSINESS_CONSULTATION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "BUSINESS_CONSULTATION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C089",
+        "acceptable_results": [
+          "BUSINESS_CONSULTATION",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "BUSINESS_CONSULTATION",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C091",
+        "acceptable_results": [
+          "STATUS_QUERY",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "STATUS_QUERY",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C093",
+        "acceptable_results": [
+          "ACKNOWLEDGEMENT",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "ACKNOWLEDGEMENT",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-C096",
+        "acceptable_results": [
+          "ACKNOWLEDGEMENT",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "ACKNOWLEDGEMENT",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-X003",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-X009",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "RELATED_FOLLOW_UP"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      },
+      {
+        "source_case_id": "P2-007-X010",
+        "acceptable_results": [
+          "TICKET_ELIGIBLE",
+          "MANUAL_REVIEW_REQUIRED"
+        ],
+        "actual": "TICKET_ELIGIBLE",
+        "matched": true
+      }
+    ]
+  },
+  "manual_review_case_rate": {
+    "unit": "SOURCE_SCENARIO_WITH_AT_LEAST_ONE_NEW_DATABASE_ROW",
+    "numerator": 27,
+    "measured_denominator": 109,
+    "observed_percent": 24.7706,
+    "full_122_percent": null,
+    "full_denominator": 122,
+    "positive_case_ids": [
+      "P2-007-C041",
+      "P2-007-C048",
+      "P2-007-C065",
+      "P2-007-C066",
+      "P2-007-C068",
+      "P2-007-C069",
+      "P2-007-C070",
+      "P2-007-C071",
+      "P2-007-C072",
+      "P2-007-C073",
+      "P2-007-C074",
+      "P2-007-C075",
+      "P2-007-C076",
+      "P2-007-C077",
+      "P2-007-C078",
+      "P2-007-C079",
+      "P2-007-C080",
+      "P2-007-C082",
+      "P2-007-C083",
+      "P2-007-C085",
+      "P2-007-C087",
+      "P2-007-C089",
+      "P2-007-C091",
+      "P2-007-C092",
+      "P2-007-X011",
+      "P2-007-X034",
+      "P2-007-X035"
+    ],
+    "excluded_case_ids": [
+      "P2-007-C029",
+      "P2-007-C030",
+      "P2-007-C031",
+      "P2-007-C044",
+      "P2-007-C054",
+      "P2-007-X005",
+      "P2-007-X006",
+      "P2-007-X008",
+      "P2-007-X012",
+      "P2-007-X020",
+      "P2-007-X021",
+      "P2-007-X030",
+      "P2-007-X036"
+    ],
+    "exclusion_reason": "Complete scenario Ticket and Review counts absent from current TAP diagnostics; missing is unknown, not zero."
+  },
+  "automatic_ticket_creation_case_rate": {
+    "unit": "SOURCE_SCENARIO_WITH_AT_LEAST_ONE_NEW_DATABASE_ROW",
+    "numerator": 88,
+    "measured_denominator": 109,
+    "observed_percent": 80.7339,
+    "full_122_percent": null,
+    "full_denominator": 122,
+    "positive_case_ids": [
+      "P2-007-C001",
+      "P2-007-C002",
+      "P2-007-C003",
+      "P2-007-C004",
+      "P2-007-C005",
+      "P2-007-C006",
+      "P2-007-C007",
+      "P2-007-C008",
+      "P2-007-C009",
+      "P2-007-C010",
+      "P2-007-C011",
+      "P2-007-C012",
+      "P2-007-C013",
+      "P2-007-C014",
+      "P2-007-C015",
+      "P2-007-C016",
+      "P2-007-C017",
+      "P2-007-C018",
+      "P2-007-C019",
+      "P2-007-C020",
+      "P2-007-C021",
+      "P2-007-C022",
+      "P2-007-C024",
+      "P2-007-C025",
+      "P2-007-C026",
+      "P2-007-C027",
+      "P2-007-C028",
+      "P2-007-C032",
+      "P2-007-C033",
+      "P2-007-C037",
+      "P2-007-C038",
+      "P2-007-C039",
+      "P2-007-C040",
+      "P2-007-C041",
+      "P2-007-C042",
+      "P2-007-C043",
+      "P2-007-C045",
+      "P2-007-C046",
+      "P2-007-C048",
+      "P2-007-C049",
+      "P2-007-C050",
+      "P2-007-C052",
+      "P2-007-C055",
+      "P2-007-C056",
+      "P2-007-C057",
+      "P2-007-C058",
+      "P2-007-C059",
+      "P2-007-C060",
+      "P2-007-C061",
+      "P2-007-C067",
+      "P2-007-C069",
+      "P2-007-C073",
+      "P2-007-C074",
+      "P2-007-C075",
+      "P2-007-C076",
+      "P2-007-C077",
+      "P2-007-C078",
+      "P2-007-C079",
+      "P2-007-C080",
+      "P2-007-C081",
+      "P2-007-C082",
+      "P2-007-C083",
+      "P2-007-C084",
+      "P2-007-C085",
+      "P2-007-C086",
+      "P2-007-C087",
+      "P2-007-C088",
+      "P2-007-C094",
+      "P2-007-C095",
+      "P2-007-X001",
+      "P2-007-X003",
+      "P2-007-X004",
+      "P2-007-X007",
+      "P2-007-X009",
+      "P2-007-X010",
+      "P2-007-X011",
+      "P2-007-X013",
+      "P2-007-X014",
+      "P2-007-X015",
+      "P2-007-X016",
+      "P2-007-X017",
+      "P2-007-X018",
+      "P2-007-X019",
+      "P2-007-X029",
+      "P2-007-X031",
+      "P2-007-X032",
+      "P2-007-X034",
+      "P2-007-X035"
+    ],
+    "excluded_case_ids": [
+      "P2-007-C029",
+      "P2-007-C030",
+      "P2-007-C031",
+      "P2-007-C044",
+      "P2-007-C054",
+      "P2-007-X005",
+      "P2-007-X006",
+      "P2-007-X008",
+      "P2-007-X012",
+      "P2-007-X020",
+      "P2-007-X021",
+      "P2-007-X030",
+      "P2-007-X036"
+    ],
+    "exclusion_reason": "Complete scenario Ticket and Review counts absent from current TAP diagnostics; missing is unknown, not zero."
+  },
+  "limitations": [
+    "Regression corpus is not random or held out; no population or production accuracy claim.",
+    "Original semantics are not universally passed. D005 and D023 retain source-audit limitations.",
+    "All source-audit timing, directory simulator, channel declaration and semantic adjudication limits continue to apply.",
+    "Measured-subset rates never impute missing cases; no full-122 classification accuracy is asserted."
+  ],
+  "cases": [
+    {
+      "source_case_id": "P2-007-C001",
+      "original_expected_result_code": "SERVICE_REQUEST",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "REFERENCE_LABEL_CONFLICT",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "27ecdfb4972fb0a3f9811f6cc4bb5196f89924327f83294f3b81f990c088ed8e",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "27ecdfb4972fb0a3f9811f6cc4bb5196f89924327f83294f3b81f990c088ed8e"
+      ],
+      "source_case_sha256": "cbbe3549898850838ff2009b26d4dfdbb4c28a5c806be3502a36d3a55a76bc73"
+    },
+    {
+      "source_case_id": "P2-007-C002",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "2f061c99ae9a2a60c6474d491057557a77c45c3b1c19587d56a8d336fa621402",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "2f061c99ae9a2a60c6474d491057557a77c45c3b1c19587d56a8d336fa621402"
+      ],
+      "source_case_sha256": "8f9e91b94aaa03d516bfb4d3e149184349f3d706237cb18427b5578ea5d62d0e"
+    },
+    {
+      "source_case_id": "P2-007-C003",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "16e05e040e6331d43289019d4afd0e51591260dadaf73cf5ef35c73c88cec259",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "16e05e040e6331d43289019d4afd0e51591260dadaf73cf5ef35c73c88cec259"
+      ],
+      "source_case_sha256": "2616f2ff1ee8456e799e1819e02b4137443c40edabe76200668d5b31182443d3"
+    },
+    {
+      "source_case_id": "P2-007-C004",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "1dde03ab0dde9750734b8ac22ff0e3b1cac3c3439ebc9a6c8b0e5a3f7805d34e",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "1dde03ab0dde9750734b8ac22ff0e3b1cac3c3439ebc9a6c8b0e5a3f7805d34e"
+      ],
+      "source_case_sha256": "577e8b293c0d9895890c1cfdcc3d286687606c9df6f133aeda49493d352c944c"
+    },
+    {
+      "source_case_id": "P2-007-C005",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "2ca1e6f8716114d8357a780dfba2a8db6047150fdc34f753b3f9347ceab70102",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "2ca1e6f8716114d8357a780dfba2a8db6047150fdc34f753b3f9347ceab70102"
+      ],
+      "source_case_sha256": "5a7a0f8a1be2a311f14649a5c5f6288244f43c1daf6c49639c9a116f651b1b5e"
+    },
+    {
+      "source_case_id": "P2-007-C006",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "aca35b18351d616341d24a158574a9880496d19a70f92dceb73c3a8e540a3ccc",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "aca35b18351d616341d24a158574a9880496d19a70f92dceb73c3a8e540a3ccc"
+      ],
+      "source_case_sha256": "413c4ada191d42e1c0029b2d3071755cee3c74bef7b90fb0b8bfed90aafbf0d8"
+    },
+    {
+      "source_case_id": "P2-007-C007",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "DETERMINISTIC_RECOGNITION_GAP",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "e16a6495a0df809cd3844725e58c6b14bcac262bc0c939ac7f1b3d1126224280",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "e16a6495a0df809cd3844725e58c6b14bcac262bc0c939ac7f1b3d1126224280"
+      ],
+      "source_case_sha256": "717886678804747c482750c4214d9d6c12abffb51adac4cd76ea1761832fa953"
+    },
+    {
+      "source_case_id": "P2-007-C008",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "50769a66d0958775dcca2b2f45507637dcad56d01960e10196d407279c7f5c3e",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "50769a66d0958775dcca2b2f45507637dcad56d01960e10196d407279c7f5c3e"
+      ],
+      "source_case_sha256": "b3228523b63bd481795c033fdd1a88d65fdb84adbaa886ddee4380d695fd918d"
+    },
+    {
+      "source_case_id": "P2-007-C009",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "1c343e0bcbe6fcff3bf3998cc4393679c360243f88f6eaec9d9d2771e8595c24",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "1c343e0bcbe6fcff3bf3998cc4393679c360243f88f6eaec9d9d2771e8595c24"
+      ],
+      "source_case_sha256": "bafd43863ec8d9c50e1160418d004ac71d7ce6e0f60c0defd936a43bdcaa9bfa"
+    },
+    {
+      "source_case_id": "P2-007-C010",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "d43eeb767a9cc82c15655c0eb8ac0e7a5f52419b8babd350528161d59d875b6c",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "d43eeb767a9cc82c15655c0eb8ac0e7a5f52419b8babd350528161d59d875b6c"
+      ],
+      "source_case_sha256": "53f472a9543393e9adcaee2dede0fc4cd982523eacbbfaeffd33dc3f6891cad0"
+    },
+    {
+      "source_case_id": "P2-007-C011",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "b8984f8e1153289f33ecb5ffe35def0b9dca2fd7e10321fdcb313c51227b05be",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "b8984f8e1153289f33ecb5ffe35def0b9dca2fd7e10321fdcb313c51227b05be"
+      ],
+      "source_case_sha256": "e85e595c12536b259a7d7829fb187e9ed1a05f593886627fdf41bfcc4a0eb25e"
+    },
+    {
+      "source_case_id": "P2-007-C012",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "c756f0bf0d0e6a0d2a0e885760bac7391926dc1116eea8197a3a56184c69793f",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "c756f0bf0d0e6a0d2a0e885760bac7391926dc1116eea8197a3a56184c69793f"
+      ],
+      "source_case_sha256": "31d517b469c4998d100ce64b81cabacc3ed431ab5660b4dace9ed59a40fa59d9"
+    },
+    {
+      "source_case_id": "P2-007-C013",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "0bda0427e4a28bc2b161206ad4cc18fc1d8085365308fafa80d9b0d44fe382e8",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "0bda0427e4a28bc2b161206ad4cc18fc1d8085365308fafa80d9b0d44fe382e8"
+      ],
+      "source_case_sha256": "70e390551c24c18e076bd72978944eef6c270367e784602f5f15f1de27b0dbf5"
+    },
+    {
+      "source_case_id": "P2-007-C014",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "e4165b25cd2aa38494916203d1ad2649941f4a445e7c1619594bcb7791c5a0c6",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "e4165b25cd2aa38494916203d1ad2649941f4a445e7c1619594bcb7791c5a0c6"
+      ],
+      "source_case_sha256": "263afc960a7299bbef69b593f67452e3ee89866952af7f39938d547356626958"
+    },
+    {
+      "source_case_id": "P2-007-C015",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "5e10436d10ce46c8bcf11677cedb0b1eabbdfc3d573e85c1c8e873f77c9949e6",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "5e10436d10ce46c8bcf11677cedb0b1eabbdfc3d573e85c1c8e873f77c9949e6"
+      ],
+      "source_case_sha256": "6fb26c44dee2bad0f3ad10611ee3e92c06e57a344c402f24ae055d6fe0e131cf"
+    },
+    {
+      "source_case_id": "P2-007-C016",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "71db679871260b7e09655905e01074f8c0f4628bc4e95f3ffb4b28b40746d19c",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "71db679871260b7e09655905e01074f8c0f4628bc4e95f3ffb4b28b40746d19c"
+      ],
+      "source_case_sha256": "ca124236cf7d6fa2bebf7bca06ac3ff41215aceaad3217083f13b0bbfd64693c"
+    },
+    {
+      "source_case_id": "P2-007-C017",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "8c2854d5f2ad8cbed9804412744c82d827293dbebdb094053491afc74b01d4ea",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "8c2854d5f2ad8cbed9804412744c82d827293dbebdb094053491afc74b01d4ea"
+      ],
+      "source_case_sha256": "289a0695fe70d2c13506be7e923886bfd1fe5d294ad6b72da5e34934c349c2fe"
+    },
+    {
+      "source_case_id": "P2-007-C018",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "9fff02ab995edee1a839f6b51b698ad933031d0a1aa7b133fe8209f10a549224",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "9fff02ab995edee1a839f6b51b698ad933031d0a1aa7b133fe8209f10a549224"
+      ],
+      "source_case_sha256": "efb019a3ab2b33ac975679c8eb96aa62d56403436d437839b103382b34fe003c"
+    },
+    {
+      "source_case_id": "P2-007-C019",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "4528dce4ae9cc0b5e2356a4cbd967d1d425085a32c09747d53d77056fc1010cd",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "4528dce4ae9cc0b5e2356a4cbd967d1d425085a32c09747d53d77056fc1010cd"
+      ],
+      "source_case_sha256": "189f3c12a35dd3e0a13f62ed6eb0a4ce85d6f930787bc99a188eab3028b96723"
+    },
+    {
+      "source_case_id": "P2-007-C020",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "b930427f0d71574c0236730c83f827028b756621c3510b3ea6a8d61dfa013735",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "b930427f0d71574c0236730c83f827028b756621c3510b3ea6a8d61dfa013735"
+      ],
+      "source_case_sha256": "ef641cbfed2813cf722b06f421451a2c111102c017deccae9b75d39b3bb627ad"
+    },
+    {
+      "source_case_id": "P2-007-C021",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "6cdbc80d2af0aa76039484537a05914000720424335624a4b4dc22a4dfbdb0b3",
+          "codes": [
+            "NEEDS_DESCRIPTION",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "6cdbc80d2af0aa76039484537a05914000720424335624a4b4dc22a4dfbdb0b3"
+      ],
+      "source_case_sha256": "377d7b243292510cd961529cdfe685c738a64ea57d3dc01d6ffdf6a79b26a254"
+    },
+    {
+      "source_case_id": "P2-007-C022",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "ae05f66a3580bca7dd25364806d209dbf7d86b216c44353645e0a34cc2a754a3",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "ae05f66a3580bca7dd25364806d209dbf7d86b216c44353645e0a34cc2a754a3"
+      ],
+      "source_case_sha256": "724bf48d89606aa4aa6d178e39bd9c6b47654775fe75f9567ee14c9384a052a9"
+    },
+    {
+      "source_case_id": "P2-007-C023",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "NEEDS_DESCRIPTION",
+        "BUSINESS_CONSULTATION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "NEEDS_DESCRIPTION",
+      "logged_result_sequences": [
+        {
+          "proof": "b51345bfa16ed6eaae6652e4061df4af15f96581c3d26ee3fb1bc3c5fb688c14",
+          "codes": [
+            "NEEDS_DESCRIPTION",
+            "NEEDS_DESCRIPTION",
+            "NEEDS_DESCRIPTION",
+            "NEEDS_DESCRIPTION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "b51345bfa16ed6eaae6652e4061df4af15f96581c3d26ee3fb1bc3c5fb688c14"
+      ],
+      "source_case_sha256": "b4e423ee1c13ce8f186e5335f4f3276b9fa7f110dba8ce0f4f6b6010085a97f1"
+    },
+    {
+      "source_case_id": "P2-007-C024",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "cc1033c981126b57a634936952fc3d3e740a46c9de857cb1fa27e0ee4f5838b0",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "cc1033c981126b57a634936952fc3d3e740a46c9de857cb1fa27e0ee4f5838b0"
+      ],
+      "source_case_sha256": "463c5658ee6b7911a7ada466ebec2122708539492b5f38504a9dd9cd945e975b"
+    },
+    {
+      "source_case_id": "P2-007-C025",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "e5eec734a5658c2a87776402b10c9905fd0e4439390901b0ef895cf465ceb05d",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "e5eec734a5658c2a87776402b10c9905fd0e4439390901b0ef895cf465ceb05d"
+      ],
+      "source_case_sha256": "43e6e99388aac0904a6efe9279bdbe2fe4edaf940cd76a4ba35695553d704cfe"
+    },
+    {
+      "source_case_id": "P2-007-C026",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "a63d7673da2444d6e7c1f65906b1b87c85a7304a1bebf8b2f546c4f69b96003d",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "a63d7673da2444d6e7c1f65906b1b87c85a7304a1bebf8b2f546c4f69b96003d"
+      ],
+      "source_case_sha256": "932f4bcfda330991be6b4fe635e2d67fc9916f475cbb8ef5ce685713df6dee80"
+    },
+    {
+      "source_case_id": "P2-007-C027",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "d406f7fe9c573ff265b63671b3ad4e6f9afd635e1d5efa29730b6fbc7b95f3d7",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "d406f7fe9c573ff265b63671b3ad4e6f9afd635e1d5efa29730b6fbc7b95f3d7"
+      ],
+      "source_case_sha256": "acf058dc1e1611b13f3c95f7cca8b509ceba10f3e180e2ed72858d187f653140"
+    },
+    {
+      "source_case_id": "P2-007-C028",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "fd84f344c5fff0492fd323ff9710cb5331ce351dbdf12ba5292b947981499ba5",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "fd84f344c5fff0492fd323ff9710cb5331ce351dbdf12ba5292b947981499ba5"
+      ],
+      "source_case_sha256": "50de7a8844657e73d394d08322ee0b63bdebd40174aebbc11ec68cc49558353a"
+    },
+    {
+      "source_case_id": "P2-007-C029",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "adjudicated_acceptable_results": [],
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "NEEDS_DESCRIPTION",
+      "logged_result_sequences": [
+        {
+          "proof": "9a6338f83bf8fd3188f8ca87f9bf870e2e58c036c5dadf665bfe17f066e3b6d9",
+          "codes": [
+            "NEEDS_DESCRIPTION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "1b0828776dbb95c78e763d2e95f6fd0d3b23deecc1d0f0c968a760f809918c63"
+    },
+    {
+      "source_case_id": "P2-007-C030",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [],
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "91d9b823f667cd3f0016bb4068637ad3439405fc2486b7d992cacba9f88a8700"
+    },
+    {
+      "source_case_id": "P2-007-C031",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [],
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "0e06064f99748fe4ae7feda978bbe11a9cf661441ef0955d52a575d1af42b345"
+    },
+    {
+      "source_case_id": "P2-007-C032",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "ff50667340627be2e2188957e6a9ae195391fd5453864059e819b64d95f7fb82",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "ff50667340627be2e2188957e6a9ae195391fd5453864059e819b64d95f7fb82"
+      ],
+      "source_case_sha256": "1b16ad4f7540bf62859a1c62157c4b1bf60616025f36caf608ea6603d2b6dd66"
+    },
+    {
+      "source_case_id": "P2-007-C033",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "RELATED_FOLLOW_UP",
+        "ACKNOWLEDGEMENT",
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "3c4070d5ec9ad29d79ca6f8e7be6af7be305eeee8d2634dce7c85a37bca82021",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "3c4070d5ec9ad29d79ca6f8e7be6af7be305eeee8d2634dce7c85a37bca82021"
+      ],
+      "source_case_sha256": "fb52c6702497e8fbb55a0dc4ce52e0390ca63654105ebc6e437d023ae8bc766a"
+    },
+    {
+      "source_case_id": "P2-007-C035",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "adjudicated_acceptable_results": [
+        "NEEDS_DESCRIPTION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "NEEDS_DESCRIPTION",
+      "logged_result_sequences": [
+        {
+          "proof": "2e4db049b0893a44c05f6a349efb0253686dbe121706d16733f6a408ec1ff53e",
+          "codes": [
+            "NEEDS_DESCRIPTION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "2e4db049b0893a44c05f6a349efb0253686dbe121706d16733f6a408ec1ff53e"
+      ],
+      "source_case_sha256": "fe3c78ea06de86d345be0cd9a04b8868d02338c9e2e177b3db23774d25f0df26"
+    },
+    {
+      "source_case_id": "P2-007-C036",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "adjudicated_acceptable_results": [
+        "NEEDS_DESCRIPTION",
+        "BUSINESS_CONSULTATION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "NEEDS_DESCRIPTION",
+      "logged_result_sequences": [
+        {
+          "proof": "b30f45dde2ea95ca7e61bdfcbd07786122dd44e66a3d5f5cbdb54ad83c007051",
+          "codes": [
+            "NEEDS_DESCRIPTION",
+            "NEEDS_DESCRIPTION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "b30f45dde2ea95ca7e61bdfcbd07786122dd44e66a3d5f5cbdb54ad83c007051"
+      ],
+      "source_case_sha256": "cbaa29f82042537914b5161f8ae6b10e0686757fd8b40c4ec03cd2e2c0ad514c"
+    },
+    {
+      "source_case_id": "P2-007-C037",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "6ac02f463b1668240e1597742027b35503cbe5e24396aace60c8a4cd5e02597b",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "6ac02f463b1668240e1597742027b35503cbe5e24396aace60c8a4cd5e02597b"
+      ],
+      "source_case_sha256": "355cfa53fef09ce8148d8ddddcfd9f49ff860be4f7ea8b286a70654a6ede0227"
+    },
+    {
+      "source_case_id": "P2-007-C038",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "933590b43d5b96c790dca01fdca8072e4464ea245c9d141d35d5c6a825486cb8",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "933590b43d5b96c790dca01fdca8072e4464ea245c9d141d35d5c6a825486cb8"
+      ],
+      "source_case_sha256": "f782a4dcb2f4605200aea99a79eda9a7c3ff44b8c11f1cd6bb02aea1950dd627"
+    },
+    {
+      "source_case_id": "P2-007-C039",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "e803a9fd2532da73336036120f803c1c34c75308d67f9dd45fa6a7a533442b72",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "e803a9fd2532da73336036120f803c1c34c75308d67f9dd45fa6a7a533442b72"
+      ],
+      "source_case_sha256": "7f5cd95d12700d2f3a75e808b35acc6bda15eb6b6e85c31af72a397933954fb0"
+    },
+    {
+      "source_case_id": "P2-007-C040",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "78fea488abbaa8e87194a803fb3bc99a3b8e05546f5e63c918bf2db27e21065d",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "78fea488abbaa8e87194a803fb3bc99a3b8e05546f5e63c918bf2db27e21065d"
+      ],
+      "source_case_sha256": "9df29d6a9057a3b2252e4f96d710e3bde567cb4f935be114b7d17023d1e45eba"
+    },
+    {
+      "source_case_id": "P2-007-C041",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "INCIDENT_REVIEW_CANDIDATE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "logged_result_sequences": [
+        {
+          "proof": "6209d36fdc7f243c1321b15433749747b2d9c712112d356de83c8ffc2dd47856",
+          "codes": [
+            "INCIDENT_REVIEW_CANDIDATE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "6209d36fdc7f243c1321b15433749747b2d9c712112d356de83c8ffc2dd47856"
+      ],
+      "source_case_sha256": "a1c01c43d8d4f34f70368fdd8249502579704ff5bc011820c280ee8cfce75f45"
+    },
+    {
+      "source_case_id": "P2-007-C042",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "INCIDENT_REVIEW_CANDIDATE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "a0fe382b9279a594a57e9fe0d431b72cbf2cfcf30e3daa9fbff48cbf7414937e",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "a0fe382b9279a594a57e9fe0d431b72cbf2cfcf30e3daa9fbff48cbf7414937e"
+      ],
+      "source_case_sha256": "ef4ad4ea52cbb34336bf197518ff1d199dd50696f0aa299b8eb409589702c25b"
+    },
+    {
+      "source_case_id": "P2-007-C043",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "INCIDENT_REVIEW_CANDIDATE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "71fbad6963a00f9ec5758cce8becf340fd82e9cecd1c117a5f0b1437d8809beb",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "71fbad6963a00f9ec5758cce8becf340fd82e9cecd1c117a5f0b1437d8809beb"
+      ],
+      "source_case_sha256": "b7e5f5c23f2fee860928d9f926df98c707af82166cb9da8f892bc486dffc62a1"
+    },
+    {
+      "source_case_id": "P2-007-C044",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [],
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [
+        {
+          "proof": "6f0c6692f7347bbf7245d1e16e4aa0cc264a093f09bd3c968b5b7ca2472cfbcb",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "cffd707d90a1a51fd38443c95c753bae845ba1ca0ecddfbac1cb6ce656184f05"
+    },
+    {
+      "source_case_id": "P2-007-C045",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "aee8391504c01ed72403e8e43485d520847d728b5780ed39a6e67f5814977a60",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "aee8391504c01ed72403e8e43485d520847d728b5780ed39a6e67f5814977a60"
+      ],
+      "source_case_sha256": "197468572101cebbd0915d5aafa6930a031c72e4073c4b7b5001f068dfec21ad"
+    },
+    {
+      "source_case_id": "P2-007-C046",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "06bcd0a8e52200bc3791af3f26e8a8e412b139e0405de7b522611ed398ac9182",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "06bcd0a8e52200bc3791af3f26e8a8e412b139e0405de7b522611ed398ac9182"
+      ],
+      "source_case_sha256": "f439522db3519b2653aba30f3767e2c5cf3d08c0c2f60e9277424d2ec7838bc1"
+    },
+    {
+      "source_case_id": "P2-007-C047",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "NEEDS_DESCRIPTION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "NEEDS_DESCRIPTION",
+      "logged_result_sequences": [
+        {
+          "proof": "26592cfd83c6e24db427cec8b2857e050ac744f0797424d5f4a77e5c582c3c7d",
+          "codes": [
+            "NEEDS_DESCRIPTION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "26592cfd83c6e24db427cec8b2857e050ac744f0797424d5f4a77e5c582c3c7d"
+      ],
+      "source_case_sha256": "316882db1cf2832bed5136dbde042a1ecf44686b9bf02c5f197b816745f2a00a"
+    },
+    {
+      "source_case_id": "P2-007-C048",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP",
+        "INCIDENT_REVIEW_CANDIDATE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "logged_result_sequences": [
+        {
+          "proof": "dccbf212dad6193e65912afeac29fbaa6b1d3a92d36d7d0d735f9b6b3bbd9040",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "INCIDENT_REVIEW_CANDIDATE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "dccbf212dad6193e65912afeac29fbaa6b1d3a92d36d7d0d735f9b6b3bbd9040"
+      ],
+      "source_case_sha256": "b218a17b386b58cd55b00838389f2d01f9732306f6b5363ea729f3b8ce01bf0a"
+    },
+    {
+      "source_case_id": "P2-007-C049",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "6d6a004d19ea262644c5fb51abead7512e24553ce4b13c8b2aa9424a0ae54755",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "6d6a004d19ea262644c5fb51abead7512e24553ce4b13c8b2aa9424a0ae54755"
+      ],
+      "source_case_sha256": "e9b9dab653011edc5aaa85bc165f2f392c447fb5a5ec2589e125c9c2479a581d"
+    },
+    {
+      "source_case_id": "P2-007-C050",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "97336292e68bb8a7301d6c20110f7c1724c4ad88e3e0ce3536c3b094f3c9f9a4",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "97336292e68bb8a7301d6c20110f7c1724c4ad88e3e0ce3536c3b094f3c9f9a4"
+      ],
+      "source_case_sha256": "6f2cad116f7b099d8cca902b6b2451f99aeaa8ae1544b1d52ce78c810ffceecd"
+    },
+    {
+      "source_case_id": "P2-007-C051",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "adjudicated_acceptable_results": [
+        "ACKNOWLEDGEMENT",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "ACKNOWLEDGEMENT",
+      "logged_result_sequences": [
+        {
+          "proof": "d8e734b2bf430c0d3f5a75fb329878674695cbe8449bf1a011300521f96f1c0a",
+          "codes": [
+            "ACKNOWLEDGEMENT"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "d8e734b2bf430c0d3f5a75fb329878674695cbe8449bf1a011300521f96f1c0a"
+      ],
+      "source_case_sha256": "b5d0207b40d6dc6d77fa84934918fcc8b6263d60cb02877378cd8b9dcc95e127"
+    },
+    {
+      "source_case_id": "P2-007-C052",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "11d71e6e0db56faef13c8f6cf786881c3c328c62f93102f35e055fa4310bdcfe",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "11d71e6e0db56faef13c8f6cf786881c3c328c62f93102f35e055fa4310bdcfe"
+      ],
+      "source_case_sha256": "15a289773ae09cdf1a7e5aaf8536202ccae69c6696762bdf3c836dcb6ea7aa14"
+    },
+    {
+      "source_case_id": "P2-007-C053",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "NEEDS_DESCRIPTION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "NEEDS_DESCRIPTION",
+      "logged_result_sequences": [
+        {
+          "proof": "114bb0893c0986fc06bcbe60f745438f2509972821396749b5293748fb00614e",
+          "codes": [
+            "NEEDS_DESCRIPTION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "114bb0893c0986fc06bcbe60f745438f2509972821396749b5293748fb00614e"
+      ],
+      "source_case_sha256": "7d3e12c705ac99f44250daf9a59a7065f4f2def0e9add478642e06f76a2eae67"
+    },
+    {
+      "source_case_id": "P2-007-C054",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [],
+      "adjudication": "CURRENT_CONTRACT_REQUIRES_SOURCE_REVIEW",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [
+        {
+          "proof": "9ae0f13d5d25c0f9c491a6892192230de959b82d97629272582f6e67459644e1",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "9ca174825491a5c23fc838bd35454708255e63ff8201f6e7bd38ed208995da64"
+    },
+    {
+      "source_case_id": "P2-007-C055",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "be83b27facc5c7a28903d25a0c8639340e4c075290521440c4839573d83631d4",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "be83b27facc5c7a28903d25a0c8639340e4c075290521440c4839573d83631d4"
+      ],
+      "source_case_sha256": "8a035b56682d3e81094605b781f3a0089735d2406d1f8998f1f4180b6530f6fa"
+    },
+    {
+      "source_case_id": "P2-007-C056",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "INCIDENT_REVIEW_CANDIDATE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "82c5a946168d402929a509bf72db75e0481851ecd3daa195284a04b3f1146363",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "82c5a946168d402929a509bf72db75e0481851ecd3daa195284a04b3f1146363"
+      ],
+      "source_case_sha256": "47e5a3c6d5a880453d3a3ee05133cff0075ba9a32dc20652711ff063b10ac912"
+    },
+    {
+      "source_case_id": "P2-007-C057",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "c145cbb707edec830956267f033dc61ad47af44519fbfefc526c7c553f12ae38",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "c145cbb707edec830956267f033dc61ad47af44519fbfefc526c7c553f12ae38"
+      ],
+      "source_case_sha256": "276ebfa66a7acbafee406ab7fc75aada71a7aaf4e46e877137d1ead0218b6c07"
+    },
+    {
+      "source_case_id": "P2-007-C058",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "94e469b2518458edbcdbe9e6bc5dca2efdcf4630c3b2daa030305355c9a81265",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "94e469b2518458edbcdbe9e6bc5dca2efdcf4630c3b2daa030305355c9a81265"
+      ],
+      "source_case_sha256": "95c01d69653aafbccb0563665a3ce2e0526df8368deefd1aff09e3e2a4f7fc03"
+    },
+    {
+      "source_case_id": "P2-007-C059",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "5d06a24b1bf4d4a4fd2647e8de8211c436e69307fb9e79d502f819a54e77e4fb",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "5d06a24b1bf4d4a4fd2647e8de8211c436e69307fb9e79d502f819a54e77e4fb"
+      ],
+      "source_case_sha256": "29d6d899cc99402a1c66ffc54c8b5e8eee7c66bef632ed7784065d818ffa2549"
+    },
+    {
+      "source_case_id": "P2-007-C060",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "b3a49092aaa2a9fcf3b531749ba9c331d2c1cf92ce78ddc4802cd966c7798ca8",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "b3a49092aaa2a9fcf3b531749ba9c331d2c1cf92ce78ddc4802cd966c7798ca8"
+      ],
+      "source_case_sha256": "31a5ec0b96785311016bb49eb0f6b58e83bf48a3cd955ca993aee5476bd80b8b"
+    },
+    {
+      "source_case_id": "P2-007-C061",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "2cbc3c47cdea35c4c3103d0aa464a871144433d6b08d7ace327c806ede3a89ad",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "2cbc3c47cdea35c4c3103d0aa464a871144433d6b08d7ace327c806ede3a89ad"
+      ],
+      "source_case_sha256": "242e085f4e87cefd5ccf4696426c2706b29970b949269d76903f922983f8f4f9"
+    },
+    {
+      "source_case_id": "P2-007-C062",
+      "original_expected_result_code": "OUT_OF_SCOPE",
+      "adjudicated_acceptable_results": [
+        "OUT_OF_SCOPE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "OUT_OF_SCOPE",
+      "logged_result_sequences": [
+        {
+          "proof": "15f4b1a4763335899dfa6f64e6323adf9a8f00519aa82114c75bf5d6fdaa1114",
+          "codes": [
+            "OUT_OF_SCOPE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "15f4b1a4763335899dfa6f64e6323adf9a8f00519aa82114c75bf5d6fdaa1114"
+      ],
+      "source_case_sha256": "fd6067e91b85c6fb6b216e01e4797602be0a807e11568938244b344b70498f66"
+    },
+    {
+      "source_case_id": "P2-007-C063",
+      "original_expected_result_code": "OUT_OF_SCOPE",
+      "adjudicated_acceptable_results": [
+        "OUT_OF_SCOPE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "OUT_OF_SCOPE",
+      "logged_result_sequences": [
+        {
+          "proof": "e16e85c35fcced6d21e60f154316b319b1cf885fb987c90e10876c8093bca5ca",
+          "codes": [
+            "OUT_OF_SCOPE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "e16e85c35fcced6d21e60f154316b319b1cf885fb987c90e10876c8093bca5ca"
+      ],
+      "source_case_sha256": "13c552d0b1363cca1443436eca5c3781a4f2e222e8428c12f3ba96dd52936604"
+    },
+    {
+      "source_case_id": "P2-007-C064",
+      "original_expected_result_code": "OUT_OF_SCOPE",
+      "adjudicated_acceptable_results": [
+        "OUT_OF_SCOPE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "OUT_OF_SCOPE",
+      "logged_result_sequences": [
+        {
+          "proof": "e7a54c0f9b990216b3aaeaf9f416ba71b4ec4673f9217e72b757ce0255fc7b2a",
+          "codes": [
+            "OUT_OF_SCOPE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "e7a54c0f9b990216b3aaeaf9f416ba71b4ec4673f9217e72b757ce0255fc7b2a"
+      ],
+      "source_case_sha256": "4c2a25de99bf1315e2947a0690c2d3e8292f59c6f61318bc7832bc709e4e301d"
+    },
+    {
+      "source_case_id": "P2-007-C065",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "adjudicated_acceptable_results": [
+        "BUSINESS_CONSULTATION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "BUSINESS_CONSULTATION",
+      "logged_result_sequences": [
+        {
+          "proof": "f77db9fec5c03a8966224445daf501e8c844e20883b0d72626b8a586991b7542",
+          "codes": [
+            "BUSINESS_CONSULTATION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "f77db9fec5c03a8966224445daf501e8c844e20883b0d72626b8a586991b7542"
+      ],
+      "source_case_sha256": "8d21ea25e5f773f976b8080997ecf6628f27e303328e669b3c29d4c1de751a3b"
+    },
+    {
+      "source_case_id": "P2-007-C066",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "adjudicated_acceptable_results": [
+        "BUSINESS_CONSULTATION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "BUSINESS_CONSULTATION",
+      "logged_result_sequences": [
+        {
+          "proof": "be2ce527e74c42fb2a80708cc3cb2641af7a352d298584ae44dfc327f337737e",
+          "codes": [
+            "BUSINESS_CONSULTATION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "be2ce527e74c42fb2a80708cc3cb2641af7a352d298584ae44dfc327f337737e"
+      ],
+      "source_case_sha256": "167d816f130a618558f2d18e69a10867d1880643f699042c4cb2da058fa82d43"
+    },
+    {
+      "source_case_id": "P2-007-C067",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "INCIDENT_REVIEW_CANDIDATE"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "1254b52e2d30ca7061c28e020161e1271dd9640611f0dd91d88a0b252549b1f0",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "1254b52e2d30ca7061c28e020161e1271dd9640611f0dd91d88a0b252549b1f0"
+      ],
+      "source_case_sha256": "8ff0dd4349fb537055214590701d27d95796aea5acf2878b4ad89a93e9505a76"
+    },
+    {
+      "source_case_id": "P2-007-C068",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "adjudicated_acceptable_results": [
+        "BUSINESS_CONSULTATION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "BUSINESS_CONSULTATION",
+      "logged_result_sequences": [
+        {
+          "proof": "97fd2c172e36902980b1c175a6e3e5d86c5f46d9e967031d457a31f11876675b",
+          "codes": [
+            "BUSINESS_CONSULTATION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "97fd2c172e36902980b1c175a6e3e5d86c5f46d9e967031d457a31f11876675b"
+      ],
+      "source_case_sha256": "e031787685eb991b38a93f254eceae7bb10f196e97b12e64c9cdfa88f9d8cbe9"
+    },
+    {
+      "source_case_id": "P2-007-C069",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "52bc31a07b6ce1fab08b95d8b8ac202d3d51b0f36e5ab9bc9ca47a5ab4a962ec",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "52bc31a07b6ce1fab08b95d8b8ac202d3d51b0f36e5ab9bc9ca47a5ab4a962ec"
+      ],
+      "source_case_sha256": "beadbc86a4ca22e2054f70561d5800866549714ea1f85e10eaa33363e7ac2e07"
+    },
+    {
+      "source_case_id": "P2-007-C070",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "BUSINESS_CONSULTATION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "BUSINESS_CONSULTATION",
+      "logged_result_sequences": [
+        {
+          "proof": "623b86e817736feeb358deb6bfa5c6116e984acf87109caee740f78cfe0a1fde",
+          "codes": [
+            "BUSINESS_CONSULTATION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "623b86e817736feeb358deb6bfa5c6116e984acf87109caee740f78cfe0a1fde"
+      ],
+      "source_case_sha256": "eb24f3b6d6363accfcfeceba04c145aa0e9aa6641f32e081ae88535c5e91cd0d"
+    },
+    {
+      "source_case_id": "P2-007-C071",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "adjudicated_acceptable_results": [
+        "BUSINESS_CONSULTATION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "BUSINESS_CONSULTATION",
+      "logged_result_sequences": [
+        {
+          "proof": "c494b739a462a17b30e4853e052c7a2bc8c8863f44b56c2fe479d3e58bd14702",
+          "codes": [
+            "BUSINESS_CONSULTATION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "c494b739a462a17b30e4853e052c7a2bc8c8863f44b56c2fe479d3e58bd14702"
+      ],
+      "source_case_sha256": "5ca2b80bb1403b59624671d53a67427018c03b23baac10d9a6177c9b5bce6277"
+    },
+    {
+      "source_case_id": "P2-007-C072",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "BUSINESS_CONSULTATION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "BUSINESS_CONSULTATION",
+      "logged_result_sequences": [
+        {
+          "proof": "5ccaa03c2f8d81ca4e1dd1cacc6860387ae79f2e358def9435acee5423109c05",
+          "codes": [
+            "BUSINESS_CONSULTATION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "5ccaa03c2f8d81ca4e1dd1cacc6860387ae79f2e358def9435acee5423109c05"
+      ],
+      "source_case_sha256": "e14257ad9936dc9c34dad5f4fd0ac516914b7d3f1725460992dc9ee686ad642f"
+    },
+    {
+      "source_case_id": "P2-007-C073",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "360a7f6f5040377d0868f9884dd81902f092c3ac435c8aeaa734cc0b8d643f6c",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "360a7f6f5040377d0868f9884dd81902f092c3ac435c8aeaa734cc0b8d643f6c"
+      ],
+      "source_case_sha256": "6f11491712ada59004b2d31901a976fa07a0e4c0a1daf8d9edcfce71de6b0538"
+    },
+    {
+      "source_case_id": "P2-007-C074",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "b225def962ff98d393cf6036512338ca4c088f984322047dcf0b184fc13d90c0",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "b225def962ff98d393cf6036512338ca4c088f984322047dcf0b184fc13d90c0"
+      ],
+      "source_case_sha256": "698cff25835576d3a9bcf9be40ce11c39930f0fa395fc0b9da0428fd25fcb59e"
+    },
+    {
+      "source_case_id": "P2-007-C075",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "1b0a576a6468ffcb009333eff2941714f4dc04acf68f66ee23b3449877075086",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "1b0a576a6468ffcb009333eff2941714f4dc04acf68f66ee23b3449877075086"
+      ],
+      "source_case_sha256": "98207af02c273d035e100acf024eeead81ca55562ab45042463435d2242d7863"
+    },
+    {
+      "source_case_id": "P2-007-C076",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "16304f580b1f704cd46ec57d6c6f12641d63c0f3d92128320e6b935ccb8abfcc",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "16304f580b1f704cd46ec57d6c6f12641d63c0f3d92128320e6b935ccb8abfcc"
+      ],
+      "source_case_sha256": "a79ee47a87b00fac0076a5a49d93229c44b92bc0b22d0ffe683b91204a2b23aa"
+    },
+    {
+      "source_case_id": "P2-007-C077",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "1b3e042aed258b592a092af5e4215009b2c831d92773f113020b01850c799a1a",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "1b3e042aed258b592a092af5e4215009b2c831d92773f113020b01850c799a1a"
+      ],
+      "source_case_sha256": "782604635c1879cc7489e4189372fe35804ba677fe55dbef60275c41e20945d9"
+    },
+    {
+      "source_case_id": "P2-007-C078",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "cc576901bb7ff904df23f5b40b008700da4837b88b533575fabf0b881c67cb46",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "cc576901bb7ff904df23f5b40b008700da4837b88b533575fabf0b881c67cb46"
+      ],
+      "source_case_sha256": "dc1404e53b1a370ca71699ea6f330d3e09a0b70ac239af5307b0fc7125f4995f"
+    },
+    {
+      "source_case_id": "P2-007-C079",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "aa83921042fddba352508af260dfbd3f806f3a78decaa046a71770671a9b0842",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "aa83921042fddba352508af260dfbd3f806f3a78decaa046a71770671a9b0842"
+      ],
+      "source_case_sha256": "dc73fb33a5c6446df1f535e6ca0233c7ed13c50a7fb3aa842972834a73860abd"
+    },
+    {
+      "source_case_id": "P2-007-C080",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "f6853a7d8fae6e1facb755b2297bbbb0f7417003228ae584aea86737246c1b9f",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "f6853a7d8fae6e1facb755b2297bbbb0f7417003228ae584aea86737246c1b9f"
+      ],
+      "source_case_sha256": "3b2376ddf0ba6109132b1f8e0f70a8d5a82d62c27a65fb6104e2c4a3a6391ee3"
+    },
+    {
+      "source_case_id": "P2-007-C081",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "edbe0eac70ce009c80c357e5c1cf2b0b41dafefdbda2c27d5f03221aa4fd9e1f",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "edbe0eac70ce009c80c357e5c1cf2b0b41dafefdbda2c27d5f03221aa4fd9e1f"
+      ],
+      "source_case_sha256": "d62881609d7770c0ed70c7bbaddf7481ce772029e539f3bf8ebb728adf633510"
+    },
+    {
+      "source_case_id": "P2-007-C082",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "830be8c5a5b9c347d25b7a9b87e4bdab2b92cc3a4b03214524e2ac7b0793a6a6",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "830be8c5a5b9c347d25b7a9b87e4bdab2b92cc3a4b03214524e2ac7b0793a6a6"
+      ],
+      "source_case_sha256": "65ef1f5a62a051e8c60a42b926e6e8ba1df7412ebfac21edc2f1c162ca5e1c16"
+    },
+    {
+      "source_case_id": "P2-007-C083",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "27147eba9682b8ddcf624e527336521d43671917143cd9aad08cdb7a7f6e0e80",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "27147eba9682b8ddcf624e527336521d43671917143cd9aad08cdb7a7f6e0e80"
+      ],
+      "source_case_sha256": "94eb19ff61ffd89b6115d13a42cdf06e2541a84a1c7f8e6e1939d3b87e0d4edf"
+    },
+    {
+      "source_case_id": "P2-007-C084",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "dfd26fe89952908fdbcc716f26dc9896e414eac1465cd6d0683f5841cd2b564a",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "dfd26fe89952908fdbcc716f26dc9896e414eac1465cd6d0683f5841cd2b564a"
+      ],
+      "source_case_sha256": "3a596b61a9456c5c743bd8aba05001b2125b48b2efaa6dfc8051eed063274955"
+    },
+    {
+      "source_case_id": "P2-007-C085",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "00ab1db72be3b68ce36f5d87e9a39fc28c6592d12453998b3e22700334281287",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "00ab1db72be3b68ce36f5d87e9a39fc28c6592d12453998b3e22700334281287"
+      ],
+      "source_case_sha256": "630271895e50fb3407d1487a4d3d7281a713315b164cde3b6d4afdf58d27eeab"
+    },
+    {
+      "source_case_id": "P2-007-C086",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "97d134d0545c5c98c70ceb2f9107641fb7032f3fee8ab8691ab62d088ed9d4ae",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "97d134d0545c5c98c70ceb2f9107641fb7032f3fee8ab8691ab62d088ed9d4ae"
+      ],
+      "source_case_sha256": "9bb691480442000895617a41bdd1597199dc2f6634f154d27afeaae852fdc57a"
+    },
+    {
+      "source_case_id": "P2-007-C087",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "REFERENCE_LABEL_CONFLICT",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "69241e7d7032edb4796ccc268674006f1aacd30beca6830b0919373b67d3a46c",
+          "codes": [
+            "NEEDS_DESCRIPTION",
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "69241e7d7032edb4796ccc268674006f1aacd30beca6830b0919373b67d3a46c"
+      ],
+      "source_case_sha256": "385f0ac8e1735a9fbf986e5e36ec6866cfc1d5acabf5457c4fe7580613aa6098"
+    },
+    {
+      "source_case_id": "P2-007-C088",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "0d6618bf969e661a71a4d6f557af07137aefd3a13957e62f6a2570339b244f00",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "0d6618bf969e661a71a4d6f557af07137aefd3a13957e62f6a2570339b244f00"
+      ],
+      "source_case_sha256": "078b4436f354ad1bbc1fe328335045b98aa213e4c0d3d794136c7fe266811032"
+    },
+    {
+      "source_case_id": "P2-007-C089",
+      "original_expected_result_code": "BUSINESS_CONSULTATION",
+      "adjudicated_acceptable_results": [
+        "BUSINESS_CONSULTATION",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "BUSINESS_CONSULTATION",
+      "logged_result_sequences": [
+        {
+          "proof": "ac691e8293f50a3fd1805521a3c9c38ba2c22fa054cb76396d1de2d7147e8707",
+          "codes": [
+            "BUSINESS_CONSULTATION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "ac691e8293f50a3fd1805521a3c9c38ba2c22fa054cb76396d1de2d7147e8707"
+      ],
+      "source_case_sha256": "8aeccf9482191e06791f177753179c42b7b7e09a5032c4ad35e878168f9328e5"
+    },
+    {
+      "source_case_id": "P2-007-C091",
+      "original_expected_result_code": "STATUS_QUERY",
+      "adjudicated_acceptable_results": [
+        "STATUS_QUERY",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "STATUS_QUERY",
+      "logged_result_sequences": [
+        {
+          "proof": "1bca4c21dbe62d3dd345bc9ebb20233db83977ff911fabb2eb0f1890a95d59c0",
+          "codes": [
+            "STATUS_QUERY"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "1bca4c21dbe62d3dd345bc9ebb20233db83977ff911fabb2eb0f1890a95d59c0"
+      ],
+      "source_case_sha256": "737b0f594e14856d17d20a3fb6624528974c4f93bcd4cd402cfdd866f92a5aa6"
+    },
+    {
+      "source_case_id": "P2-007-C092",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "359af916e05529a651f71b3fe39bbeaa46b313be24d30a2114c7bb9915448bf0",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "359af916e05529a651f71b3fe39bbeaa46b313be24d30a2114c7bb9915448bf0"
+      ],
+      "source_case_sha256": "6d92e2eccd68e03a9dabfbcd025db17b7a55842199e97d9687282bc00bbec176"
+    },
+    {
+      "source_case_id": "P2-007-C093",
+      "original_expected_result_code": "RELATED_FOLLOW_UP",
+      "adjudicated_acceptable_results": [
+        "ACKNOWLEDGEMENT",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "ACKNOWLEDGEMENT",
+      "logged_result_sequences": [
+        {
+          "proof": "64878ff4a968ebcb973b74fde2779d420fe92a315ae15200d506d1b45891f086",
+          "codes": [
+            "ACKNOWLEDGEMENT"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "64878ff4a968ebcb973b74fde2779d420fe92a315ae15200d506d1b45891f086"
+      ],
+      "source_case_sha256": "3092c5af1310cd0e0dbac1c93d445288ad71bb41bf9e4140a2f714a311d08870"
+    },
+    {
+      "source_case_id": "P2-007-C094",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "f3936a8a406f897335935f91cdf01458b9a4cfed5f30c6e13d43c444862bddc7",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "f3936a8a406f897335935f91cdf01458b9a4cfed5f30c6e13d43c444862bddc7"
+      ],
+      "source_case_sha256": "3ef0d23e6f9dcbde17bdaa56117c27ac823bac73100edce673aa12dc4bd212da"
+    },
+    {
+      "source_case_id": "P2-007-C095",
+      "original_expected_result_code": "TICKET_ELIGIBLE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_EXPECTATION_RETAINED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "7be1a85c493a1c10ed42238f0c5294a4446042b1dcf726713d50b415e4997a18",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "7be1a85c493a1c10ed42238f0c5294a4446042b1dcf726713d50b415e4997a18"
+      ],
+      "source_case_sha256": "edf450e8aec79eeebd54a2bfba88ae8c863f4a74764275416a60216b7bfc5396"
+    },
+    {
+      "source_case_id": "P2-007-C096",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "ACKNOWLEDGEMENT",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "SOURCE_SPEC_ADJUDICATION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "ACKNOWLEDGEMENT",
+      "logged_result_sequences": [
+        {
+          "proof": "97d475637cb6bb194dd71d2a85ee70779e88630073ac22809471aa03e4bb1789",
+          "codes": [
+            "ACKNOWLEDGEMENT"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "97d475637cb6bb194dd71d2a85ee70779e88630073ac22809471aa03e4bb1789"
+      ],
+      "source_case_sha256": "40dd671cb35156e1e0d9da86e89d7c95dc4d741c647b87a57caac86884fd172f"
+    },
+    {
+      "source_case_id": "P2-007-X001",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "8e0b8489054ad753b55fab5c7a9c275358ecfffaaaaa04843a2a00758221d6c8",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "8e0b8489054ad753b55fab5c7a9c275358ecfffaaaaa04843a2a00758221d6c8"
+      ],
+      "source_case_sha256": "06793472688d2fee8871ce5e95dcb1a63bf2f71123d659d5d7c711fcc8a7ffac"
+    },
+    {
+      "source_case_id": "P2-007-X002",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "adjudicated_acceptable_results": [
+        "NEEDS_DESCRIPTION"
+      ],
+      "adjudication": "NONE",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "NEEDS_DESCRIPTION",
+      "logged_result_sequences": [
+        {
+          "proof": "49e340000a66a950d76271a7029e79722905377072c5c4af440355f462709556",
+          "codes": [
+            "NEEDS_DESCRIPTION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 0,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "49e340000a66a950d76271a7029e79722905377072c5c4af440355f462709556"
+      ],
+      "source_case_sha256": "a09db476461a7ac7b128cfb513ac89da8fe4a34b48c6b8bbab7cd10b7fc6e0b7"
+    },
+    {
+      "source_case_id": "P2-007-X003",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "3840e02314fb93c9f958ad3d1df9e751ec79fbd0aab7540158b88f7cdc6a4081",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "3840e02314fb93c9f958ad3d1df9e751ec79fbd0aab7540158b88f7cdc6a4081"
+      ],
+      "source_case_sha256": "0e60952fbeca51a17c085b36ef3cd58853ce81046eae437960783ab6158845e0"
+    },
+    {
+      "source_case_id": "P2-007-X004",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "2efb57d37898cd55530b540722af2cf85cb7373daca6ecd54624d02c819afab5",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "2efb57d37898cd55530b540722af2cf85cb7373daca6ecd54624d02c819afab5"
+      ],
+      "source_case_sha256": "90b901080209f33b044e77c5920d20fed66e57d936d1d37d579f7963a04c3812"
+    },
+    {
+      "source_case_id": "P2-007-X005",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_REPLY_PRECONDITION",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "4752a6940ea488e64a581ddbc6af943d752f07aef05a4811f7d8338027b86845"
+    },
+    {
+      "source_case_id": "P2-007-X006",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "MISSING_AUTHORITY_PRECONDITION_AND_REVIEW",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "0b4103f571485d466eb25f8ab21ba1d8210cd19820a63ce1fa6b72c8474384af"
+    },
+    {
+      "source_case_id": "P2-007-X007",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "b80e8e611db27e9578e2324f5a5b348f436b8f2aae5078747d17d7cfbf7cc97c",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 2,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "b80e8e611db27e9578e2324f5a5b348f436b8f2aae5078747d17d7cfbf7cc97c"
+      ],
+      "source_case_sha256": "f27b0daf731d88d836adf97ea4ccdaa6fbfbe90d784ec7ceeae23ed30bf7e01a"
+    },
+    {
+      "source_case_id": "P2-007-X008",
+      "original_expected_result_code": "NEEDS_DESCRIPTION",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_CONTINUATION_PRECONDITION",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "f2421367be1db4fee9724b9c6cebb0cd94c345dfa3b9a0b3c0e7560e1edb8d3e"
+    },
+    {
+      "source_case_id": "P2-007-X009",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "8465912347d95e4c25c698087310c8d626c053654e8967c330bbb013906d1aeb",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "8465912347d95e4c25c698087310c8d626c053654e8967c330bbb013906d1aeb"
+      ],
+      "source_case_sha256": "a167be128d141c8155fbd6dc6fc3571c6cbfbe3d9e51a790fac986fa666f4d79"
+    },
+    {
+      "source_case_id": "P2-007-X010",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "TICKET_OMITTED_BY_GROUP_LABEL",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "6bfd650427ef7a5aeb405ff470878d03635b7d3d83e99d16279216cc1dc641e8",
+          "codes": [
+            "NEEDS_DESCRIPTION",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "6bfd650427ef7a5aeb405ff470878d03635b7d3d83e99d16279216cc1dc641e8"
+      ],
+      "source_case_sha256": "837bf929f7cb7a69564e8e3e034e81d8a8e8a26affaa389eca67af034875b308"
+    },
+    {
+      "source_case_id": "P2-007-X011",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "TICKET_OMITTED",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "cdc245e2963ad8d79708737e3f641f9a740240fc6c67cc6a481ae6ef22c83c93",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "cdc245e2963ad8d79708737e3f641f9a740240fc6c67cc6a481ae6ef22c83c93"
+      ],
+      "source_case_sha256": "7684a67870955d53c457c7b57003197706de565d74936f377c93fc2f550cfbfa"
+    },
+    {
+      "source_case_id": "P2-007-X012",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP",
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_CONTINUATION_PRECONDITION",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "ec32dfd62b25af8976f634dba4cf6639d67d893e93376f0ab2e890acaaf1108b"
+    },
+    {
+      "source_case_id": "P2-007-X013",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "b8704ce1c3e1b51932abd5a1f1e7a4e1d501598869077aee9a11f571dfe56b85",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 2,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "b8704ce1c3e1b51932abd5a1f1e7a4e1d501598869077aee9a11f571dfe56b85"
+      ],
+      "source_case_sha256": "a015dd973b61635b80cf9f5bfaf649813a3df94806f531f5cf87d27feddad4b7"
+    },
+    {
+      "source_case_id": "P2-007-X014",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "77f6fe8465b132095e6f2766257a230b78bc10d6be3bab227e45815dd671c26a",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "77f6fe8465b132095e6f2766257a230b78bc10d6be3bab227e45815dd671c26a"
+      ],
+      "source_case_sha256": "21f9bc126d36bb1419a683470ed5b7f765fee7c5a3edb4b82bf67432f30c0ea8"
+    },
+    {
+      "source_case_id": "P2-007-X015",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "4a2065ff9d3adce29b3b575f728f7b58768fef0ed567ec0b91c41d5a187498d7",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "4a2065ff9d3adce29b3b575f728f7b58768fef0ed567ec0b91c41d5a187498d7"
+      ],
+      "source_case_sha256": "702b841520486713f49fbbfc76b4916613791e6be7de5aab4be7a1deb8bb49a3"
+    },
+    {
+      "source_case_id": "P2-007-X016",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_DIRECTORY_PRECONDITION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "3c7422ccd4bd8d5379660b51d7868efb227dfe42c97e3a6d85b5f959a27069e3",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "3c7422ccd4bd8d5379660b51d7868efb227dfe42c97e3a6d85b5f959a27069e3"
+      ],
+      "source_case_sha256": "b2bdccd5d2dc1de0cafa23d6cdc7a3c90d0d2509e1ecd838bd17d6b4878be8da"
+    },
+    {
+      "source_case_id": "P2-007-X017",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_DIRECTORY_PRECONDITION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "02073869144382d632f68d2849cc750906c5d4a47295640f2e3130610d69ed28",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "02073869144382d632f68d2849cc750906c5d4a47295640f2e3130610d69ed28"
+      ],
+      "source_case_sha256": "470a2fe72a9fe00e6077bd95a31ea13d1f0994cae726eb51d1a7012ba071cd64"
+    },
+    {
+      "source_case_id": "P2-007-X018",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "bef03377d0ecb2b6a95b9ea7b7532fbe46624bd384d369c171558c6a38c2e6f3",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "bef03377d0ecb2b6a95b9ea7b7532fbe46624bd384d369c171558c6a38c2e6f3"
+      ],
+      "source_case_sha256": "9cc0e20fd51ab09c18ddfcfe0a6db5672c96074d94d9dd24949aa9e49f43b721"
+    },
+    {
+      "source_case_id": "P2-007-X019",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_AUTHORITY_PRECONDITION",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "TICKET_ELIGIBLE",
+      "logged_result_sequences": [
+        {
+          "proof": "19f16c633ecf0bd13dd20861a15d35c43df3e902ac120bfe393478613d837a08",
+          "codes": [
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "19f16c633ecf0bd13dd20861a15d35c43df3e902ac120bfe393478613d837a08"
+      ],
+      "source_case_sha256": "01e88077278add84b0eb7f03bb038bb02ffcd8d76214a84173ebdd350a592265"
+    },
+    {
+      "source_case_id": "P2-007-X020",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_TIME_PRECONDITION",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "10d8dfddcb230df851e1e6004afa15343eb253d91f4adce7ead233d198d05c39"
+    },
+    {
+      "source_case_id": "P2-007-X021",
+      "original_expected_result_code": "MANUAL_REVIEW_REQUIRED",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "TICKET_OMITTED_AND_UNJUSTIFIED_REVIEW",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "NO_UNAMBIGUOUS_ACTUAL_ENUM_DIAGNOSTIC",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "4ff6acbb8442d13737fe16223450649f0891d831853b4d1dd8d67aade295cb18"
+    },
+    {
+      "source_case_id": "P2-007-X029",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "SOURCE_AND_P2015_CANDIDATE_UNSUPPORTED_WITHOUT_BINDING",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [
+        {
+          "proof": "3fcadabd0145586f4b03e4d438804633510f2e8c9235115ec67a125c4435d151",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 3,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "3fcadabd0145586f4b03e4d438804633510f2e8c9235115ec67a125c4435d151"
+      ],
+      "source_case_sha256": "072992114965e15499cf0367a0b7f9c34d26f90a4ef956c0ee246f7e7759cd3f"
+    },
+    {
+      "source_case_id": "P2-007-X030",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "RELATED_FOLLOW_UP"
+      ],
+      "adjudication": "P2015_CONTRADICTS_SOURCE_FALSE_CANDIDATE",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "fa67b127abdd5b3b587c4437d99d50c3a79b6d3495238ff571e9667ddec6fd0a"
+    },
+    {
+      "source_case_id": "P2-007-X031",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE"
+      ],
+      "adjudication": "FROZEN_DISTINCT_REPORTER_COUNTS_WITH_UNKNOWN_DEPARTMENT_AND_LOCATION",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [
+        {
+          "proof": "92d9b24d747a522134ba72037b1d2b981eb37ffa234a89a3e2fe3c365823a1c8",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 3,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "92d9b24d747a522134ba72037b1d2b981eb37ffa234a89a3e2fe3c365823a1c8"
+      ],
+      "source_case_sha256": "067877842a0e1c0c939b115f5dc39827b5dffbf2b8ca006d626fde035e06c8a3"
+    },
+    {
+      "source_case_id": "P2-007-X032",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [],
+      "adjudication": "SOURCE_AND_P2015_HOSPITAL_CANDIDATE_UNSUPPORTED",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [
+        {
+          "proof": "0bb2802d7fb166b82e6c3039ce592ff10e442f2667166109b6ed408af2e70414",
+          "codes": [
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE",
+            "NEEDS_DESCRIPTION",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE",
+            "TICKET_ELIGIBLE",
+            "NEEDS_DESCRIPTION",
+            "NEEDS_DESCRIPTION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 5,
+        "reviews": 0
+      },
+      "count_proof_blocks": [
+        "0bb2802d7fb166b82e6c3039ce592ff10e442f2667166109b6ed408af2e70414"
+      ],
+      "source_case_sha256": "17a8b7f6644a7f03590f873b62d038da0b8893f0794b82ab0444fe8bc8969073"
+    },
+    {
+      "source_case_id": "P2-007-X034",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "TICKET_ELIGIBLE",
+        "MANUAL_REVIEW_REQUIRED",
+        "NEEDS_DESCRIPTION"
+      ],
+      "adjudication": "P2015_CANDIDATE_NOT_IN_SOURCE",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [
+        {
+          "proof": "3f37036e557fb3109a22b1a1c03cea69efb4fa6da607890532f75ebb34dcb57b",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED",
+            "NEEDS_DESCRIPTION"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "3f37036e557fb3109a22b1a1c03cea69efb4fa6da607890532f75ebb34dcb57b"
+      ],
+      "source_case_sha256": "b478f4964791f3404feb7712d43b98a71732d0f67bd596c0aebc6dd1cb12744b"
+    },
+    {
+      "source_case_id": "P2-007-X035",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [
+        "MANUAL_REVIEW_REQUIRED"
+      ],
+      "adjudication": "P2015_CONTRADICTS_SOURCE_FALSE_CANDIDATE",
+      "classification_comparable": true,
+      "classification_exclusion_reason": null,
+      "observed_final_result_code": "MANUAL_REVIEW_REQUIRED",
+      "logged_result_sequences": [
+        {
+          "proof": "eaf3786d6c1f3b5f6cbe4e336e1afd9d6b7a40bdd6b4559a7455f3df4479f2d6",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        },
+        {
+          "proof": "d11d3f72d77e6732e3eb330745e06ebf9417136611545f8637ea7c3d41d07957",
+          "codes": [
+            "MANUAL_REVIEW_REQUIRED"
+          ]
+        }
+      ],
+      "logged_scenario_database_counts": {
+        "tickets": 1,
+        "reviews": 1
+      },
+      "count_proof_blocks": [
+        "eaf3786d6c1f3b5f6cbe4e336e1afd9d6b7a40bdd6b4559a7455f3df4479f2d6",
+        "d11d3f72d77e6732e3eb330745e06ebf9417136611545f8637ea7c3d41d07957"
+      ],
+      "source_case_sha256": "f1b79e30f7fa5511bfcf275233c99bfe7298c7458b92db562103a3c4e1513ef2"
+    },
+    {
+      "source_case_id": "P2-007-X036",
+      "original_expected_result_code": "INCIDENT_REVIEW_CANDIDATE",
+      "adjudicated_acceptable_results": [],
+      "adjudication": "P2015_CONFLATES_EXISTING_INCIDENT_WITH_NEW_CANDIDATE",
+      "classification_comparable": false,
+      "classification_exclusion_reason": "MULTI_REPORTER_OR_HUMAN_CONTEXT_NOT_ONE_SCENARIO_ENUM",
+      "observed_final_result_code": null,
+      "logged_result_sequences": [],
+      "logged_scenario_database_counts": null,
+      "count_proof_blocks": [],
+      "source_case_sha256": "0703ca5dd238760a0cf2c27b97a90cfac3aca72ef136e8e99d6039467a6712b1"
+    }
+  ],
+  "refresh_method": "Every measured result/count proof revalidated against the matching current passing diagnostic; unchanged source labels, formulas and denominators.",
+  "measurement_proofs_revalidated": 223,
+  "event_time": "2026-09-15 10:51:01",
+  "event_epoch_ms": "1789440661803"
+}

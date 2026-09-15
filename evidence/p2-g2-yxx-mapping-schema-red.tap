@@ -1,0 +1,31 @@
+✔ delegated member conversion binds exact original Bot identities without normalizing encrypted IDs (4.4411ms)
+✖ delegated configuration and public schema bound the approved roster and forbid invented proof (3.8491ms)
+✔ delegated conversion rejects partial, duplicate, foreign and malformed mappings without identity or token leaks (8.7921ms)
+✔ delegated map cannot be reused under another scope or authorize an unlisted OAuth identity (1.1809ms)
+✔ delegated conversion rejects a non-cooperative Provider within its startup deadline (5001.6255ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5198.5922
+
+✖ failing tests:
+
+test at tests\p2-g2-yixiaoxiu-delegated-identity.test.mjs:21:1
+✖ delegated configuration and public schema bound the approved roster and forbid invented proof (3.8491ms)
+  AssertionError [ERR_ASSERTION]: yixiaoxiu_member_entry_config closed keys
+      at visit (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-016-schema-assert.mjs:23:53)
+      at assertP2016Schema (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-016-schema-assert.mjs:27:9)
+      at async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-delegated-identity.test.mjs:22:2)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

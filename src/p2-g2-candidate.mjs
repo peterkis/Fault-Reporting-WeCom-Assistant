@@ -6,6 +6,7 @@ import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
 import { g2Hash, failG2, validateG2Manifest } from './p2-g2-validation-config.mjs';
 import {requirePreparedYxxCandidate} from './p2-g2-yixiaoxiu-readiness.mjs';
 import {assertG2EvidenceTime} from './p2-g2-evidence-time.mjs';
+import {readG2CurrentEvidence} from './p2-g2-current-evidence.mjs';
 
 export const G2_ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const G2_CANDIDATE_ROOTS = Object.freeze(['src', 'scripts', 'web', 'contracts', 'config', 'config_examples', 'database/migrations', 'tests']);
@@ -81,7 +82,7 @@ export function requirePreparedG2Candidate(fingerprint, root=G2_ROOT){
     if(g2Hash(raw)!==ref.sha256)failG2('REGRESSION_EVIDENCE_CHANGED');
     return raw.toString('utf8');
   };
-  let r;try{r=JSON.parse(readFileSync(path.join(root,'evidence/p2-g2-automated-readiness-report.json'),'utf8'));}catch{reject();}
+  let r;try{r=readG2CurrentEvidence(root,'parent');}catch{reject();}
   try{assertG2EvidenceTime(r);}catch{reject();}
   const f=r?.full_regression,keys=['tests','pass','fail','skipped','cancelled','todo'];
   if(r?.preparation_status!=='READY_FOR_LIVE_E2E'||r.candidate_fingerprint!==fingerprint||r.gold_reference_count!==202

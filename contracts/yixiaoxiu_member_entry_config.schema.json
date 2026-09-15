@@ -15,13 +15,21 @@
     "validationProfile"
   ],
   "properties": {
+    "reporterUserIds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[^\\\\/\\s\\u0000-\\u001f\\u007f]+$"}
+    },
     "enabled": {
       "type": "boolean"
     },
     "identityMode": {
       "enum": [
         "UNVERIFIED",
-        "VERIFIED_SAME_NAMESPACE"
+        "VERIFIED_SAME_NAMESPACE",
+        "VERIFIED_DELEGATED_MAPPING"
       ]
     },
     "memberIdsConfirmed": {
@@ -72,6 +80,11 @@
     }
   },
   "allOf": [
+    {
+      "if": {"properties": {"identityMode": {"const": "VERIFIED_DELEGATED_MAPPING"}}},
+      "then": {"required": ["reporterUserIds"]},
+      "else": {"not": {"required": ["reporterUserIds"]}}
+    },
     {
       "if": {
         "properties": {

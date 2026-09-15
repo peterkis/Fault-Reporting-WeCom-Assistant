@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 08:35:25",
+  "event_epoch_ms": "1789432525579",
+  "scope": "YXX_TARGETED_LIVE_PREFLIGHT",
+  "authorization": "User requested start, reuse .env.pilot test accounts/group and configured cloud host; not full P2-G2-LIVE.",
+  "configuration_source": ".env.pilot",
+  "members": {
+    "A": "PILOT_TEST_ACCOUNT_USER_ID",
+    "B": "P2_012_SECOND_TEST_ACCOUNT_USER_ID",
+    "reserved": "P2_G2_THIRD_TEST_ACCOUNT_USER_ID"
+  },
+  "test_accounts_distinct": true,
+  "cloud_check": {
+    "exit_code": 0,
+    "result": {
+      "running": true,
+      "restart_count": 0,
+      "readonly_root": true,
+      "memory_limit_bytes": 134217728,
+      "health": {
+        "ok": true,
+        "mode": "OAUTH_ONLY",
+        "authenticated_callbacks": 1,
+        "authenticated_pages": 1
+      },
+      "manifest_sha256": "34d91172dc849c833ad32c09f4d5f9bf31c4b42c38cf3099e326e1e83121649c",
+      "logs_only_safe_startup_events": true,
+      "nginx_config_sha256": "1a544e6156e4a43fcb95b2d2eb3999a8233d638e02e4a6a55add2f2fafd112ae"
+    }
+  },
+  "identity_namespace_live_verified": false,
+  "ticket_scope_verified": false,
+  "real_sends": 0,
+  "cloud_changes": false,
+  "database_access": false,
+  "services_started": false,
+  "p2_g2_live_started": false
+}

@@ -1,0 +1,29 @@
+{
+  "event_time": "2026-09-15 08:50:23",
+  "event_epoch_ms": "1789433423828",
+  "run_id": "20260915-20f3efad",
+  "user_report": "A opened fresh login after probe compatibility repair",
+  "exit_code": 0,
+  "result": {
+    "running": true,
+    "events": [
+      {
+        "event_time": "2026-09-15 08:47:23",
+        "event_epoch_ms": "1789433243019",
+        "event": "PROBE_READY",
+        "expires_epoch_ms": "1789434143882"
+      },
+      {
+        "event_time": "2026-09-15 08:49:27",
+        "event_epoch_ms": "1789433367870",
+        "event": "OAUTH_IDENTITY_COMPARISON",
+        "sequence": 1,
+        "match": "NO_MATCH",
+        "comparison": "EXACT_UTF8_HMAC_SHA256",
+        "provider_response_validated": true
+      }
+    ]
+  },
+  "real_sends": 0,
+  "database_access": false
+}

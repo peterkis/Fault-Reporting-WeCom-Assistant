@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "work_item": "P2-G2-YXX-TICKET-ENTRY",
+  "parent_gate": "P2-G2",
+  "candidate_fingerprint": "c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9",
+  "candidate_file_count": 614,
+  "candidate_algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF",
+  "branch": "codex/yxx-delegated-identity-repair",
+  "base_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "authorization_commit": "c1b33218521dc5dba3c07ce57452473c367e7ad6",
+  "source_worktree_parent_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "review_repair_authorization": "evidence/p2-g2-yxx-entry-mapping-authorization.json",
+  "implementation": "IMPLEMENTED",
+  "automation": "VERIFIED",
+  "entry_status": "DELEGATED_MAPPING_LIVE_VALIDATION_PENDING",
+  "entry_live_authorized": false,
+  "entry_live_result": "NOT_RUN",
+  "p2_g2_live_result": "NOT_RUN",
+  "identity_namespace_live_verified": false,
+  "persistent_flags_all_off": true,
+  "no_ddl": true,
+  "dependency_changes": false,
+  "real_provider_calls": 0,
+  "real_business_data_access": false,
+  "real_sends": 0,
+  "ai_calls": 0,
+  "ocr_calls": 0,
+  "rag_calls": 0,
+  "reporter_policy": "MEMBER_REQUIRED",
+  "full_regression": {
+    "tests": 1053,
+    "pass": 1053,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_file_count": 169,
+    "baseline_test_file_count": 158,
+    "baseline_test_files_covered": true,
+    "candidate_unchanged": true,
+    "exit_code": 0,
+    "tap_path": "evidence/p2-g2-yxx-entry-mapping-v1-regression.tap",
+    "tap_sha256": "9d9dd3cddd82c431a3b6df3c72acb897d305048c5caedb5e476192c5da7c9cb3",
+    "expose_gc": true
+  },
+  "sources": {
+    "regression_run": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-regression-run.json",
+      "sha256": "305b396752c873df48ebf690ad5f7e07c094830bb6cbf0228e4453c6ab36abc4"
+    },
+    "scenario_matrix": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-scenario-matrix.json",
+      "sha256": "e62b87374c07298cb98020c22c5cd38068e99bfcde3675c78dbb2c123384809f"
+    },
+    "route_audit": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-route-audit.json",
+      "sha256": "c512fbfde3218511c74e61a13fe377030cab8b6f701fc95415ef0491a1e05cc2"
+    },
+    "independent_review": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-review-summary.json",
+      "sha256": "329dccfb5ff6b8ec9497fd71d9146255c1661a0b588fa2bb23fe33f53a75e13e"
+    },
+    "resource_measurement": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-resource.json",
+      "sha256": "af04834db53b34bbff510c72142c309dde6ccdf2387f6fb4838ac4fc33f7caf7"
+    },
+    "candidate_inventory": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-candidate-inventory.json",
+      "sha256": "c607dc75c13ca12e3bcff2544cdae46502851564ff5d1f0261bb67a832834f8a"
+    },
+    "cleanup": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-cleanup.json",
+      "sha256": "eeaefbbf1d916c077f551bc3774dd3d6be99e6c9a3da015b96f02c94a7ff7201"
+    },
+    "visual_archive": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-screenshots.json",
+      "sha256": "7c886905a0bf409f6985a8d7435dcafee03cb5060c8ed44b9fa0e738e9a6af05"
+    }
+  },
+  "identity_proof": {
+    "live": "A_B_OFFICIAL_CONVERSION_CORRESPONDENCE_VERIFIED_BEFORE_REPAIR",
+    "raw_same_namespace": false,
+    "current_repaired_deployment": "NOT_RUN",
+    "evidence": [
+      "evidence/p2-g2-yxx-identity-probe-observation-1789434282987.json",
+      "evidence/p2-g2-yxx-identity-B-verified-1789435500033.json"
+    ]
+  },
+  "preservation": {
+    "grant_consumption_unchanged": true,
+    "session_grant_id_not_null_unique": true,
+    "new_persistent_member_sessions": 0,
+    "new_login_grants": 0,
+    "direct_leg_created_by_login": false,
+    "private_send_eligibility_created_by_login": false,
+    "migrations_001_032_unchanged": true,
+    "frozen_screenshot_transient_overwrite_restored": true,
+    "restoration_evidence": "evidence/p2-g2-yxx-entry-mapping-screenshot-restoration.json"
+  },
+  "resource": {
+    "authenticated_sessions": 100,
+    "concurrent_reads": 32,
+    "overload_status": 503,
+    "pool_peak_connections": 4,
+    "pending_pool_after": 0,
+    "elapsed_ms": 573,
+    "rss_before_bytes": 97431552,
+    "rss_after_bytes": 103755776,
+    "catalog_unchanged": true,
+    "business_tables_unchanged": true,
+    "formal_observation": false,
+    "real_provider_calls": 0
+  },
+  "cleanup": {
+    "schema_version": 1,
+    "candidate_fingerprint": "c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9",
+    "isolated_test_cleanup": "Existing fixtures close owned pools and drop owned synthetic databases; full TAP is authoritative.",
+    "retained": "Full TAP, prior failed TAP, private source evidence and previous live probes remain; no global Temp or frozen history cleanup.",
+    "real_runtime_changes_by_repair": false,
+    "event_time": "2026-09-15 10:53:21",
+    "event_epoch_ms": "1789440801646"
+  },
+  "gitignore": {
+    "bytes_sha256": "0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092",
+    "modified_by_task": false
+  },
+  "browser_limits": [
+    "Actual Edge desktop/mobile widths, multi-tab, actual history back and a synthetic persisted pageshow branch tested; no claim that Edge actually selected BFCache for that navigation."
+  ],
+  "runbook": "docs/runbooks/yixiaoxiu-member-ticket-entry.md",
+  "failure_history": "evidence/p2-g2-yxx-entry-mapping-v1-failure-history.json",
+  "stop_line": "Repaired candidate local automation and independent review complete; current member runtime has not been deployed or field-tested. Full P2-G2-LIVE and P2-008 remain stopped.",
+  "event_time": "2026-09-15 10:53:21",
+  "event_epoch_ms": "1789440801697",
+  "authorization_commit_role": "HISTORICAL_PR8_MEMBER_ENTRY_AUTHORIZATION",
+  "mapping_repair": {
+    "status": "VERIFIED",
+    "mode": "VERIFIED_DELEGATED_MAPPING",
+    "readonly_profile_only": true,
+    "full_service_loop_mapping_supported": false,
+    "maximum_members": 32,
+    "provider_deadline_ms": 5000,
+    "response_limit_bytes": 65536,
+    "current_live_result": "NOT_RUN",
+    "identity_namespace_live_verified_semantics": "Raw same-namespace remains false; official converted correspondence is separately verified, not relabeled as raw equality."
+  }
+}

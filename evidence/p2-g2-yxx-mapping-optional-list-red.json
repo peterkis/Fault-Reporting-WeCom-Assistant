@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 10:01:13",
+  "event_epoch_ms": "1789437673824",
+  "case": "Complete official mapping without optional empty invalid list",
+  "expected": "ALLOWED",
+  "actual": "YXX_ENTRY_UNAVAILABLE",
+  "red": true,
+  "provider": "SYNTHETIC",
+  "network_calls": 0
+}

@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9",
+  "scope": "CURRENT_FULL_RUN_SYNTHETIC_BROWSER",
+  "screenshots": [
+    {
+      "event_time": "2026-09-15 10:49:39",
+      "event_epoch_ms": "1789440579164",
+      "width": 1440,
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-screenshot-1440.png",
+      "sha256": "7b7656803d4c73e120b794ad2c35a3cf234aea3a28814603eb7ab46285f3295f",
+      "source_path": "tmp/yxx-browser-screenshots-0154a2af-d8bb-46a5-9b6f-70ec881f6962/1440.png"
+    },
+    {
+      "event_time": "2026-09-15 10:49:44",
+      "event_epoch_ms": "1789440584980",
+      "width": 390,
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-screenshot-390.png",
+      "sha256": "034902fee7c854268cd8bc85aba27741d637617601bfaafbbbc711f370508752",
+      "source_path": "tmp/yxx-browser-screenshots-0154a2af-d8bb-46a5-9b6f-70ec881f6962/390.png"
+    }
+  ],
+  "event_time": "2026-09-15 10:53:21",
+  "event_epoch_ms": "1789440801654"
+}

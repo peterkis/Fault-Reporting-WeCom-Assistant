@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "gate": "P2-G2",
+  "preparation_status": "READY_FOR_LIVE_E2E",
+  "gate_status": "IN_PROGRESS",
+  "active_task": "P2-G2",
+  "active_lane": "ASSEMBLY",
+  "candidate_fingerprint": "c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9",
+  "candidate_file_count": 614,
+  "candidate_algorithm": "SHA256_SORTED_PATH_CONTENT_UTF8_LF",
+  "base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
+  "authorization_commit": "d7311cdbfe30c66f37d22a553a3e8f0e04e27cd1",
+  "baseline_reference_tests": 577,
+  "gold_reference_count": 202,
+  "normal_input_cases": 122,
+  "mechanism_and_other_references": 80,
+  "original_semantics_all_passed": false,
+  "source_semantic_limits": [
+    "D12-005 reliable non-mention SDK indication unavailable",
+    "D12-023 hospital master identity remains outside P2",
+    "D12-016 URL Grant replaces unsupported card-event association; D12-053 uses proactive Outbox alternative",
+    "Frozen 120000ms correlation and trusted available department/campus facts; original 300000ms/hospital-wide assumptions not imported"
+  ],
+  "scenario_matrix_complete": true,
+  "scenario_count": 37,
+  "independent_review_passed": true,
+  "pr6_review_invariants": 10,
+  "full_regression": {
+    "tests": 1053,
+    "pass": 1053,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_file_count": 169,
+    "baseline_test_file_count": 92,
+    "baseline_test_files_covered": true,
+    "candidate_unchanged": true,
+    "exit_code": 0,
+    "tap_path": "evidence/p2-g2-yxx-entry-mapping-v1-regression.tap",
+    "tap_sha256": "9d9dd3cddd82c431a3b6df3c72acb897d305048c5caedb5e476192c5da7c9cb3",
+    "expose_gc": true,
+    "baseline_recursive_test_file_count": 94,
+    "baseline_test_file_count_scope": "ROOT_LEVEL_ONLY"
+  },
+  "source_evidence": {
+    "regression_run": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-regression-run.json",
+      "sha256": "305b396752c873df48ebf690ad5f7e07c094830bb6cbf0228e4453c6ab36abc4"
+    },
+    "source_execution": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-source-execution.json",
+      "sha256": "8582c3cf37fa8d26cb17a163b9d71722a2ae636332f082b1d12b00a44fc0a662"
+    },
+    "scenario_matrix": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-g2-scenario-matrix.json",
+      "sha256": "aaf072ea9bd46ed7c529c0a63933ed06a50955bca7712c9584294f30f244f5f7"
+    },
+    "independent_review": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-review-summary.json",
+      "sha256": "329dccfb5ff6b8ec9497fd71d9146255c1661a0b588fa2bb23fe33f53a75e13e"
+    },
+    "pr6_invariants": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-pr6-invariants.json",
+      "sha256": "cd5ba45203072fcefa17f3f1d89c5fac032ced1474d3b9ebfcf3e5c85341c5e1"
+    },
+    "candidate_inventory": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-candidate-inventory.json",
+      "sha256": "c607dc75c13ca12e3bcff2544cdae46502851564ff5d1f0261bb67a832834f8a"
+    },
+    "classification_metrics": {
+      "path": "evidence/p2-g2-yxx-entry-mapping-v1-classification-metrics.json",
+      "sha256": "33cf8f1b2b513be9b6d60e880b4f8fd46cce853dd303678ae7d334c2beb5053e"
+    }
+  },
+  "environment": {
+    "node_version": "24.18.0",
+    "platform": "win32",
+    "architecture": "x64",
+    "os_release": "10.0.26200",
+    "formal_natural_gc_observation": false,
+    "whole_stack_2c4g_live_validation": "NOT_RUN"
+  },
+  "configured_resource_caps": {
+    "app_processes": 1,
+    "worker_processes": 1,
+    "gateway_connections": 1,
+    "postgres_instances": 1,
+    "app_pool": 4,
+    "worker_pool": 2,
+    "gateway_pool": 1,
+    "controller_pool": 1,
+    "sse_clients": 32,
+    "batch": 20,
+    "turns": 50,
+    "input_characters": 20000,
+    "list": 100
+  },
+  "persistent_flags_all_off": true,
+  "model_environment_keys_in_test_processes": 0,
+  "model_provider_calls": 0,
+  "ocr_calls": 0,
+  "rag_calls": 0,
+  "database_change": "NO_APPLICATION_SCHEMA_CHANGE_EXISTING_MIGRATIONS_UNCHANGED",
+  "shared_database_migrated": false,
+  "live_validation": "NOT_RUN",
+  "client_observation": "NOT_RUN",
+  "project_owner_approval": false,
+  "live_send_authorized": false,
+  "p2_008_status": "TODO_BLOCKED_BY_P2_G2",
+  "next_task_candidate": "P2-G2-LIVE",
+  "next_task_authorized": false,
+  "runbook": "prompts/P2-G2_rule_first_service_loop_runbook.md",
+  "failure_history": "evidence/p2-g2-yxx-entry-mapping-v1-failure-history.json",
+  "repair_report": "adr/0019_yixiaoxiu_delegated_identity_mapping.md",
+  "service_chain_inventory": "evidence/p2-g2-service-chain-inventory.json",
+  "cleanup_limit": "evidence/p2-g2-yxx-entry-mapping-v1-cleanup.json",
+  "cloud_environment_limit": "No cloud deployment during mapping code repair; earlier temporary identity probes restored OAuth-only. Repaired member candidate not deployed.",
+  "classification_metric_limits": "Classification comparison uses 106 comparable terminal observations; Ticket/Review ratios use 109 measured scenarios. Exclusions are explicit. Safe-route test coverage is not classification accuracy or a claim of original-202 label equality.",
+  "source_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "validation_scope": "P2_G2_AND_STANDALONE_DELEGATED_MEMBER_PREPARATION",
+  "historical_readiness_snapshot": "evidence/p2-g2-automated-readiness-report.json",
+  "persistent_flag_scope": "Repository business and member-entry defaults remain false; no runtime configuration was enabled by this task.",
+  "oauth_authentication": {
+    "status": "LIVE_VERIFIED",
+    "evidence": "evidence/p2-g2-wecom-web-oauth.md",
+    "business_service_loop_started": false,
+    "historical_only": true,
+    "applies_to_member_ticket_entry": false,
+    "namespace_correspondence_verified": false
+  },
+  "historical_failure_history": "evidence/p2-g2-validation-run-index.json",
+  "source_worktree_parent_commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "source_commit_role": "WORKTREE_PARENT_BEFORE_MAPPING_REPAIR",
+  "yixiaoxiu_member_ticket_entry": {
+    "path": "evidence/p2-g2-yxx-entry-mapping-v1-report.json",
+    "sha256": "5ed41c314f18fa7c3589000f06c59b3b96b2de365555a3c6ce7a3425ac239c78"
+  },
+  "event_time": "2026-09-15 10:53:21",
+  "event_epoch_ms": "1789440801697"
+}

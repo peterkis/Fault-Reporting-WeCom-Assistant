@@ -2,6 +2,7 @@ import {readFileSync,lstatSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
 import {assertG2EvidenceTime} from './p2-g2-evidence-time.mjs';
+import {readG2CurrentEvidence} from './p2-g2-current-evidence.mjs';
 
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const reject=()=>{throw Object.assign(new Error('YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'),{code:'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'});};
@@ -19,11 +20,19 @@ export function requirePreparedYxxCandidate({fingerprint,root,fullRegression,pas
     let raw;try{const file=path.join(root,ref.path),stat=lstatSync(file);if(!stat.isFile()||stat.isSymbolicLink()||stat.size>64*1024*1024)reject();raw=readFileSync(file);}catch{reject();}
     if(sha(raw)!==ref.sha256)reject();try{const value=JSON.parse(raw);assertG2EvidenceTime(value);return value;}catch{reject();}
   };
-  let r;try{r=JSON.parse(readFileSync(path.join(root,'evidence/p2-g2-yxx-entry-report.json'),'utf8'));}catch{reject();}
+  let r;try{r=readG2CurrentEvidence(root,'member');}catch{reject();}
   try{assertG2EvidenceTime(r);}catch{reject();}
+  const entryStatusValid=r.entry_status==='IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING'
+    ||r.entry_status==='DELEGATED_MAPPING_LIVE_VALIDATION_PENDING'&&r.mapping_repair?.status==='VERIFIED'
+    &&r.mapping_repair.mode==='VERIFIED_DELEGATED_MAPPING'&&r.mapping_repair.readonly_profile_only===true
+    &&r.mapping_repair.current_live_result==='NOT_RUN'&&[
+      'delegated member conversion binds exact original Bot identities without normalizing encrypted IDs',
+      'delegated OAuth HTTP reads own original Bot tickets, denies other members and preserves Grant and business facts',
+      'readonly check stays offline and conversion failure prevents startup; full service loop cannot inherit mapped mode',
+    ].every(name=>passedNames.has(name));
   if(r.work_item!=='P2-G2-YXX-TICKET-ENTRY'||r.candidate_fingerprint!==fingerprint||r.implementation!=='IMPLEMENTED'||r.automation!=='VERIFIED'
     ||r.entry_live_authorized!==false||r.entry_live_result!=='NOT_RUN'||r.p2_g2_live_result!=='NOT_RUN'
-    ||r.identity_namespace_live_verified!==false||r.entry_status!=='IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING'
+    ||r.identity_namespace_live_verified!==false||!entryStatusValid
     ||r.persistent_flags_all_off!==true||r.no_ddl!==true||r.real_provider_calls!==0||r.real_business_data_access!==false
     ||r.reporter_policy!=='MEMBER_REQUIRED'||r.full_regression?.tests!==fullRegression?.tests||fullRegression.tests<=976)reject();
   const matrix=evidence(r.sources?.scenario_matrix),routes=evidence(r.sources?.route_audit),run=evidence(r.sources?.regression_run),review=evidence(r.sources?.independent_review);

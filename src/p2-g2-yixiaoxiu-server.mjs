@@ -6,8 +6,8 @@ import {createP2012ReporterTimelineAdapter} from './p2-012-reporter-timeline-ada
 import {createYxxMemberAuthorizer} from './p2-g2-yixiaoxiu-authorizer.mjs';
 import {createYxxMemberHttp} from './p2-g2-yixiaoxiu-http.mjs';
 
-export function createYxxMemberExtension({pool,oauth,publicOrigin,reporterHmacSecret,reporterMemberEntry,access=null,incidentAdapter=undefined,now=Date.now}){
-  const authorizer=createYxxMemberAuthorizer({pool,oauth,config:reporterMemberEntry});
+export function createYxxMemberExtension({pool,oauth,publicOrigin,reporterHmacSecret,reporterMemberEntry,identityMapping=null,access=null,incidentAdapter=undefined,now=Date.now}){
+  const authorizer=createYxxMemberAuthorizer({pool,oauth,config:reporterMemberEntry,identityMapping});
   access??=createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});
   const timeline=createP2016ReporterTimeline({pool,enabled:true,authorizeRead:authorizer.read,
     incidentAdapter:incidentAdapter===undefined?createP2012ReporterTimelineAdapter({pool,enabled:true}):incidentAdapter});
