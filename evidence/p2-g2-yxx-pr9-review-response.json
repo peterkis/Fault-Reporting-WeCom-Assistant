@@ -1,0 +1,29 @@
+{
+  "event_time": "2026-09-15 15:13:35",
+  "event_epoch_ms": "1789456415085",
+  "pr": 9,
+  "reviewed_commit": "c48c2d07486a937aaecde5c5106aa3b36a2ee278",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "runtime_source_changed": false,
+  "findings": [
+    {
+      "comment_id": 4012880196,
+      "assessment": "NOT_REPRODUCED_EXISTING_SHORT_CIRCUIT",
+      "reproduction": "Passed empty frame and incomplete text callback to createTargetedTicketCreation.accept; both returned YXX_CREATION_SCOPE_DENIED; zero database connections",
+      "reason": "Reading adapted.message assigns undefined; !adapted.ok short-circuits before any m field dereference"
+    },
+    {
+      "comment_id": 4012880206,
+      "assessment": "STRUCTURAL_VS_SEMANTIC_CONTRACT_CLARIFIED",
+      "reproduction": "Standalone --check with Alice/alice rejected YXX_ENTRY_CONFIG_INVALID before Provider, pool or listener",
+      "resolution": "ADR0019 and runbook explicitly require runtime semantic validation after JSON Schema structure checks; no lossy case normalization or nonstandard schema keyword introduced"
+    }
+  ],
+  "focused_tests": {
+    "tests": 9,
+    "pass": 9,
+    "fail": 0
+  },
+  "full_regression": "Existing 1056/1056 applies to unchanged candidate",
+  "remote_re_review": "PENDING"
+}

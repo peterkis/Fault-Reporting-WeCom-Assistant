@@ -67,6 +67,8 @@ node scripts/validate-p2-g2-service-loop.mjs --require-ready
 - YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG指向受保护配置文件，结构参考config_examples/yixiaoxiu-member-ticket-entry.example.json；
 - PILOT_DATABASE_URL为批准的仅测试数据目标，P2_G2_REPORTER_HMAC_SECRET为既有Reporter签名密钥。
 
+部署配置必须同时通过结构与语义校验。JSON Schema 的 `uniqueItems` 仅检测完全相同的字符串，不代表已检查忽略大小写的成员唯一性或 UTF-8 字节长度。部署工具必须调用 `validateYxxEntryConfig` 或本启动器的离线 `--check`；例如 `Alice` 与 `alice` 同时出现在名单中必须拒绝，且此拒绝发生在 Provider、数据库和监听启动之前。不得将成员 ID 统一转小写，也不得仅凭 Schema 校验成功放行部署。
+
 连接池max4，启动器只关闭自己创建的pool；库函数不关闭外部共享pool。关闭App会撤销内存认证与intent。应用只读profile的唯一本地持久增量是访问审计，不能连接真实业务库试探权限。
 
 FULL_SERVICE_LOOP仍走现有G2进程入口。未来manifest必须带scope.reporter_access_policy=MEMBER_REQUIRED和按validateYxxEntryConfig规范化后的配置SHA256；Controller/App使用YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG_JSON传递该受保护数据配置。manifest scope hash与负责人许可也覆盖该摘要。App凭据不传Worker/Gateway，Gateway只接收链接模式。缺任何条件均失败关闭。
