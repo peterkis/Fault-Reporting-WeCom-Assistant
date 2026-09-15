@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_report_page.schema.json",
+  "title": "YXX self-service report page",
+  "type": "object", "additionalProperties": false, "required": ["items", "next_cursor"],
+  "properties": {
+    "items": {"type": "array", "maxItems": 50, "items": {"type": "object", "additionalProperties": false, "required": ["kind", "ref", "display_status", "created_at"], "properties": {
+      "kind": {"enum": ["WEB_REQUEST", "BOT_TICKET"]}, "ref": {"type": "string"}, "display_status": {"type": "string"}, "created_at": {"$ref": "./local_datetime.schema.json"}, "ticket": {"type": ["object", "null"]}
+    }}},
+    "next_cursor": {"type": ["string", "null"], "maxLength": 2048}
+  }
+}

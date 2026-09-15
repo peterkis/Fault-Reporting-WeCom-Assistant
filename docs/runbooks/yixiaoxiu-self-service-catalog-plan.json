@@ -1,0 +1,18 @@
+{
+  "migration": "033_yxx_self_service_intake.sql",
+  "new_tables": [
+    "intake.web_request_binding",
+    "intake.web_submission",
+    "intake.web_command_receipt"
+  ],
+  "shared_tables": {
+    "intake.service_intake": ["web_submission_id", "source_app_scope", "canonical_reporter_binding"],
+    "intake.contact_journey": ["entry_mode APP_WEB_SELF_SERVICE", "origin_channel PORTAL"],
+    "intake.channel_leg": ["leg_type WEB_FORM", "web_submission_id", "nullable Bot/session fields only on WEB branch"],
+    "intake.deterministic_decision": ["source_kind WEB", "basis_input_revision"],
+    "intake.manual_review_item": ["basis_input_revision"],
+    "pilot_ticket.ticket": ["no schema ownership change; existing core only"]
+  },
+  "preserved": ["migrations 001-032", "Bot foreign keys and non-null checks", "pilot_ticket_id", "version", "historical evidence"],
+  "forbidden": ["second ticket table", "Bot inbox row for web", "conversation session for web", "external message/outbox/delivery", "production profile enablement"]
+}

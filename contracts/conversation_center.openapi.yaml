@@ -1514,6 +1514,16 @@ paths:
         "403": {description: "Role denied"}
         "404": {description: "Resource outside authorized scope"}
         "503": {description: "Feature disabled or temporarily unavailable"}
+  /api/yixiaoxiu/bootstrap: {$ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1bootstrap'}
+  /api/yixiaoxiu/requests: {$ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1requests'}
+  /api/yixiaoxiu/my-reports: {$ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1my-reports'}
+  /api/yixiaoxiu/requests/{request_ref}: {$ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1requests~1{request_ref}'}
+  /api/yixiaoxiu/requests/{request_ref}/timeline: {$ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1requests~1{request_ref}~1timeline'}
+  /api/yixiaoxiu/requests/{request_ref}/supplements: {$ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1requests~1{request_ref}~1supplements'}
+  /api/yixiaoxiu/commands/{client_command_id}: {$ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1commands~1{client_command_id}'}
+  /wecom/yixiaoxiu/reports/new: {$ref: './yxx_self_service.openapi.yaml#/paths/~1wecom~1yixiaoxiu~1reports~1new'}
+  /wecom/yixiaoxiu/reports: {$ref: './yxx_self_service.openapi.yaml#/paths/~1wecom~1yixiaoxiu~1reports'}
+  /wecom/yixiaoxiu/reports/{request_ref}: {$ref: './yxx_self_service.openapi.yaml#/paths/~1wecom~1yixiaoxiu~1reports~1{request_ref}'}
 components:
   securitySchemes:
     WeComMember: {type: apiKey, in: cookie, name: __Host-wecom_session, description: "Secure HttpOnly member authentication only; per-request server ownership is required."}
