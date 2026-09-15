@@ -1,6 +1,8 @@
 import { WeComOAuthError } from './p2-g2-wecom-web-oauth.mjs';
 
 const root='/wecom/yixiaoxiu/';
+const homepageAuthReturn='?auth_return=1';
+const sessionCookieSeen=request=>(request.headers.cookie??'').split(';').some(part=>part.trim().startsWith(sessionName+'='));
 export const browserName='__Host-wecom_oauth',sessionName='__Host-wecom_session';
 const cookie=(name,value,age)=>`${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${age}`;
 export function readWeComCookie(request,name){
@@ -60,8 +62,18 @@ export function createWeComOAuthHttp({oauth,publicOrigin}={}){
           cookie(intentName(state),'',0),cookie(browserName,binding,1200),cookie(sessionName,result.sessionToken,result.maxAgeSeconds),
         ]});response.end();return true;
       }
-      if(request.method==='GET'&&url.pathname===root&&!url.search){
-        oauth.authenticate(readWeComCookie(request,sessionName));page(response,200,'企业微信成员认证成功。请从机器人发给您的工单卡片进入。');return true;
+      if(request.method==='GET'&&url.pathname===root){
+        const authReturn=url.search===homepageAuthReturn;
+        if(url.search && !authReturn){page(response,404,'未找到此页面。');return true;}
+        try{
+          oauth.authenticate(readWeComCookie(request,sessionName));
+          if(authReturn){response.writeHead(303,{location:root});response.end();return true;}
+          page(response,200,'企业微信成员认证成功。请从机器人发给您的工单卡片进入。');return true;
+        }catch(error){
+          if(!(error instanceof WeComOAuthError) || error.code!=='WECOM_AUTH_REQUIRED')throw error;
+          if(authReturn||sessionCookieSeen(request)){page(response,401,'认证未完成，请点击“重新认证”后再次进入。');return true;}
+          beginWeComOAuth({request,response,oauth,returnPath:root+homepageAuthReturn});return true;
+        }
       }
       if(request.method==='POST'&&url.pathname===root+'logout'&&!url.search){
         if(request.headers.origin!==publicOrigin||request.headers['sec-fetch-site']==='cross-site')throw new WeComOAuthError('WECOM_AUTH_REQUIRED',403);
