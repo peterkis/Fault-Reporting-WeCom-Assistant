@@ -22,4 +22,3 @@ Source package: `D:/Projects/CodexPlans/yixiaoxiu_self_service_tickets_v1/`
 | YXX-SS-009 | isolated verification | SS-008 | PLANNED |
 | YXX-SS-010 | readiness and live runbook | SS-009 | PLANNED |
 | YXX-SS-011 | limited-write live work | SS-010 | NOT AUTHORIZED |
-

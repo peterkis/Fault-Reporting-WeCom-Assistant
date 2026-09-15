@@ -36,7 +36,6 @@ SS-011 requires a separate live authorization.
 Each ticket is completed with its own tests and evidence, committed on this
 branch, pushed to its review branch, and held until the corresponding review is
 resolved before the next dependent ticket starts.
-
 ## Current status
 
 | Ticket | Status | Evidence |
@@ -44,4 +43,3 @@ resolved before the next dependent ticket starts.
 | YXX-SS-000 | IMPLEMENTING | this ledger and imported task index |
 | YXX-SS-001..010 | PLANNED | plan package, not completion evidence |
 | YXX-SS-011 | NOT AUTHORIZED | intentionally out of scope |
-
