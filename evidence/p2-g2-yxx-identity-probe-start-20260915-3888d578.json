@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 09:09:46",
+  "event_epoch_ms": "1789434586730",
+  "run_id": "20260915-3888d578",
+  "scope": "B_OAUTH_DIRECT_CONFIG_COMPARISON_ONLY",
+  "authorization": "User explicitly requested B login listener after B visibility confirmation.",
+  "B_config_key": "P2_G2_SECOND_TEST_ACCOUNT_USER_ID",
+  "expected_identity_source": "CONFIGURED_B_USERID_WITHOUT_CONVERSION",
+  "prior_conversion_status": "INVALID_INPUT_NOT_CAUSED_BY_MISSING_LOGIN",
+  "probe_sha256": "26922e32da5f68b03cfc560d0cb3e94cafe479819f822a4d1b4a391eff03f045",
+  "local_self_test": "PASS_INCLUDING_B_ONLY",
+  "exit_code": 0,
+  "result": {
+    "status": "PROBE_READY",
+    "run_id": "20260915-3888d578",
+    "container": "yxx-identity-probe-20260915-3888d578",
+    "restore_timer": "yxx-identity-probe-20260915-3888d578-restore.timer",
+    "expires_epoch_ms": "1789435785666",
+    "original_container_stopped": true,
+    "proxy_unchanged": true,
+    "oauth_application_matches_local_config": true,
+    "business_services_started": false,
+    "database_access": false,
+    "real_sends": 0
+  },
+  "identity_result": "PENDING_B_LOGIN",
+  "business_code_changed": false,
+  "database_access": false,
+  "real_sends": 0
+}

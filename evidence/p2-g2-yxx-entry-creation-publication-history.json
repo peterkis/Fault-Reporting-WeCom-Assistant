@@ -1,0 +1,11 @@
+{
+  "event_time": "2026-09-15 11:47:05",
+  "event_epoch_ms": "1789444025392",
+  "first_attempt": "creation-v1",
+  "status": "REJECTED_BY_READINESS_VALIDATOR",
+  "reason": "Reviewer record used resolved_findings instead of required findings array",
+  "runtime_source_changed": false,
+  "full_regression_reused": "1056/1056 same unchanged candidate",
+  "resolution": "Append-only creation-v2 reports with required resolved findings structure; readiness checks passed",
+  "frozen_files_overwritten": false
+}

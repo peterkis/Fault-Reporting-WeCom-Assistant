@@ -1,15 +1,22 @@
 import {textHashP2016,transactionP2016} from './p2-016-domain-contracts.mjs';
 import {failYxx,publicRefYxx,validateYxxEntryConfig} from './p2-g2-yixiaoxiu-contract.mjs';
+import {yxxIdentityConfigHash} from './p2-g2-yixiaoxiu-delegated-identity.mjs';
 
-export function createYxxMemberAuthorizer({pool,oauth,config}){
+export function createYxxMemberAuthorizer({pool,oauth,config,identityMapping=null}){
   const c=validateYxxEntryConfig(config);
   if(!c.enabled||!oauth?.enabled||typeof oauth.authenticate!=='function'
     ||oauth.scope?.corpId!==c.corpId||oauth.scope?.agentId!==c.agentId)failYxx('CONFIG_INVALID');
+  if(c.identityMode==='VERIFIED_DELEGATED_MAPPING'
+    &&(typeof identityMapping?.resolve!=='function'||identityMapping.configHash!==yxxIdentityConfigHash(c)))failYxx('IDENTITY_NAMESPACE_UNVERIFIED');
   let inFlight=0,closed=false;
   function authenticate(sessionToken){
     if(closed)failYxx('UNAVAILABLE');
     let member;try{member=oauth.authenticate(sessionToken);}catch{failYxx('AUTH_REQUIRED');}
     if(member.corpId!==c.corpId)failYxx('MEMBER_REQUIRED');
+    if(c.identityMode==='VERIFIED_DELEGATED_MAPPING'){
+      const userid=identityMapping.resolve(member.userid);if(!userid)failYxx('MEMBER_REQUIRED');
+      return {...member,userid};
+    }
     if(c.identityMode!=='VERIFIED_SAME_NAMESPACE')failYxx('IDENTITY_NAMESPACE_UNVERIFIED');
     return member;
   }

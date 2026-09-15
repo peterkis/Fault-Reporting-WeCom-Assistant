@@ -1,0 +1,10 @@
+{
+  "status": "RESTORED_OAUTH_ONLY",
+  "readonly_app_running": false,
+  "gateway_running": false,
+  "original_proxy_restored": true,
+  "timer_stopped": true,
+  "test_tickets_retained": true,
+  "event_time": "2026-09-15 14:47:41",
+  "event_epoch_ms": "1789454861160"
+}

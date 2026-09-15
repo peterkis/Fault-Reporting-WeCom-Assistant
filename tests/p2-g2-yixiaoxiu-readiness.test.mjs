@@ -77,7 +77,7 @@ test('member readiness refuses old976, missing48, bypass gaps, missing baseline 
   await t.test('member readiness refuses unrelated scenario files',()=>{
     save(report,{...matrix,scenarios:matrix.scenarios.map(s=>({...s,test_files:[baseline[1]]}))});assert.throws(read,{code:'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'});
   });
-  for(const patch of [{full_regression:{tests:976}},{entry_live_authorized:true},{identity_namespace_live_verified:true},{real_provider_calls:1},{reporter_policy:'LEGACY_BOUND_GRANT'}]){
+  for(const patch of [{entry_status:'DELEGATED_MAPPING_LIVE_VALIDATION_PENDING'},{full_regression:{tests:976}},{entry_live_authorized:true},{identity_namespace_live_verified:true},{real_provider_calls:1},{reporter_policy:'LEGACY_BOUND_GRANT'}]){
     save({...report,...patch});assert.throws(read,{code:'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'});
   }
   save(report,{...matrix,scenarios:matrix.scenarios.slice(1)});assert.throws(read,{code:'YXX_ENTRY_CURRENT_EVIDENCE_REQUIRED'});

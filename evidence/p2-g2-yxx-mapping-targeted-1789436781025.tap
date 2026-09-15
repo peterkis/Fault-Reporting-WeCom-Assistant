@@ -1,0 +1,72 @@
+TAP version 13
+# Subtest: delegated OAuth HTTP reads own original Bot tickets, denies other members and preserves Grant and business facts
+not ok 1 - delegated OAuth HTTP reads own original Bot tickets, denies other members and preserves Grant and business facts
+  ---
+  duration_ms: 2827.4993
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\p2-g2-yixiaoxiu-delegated-identity.integration.test.mjs:8:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    400 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 400
+  operator: 'strictEqual'
+  stack: |-
+    file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-delegated-identity.integration.test.mjs:30:11
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/p2-g2-yixiaoxiu-delegated-identity.integration.test.mjs:9:2)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: delegated member conversion binds exact original Bot identities without normalizing encrypted IDs
+ok 2 - delegated member conversion binds exact original Bot identities without normalizing encrypted IDs
+  ---
+  duration_ms: 3.2454
+  type: 'test'
+  ...
+# Subtest: delegated configuration and public schema bound the approved roster and forbid invented proof
+ok 3 - delegated configuration and public schema bound the approved roster and forbid invented proof
+  ---
+  duration_ms: 4.9357
+  type: 'test'
+  ...
+# Subtest: delegated conversion rejects partial, duplicate, foreign and malformed mappings without identity or token leaks
+ok 4 - delegated conversion rejects partial, duplicate, foreign and malformed mappings without identity or token leaks
+  ---
+  duration_ms: 4.2845
+  type: 'test'
+  ...
+# Subtest: delegated map cannot be reused under another scope or authorize an unlisted OAuth identity
+ok 5 - delegated map cannot be reused under another scope or authorize an unlisted OAuth identity
+  ---
+  duration_ms: 1.4575
+  type: 'test'
+  ...
+# {"ok":true,"profile":"MEMBER_TICKET_READONLY","configured":true,"database_connections":0,"provider_calls":0,"listener_started":false,"live_authorized":false}
+# Subtest: delegated conversion rejects a non-cooperative Provider within its startup deadline
+ok 6 - delegated conversion rejects a non-cooperative Provider within its startup deadline
+  ---
+  duration_ms: 5009.375
+  type: 'test'
+  ...
+# Subtest: readonly check stays offline and conversion failure prevents startup; full service loop cannot inherit mapped mode
+ok 7 - readonly check stays offline and conversion failure prevents startup; full service loop cannot inherit mapped mode
+  ---
+  duration_ms: 4.2847
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8306.468

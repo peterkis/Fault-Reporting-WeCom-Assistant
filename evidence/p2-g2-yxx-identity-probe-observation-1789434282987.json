@@ -1,0 +1,32 @@
+{
+  "event_time": "2026-09-15 09:04:42",
+  "event_epoch_ms": "1789434282987",
+  "run_id": "20260915-35e193e2",
+  "user_report": "A opened login after official conversion; B config key corrected by user",
+  "B_config_key": "P2_G2_SECOND_TEST_ACCOUNT_USER_ID",
+  "B_config_present": true,
+  "B_distinct_from_A": true,
+  "exit_code": 0,
+  "result": {
+    "running": true,
+    "events": [
+      {
+        "event_time": "2026-09-15 09:00:47",
+        "event_epoch_ms": "1789434047266",
+        "event": "PROBE_READY",
+        "expires_epoch_ms": "1789435246584"
+      },
+      {
+        "event_time": "2026-09-15 09:03:49",
+        "event_epoch_ms": "1789434229135",
+        "event": "OAUTH_IDENTITY_COMPARISON",
+        "sequence": 1,
+        "match": "A",
+        "comparison": "EXACT_UTF8_HMAC_SHA256",
+        "provider_response_validated": true
+      }
+    ]
+  },
+  "real_sends": 0,
+  "database_access": false
+}

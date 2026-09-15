@@ -1,0 +1,16 @@
+{
+  "event_time": "2026-09-15 10:23:16",
+  "event_epoch_ms": "1789438996565",
+  "scope": "EXACT_ABORTED_RUN_TEMP_DATABASE_CLEANUP",
+  "database_name_sha256": "4d9fabce204bdcc0f5a15b6476e6807730508f2280fd718afc128993bd68fadf",
+  "database_oid": "29632610",
+  "created_epoch_ms": "1789438780000",
+  "run_started_epoch_ms": "1789438678756",
+  "run_completed_epoch_ms": "1789438790331",
+  "fixture_identity_confirmed": true,
+  "real_ticket_count": 0,
+  "active_backends_before_drop": 0,
+  "deleted_database_count": 1,
+  "deleted_role_count": 0,
+  "cleanup_passed": true
+}

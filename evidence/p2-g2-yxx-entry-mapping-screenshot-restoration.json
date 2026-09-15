@@ -1,0 +1,24 @@
+{
+  "event_time": "2026-09-15 10:20:47",
+  "event_epoch_ms": "1789438847172",
+  "cause": "Existing browser test wrote to frozen tracked screenshot paths during first full run; subsequent run stopped when detected.",
+  "historical_overwrite_occurred": true,
+  "records": [
+    {
+      "path": "evidence/p2-g2-yxx-entry-screenshots/1440.png",
+      "preserved_generated_copy": "evidence/p2-g2-yxx-entry-mapping-first-screenshot-1440.png",
+      "generated_sha256": "618c620f998636a0cb928b14a440122f5ed7e84b84007e658484a5352c2f8cf5",
+      "restored_sha256": "2a4e6d80e733aeb796b531880c6936bd765d3543e56350695938d2b0f9bba1cf",
+      "restored_exact": true
+    },
+    {
+      "path": "evidence/p2-g2-yxx-entry-screenshots/390.png",
+      "preserved_generated_copy": "evidence/p2-g2-yxx-entry-mapping-first-screenshot-390.png",
+      "generated_sha256": "6a12335c38509dc4dc2b888343920f8c8a252d0b925b1996b77d16f8cee4dd05",
+      "restored_sha256": "a3a092d1b70a5a39efe97d82043e46227f071a4ffd307988ccdf911a457b1b2e",
+      "restored_exact": true
+    }
+  ],
+  "aborted_run": "tmp/p2-g2-tests-c88fde13-4e8b-4822-bead-8b0018271ae5",
+  "preexisting_tracked_worktree_was_clean": true
+}

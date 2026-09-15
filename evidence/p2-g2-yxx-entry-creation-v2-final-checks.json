@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 11:46:53",
+  "event_epoch_ms": "1789444013154",
+  "status": "PASS",
+  "commit": "9aa2428c85fbd28d34eaf5a795be85046afc59a7",
+  "tree": "33826803c02e058f6475a8a0c8b5abccf6a8aaa0",
+  "branch": "codex/yxx-delegated-identity-repair",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "gitignore_sha256": "0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092",
+  "pilot_env_sha256": "55a1a49e4b7da9806ad30c03a4ab6297e8017ba6189c5f54399915d691baf346",
+  "frozen_tracked_evidence_unchanged": true,
+  "migrations_unchanged": true,
+  "ready_checks": true,
+  "full_g2_live_started": false,
+  "p2_008_started": false,
+  "gateway_started_at_this_check": false,
+  "cloud_staging": {
+    "status": "STOPPED_RELEASE_STAGED",
+    "release": "/opt/fault-reporting-wecom/p2-g2/releases/yxx-create-72cea60ac8f812ab",
+    "private": "/opt/fault-reporting-wecom/p2-g2/live-data/p2-g2-db3f37e173c345d4/yxx-targeted",
+    "fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+    "migration": {
+      "status": "APPLIED",
+      "tail": "APPLIED"
+    },
+    "tickets": 0,
+    "business_services_started": false,
+    "real_sends": 0,
+    "event_time": "2026-09-15 11:25:22",
+    "event_epoch_ms": "1789442722770"
+  }
+}

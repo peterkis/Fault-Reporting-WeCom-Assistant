@@ -1,0 +1,25 @@
+{
+  "event_time": "2026-09-15 14:31:41",
+  "event_epoch_ms": "1789453901672",
+  "status": "A_B_OWN_READ_AND_CROSS_DENIAL_VERIFIED",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "sources": [
+    "evidence/yxx-ro-2a31c0dbede7-result-1789453138008.json",
+    "evidence/yxx-ro-dbac9f4fac91-result-1789453863459.json"
+  ],
+  "A": {
+    "own_A1_A2": "PASS_HTTP_200_AND_USER_CONFIRMED",
+    "other_B1_B2": "PASS_HTTP_404_AND_USER_CONFIRMED"
+  },
+  "B": {
+    "own_B1_B2": "PASS_HTTP_200_AND_USER_CONFIRMED",
+    "other_A1_A2": "PASS_HTTP_404_AND_USER_CONFIRMED"
+  },
+  "logout_and_reauthentication": "HTTP_LOGOUT_200_THEN_READ_401_THEN_CALLBACK_303_AND_OWN_READ_200_OBSERVED",
+  "cross_tab_logout_visual": "PENDING_USER_OBSERVATION",
+  "legacy_grant_link_live": "NOT_RUN",
+  "real_card_sends": 0,
+  "business_tables_unchanged": 49,
+  "full_p2_g2_live": false,
+  "p2_008": false
+}

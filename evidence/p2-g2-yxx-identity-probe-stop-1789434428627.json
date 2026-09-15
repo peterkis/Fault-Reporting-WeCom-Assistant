@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 09:07:08",
+  "event_epoch_ms": "1789434428627",
+  "run_id": "20260915-35e193e2",
+  "exit_code": 0,
+  "result": {
+    "oauth_only_restored": true,
+    "probe_stopped": true,
+    "timer_cancelled_after_restoration": true,
+    "proxy_unchanged": true
+  },
+  "A_result": "LIVE_OAUTH_MATCHES_OFFICIALLY_CONVERTED_CONFIGURED_BOT_USERID",
+  "B_result": "OFFICIAL_CONVERSION_INVALID_INPUT_NO_MAPPING",
+  "direct_same_namespace_verified": false,
+  "entry_enabled": false,
+  "p2_g2_live_started": false,
+  "real_sends": 0,
+  "database_access": false
+}

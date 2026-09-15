@@ -1,0 +1,7 @@
+{
+  "event_time": "2026-09-15 10:24:30",
+  "event_epoch_ms": "1789439070028",
+  "exit_code": 0,
+  "tap": "evidence/p2-g2-yxx-entry-mapping-browser-1789439070028.tap",
+  "frozen_screenshot_bytes_unchanged": true
+}

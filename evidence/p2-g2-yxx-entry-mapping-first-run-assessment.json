@@ -1,0 +1,14 @@
+{
+  "event_time": "2026-09-15 10:17:56",
+  "event_epoch_ms": "1789438676514",
+  "counts": {
+    "tests": 1052,
+    "pass": 1051,
+    "fail": 1
+  },
+  "candidate_unchanged": true,
+  "sole_failed_test": "ARCH-006 validator passes",
+  "cause": "Nested temporary governance fields were not synchronized at initial ARCH006 execution; both validators now pass after state synchronization.",
+  "governance_changed_during_preliminary_run": true,
+  "superseded_by": "Final run after optional response field compatibility fix; not accepted as current readiness."
+}

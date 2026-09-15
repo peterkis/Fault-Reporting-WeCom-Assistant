@@ -1,0 +1,43 @@
+{
+  "event_time": "2026-09-15 08:45:11",
+  "event_epoch_ms": "1789433111372",
+  "run_id": "20260915-20f3efad",
+  "exit_code": 0,
+  "result": {
+    "containers": [
+      {
+        "name": "yxx-identity-probe-20260915-20f3efad",
+        "running": true,
+        "exit_code": 0,
+        "restart_count": 0
+      },
+      {
+        "name": "fault-reporting-wecom-oauth",
+        "running": false,
+        "exit_code": 0,
+        "restart_count": 0
+      }
+    ],
+    "events": [
+      {
+        "event_time": "2026-09-15 08:42:24",
+        "event_epoch_ms": "1789432944489",
+        "event": "PROBE_READY",
+        "expires_epoch_ms": "1789434143882"
+      },
+      {
+        "event_time": "2026-09-15 08:43:55",
+        "event_epoch_ms": "1789433035811",
+        "event": "OAUTH_IDENTITY_COMPARISON_FAILED",
+        "sequence": 1
+      },
+      {
+        "event_time": "2026-09-15 08:44:00",
+        "event_epoch_ms": "1789433040481",
+        "event": "OAUTH_IDENTITY_COMPARISON_FAILED",
+        "sequence": 2
+      }
+    ],
+    "timer_active": "active"
+  }
+}

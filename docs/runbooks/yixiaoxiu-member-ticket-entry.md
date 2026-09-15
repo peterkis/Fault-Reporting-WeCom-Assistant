@@ -2,6 +2,16 @@
 
 Status: NOT_AUTHORIZED / NOT_RUN. 本文是后续独立授权的执行模板。当前只能使用本地合成自动化结果；没有本次真实身份对应证明、客户端验收或负责人现场批准。
 
+2026-09-15 增补：A/B 已完成独立身份核验，结论是官方转换后对应，不是原始 ID 同命名空间；工单现场尚未运行。ADR-0019 的最小修补已获授权。当前候选报告以 `plans/current_phase.json` 的 `p2_g2_current_readiness` 指针为准（不存在时使用原固定路径）；原 PR #8 报告是冻结历史，不覆盖。
+
+### 代开发应用的只读启动转换
+
+当 Bot 返回企业明文 userid、OAuth 返回服务商级密文时，使用 `VERIFIED_DELEGATED_MAPPING`，受保护配置添加 `reporterUserIds`（1–32 个经批准的 Bot 原始 userid）。仍要求企业/Agent/Bot范围、memberIdsConfirmed=true、proofKind=LIVE、proofRef 与 DEPLOYMENT。不得以 VERIFIED_SAME_NAMESPACE 代替。
+
+独立 MEMBER_TICKET_READONLY 启动器在建立数据库池和监听前，使用同一应用 token provider 调用官方 `batch/userid_to_openuserid` 一次。5秒截止、64KiB响应上限；全部转换成功且一对一才创建内存反向映射。`--check`只检查配置，不调用该接口。读取时仍比较原始 Intake userid 和原始 binding hash，不改数据库身份，不在事务中访问 Provider。映射不赋予额外工单权限，不包含的成员拒绝。
+
+映射随当前 App 生命周期使用；配置或名单变化须停止并重新启动、重新转换，不热改旧映射。关闭/回退仍按本手册原方式执行。FULL_SERVICE_LOOP 的映射集成不在本次修补范围，仍拒绝这种配置。下面的“确认一致”仅适用于原同命名空间模式；跨命名空间采用本增补，不能伪造原始ID相等证明。
+
 ## 选择候选与最少许可
 
 现场申请必须给出当前确切commit、tree、candidate fingerprint及两个就绪报告。先执行离线命令并逐条核对退出码：
@@ -110,3 +120,22 @@ callback query、prepare body和Cookie头关闭敏感访问日志；不记录完
 关闭本次App及其拥有的请求、池和认证状态；保留已有业务/审计事实。需要回退到OAuth-only时，在已批准窗口核对原版本摘要并切回，重新认证；MEMBER_REQUIRED配置失效不能变成公开LEGACY_BOUND_GRANT入口。不执行down migration或清理旧工单、Grant、archive、用户.gitignore、全局Temp。
 
 负责人另行确认的是本入口的定向联调结果。即使本入口通过，P2-G2-LIVE、P2-008、Phase2 Go、生产或临床上线仍需各自授权。
+# 定向建单补充（2026-09-15）
+
+负责人已在会话授权受控建单模式，供 A/B 后续成员只读测试准备工单。入口仍使用本手册既有实现。新增运行模式为 `YXX_TARGETED_TICKET_CREATION`，启动器 `scripts/p2-g2-yxx-targeted-create.mjs --check|--serve`，契约见 ADR 0020。
+
+范围：A1=A 群聊、A2=A 私聊、B1=B 群聊、B2=B 私聊；每案例精确文本、原始 Bot 成员 ID、Bot ID 和唯一群 ID 绑定。群消息须 @Bot。每案例最多一单，最多 16 条持久入站，最多 4 条在途，最长 30 分钟；完成四案例、失败、超限或到期自动停止。配置只保存于受限私有目录，不将成员 ID 写入证据。
+
+此运行不启动发送器、AI、Incident、完整 G2 Worker；无回复和卡片发送。工单及创建事件通过既有事务端口写入，并生成只读 public_ref，不生成 Grant。测试者发送完成后，由操作者核对返回案例编号、工单号及 public_ref，再按本手册继续本人读取与他人拒绝测试。
+
+启动前核对候选 fingerprint、独立审查和回归，验证测试库名称/OID/属主、原归属标记及无其他 Gateway；部署使用独立不可覆盖目录、只读挂载、专用配置、256 MiB/0.5 CPU、无自动重启和额外的系统停止计时器。关闭仅停止本次容器，保留测试工单供后续读取；不修改原 OAuth/nginx 配置，不推进 P2-G2-LIVE/P2-008。
+
+## 2026-09-15 定向现场收尾
+
+上述原始授权表和停止态描述保留其历史语境。负责人随后授权定向现场、身份修补、受控建单和成员只读测试；结果见 `evidence/p2-g2-yxx-targeted-live-summary.json`，不扩展为完整 P2-G2-LIVE 或 P2-008。
+
+A/B 均可读取自己的两单，对他人的两单均被拒绝。手机上按顺序打开多个页面已验证，但未执行同时多标签测试。退出本次访问后，旧请求可返回 401，重新打开入口会启动新的 `snsapi_base` OAuth 流程；企业微信可以自动完成这轮认证，因此“必须出现手动认证提示”不是通过判据。应核对退出、重定向或未认证拒绝、新 OAuth 回调、本人读取恢复的请求顺序。
+
+只读窗口曾通过 Unix socket 代理连接 nginx 容器与主机回环上的唯一 App，没有改变 PostgreSQL 的监听或认证规则。日志仅记录时间、方法、HTTP 状态和固定路径别名，不记录查询串、Cookie 或原始成员 ID。窗口结束恢复原 nginx 字节和 OAuth-only 容器；本轮已完成回退，保留四张测试工单。
+
+旧 Grant 卡片现场和真实卡片发送仍未执行，后者没有独立发送授权。退出/恢复和部分现场验证通过不等于 Gate 批准。

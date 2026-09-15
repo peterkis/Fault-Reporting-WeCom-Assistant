@@ -1,0 +1,23 @@
+{
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "screenshots": [
+    {
+      "event_time": "2026-09-15 11:44:20",
+      "event_epoch_ms": "1789443860987",
+      "width": 1440,
+      "path": "evidence/p2-g2-yxx-entry-creation-v2-screenshot-1440.png",
+      "sha256": "0c2d511e6eafe7c1c084004e60b5e9f161e56ee814e349c9ed61875b06b2df2f",
+      "source_path": "tmp/yxx-browser-screenshots-97464913-f2fc-44f1-a00e-48feb3200620/1440.png"
+    },
+    {
+      "event_time": "2026-09-15 11:44:26",
+      "event_epoch_ms": "1789443866974",
+      "width": 390,
+      "path": "evidence/p2-g2-yxx-entry-creation-v2-screenshot-390.png",
+      "sha256": "35c9256ff732d076ffea3a5fa3a1d19b0ff7ac75e0338b19fa30b40ed9227c49",
+      "source_path": "tmp/yxx-browser-screenshots-97464913-f2fc-44f1-a00e-48feb3200620/390.png"
+    }
+  ],
+  "event_time": "2026-09-15 11:46:41",
+  "event_epoch_ms": "1789444001680"
+}

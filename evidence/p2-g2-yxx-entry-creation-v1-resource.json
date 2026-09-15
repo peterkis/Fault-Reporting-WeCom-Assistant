@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "regression_tap_sha256": "22f6e878ad046855eb96607fec96124eb46e9379a0c0e0d92936f239e964386e",
+  "diagnostic_sha256": "5a49d51860bb0a1a01b8df8b41d52f4c2d9bd45d77623c2b5f8fb2590c202d02",
+  "measurement": {
+    "authenticated_sessions": 100,
+    "concurrent_reads": 32,
+    "overload_status": 503,
+    "pool_peak_connections": 4,
+    "pending_pool_after": 0,
+    "elapsed_ms": 357,
+    "rss_before_bytes": 98115584,
+    "rss_after_bytes": 102924288,
+    "catalog_unchanged": true,
+    "business_tables_unchanged": true,
+    "formal_observation": false,
+    "real_provider_calls": 0
+  },
+  "event_time": "2026-09-15 11:45:34",
+  "event_epoch_ms": "1789443934479"
+}

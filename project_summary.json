@@ -120,8 +120,8 @@
     "p2_g2_authorized_at": "2026-09-08",
     "p2_g2_authorization_evidence": "evidence/p2-g2-start-authorization.md",
     "p2_g2_base_commit": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
-    "p2_g2_automated_readiness_evidence": "evidence/p2-g2-automated-readiness-report.json",
-    "p2_g2_ready_at": "2026-09-11",
+    "p2_g2_automated_readiness_evidence": "evidence/p2-g2-yxx-entry-creation-v2-parent-report.json",
+    "p2_g2_ready_at": "2026-09-15",
     "yixiaoxiu_member_ticket_entry": {
       "work_item": "P2-G2-YXX-TICKET-ENTRY",
       "status": "READY_FOR_TARGETED_LIVE_VALIDATION",
@@ -135,9 +135,37 @@
       "review_repair_authorization": "evidence/p2-g2-yxx-entry-pr8-repair-authorization.md",
       "implementation": "IMPLEMENTED",
       "automation": "VERIFIED",
-      "entry_status": "IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING",
-      "completion_evidence": "evidence/p2-g2-yxx-entry-report.json",
-      "candidate_fingerprint": "9e6aa8a001fc0fde9c4f364888d5ecbaa28dd3350269e1af72e18d3c4a502048"
+      "entry_status": "DELEGATED_MAPPING_LIVE_VALIDATION_PENDING",
+      "completion_evidence": "evidence/p2-g2-yxx-entry-creation-v2-report.json",
+      "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+      "mapping_repair": {
+        "status": "LOCAL_VERIFIED",
+        "candidate_fingerprint": "c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9",
+        "report": "evidence/p2-g2-yxx-entry-mapping-v1-report.json",
+        "current_live_result": "NOT_RUN",
+        "event_time": "2026-09-15 10:53:22",
+        "event_epoch_ms": "1789440802751"
+      },
+      "targeted_creation": {
+        "status": "LOCAL_VERIFIED",
+        "evidence": "evidence/p2-g2-yxx-entry-creation-v2-report.json",
+        "live_result": "FOUR_TICKETS_CREATED_GATEWAY_STOPPED",
+        "event_time": "2026-09-15 12:53:54",
+        "event_epoch_ms": "1789448034770",
+        "startup_evidence": "evidence/p2-g2-yxx-creation-c40e7c780f7c-startup.json",
+        "run_id": "yxx-create-c40e7c780f7c",
+        "completion_evidence": "evidence/p2-g2-yxx-creation-observation-1789447987837.json",
+        "member_readonly_live_result": "NOT_RUN"
+      },
+      "readonly_live": {
+        "status": "TARGETED_MEMBER_READ_VERIFIED_WITH_REMAINING_ITEMS",
+        "summary_evidence": "evidence/p2-g2-yxx-targeted-live-summary.json",
+        "cloud_status": "RESTORED_OAUTH_ONLY",
+        "multi_tab_live": "NOT_RUN_MOBILE_ENVIRONMENT",
+        "legacy_grant_live": "NOT_RUN",
+        "event_time": "2026-09-15 14:51:23",
+        "event_epoch_ms": "1789455083654"
+      }
     },
     "p2_g2_live_authorized": false
   },

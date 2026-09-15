@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 12:32:59",
+  "event_epoch_ms": "1789446779729",
+  "run_id": "yxx-create-c40e7c780f7c",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "config_sha256": "30f2fd8ae6bc87404c163e0280dcabe0e205e69f192aae3cb450a0fdb1fd3271",
+  "owner": "PROJECT_OWNER_CURRENT_CONVERSATION",
+  "authorization": "Explicit user permission after scoped launcher proposal",
+  "scope": {
+    "members": [
+      "A",
+      "B"
+    ],
+    "group_count": 1,
+    "cases": [
+      {
+        "id": "A1",
+        "member": "A",
+        "chatType": "group",
+        "text": "新故障：HIS无法登录，定向测试 c40e7c780f7c-A1"
+      },
+      {
+        "id": "A2",
+        "member": "A",
+        "chatType": "single",
+        "text": "新故障：HIS无法登录，定向测试 c40e7c780f7c-A2"
+      },
+      {
+        "id": "B1",
+        "member": "B",
+        "chatType": "group",
+        "text": "新故障：HIS无法登录，定向测试 c40e7c780f7c-B1"
+      },
+      {
+        "id": "B2",
+        "member": "B",
+        "chatType": "single",
+        "text": "新故障：HIS无法登录，定向测试 c40e7c780f7c-B2"
+      }
+    ],
+    "max_tickets": 4,
+    "max_inflight": 4,
+    "max_inbox": 16,
+    "real_sends": 0,
+    "start_epoch_ms": "1789446779727",
+    "end_epoch_ms": "1789448579727"
+  },
+  "full_p2_g2_live": false,
+  "p2_008": false,
+  "ai": false,
+  "incident": false,
+  "proxy_changes": false
+}

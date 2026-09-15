@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-15 10:55:46",
+  "event_epoch_ms": "1789440946479",
+  "candidate_fingerprint": "c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9",
+  "candidate_file_count": 614,
+  "checks": [
+    {
+      "event_time": "2026-09-15 10:55:42",
+      "event_epoch_ms": "1789440942926",
+      "command": [
+        "node",
+        "scripts/p2-g2-yixiaoxiu-check.mjs",
+        "--require-ready"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"ok\":true,\"work_item\":\"P2-G2-YXX-TICKET-ENTRY\",\"check_scope\":\"CURRENT_READY\",\"candidate_fingerprint\":\"c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9\",\"persistent_defaults_off\":true,\"readiness_checked\":true,\"live_authorized\":false,\"database_connections\":0,\"provider_calls\":0}\n",
+      "stderr": ""
+    },
+    {
+      "event_time": "2026-09-15 10:55:44",
+      "event_epoch_ms": "1789440944421",
+      "command": [
+        "node",
+        "scripts/validate-p2-g2-service-loop.mjs",
+        "--require-ready"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"ok\":true,\"gate\":\"P2-G2\",\"checks\":17,\"errors\":[],\"candidate_fingerprint\":\"c62464fe53392de7ea49e63da12cf4b097687ee1edffd20145aa3806e693f5f9\",\"readiness_checked\":true,\"live_validation\":\"NOT_RUN\",\"database_writes\":false,\"provider_calls\":0}\n",
+      "stderr": ""
+    },
+    {
+      "event_time": "2026-09-15 10:55:44",
+      "event_epoch_ms": "1789440944545",
+      "command": [
+        "node",
+        "scripts/validate-v1-4-architecture.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "V1.4 architecture validation passed (407 checks).\n",
+      "stderr": ""
+    },
+    {
+      "event_time": "2026-09-15 10:55:45",
+      "event_epoch_ms": "1789440945877",
+      "command": [
+        "node",
+        "scripts/validate-arch-006-rule-first-service-loop.mjs"
+      ],
+      "exit_code": 0,
+      "stdout": "ARCH-006 rule-first service loop validation passed (262 checks).\n",
+      "stderr": ""
+    }
+  ],
+  "frozen_tracked_evidence_migrations_gitignore_unchanged": true,
+  "historical_screenshot_overwrite_restored_and_recorded": true,
+  "gitignore_sha256": "0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092",
+  "B_configuration_update_preserved": true,
+  "current_report_pointers": {
+    "parent": "evidence/p2-g2-yxx-entry-mapping-v1-parent-report.json",
+    "member": "evidence/p2-g2-yxx-entry-mapping-v1-report.json"
+  },
+  "cleanup": {
+    "remaining_test_database_candidates": 0,
+    "active_test_backends": 0
+  },
+  "current_live_member_test": "NOT_RUN",
+  "real_sends_by_repair": 0,
+  "cloud_deploy_by_repair": false,
+  "p2_g2_live_started": false,
+  "p2_008_started": false,
+  "commit_push_merge_tag": false
+}

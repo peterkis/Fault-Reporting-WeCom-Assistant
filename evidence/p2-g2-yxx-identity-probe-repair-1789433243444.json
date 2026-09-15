@@ -1,0 +1,20 @@
+{
+  "event_time": "2026-09-15 08:47:23",
+  "event_epoch_ms": "1789433243444",
+  "run_id": "20260915-20f3efad",
+  "cause": "Temporary probe assumed second context argument; frozen cloud OAuth core calls resolver with code only.",
+  "red": "TypeError reading signal of undefined reproduced in local actual observe function.",
+  "green": "Missing-context call passes, exact A/B and negative cases pass; supplied aborted signal still rejects.",
+  "probe_sha256": "42c0b12d47b9714e09aeceee8448635fcba8d2c607d4e1b68c419bd1e5fc95df",
+  "exit_code": 0,
+  "result": {
+    "status": "PROBE_V2_READY",
+    "original_window_preserved": true,
+    "remaining_provider_attempt_limit": 6,
+    "prior_failed_attempts": 2,
+    "original_oauth_stopped": true,
+    "proxy_unchanged": true
+  },
+  "business_source_changed": false,
+  "real_identity_verified": false
+}

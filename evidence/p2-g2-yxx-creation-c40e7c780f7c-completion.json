@@ -1,0 +1,42 @@
+{
+  "event_time": "2026-09-15 12:53:54",
+  "event_epoch_ms": "1789448034771",
+  "status": "FOUR_TICKETS_CREATED_GATEWAY_STOPPED",
+  "run_id": "yxx-create-c40e7c780f7c",
+  "source": "evidence/p2-g2-yxx-creation-observation-1789447987837.json",
+  "tickets": [
+    {
+      "case_id": "A1",
+      "ticket_no": "IT-20260915-0001",
+      "public_ref": "vh8MXSCEqXzRu9f2nLabwulXr7pLsklW",
+      "original_reporter_matches": true,
+      "created_events": 1
+    },
+    {
+      "case_id": "A2",
+      "ticket_no": "IT-20260915-0002",
+      "public_ref": "XcWTVyEu5qtJbfw6oasITqlBZC8LqLdf",
+      "original_reporter_matches": true,
+      "created_events": 1
+    },
+    {
+      "case_id": "B1",
+      "ticket_no": "IT-20260915-0003",
+      "public_ref": "fbdanM_gba2CN6mnIhsKD1wmUoQ3AKO8",
+      "original_reporter_matches": true,
+      "created_events": 1
+    },
+    {
+      "case_id": "B2",
+      "ticket_no": "IT-20260915-0004",
+      "public_ref": "lNOmOsPXXiqHDxKjEdD5duvmzmmR2C9b",
+      "original_reporter_matches": true,
+      "created_events": 1
+    }
+  ],
+  "gateway_running": false,
+  "real_sends": 0,
+  "member_readonly_live_result": "NOT_RUN",
+  "full_p2_g2_live": false,
+  "p2_008": false
+}

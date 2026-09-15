@@ -1,0 +1,888 @@
+{
+  "schema_version": 1,
+  "work_item": "P2-G2-YXX-TICKET-ENTRY",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "regression_run": {
+    "path": "evidence/p2-g2-yxx-entry-creation-v2-regression-run.json",
+    "sha256": "847bc1dab00ded13ad8f7b5d983f50c7e273627f963fbabca1f08fb83d85bee1"
+  },
+  "regression_tap_sha256": "22f6e878ad046855eb96607fec96124eb46e9379a0c0e0d92936f239e964386e",
+  "scenarios": [
+    {
+      "scenario_id": "YXX-01",
+      "requirement": "新卡片两个点击区域",
+      "required_assertion": "同canonical URL、无Grant/身份/secret",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-01 member Sender validates persisted delivery binding without reading a Grant before its mock SDK call",
+        "YXX-01 both member card click regions use one canonical ref without a grant or identity"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+          "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-02",
+      "requirement": "未登录打开新卡片",
+      "required_assertion": "无Ticket数据，OAuth后回到原ref",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+        "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844",
+        "YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-03",
+      "requirement": "正确成员查看",
+      "required_assertion": "与既有安全投影逐字段一致",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects",
+        "YXX-03 member detail equals the complete legacy safe projection field for field"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-04",
+      "requirement": "同院其他成员打开转发卡片",
+      "required_assertion": "404，无他人工单内容",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-05",
+      "requirement": "非成员/互联企业",
+      "required_assertion": "403，无身份降级",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-05 OAuth rejects non-member, interconnected identity and accessor responses without invoking getters"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+          "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-06",
+      "requirement": "相同userid不同corp/Bot域",
+      "required_assertion": "拒绝，不串企业/机器人",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint",
+        "YXX-06 YXX-08 different Bot and malformed or unknown refs cannot broaden ownership"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+          "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-07",
+      "requirement": "ID口径未确认",
+      "required_assertion": "默认拒绝，无猜测匹配",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback",
+        "YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint",
+        "YXX-07 live namespace unknown stays denied after successful synthetic member authentication"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+          "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-08",
+      "requirement": "篡改ref/内部UUID/四位尾号",
+      "required_assertion": "不扩大权限，输入分类稳定",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-06 YXX-08 different Bot and malformed or unknown refs cannot broaden ownership"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-09",
+      "requirement": "ref撤销",
+      "required_assertion": "每次读/304都拒绝，不复活",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-09 YXX-37 revoked ref denies a formerly matching ETag before 304"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-10",
+      "requirement": "Ticket/Intake相关保留期到期",
+      "required_assertion": "按已裁定有效性拒绝",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-10 Intake retention expiry removes eligibility using the actual persisted deadline"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-11",
+      "requirement": "工单关闭但保留期内",
+      "required_assertion": "正确成员仍可读，无业务重开",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-11 closed retained Ticket stays readable and member query does not reopen it"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-12",
+      "requirement": "新链接重复点击",
+      "required_assertion": "无新Ticket/Delivery/Grant；正常查询",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-13",
+      "requirement": "会话过期后新OAuth",
+      "required_assertion": "新code，原ref恢复，不复用code",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag",
+        "YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery",
+        "YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code",
+        "YXX-13 explicit fresh login refreshes browser binding without extending authentication or polling lifetime"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+          "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-14",
+      "requirement": "同成员不同设备",
+      "required_assertion": "独立认证后正确访问，不共享Bearer",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-15",
+      "requirement": "双标签页同时登录A/B工单",
+      "required_assertion": "intent不覆盖，不串ref",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge",
+        "YXX-15 YXX-43 same-browser OAuth intents retain independent ticket destinations and bounded capacity"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+          "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-16",
+      "requirement": "一个state重放/跨浏览器",
+      "required_assertion": "一次性拒绝，无Provider重放",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-16 YXX-17 YXX-18 YXX-43 opaque intents reject replay, foreign browser, arbitrary return paths and release expired slots"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+          "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-17",
+      "requirement": "callback参数污染/重复参数",
+      "required_assertion": "拒绝，原业务状态无变化",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-17 YXX-18 callback pollution and arbitrary return query do not consume the valid intent",
+        "YXX-16 YXX-17 YXX-18 YXX-43 opaque intents reject replay, foreign browser, arbitrary return paths and release expired slots"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+          "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-18",
+      "requirement": "任意return_url/外域重定向",
+      "required_assertion": "拒绝，固定站内目的地",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-17 YXX-18 callback pollution and arbitrary return query do not consume the valid intent",
+        "YXX-16 YXX-17 YXX-18 YXX-43 opaque intents reject replay, foreign browser, arbitrary return paths and release expired slots"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+          "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-19",
+      "requirement": "callback刷新",
+      "required_assertion": "303后干净地址，不再换code",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+        "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-20",
+      "requirement": "Provider超时/挂起",
+      "required_assertion": "有界失败，零后台累积",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-20 non-cooperative injected provider times out and remains fenced with no queued calls"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+          "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-21",
+      "requirement": "token无效与invalid code",
+      "required_assertion": "继承已有缓存隔离及不重试code",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "提前失效的应用令牌被清除，30秒刷新保护后新登录获取新令牌，不重试 code",
+        "无效 code 只使本次登录失败，不能撤销其他成员共用的健康应用令牌"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-wecom-app-token-failure.test.mjs",
+          "sha256": "ef03353435e8f095e569c4eae5fd2f79f5ca8c75d29c3044aba045860228ec9a"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-22",
+      "requirement": "用户退出期间请求晚到",
+      "required_assertion": "不恢复页面或创建有效新会话",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data",
+        "YXX-22 YXX-37 OAuth logout during real authorized SQL read prevents any late detail or 304 response",
+        "YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read",
+        "YXX-22 browser logout invalidates pending and in-flight callbacks without minting late sessions"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+          "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-23",
+      "requirement": "A退出B登录后A旧标签",
+      "required_assertion": "清空旧内容，API拒绝A工单",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data",
+        "YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-24",
+      "requirement": "BFCache返回",
+      "required_assertion": "重新校验，不恢复未授权旧画面",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-25",
+      "requirement": "合法旧Grant入口",
+      "required_assertion": "认证后只定位，不匿名exchange",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag",
+        "YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery",
+        "YXX-25 YXX-29 anonymous old entry scanning prepares only context and requires real OAuth flow"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-26",
+      "requirement": "错误成员拿旧Grant",
+      "required_assertion": "原Grant状态/version不变",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-26 wrong member possession cannot consume or lock the original grant"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-27",
+      "requirement": "CONSUMED/到期旧Grant",
+      "required_assertion": "仅在完整成员授权下定位，无Grant复活",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-27 consumed and expired signed grants locate only under fresh member ownership"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-28",
+      "requirement": "REVOKED/轮换失效/签名伪造",
+      "required_assertion": "拒绝，不仅解析UUID",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-28 revoked, forged and rotated-key grants reject without using a parsed UUID as proof"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-29",
+      "requirement": "旧入口扫描/预取",
+      "required_assertion": "不消费Grant，不创建Ticket/发送",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-25 YXX-29 anonymous old entry scanning prepares only context and requires real OAuth flow"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-30",
+      "requirement": "只有旧Reporter Cookie",
+      "required_assertion": "MEMBER_REQUIRED下无读取权限",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-30 YXX-31 YXX-32 old Reporter Cookie, anonymous exchange and bootstrap confer no member permission"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-31",
+      "requirement": "有A OAuth + B旧Cookie",
+      "required_assertion": "B数据不可见",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-30 YXX-31 YXX-32 old Reporter Cookie, anonymous exchange and bootstrap confer no member permission"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-32",
+      "requirement": "旧exchange/bootstrap/logout",
+      "required_assertion": "模式语义统一，无旁路",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-30 YXX-31 YXX-32 old Reporter Cookie, anonymous exchange and bootstrap confer no member permission",
+        "YXX-32 both logout aliases revoke member sessions and stop old-cookie fallback"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-33",
+      "requirement": "OAuth关闭/入口关闭/错误配置",
+      "required_assertion": "503或拒绝构造，不回落legacy",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback",
+        "YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint",
+        "YXX-33 YXX-45 FULL_SERVICE_LOOP composes the same member policy and keeps member Cookie outside staff authority",
+        "YXX-33 complete G2 live configuration requires member policy and binds the server identity proof configuration"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+          "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs",
+          "sha256": "2c6afe044fc78032ba1a2836dede822f794d23dfb3df5fcd43e4b187dc519d89"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-readiness.test.mjs",
+          "sha256": "9193374aed96ec5499961eae9301797c4168440cc59d76605324aea423ffaf64"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-34",
+      "requirement": "非法Origin/CSRF/CORS/Host",
+      "required_assertion": "拒绝，不污染认证上下文",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-34 exact Origin, Host, CORS and POST boundaries reject contamination"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-35",
+      "requirement": "DOM/XSS/敏感扫描",
+      "required_assertion": "纯文本、安全CSP、无敏感响应/日志",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+        "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844",
+        "YXX-35 closed member schemas expose authentication mode without raw identity or nullable Ticket guessing",
+        "YXX-35 configuration refuses Proxy, accessors, toJSON, cycles and loose identity coercions"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+          "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-36",
+      "requirement": "detail成功Timeline503",
+      "required_assertion": "不提前接受ETag，恢复后补齐",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-37",
+      "requirement": "304时权限撤销或Session过期",
+      "required_assertion": "不返回未授权304，UI退出",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-09 YXX-37 revoked ref denies a formerly matching ETag before 304",
+        "YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code",
+        "YXX-22 YXX-37 OAuth logout during real authorized SQL read prevents any late detail or 304 response"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-38",
+      "requirement": "Incident Unlink",
+      "required_assertion": "旧里程碑移除，不影响其他用户事实",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-38 member-safe Incident milestones disappear on unlink without changing the other reporter facts"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-incident.integration.test.mjs",
+          "sha256": "cab8eaf04b5b1412be459fa4c946cb0afb67d66554cc34be69e5a02568f03882"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-39",
+      "requirement": "同秒事件/分页",
+      "required_assertion": "显式ordinal稳定顺序，跨ref cursor拒绝",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-39 same-second pagination uses ordinals and rejects a cursor from another ref"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-40",
+      "requirement": "桌面/手机/键盘",
+      "required_assertion": "页面可用，无横向溢出",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+        "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-41",
+      "requirement": "UTC/Tokyo/NewYork浏览器",
+      "required_assertion": "Shanghai文本一致",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+        "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+          "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-42",
+      "requirement": "100会话/32并发读",
+      "required_assertion": "有界pool/内存/查询，无无限队列",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-42 100 authenticated sessions and 32 simultaneous PostgreSQL HTTP reads stay bounded and preserve catalog"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs",
+          "sha256": "2c6afe044fc78032ba1a2836dede822f794d23dfb3df5fcd43e4b187dc519d89"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-43",
+      "requirement": "intent容量/过期/清理",
+      "required_assertion": "上限有效，过期可释放，无全局当前ticket",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-15 YXX-43 same-browser OAuth intents retain independent ticket destinations and bounded capacity",
+        "YXX-16 YXX-17 YXX-18 YXX-43 opaque intents reject replay, foreign browser, arbitrary return paths and release expired slots"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+          "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-44",
+      "requirement": "App重启",
+      "required_assertion": "内存认证失效，新登录可恢复canonical ref",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery",
+        "YXX-44 actual App process stop and restart loses ephemeral authentication then restores the canonical ref"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        },
+        {
+          "path": "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs",
+          "sha256": "2c6afe044fc78032ba1a2836dede822f794d23dfb3df5fcd43e4b187dc519d89"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-45",
+      "requirement": "OAUTH_ONLY/MEMBER_READONLY/完整App",
+      "required_assertion": "前两者无业务写API，完整App同策略",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-45 OAUTH_ONLY is zero DB and MEMBER_TICKET_READONLY exposes no business write or staff API",
+        "YXX-33 YXX-45 FULL_SERVICE_LOOP composes the same member policy and keeps member Cookie outside staff authority"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs",
+          "sha256": "2c6afe044fc78032ba1a2836dede822f794d23dfb3df5fcd43e4b187dc519d89"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-46",
+      "requirement": "查询对业务无副作用",
+      "required_assertion": "Ticket/Journey/Leg/Assignment/Incident/Communication不变",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects",
+        "YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-47",
+      "requirement": "仅网页登录",
+      "required_assertion": "Direct Leg/私人发送资格不新增",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects",
+        "YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+        }
+      ]
+    },
+    {
+      "scenario_id": "YXX-48",
+      "requirement": "原服务链与AI完全关闭",
+      "required_assertion": "既有规则、人工、Ticket、通知回归不被认证依赖破坏",
+      "automation": "VERIFIED",
+      "live_result": "NOT_RUN",
+      "test_names": [
+        "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+        "P2-G2 ten-route prerequisite: committed decisions have an executable next step"
+      ],
+      "test_files": [
+        {
+          "path": "tests/p2-g2-process-assembly.integration.test.mjs",
+          "sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9"
+        },
+        {
+          "path": "tests/p2-g2-service-route-readiness.integration.test.mjs",
+          "sha256": "ff84ffa566b71707d91895aec799e1632edfc5ab14fae1eac33582102f90d52b"
+        }
+      ]
+    }
+  ],
+  "event_time": "2026-09-15 11:45:34",
+  "event_epoch_ms": "1789443934479"
+}

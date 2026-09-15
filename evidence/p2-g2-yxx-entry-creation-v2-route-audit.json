@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "access_policy": "MEMBER_REQUIRED",
+  "legacy_cookie_bypass": false,
+  "legacy_exchange_bypass": false,
+  "identity_namespace_live_verified": false,
+  "proof_scenarios": [
+    "YXX-30",
+    "YXX-31",
+    "YXX-32",
+    "YXX-33",
+    "YXX-34",
+    "YXX-45"
+  ],
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/api/reporter/member/session",
+      "operation_id": "getYxxMemberSession",
+      "responses": [
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/reporter/bootstrap",
+      "operation_id": "getP2016ReporterSession",
+      "responses": [
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/reporter/member-entry/prepare",
+      "operation_id": "prepareYxxLegacyEntry",
+      "responses": [
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": "Same-origin JSON, max2048 bytes. Retain locator/digest and browser-bound intent only; do not consume Grant or disclose Ticket."
+    },
+    {
+      "method": "POST",
+      "path": "/api/reporter/access/exchange",
+      "operation_id": "exchangeP2016ReporterGrant",
+      "responses": [
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": "MEMBER_REQUIRED always returns403 YXX_ENTRY_LEGACY_EXCHANGE_DISABLED. Explicit legacy mode retains the original one-use exchange and response schema."
+    },
+    {
+      "method": "POST",
+      "path": "/api/reporter/logout",
+      "operation_id": "logoutP2016Reporter",
+      "responses": [
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": "Same-origin JSON POST. Revoke all recognized browser bindings, pending/in-flight authentication and member sessions. No business action."
+    },
+    {
+      "method": "POST",
+      "path": "/wecom/yixiaoxiu/logout",
+      "operation_id": "logoutYxxMember",
+      "responses": [
+        "200",
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": "Same-origin JSON POST. Revoke all recognized browser bindings, pending/in-flight authentication and member sessions. No business action."
+    },
+    {
+      "method": "GET",
+      "path": "/api/reporter/tickets/{publicRef}",
+      "operation_id": "getP2016ReporterTicket",
+      "responses": [
+        "200",
+        "304",
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": "OAuth plus authoritative source-Intake ownership, enterprise/Bot, binding, active ref and retention checked on every request including304; one transaction; late revoked identity rejected. no-store/no-referrer."
+    },
+    {
+      "method": "GET",
+      "path": "/api/reporter/tickets/{publicRef}/timeline",
+      "operation_id": "listP2016ReporterTimeline",
+      "responses": [
+        "200",
+        "304",
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": "OAuth plus authoritative source-Intake ownership, enterprise/Bot, binding, active ref and retention checked on every request including304; one transaction; late revoked identity rejected. no-store/no-referrer."
+    },
+    {
+      "method": "GET",
+      "path": "/wecom/yixiaoxiu/tickets/{publicRef}",
+      "operation_id": "openYxxTicket",
+      "responses": [
+        "200",
+        "302",
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": "Anonymous shell/redirect reveals no Ticket existence or details. Opaque one-use browser-bound OAuth intent preserves this ref."
+    },
+    {
+      "method": "GET",
+      "path": "/wecom/yixiaoxiu/continue/{entryRef}",
+      "operation_id": "continueYxxLegacyEntry",
+      "responses": [
+        "302",
+        "303",
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": "Current-browser continuation only. OAuth then validate current HMAC/digest, active ref and ownership; consumed/expired Grant locates without resurrection."
+    },
+    {
+      "method": "GET",
+      "path": "/wecom/yixiaoxiu/login",
+      "operation_id": "beginYxxOAuth",
+      "responses": [
+        "302",
+        "400",
+        "401",
+        "403",
+        "404",
+        "503"
+      ],
+      "description": null
+    },
+    {
+      "method": "GET",
+      "path": "/wecom/yixiaoxiu/callback",
+      "operation_id": "completeYxxOAuth",
+      "responses": [
+        "303",
+        "401",
+        "403",
+        "502",
+        "503"
+      ],
+      "description": "Single code/state only; cross-site navigation allowed; one-use browser binding, fixed local303. Errors are safe static OAuth HTML, not raw Provider text."
+    },
+    {
+      "method": "GET",
+      "path": "/wecom/yixiaoxiu/",
+      "operation_id": "getYxxHome",
+      "responses": [
+        "200",
+        "401",
+        "503"
+      ],
+      "description": "Authentication status only; choose no Ticket, no listing or staff authority."
+    },
+    {
+      "method": "GET",
+      "path": "/reporter/",
+      "operation_id": "getYxxAssetreporter",
+      "responses": [
+        "200",
+        "400",
+        "503"
+      ],
+      "description": "Static same-origin Reporter assets; member legacy landing clears fragment before prepare. No embedded business data."
+    },
+    {
+      "method": "GET",
+      "path": "/reporter/open",
+      "operation_id": "getYxxAssetreporteropen",
+      "responses": [
+        "200",
+        "400",
+        "503"
+      ],
+      "description": "Static same-origin Reporter assets; member legacy landing clears fragment before prepare. No embedded business data."
+    },
+    {
+      "method": "GET",
+      "path": "/reporter/reporter.js",
+      "operation_id": "getYxxAssetreporterreporterjs",
+      "responses": [
+        "200",
+        "400",
+        "503"
+      ],
+      "description": "Static same-origin Reporter assets; member legacy landing clears fragment before prepare. No embedded business data."
+    },
+    {
+      "method": "GET",
+      "path": "/reporter/reporter.css",
+      "operation_id": "getYxxAssetreporterreportercss",
+      "responses": [
+        "200",
+        "400",
+        "503"
+      ],
+      "description": "Static same-origin Reporter assets; member legacy landing clears fragment before prepare. No embedded business data."
+    }
+  ],
+  "event_time": "2026-09-15 11:45:34",
+  "event_epoch_ms": "1789443934479"
+}

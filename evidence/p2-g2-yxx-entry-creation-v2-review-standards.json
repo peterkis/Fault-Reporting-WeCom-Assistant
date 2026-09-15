@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "axis": "STANDARDS",
+  "reviewer": "/root/mapping_standards",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "source_execution_sha256": "55116cc012be3b190596cb3504a44d0cd8e277c5ac14e1c4f7386ffe0ea87b42",
+  "scenario_matrix_sha256": "9870b254ead08574ccfdbb26cf09fa1016515e2ea7542e3019649ad3c7baae99",
+  "scope": "Independent review of ADR0020 targeted creation delta; unchanged identity repair was independently reviewed in mapping-v1.",
+  "prior_review": "evidence/p2-g2-yxx-entry-mapping-v1-review-summary.json",
+  "findings": [
+    {
+      "id": "BOUNDED_INBOUND_CONCURRENCY",
+      "resolved": true
+    },
+    {
+      "id": "ATOMIC_ROLLBACK_AND_NOTIFICATION_SIDE_EFFECT_PROOFS",
+      "resolved": true
+    }
+  ],
+  "event_time": "2026-09-15 11:46:41",
+  "event_epoch_ms": "1789444001672"
+}

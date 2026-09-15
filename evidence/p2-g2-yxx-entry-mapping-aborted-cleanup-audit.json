@@ -1,0 +1,9 @@
+{
+  "event_time": "2026-09-15 10:21:39",
+  "event_epoch_ms": "1789438899461",
+  "scope": "READ_ONLY_CATALOG_AUDIT_AFTER_OWNED_TEST_RUN_ABORT",
+  "candidate_test_database_count": 1,
+  "active_test_backend_count": 0,
+  "database_names_exposed": false,
+  "cleanup_deletes_performed": false
+}

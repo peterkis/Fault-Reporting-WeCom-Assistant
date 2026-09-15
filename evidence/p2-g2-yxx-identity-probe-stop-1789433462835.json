@@ -1,0 +1,19 @@
+{
+  "event_time": "2026-09-15 08:51:02",
+  "event_epoch_ms": "1789433462835",
+  "run_id": "20260915-20f3efad",
+  "exit_code": 0,
+  "result": {
+    "restored_oauth_only": true,
+    "probe_containers_stopped": true,
+    "restore_timer_cancelled_after_restoration": true,
+    "proxy_unchanged": true,
+    "retained_probe_files_and_safe_logs": true
+  },
+  "decision": "STOP_ON_IDENTITY_MISMATCH",
+  "A_oauth_matches_configured_A_or_B": false,
+  "B_test": "NOT_RUN",
+  "namespace_verified": false,
+  "entry_enabled": false,
+  "p2_g2_live_started": false
+}

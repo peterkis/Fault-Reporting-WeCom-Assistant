@@ -1,0 +1,47 @@
+{
+  "status": "READY",
+  "container": "yxx-create-c40e7c780f7c",
+  "stop_timer": "yxx-create-c40e7c780f7c-stop.timer",
+  "ready": {
+    "event": "YXX_CREATION_READY",
+    "run_id": "yxx-create-c40e7c780f7c",
+    "end_epoch_ms": "1789448579727",
+    "max_tickets": 4,
+    "real_sends": 0,
+    "event_time": "2026-09-15 12:33:03",
+    "event_epoch_ms": "1789446783201"
+  },
+  "proxy_unchanged": true,
+  "oauth_only_retained": true,
+  "real_sends": 0,
+  "event_time": "2026-09-15 12:33:03",
+  "event_epoch_ms": "1789446783423",
+  "candidate_fingerprint": "72cea60ac8f812ab9d54e597453dbddb271bb869ae4ebcf2e022fd3b52eaa137",
+  "run_id": "yxx-create-c40e7c780f7c",
+  "cases": [
+    {
+      "id": "A1",
+      "member": "A",
+      "chatType": "group",
+      "text": "新故障：HIS无法登录，定向测试 c40e7c780f7c-A1"
+    },
+    {
+      "id": "A2",
+      "member": "A",
+      "chatType": "single",
+      "text": "新故障：HIS无法登录，定向测试 c40e7c780f7c-A2"
+    },
+    {
+      "id": "B1",
+      "member": "B",
+      "chatType": "group",
+      "text": "新故障：HIS无法登录，定向测试 c40e7c780f7c-B1"
+    },
+    {
+      "id": "B2",
+      "member": "B",
+      "chatType": "single",
+      "text": "新故障：HIS无法登录，定向测试 c40e7c780f7c-B2"
+    }
+  ]
+}
