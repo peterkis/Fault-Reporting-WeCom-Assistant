@@ -29,4 +29,3 @@ nullable and add source-branch checks/FKs, but it does not alter migrations
 001–032 or create a second Ticket Core. The exact catalog delta is recorded in
 `docs/runbooks/yixiaoxiu-self-service-contract-freeze.md` and is verified by
 the migration tests before any runtime path is enabled.
-
