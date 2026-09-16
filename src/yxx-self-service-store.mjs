@@ -182,8 +182,10 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
           const last=rows.at(-1),previous=key?timelineKey(key):null;
           let boundary=order==='ASC'&&previous?previous:timelineKey(order==='ASC'?last:rows[0]);
           if(order==='ASC')for(const row of rows.map(timelineKey))if(compareTimeline(row,boundary)>0)boundary=row;
-          const intakeHighWater=Math.max(Number(key?.intake_high_water??0),...rows.filter(row=>row.event_source==='INTAKE').map(row=>Number(row.source_ordinal)));
-          const ticketHighWater=Math.max(Number(key?.ticket_high_water??0),...rows.filter(row=>row.event_source==='TICKET').map(row=>Number(row.source_ordinal)));
+          const snapshotIntakeHighWater=Number(rows[0]?.intake_high_water??key?.intake_high_water??0);
+          const snapshotTicketHighWater=Number(rows[0]?.ticket_high_water??key?.ticket_high_water??0);
+          const intakeHighWater=order==='DESC'?snapshotIntakeHighWater:Math.max(Number(key?.intake_high_water??snapshotIntakeHighWater),...rows.filter(row=>row.event_source==='INTAKE').map(row=>Number(row.source_ordinal)));
+          const ticketHighWater=order==='DESC'?snapshotTicketHighWater:Math.max(Number(key?.ticket_high_water??snapshotTicketHighWater),...rows.filter(row=>row.event_source==='TICKET').map(row=>Number(row.source_ordinal)));
           const data=Buffer.from(JSON.stringify({scope_hash:scopeHash,request_ref:ref,timeline_ordinal:boundary.timeline_ordinal,intake_high_water:intakeHighWater,ticket_high_water:ticketHighWater,direction:order,
             occurred_at:boundary.occurred_at,source_rank:boundary.source_rank,source_ordinal:boundary.source_ordinal,event_source:boundary.event_source,source_id:boundary.source_id}),'utf8').toString('base64url');
           return data+'.'+createHmac('sha256',scopeSecret).update(data).digest('base64url');
