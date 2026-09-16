@@ -30,6 +30,7 @@ test('SS-003 fresh applied migration, idempotent Web acceptance and source const
     const replay=await store.accept({scope,input});assert.equal(replay.replayed,true);assert.equal(replay.receipt.request_ref,first.receipt.request_ref);
     const listed=await store.listMyReports({scope});assert.ok(listed.items.some(item=>item.ref===first.receipt.request_ref));
     const command=await store.command({scope,clientCommandId:input.client_command_id});assert.equal(command.request_ref,first.receipt.request_ref);assert.ok(command.intake_no);
+    const boundaryInput={...input,client_command_id:randomUUID(),description:'x'.repeat(4000),reported_department_text:'科'.repeat(100)};const boundary=await store.accept({scope,input:boundaryInput});const boundaryDetail=await store.getRequest({scope,requestRef:boundary.receipt.request_ref});assert.equal(boundaryDetail.safe_description.length,4000);
     const detail=await store.getRequest({scope,requestRef:first.receipt.request_ref});assert.equal(detail.source_kind,'WEB_REQUEST');assert.equal(detail.input_revision,'1');assert.equal(detail.ticket,null);
     const supplement={schema_version:1,client_command_id:randomUUID(),expected_input_revision:'1',text:'仅护士站这一台电脑异常'};
     const added=await store.accept({scope,input:supplement,kind:'SUPPLEMENT',requestRef:first.receipt.request_ref});assert.equal(added.receipt.accepted_revision,'2');
