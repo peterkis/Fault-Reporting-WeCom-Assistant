@@ -1,5 +1,6 @@
 {
   "migration": "033_yxx_self_service_intake.sql",
+  "corrective_migration": "034_yxx_self_service_direct_chat_check.sql",
   "new_tables": [
     "intake.web_request_binding",
     "intake.web_submission",

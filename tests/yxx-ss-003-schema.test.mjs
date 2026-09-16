@@ -10,7 +10,10 @@ const databaseUrl=process.env.PILOT_DATABASE_URL;
 
 test('SS-003 migration and store contracts are source-complete',async()=>{
   const sql=await readFile('database/migrations/033_yxx_self_service_intake.sql','utf8');
+  const correction=await readFile('database/migrations/034_yxx_self_service_direct_chat_check.sql','utf8');
   for(const name of ['web_request_binding','web_submission','web_command_receipt','service_intake_web_source_check','channel_leg_web_source_check','deterministic_decision_web_source_check','web_binding_pending_idx'])assert.match(sql,new RegExp(name,'u'));
+  assert.match(correction,/DROP CONSTRAINT IF EXISTS service_intake_web_source_check/u);
+  assert.match(correction,/source_chat_type = 'single' AND source_chat_id IS NULL/u);
   assert.doesNotMatch(sql,/CREATE TABLE IF NOT EXISTS pilot_ticket\./u);assert.match(sql,/FOREIGN KEY \(primary_web_submission_id, id\)/u);assert.match(sql,/FOREIGN KEY \(channel_leg_id, service_intake_id, primary_web_submission_id\)/u);assert.match(sql,/DEFERRABLE INITIALLY DEFERRED/u);
   assert.equal(typeof migrateCurrentBaselineWithYxx,'function');
   const input=parseYxxRequestInput({schema_version:1,client_command_id:'11111111-1111-4111-8111-111111111111',description:'打印机无响应',location:{text:'住院楼8层护士站',unknown:false},service_code:null,impact_scope:'SINGLE_WORKSTATION',reported_department_text:null,extension:null});
@@ -41,7 +44,7 @@ test('SS-003 fresh applied migration, idempotent Web acceptance and source const
     const again=await store.accept({scope,input:supplement,kind:'SUPPLEMENT',requestRef:first.receipt.request_ref});assert.equal(again.replayed,true);
     const timelinePage=await store.timeline({scope,requestRef:first.receipt.request_ref,limit:1});assert.equal(timelinePage.items.length,1);assert.ok(timelinePage.next_cursor);const timelineNext=await store.timeline({scope,requestRef:first.receipt.request_ref,cursor:timelinePage.next_cursor,limit:1});assert.equal(timelineNext.items.length,1);assert.equal(timelineNext.items[0].event_type,'SUPPLEMENT_ACCEPTED');
     const secondInput={...input,client_command_id:randomUUID(),description:'第二个网页报修'};const second=await store.accept({scope,input:secondInput});await assert.rejects(store.accept({scope,input:supplement,kind:'SUPPLEMENT',requestRef:second.receipt.request_ref}),error=>error.code==='YXX_COMMAND_CONFLICT'&&error.status===409);
-    await pool.query("UPDATE intake.web_request_binding b SET retention_until=platform.local_now()-interval '1 second' FROM intake.service_intake i WHERE b.intake_id=i.id AND b.request_ref=$1",[second.receipt.request_ref]);
+    await pool.query("UPDATE intake.web_request_binding b SET retention_until_epoch_ms=s.received_epoch_ms+1,retention_until=platform.local_from_epoch_ms(s.received_epoch_ms+1) FROM intake.web_submission s WHERE b.intake_id=s.intake_id AND s.kind='SUBMIT' AND b.request_ref=$1",[second.receipt.request_ref]);
     await pool.query("UPDATE intake.service_intake i SET retention_until=platform.local_now()-interval '1 second' FROM intake.web_request_binding b WHERE b.intake_id=i.id AND b.request_ref=$1",[second.receipt.request_ref]);
     assert.equal((await store.listMyReports({scope})).items.some(item=>item.ref===second.receipt.request_ref),false);
     await pool.query("UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE request_ref=$1",[first.receipt.request_ref]);await assert.rejects(store.accept({scope,input:{...supplement,client_command_id:randomUUID()},kind:'SUPPLEMENT',requestRef:first.receipt.request_ref}),error=>error.code==='YXX_NOT_FOUND'&&error.status===404);

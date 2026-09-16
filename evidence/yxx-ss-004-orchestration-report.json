@@ -2,6 +2,10 @@
   "task": "YXX-SS-004",
   "status": "READY_FOR_REVIEW",
   "scope": "LOCAL_ISOLATED_ONLY",
+  "schema_migration": {
+    "base": "033_yxx_self_service_intake.sql (immutable)",
+    "forward_correction": "034_yxx_self_service_direct_chat_check.sql"
+  },
   "branch": "phase2/yixiaoxiu-ss-004",
   "profile_boundary": {
     "member_self_service_app_pump": true,
@@ -18,6 +22,9 @@
     "rule_failure": "SAVEPOINT fallback to shared pending ManualReview",
     "precommit_auth_recheck": "local protected recheck fences session generation and write permission before COMMIT",
     "commit_boundary_recovery": "AC-037/038 before/after COMMIT fault boundaries recover after fresh process instances without partial or duplicate Ticket",
+    "stale_review": "old Web approval returns a version conflict; explicit CANCEL_REVIEW retires the stale queue item",
+    "worker_fairness": "FULL worker gives Web one bounded slot and falls back to the full Bot batch when Web has no due work",
+    "retention_listing": "my reports excludes expired binding and intake roots",
     "poison_batch": "one failed root receives bounded retry metadata while a later root proceeds",
     "web_side_effects": "Message/Outbox/Delivery/Grant/Conversation Session/Direct Leg remain zero"
   },

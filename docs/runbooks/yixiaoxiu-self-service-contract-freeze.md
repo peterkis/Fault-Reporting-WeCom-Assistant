@@ -23,7 +23,9 @@ durably received, never that a Ticket exists. A repeated command returns the
 same receipt; the same ID with a different canonical body is `409`.
 
 Migration 033 is reserved for three auxiliary tables and the following exact
-conditional catalog delta:
+conditional catalog delta. It is immutable after application; the forward
+correction migration 034 only tightens the preserved single/group Bot source
+check and does not rewrite 033.
 
 | Object | 033 change | Web branch check | Bot branch preservation |
 |---|---|---|---|

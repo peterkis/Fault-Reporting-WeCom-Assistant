@@ -48,7 +48,9 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
     const results = [];
     let webResult = null;
     if (webOrchestrator && !value.signal?.aborted) {
-      webResult = await webOrchestrator.processPendingFromWorker({ batchSize, nowEpochMs, signal: value.signal });
+      // Reserve one slot for Web on every batch. If no Web root is due, the
+      // zero-result response lets the Bot query use the full batch instead.
+      webResult = await webOrchestrator.processPendingFromWorker({ batchSize: 1, nowEpochMs, signal: value.signal });
       processed += webResult.processed ?? 0;
       results.push(...(webResult.results ?? []));
     }

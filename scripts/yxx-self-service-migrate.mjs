@@ -4,7 +4,9 @@ import {pathToFileURL} from 'node:url';
 import {createPostgresPool} from '../src/platform/postgres-pool.mjs';
 
 export const YXX_MIGRATION_ID='033_yxx_self_service_intake';
+export const YXX_CORRECTIVE_MIGRATION_ID='034_yxx_self_service_direct_chat_check';
 const FILE=new URL('../database/migrations/033_yxx_self_service_intake.sql',import.meta.url);
+const CORRECTIVE_FILE=new URL('../database/migrations/034_yxx_self_service_direct_chat_check.sql',import.meta.url);
 const RELATIONS=Object.freeze(['intake.web_request_binding','intake.web_submission','intake.web_command_receipt']);
 const REQUIRED_COLUMNS=Object.freeze({
   'intake.web_request_binding':['intake_id','request_ref','source_corp_scope','source_app_scope','canonical_reporter_binding','input_revision','processed_revision','next_attempt_epoch_ms','retry_count','last_safe_error_code','retention_until','retention_until_epoch_ms'],
@@ -79,24 +81,51 @@ export function validateYxxCatalog(inventory){
   return inventory;
 }
 
+function migrationBody(sql, code) {
+  const body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];
+  if(!body)fail(code);
+  return body;
+}
+
+async function insertMigrationMarker(client, migrationId, checksum) {
+  const inserted=await client.query(`WITH applied AS (SELECT platform.physical_epoch_ms() AS epoch_ms)
+    INSERT INTO platform.schema_migration(migration_id,checksum_sha256,applied_at,applied_epoch_ms)
+    SELECT $1,$2,platform.local_from_epoch_ms(epoch_ms),epoch_ms FROM applied
+    ON CONFLICT (migration_id) DO NOTHING RETURNING migration_id`,[migrationId,checksum]);
+  if(inserted.rowCount!==1)fail('YXX_SELF_SERVICE_MIGRATION_MARKER_CONFLICT');
+}
+
 export async function migrateYxxSelfService({databaseUrl,mode='apply',PoolFactory=createPostgresPool}={}){
   if(typeof databaseUrl!=='string'||!databaseUrl)fail('YXX_SELF_SERVICE_DATABASE_URL_REQUIRED');
   if(!['apply','check','status'].includes(mode))fail('YXX_SELF_SERVICE_MIGRATION_MODE_INVALID');
-  const sql=await readFile(FILE,'utf8'),body=/^\s*BEGIN;\s*([\s\S]*?)\s*COMMIT;\s*$/u.exec(sql)?.[1];
-  if(!body)fail('YXX_SELF_SERVICE_MIGRATION_FILE_INVALID');
-  const checksum=sha(sql),pool=PoolFactory({connectionString:databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'yxx_self_service_migrator'});let client;
+  const sql=await readFile(FILE,'utf8'),correctionSql=await readFile(CORRECTIVE_FILE,'utf8');
+  const body=migrationBody(sql,'YXX_SELF_SERVICE_MIGRATION_FILE_INVALID');
+  const correctionBody=migrationBody(correctionSql,'YXX_SELF_SERVICE_CORRECTION_FILE_INVALID');
+  const checksum=sha(sql),correctionChecksum=sha(correctionSql);
+  const pool=PoolFactory({connectionString:databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'yxx_self_service_migrator'});let client;
   try{
     client=await pool.connect();await client.query('BEGIN');await client.query("SELECT pg_advisory_xact_lock(hashtext('YXX_SELF_SERVICE_MIGRATION'))");
     if((await client.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='032_p2_012_human_confirmed_incident'")).rowCount!==1)fail('YXX_SELF_SERVICE_REQUIRES_032');
-    const existing=await client.query('SELECT checksum_sha256 FROM platform.schema_migration WHERE migration_id=$1',[YXX_MIGRATION_ID]);
-    if(existing.rowCount){if(existing.rows[0].checksum_sha256!==checksum)fail('YXX_SELF_SERVICE_CHECKSUM_MISMATCH');const inventory=validateYxxCatalog(await yxxCatalogInventory(client));await client.query('ROLLBACK');return {status:'NOOP_ALREADY_APPLIED',mode,checksum_sha256:checksum,catalog_sha256:yxxCatalogHash(inventory),inventory};}
-    if(mode==='status'){await client.query('ROLLBACK');return {status:'READY_FOR_033',mode,checksum_sha256:checksum};}
-    await client.query(body);const inventory=validateYxxCatalog(await yxxCatalogInventory(client));
-    if(mode==='check'){await client.query('ROLLBACK');return {status:'CHECK_ROLLBACK_SUCCEEDED',mode,checksum_sha256:checksum,catalog_sha256:yxxCatalogHash(inventory),inventory};}
-    await client.query(`WITH applied AS (SELECT platform.physical_epoch_ms() AS epoch_ms)
-      INSERT INTO platform.schema_migration(migration_id,checksum_sha256,applied_at,applied_epoch_ms)
-      SELECT $1,$2,platform.local_from_epoch_ms(epoch_ms),epoch_ms FROM applied`,[YXX_MIGRATION_ID,checksum]);
-    await client.query('COMMIT');return {status:'APPLIED',mode,checksum_sha256:checksum,catalog_sha256:yxxCatalogHash(inventory),inventory};
+    const markers=await client.query('SELECT migration_id,checksum_sha256 FROM platform.schema_migration WHERE migration_id=ANY($1::text[])',[[YXX_MIGRATION_ID,YXX_CORRECTIVE_MIGRATION_ID]]);
+    const markerById=new Map(markers.rows.map(row=>[row.migration_id,row.checksum_sha256]));
+    if(markerById.has(YXX_MIGRATION_ID)&&markerById.get(YXX_MIGRATION_ID)!==checksum)fail('YXX_SELF_SERVICE_CHECKSUM_MISMATCH');
+    if(markerById.has(YXX_CORRECTIVE_MIGRATION_ID)&&markerById.get(YXX_CORRECTIVE_MIGRATION_ID)!==correctionChecksum)fail('YXX_SELF_SERVICE_CORRECTION_CHECKSUM_MISMATCH');
+    const pending033=!markerById.has(YXX_MIGRATION_ID),pending034=!markerById.has(YXX_CORRECTIVE_MIGRATION_ID);
+    const status=pending033?'READY_FOR_033':pending034?'READY_FOR_034':'NOOP_ALREADY_APPLIED';
+    if(mode==='status'){
+      await client.query('ROLLBACK');
+      return {status,mode,checksum_sha256:checksum,corrective_checksum_sha256:correctionChecksum};
+    }
+    if(pending033){await client.query(body);validateYxxCatalog(await yxxCatalogInventory(client));if(mode!=='check')await insertMigrationMarker(client,YXX_MIGRATION_ID,checksum);}
+    if(pending034){await client.query(correctionBody);}
+    const inventory=validateYxxCatalog(await yxxCatalogInventory(client));
+    if(mode==='check'){
+      await client.query('ROLLBACK');
+      return {status:'CHECK_ROLLBACK_SUCCEEDED',mode,checksum_sha256:checksum,corrective_checksum_sha256:correctionChecksum,catalog_sha256:yxxCatalogHash(inventory),inventory};
+    }
+    if(pending034)await insertMigrationMarker(client,YXX_CORRECTIVE_MIGRATION_ID,correctionChecksum);
+    await client.query('COMMIT');
+    return {status:(pending033||pending034)?'APPLIED':'NOOP_ALREADY_APPLIED',mode,checksum_sha256:checksum,corrective_checksum_sha256:correctionChecksum,catalog_sha256:yxxCatalogHash(inventory),inventory};
   }catch(error){await client?.query('ROLLBACK').catch(()=>{});if(/^YXX_SELF_SERVICE_[A-Z0-9_]+$/u.test(error?.code??''))throw error;fail('YXX_SELF_SERVICE_MIGRATION_FAILED');}
   finally{client?.release();await pool.end();}
 }
