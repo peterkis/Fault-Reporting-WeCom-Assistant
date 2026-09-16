@@ -125,7 +125,9 @@ ALTER TABLE intake.service_intake
       AND primary_web_submission_id IS NULL
       AND source_app_scope IS NULL AND canonical_reporter_binding IS NULL
       AND source_bot_id IS NOT NULL AND source_chat_type IS NOT NULL
-      AND reporter_wecom_userid IS NOT NULL AND primary_message_id IS NOT NULL)
+      AND reporter_wecom_userid IS NOT NULL AND primary_message_id IS NOT NULL
+      AND ((source_chat_type = 'single' AND source_chat_id IS NULL)
+        OR (source_chat_type = 'group' AND char_length(source_chat_id) BETWEEN 1 AND 256)))
   );
 ALTER TABLE intake.service_intake
   ADD CONSTRAINT service_intake_web_scope_check CHECK (

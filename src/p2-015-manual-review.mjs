@@ -112,7 +112,11 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
           `SELECT input_revision FROM intake.web_request_binding
             WHERE intake_id=$1::uuid AND revoked_at IS NULL FOR UPDATE`, [row.service_intake_id],
         );
-        if (current.rowCount !== 1 || String(current.rows[0].input_revision) !== String(row.basis_input_revision)) {
+        if ((current.rowCount !== 1 || String(current.rows[0].input_revision) !== String(row.basis_input_revision))
+          && value.resolution_code !== 'CANCEL_REVIEW') {
+          // A stale item cannot approve old evidence; an operator may still
+          // explicitly retire it so the queue does not contain an
+          // unresolvable review forever.
           failP2015(P2_015_ERROR_CODES.versionConflict);
         }
       }

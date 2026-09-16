@@ -35,3 +35,22 @@ test('worker reserves one bounded slot for the Web owner when Bot backlog is ful
   const single = await worker.processDueBatch({ batch_size: 1, now_epoch_ms: '123', feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true } });
   assert.equal(candidateParams[1], 0); assert.equal(single.web_result.processed, 1);
 });
+
+test('worker falls back to the full Bot batch when the Web owner has no due work', async () => {
+  const intakeId = '11111111-1111-4111-8111-111111111111'; let candidateParams; let webCalls = 0;
+  const pool = {
+    query: async (_sql, params) => { candidateParams = params; return params[1] === 0 ? { rows: [] } : { rows: [{ id: intakeId }] }; },
+    connect: async () => ({
+      query: async (sql) => sql === 'BEGIN' || sql === 'COMMIT' ? {} : { rowCount: 1, rows: [{ id: intakeId }] },
+      release() {},
+    }),
+  };
+  const webOrchestrator = { processPendingFromWorker: async () => { webCalls += 1; return { processed: 0, results: [] }; } };
+  const orchestrator = {
+    preparePersistedIntake: async () => ({ profile: 'OAUTH_ONLY', reporter_hash: 'a'.repeat(64), primary_message_id: '1' }),
+    processInTransaction: async () => ({ decision: { id: '22222222-2222-4222-8222-222222222222', result_code: 'TICKET_ELIGIBLE', replayed: false } }),
+  };
+  const worker = createP2015Worker({ pool, webOrchestrator, orchestrator });
+  const result = await worker.processDueBatch({ batch_size: 1, now_epoch_ms: '123', feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true } });
+  assert.equal(webCalls, 1); assert.equal(candidateParams[1], 1); assert.equal(result.processed, 1); assert.equal(result.web_result.processed, 0);
+});

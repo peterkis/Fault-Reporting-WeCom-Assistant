@@ -44,7 +44,15 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
     }
     const batchSize = normalizeLimit(value.batch_size, P2_015_LIMITS.defaultBatch, P2_015_LIMITS.maximumBatch);
     const nowEpochMs = value.now_epoch_ms ?? String(Date.now());
-    const botBatchSize = webOrchestrator ? Math.max(0, batchSize - 1) : batchSize;
+    let processed = 0;
+    const results = [];
+    let webResult = null;
+    if (webOrchestrator && !value.signal?.aborted) {
+      webResult = await webOrchestrator.processPendingFromWorker({ batchSize, nowEpochMs, signal: value.signal });
+      processed += webResult.processed ?? 0;
+      results.push(...(webResult.results ?? []));
+    }
+    const botBatchSize = value.signal?.aborted ? 0 : webOrchestrator ? Math.max(0, batchSize - processed) : batchSize;
     const candidates = await pool.query(
       `SELECT intake.id::text
          FROM intake.service_intake AS intake
@@ -62,8 +70,6 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
           AND COALESCE(latest.source_window_end_sequence,0) < intake.message_count))
         ORDER BY intake.last_message_at,intake.id LIMIT $2`, [nowEpochMs, botBatchSize],
     );
-    let processed = 0;
-    const results = [];
     for (const candidate of candidates.rows) {
       if (value.signal?.aborted) break;
       const prepared = await orchestrator.preparePersistedIntake(candidate.id);
@@ -82,12 +88,6 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
         results.push({ service_intake_id: candidate.id, decision_id: result.decision.id,
           result_code: result.decision.result_code, replayed: result.decision.replayed });
       }
-    }
-    let webResult = null;
-    if (webOrchestrator && processed < batchSize && !value.signal?.aborted) {
-      webResult = await webOrchestrator.processPendingFromWorker({ batchSize: batchSize - processed, nowEpochMs, signal: value.signal });
-      processed += webResult.processed ?? 0;
-      results.push(...(webResult.results ?? []));
     }
     if(afterBatch)try{await afterBatch();}catch{
       // The intake transactions above have already committed. This maintenance

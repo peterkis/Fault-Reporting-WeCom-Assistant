@@ -22,7 +22,7 @@
     "web_side_effects": "Message/Outbox/Delivery/Grant/Conversation Session/Direct Leg remain zero"
   },
   "validation": [
-    {"command": "node --test --test-concurrency=1 tests/p2-015-worker.test.mjs tests/p2-015-rule-first-orchestration.integration.test.mjs tests/p2-016-manual-review.integration.test.mjs", "result": "12 passed"},
+    {"command": "node --test --test-concurrency=1 tests/p2-015-worker.test.mjs tests/p2-015-rule-first-orchestration.integration.test.mjs tests/p2-016-manual-review.integration.test.mjs tests/yxx-ss-004-orchestration.integration.test.mjs", "result": "14 passed"},
     {"command": "node --test --test-concurrency=1 tests/yxx-ss-004-orchestration.integration.test.mjs", "result": "4 passed (including AC-037/038 and pre-commit auth recheck)"},
     {"command": "node --check on all touched modules", "result": "passed"},
     {"command": "git diff --check", "result": "passed"}
