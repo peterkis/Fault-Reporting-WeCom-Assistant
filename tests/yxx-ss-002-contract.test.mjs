@@ -24,6 +24,8 @@ test('SS-002 closed schemas reject identity and operational authority fields',as
   assert.equal(timeline.properties.items.items.additionalProperties,false);
   assert.equal(profile.additionalProperties,false);assert.deepEqual(profile.properties.profile.enum,['OAUTH_ONLY','MEMBER_TICKET_READONLY','MEMBER_SELF_SERVICE','FULL_SERVICE_LOOP']);
   assert.equal(profile.properties['x-readonly-write-denied'].const,true);
+  assert.ok(profile.required.includes('x-readonly-write-denied'));
+  assert.equal(profile.properties.YIXIAOXIU_SELF_SERVICE_ENABLED.default,false);assert.equal(profile.properties.YIXIAOXIU_MY_REPORTS_ENABLED.default,false);
   assert.ok(JSON.parse(await readFile('contracts/yxx_self_service_report_page.schema.json','utf8')).properties.items.items.required.includes('ticket'));
   for(const key of ['reporter','role','provider','target','ticket_id','status','priority','actor','created_at','accepted_at'])assert.equal(Object.hasOwn(input.properties,key),false,key);
   assert.deepEqual(input.properties.impact_scope.enum,['UNKNOWN','SELF','SINGLE_WORKSTATION','MULTIPLE_USERS','DEPARTMENT']);
