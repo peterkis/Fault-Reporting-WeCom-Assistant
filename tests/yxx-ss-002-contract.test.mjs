@@ -27,6 +27,7 @@ test('SS-002 closed schemas reject identity and operational authority fields',as
   assert.ok(profile.required.includes('x-readonly-write-denied'));
   assert.equal(profile.properties.YIXIAOXIU_SELF_SERVICE_ENABLED.default,false);assert.equal(profile.properties.YIXIAOXIU_MY_REPORTS_ENABLED.default,false);
   assert.ok(JSON.parse(await readFile('contracts/yxx_self_service_report_page.schema.json','utf8')).properties.items.items.required.includes('ticket'));
+  assert.ok(timeline.properties.items.items.required.includes('ticket'));
   for(const key of ['reporter','role','provider','target','ticket_id','status','priority','actor','created_at','accepted_at'])assert.equal(Object.hasOwn(input.properties,key),false,key);
   assert.deepEqual(input.properties.impact_scope.enum,['UNKNOWN','SELF','SINGLE_WORKSTATION','MULTIPLE_USERS','DEPARTMENT']);
   assert.equal(input.properties.description.maxLength,4000);assert.equal(supplement.properties.text.maxLength,2000);
@@ -45,6 +46,7 @@ test('SS-002 both OpenAPI documents expose the same seven YXX operation referenc
   assert.match(contract,/WeComMember:/u);assert.match(contract,/['"]202['"]:/u);assert.match(contract,/['"]409['"]:/u);assert.match(contract,/['"]304['"]:/u);
   assert.match(contract,/additionalProperties: false/u);assert.match(contract,/yxx_self_service_timeline\.schema\.json/u);
   assert.match(contract,/x-idempotency-body-header-equality/u);assert.match(contract,/x-mutually-exclusive-with/u);
+  const homepage=contract.slice(contract.indexOf('/wecom/yixiaoxiu/:'));assert.match(homepage,/security: \[\{\}, \{WeComMember: \[\]\}\]/u);
 });
 
 test('SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY',async()=>{

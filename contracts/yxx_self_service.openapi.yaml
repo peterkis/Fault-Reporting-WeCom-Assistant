@@ -14,7 +14,7 @@ paths:
   /api/yixiaoxiu/bootstrap:
     get:
       operationId: yxxSelfServiceBootstrap
-      security: [{WeComMember: []}]
+      security: [{}, {WeComMember: []}]
       responses:
         '200': {description: 'Member-safe capabilities and CSRF token', content: {application/json: {schema: {$ref: './yxx_self_service_bootstrap.schema.json'}}}}
         '401': {$ref: '#/components/responses/AuthRequired'}
@@ -115,7 +115,7 @@ paths:
   /wecom/yixiaoxiu/:
     get:
       operationId: getYxxSelfServiceHome
-      security: [{WeComMember: []}]
+      security: [{}, {WeComMember: []}]
       description: 'The fixed homepage. It retains the existing prompt when the self-service profile or flags are disabled.'
       responses: {'200': {description: 'Prompt or self-service home'}, '302': {description: 'One bounded OAuth begin'}, '401': {description: 'Terminal authentication prompt'}, '503': {description: 'Fail closed'}}
   /wecom/yixiaoxiu/reports/new:
