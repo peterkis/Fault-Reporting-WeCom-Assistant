@@ -157,6 +157,12 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
             SET status='WAITING_DESCRIPTION',row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now())
             WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id]);
           if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
+        } else if(webSource&&['ACKNOWLEDGE','MARK_OUT_OF_SCOPE','CLASSIFY_BUSINESS_CONSULTATION'].includes(v.resolution_code)) {
+          const journeyUpdate=await transaction.query(`UPDATE intake.contact_journey
+            SET status='ENDED',ended_at=$2::timestamp without time zone,row_version=row_version+1,
+                updated_at=GREATEST(created_at,$2::timestamp without time zone)
+            WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id,resolvedAt]);
+          if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
         }
         if(realtimeProjector)await realtimeProjector.review({transaction,reviewId});
         return {ok:true,review_id:reviewId,status:resolution.status,resolution_decision_id:resolution.resolution_decision_id,action_count:actions.length};

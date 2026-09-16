@@ -181,6 +181,32 @@ async function resumeWaitingRequesterTicket({ transaction, ticketId: id, traceId
   }, transaction);
 }
 
+async function recordWebSupplement({ transaction, ticketId: id, traceId, realtimeProjector }) {
+  const resumed = await resumeWaitingRequesterTicket({ transaction, ticketId: id, traceId });
+  if (resumed) {
+    await realtimeProjector?.ticket?.({ transaction, ticket: resumed.ticket, event: resumed.event });
+    return resumed;
+  }
+  const current = await transaction.query(
+    `SELECT id::text,status,version,source_intake_id::text AS intake_id
+       FROM pilot_ticket.ticket WHERE id=$1::uuid FOR UPDATE`, [id],
+  );
+  if (current.rowCount !== 1 || ['CLOSED', 'CANCELLED'].includes(current.rows[0].status)) return null;
+  const updated = await transaction.query(
+    `UPDATE pilot_ticket.ticket
+        SET version=version+1,updated_at=GREATEST(created_at,platform.local_now())
+      WHERE id=$1::uuid AND status NOT IN ('CLOSED','CANCELLED')
+      RETURNING id::text,status,version,source_intake_id::text AS intake_id`, [id],
+  );
+  if (updated.rowCount !== 1) return null;
+  const ticket = updated.rows[0];
+  const event = await appendTicketEvent({ transaction, ticket, eventType: 'ticket.information_added',
+    oldStatus: current.rows[0].status, newStatus: ticket.status, actor: { type: 'SYSTEM', id: null },
+    reasonCode: 'WEB_SUPPLEMENT_RECEIVED', traceId });
+  await realtimeProjector?.ticket?.({ transaction, ticket, event });
+  return { ticket, event };
+}
+
 async function processActions({ transaction, decision, root, journey, observedAt, decisionStore, manualReviewStore, ticketCore, intakeDecisionPort, realtimeProjector }) {
   let linkedTicketId = decision.linked_ticket_id ?? null;
   const results = [];
@@ -227,6 +253,7 @@ async function processActions({ transaction, decision, root, journey, observedAt
         review_reason_code: action.action_type === 'ENQUEUE_INCIDENT_REVIEW' ? 'INCIDENT_CANDIDATE_HUMAN_CONFIRMATION' : decision.reason_code,
         priority: decision.safe_result?.clinical_safety_risk === 'CRITICAL_REVIEW_REQUIRED' ? 'URGENT' : 'NORMAL',
       } });
+      await realtimeProjector?.review?.({ transaction, reviewId: review.id });
       resultRefType = 'MANUAL_REVIEW'; resultRefId = review.id;
       await transaction.query(
         `UPDATE intake.contact_journey SET status='WAITING_REVIEW',row_version=row_version+1,
@@ -250,12 +277,9 @@ async function processActions({ transaction, decision, root, journey, observedAt
     results.push({ action_id: action.id, action_type: action.action_type, result_ref_type: resultRefType, result_ref_id: String(resultRefId) });
   }
   if (root.pilot_ticket_id) {
-    const resumed = await resumeWaitingRequesterTicket({ transaction, ticketId: root.pilot_ticket_id,
-      traceId: `yxx:${root.request_ref}:supplement-resume` });
-    if (resumed) {
-      await realtimeProjector?.ticket?.({ transaction, ticket: resumed.ticket, event: resumed.event });
-      results.push({ action_type: 'RESUME_AFTER_WEB_SUPPLEMENT', result_ref_type: 'TICKET', result_ref_id: root.pilot_ticket_id });
-    }
+    const supplement = await recordWebSupplement({ transaction, ticketId: root.pilot_ticket_id,
+      traceId: `yxx:${root.request_ref}:supplement`, realtimeProjector });
+    if (supplement) results.push({ action_type: 'RECORD_WEB_SUPPLEMENT', result_ref_type: 'TICKET', result_ref_id: root.pilot_ticket_id });
   }
   return { results, linkedTicketId };
 }

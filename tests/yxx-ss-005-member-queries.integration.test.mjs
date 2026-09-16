@@ -139,6 +139,7 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
       WHERE publisher_name='P2_016_WORKBENCH' AND source_type='TICKET_EVENT' AND event_type='ticket.status.changed'
         AND aggregate_id=$1`, [processed.ticket_id])).rows[0].n, 1);
     const fallbackOrchestrator = createYxxSelfServiceOrchestrator({ pool, profile: 'MEMBER_SELF_SERVICE', featureFlags: FLAGS,
+      realtimeProjector: realtime,
       ruleEngine: { catalog_version: 'SS005', rule_set_version: 'SS005', evaluate() { throw new Error('synthetic rule failure'); } } });
     const reviewed = await fallbackOrchestrator.processOne({ requestRef: reviewA.receipt.request_ref });
     assert.equal(reviewed.processed, true);
@@ -159,6 +160,13 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     assert.equal((await orchestrator.processOne({ requestRef: secondA.receipt.request_ref })).processed, true);
     assert.equal((await pool.query('SELECT status FROM pilot_ticket.ticket WHERE id=$1::uuid', [processed.ticket_id])).rows[0].status, 'IN_PROGRESS');
     assert.equal((await pool.query("SELECT count(*)::integer AS n FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type='ticket.resumed'", [processed.ticket_id])).rows[0].n, 1);
+    await store.accept({ scope: scopeA, kind: 'SUPPLEMENT', requestRef: secondA.receipt.request_ref,
+      input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '2', text: '进行中的网页补充' } });
+    assert.equal((await orchestrator.processOne({ requestRef: secondA.receipt.request_ref })).processed, true);
+    assert.equal((await pool.query("SELECT count(*)::integer AS n FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type='ticket.information_added'", [processed.ticket_id])).rows[0].n, 1);
+    assert.equal((await pool.query(`SELECT count(*)::integer AS n FROM conversation.realtime_event
+      WHERE publisher_name='P2_016_WORKBENCH' AND source_type='TICKET_EVENT' AND event_type='ticket.updated'
+        AND aggregate_id=$1`, [processed.ticket_id])).rows[0].n, 1);
     assert.deepEqual((await pool.query('SELECT (SELECT count(*)::integer FROM pilot_ticket.reporter_access_grant) AS grants,(SELECT count(*)::integer FROM communication.delivery) AS deliveries')).rows[0], baselineCounts);
 
     current.value = 'A';
@@ -174,6 +182,9 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     const reviewRow = (await pool.query(`SELECT r.id::text,r.row_version::text FROM intake.manual_review_item r
       JOIN intake.web_request_binding b ON b.intake_id=r.service_intake_id
       WHERE b.request_ref=$1 AND r.status='PENDING'`, [reviewA.receipt.request_ref])).rows[0];
+    assert.equal((await pool.query(`SELECT count(*)::integer AS n FROM conversation.realtime_event
+      WHERE publisher_name='P2_016_WORKBENCH' AND source_type='MANUAL_REVIEW'
+        AND event_type='manual_review.created' AND aggregate_id=$1`, [reviewRow.id])).rows[0].n, 1);
     const facade = createP2016ManualReviewFacade({ pool, enabled: true, realtimeProjector: realtime });
     const reviewResolution = await facade.resolveManualReview({ authContext: { principal_id: principal.id }, reviewId: reviewRow.id,
       body: { client_command_id: randomUUID(), expected_row_version: reviewRow.row_version,
@@ -182,6 +193,18 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     assert.equal(reviewResolution.ok, true);
     assert.equal((await pool.query(`SELECT j.status FROM intake.contact_journey j
       JOIN intake.manual_review_item r ON r.journey_id=j.id WHERE r.id=$1::uuid`, [reviewRow.id])).rows[0].status, 'WAITING_DESCRIPTION');
+    const terminalReview = await store.accept({ scope: scopeA, input: requestInput('网页范围外', randomUUID(), { text: null, unknown: true }) });
+    await fallbackOrchestrator.processOne({ requestRef: terminalReview.receipt.request_ref });
+    const terminalRow = (await pool.query(`SELECT r.id::text,r.row_version::text FROM intake.manual_review_item r
+      JOIN intake.web_request_binding b ON b.intake_id=r.service_intake_id
+      WHERE b.request_ref=$1 AND r.status='PENDING'`, [terminalReview.receipt.request_ref])).rows[0];
+    const terminalResolution = await facade.resolveManualReview({ authContext: { principal_id: principal.id }, reviewId: terminalRow.id,
+      body: { client_command_id: randomUUID(), expected_row_version: terminalRow.row_version,
+        resolution_code: 'MARK_OUT_OF_SCOPE', resolution_reason_code: 'SS005_OUT_OF_SCOPE' },
+    });
+    assert.equal(terminalResolution.ok, true);
+    assert.equal((await pool.query(`SELECT j.status FROM intake.contact_journey j
+      JOIN intake.manual_review_item r ON r.journey_id=j.id WHERE r.id=$1::uuid`, [terminalRow.id])).rows[0].status, 'ENDED');
     assert.ok(page.next_cursor);
     const rest = await query.list({ request: 'A', limit: 2, cursor: page.next_cursor });
     const allA = [...page.items, ...rest.items];

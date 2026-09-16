@@ -6,7 +6,7 @@ export const YXX_WEB_LIMITS=Object.freeze({description:4000,location:200,departm
 const IMPACTS=new Set(['UNKNOWN','SELF','SINGLE_WORKSTATION','MULTIPLE_USERS','DEPARTMENT']);
 const HASH=/^[a-f0-9]{64}$/u;
 const REF=/^[A-Za-z0-9_-]{32}$/u;
-const TICKET_TIMELINE_EVENTS=Object.freeze(['ticket.created','ticket.queued','ticket.accepted','ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed','ticket.resolved','ticket.closed','ticket.reopened','ticket.cancelled']);
+const TICKET_TIMELINE_EVENTS=Object.freeze(['ticket.created','ticket.queued','ticket.accepted','ticket.started','ticket.waiting_requester','ticket.waiting_vendor','ticket.resumed','ticket.information_added','ticket.resolved','ticket.closed','ticket.reopened','ticket.cancelled']);
 const cleanText=(value,max)=>{if(typeof value!=='string')throw new TypeError('YXX_INPUT_INVALID');const text=value.trim();if(!text||Array.from(text).length>max||Buffer.byteLength(text,'utf8')>max*4)throw new TypeError('YXX_INPUT_INVALID');return text;};
 const optionalText=(value,max)=>value===null?null:typeof value==='string'&&value.trim()===''?null:cleanText(value,max);
 const ensureHash=value=>{if(typeof value!=='string'||!HASH.test(value))throw new TypeError('YXX_SCOPE_INVALID');return value;};

@@ -26,7 +26,7 @@ export function createP2016RealtimeProjector({pool,enabled=false,wakeup=null}) {
     for(const sessionId of scopes){
       const base={source:'TICKET_EVENT',id:event.event_id,aggregate:'TICKET',aggregateId:ticket.id,version:event.aggregate_version,sessionId,
         payload:{ticket_id:ticket.id,ticket_event_id:event.event_id,version:String(event.aggregate_version)}};
-      if(event.old_status!==event.new_status)await emit(tx,{...base,type:'ticket.status.changed'});
+      if(event.old_status!==event.new_status||event.event_type==='ticket.information_added')await emit(tx,{...base,type:event.event_type==='ticket.information_added'?'ticket.updated':'ticket.status.changed'});
       if(event.event_type==='ticket.assignment_transferred'||event.event_type==='ticket.accepted')await emit(tx,{...base,type:'ticket.assignment.changed'});
       if(command)await emit(tx,{...base,type:'ticket.command.committed'});
       const notifications=await tx.query('SELECT delivery_id::text FROM communication.ticket_notification_binding WHERE ticket_event_id=$1::uuid',[event.event_id]);
