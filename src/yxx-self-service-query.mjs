@@ -121,6 +121,7 @@ function reportItem(row) {
 }
 
 function safeNeedsAction(row) {
+  if (String(row.input_revision) !== String(row.processed_revision)) return null;
   if (row.status === 'WAITING_DESCRIPTION') return '请补充故障现象';
   if (row.status === 'WAITING_TRIAGE' || row.has_pending_review) return '正在人工审核';
   return null;

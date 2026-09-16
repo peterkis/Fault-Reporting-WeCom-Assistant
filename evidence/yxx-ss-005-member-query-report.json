@@ -2,8 +2,8 @@
   "task": "YXX-SS-005",
   "status": "COMPLETE",
   "scope": "LOCAL_ISOLATED_ONLY",
-  "event_time": "2026-09-16 17:03:49",
-  "event_epoch_ms": "1789549429536",
+  "event_time": "2026-09-16 18:42:39",
+  "event_epoch_ms": "1789555360000",
   "dependencies": ["YXX-SS-003"],
   "implementation": {
     "authorization": "server-derived member scope; protected recheck after every read",
@@ -25,7 +25,10 @@
     "write authorization now rejects authenticated profile/flag overrides of configured gates",
     "report rows derive pending ManualReview state",
     "supplement revision schema accepts 10 through 49",
-    "merged timeline uses occurred_at and deterministic source/id ordering while retaining high-water bounds"
+    "merged timeline uses occurred_at and deterministic source/id ordering while retaining high-water bounds",
+    "supplement and store read lookups bind canonical member to corp/app scope",
+    "pending supplement revisions do not repeat the old action prompt",
+    "SS-005 task ledger records COMPLETE"
   ],
   "forbidden_live_actions": ["REAL_OAUTH", "WECOM_SDK", "PRODUCTION_DB", "SSH", "CLOUD_PUBLISH", "SEND", "YXX-SS-011", "P2-G2-LIVE", "P2-008"]
 }

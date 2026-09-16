@@ -175,6 +175,9 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     const changed = await query.detailWithEtag({ request: 'A', requestRef: firstA.receipt.request_ref, ifNoneMatch: firstRepresentation.etag });
     assert.equal(changed.status, 200);
     assert.notEqual(changed.etag, firstRepresentation.etag);
+    assert.equal(changed.body.needs_action, null);
+    await assert.rejects(store.accept({ scope: { ...scopeA, sourceAppScope: 'another-app' }, kind: 'SUPPLEMENT',
+      requestRef: firstA.receipt.request_ref, input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '2', text: '跨应用不得写入' } }), { code: 'YXX_NOT_FOUND' });
 
     await pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE request_ref=$1', [firstA.receipt.request_ref]);
     const afterRevoke = await query.list({ request: 'A', source: 'WEB' });

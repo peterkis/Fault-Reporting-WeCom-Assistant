@@ -45,5 +45,6 @@ resolved before the next dependent ticket starts.
 | YXX-SS-002 | COMPLETE | closed Web/API contract schemas, types and freeze runbook |
 | YXX-SS-003 | COMPLETE | immutable migration 033 plus forward correction 034, catalog checks and isolated Web storage tests |
 | YXX-SS-004 | COMPLETE | shared rule/Ticket/Review orchestration, command boundary, lifecycle projection and isolated DB evidence |
-| YXX-SS-005..010 | PLANNED | plan package, not completion evidence |
+| YXX-SS-005 | COMPLETE | member query authorization, mixed Web/Bot pagination and safe progress evidence |
+| YXX-SS-006..010 | PLANNED | plan package, not completion evidence |
 | YXX-SS-011 | NOT AUTHORIZED | intentionally out of scope |
