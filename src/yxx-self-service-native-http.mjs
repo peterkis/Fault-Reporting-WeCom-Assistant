@@ -213,7 +213,10 @@ export function createYxxSelfServiceNativeHttp({
         if ([...url.searchParams.keys()].some((key) => !allowed.has(key) || url.searchParams.getAll(key).length !== 1)) throw error('YXX_INPUT_INVALID');
         await currentMember(request);
         if (timeline) {
-          json(response, 200, await query.timeline({ request, requestRef: detailMatch[1], after: url.searchParams.get('after'), before: url.searchParams.get('before'), cursor: url.searchParams.get('cursor'), limit: url.searchParams.get('limit') })); return true;
+          const requestedLimit = url.searchParams.get('limit');
+          const timelineLimit = requestedLimit === null ? undefined : Number(requestedLimit);
+          if (timelineLimit !== undefined && (!Number.isSafeInteger(timelineLimit) || timelineLimit < 1 || timelineLimit > 50)) throw error('YXX_INPUT_INVALID');
+          json(response, 200, await query.timeline({ request, requestRef: detailMatch[1], after: url.searchParams.get('after'), before: url.searchParams.get('before'), cursor: url.searchParams.get('cursor'), limit: timelineLimit })); return true;
         }
         const result = await query.detailWithEtag({ request, requestRef: detailMatch[1], ifNoneMatch: header(request, 'if-none-match') });
         json(response, result.status, result.body, { etag: result.etag }); return true;

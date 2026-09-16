@@ -50,8 +50,8 @@ function fixture(origin) {
         intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: '待补充', input_revision: '1', processed_revision: '0',
         updated_at: '2026-09-16 23:00:00', safe_description: '<img src=x onerror=window.__xss=1>', supplements: [], can_supplement: true, ticket: null } };
     },
-    async timeline({ request, requestRef }) {
-      state.timelineCalls.push({ member: memberFor(request), requestRef });
+    async timeline({ request, requestRef, limit }) {
+      state.timelineCalls.push({ member: memberFor(request), requestRef, limit });
       return { schema_version: 1, items: [{ event_type: 'intake.accepted', summary: '已收到报修', occurred_at: '2026-09-16 23:00:00' }], next_cursor: null };
     },
     async commandStatus({ request, clientCommandId }) { return { status: 'ACCEPTED', client_command_id: clientCommandId, member: memberFor(request) }; },
@@ -113,6 +113,7 @@ test('SS-007 native HTTP keeps the fixed homepage gate and closed API boundary',
     const etag = detail.headers.get('etag');
     assert.equal((await get(`/api/yixiaoxiu/requests/${REFS.A}`, { cookie: 'yxx_session=member-a', 'if-none-match': etag })).status, 304);
     assert.equal((await get(`/api/yixiaoxiu/requests/${REFS.A}/timeline?limit=50`, { cookie: 'yxx_session=member-a' })).status, 200);
+    assert.equal(state.timelineCalls.at(-1).limit, 50);
     const supplement = await fetch(origin + `/api/yixiaoxiu/requests/${REFS.A}/supplements`, { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000002', 'x-csrf-token': 'csrf-member-a', 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000002', expected_input_revision: '1', text: '补充事实' }) });
     assert.equal(supplement.status, 202);
     assert.equal(state.supplementCalls.length, 1);
@@ -144,9 +145,10 @@ test('SS-007 native UI renders safely at phone and desktop sizes and keeps tabs 
       await browser.waitFor("document.querySelector('#new-view').hidden===false");
       await browser.waitFor("document.querySelector('#submit-report').disabled===false");
       const beforeCommands = state.commandCalls.filter(call => call.member === 'A').length;
-      await browser.evaluate("document.querySelector('#description').value='网页故障';document.querySelector('#location-text').value='护士站';document.querySelector('#new-report-form').requestSubmit();document.querySelector('#new-report-form').requestSubmit()");
+      await browser.evaluate("document.querySelector('#description').value='网页故障';document.querySelector('#location-text').value='护士站';document.querySelector('#service-code').value='打印机';document.querySelector('#new-report-form').requestSubmit();document.querySelector('#new-report-form').requestSubmit()");
       await browser.waitFor("location.pathname.startsWith('/wecom/yixiaoxiu/reports/')");
       assert.equal(state.commandCalls.filter(call => call.member === 'A').length, beforeCommands + 1);
+      assert.equal(state.commandCalls.at(-1).input.service_code, null);
       assert.equal(await browser.evaluate("document.querySelector('[onerror]')===null"), true);
       assert.equal(await browser.evaluate("window.__xss===undefined"), true);
       assert.equal(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
