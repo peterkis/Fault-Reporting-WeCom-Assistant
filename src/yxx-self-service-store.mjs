@@ -57,12 +57,14 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
   if(!pool?.connect||typeof scopeSecret!=='string'||Buffer.byteLength(scopeSecret)<16)throw new TypeError('YXX_STORE_CONFIG_INVALID');
   const commandScope=scope=>ensureHash(scope.scopeHash??scope.canonical_reporter_binding);
   const stamp=()=>stampP2016(now);
-  async function acceptInTransaction({scope,input,kind='SUBMIT',requestRef:nullRef=null,transaction:tx}){
+  async function acceptInTransaction({scope,input,kind='SUBMIT',requestRef:nullRef=null,transaction:tx,onNewCommand=null,onBeforeCommit=null}){
     if(!scope||kind!=='SUBMIT'&&kind!=='SUPPLEMENT')throw new TypeError('YXX_INPUT_INVALID');const value=kind==='SUBMIT'?parseYxxRequestInput(input):parseYxxSupplementInput(input);if(kind==='SUPPLEMENT')requestRef(nullRef);const scopeHash=commandScope(scope);const commandHash=hashP2016({kind,request_ref:kind==='SUPPLEMENT'?nullRef:null,schema_version:value.schema_version,...value});
+      const beforeCommit=async(payload)=>{if(onBeforeCommit===null)return;if(typeof onBeforeCommit!=='function'||await onBeforeCommit(payload)!==true){const error=new Error('YXX_AUTH_RECHECK_FAILED');error.code='YXX_AUTH_RECHECK_FAILED';throw error;}};
       await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))',[scopeHash+':'+value.client_command_id]);
       const existing=await tx.query(`SELECT r.id::text,r.command_hash,r.result_intake_id::text,r.result_request_ref,r.accepted_revision,to_char(r.accepted_at,'YYYY-MM-DD HH24:MI:SS') AS accepted_at,r.accepted_epoch_ms::text,i.intake_no
         FROM intake.web_command_receipt r LEFT JOIN intake.service_intake i ON i.id=r.result_intake_id WHERE r.scope_hash=$1 AND r.client_command_id=$2::uuid FOR UPDATE OF r`,[scopeHash,value.client_command_id]);
-      if(existing.rowCount){const row=existing.rows[0];if(row.command_hash!==commandHash){const error=new Error('YXX_COMMAND_CONFLICT');error.code='YXX_COMMAND_CONFLICT';error.status=409;throw error;}return {replayed:true,receipt:{client_command_id:value.client_command_id,status:'ACCEPTED',request_ref:row.result_request_ref,intake_no:row.intake_no??null,accepted_revision:String(row.accepted_revision),accepted_at:String(row.accepted_at),accepted_epoch_ms:String(row.accepted_epoch_ms)}};}
+      if(existing.rowCount){const row=existing.rows[0];if(row.command_hash!==commandHash){const error=new Error('YXX_COMMAND_CONFLICT');error.code='YXX_COMMAND_CONFLICT';error.status=409;throw error;}const receipt={client_command_id:value.client_command_id,status:'ACCEPTED',request_ref:row.result_request_ref,intake_no:row.intake_no??null,accepted_revision:String(row.accepted_revision),accepted_at:String(row.accepted_at),accepted_epoch_ms:String(row.accepted_epoch_ms)};await beforeCommit({scope,value,kind,transaction:tx,replayed:true,receipt});return {replayed:true,receipt};}
+      if(onNewCommand!==null){if(typeof onNewCommand!=='function')throw new TypeError('YXX_INPUT_INVALID');if(await onNewCommand({scope,value,kind,transaction:tx})!==true){const error=new Error('YXX_MEMBER_QUOTA_EXCEEDED');error.code='YXX_MEMBER_QUOTA_EXCEEDED';error.status=429;throw error;}}
       const current=stamp(),retentionEpoch=String(BigInt(current.epoch)+BigInt(retentionMs)),retentionLocal=formatEpochMsToShanghaiLocal(retentionEpoch),receiptId=randomUUID();let intakeId,requestRefValue=nullRef,revision=1;
       if(kind==='SUBMIT'){
         intakeId=randomUUID();requestRefValue=opaqueRef();
@@ -86,7 +88,9 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
         await tx.query('UPDATE intake.service_intake SET primary_web_submission_id=$2::uuid WHERE id=$1::uuid',[intakeId,primary]);
         await tx.query('UPDATE intake.web_command_receipt SET result_intake_id=$2::uuid,result_request_ref=$3 WHERE id=$1::uuid',[receiptId,intakeId,requestRefValue]);
         const intake=(await tx.query('SELECT intake_no FROM intake.service_intake WHERE id=$1::uuid',[intakeId])).rows[0];
-        return {replayed:false,receipt:{client_command_id:value.client_command_id,status:'ACCEPTED',request_ref:requestRefValue,intake_no:intake.intake_no,accepted_revision:'1',accepted_at:current.local,accepted_epoch_ms:current.epoch}};
+        const receipt={client_command_id:value.client_command_id,status:'ACCEPTED',request_ref:requestRefValue,intake_no:intake.intake_no,accepted_revision:'1',accepted_at:current.local,accepted_epoch_ms:current.epoch};
+        await beforeCommit({scope,value,kind,transaction:tx,replayed:false,receipt});
+        return {replayed:false,receipt};
       }
       requestRefValue=requestRef(nullRef);const locked=await tx.query(`SELECT b.intake_id::text,b.input_revision,b.retention_until,i.intake_no,i.pilot_ticket_id::text,i.status,t.status AS ticket_status
         FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND i.retention_until>platform.local_now() AND (t.status IS NULL OR t.status NOT IN ('CLOSED','CANCELLED')) FOR UPDATE OF b,i`,[requestRefValue,scopeHash]);
@@ -103,7 +107,9 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
       const eventCount=(await tx.query('SELECT COALESCE(max(event_ordinal),0)+1 AS n FROM intake.service_intake_event WHERE intake_id=$1::uuid',[intakeId])).rows[0].n;
       await tx.query(`INSERT INTO intake.service_intake_event(event_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
         VALUES('intake.web_supplement_added',$1::uuid,$2,$3,$4::timestamp without time zone,$5,$6::jsonb)`,[intakeId,aggregateVersion,eventCount, current.local,receiptId,JSON.stringify({source_kind:'WEB_REQUEST',input_revision:String(revision)})]);
-      return {replayed:false,receipt:{client_command_id:value.client_command_id,status:'ACCEPTED',request_ref:requestRefValue,intake_no:row.intake_no,accepted_revision:String(revision),accepted_at:current.local,accepted_epoch_ms:current.epoch}};
+      const receipt={client_command_id:value.client_command_id,status:'ACCEPTED',request_ref:requestRefValue,intake_no:row.intake_no,accepted_revision:String(revision),accepted_at:current.local,accepted_epoch_ms:current.epoch};
+      await beforeCommit({scope,value,kind,transaction:tx,replayed:false,receipt});
+      return {replayed:false,receipt};
   }
   async function accept(args){
     if(args?.transaction)return acceptInTransaction(args);

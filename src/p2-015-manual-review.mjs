@@ -19,7 +19,15 @@ const RESULT_BY_RESOLUTION = Object.freeze({
   CANCEL_REVIEW: 'MANUAL_REVIEW_REQUIRED',
 });
 
-export function createManualReviewStore({ authorizer = null } = {}) {
+export function createManualReviewStore({ authorizer = null, webSource = null } = {}) {
+  if (![true, false, null].includes(webSource)) failP2015(P2_015_ERROR_CODES.inputInvalid);
+  async function supportsWebSource(transaction) {
+    if (webSource !== null) return webSource;
+    const result = await transaction.query(`SELECT count(*)::integer AS count
+      FROM information_schema.columns WHERE table_schema='intake' AND table_name='deterministic_decision'
+        AND column_name IN ('source_kind','primary_web_submission_id','basis_input_revision')`);
+    return result.rows[0]?.count === 3;
+  }
   const allowedJourneyIds = async (input) => {
     if (!authorizer || typeof authorizer.authorizedJourneyIds !== 'function') failP2015(P2_015_ERROR_CODES.authorizationDenied);
     const ids = await authorizer.authorizedJourneyIds(snapshotP2015Json(input));
@@ -29,16 +37,20 @@ export function createManualReviewStore({ authorizer = null } = {}) {
   return Object.freeze({
     async enqueue({ transaction, input }) {
       const value = snapshotP2015Json(input);
-      const reviewKey = `review_v1_${safeHash({ decision_id: value.decision_id, reason: value.review_reason_code })}`;
+      const reviewKey = `review_v1_${safeHash({ decision_id: value.decision_id, reason: value.review_reason_code, basis_input_revision: value.basis_input_revision ?? null })}`;
+      const useWebSource = await supportsWebSource(transaction);
+      const basisColumns = useWebSource ? ',basis_input_revision' : '';
+      const basisValues = useWebSource ? ',$8' : '';
       const result = await transaction.query(
         `INSERT INTO intake.manual_review_item (
-           review_key,journey_id,decision_id,service_intake_id,linked_ticket_id,review_reason_code,priority
-         ) VALUES ($1,$2::uuid,$3::uuid,$4::uuid,$5::uuid,$6,$7)
+           review_key,journey_id,decision_id,service_intake_id,linked_ticket_id,review_reason_code,priority${basisColumns}
+         ) VALUES ($1,$2::uuid,$3::uuid,$4::uuid,$5::uuid,$6,$7${basisValues})
          ON CONFLICT (review_key) DO UPDATE SET review_key=EXCLUDED.review_key
          RETURNING id::text,review_key,journey_id::text,decision_id::text,service_intake_id::text,
-           linked_ticket_id::text,review_reason_code,priority,status,row_version::text,created_at`,
+           linked_ticket_id::text,review_reason_code,priority${useWebSource ? ',basis_input_revision' : ''},status,row_version::text,created_at`,
         [reviewKey, value.journey_id, value.decision_id, value.service_intake_id,
-          value.linked_ticket_id ?? null, value.review_reason_code, value.priority ?? 'NORMAL'],
+          value.linked_ticket_id ?? null, value.review_reason_code, value.priority ?? 'NORMAL',
+          ...(useWebSource ? [value.basis_input_revision ?? null] : [])],
       );
       return freezePublic(result.rows[0]);
     },
@@ -83,17 +95,27 @@ export function createManualReviewStore({ authorizer = null } = {}) {
       const value = snapshotP2015Json(command);
       if (!RESOLUTIONS.has(value.resolution_code)) failP2015(P2_015_ERROR_CODES.inputInvalid);
       const ids = await allowedJourneyIds({ principal, operation: 'RESOLVE_MANUAL_REVIEW', review_id: value.review_id });
+      const useWebSource = await supportsWebSource(transaction);
       const selected = await transaction.query(
         `SELECT review.*,decision.safe_result,decision.channel_leg_id,decision.conversation_session_id,
                 decision.source_window_start_sequence,decision.source_window_end_sequence,
                 decision.source_message_count,decision.source_hash,decision.catalog_version,
                 decision.rule_set_version,decision.engine_version,decision.decision_policy_version,
-                decision.input_hash,decision.observed_at
+                decision.input_hash,to_char(decision.observed_at,'YYYY-MM-DD HH24:MI:SS') AS observed_at${useWebSource ? ',decision.source_kind,decision.primary_web_submission_id,decision.basis_input_revision' : ''}
            FROM intake.manual_review_item review JOIN intake.deterministic_decision decision ON decision.id=review.decision_id
           WHERE review.id=$1::uuid AND review.journey_id=ANY($2::uuid[]) FOR UPDATE OF review`, [value.review_id, ids],
       );
       if (selected.rowCount !== 1) failP2015(P2_015_ERROR_CODES.authorizationDenied);
       const row = selected.rows[0];
+      if (useWebSource && row.source_kind === 'WEB') {
+        const current = await transaction.query(
+          `SELECT input_revision FROM intake.web_request_binding
+            WHERE intake_id=$1::uuid AND revoked_at IS NULL FOR UPDATE`, [row.service_intake_id],
+        );
+        if (current.rowCount !== 1 || String(current.rows[0].input_revision) !== String(row.basis_input_revision)) {
+          failP2015(P2_015_ERROR_CODES.versionConflict);
+        }
+      }
       const commandHash = safeHash({ review_id: value.review_id, resolution_code: value.resolution_code,
         resolution_reason_code: value.resolution_reason_code, expected_row_version: value.expected_row_version });
       if (row.status !== 'PENDING') {
@@ -106,17 +128,22 @@ export function createManualReviewStore({ authorizer = null } = {}) {
         reason_code: value.resolution_reason_code, manual_review_required: false,
         human_override: { resolution_code: value.resolution_code, principal_id: principal.principal_id } };
       const resultHash = safeHash(safeResult);
+      const sourceColumns = useWebSource ? 'source_kind,primary_web_submission_id,basis_input_revision,' : '';
+      const sourceValues = useWebSource ? '$6,$7::uuid,$8,' : '';
+      const parameter = (number) => `$${number + (useWebSource ? 3 : 0)}`;
       const override = await transaction.query(
         `INSERT INTO intake.deterministic_decision (
            journey_id,channel_leg_id,service_intake_id,conversation_session_id,linked_ticket_id,
+           ${sourceColumns}
            decision_ordinal,decision_key,source_window_start_sequence,source_window_end_sequence,
            source_message_count,source_hash,catalog_version,rule_set_version,engine_version,
            decision_policy_version,result_code,reason_code,input_hash,result_hash,safe_result,
            requires_manual_review,ticket_creation_recommended,incident_review_candidate,status,observed_at
-         ) VALUES ($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::uuid,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,
-           $16,$17,$18,$19,$20::jsonb,false,$21,$22,'HUMAN_OVERRIDDEN',$23::timestamp without time zone)
+         ) VALUES ($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::uuid,${sourceValues}${parameter(6)},${parameter(7)},${parameter(8)},${parameter(9)},${parameter(10)},${parameter(11)},${parameter(12)},${parameter(13)},${parameter(14)},${parameter(15)},${parameter(16)},${parameter(17)},${parameter(18)},${parameter(19)},${parameter(20)}::jsonb,false,${parameter(21)},${parameter(22)},'HUMAN_OVERRIDDEN',${parameter(23)}::timestamp without time zone)
          RETURNING id::text`,
         [row.journey_id,row.channel_leg_id,row.service_intake_id,row.conversation_session_id,row.linked_ticket_id,
+          ...(useWebSource ? [row.source_kind ?? 'BOT',row.source_kind === 'WEB' ? row.primary_web_submission_id : null,
+            row.source_kind === 'WEB' ? row.basis_input_revision : null] : []),
           ordinal.rows[0].ordinal,`human_v1_${safeHash({ review: value.review_id, command: value.client_command_id })}`,
           row.source_window_start_sequence,row.source_window_end_sequence,row.source_message_count,row.source_hash,
           row.catalog_version,row.rule_set_version,row.engine_version,row.decision_policy_version,

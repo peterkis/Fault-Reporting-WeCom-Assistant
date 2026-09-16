@@ -24,3 +24,14 @@ test('worker rejects batches above maximum without querying storage', async () =
   const worker = createP2015Worker({ pool, orchestrator: { preparePersistedIntake() {}, processInTransaction() {} } });
   await assert.rejects(worker.processDueBatch({ batch_size: 101, feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true } }), { code: 'P2_015_LIMIT_EXCEEDED' });
 });
+
+test('worker reserves one bounded slot for the Web owner when Bot backlog is full', async () => {
+  let candidateParams; let webCalls = 0;
+  const pool = { connect: async () => { throw new Error('Bot rows should not connect in this fixture'); }, query: async (_sql, params) => { candidateParams = params; return { rows: [] }; } };
+  const webOrchestrator = { processPendingFromWorker: async ({ batchSize }) => { webCalls += 1; assert.equal(batchSize, webCalls === 1 ? 2 : 1); return { processed: 1, results: [{ request_ref: 'a'.repeat(32) }] }; } };
+  const worker = createP2015Worker({ pool, webOrchestrator, orchestrator: { preparePersistedIntake() {}, processInTransaction() {} } });
+  const result = await worker.processDueBatch({ batch_size: 2, now_epoch_ms: '123', feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true } });
+  assert.equal(candidateParams[1], 1); assert.equal(webCalls, 1); assert.equal(result.processed, 1); assert.equal(result.web_result.processed, 1);
+  const single = await worker.processDueBatch({ batch_size: 1, now_epoch_ms: '123', feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true } });
+  assert.equal(candidateParams[1], 0); assert.equal(single.web_result.processed, 1);
+});

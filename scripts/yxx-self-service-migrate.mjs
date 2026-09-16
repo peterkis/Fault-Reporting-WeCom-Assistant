@@ -93,8 +93,9 @@ export async function migrateYxxSelfService({databaseUrl,mode='apply',PoolFactor
     if(mode==='status'){await client.query('ROLLBACK');return {status:'READY_FOR_033',mode,checksum_sha256:checksum};}
     await client.query(body);const inventory=validateYxxCatalog(await yxxCatalogInventory(client));
     if(mode==='check'){await client.query('ROLLBACK');return {status:'CHECK_ROLLBACK_SUCCEEDED',mode,checksum_sha256:checksum,catalog_sha256:yxxCatalogHash(inventory),inventory};}
-    await client.query(`INSERT INTO platform.schema_migration(migration_id,checksum_sha256,applied_at,applied_epoch_ms)
-      VALUES($1,$2,platform.local_now(),platform.physical_epoch_ms())`,[YXX_MIGRATION_ID,checksum]);
+    await client.query(`WITH applied AS (SELECT platform.physical_epoch_ms() AS epoch_ms)
+      INSERT INTO platform.schema_migration(migration_id,checksum_sha256,applied_at,applied_epoch_ms)
+      SELECT $1,$2,platform.local_from_epoch_ms(epoch_ms),epoch_ms FROM applied`,[YXX_MIGRATION_ID,checksum]);
     await client.query('COMMIT');return {status:'APPLIED',mode,checksum_sha256:checksum,catalog_sha256:yxxCatalogHash(inventory),inventory};
   }catch(error){await client?.query('ROLLBACK').catch(()=>{});if(/^YXX_SELF_SERVICE_[A-Z0-9_]+$/u.test(error?.code??''))throw error;fail('YXX_SELF_SERVICE_MIGRATION_FAILED');}
   finally{client?.release();await pool.end();}

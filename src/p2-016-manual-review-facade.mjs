@@ -18,6 +18,12 @@ const ACTIONS=Object.freeze({
   ACKNOWLEDGE:['SEND_FIXED_ACKNOWLEDGEMENT'],MARK_OUT_OF_SCOPE:['SEND_FIXED_SCOPE_NOTICE'],
   KEEP_INCIDENT_REVIEW_CANDIDATE:[],CANCEL_REVIEW:[],
 });
+const WEB_ACTIONS=Object.freeze({
+  CONFIRM_TICKET_ELIGIBLE:['APPLY_INTAKE_CLASSIFICATION','CREATE_MINIMAL_TICKET'],
+  CLASSIFY_SERVICE_REQUEST:['APPLY_INTAKE_CLASSIFICATION','ROUTE_SERVICE_REQUEST'],
+  REQUEST_DESCRIPTION:['APPLY_INTAKE_CLASSIFICATION'],CLASSIFY_BUSINESS_CONSULTATION:[],
+  ACKNOWLEDGE:[],MARK_OUT_OF_SCOPE:[],KEEP_INCIDENT_REVIEW_CANDIDATE:[],CANCEL_REVIEW:[],
+});
 function derivedCommand(id) {const h=textHashP2016('P2016_PERSON_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
 export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2016TicketQuery({pool,enabled}),notificationProjector=null,realtimeProjector=null,
   communicationAppend=appendCommunication,now=()=>String(Date.now()),personDestinationAuthorizer=null}) {
@@ -80,16 +86,18 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
         await transaction.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[review.journey_id]);
         const resolution=await store.resolve({transaction,principal,command:{...command,resolved_at:stampP2016(now).local}});
         if(!resolution.resolution_decision_id)failP2016('REVIEW_ALREADY_RESOLVED',409);
-        const suggestions=ACTIONS[v.resolution_code].map((type,index)=>{
+        const source=(await transaction.query(`SELECT i.source_provider,i.source_bot_id,i.reporter_wecom_userid,i.source_chat_type,i.source_chat_id,
+          i.retention_until,i.retention_until_epoch_ms::text,s.id::text AS session_id,s.row_version::integer
+          FROM intake.service_intake i LEFT JOIN conversation.session s ON s.service_intake_id=i.id AND s.status<>'ENDED'
+          WHERE i.id=$1::uuid`,[review.service_intake_id])).rows[0];
+        const webSource=source?.source_provider==='YIXIAOXIU_WEB';
+        const actionTypes=(webSource?WEB_ACTIONS:ACTIONS)[v.resolution_code];
+        const suggestions=actionTypes.map((type,index)=>{
           const payload={service_intake_id:review.service_intake_id,journey_ref:review.journey_id};
           return {action_type:type,action_ordinal:index+1,execution_policy:'HUMAN_CONFIRM_REQUIRED',safe_payload:payload,payload_hash:safeHash(payload)};
         });
         const decision=await decisions.ensureHumanActions({transaction,decisionId:resolution.resolution_decision_id,suggestions});
-        const source=(await transaction.query(`SELECT i.source_bot_id,i.reporter_wecom_userid,i.source_chat_type,i.source_chat_id,
-          i.retention_until,i.retention_until_epoch_ms::text,s.id::text AS session_id,s.row_version::integer
-          FROM intake.service_intake i LEFT JOIN conversation.session s ON s.service_intake_id=i.id AND s.status<>'ENDED'
-          WHERE i.id=$1::uuid`,[review.service_intake_id])).rows[0];
-        const fixed=createP2004FixedCommunicationPort({append:async input=>{
+        const fixed=webSource?null:createP2004FixedCommunicationPort({append:async input=>{
           const group=source.source_chat_type==='group';
           const guided=group&&v.resolution_code==='REQUEST_DESCRIPTION';
           const personAllowed=guided&&(personDestinationAuthorizer===null||await personDestinationAuthorizer({transaction,bot_id:source.source_bot_id,reporter_user_id:source.reporter_wecom_userid})===true);
@@ -109,14 +117,16 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
             const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id});
             if(result.created){const event=await appendTicketEvent({transaction:tx,ticket:result.ticket,eventType:'ticket.created',
               actor:{type:'PILOT_USER',id:principal.principal_id},traceId:trace_id});
-              if(notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});
+              if(!webSource&&notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});
               if(realtimeProjector)await realtimeProjector.ticket({transaction:tx,ticket:result.ticket,event});}
             return result;
           }}});
-        const actions=await executor.execute({transaction,decision,context:{trace_id:'p2-016:'+command.client_command_id,
-          session_id:source.session_id??null,privacy_class:'INTERNAL',retention_until:source.retention_until,
-          retention_until_epoch_ms:source.retention_until_epoch_ms,destination:{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,
-            target_type:source.source_chat_type==='group'?'GROUP':'PERSON',target_id:source.source_chat_type==='group'?source.source_chat_id:source.reporter_wecom_userid}}});
+        const actionContext={trace_id:'p2-016:'+command.client_command_id,session_id:source.session_id??null,
+          privacy_class:webSource?'PERSONAL':'INTERNAL',retention_until:source.retention_until,
+          retention_until_epoch_ms:source.retention_until_epoch_ms,
+          ...(!webSource?{destination:{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,
+            target_type:source.source_chat_type==='group'?'GROUP':'PERSON',target_id:source.source_chat_type==='group'?source.source_chat_id:source.reporter_wecom_userid}}:{})};
+        const actions=await executor.execute({transaction,decision,context:actionContext});
         if(actions.some(a=>a.failed_safe))failP2016('REVIEW_ACTION_FAILED',409);
         if(realtimeProjector)await realtimeProjector.review({transaction,reviewId});
         return {ok:true,review_id:reviewId,status:resolution.status,resolution_decision_id:resolution.resolution_decision_id,action_count:actions.length};

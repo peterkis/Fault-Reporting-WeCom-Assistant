@@ -22,11 +22,12 @@ async function withTransaction(pool, operation) {
   } finally { client.release(destroy); }
 }
 
-export function createP2015Worker({ pool, orchestrator,
+export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
   beforeClaim = null,
   afterBatch = null,
   pollMilliseconds = P2_015_LIMITS.recoveryPollMilliseconds } = {}) {
   if (!pool?.connect || !orchestrator?.preparePersistedIntake || !orchestrator?.processInTransaction
+    || (webOrchestrator !== null && typeof webOrchestrator.processPendingFromWorker !== 'function')
     || (beforeClaim !== null && typeof beforeClaim !== 'function') || (afterBatch !== null && typeof afterBatch !== 'function')
     || !Number.isInteger(pollMilliseconds) || pollMilliseconds < 100 || pollMilliseconds > 60_000) {
     failP2015(P2_015_ERROR_CODES.inputInvalid);
@@ -43,6 +44,7 @@ export function createP2015Worker({ pool, orchestrator,
     }
     const batchSize = normalizeLimit(value.batch_size, P2_015_LIMITS.defaultBatch, P2_015_LIMITS.maximumBatch);
     const nowEpochMs = value.now_epoch_ms ?? String(Date.now());
+    const botBatchSize = webOrchestrator ? Math.max(0, batchSize - 1) : batchSize;
     const candidates = await pool.query(
       `SELECT intake.id::text
          FROM intake.service_intake AS intake
@@ -58,7 +60,7 @@ export function createP2015Worker({ pool, orchestrator,
           AND (journey.id IS NULL OR (journey.status IN ('OPEN','WAITING_DESCRIPTION','WAITING_REVIEW','TICKET_LINKED')
           AND journey.evaluation_due_epoch_ms <= $1::bigint
           AND COALESCE(latest.source_window_end_sequence,0) < intake.message_count))
-        ORDER BY intake.last_message_at,intake.id LIMIT $2`, [nowEpochMs, batchSize],
+        ORDER BY intake.last_message_at,intake.id LIMIT $2`, [nowEpochMs, botBatchSize],
     );
     let processed = 0;
     const results = [];
@@ -81,13 +83,19 @@ export function createP2015Worker({ pool, orchestrator,
           result_code: result.decision.result_code, replayed: result.decision.replayed });
       }
     }
+    let webResult = null;
+    if (webOrchestrator && processed < batchSize && !value.signal?.aborted) {
+      webResult = await webOrchestrator.processPendingFromWorker({ batchSize: batchSize - processed, nowEpochMs, signal: value.signal });
+      processed += webResult.processed ?? 0;
+      results.push(...(webResult.results ?? []));
+    }
     if(afterBatch)try{await afterBatch();}catch{
       // The intake transactions above have already committed. This maintenance
       // failure must never be represented as a rollback of accepted reports.
       const error=new Error('P2_015_POST_BATCH_MAINTENANCE_FAILED');error.code=error.message;
       error.accepted_batch_committed=true;error.processed=processed;throw error;
     }
-    return freezePublic({ processed, claimed: processed, disabled: false, results,
+    return freezePublic({ processed, claimed: processed, disabled: false, results, web_result: webResult,
       model_provider_calls: 0, batch_size: batchSize });
   }
 

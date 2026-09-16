@@ -40,6 +40,10 @@ resolved before the next dependent ticket starts.
 
 | Ticket | Status | Evidence |
 |---|---|---|
-| YXX-SS-000 | IMPLEMENTING | this ledger and imported task index |
-| YXX-SS-001..010 | PLANNED | plan package, not completion evidence |
+| YXX-SS-000 | COMPLETE | this ledger, imported task index and committed contract baseline |
+| YXX-SS-001 | COMPLETE | bounded homepage OAuth return tests and runbook |
+| YXX-SS-002 | COMPLETE | closed Web/API contract schemas, types and freeze runbook |
+| YXX-SS-003 | COMPLETE | migration 033, catalog checks and isolated Web storage tests |
+| YXX-SS-004 | READY_FOR_REVIEW | shared rule/Ticket/Review orchestration, command boundary and isolated DB evidence |
+| YXX-SS-005..010 | PLANNED | plan package, not completion evidence |
 | YXX-SS-011 | NOT AUTHORIZED | intentionally out of scope |
