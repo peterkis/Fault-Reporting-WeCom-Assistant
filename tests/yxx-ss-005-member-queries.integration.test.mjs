@@ -345,6 +345,11 @@ test('SS-005 extends aggregate retention for a late accepted supplement', { skip
     assert.ok(BigInt(after.binding_retention) > BigInt(before.binding_retention));
     assert.equal(after.binding_retention, after.intake_retention);
     assert.equal(after.binding_retention, after.journey_retention);
+    assert.equal((await pool.query(`SELECT count(DISTINCT retention_until_epoch_ms)::integer AS n,
+      min(retention_until_epoch_ms)::text AS submission_retention FROM intake.web_submission
+      WHERE intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1)`, [root.receipt.request_ref])).rows[0].n, 1);
+    assert.equal((await pool.query(`SELECT min(retention_until_epoch_ms)::text AS submission_retention FROM intake.web_submission
+      WHERE intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1)`, [root.receipt.request_ref])).rows[0].submission_retention, after.binding_retention);
     assert.equal((await createYxxSelfServiceOrchestrator({ pool, profile: 'MEMBER_SELF_SERVICE', featureFlags: FLAGS })
       .processOne({ requestRef: root.receipt.request_ref })).processed, true);
   } });
