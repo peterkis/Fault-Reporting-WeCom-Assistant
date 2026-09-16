@@ -16,6 +16,9 @@ test('SS-003 migration and store contracts are source-complete',async()=>{
   const input=parseYxxRequestInput({schema_version:1,client_command_id:'11111111-1111-4111-8111-111111111111',description:'打印机无响应',location:{text:'住院楼8层护士站',unknown:false},service_code:null,impact_scope:'SINGLE_WORKSTATION',reported_department_text:null,extension:null});
   assert.equal(input.description,'打印机无响应');
   assert.throws(()=>parseYxxRequestInput({...input,reporter:'member'}),{message:'YXX_INPUT_INVALID'});
+  assert.equal(parseYxxRequestInput({...input,location:{text:'',unknown:true}}).location.text,null);
+  assert.throws(()=>parseYxxRequestInput({...input,location:{text:'',unknown:false}}),{message:'YXX_INPUT_INVALID'});
+  await assert.rejects(createYxxSelfServiceStore({pool:{connect:()=>{}},scopeSecret:'yxx-self-service-test-secret-32-bytes'}).listMyReports({scope:{scopeHash:'a'.repeat(64)},cursor:'abcdefghijk'}),{message:'YXX_CURSOR_INVALID'});
   assert.throws(()=>parseYxxSupplementInput({schema_version:1,client_command_id:'22222222-2222-4222-8222-222222222222',expected_input_revision:'0',text:'补充'}),{message:'YXX_INPUT_INVALID'});
 });
 
