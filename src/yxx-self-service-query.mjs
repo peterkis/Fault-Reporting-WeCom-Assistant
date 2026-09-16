@@ -285,7 +285,7 @@ export function createYxxSelfServiceQuery({
           JOIN intake.service_intake i ON i.id=b.intake_id
           LEFT JOIN LATERAL (
             SELECT s.safe_content FROM intake.web_submission s
-             WHERE s.intake_id=i.id AND s.kind='SUBMIT'
+             WHERE s.intake_id=i.id AND s.kind='SUBMIT' AND s.retention_until>platform.local_now()
              ORDER BY s.input_revision LIMIT 1
           ) initial ON TRUE
           LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id

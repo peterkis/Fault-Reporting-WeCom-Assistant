@@ -33,10 +33,10 @@ async function webReportForTicket(queryable,ticket) {
     JOIN intake.web_request_binding b ON b.intake_id=i.id
       AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
     LEFT JOIN LATERAL (SELECT s.safe_content FROM intake.web_submission s
-      WHERE s.intake_id=i.id AND s.kind='SUBMIT' ORDER BY s.input_revision LIMIT 1) initial ON TRUE
+      WHERE s.intake_id=i.id AND s.kind='SUBMIT' AND s.retention_until>platform.local_now() ORDER BY s.input_revision LIMIT 1) initial ON TRUE
     LEFT JOIN LATERAL (SELECT jsonb_agg(jsonb_build_object('input_revision',s.input_revision::text,
       'text',s.safe_content->>'text') ORDER BY s.input_revision) AS items
-      FROM intake.web_submission s WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT') supplements ON TRUE
+      FROM intake.web_submission s WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT' AND s.retention_until>platform.local_now()) supplements ON TRUE
     WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()`,[ticket.intake_id]); }
   catch(error) { if(error?.code==='42P01')return null; throw error; }
   const row=q.rows[0];if(q.rowCount!==1||row.source_provider!=='YIXIAOXIU_WEB')return null;

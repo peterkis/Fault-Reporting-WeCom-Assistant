@@ -151,6 +151,18 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     assert.equal((await orchestrator.processOne({ requestRef: autoOutOfScope.receipt.request_ref })).result_code, 'OUT_OF_SCOPE');
     assert.equal((await pool.query(`SELECT j.status FROM intake.contact_journey j
       JOIN intake.web_request_binding b ON b.intake_id=j.origin_intake_id WHERE b.request_ref=$1`, [autoOutOfScope.receipt.request_ref])).rows[0].status, 'ENDED');
+    await store.accept({ scope: scopeA, kind: 'SUPPLEMENT', requestRef: autoOutOfScope.receipt.request_ref,
+      input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '处方提交不了' } });
+    const reopened = await orchestrator.processOne({ requestRef: autoOutOfScope.receipt.request_ref });
+    assert.equal(reopened.processed, true);
+    assert.equal((await pool.query(`SELECT j.status,j.ended_at FROM intake.contact_journey j
+      JOIN intake.web_request_binding b ON b.intake_id=j.origin_intake_id WHERE b.request_ref=$1`, [autoOutOfScope.receipt.request_ref])).rows[0].status, 'TICKET_LINKED');
+    assert.equal((await pool.query(`SELECT j.ended_at FROM intake.contact_journey j
+      JOIN intake.web_request_binding b ON b.intake_id=j.origin_intake_id WHERE b.request_ref=$1`, [autoOutOfScope.receipt.request_ref])).rows[0].ended_at, null);
+    const clarification = await store.accept({ scope: scopeA, input: requestInput('系统不行', randomUUID(), { text: null, unknown: true }) });
+    assert.equal((await orchestrator.processOne({ requestRef: clarification.receipt.request_ref })).result_code, 'NEEDS_DESCRIPTION');
+    assert.equal((await pool.query(`SELECT j.status FROM intake.contact_journey j
+      JOIN intake.web_request_binding b ON b.intake_id=j.origin_intake_id WHERE b.request_ref=$1`, [clarification.receipt.request_ref])).rows[0].status, 'WAITING_DESCRIPTION');
     const botA = await createBotTicket(pool, contexts.A.bot_owner.userId, 'a');
     const botB = await createBotTicket(pool, contexts.B.bot_owner.userId, 'b');
     const baselineCounts = (await pool.query('SELECT (SELECT count(*)::integer FROM pilot_ticket.reporter_access_grant) AS grants,(SELECT count(*)::integer FROM communication.delivery) AS deliveries')).rows[0];
@@ -259,11 +271,12 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     const timelineAnchor = await store.timeline({ scope: scopeA, requestRef: firstA.receipt.request_ref, limit: 1 });
     const firstIntake = (await pool.query('SELECT b.intake_id::text AS intake_id,i.version,COALESCE(max(e.event_ordinal),0)::integer+1 AS next_ordinal FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id LEFT JOIN intake.service_intake_event e ON e.intake_id=i.id WHERE b.request_ref=$1 GROUP BY b.intake_id,i.version', [firstA.receipt.request_ref])).rows[0];
     await pool.query(`INSERT INTO intake.service_intake_event(event_type,aggregate_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
-      VALUES('intake.rule_decision_applied','intake',$1::uuid,$2,$3,'2020-01-01 00:00:00',$4,'{}'::jsonb)`, [firstIntake.intake_id, firstIntake.version, firstIntake.next_ordinal, 'yxx:ss005:late']);
+      VALUES('intake.rule_decision_applied','intake',$1::uuid,$2,$3,'2020-01-02 00:00:00',$4,'{}'::jsonb),
+            ('intake.rule_decision_applied','intake',$1::uuid,$2,$3+1,'2020-01-01 00:00:00',$5,'{}'::jsonb)`, [firstIntake.intake_id, firstIntake.version, firstIntake.next_ordinal, 'yxx:ss005:late-a', 'yxx:ss005:late-b']);
     const latePage = await store.timeline({ scope: scopeA, requestRef: firstA.receipt.request_ref, cursor: timelineAnchor.next_cursor, limit: 1 });
     assert.equal(latePage.items[0].occurred_at, '2020-01-01 00:00:00');
-    const afterLate = await store.timeline({ scope: scopeA, requestRef: firstA.receipt.request_ref, cursor: latePage.next_cursor, limit: 1 });
-    assert.notEqual(afterLate.items[0]?.occurred_at, '2020-01-01 00:00:00');
+    const secondLate = await store.timeline({ scope: scopeA, requestRef: firstA.receipt.request_ref, cursor: latePage.next_cursor, limit: 1 });
+    assert.equal(secondLate.items[0].occurred_at, '2020-01-02 00:00:00');
 
     await pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE request_ref=$1', [firstA.receipt.request_ref]);
     const afterRevoke = await query.list({ request: 'A', source: 'WEB' });

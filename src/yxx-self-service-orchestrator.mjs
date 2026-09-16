@@ -97,7 +97,7 @@ async function loadWebRoot(transaction, requestRef) {
     `SELECT id::text,kind,input_revision,canonical_content_hash,safe_content,
             to_char(received_at,'YYYY-MM-DD HH24:MI:SS') AS received_at
        FROM intake.web_submission
-      WHERE intake_id=$1::uuid ORDER BY input_revision`, [row.intake_id],
+      WHERE intake_id=$1::uuid AND retention_until>platform.local_now() ORDER BY input_revision`, [row.intake_id],
   );
   if (submissions.rows.length === 0 || Number(submissions.rows.at(-1).input_revision) !== Number(row.input_revision)) {
     throw inputError('YXX_WEB_INPUT_SNAPSHOT_MISSING');
@@ -241,7 +241,7 @@ async function processActions({ transaction, decision, root, journey, observedAt
       }
       resultRefType = 'TICKET'; resultRefId = linkedTicketId;
       await transaction.query(
-        `UPDATE intake.contact_journey SET linked_ticket_id=$2::uuid,status='TICKET_LINKED',
+        `UPDATE intake.contact_journey SET linked_ticket_id=$2::uuid,status='TICKET_LINKED',ended_at=NULL,
            row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now()) WHERE id=$1::uuid`,
         [journey.id, linkedTicketId],
       );
@@ -275,6 +275,11 @@ async function processActions({ transaction, decision, root, journey, observedAt
       command_id: action.id, command_hash: commandHash, result_ref_type: resultRefType,
       result_ref_id: String(resultRefId), executed_at: observedAt });
     results.push({ action_id: action.id, action_type: action.action_type, result_ref_type: resultRefType, result_ref_id: String(resultRefId) });
+  }
+  if (decision.result_code === 'NEEDS_DESCRIPTION') {
+    await transaction.query(`UPDATE intake.contact_journey SET status='WAITING_DESCRIPTION',ended_at=NULL,
+      row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now())
+      WHERE id=$1::uuid AND status<>'WAITING_DESCRIPTION'`, [journey.id]);
   }
   if (root.pilot_ticket_id) {
     const supplement = await recordWebSupplement({ transaction, ticketId: root.pilot_ticket_id,
