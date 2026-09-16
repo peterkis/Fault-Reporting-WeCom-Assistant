@@ -110,8 +110,8 @@ ALTER TABLE intake.web_submission
 
 ALTER TABLE intake.service_intake
   ADD CONSTRAINT service_intake_primary_web_submission_fk
-    FOREIGN KEY (primary_web_submission_id)
-    REFERENCES intake.web_submission(id) DEFERRABLE INITIALLY DEFERRED;
+    FOREIGN KEY (primary_web_submission_id, id)
+    REFERENCES intake.web_submission(id, intake_id) DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE intake.service_intake
   ADD CONSTRAINT service_intake_web_source_check CHECK (
@@ -163,6 +163,7 @@ ALTER TABLE intake.channel_leg
     OR (leg_type <> 'WEB_FORM' AND web_submission_id IS NULL)
   );
 ALTER TABLE intake.channel_leg
+  ADD CONSTRAINT channel_leg_web_identity_unique UNIQUE (id, source_intake_id, web_submission_id),
   ADD CONSTRAINT channel_leg_web_submission_fk
     FOREIGN KEY (web_submission_id, source_intake_id)
     REFERENCES intake.web_submission(id, intake_id) ON DELETE RESTRICT;
@@ -178,7 +179,10 @@ ALTER TABLE intake.deterministic_decision
     OR (source_kind = 'BOT' AND primary_web_submission_id IS NULL AND basis_input_revision IS NULL)
   ),
   ADD CONSTRAINT deterministic_decision_web_submission_fk
-    FOREIGN KEY (primary_web_submission_id) REFERENCES intake.web_submission(id) ON DELETE RESTRICT;
+    FOREIGN KEY (primary_web_submission_id) REFERENCES intake.web_submission(id) ON DELETE RESTRICT,
+  ADD CONSTRAINT deterministic_decision_web_leg_fk
+    FOREIGN KEY (channel_leg_id, service_intake_id, primary_web_submission_id)
+    REFERENCES intake.channel_leg(id, source_intake_id, web_submission_id) ON DELETE RESTRICT;
 
 ALTER TABLE intake.manual_review_item
   ADD COLUMN IF NOT EXISTS basis_input_revision BIGINT,

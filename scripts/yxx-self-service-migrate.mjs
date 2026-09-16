@@ -32,7 +32,7 @@ export async function yxxCatalogInventory(tx){
       'contact_journey_entry_mode_check','contact_journey_origin_channel_check','contact_journey_current_channel_check',
       'contact_journey_entry_origin_check','contact_journey_web_scope_check','channel_leg_type_check','channel_leg_web_source_check',
       'channel_leg_web_submission_fk','deterministic_decision_source_kind_check','deterministic_decision_web_source_check',
-      'deterministic_decision_web_submission_fk','manual_review_basis_revision_check'
+      'deterministic_decision_web_submission_fk','deterministic_decision_web_leg_fk','manual_review_basis_revision_check'
     ) ORDER BY relation,name`,[RELATIONS]);
   const indexes=await tx.query(`SELECT n.nspname||'.'||r.relname AS relation,c.relname AS name,i.indisunique AS unique_index,
       i.indisvalid AS valid,i.indisready AS ready,pg_get_indexdef(c.oid) AS definition
@@ -53,11 +53,29 @@ export function validateYxxCatalog(inventory){
   const columns=new Map();for(const row of inventory.columns){if(!columns.has(row.relation))columns.set(row.relation,new Set());columns.get(row.relation).add(row.name);}
   for(const [relation,names] of Object.entries(REQUIRED_COLUMNS))if(names.some(name=>!columns.get(relation)?.has(name)))fail('YXX_SELF_SERVICE_COLUMN_DRIFT');
   const constraints=new Map(inventory.constraints.map(v=>[v.name,v]));
-  for(const name of ['web_binding_ref_check','web_binding_revision_check','web_binding_retention_pair_check','web_submission_kind_check','web_submission_intake_revision_unique','web_command_receipt_idempotency_unique','service_intake_web_source_check','channel_leg_web_source_check','deterministic_decision_web_source_check']){
-    if(!constraints.has(name)||constraints.get(name).validated!==true)fail('YXX_SELF_SERVICE_CONSTRAINT_DRIFT');
+  const expectedConstraints={
+    web_binding_ref_check:['c','request_ref','^[A-Za-z0-9_-]{32}$'],
+    web_binding_revision_check:['c','processed_revision','input_revision'],
+    web_binding_retention_pair_check:['c','retention_until_epoch_ms','local_from_epoch_ms'],
+    web_submission_kind_check:['c','kind','SUBMIT'],
+    web_submission_intake_revision_unique:['u','intake_id','input_revision'],
+    web_command_receipt_idempotency_unique:['u','scope_hash','client_command_id'],
+    service_intake_web_source_check:['c','YIXIAOXIU_WEB','primary_web_submission_id'],
+    channel_leg_web_source_check:['c','WEB_FORM','web_submission_id'],
+    deterministic_decision_web_source_check:['c','source_kind','primary_web_submission_id'],
+    channel_leg_web_submission_fk:['f','web_submission'],
+    deterministic_decision_web_leg_fk:['f','channel_leg'],
+    service_intake_primary_web_submission_fk:['f','web_submission'],
+  };
+  for(const [name,[type,...fragments]] of Object.entries(expectedConstraints)){
+    const row=constraints.get(name);const definition=String(row?.definition??'');
+    if(!row||row.type!==type||row.validated!==true||row.deferrable!== (name==='service_intake_primary_web_submission_fk')||fragments.some(fragment=>!definition.includes(fragment)))fail('YXX_SELF_SERVICE_CONSTRAINT_DRIFT');
   }
   const indexes=new Set(inventory.indexes.filter(v=>v.valid&&v.ready).map(v=>v.name));
   for(const name of ['web_binding_member_created_idx','web_binding_pending_idx','web_submission_intake_received_idx','web_receipt_result_idx'])if(!indexes.has(name))fail('YXX_SELF_SERVICE_INDEX_DRIFT');
+  const pending=inventory.indexes.find(v=>v.name==='web_binding_pending_idx');
+  if(!pending?.definition.includes("processed_revision < input_revision")||!pending.definition.includes("revoked_at IS NULL")||pending.unique_index)fail('YXX_SELF_SERVICE_INDEX_DRIFT');
+  for(const name of ['web_command_receipt_idempotency_unique','web_submission_intake_revision_unique'])if(constraints.get(name)?.deferrable||constraints.get(name)?.deferred)fail('YXX_SELF_SERVICE_CONSTRAINT_DRIFT');
   return inventory;
 }
 
