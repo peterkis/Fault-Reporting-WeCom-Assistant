@@ -9,6 +9,7 @@ import { routeP2007Decision } from '../src/p2-015-decision-router.mjs';
 import { createP2016ManualReviewFacade } from '../src/p2-016-manual-review-facade.mjs';
 import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
 import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
+import { createP2016TicketQuery } from '../src/p2-016-ticket-query.mjs';
 import { migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
 import { withP2015IsolatedDatabase } from './helpers/p2-015-postgres-harness.mjs';
 
@@ -271,6 +272,10 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
     assert.equal(recoveredBatch.processed, 1);
     assert.equal((await facts(pool, poison.receipt.request_ref)).ticket_count, 1);
     const principal = await createPilotAccessService({ pool }).upsertPrincipal({ wecomUserId: 'yxx-reviewer', displayName: 'YXX审核', roles: ['ADMIN'], resolverTeamIds: ['PILOT_IT'] });
+    const needsTicketId = (await pool.query('SELECT pilot_ticket_id::text AS id FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1', [needs.receipt.request_ref])).rows[0].id;
+    const needsTicket = await createP2016TicketQuery({ pool, enabled: true }).detail({ authContext: { principal_id: principal.id }, ticketId: needsTicketId });
+    assert.equal(needsTicket.web_report.description, '系统不行');
+    assert.deepEqual(needsTicket.web_report.supplements, [{ input_revision: '2', text: '处方提交不了' }]);
     const facade = createP2016ManualReviewFacade({ pool, enabled: true });
     const outReviewBody = input('审核后不在范围', { text: null, unknown: true });
     const outReview = await command.accept({ request: request(outReviewBody.client_command_id), input: outReviewBody });
