@@ -148,6 +148,9 @@ function safeWebDetail(row) {
     display_status: webDisplayStatus(row),
     needs_action: safeNeedsAction(row),
     safe_description: safeDescription,
+    supplements: (Array.isArray(row.supplement_items) ? row.supplement_items : []).map((item) => ({
+      input_revision: String(item.input_revision), text: typeof item.text === 'string' ? item.text : null,
+    })),
     safe_location: row.safe_location ?? null,
     created_at: created,
     created_epoch_ms: createdEpoch,
@@ -277,6 +280,11 @@ export function createYxxSelfServiceQuery({
                COALESCE(initial.safe_content->>'description','') AS safe_description,
                CASE WHEN (initial.safe_content->'location'->>'unknown')::boolean THEN NULL
                     ELSE initial.safe_content->'location'->>'text' END AS safe_location,
+               COALESCE((SELECT jsonb_agg(jsonb_build_object('input_revision',s.input_revision::text,
+                       'text',s.safe_content->>'text') ORDER BY s.input_revision)
+                         FROM intake.web_submission s
+                        WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT'
+                          AND s.retention_until>platform.local_now()),'[]'::jsonb) AS supplement_items,
                t.ticket_no,t.status AS ticket_status,
                to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,
                EXISTS (SELECT 1 FROM intake.manual_review_item r
