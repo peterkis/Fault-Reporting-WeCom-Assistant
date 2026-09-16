@@ -2,8 +2,8 @@
   "task": "YXX-SS-005",
   "status": "COMPLETE",
   "scope": "LOCAL_ISOLATED_ONLY",
-  "event_time": "2026-09-16 19:08:39",
-  "event_epoch_ms": "1789556919844",
+  "event_time": "2026-09-16 19:25:04",
+  "event_epoch_ms": "1789557904584",
   "dependencies": ["YXX-SS-003"],
   "implementation": {
     "authorization": "server-derived member scope; protected recheck after every read",
@@ -17,6 +17,7 @@
   "validation": [
     {"command": "node --test --test-concurrency=1 tests/yxx-ss-005-member-queries.integration.test.mjs", "result": "3 passed with isolated PostgreSQL"},
     {"command": "node --test --test-concurrency=1 tests/yxx-ss-003-schema.test.mjs tests/yxx-ss-004-orchestration.integration.test.mjs tests/yxx-ss-005-member-queries.integration.test.mjs", "result": "9 passed with isolated PostgreSQL"},
+    {"command": "node --test --test-concurrency=1 tests/p2-016-ticket-lifecycle.integration.test.mjs tests/p2-016-notification-delivery.integration.test.mjs tests/p2-016-orchestration.integration.test.mjs tests/p2-016-manual-review.integration.test.mjs tests/yxx-ss-003-schema.test.mjs tests/yxx-ss-004-orchestration.integration.test.mjs tests/yxx-ss-005-member-queries.integration.test.mjs", "result": "26 passed with isolated PostgreSQL"},
     {"cases": ["OAUTH_ONLY zero database calls", "A/B ownership and cross-member denial", "mixed Web/Bot cursor", "source filter", "Web Ticket one row", "revoked detail/list", "304 recheck", "READONLY Bot read", "500-row mixed snapshot traversal"], "result": "passed"},
     {"command": "node --check on SS-005 modules and test", "result": "passed"},
     {"command": "git diff --check", "result": "passed"}
