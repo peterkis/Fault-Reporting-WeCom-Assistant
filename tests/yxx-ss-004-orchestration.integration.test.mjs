@@ -9,6 +9,7 @@ import { routeP2007Decision } from '../src/p2-015-decision-router.mjs';
 import { createP2016ManualReviewFacade } from '../src/p2-016-manual-review-facade.mjs';
 import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
 import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
+import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
 import { createP2016TicketQuery } from '../src/p2-016-ticket-query.mjs';
 import { migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
 import { withP2015IsolatedDatabase } from './helpers/p2-015-postgres-harness.mjs';
@@ -179,7 +180,7 @@ test('SS-004 accepts, processes, replays, and creates one Web Ticket through the
     assert.equal(row.source_kind, 'WEB'); assert.equal(String(row.basis_input_revision), '1');
     assert.equal(row.ticket_count, 1); assert.deepEqual([row.message_count, row.outbox_count, row.delivery_count, row.grant_count, row.session_count, row.direct_leg_count], [0, 0, 0, 0, 0, 0]);
     assert.deepEqual((await pool.query(`SELECT event_type FROM pilot_ticket.ticket_event WHERE ticket_id=(SELECT pilot_ticket_id FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1)`, [accepts[0].receipt.request_ref])).rows.map((item) => item.event_type), ['ticket.created']);
-    const createdTicket = (await pool.query(`SELECT title FROM pilot_ticket.ticket WHERE source_intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1)`, [accepts[0].receipt.request_ref])).rows[0];
+    const createdTicket = (await pool.query(`SELECT id::text,title FROM pilot_ticket.ticket WHERE source_intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1)`, [accepts[0].receipt.request_ref])).rows[0];
     assert.match(createdTicket.title, /处方提交不了/u);
     const source = (await pool.query(`SELECT i.source_channel,i.source_provider,i.source_bot_id,i.source_chat_type,i.primary_message_id,
         l.leg_type,l.conversation_session_id,l.conversation_thread_id,l.origin_channel_message_id
@@ -191,6 +192,11 @@ test('SS-004 accepts, processes, replays, and creates one Web Ticket through the
     const timeline = await store.timeline({ scope: currentScope, requestRef: accepts[0].receipt.request_ref, limit: 100 });
     const ticketEvent = timeline.items.find((item) => item.event_type === 'TICKET_CREATED');
     assert.ok(ticketEvent); assert.match(ticketEvent.ticket.ticket_no, /^IT-[0-9]{8}-[0-9]{4,}$/u); assert.equal(ticketEvent.ticket.status, 'QUEUED');
+    const ticketAction = createTicketActionService({ pool });
+    assert.equal((await ticketAction.perform({ ticketId: createdTicket.id, action: 'accept', expectedVersion: 1,
+      actor: { type: 'SYSTEM', id: null }, reasonCode: 'SYNTHETIC_ACCEPT', traceId: 'yxx:ss004:accept' })).ok, true);
+    const updatedTimeline = await store.timeline({ scope: currentScope, requestRef: accepts[0].receipt.request_ref, limit: 100 });
+    assert.ok(updatedTimeline.items.some((item) => item.event_type === 'TICKET_UPDATED' && item.ticket?.status === 'ACCEPTED'));
   } });
 });
 

@@ -73,3 +73,12 @@ test('worker still advances Bot work while Web remains continuously due', async 
   const result = await worker.processDueBatch({ batch_size: 2, now_epoch_ms: '123', feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true } });
   assert.equal(candidateParams[1], 1); assert.equal(botProcessed, 1); assert.equal(result.processed, 2); assert.equal(result.web_result.processed, 1);
 });
+
+test('worker counts a failed Web claim against the bounded Bot capacity', async () => {
+  let candidateParams;
+  const pool = { query: async (_sql, params) => { candidateParams = params; return { rows: [] }; }, connect: async () => { throw new Error('Bot rows should not connect'); } };
+  const webOrchestrator = { processPendingFromWorker: async () => ({ processed: 0, claimed: 1, results: [{ pending: true }] }) };
+  const worker = createP2015Worker({ pool, webOrchestrator, orchestrator: { preparePersistedIntake() {}, processInTransaction() {} } });
+  const result = await worker.processDueBatch({ batch_size: 1, now_epoch_ms: '123', feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true } });
+  assert.equal(candidateParams[1], 0); assert.equal(result.processed, 0); assert.equal(result.claimed, 1);
+});

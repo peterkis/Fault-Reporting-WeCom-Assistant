@@ -45,16 +45,22 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
     const batchSize = normalizeLimit(value.batch_size, P2_015_LIMITS.defaultBatch, P2_015_LIMITS.maximumBatch);
     const nowEpochMs = value.now_epoch_ms ?? String(Date.now());
     let processed = 0;
+    let claimed = 0;
     const results = [];
     let webResult = null;
+    const webClaimedFor = result => result?.claimed ?? result?.processed ?? 0;
     if (webOrchestrator && !value.signal?.aborted) {
       // Reserve one slot for Web on every batch. If no Web root is due, the
       // zero-result response lets the Bot query use the full batch instead.
       webResult = await webOrchestrator.processPendingFromWorker({ batchSize: 1, nowEpochMs, signal: value.signal });
       processed += webResult.processed ?? 0;
+      claimed += webClaimedFor(webResult);
       results.push(...(webResult.results ?? []));
     }
-    const botBatchSize = value.signal?.aborted ? 0 : webOrchestrator ? Math.max(0, batchSize - processed) : batchSize;
+    const webClaimed = webClaimedFor(webResult);
+    const botBatchSize = value.signal?.aborted ? 0 : webOrchestrator
+      ? webClaimed > 0 ? Math.max(0, batchSize - webClaimed) : batchSize
+      : batchSize;
     const candidates = await pool.query(
       `SELECT intake.id::text
          FROM intake.service_intake AS intake
@@ -74,6 +80,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
     );
     for (const candidate of candidates.rows) {
       if (value.signal?.aborted) break;
+      claimed += 1;
       const prepared = await orchestrator.preparePersistedIntake(candidate.id);
       const result = await withTransaction(pool, async (transaction) => {
         if (beforeClaim) await beforeClaim(transaction);
@@ -97,7 +104,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
       const error=new Error('P2_015_POST_BATCH_MAINTENANCE_FAILED');error.code=error.message;
       error.accepted_batch_committed=true;error.processed=processed;throw error;
     }
-    return freezePublic({ processed, claimed: processed, disabled: false, results, web_result: webResult,
+    return freezePublic({ processed, claimed, disabled: false, results, web_result: webResult,
       model_provider_calls: 0, batch_size: batchSize });
   }
 
