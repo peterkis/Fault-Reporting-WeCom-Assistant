@@ -154,7 +154,7 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
       else if(before!==null){if(!/^[0-9]+$/u.test(before)||!Number.isSafeInteger(Number(before)))throw new TypeError('YXX_CURSOR_INVALID');numericBoundary=Number(before);order='DESC';}
       const args=[owner.rows[0].intake_id,limit+1,TICKET_TIMELINE_EVENTS];let boundarySql='';
       if(key){args.push(key.occurred_at,key.source_rank,key.source_ordinal,key.source_id,key.intake_high_water,key.ticket_high_water);boundarySql=order==='ASC'?'WHERE ((occurred_at,source_rank,source_ordinal,source_id::uuid)>($4::timestamp without time zone,$5::integer,$6::integer,$7::uuid) OR (event_source=\'INTAKE\' AND source_ordinal>$8) OR (event_source=\'TICKET\' AND source_ordinal>$9))':'WHERE (occurred_at,source_rank,source_ordinal,source_id::uuid)<($4::timestamp without time zone,$5::integer,$6::integer,$7::uuid) AND ((event_source=\'INTAKE\' AND source_ordinal<=$8) OR (event_source=\'TICKET\' AND source_ordinal<=$9))';}
-      else if(numericBoundary!==null){args.push(numericBoundary);boundarySql=order==='ASC'?'WHERE source_ordinal>$4':'WHERE source_ordinal<$4';}
+      else if(numericBoundary!==null){args.push(numericBoundary);boundarySql=order==='ASC'?'WHERE timeline_ordinal>$4':'WHERE timeline_ordinal<$4';}
       const q=await tx.query(`WITH all_events AS (
           SELECT 'INTAKE'::text AS event_source,e.event_type,e.payload,e.occurred_at,e.event_ordinal::integer AS source_ordinal,e.event_id::text AS source_id,
                  t.ticket_no,t.status AS ticket_status,to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,0::integer AS source_rank
@@ -170,11 +170,14 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
                  COALESCE(MAX(source_ordinal) FILTER (WHERE event_source='INTAKE') OVER (),0)::integer AS intake_high_water,
                  COALESCE(MAX(source_ordinal) FILTER (WHERE event_source='TICKET') OVER (),0)::integer AS ticket_high_water
             FROM all_events
+        ), ranked AS (
+          SELECT annotated.*,row_number() OVER (ORDER BY occurred_at,source_rank,source_ordinal,source_id::uuid)::integer AS timeline_ordinal
+            FROM annotated
         )
         SELECT event_source,event_type,payload,to_char(occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,source_rank,source_ordinal,source_id,
                intake_high_water,ticket_high_water,
                ticket_no,ticket_status,ticket_updated_at
-          FROM annotated ${boundarySql} ORDER BY occurred_at ${order},source_rank ${order},source_ordinal ${order},source_id::uuid ${order} LIMIT $2`,args);
+          FROM ranked ${boundarySql} ORDER BY occurred_at ${order},source_rank ${order},source_ordinal ${order},source_id::uuid ${order} LIMIT $2`,args);
       const rows=q.rows.slice(0,limit);if(order==='DESC')rows.reverse();const items=rows.map(timelineItem);
       const next=rows.length===limit&&q.rows.length>limit?(()=>{const anchor=order==='ASC'?rows.at(-1):rows[0];const data=Buffer.from(JSON.stringify({scope_hash:scopeHash,request_ref:ref,occurred_at:String(anchor.occurred_at),source_rank:Number(anchor.source_rank),source_ordinal:Number(anchor.source_ordinal),source_id:String(anchor.source_id),intake_high_water:Number(anchor.intake_high_water),ticket_high_water:Number(anchor.ticket_high_water),direction:order}),'utf8').toString('base64url');return data+'.'+createHmac('sha256',scopeSecret).update(data).digest('base64url');})():null;
       return {items,next_cursor:next};

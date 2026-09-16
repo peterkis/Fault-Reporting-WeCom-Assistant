@@ -113,8 +113,13 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
       );
       if (selected.rowCount !== 1) failP2015(P2_015_ERROR_CODES.authorizationDenied);
       const row = selected.rows[0];
-      const overrideResultCode = value.resolution_code === 'CANCEL_REVIEW'
-        ? 'MANUAL_REVIEW_REQUIRED' : RESULT_BY_RESOLUTION[value.resolution_code];
+      const commandHash = safeHash({ review_id: value.review_id, resolution_code: value.resolution_code,
+        resolution_reason_code: value.resolution_reason_code, expected_row_version: value.expected_row_version });
+      if (row.status !== 'PENDING') {
+        if (row.resolution_command_id === value.client_command_id && row.resolution_command_hash === commandHash) return freezePublic({ review_id: value.review_id, status: row.status, replayed: true });
+        failP2015(P2_015_ERROR_CODES.commandConflict);
+      }
+      if (String(row.row_version) !== String(value.expected_row_version)) failP2015(P2_015_ERROR_CODES.versionConflict);
       if (useWebSource && row.source_kind === 'WEB') {
         const current = await transaction.query(
           `SELECT input_revision FROM intake.web_request_binding
@@ -128,13 +133,8 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
           failP2015(P2_015_ERROR_CODES.versionConflict);
         }
       }
-      const commandHash = safeHash({ review_id: value.review_id, resolution_code: value.resolution_code,
-        resolution_reason_code: value.resolution_reason_code, expected_row_version: value.expected_row_version });
-      if (row.status !== 'PENDING') {
-        if (row.resolution_command_id === value.client_command_id && row.resolution_command_hash === commandHash) return freezePublic({ review_id: value.review_id, status: row.status, replayed: true });
-        failP2015(P2_015_ERROR_CODES.commandConflict);
-      }
-      if (String(row.row_version) !== String(value.expected_row_version)) failP2015(P2_015_ERROR_CODES.versionConflict);
+      const overrideResultCode = value.resolution_code === 'CANCEL_REVIEW'
+        ? 'MANUAL_REVIEW_REQUIRED' : RESULT_BY_RESOLUTION[value.resolution_code];
       const ordinal = await transaction.query('SELECT COALESCE(max(decision_ordinal),0)::integer+1 AS ordinal FROM intake.deterministic_decision WHERE journey_id=$1::uuid', [row.journey_id]);
       const safeResult = { ...row.safe_result, result_code: overrideResultCode,
         reason_code: value.resolution_reason_code, manual_review_required: false,
