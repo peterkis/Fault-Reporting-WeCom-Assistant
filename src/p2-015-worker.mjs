@@ -57,7 +57,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
       } catch {
         // A broken optional Web lane must not starve the existing Bot batch.
         // Treat the reserved slot as claimed and expose only a stable code.
-        webResult = { processed: 0, claimed: 1, pending: true, error_code: 'WEB_PROCESSOR_UNAVAILABLE', results: [] };
+        webResult = { processed: 0, claimed: 0, pending: true, error_code: 'WEB_PROCESSOR_UNAVAILABLE', results: [] };
       }
       processed += webResult.processed ?? 0;
       claimed += webClaimedFor(webResult);

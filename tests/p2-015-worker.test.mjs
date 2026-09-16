@@ -99,7 +99,7 @@ test('worker keeps the Bot batch running when the Web processor throws', async (
   };
   const worker = createP2015Worker({ pool, webOrchestrator, orchestrator });
   const result = await worker.processDueBatch({ batch_size: 2, now_epoch_ms: '123', feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true } });
-  assert.equal(candidateParams[1], 1); assert.equal(botProcessed, 1);
+  assert.equal(candidateParams[1], 2); assert.equal(botProcessed, 1);
   assert.equal(result.web_result.error_code, 'WEB_PROCESSOR_UNAVAILABLE');
-  assert.equal(result.claimed, 2); assert.equal(result.processed, 1);
+  assert.equal(result.web_result.claimed, 0); assert.equal(result.claimed, 1); assert.equal(result.processed, 1);
 });

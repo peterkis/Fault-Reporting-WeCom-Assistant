@@ -71,6 +71,8 @@ function publicDetail(row){
 }
 function cursorToken(payload,secret){const data=Buffer.from(JSON.stringify(payload),'utf8').toString('base64url');return data+'.'+createHmac('sha256',secret).update(data).digest('base64url');}
 function decodeCursor(value,secret,scopeHash){if(typeof value!=='string'||value.length>2048)throw new TypeError('YXX_CURSOR_INVALID');const parts=value.split('.');if(parts.length!==2||!parts[0]||!parts[1])throw new TypeError('YXX_CURSOR_INVALID');const [data,signature]=parts;const expected=createHmac('sha256',secret).update(data).digest('base64url');const a=Buffer.from(signature),b=Buffer.from(expected);if(a.length!==b.length||!timingSafeEqual(a,b))throw new TypeError('YXX_CURSOR_INVALID');let parsed;try{parsed=JSON.parse(Buffer.from(data,'base64url').toString('utf8'));}catch{throw new TypeError('YXX_CURSOR_INVALID');}if(parsed.scope_hash!==scopeHash||typeof parsed.created_at!=='string'||typeof parsed.id!=='string')throw new TypeError('YXX_CURSOR_INVALID');return parsed;}
+function timelineKey(row){return {occurred_at:String(row.occurred_at),source_rank:Number(row.source_rank),source_id:String(row.source_id),source_ordinal:Number(row.source_ordinal),event_source:row.event_source,timeline_ordinal:Number(row.timeline_ordinal)};}
+function compareTimeline(left,right){return left.occurred_at<right.occurred_at?-1:left.occurred_at>right.occurred_at?1:left.source_rank!==right.source_rank?left.source_rank-right.source_rank:left.source_id<right.source_id?-1:left.source_id>right.source_id?1:0;}
 
 export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cursor-secret',now=()=>String(Date.now()),retentionMs=30*24*60*60*1000}={}){
   if(!pool?.connect||typeof scopeSecret!=='string'||Buffer.byteLength(scopeSecret)<16)throw new TypeError('YXX_STORE_CONFIG_INVALID');
@@ -176,7 +178,16 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
                ticket_no,ticket_status,ticket_updated_at
          FROM annotated ${boundarySql} ORDER BY occurred_at ${order},source_rank ${order},source_id ${order} LIMIT $2`,args);
       const rows=q.rows.slice(0,limit);if(order==='DESC')rows.reverse();const items=rows.map(timelineItem);
-       const next=rows.length===limit&&q.rows.length>limit?(()=>{const anchor=order==='ASC'?rows.at(-1):rows[0];const data=Buffer.from(JSON.stringify({scope_hash:scopeHash,request_ref:ref,timeline_ordinal:Number(anchor.timeline_ordinal),intake_high_water:Number(anchor.intake_high_water),ticket_high_water:Number(anchor.ticket_high_water),direction:order,occurred_at:String(anchor.occurred_at),source_rank:Number(anchor.source_rank),source_ordinal:Number(anchor.source_ordinal),event_source:anchor.event_source,source_id:anchor.source_id}),'utf8').toString('base64url');return data+'.'+createHmac('sha256',scopeSecret).update(data).digest('base64url');})():null;
+        const next=rows.length===limit&&q.rows.length>limit?(()=>{
+          const last=rows.at(-1),previous=key?timelineKey(key):null;
+          let boundary=order==='ASC'&&previous?previous:timelineKey(order==='ASC'?last:rows[0]);
+          if(order==='ASC')for(const row of rows.map(timelineKey))if(compareTimeline(row,boundary)>0)boundary=row;
+          const intakeHighWater=Math.max(Number(key?.intake_high_water??0),...rows.filter(row=>row.event_source==='INTAKE').map(row=>Number(row.source_ordinal)));
+          const ticketHighWater=Math.max(Number(key?.ticket_high_water??0),...rows.filter(row=>row.event_source==='TICKET').map(row=>Number(row.source_ordinal)));
+          const data=Buffer.from(JSON.stringify({scope_hash:scopeHash,request_ref:ref,timeline_ordinal:boundary.timeline_ordinal,intake_high_water:intakeHighWater,ticket_high_water:ticketHighWater,direction:order,
+            occurred_at:boundary.occurred_at,source_rank:boundary.source_rank,source_ordinal:boundary.source_ordinal,event_source:boundary.event_source,source_id:boundary.source_id}),'utf8').toString('base64url');
+          return data+'.'+createHmac('sha256',scopeSecret).update(data).digest('base64url');
+        })():null;
       return {items,next_cursor:next};
     });
   }
