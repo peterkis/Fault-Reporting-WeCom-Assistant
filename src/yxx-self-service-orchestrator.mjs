@@ -181,7 +181,7 @@ async function resumeWaitingRequesterTicket({ transaction, ticketId: id, traceId
   }, transaction);
 }
 
-async function processActions({ transaction, decision, root, journey, observedAt, decisionStore, manualReviewStore, ticketCore, intakeDecisionPort }) {
+async function processActions({ transaction, decision, root, journey, observedAt, decisionStore, manualReviewStore, ticketCore, intakeDecisionPort, realtimeProjector }) {
   let linkedTicketId = decision.linked_ticket_id ?? null;
   const results = [];
   for (const action of decision.actions) {
@@ -205,8 +205,14 @@ async function processActions({ transaction, decision, root, journey, observedAt
       });
       linkedTicketId = ticketId(created);
       if (!linkedTicketId) throw inputError('YXX_TICKET_CORE_NO_RESULT');
-      if (created.created === true) await appendTicketEvent({ transaction, ticket: created.ticket,
-        eventType: 'ticket.created', actor: { type: 'SYSTEM', id: null }, traceId: `yxx:${root.request_ref}` });
+      if (created.created === true) {
+        const event = await appendTicketEvent({ transaction, ticket: created.ticket,
+          eventType: 'ticket.created', actor: { type: 'SYSTEM', id: null }, traceId: `yxx:${root.request_ref}` });
+        // Web tickets have no WeCom leg, but still belong to the existing
+        // workbench realtime stream. Keep projection in this transaction so
+        // a committed Ticket cannot be invisible until a full refresh.
+        await realtimeProjector?.ticket?.({ transaction, ticket: created.ticket, event });
+      }
       resultRefType = 'TICKET'; resultRefId = linkedTicketId;
       await transaction.query(
         `UPDATE intake.contact_journey SET linked_ticket_id=$2::uuid,status='TICKET_LINKED',
@@ -253,7 +259,8 @@ async function processActions({ transaction, decision, root, journey, observedAt
 
 export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, ticketCore = null,
   decisionStore = createDecisionStore({ webSource: true }), manualReviewStore = createManualReviewStore({ webSource: true }),
-  intakeDecisionPort = createServiceIntakeDecisionPort(), profile = 'OAUTH_ONLY', featureFlags = {} } = {}) {
+  intakeDecisionPort = createServiceIntakeDecisionPort(), realtimeProjector = null,
+  profile = 'OAUTH_ONLY', featureFlags = {} } = {}) {
   assertPool(pool);
   if (!PROFILES.has(profile) || !featureFlags || typeof featureFlags !== 'object' || Array.isArray(featureFlags)
     || Object.keys(featureFlags).some((key) => !['YIXIAOXIU_SELF_SERVICE_ENABLED', 'YIXIAOXIU_MY_REPORTS_ENABLED'].includes(key))) {
@@ -324,7 +331,7 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
           source_kind: 'WEB', primary_web_submission_id: leg.web_submission_id, basis_input_revision: revision,
         } });
         const actions = await processActions({ transaction, decision, root, journey, observedAt: latest.received_at,
-          decisionStore, manualReviewStore, ticketCore: core, intakeDecisionPort });
+          decisionStore, manualReviewStore, ticketCore: core, intakeDecisionPort, realtimeProjector });
         if (decision.result_code === 'OUT_OF_SCOPE' || decision.result_code === 'ACKNOWLEDGEMENT') {
           const [requestType, intakeStatus] = decision.result_code === 'OUT_OF_SCOPE'
             ? ['UNKNOWN', 'IGNORED'] : ['CHATTER', 'COMPLETED'];

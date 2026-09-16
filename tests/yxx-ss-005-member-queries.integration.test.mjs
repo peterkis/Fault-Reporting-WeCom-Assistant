@@ -9,6 +9,7 @@ import { createYxxMemberCommandContext } from '../src/yxx-self-service-command.m
 import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
 import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
 import { createTicketClosureService } from '../src/p1-010-ticket-closure.mjs';
+import { createP2016RealtimeProjector } from '../src/p2-016-realtime-projector.mjs';
 import { textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
 import { migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
@@ -127,10 +128,14 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     const secondA = await store.accept({ scope: scopeA, input: requestInput('处方提交不了') });
     const reviewA = await store.accept({ scope: scopeA, input: requestInput('无法安全判断', randomUUID(), { text: null, unknown: true }) });
     const firstB = await store.accept({ scope: scopeB, input: requestInput('B 私有报修') });
-    const orchestrator = createYxxSelfServiceOrchestrator({ pool, profile: 'MEMBER_SELF_SERVICE', featureFlags: FLAGS });
+    const realtime = createP2016RealtimeProjector({ pool, enabled: true });
+    const orchestrator = createYxxSelfServiceOrchestrator({ pool, profile: 'MEMBER_SELF_SERVICE', featureFlags: FLAGS, realtimeProjector: realtime });
     const processed = await orchestrator.processOne({ requestRef: secondA.receipt.request_ref });
     assert.equal(processed.processed, true);
     const processedTicketNo = (await pool.query('SELECT ticket_no FROM pilot_ticket.ticket WHERE id=$1::uuid', [processed.ticket_id])).rows[0].ticket_no;
+    assert.equal((await pool.query(`SELECT count(*)::integer AS n FROM conversation.realtime_event
+      WHERE publisher_name='P2_016_WORKBENCH' AND source_type='TICKET_EVENT' AND event_type='ticket.status.changed'
+        AND aggregate_id=$1`, [processed.ticket_id])).rows[0].n, 1);
     const fallbackOrchestrator = createYxxSelfServiceOrchestrator({ pool, profile: 'MEMBER_SELF_SERVICE', featureFlags: FLAGS,
       ruleEngine: { catalog_version: 'SS005', rule_set_version: 'SS005', evaluate() { throw new Error('synthetic rule failure'); } } });
     const reviewed = await fallbackOrchestrator.processOne({ requestRef: reviewA.receipt.request_ref });

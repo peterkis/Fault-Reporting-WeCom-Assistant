@@ -46,6 +46,7 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio
   // Scheduling cursor only: restart may rescan, but never invents or owns facts.
   let bindingCursor=null;
   const webOrchestrator=yxxSelfService===null?null:createYxxSelfServiceOrchestrator({pool,profile:'FULL_SERVICE_LOOP',ruleEngine,
+    realtimeProjector:realtime,
     featureFlags:yxxSelfService.featureFlags??{YIXIAOXIU_SELF_SERVICE_ENABLED:false,YIXIAOXIU_MY_REPORTS_ENABLED:false}});
   return createP2015Worker({pool,orchestrator,webOrchestrator,beforeClaim:realtime.lock,afterBatch:async()=>{
     const scan=await reconcileP2016ConversationBindings({pool,identityHmacKey,beforeTransaction:realtime.lock,afterLegId:bindingCursor});
