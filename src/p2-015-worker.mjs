@@ -54,7 +54,8 @@ export function createP2015Worker({ pool, orchestrator,
             WHERE decision.journey_id=journey.id AND decision.service_intake_id=intake.id
             ORDER BY decision.decision_ordinal DESC LIMIT 1
          ) latest ON true
-        WHERE (journey.id IS NULL OR (journey.status IN ('OPEN','WAITING_DESCRIPTION','WAITING_REVIEW','TICKET_LINKED')
+        WHERE intake.source_provider <> 'YIXIAOXIU_WEB'
+          AND (journey.id IS NULL OR (journey.status IN ('OPEN','WAITING_DESCRIPTION','WAITING_REVIEW','TICKET_LINKED')
           AND journey.evaluation_due_epoch_ms <= $1::bigint
           AND COALESCE(latest.source_window_end_sequence,0) < intake.message_count))
         ORDER BY intake.last_message_at,intake.id LIMIT $2`, [nowEpochMs, batchSize],

@@ -6,8 +6,8 @@ export const YXX_WEB_LIMITS=Object.freeze({description:4000,location:200,departm
 const IMPACTS=new Set(['UNKNOWN','SELF','SINGLE_WORKSTATION','MULTIPLE_USERS','DEPARTMENT']);
 const HASH=/^[a-f0-9]{64}$/u;
 const REF=/^[A-Za-z0-9_-]{32}$/u;
-const cleanText=(value,max)=>{if(typeof value!=='string')throw new TypeError('YXX_INPUT_INVALID');const text=value.trim();if(!text||text.length>max||Buffer.byteLength(text,'utf8')>max*4)throw new TypeError('YXX_INPUT_INVALID');return text;};
-const optionalText=(value,max)=>value===null?null:cleanText(value,max);
+const cleanText=(value,max)=>{if(typeof value!=='string')throw new TypeError('YXX_INPUT_INVALID');const text=value.trim();if(!text||Array.from(text).length>max||Buffer.byteLength(text,'utf8')>max*4)throw new TypeError('YXX_INPUT_INVALID');return text;};
+const optionalText=(value,max)=>value===null?null:typeof value==='string'&&value.trim()===''?null:cleanText(value,max);
 const ensureHash=value=>{if(typeof value!=='string'||!HASH.test(value))throw new TypeError('YXX_SCOPE_INVALID');return value;};
 const requestRef=value=>{if(typeof value!=='string'||!REF.test(value))throw new TypeError('YXX_REQUEST_REF_INVALID');return value;};
 const opaqueRef=()=>randomBytes(24).toString('base64url');
@@ -42,7 +42,7 @@ function displayStatus(row){
   if(row.pilot_ticket_id)return 'TICKET_CREATED';
   if(row.input_revision!==row.processed_revision)return 'RECEIVED_PROCESSING';
   if(row.status==='WAITING_DESCRIPTION')return 'WAITING_FOR_DETAILS';
-  if(row.status==='WAITING_REVIEW'||row.review_id)return 'UNDER_REVIEW';
+  if(row.status==='WAITING_REVIEW'||row.status==='WAITING_TRIAGE'||row.review_id)return 'UNDER_REVIEW';
   if(row.status==='IGNORED')return 'NOT_SERVICE';
   return 'RECEIVED_PROCESSING';
 }

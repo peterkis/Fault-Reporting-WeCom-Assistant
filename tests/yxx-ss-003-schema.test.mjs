@@ -18,6 +18,7 @@ test('SS-003 migration and store contracts are source-complete',async()=>{
   assert.throws(()=>parseYxxRequestInput({...input,reporter:'member'}),{message:'YXX_INPUT_INVALID'});
   assert.equal(parseYxxRequestInput({...input,location:{text:'',unknown:true}}).location.text,null);
   assert.throws(()=>parseYxxRequestInput({...input,location:{text:'',unknown:false}}),{message:'YXX_INPUT_INVALID'});
+  assert.equal(parseYxxRequestInput({...input,description:'🙂'.repeat(2001)}).description,'🙂'.repeat(2001));
   await assert.rejects(createYxxSelfServiceStore({pool:{connect:()=>{}},scopeSecret:'yxx-self-service-test-secret-32-bytes'}).listMyReports({scope:{scopeHash:'a'.repeat(64)},cursor:'abcdefghijk'}),{message:'YXX_CURSOR_INVALID'});
   assert.throws(()=>parseYxxSupplementInput({schema_version:1,client_command_id:'22222222-2222-4222-8222-222222222222',expected_input_revision:'0',text:'补充'}),{message:'YXX_INPUT_INVALID'});
 });
