@@ -28,6 +28,8 @@ test('SS-002 closed schemas reject identity and operational authority fields',as
   assert.equal(profile.properties.YIXIAOXIU_SELF_SERVICE_ENABLED.default,false);assert.equal(profile.properties.YIXIAOXIU_MY_REPORTS_ENABLED.default,false);
   const selfBranch=JSON.stringify(profile.allOf.find(v=>JSON.stringify(v).includes('MEMBER_SELF_SERVICE')));
   assert.match(selfBranch,/YIXIAOXIU_SELF_SERVICE_ENABLED.*const.*true/u);assert.match(selfBranch,/YIXIAOXIU_MY_REPORTS_ENABLED.*const.*true/u);
+  const oauthOnlyBranch=JSON.stringify(profile.allOf.find(v=>JSON.stringify(v).includes('OAUTH_ONLY')));
+  assert.match(oauthOnlyBranch,/write_flag.*const.*false/u);assert.match(oauthOnlyBranch,/YIXIAOXIU_SELF_SERVICE_ENABLED.*const.*false/u);assert.match(oauthOnlyBranch,/YIXIAOXIU_MY_REPORTS_ENABLED.*const.*false/u);
   assert.ok(JSON.parse(await readFile('contracts/yxx_self_service_report_page.schema.json','utf8')).properties.items.items.required.includes('ticket'));
   assert.equal(JSON.parse(await readFile('contracts/yxx_self_service_report_page.schema.json','utf8')).properties.items.items.properties.ref.pattern,'^[A-Za-z0-9_-]{32}$');
   assert.ok(timeline.properties.items.items.required.includes('ticket'));

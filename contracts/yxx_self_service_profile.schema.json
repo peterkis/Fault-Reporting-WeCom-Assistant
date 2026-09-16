@@ -14,7 +14,7 @@
     "x-readonly-write-denied": {"const": true}
   },
   "allOf": [
-    {"if": {"properties": {"profile": {"const": "OAUTH_ONLY"}}}, "then": {"properties": {"business_read": {"const": false}, "web_write": {"const": false}, "processor": {"const": "NONE"}}}},
+    {"if": {"properties": {"profile": {"const": "OAUTH_ONLY"}}}, "then": {"properties": {"business_read": {"const": false}, "web_write": {"const": false}, "processor": {"const": "NONE"}, "write_flag": {"const": false}, "YIXIAOXIU_SELF_SERVICE_ENABLED": {"const": false}, "YIXIAOXIU_MY_REPORTS_ENABLED": {"const": false}}}},
     {"if": {"properties": {"profile": {"const": "MEMBER_TICKET_READONLY"}}}, "then": {"properties": {"web_write": {"const": false}, "processor": {"const": "NONE"}, "write_flag": {"const": false}}}},
     {"if": {"properties": {"profile": {"const": "MEMBER_SELF_SERVICE"}}}, "then": {"properties": {"YIXIAOXIU_SELF_SERVICE_ENABLED": {"const": true}, "YIXIAOXIU_MY_REPORTS_ENABLED": {"const": true}, "web_write": {"const": true}, "write_flag": {"const": true}, "processor": {"const": "APP_BOUNDED_PUMP"}}}},
     {"if": {"properties": {"profile": {"const": "FULL_SERVICE_LOOP"}}}, "then": {"properties": {"processor": {"const": "EXISTING_WORKER"}}}}
