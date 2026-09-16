@@ -191,6 +191,13 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
     assert.equal(processed.result_code, 'NEEDS_DESCRIPTION');
     const needsFacts = await facts(pool, needs.receipt.request_ref);
     assert.equal(needsFacts.status, 'WAITING_DESCRIPTION'); assert.equal(needsFacts.ticket_count, 0); assert.equal(needsFacts.pending_reviews, 0);
+    const needsSupplement = { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '处方提交不了' };
+    await command.accept({ request: request(needsSupplement.client_command_id), input: needsSupplement, kind: 'SUPPLEMENT', requestRef: needs.receipt.request_ref });
+    assert.equal((await orchestrator.processOne({ requestRef: needs.receipt.request_ref })).result_code, 'TICKET_ELIGIBLE');
+    const window = (await pool.query(`SELECT source_window_start_sequence,source_window_end_sequence,source_message_count
+      FROM intake.deterministic_decision d JOIN intake.web_request_binding b ON b.intake_id=d.service_intake_id
+      WHERE b.request_ref=$1 ORDER BY d.decision_ordinal DESC LIMIT 1`, [needs.receipt.request_ref])).rows[0];
+    assert.deepEqual(window, { source_window_start_sequence: 1, source_window_end_sequence: 2, source_message_count: 2 });
 
     const thanksBody = input('谢谢');
     const thanks = await command.accept({ request: request(thanksBody.client_command_id), input: thanksBody });
@@ -200,6 +207,10 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
     const thanksFault = await command.accept({ request: request(thanksFaultBody.client_command_id), input: thanksFaultBody });
     const thanksFaultResult = await orchestrator.processOne({ requestRef: thanksFault.receipt.request_ref });
     assert.equal(thanksFaultResult.result_code, 'TICKET_ELIGIBLE'); assert.equal((await facts(pool, thanksFault.receipt.request_ref)).ticket_count, 1);
+    const outOfScopeBody = input('天气');
+    const outOfScope = await command.accept({ request: request(outOfScopeBody.client_command_id), input: outOfScopeBody });
+    assert.equal((await orchestrator.processOne({ requestRef: outOfScope.receipt.request_ref })).result_code, 'OUT_OF_SCOPE');
+    assert.equal((await store.getRequest({ scope: currentScope, requestRef: outOfScope.receipt.request_ref })).display_status, 'NOT_SERVICE');
     const riskBody = input('急诊患者等着做检查，但检查申请完全提交不了', { text: null, unknown: true });
     const risk = await command.accept({ request: request(riskBody.client_command_id), input: riskBody });
     const riskResult = await orchestrator.processOne({ requestRef: risk.receipt.request_ref });

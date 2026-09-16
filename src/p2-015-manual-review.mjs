@@ -96,6 +96,11 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
       if (!RESOLUTIONS.has(value.resolution_code)) failP2015(P2_015_ERROR_CODES.inputInvalid);
       const ids = await allowedJourneyIds({ principal, operation: 'RESOLVE_MANUAL_REVIEW', review_id: value.review_id });
       const useWebSource = await supportsWebSource(transaction);
+      const webRetentionJoin = useWebSource ? `LEFT JOIN intake.web_request_binding web_binding ON web_binding.intake_id=review.service_intake_id
+          LEFT JOIN intake.service_intake web_intake ON web_intake.id=review.service_intake_id` : '';
+      const activeWebPredicate = useWebSource && value.resolution_code !== 'CANCEL_REVIEW'
+        ? ` AND (decision.source_kind <> 'WEB' OR (web_binding.revoked_at IS NULL
+            AND web_binding.retention_until>platform.local_now() AND web_intake.retention_until>platform.local_now()))` : '';
       const selected = await transaction.query(
         `SELECT review.*,decision.safe_result,decision.channel_leg_id,decision.conversation_session_id,
                 decision.source_window_start_sequence,decision.source_window_end_sequence,
@@ -103,7 +108,8 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
                 decision.rule_set_version,decision.engine_version,decision.decision_policy_version,
                 decision.input_hash,to_char(decision.observed_at,'YYYY-MM-DD HH24:MI:SS') AS observed_at${useWebSource ? ',decision.source_kind,decision.primary_web_submission_id,decision.basis_input_revision' : ''}
            FROM intake.manual_review_item review JOIN intake.deterministic_decision decision ON decision.id=review.decision_id
-          WHERE review.id=$1::uuid AND review.journey_id=ANY($2::uuid[]) FOR UPDATE OF review`, [value.review_id, ids],
+           ${webRetentionJoin}
+          WHERE review.id=$1::uuid AND review.journey_id=ANY($2::uuid[])${activeWebPredicate} FOR UPDATE OF review`, [value.review_id, ids],
       );
       if (selected.rowCount !== 1) failP2015(P2_015_ERROR_CODES.authorizationDenied);
       const row = selected.rows[0];

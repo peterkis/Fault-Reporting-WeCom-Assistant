@@ -245,6 +245,8 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         const text = sourceText(submissions);
         const sourceHash = safeHash(submissions.map((item) => ({ id: item.id, revision: item.input_revision, hash: item.canonical_content_hash })));
         const revision = Number(root.input_revision);
+        const windowStart = Number(submissions[0].input_revision);
+        const windowCount = submissions.length;
         const initial = submissions.find((item) => item.kind === 'SUBMIT')?.safe_content ?? {};
         const webFields = { service_code: initial.service_code ?? null, impact_scope: initial.impact_scope ?? 'UNKNOWN',
           location_unknown: initial.location?.unknown === true, reported_department_present: Boolean(initial.reported_department_text) };
@@ -253,7 +255,7 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         const sourceRefs = submissions.map((item) => `web:${item.id}`);
         const routeContext = {
           service_intake_id: root.intake_id, journey_ref: journey.id, delivery_mode: 'APP_ONLY',
-          source_refs: sourceRefs, message_sequence_window: { start: revision, end: revision, count: 1 },
+          source_refs: sourceRefs, message_sequence_window: { start: windowStart, end: revision, count: windowCount },
           safe_normalized_text: text.length <= MAX_RULE_TEXT ? text : '',
           input_hash: safeHash({ source_hash: sourceHash, input_revision: revision, web_fields: webFields }), web_fields: webFields,
           conflicts: [], reliable_follow_up: false,
@@ -274,7 +276,7 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         const decision = await decisionStore.record({ transaction, input: {
           journey_id: journey.id, channel_leg_id: leg.id, service_intake_id: root.intake_id,
           conversation_session_id: null, linked_ticket_id: root.pilot_ticket_id,
-          source_window_start_sequence: revision, source_window_end_sequence: revision, source_message_count: 1,
+          source_window_start_sequence: windowStart, source_window_end_sequence: revision, source_message_count: windowCount,
           source_hash: sourceHash, catalog_version: routed.catalog_version, rule_set_version: routed.rule_set_version,
           engine_version: routed.engine_version, decision_policy_version: routed.decision_policy_version,
           result_code: routed.result_code, reason_code: routed.reason_code, input_hash: routed.input_hash,
@@ -285,6 +287,12 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         } });
         const actions = await processActions({ transaction, decision, root, journey, observedAt: latest.received_at,
           decisionStore, manualReviewStore, ticketCore: core, intakeDecisionPort });
+        if (decision.result_code === 'OUT_OF_SCOPE') {
+          await transaction.query(
+            `UPDATE intake.service_intake SET status='IGNORED',updated_at=GREATEST(created_at,platform.local_now())
+              WHERE id=$1::uuid AND pilot_ticket_id IS NULL`, [root.intake_id],
+          );
+        }
         const cursor = await transaction.query(
           `UPDATE intake.web_request_binding
               SET processed_revision=$2,next_attempt_epoch_ms=NULL,last_safe_error_code=NULL,updated_at=platform.local_now()
