@@ -269,11 +269,13 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
       requestRef: firstA.receipt.request_ref, input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '2', text: '跨应用不得写入' } }), { code: 'YXX_NOT_FOUND' });
 
     const timelineAnchor = await store.timeline({ scope: scopeA, requestRef: firstA.receipt.request_ref, limit: 1 });
+    assert.ok(timelineAnchor.next_cursor.length <= 2048);
     const firstIntake = (await pool.query('SELECT b.intake_id::text AS intake_id,i.version,COALESCE(max(e.event_ordinal),0)::integer+1 AS next_ordinal FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id LEFT JOIN intake.service_intake_event e ON e.intake_id=i.id WHERE b.request_ref=$1 GROUP BY b.intake_id,i.version', [firstA.receipt.request_ref])).rows[0];
     await pool.query(`INSERT INTO intake.service_intake_event(event_type,aggregate_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
       VALUES('intake.rule_decision_applied','intake',$1::uuid,$2,$3,'2020-01-02 00:00:00',$4,'{}'::jsonb),
             ('intake.rule_decision_applied','intake',$1::uuid,$2,$3+1,'2020-01-01 00:00:00',$5,'{}'::jsonb)`, [firstIntake.intake_id, firstIntake.version, firstIntake.next_ordinal, 'yxx:ss005:late-a', 'yxx:ss005:late-b']);
     const latePage = await store.timeline({ scope: scopeA, requestRef: firstA.receipt.request_ref, cursor: timelineAnchor.next_cursor, limit: 1 });
+    assert.ok(latePage.next_cursor.length <= 2048);
     assert.equal(latePage.items[0].occurred_at, '2020-01-01 00:00:00');
     const secondLate = await store.timeline({ scope: scopeA, requestRef: firstA.receipt.request_ref, cursor: latePage.next_cursor, limit: 1 });
     assert.equal(secondLate.items[0].occurred_at, '2020-01-02 00:00:00');
