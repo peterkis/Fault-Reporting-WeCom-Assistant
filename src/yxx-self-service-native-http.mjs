@@ -98,6 +98,9 @@ function safeProfile(context, configuredProfile) {
 
 function mapError(value) {
   if (value?.status) return value;
+  if (value instanceof TypeError && ['YXX_INPUT_INVALID', 'YXX_CURSOR_INVALID', 'YXX_LIMIT_INVALID', 'YXX_REQUEST_REF_INVALID'].includes(value.message)) {
+    return error('YXX_INPUT_INVALID', 400);
+  }
   const code = String(value?.code ?? '');
   if (/AUTH_REQUIRED|MEMBER_REQUIRED|UNAUTHENTICATED/u.test(code)) return error('YXX_AUTH_REQUIRED', 401);
   if (/FORBIDDEN|READ_DISABLED|WRITE_DISABLED|CSRF|ORIGIN/u.test(code)) return error('YXX_FORBIDDEN', 403);

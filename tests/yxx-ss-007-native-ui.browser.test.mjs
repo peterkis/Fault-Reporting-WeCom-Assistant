@@ -22,11 +22,12 @@ function fixture(origin) {
     begin() { return { location: `${origin}/wecom/yixiaoxiu/login?state=synthetic`, browserToken: 'synthetic-browser-token' }; },
   };
   const context = async ({ sessionToken }) => ({
-    profile: 'MEMBER_SELF_SERVICE', flags: FLAGS, csrf_token: csrfFor(sessionToken),
+    profile: 'MEMBER_SELF_SERVICE', flags: FLAGS, csrf_token: state.csrfOverride ?? csrfFor(sessionToken),
   });
   const receipt = requestRef => ({ request_ref: requestRef, status: 'ACCEPTED' });
   const command = {
     async accept({ request, input }) {
+      if (state.commandError) throw state.commandError;
       state.commandCalls.push({ member: memberFor(request), input });
       const requestRef = state.next++ % 2 === 0 ? REFS.A : REFS.B;
       return { replayed: false, receipt: receipt(requestRef) };
@@ -82,6 +83,25 @@ async function startFixture({ enabled = true } = {}) {
 
 async function closeServer(server) { await new Promise(resolve => server.close(resolve)); }
 
+test('SS-007 refreshed member CSRF survives clearing the previous form', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate("document.querySelector('#description').value='旧会话草稿'");
+    f.state.csrfOverride = 'refreshed-synthetic-csrf-01234567890123456789';
+    await browser.evaluate("document.dispatchEvent(new Event('visibilitychange'))");
+    await browser.waitFor("document.querySelector('#description').value===''");
+    assert.equal(await browser.evaluate('window.__yxx_csrf'), f.state.csrfOverride);
+    await browser.evaluate("document.querySelector('#description').value='新会话报修';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+    await browser.waitFor("location.pathname==='/wecom/yixiaoxiu/reports/" + REFS.A + "'");
+    assert.equal(f.state.commandCalls.length, 1);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
 test('SS-007 native HTTP keeps the fixed homepage gate and closed API boundary', async () => {
   const fixtureState = await startFixture();
   const disabledState = await startFixture({ enabled: false });
@@ -112,6 +132,12 @@ test('SS-007 native HTTP keeps the fixed homepage gate and closed API boundary',
     assert.equal(accepted.status, 202);
     assert.equal((await accepted.json()).location, `/wecom/yixiaoxiu/reports/${REFS.A}`);
     assert.equal(state.commandCalls.length, 1);
+    for (const message of ['YXX_INPUT_INVALID', 'YXX_CURSOR_INVALID', 'YXX_LIMIT_INVALID']) {
+      state.commandError = new TypeError(message);
+      const rejected = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'x-csrf-token': csrfFor('member-a') }, body: '{}' });
+      assert.equal(rejected.status, 400, message);
+    }
+    state.commandError = null;
     const detail = await get(`/api/yixiaoxiu/requests/${REFS.A}`, { cookie: 'yxx_session=member-a' });
     assert.equal(detail.status, 200);
     const etag = detail.headers.get('etag');
