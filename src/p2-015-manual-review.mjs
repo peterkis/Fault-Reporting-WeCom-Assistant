@@ -113,7 +113,7 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
       );
       if (selected.rowCount !== 1) failP2015(P2_015_ERROR_CODES.authorizationDenied);
       const row = selected.rows[0];
-      const overrideResultCode = useWebSource && value.resolution_code === 'CANCEL_REVIEW'
+      const overrideResultCode = useWebSource && row.source_kind === 'WEB' && value.resolution_code === 'CANCEL_REVIEW'
         ? 'OUT_OF_SCOPE' : RESULT_BY_RESOLUTION[value.resolution_code];
       if (useWebSource && row.source_kind === 'WEB') {
         const current = await transaction.query(

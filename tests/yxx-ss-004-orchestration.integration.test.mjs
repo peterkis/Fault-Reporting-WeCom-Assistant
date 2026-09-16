@@ -294,6 +294,8 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
     const staleTarget = (await facade.listManualReviews({ authContext: { principal_id: principal.id } })).items.find((item) => item.decision_id === staleDecision.rows[0].id);
     const staleSupplementBody = { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '补充后证据已变化' };
     await command.accept({ request: request(staleSupplementBody.client_command_id), input: staleSupplementBody, kind: 'SUPPLEMENT', requestRef: stale.receipt.request_ref });
+    await failing.processOne({ requestRef: stale.receipt.request_ref });
+    const staleProcessed = await facts(pool, stale.receipt.request_ref);
     const staleResolution = await facade.resolveManualReview({ authContext: { principal_id: principal.id }, reviewId: staleTarget.id,
       body: { client_command_id: randomUUID(), expected_row_version: staleTarget.row_version,
         resolution_code: 'CONFIRM_TICKET_ELIGIBLE', resolution_reason_code: 'STALE_BASIS' } });
@@ -303,6 +305,8 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
       body: { client_command_id: randomUUID(), expected_row_version: staleTarget.row_version,
         resolution_code: 'CANCEL_REVIEW', resolution_reason_code: 'STALE_BASIS_RETIRED' } });
     assert.equal(staleCancelled.ok, true);
+    const staleAfterCancel = await facts(pool, stale.receipt.request_ref);
+    assert.equal(staleAfterCancel.status, staleProcessed.status); assert.equal(staleAfterCancel.ticket_count, staleProcessed.ticket_count);
     assert.equal((await facade.listManualReviews({ authContext: { principal_id: principal.id } })).items.some((item) => item.id === staleTarget.id), false);
     const listed = await facade.listManualReviews({ authContext: { principal_id: principal.id } });
     const decision = await pool.query('SELECT id::text FROM intake.deterministic_decision WHERE service_intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1) ORDER BY decision_ordinal DESC LIMIT 1', [broken.receipt.request_ref]);
