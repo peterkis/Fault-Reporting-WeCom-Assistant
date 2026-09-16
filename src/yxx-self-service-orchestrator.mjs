@@ -252,7 +252,10 @@ async function processActions({ transaction, decision, root, journey, observedAt
   if (root.pilot_ticket_id) {
     const resumed = await resumeWaitingRequesterTicket({ transaction, ticketId: root.pilot_ticket_id,
       traceId: `yxx:${root.request_ref}:supplement-resume` });
-    if (resumed) results.push({ action_type: 'RESUME_AFTER_WEB_SUPPLEMENT', result_ref_type: 'TICKET', result_ref_id: root.pilot_ticket_id });
+    if (resumed) {
+      await realtimeProjector?.ticket?.({ transaction, ticket: resumed.ticket, event: resumed.event });
+      results.push({ action_type: 'RESUME_AFTER_WEB_SUPPLEMENT', result_ref_type: 'TICKET', result_ref_id: root.pilot_ticket_id });
+    }
   }
   return { results, linkedTicketId };
 }

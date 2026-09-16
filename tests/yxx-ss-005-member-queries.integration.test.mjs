@@ -7,9 +7,11 @@ import { createYxxSelfServiceQuery } from '../src/yxx-self-service-query.mjs';
 import { createYxxSelfServiceOrchestrator } from '../src/yxx-self-service-orchestrator.mjs';
 import { createYxxMemberCommandContext } from '../src/yxx-self-service-command.mjs';
 import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
+import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
 import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
 import { createTicketClosureService } from '../src/p1-010-ticket-closure.mjs';
 import { createP2016RealtimeProjector } from '../src/p2-016-realtime-projector.mjs';
+import { createP2016ManualReviewFacade } from '../src/p2-016-manual-review-facade.mjs';
 import { textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
 import { migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
@@ -166,6 +168,20 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     assert.equal(page.items.some((item) => item.ref === firstB.receipt.request_ref), false);
     const reviewItem = (await query.list({ request: 'A', source: 'WEB' })).items.find((item) => item.ref === reviewA.receipt.request_ref);
     assert.equal(reviewItem.display_status, 'UNDER_REVIEW');
+    const principal = await createPilotAccessService({ pool }).upsertPrincipal({
+      wecomUserId: 'yxx-ss005-reviewer', displayName: 'YXX SS005 审核', roles: ['ADMIN'], resolverTeamIds: ['PILOT_IT'],
+    });
+    const reviewRow = (await pool.query(`SELECT r.id::text,r.row_version::text FROM intake.manual_review_item r
+      JOIN intake.web_request_binding b ON b.intake_id=r.service_intake_id
+      WHERE b.request_ref=$1 AND r.status='PENDING'`, [reviewA.receipt.request_ref])).rows[0];
+    const facade = createP2016ManualReviewFacade({ pool, enabled: true, realtimeProjector: realtime });
+    const reviewResolution = await facade.resolveManualReview({ authContext: { principal_id: principal.id }, reviewId: reviewRow.id,
+      body: { client_command_id: randomUUID(), expected_row_version: reviewRow.row_version,
+        resolution_code: 'REQUEST_DESCRIPTION', resolution_reason_code: 'SS005_NEEDS_DESCRIPTION' },
+    });
+    assert.equal(reviewResolution.ok, true);
+    assert.equal((await pool.query(`SELECT j.status FROM intake.contact_journey j
+      JOIN intake.manual_review_item r ON r.journey_id=j.id WHERE r.id=$1::uuid`, [reviewRow.id])).rows[0].status, 'WAITING_DESCRIPTION');
     assert.ok(page.next_cursor);
     const rest = await query.list({ request: 'A', limit: 2, cursor: page.next_cursor });
     const allA = [...page.items, ...rest.items];
