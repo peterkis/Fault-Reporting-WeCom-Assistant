@@ -57,7 +57,7 @@ function cursorToken(payload, secret) {
   return `${data}.${createHmac('sha256', secret).update(data).digest('base64url')}`;
 }
 
-function decodeCursor(value, secret, scopeHash, selectedSource) {
+function decodeCursor(value, secret, scopeHash, selectedSource, sourceCorpScope, sourceAppScope) {
   if (typeof value !== 'string' || value.length < 10 || value.length > 2048) fail('YXX_CURSOR_INVALID');
   const parts = value.split('.');
   if (parts.length !== 2 || !parts[0] || !parts[1]) fail('YXX_CURSOR_INVALID');
@@ -69,8 +69,9 @@ function decodeCursor(value, secret, scopeHash, selectedSource) {
   let parsed;
   try { parsed = JSON.parse(Buffer.from(data, 'base64url').toString('utf8')); } catch { fail('YXX_CURSOR_INVALID'); }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)
-    || Object.keys(parsed).some((key) => !['v', 'scope_hash', 'source', 'snapshot_epoch', 'created_at', 'kind_rank', 'immutable_id'].includes(key))
+    || Object.keys(parsed).some((key) => !['v', 'scope_hash', 'source', 'source_corp_scope', 'source_app_scope', 'snapshot_epoch', 'created_at', 'kind_rank', 'immutable_id'].includes(key))
     || parsed.v !== 1 || parsed.scope_hash !== scopeHash || parsed.source !== selectedSource
+    || parsed.source_corp_scope !== sourceCorpScope || parsed.source_app_scope !== sourceAppScope
     || typeof parsed.created_at !== 'string' || !LOCAL_TIME.test(parsed.created_at)
     || !Number.isInteger(parsed.kind_rank) || ![0, 1].includes(parsed.kind_rank)
     || typeof parsed.immutable_id !== 'string' || !UUID.test(parsed.immutable_id)) fail('YXX_CURSOR_INVALID');
@@ -78,6 +79,8 @@ function decodeCursor(value, secret, scopeHash, selectedSource) {
     v: 1,
     scope_hash: parsed.scope_hash,
     source: parsed.source,
+    source_corp_scope: parsed.source_corp_scope,
+    source_app_scope: parsed.source_app_scope,
     snapshot_epoch: epoch(parsed.snapshot_epoch),
     created_at: parsed.created_at,
     kind_rank: parsed.kind_rank,
@@ -237,7 +240,8 @@ export function createYxxSelfServiceQuery({
   async function listForContext(context, selectedSource, n, cursorValue) {
     const cursor = cursorValue === null || cursorValue === undefined
       ? null
-      : decodeCursor(cursorValue, scopeSecret, context.scope.scopeHash, selectedSource);
+      : decodeCursor(cursorValue, scopeSecret, context.scope.scopeHash, selectedSource,
+        context.scope.sourceCorpScope, context.scope.sourceAppScope);
     const snapshotEpoch = cursor?.snapshot_epoch ?? snapshotNow(now);
     const rows = await transactionP2016(pool, async (transaction) => listRows(transaction, context, selectedSource, n, cursor, snapshotEpoch));
     const page = rows.slice(0, n).map(reportItem);
@@ -251,6 +255,8 @@ export function createYxxSelfServiceQuery({
         v: 1,
         scope_hash: context.scope.scopeHash,
         source: selectedSource,
+        source_corp_scope: context.scope.sourceCorpScope,
+        source_app_scope: context.scope.sourceAppScope,
         snapshot_epoch: snapshotEpoch,
         created_at: page.at(-1).created_at,
         kind_rank: rows[n - 1].kind_rank,

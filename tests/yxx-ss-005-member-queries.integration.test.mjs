@@ -7,6 +7,8 @@ import { createYxxSelfServiceQuery } from '../src/yxx-self-service-query.mjs';
 import { createYxxSelfServiceOrchestrator } from '../src/yxx-self-service-orchestrator.mjs';
 import { createYxxMemberCommandContext } from '../src/yxx-self-service-command.mjs';
 import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
+import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
+import { createTicketClosureService } from '../src/p1-010-ticket-closure.mjs';
 import { textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
 import { migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
@@ -136,6 +138,21 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     const botA = await createBotTicket(pool, contexts.A.bot_owner.userId, 'a');
     const botB = await createBotTicket(pool, contexts.B.bot_owner.userId, 'b');
     const baselineCounts = (await pool.query('SELECT (SELECT count(*)::integer FROM pilot_ticket.reporter_access_grant) AS grants,(SELECT count(*)::integer FROM communication.delivery) AS deliveries')).rows[0];
+    const closure = createTicketClosureService({ pool, resolveReporterActor: async () => null,
+      outbox: { enqueueTicketEvent: async () => { throw new Error('Web actions must not enqueue notifications'); } } });
+    const webActions = createTicketActionService({ pool, afterAction: closure.afterTicketAction });
+    await webActions.perform({ ticketId: processed.ticket_id, action: 'accept', expectedVersion: 1,
+      actor: { type: 'SYSTEM', id: null }, reasonCode: 'SS005_ACCEPT', traceId: 'yxx:ss005:accept' });
+    await webActions.perform({ ticketId: processed.ticket_id, action: 'start', expectedVersion: 2,
+      actor: { type: 'SYSTEM', id: null }, reasonCode: 'SS005_START', traceId: 'yxx:ss005:start' });
+    await webActions.perform({ ticketId: processed.ticket_id, action: 'request-information', expectedVersion: 3,
+      actor: { type: 'SYSTEM', id: null }, reasonCode: 'SS005_WAIT', traceId: 'yxx:ss005:wait' });
+    await store.accept({ scope: scopeA, kind: 'SUPPLEMENT', requestRef: secondA.receipt.request_ref,
+      input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '等待中的网页补充' } });
+    assert.equal((await orchestrator.processOne({ requestRef: secondA.receipt.request_ref })).processed, true);
+    assert.equal((await pool.query('SELECT status FROM pilot_ticket.ticket WHERE id=$1::uuid', [processed.ticket_id])).rows[0].status, 'IN_PROGRESS');
+    assert.equal((await pool.query("SELECT count(*)::integer AS n FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid AND event_type='ticket.resumed'", [processed.ticket_id])).rows[0].n, 1);
+    assert.deepEqual((await pool.query('SELECT (SELECT count(*)::integer FROM pilot_ticket.reporter_access_grant) AS grants,(SELECT count(*)::integer FROM communication.delivery) AS deliveries')).rows[0], baselineCounts);
 
     current.value = 'A';
     const page = await query.list({ request: 'A', limit: 2 });
@@ -155,6 +172,10 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     const botOnly = await query.list({ request: 'A', source: 'BOT' });
     assert.deepEqual(botOnly.items.map((item) => item.ref), [botA.public_ref]);
     await assert.rejects(query.list({ request: 'B', cursor: page.next_cursor }), { code: 'YXX_CURSOR_INVALID' });
+    const sameMemberOtherApp = { ...scopeA, sourceAppScope: 'another-app' };
+    const otherAppAuth = localAuthorization({ C: authContext(sameMemberOtherApp) });
+    const otherAppQuery = createYxxSelfServiceQuery({ pool, authorization: otherAppAuth.authorization, scopeSecret: SECRET });
+    await assert.rejects(otherAppQuery.list({ request: 'C', cursor: page.next_cursor }), { code: 'YXX_CURSOR_INVALID' });
 
     const webDetail = await query.getWebRequest({ request: 'A', requestRef: secondA.receipt.request_ref });
     assert.equal(webDetail.source_kind, 'WEB_REQUEST');

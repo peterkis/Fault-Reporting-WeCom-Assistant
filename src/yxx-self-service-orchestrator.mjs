@@ -4,7 +4,7 @@ import { routeP2007Decision, routeRuleFailure } from './p2-015-decision-router.m
 import { createDecisionStore } from './p2-015-decision-store.mjs';
 import { createManualReviewStore } from './p2-015-manual-review.mjs';
 import { createServiceIntakeDecisionPort } from './p2-015-service-intake-decision-port.mjs';
-import { appendTicketEvent } from './p1-006-ticket-state-actions.mjs';
+import { appendTicketEvent, createTicketActionService } from './p1-006-ticket-state-actions.mjs';
 import { safeHash } from './p2-015-domain-contracts.mjs';
 import { shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
 
@@ -165,6 +165,22 @@ function ticketId(result) {
   return result?.ticket?.id ?? result?.ticket_id ?? result?.id ?? null;
 }
 
+async function resumeWaitingRequesterTicket({ transaction, ticketId: id, traceId }) {
+  if (!id) return null;
+  const current = await transaction.query(
+    'SELECT id::text,version,status FROM pilot_ticket.ticket WHERE id=$1::uuid FOR UPDATE', [id],
+  );
+  if (current.rowCount !== 1 || current.rows[0].status !== 'WAITING_REQUESTER') return null;
+  return createTicketActionService().performInTransaction({
+    ticketId: id,
+    action: 'resume',
+    expectedVersion: current.rows[0].version,
+    actor: { type: 'SYSTEM', id: null },
+    reasonCode: 'WEB_SUPPLEMENT_RECEIVED',
+    traceId,
+  }, transaction);
+}
+
 async function processActions({ transaction, decision, root, journey, observedAt, decisionStore, manualReviewStore, ticketCore, intakeDecisionPort }) {
   let linkedTicketId = decision.linked_ticket_id ?? null;
   const results = [];
@@ -226,6 +242,11 @@ async function processActions({ transaction, decision, root, journey, observedAt
       command_id: action.id, command_hash: commandHash, result_ref_type: resultRefType,
       result_ref_id: String(resultRefId), executed_at: observedAt });
     results.push({ action_id: action.id, action_type: action.action_type, result_ref_type: resultRefType, result_ref_id: String(resultRefId) });
+  }
+  if (root.pilot_ticket_id) {
+    const resumed = await resumeWaitingRequesterTicket({ transaction, ticketId: root.pilot_ticket_id,
+      traceId: `yxx:${root.request_ref}:supplement-resume` });
+    if (resumed) results.push({ action_type: 'RESUME_AFTER_WEB_SUPPLEMENT', result_ref_type: 'TICKET', result_ref_id: root.pilot_ticket_id });
   }
   return { results, linkedTicketId };
 }

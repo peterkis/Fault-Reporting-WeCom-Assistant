@@ -17,6 +17,10 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
         JOIN pilot_ticket.ticket t ON t.id=e.ticket_id WHERE e.event_id=$1::uuid AND e.ticket_id=$2::uuid FOR UPDATE OF e`,[event.event_id,ticket.id]);
       if(fact.rowCount!==1)failP2016('NOTIFICATION_EVENT_INVALID');
       event=fact.rows[0];ticket={id:event.ticket_id,ticket_no:event.ticket_no,intake_id:event.intake_id};
+      const sourceFact=await tx.query(`SELECT source_channel,source_provider FROM intake.service_intake WHERE id=$1::uuid`,[ticket.intake_id]);
+      if(sourceFact.rowCount!==1)failP2016('NOTIFICATION_BINDING_INVALID');
+      if(sourceFact.rows[0].source_channel==='PORTAL'&&sourceFact.rows[0].source_provider==='YIXIAOXIU_WEB')
+        return {created:false,reason:'WEB_APP_ONLY'};
       const policy=ticketNotificationP2016({event_type:event.event_type,new_status:event.new_status},{additionalEventTypes:[...configuredEvents,'ticket.created']});
       if(!policy)return {created:false,reason:'NO_EXTERNAL_NOTIFICATION'};
       const legacy=await tx.query('SELECT 1 FROM notification.outbox WHERE ticket_event_id=$1::uuid LIMIT 1',[event.event_id]);
