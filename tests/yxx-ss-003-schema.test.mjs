@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createHash,randomUUID} from 'node:crypto';
-import {createYxxSelfServiceStore,parseYxxRequestInput,parseYxxSupplementInput} from '../src/yxx-self-service-store.mjs';
+import {createYxxSelfServiceStore,parseYxxRequestInput,parseYxxSupplementInput,YXX_WEB_LIMITS} from '../src/yxx-self-service-store.mjs';
 import {migrateYxxSelfService,yxxCatalogHash} from '../scripts/yxx-self-service-migrate.mjs';
 import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
 
@@ -18,6 +18,7 @@ test('SS-003 migration and store contracts are source-complete',async()=>{
   assert.equal(typeof migrateCurrentBaselineWithYxx,'function');
   const input=parseYxxRequestInput({schema_version:1,client_command_id:'11111111-1111-4111-8111-111111111111',description:'打印机无响应',location:{text:'住院楼8层护士站',unknown:false},service_code:null,impact_scope:'SINGLE_WORKSTATION',reported_department_text:null,extension:null});
   assert.equal(input.description,'打印机无响应');
+  assert.equal(YXX_WEB_LIMITS.window,50);
   assert.throws(()=>parseYxxRequestInput({...input,reporter:'member'}),{message:'YXX_INPUT_INVALID'});
   assert.equal(parseYxxRequestInput({...input,location:{text:'',unknown:true}}).location.text,null);
   assert.throws(()=>parseYxxRequestInput({...input,location:{text:'',unknown:false}}),{message:'YXX_INPUT_INVALID'});
@@ -38,6 +39,11 @@ test('SS-003 fresh applied migration, idempotent Web acceptance and source const
     const listed=await store.listMyReports({scope});assert.ok(listed.items.some(item=>item.ref===first.receipt.request_ref));
     const command=await store.command({scope,clientCommandId:input.client_command_id});assert.equal(command.request_ref,first.receipt.request_ref);assert.ok(command.intake_no);assert.match(command.accepted_at,/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/u);
     const boundaryInput={...input,client_command_id:randomUUID(),description:'x'.repeat(4000),reported_department_text:'科'.repeat(100)};const boundary=await store.accept({scope,input:boundaryInput});const boundaryDetail=await store.getRequest({scope,requestRef:boundary.receipt.request_ref});assert.equal(boundaryDetail.safe_description.length,4000);
+    for(let expected=1;expected<YXX_WEB_LIMITS.window;expected+=1){await store.accept({scope,input:{schema_version:1,client_command_id:randomUUID(),expected_input_revision:String(expected),text:`窗口补充${expected}`},kind:'SUPPLEMENT',requestRef:boundary.receipt.request_ref});}
+    const windowState=(await pool.query('SELECT input_revision FROM intake.web_request_binding WHERE request_ref=$1',[boundary.receipt.request_ref])).rows[0];assert.equal(windowState.input_revision,String(YXX_WEB_LIMITS.window));
+    const overWindow={schema_version:1,client_command_id:randomUUID(),expected_input_revision:String(YXX_WEB_LIMITS.window),text:'超出窗口'};
+    await assert.rejects(store.accept({scope,input:overWindow,kind:'SUPPLEMENT',requestRef:boundary.receipt.request_ref}),error=>error.code==='YXX_LIMIT_EXCEEDED'&&error.status===413);
+    assert.equal((await pool.query('SELECT count(*)::integer AS n FROM intake.web_command_receipt WHERE client_command_id=$1::uuid',[overWindow.client_command_id])).rows[0].n,0);
     const detail=await store.getRequest({scope,requestRef:first.receipt.request_ref});assert.equal(detail.source_kind,'WEB_REQUEST');assert.equal(detail.input_revision,'1');assert.equal(detail.ticket,null);
     const supplement={schema_version:1,client_command_id:randomUUID(),expected_input_revision:'1',text:'仅护士站这一台电脑异常'};
     const added=await store.accept({scope,input:supplement,kind:'SUPPLEMENT',requestRef:first.receipt.request_ref});assert.equal(added.receipt.accepted_revision,'2');

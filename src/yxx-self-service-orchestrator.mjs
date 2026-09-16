@@ -14,6 +14,16 @@ const WEB_REF = /^[A-Za-z0-9_-]{32}$/u;
 const COMMUNICATION_ACTIONS = new Set(['REQUEST_ONE_DESCRIPTION', 'SEND_FIXED_ACKNOWLEDGEMENT', 'SEND_FIXED_SCOPE_NOTICE']);
 const PROFILES = new Set(['OAUTH_ONLY', 'MEMBER_TICKET_READONLY', 'MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP']);
 
+function boundedTicketTitle(value) {
+  if (typeof value !== 'string' || value.length === 0) return null;
+  let title = '';
+  for (const character of value) {
+    if (title.length + character.length > 200) break;
+    title += character;
+  }
+  return title || null;
+}
+
 function inputError(code = 'YXX_SELF_SERVICE_INPUT_INVALID') {
   const error = new Error(code);
   error.code = code;
@@ -70,7 +80,7 @@ async function loadWebRoot(transaction, requestRef) {
   const root = await transaction.query(
     `SELECT b.intake_id::text,b.request_ref,b.source_app_scope,b.canonical_reporter_binding,
             b.input_revision,b.processed_revision,b.retry_count,b.retention_until,
-            i.intake_no,i.status,i.pilot_ticket_id::text,i.version,
+            i.intake_no,i.status,i.summary,i.pilot_ticket_id::text,i.version,
             to_char(i.created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at,
             to_char(i.updated_at,'YYYY-MM-DD HH24:MI:SS') AS updated_at,
             to_char(i.retention_until,'YYYY-MM-DD HH24:MI:SS') AS intake_retention_until
@@ -174,6 +184,7 @@ async function processActions({ transaction, decision, root, journey, observedAt
     } else if (action.action_type === 'CREATE_MINIMAL_TICKET' || action.action_type === 'ROUTE_SERVICE_REQUEST') {
       const created = await ticketCore.createForIntakeInTransaction({
         intakeId: root.intake_id, transaction, occurredAt: observedAt, traceId: `yxx:${root.request_ref}`,
+        title: boundedTicketTitle(root.summary),
       });
       linkedTicketId = ticketId(created);
       if (!linkedTicketId) throw inputError('YXX_TICKET_CORE_NO_RESULT');

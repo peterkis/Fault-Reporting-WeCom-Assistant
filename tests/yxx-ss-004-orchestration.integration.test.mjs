@@ -176,6 +176,8 @@ test('SS-004 accepts, processes, replays, and creates one Web Ticket through the
     assert.equal(row.input_revision, '1'); assert.equal(row.processed_revision, '1');
     assert.equal(row.source_kind, 'WEB'); assert.equal(String(row.basis_input_revision), '1');
     assert.equal(row.ticket_count, 1); assert.deepEqual([row.message_count, row.outbox_count, row.delivery_count, row.grant_count, row.session_count, row.direct_leg_count], [0, 0, 0, 0, 0, 0]);
+    const createdTicket = (await pool.query(`SELECT title FROM pilot_ticket.ticket WHERE source_intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1)`, [accepts[0].receipt.request_ref])).rows[0];
+    assert.match(createdTicket.title, /处方提交不了/u);
     const source = (await pool.query(`SELECT i.source_channel,i.source_provider,i.source_bot_id,i.source_chat_type,i.primary_message_id,
         l.leg_type,l.conversation_session_id,l.conversation_thread_id,l.origin_channel_message_id
       FROM intake.service_intake i JOIN intake.web_request_binding b ON b.intake_id=i.id
@@ -307,6 +309,8 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
     assert.equal(resolved.ok, true);
     const resolvedFacts = await facts(pool, broken.receipt.request_ref);
     assert.equal(resolvedFacts.ticket_count, 1); assert.deepEqual([resolvedFacts.message_count, resolvedFacts.outbox_count, resolvedFacts.delivery_count, resolvedFacts.grant_count, resolvedFacts.session_count, resolvedFacts.direct_leg_count], [0, 0, 0, 0, 0, 0]);
+    const resolvedTicket = (await pool.query(`SELECT title FROM pilot_ticket.ticket WHERE source_intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1)`, [broken.receipt.request_ref])).rows[0];
+    assert.match(resolvedTicket.title, /无法安全判断/u);
     assert.equal((await pool.query(`SELECT count(*)::integer AS n FROM intake.deterministic_decision d
       WHERE d.service_intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1) AND d.status='HUMAN_OVERRIDDEN' AND d.source_kind='WEB'`, [broken.receipt.request_ref])).rows[0].n, 1);
 

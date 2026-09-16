@@ -25,6 +25,7 @@ const WEB_ACTIONS=Object.freeze({
   ACKNOWLEDGE:['APPLY_INTAKE_CLASSIFICATION'],MARK_OUT_OF_SCOPE:['APPLY_INTAKE_CLASSIFICATION'],KEEP_INCIDENT_REVIEW_CANDIDATE:[],CANCEL_REVIEW:['APPLY_INTAKE_CLASSIFICATION'],
 });
 function derivedCommand(id) {const h=textHashP2016('P2016_PERSON_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
+function boundedTicketTitle(value) {if(typeof value!=='string'||value.length===0)return null;let title='';for(const character of value){if(title.length+character.length>200)break;title+=character;}return title||null;}
 export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2016TicketQuery({pool,enabled}),notificationProjector=null,realtimeProjector=null,
   communicationAppend=appendCommunication,now=()=>String(Date.now()),personDestinationAuthorizer=null}) {
   if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016();
@@ -86,7 +87,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
         await transaction.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[review.journey_id]);
         const resolution=await store.resolve({transaction,principal,command:{...command,resolved_at:stampP2016(now).local}});
         if(!resolution.resolution_decision_id)failP2016('REVIEW_ALREADY_RESOLVED',409);
-        const source=(await transaction.query(`SELECT i.source_provider,i.source_bot_id,i.reporter_wecom_userid,i.source_chat_type,i.source_chat_id,
+        const source=(await transaction.query(`SELECT i.source_provider,i.source_bot_id,i.reporter_wecom_userid,i.source_chat_type,i.source_chat_id,i.summary,
           i.retention_until,i.retention_until_epoch_ms::text,s.id::text AS session_id,s.row_version::integer
           FROM intake.service_intake i LEFT JOIN conversation.session s ON s.service_intake_id=i.id AND s.status<>'ENDED'
           WHERE i.id=$1::uuid`,[review.service_intake_id])).rows[0];
@@ -114,7 +115,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
         const executor=createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),manualReviewStore:store,decisionStore:decisions,communicationPort:fixed,
           ticketCommandPort:{createMinimalTicket:async({transaction:tx,intake_id,occurred_at,trace_id})=>{
             const intakeId=await p2016TicketSourceIntake({transaction:tx,intakeId:intake_id});
-            const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id});
+            const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id,title:boundedTicketTitle(source.summary)});
             if(result.created){const event=await appendTicketEvent({transaction:tx,ticket:result.ticket,eventType:'ticket.created',
               actor:{type:'PILOT_USER',id:principal.principal_id},traceId:trace_id});
               if(!webSource&&notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});
