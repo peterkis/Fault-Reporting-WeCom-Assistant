@@ -121,8 +121,11 @@ function publicEvent(row, includeInternal) {
 }
 
 async function webReportForIntake(transaction,intakeId) {
+  const available=await transaction.query(`SELECT to_regclass('intake.web_request_binding') AS binding,
+      to_regclass('intake.web_submission') AS submission`);
+  if(!available.rows[0]?.binding||!available.rows[0]?.submission)return null;
   let result;
-  try { result=await transaction.query(`SELECT i.source_provider,initial.safe_content AS initial_content,
+  result=await transaction.query(`SELECT i.source_provider,initial.safe_content AS initial_content,
       COALESCE(supplements.items,'[]'::jsonb) AS supplement_items
     FROM intake.service_intake i
     JOIN intake.web_request_binding b ON b.intake_id=i.id
@@ -132,8 +135,7 @@ async function webReportForIntake(transaction,intakeId) {
     LEFT JOIN LATERAL (SELECT jsonb_agg(jsonb_build_object('input_revision',s.input_revision::text,
       'text',s.safe_content->>'text') ORDER BY s.input_revision) AS items
       FROM intake.web_submission s WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT') supplements ON TRUE
-    WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()`,[intakeId]); }
-  catch(error) { if(error?.code==='42P01')return null; throw error; }
+    WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()`,[intakeId]);
   const row=result.rows[0];if(result.rowCount!==1||row.source_provider!=='YIXIAOXIU_WEB')return null;
   const initial=row.initial_content&&typeof row.initial_content==='object'?row.initial_content:{};
   const supplements=Array.isArray(row.supplement_items)?row.supplement_items:[];
