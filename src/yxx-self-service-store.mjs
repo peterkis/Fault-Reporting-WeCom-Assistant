@@ -1,0 +1,112 @@
+import {randomBytes,randomUUID,createHmac,timingSafeEqual} from 'node:crypto';
+import {hashP2016,snapshotP2016,stampP2016,textHashP2016,transactionP2016,uuidP2016} from './p2-016-domain-contracts.mjs';
+import {formatEpochMsToShanghaiLocal,shanghaiLocalToEpochMs} from './platform/time-contract.mjs';
+
+export const YXX_WEB_LIMITS=Object.freeze({description:4000,location:200,department:100,extension:20,supplement:2000,body:16*1024,list:50,timeline:100});
+const IMPACTS=new Set(['UNKNOWN','SELF','SINGLE_WORKSTATION','MULTIPLE_USERS','DEPARTMENT']);
+const HASH=/^[a-f0-9]{64}$/u;
+const REF=/^[A-Za-z0-9_-]{32}$/u;
+const cleanText=(value,max)=>{if(typeof value!=='string')throw new TypeError('YXX_INPUT_INVALID');const text=value.trim();if(!text||text.length>max||Buffer.byteLength(text,'utf8')>max*4)throw new TypeError('YXX_INPUT_INVALID');return text;};
+const optionalText=(value,max)=>value===null?null:cleanText(value,max);
+const ensureHash=value=>{if(typeof value!=='string'||!HASH.test(value))throw new TypeError('YXX_SCOPE_INVALID');return value;};
+const requestRef=value=>{if(typeof value!=='string'||!REF.test(value))throw new TypeError('YXX_REQUEST_REF_INVALID');return value;};
+const opaqueRef=()=>randomBytes(24).toString('base64url');
+
+export function parseYxxRequestInput(value){
+  const input=snapshotP2016(value);
+  if(!input||Array.isArray(input)||typeof input!=='object'||Object.keys(input).some(key=>!['schema_version','client_command_id','description','location','service_code','impact_scope','reported_department_text','extension'].includes(key))
+    ||input.schema_version!==1)throw new TypeError('YXX_INPUT_INVALID');
+  uuidP2016(input.client_command_id);
+  const description=cleanText(input.description,YXX_WEB_LIMITS.description);
+  if(!input.location||Array.isArray(input.location)||typeof input.location!=='object'||Object.keys(input.location).some(key=>!['text','unknown'].includes(key))||typeof input.location.unknown!=='boolean')throw new TypeError('YXX_INPUT_INVALID');
+  const locationText=input.location.unknown?optionalText(input.location.text,YXX_WEB_LIMITS.location):cleanText(input.location.text,YXX_WEB_LIMITS.location);
+  let serviceCode=input.service_code===null?null:cleanText(input.service_code,64).toUpperCase();if(serviceCode!==null&&!/^[A-Z][A-Z0-9_]{0,63}$/u.test(serviceCode))throw new TypeError('YXX_INPUT_INVALID');
+  if(typeof input.impact_scope!=='string'||!IMPACTS.has(input.impact_scope))throw new TypeError('YXX_INPUT_INVALID');
+  const department=optionalText(input.reported_department_text,YXX_WEB_LIMITS.department);
+  const extension=input.extension===null?null:cleanText(input.extension,YXX_WEB_LIMITS.extension);if(extension!==null&&!/^[0-9][0-9 -]{0,19}$/u.test(extension))throw new TypeError('YXX_INPUT_INVALID');
+  return Object.freeze({schema_version:1,client_command_id:input.client_command_id.toLowerCase(),description,location:Object.freeze({text:locationText,unknown:input.location.unknown}),service_code:serviceCode,impact_scope:input.impact_scope,reported_department_text:department,extension});
+}
+
+export function parseYxxSupplementInput(value){
+  const input=snapshotP2016(value);
+  if(!input||Array.isArray(input)||typeof input!=='object'||Object.keys(input).some(key=>!['schema_version','client_command_id','expected_input_revision','text'].includes(key))||input.schema_version!==1)throw new TypeError('YXX_INPUT_INVALID');
+  uuidP2016(input.client_command_id);if(typeof input.expected_input_revision!=='string'||!/^[1-9][0-9]*$/u.test(input.expected_input_revision))throw new TypeError('YXX_INPUT_INVALID');
+  return Object.freeze({schema_version:1,client_command_id:input.client_command_id.toLowerCase(),expected_input_revision:input.expected_input_revision,text:cleanText(input.text,YXX_WEB_LIMITS.supplement)});
+}
+
+function safeTicket(row){return row?.ticket_no?Object.freeze({ticket_no:row.ticket_no,status:row.status,updated_at:row.updated_at?String(row.updated_at):undefined}):null;}
+function localEpoch(value){try{return String(shanghaiLocalToEpochMs(String(value)));}catch{return '0';}}
+function displayStatus(row){
+  if(row.pilot_ticket_id)return 'TICKET_CREATED';
+  if(row.input_revision!==row.processed_revision)return 'RECEIVED_PROCESSING';
+  if(row.status==='WAITING_DESCRIPTION')return 'WAITING_FOR_DETAILS';
+  if(row.status==='WAITING_REVIEW'||row.review_id)return 'UNDER_REVIEW';
+  if(row.status==='IGNORED')return 'NOT_SERVICE';
+  return 'RECEIVED_PROCESSING';
+}
+function publicDetail(row){
+  const created=String(row.created_at),updated=String(row.updated_at);
+  return Object.freeze({request_ref:row.request_ref,intake_no:row.intake_no,source_kind:'WEB_REQUEST',input_revision:String(row.input_revision),processed_revision:String(row.processed_revision),display_status:displayStatus(row),needs_action:row.needs_action??null,safe_description:row.safe_description,safe_location:row.safe_location??null,created_at:created,created_epoch_ms:localEpoch(created),updated_at:updated,updated_epoch_ms:localEpoch(updated),ticket:safeTicket(row),safe_clarification:row.safe_clarification??null,can_supplement:!['CLOSED','CANCELLED'].includes(row.ticket_status??'')&&row.revoked_at===null});
+}
+function cursorToken(payload,secret){const data=Buffer.from(JSON.stringify(payload),'utf8').toString('base64url');return data+'.'+createHmac('sha256',secret).update(data).digest('base64url');}
+function decodeCursor(value,secret,scopeHash){if(typeof value!=='string'||value.length>2048)throw new TypeError('YXX_CURSOR_INVALID');const [data,signature]=value.split('.');if(!data||!signature)return null;const expected=createHmac('sha256',secret).update(data).digest('base64url');const a=Buffer.from(signature),b=Buffer.from(expected);if(a.length!==b.length||!timingSafeEqual(a,b))throw new TypeError('YXX_CURSOR_INVALID');let parsed;try{parsed=JSON.parse(Buffer.from(data,'base64url').toString('utf8'));}catch{throw new TypeError('YXX_CURSOR_INVALID');}if(parsed.scope_hash!==scopeHash||typeof parsed.created_at!=='string'||typeof parsed.id!=='string')throw new TypeError('YXX_CURSOR_INVALID');return parsed;}
+
+export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cursor-secret',now=()=>String(Date.now()),retentionMs=30*24*60*60*1000}={}){
+  if(!pool?.connect||typeof scopeSecret!=='string'||Buffer.byteLength(scopeSecret)<16)throw new TypeError('YXX_STORE_CONFIG_INVALID');
+  const commandScope=scope=>ensureHash(scope.scopeHash??scope.canonical_reporter_binding);
+  const stamp=()=>stampP2016(now);
+  async function accept({scope,input,kind='SUBMIT',requestRef:nullRef=null}){
+    if(!scope||kind!=='SUBMIT'&&kind!=='SUPPLEMENT')throw new TypeError('YXX_INPUT_INVALID');const value=kind==='SUBMIT'?parseYxxRequestInput(input):parseYxxSupplementInput(input);const scopeHash=commandScope(scope);const commandHash=hashP2016({kind,schema_version:value.schema_version,...value});
+    return transactionP2016(pool,async tx=>{
+      await tx.query('SELECT pg_advisory_xact_lock(hashtext($1))',[scopeHash+':'+value.client_command_id]);
+      const existing=await tx.query(`SELECT id::text,command_hash,result_intake_id::text,result_request_ref,accepted_revision,accepted_at,accepted_epoch_ms::text
+        FROM intake.web_command_receipt WHERE scope_hash=$1 AND client_command_id=$2::uuid FOR UPDATE`,[scopeHash,value.client_command_id]);
+      if(existing.rowCount){const row=existing.rows[0];if(row.command_hash!==commandHash){const error=new Error('YXX_COMMAND_CONFLICT');error.code='YXX_COMMAND_CONFLICT';error.status=409;throw error;}return {replayed:true,receipt:{client_command_id:value.client_command_id,status:'ACCEPTED',request_ref:row.result_request_ref,intake_no:null,accepted_revision:String(row.accepted_revision),accepted_at:String(row.accepted_at),accepted_epoch_ms:String(row.accepted_epoch_ms)}};}
+      const current=stamp(),retentionEpoch=String(BigInt(current.epoch)+BigInt(retentionMs)),retentionLocal=formatEpochMsToShanghaiLocal(retentionEpoch),receiptId=randomUUID();let intakeId,requestRefValue=nullRef,revision=1;
+      if(kind==='SUBMIT'){
+        intakeId=randomUUID();requestRefValue=opaqueRef();
+        await tx.query(`INSERT INTO intake.web_command_receipt(id,scope_hash,client_command_id,command_kind,command_hash,schema_version,accepted_revision,status,accepted_at,accepted_epoch_ms,created_at)
+          VALUES($1::uuid,$2,$3::uuid,$4,$5,1,1,'ACCEPTED',$6::timestamp without time zone,$7::bigint,$6::timestamp without time zone)`,[receiptId,scopeHash,value.client_command_id,kind,commandHash,current.local,current.epoch]);
+        await tx.query(`INSERT INTO intake.service_intake(id,intake_no,source_channel,source_provider,source_bot_id,source_chat_type,source_chat_id,reporter_wecom_userid,
+          explicit_aggregation_boundary,privacy_class,retention_until,request_type,summary,reported_department_id,reported_location_text,status,primary_message_id,message_count,last_message_at,version,created_at,updated_at,primary_web_submission_id,source_app_scope,canonical_reporter_binding)
+          VALUES($1::uuid,'INT-'||to_char($2::timestamp without time zone,'YYYYMMDD')||'-'||lpad(nextval('intake.service_intake_number_seq')::text,4,'0'),'PORTAL','YIXIAOXIU_WEB',NULL,NULL,NULL,NULL,FALSE,'PERSONAL',$3::timestamp without time zone,'SERVICE_REQUEST',$4,$5,$6,'RECEIVED',NULL,1,$2::timestamp without time zone,1,$2::timestamp without time zone,$2::timestamp without time zone,$7::uuid,$8,$9)`,[intakeId,current.local,retentionLocal,value.description,value.reported_department_text,value.location.text,randomUUID(),scope.sourceAppScope??'yixiaoxiu',scopeHash]);
+        const primary=(await tx.query('SELECT primary_web_submission_id::text FROM intake.service_intake WHERE id=$1::uuid FOR UPDATE',[intakeId])).rows[0].primary_web_submission_id;
+        await tx.query(`INSERT INTO intake.web_request_binding(intake_id,request_ref,source_corp_scope,source_app_scope,canonical_reporter_binding,proof_ref,input_revision,processed_revision,next_attempt_epoch_ms,retention_until,retention_until_epoch_ms)
+          VALUES($1::uuid,$2,$3,$4,$5,$6,1,0,$7::bigint,$8::timestamp without time zone,$9::bigint)`,[intakeId,requestRefValue,scope.sourceCorpScope??'local',scope.sourceAppScope??'yixiaoxiu',scopeHash,scope.proofRef??null,current.epoch,retentionLocal,retentionEpoch]);
+        await tx.query(`INSERT INTO intake.web_submission(id,intake_id,command_receipt_id,kind,input_revision,sequence_no,safe_content,canonical_content_hash,canonical_reporter_binding,received_at,received_epoch_ms,retention_until,retention_until_epoch_ms)
+          VALUES($1::uuid,$2::uuid,$3::uuid,'SUBMIT',1,1,$4::jsonb,$5,$6,$7::timestamp without time zone,$8::bigint,$9::timestamp without time zone,$10::bigint)`,[primary,intakeId,receiptId,JSON.stringify(value),hashP2016(value),scopeHash,current.local,current.epoch,retentionLocal,retentionEpoch]);
+        await tx.query(`INSERT INTO intake.contact_journey(id,creation_key,origin_intake_id,entry_mode,origin_channel,current_channel,source_app_scope,reporter_identity_hash,profile_resolution_status,profile_snapshot,profile_snapshot_hash,status,evaluation_due_at,evaluation_due_epoch_ms,reported_at,last_activity_at,privacy_class,retention_until,retention_until_epoch_ms)
+          VALUES($1::uuid,$2,$3::uuid,'APP_WEB_SELF_SERVICE','PORTAL','PORTAL',$4,$5,'NOT_REQUIRED',$6::jsonb,$7,'OPEN',$8::timestamp without time zone,$9::bigint,$10::timestamp without time zone,$10,'PERSONAL',$11::timestamp without time zone,$12::bigint)`,[randomUUID(),'web:'+intakeId,intakeId,scope.sourceAppScope??'yixiaoxiu',scopeHash,JSON.stringify({source:'YIXIAOXIU_WEB'}),hashP2016({source:'YIXIAOXIU_WEB'}),current.local,current.epoch,current.local,retentionLocal,retentionEpoch]);
+        const journey=(await tx.query('SELECT id::text FROM intake.contact_journey WHERE origin_intake_id=$1::uuid',[intakeId])).rows[0].id;
+        await tx.query(`INSERT INTO intake.channel_leg(journey_id,leg_ordinal,leg_type,source_intake_id,web_submission_id,provider_context_hash,channel_identity_hash,reporter_identity_hash,opened_at)
+          VALUES($1::uuid,1,'WEB_FORM',$2::uuid,$3::uuid,$4,$5,$6,$7::timestamp without time zone)`,[journey,intakeId,primary,textHashP2016('YIXIAOXIU_WEB'),textHashP2016(scope.sourceAppScope??'yixiaoxiu'),scopeHash,current.local]);
+        await tx.query(`INSERT INTO intake.service_intake_event(event_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
+          VALUES('intake.web_received',$1::uuid,1,1,$2::timestamp without time zone,$3::text,$4::jsonb)`,[intakeId,current.local,receiptId,JSON.stringify({source_kind:'WEB_REQUEST',input_revision:'1'})]);
+        await tx.query('UPDATE intake.service_intake SET primary_web_submission_id=$2::uuid WHERE id=$1::uuid',[intakeId,primary]);
+        await tx.query('UPDATE intake.web_command_receipt SET result_intake_id=$2::uuid,result_request_ref=$3 WHERE id=$1::uuid',[receiptId,intakeId,requestRefValue]);
+        const intake=(await tx.query('SELECT intake_no FROM intake.service_intake WHERE id=$1::uuid',[intakeId])).rows[0];
+        return {replayed:false,receipt:{client_command_id:value.client_command_id,status:'ACCEPTED',request_ref:requestRefValue,intake_no:intake.intake_no,accepted_revision:'1',accepted_at:current.local,accepted_epoch_ms:current.epoch}};
+      }
+      requestRefValue=requestRef(nullRef);const locked=await tx.query(`SELECT b.intake_id::text,b.input_revision,b.retention_until,i.intake_no,i.pilot_ticket_id::text,i.status
+        FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 FOR UPDATE OF b,i`,[requestRefValue,scopeHash]);
+      if(locked.rowCount!==1){const error=new Error('YXX_NOT_FOUND');error.code='YXX_NOT_FOUND';error.status=404;throw error;}
+      const row=locked.rows[0];if(BigInt(value.expected_input_revision)!==BigInt(row.input_revision)){const error=new Error('YXX_VERSION_CONFLICT');error.code='YXX_VERSION_CONFLICT';error.status=409;throw error;}
+      revision=Number(row.input_revision)+1;intakeId=row.intake_id;
+      await tx.query(`INSERT INTO intake.web_command_receipt(id,scope_hash,client_command_id,command_kind,command_hash,schema_version,accepted_revision,status,accepted_at,accepted_epoch_ms,created_at,result_intake_id,result_request_ref)
+        VALUES($1::uuid,$2,$3::uuid,'SUPPLEMENT',$4,1,$5,'ACCEPTED',$6::timestamp without time zone,$7::bigint,$6::timestamp without time zone,$8::uuid,$9)`,[receiptId,scopeHash,value.client_command_id,commandHash,revision,current.local,current.epoch,intakeId,requestRefValue]);
+      const submissionId=randomUUID();await tx.query(`INSERT INTO intake.web_submission(id,intake_id,command_receipt_id,kind,input_revision,sequence_no,safe_content,canonical_content_hash,canonical_reporter_binding,received_at,received_epoch_ms,retention_until,retention_until_epoch_ms)
+        VALUES($1::uuid,$2::uuid,$3::uuid,'SUPPLEMENT',$4,$4,$5::jsonb,$6,$7,$8::timestamp without time zone,$9::bigint,$10::timestamp without time zone,$11::bigint)`,[submissionId,intakeId,receiptId,revision,JSON.stringify(value),hashP2016(value),scopeHash,current.local,current.epoch,retentionLocal,retentionEpoch]);
+      await tx.query(`UPDATE intake.web_request_binding SET input_revision=$2,updated_at=$3::timestamp without time zone,next_attempt_epoch_ms=$4::bigint WHERE intake_id=$1::uuid`,[intakeId,revision,current.local,current.epoch]);
+      const eventCount=(await tx.query('SELECT COALESCE(max(event_ordinal),0)+1 AS n FROM intake.service_intake_event WHERE intake_id=$1::uuid',[intakeId])).rows[0].n;
+      await tx.query(`INSERT INTO intake.service_intake_event(event_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
+        VALUES('intake.web_supplement_added',$1::uuid,$2,$3,$4::timestamp without time zone,$5,$6::jsonb)`,[intakeId,revision,eventCount, current.local,receiptId,JSON.stringify({source_kind:'WEB_REQUEST',input_revision:String(revision)})]);
+      return {replayed:false,receipt:{client_command_id:value.client_command_id,status:'ACCEPTED',request_ref:requestRefValue,intake_no:row.intake_no,accepted_revision:String(revision),accepted_at:current.local,accepted_epoch_ms:current.epoch}};
+    });
+  }
+  async function getRequest({scope,requestRef:ref}){const scopeHash=commandScope(scope);requestRef(ref);return transactionP2016(pool,async tx=>{const q=await tx.query(`SELECT b.request_ref,b.input_revision,b.processed_revision,b.revoked_at,i.intake_no,i.status,i.pilot_ticket_id::text,i.created_at,i.updated_at,i.reported_location_text,i.summary AS safe_description,i.reported_department_id AS reported_department_text,
+      t.ticket_no,t.status AS ticket_status,t.updated_at AS ticket_updated_at,r.id::text AS review_id FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id LEFT JOIN intake.manual_review_item r ON r.service_intake_id=i.id AND r.status='PENDING' WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 AND b.revoked_at IS NULL AND i.retention_until>platform.local_now() FOR SHARE OF b,i`,[ref,scopeHash]);if(q.rowCount!==1){const e=new Error('YXX_NOT_FOUND');e.code='YXX_NOT_FOUND';e.status=404;throw e;}const row=q.rows[0];return publicDetail({...row,safe_description:row.safe_description??'',safe_location:row.reported_location_text,ticket:row.ticket_no?{ticket_no:row.ticket_no,status:row.ticket_status,updated_at:row.ticket_updated_at}:null});});}
+  async function listMyReports({scope,limit=20,cursor=null}={}){const scopeHash=commandScope(scope);if(!Number.isInteger(limit)||limit<1||limit>YXX_WEB_LIMITS.list)throw new TypeError('YXX_LIMIT_INVALID');const after=decodeCursor(cursor,scopeSecret,scopeHash);return transactionP2016(pool,async tx=>{const args=[scopeHash,limit+1];let where='b.canonical_reporter_binding=$1 AND b.revoked_at IS NULL';if(after){where+=' AND (i.created_at,i.id)<($3::timestamp without time zone,$4::uuid)';args.push(after.created_at,after.id);}const q=await tx.query(`SELECT b.request_ref,i.id::text,i.intake_no,i.created_at,i.pilot_ticket_id::text,t.ticket_no,t.status AS ticket_status,t.updated_at AS ticket_updated_at,i.status,b.input_revision,b.processed_revision FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id WHERE ${where} ORDER BY i.created_at DESC,i.id DESC LIMIT $2`,args);const rows=q.rows.slice(0,limit);const items=rows.map(row=>({kind:'WEB_REQUEST',ref:row.request_ref,display_status:displayStatus(row),created_at:String(row.created_at),created_epoch_ms:localEpoch(row.created_at),ticket:row.ticket_no?{ticket_no:row.ticket_no,status:row.ticket_status,updated_at:String(row.ticket_updated_at)}:null}));const next=rows.length===limit&&q.rows.length>limit?cursorToken({scope_hash:scopeHash,created_at:String(rows.at(-1).created_at),id:rows.at(-1).id},scopeSecret):null;return {items,next_cursor:next};});}
+  async function timeline({scope,requestRef:ref,after=null,before=null,cursor=null,limit=50}={}){const scopeHash=commandScope(scope);requestRef(ref);if(after!==null&&before!==null||cursor!==null&&(after!==null||before!==null))throw new TypeError('YXX_CURSOR_INVALID');if(!Number.isInteger(limit)||limit<1||limit>YXX_WEB_LIMITS.timeline)throw new TypeError('YXX_LIMIT_INVALID');return transactionP2016(pool,async tx=>{const owner=await tx.query('SELECT b.intake_id::text FROM intake.web_request_binding b WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 AND b.revoked_at IS NULL',[ref,scopeHash]);if(owner.rowCount!==1){const e=new Error('YXX_NOT_FOUND');e.code='YXX_NOT_FOUND';e.status=404;throw e;}const q=await tx.query(`SELECT event_type,occurred_at,occurred_at AS epoch_source,payload FROM intake.service_intake_event WHERE intake_id=$1::uuid ORDER BY occurred_at,event_ordinal LIMIT $2`,[owner.rows[0].intake_id,limit]);const items=q.rows.map(row=>({event_type:row.event_type==='intake.web_received'?'REQUEST_ACCEPTED':row.event_type==='intake.web_supplement_added'?'SUPPLEMENT_ACCEPTED':'PROCESSING',occurred_at:String(row.occurred_at),occurred_epoch_ms:localEpoch(row.occurred_at),summary:row.event_type==='intake.web_received'?'报修已收到':row.event_type==='intake.web_supplement_added'?'补充说明已收到':'报修正在处理中',ticket:null}));return {items,next_cursor:null};});}
+  async function command({scope,clientCommandId}){const scopeHash=commandScope(scope);uuidP2016(clientCommandId);return transactionP2016(pool,async tx=>{const q=await tx.query(`SELECT client_command_id::text,status,result_request_ref,accepted_revision,accepted_at,accepted_epoch_ms::text FROM intake.web_command_receipt WHERE scope_hash=$1 AND client_command_id=$2::uuid`,[scopeHash,clientCommandId]);if(q.rowCount!==1){const e=new Error('YXX_NOT_FOUND');e.code='YXX_NOT_FOUND';e.status=404;throw e;}return q.rows[0];});}
+  return Object.freeze({accept,getRequest,listMyReports,timeline,command,parseYxxRequestInput,parseYxxSupplementInput});
+}
