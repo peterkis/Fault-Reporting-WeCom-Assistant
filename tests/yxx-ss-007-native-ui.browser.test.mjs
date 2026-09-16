@@ -4,9 +4,11 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-http.mjs';
 import { launchSystemBrowser, closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
+import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 
 const FLAGS = Object.freeze({ YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true });
 const REFS = Object.freeze({ A: 'A'.repeat(32), B: 'B'.repeat(32) });
+const csrfFor = token => `csrf-${token}-012345678901234567890123`;
 
 function fixture(origin) {
   const state = { commandCalls: [], supplementCalls: [], detailCalls: [], timelineCalls: [], next: 0, supplementConflict: false };
@@ -20,7 +22,7 @@ function fixture(origin) {
     begin() { return { location: `${origin}/wecom/yixiaoxiu/login?state=synthetic`, browserToken: 'synthetic-browser-token' }; },
   };
   const context = async ({ sessionToken }) => ({
-    profile: 'MEMBER_SELF_SERVICE', flags: FLAGS, csrf_token: `csrf-${sessionToken}`,
+    profile: 'MEMBER_SELF_SERVICE', flags: FLAGS, csrf_token: csrfFor(sessionToken),
   });
   const receipt = requestRef => ({ request_ref: requestRef, status: 'ACCEPTED' });
   const command = {
@@ -92,8 +94,10 @@ test('SS-007 native HTTP keeps the fixed homepage gate and closed API boundary',
     const bootstrap = await get('/api/yixiaoxiu/bootstrap', { cookie: 'yxx_session=member-a' });
     assert.equal(bootstrap.status, 200);
     const bootstrapBody = await bootstrap.json();
-    assert.equal(bootstrapBody.profile, 'MEMBER_SELF_SERVICE');
-    assert.equal(bootstrapBody.write_enabled, true);
+    await assertP2016Schema('yxx_self_service_bootstrap', bootstrapBody);
+    assert.equal(bootstrapBody.identity_mode, 'MEMBER_SELF_SERVICE');
+    assert.equal(bootstrapBody.read_only, false);
+    assert.equal(bootstrapBody.can_submit, true);
     assert.equal(typeof bootstrapBody.csrf_token, 'string');
     assert.equal((await get('/api/yixiaoxiu/bootstrap')).status, 401);
     const disabledRoot = await fetch(disabledState.origin + '/wecom/yixiaoxiu/', { headers: { cookie: 'yxx_session=member-a' } });
@@ -104,7 +108,7 @@ test('SS-007 native HTTP keeps the fixed homepage gate and closed API boundary',
     const badCsrf = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000000', 'x-csrf-token': 'wrong', 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000000', description: '普通描述', location: { text: '护士站', unknown: false } }) });
     assert.equal(badCsrf.status, 403);
     assert.equal(state.commandCalls.length, 0);
-    const accepted = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000001', 'x-csrf-token': 'csrf-member-a', 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000001', description: '普通描述', location: { text: '护士站', unknown: false } }) });
+    const accepted = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000001', 'x-csrf-token': csrfFor('member-a'), 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000001', description: '普通描述', location: { text: '护士站', unknown: false } }) });
     assert.equal(accepted.status, 202);
     assert.equal((await accepted.json()).location, `/wecom/yixiaoxiu/reports/${REFS.A}`);
     assert.equal(state.commandCalls.length, 1);
@@ -114,11 +118,11 @@ test('SS-007 native HTTP keeps the fixed homepage gate and closed API boundary',
     assert.equal((await get(`/api/yixiaoxiu/requests/${REFS.A}`, { cookie: 'yxx_session=member-a', 'if-none-match': etag })).status, 304);
     assert.equal((await get(`/api/yixiaoxiu/requests/${REFS.A}/timeline?limit=50`, { cookie: 'yxx_session=member-a' })).status, 200);
     assert.equal(state.timelineCalls.at(-1).limit, 50);
-    const supplement = await fetch(origin + `/api/yixiaoxiu/requests/${REFS.A}/supplements`, { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000002', 'x-csrf-token': 'csrf-member-a', 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000002', expected_input_revision: '1', text: '补充事实' }) });
+    const supplement = await fetch(origin + `/api/yixiaoxiu/requests/${REFS.A}/supplements`, { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000002', 'x-csrf-token': csrfFor('member-a'), 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000002', expected_input_revision: '1', text: '补充事实' }) });
     assert.equal(supplement.status, 202);
     assert.equal(state.supplementCalls.length, 1);
     fixtureState.state.supplementConflict = true;
-    const conflict = await fetch(origin + `/api/yixiaoxiu/requests/${REFS.A}/supplements`, { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000003', 'x-csrf-token': 'csrf-member-a', 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000003', expected_input_revision: '1', text: '旧版本' }) });
+    const conflict = await fetch(origin + `/api/yixiaoxiu/requests/${REFS.A}/supplements`, { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000003', 'x-csrf-token': csrfFor('member-a'), 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000003', expected_input_revision: '1', text: '旧版本' }) });
     assert.equal(conflict.status, 409);
     assert.equal((await fetch(origin + '/wecom/yixiaoxiu/logout', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' }, body: '{}' })).status, 200);
   } finally { await closeServer(fixtureState.server); await closeServer(disabledState.server); }

@@ -141,7 +141,7 @@ export function createYxxSelfServiceNativeHttp({
     if (!context || typeof context !== 'object' || Array.isArray(context)) throw error('YXX_AUTH_REQUIRED', 401);
     const selectedProfile = safeProfile(context, configured.profile);
     const selectedFlags = safeFlags(context, configured.flags);
-    if (typeof context.csrf_token !== 'string' || context.csrf_token.length < 1) throw error('YXX_UNAVAILABLE', 503);
+    if (typeof context.csrf_token !== 'string' || context.csrf_token.length < 32 || context.csrf_token.length > 128) throw error('YXX_UNAVAILABLE', 503);
     return Object.freeze({ profile: selectedProfile, flags: selectedFlags, csrf_token: context.csrf_token });
   }
 
@@ -196,8 +196,8 @@ export function createYxxSelfServiceNativeHttp({
       if (url.pathname === '/api/yixiaoxiu/bootstrap' && request.method === 'GET') {
         if (url.search) throw error('YXX_INPUT_INVALID');
         const context = await currentMember(request);
-        json(response, 200, { schema_version: 1, profile: context.profile, flags: context.flags,
-          write_enabled: serviceEnabled, csrf_token: context.csrf_token }); return true;
+        json(response, 200, { authenticated: true, identity_mode: 'MEMBER_SELF_SERVICE', read_only: false,
+          can_submit: serviceEnabled, can_supplement: serviceEnabled, csrf_token: context.csrf_token }); return true;
       }
       const listPath = url.pathname === '/api/yixiaoxiu/my-reports';
       if (listPath && request.method === 'GET') {
