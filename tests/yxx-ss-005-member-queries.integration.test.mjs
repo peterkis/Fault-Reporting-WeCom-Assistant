@@ -5,6 +5,7 @@ import { createYxxSelfServiceStore } from '../src/yxx-self-service-store.mjs';
 import { createYxxSelfServiceAuthorization } from '../src/yxx-self-service-authorization.mjs';
 import { createYxxSelfServiceQuery } from '../src/yxx-self-service-query.mjs';
 import { createYxxSelfServiceOrchestrator } from '../src/yxx-self-service-orchestrator.mjs';
+import { createYxxMemberCommandContext } from '../src/yxx-self-service-command.mjs';
 import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
 import { textHashP2016 } from '../src/p2-016-domain-contracts.mjs';
 import { migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
@@ -39,9 +40,9 @@ function authContext(memberScope, profile = 'MEMBER_SELF_SERVICE', flags = FLAGS
   };
 }
 
-function requestInput(description, clientCommandId = randomUUID()) {
+function requestInput(description, clientCommandId = randomUUID(), location = { text: '本部住院楼8层护士站', unknown: false }) {
   return { schema_version: 1, client_command_id: clientCommandId, description,
-    location: { text: '本部住院楼8层护士站', unknown: false }, service_code: null,
+    location, service_code: null,
     impact_scope: 'SINGLE_WORKSTATION', reported_department_text: null, extension: null };
 }
 
@@ -95,6 +96,20 @@ test('SS-005 authorization denies OAUTH_ONLY before touching the database and fe
   const authorization = createYxxSelfServiceAuthorization({ profile: 'MEMBER_SELF_SERVICE', flags: FLAGS,
     authenticate: async () => contexts.A, recheck });
   await assert.rejects(authorization.read({ request: 'member', run: async () => { phase = 'A'; contexts.A = { ...contexts.A, session_generation: 'generation-2' }; return { leaked: true }; } }), { code: 'YXX_MEMBER_AUTH_RECHECK_FAILED' });
+
+  let writes = 0;
+  const stale = createYxxMemberCommandContext({
+    profile: 'OAUTH_ONLY', flags: {},
+    authenticate: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags: FLAGS, write_flag: true,
+      csrf_token: 'csrf', canonical_reporter_binding: a.scopeHash, source_corp_scope: a.sourceCorpScope,
+      source_app_scope: a.sourceAppScope, proof_ref: a.proofRef }),
+    recheck: Object.assign(async () => ({}), { localOnly: true }),
+    quota: Object.assign(async () => true, { localOnly: true }),
+    store: { accept: async () => { writes += 1; } },
+  });
+  const body = requestInput('越过部署门禁');
+  await assert.rejects(stale.accept({ request: { headers: { 'x-csrf-token': 'csrf', 'idempotency-key': body.client_command_id } }, input: body }), { code: 'YXX_MEMBER_WRITE_DISABLED' });
+  assert.equal(writes, 0);
 });
 
 test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail', { skip: !databaseUrl, timeout: 180_000 }, async () => {
@@ -108,11 +123,16 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     const query = createYxxSelfServiceQuery({ pool, authorization, store, scopeSecret: SECRET });
     const firstA = await store.accept({ scope: scopeA, input: requestInput('A 未建单') });
     const secondA = await store.accept({ scope: scopeA, input: requestInput('处方提交不了') });
+    const reviewA = await store.accept({ scope: scopeA, input: requestInput('无法安全判断', randomUUID(), { text: null, unknown: true }) });
     const firstB = await store.accept({ scope: scopeB, input: requestInput('B 私有报修') });
     const orchestrator = createYxxSelfServiceOrchestrator({ pool, profile: 'MEMBER_SELF_SERVICE', featureFlags: FLAGS });
     const processed = await orchestrator.processOne({ requestRef: secondA.receipt.request_ref });
     assert.equal(processed.processed, true);
     const processedTicketNo = (await pool.query('SELECT ticket_no FROM pilot_ticket.ticket WHERE id=$1::uuid', [processed.ticket_id])).rows[0].ticket_no;
+    const fallbackOrchestrator = createYxxSelfServiceOrchestrator({ pool, profile: 'MEMBER_SELF_SERVICE', featureFlags: FLAGS,
+      ruleEngine: { catalog_version: 'SS005', rule_set_version: 'SS005', evaluate() { throw new Error('synthetic rule failure'); } } });
+    const reviewed = await fallbackOrchestrator.processOne({ requestRef: reviewA.receipt.request_ref });
+    assert.equal(reviewed.processed, true);
     const botA = await createBotTicket(pool, contexts.A.bot_owner.userId, 'a');
     const botB = await createBotTicket(pool, contexts.B.bot_owner.userId, 'b');
     const baselineCounts = (await pool.query('SELECT (SELECT count(*)::integer FROM pilot_ticket.reporter_access_grant) AS grants,(SELECT count(*)::integer FROM communication.delivery) AS deliveries')).rows[0];
@@ -122,6 +142,8 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     assert.equal(page.items.length, 2);
     assert.equal(new Set(page.items.map((item) => item.ref)).size, page.items.length);
     assert.equal(page.items.some((item) => item.ref === firstB.receipt.request_ref), false);
+    const reviewItem = (await query.list({ request: 'A', source: 'WEB' })).items.find((item) => item.ref === reviewA.receipt.request_ref);
+    assert.equal(reviewItem.display_status, 'UNDER_REVIEW');
     assert.ok(page.next_cursor);
     const rest = await query.list({ request: 'A', limit: 2, cursor: page.next_cursor });
     const allA = [...page.items, ...rest.items];

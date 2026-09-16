@@ -50,6 +50,11 @@ function validatedAuth(auth, fallbackProfile, fallbackFlags) {
   if (!auth || typeof auth !== 'object' || Array.isArray(auth)) fail('YXX_AUTH_REQUIRED');
   const selectedProfile = auth.profile ?? fallbackProfile;
   const selectedFlags = auth.flags === undefined ? fallbackFlags : configFlags(auth.flags);
+  if (selectedProfile !== fallbackProfile
+    || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== fallbackFlags.YIXIAOXIU_SELF_SERVICE_ENABLED
+    || selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== fallbackFlags.YIXIAOXIU_MY_REPORTS_ENABLED) {
+    fail('YXX_MEMBER_WRITE_DISABLED');
+  }
   if (selectedProfile === 'MEMBER_TICKET_READONLY' || selectedProfile === 'OAUTH_ONLY'
     || !['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(selectedProfile)
     || auth.write_flag !== true || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== true
@@ -69,6 +74,41 @@ function validatedAuth(auth, fallbackProfile, fallbackFlags) {
   };
   return Object.freeze({ profile: selectedProfile, flags: selectedFlags, write_flag: true,
     csrf_token: csrf, session_generation: sessionGeneration, scope: Object.freeze(trusted) });
+}
+
+function validatedReadAuth(auth, fallbackProfile, fallbackFlags) {
+  if (!auth || typeof auth !== 'object' || Array.isArray(auth)) fail('YXX_AUTH_REQUIRED');
+  const selectedProfile = auth.profile ?? fallbackProfile;
+  const selectedFlags = auth.flags === undefined ? fallbackFlags : configFlags(auth.flags);
+  if (selectedProfile !== fallbackProfile
+    || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== fallbackFlags.YIXIAOXIU_SELF_SERVICE_ENABLED
+    || selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== fallbackFlags.YIXIAOXIU_MY_REPORTS_ENABLED
+    || !['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(selectedProfile)
+    || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== true
+    || selectedProfile === 'MEMBER_SELF_SERVICE' && selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== true) {
+    fail('YXX_MEMBER_READ_DISABLED');
+  }
+  const binding = text(auth.canonical_reporter_binding, 'YXX_COMMAND_AUTH_INVALID', 128);
+  if (!HASH.test(binding)) fail('YXX_COMMAND_AUTH_INVALID');
+  const generationValue = auth.session_generation ?? auth.generation ?? null;
+  const sessionGeneration = generationValue === null ? null : text(generationValue, 'YXX_COMMAND_AUTH_INVALID', 256);
+  return Object.freeze({ profile: selectedProfile, flags: selectedFlags, write_flag: auth.write_flag === true,
+    session_generation: sessionGeneration, scope: Object.freeze({ scopeHash: binding,
+      sourceCorpScope: text(auth.source_corp_scope, 'YXX_COMMAND_AUTH_INVALID'),
+      sourceAppScope: text(auth.source_app_scope, 'YXX_COMMAND_AUTH_INVALID'),
+      proofRef: text(auth.proof_ref, 'YXX_COMMAND_AUTH_INVALID', 256) }) });
+}
+
+function sameReadAuthContext(left, right) {
+  return left.profile === right.profile
+    && left.write_flag === right.write_flag
+    && left.flags.YIXIAOXIU_SELF_SERVICE_ENABLED === right.flags.YIXIAOXIU_SELF_SERVICE_ENABLED
+    && left.flags.YIXIAOXIU_MY_REPORTS_ENABLED === right.flags.YIXIAOXIU_MY_REPORTS_ENABLED
+    && left.session_generation === right.session_generation
+    && left.scope.scopeHash === right.scope.scopeHash
+    && left.scope.sourceCorpScope === right.scope.sourceCorpScope
+    && left.scope.sourceAppScope === right.scope.sourceAppScope
+    && left.scope.proofRef === right.scope.proofRef;
 }
 
 function sameAuthContext(left, right) {
@@ -142,14 +182,15 @@ export function createYxxMemberCommandContext({ store, authenticate, recheck, pr
   async function commandStatus({ request, clientCommandId } = {}) {
     let auth;
     try { auth = snapshotP2015Json(await authenticate(request)); } catch { fail('YXX_AUTH_REQUIRED'); }
-    const selectedProfile = auth.profile ?? profile;
-    const selectedFlags = auth.flags === undefined ? configuredFlags : configFlags(auth.flags);
-    if (!['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(selectedProfile)
-      || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== true
-      || selectedProfile === 'MEMBER_SELF_SERVICE' && selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== true) fail('YXX_MEMBER_READ_DISABLED');
-    const binding = text(auth.canonical_reporter_binding, 'YXX_COMMAND_AUTH_INVALID', 128);
-    if (!HASH.test(binding)) fail('YXX_COMMAND_AUTH_INVALID');
-    return store.command({ scope: { scopeHash: binding }, clientCommandId });
+    const context = validatedReadAuth(auth, profile, configuredFlags);
+    const result = await store.command({ scope: context.scope, clientCommandId });
+    let latest;
+    try { latest = snapshotP2015Json(await recheck({ request, context })); }
+    catch { fail('YXX_AUTH_RECHECK_FAILED'); }
+    if (!sameReadAuthContext(context, validatedReadAuth(latest, context.profile, context.flags))) {
+      fail('YXX_AUTH_RECHECK_FAILED');
+    }
+    return result;
   }
 
   return Object.freeze({ authorize, accept, acceptInTransaction, commandStatus });

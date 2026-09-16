@@ -20,7 +20,7 @@
     "extension": {"type": ["string", "null"], "maxLength": 20, "pattern": "^[0-9][0-9 -]{0,19}$"},
     "supplements": {"type": "array", "maxItems": 49, "items": {"type": "object", "additionalProperties": false,
       "required": ["input_revision", "text"], "properties": {
-        "input_revision": {"type": "string", "pattern": "^[2-9][0-9]*$"},
+        "input_revision": {"type": "string", "pattern": "^([2-9]|[1-9][0-9]+)$"},
         "text": {"type": ["string", "null"], "maxLength": 2000}
       }
     }}

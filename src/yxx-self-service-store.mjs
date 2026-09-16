@@ -148,36 +148,35 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
       const owner=await tx.query('SELECT b.intake_id::text FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1 AND b.canonical_reporter_binding=$2 AND b.revoked_at IS NULL AND b.retention_until>platform.local_now() AND i.retention_until>platform.local_now()',[ref,scopeHash]);
       if(owner.rowCount!==1){const e=new Error('YXX_NOT_FOUND');e.code='YXX_NOT_FOUND';e.status=404;throw e;}
       let key=null,numericBoundary=null,order='ASC';
-      if(cursor){const [data,signature]=cursor.split('.');if(!data||!signature)throw new TypeError('YXX_CURSOR_INVALID');const expected=createHmac('sha256',scopeSecret).update(data).digest('base64url'),a=Buffer.from(signature),b=Buffer.from(expected);if(a.length!==b.length||!timingSafeEqual(a,b))throw new TypeError('YXX_CURSOR_INVALID');try{const parsed=JSON.parse(Buffer.from(data,'base64url').toString('utf8'));if(parsed.scope_hash!==scopeHash||parsed.request_ref!==ref||!Number.isSafeInteger(parsed.timeline_ordinal)||parsed.timeline_ordinal<1||!Number.isInteger(parsed.intake_high_water)||!Number.isInteger(parsed.ticket_high_water)||parsed.intake_high_water<0||parsed.ticket_high_water<0||!['ASC','DESC'].includes(parsed.direction))throw new Error('cursor');key=parsed;order=parsed.direction;}catch{throw new TypeError('YXX_CURSOR_INVALID');}}
+       if(cursor){const [data,signature]=cursor.split('.');if(!data||!signature)throw new TypeError('YXX_CURSOR_INVALID');const expected=createHmac('sha256',scopeSecret).update(data).digest('base64url'),a=Buffer.from(signature),b=Buffer.from(expected);if(a.length!==b.length||!timingSafeEqual(a,b))throw new TypeError('YXX_CURSOR_INVALID');try{const parsed=JSON.parse(Buffer.from(data,'base64url').toString('utf8'));if(parsed.scope_hash!==scopeHash||parsed.request_ref!==ref||!Number.isSafeInteger(parsed.timeline_ordinal)||parsed.timeline_ordinal<1||!Number.isInteger(parsed.intake_high_water)||!Number.isInteger(parsed.ticket_high_water)||parsed.intake_high_water<0||parsed.ticket_high_water<0||!['ASC','DESC'].includes(parsed.direction)||typeof parsed.occurred_at!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/u.test(parsed.occurred_at)||!Number.isInteger(parsed.source_rank)||!Number.isInteger(parsed.source_ordinal)||!['INTAKE','TICKET'].includes(parsed.event_source)||typeof parsed.source_id!=='string'||!/^[0-9a-f-]{36}$/iu.test(parsed.source_id))throw new Error('cursor');key=parsed;order=parsed.direction;}catch{throw new TypeError('YXX_CURSOR_INVALID');}}
       else if(after!==null){if(!/^[0-9]+$/u.test(after)||!Number.isSafeInteger(Number(after)))throw new TypeError('YXX_CURSOR_INVALID');numericBoundary=Number(after);}
       else if(before!==null){if(!/^[0-9]+$/u.test(before)||!Number.isSafeInteger(Number(before)))throw new TypeError('YXX_CURSOR_INVALID');numericBoundary=Number(before);order='DESC';}
       const args=[owner.rows[0].intake_id,limit+1,TICKET_TIMELINE_EVENTS];let boundarySql='';
-      if(key){args.push(key.timeline_ordinal,key.intake_high_water,key.ticket_high_water);boundarySql=order==='ASC'?'WHERE (timeline_ordinal>$4 OR (event_source=\'INTAKE\' AND source_ordinal>$5) OR (event_source=\'TICKET\' AND source_ordinal>$6))':'WHERE timeline_ordinal<$4 AND ((event_source=\'INTAKE\' AND source_ordinal<=$5) OR (event_source=\'TICKET\' AND source_ordinal<=$6))';}
+        if(key){args.push(key.occurred_at,key.source_rank,key.source_id);if(order==='DESC')args.push(key.intake_high_water,key.ticket_high_water);boundarySql=order==='ASC'?`WHERE (occurred_at>$4::timestamp without time zone OR (occurred_at=$4::timestamp without time zone AND source_rank>$5::integer) OR (occurred_at=$4::timestamp without time zone AND source_rank=$5::integer AND source_id>$6::text))`:`WHERE ((event_source='INTAKE' AND source_ordinal<=$7) OR (event_source='TICKET' AND source_ordinal<=$8)) AND (occurred_at<$4::timestamp without time zone OR (occurred_at=$4::timestamp without time zone AND source_rank<$5::integer) OR (occurred_at=$4::timestamp without time zone AND source_rank=$5::integer AND source_id<$6::text))`;}
       else if(numericBoundary!==null){args.push(numericBoundary);boundarySql=order==='ASC'?'WHERE timeline_ordinal>$4':'WHERE timeline_ordinal<$4';}
       const q=await tx.query(`WITH all_events AS (
-          SELECT 'INTAKE'::text AS event_source,e.event_type,e.payload,e.occurred_at,e.event_ordinal::integer AS source_ordinal,e.event_id::text AS source_id,
-                 t.ticket_no,t.status AS ticket_status,to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,0::integer AS source_rank,
-                 (e.event_ordinal::bigint*2)::bigint AS timeline_ordinal
+           SELECT 'INTAKE'::text AS event_source,e.event_type,e.payload,e.occurred_at::timestamp without time zone AS occurred_at,e.event_ordinal::integer AS source_ordinal,e.event_id::text AS source_id,
+                  t.ticket_no,t.status AS ticket_status,to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,0::integer AS source_rank
             FROM intake.service_intake_event e LEFT JOIN pilot_ticket.ticket t ON t.source_intake_id=e.intake_id
            WHERE e.intake_id=$1::uuid AND (e.event_type<>'intake.ticket_created' OR NOT EXISTS (SELECT 1 FROM pilot_ticket.ticket_event te WHERE te.ticket_id=t.id AND te.event_type='ticket.created'))
           UNION ALL
-          SELECT 'TICKET'::text AS event_source,te.event_type,jsonb_build_object('new_status',te.new_status),te.created_at,te.event_ordinal::integer,te.event_id::text,
-                 t.ticket_no,te.new_status,to_char(te.created_at,'YYYY-MM-DD HH24:MI:SS'),1::integer,
-                 (te.event_ordinal::bigint*2+1)::bigint AS timeline_ordinal
+           SELECT 'TICKET'::text AS event_source,te.event_type,jsonb_build_object('new_status',te.new_status),te.created_at::timestamp without time zone,te.event_ordinal::integer,te.event_id::text,
+                  t.ticket_no,te.new_status,to_char(te.created_at,'YYYY-MM-DD HH24:MI:SS'),1::integer
             FROM pilot_ticket.ticket t JOIN pilot_ticket.ticket_event te ON te.ticket_id=t.id
            WHERE t.source_intake_id=$1::uuid AND te.event_type=ANY($3::text[])
          ), annotated AS (
           SELECT all_events.*,
                  COALESCE(MAX(source_ordinal) FILTER (WHERE event_source='INTAKE') OVER (),0)::integer AS intake_high_water,
-                 COALESCE(MAX(source_ordinal) FILTER (WHERE event_source='TICKET') OVER (),0)::integer AS ticket_high_water
+                  COALESCE(MAX(source_ordinal) FILTER (WHERE event_source='TICKET') OVER (),0)::integer AS ticket_high_water,
+                  row_number() OVER (ORDER BY occurred_at,source_rank,source_id)::bigint AS timeline_ordinal
             FROM all_events
         )
         SELECT event_source,event_type,payload,to_char(occurred_at,'YYYY-MM-DD HH24:MI:SS') AS occurred_at,source_rank,source_ordinal,source_id,
                intake_high_water,ticket_high_water,timeline_ordinal,
                ticket_no,ticket_status,ticket_updated_at
-          FROM annotated ${boundarySql} ORDER BY timeline_ordinal ${order} LIMIT $2`,args);
+         FROM annotated ${boundarySql} ORDER BY occurred_at ${order},source_rank ${order},source_id ${order} LIMIT $2`,args);
       const rows=q.rows.slice(0,limit);if(order==='DESC')rows.reverse();const items=rows.map(timelineItem);
-      const next=rows.length===limit&&q.rows.length>limit?(()=>{const anchor=order==='ASC'?rows.at(-1):rows[0];const data=Buffer.from(JSON.stringify({scope_hash:scopeHash,request_ref:ref,timeline_ordinal:Number(anchor.timeline_ordinal),intake_high_water:Number(anchor.intake_high_water),ticket_high_water:Number(anchor.ticket_high_water),direction:order}),'utf8').toString('base64url');return data+'.'+createHmac('sha256',scopeSecret).update(data).digest('base64url');})():null;
+       const next=rows.length===limit&&q.rows.length>limit?(()=>{const anchor=order==='ASC'?rows.at(-1):rows[0];const data=Buffer.from(JSON.stringify({scope_hash:scopeHash,request_ref:ref,timeline_ordinal:Number(anchor.timeline_ordinal),intake_high_water:Number(anchor.intake_high_water),ticket_high_water:Number(anchor.ticket_high_water),direction:order,occurred_at:String(anchor.occurred_at),source_rank:Number(anchor.source_rank),source_ordinal:Number(anchor.source_ordinal),event_source:anchor.event_source,source_id:anchor.source_id}),'utf8').toString('base64url');return data+'.'+createHmac('sha256',scopeSecret).update(data).digest('base64url');})():null;
       return {items,next_cursor:next};
     });
   }

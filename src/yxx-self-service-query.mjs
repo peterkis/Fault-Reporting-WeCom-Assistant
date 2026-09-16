@@ -180,7 +180,8 @@ async function listRows(transaction, context, selectedSource, n, cursor, snapsho
              0::integer AS kind_rank, b.intake_id::text AS immutable_id,
              i.status, b.input_revision, b.processed_revision, i.pilot_ticket_id::text,
              t.ticket_no, t.status AS ticket_status, to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,
-             false AS has_pending_review
+             EXISTS (SELECT 1 FROM intake.manual_review_item r
+                      WHERE r.service_intake_id=i.id AND r.status='PENDING') AS has_pending_review
         FROM intake.web_request_binding b
         JOIN intake.service_intake i ON i.id=b.intake_id
         LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id
