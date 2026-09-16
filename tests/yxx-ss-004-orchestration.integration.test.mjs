@@ -192,9 +192,15 @@ test('SS-004 accepts, processes, replays, and creates one Web Ticket through the
     const timeline = await store.timeline({ scope: currentScope, requestRef: accepts[0].receipt.request_ref, limit: 100 });
     const ticketEvent = timeline.items.find((item) => item.event_type === 'TICKET_CREATED');
     assert.ok(ticketEvent); assert.match(ticketEvent.ticket.ticket_no, /^IT-[0-9]{8}-[0-9]{4,}$/u); assert.equal(ticketEvent.ticket.status, 'QUEUED');
+    const timelineAnchor = await store.timeline({ scope: currentScope, requestRef: accepts[0].receipt.request_ref, limit: 2 });
+    assert.ok(timelineAnchor.next_cursor);
     const ticketAction = createTicketActionService({ pool });
     assert.equal((await ticketAction.perform({ ticketId: createdTicket.id, action: 'accept', expectedVersion: 1,
       actor: { type: 'SYSTEM', id: null }, reasonCode: 'SYNTHETIC_ACCEPT', traceId: 'yxx:ss004:accept' })).ok, true);
+    await store.accept({ scope: currentScope, input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '同一根报修的后续说明' }, kind: 'SUPPLEMENT', requestRef: accepts[0].receipt.request_ref });
+    const afterAnchor = await store.timeline({ scope: currentScope, requestRef: accepts[0].receipt.request_ref, cursor: timelineAnchor.next_cursor, limit: 100 });
+    assert.ok(afterAnchor.items.some((item) => item.event_type === 'TICKET_UPDATED' && item.ticket?.status === 'ACCEPTED'));
+    assert.ok(afterAnchor.items.some((item) => item.event_type === 'SUPPLEMENT_ACCEPTED'));
     const updatedTimeline = await store.timeline({ scope: currentScope, requestRef: accepts[0].receipt.request_ref, limit: 100 });
     assert.ok(updatedTimeline.items.some((item) => item.event_type === 'TICKET_UPDATED' && item.ticket?.status === 'ACCEPTED'));
   } });
