@@ -125,8 +125,15 @@ export function createYxxSelfServiceStore({pool,scopeSecret='yxx-self-service-cu
         VALUES($1::uuid,$2,$3::uuid,'SUPPLEMENT',$4,1,$5,'ACCEPTED',$6::timestamp without time zone,$7::bigint,$6::timestamp without time zone,$8::uuid,$9)`,[receiptId,scopeHash,value.client_command_id,commandHash,revision,current.local,current.epoch,intakeId,requestRefValue]);
       const submissionId=randomUUID();await tx.query(`INSERT INTO intake.web_submission(id,intake_id,command_receipt_id,kind,input_revision,sequence_no,safe_content,canonical_content_hash,canonical_reporter_binding,received_at,received_epoch_ms,retention_until,retention_until_epoch_ms)
         VALUES($1::uuid,$2::uuid,$3::uuid,'SUPPLEMENT',$4,$4,$5::jsonb,$6,$7,$8::timestamp without time zone,$9::bigint,$10::timestamp without time zone,$11::bigint)`,[submissionId,intakeId,receiptId,revision,JSON.stringify(value),hashP2016(value),scopeHash,current.local,current.epoch,retentionLocal,retentionEpoch]);
-      await tx.query(`UPDATE intake.web_request_binding SET input_revision=$2,updated_at=$3::timestamp without time zone,next_attempt_epoch_ms=$4::bigint WHERE intake_id=$1::uuid`,[intakeId,revision,current.local,current.epoch]);
-      const intakeUpdate=await tx.query(`UPDATE intake.service_intake SET summary=LEFT(COALESCE(summary,'') || E'\\n' || $3,500),updated_at=$2::timestamp without time zone,version=version+1 WHERE id=$1::uuid RETURNING version`,[intakeId,current.local,value.text]);
+      await tx.query(`UPDATE intake.web_request_binding SET input_revision=$2,updated_at=$3::timestamp without time zone,
+        next_attempt_epoch_ms=$4::bigint,retention_until=$5::timestamp without time zone,retention_until_epoch_ms=$6::bigint
+        WHERE intake_id=$1::uuid`,[intakeId,revision,current.local,current.epoch,retentionLocal,retentionEpoch]);
+      const intakeUpdate=await tx.query(`UPDATE intake.service_intake SET summary=LEFT(COALESCE(summary,'') || E'\\n' || $3,500),
+        retention_until=$4::timestamp without time zone,retention_until_epoch_ms=$5::bigint,
+        updated_at=$2::timestamp without time zone,version=version+1 WHERE id=$1::uuid RETURNING version`,[intakeId,current.local,value.text,retentionLocal,retentionEpoch]);
+      await tx.query(`UPDATE intake.contact_journey SET retention_until=$2::timestamp without time zone,
+        retention_until_epoch_ms=$3::bigint,updated_at=GREATEST(created_at,$4::timestamp without time zone)
+        WHERE origin_intake_id=$1::uuid`,[intakeId,retentionLocal,retentionEpoch,current.local]);
       const aggregateVersion=intakeUpdate.rows[0]?.version;
       const eventCount=(await tx.query('SELECT COALESCE(max(event_ordinal),0)+1 AS n FROM intake.service_intake_event WHERE intake_id=$1::uuid',[intakeId])).rows[0].n;
       await tx.query(`INSERT INTO intake.service_intake_event(event_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)

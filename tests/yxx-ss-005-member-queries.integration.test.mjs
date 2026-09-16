@@ -143,6 +143,14 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
       ruleEngine: { catalog_version: 'SS005', rule_set_version: 'SS005', evaluate() { throw new Error('synthetic rule failure'); } } });
     const reviewed = await fallbackOrchestrator.processOne({ requestRef: reviewA.receipt.request_ref });
     assert.equal(reviewed.processed, true);
+    const autoAcknowledgement = await store.accept({ scope: scopeA, input: requestInput('谢谢') });
+    assert.equal((await orchestrator.processOne({ requestRef: autoAcknowledgement.receipt.request_ref })).result_code, 'ACKNOWLEDGEMENT');
+    assert.equal((await pool.query(`SELECT j.status FROM intake.contact_journey j
+      JOIN intake.web_request_binding b ON b.intake_id=j.origin_intake_id WHERE b.request_ref=$1`, [autoAcknowledgement.receipt.request_ref])).rows[0].status, 'ENDED');
+    const autoOutOfScope = await store.accept({ scope: scopeA, input: requestInput('天气怎么样') });
+    assert.equal((await orchestrator.processOne({ requestRef: autoOutOfScope.receipt.request_ref })).result_code, 'OUT_OF_SCOPE');
+    assert.equal((await pool.query(`SELECT j.status FROM intake.contact_journey j
+      JOIN intake.web_request_binding b ON b.intake_id=j.origin_intake_id WHERE b.request_ref=$1`, [autoOutOfScope.receipt.request_ref])).rows[0].status, 'ENDED');
     const botA = await createBotTicket(pool, contexts.A.bot_owner.userId, 'a');
     const botB = await createBotTicket(pool, contexts.B.bot_owner.userId, 'b');
     const baselineCounts = (await pool.query('SELECT (SELECT count(*)::integer FROM pilot_ticket.reporter_access_grant) AS grants,(SELECT count(*)::integer FROM communication.delivery) AS deliveries')).rows[0];
@@ -206,8 +214,12 @@ test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and
     assert.equal((await pool.query(`SELECT j.status FROM intake.contact_journey j
       JOIN intake.manual_review_item r ON r.journey_id=j.id WHERE r.id=$1::uuid`, [terminalRow.id])).rows[0].status, 'ENDED');
     assert.ok(page.next_cursor);
-    const rest = await query.list({ request: 'A', limit: 2, cursor: page.next_cursor });
-    const allA = [...page.items, ...rest.items];
+    const allA = [...page.items];
+    for (let next = page.next_cursor; next;) {
+      const rest = await query.list({ request: 'A', limit: 2, cursor: next });
+      allA.push(...rest.items);
+      next = rest.next_cursor;
+    }
     assert.equal(new Set(allA.map((item) => item.ref)).size, allA.length);
     assert.equal(allA.some((item) => item.ref === firstA.receipt.request_ref), true);
     assert.equal(allA.some((item) => item.ref === secondA.receipt.request_ref), true);
@@ -298,6 +310,43 @@ test('SS-005 traverses a 500-row mixed snapshot without loss or duplication', { 
     assert.equal(refs.size, 500);
     assert.equal([...refs].filter((ref) => web.some((item) => item.receipt.request_ref === ref)).length, 250);
     assert.equal([...refs].filter((ref) => bot.some((item) => item.public_ref === ref)).length, 250);
+  } });
+  await assertNoP2016Residual({ databaseUrl });
+});
+
+test('SS-005 extends aggregate retention for a late accepted supplement', { skip: !databaseUrl, timeout: 120_000 }, async () => {
+  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx005ret', run: async ({ pool, databaseUrl: isolated }) => {
+    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
+    const memberScope = scope('retention');
+    const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET, retentionMs: 60_000 });
+    const root = await store.accept({ scope: memberScope, input: requestInput('处方提交不了') });
+    await pool.query(`WITH target AS (SELECT platform.physical_epoch_ms()+5000 AS epoch)
+      UPDATE intake.web_request_binding b SET retention_until_epoch_ms=target.epoch,
+        retention_until=platform.local_from_epoch_ms(target.epoch) FROM target WHERE b.request_ref=$1`, [root.receipt.request_ref]);
+    await pool.query(`WITH target AS (SELECT platform.physical_epoch_ms()+5000 AS epoch)
+      UPDATE intake.service_intake i SET retention_until_epoch_ms=target.epoch,
+        retention_until=platform.local_from_epoch_ms(target.epoch) FROM target, intake.web_request_binding b
+      WHERE b.intake_id=i.id AND b.request_ref=$1`, [root.receipt.request_ref]);
+    await pool.query(`WITH target AS (SELECT platform.physical_epoch_ms()+5000 AS epoch)
+      UPDATE intake.contact_journey j SET retention_until_epoch_ms=target.epoch,
+        retention_until=platform.local_from_epoch_ms(target.epoch) FROM target, intake.web_request_binding b
+      WHERE b.intake_id=j.origin_intake_id AND b.request_ref=$1`, [root.receipt.request_ref]);
+    const before = (await pool.query(`SELECT b.retention_until_epoch_ms::text AS binding_retention,
+      i.retention_until_epoch_ms::text AS intake_retention,j.retention_until_epoch_ms::text AS journey_retention
+      FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id
+      JOIN intake.contact_journey j ON j.origin_intake_id=i.id WHERE b.request_ref=$1`, [root.receipt.request_ref])).rows[0];
+    const supplement = await store.accept({ scope: memberScope, kind: 'SUPPLEMENT', requestRef: root.receipt.request_ref,
+      input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '临近保留期补充' } });
+    assert.equal(supplement.receipt.status, 'ACCEPTED');
+    const after = (await pool.query(`SELECT b.retention_until_epoch_ms::text AS binding_retention,
+      i.retention_until_epoch_ms::text AS intake_retention,j.retention_until_epoch_ms::text AS journey_retention
+      FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id
+      JOIN intake.contact_journey j ON j.origin_intake_id=i.id WHERE b.request_ref=$1`, [root.receipt.request_ref])).rows[0];
+    assert.ok(BigInt(after.binding_retention) > BigInt(before.binding_retention));
+    assert.equal(after.binding_retention, after.intake_retention);
+    assert.equal(after.binding_retention, after.journey_retention);
+    assert.equal((await createYxxSelfServiceOrchestrator({ pool, profile: 'MEMBER_SELF_SERVICE', featureFlags: FLAGS })
+      .processOne({ requestRef: root.receipt.request_ref })).processed, true);
   } });
   await assertNoP2016Residual({ databaseUrl });
 });

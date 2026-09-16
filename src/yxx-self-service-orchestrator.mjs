@@ -380,6 +380,11 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
                 JSON.stringify({ intake_id: root.intake_id, decision_id: decision.id, new_status: terminal.rows[0].status,
                   new_request_type: terminal.rows[0].request_type, reason_code: decision.reason_code })],
             );
+            await transaction.query(`UPDATE intake.contact_journey
+              SET status='ENDED',ended_at=GREATEST(last_activity_at,$2::timestamp without time zone),
+                  last_activity_at=GREATEST(last_activity_at,$2::timestamp without time zone),row_version=row_version+1,
+                  updated_at=GREATEST(created_at,$2::timestamp without time zone)
+              WHERE id=$1::uuid AND status<>'ENDED'`, [journey.id, latest.received_at]);
           }
         }
         const cursor = await transaction.query(
