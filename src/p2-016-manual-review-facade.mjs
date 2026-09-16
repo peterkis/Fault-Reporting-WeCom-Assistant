@@ -107,7 +107,8 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
       },run:async(transaction,{principal,review,store})=>{
         await realtimeProjector?.lock?.(transaction);
         await transaction.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[review.journey_id]);
-        const resolution=await store.resolve({transaction,principal,command:{...command,resolved_at:stampP2016(now).local}});
+         const resolvedAt=stampP2016(now).local;
+         const resolution=await store.resolve({transaction,principal,command:{...command,resolved_at:resolvedAt}});
         if(!resolution.resolution_decision_id)failP2016('REVIEW_ALREADY_RESOLVED',409);
         const source=(await transaction.query(`SELECT i.source_provider,i.source_bot_id,i.reporter_wecom_userid,i.source_chat_type,i.source_chat_id,i.summary,
           i.retention_until,i.retention_until_epoch_ms::text,s.id::text AS session_id,s.row_version::integer
@@ -149,7 +150,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
           retention_until_epoch_ms:source.retention_until_epoch_ms,
           ...(!webSource?{destination:{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,
             target_type:source.source_chat_type==='group'?'GROUP':'PERSON',target_id:source.source_chat_type==='group'?source.source_chat_id:source.reporter_wecom_userid}}:{})};
-        const actions=await executor.execute({transaction,decision,context:actionContext});
+         const actions=await executor.execute({transaction,decision:webSource?{...decision,applied_at:resolvedAt}:decision,context:actionContext});
         if(actions.some(a=>a.failed_safe))failP2016('REVIEW_ACTION_FAILED',409);
         if(realtimeProjector)await realtimeProjector.review({transaction,reviewId});
         return {ok:true,review_id:reviewId,status:resolution.status,resolution_decision_id:resolution.resolution_decision_id,action_count:actions.length};

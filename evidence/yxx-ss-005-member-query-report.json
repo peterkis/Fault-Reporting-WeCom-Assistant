@@ -2,8 +2,8 @@
   "task": "YXX-SS-005",
   "status": "COMPLETE",
   "scope": "LOCAL_ISOLATED_ONLY",
-  "event_time": "2026-09-16 19:25:04",
-  "event_epoch_ms": "1789557904584",
+  "event_time": "2026-09-16 19:43:33",
+  "event_epoch_ms": "1789559013558",
   "dependencies": ["YXX-SS-003"],
   "implementation": {
     "authorization": "server-derived member scope; protected recheck after every read",
@@ -32,7 +32,10 @@
     "SS-005 task ledger records COMPLETE",
     "Web Ticket lifecycle actions remain APP_ONLY without notification side effects",
     "waiting requester Web Tickets resume through the existing Ticket Action Core",
-    "report cursors bind corp/app scope as well as member and source"
+    "report cursors bind corp/app scope as well as member and source",
+    "Web pump exceptions consume one bounded slot and do not stop Bot processing",
+    "late Web decision events retain discoverable source high-water ordinals",
+    "configured rule engine is shared by Bot and Web orchestration"
   ],
   "forbidden_live_actions": ["REAL_OAUTH", "WECOM_SDK", "PRODUCTION_DB", "SSH", "CLOUD_PUBLISH", "SEND", "YXX-SS-011", "P2-G2-LIVE", "P2-008"]
 }

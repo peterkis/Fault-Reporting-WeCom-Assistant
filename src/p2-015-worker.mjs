@@ -52,7 +52,13 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
     if (webOrchestrator && !value.signal?.aborted) {
       // Reserve one slot for Web on every batch. If no Web root is due, the
       // zero-result response lets the Bot query use the full batch instead.
-      webResult = await webOrchestrator.processPendingFromWorker({ batchSize: 1, nowEpochMs, signal: value.signal });
+      try {
+        webResult = await webOrchestrator.processPendingFromWorker({ batchSize: 1, nowEpochMs, signal: value.signal });
+      } catch {
+        // A broken optional Web lane must not starve the existing Bot batch.
+        // Treat the reserved slot as claimed and expose only a stable code.
+        webResult = { processed: 0, claimed: 1, pending: true, error_code: 'WEB_PROCESSOR_UNAVAILABLE', results: [] };
+      }
       processed += webResult.processed ?? 0;
       claimed += webClaimedFor(webResult);
       results.push(...(webResult.results ?? []));

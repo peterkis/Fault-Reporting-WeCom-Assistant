@@ -82,3 +82,24 @@ test('worker counts a failed Web claim against the bounded Bot capacity', async 
   const result = await worker.processDueBatch({ batch_size: 1, now_epoch_ms: '123', feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true } });
   assert.equal(candidateParams[1], 0); assert.equal(result.processed, 0); assert.equal(result.claimed, 1);
 });
+
+test('worker keeps the Bot batch running when the Web processor throws', async () => {
+  let candidateParams; let botProcessed = 0;
+  const pool = {
+    query: async (_sql, params) => { candidateParams = params; return params[1] === 0 ? { rows: [] } : { rows: [{ id: '55555555-5555-4555-8555-555555555555' }] }; },
+    connect: async () => ({
+      query: async (sql) => sql === 'BEGIN' || sql === 'COMMIT' ? {} : { rowCount: 1, rows: [{ id: '55555555-5555-4555-8555-555555555555' }] },
+      release() {},
+    }),
+  };
+  const webOrchestrator = { processPendingFromWorker: async () => { throw new Error('synthetic web outage'); } };
+  const orchestrator = {
+    preparePersistedIntake: async () => ({ profile: 'OAUTH_ONLY', reporter_hash: 'a'.repeat(64), primary_message_id: '1' }),
+    processInTransaction: async () => { botProcessed += 1; return { decision: { id: '66666666-6666-4666-8666-666666666666', result_code: 'TICKET_ELIGIBLE', replayed: false } }; },
+  };
+  const worker = createP2015Worker({ pool, webOrchestrator, orchestrator });
+  const result = await worker.processDueBatch({ batch_size: 2, now_epoch_ms: '123', feature_flags: { RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true } });
+  assert.equal(candidateParams[1], 1); assert.equal(botProcessed, 1);
+  assert.equal(result.web_result.error_code, 'WEB_PROCESSOR_UNAVAILABLE');
+  assert.equal(result.claimed, 2); assert.equal(result.processed, 1);
+});
