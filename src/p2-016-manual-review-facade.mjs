@@ -26,6 +26,28 @@ const WEB_ACTIONS=Object.freeze({
 });
 function derivedCommand(id) {const h=textHashP2016('P2016_PERSON_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
 function boundedTicketTitle(value) {if(typeof value!=='string'||value.length===0)return null;let title='';for(const character of value){if(title.length+character.length>200)break;title+=character;}return title||null;}
+async function webReportForIntake(queryable,intakeId) {
+  let result;
+  try { result=await queryable.query(`SELECT i.source_provider,initial.safe_content AS initial_content,
+      COALESCE(supplements.items,'[]'::jsonb) AS supplement_items
+    FROM intake.service_intake i
+    JOIN intake.web_request_binding b ON b.intake_id=i.id
+      AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
+    LEFT JOIN LATERAL (SELECT s.safe_content FROM intake.web_submission s
+      WHERE s.intake_id=i.id AND s.kind='SUBMIT' ORDER BY s.input_revision LIMIT 1) initial ON TRUE
+    LEFT JOIN LATERAL (SELECT jsonb_agg(jsonb_build_object('input_revision',s.input_revision::text,
+      'text',s.safe_content->>'text') ORDER BY s.input_revision) AS items
+      FROM intake.web_submission s WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT') supplements ON TRUE
+    WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()`,[intakeId]); }
+  catch(error) { if(error?.code==='42P01')return null; throw error; }
+  const row=result.rows[0];if(result.rowCount!==1||row.source_provider!=='YIXIAOXIU_WEB')return null;
+  const initial=row.initial_content&&typeof row.initial_content==='object'?row.initial_content:{};
+  const supplements=Array.isArray(row.supplement_items)?row.supplement_items:[];
+  return {source_kind:'WEB_REQUEST',description:typeof initial.description==='string'?initial.description:null,
+    location:initial.location??null,service_code:initial.service_code??null,impact_scope:initial.impact_scope??null,
+    reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
+    supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))};
+}
 export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2016TicketQuery({pool,enabled}),notificationProjector=null,realtimeProjector=null,
   communicationAppend=appendCommunication,now=()=>String(Date.now()),personDestinationAuthorizer=null}) {
   if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016();
@@ -59,7 +81,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
       const result=await store.list({transaction:pool,principal,priority,cursor:decoded?.page??null,limit:limitP2016(limit)});
       return publicP2016({items:result.items,next_cursor:result.next_cursor?cursorP2016({priority,page:result.next_cursor}):null});
     },
-    async getManualReviewDetail(input) {const {review}=await detail(input);return publicP2016({...review,allowed_resolutions:Object.keys(ACTIONS),unsupported_resolutions:['LINK_EXISTING_JOURNEY']});},
+    async getManualReviewDetail(input) {const {review}=await detail(input);const report=await webReportForIntake(pool,review.service_intake_id);return publicP2016({...review,...(report?{web_report:report}:{}),allowed_resolutions:Object.keys(ACTIONS),unsupported_resolutions:['LINK_EXISTING_JOURNEY']});},
     async journey({authContext,journeyId,part=null}) {
       const principal=await query.principal(authContext),predicate=ticketPredicateP2016(principal,2);
       const q=await pool.query(`SELECT j.* FROM intake.contact_journey j LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id

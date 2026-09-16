@@ -276,6 +276,8 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
     const needsTicket = await createP2016TicketQuery({ pool, enabled: true }).detail({ authContext: { principal_id: principal.id }, ticketId: needsTicketId });
     assert.equal(needsTicket.web_report.description, '系统不行');
     assert.deepEqual(needsTicket.web_report.supplements, [{ input_revision: '2', text: '处方提交不了' }]);
+    const legacyNeedsTicket = await createPilotAccessService({ pool }).getTicketView({ ticketId: needsTicketId, actorId: principal.id });
+    assert.equal(legacyNeedsTicket.ticket.web_report.description, '系统不行');
     const facade = createP2016ManualReviewFacade({ pool, enabled: true });
     const outReviewBody = input('审核后不在范围', { text: null, unknown: true });
     const outReview = await command.accept({ request: request(outReviewBody.client_command_id), input: outReviewBody });
@@ -307,11 +309,14 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
     assert.equal(staleCancelled.ok, true);
     const staleAfterCancel = await facts(pool, stale.receipt.request_ref);
     assert.equal(staleAfterCancel.status, staleProcessed.status); assert.equal(staleAfterCancel.ticket_count, staleProcessed.ticket_count);
+    assert.equal((await pool.query('SELECT result_code FROM intake.deterministic_decision WHERE id=$1::uuid', [staleCancelled.resolution_decision_id])).rows[0].result_code, 'MANUAL_REVIEW_REQUIRED');
     assert.equal((await facade.listManualReviews({ authContext: { principal_id: principal.id } })).items.some((item) => item.id === staleTarget.id), false);
     const listed = await facade.listManualReviews({ authContext: { principal_id: principal.id } });
     const decision = await pool.query('SELECT id::text FROM intake.deterministic_decision WHERE service_intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1) ORDER BY decision_ordinal DESC LIMIT 1', [broken.receipt.request_ref]);
     const target = listed.items.find((item) => item.decision_id === decision.rows[0].id);
     assert.ok(target);
+    const reviewDetail = await facade.getManualReviewDetail({ authContext: { principal_id: principal.id }, reviewId: target.id });
+    assert.equal(reviewDetail.web_report.description, '无法安全判断');
     const resolved = await facade.resolveManualReview({ authContext: { principal_id: principal.id }, reviewId: target.id,
       body: { client_command_id: randomUUID(), expected_row_version: target.row_version,
         resolution_code: 'CONFIRM_TICKET_ELIGIBLE', resolution_reason_code: 'WEB_HUMAN_CONFIRMED' } });
