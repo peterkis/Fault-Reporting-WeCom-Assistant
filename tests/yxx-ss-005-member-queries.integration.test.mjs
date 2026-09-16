@@ -310,9 +310,33 @@ test('SS-005 traverses a 500-row mixed snapshot without loss or duplication', { 
       (index) => store.accept({ scope: memberScope, input: requestInput(`批量网页报修 ${index}`) }));
     const bot = await mapInBatches(Array.from({ length: 250 }, (_, index) => index), 8,
       (index) => createBotTicket(pool, contexts.A.bot_owner.userId, `mix-${index}`));
+    const eligible = (await pool.query(`SELECT kind,count(*)::integer AS count FROM (
+      SELECT 'WEB_REQUEST'::text AS kind
+        FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id
+       WHERE b.canonical_reporter_binding=$1 AND b.source_corp_scope=$2 AND b.source_app_scope=$3
+         AND b.revoked_at IS NULL AND b.retention_until_epoch_ms>platform.physical_epoch_ms()
+         AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
+      UNION ALL
+      SELECT 'BOT_TICKET'::text AS kind
+        FROM pilot_ticket.reporter_public_ref r
+        JOIN pilot_ticket.ticket t ON t.id=r.ticket_id
+        JOIN intake.service_intake i ON i.id=t.source_intake_id
+       WHERE r.status='ACTIVE' AND r.reporter_binding_hash=$4
+         AND i.source_provider='WECOM_AIBOT' AND i.source_bot_id=$5 AND i.reporter_wecom_userid=$6
+         AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
+         AND (r.journey_id IS NULL OR EXISTS (SELECT 1 FROM intake.contact_journey j
+              WHERE j.id=r.journey_id AND j.retention_until_epoch_ms>platform.physical_epoch_ms()))
+    ) expected GROUP BY kind ORDER BY kind`, [memberScope.scopeHash, memberScope.sourceCorpScope,
+      memberScope.sourceAppScope, textHashP2016(JSON.stringify(['WECOM_AIBOT', contexts.A.bot_owner.botId,
+        contexts.A.bot_owner.userId])), contexts.A.bot_owner.botId, contexts.A.bot_owner.userId])).rows;
+    assert.deepEqual(eligible, [{ kind: 'BOT_TICKET', count: 250 }, { kind: 'WEB_REQUEST', count: 250 }]);
     const refs = new Set();
+    const pageShape = [];
     let page = await query.list({ request: 'A', limit: 50 });
     while (true) {
+      pageShape.push({ count: page.items.length,
+        web: page.items.filter((item) => item.kind === 'WEB_REQUEST').length,
+        bot: page.items.filter((item) => item.kind === 'BOT_TICKET').length });
       for (const item of page.items) {
         assert.equal(refs.has(item.ref), false, `duplicate ref ${item.ref}`);
         refs.add(item.ref);
@@ -322,9 +346,43 @@ test('SS-005 traverses a 500-row mixed snapshot without loss or duplication', { 
     }
     assert.equal(web.length, 250);
     assert.equal(bot.length, 250);
-    assert.equal(refs.size, 500);
+    const missing = {
+      web: web.map((item) => item.receipt.request_ref).filter((ref) => !refs.has(ref)),
+      bot: bot.map((item) => item.public_ref).filter((ref) => !refs.has(ref)),
+    };
+    assert.equal(refs.size, 500, JSON.stringify({ eligible, pageShape, missing }));
     assert.equal([...refs].filter((ref) => web.some((item) => item.receipt.request_ref === ref)).length, 250);
     assert.equal([...refs].filter((ref) => bot.some((item) => item.public_ref === ref)).length, 250);
+
+    const sharedSecond = '2026-09-03 12:00:00';
+    await pool.query(`UPDATE intake.web_request_binding
+      SET created_at=$4::timestamp without time zone
+      WHERE canonical_reporter_binding=$1 AND source_corp_scope=$2 AND source_app_scope=$3`,
+    [memberScope.scopeHash, memberScope.sourceCorpScope, memberScope.sourceAppScope, sharedSecond]);
+    await pool.query(`UPDATE pilot_ticket.ticket t SET created_at=$3::timestamp without time zone
+      FROM intake.service_intake i
+      WHERE i.id=t.source_intake_id AND i.source_provider='WECOM_AIBOT'
+        AND i.source_bot_id=$1 AND i.reporter_wecom_userid=$2`,
+    [contexts.A.bot_owner.botId, contexts.A.bot_owner.userId, sharedSecond]);
+    const tiedRefs = new Set();
+    const tiedPageShape = [];
+    let tiedPage = await query.list({ request: 'A', limit: 50 });
+    while (true) {
+      tiedPageShape.push({ count: tiedPage.items.length,
+        web: tiedPage.items.filter((item) => item.kind === 'WEB_REQUEST').length,
+        bot: tiedPage.items.filter((item) => item.kind === 'BOT_TICKET').length });
+      for (const item of tiedPage.items) {
+        assert.equal(tiedRefs.has(item.ref), false, `duplicate tied ref ${item.ref}`);
+        tiedRefs.add(item.ref);
+      }
+      if (!tiedPage.next_cursor) break;
+      tiedPage = await query.list({ request: 'A', limit: 50, cursor: tiedPage.next_cursor });
+    }
+    assert.equal(tiedRefs.size, 500, JSON.stringify({ eligible, tiedPageShape }));
+    assert.deepEqual(tiedPageShape, [
+      ...Array.from({ length: 5 }, () => ({ count: 50, web: 50, bot: 0 })),
+      ...Array.from({ length: 5 }, () => ({ count: 50, web: 0, bot: 50 })),
+    ]);
   } });
   await assertNoP2016Residual({ databaseUrl });
 });

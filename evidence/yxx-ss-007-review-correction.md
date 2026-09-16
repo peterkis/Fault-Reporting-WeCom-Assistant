@@ -23,5 +23,25 @@ passed 3 tests without skips. The browser regression submits successfully after
 the server changes the CSRF token. These results do not substitute for the
 remaining acceptance scenarios or SS-008 real database assembly.
 
+## Subsequent operation recovery verification
+
+Independent review found additional detail-cache, list-cursor, identity-refresh
+and stale-operation ownership gaps. The implementation now preserves complete
+detail/ETag pairs, refreshes the first list page without an old cursor, validates
+the session before pending-command recovery, and permits only the current
+controller/generation to release busy state or clear authenticated DOM state.
+
+The combined SS-005 and SS-007 run passed **10/10**, with zero skipped, failed,
+cancelled or todo tests. The six SS-007 tests now include CSRF refresh, detail
+304 after visibility restoration, first-page restoration, GET-only recovery
+through 404 and an in-memory identity change, stale 401 responses and the UUID
+route guard. Visibility is controlled through a deterministic browser test seam;
+this is not evidence of operating-system backgrounding.
+
+After a full reload, there is no in-memory CSRF comparison available to identify
+a changed account. Pending IDs remain scoped by server-side GET authorization;
+a 404 conservatively retains the fence and never triggers an automatic POST.
+The current contract has no persistent opaque session generation field.
+
 Real OAuth/SDK, production databases, SSH, deployment and message sends remain
 NOT_RUN. SS-011, P2-G2-LIVE and P2-008 remain outside the authorized scope.

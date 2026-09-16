@@ -242,6 +242,7 @@ export function createYxxSelfServiceNativeHttp({
       }
       const commandMatch = url.pathname.match(/^\/api\/yixiaoxiu\/commands\/([0-9a-f-]{36})$/iu);
       if (commandMatch && request.method === 'GET' && !url.search) {
+        if (!COMMAND_ID.test(commandMatch[1])) throw error('YXX_INPUT_INVALID');
         await currentMember(request); json(response, 200, await query.commandStatus({ request, clientCommandId: commandMatch[1] })); return true;
       }
       return false;
