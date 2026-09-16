@@ -49,6 +49,7 @@ test('SS-002 both OpenAPI documents expose the same seven YXX operation referenc
   assert.match(contract,/WeComMember:/u);assert.match(contract,/['"]202['"]:/u);assert.match(contract,/['"]409['"]:/u);assert.match(contract,/['"]304['"]:/u);
   assert.match(contract,/additionalProperties: false/u);assert.match(contract,/yxx_self_service_timeline\.schema\.json/u);
   assert.match(contract,/x-idempotency-body-header-equality/u);assert.match(contract,/x-mutually-exclusive-with/u);
+  assert.match(contract,/name: auth_return/u);assert.match(contract,/['"]303['"]:/u);
   assert.match(contract,/name: cursor, schema: \{type: string, minLength: 10, maxLength: 2048\}/u);
   assert.match(conversation,/\/api\/yixiaoxiu\/bootstrap:\s+\$ref:/u);
   const homepage=contract.slice(contract.indexOf('/wecom/yixiaoxiu/:'));assert.match(homepage,/security: \[\{\}, \{WeComMember: \[\]\}\]/u);

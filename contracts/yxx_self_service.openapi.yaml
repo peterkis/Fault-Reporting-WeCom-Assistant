@@ -126,7 +126,8 @@ paths:
       operationId: getYxxSelfServiceHome
       security: [{}, {WeComMember: []}]
       description: 'The fixed homepage. It retains the existing prompt when the self-service profile or flags are disabled.'
-      responses: {'200': {description: 'Prompt or self-service home'}, '302': {description: 'One bounded OAuth begin'}, '401': {description: 'Terminal authentication prompt'}, '503': {description: 'Fail closed'}}
+      parameters: [{in: query, name: auth_return, schema: {type: string, const: '1'}, description: 'Internal one-use return marker; no identity or authorization data.'}]
+      responses: {'200': {description: 'Prompt or self-service home'}, '302': {description: 'One bounded OAuth begin'}, '303': {description: 'Normalize the exact auth_return marker to the bare root'}, '401': {description: 'Terminal authentication prompt'}, '503': {description: 'Fail closed'}}
   /wecom/yixiaoxiu/reports/new:
     servers: [{url: /}]
     get: {operationId: openYxxNewReport, security: [{WeComMember: []}], responses: {'200': {description: 'Native form'}, '401': {description: 'Authentication required'}, '503': {description: 'Disabled'}}}
