@@ -404,7 +404,8 @@ export function createYxxSelfServiceWorker({ orchestrator, pollMilliseconds = 5_
       timer = null;
       if (running) return schedule(signal);
       running = true;
-      try { await orchestrator.processPending({ signal }); } finally { running = false; schedule(signal); }
+      try { await orchestrator.processPending({ signal }); } catch { /* leave the durable pending cursor for the next bounded poll */ }
+      finally { running = false; schedule(signal); }
     }, pollMilliseconds);
     timer.unref?.();
   };
