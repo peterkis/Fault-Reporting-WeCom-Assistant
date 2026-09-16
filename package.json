@@ -151,7 +151,8 @@
     "yxx:ss:003:status": "node --env-file=.env.pilot scripts/yxx-self-service-migrate.mjs --status",
     "test:yxx:ss:003": "node --test tests/yxx-ss-003-schema.test.mjs",
     "test:yxx:ss:004": "node --test --test-concurrency=1 tests/yxx-ss-004-orchestration.integration.test.mjs",
-    "test:yxx:ss:005": "node --test --test-concurrency=1 tests/yxx-ss-005-member-queries.integration.test.mjs"
+    "test:yxx:ss:005": "node --test --test-concurrency=1 tests/yxx-ss-005-member-queries.integration.test.mjs",
+    "test:yxx:ss:006": "node --test --test-concurrency=1 tests/yxx-ss-006-supplements-review.integration.test.mjs"
   },
   "dependencies": {
     "@wecom/aibot-node-sdk": "1.0.6",

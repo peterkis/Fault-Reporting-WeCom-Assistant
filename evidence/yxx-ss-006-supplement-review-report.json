@@ -1,0 +1,36 @@
+{
+  "task": "YXX-SS-006",
+  "status": "COMPLETE",
+  "scope": "LOCAL_ISOLATED_ONLY",
+  "event_time": "2026-09-16 22:47:20",
+  "event_epoch_ms": "1789570040881",
+  "dependencies": ["YXX-SS-004"],
+  "implementation": {
+    "boundary": "fixed SUPPLEMENT-only adapter over the existing authenticated member command",
+    "acceptance": "append-only WebSubmission with expected input revision, durable receipt and aggregate retention renewal",
+    "review_race": "manual review basis revision rejects stale approval while preserving the new input and review history",
+    "ticket": "existing Unified/Pilot Ticket Core is reused; active tickets append information and RESOLVED remains resolved",
+    "closed": "CLOSED, CANCELLED and revoked Web roots reject supplements without business changes",
+    "recovery": "accepted supplements remain pending until a fresh Web processor completes them"
+  },
+  "acceptance_cases": [
+    {"id": "YXX-AC-054", "result": "passed", "coverage": "ordered revisions 1-3 append source events and preserve the original description"},
+    {"id": "YXX-AC-055", "result": "passed", "coverage": "same command/body replay returns the original receipt without a new revision or source row"},
+    {"id": "YXX-AC-056", "result": "passed", "coverage": "two concurrent commands at revision 1 yield one success and one YXX_VERSION_CONFLICT"},
+    {"id": "YXX-AC-057", "result": "passed", "coverage": "another member receives safe YXX_NOT_FOUND and counts remain unchanged"},
+    {"id": "YXX-AC-058", "result": "passed", "coverage": "review-first then supplement keeps one Ticket and does not overwrite new evidence"},
+    {"id": "YXX-AC-059", "result": "passed", "coverage": "supplement-first makes the old review basis return P2_016_VERSION_CONFLICT"},
+    {"id": "YXX-AC-060", "result": "passed", "coverage": "existing Ticket supplement appends ticket.information_added without a second Ticket"},
+    {"id": "YXX-AC-061", "result": "passed", "coverage": "CLOSED/CANCELLED/revoked roots reject; RESOLVED appends information without implicit reopen"},
+    {"id": "YXX-AC-062", "result": "passed", "coverage": "new processor instance completes an accepted supplement and replay adds no event"}
+  ],
+  "validation": [
+    {"command": "node --test --test-concurrency=1 tests/yxx-ss-006-supplements-review.integration.test.mjs", "result": "3 passed with isolated PostgreSQL"},
+    {"command": "node --test --test-concurrency=1 tests/p2-015-worker.test.mjs tests/p2-016-manual-review.integration.test.mjs tests/p2-016-orchestration.integration.test.mjs tests/yxx-ss-003-schema.test.mjs tests/yxx-ss-004-orchestration.integration.test.mjs tests/yxx-ss-005-member-queries.integration.test.mjs tests/yxx-ss-006-supplements-review.integration.test.mjs", "result": "22 passed with isolated PostgreSQL"},
+    {"command": "node --check on SS-006 modules, touched dependencies and tests", "result": "passed"},
+    {"command": "git diff --check", "result": "passed"}
+  ],
+  "side_effects": "Web supplements create no Bot inbox/message/outbox/delivery/grant/conversation session/direct leg",
+  "rollback": "keep YIXIAOXIU_SELF_SERVICE_ENABLED=false to stop new Web writes; retain accepted facts for bounded local recovery",
+  "forbidden_live_actions": ["REAL_OAUTH", "WECOM_SDK", "PRODUCTION_DB", "SSH", "CLOUD_PUBLISH", "SEND", "YXX-SS-011", "P2-G2-LIVE", "P2-008"]
+}
