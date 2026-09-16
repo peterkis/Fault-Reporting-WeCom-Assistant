@@ -12,15 +12,17 @@ security:
   - WeComMember: []
 paths:
   /api/yixiaoxiu/bootstrap:
+    servers: [{url: /}]
     get:
       operationId: yxxSelfServiceBootstrap
-      security: [{}, {WeComMember: []}]
+      security: [{WeComMember: []}]
       responses:
         '200': {description: 'Member-safe capabilities and CSRF token', content: {application/json: {schema: {$ref: './yxx_self_service_bootstrap.schema.json'}}}}
         '401': {$ref: '#/components/responses/AuthRequired'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/requests:
+    servers: [{url: /}]
     post:
       operationId: yxxCreateRequest
       security: [{WeComMember: []}]
@@ -41,6 +43,7 @@ paths:
         '429': {$ref: '#/components/responses/Busy'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/my-reports:
+    servers: [{url: /}]
     get:
       operationId: yxxListMyReports
       security: [{WeComMember: []}]
@@ -54,6 +57,7 @@ paths:
         '401': {$ref: '#/components/responses/AuthRequired'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/requests/{request_ref}:
+    servers: [{url: /}]
     get:
       operationId: yxxGetRequest
       security: [{WeComMember: []}]
@@ -67,13 +71,15 @@ paths:
         '404': {$ref: '#/components/responses/NotFound'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/requests/{request_ref}/timeline:
+    servers: [{url: /}]
     get:
       operationId: yxxGetRequestTimeline
       security: [{WeComMember: []}]
       parameters:
         - {$ref: '#/components/parameters/RequestRef'}
-        - {in: query, name: after, schema: {type: string, pattern: '^[0-9]+$'}, x-mutually-exclusive-with: before}
-        - {in: query, name: before, schema: {type: string, pattern: '^[0-9]+$'}, x-mutually-exclusive-with: after}
+        - {in: query, name: cursor, schema: {type: string, minLength: 10, maxLength: 2048}, x-mutually-exclusive-with: [after, before]}
+        - {in: query, name: after, schema: {type: string, pattern: '^[0-9]+$'}, x-mutually-exclusive-with: [before, cursor]}
+        - {in: query, name: before, schema: {type: string, pattern: '^[0-9]+$'}, x-mutually-exclusive-with: [after, cursor]}
         - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
       responses:
         '200': {description: 'Member-safe timeline without internal notes or identity', content: {application/json: {schema: {$ref: './yxx_self_service_timeline.schema.json'}}}}
@@ -82,6 +88,7 @@ paths:
         '404': {$ref: '#/components/responses/NotFound'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/requests/{request_ref}/supplements:
+    servers: [{url: /}]
     post:
       operationId: yxxSupplementRequest
       security: [{WeComMember: []}]
@@ -102,6 +109,7 @@ paths:
         '413': {$ref: '#/components/responses/TooLarge'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/commands/{client_command_id}:
+    servers: [{url: /}]
     get:
       operationId: yxxGetMyCommand
       security: [{WeComMember: []}]
@@ -113,16 +121,20 @@ paths:
         '404': {$ref: '#/components/responses/NotFound'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /wecom/yixiaoxiu/:
+    servers: [{url: /}]
     get:
       operationId: getYxxSelfServiceHome
       security: [{}, {WeComMember: []}]
       description: 'The fixed homepage. It retains the existing prompt when the self-service profile or flags are disabled.'
       responses: {'200': {description: 'Prompt or self-service home'}, '302': {description: 'One bounded OAuth begin'}, '401': {description: 'Terminal authentication prompt'}, '503': {description: 'Fail closed'}}
   /wecom/yixiaoxiu/reports/new:
+    servers: [{url: /}]
     get: {operationId: openYxxNewReport, security: [{WeComMember: []}], responses: {'200': {description: 'Native form'}, '401': {description: 'Authentication required'}, '503': {description: 'Disabled'}}}
   /wecom/yixiaoxiu/reports:
+    servers: [{url: /}]
     get: {operationId: openYxxReports, security: [{WeComMember: []}], responses: {'200': {description: 'Native member report list'}, '401': {description: 'Authentication required'}, '503': {description: 'Disabled'}}}
   /wecom/yixiaoxiu/reports/{request_ref}:
+    servers: [{url: /}]
     get: {operationId: openYxxReport, security: [{WeComMember: []}], parameters: [{ $ref: '#/components/parameters/RequestRef'}], responses: {'200': {description: 'Native safe detail'}, '401': {description: 'Authentication required'}, '404': {description: 'Not found or not owned'}, '503': {description: 'Disabled'}}}
 components:
   securitySchemes:

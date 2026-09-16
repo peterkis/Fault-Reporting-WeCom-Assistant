@@ -10,6 +10,6 @@
       "occurred_at": {"$ref": "./local_datetime.schema.json"}, "occurred_epoch_ms": {"$ref": "./epoch_ms_string.schema.json"}, "summary": {"type": "string", "maxLength": 500},
       "ticket": {"anyOf": [{"$ref": "./yxx_self_service_ticket_summary.schema.json"}, {"type": "null"}]}
     }}},
-    "next_cursor": {"type": ["string", "null"], "maxLength": 2048}
+    "next_cursor": {"type": ["string", "null"], "minLength": 10, "maxLength": 2048}
   }
 }
