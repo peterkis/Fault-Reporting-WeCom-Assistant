@@ -9,7 +9,7 @@
     {"id":"YXX-SS-001","depends_on":["YXX-SS-000"],"status":"COMPLETE"},
     {"id":"YXX-SS-002","depends_on":["YXX-SS-000"],"status":"COMPLETE"},
     {"id":"YXX-SS-003","depends_on":["YXX-SS-002"],"status":"COMPLETE"},
-    {"id":"YXX-SS-004","depends_on":["YXX-SS-003"],"status":"READY_FOR_REVIEW"},
+    {"id":"YXX-SS-004","depends_on":["YXX-SS-003"],"status":"COMPLETE"},
     {"id":"YXX-SS-005","depends_on":["YXX-SS-003"],"status":"PLANNED"},
     {"id":"YXX-SS-006","depends_on":["YXX-SS-004"],"status":"PLANNED"},
     {"id":"YXX-SS-007","depends_on":["YXX-SS-001","YXX-SS-002"],"status":"PLANNED"},
