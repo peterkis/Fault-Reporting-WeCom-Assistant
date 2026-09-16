@@ -22,7 +22,7 @@ const WEB_ACTIONS=Object.freeze({
   CONFIRM_TICKET_ELIGIBLE:['APPLY_INTAKE_CLASSIFICATION','CREATE_MINIMAL_TICKET'],
   CLASSIFY_SERVICE_REQUEST:['APPLY_INTAKE_CLASSIFICATION','ROUTE_SERVICE_REQUEST'],
   REQUEST_DESCRIPTION:['APPLY_INTAKE_CLASSIFICATION'],CLASSIFY_BUSINESS_CONSULTATION:[],
-  ACKNOWLEDGE:[],MARK_OUT_OF_SCOPE:[],KEEP_INCIDENT_REVIEW_CANDIDATE:[],CANCEL_REVIEW:[],
+  ACKNOWLEDGE:[],MARK_OUT_OF_SCOPE:['APPLY_INTAKE_CLASSIFICATION'],KEEP_INCIDENT_REVIEW_CANDIDATE:[],CANCEL_REVIEW:[],
 });
 function derivedCommand(id) {const h=textHashP2016('P2016_PERSON_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
 export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2016TicketQuery({pool,enabled}),notificationProjector=null,realtimeProjector=null,

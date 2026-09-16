@@ -5,6 +5,7 @@ const TARGETS = Object.freeze({
   SERVICE_REQUEST: { request_type: 'SERVICE_REQUEST', status: 'RECEIVED' },
   NEEDS_DESCRIPTION: { request_type: null, status: 'WAITING_DESCRIPTION' },
   MANUAL_REVIEW_REQUIRED: { request_type: null, status: 'WAITING_TRIAGE' },
+  OUT_OF_SCOPE: { request_type: 'UNKNOWN', status: 'IGNORED' },
 });
 
 export function createServiceIntakeDecisionPort() {

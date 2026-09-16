@@ -177,6 +177,9 @@ test('SS-004 accepts, processes, replays, and creates one Web Ticket through the
     assert.deepEqual(source, { source_channel: 'PORTAL', source_provider: 'YIXIAOXIU_WEB', source_bot_id: null,
       source_chat_type: null, primary_message_id: null, leg_type: 'WEB_FORM', conversation_session_id: null,
       conversation_thread_id: null, origin_channel_message_id: null });
+    const timeline = await store.timeline({ scope: currentScope, requestRef: accepts[0].receipt.request_ref, limit: 100 });
+    const ticketEvent = timeline.items.find((item) => item.event_type === 'TICKET_CREATED');
+    assert.ok(ticketEvent); assert.match(ticketEvent.ticket.ticket_no, /^IT-[0-9]{8}-[0-9]{4,}$/u); assert.equal(ticketEvent.ticket.status, 'QUEUED');
   } });
 });
 
@@ -261,6 +264,16 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
     assert.equal((await facts(pool, poison.receipt.request_ref)).ticket_count, 1);
     const principal = await createPilotAccessService({ pool }).upsertPrincipal({ wecomUserId: 'yxx-reviewer', displayName: 'YXX审核', roles: ['ADMIN'], resolverTeamIds: ['PILOT_IT'] });
     const facade = createP2016ManualReviewFacade({ pool, enabled: true });
+    const outReviewBody = input('审核后不在范围', { text: null, unknown: true });
+    const outReview = await command.accept({ request: request(outReviewBody.client_command_id), input: outReviewBody });
+    await failing.processOne({ requestRef: outReview.receipt.request_ref });
+    const outDecision = await pool.query('SELECT id::text FROM intake.deterministic_decision WHERE service_intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1) ORDER BY decision_ordinal DESC LIMIT 1', [outReview.receipt.request_ref]);
+    const outTarget = (await facade.listManualReviews({ authContext: { principal_id: principal.id } })).items.find((item) => item.decision_id === outDecision.rows[0].id);
+    const outOfScopeResolution = await facade.resolveManualReview({ authContext: { principal_id: principal.id }, reviewId: outTarget.id,
+      body: { client_command_id: randomUUID(), expected_row_version: outTarget.row_version,
+        resolution_code: 'MARK_OUT_OF_SCOPE', resolution_reason_code: 'WEB_OUT_OF_SCOPE' } });
+    assert.equal(outOfScopeResolution.ok, true);
+    assert.equal((await store.getRequest({ scope: currentScope, requestRef: outReview.receipt.request_ref })).display_status, 'NOT_SERVICE');
     const staleBody = input('另一条待审核故障', { text: null, unknown: true });
     const stale = await command.accept({ request: request(staleBody.client_command_id), input: staleBody });
     await failing.processOne({ requestRef: stale.receipt.request_ref });

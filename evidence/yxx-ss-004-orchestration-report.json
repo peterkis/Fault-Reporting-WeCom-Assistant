@@ -25,6 +25,7 @@
     "stale_review": "old Web approval returns a version conflict; explicit CANCEL_REVIEW retires the stale queue item",
     "worker_fairness": "FULL worker gives Web one bounded slot and falls back to the full Bot batch when Web has no due work",
     "retention_listing": "my reports excludes expired binding and intake roots",
+    "timeline_and_scope": "ticket-created events expose a safe Ticket summary and OUT_OF_SCOPE resolves to NOT_SERVICE without delivery",
     "poison_batch": "one failed root receives bounded retry metadata while a later root proceeds",
     "web_side_effects": "Message/Outbox/Delivery/Grant/Conversation Session/Direct Leg remain zero"
   },
