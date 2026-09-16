@@ -28,6 +28,8 @@ test('SS-003 fresh applied migration, idempotent Web acceptance and source const
     const input={schema_version:1,client_command_id:randomUUID(),description:'网页自助报修测试',location:{text:'本部8层',unknown:false},service_code:null,impact_scope:'SELF',reported_department_text:null,extension:null};
     const client=await pool.connect();let first;try {await client.query('BEGIN');first=await store.acceptInTransaction({scope,input,transaction:client});await client.query('COMMIT');} finally {client.release();} assert.equal(first.replayed,false);assert.equal(first.receipt.accepted_revision,'1');
     const replay=await store.accept({scope,input});assert.equal(replay.replayed,true);assert.equal(replay.receipt.request_ref,first.receipt.request_ref);
+    const listed=await store.listMyReports({scope});assert.ok(listed.items.some(item=>item.ref===first.receipt.request_ref));
+    const command=await store.command({scope,clientCommandId:input.client_command_id});assert.equal(command.request_ref,first.receipt.request_ref);assert.ok(command.intake_no);
     const detail=await store.getRequest({scope,requestRef:first.receipt.request_ref});assert.equal(detail.source_kind,'WEB_REQUEST');assert.equal(detail.input_revision,'1');assert.equal(detail.ticket,null);
     const supplement={schema_version:1,client_command_id:randomUUID(),expected_input_revision:'1',text:'仅护士站这一台电脑异常'};
     const added=await store.accept({scope,input:supplement,kind:'SUPPLEMENT',requestRef:first.receipt.request_ref});assert.equal(added.receipt.accepted_revision,'2');
