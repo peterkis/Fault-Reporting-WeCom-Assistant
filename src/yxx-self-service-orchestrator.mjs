@@ -311,6 +311,7 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
     if (!canProcess) return Object.freeze({ processed: false, reason: 'FEATURE_DISABLED', profile, flags: configuredFlags });
     try {
       return await withTransaction(pool, async (transaction) => {
+        await realtimeProjector?.lock?.(transaction);
         const { row: root, submissions } = await loadWebRoot(transaction, requestRef);
         if (Number(root.processed_revision) >= Number(root.input_revision)) return { processed: false, replayed: true, request_ref: requestRef };
         const latest = submissions.at(-1);
