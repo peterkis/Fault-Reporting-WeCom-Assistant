@@ -5,7 +5,7 @@
   "type": "object", "additionalProperties": false,
   "required": ["items", "next_cursor"],
   "properties": {
-    "items": {"type": "array", "maxItems": 100, "items": {"type": "object", "additionalProperties": false, "required": ["event_type", "occurred_at", "summary"], "properties": {
+    "items": {"type": "array", "maxItems": 100, "items": {"type": "object", "additionalProperties": false, "required": ["event_type", "occurred_at", "occurred_epoch_ms", "summary"], "properties": {
       "event_type": {"type": "string", "enum": ["REQUEST_ACCEPTED", "SUPPLEMENT_ACCEPTED", "PROCESSING", "WAITING_FOR_DETAILS", "UNDER_REVIEW", "TICKET_CREATED", "TICKET_UPDATED", "NOT_SERVICE"]},
       "occurred_at": {"$ref": "./local_datetime.schema.json"}, "occurred_epoch_ms": {"$ref": "./epoch_ms_string.schema.json"}, "summary": {"type": "string", "maxLength": 500},
       "ticket": {"anyOf": [{"$ref": "./yxx_self_service_ticket_summary.schema.json"}, {"type": "null"}]}

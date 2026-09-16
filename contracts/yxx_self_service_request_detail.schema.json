@@ -3,7 +3,7 @@
   "$id": "https://hospital.local/schemas/yxx_self_service_request_detail.schema.json",
   "title": "YXX self-service safe request detail",
   "type": "object", "additionalProperties": false,
-  "required": ["request_ref", "intake_no", "source_kind", "input_revision", "processed_revision", "display_status", "needs_action", "safe_description", "safe_location", "created_at", "updated_at", "ticket", "safe_clarification", "can_supplement"],
+  "required": ["request_ref", "intake_no", "source_kind", "input_revision", "processed_revision", "display_status", "needs_action", "safe_description", "safe_location", "created_at", "created_epoch_ms", "updated_at", "updated_epoch_ms", "ticket", "safe_clarification", "can_supplement"],
   "properties": {
     "request_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
     "intake_no": {"type": "string"}, "source_kind": {"const": "WEB_REQUEST"},
