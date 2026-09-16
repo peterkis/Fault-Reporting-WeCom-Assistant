@@ -116,6 +116,9 @@ test('SS-004 Web adapter is shared-rule, APP_ONLY, and never creates message-sid
     featureFlags: { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true } });
   const aborted = new AbortController(); aborted.abort();
   assert.equal((await memberPump.processPending({ signal: aborted.signal })).reason, 'ABORTED');
+  const reportsDisabled = createYxxSelfServiceOrchestrator({ pool: fakePool, profile: 'MEMBER_SELF_SERVICE',
+    featureFlags: { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: false } });
+  assert.equal((await reportsDisabled.processPending()).reason, 'FEATURE_DISABLED');
   const worker = createYxxSelfServiceWorker({ orchestrator: memberPump, pollMilliseconds: 100 });
   assert.equal(worker.start(), true); assert.equal(worker.start(), false); assert.deepEqual(await worker.stop(), { stopped: true, running: false });
 });

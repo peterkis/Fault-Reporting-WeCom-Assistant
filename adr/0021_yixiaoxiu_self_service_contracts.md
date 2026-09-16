@@ -24,8 +24,10 @@ Status: Accepted for local implementation on the `phase2/yixiaoxiu-self-service-
 
 ## Compatibility and migration
 
-Migration 033 is the only new migration. It may make conditional Web columns
-nullable and add source-branch checks/FKs, but it does not alter migrations
-001–032 or create a second Ticket Core. The exact catalog delta is recorded in
-`docs/runbooks/yixiaoxiu-self-service-contract-freeze.md` and is verified by
-the migration tests before any runtime path is enabled.
+Migration 033 is immutable after application. It may make conditional Web
+columns nullable and add source-branch checks/FKs, but it does not alter
+migrations 001–032 or create a second Ticket Core. Forward migration 034
+corrects the preserved Bot single/group chat-ID check without rewriting 033.
+The exact catalog delta and both checksums are recorded in
+`docs/runbooks/yixiaoxiu-self-service-contract-freeze.md` and verified by the
+migration tests before any runtime path is enabled.

@@ -228,8 +228,11 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
     YIXIAOXIU_SELF_SERVICE_ENABLED: configFlag(featureFlags.YIXIAOXIU_SELF_SERVICE_ENABLED),
     YIXIAOXIU_MY_REPORTS_ENABLED: configFlag(featureFlags.YIXIAOXIU_MY_REPORTS_ENABLED),
   });
-  const canProcess = (profile === 'MEMBER_SELF_SERVICE' || profile === 'FULL_SERVICE_LOOP')
-    && configuredFlags.YIXIAOXIU_SELF_SERVICE_ENABLED === true;
+  const canProcess = profile === 'FULL_SERVICE_LOOP'
+    ? configuredFlags.YIXIAOXIU_SELF_SERVICE_ENABLED === true
+    : profile === 'MEMBER_SELF_SERVICE'
+      && configuredFlags.YIXIAOXIU_SELF_SERVICE_ENABLED === true
+      && configuredFlags.YIXIAOXIU_MY_REPORTS_ENABLED === true;
   const engine = ruleEngine ?? createRuleEngine();
   const core = ticketCore ?? createPilotTicketCore({ pool });
   let pumpRunning = false;
