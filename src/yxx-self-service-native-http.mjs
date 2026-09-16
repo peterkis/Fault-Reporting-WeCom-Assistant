@@ -215,7 +215,7 @@ export function createYxxSelfServiceNativeHttp({
         if (timeline) {
           const requestedLimit = url.searchParams.get('limit');
           const timelineLimit = requestedLimit === null ? undefined : Number(requestedLimit);
-          if (timelineLimit !== undefined && (!Number.isSafeInteger(timelineLimit) || timelineLimit < 1 || timelineLimit > 50)) throw error('YXX_INPUT_INVALID');
+          if (timelineLimit !== undefined && (!Number.isSafeInteger(timelineLimit) || timelineLimit < 1 || timelineLimit > 100)) throw error('YXX_INPUT_INVALID');
           json(response, 200, await query.timeline({ request, requestRef: detailMatch[1], after: url.searchParams.get('after'), before: url.searchParams.get('before'), cursor: url.searchParams.get('cursor'), limit: timelineLimit })); return true;
         }
         const result = await query.detailWithEtag({ request, requestRef: detailMatch[1], ifNoneMatch: header(request, 'if-none-match') });

@@ -40,19 +40,19 @@ function fixture(origin) {
   const query = {
     async list({ request }) {
       const member = memberFor(request);
-      return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS[member], intake_no: `YXX-${member}`, display_status: '已收到', created_at: '2026-09-16 23:00:00', ticket: null }], next_cursor: null };
+      return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS[member], intake_no: `YXX-${member}`, display_status: 'RECEIVED_PROCESSING', created_at: '2026-09-16 23:00:00', ticket: null }], next_cursor: null };
     },
     async detailWithEtag({ request, requestRef, ifNoneMatch }) {
       state.detailCalls.push({ member: memberFor(request), requestRef, ifNoneMatch });
       const etag = `"${requestRef}-v1"`;
       if (ifNoneMatch === etag) return { status: 304, body: null, etag };
       return { status: 200, etag, body: { schema_version: 1, source_kind: 'WEB_REQUEST', request_ref: requestRef,
-        intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: '待补充', input_revision: '1', processed_revision: '0',
+        intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: 'WAITING_FOR_DETAILS', input_revision: '1', processed_revision: '0',
         updated_at: '2026-09-16 23:00:00', safe_description: '<img src=x onerror=window.__xss=1>', supplements: [], can_supplement: true, ticket: null } };
     },
-    async timeline({ request, requestRef, limit }) {
-      state.timelineCalls.push({ member: memberFor(request), requestRef, limit });
-      return { schema_version: 1, items: [{ event_type: 'intake.accepted', summary: '已收到报修', occurred_at: '2026-09-16 23:00:00' }], next_cursor: null };
+    async timeline({ request, requestRef, limit, cursor }) {
+      state.timelineCalls.push({ member: memberFor(request), requestRef, limit, cursor });
+      return { schema_version: 1, items: [{ event_type: cursor ? 'ticket.updated' : 'intake.accepted', summary: cursor ? '已更新处理状态' : '已收到报修', occurred_at: '2026-09-16 23:00:00' }], next_cursor: cursor ? null : 'cursor-1' };
     },
     async commandStatus({ request, clientCommandId }) { return { status: 'ACCEPTED', client_command_id: clientCommandId, member: memberFor(request) }; },
   };
@@ -158,7 +158,8 @@ test('SS-007 native UI renders safely at phone and desktop sizes and keeps tabs 
       const beforeSupplements = state.supplementCalls.filter(call => call.member === 'A').length;
       await browser.evaluate("document.querySelector('#supplement-text').value='补充事实';document.querySelector('#supplement-form').requestSubmit();document.querySelector('#supplement-form').requestSubmit()");
       await browser.waitFor("document.querySelector('#submit-supplement').disabled===false");
-      assert.equal(state.supplementCalls.filter(call => call.member === 'A').length, beforeSupplements + 1);
+    assert.equal(state.supplementCalls.filter(call => call.member === 'A').length, beforeSupplements + 1);
+      assert.equal(state.timelineCalls.some(call => call.cursor === 'cursor-1'), true);
       const focused = await browser.evaluate("document.activeElement?.id");
       assert.equal(typeof focused, 'string');
     }
@@ -167,7 +168,8 @@ test('SS-007 native UI renders safely at phone and desktop sizes and keeps tabs 
     browsers.push(other);
     await other.waitFor("document.querySelector('#home-view').hidden===false");
     await other.evaluate("location.assign('/wecom/yixiaoxiu/reports')", { awaitPromise: false });
-    await other.waitFor("document.querySelector('#reports-view').hidden===false");
+      await other.waitFor("document.querySelector('#reports-view').hidden===false");
+    assert.equal(await other.evaluate("document.querySelector('#report-list').textContent.includes('已收到，正在处理')"), true);
     assert.equal(await other.evaluate("document.body.textContent.includes('B')"), true);
     assert.equal(await other.evaluate("document.body.textContent.includes('A')"), false);
     assert.equal(state.commandCalls.filter(call => call.member === 'B').length, 0);
