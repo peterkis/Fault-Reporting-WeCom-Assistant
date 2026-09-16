@@ -145,7 +145,8 @@ export function createYxxMemberCommandContext({ store, authenticate, recheck, pr
     const selectedProfile = auth.profile ?? profile;
     const selectedFlags = auth.flags === undefined ? configuredFlags : configFlags(auth.flags);
     if (!['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(selectedProfile)
-      || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== true) fail('YXX_MEMBER_READ_DISABLED');
+      || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== true
+      || selectedProfile === 'MEMBER_SELF_SERVICE' && selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== true) fail('YXX_MEMBER_READ_DISABLED');
     const binding = text(auth.canonical_reporter_binding, 'YXX_COMMAND_AUTH_INVALID', 128);
     if (!HASH.test(binding)) fail('YXX_COMMAND_AUTH_INVALID');
     return store.command({ scope: { scopeHash: binding }, clientCommandId });

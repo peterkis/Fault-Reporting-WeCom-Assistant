@@ -290,11 +290,27 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         } });
         const actions = await processActions({ transaction, decision, root, journey, observedAt: latest.received_at,
           decisionStore, manualReviewStore, ticketCore: core, intakeDecisionPort });
-        if (decision.result_code === 'OUT_OF_SCOPE') {
-          await transaction.query(
-            `UPDATE intake.service_intake SET status='IGNORED',updated_at=GREATEST(created_at,platform.local_now())
-              WHERE id=$1::uuid AND pilot_ticket_id IS NULL`, [root.intake_id],
+        if (decision.result_code === 'OUT_OF_SCOPE' || decision.result_code === 'ACKNOWLEDGEMENT') {
+          const [requestType, intakeStatus] = decision.result_code === 'OUT_OF_SCOPE'
+            ? ['UNKNOWN', 'IGNORED'] : ['CHATTER', 'COMPLETED'];
+          const terminal = await transaction.query(
+            `UPDATE intake.service_intake SET request_type=$2,status=$3,version=version+1,
+                updated_at=GREATEST(created_at,platform.local_now())
+              WHERE id=$1::uuid AND pilot_ticket_id IS NULL
+              RETURNING version,status,request_type`, [root.intake_id, requestType, intakeStatus],
           );
+          if (terminal.rowCount === 1) {
+            const ordinal = (await transaction.query(
+              'SELECT COALESCE(max(event_ordinal),0)::integer+1 AS ordinal FROM intake.service_intake_event WHERE intake_id=$1::uuid', [root.intake_id],
+            )).rows[0].ordinal;
+            await transaction.query(
+              `INSERT INTO intake.service_intake_event(event_type,aggregate_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
+                VALUES('intake.rule_decision_applied','intake',$1::uuid,$2,$3,$4::timestamp without time zone,$5,$6::jsonb)`,
+              [root.intake_id, terminal.rows[0].version, ordinal, latest.received_at, `yxx:${root.request_ref}`,
+                JSON.stringify({ intake_id: root.intake_id, decision_id: decision.id, new_status: terminal.rows[0].status,
+                  new_request_type: terminal.rows[0].request_type, reason_code: decision.reason_code })],
+            );
+          }
         }
         const cursor = await transaction.query(
           `UPDATE intake.web_request_binding

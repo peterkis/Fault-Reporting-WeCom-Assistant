@@ -119,6 +119,12 @@ test('SS-004 Web adapter is shared-rule, APP_ONLY, and never creates message-sid
   const reportsDisabled = createYxxSelfServiceOrchestrator({ pool: fakePool, profile: 'MEMBER_SELF_SERVICE',
     featureFlags: { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: false } });
   assert.equal((await reportsDisabled.processPending()).reason, 'FEATURE_DISABLED');
+  const readGateAuth = { profile: 'MEMBER_SELF_SERVICE', write_flag: false,
+    flags: { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: false },
+    canonical_reporter_binding: 'b'.repeat(64), source_corp_scope: 'corp', source_app_scope: 'app', proof_ref: 'test', csrf_token: 'csrf' };
+  const readGate = createYxxMemberCommandContext({ store: { accept: async () => ({}), command: async () => ({}) }, profile: 'MEMBER_SELF_SERVICE', flags: readGateAuth.flags,
+    authenticate: async () => readGateAuth, recheck: Object.assign(async () => readGateAuth, { localOnly: true }), quota: localQuota });
+  await assert.rejects(readGate.commandStatus({ request: {}, clientCommandId: '11111111-1111-4111-8111-111111111111' }), { code: 'YXX_MEMBER_READ_DISABLED' });
   const worker = createYxxSelfServiceWorker({ orchestrator: memberPump, pollMilliseconds: 100 });
   assert.equal(worker.start(), true); assert.equal(worker.start(), false); assert.deepEqual(await worker.stop(), { stopped: true, running: false });
 });

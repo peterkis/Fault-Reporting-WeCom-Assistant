@@ -113,6 +113,8 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
       );
       if (selected.rowCount !== 1) failP2015(P2_015_ERROR_CODES.authorizationDenied);
       const row = selected.rows[0];
+      const overrideResultCode = useWebSource && value.resolution_code === 'CANCEL_REVIEW'
+        ? 'OUT_OF_SCOPE' : RESULT_BY_RESOLUTION[value.resolution_code];
       if (useWebSource && row.source_kind === 'WEB') {
         const current = await transaction.query(
           `SELECT input_revision FROM intake.web_request_binding
@@ -134,7 +136,7 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
       }
       if (String(row.row_version) !== String(value.expected_row_version)) failP2015(P2_015_ERROR_CODES.versionConflict);
       const ordinal = await transaction.query('SELECT COALESCE(max(decision_ordinal),0)::integer+1 AS ordinal FROM intake.deterministic_decision WHERE journey_id=$1::uuid', [row.journey_id]);
-      const safeResult = { ...row.safe_result, result_code: RESULT_BY_RESOLUTION[value.resolution_code],
+      const safeResult = { ...row.safe_result, result_code: overrideResultCode,
         reason_code: value.resolution_reason_code, manual_review_required: false,
         human_override: { resolution_code: value.resolution_code, principal_id: principal.principal_id } };
       const resultHash = safeHash(safeResult);
@@ -157,9 +159,9 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
           ordinal.rows[0].ordinal,`human_v1_${safeHash({ review: value.review_id, command: value.client_command_id })}`,
           row.source_window_start_sequence,row.source_window_end_sequence,row.source_message_count,row.source_hash,
           row.catalog_version,row.rule_set_version,row.engine_version,row.decision_policy_version,
-          RESULT_BY_RESOLUTION[value.resolution_code],value.resolution_reason_code,row.input_hash,resultHash,
-          JSON.stringify(safeResult),['TICKET_ELIGIBLE','SERVICE_REQUEST','INCIDENT_REVIEW_CANDIDATE'].includes(RESULT_BY_RESOLUTION[value.resolution_code]),
-          RESULT_BY_RESOLUTION[value.resolution_code] === 'INCIDENT_REVIEW_CANDIDATE',row.observed_at],
+          overrideResultCode,value.resolution_reason_code,row.input_hash,resultHash,
+          JSON.stringify(safeResult),['TICKET_ELIGIBLE','SERVICE_REQUEST','INCIDENT_REVIEW_CANDIDATE'].includes(overrideResultCode),
+          overrideResultCode === 'INCIDENT_REVIEW_CANDIDATE',row.observed_at],
       );
       const status = value.resolution_code === 'CANCEL_REVIEW' ? 'CANCELLED' : 'RESOLVED';
       const updated = await transaction.query(

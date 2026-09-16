@@ -5,6 +5,8 @@ const TARGETS = Object.freeze({
   SERVICE_REQUEST: { request_type: 'SERVICE_REQUEST', status: 'RECEIVED' },
   NEEDS_DESCRIPTION: { request_type: null, status: 'WAITING_DESCRIPTION' },
   MANUAL_REVIEW_REQUIRED: { request_type: null, status: 'WAITING_TRIAGE' },
+  BUSINESS_CONSULTATION: { request_type: 'QUESTION', status: 'COMPLETED' },
+  ACKNOWLEDGEMENT: { request_type: 'CHATTER', status: 'COMPLETED' },
   OUT_OF_SCOPE: { request_type: 'UNKNOWN', status: 'IGNORED' },
 });
 
