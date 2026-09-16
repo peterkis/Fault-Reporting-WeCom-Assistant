@@ -120,6 +120,9 @@
           "transfer-assignment"
         ]
       }
+    },
+    "web_report": {
+      "$ref": "p2_016_web_report.schema.json"
     }
   },
   "x-business-timezone": "Asia/Shanghai",

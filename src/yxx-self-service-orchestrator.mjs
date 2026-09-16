@@ -4,6 +4,7 @@ import { routeP2007Decision, routeRuleFailure } from './p2-015-decision-router.m
 import { createDecisionStore } from './p2-015-decision-store.mjs';
 import { createManualReviewStore } from './p2-015-manual-review.mjs';
 import { createServiceIntakeDecisionPort } from './p2-015-service-intake-decision-port.mjs';
+import { appendTicketEvent } from './p1-006-ticket-state-actions.mjs';
 import { safeHash } from './p2-015-domain-contracts.mjs';
 import { shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
 
@@ -188,6 +189,8 @@ async function processActions({ transaction, decision, root, journey, observedAt
       });
       linkedTicketId = ticketId(created);
       if (!linkedTicketId) throw inputError('YXX_TICKET_CORE_NO_RESULT');
+      if (created.created === true) await appendTicketEvent({ transaction, ticket: created.ticket,
+        eventType: 'ticket.created', actor: { type: 'SYSTEM', id: null }, traceId: `yxx:${root.request_ref}` });
       resultRefType = 'TICKET'; resultRefId = linkedTicketId;
       await transaction.query(
         `UPDATE intake.contact_journey SET linked_ticket_id=$2::uuid,status='TICKET_LINKED',

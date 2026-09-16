@@ -12,6 +12,7 @@ import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
 import { createP2016TicketQuery } from '../src/p2-016-ticket-query.mjs';
 import { migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
 import { withP2015IsolatedDatabase } from './helpers/p2-015-postgres-harness.mjs';
+import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 const SECRET = 'yxx-self-service-test-secret-32-bytes';
@@ -177,6 +178,7 @@ test('SS-004 accepts, processes, replays, and creates one Web Ticket through the
     assert.equal(row.input_revision, '1'); assert.equal(row.processed_revision, '1');
     assert.equal(row.source_kind, 'WEB'); assert.equal(String(row.basis_input_revision), '1');
     assert.equal(row.ticket_count, 1); assert.deepEqual([row.message_count, row.outbox_count, row.delivery_count, row.grant_count, row.session_count, row.direct_leg_count], [0, 0, 0, 0, 0, 0]);
+    assert.deepEqual((await pool.query(`SELECT event_type FROM pilot_ticket.ticket_event WHERE ticket_id=(SELECT pilot_ticket_id FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1)`, [accepts[0].receipt.request_ref])).rows.map((item) => item.event_type), ['ticket.created']);
     const createdTicket = (await pool.query(`SELECT title FROM pilot_ticket.ticket WHERE source_intake_id=(SELECT intake_id FROM intake.web_request_binding WHERE request_ref=$1)`, [accepts[0].receipt.request_ref])).rows[0];
     assert.match(createdTicket.title, /处方提交不了/u);
     const source = (await pool.query(`SELECT i.source_channel,i.source_provider,i.source_bot_id,i.source_chat_type,i.primary_message_id,
@@ -276,6 +278,7 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
     const needsTicket = await createP2016TicketQuery({ pool, enabled: true }).detail({ authContext: { principal_id: principal.id }, ticketId: needsTicketId });
     assert.equal(needsTicket.web_report.description, '系统不行');
     assert.deepEqual(needsTicket.web_report.supplements, [{ input_revision: '2', text: '处方提交不了' }]);
+    await assertP2016Schema('p2_016_ticket_detail', needsTicket);
     const legacyNeedsTicket = await createPilotAccessService({ pool }).getTicketView({ ticketId: needsTicketId, actorId: principal.id });
     assert.equal(legacyNeedsTicket.ticket.web_report.description, '系统不行');
     const facade = createP2016ManualReviewFacade({ pool, enabled: true });
@@ -317,6 +320,7 @@ test('SS-004 keeps insufficient input pending for details and routes rule failur
     assert.ok(target);
     const reviewDetail = await facade.getManualReviewDetail({ authContext: { principal_id: principal.id }, reviewId: target.id });
     assert.equal(reviewDetail.web_report.description, '无法安全判断');
+    await assertP2016Schema('p2_016_manual_review_detail', reviewDetail);
     const resolved = await facade.resolveManualReview({ authContext: { principal_id: principal.id }, reviewId: target.id,
       body: { client_command_id: randomUUID(), expected_row_version: target.row_version,
         resolution_code: 'CONFIRM_TICKET_ELIGIBLE', resolution_reason_code: 'WEB_HUMAN_CONFIRMED' } });
