@@ -26,6 +26,8 @@ test('SS-002 closed schemas reject identity and operational authority fields',as
   assert.equal(profile.properties['x-readonly-write-denied'].const,true);
   assert.ok(profile.required.includes('x-readonly-write-denied'));
   assert.equal(profile.properties.YIXIAOXIU_SELF_SERVICE_ENABLED.default,false);assert.equal(profile.properties.YIXIAOXIU_MY_REPORTS_ENABLED.default,false);
+  const selfBranch=JSON.stringify(profile.allOf.find(v=>JSON.stringify(v).includes('MEMBER_SELF_SERVICE')));
+  assert.match(selfBranch,/YIXIAOXIU_SELF_SERVICE_ENABLED.*const.*true/u);assert.match(selfBranch,/YIXIAOXIU_MY_REPORTS_ENABLED.*const.*true/u);
   assert.ok(JSON.parse(await readFile('contracts/yxx_self_service_report_page.schema.json','utf8')).properties.items.items.required.includes('ticket'));
   assert.ok(timeline.properties.items.items.required.includes('ticket'));
   for(const key of ['reporter','role','provider','target','ticket_id','status','priority','actor','created_at','accepted_at'])assert.equal(Object.hasOwn(input.properties,key),false,key);
@@ -47,7 +49,7 @@ test('SS-002 both OpenAPI documents expose the same seven YXX operation referenc
   assert.match(contract,/additionalProperties: false/u);assert.match(contract,/yxx_self_service_timeline\.schema\.json/u);
   assert.match(contract,/x-idempotency-body-header-equality/u);assert.match(contract,/x-mutually-exclusive-with/u);
   assert.match(contract,/name: cursor, schema: \{type: string, minLength: 10, maxLength: 2048\}/u);
-  assert.match(conversation,/\/api\/yixiaoxiu\/bootstrap: \{\$ref:/u);
+  assert.match(conversation,/\/api\/yixiaoxiu\/bootstrap:\s+\$ref:/u);
   const homepage=contract.slice(contract.indexOf('/wecom/yixiaoxiu/:'));assert.match(homepage,/security: \[\{\}, \{WeComMember: \[\]\}\]/u);
   const bootstrap=contract.slice(contract.indexOf('/api/yixiaoxiu/bootstrap'));assert.match(bootstrap,/security: \[\{WeComMember: \[\]\}\]/u);
 });

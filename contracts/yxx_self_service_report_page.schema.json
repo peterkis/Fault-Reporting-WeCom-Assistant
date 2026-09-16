@@ -7,6 +7,6 @@
     "items": {"type": "array", "maxItems": 50, "items": {"type": "object", "additionalProperties": false, "required": ["kind", "ref", "display_status", "created_at", "created_epoch_ms", "ticket"], "properties": {
       "kind": {"enum": ["WEB_REQUEST", "BOT_TICKET"]}, "ref": {"type": "string"}, "display_status": {"type": "string"}, "created_at": {"$ref": "./local_datetime.schema.json"}, "created_epoch_ms": {"$ref": "./epoch_ms_string.schema.json"}, "ticket": {"anyOf": [{"$ref": "./yxx_self_service_ticket_summary.schema.json"}, {"type": "null"}]}
     }}},
-    "next_cursor": {"type": ["string", "null"], "maxLength": 2048}
+    "next_cursor": {"type": ["string", "null"], "minLength": 10, "maxLength": 2048}
   }
 }
