@@ -60,6 +60,18 @@ member's DOM and tab pointer, without deleting durable records belonging to othe
 even when CSRF changes. Unknown-scope legacy records remain conservative;
 an early 404 alone never proves that an earlier transaction cannot commit. A legacy record without a scope cannot be assigned to the current member merely because bootstrap succeeded. Only a validated receipt or a definite rejection clears the corresponding command record; form text, raw identity, tokens and CSRF remain excluded.
 
+Logout publishes only a fixed same-origin `v1/logout` invalidation signal over
+BroadcastChannel and the storage event fallback. It carries no command UUID,
+scope, cookie, CSRF value or form text. Every open self-service document clears
+its protected DOM and stops its controller without rebroadcasting or starting
+OAuth; its own durable command record remains available for later same-scope
+GET-only recovery.
+
+The native logout endpoint preserves the established entry error namespace:
+closed-body, query and content-type failures are `YXX_ENTRY_INPUT_INVALID`,
+origin failures are `YXX_ENTRY_ORIGIN_INVALID`, and service failures use the
+existing `YXX_ENTRY_*` mapping.
+
 The new secret must be supplied through protected server configuration and
 remain stable across restarts. It must never be sent to the browser, logged,
 stored with command data, or derived from the current CSRF token. This contract

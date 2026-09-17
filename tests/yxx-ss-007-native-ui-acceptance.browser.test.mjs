@@ -104,6 +104,8 @@ beforeEach(async () => {
   fixture.state.commandStatusResponses.length = 0;
   await browser.command('Page.bringToFront');
   await browser.evaluate("sessionStorage.clear();localStorage.clear();delete document.hidden;window.dispatchEvent(new PageTransitionEvent('pagehide'))");
+  await browser.command('Network.enable');
+  await browser.command('Network.setCookies', { cookies: cookie(fixture.origin) });
   await navigate('/wecom/yixiaoxiu/');
   await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
 });
@@ -149,6 +151,38 @@ test('SS-007 a new tab in the same browser recovers a closed tab command from du
   } finally {
     await submittingTab?.close();
     await recoveryTab?.close();
+  }
+});
+
+test('SS-007 logout invalidates every open same-origin tab without broadcasting sensitive data', { timeout: 60000 }, async () => {
+  let tab;
+  try {
+    await navigate('/wecom/yixiaoxiu/reports/new');
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate("document.querySelector('#description').value='当前标签敏感草稿';document.querySelector('#location-unknown').checked=true");
+    tab = await createTab(browser, `${fixture.origin}/wecom/yixiaoxiu/reports`);
+    await tab.waitFor("document.querySelector('#reports-view')?.hidden===false");
+    await tab.command('Page.bringToFront');
+    await tab.evaluate(`(() => {
+      window.__peerBootstrapCalls=0;window.__peerStorageSignals=[];
+      const actualFetch=window.fetch.bind(window);
+      window.fetch=(path,options)=>{if(String(path).includes('/api/yixiaoxiu/bootstrap'))window.__peerBootstrapCalls+=1;return actualFetch(path,options)};
+      window.addEventListener('storage',event=>{if(event.key==='yxx.self_service.logout_signal')window.__peerStorageSignals.push({key:event.key,newValue:event.newValue});});
+    })()`);
+    await browser.evaluate("document.querySelector('#logout').click()");
+    await browser.waitFor("document.querySelector('#logged-out-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('退出')");
+    await tab.waitFor("document.querySelector('#logged-out-view')?.hidden===false");
+    assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+    assert.equal(await tab.evaluate("document.querySelector('#report-list').textContent"), '');
+    assert.equal(await tab.evaluate("window.__peerBootstrapCalls"), 0);
+    const signals = await tab.evaluate("window.__peerStorageSignals");
+    assert.ok(signals.length >= 1);
+    assert.equal(signals.every(value => value.key === 'yxx.self_service.logout_signal' && (value.newValue === 'v1' || value.newValue === null)), true);
+    assert.equal(JSON.stringify(signals).includes('当前标签敏感草稿'), false);
+    assert.equal(JSON.stringify(signals).includes('member-a'), false);
+    assert.equal(fixture.state.logoutCalls > 0, true);
+  } finally {
+    await tab?.close();
   }
 });
 

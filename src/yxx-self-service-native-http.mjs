@@ -137,6 +137,16 @@ function mapError(value) {
   return error('YXX_UNAVAILABLE', 503);
 }
 
+function mapLogoutError(value) {
+  const status = Number(value?.status);
+  if (status === 403 || /ORIGIN/u.test(String(value?.code ?? ''))) return error('YXX_ENTRY_ORIGIN_INVALID', 403);
+  if (status === 401 || /AUTH_REQUIRED|MEMBER_REQUIRED/u.test(String(value?.code ?? ''))) return error('YXX_ENTRY_AUTH_REQUIRED', 401);
+  if (status === 404) return error('YXX_ENTRY_NOT_FOUND', 404);
+  if (status === 429 || /BUSY/u.test(String(value?.code ?? ''))) return error('YXX_ENTRY_BUSY', 503);
+  if (status >= 500 || /UNAVAILABLE|CONFIG/u.test(String(value?.code ?? ''))) return error('YXX_ENTRY_UNAVAILABLE', 503);
+  return error('YXX_ENTRY_INPUT_INVALID', 400);
+}
+
 function memberError(value) {
   if (value?.status === 403) return error('YXX_FORBIDDEN', 403);
   if (Number(value?.status) >= 500) return error('YXX_UNAVAILABLE', 503);
@@ -228,6 +238,7 @@ export function createYxxSelfServiceNativeHttp({
 
   const handler = async ({ request, response, url }) => {
     if (!url.pathname.startsWith(ROOT) && !url.pathname.startsWith('/api/yixiaoxiu/')) return false;
+    const logoutRoute = request.method === 'POST' && url.pathname === `${ROOT}logout`;
     for (const [name, value] of Object.entries(HEADERS)) response.setHeader(name, value);
     try {
       if (url.origin !== origin.origin || Buffer.byteLength(request.url ?? '', 'utf8') > 2048) throw error('YXX_INPUT_INVALID');
@@ -309,7 +320,8 @@ export function createYxxSelfServiceNativeHttp({
       }
       return false;
     } catch (value) {
-      const selected = mapError(value); json(response, selected.status, { error: { code: selected.code, retryable: selected.status >= 500 } }); return true;
+      const selected = logoutRoute ? mapLogoutError(value) : mapError(value);
+      json(response, selected.status, { error: { code: selected.code, retryable: selected.status >= 500 } }); return true;
     }
   };
   return Object.freeze({ handler, configured, serviceEnabled });

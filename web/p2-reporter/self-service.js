@@ -14,6 +14,10 @@ const pendingDelays=[1000,2000,4000,5000];
 const latestTimelineBoundary=String(Number.MAX_SAFE_INTEGER);
 const requestDeadlineMs=15000;
 const ticketStatuses=Object.freeze({NEW:'等待受理',QUEUED:'等待受理',ACCEPTED:'已受理',IN_PROGRESS:'处理中',WAITING_REQUESTER:'待您补充',WAITING_VENDOR:'处理中',RESOLVED:'已处理，待确认',CLOSED:'已关闭',REOPENED:'重新处理中',CANCELLED:'已撤销',DUPLICATE_LINKED:'已关联公共故障'});
+const logoutStorageKey='yxx.self_service.logout_signal';
+const logoutStorageValue='v1';
+const logoutSignal=Object.freeze({v:1,type:'logout'});
+let logoutChannel=null;
 function node(tag,textValue,className){const value=document.createElement(tag);if(textValue!==undefined)value.textContent=String(textValue);if(className)value.className=className;return value;}
 function clear(element){while(element.firstChild)element.removeChild(element.firstChild);}
 function validGeneration(g){return g===state.generation&&!state.stopped;}
@@ -62,6 +66,16 @@ function clearClientDom(message='认证已失效，请重新认证。'){
 function showLoggedOut(message,kind='error',signInReady=true){
  state.loggedOut=true;state.stopped=true;state.hidden=document.hidden;cancelPendingRecovery(true);clearTimeout(state.poll);
  setView('logged-out-view','会话已结束');setStatus(message,kind);$('brand-link').hidden=true;$('logout').hidden=true;$('sign-in-link').hidden=!signInReady;
+}
+function invalidateFromPeer(){
+ if(state.loggedOut)return;
+ clearClientDom('会话已在其他窗口退出，请重新登录。');
+ showLoggedOut('会话已在其他窗口退出，请重新登录。');
+}
+function receiveLogoutSignal(value){if(value?.v===1&&value.type==='logout')invalidateFromPeer();}
+function broadcastLogout(){
+ try{logoutChannel?.postMessage(logoutSignal);}catch{/* channel is an optional transport */}
+ try{localStorage.setItem(logoutStorageKey,logoutStorageValue);localStorage.removeItem(logoutStorageKey);}catch{/* storage is an optional transport */}
 }
 function captureDraft(){return Object.freeze({path:location.pathname,description:$('description').value,locationText:$('location-text').value,locationUnknown:$('location-unknown').checked,impactScope:$('impact-scope').value,serviceCode:$('service-code').value,department:$('department').value,extension:$('extension').value,supplement:$('supplement-text').value});}
 function restoreDraft(draft){if(!draft||draft.path!==location.pathname)return;$('description').value=draft.description;$('location-text').value=draft.locationText;$('location-unknown').checked=draft.locationUnknown;$('impact-scope').value=draft.impactScope;$('service-code').value=draft.serviceCode;$('department').value=draft.department;$('extension').value=draft.extension;$('supplement-text').value=draft.supplement;}
@@ -292,7 +306,7 @@ $('load-more-reports').addEventListener('click',()=>loadReports(true));
 $('load-older-timeline').addEventListener('click',loadOlderTimeline);
 $('retry-pending').addEventListener('click',()=>void recoverPending({restart:true}));
 $('logout').addEventListener('click',async()=>{
- clearClientDom('正在退出当前会话…');showLoggedOut('正在退出当前会话…','',false);
+ clearClientDom('正在退出当前会话…');showLoggedOut('正在退出当前会话…','',false);broadcastLogout();
  const generation=state.generation,controller=new AbortController();
  try{
   const result=await fetchJson(`${ROOT}logout`,{method:'POST',headers:{'content-type':'application/json','sec-fetch-site':'same-origin'},body:'{}'},controller.signal);
@@ -301,4 +315,8 @@ $('logout').addEventListener('click',async()=>{
   if(state.loggedOut&&state.generation===generation)showLoggedOut('未能确认服务端退出，请重新登录后确认会话。');
  }
 });
+window.addEventListener('storage',event=>{if(event.key===logoutStorageKey&&event.newValue===logoutStorageValue)receiveLogoutSignal(logoutSignal);});
+if(typeof BroadcastChannel==='function'){
+ try{logoutChannel=new BroadcastChannel('yxx.self_service.session');logoutChannel.addEventListener('message',event=>receiveLogoutSignal(event.data));}catch{/* BroadcastChannel is an optional transport */}
+}
 void bootstrap();

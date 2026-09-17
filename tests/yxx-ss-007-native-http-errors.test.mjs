@@ -204,10 +204,17 @@ test('SS-007 logout rejects unknown query and body fields without clearing sessi
   try {
     for (const [suffix, body] of [['?extra=1','{}'],['','{"extra":true}'],['','[]'],['','null']]) {
       const response = await send(suffix, body); assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), { error: { code: 'YXX_ENTRY_INPUT_INVALID', retryable: false } });
       assert.equal(response.headers.has('set-cookie'), false);
     }
     assert.deepEqual(loggedOut, []);
-    assert.equal((await send('', '{}', 'https://other.invalid')).status, 403);
+    const originFailure = await send('', '{}', 'https://other.invalid');
+    assert.equal(originFailure.status, 403);
+    assert.deepEqual(await originFailure.json(), { error: { code: 'YXX_ENTRY_ORIGIN_INVALID', retryable: false } });
+    assert.deepEqual(loggedOut, []);
+    const contentTypeFailure = await fetch(origin + '/wecom/yixiaoxiu/logout', { method: 'POST', headers: { origin, cookie: '__Host-wecom_session=synthetic' }, body: '{}' });
+    assert.equal(contentTypeFailure.status, 400);
+    assert.deepEqual(await contentTypeFailure.json(), { error: { code: 'YXX_ENTRY_INPUT_INVALID', retryable: false } });
     assert.deepEqual(loggedOut, []);
     const accepted = await send('', '{}'); assert.equal(accepted.status, 200);
     assert.deepEqual(await accepted.json(), { logged_out: true });

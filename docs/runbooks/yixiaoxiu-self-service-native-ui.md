@@ -1,6 +1,6 @@
 # YXX-SS-007 原生自助报修页面手册
 
-当前本地验证以 `evidence/yxx-ss-007-durable-recovery-v18-report.json` 为准。
+当前本地验证以 `evidence/yxx-ss-007-logout-broadcast-v22-report.json` 为准。
 原始报告保留作历史记录；任务仍等待当前提交的外部审查。
 时间线默认显示最近100条，按按钮逐页加载更早记录；下一次轮询回到最新窗口。
 未知提交结果最多自动查询五次，之后可点击“查询上次提交结果”继续查询，
@@ -53,6 +53,9 @@ PostgreSQL，把页面接到已有规则、人工审核和 Unified Ticket Core �
 退出会先清空成员内容并停留在终止页面，不自动返回会触发认证的主页。
 退出失败会明确提示；重新认证必须由用户主动操作。未知提交的恢复记录在退出后保留，
 同一成员重新登录继续查询，其他成员的恢复范围不匹配时清除当前标签指针，但不删除其持久记录；不保留表单正文。
+退出会通过同源 BroadcastChannel 和 storage 事件广播固定的 `v1/logout` 标记，
+不携带命令 ID、恢复范围、Cookie、CSRF 或表单内容。其他打开标签收到后立即清空
+保护内容并进入终止页面，监听不会再次广播或启动认证。
 输入草稿仅暂存于当前调用内存；同身份范围且同CSRF核验成功后恢复，
 身份变化、CSRF轮换或核验失败不恢复。正文不写入浏览器存储。
 
@@ -60,6 +63,9 @@ PostgreSQL，把页面接到已有规则、人工审核和 Unified Ticket Core �
 详情页可见时每五秒最多发起一组 detail/timeline GET；隐藏、离页、退出或账号
 边界变化会取消请求、清空敏感 DOM，并使用 generation fence 丢弃晚到响应。
 补充使用当前输入版本，收到 `409` 时保留内存草稿并提示刷新。
+退出接口沿用既有 `yixiaoxiu_error.schema.json` 的 `YXX_ENTRY_*` 错误命名空间；
+非法查询、正文或内容类型统一为 `YXX_ENTRY_INPUT_INVALID`，来源校验为
+`YXX_ENTRY_ORIGIN_INVALID`，其他失败按既有入口错误映射处理。
 
 回退时保持 `YIXIAOXIU_SELF_SERVICE_ENABLED=false` 或
 `YIXIAOXIU_MY_REPORTS_ENABLED=false`。不要打开生产 URL、调用真实 OAuth/SDK、

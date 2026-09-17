@@ -1,0 +1,100 @@
+
+> fault-reporting-wecom-assistant@0.0.0-p1 test:yxx:ss:007
+> node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs --test-reporter=tap
+
+✔ SS-007 native factory accepts only the OAuth callback session cookie (1.1302ms)
+✔ SS-007 dependency failures remain terminal service or permission failures (74.0926ms)
+✔ SS-007 JSON bodies reject duplicate decoded keys before commands (48.8339ms)
+✔ SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes (37.3143ms)
+✔ SS-007 direct detail pages enforce ownership before rendering the shell (28.7193ms)
+✔ SS-007 report source filters reject explicit empty and unknown values before querying (49.6862ms)
+✔ SS-007 logout rejects unknown query and body fields without clearing sessions (50.3862ms)
+✔ SS-007 a new tab in the same browser recovers a closed tab command from durable opaque storage (998.3223ms)
+✔ SS-007 logout invalidates every open same-origin tab without broadcasting sensitive data (212.4621ms)
+✖ SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence (30031.1925ms)
+✖ SS-007 status copy is exercised through browser responses for 429, 409, 401 and 503 (30047.3899ms)
+✖ SS-007 supplement conflict refreshes the revision while retaining the draft without an automatic POST (30048.9556ms)
+✖ SS-007 does not accept a new detail ETag when the paired timeline request fails (30034.4737ms)
+✖ SS-007 synthetic page lifecycle rejects a late detail response and logout reaches a terminal page (30064.3188ms)
+✔ SS-007 refreshed member CSRF survives clearing the previous form (1066.8913ms)
+✔ SS-007 visibility bootstrap hides member data before slow and failed revalidation (2266.2067ms)
+✔ SS-007 a late detail response cannot restore an old member draft after identity rotation (1262.7361ms)
+✔ SS-007 unavailable tab or durable storage blocks new POST commands (6939.5862ms)
+✔ SS-007 durable recovery capacity fails closed without deleting older unknown commands (1992.8044ms)
+✔ SS-007 durable read failure blocks a later POST even when storage becomes writable (2010.0025ms)
+✔ SS-007 ambiguous successful responses keep the original UUID and use GET-only recovery (13398.6345ms)
+✔ SS-007 hanging accepted POSTs time out and stop after five bounded GET recoveries (30427.4917ms)
+✔ SS-007 v2 recovery migrates durably without blocking another member or losing the original member fence (1178.7494ms)
+✔ SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET only (1772.1281ms)
+✔ SS-007 synthetic visibility restore reloads cleared detail, bounds an endless timeline, and reloads the first list page (3674.6214ms)
+✔ SS-007 renders authoritative ticket lifecycle status in list, detail, and timeline (2209.9947ms)
+✔ SS-007 detail and timeline 404 clear rendered state and stop polling (4120.2339ms)
+✔ SS-007 supplement terminal errors resume polling after a slow POST consumes the timer (5529.1449ms)
+✔ SS-007 pending recovery stays GET-only, survives 404, and is discarded on an in-memory identity change (2817.5887ms)
+✔ SS-007 pending recovery retries only GET, then requires an explicit bounded restart (13473.2847ms)
+✔ SS-007 logout timeout keeps an opaque recovery fence on a terminal page (2406.3458ms)
+✔ SS-007 logout failure stays terminal and does not reopen member data (1361.909ms)
+✔ SS-007 logout preserves an in-flight POST fence for same-member recovery and discards it for another member (5235.4986ms)
+✔ SS-007 a stale unauthorized response cannot clear the newer member operation (1771.8492ms)
+✔ SS-007 native HTTP keeps the fixed homepage gate and closed API boundary (148.3442ms)
+✔ SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated (5359.0539ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 31
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 262805.5466
+
+✖ failing tests:
+
+test at tests\yxx-ss-007-native-ui-acceptance.browser.test.mjs:187:1
+✖ SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence (30031.1925ms)
+  Error: P2_006_BROWSER_WAIT_TIMEOUT
+      at waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+      at async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:108:3)
+      at async TestHook.run (node:internal/test_runner/test:1332:7)
+      at async Test.runHook (node:internal/test_runner/test:1212:9)
+      at async Test.run (node:internal/test_runner/test:1285:9)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+
+test at tests\yxx-ss-007-native-ui-acceptance.browser.test.mjs:239:1
+✖ SS-007 status copy is exercised through browser responses for 429, 409, 401 and 503 (30047.3899ms)
+  Error: P2_006_BROWSER_WAIT_TIMEOUT
+      at waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+      at async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:108:3)
+      at async TestHook.run (node:internal/test_runner/test:1332:7)
+      at async Test.runHook (node:internal/test_runner/test:1212:9)
+      at async Test.run (node:internal/test_runner/test:1285:9)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+
+test at tests\yxx-ss-007-native-ui-acceptance.browser.test.mjs:260:1
+✖ SS-007 supplement conflict refreshes the revision while retaining the draft without an automatic POST (30048.9556ms)
+  Error: P2_006_BROWSER_WAIT_TIMEOUT
+      at waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+      at async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:108:3)
+      at async TestHook.run (node:internal/test_runner/test:1332:7)
+      at async Test.runHook (node:internal/test_runner/test:1212:9)
+      at async Test.run (node:internal/test_runner/test:1285:9)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+
+test at tests\yxx-ss-007-native-ui-acceptance.browser.test.mjs:275:1
+✖ SS-007 does not accept a new detail ETag when the paired timeline request fails (30034.4737ms)
+  Error: P2_006_BROWSER_WAIT_TIMEOUT
+      at waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+      at async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:108:3)
+      at async TestHook.run (node:internal/test_runner/test:1332:7)
+      at async Test.runHook (node:internal/test_runner/test:1212:9)
+      at async Test.run (node:internal/test_runner/test:1285:9)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+
+test at tests\yxx-ss-007-native-ui-acceptance.browser.test.mjs:293:1
+✖ SS-007 synthetic page lifecycle rejects a late detail response and logout reaches a terminal page (30064.3188ms)
+  Error: P2_006_BROWSER_WAIT_TIMEOUT
+      at waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+      at async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:108:3)
+      at async TestHook.run (node:internal/test_runner/test:1332:7)
+      at async Test.runHook (node:internal/test_runner/test:1212:9)
+      at async Test.run (node:internal/test_runner/test:1285:9)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
