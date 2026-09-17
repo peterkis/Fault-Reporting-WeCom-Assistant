@@ -1,6 +1,9 @@
 const ROOT='/wecom/yixiaoxiu/';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const RECOVERY_SCOPE=/^[a-f0-9]{64}$/u;
+const REQUEST_REF=/^[A-Za-z0-9_-]{32}$/u;
+const INTAKE_NO=/^INT-[0-9]{8}-[0-9]{4,}$/u;
+const LOCAL_TIME=/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/u;
 const refs={home:'/wecom/yixiaoxiu/',new:'/wecom/yixiaoxiu/reports/new',list:'/wecom/yixiaoxiu/reports'};
 const $=id=>document.getElementById(id);
 const state={generation:0,controller:null,busy:false,stopped:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,poll:null,hidden:false};
@@ -39,7 +42,10 @@ function prepareBootstrap(){
  setStatus('正在验证成员会话…');
 }
 function readPending(){try{const value=JSON.parse(sessionStorage.getItem(pendingKey)??'null');if(!UUID.test(value?.id))return null;const v2=value.v===2&&RECOVERY_SCOPE.test(value.scope??'');const v1=value.v===1&&value.scope===undefined;if(!v1&&!v2)return null;state.pendingCommandId=value.id;state.pendingScope=v2?value.scope:null;state.pendingLegacy=v1;syncPendingButtons();return value.id;}catch{return state.pendingCommandId;}}
-function fetchJson(path,options={},signal){return fetch(path,{credentials:'same-origin',cache:'no-store',signal,...options}).then(async response=>{if(response.status===304)return {status:304,body:null,etag:response.headers.get('etag')};let body={};try{body=await response.json();}catch{/* error body may be empty */}if(!response.ok){const currentOperation=Boolean(signal&&signal===state.controller?.signal&&!signal.aborted);if((response.status===401||response.status===403)&&currentOperation)clearClientDom();const error=new Error(messageFor(response.status));error.status=response.status;error.code=body.error?.code;error.current_operation=currentOperation;throw error;}return {status:response.status,body,etag:response.headers.get('etag')};});}
+function ambiguousResult(){const error=new Error('YXX_AMBIGUOUS_RESULT');error.code='YXX_AMBIGUOUS_RESULT';return error;}
+function acceptedReceipt(value,commandId,expectedRef=null){const strings=[value?.client_command_id,value?.request_ref,value?.intake_no,value?.accepted_revision,value?.accepted_at,value?.accepted_epoch_ms];if(!value||typeof value!=='object'||Array.isArray(value)||!strings.every(item=>typeof item==='string')||value.client_command_id!==commandId||value.status!=='ACCEPTED'||!REQUEST_REF.test(value.request_ref)||expectedRef!==null&&value.request_ref!==expectedRef||!INTAKE_NO.test(value.intake_no)||!/^[1-9][0-9]*$/u.test(value.accepted_revision)||!LOCAL_TIME.test(value.accepted_at)||!/^[0-9]+$/u.test(value.accepted_epoch_ms))throw ambiguousResult();return value;}
+function acceptedResponse(value,commandId,expectedRef=null){if(!value||typeof value!=='object'||Array.isArray(value)||value.ok!==true||typeof value.replayed!=='boolean')throw ambiguousResult();const receipt=acceptedReceipt(value.receipt,commandId,expectedRef);if(typeof value.location!=='string')throw ambiguousResult();let target;try{target=new URL(value.location,location.origin);}catch{throw ambiguousResult();}const path=`${ROOT}reports/${receipt.request_ref}`;if(target.origin!==location.origin||target.pathname!==path||target.search||target.hash)throw ambiguousResult();return {receipt,replayed:value.replayed,path};}
+function fetchJson(path,options={},signal){return fetch(path,{credentials:'same-origin',cache:'no-store',signal,...options}).then(async response=>{if(response.status===304)return {status:304,body:null,etag:response.headers.get('etag')};let body={},parsed=true;try{body=await response.json();}catch{parsed=false;}if(!response.ok){const currentOperation=Boolean(signal&&signal===state.controller?.signal&&!signal.aborted);if((response.status===401||response.status===403)&&currentOperation)clearClientDom();const error=new Error(messageFor(response.status));error.status=response.status;error.code=body?.error?.code;error.current_operation=currentOperation;throw error;}if(!parsed)throw ambiguousResult();return {status:response.status,body,etag:response.headers.get('etag')};});}
 function beginOperation({busy=false}={}){state.controller?.abort();const controller=new AbortController();state.controller=controller;if(busy)state.busy=true;return {controller,signal:controller.signal,generation:state.generation};}
 function ownsOperation(operation){return state.controller===operation.controller&&state.generation===operation.generation&&!state.stopped;}
 function finishOperation(operation){if(!ownsOperation(operation))return false;state.controller=null;state.busy=false;return true;}
@@ -124,9 +130,7 @@ async function recoverPending({restart=false}={}){
  try{
   const result=await fetchJson(`/api/yixiaoxiu/commands/${id}`,{},operation.signal);
   if(!ownsOperation(operation))return;
-  if(result.body?.request_ref){forget();location.assign(`${ROOT}reports/${result.body.request_ref}`);return;}
-  unresolved=true;
-  setStatus('上次报修命令仍在处理中，可到“我的报修”查看。','success');
+  const receipt=acceptedReceipt(result.body,id);forget();location.assign(`${ROOT}reports/${receipt.request_ref}`);return;
  }catch(error){if(error.name==='AbortError')return;if(ownsOperation(operation)){unresolved=true;if(error.status===404)setStatus('上次命令尚未可查询，正在有限重查；不会重复提交。','error');else setStatus('上次命令尚未确认，正在有限重查；不会重复提交。','error');}}
  finally{if(finishOperation(operation)){syncPendingButtons();schedule();if(unresolved) schedulePendingRecovery(id,operation.generation,csrf);}}
 }
@@ -143,7 +147,7 @@ async function submitNew(event){
  try{
   const result=await fetchJson('/api/yixiaoxiu/requests',{method:'POST',headers:jsonHeaders(id,window.__yxx_csrf),body:JSON.stringify(payload)},operation.signal);
   if(!ownsOperation(operation))return;
-  forget();setStatus(result.body.replayed?'已恢复原受理结果。':'报修已收到，正在处理。','success');location.assign(result.body.location);
+  const accepted=acceptedResponse(result.body,id);forget();setStatus(accepted.replayed?'已恢复原受理结果。':'报修已收到，正在处理。','success');location.assign(accepted.path);
  }catch(error){
   if(error.name==='AbortError')return;
   if(error.status&&error.status<500&&(ownsOperation(operation)||error.current_operation))forget();
@@ -157,12 +161,12 @@ async function submitSupplement(event){
  if(pending){state.pendingCommandId=pending;syncPendingButtons();setStatus('上次报修结果尚未确认，正在查询；不会重复提交。','error');void recoverPending();return;}
  const id=crypto.randomUUID(),text=$('supplement-text').value.trim();
  if(!text){setStatus('请填写补充说明。','error');return;}
- const payload=Object.freeze({schema_version:1,client_command_id:id,expected_input_revision:state.detail.input_revision,text});
+ const requestRef=state.detail.request_ref,payload=Object.freeze({schema_version:1,client_command_id:id,expected_input_revision:state.detail.input_revision,text});
  if(!remember(id)){setStatus(messageFor(503),'error');return;}const operation=beginOperation({busy:true});let refresh=false,conflictRefresh=false;
  try{
-  const result=await fetchJson(`/api/yixiaoxiu/requests/${state.detail.request_ref}/supplements`,{method:'POST',headers:jsonHeaders(id,window.__yxx_csrf),body:JSON.stringify(payload)},operation.signal);
+  const result=await fetchJson(`/api/yixiaoxiu/requests/${requestRef}/supplements`,{method:'POST',headers:jsonHeaders(id,window.__yxx_csrf),body:JSON.stringify(payload)},operation.signal);
   if(!ownsOperation(operation))return;
-  forget();$('supplement-text').value='';setStatus(result.body.replayed?'已恢复原补充结果。':'补充已收到，正在处理。','success');state.detailEtag=null;refresh=true;
+  const accepted=acceptedResponse(result.body,id,requestRef);forget();$('supplement-text').value='';setStatus(accepted.replayed?'已恢复原补充结果。':'补充已收到，正在处理。','success');state.detailEtag=null;refresh=true;
  }catch(error){
   if(error.name==='AbortError')return;
   if(error.status&&error.status<500&&(ownsOperation(operation)||error.current_operation))forget();

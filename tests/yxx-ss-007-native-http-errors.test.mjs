@@ -68,7 +68,9 @@ test('SS-007 JSON bodies reject duplicate decoded keys before commands', async (
   const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
   native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) },
     oauthHttp: async () => false,
-    command: { accept: async () => { if(commandFailure)throw commandFailure; calls++; return { receipt: { request_ref: 'A'.repeat(32) } }; } },
+    command: { accept: async ({ input }) => { if(commandFailure)throw commandFailure; calls++; return { receipt: {
+      client_command_id: input.client_command_id ?? '00000000-0000-4000-8000-000000000001', request_ref: 'A'.repeat(32), status: 'ACCEPTED',
+      intake_no: 'INT-20260917-0001', accepted_revision: '1', accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' } }; } },
     supplement: { accept() {} }, query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
     authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: csrf,
       canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-http', source_app_scope: 'app-http' }), featureFlags: flags,

@@ -128,16 +128,16 @@ paths:
       security: [{}, {WeComMember: []}]
       description: 'The fixed homepage. It retains the existing prompt when the self-service profile or flags are disabled.'
       parameters: [{in: query, name: auth_return, schema: {type: string, const: '1'}, description: 'Internal one-use return marker; no identity or authorization data.'}]
-      responses: {'200': {description: 'Prompt or self-service home'}, '302': {description: 'One bounded OAuth begin'}, '303': {description: 'Normalize the exact auth_return marker to the bare root'}, '401': {description: 'Terminal authentication prompt'}, '503': {description: 'Fail closed'}}
+      responses: {'200': {description: 'Prompt or self-service home'}, '302': {description: 'One bounded OAuth begin'}, '303': {description: 'Normalize the exact auth_return marker to the bare root'}, '401': {description: 'Terminal authentication prompt'}, '403': {description: 'Member permission denied'}, '503': {description: 'Fail closed'}}
   /wecom/yixiaoxiu/reports/new:
     servers: [{url: /}]
-    get: {operationId: openYxxNewReport, security: [{WeComMember: []}], responses: {'200': {description: 'Native form'}, '401': {description: 'Authentication required'}, '503': {description: 'Disabled'}}}
+    get: {operationId: openYxxNewReport, security: [{WeComMember: []}], responses: {'200': {description: 'Native form'}, '302': {description: 'Bounded OAuth begin; returns to the fixed homepage'}, '401': {description: 'Authentication required'}, '403': {description: 'Member permission denied'}, '503': {description: 'Disabled'}}}
   /wecom/yixiaoxiu/reports:
     servers: [{url: /}]
-    get: {operationId: openYxxReports, security: [{WeComMember: []}], responses: {'200': {description: 'Native member report list'}, '401': {description: 'Authentication required'}, '503': {description: 'Disabled'}}}
+    get: {operationId: openYxxReports, security: [{WeComMember: []}], responses: {'200': {description: 'Native member report list'}, '302': {description: 'Bounded OAuth begin; returns to the fixed homepage'}, '401': {description: 'Authentication required'}, '403': {description: 'Member permission denied'}, '503': {description: 'Disabled'}}}
   /wecom/yixiaoxiu/reports/{request_ref}:
     servers: [{url: /}]
-    get: {operationId: openYxxReport, security: [{WeComMember: []}], parameters: [{ $ref: '#/components/parameters/RequestRef'}], responses: {'200': {description: 'Native safe detail'}, '401': {description: 'Authentication required'}, '404': {description: 'Not found or not owned'}, '503': {description: 'Disabled'}}}
+    get: {operationId: openYxxReport, security: [{WeComMember: []}], parameters: [{ $ref: '#/components/parameters/RequestRef'}], responses: {'200': {description: 'Native safe detail'}, '302': {description: 'Bounded OAuth begin; returns to the fixed homepage'}, '401': {description: 'Authentication required'}, '403': {description: 'Member permission denied'}, '404': {description: 'Not found or not owned'}, '503': {description: 'Disabled'}}}
 components:
   securitySchemes:
     WeComMember: {type: apiKey, in: cookie, name: __Host-wecom_session}

@@ -44,13 +44,15 @@ function fixture(origin) {
       canonical_reporter_binding: sessionToken === 'member-b' ? 'b'.repeat(64) : 'a'.repeat(64),
       source_corp_scope: 'corp-local', source_app_scope: 'app-local' };
   };
-  const receipt = requestRef => ({ request_ref: requestRef, status: 'ACCEPTED' });
+  const receipt = (requestRef, clientCommandId, acceptedRevision = '1') => ({ client_command_id: clientCommandId,
+    status: 'ACCEPTED', request_ref: requestRef, intake_no: 'INT-20260917-0001', accepted_revision: acceptedRevision,
+    accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' });
   const command = {
     async accept({ request, input }) {
       if (state.commandError) throw state.commandError;
       state.commandCalls.push({ member: memberFor(request), input });
       const requestRef = state.next++ % 2 === 0 ? REFS.A : REFS.B;
-      return { replayed: false, receipt: receipt(requestRef) };
+      return { replayed: false, receipt: receipt(requestRef, input.client_command_id) };
     },
   };
   const supplement = {
@@ -59,7 +61,7 @@ function fixture(origin) {
       if (state.supplementGate) await state.supplementGate;
       if (state.supplementError) throw state.supplementError;
       if (state.supplementConflict) { const error = new Error('version'); error.code = 'YXX_VERSION_CONFLICT'; throw error; }
-      return { replayed: false, receipt: receipt(requestRef) };
+      return { replayed: false, receipt: receipt(requestRef, input.client_command_id, String(Number(input.expected_input_revision) + 1)) };
     },
   };
   const query = {
@@ -117,6 +119,12 @@ async function startFixture({ enabled = true } = {}) {
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, origin);
     adaptSyntheticSession(request, response, url);
+    const override = values.state.successBodyOverride;
+    if (override && request.method === 'POST' && url.pathname === override.path) {
+      values.state.successBodyOverride = null;
+      const end = response.end.bind(response);
+      response.end = (body, ...rest) => end(override.transform(String(body)), ...rest);
+    }
     const handled = await native.handler({ request, response, url });
     if (!handled && !response.writableEnded) { response.writeHead(404); response.end(); }
   });
@@ -254,6 +262,54 @@ test('SS-007 unavailable session storage blocks new POST commands', { timeout: 6
       assert.equal(f.state.commandCalls.length, 0);
       assert.equal(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
       assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), false);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
+test('SS-007 ambiguous successful responses keep the original UUID and use GET-only recovery', { timeout: 120000 }, async () => {
+  const scenarios = [
+    { surface: 'new', mode: 'truncated' },
+    { surface: 'new', mode: 'external-location' },
+    { surface: 'new', mode: 'numeric-revision' },
+    { surface: 'supplement', mode: 'truncated' },
+    { surface: 'supplement', mode: 'wrong-request-ref' },
+  ];
+  for (const { surface, mode } of scenarios) {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      if (surface === 'new') {
+        await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+        await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+      } else {
+        await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+        await browser.waitFor("document.querySelector('#supplement-form')?.hidden===false");
+      }
+      const path = surface === 'new' ? '/api/yixiaoxiu/requests' : `/api/yixiaoxiu/requests/${REFS.A}/supplements`;
+      f.state.successBodyOverride = { path, transform: body => {
+        if (mode === 'truncated') return body.slice(0, 10);
+        const value = JSON.parse(body);
+        if (mode === 'external-location') value.location = `https://attacker.invalid/wecom/yixiaoxiu/reports/${value.receipt.request_ref}`;
+        else if (mode === 'numeric-revision') value.receipt.accepted_revision = 1;
+        else { value.receipt.request_ref = REFS.B; value.location = `/wecom/yixiaoxiu/reports/${REFS.B}`; }
+        return JSON.stringify(value);
+      } };
+      if (surface === 'new') await browser.evaluate("document.querySelector('#description').value='未知结果新报修';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+      else await browser.evaluate("document.querySelector('#supplement-text').value='未知结果补充草稿';document.querySelector('#supplement-form').requestSubmit()");
+      await waitForState(() => surface === 'new' ? f.state.commandCalls.length === 1 : f.state.supplementCalls.length === 1);
+      await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('结果未知')");
+      const call = surface === 'new' ? f.state.commandCalls[0] : f.state.supplementCalls[0];
+      const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+      assert.equal(pending.id, call.input.client_command_id);
+      assert.equal(await browser.evaluate('location.origin'), f.origin);
+      assert.equal(await browser.evaluate('location.pathname'), surface === 'new' ? '/wecom/yixiaoxiu/reports/new' : `/wecom/yixiaoxiu/reports/${REFS.A}`);
+      await waitForState(() => f.state.commandStatusCalls.some(item => item.clientCommandId === pending.id), 3000);
+      assert.equal(surface === 'new' ? f.state.commandCalls.length : f.state.supplementCalls.length, 1);
+      assert.equal(JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')")).id, pending.id);
+      if (surface === 'new') assert.equal(await browser.evaluate("document.querySelector('#description').value"), '未知结果新报修');
+      else assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '未知结果补充草稿');
     } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
   }
 });
@@ -441,7 +497,8 @@ test('SS-007 pending recovery retries only GET, then requires an explicit bounde
   const notFound = () => Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
   try {
     f.state.commandStatusResponses = [notFound(), notFound(), notFound(), notFound(), notFound(),
-      { status: 'ACCEPTED', client_command_id: commandId, request_ref: REFS.A }];
+      { status: 'ACCEPTED', client_command_id: commandId, request_ref: REFS.A, intake_no: 'INT-20260917-0001',
+        accepted_revision: '1', accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' }];
     browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
       cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
     await browser.waitFor("document.querySelector('#home-view')?.hidden===false");

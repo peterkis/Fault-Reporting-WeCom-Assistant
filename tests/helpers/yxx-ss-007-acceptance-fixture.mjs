@@ -13,9 +13,11 @@ export const SS007_REFS = Object.freeze({
 
 const csrf = 'ss007-acceptance-csrf-012345678901234567890123';
 const recoveryBindingSecret = 'ss007-acceptance-recovery-secret-0123456789';
-const accepted = requestRef => ({
+const accepted = (requestRef, clientCommandId, acceptedRevision = '1') => ({
   replayed: false,
-  receipt: { request_ref: requestRef, status: 'ACCEPTED' },
+  receipt: { client_command_id: clientCommandId, request_ref: requestRef, status: 'ACCEPTED',
+    intake_no: 'INT-20260917-0001', accepted_revision: acceptedRevision,
+    accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' },
 });
 
 function httpError(status, code) {
@@ -115,7 +117,7 @@ export async function startSs007AcceptanceFixture() {
       };
     },
     async commandStatus({ clientCommandId }) {
-      return { client_command_id: clientCommandId, status: 'ACCEPTED' };
+      throw httpError(404, `YXX_COMMAND_NOT_FOUND_${clientCommandId}`);
     },
   };
   const command = {
@@ -126,7 +128,7 @@ export async function startSs007AcceptanceFixture() {
       if (input.description === '触发503') throw httpError(503, 'YXX_UNAVAILABLE');
       const requestRef = input.description.includes('标签页二') ? SS007_REFS.SECOND : SS007_REFS.FIRST;
       state.byRef.set(requestRef, { description: input.description, revision: '1' });
-      return accepted(requestRef);
+      return accepted(requestRef, input.client_command_id);
     },
   };
   const supplement = {
@@ -137,7 +139,7 @@ export async function startSs007AcceptanceFixture() {
         state.byRef.set(requestRef, { ...value, revision: '2' });
         throw httpError(409, 'YXX_VERSION_CONFLICT');
       }
-      return accepted(requestRef);
+      return accepted(requestRef, input.client_command_id, String(Number(input.expected_input_revision) + 1));
     },
   };
   const oauthHttp = async ({ response }) => {
