@@ -71,7 +71,24 @@ async function body(request, maximum) {
     chunks.push(chunk);
   }
   try {
-    const value = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    const source = new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks));
+    const value = JSON.parse(source);
+    // JSON.parse validates grammar; walk its lexical tokens to retain duplicate
+    // object keys (including escaped equivalents) before their values disappear.
+    const tokens = source.match(/"(?:[^"\\]|\\.)*"|[{}\[\]:,]|[^\s{}\[\]:,"]+/gu) ?? [];
+    const objects = [];
+    for (let index = 0; index < tokens.length; index += 1) {
+      const token = tokens[index];
+      if (token === '{' || token === '[') {
+        if (objects.length >= 32) throw new Error('depth');
+        objects.push(token === '{' ? new Set() : null);
+      } else if (token === '}' || token === ']') objects.pop();
+      else if (token.startsWith('"') && tokens[index + 1] === ':') {
+        const key = JSON.parse(token), keys = objects.at(-1);
+        if (!keys || keys.has(key)) throw new Error('duplicate key');
+        keys.add(key);
+      }
+    }
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('shape');
     return value;
   } catch { throw error('YXX_INPUT_INVALID'); }
@@ -97,7 +114,13 @@ function safeProfile(context, configuredProfile) {
 }
 
 function mapError(value) {
-  if (value?.status) return value;
+  if (value?.status) {
+    const codes = { 400: 'YXX_INPUT_INVALID', 401: 'YXX_AUTH_REQUIRED', 403: 'YXX_FORBIDDEN',
+      404: 'YXX_NOT_FOUND', 409: 'YXX_CONFLICT', 413: 'YXX_BODY_TOO_LARGE',
+      415: 'YXX_CONTENT_TYPE_INVALID', 429: 'YXX_BUSY', 503: 'YXX_UNAVAILABLE' };
+    const status = Object.hasOwn(codes, value.status) ? Number(value.status) : 503;
+    return error(/^YXX_[A-Z0-9_]+$/u.test(value.code ?? '') ? value.code : codes[status], status);
+  }
   if (value instanceof TypeError && ['YXX_INPUT_INVALID', 'YXX_CURSOR_INVALID', 'YXX_LIMIT_INVALID', 'YXX_REQUEST_REF_INVALID'].includes(value.message)) {
     return error('YXX_INPUT_INVALID', 400);
   }
@@ -109,6 +132,15 @@ function mapError(value) {
   if (/TOO_LARGE|BODY/u.test(code)) return error('YXX_BODY_TOO_LARGE', 413);
   if (/CONTENT_TYPE/u.test(code)) return error('YXX_CONTENT_TYPE_INVALID', 415);
   if (/LIMIT|INVALID|INPUT/u.test(code)) return error('YXX_INPUT_INVALID', 400);
+  return error('YXX_UNAVAILABLE', 503);
+}
+
+function memberError(value) {
+  if (value?.status === 403) return error('YXX_FORBIDDEN', 403);
+  if (Number(value?.status) >= 500) return error('YXX_UNAVAILABLE', 503);
+  if (value?.status === 401 || /^(?:YXX|WECOM)_(?:AUTH_REQUIRED|MEMBER_REQUIRED)$/u.test(value?.code ?? '')) {
+    return error('YXX_AUTH_REQUIRED', 401);
+  }
   return error('YXX_UNAVAILABLE', 503);
 }
 
@@ -138,9 +170,9 @@ export function createYxxSelfServiceNativeHttp({
     const token = cookie(request, sessionCookieName);
     if (!token) throw error('YXX_AUTH_REQUIRED', 401);
     let member;
-    try { member = oauth.authenticate(token); } catch { throw error('YXX_AUTH_REQUIRED', 401); }
+    try { member = oauth.authenticate(token); } catch (value) { throw memberError(value); }
     let context;
-    try { context = await authenticateMember({ request, sessionToken: token, member }); } catch { throw error('YXX_AUTH_REQUIRED', 401); }
+    try { context = await authenticateMember({ request, sessionToken: token, member }); } catch (value) { throw memberError(value); }
     if (!context || typeof context !== 'object' || Array.isArray(context)) throw error('YXX_AUTH_REQUIRED', 401);
     const selectedProfile = safeProfile(context, configured.profile);
     const selectedFlags = safeFlags(context, configured.flags);
@@ -159,7 +191,9 @@ export function createYxxSelfServiceNativeHttp({
     catch (value) {
       const selected = mapError(value);
       if (selected.status === 401 && !cookieSeen(request, sessionCookieName)) {
-        beginWeComOAuth({ request, response, oauth, returnPath: path }); return true;
+        // Reuse the bounded homepage return marker. Native report URLs are not
+        // OAuth callback destinations, and a missing cookie must not loop.
+        beginWeComOAuth({ request, response, oauth, returnPath: `${ROOT}?auth_return=1` }); return true;
       }
       page(response, selected.status, '医小修', selected.status === 401 ? '认证已失效，请重新认证。' : '当前页面暂不可用。'); return true;
     }
@@ -180,8 +214,10 @@ export function createYxxSelfServiceNativeHttp({
         if (!serviceEnabled) return oauthHttp({ request, response, url });
         try { await currentMember(request); await asset(response, ['self-service.html', 'text/html']); return true; }
         catch (value) {
-          if (mapError(value).status === 401 && cookieSeen(request, sessionCookieName)) return oauthHttp({ request, response, url });
-          return oauthHttp({ request, response, url });
+          const selected = mapError(value);
+          if (selected.status === 401) return await oauthHttp({ request, response, url });
+          page(response, selected.status, '医小修', selected.status === 403 ? '当前账号没有此项权限。' : '服务暂时不可用，请稍后重试。');
+          return true;
         }
       }
       if (request.method === 'POST' && url.pathname === `${ROOT}logout` && !url.search) {
@@ -194,7 +230,7 @@ export function createYxxSelfServiceNativeHttp({
         json(response, 200, { logged_out: true }, { 'set-cookie': cleared }); return true;
       }
       const pageMatch = url.pathname.match(/^\/wecom\/yixiaoxiu\/reports(?:\/(new|[A-Za-z0-9_-]{32}))?$/u);
-      if (request.method === 'GET' && pageMatch && !url.search) return nativePage({ request, response, path: url.pathname });
+      if (request.method === 'GET' && pageMatch && !url.search) return await nativePage({ request, response, path: url.pathname });
 
       if (url.pathname === '/api/yixiaoxiu/bootstrap' && request.method === 'GET') {
         if (url.search) throw error('YXX_INPUT_INVALID');

@@ -55,20 +55,25 @@ function fixture(origin) {
       const member = memberFor(request);
       state.detailCalls.push({ member, requestRef, ifNoneMatch });
       if (state.enforceOwnership && requestRef !== REFS[member]) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
-      const etag = `"${requestRef}-v1"`;
+      const revision = state.detailRevision ?? '1';
+      const etag = `"${requestRef}-v${revision}"`;
       if (ifNoneMatch === etag) return { status: 304, body: null, etag };
       return { status: 200, etag, body: { source_kind: 'WEB_REQUEST', request_ref: requestRef,
-        intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: 'WAITING_FOR_DETAILS', input_revision: '1', processed_revision: '0',
+        intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: 'WAITING_FOR_DETAILS', input_revision: revision, processed_revision: '0',
         needs_action: '请补充故障现象', updated_at: '2026-09-16 23:00:00', updated_epoch_ms: '1789570800000',
         created_at: '2026-09-16 23:00:00', created_epoch_ms: '1789570800000', safe_description: '<img src=x onerror=window.__xss=1>',
         safe_location: '护士站', safe_clarification: null, supplements: [], can_supplement: true, ticket: null } };
     },
-    async timeline({ request, requestRef, limit, cursor }) {
-      state.timelineCalls.push({ member: memberFor(request), requestRef, limit, cursor });
-      return { schema_version: 1, items: [{ event_type: cursor ? 'ticket.updated' : 'intake.accepted', summary: cursor ? '已更新处理状态' : '已收到报修', occurred_at: '2026-09-16 23:00:00' }], next_cursor: cursor ? null : 'cursor-1' };
+    async timeline({ request, requestRef, limit, cursor, before }) {
+      state.timelineCalls.push({ member: memberFor(request), requestRef, limit, cursor, before });
+      const older = cursor !== null && cursor !== undefined;
+      return { items: [{ event_type: older ? 'PROCESSING' : 'REQUEST_ACCEPTED', summary: older ? `更早记录 ${cursor}` : '最近记录',
+        occurred_at: older ? '2026-09-16 22:00:00' : '2026-09-16 23:00:00', occurred_epoch_ms: older ? '1789567200000' : '1789570800000', ticket: null }],
+        next_cursor: state.timelineEnds ? null : older ? `${cursor}-next` : 'cursor-1' };
     },
     async commandStatus({ request, clientCommandId }) {
       state.commandStatusCalls.push({ member: memberFor(request), clientCommandId });
+      if (state.commandStatusResponses?.length) { const value = state.commandStatusResponses.shift(); if (value instanceof Error) throw value; return value; }
       if (state.commandStatusError) throw state.commandStatusError;
       return { status: 'ACCEPTED', client_command_id: clientCommandId, member: memberFor(request) };
     },
@@ -131,7 +136,7 @@ test('SS-007 refreshed member CSRF survives clearing the previous form', { timeo
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
-test('SS-007 synthetic visibility restore preserves the detail ETag pair and reloads the first list page', { timeout: 45000 }, async () => {
+test('SS-007 synthetic visibility restore preserves ETag, bounds an endless timeline, and reloads the first list page', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   try {
     browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
@@ -145,6 +150,13 @@ test('SS-007 synthetic visibility restore preserves the detail ETag pair and rel
     await waitForState(() => f.state.detailCalls.length > beforeRestore && f.state.detailCalls.at(-1).ifNoneMatch === `"${REFS.A}-v1"`);
     await browser.waitFor("document.querySelector('#detail-source')?.textContent.includes('YXX-AAAA')&&document.querySelector('#supplement-form')?.hidden===false");
     assert.equal(await browser.evaluate("document.querySelector('#detail-facts').textContent.includes('undefined')"), false);
+    assert.equal(f.state.timelineCalls.at(-1).before, String(Number.MAX_SAFE_INTEGER));
+    const beforeOlder = f.state.timelineCalls.length;
+    await browser.evaluate("document.querySelector('#load-older-timeline').click()");
+    await waitForState(() => f.state.timelineCalls.length > beforeOlder && f.state.timelineCalls.at(-1).cursor === 'cursor-1');
+    await browser.waitFor("document.querySelector('#detail-timeline')?.textContent.includes('更早记录 cursor-1')&&document.querySelector('#detail-timeline')?.textContent.includes('最近记录')");
+    assert.equal(await browser.evaluate("document.querySelector('#load-older-timeline').hidden"), false);
+    assert.equal(await browser.evaluate("document.querySelector('#timeline-window-note').textContent.includes('下次状态刷新')"), true);
 
     f.state.paginatedLists = true;
     await browser.close();
@@ -195,11 +207,68 @@ test('SS-007 pending recovery stays GET-only, survives 404, and is discarded on 
     await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
     await setSyntheticVisibility(browser, false);
     await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&sessionStorage.getItem('yxx.self_service.pending_command')===null`);
+    await new Promise(resolve => setTimeout(resolve, 1200));
     assert.equal(f.state.commandStatusCalls.length, beforeIdentityChange);
     assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
     assert.equal(await browser.evaluate("document.body.textContent.includes('YXX-AAAA')"), false);
     assert.equal(f.state.commandCalls.length, 0);
     assert.equal(f.state.supplementCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 pending recovery retries only GET, then requires an explicit bounded restart', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000098';
+  const notFound = () => Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
+  try {
+    f.state.commandStatusResponses = [notFound(), notFound(), notFound(), notFound(), notFound(),
+      { status: 'ACCEPTED', client_command_id: commandId, request_ref: REFS.A }];
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:1,id:'${commandId}'}))`);
+    await setSyntheticVisibility(browser, false);
+    await waitForState(() => f.state.commandStatusCalls.length === 5, 18000);
+    await browser.waitFor("document.querySelector('#retry-pending')?.hidden===false");
+    assert.notEqual(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(f.state.supplementCalls.length, 0);
+    await browser.evaluate("document.querySelector('#retry-pending').click()");
+    await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+    assert.equal(f.state.commandStatusCalls.length, 6);
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(f.state.supplementCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 logout clears member DOM and timers before a hanging response', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+    f.state.commandStatusError = Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
+    await browser.evaluate(`(() => {
+      sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:1,id:'00000000-0000-4000-8000-000000000097'}));
+      document.dispatchEvent(new Event('visibilitychange'));
+    })()`);
+    await waitForState(() => f.state.commandStatusCalls.length === 1);
+    const recoveryCallsBeforeLogout = f.state.commandStatusCalls.length;
+    await browser.evaluate(`(() => {
+      const actualFetch=window.fetch.bind(window);
+      window.fetch=(path,options)=>String(path).endsWith('/logout')?new Promise(()=>{}):actualFetch(path,options);
+      document.querySelector('#logout').click();
+    })()`);
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('正在退出')");
+    assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+    assert.equal(await browser.evaluate("document.querySelector('#detail-timeline').textContent"), '');
+    assert.equal(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+    assert.equal(await browser.evaluate("window.__yxx_csrf===undefined"), true);
+    assert.equal(await browser.evaluate("document.querySelector('#retry-pending').hidden"), true);
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    assert.equal(f.state.commandStatusCalls.length, recoveryCallsBeforeLogout);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
@@ -291,6 +360,7 @@ test('SS-007 native HTTP keeps the fixed homepage gate and closed API boundary',
 test('SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated', { timeout: 120000 }, async () => {
   const fixtureState = await startFixture();
   const browsers = [];
+  let failure;
   try {
     const { origin, state } = fixtureState;
     for (const [width, height] of [[390, 844], [1440, 900]]) {
@@ -305,12 +375,14 @@ test('SS-007 native UI renders safely at phone and desktop sizes and keeps tabs 
       assert.equal(await browser.evaluate("document.body.textContent.includes('工单号只在真实工单生成后出现')"), true);
       assert.equal(await browser.evaluate("document.querySelectorAll('script[src]').length"), 1);
       assert.equal(await browser.evaluate("document.querySelector('img')===null"), true);
+      assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('#logout')).color"), 'rgb(22, 78, 61)');
       await browser.evaluate("document.querySelector('#new-report-link').click()");
       await browser.waitFor("document.querySelector('#new-view').hidden===false");
       await browser.waitFor("document.querySelector('#submit-report').disabled===false");
       const beforeCommands = state.commandCalls.filter(call => call.member === 'A').length;
       await browser.evaluate("document.querySelector('#description').value='网页故障';document.querySelector('#location-text').value='护士站';document.querySelector('#service-code').value='打印机';document.querySelector('#new-report-form').requestSubmit();document.querySelector('#new-report-form').requestSubmit()");
-      await browser.waitFor("location.pathname.startsWith('/wecom/yixiaoxiu/reports/')");
+      await browser.waitFor("/^\\/wecom\\/yixiaoxiu\\/reports\\/[A-Za-z0-9_-]{32}$/.test(location.pathname)");
+      await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img src=x')");
       assert.equal(state.commandCalls.filter(call => call.member === 'A').length, beforeCommands + 1);
       assert.equal(state.commandCalls.at(-1).input.service_code, null);
       assert.equal(await browser.evaluate("document.querySelector('[onerror]')===null"), true);
@@ -323,7 +395,7 @@ test('SS-007 native UI renders safely at phone and desktop sizes and keeps tabs 
       await browser.evaluate("document.querySelector('#supplement-text').value='补充事实';document.querySelector('#supplement-form').requestSubmit();document.querySelector('#supplement-form').requestSubmit()");
       await browser.waitFor("document.querySelector('#submit-supplement').disabled===false");
     assert.equal(state.supplementCalls.filter(call => call.member === 'A').length, beforeSupplements + 1);
-      assert.equal(state.timelineCalls.some(call => call.cursor === 'cursor-1'), true);
+      assert.equal(state.timelineCalls.some(call => call.before === String(Number.MAX_SAFE_INTEGER)), true);
       const focused = await browser.evaluate("document.activeElement?.id");
       assert.equal(typeof focused, 'string');
     }
@@ -342,5 +414,6 @@ test('SS-007 native UI renders safely at phone and desktop sizes and keeps tabs 
     assert.match(source, /AbortController/u);
     assert.match(source, /visibilitychange/u);
     assert.match(source, /state\.detailEtag=detail\.etag/u);
-  } finally { await closeBrowserTestResources(browsers.map(browser => browser.close)); await closeServer(fixtureState.server); }
+  } catch (error) { failure = error; }
+  finally { await closeBrowserTestResources([...browsers.map(browser => browser.close), () => closeServer(fixtureState.server)], failure); }
 });

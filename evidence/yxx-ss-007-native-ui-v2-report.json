@@ -1,0 +1,109 @@
+{
+  "task": "YXX-SS-007",
+  "status": "LOCAL_VALIDATION_COMPLETE_REVIEW_PENDING",
+  "event_time": "2026-09-17 08:31:29",
+  "event_epoch_ms": "1789605089451",
+  "base_head": "67738bb17c9aefb5b4a05627af2c00b7fa3f2b18",
+  "source_binding": "SHA256 of tested working-tree bytes; implementation commit is a successor of base_head",
+  "source_files": [
+    {
+      "path": "src/yxx-self-service-native-http.mjs",
+      "sha256": "0d91dea2546a71cfc46d165d3541d7e6f3f2134e1881307778ae334b48181bf1"
+    },
+    {
+      "path": "web/p2-reporter/self-service.js",
+      "sha256": "216b0d7a5dd0616911ba4be74501f1232fcd580c2a13591702d325197f3f1864"
+    },
+    {
+      "path": "web/p2-reporter/self-service.html",
+      "sha256": "e0dde17067a2ffdbb4637454acc6cd962445b027319251d3696adef7a6660565"
+    },
+    {
+      "path": "web/p2-reporter/self-service.css",
+      "sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "sha256": "0ea1a2343565729f7838ea189a66cede23bff5e1a615e3ff999b3d101e2233c8"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "sha256": "fa9e2cf1ea3895bf423695147f8b85418fa526a1cbd9a3999961cd8554a37597"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+      "sha256": "410942a5f9278916f56b45c94ed1e5a01078203fa9eb8ba334d068d8eb88b74f"
+    },
+    {
+      "path": "tests/helpers/yxx-ss-007-acceptance-fixture.mjs",
+      "sha256": "bcf42de905abd4972f1ae74c1db15ea5c68aba3ce1bbf50f9cbbeaa1243ce9a2"
+    },
+    {
+      "path": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+      "sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29"
+    },
+    {
+      "path": "evidence/yxx-ss-007-phone-v2.png",
+      "sha256": "65d1275fcf85d634453e11ce24e0fca3e9f8f755bbf316360e1f213aafb5c214"
+    },
+    {
+      "path": "evidence/yxx-ss-007-desktop-v2.png",
+      "sha256": "05e4dcad5e3b447713e7dc310d04280fa6cef80b96b9d7e8c062c580f60cfa90"
+    },
+    {
+      "path": "evidence/yxx-ss-007-integrated-v6-passed.tap",
+      "sha256": "32f83b163a19362d29323127446bd61030e9fa82e9084ae6d4bb180b5429102b"
+    }
+  ],
+  "validation": {
+    "command": "node --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-001-homepage-oauth.test.mjs tests/yxx-ss-005-member-queries.integration.test.mjs tests/yxx-ss-007-*.test.mjs",
+    "tests": 24,
+    "pass": 24,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "scope": "LOCAL_HTTP_BROWSER_AND_ISOLATED_POSTGRES"
+  },
+  "independent_reviews": {
+    "standards": {
+      "agent": "ss007_standards_final",
+      "initial_findings": [
+        "member dependency failures incorrectly became 401",
+        "logout did not clear DOM before network"
+      ],
+      "followup": "Both corrected; independent follow-up found no remaining blocker in those changes"
+    },
+    "spec": {
+      "agent": "ss007_spec_final",
+      "initial_findings": [
+        "409 revision refresh missing",
+        "browser acceptance gaps",
+        "duplicate JSON keys accepted"
+      ],
+      "followup": "Regression coverage added; parent corrected two-tab scheduling and fixture isolation after preserved failures"
+    }
+  },
+  "failure_history": [
+    "evidence/yxx-ss-007-integrated-v3-failed.tap",
+    "evidence/yxx-ss-007-acceptance-v4-failed.tap",
+    "evidence/yxx-ss-005-pagination-diagnostic.md"
+  ],
+  "limitations": [
+    "PageTransitionEvent and document.hidden tests use deterministic browser seams, not real operating-system BFCache proof",
+    "Historical 498/500 list failure remains UNREPRODUCED; original and same-second diagnostic traversals now pass",
+    "SS-008 real DB/HTTP/workbench assembly and SS-009 full regression are not yet run",
+    "External current-commit review remains pending"
+  ],
+  "live": {
+    "oauth": "NOT_RUN",
+    "sdk": "NOT_RUN",
+    "production_db": "NOT_RUN",
+    "send": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "SS011": "NOT_AUTHORIZED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "BLOCKED"
+  }
+}

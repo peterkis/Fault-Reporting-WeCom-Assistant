@@ -15,6 +15,7 @@
   </header>
   <main>
     <p id="app-status" class="status" role="status" aria-live="polite">正在验证成员会话…</p>
+    <button id="retry-pending" class="secondary recovery-action" type="button" hidden>查询上次提交结果</button>
     <section id="home-view" class="panel" hidden>
       <h2>需要帮助？</h2>
       <p>请描述看到的故障现象。不要填写患者资料、账号口令或其他敏感信息。</p>
@@ -64,6 +65,8 @@
       <h3>原始说明</h3><p id="detail-description" class="preserved-text"></p>
       <h3>补充记录</h3><ol id="detail-supplements" class="preserved-list"></ol>
       <h3>处理时间线</h3><ol id="detail-timeline" class="timeline"></ol>
+      <button id="load-older-timeline" class="secondary" type="button" hidden>加载更早记录</button>
+      <p id="timeline-window-note" class="quiet"></p>
       <form id="supplement-form" hidden>
         <label for="supplement-text">补充说明</label>
         <textarea id="supplement-text" maxlength="2000" rows="4" required placeholder="补充一个新的、可观察的事实"></textarea>

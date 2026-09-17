@@ -1,0 +1,82 @@
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { test } from 'node:test';
+import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-http.mjs';
+
+test('SS-007 dependency failures remain terminal service or permission failures', async () => {
+  let failure = new Error('private dependency detail');
+  let oauthFailure = null;
+  let delegated = 0;
+  let returnPath = null;
+  let native;
+  const server = createServer(async (request, response) => {
+    await native.handler({ request, response, url: new URL(request.url, origin) });
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin,
+    oauth: { authenticate() { if (oauthFailure) throw oauthFailure; return {}; },
+      begin(input) { returnPath = input.returnPath; return { location: origin + '/synthetic-authorize?state=' + 'a'.repeat(64), browserToken: 'synthetic' }; } },
+    oauthHttp: async ({ response }) => { delegated++; response.writeHead(401); response.end(); return true; },
+    command: { accept() {} }, supplement: { accept() {} },
+    query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
+    authenticateMember: async () => { throw failure; },
+    featureFlags: { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true },
+  });
+  try {
+    for (const status of [503, 403]) {
+      failure = Object.assign(new Error('private dependency detail'), { status, code: status === 503 ? 'DEPENDENCY_DOWN' : 'MEMBER_DENIED' });
+      for (const path of ['/api/yixiaoxiu/bootstrap', '/wecom/yixiaoxiu/', '/wecom/yixiaoxiu/reports/new']) {
+        const response = await fetch(origin + path, { headers: { cookie: '__Host-wecom_session=synthetic' }, redirect: 'manual' });
+        assert.equal(response.status, status, path);
+        assert.equal(response.headers.has('location'), false);
+        assert.doesNotMatch(await response.text(), /private dependency detail|DEPENDENCY_DOWN|MEMBER_DENIED/);
+      }
+    }
+    failure = new Error('private database error');
+    assert.equal((await fetch(origin + '/api/yixiaoxiu/bootstrap', { headers: { cookie: '__Host-wecom_session=synthetic' } })).status, 503);
+    oauthFailure = Object.assign(new Error('closed provider'), { status: 503, code: 'WECOM_AUTH_UNAVAILABLE' });
+    assert.equal((await fetch(origin + '/api/yixiaoxiu/bootstrap', { headers: { cookie: '__Host-wecom_session=synthetic' } })).status, 503);
+    assert.equal(delegated, 0);
+    const unauthenticatedPage = await fetch(origin + '/wecom/yixiaoxiu/reports/new', { redirect: 'manual' });
+    assert.equal(unauthenticatedPage.status, 302);
+    assert.equal(returnPath, '/wecom/yixiaoxiu/?auth_return=1');
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test('SS-007 JSON bodies reject duplicate decoded keys before commands', async () => {
+  let calls = 0, native, commandFailure = null;
+  const csrf = 'synthetic-csrf-at-least-thirty-two-characters';
+  const server = createServer(async (request, response) => {
+    await native.handler({ request, response, url: new URL(request.url, origin) });
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) },
+    oauthHttp: async () => false,
+    command: { accept: async () => { if(commandFailure)throw commandFailure; calls++; return { receipt: { request_ref: 'A'.repeat(32) } }; } },
+    supplement: { accept() {} }, query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: csrf }), featureFlags: flags,
+  });
+  const send = body => fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: {
+    origin, cookie: '__Host-wecom_session=synthetic', 'content-type': 'application/json', 'x-csrf-token': csrf,
+  }, body });
+  try {
+    for (const body of ['{"description":"a","description":"b"}',
+      '{"location":{"text":"a","text":"b"}}',
+      '{"location":{"text":"a","te\\u0078t":"b"}}',
+      '{"a":[{"k":1,"k":2}]}']) {
+      const response = await send(body);
+      assert.equal(response.status, 400);
+      assert.equal((await response.json()).error.code, 'YXX_INPUT_INVALID');
+    }
+    assert.equal(calls, 0);
+    assert.equal((await send('{"a":{"k":1},"b":{"k":2},"text":"literal \\"k\\": text"}')).status, 202);
+    assert.equal(calls, 1, 'equal keys in different objects and punctuation inside strings remain valid');
+    commandFailure = Object.assign(new Error('private input detail'), { status: 400, code: 'P2_016_INPUT_INVALID' });
+    const invalid = await send('{}');
+    assert.equal(invalid.status, 400);
+    assert.deepEqual(await invalid.json(), { error: { code: 'YXX_INPUT_INVALID', retryable: false } });
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
