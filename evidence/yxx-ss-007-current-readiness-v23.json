@@ -198,8 +198,8 @@
       "result": "NO_CRITICAL_HIGH_MEDIUM_FINDINGS"
     },
     "external_current_head": "LIMIT_REACHED",
-    "external_requested_head": "e5a47d9450ead21241aa1aee7830ac4899899e1d",
-    "external_review_record": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/17#issuecomment-5711120662",
+    "external_requested_head": "4d2c6cf94eaa4ea51c74c9065e305b8066d4c1c9",
+    "external_review_record": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/17#issuecomment-5711150718",
     "github_checks": "UNAVAILABLE_OR_NOT_REPORTED"
   },
   "security_boundaries": [

@@ -29,6 +29,6 @@ This is an append-only current aggregate. The historical v22 report remains unch
 ## Review and readiness
 
 - Local Delegation Mode review covered 5/5 changed files with no Critical, High or Medium findings.
-- External current-head Code Review was requested for `e5a47d9`, but the connector reported the Codex code-review usage limit ([record](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/17#issuecomment-5711120662)); no remote approval or CI success is claimed.
+- External current-head Code Review was requested for `4d2c6cf`, but the connector reported the Codex code-review usage limit ([record](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/17#issuecomment-5711150718)); no remote approval or CI success is claimed.
 - YXX-SS-007 remains `IN_REVIEW`; YXX-SS-008 remains `PLANNED`.
 - `MEMBER_TICKET_READONLY` remains business read-only. No real OAuth/SDK, production database, SSH, send, deployment, SS-011, P2-G2-LIVE or P2-008 activity was run.
