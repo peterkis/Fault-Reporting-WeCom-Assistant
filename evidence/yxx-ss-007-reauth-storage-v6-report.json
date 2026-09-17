@@ -1,0 +1,121 @@
+{
+  "task": "YXX-SS-007",
+  "status": "LOCAL_VALIDATION_COMPLETE_REVIEW_PENDING",
+  "event_time": "2026-09-17 09:27:10",
+  "event_epoch_ms": "1789608430288",
+  "base_head": "805c04541b338731023262c0201bc1ad91b9f151",
+  "source_binding": "SHA256 of tested working-tree bytes; implementation commit is a successor of base_head",
+  "source_files": [
+    {
+      "path": "src/yxx-self-service-native-http.mjs",
+      "sha256": "21c4dbe825670d862153ef89fd961b4b97fb20c071c2f4ab732114bc3557378c"
+    },
+    {
+      "path": "web/p2-reporter/self-service.js",
+      "sha256": "9bc9aa1b41b4bed911de290a0f3bc91d6978503e9fab4c16ac8b619e223f898f"
+    },
+    {
+      "path": "web/p2-reporter/self-service.html",
+      "sha256": "e0dde17067a2ffdbb4637454acc6cd962445b027319251d3696adef7a6660565"
+    },
+    {
+      "path": "web/p2-reporter/self-service.css",
+      "sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "sha256": "722d153a80aae36daa36998685489ed7199aee1ae9be44f3478361e45b627c91"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "sha256": "c152d907f2b1ca0c01f5c8f2585e53011323c53168959e324cbba48e653ab963"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+      "sha256": "2eddaf1d6bbee86ffcec3578e2715e7e54a233278572e417b2216a6f08376643"
+    },
+    {
+      "path": "tests/helpers/yxx-ss-007-acceptance-fixture.mjs",
+      "sha256": "709df5c04a1297ce2f82ec2cd7bb293e79588a78250245fcad091b40d249ec32"
+    },
+    {
+      "path": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+      "sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29"
+    },
+    {
+      "path": "contracts/yxx_self_service_bootstrap.schema.json",
+      "sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4"
+    },
+    {
+      "path": "contracts/yxx_self_service_contracts.d.ts",
+      "sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-contract-freeze.md",
+      "sha256": "0cfc98453d62b73deeef26fe398f1af875bbfa6474fc06b4f2182b2a75420bca"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-native-ui.md",
+      "sha256": "d88e3c905be60779e0064dfc83fe026a00864e676077e55fac95aab4f2ff8c0e"
+    },
+    {
+      "path": "evidence/yxx-ss-007-reauth-storage-v6-passed.tap",
+      "sha256": "c13a5525d8898e5b1b03388fd796fd9ad214d50ada22915d8aa18b2c52d6226f"
+    }
+  ],
+  "validation": {
+    "command": "node --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-001-homepage-oauth.test.mjs tests/yxx-ss-002-contract.test.mjs tests/yxx-ss-007-*.test.mjs",
+    "tests": 30,
+    "pass": 30,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "scope": "LOCAL_HTTP_BROWSER_CONTRACT",
+    "result_basis": "Completed TAP and agent process exit",
+    "exit_code": 0
+  },
+  "review_fixes": [
+    "Clear protected DOM before reauthentication; retain draft only in memory and restore synchronously after matching scope and CSRF",
+    "Require sessionStorage write and exact readback before POST; reject thrown and silent storage failures",
+    "Add required supplements to TypeScript request detail declaration"
+  ],
+  "failure_history": [
+    {
+      "path": "evidence/yxx-ss-007-reauth-storage-v4-failed.tap",
+      "result": "27/29",
+      "cause": "Draft cleared on same-member visibility and old ETag test trigger incompatible with privacy clearing",
+      "correction": "Restore draft only after matching verification; exercise ETag behavior through actual polling, retaining original assertions"
+    },
+    {
+      "path": "evidence/yxx-ss-007-reauth-storage-v5-failed.tap",
+      "result": "28/29",
+      "cause": "P2_006_BROWSER_PROCESS_NOT_STOPPED during cleanup",
+      "status": "UNREPRODUCED",
+      "followup": "Read-only owned-profile process query found no residual browser; no broad kill or harness/cleanup-timeout change"
+    },
+    {
+      "result": "Earlier browser-only 12/13 failures",
+      "artifact": "Agent tool trace only; no standalone TAP saved",
+      "cause": "Old visibility ETag expectation and premature CSRF read before asynchronous bootstrap completion"
+    }
+  ],
+  "test_timing": "ETag test now waits for actual five-second polling; its observation window is eight seconds instead of five. Original ETag and previous-DOM assertions retained. Cleanup timeouts unchanged.",
+  "limitations": [
+    "PageTransitionEvent and document.hidden tests use deterministic browser seams, not real operating-system BFCache proof",
+    "Historical 498/500 list failure remains UNREPRODUCED; original and same-second diagnostic traversals now pass",
+    "SS-008 real DB/HTTP/workbench assembly and SS-009 full regression are not yet run",
+    "External current-commit review remains pending",
+    "Prior v5 browser cleanup failure remains UNREPRODUCED despite current successful cleanup"
+  ],
+  "live": {
+    "oauth": "NOT_RUN",
+    "sdk": "NOT_RUN",
+    "production_db": "NOT_RUN",
+    "send": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "SS011": "NOT_AUTHORIZED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "BLOCKED"
+  }
+}

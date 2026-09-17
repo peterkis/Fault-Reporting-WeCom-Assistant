@@ -62,6 +62,7 @@ async function press(target, key) {
 
 async function focusSubmitWithTabs(target) {
   await target.command('Page.bringToFront');
+  await target.waitFor("document.querySelector('#new-view')?.hidden===false");
   await target.evaluate('document.activeElement?.blur()');
   await press(target, 'Tab');
   assert.equal(await target.evaluate('document.activeElement?.classList.contains("brand")'), true);
@@ -124,10 +125,14 @@ test('SS-007 same-browser tabs keep form input and accepted request references i
     await focusSubmitWithTabs(browser);
     await focusSubmitWithTabs(tab);
     await browser.command('Page.bringToFront');
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false&&document.querySelector('#description')?.value==='标签页一故障'");
+    await browser.evaluate("document.querySelector('#submit-report').focus()");
     await press(browser, 'Enter');
     await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${SS007_REFS.FIRST}'`);
     await browser.waitFor("document.querySelector('#detail-description')?.textContent==='标签页一故障'");
     await tab.command('Page.bringToFront');
+    await tab.waitFor("document.querySelector('#new-view')?.hidden===false&&document.querySelector('#description')?.value==='标签页二故障'");
+    await tab.evaluate("document.querySelector('#submit-report').focus()");
     await press(tab, 'Enter');
     await tab.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${SS007_REFS.SECOND}'`);
     await tab.waitFor("document.querySelector('#detail-description')?.textContent==='标签页二故障'");
@@ -194,15 +199,13 @@ test('SS-007 does not accept a new detail ETag when the paired timeline request 
   fixture.state.byRef.set(SS007_REFS.FIRST, { description: '第二版详情', revision: '2' });
   fixture.state.timelineFailureOnce = true;
   const beforeFailure = fixture.state.detailCalls.length;
-  await syntheticVisibilityCycle(browser);
-  await waitForSs007State(() => fixture.state.detailCalls.length > beforeFailure && !fixture.state.timelineFailureOnce);
+  await waitForSs007State(() => fixture.state.detailCalls.length > beforeFailure && !fixture.state.timelineFailureOnce, 8000);
   await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
   assert.equal(fixture.state.detailCalls.at(-1).ifNoneMatch, `"${SS007_REFS.FIRST}-1"`);
   assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '标签页一故障');
 
   const beforeRecovery = fixture.state.detailCalls.length;
-  await syntheticVisibilityCycle(browser);
-  await waitForSs007State(() => fixture.state.detailCalls.length > beforeRecovery);
+  await waitForSs007State(() => fixture.state.detailCalls.length > beforeRecovery, 8000);
   assert.equal(fixture.state.detailCalls.at(-1).ifNoneMatch, `"${SS007_REFS.FIRST}-1"`);
   await browser.waitFor("document.querySelector('#detail-description')?.textContent==='第二版详情'");
 });

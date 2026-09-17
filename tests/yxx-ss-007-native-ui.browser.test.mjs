@@ -23,11 +23,14 @@ function fixture(origin) {
     logout() {},
     begin() { return { location: `${origin}/wecom/yixiaoxiu/login?state=synthetic`, browserToken: 'synthetic-browser-token' }; },
   };
-  const context = async ({ sessionToken }) => ({
-    profile: 'MEMBER_SELF_SERVICE', flags: FLAGS, csrf_token: state.csrfOverride ?? csrfFor(sessionToken),
-    canonical_reporter_binding: sessionToken === 'member-b' ? 'b'.repeat(64) : 'a'.repeat(64),
-    source_corp_scope: 'corp-local', source_app_scope: 'app-local',
-  });
+  const context = async ({ sessionToken }) => {
+    state.contextCalls = (state.contextCalls ?? 0) + 1;
+    if (state.contextGate) await state.contextGate;
+    if (state.contextError) throw state.contextError;
+    return { profile: 'MEMBER_SELF_SERVICE', flags: FLAGS, csrf_token: state.csrfOverride ?? csrfFor(sessionToken),
+      canonical_reporter_binding: sessionToken === 'member-b' ? 'b'.repeat(64) : 'a'.repeat(64),
+      source_corp_scope: 'corp-local', source_app_scope: 'app-local' };
+  };
   const receipt = requestRef => ({ request_ref: requestRef, status: 'ACCEPTED' });
   const command = {
     async accept({ request, input }) {
@@ -134,11 +137,109 @@ test('SS-007 refreshed member CSRF survives clearing the previous form', { timeo
     f.state.csrfOverride = 'refreshed-synthetic-csrf-01234567890123456789';
     await browser.evaluate("document.dispatchEvent(new Event('visibilitychange'))");
     await browser.waitFor("document.querySelector('#description').value===''");
+    await browser.waitFor(`window.__yxx_csrf==='${f.state.csrfOverride}'`);
     assert.equal(await browser.evaluate('window.__yxx_csrf'), f.state.csrfOverride);
     await browser.evaluate("document.querySelector('#description').value='新会话报修';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
     await browser.waitFor("location.pathname==='/wecom/yixiaoxiu/reports/" + REFS.A + "'");
     assert.equal(f.state.commandCalls.length, 1);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 visibility bootstrap hides member data before slow and failed revalidation', { timeout: 60000 }, async () => {
+  for (const mode of ['slow-detail', 'failed-list']) {
+    const f = await startFixture(); let browser; let releaseContext;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      const path = mode === 'slow-detail' ? `/wecom/yixiaoxiu/reports/${REFS.A}` : '/wecom/yixiaoxiu/reports';
+      await browser.evaluate(`location.assign('${path}')`, { awaitPromise: false });
+      if (mode === 'slow-detail') await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+      else await browser.waitFor(`document.querySelector('#report-list')?.textContent.includes('${REFS.A}')`);
+      if (mode === 'slow-detail') {
+        const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+        await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'00000000-0000-4000-8000-000000000094',scope:'${scope}'}))`);
+        f.state.contextGate = new Promise(resolve => { releaseContext = resolve; });
+      } else f.state.contextError = Object.assign(new Error('unavailable'), { status: 503, code: 'YXX_UNAVAILABLE' });
+      const beforeContext = f.state.contextCalls;
+      await setSyntheticVisibility(browser, false);
+      await waitForState(() => f.state.contextCalls > beforeContext);
+      assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
+      assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+      assert.equal(await browser.evaluate("document.querySelector('#report-list').textContent"), '');
+      assert.equal(await browser.evaluate("window.__yxx_csrf===undefined"), true);
+      if (mode === 'slow-detail') {
+        assert.notEqual(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+        f.state.contextGate = null; releaseContext();
+        await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+        assert.notEqual(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+      } else {
+        await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+        assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
+      }
+    } finally { releaseContext?.(); await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
+test('SS-007 a late detail response cannot restore an old member draft after identity rotation', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#supplement-form')?.hidden===false");
+    await browser.evaluate(`(() => {
+      document.querySelector('#supplement-text').value='A成员不得迟到恢复的草稿';
+      const actualFetch=window.fetch.bind(window);let held=true;
+      window.fetch=(path,options)=>{
+        if(held&&String(path)==='/api/yixiaoxiu/requests/${REFS.A}'){
+          held=false;
+          return new Promise(resolve=>{window.__releaseLateDraft=()=>resolve(new Response('{}',{status:200,headers:{'content-type':'application/json','etag':'"late"'}}));});
+        }
+        return actualFetch(path,options);
+      };
+      document.dispatchEvent(new Event('visibilitychange'));
+    })()`);
+    await browser.waitFor("typeof window.__releaseLateDraft==='function'");
+    f.state.enforceOwnership = true;
+    await browser.evaluate("document.cookie='yxx_session=member-b; Path=/';document.dispatchEvent(new Event('visibilitychange'))");
+    await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&document.querySelector('#home-view')?.hidden===false`);
+    await browser.evaluate("(async()=>{window.__releaseLateDraft();await new Promise(resolve=>setTimeout(resolve,100));})()");
+    assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '');
+    assert.equal(await browser.evaluate("document.body.textContent.includes('A成员不得迟到恢复的草稿')"), false);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 unavailable session storage blocks new POST commands', { timeout: 60000 }, async () => {
+  for (const mode of ['quota-error', 'silent-noop']) {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+      await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+      await browser.evaluate(`(() => {
+        const actual=Storage.prototype.setItem;
+        Storage.prototype.setItem=function(key,value){
+          if(key==='yxx.self_service.pending_command'){
+            if('${mode}'==='quota-error')throw new DOMException('full','QuotaExceededError');
+            return;
+          }
+          return actual.call(this,key,value);
+        };
+        document.querySelector('#description').value='存储不可用不得提交';
+        document.querySelector('#location-unknown').checked=true;
+        document.querySelector('#new-report-form').requestSubmit();
+      })()`);
+      await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+      assert.equal(f.state.commandCalls.length, 0);
+      assert.equal(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+      assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), false);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
 });
 
 test('SS-007 v2 recovery scope clears a different member fence after a full reload', { timeout: 45000 }, async () => {
@@ -183,7 +284,7 @@ test('SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET on
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
-test('SS-007 synthetic visibility restore preserves ETag, bounds an endless timeline, and reloads the first list page', { timeout: 45000 }, async () => {
+test('SS-007 synthetic visibility restore reloads cleared detail, bounds an endless timeline, and reloads the first list page', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   try {
     browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
@@ -194,7 +295,7 @@ test('SS-007 synthetic visibility restore preserves ETag, bounds an endless time
     const beforeRestore = f.state.detailCalls.length;
     await setSyntheticVisibility(browser, true);
     await setSyntheticVisibility(browser, false);
-    await waitForState(() => f.state.detailCalls.length > beforeRestore && f.state.detailCalls.at(-1).ifNoneMatch === `"${REFS.A}-v1"`);
+    await waitForState(() => f.state.detailCalls.length > beforeRestore && !f.state.detailCalls.at(-1).ifNoneMatch);
     await browser.waitFor("document.querySelector('#detail-source')?.textContent.includes('YXX-AAAA')&&document.querySelector('#supplement-form')?.hidden===false");
     assert.equal(await browser.evaluate("document.querySelector('#detail-facts').textContent.includes('undefined')"), false);
     assert.equal(f.state.timelineCalls.at(-1).before, String(Number.MAX_SAFE_INTEGER));

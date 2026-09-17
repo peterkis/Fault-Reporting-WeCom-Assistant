@@ -15,13 +15,28 @@ function setStatus(textValue,kind=''){const value=$('app-status');value.textCont
 function setView(view,title){for(const id of ['home-view','new-view','reports-view','detail-view'])$(id).hidden=id!==view;$('page-title').textContent=title;}
 function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTimer);state.pendingTimer=null;if(resetAttempts)state.pendingAttempts=0;$('retry-pending').hidden=true;}
 function syncPendingButtons(){const pending=state.pendingCommandId!==null;$('submit-report').disabled=pending;$('submit-supplement').disabled=pending;}
-function remember(id){if(!UUID.test(id)||!RECOVERY_SCOPE.test(state.recoveryScope??''))return false;cancelPendingRecovery(true);state.pendingCommandId=id;state.pendingScope=state.recoveryScope;state.pendingLegacy=false;try{sessionStorage.setItem(pendingKey,JSON.stringify({v:2,id,scope:state.recoveryScope}));}catch{/* storage is optional */}syncPendingButtons();return true;}
+function remember(id){
+ if(!UUID.test(id)||!RECOVERY_SCOPE.test(state.recoveryScope??''))return false;
+ const record=JSON.stringify({v:2,id,scope:state.recoveryScope});
+ try{sessionStorage.setItem(pendingKey,record);if(sessionStorage.getItem(pendingKey)!==record)throw new Error('storage verification');}
+ catch{try{sessionStorage.removeItem(pendingKey);}catch{/* storage remains unavailable */}state.pendingCommandId=null;state.pendingScope=null;state.pendingLegacy=false;syncPendingButtons();return false;}
+ cancelPendingRecovery(true);state.pendingCommandId=id;state.pendingScope=state.recoveryScope;state.pendingLegacy=false;syncPendingButtons();return true;
+}
 function forget(){cancelPendingRecovery(true);state.pendingCommandId=null;state.pendingScope=null;state.pendingLegacy=false;try{sessionStorage.removeItem(pendingKey);}catch{/* storage is optional */}syncPendingButtons();}
 function clearClientDom(message='认证已失效，请重新认证。'){
  cancelPendingRecovery(true);state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();clearTimeout(state.poll);state.controller=null;window.__yxx_csrf=undefined;state.recoveryScope=null;state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
  readPending();
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
- $('location-unknown').checked=false;clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');setStatus(message,'error');
+ $('location-unknown').checked=false;$('impact-scope').value='UNKNOWN';clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');setStatus(message,'error');
+}
+function captureDraft(){return Object.freeze({path:location.pathname,description:$('description').value,locationText:$('location-text').value,locationUnknown:$('location-unknown').checked,impactScope:$('impact-scope').value,serviceCode:$('service-code').value,department:$('department').value,extension:$('extension').value,supplement:$('supplement-text').value});}
+function restoreDraft(draft){if(!draft||draft.path!==location.pathname)return;$('description').value=draft.description;$('location-text').value=draft.locationText;$('location-unknown').checked=draft.locationUnknown;$('impact-scope').value=draft.impactScope;$('service-code').value=draft.serviceCode;$('department').value=draft.department;$('extension').value=draft.extension;$('supplement-text').value=draft.supplement;}
+function prepareBootstrap(){
+ clearTimeout(state.poll);state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];state.recoveryScope=null;window.__yxx_csrf=undefined;
+ for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
+ $('location-unknown').checked=false;$('impact-scope').value='UNKNOWN';clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-more-reports').hidden=true;$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;
+ for(const id of ['home-view','new-view','reports-view','detail-view'])$(id).hidden=true;
+ setStatus('正在验证成员会话…');
 }
 function readPending(){try{const value=JSON.parse(sessionStorage.getItem(pendingKey)??'null');if(!UUID.test(value?.id))return null;const v2=value.v===2&&RECOVERY_SCOPE.test(value.scope??'');const v1=value.v===1&&value.scope===undefined;if(!v1&&!v2)return null;state.pendingCommandId=value.id;state.pendingScope=v2?value.scope:null;state.pendingLegacy=v1;syncPendingButtons();return value.id;}catch{return state.pendingCommandId;}}
 function fetchJson(path,options={},signal){return fetch(path,{credentials:'same-origin',cache:'no-store',signal,...options}).then(async response=>{if(response.status===304)return {status:304,body:null,etag:response.headers.get('etag')};let body={};try{body=await response.json();}catch{/* error body may be empty */}if(!response.ok){const currentOperation=Boolean(signal&&signal===state.controller?.signal&&!signal.aborted);if((response.status===401||response.status===403)&&currentOperation)clearClientDom();const error=new Error(messageFor(response.status));error.status=response.status;error.code=body.error?.code;error.current_operation=currentOperation;throw error;}return {status:response.status,body,etag:response.headers.get('etag')};});}
@@ -158,18 +173,20 @@ async function submitSupplement(event){
  if(refresh&&validGeneration(operation.generation)){await loadDetail();if(conflictRefresh&&validGeneration(operation.generation))setStatus('版本已变化，已刷新到最新版本；请确认草稿后重新提交。','error');}
 }
 async function bootstrap(){
- cancelPendingRecovery(true);state.generation+=1;state.stopped=false;state.hidden=document.hidden;clearTimeout(state.poll);
+ const previousCsrf=window.__yxx_csrf,previousScope=state.recoveryScope,draft=captureDraft();
+ cancelPendingRecovery(true);state.generation+=1;state.stopped=false;state.busy=false;state.hidden=document.hidden;prepareBootstrap();
  const operation=beginOperation();
  try{
   const result=await fetchJson('/api/yixiaoxiu/bootstrap',{},operation.signal);
   if(!ownsOperation(operation))return;
-  const previousCsrf=window.__yxx_csrf,previousScope=state.recoveryScope,nextScope=result.body.recovery_scope;
+  const nextScope=result.body.recovery_scope;
   if(!RECOVERY_SCOPE.test(nextScope??''))throw Object.assign(new Error(messageFor(503)),{status:503});
   readPending();
   const scopeChanged=Boolean(previousScope&&previousScope!==nextScope||state.pendingScope&&state.pendingScope!==nextScope);
-  if(scopeChanged){clearClientDom('');forget();state.stopped=false;}
-  else if(previousCsrf&&previousCsrf!==result.body.csrf_token){clearClientDom('');state.stopped=false;}
+  if(scopeChanged)forget();
   state.recoveryScope=nextScope;window.__yxx_csrf=result.body.csrf_token;
+  const sameContext=Boolean(previousScope&&previousScope===nextScope&&previousCsrf&&previousCsrf===result.body.csrf_token);
+  if(sameContext)restoreDraft(draft);
   const path=location.pathname;
   if(path===refs.new){setView('new-view','新建报修');}
   else if(path===refs.list){setView('reports-view','我的报修');await loadReports();}
