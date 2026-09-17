@@ -197,7 +197,9 @@
       "medium": 0,
       "result": "NO_CRITICAL_HIGH_MEDIUM_FINDINGS"
     },
-    "external_current_head": "PENDING",
+    "external_current_head": "LIMIT_REACHED",
+    "external_requested_head": "e5a47d9450ead21241aa1aee7830ac4899899e1d",
+    "external_review_record": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/17#issuecomment-5711120662",
     "github_checks": "UNAVAILABLE_OR_NOT_REPORTED"
   },
   "security_boundaries": [
@@ -207,7 +209,7 @@
   ],
   "limitations": [
     "Browser visibility/BFCache checks use deterministic local seams, not operating-system backgrounding proof.",
-    "External current-head Code Review and GitHub status checks are pending/unavailable; this report does not claim remote review passed.",
+    "External current-head Code Review was requested for e5a47d9, but the connector reported the Codex code-review usage limit; this report does not claim remote review passed.",
     "SS-008 assembly, SS-009 regression and live validation remain outside this candidate."
   ],
   "live": {
