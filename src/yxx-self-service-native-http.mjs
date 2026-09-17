@@ -229,7 +229,12 @@ export function createYxxSelfServiceNativeHttp({
       if (selected.status === 401 && !cookieSeen(request, sessionCookieName)) {
         // Reuse the bounded homepage return marker. Native report URLs are not
         // OAuth callback destinations, and a missing cookie must not loop.
-        beginWeComOAuth({ request, response, oauth, returnPath: `${ROOT}?auth_return=1` }); return true;
+        try { beginWeComOAuth({ request, response, oauth, returnPath: `${ROOT}?auth_return=1` }); }
+        catch (beginFailure) {
+          const terminal = mapError(beginFailure);
+          page(response, terminal.status, '医小修', '当前页面暂不可用。');
+        }
+        return true;
       }
       page(response, selected.status, '医小修', selected.status === 401 ? '认证已失效，请重新认证。' : '当前页面暂不可用。'); return true;
     }

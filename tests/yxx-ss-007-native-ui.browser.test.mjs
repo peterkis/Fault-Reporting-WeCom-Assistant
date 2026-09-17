@@ -468,6 +468,8 @@ test('SS-007 synthetic visibility restore reloads cleared detail, bounds an endl
     await browser.waitFor("document.querySelector('#detail-source')?.textContent.includes('YXX-AAAA')");
     const beforeRestore = f.state.detailCalls.length;
     await setSyntheticVisibility(browser, true);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+    assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '');
     await setSyntheticVisibility(browser, false);
     await waitForState(() => f.state.detailCalls.length > beforeRestore && !f.state.detailCalls.at(-1).ifNoneMatch);
     await browser.waitFor("document.querySelector('#detail-source')?.textContent.includes('YXX-AAAA')&&document.querySelector('#supplement-form')?.hidden===false");

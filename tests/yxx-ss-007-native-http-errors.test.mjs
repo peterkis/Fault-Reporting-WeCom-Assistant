@@ -18,6 +18,7 @@ test('SS-007 native factory accepts only the OAuth callback session cookie', () 
 test('SS-007 dependency failures remain terminal service or permission failures', async () => {
   let failure = new Error('private dependency detail');
   let oauthFailure = null;
+  let beginFailure = null;
   let delegated = 0;
   let returnPath = null;
   let native;
@@ -28,7 +29,7 @@ test('SS-007 dependency failures remain terminal service or permission failures'
   const origin = `http://127.0.0.1:${server.address().port}`;
   native = createYxxSelfServiceNativeHttp({ publicOrigin: origin,
     oauth: { authenticate() { if (oauthFailure) throw oauthFailure; return {}; },
-      begin(input) { returnPath = input.returnPath; return { location: origin + '/synthetic-authorize?state=' + 'a'.repeat(64), browserToken: 'synthetic' }; } },
+      begin(input) { if (beginFailure) throw beginFailure; returnPath = input.returnPath; return { location: origin + '/synthetic-authorize?state=' + 'a'.repeat(64), browserToken: 'synthetic' }; } },
     oauthHttp: async ({ response }) => { delegated++; response.writeHead(401); response.end(); return true; },
     command: { accept() {} }, supplement: { accept() {} },
     query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
@@ -54,6 +55,12 @@ test('SS-007 dependency failures remain terminal service or permission failures'
     const unauthenticatedPage = await fetch(origin + '/wecom/yixiaoxiu/reports/new', { redirect: 'manual' });
     assert.equal(unauthenticatedPage.status, 302);
     assert.equal(returnPath, '/wecom/yixiaoxiu/?auth_return=1');
+    beginFailure = Object.assign(new Error('closed OAuth gate'), { status: 503, code: 'WECOM_AUTH_UNAVAILABLE' });
+    const failedNativePage = await fetch(origin + '/wecom/yixiaoxiu/reports/new', { redirect: 'manual' });
+    assert.equal(failedNativePage.status, 503);
+    assert.match(failedNativePage.headers.get('content-type') ?? '', /^text\/html/u);
+    assert.equal(failedNativePage.headers.has('location'), false);
+    assert.doesNotMatch(await failedNativePage.text(), /closed OAuth gate|WECOM_AUTH_UNAVAILABLE/u);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 

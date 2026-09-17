@@ -6,7 +6,7 @@ const INTAKE_NO=/^INT-[0-9]{8}-[0-9]{4,}$/u;
 const LOCAL_TIME=/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/u;
 const refs={home:'/wecom/yixiaoxiu/',new:'/wecom/yixiaoxiu/reports/new',list:'/wecom/yixiaoxiu/reports'};
 const $=id=>document.getElementById(id);
-const state={generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,poll:null,hidden:false};
+const state={generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,poll:null,hidden:false,hiddenDraft:null};
 const pendingKey='yxx.self_service.pending_command';
 const durablePrefix=`${pendingKey}.`;
 const durableLimit=20;
@@ -57,8 +57,8 @@ function remember(id){
  setPending(value);return true;
 }
 function forget(){const id=state.pendingCommandId;releaseTabPending();removeDurable(id);}
-function clearClientDom(message='认证已失效，请重新认证。'){
- cancelPendingRecovery(true);state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();clearTimeout(state.poll);state.controller=null;window.__yxx_csrf=undefined;state.recoveryScope=null;state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
+function clearClientDom(message='认证已失效，请重新认证。',{preserveContext=false}={}){
+ cancelPendingRecovery(true);state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();clearTimeout(state.poll);state.controller=null;state.hiddenDraft=null;if(!preserveContext){window.__yxx_csrf=undefined;state.recoveryScope=null;}state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
  readPending();
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
  $('location-unknown').checked=false;$('impact-scope').value='UNKNOWN';clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');setStatus(message,'error');
@@ -78,6 +78,7 @@ function broadcastLogout(){
  try{localStorage.setItem(logoutStorageKey,logoutStorageValue);localStorage.removeItem(logoutStorageKey);}catch{/* storage is an optional transport */}
 }
 function captureDraft(){return Object.freeze({path:location.pathname,description:$('description').value,locationText:$('location-text').value,locationUnknown:$('location-unknown').checked,impactScope:$('impact-scope').value,serviceCode:$('service-code').value,department:$('department').value,extension:$('extension').value,supplement:$('supplement-text').value});}
+function draftHasInput(draft){return Boolean(draft?.description||draft?.locationText||draft?.locationUnknown||draft?.impactScope!=='UNKNOWN'||draft?.serviceCode||draft?.department||draft?.extension||draft?.supplement);}
 function restoreDraft(draft){if(!draft||draft.path!==location.pathname)return;$('description').value=draft.description;$('location-text').value=draft.locationText;$('location-unknown').checked=draft.locationUnknown;$('impact-scope').value=draft.impactScope;$('service-code').value=draft.serviceCode;$('department').value=draft.department;$('extension').value=draft.extension;$('supplement-text').value=draft.supplement;}
 function prepareBootstrap(){
  clearTimeout(state.poll);state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];state.recoveryScope=null;window.__yxx_csrf=undefined;
@@ -265,7 +266,7 @@ async function submitSupplement(event){
 }
 async function bootstrap(){
  if(state.loggedOut)return;
- const previousCsrf=window.__yxx_csrf,previousScope=state.recoveryScope,draft=captureDraft();
+ const previousCsrf=window.__yxx_csrf,previousScope=state.recoveryScope,currentDraft=captureDraft(),draft=draftHasInput(currentDraft)?currentDraft:(state.hiddenDraft??currentDraft);state.hiddenDraft=null;
  cancelPendingRecovery(true);state.generation+=1;state.stopped=false;state.busy=false;state.hidden=document.hidden;prepareBootstrap();
  const operation=beginOperation();
  try{
@@ -295,7 +296,7 @@ async function bootstrap(){
 document.addEventListener('visibilitychange',()=>{
  state.hidden=document.hidden;
  if(state.loggedOut)return;
- if(state.hidden){cancelPendingRecovery(true);state.generation+=1;clearTimeout(state.poll);state.controller?.abort();state.controller=null;state.busy=false;return;}
+ if(state.hidden){const draft=state.hiddenDraft??captureDraft();clearClientDom('',{preserveContext:true});state.hiddenDraft=draft;return;}
  void bootstrap();
 });
 window.addEventListener('pagehide',()=>{if(!state.loggedOut)clearClientDom('');});
