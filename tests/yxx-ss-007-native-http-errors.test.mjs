@@ -188,3 +188,30 @@ test('SS-007 report source filters reject explicit empty and unknown values befo
     assert.deepEqual(sources, [null, 'WEB', 'BOT']);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
+
+
+test('SS-007 logout rejects unknown query and body fields without clearing sessions', async () => {
+  let native; const loggedOut = [];
+  const server = createServer(async (request, response) => {
+    if (!await native.handler({ request, response, url: new URL(request.url, origin) })) { response.writeHead(418); response.end(); }
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}), logout: token => loggedOut.push(token) }, oauthHttp: async () => false,
+    command: { accept() {} }, supplement: { accept() {} }, query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
+    authenticateMember: async () => ({}), recoveryBindingSecret });
+  const send = (suffix, body, requestOrigin = origin) => fetch(origin + '/wecom/yixiaoxiu/logout' + suffix, { method: 'POST', headers: { origin: requestOrigin, 'content-type': 'application/json', cookie: '__Host-wecom_session=synthetic' }, body });
+  try {
+    for (const [suffix, body] of [['?extra=1','{}'],['','{"extra":true}'],['','[]'],['','null']]) {
+      const response = await send(suffix, body); assert.equal(response.status, 400);
+      assert.equal(response.headers.has('set-cookie'), false);
+    }
+    assert.deepEqual(loggedOut, []);
+    assert.equal((await send('', '{}', 'https://other.invalid')).status, 403);
+    assert.deepEqual(loggedOut, []);
+    const accepted = await send('', '{}'); assert.equal(accepted.status, 200);
+    assert.deepEqual(await accepted.json(), { logged_out: true });
+    assert.deepEqual(loggedOut, ['synthetic']);
+    assert.match(accepted.headers.get('set-cookie'), /__Host-wecom_session=;.*Max-Age=0/);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});

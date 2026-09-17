@@ -246,8 +246,10 @@ export function createYxxSelfServiceNativeHttp({
           return true;
         }
       }
-      if (request.method === 'POST' && url.pathname === `${ROOT}logout` && !url.search) {
-        assertOrigin(request, origin.origin); await body(request, 1024);
+      if (request.method === 'POST' && url.pathname === `${ROOT}logout`) {
+        if (url.search) throw error('YXX_INPUT_INVALID');
+        assertOrigin(request, origin.origin);
+        if (Object.keys(await body(request, 1024)).length !== 0) throw error('YXX_INPUT_INVALID');
         const cleared = logoutWeComBrowser({ request, oauth });
         json(response, 200, { logged_out: true }, { 'set-cookie': cleared }); return true;
       }
