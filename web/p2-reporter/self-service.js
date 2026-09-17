@@ -169,7 +169,7 @@ async function submitSupplement(event){
   if(error.status===409&&ownsOperation(operation)){state.detailEtag=null;refresh=true;conflictRefresh=true;}
   if(ownsOperation(operation))setStatus(error.status===409?'版本已变化，正在刷新；草稿已保留。':error.status?messageFor(error.status):'结果未知，请保留本次命令并稍后查询。');
   if((!error.status||error.status>=500)&&ownsOperation(operation))schedulePendingRecovery(id,operation.generation,window.__yxx_csrf);
- }finally{if(finishOperation(operation))syncPendingButtons();}
+ }finally{if(finishOperation(operation)){syncPendingButtons();if(state.detail&&validGeneration(operation.generation))schedule();}}
  if(refresh&&validGeneration(operation.generation)){await loadDetail();if(conflictRefresh&&validGeneration(operation.generation))setStatus('版本已变化，已刷新到最新版本；请确认草稿后重新提交。','error');}
 }
 async function bootstrap(){

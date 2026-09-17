@@ -118,3 +118,36 @@ test('SS-007 recovery scope is stable across CSRF rotation and separates protect
     assert.doesNotMatch(JSON.stringify(first), /corp-one|app-one|a{64}/u);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
+
+
+test('SS-007 direct detail pages enforce ownership before rendering the shell', async () => {
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  let native, outcome = 200, calls = 0;
+  const server = createServer(async (request, response) => native.handler({ request, response, url: new URL(request.url, origin) }));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
+    command: { accept() {} }, supplement: { accept() {} },
+    query: { list() {}, timeline() {}, commandStatus() {}, async detailWithEtag(input) {
+      calls++; assert.equal(input.requestRef, 'A'.repeat(32)); assert.equal(input.ifNoneMatch, undefined);
+      if (outcome !== 200) throw Object.assign(new Error('private ownership detail'), { status: outcome, code: 'YXX_NOT_FOUND' });
+      return { status: 200, body: {} };
+    } },
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: 'csrf-page-0123456789012345678901234567',
+      canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-page', source_app_scope: 'app-page' }),
+    featureFlags: flags, recoveryBindingSecret });
+  try {
+    for (const status of [200, 404, 503]) {
+      outcome = status;
+      const response = await fetch(origin + '/wecom/yixiaoxiu/reports/' + 'A'.repeat(32), { headers: { cookie: '__Host-wecom_session=synthetic', 'if-none-match': 'untrusted' }, redirect: 'manual' });
+      assert.equal(response.status, status);
+      const html = await response.text();
+      if (status === 200) assert.match(html, /self-service.js/);
+      else assert.doesNotMatch(html, /self-service.js|private ownership detail/);
+      assert.equal(response.headers.has('location'), false);
+    }
+    assert.equal(calls, 3);
+    for (const path of ['/wecom/yixiaoxiu/reports', '/wecom/yixiaoxiu/reports/new']) assert.equal((await fetch(origin + path, { headers: { cookie: '__Host-wecom_session=synthetic' } })).status, 200);
+    assert.equal(calls, 3);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});

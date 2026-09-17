@@ -205,9 +205,15 @@ export function createYxxSelfServiceNativeHttp({
     response.writeHead(200, { ...HEADERS, 'content-type': `${item[1]}; charset=utf-8` }); response.end(content);
   }
 
-  async function nativePage({ request, response, path }) {
+  async function nativePage({ request, response, requestRef }) {
     if (!serviceEnabled) { page(response, 503, '医小修服务未启用', '当前仅保留原有认证提示。'); return true; }
-    try { await currentMember(request); }
+    try {
+      await currentMember(request);
+      if (requestRef) {
+        const detail = await query.detailWithEtag({ request, requestRef });
+        if (detail?.status !== 200) throw error(detail?.status === 404 ? 'YXX_NOT_FOUND' : 'YXX_UNAVAILABLE', detail?.status === 404 ? 404 : 503);
+      }
+    }
     catch (value) {
       const selected = mapError(value);
       if (selected.status === 401 && !cookieSeen(request, sessionCookieName)) {
@@ -250,7 +256,7 @@ export function createYxxSelfServiceNativeHttp({
         json(response, 200, { logged_out: true }, { 'set-cookie': cleared }); return true;
       }
       const pageMatch = url.pathname.match(/^\/wecom\/yixiaoxiu\/reports(?:\/(new|[A-Za-z0-9_-]{32}))?$/u);
-      if (request.method === 'GET' && pageMatch && !url.search) return await nativePage({ request, response, path: url.pathname });
+      if (request.method === 'GET' && pageMatch && !url.search) return await nativePage({ request, response, requestRef: pageMatch[1]?.length === 32 ? pageMatch[1] : null });
 
       if (url.pathname === '/api/yixiaoxiu/bootstrap' && request.method === 'GET') {
         if (url.search) throw error('YXX_INPUT_INVALID');

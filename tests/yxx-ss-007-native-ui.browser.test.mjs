@@ -43,6 +43,8 @@ function fixture(origin) {
   const supplement = {
     async accept({ request, requestRef, input }) {
       state.supplementCalls.push({ member: memberFor(request), requestRef, input });
+      if (state.supplementGate) await state.supplementGate;
+      if (state.supplementError) throw state.supplementError;
       if (state.supplementConflict) { const error = new Error('version'); error.code = 'YXX_VERSION_CONFLICT'; throw error; }
       return { replayed: false, receipt: receipt(requestRef) };
     },
@@ -349,6 +351,37 @@ test('SS-007 detail and timeline 404 clear rendered state and stop polling', { t
       assert.equal(await browser.evaluate("document.querySelector('#detail-timeline').textContent"), '');
       assert.equal(await browser.evaluate("document.querySelector('#supplement-form').hidden"), true);
     } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
+test('SS-007 supplement terminal errors resume polling after a slow POST consumes the timer', { timeout: 60000 }, async () => {
+  for (const [status, code, copy] of [[413, 'YXX_BODY_TOO_LARGE', '内容超过允许大小'], [400, 'YXX_INPUT_INVALID', '输入格式有误']]) {
+    const f = await startFixture(); let browser; let releaseSupplement;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+      await browser.waitFor("document.querySelector('#supplement-form')?.hidden===false");
+      await browser.evaluate("window.setTimeout=((actual)=>((callback,delay,...args)=>actual(callback,delay===5000?500:delay,...args)))(window.setTimeout.bind(window))");
+      const beforeRefresh = f.state.detailCalls.length;
+      await setSyntheticVisibility(browser, false);
+      await waitForState(() => f.state.detailCalls.length > beforeRefresh);
+      await browser.waitFor("document.querySelector('#supplement-form')?.hidden===false");
+      f.state.supplementGate = new Promise(resolve => { releaseSupplement = resolve; });
+      f.state.supplementError = Object.assign(new Error(code), { status, code });
+      await browser.evaluate("document.querySelector('#supplement-text').value='慢请求后的补充草稿';document.querySelector('#supplement-form').requestSubmit()");
+      await waitForState(() => f.state.supplementCalls.length === 1);
+      const detailCallsDuringPost = f.state.detailCalls.length;
+      await new Promise(resolve => setTimeout(resolve, 650));
+      assert.equal(f.state.detailCalls.length, detailCallsDuringPost, 'the in-flight POST consumes the scheduled detail timer');
+      f.state.supplementGate = null; releaseSupplement();
+      await browser.waitFor(`document.querySelector('#app-status')?.textContent.includes('${copy}')`);
+      const beforeResumedPoll = f.state.detailCalls.length;
+      await waitForState(() => f.state.detailCalls.length > beforeResumedPoll, 2000);
+      assert.equal(f.state.supplementCalls.length, 1);
+      assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '慢请求后的补充草稿');
+    } finally { releaseSupplement?.(); await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
   }
 });
 
