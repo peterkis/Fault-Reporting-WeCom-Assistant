@@ -98,7 +98,8 @@
     "exit_code": 0,
     "tap": {
       "path": "evidence/yxx-ss-007-page-poll-v7-passed.tap",
-      "sha256": "ee818e01862bd005a59a551e0d6e805b2170aeb4c5e60b3de13eb72cc21c7fd7"
+      "sha256": "11ad0c6a05f7363db266ca9da2357b6c7eaeb6815c0e52428b6fc4a615fd0260",
+      "tested_worktree_sha256": "ee818e01862bd005a59a551e0d6e805b2170aeb4c5e60b3de13eb72cc21c7fd7"
     }
   },
   "review_fixes": [
