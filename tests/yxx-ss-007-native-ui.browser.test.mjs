@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-http.mjs';
+import { EXTERNAL_TICKET_STATUS } from '../src/p1-005-pilot-ticket-core.mjs';
 import { launchSystemBrowser, closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
 import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 
@@ -47,6 +48,7 @@ function fixture(origin) {
   const receipt = (requestRef, clientCommandId, acceptedRevision = '1') => ({ client_command_id: clientCommandId,
     status: 'ACCEPTED', request_ref: requestRef, intake_no: 'INT-20260917-0001', accepted_revision: acceptedRevision,
     accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' });
+  const ticket = status => status ? { ticket_no: 'TCK-20260917-0001', status, updated_at: '2026-09-17 09:00:00' } : null;
   const command = {
     async accept({ request, input }) {
       if (state.commandError) throw state.commandError;
@@ -69,10 +71,10 @@ function fixture(origin) {
       const member = memberFor(request);
       state.listCalls.push({ member, cursor });
       if (state.paginatedLists && member === 'A') {
-        if (cursor === 'page-2') return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS.B, intake_no: 'YXX-PAGE-2', display_status: 'UNDER_REVIEW', created_at: '2026-09-16 22:00:00', ticket: null }], next_cursor: null };
-        return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS.A, intake_no: 'YXX-PAGE-1', display_status: 'RECEIVED_PROCESSING', created_at: '2026-09-16 23:00:00', ticket: null }], next_cursor: 'page-2' };
+        if (cursor === 'page-2') return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS.B, intake_no: 'YXX-PAGE-2', display_status: 'UNDER_REVIEW', created_at: '2026-09-16 22:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: null };
+        return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS.A, intake_no: 'YXX-PAGE-1', display_status: state.ticketStatus ? 'TICKET_CREATED' : 'RECEIVED_PROCESSING', created_at: '2026-09-16 23:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: 'page-2' };
       }
-      return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS[member], intake_no: `YXX-${member}`, display_status: 'RECEIVED_PROCESSING', created_at: '2026-09-16 23:00:00', ticket: null }], next_cursor: null };
+      return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS[member], intake_no: `YXX-${member}`, display_status: state.ticketStatus ? 'TICKET_CREATED' : 'RECEIVED_PROCESSING', created_at: '2026-09-16 23:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: null };
     },
     async detailWithEtag({ request, requestRef, ifNoneMatch }) {
       const member = memberFor(request);
@@ -83,21 +85,22 @@ function fixture(origin) {
       const etag = `"${requestRef}-v${revision}"`;
       if (ifNoneMatch === etag) return { status: 304, body: null, etag };
       return { status: 200, etag, body: { source_kind: 'WEB_REQUEST', request_ref: requestRef,
-        intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: 'WAITING_FOR_DETAILS', input_revision: revision, processed_revision: '0',
+        intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: state.ticketStatus ? 'TICKET_CREATED' : 'WAITING_FOR_DETAILS', input_revision: revision, processed_revision: '0',
         needs_action: '请补充故障现象', updated_at: '2026-09-16 23:00:00', updated_epoch_ms: '1789570800000',
         created_at: '2026-09-16 23:00:00', created_epoch_ms: '1789570800000', safe_description: '<img src=x onerror=window.__xss=1>',
-        safe_location: '护士站', safe_clarification: null, supplements: [], can_supplement: true, ticket: null } };
+        safe_location: '护士站', safe_clarification: null, supplements: [], can_supplement: true, ticket: ticket(state.ticketStatus) } };
     },
     async timeline({ request, requestRef, limit, cursor, before }) {
       state.timelineCalls.push({ member: memberFor(request), requestRef, limit, cursor, before });
       if (state.timelineNotFound) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
       const older = cursor !== null && cursor !== undefined;
       return { items: [{ event_type: older ? 'PROCESSING' : 'REQUEST_ACCEPTED', summary: older ? `更早记录 ${cursor}` : '最近记录',
-        occurred_at: older ? '2026-09-16 22:00:00' : '2026-09-16 23:00:00', occurred_epoch_ms: older ? '1789567200000' : '1789570800000', ticket: null }],
+        occurred_at: older ? '2026-09-16 22:00:00' : '2026-09-16 23:00:00', occurred_epoch_ms: older ? '1789567200000' : '1789570800000', ticket: ticket(state.timelineTicketStatus ?? state.ticketStatus) }],
         next_cursor: state.timelineEnds ? null : older ? `${cursor}-next` : 'cursor-1' };
     },
     async commandStatus({ request, clientCommandId }) {
       state.commandStatusCalls.push({ member: memberFor(request), clientCommandId });
+      if (state.commandStatusDelayMs) await new Promise(resolve => setTimeout(resolve, state.commandStatusDelayMs));
       if (state.commandStatusResponses?.length) { const value = state.commandStatusResponses.shift(); if (value instanceof Error) throw value; return value; }
       if (state.commandStatusError) throw state.commandStatusError;
       return { status: 'ACCEPTED', client_command_id: clientCommandId, member: memberFor(request) };
@@ -123,7 +126,7 @@ async function startFixture({ enabled = true } = {}) {
     if (override && request.method === 'POST' && url.pathname === override.path) {
       values.state.successBodyOverride = null;
       const end = response.end.bind(response);
-      response.end = (body, ...rest) => end(override.transform(String(body)), ...rest);
+      response.end = override.hang ? () => undefined : (body, ...rest) => end(override.transform(String(body)), ...rest);
     }
     const handled = await native.handler({ request, response, url });
     if (!handled && !response.writableEnded) { response.writeHead(404); response.end(); }
@@ -314,6 +317,40 @@ test('SS-007 ambiguous successful responses keep the original UUID and use GET-o
   }
 });
 
+test('SS-007 hanging accepted POSTs time out and stop after five bounded GET recoveries', { timeout: 60000 }, async () => {
+  for (const surface of ['new', 'supplement']) {
+    const f = await startFixture(); let browser;
+    try {
+      f.state.commandStatusDelayMs = 250;
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      if (surface === 'new') {
+        await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+        await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+      } else {
+        await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+        await browser.waitFor("document.querySelector('#supplement-form')?.hidden===false");
+      }
+      await browser.evaluate("window.setTimeout=((actual)=>((callback,delay,...args)=>actual(callback,delay===15000?100:delay,...args)))(window.setTimeout.bind(window))");
+      f.state.successBodyOverride = { path: surface === 'new' ? '/api/yixiaoxiu/requests' : `/api/yixiaoxiu/requests/${REFS.A}/supplements`, hang: true };
+      if (surface === 'new') await browser.evaluate("document.querySelector('#description').value='连接悬挂新报修';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+      else await browser.evaluate("document.querySelector('#supplement-text').value='连接悬挂补充';document.querySelector('#supplement-form').requestSubmit()");
+      await waitForState(() => surface === 'new' ? f.state.commandCalls.length === 1 : f.state.supplementCalls.length === 1);
+      await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('结果未知')", { timeoutMs: 3000 });
+      const call = surface === 'new' ? f.state.commandCalls[0] : f.state.supplementCalls[0];
+      const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+      assert.equal(pending.id, call.input.client_command_id);
+      await waitForState(() => f.state.commandStatusCalls.length === 5, 18000);
+      await browser.waitFor("document.querySelector('#retry-pending')?.hidden===false");
+      assert.equal(surface === 'new' ? f.state.commandCalls.length : f.state.supplementCalls.length, 1);
+      assert.equal(JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')")).id, pending.id);
+      if (surface === 'new') assert.equal(await browser.evaluate("document.querySelector('#description').value"), '连接悬挂新报修');
+      else assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '连接悬挂补充');
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
 test('SS-007 v2 recovery scope clears a different member fence after a full reload', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   const commandId = '00000000-0000-4000-8000-000000000096';
@@ -397,6 +434,29 @@ test('SS-007 synthetic visibility restore reloads cleared detail, bounds an endl
     assert.equal(f.state.listCalls.at(-1).cursor, null);
     await browser.waitFor(`!document.querySelector('#report-list')?.textContent.includes('${REFS.B}')`);
     assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${REFS.A}')`), true);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 renders authoritative ticket lifecycle status in list, detail, and timeline', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const statuses = ['IN_PROGRESS', 'WAITING_REQUESTER', 'RESOLVED', 'CLOSED'];
+  try {
+    f.state.ticketStatus = statuses[0]; f.state.timelineTicketStatus = statuses[0];
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports')", { awaitPromise: false });
+    await browser.waitFor(`document.querySelector('#report-list')?.textContent.includes('工单 TCK-20260917-0001 · ${EXTERNAL_TICKET_STATUS.IN_PROGRESS}')`);
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor(`document.querySelector('#detail-status')?.textContent.includes(${JSON.stringify(EXTERNAL_TICKET_STATUS.IN_PROGRESS)})`);
+    for (const status of statuses) {
+      f.state.ticketStatus = status; f.state.timelineTicketStatus = status;
+      const before = f.state.detailCalls.length;
+      await setSyntheticVisibility(browser, false);
+      await waitForState(() => f.state.detailCalls.length > before);
+      const expected = EXTERNAL_TICKET_STATUS[status];
+      await browser.waitFor(`document.querySelector('#detail-status')?.textContent.includes(${JSON.stringify(expected)})&&document.querySelector('#detail-timeline')?.textContent.includes(${JSON.stringify(expected)})`);
+    }
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 

@@ -10,6 +10,8 @@ const state={generation:0,controller:null,busy:false,stopped:false,recoveryScope
 const pendingKey='yxx.self_service.pending_command';
 const pendingDelays=[1000,2000,4000,5000];
 const latestTimelineBoundary=String(Number.MAX_SAFE_INTEGER);
+const requestDeadlineMs=15000;
+const ticketStatuses=Object.freeze({NEW:'等待受理',QUEUED:'等待受理',ACCEPTED:'已受理',IN_PROGRESS:'处理中',WAITING_REQUESTER:'待您补充',WAITING_VENDOR:'处理中',RESOLVED:'已处理，待确认',CLOSED:'已关闭',REOPENED:'重新处理中',CANCELLED:'已撤销',DUPLICATE_LINKED:'已关联公共故障'});
 function node(tag,textValue,className){const value=document.createElement(tag);if(textValue!==undefined)value.textContent=String(textValue);if(className)value.className=className;return value;}
 function clear(element){while(element.firstChild)element.removeChild(element.firstChild);}
 function validGeneration(g){return g===state.generation&&!state.stopped;}
@@ -45,13 +47,30 @@ function readPending(){try{const value=JSON.parse(sessionStorage.getItem(pending
 function ambiguousResult(){const error=new Error('YXX_AMBIGUOUS_RESULT');error.code='YXX_AMBIGUOUS_RESULT';return error;}
 function acceptedReceipt(value,commandId,expectedRef=null){const strings=[value?.client_command_id,value?.request_ref,value?.intake_no,value?.accepted_revision,value?.accepted_at,value?.accepted_epoch_ms];if(!value||typeof value!=='object'||Array.isArray(value)||!strings.every(item=>typeof item==='string')||value.client_command_id!==commandId||value.status!=='ACCEPTED'||!REQUEST_REF.test(value.request_ref)||expectedRef!==null&&value.request_ref!==expectedRef||!INTAKE_NO.test(value.intake_no)||!/^[1-9][0-9]*$/u.test(value.accepted_revision)||!LOCAL_TIME.test(value.accepted_at)||!/^[0-9]+$/u.test(value.accepted_epoch_ms))throw ambiguousResult();return value;}
 function acceptedResponse(value,commandId,expectedRef=null){if(!value||typeof value!=='object'||Array.isArray(value)||value.ok!==true||typeof value.replayed!=='boolean')throw ambiguousResult();const receipt=acceptedReceipt(value.receipt,commandId,expectedRef);if(typeof value.location!=='string')throw ambiguousResult();let target;try{target=new URL(value.location,location.origin);}catch{throw ambiguousResult();}const path=`${ROOT}reports/${receipt.request_ref}`;if(target.origin!==location.origin||target.pathname!==path||target.search||target.hash)throw ambiguousResult();return {receipt,replayed:value.replayed,path};}
-function fetchJson(path,options={},signal){return fetch(path,{credentials:'same-origin',cache:'no-store',signal,...options}).then(async response=>{if(response.status===304)return {status:304,body:null,etag:response.headers.get('etag')};let body={},parsed=true;try{body=await response.json();}catch{parsed=false;}if(!response.ok){const currentOperation=Boolean(signal&&signal===state.controller?.signal&&!signal.aborted);if((response.status===401||response.status===403)&&currentOperation)clearClientDom();const error=new Error(messageFor(response.status));error.status=response.status;error.code=body?.error?.code;error.current_operation=currentOperation;throw error;}if(!parsed)throw ambiguousResult();return {status:response.status,body,etag:response.headers.get('etag')};});}
+async function fetchJson(path,options={},signal){
+ const controller=new AbortController();let deadlineReached=false;
+ const cancel=()=>controller.abort(signal?.reason);
+ if(signal?.aborted)cancel();else signal?.addEventListener('abort',cancel,{once:true});
+ const timer=setTimeout(()=>{deadlineReached=true;controller.abort();},requestDeadlineMs);
+ try{
+  const response=await fetch(path,{credentials:'same-origin',cache:'no-store',...options,signal:controller.signal});
+  if(response.status===304)return {status:304,body:null,etag:response.headers.get('etag')};
+  const currentOperation=Boolean(signal&&signal===state.controller?.signal&&!signal.aborted);
+  if((response.status===401||response.status===403)&&currentOperation){clearClientDom();const error=new Error(messageFor(response.status));error.status=response.status;error.code=response.status===401?'YXX_AUTH_REQUIRED':'YXX_FORBIDDEN';error.current_operation=true;throw error;}
+  let body={},parsed=true;try{body=await response.json();}catch(error){if(deadlineReached&&!signal?.aborted)throw ambiguousResult();if(controller.signal.aborted)throw error;parsed=false;}
+  if(!response.ok){const error=new Error(messageFor(response.status));error.status=response.status;error.code=body?.error?.code;error.current_operation=currentOperation;throw error;}
+  if(!parsed)throw ambiguousResult();return {status:response.status,body,etag:response.headers.get('etag')};
+ }catch(error){if(deadlineReached&&!signal?.aborted)throw ambiguousResult();throw error;}
+ finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel);}
+}
 function beginOperation({busy=false}={}){state.controller?.abort();const controller=new AbortController();state.controller=controller;if(busy)state.busy=true;return {controller,signal:controller.signal,generation:state.generation};}
 function ownsOperation(operation){return state.controller===operation.controller&&state.generation===operation.generation&&!state.stopped;}
 function finishOperation(operation){if(!ownsOperation(operation))return false;state.controller=null;state.busy=false;return true;}
 function jsonHeaders(id,csrf){return {'content-type':'application/json','idempotency-key':id,'x-csrf-token':csrf,'sec-fetch-site':'same-origin'};}
 function statusText(value){return ({RECEIVED_PROCESSING:'已收到，正在处理',WAITING_FOR_DETAILS:'等待补充说明',UNDER_REVIEW:'人工审核中',TICKET_CREATED:'已生成工单',NOT_SERVICE:'非报修事项'})[value]??String(value??'状态未知');}
-function renderList(items){const list=$('report-list');clear(list);if(!items.length){list.append(node('li','暂时没有本人报修记录。','quiet'));return;}for(const item of items){const li=node('li');const link=node('a',undefined,'report-link');link.href=item.kind==='WEB_REQUEST'?`${ROOT}reports/${item.ref}`:`${ROOT}tickets/${item.ref}`;const top=node('div',undefined,'report-top');top.append(node('strong',item.kind==='WEB_REQUEST'?'网页报修':'原有工单','report-source'),node('span',statusText(item.display_status),'state'));link.append(top,node('span',item.ref,'report-ref'),node('div',item.ticket?.ticket_no?`工单 ${item.ticket.ticket_no}`:'尚未生成工单','report-meta'),node('div',item.created_at,'report-meta'));li.append(link);list.append(li);}}
+function ticketStatusText(value){return ticketStatuses[value]??'状态未知';}
+function ticketSummary(ticket){return ticket?.ticket_no?`工单 ${ticket.ticket_no} · ${ticketStatusText(ticket.status)}`:'尚未生成工单';}
+function renderList(items){const list=$('report-list');clear(list);if(!items.length){list.append(node('li','暂时没有本人报修记录。','quiet'));return;}for(const item of items){const li=node('li');const link=node('a',undefined,'report-link');link.href=item.kind==='WEB_REQUEST'?`${ROOT}reports/${item.ref}`:`${ROOT}tickets/${item.ref}`;const top=node('div',undefined,'report-top');top.append(node('strong',item.kind==='WEB_REQUEST'?'网页报修':'原有工单','report-source'),node('span',statusText(item.display_status),'state'));link.append(top,node('span',item.ref,'report-ref'),node('div',ticketSummary(item.ticket),'report-meta'),node('div',item.created_at,'report-meta'));li.append(link);list.append(li);}}
 async function loadReports(append=false){
  if(state.busy)return;
  const operation=beginOperation({busy:true});
@@ -71,11 +90,11 @@ function renderTimeline(timeline,{older=false}={}){
  state.timelineCursor=timeline?.next_cursor??null;
  state.timelineExpanded=older||false;
  clear($('detail-timeline'));
- for(const item of state.timelineItems){const li=node('li');li.append(node('span',item.summary??item.event_type),node('time',item.occurred_at));$('detail-timeline').append(li);}
+ for(const item of state.timelineItems){const li=node('li');li.append(node('span',item.summary??item.event_type));if(item.ticket?.ticket_no)li.append(node('span',ticketSummary(item.ticket),'report-meta'));li.append(node('time',item.occurred_at));$('detail-timeline').append(li);}
  $('load-older-timeline').hidden=!state.timelineCursor;$('load-older-timeline').disabled=false;
  $('timeline-window-note').textContent=state.timelineExpanded?'已加载较早记录；下次状态刷新会回到最近100条。':'显示最近100条处理记录；可按需加载更早记录。';
 }
-function renderDetail(detail,timeline){state.detail=detail;clear($('detail-facts'));$('detail-source').textContent='网页报修 · '+detail.intake_no;$('detail-status').textContent=statusText(detail.display_status);for(const [term,value] of [['输入版本',detail.input_revision],['已处理版本',detail.processed_revision],['最近更新',detail.updated_at]])$('detail-facts').append(node('dt',term),node('dd',value));$('detail-description').textContent=detail.safe_description||'（未提供）';clear($('detail-supplements'));for(const item of detail.supplements??[]){const li=node('li',`版本 ${item.input_revision}：${item.text??''}`);$('detail-supplements').append(li);}renderTimeline(timeline);const ticket=detail.ticket?.ticket_no?`已生成工单 ${detail.ticket.ticket_no}`:'尚未生成工单';$('detail-status').append(node('span',` · ${ticket}`));$('supplement-form').hidden=!detail.can_supplement;}
+function renderDetail(detail,timeline){state.detail=detail;clear($('detail-facts'));$('detail-source').textContent='网页报修 · '+detail.intake_no;$('detail-status').textContent=statusText(detail.display_status);for(const [term,value] of [['输入版本',detail.input_revision],['已处理版本',detail.processed_revision],['最近更新',detail.updated_at]])$('detail-facts').append(node('dt',term),node('dd',value));$('detail-description').textContent=detail.safe_description||'（未提供）';clear($('detail-supplements'));for(const item of detail.supplements??[]){const li=node('li',`版本 ${item.input_revision}：${item.text??''}`);$('detail-supplements').append(li);}renderTimeline(timeline);$('detail-status').append(node('span',` · ${detail.ticket?.ticket_no?ticketSummary(detail.ticket):'尚未生成工单'}`));$('supplement-form').hidden=!detail.can_supplement;}
 function clearDetailState(){clearTimeout(state.poll);state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');}
 async function loadTimeline(ref,operation,{cursor=null}={}){const query=new URLSearchParams({limit:'100'});if(cursor)query.set('cursor',cursor);else query.set('before',latestTimelineBoundary);const result=await fetchJson(`/api/yixiaoxiu/requests/${ref}/timeline?${query}`,{},operation.signal);return ownsOperation(operation)?result.body:null;}
 async function loadDetail(){
