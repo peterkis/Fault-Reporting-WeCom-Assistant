@@ -44,7 +44,9 @@ test('SS-007 dependency failures remain terminal service or permission failures'
         const response = await fetch(origin + path, { headers: { cookie: '__Host-wecom_session=synthetic' }, redirect: 'manual' });
         assert.equal(response.status, status, path);
         assert.equal(response.headers.has('location'), false);
-        assert.doesNotMatch(await response.text(), /private dependency detail|DEPENDENCY_DOWN|MEMBER_DENIED/);
+        const text = await response.text();
+        assert.doesNotMatch(text, /private dependency detail|DEPENDENCY_DOWN|MEMBER_DENIED/);
+        if (status === 403 && path !== '/api/yixiaoxiu/bootstrap') assert.match(text, /当前账号没有此项权限/u);
       }
     }
     failure = new Error('private database error');
@@ -193,6 +195,41 @@ test('SS-007 report source filters reject explicit empty and unknown values befo
     assert.deepEqual(sources, []);
     for (const suffix of ['', '?source=WEB', '?source=BOT']) assert.equal((await get(suffix)).status, 200);
     assert.deepEqual(sources, [null, 'WEB', 'BOT']);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test('SS-007 write routes reject unknown query parameters before invoking commands', async () => {
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  const csrf = 'csrf-write-query-0123456789012345678901234567';
+  const requestRef = 'A'.repeat(32);
+  let commandCalls = 0; let supplementCalls = 0; let native;
+  const server = createServer(async (request, response) => native.handler({ request, response, url: new URL(request.url, origin) }));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
+    command: { async accept() { commandCalls += 1; return {}; } },
+    supplement: { async accept() { supplementCalls += 1; return {}; } },
+    query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: csrf,
+      canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-write-query', source_app_scope: 'app-write-query' }),
+    featureFlags: flags, recoveryBindingSecret,
+  });
+  const headers = { origin, cookie: '__Host-wecom_session=synthetic', 'content-type': 'application/json', 'x-csrf-token': csrf, 'sec-fetch-site': 'same-origin' };
+  const commandBody = JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000010', description: '网页报修', location: { text: '护士站', unknown: false },
+    service_code: null, impact_scope: 'UNKNOWN', reported_department_text: null, extension: null });
+  const supplementBody = JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000011', expected_input_revision: '1', text: '补充事实' });
+  const suffixes = ['?foo=bar', '?foo', '?foo=', '?a=1&a=2'];
+  try {
+    for (const suffix of suffixes) {
+      const commandResponse = await fetch(origin + '/api/yixiaoxiu/requests' + suffix, { method: 'POST', headers, body: commandBody });
+      assert.equal(commandResponse.status, 400, `command ${suffix}`);
+      assert.deepEqual(await commandResponse.json(), { error: { code: 'YXX_INPUT_INVALID', retryable: false } });
+      const supplementResponse = await fetch(origin + `/api/yixiaoxiu/requests/${requestRef}/supplements${suffix}`, { method: 'POST', headers, body: supplementBody });
+      assert.equal(supplementResponse.status, 400, `supplement ${suffix}`);
+      assert.deepEqual(await supplementResponse.json(), { error: { code: 'YXX_INPUT_INVALID', retryable: false } });
+    }
+    assert.equal(commandCalls, 0);
+    assert.equal(supplementCalls, 0);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 

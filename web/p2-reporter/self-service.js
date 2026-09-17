@@ -28,6 +28,7 @@ function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTi
 function syncPendingButtons(){const blocked=state.pendingCommandId!==null||state.storageBlocked;$('submit-report').disabled=blocked;$('submit-supplement').disabled=blocked;}
 function durableKey(id){return `${durablePrefix}${id}`;}
 function durableKeys(){const keys=[];for(let index=0;index<localStorage.length;index+=1){const key=localStorage.key(index);if(key?.startsWith(durablePrefix))keys.push(key);}return keys;}
+function durableRecords(scope){const records=[];for(const key of durableKeys()){let value;try{value=JSON.parse(localStorage.getItem(key)??'null');}catch{continue;}if(value?.v!==3||!scopedRecord(value)||key!==durableKey(value.id)||value.scope!==scope)continue;records.push({key,value});}return records;}
 function scopedRecord(value){return value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).sort().join(',')==='id,scope,v'&&(value.v===2||value.v===3)&&typeof value.id==='string'&&UUID.test(value.id)&&typeof value.scope==='string'&&RECOVERY_SCOPE.test(value.scope);}
 function pointTab(value){const record=JSON.stringify(value);sessionStorage.setItem(pendingKey,record);if(sessionStorage.getItem(pendingKey)!==record)throw new Error('storage verification');}
 function writeDurable(id,scope,{allowExisting=false}={}){
@@ -35,10 +36,10 @@ function writeDurable(id,scope,{allowExisting=false}={}){
  try{
   const existing=localStorage.getItem(key);
   if(existing!==null)return allowExisting&&existing===record;
-  if(durableKeys().length>=durableLimit)return false;
+  if(durableRecords(scope).length>=durableLimit)return false;
   localStorage.setItem(key,record);created=true;
   if(localStorage.getItem(key)!==record)throw new Error('storage verification');
-  if(durableKeys().length>durableLimit){localStorage.removeItem(key);return false;}
+  if(durableRecords(scope).length>durableLimit){localStorage.removeItem(key);return false;}
   return true;
  }catch{if(created){try{if(localStorage.getItem(key)===record)localStorage.removeItem(key);}catch{/* durable storage remains unavailable */}}return false;}
 }
@@ -125,7 +126,7 @@ async function fetchJson(path,options={},signal){
   const response=await fetch(path,{credentials:'same-origin',cache:'no-store',...options,signal:controller.signal});
   if(response.status===304)return {status:304,body:null,etag:response.headers.get('etag')};
   const currentOperation=Boolean(signal&&signal===state.controller?.signal&&!signal.aborted);
-  if((response.status===401||response.status===403)&&currentOperation){clearClientDom();const error=new Error(messageFor(response.status));error.status=response.status;error.code=response.status===401?'YXX_AUTH_REQUIRED':'YXX_FORBIDDEN';error.current_operation=true;throw error;}
+  if((response.status===401||response.status===403)&&currentOperation){clearClientDom(messageFor(response.status));const error=new Error(messageFor(response.status));error.status=response.status;error.code=response.status===401?'YXX_AUTH_REQUIRED':'YXX_FORBIDDEN';error.current_operation=true;throw error;}
   let body={},parsed=true;try{body=await response.json();}catch(error){if(deadlineReached&&!signal?.aborted)throw ambiguousResult();if(controller.signal.aborted)throw error;parsed=false;}
   if(!response.ok){const error=new Error(messageFor(response.status));error.status=response.status;error.code=body?.error?.code;error.current_operation=currentOperation;throw error;}
   if(!parsed)throw ambiguousResult();return {status:response.status,body,etag:response.headers.get('etag')};
@@ -229,8 +230,10 @@ async function submitNew(event){
  const description=$('description').value.trim(),locationText=$('location-text').value.trim(),unknown=$('location-unknown').checked;
  if(!description){setStatus('请先填写故障现象。','error');$('description').focus();return;}
  if(!locationText&&!unknown){setStatus('请填写位置，或勾选“位置暂不清楚”。','error');$('location-text').focus();return;}
- const id=crypto.randomUUID(),serviceValue=$('service-code').value.trim().toUpperCase(),serviceCode=/^[A-Z][A-Z0-9_]{0,63}$/u.test(serviceValue)?serviceValue:null;
- const payload=Object.freeze({schema_version:1,client_command_id:id,description,location:{text:locationText||null,unknown},service_code:serviceCode,impact_scope:$('impact-scope').value,reported_department_text:$('department').value.trim()||null,extension:$('extension').value.trim()||null});
+  const extension=$('extension').value.trim();
+  if(extension&&!/^[0-9][0-9 -]{0,19}$/u.test(extension)){setStatus('分机仅支持数字、空格和短横线。','error');$('extension').focus();return;}
+  const id=crypto.randomUUID(),serviceValue=$('service-code').value.trim().toUpperCase(),serviceCode=/^[A-Z][A-Z0-9_]{0,63}$/u.test(serviceValue)?serviceValue:null;
+  const payload=Object.freeze({schema_version:1,client_command_id:id,description,location:{text:locationText||null,unknown},service_code:serviceCode,impact_scope:$('impact-scope').value,reported_department_text:$('department').value.trim()||null,extension:extension||null});
  if(!remember(id)){setStatus(messageFor(503),'error');return;}const operation=beginOperation({busy:true});
  try{
   const result=await fetchJson('/api/yixiaoxiu/requests',{method:'POST',headers:jsonHeaders(id,window.__yxx_csrf),body:JSON.stringify(payload)},operation.signal);
@@ -278,8 +281,8 @@ async function bootstrap(){
   if(previousScope&&previousScope!==nextScope||state.pendingScope&&state.pendingScope!==nextScope)releaseTabPending();
   state.recoveryScope=nextScope;window.__yxx_csrf=result.body.csrf_token;
   if(state.pendingCommandId)migratePending(nextScope);else claimDurable(nextScope);
-  const sameContext=Boolean(previousScope&&previousScope===nextScope&&previousCsrf&&previousCsrf===result.body.csrf_token);
-  if(sameContext)restoreDraft(draft);
+  const sameMemberScope=Boolean(previousScope&&previousScope===nextScope);
+  if(sameMemberScope)restoreDraft(draft);
   const path=location.pathname;
   if(path===refs.new){setView('new-view','新建报修');}
   else if(path===refs.list){setView('reports-view','我的报修');await loadReports();}

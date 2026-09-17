@@ -52,7 +52,7 @@
         <label for="department">科室（可选）</label>
         <input id="department" name="department" maxlength="100" autocomplete="organization">
         <label for="extension">分机（可选）</label>
-        <input id="extension" name="extension" inputmode="tel" maxlength="20" autocomplete="tel">
+        <input id="extension" name="extension" inputmode="tel" maxlength="20" pattern="[0-9][0-9 -]{0,19}" autocomplete="tel">
         <div class="form-actions"><button id="submit-report" type="submit">提交报修</button><a href="/wecom/yixiaoxiu/">取消</a></div>
       </form>
     </section>

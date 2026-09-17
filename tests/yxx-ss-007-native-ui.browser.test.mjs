@@ -152,7 +152,7 @@ async function setSyntheticVisibility(browser, hidden) {
   await browser.evaluate(`Object.defineProperty(document,'hidden',{configurable:true,value:${hidden}});document.dispatchEvent(new Event('visibilitychange'))`);
 }
 
-test('SS-007 refreshed member CSRF survives clearing the previous form', { timeout: 45000 }, async () => {
+test('SS-007 refreshed member CSRF preserves the same-scope draft', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   try {
     browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
@@ -163,12 +163,45 @@ test('SS-007 refreshed member CSRF survives clearing the previous form', { timeo
     await browser.evaluate("document.querySelector('#description').value='旧会话草稿'");
     f.state.csrfOverride = 'refreshed-synthetic-csrf-01234567890123456789';
     await browser.evaluate("document.dispatchEvent(new Event('visibilitychange'))");
-    await browser.waitFor("document.querySelector('#description').value===''");
+    await browser.waitFor("document.querySelector('#description').value==='旧会话草稿'");
     await browser.waitFor(`window.__yxx_csrf==='${f.state.csrfOverride}'`);
     assert.equal(await browser.evaluate('window.__yxx_csrf'), f.state.csrfOverride);
     await browser.evaluate("document.querySelector('#description').value='新会话报修';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
     await browser.waitFor("location.pathname==='/wecom/yixiaoxiu/reports/" + REFS.A + "'");
     assert.equal(f.state.commandCalls.length, 1);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 permission revocation clears member data without showing an authentication-expired message', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    f.state.commandError = Object.assign(new Error('permission revoked'), { status: 403, code: 'YXX_FORBIDDEN' });
+    await browser.evaluate("document.querySelector('#description').value='权限撤销后不得提交';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('当前账号没有此项权限')");
+    assert.equal(await browser.evaluate("document.querySelector('#home-view').hidden"), false);
+    assert.equal(await browser.evaluate("location.pathname"), '/wecom/yixiaoxiu/reports/new');
+    assert.equal(f.state.commandCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 rejects an invalid extension before sending a report', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate("document.querySelector('#description').value='分机格式校验';document.querySelector('#location-unknown').checked=true;document.querySelector('#extension').value='+123';document.querySelector('#new-report-form').requestSubmit()");
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('分机仅支持数字、空格和短横线')");
+    assert.equal(await browser.evaluate("document.activeElement?.id"), 'extension');
+    assert.equal(await browser.evaluate("document.querySelector('#extension').getAttribute('pattern')"), '[0-9][0-9 -]{0,19}');
+    assert.equal(f.state.commandCalls.length, 0);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
@@ -279,11 +312,11 @@ test('SS-007 durable recovery capacity fails closed without deleting older unkno
     await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
     await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
     await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
     await browser.evaluate(`(() => {
-      const scope='b'.repeat(64);
       for(let index=1;index<=20;index+=1){
         const id='00000000-0000-4000-8000-'+String(index).padStart(12,'0');
-        localStorage.setItem('yxx.self_service.pending_command.'+id,JSON.stringify({v:3,id,scope}));
+        localStorage.setItem('yxx.self_service.pending_command.'+id,JSON.stringify({v:3,id,scope:'${scope}'}));
       }
       document.querySelector('#description').value='容量已满不得提交';
       document.querySelector('#location-unknown').checked=true;
@@ -293,6 +326,52 @@ test('SS-007 durable recovery capacity fails closed without deleting older unkno
     assert.equal(f.state.commandCalls.length, 0);
     assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 20);
     assert.equal(await browser.evaluate("Object.values(localStorage).every(value=>!value.includes('容量已满'))"), true);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 durable recovery quota is isolated by recovery scope', { timeout: 60000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate(`(() => {
+      const scope='b'.repeat(64);
+      for(let index=1;index<=20;index+=1){
+        const id='00000000-0000-4000-8000-'+String(index).padStart(12,'0');
+        localStorage.setItem('yxx.self_service.pending_command.'+id,JSON.stringify({v:3,id,scope}));
+      }
+      localStorage.setItem('yxx.self_service.pending_command.invalid','not-a-pending-record');
+      document.querySelector('#description').value='其他成员容量不阻断当前成员';
+      document.querySelector('#location-unknown').checked=true;
+      document.querySelector('#new-report-form').requestSubmit();
+    })()`);
+    await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+    assert.equal(f.state.commandCalls.length, 1);
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 21);
+    assert.equal(await browser.evaluate("localStorage.getItem('yxx.self_service.pending_command.invalid')"), 'not-a-pending-record');
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 invalid durable recovery records do not consume the current scope quota', { timeout: 60000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate(`(() => {
+      for(let index=1;index<=20;index+=1) localStorage.setItem('yxx.self_service.pending_command.invalid-'+index,'not-a-pending-record');
+      document.querySelector('#description').value='无效恢复记录不阻断当前成员';
+      document.querySelector('#location-unknown').checked=true;
+      document.querySelector('#new-report-form').requestSubmit();
+    })()`);
+    await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+    assert.equal(f.state.commandCalls.length, 1);
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.invalid-')).length"), 20);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
@@ -433,7 +512,7 @@ test('SS-007 v2 recovery migrates durably without blocking another member or los
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
-test('SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET only', { timeout: 45000 }, async () => {
+test('SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and restores the draft with GET only', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   const commandId = '00000000-0000-4000-8000-000000000095';
   try {
@@ -444,17 +523,56 @@ test('SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET on
     await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
     const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
     f.state.commandStatusError = Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
-    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scope}'}));document.querySelector('#description').value='需要重新确认的草稿'`);
+    await browser.evaluate(`(() => {
+      sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scope}'}));
+      document.querySelector('#description').value='需要重新确认的草稿';
+      document.querySelector('#location-text').value='住院楼8层护士站';
+      document.querySelector('#impact-scope').value='DEPARTMENT';
+      document.querySelector('#service-code').value='PRINTING';
+      document.querySelector('#department').value='护理部';
+      document.querySelector('#extension').value='8012';
+    })()`);
     f.state.csrfOverride = 'rotated-same-member-csrf-012345678901234567890';
     await setSyntheticVisibility(browser, false);
     await waitForState(() => f.state.commandStatusCalls.some(call => call.clientCommandId === commandId));
     const persisted = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
     assert.deepEqual(persisted, { v: 3, id: commandId, scope });
     assert.notEqual(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
-    assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+    assert.deepEqual(await browser.evaluate(`({
+      description:document.querySelector('#description').value,
+      locationText:document.querySelector('#location-text').value,
+      locationUnknown:document.querySelector('#location-unknown').checked,
+      impactScope:document.querySelector('#impact-scope').value,
+      serviceCode:document.querySelector('#service-code').value,
+      department:document.querySelector('#department').value,
+      extension:document.querySelector('#extension').value,
+    })`), {
+      description: '需要重新确认的草稿', locationText: '住院楼8层护士站', locationUnknown: false,
+      impactScope: 'DEPARTMENT', serviceCode: 'PRINTING', department: '护理部', extension: '8012',
+    });
     assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), true);
     assert.equal(f.state.commandCalls.length, 0);
     assert.equal(f.state.supplementCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 recovery scope changes discard the hidden member draft', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate("document.querySelector('#description').value='A成员草稿不得进入B成员页面';document.querySelector('#location-unknown').checked=true");
+    await setSyntheticVisibility(browser, true);
+    await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
+    await setSyntheticVisibility(browser, false);
+    await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&document.querySelector('#new-view')?.hidden===false`);
+    assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+    assert.equal(await browser.evaluate("document.querySelector('#location-unknown').checked"), false);
+    assert.equal(await browser.evaluate("document.body.textContent.includes('A成员草稿不得进入B成员页面')"), false);
+    assert.equal(f.state.commandCalls.length, 0);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 

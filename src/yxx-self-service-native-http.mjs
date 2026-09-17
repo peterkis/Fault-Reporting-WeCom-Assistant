@@ -137,6 +137,12 @@ function mapError(value) {
   return error('YXX_UNAVAILABLE', 503);
 }
 
+function nativePageMessage(status) {
+  if (status === 401) return '认证已失效，请重新认证。';
+  if (status === 403) return '当前账号没有此项权限。';
+  return '当前页面暂不可用。';
+}
+
 function mapLogoutError(value) {
   const status = Number(value?.status);
   if (status === 403 || /ORIGIN/u.test(String(value?.code ?? ''))) return error('YXX_ENTRY_ORIGIN_INVALID', 403);
@@ -232,11 +238,11 @@ export function createYxxSelfServiceNativeHttp({
         try { beginWeComOAuth({ request, response, oauth, returnPath: `${ROOT}?auth_return=1` }); }
         catch (beginFailure) {
           const terminal = mapError(beginFailure);
-          page(response, terminal.status, '医小修', '当前页面暂不可用。');
+          page(response, terminal.status, '医小修', nativePageMessage(terminal.status));
         }
         return true;
       }
-      page(response, selected.status, '医小修', selected.status === 401 ? '认证已失效，请重新认证。' : '当前页面暂不可用。'); return true;
+      page(response, selected.status, '医小修', nativePageMessage(selected.status)); return true;
     }
     await asset(response, ['self-service.html', 'text/html']); return true;
   }
@@ -304,6 +310,7 @@ export function createYxxSelfServiceNativeHttp({
       }
       const supplementMatch = url.pathname.match(/^\/api\/yixiaoxiu\/requests\/([A-Za-z0-9_-]{32})\/supplements$/u);
       if (supplementMatch && request.method === 'POST') {
+        if (url.search) throw error('YXX_INPUT_INVALID');
         assertOrigin(request, origin.origin); const input = await body(request, 8 * 1024); const context = await currentMember(request);
         if (header(request, 'x-csrf-token') !== context.csrf_token) throw error('YXX_FORBIDDEN', 403);
         const result = await supplement.accept({ request, input, requestRef: supplementMatch[1] });
@@ -312,6 +319,7 @@ export function createYxxSelfServiceNativeHttp({
       }
       const requestPath = url.pathname === '/api/yixiaoxiu/requests';
       if (requestPath && request.method === 'POST') {
+        if (url.search) throw error('YXX_INPUT_INVALID');
         assertOrigin(request, origin.origin); const input = await body(request, 16 * 1024); const context = await currentMember(request);
         if (header(request, 'x-csrf-token') !== context.csrf_token) throw error('YXX_FORBIDDEN', 403);
         const result = await command.accept({ request, input });
