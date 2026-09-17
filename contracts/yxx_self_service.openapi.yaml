@@ -107,6 +107,7 @@ paths:
         '404': {$ref: '#/components/responses/NotFound'}
         '409': {$ref: '#/components/responses/Conflict'}
         '413': {$ref: '#/components/responses/TooLarge'}
+        '429': {$ref: '#/components/responses/Busy'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/commands/{client_command_id}:
     servers: [{url: /}]
