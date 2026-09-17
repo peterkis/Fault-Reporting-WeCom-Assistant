@@ -176,7 +176,7 @@ export function createYxxSelfServiceNativeHttp({
     || typeof oauthHttp !== 'function' || !command?.accept || !supplement?.accept
     || !query?.list || !query?.detailWithEtag || !query?.timeline || !query?.commandStatus
     || typeof authenticateMember !== 'function' || !['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(profile)
-    || typeof sessionCookieName !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/u.test(sessionCookieName)) {
+    || sessionCookieName !== sessionName) {
     throw error('YXX_CONFIG_INVALID', 503);
   }
   const origin = new URL(publicOrigin);
@@ -249,10 +249,6 @@ export function createYxxSelfServiceNativeHttp({
       if (request.method === 'POST' && url.pathname === `${ROOT}logout` && !url.search) {
         assertOrigin(request, origin.origin); await body(request, 1024);
         const cleared = logoutWeComBrowser({ request, oauth });
-        if (sessionCookieName !== sessionName) {
-          oauth.logout(cookie(request, sessionCookieName));
-          cleared.unshift(`${sessionCookieName}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
-        }
         json(response, 200, { logged_out: true }, { 'set-cookie': cleared }); return true;
       }
       const pageMatch = url.pathname.match(/^\/wecom\/yixiaoxiu\/reports(?:\/(new|[A-Za-z0-9_-]{32}))?$/u);

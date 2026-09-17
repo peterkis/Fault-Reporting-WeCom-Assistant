@@ -11,6 +11,19 @@ const REFS = Object.freeze({ A: 'A'.repeat(32), B: 'B'.repeat(32) });
 const RECOVERY_SECRET = 'ss007-recovery-secret-0123456789abcdef';
 const csrfFor = token => `csrf-${token}-012345678901234567890123`;
 
+function adaptSyntheticSession(request, response, url) {
+  request.headers.cookie = (request.headers.cookie ?? '').split(';').map(part => part.trim())
+    .map(part => part.startsWith('yxx_session=') ? `__Host-wecom_session=${part.slice('yxx_session='.length)}` : part).filter(Boolean).join('; ');
+  if (request.method === 'POST' && url.pathname === '/wecom/yixiaoxiu/logout') {
+    const writeHead = response.writeHead.bind(response);
+    response.writeHead = (status, headers = {}) => {
+      const existing = headers['set-cookie'] ?? [];
+      const cookies = Array.isArray(existing) ? existing : [existing];
+      return writeHead(status, { ...headers, 'set-cookie': [...cookies, 'yxx_session=; Path=/; SameSite=Lax; Max-Age=0'] });
+    };
+  }
+}
+
 function fixture(origin) {
   const state = { commandCalls: [], supplementCalls: [], listCalls: [], detailCalls: [], timelineCalls: [],
     commandStatusCalls: [], next: 0, supplementConflict: false };
@@ -90,7 +103,7 @@ function fixture(origin) {
   };
   const oauthHttp = async ({ response }) => { response.writeHead(401, { 'content-type': 'text/html; charset=utf-8' }); response.end('<p>旧认证提示</p>'); return true; };
   const config = { publicOrigin: origin, oauth, oauthHttp, command, supplement, query,
-    authenticateMember: context, featureFlags: FLAGS, sessionCookieName: 'yxx_session', recoveryBindingSecret: RECOVERY_SECRET };
+    authenticateMember: context, featureFlags: FLAGS, recoveryBindingSecret: RECOVERY_SECRET };
   return { native: createYxxSelfServiceNativeHttp(config), config, state, oauth };
 }
 
@@ -103,6 +116,7 @@ async function startFixture({ enabled = true } = {}) {
   const native = enabled ? values.native : createYxxSelfServiceNativeHttp({ ...values.config, featureFlags: { ...FLAGS, YIXIAOXIU_SELF_SERVICE_ENABLED: false } });
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, origin);
+    adaptSyntheticSession(request, response, url);
     const handled = await native.handler({ request, response, url });
     if (!handled && !response.writableEnded) { response.writeHead(404); response.end(); }
   });

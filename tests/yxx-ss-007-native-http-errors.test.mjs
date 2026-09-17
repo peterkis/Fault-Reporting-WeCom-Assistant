@@ -5,6 +5,16 @@ import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-h
 
 const recoveryBindingSecret = 'ss007-http-recovery-secret-0123456789abcdef';
 
+test('SS-007 native factory accepts only the OAuth callback session cookie', () => {
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  const config = { publicOrigin: 'http://127.0.0.1:3000', oauth: { authenticate() {} }, oauthHttp() {},
+    command: { accept() {} }, supplement: { accept() {} }, query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
+    authenticateMember() {}, featureFlags: flags, recoveryBindingSecret };
+  assert.doesNotThrow(() => createYxxSelfServiceNativeHttp(config));
+  assert.doesNotThrow(() => createYxxSelfServiceNativeHttp({ ...config, sessionCookieName: '__Host-wecom_session' }));
+  assert.throws(() => createYxxSelfServiceNativeHttp({ ...config, sessionCookieName: 'yxx_session' }), { code: 'YXX_CONFIG_INVALID', status: 503 });
+});
+
 test('SS-007 dependency failures remain terminal service or permission failures', async () => {
   let failure = new Error('private dependency detail');
   let oauthFailure = null;

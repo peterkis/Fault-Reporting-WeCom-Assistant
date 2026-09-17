@@ -1,6 +1,6 @@
 # YXX-SS-007 原生自助报修页面手册
 
-当前本地验证以 `evidence/yxx-ss-007-supplement-contract-v9-report.json` 为准。
+当前本地验证以 `evidence/yxx-ss-007-cookie-v10-report.json` 为准。
 原始报告保留作历史记录；任务仍等待当前提交的外部审查。
 时间线默认显示最近100条，按按钮逐页加载更早记录；下一次轮询回到最新窗口。
 未知提交结果最多自动查询五次，之后可点击“查询上次提交结果”继续查询，
@@ -17,6 +17,9 @@
 保护，只有 `MEMBER_SELF_SERVICE` 或 `FULL_SERVICE_LOOP` 且两个持久开关都为
 `true` 时才显示新建报修和我的报修动作。`MEMBER_TICKET_READONLY` 不会获得
 写入口。
+
+原生入口与既有 OAuth 回调统一使用 `__Host-wecom_session`；构造器拒绝其他会话 Cookie 名。
+HTTP 浏览器夹具仅在测试服务器边界转换合成 Cookie，不改变生产 Cookie 配置。
 
 ## 本地验证
 

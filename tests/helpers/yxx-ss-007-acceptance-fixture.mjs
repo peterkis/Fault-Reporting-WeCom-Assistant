@@ -25,6 +25,19 @@ function httpError(status, code) {
   return value;
 }
 
+function adaptSyntheticSession(request, response, url) {
+  request.headers.cookie = (request.headers.cookie ?? '').split(';').map(part => part.trim())
+    .map(part => part.startsWith('yxx_session=') ? `__Host-wecom_session=${part.slice('yxx_session='.length)}` : part).filter(Boolean).join('; ');
+  if (request.method === 'POST' && url.pathname === '/wecom/yixiaoxiu/logout') {
+    const writeHead = response.writeHead.bind(response);
+    response.writeHead = (status, headers = {}) => {
+      const existing = headers['set-cookie'] ?? [];
+      const cookies = Array.isArray(existing) ? existing : [existing];
+      return writeHead(status, { ...headers, 'set-cookie': [...cookies, 'yxx_session=; Path=/; SameSite=Lax; Max-Age=0'] });
+    };
+  }
+}
+
 export async function startSs007AcceptanceFixture() {
   let native;
   const state = {
@@ -43,6 +56,7 @@ export async function startSs007AcceptanceFixture() {
   const server = createServer(async (request, response) => {
     if (!native) { response.writeHead(503); response.end(); return; }
     const url = new URL(request.url, origin);
+    adaptSyntheticSession(request, response, url);
     const handled = await native.handler({ request, response, url });
     if (!handled && !response.writableEnded) { response.writeHead(404); response.end(); }
   });
@@ -143,7 +157,6 @@ export async function startSs007AcceptanceFixture() {
       canonical_reporter_binding: 'c'.repeat(64), source_corp_scope: 'corp-acceptance', source_app_scope: 'app-acceptance',
     }),
     featureFlags: SS007_FLAGS,
-    sessionCookieName: 'yxx_session',
     recoveryBindingSecret,
   });
   return { origin, server, state };
