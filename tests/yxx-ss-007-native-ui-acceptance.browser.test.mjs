@@ -210,7 +210,7 @@ test('SS-007 does not accept a new detail ETag when the paired timeline request 
   await browser.waitFor("document.querySelector('#detail-description')?.textContent==='第二版详情'");
 });
 
-test('SS-007 synthetic page lifecycle rejects a late detail response and UI logout clears browser state', { timeout: 90000 }, async () => {
+test('SS-007 synthetic page lifecycle rejects a late detail response and logout reaches a terminal page', { timeout: 90000 }, async () => {
   fixture.state.byRef.set(SS007_REFS.FIRST, { description: '标签页一故障', revision: '1' });
   await navigate(`/wecom/yixiaoxiu/reports/${SS007_REFS.FIRST}`);
   await browser.waitFor("document.querySelector('#detail-description')?.textContent==='标签页一故障'");
@@ -240,9 +240,16 @@ test('SS-007 synthetic page lifecycle rejects a late detail response and UI logo
   await pause(100);
   assert.equal(await browser.evaluate("document.body.textContent.includes('STALE-DETAIL-MUST-NOT-RENDER')"), false);
 
-  await browser.evaluate("sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:1,id:'00000000-0000-4000-8000-000000000077'}));document.querySelector('#logout').click()");
-  await browser.waitFor("document.body.textContent.includes('旧认证提示')");
-  assert.equal(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+  const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+  await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'00000000-0000-4000-8000-000000000077',scope:'${scope}'}));document.querySelector('#logout').click()`);
+  await browser.waitFor("document.querySelector('#logged-out-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('已退出')");
+  const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+  assert.deepEqual(Object.keys(pending).sort(), ['id', 'scope', 'v']);
+  assert.equal(pending.scope, scope);
   assert.equal(await browser.evaluate("document.body.textContent.includes('标签页一故障')"), false);
+  assert.equal(await browser.evaluate("document.querySelector('#brand-link').hidden&&document.querySelector('#logout').hidden"), true);
+  await browser.evaluate("document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))");
+  assert.equal(await browser.evaluate("document.querySelector('#logged-out-view').hidden"), false);
+  assert.equal(await browser.evaluate("document.body.textContent.includes('旧认证提示')"), false);
   assert.equal(fixture.state.logoutCalls > 0, true);
 });

@@ -9,13 +9,18 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="/wecom/yixiaoxiu/">医小修</a>
+    <a class="brand" id="brand-link" href="/wecom/yixiaoxiu/">医小修</a>
     <p class="eyebrow">医院信息故障自助服务</p>
     <h1 id="page-title">自助报修</h1>
   </header>
   <main>
     <p id="app-status" class="status" role="status" aria-live="polite">正在验证成员会话…</p>
     <button id="retry-pending" class="secondary recovery-action" type="button" hidden>查询上次提交结果</button>
+    <section id="logged-out-view" class="panel" hidden>
+      <h2>会话已结束</h2>
+      <p>本页已停止访问您的报修数据。需要继续时，请重新进行成员认证。</p>
+      <a class="button" id="sign-in-link" href="/wecom/yixiaoxiu/login">重新登录</a>
+    </section>
     <section id="home-view" class="panel" hidden>
       <h2>需要帮助？</h2>
       <p>请描述看到的故障现象。不要填写患者资料、账号口令或其他敏感信息。</p>

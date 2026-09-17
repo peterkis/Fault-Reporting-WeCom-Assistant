@@ -578,7 +578,7 @@ test('SS-007 pending recovery retries only GET, then requires an explicit bounde
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
-test('SS-007 logout clears member DOM and timers before a hanging response', { timeout: 45000 }, async () => {
+test('SS-007 logout timeout keeps an opaque recovery fence on a terminal page', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   try {
     browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
@@ -587,26 +587,91 @@ test('SS-007 logout clears member DOM and timers before a hanging response', { t
     await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
     await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
     f.state.commandStatusError = Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
+    const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
     await browser.evaluate(`(() => {
-      sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:1,id:'00000000-0000-4000-8000-000000000097'}));
+      sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'00000000-0000-4000-8000-000000000097',scope:'${scope}'}));
       document.dispatchEvent(new Event('visibilitychange'));
     })()`);
     await waitForState(() => f.state.commandStatusCalls.length === 1);
     const recoveryCallsBeforeLogout = f.state.commandStatusCalls.length;
     await browser.evaluate(`(() => {
       const actualFetch=window.fetch.bind(window);
-      window.fetch=(path,options)=>String(path).endsWith('/logout')?new Promise(()=>{}):actualFetch(path,options);
+      const actualSetTimeout=window.setTimeout.bind(window);
+      window.setTimeout=(callback,delay,...args)=>actualSetTimeout(callback,delay===15000?100:delay,...args);
+      window.fetch=(path,options)=>String(path).endsWith('/logout')?new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new DOMException('aborted','AbortError')),{once:true})):actualFetch(path,options);
       document.querySelector('#logout').click();
     })()`);
-    await browser.waitFor("document.querySelector('#home-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('正在退出')");
+    await browser.waitFor("document.querySelector('#logged-out-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('未能确认服务端退出')");
     assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
     assert.equal(await browser.evaluate("document.querySelector('#detail-timeline').textContent"), '');
-    assert.equal(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+    const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+    assert.deepEqual(Object.keys(pending).sort(), ['id', 'scope', 'v']);
+    assert.equal(pending.scope, scope);
     assert.equal(await browser.evaluate("window.__yxx_csrf===undefined"), true);
     assert.equal(await browser.evaluate("document.querySelector('#retry-pending').hidden"), true);
+    await browser.evaluate("document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))");
+    assert.equal(await browser.evaluate("document.querySelector('#logged-out-view').hidden"), false);
     await new Promise(resolve => setTimeout(resolve, 1200));
     assert.equal(f.state.commandStatusCalls.length, recoveryCallsBeforeLogout);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 logout failure stays terminal and does not reopen member data', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    const beforeContext = f.state.contextCalls;
+    await browser.evaluate(`(() => {
+      const actualFetch=window.fetch.bind(window);
+      window.fetch=(path,options)=>String(path).endsWith('/logout')?Promise.resolve(new Response(JSON.stringify({error:{code:'YXX_UNAVAILABLE'}}),{status:503,headers:{'content-type':'application/json'}})):actualFetch(path,options);
+      document.querySelector('#logout').click();
+    })()`);
+    await browser.waitFor("document.querySelector('#logged-out-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('未能确认服务端退出')");
+    await browser.evaluate("document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))");
+    await new Promise(resolve => setTimeout(resolve, 100));
+    assert.equal(f.state.contextCalls, beforeContext);
+    assert.equal(await browser.evaluate("document.querySelector('#logged-out-view').hidden"), false);
+    assert.equal(await browser.evaluate("document.querySelector('#sign-in-link').getAttribute('href')"), '/wecom/yixiaoxiu/login');
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 logout preserves an in-flight POST fence for same-member recovery and discards it for another member', { timeout: 90000 }, async () => {
+  for (const nextMember of ['member-a', 'member-b']) {
+    const f = await startFixture(); let browser;
+    try {
+      f.state.successBodyOverride = { path: '/api/yixiaoxiu/requests', hang: true };
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      await browser.evaluate("document.querySelector('#new-report-link').click()", { awaitPromise: false });
+      await browser.waitFor("document.querySelector('#new-view')?.hidden===false&&document.querySelector('#submit-report')?.disabled===false");
+      await browser.evaluate("document.querySelector('#description').value='退出期间待确认命令';document.querySelector('#location-text').value='护士站';document.querySelector('#new-report-form').requestSubmit()");
+      await waitForState(() => f.state.commandCalls.length === 1);
+      await browser.waitFor("sessionStorage.getItem('yxx.self_service.pending_command')!==null");
+      const commandId = f.state.commandCalls[0].input.client_command_id;
+      const pendingBefore = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+      assert.deepEqual(Object.keys(pendingBefore).sort(), ['id', 'scope', 'v']);
+      assert.equal(pendingBefore.id, commandId);
+      await browser.evaluate("document.querySelector('#logout').click()");
+      await browser.waitFor("document.querySelector('#logged-out-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('已退出')");
+      assert.equal(JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')")).id, commandId);
+      if (nextMember === 'member-a') {
+        f.state.commandStatusResponses = [{ status: 'ACCEPTED', client_command_id: commandId, request_ref: REFS.A,
+          intake_no: 'INT-20260917-0001', accepted_revision: '1', accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' }];
+      }
+      await browser.evaluate(`document.cookie='yxx_session=${nextMember}; Path=/';location.assign('/wecom/yixiaoxiu/')`, { awaitPromise: false });
+      if (nextMember === 'member-a') {
+        await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+        assert.equal(f.state.commandStatusCalls.some(call => call.member === 'A' && call.clientCommandId === commandId), true);
+      } else {
+        await browser.waitFor("document.querySelector('#home-view')?.hidden===false&&sessionStorage.getItem('yxx.self_service.pending_command')===null");
+        assert.equal(f.state.commandStatusCalls.some(call => call.clientCommandId === commandId), false);
+      }
+      assert.equal(f.state.commandCalls.length, 1);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
 });
 
 test('SS-007 a stale unauthorized response cannot clear the newer member operation', { timeout: 45000 }, async () => {

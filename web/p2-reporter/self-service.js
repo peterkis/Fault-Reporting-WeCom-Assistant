@@ -6,7 +6,7 @@ const INTAKE_NO=/^INT-[0-9]{8}-[0-9]{4,}$/u;
 const LOCAL_TIME=/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/u;
 const refs={home:'/wecom/yixiaoxiu/',new:'/wecom/yixiaoxiu/reports/new',list:'/wecom/yixiaoxiu/reports'};
 const $=id=>document.getElementById(id);
-const state={generation:0,controller:null,busy:false,stopped:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,poll:null,hidden:false};
+const state={generation:0,controller:null,busy:false,stopped:false,loggedOut:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,poll:null,hidden:false};
 const pendingKey='yxx.self_service.pending_command';
 const pendingDelays=[1000,2000,4000,5000];
 const latestTimelineBoundary=String(Number.MAX_SAFE_INTEGER);
@@ -17,7 +17,7 @@ function clear(element){while(element.firstChild)element.removeChild(element.fir
 function validGeneration(g){return g===state.generation&&!state.stopped;}
 function messageFor(status){return ({400:'输入格式有误，请检查后重试。',401:'认证已失效，请重新认证。',403:'当前账号没有此项权限。',404:'报修不存在、已撤销或已过期。',409:'版本或状态已变化，请刷新后重试。',413:'内容超过允许大小。',415:'请求格式不受支持。',429:'操作太频繁，请稍后再试。',503:'服务暂时不可用，请稍后刷新。'})[status]??'网络暂不可用，请稍后重试。';}
 function setStatus(textValue,kind=''){const value=$('app-status');value.textContent=textValue;value.className=`status ${kind}`;}
-function setView(view,title){for(const id of ['home-view','new-view','reports-view','detail-view'])$(id).hidden=id!==view;$('page-title').textContent=title;}
+function setView(view,title){for(const id of ['logged-out-view','home-view','new-view','reports-view','detail-view'])$(id).hidden=id!==view;$('page-title').textContent=title;}
 function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTimer);state.pendingTimer=null;if(resetAttempts)state.pendingAttempts=0;$('retry-pending').hidden=true;}
 function syncPendingButtons(){const pending=state.pendingCommandId!==null;$('submit-report').disabled=pending;$('submit-supplement').disabled=pending;}
 function remember(id){
@@ -33,6 +33,10 @@ function clearClientDom(message='认证已失效，请重新认证。'){
  readPending();
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
  $('location-unknown').checked=false;$('impact-scope').value='UNKNOWN';clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');setStatus(message,'error');
+}
+function showLoggedOut(message,kind='error',signInReady=true){
+ state.loggedOut=true;state.stopped=true;state.hidden=document.hidden;cancelPendingRecovery(true);clearTimeout(state.poll);
+ setView('logged-out-view','会话已结束');setStatus(message,kind);$('brand-link').hidden=true;$('logout').hidden=true;$('sign-in-link').hidden=!signInReady;
 }
 function captureDraft(){return Object.freeze({path:location.pathname,description:$('description').value,locationText:$('location-text').value,locationUnknown:$('location-unknown').checked,impactScope:$('impact-scope').value,serviceCode:$('service-code').value,department:$('department').value,extension:$('extension').value,supplement:$('supplement-text').value});}
 function restoreDraft(draft){if(!draft||draft.path!==location.pathname)return;$('description').value=draft.description;$('location-text').value=draft.locationText;$('location-unknown').checked=draft.locationUnknown;$('impact-scope').value=draft.impactScope;$('service-code').value=draft.serviceCode;$('department').value=draft.department;$('extension').value=draft.extension;$('supplement-text').value=draft.supplement;}
@@ -196,6 +200,7 @@ async function submitSupplement(event){
  if(refresh&&validGeneration(operation.generation)){await loadDetail();if(conflictRefresh&&validGeneration(operation.generation))setStatus('版本已变化，已刷新到最新版本；请确认草稿后重新提交。','error');}
 }
 async function bootstrap(){
+ if(state.loggedOut)return;
  const previousCsrf=window.__yxx_csrf,previousScope=state.recoveryScope,draft=captureDraft();
  cancelPendingRecovery(true);state.generation+=1;state.stopped=false;state.busy=false;state.hidden=document.hidden;prepareBootstrap();
  const operation=beginOperation();
@@ -225,15 +230,25 @@ async function bootstrap(){
 }
 document.addEventListener('visibilitychange',()=>{
  state.hidden=document.hidden;
+ if(state.loggedOut)return;
  if(state.hidden){cancelPendingRecovery(true);state.generation+=1;clearTimeout(state.poll);state.controller?.abort();state.controller=null;state.busy=false;return;}
  void bootstrap();
 });
-window.addEventListener('pagehide',()=>{clearClientDom('');});
-window.addEventListener('pageshow',event=>{if(event.persisted){clearClientDom('正在验证成员会话…');void bootstrap();}});
+window.addEventListener('pagehide',()=>{if(!state.loggedOut)clearClientDom('');});
+window.addEventListener('pageshow',event=>{if(event.persisted&&!state.loggedOut){clearClientDom('正在验证成员会话…');void bootstrap();}});
 $('new-report-form').addEventListener('submit',submitNew);
 $('supplement-form').addEventListener('submit',submitSupplement);
 $('load-more-reports').addEventListener('click',()=>loadReports(true));
 $('load-older-timeline').addEventListener('click',loadOlderTimeline);
 $('retry-pending').addEventListener('click',()=>void recoverPending({restart:true}));
-$('logout').addEventListener('click',async()=>{clearClientDom('正在退出当前会话…');forget();try{await fetch(`${ROOT}logout`,{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json','sec-fetch-site':'same-origin'},body:'{}'});}finally{location.assign(ROOT);}});
+$('logout').addEventListener('click',async()=>{
+ clearClientDom('正在退出当前会话…');showLoggedOut('正在退出当前会话…','',false);
+ const generation=state.generation,controller=new AbortController();
+ try{
+  const result=await fetchJson(`${ROOT}logout`,{method:'POST',headers:{'content-type':'application/json','sec-fetch-site':'same-origin'},body:'{}'},controller.signal);
+  if(state.loggedOut&&state.generation===generation)showLoggedOut(result.body?.logged_out===true?'已退出当前会话。':'未能确认服务端退出，请重新登录后确认会话。',result.body?.logged_out===true?'success':'error');
+ }catch{
+  if(state.loggedOut&&state.generation===generation)showLoggedOut('未能确认服务端退出，请重新登录后确认会话。');
+ }
+});
 void bootstrap();
