@@ -151,3 +151,28 @@ test('SS-007 direct detail pages enforce ownership before rendering the shell', 
     assert.equal(calls, 3);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
+
+
+test('SS-007 report source filters reject explicit empty and unknown values before querying', async () => {
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  let native; const sources = [];
+  const server = createServer(async (request, response) => native.handler({ request, response, url: new URL(request.url, origin) }));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = 'http://127.0.0.1:' + server.address().port;
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
+    command: { accept() {} }, supplement: { accept() {} },
+    query: { async list(input) { sources.push(input.source); return { items: [], next_cursor: null }; }, detailWithEtag() {}, timeline() {}, commandStatus() {} },
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: 'csrf-filter-0123456789012345678901234567',
+      canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-filter', source_app_scope: 'app-filter' }),
+    featureFlags: flags, recoveryBindingSecret });
+  try {
+    const get = suffix => fetch(origin + '/api/yixiaoxiu/my-reports' + suffix, { headers: { cookie: '__Host-wecom_session=synthetic' } });
+    for (const suffix of ['?source=', '?source', '?source=web', '?source=ALL', '?source=%20', '?source=WEB&source=BOT']) {
+      const response = await get(suffix); assert.equal(response.status, 400, suffix);
+      assert.equal((await response.json()).error.code, 'YXX_INPUT_INVALID');
+    }
+    assert.deepEqual(sources, []);
+    for (const suffix of ['', '?source=WEB', '?source=BOT']) assert.equal((await get(suffix)).status, 200);
+    assert.deepEqual(sources, [null, 'WEB', 'BOT']);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});

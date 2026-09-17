@@ -268,6 +268,7 @@ export function createYxxSelfServiceNativeHttp({
       const listPath = url.pathname === '/api/yixiaoxiu/my-reports';
       if (listPath && request.method === 'GET') {
         const allowed = new Set(['source', 'cursor', 'limit']);
+        if (url.searchParams.has('source') && !['WEB', 'BOT'].includes(url.searchParams.get('source'))) throw error('YXX_INPUT_INVALID');
         if ([...url.searchParams.keys()].some((key) => !allowed.has(key) || url.searchParams.getAll(key).length !== 1)) throw error('YXX_INPUT_INVALID');
         await currentMember(request);
         json(response, 200, await query.list({ request, source: url.searchParams.get('source'), cursor: url.searchParams.get('cursor'), limit: url.searchParams.get('limit') })); return true;
