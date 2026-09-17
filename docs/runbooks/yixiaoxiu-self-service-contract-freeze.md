@@ -44,3 +44,24 @@ FKs, weak checks, and wrong partial indexes are negative catalog cases. The
 plan preserves `pilot_ticket_id`, `version`, the existing Ticket Core, Bot
 foreign keys, and all historical catalog/evidence. Persistent flags remain
 false in every example configuration.
+
+## SS-007 recovery scope refinement
+
+Bootstrap additionally returns `recovery_scope`, a 64-character lowercase HMAC
+hex value. The server derives it from the protected canonical member binding
+and source corp/app scopes using a stable server-only recovery binding secret.
+It is not a credential and grants no read or write access. It must stay stable
+for the same member/scope when CSRF rotates or that member reauthenticates.
+
+The browser may persist only `{v:2,id,scope}` for a pending command: the opaque
+command UUID and this opaque recovery scope. Bootstrap compares the saved scope
+before resuming GET-only recovery. A different scope clears the previous
+member's DOM and recovery record. A matching scope preserves the command fence
+even when CSRF changes. Unknown-scope legacy records remain conservative;
+an early 404 alone never proves that an earlier transaction cannot commit.
+
+The new secret must be supplied through protected server configuration and
+remain stable across restarts. It must never be sent to the browser, logged,
+stored with command data, or derived from the current CSRF token. This contract
+refinement has no database migration and does not relax command authorization,
+member ownership checks, or `MEMBER_TICKET_READONLY` restrictions.

@@ -6,6 +6,13 @@
 未知提交结果最多自动查询五次，之后可点击“查询上次提交结果”继续查询，
 查询始终为GET；早期404不会清除原命令或自动创建新命令。
 
+恢复标记升级为 `{v:2,id,scope}`：`scope` 是 bootstrap 返回的
+`recovery_scope`，不是 Cookie、CSRF 或原始成员身份。相同 scope 下 CSRF
+轮换不会解除未知命令的围栏；新成员的 scope 不同时才清除旧成员记录。
+服务端必须提供稳定且仅服务端持有的 `recoveryBindingSecret`（至少32字节），
+并通过受保护成员上下文提供 canonical binding 与 corp/app scope。
+重启时不得随机生成新密钥；轮换密钥前须单独处理尚未确认的命令。
+
 本包提供固定医小修主页下的原生网页自助服务。页面由现有 OAuth/成员边界
 保护，只有 `MEMBER_SELF_SERVICE` 或 `FULL_SERVICE_LOOP` 且两个持久开关都为
 `true` 时才显示新建报修和我的报修动作。`MEMBER_TICKET_READONLY` 不会获得

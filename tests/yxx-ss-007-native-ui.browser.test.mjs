@@ -8,6 +8,7 @@ import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 
 const FLAGS = Object.freeze({ YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true });
 const REFS = Object.freeze({ A: 'A'.repeat(32), B: 'B'.repeat(32) });
+const RECOVERY_SECRET = 'ss007-recovery-secret-0123456789abcdef';
 const csrfFor = token => `csrf-${token}-012345678901234567890123`;
 
 function fixture(origin) {
@@ -24,6 +25,8 @@ function fixture(origin) {
   };
   const context = async ({ sessionToken }) => ({
     profile: 'MEMBER_SELF_SERVICE', flags: FLAGS, csrf_token: state.csrfOverride ?? csrfFor(sessionToken),
+    canonical_reporter_binding: sessionToken === 'member-b' ? 'b'.repeat(64) : 'a'.repeat(64),
+    source_corp_scope: 'corp-local', source_app_scope: 'app-local',
   });
   const receipt = requestRef => ({ request_ref: requestRef, status: 'ACCEPTED' });
   const command = {
@@ -54,6 +57,7 @@ function fixture(origin) {
     async detailWithEtag({ request, requestRef, ifNoneMatch }) {
       const member = memberFor(request);
       state.detailCalls.push({ member, requestRef, ifNoneMatch });
+      if (state.detailNotFound) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
       if (state.enforceOwnership && requestRef !== REFS[member]) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
       const revision = state.detailRevision ?? '1';
       const etag = `"${requestRef}-v${revision}"`;
@@ -66,6 +70,7 @@ function fixture(origin) {
     },
     async timeline({ request, requestRef, limit, cursor, before }) {
       state.timelineCalls.push({ member: memberFor(request), requestRef, limit, cursor, before });
+      if (state.timelineNotFound) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
       const older = cursor !== null && cursor !== undefined;
       return { items: [{ event_type: older ? 'PROCESSING' : 'REQUEST_ACCEPTED', summary: older ? `更早记录 ${cursor}` : '最近记录',
         occurred_at: older ? '2026-09-16 22:00:00' : '2026-09-16 23:00:00', occurred_epoch_ms: older ? '1789567200000' : '1789570800000', ticket: null }],
@@ -80,7 +85,7 @@ function fixture(origin) {
   };
   const oauthHttp = async ({ response }) => { response.writeHead(401, { 'content-type': 'text/html; charset=utf-8' }); response.end('<p>旧认证提示</p>'); return true; };
   const config = { publicOrigin: origin, oauth, oauthHttp, command, supplement, query,
-    authenticateMember: context, featureFlags: FLAGS, sessionCookieName: 'yxx_session' };
+    authenticateMember: context, featureFlags: FLAGS, sessionCookieName: 'yxx_session', recoveryBindingSecret: RECOVERY_SECRET };
   return { native: createYxxSelfServiceNativeHttp(config), config, state, oauth };
 }
 
@@ -136,6 +141,48 @@ test('SS-007 refreshed member CSRF survives clearing the previous form', { timeo
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
+test('SS-007 v2 recovery scope clears a different member fence after a full reload', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000096';
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    const scopeA = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scopeA}'}));document.querySelector('#description').value='A成员旧草稿';document.cookie='yxx_session=member-b; Path=/';location.reload()`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false&&sessionStorage.getItem('yxx.self_service.pending_command')===null");
+    assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+    assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), false);
+    assert.equal(f.state.commandStatusCalls.some(call => call.member === 'B'), false);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET only', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000095';
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+    f.state.commandStatusError = Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
+    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scope}'}));document.querySelector('#description').value='需要重新确认的草稿'`);
+    f.state.csrfOverride = 'rotated-same-member-csrf-012345678901234567890';
+    await setSyntheticVisibility(browser, false);
+    await waitForState(() => f.state.commandStatusCalls.some(call => call.clientCommandId === commandId));
+    const persisted = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+    assert.deepEqual(persisted, { v: 2, id: commandId, scope });
+    assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+    assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), true);
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(f.state.supplementCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
 test('SS-007 synthetic visibility restore preserves ETag, bounds an endless timeline, and reloads the first list page', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   try {
@@ -178,6 +225,30 @@ test('SS-007 synthetic visibility restore preserves ETag, bounds an endless time
     await browser.waitFor(`!document.querySelector('#report-list')?.textContent.includes('${REFS.B}')`);
     assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${REFS.A}')`), true);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 detail and timeline 404 clear rendered state and stop polling', { timeout: 60000 }, async () => {
+  for (const failureKind of ['detail', 'timeline']) {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+      await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+      await browser.evaluate("window.setTimeout=((actual)=>((callback,delay,...args)=>actual(callback,Math.min(delay,30),...args)))(window.setTimeout.bind(window))");
+      if (failureKind === 'detail') f.state.detailNotFound = true;
+      else f.state.timelineNotFound = true;
+      await setSyntheticVisibility(browser, false);
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('不存在')");
+      const callsAfter404 = failureKind === 'detail' ? f.state.detailCalls.length : f.state.timelineCalls.length;
+      await new Promise(resolve => setTimeout(resolve, 250));
+      assert.equal(failureKind === 'detail' ? f.state.detailCalls.length : f.state.timelineCalls.length, callsAfter404);
+      assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+      assert.equal(await browser.evaluate("document.querySelector('#detail-timeline').textContent"), '');
+      assert.equal(await browser.evaluate("document.querySelector('#supplement-form').hidden"), true);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
 });
 
 test('SS-007 pending recovery stays GET-only, survives 404, and is discarded on an in-memory identity change', { timeout: 45000 }, async () => {
@@ -230,6 +301,7 @@ test('SS-007 pending recovery retries only GET, then requires an explicit bounde
     await setSyntheticVisibility(browser, false);
     await waitForState(() => f.state.commandStatusCalls.length === 5, 18000);
     await browser.waitFor("document.querySelector('#retry-pending')?.hidden===false");
+    assert.equal(await browser.evaluate("document.querySelector('#app-status').textContent.includes('旧版恢复记录')"), true);
     assert.notEqual(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
     assert.equal(f.state.commandCalls.length, 0);
     assert.equal(f.state.supplementCalls.length, 0);

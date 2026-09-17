@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { createHmac } from 'node:crypto';
 import { beginWeComOAuth, logoutWeComBrowser, sessionName } from './p2-g2-wecom-oauth-http.mjs';
 
 const ROOT = '/wecom/yixiaoxiu/';
@@ -9,6 +10,7 @@ const ASSETS = Object.freeze({
   '/wecom/yixiaoxiu/self-service.css': ['self-service.css', 'text/css'],
 });
 const FLAGS = Object.freeze(['YIXIAOXIU_SELF_SERVICE_ENABLED', 'YIXIAOXIU_MY_REPORTS_ENABLED']);
+const BINDING_HASH = /^[a-f0-9]{64}$/u;
 const HEADERS = Object.freeze({
   'cache-control': 'no-store', 'referrer-policy': 'no-referrer', 'x-content-type-options': 'nosniff',
   'content-security-policy': "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; font-src 'self'",
@@ -150,9 +152,25 @@ function writeEnabled(profile, configuredFlags) {
     && configuredFlags.YIXIAOXIU_MY_REPORTS_ENABLED === true;
 }
 
+function recoverySecret(value) {
+  const selected = Buffer.isBuffer(value) ? Buffer.from(value) : typeof value === 'string' ? Buffer.from(value, 'utf8') : null;
+  if (!selected || selected.length < 32 || selected.length > 512) throw error('YXX_CONFIG_INVALID', 503);
+  return selected;
+}
+
+function recoveryScope(context, secret) {
+  const binding = context?.canonical_reporter_binding;
+  const corp = context?.source_corp_scope;
+  const app = context?.source_app_scope;
+  if (typeof binding !== 'string' || !BINDING_HASH.test(binding)
+    || typeof corp !== 'string' || corp.length < 1 || corp.length > 128
+    || typeof app !== 'string' || app.length < 1 || app.length > 128) throw error('YXX_UNAVAILABLE', 503);
+  return createHmac('sha256', secret).update(JSON.stringify([binding, corp, app]), 'utf8').digest('hex');
+}
+
 export function createYxxSelfServiceNativeHttp({
   publicOrigin, oauth, oauthHttp = null, command, supplement, query, authenticateMember,
-  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName,
+  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret,
 } = {}) {
   if (typeof publicOrigin !== 'string' || !oauth || typeof oauth.authenticate !== 'function'
     || typeof oauthHttp !== 'function' || !command?.accept || !supplement?.accept
@@ -162,6 +180,7 @@ export function createYxxSelfServiceNativeHttp({
     throw error('YXX_CONFIG_INVALID', 503);
   }
   const origin = new URL(publicOrigin);
+  const scopeSecret = recoverySecret(recoveryBindingSecret);
   const configuredFlags = flags(featureFlags);
   const configured = Object.freeze({ profile, flags: configuredFlags });
   const serviceEnabled = writeEnabled(profile, configuredFlags);
@@ -177,7 +196,8 @@ export function createYxxSelfServiceNativeHttp({
     const selectedProfile = safeProfile(context, configured.profile);
     const selectedFlags = safeFlags(context, configured.flags);
     if (typeof context.csrf_token !== 'string' || context.csrf_token.length < 32 || context.csrf_token.length > 128) throw error('YXX_UNAVAILABLE', 503);
-    return Object.freeze({ profile: selectedProfile, flags: selectedFlags, csrf_token: context.csrf_token });
+    return Object.freeze({ profile: selectedProfile, flags: selectedFlags, csrf_token: context.csrf_token,
+      recovery_scope: recoveryScope(context, scopeSecret) });
   }
 
   async function asset(response, item) {
@@ -236,7 +256,8 @@ export function createYxxSelfServiceNativeHttp({
         if (url.search) throw error('YXX_INPUT_INVALID');
         const context = await currentMember(request);
         json(response, 200, { authenticated: true, identity_mode: 'MEMBER_SELF_SERVICE', read_only: false,
-          can_submit: serviceEnabled, can_supplement: serviceEnabled, csrf_token: context.csrf_token }); return true;
+          can_submit: serviceEnabled, can_supplement: serviceEnabled, csrf_token: context.csrf_token,
+          recovery_scope: context.recovery_scope }); return true;
       }
       const listPath = url.pathname === '/api/yixiaoxiu/my-reports';
       if (listPath && request.method === 'GET') {

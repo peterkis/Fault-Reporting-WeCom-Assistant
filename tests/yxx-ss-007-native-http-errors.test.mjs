@@ -3,6 +3,8 @@ import { createServer } from 'node:http';
 import { test } from 'node:test';
 import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-http.mjs';
 
+const recoveryBindingSecret = 'ss007-http-recovery-secret-0123456789abcdef';
+
 test('SS-007 dependency failures remain terminal service or permission failures', async () => {
   let failure = new Error('private dependency detail');
   let oauthFailure = null;
@@ -22,6 +24,7 @@ test('SS-007 dependency failures remain terminal service or permission failures'
     query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
     authenticateMember: async () => { throw failure; },
     featureFlags: { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true },
+    recoveryBindingSecret,
   });
   try {
     for (const status of [503, 403]) {
@@ -57,7 +60,9 @@ test('SS-007 JSON bodies reject duplicate decoded keys before commands', async (
     oauthHttp: async () => false,
     command: { accept: async () => { if(commandFailure)throw commandFailure; calls++; return { receipt: { request_ref: 'A'.repeat(32) } }; } },
     supplement: { accept() {} }, query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
-    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: csrf }), featureFlags: flags,
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: csrf,
+      canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-http', source_app_scope: 'app-http' }), featureFlags: flags,
+    recoveryBindingSecret,
   });
   const send = body => fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: {
     origin, cookie: '__Host-wecom_session=synthetic', 'content-type': 'application/json', 'x-csrf-token': csrf,
@@ -78,5 +83,38 @@ test('SS-007 JSON bodies reject duplicate decoded keys before commands', async (
     const invalid = await send('{}');
     assert.equal(invalid.status, 400);
     assert.deepEqual(await invalid.json(), { error: { code: 'YXX_INPUT_INVALID', retryable: false } });
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test('SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes', async () => {
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  const context = { profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: 'csrf-one-0123456789012345678901234567',
+    canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-one', source_app_scope: 'app-one' };
+  let native;
+  const server = createServer(async (request, response) => native.handler({ request, response, url: new URL(request.url, origin) }));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
+    command: { accept() {} }, supplement: { accept() {} }, query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
+    authenticateMember: async () => ({ ...context }), featureFlags: flags, recoveryBindingSecret });
+  const bootstrap = async () => (await fetch(origin + '/api/yixiaoxiu/bootstrap', { headers: { cookie: '__Host-wecom_session=synthetic' } })).json();
+  try {
+    const first = await bootstrap();
+    context.csrf_token = 'csrf-two-0123456789012345678901234567';
+    const rotated = await bootstrap();
+    assert.equal(rotated.recovery_scope, first.recovery_scope);
+    context.canonical_reporter_binding = 'b'.repeat(64);
+    const otherMember = await bootstrap();
+    assert.notEqual(otherMember.recovery_scope, first.recovery_scope);
+    context.canonical_reporter_binding = 'a'.repeat(64); context.source_app_scope = 'app-two';
+    const otherApp = await bootstrap();
+    assert.notEqual(otherApp.recovery_scope, first.recovery_scope);
+    context.source_app_scope = 'app-one'; context.source_corp_scope = 'corp-two';
+    const otherCorp = await bootstrap();
+    assert.notEqual(otherCorp.recovery_scope, first.recovery_scope);
+    assert.equal('canonical_reporter_binding' in first, false);
+    assert.equal('source_corp_scope' in first, false);
+    assert.equal('source_app_scope' in first, false);
+    assert.doesNotMatch(JSON.stringify(first), /corp-one|app-one|a{64}/u);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });

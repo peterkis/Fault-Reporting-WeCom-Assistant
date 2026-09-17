@@ -12,6 +12,7 @@ export const SS007_REFS = Object.freeze({
 });
 
 const csrf = 'ss007-acceptance-csrf-012345678901234567890123';
+const recoveryBindingSecret = 'ss007-acceptance-recovery-secret-0123456789';
 const accepted = requestRef => ({
   replayed: false,
   receipt: { request_ref: requestRef, status: 'ACCEPTED' },
@@ -139,9 +140,11 @@ export async function startSs007AcceptanceFixture() {
     query,
     authenticateMember: async () => ({
       profile: 'MEMBER_SELF_SERVICE', flags: SS007_FLAGS, csrf_token: csrf,
+      canonical_reporter_binding: 'c'.repeat(64), source_corp_scope: 'corp-acceptance', source_app_scope: 'app-acceptance',
     }),
     featureFlags: SS007_FLAGS,
     sessionCookieName: 'yxx_session',
+    recoveryBindingSecret,
   });
   return { origin, server, state };
 }

@@ -3,10 +3,11 @@
   "$id": "https://hospital.local/schemas/yxx_self_service_bootstrap.schema.json",
   "title": "YXX self-service bootstrap",
   "type": "object", "additionalProperties": false,
-  "required": ["authenticated", "identity_mode", "read_only", "can_submit", "can_supplement", "csrf_token"],
+  "required": ["authenticated", "identity_mode", "read_only", "can_submit", "can_supplement", "csrf_token", "recovery_scope"],
   "properties": {
     "authenticated": {"const": true}, "identity_mode": {"const": "MEMBER_SELF_SERVICE"},
     "read_only": {"const": false}, "can_submit": {"type": "boolean"}, "can_supplement": {"type": "boolean"},
-    "csrf_token": {"type": "string", "minLength": 32, "maxLength": 128}
+    "csrf_token": {"type": "string", "minLength": 32, "maxLength": 128},
+    "recovery_scope": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
   }
 }
