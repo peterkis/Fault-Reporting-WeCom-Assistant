@@ -1,0 +1,170 @@
+{
+  "task": "YXX-SS-007",
+  "status": "LOCAL_VALIDATION_COMPLETE_REVIEW_PENDING",
+  "event_time": "2026-09-17 12:05:33",
+  "event_epoch_ms": "1789617933130",
+  "base_head": "5d81594b2c2d4198faca67598dd894ba7552599f",
+  "source_binding": "sha256 binds staged Git blob bytes; tested_worktree_sha256 binds executed working-tree bytes. Each difference verified to be CRLF-to-LF normalization only. No implementation edits after validation.",
+  "source_files": [
+    {
+      "path": "src/yxx-self-service-native-http.mjs",
+      "sha256": "9c472cbb4b273359ef56082adb22554f58bd92bcc35c39e786d96f440c4fc2ac",
+      "tested_worktree_sha256": "9c472cbb4b273359ef56082adb22554f58bd92bcc35c39e786d96f440c4fc2ac",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.js",
+      "sha256": "b182e0b8961db7e6b58b86b3edc51cadb2b76890c2bcdcee06ef564a4e8f01c5",
+      "tested_worktree_sha256": "4dd875fa828b2bc0490f92574474c36147178a7a3e5f096744864ee52dc008db",
+      "relation": "CRLF_TO_LF_ONLY"
+    },
+    {
+      "path": "web/p2-reporter/self-service.html",
+      "sha256": "9b06eb2460e3be955dccb1e3ffaecd0d74e4d7ac2d6545ac1692c418bc834562",
+      "tested_worktree_sha256": "9b06eb2460e3be955dccb1e3ffaecd0d74e4d7ac2d6545ac1692c418bc834562",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.css",
+      "sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "tested_worktree_sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "sha256": "15e346f5e5a1130f6e442ab9e2d04e4198b593372d0eab129175b5c33f664476",
+      "tested_worktree_sha256": "15e346f5e5a1130f6e442ab9e2d04e4198b593372d0eab129175b5c33f664476",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "sha256": "346fa063c792e2c503d51c1bfa5602c697e22cbc8cadb5380cd2606b889a1bc3",
+      "tested_worktree_sha256": "346fa063c792e2c503d51c1bfa5602c697e22cbc8cadb5380cd2606b889a1bc3",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+      "sha256": "02d3be3eebf0629a5aea5e5afeb30f1d118fe2d92f5acab0807b33d7fc13d53e",
+      "tested_worktree_sha256": "02d3be3eebf0629a5aea5e5afeb30f1d118fe2d92f5acab0807b33d7fc13d53e",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/helpers/yxx-ss-007-acceptance-fixture.mjs",
+      "sha256": "39b82a0cd89e764b1a45b48cd4f130afd7fb0ec1db1fee4b560f2e99168a64e7",
+      "tested_worktree_sha256": "39b82a0cd89e764b1a45b48cd4f130afd7fb0ec1db1fee4b560f2e99168a64e7",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+      "sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "tested_worktree_sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_bootstrap.schema.json",
+      "sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "tested_worktree_sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_contracts.d.ts",
+      "sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "tested_worktree_sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-contract-freeze.md",
+      "sha256": "490a456fd0cfae56c0533fd8bdd6df8ae7c32547b1bcd154480ad2217441bfce",
+      "tested_worktree_sha256": "490a456fd0cfae56c0533fd8bdd6df8ae7c32547b1bcd154480ad2217441bfce",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-native-ui.md",
+      "sha256": "aa0957232ab68f2a3a32041375d2c254b1170e429ecba0c702d340c93b73921d",
+      "tested_worktree_sha256": "aa0957232ab68f2a3a32041375d2c254b1170e429ecba0c702d340c93b73921d",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service.openapi.yaml",
+      "sha256": "60d9bee38e9dc7ad0e0cdec775331814264bc0b18bc01c3062d9746917cd895b",
+      "tested_worktree_sha256": "60d9bee38e9dc7ad0e0cdec775331814264bc0b18bc01c3062d9746917cd895b",
+      "relation": "IDENTICAL"
+    }
+  ],
+  "validation": {
+    "command": "node --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-001-homepage-oauth.test.mjs tests/yxx-ss-002-contract.test.mjs tests/yxx-ss-007-*.test.mjs",
+    "tests": 43,
+    "pass": 43,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "tap": {
+      "path": "evidence/yxx-ss-007-durable-recovery-v18-passed.tap",
+      "sha256": "023a6c9ae60029c08c5252b86e2cf021ff1b0796aa20a00008522b415231cb58",
+      "tested_worktree_sha256": "023a6c9ae60029c08c5252b86e2cf021ff1b0796aa20a00008522b415231cb58",
+      "relation": "IDENTICAL"
+    },
+    "scope": "Homepage, contracts and all SS-007 HTTP/browser tests"
+  },
+  "parent_validation": "evidence/yxx-ss-007-logout-terminal-v15-report.json",
+  "review_fixes": [
+    "Persist one opaque v3 localStorage record per command, with a current-tab sessionStorage pointer",
+    "Bound durable records to 20 with pre/post-write checks; fail closed on storage read/write errors",
+    "Recover through GET after closing and reopening a tab in the same browser profile; preserve independent command UUIDs across tabs",
+    "Clear tab context on known member changes without deleting other scopes durable records; legacy unscoped v1 is never rebound"
+  ],
+  "failure_history": [
+    {
+      "tap": {
+        "path": "evidence/yxx-ss-007-durable-recovery-acceptance-targeted-v1-failed.tap",
+        "sha256": "3959f0009e93b4047738acd4cdc11b49fc87e5f503e1d707e560e50f328e797f",
+        "tested_worktree_sha256": "3959f0009e93b4047738acd4cdc11b49fc87e5f503e1d707e560e50f328e797f",
+        "relation": "IDENTICAL"
+      },
+      "pass": 1,
+      "fail": 1,
+      "cause": "New acceptance case added a third fixture command; original two-tab assertion needed to select its own two commands"
+    },
+    {
+      "tap": {
+        "path": "evidence/yxx-ss-007-durable-recovery-v16-failed.tap",
+        "sha256": "c8d1edd78cada70b3c4940e6482632ab0a14ab3a8126420ed79d3380b1541875",
+        "tested_worktree_sha256": "c8d1edd78cada70b3c4940e6482632ab0a14ab3a8126420ed79d3380b1541875",
+        "relation": "IDENTICAL"
+      },
+      "pass": 42,
+      "fail": 1,
+      "cause": "Implementation regression removed prior in-memory scope-change detection for legacy v1; restored original behavior and assertion"
+    },
+    {
+      "tap": {
+        "path": "evidence/yxx-ss-007-durable-recovery-v17-aborted.tap",
+        "sha256": "e2f63f2dbd361dea8eaa3af09ed4105c67d6d307aca1d6610c67dae13ff07c84",
+        "tested_worktree_sha256": "e2f63f2dbd361dea8eaa3af09ed4105c67d6d307aca1d6610c67dae13ff07c84",
+        "relation": "IDENTICAL"
+      },
+      "status": "ABORTED_BY_AGENT",
+      "cause": "Incorrect test reinterpretation rejected in parent review; stopped and retained before corrected v18 run"
+    }
+  ],
+  "limitations": [
+    "PageTransitionEvent and document.hidden tests use deterministic browser seams, not real operating-system BFCache proof",
+    "Historical 498/500 list failure remains UNREPRODUCED; original and same-second diagnostic traversals now pass",
+    "SS-008 real DB/HTTP/workbench assembly and SS-009 full regression are not yet run",
+    "External current-commit review remains pending",
+    "Prior v5 browser cleanup failure remains UNREPRODUCED despite current successful cleanup",
+    "Legacy v1 lacks a member scope and cannot be safely rebound into durable member-scoped storage; new commands use v3"
+  ],
+  "live": {
+    "oauth": "NOT_RUN",
+    "sdk": "NOT_RUN",
+    "production_db": "NOT_RUN",
+    "send": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "SS011": "NOT_AUTHORIZED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "BLOCKED"
+  }
+}

@@ -101,10 +101,55 @@ beforeEach(async () => {
   fixture.state.authExpired = false;
   fixture.state.supplementConflict = false;
   fixture.state.timelineFailureOnce = false;
+  fixture.state.commandStatusResponses.length = 0;
   await browser.command('Page.bringToFront');
-  await browser.evaluate("sessionStorage.clear();delete document.hidden;window.dispatchEvent(new PageTransitionEvent('pagehide'))");
+  await browser.evaluate("sessionStorage.clear();localStorage.clear();delete document.hidden;window.dispatchEvent(new PageTransitionEvent('pagehide'))");
   await navigate('/wecom/yixiaoxiu/');
   await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+});
+
+test('SS-007 a new tab in the same browser recovers a closed tab command from durable opaque storage', { timeout: 60000 }, async () => {
+  let submittingTab;
+  let recoveryTab;
+  try {
+    const route = `${fixture.origin}/wecom/yixiaoxiu/reports/new`;
+    submittingTab = await createTab(browser, route);
+    await submittingTab.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await submittingTab.evaluate(`(() => {
+      const actualFetch=window.fetch.bind(window);
+      window.fetch=async(path,options)=>{
+        const response=await actualFetch(path,options);
+        if(String(path)==='/api/yixiaoxiu/requests'&&options?.method==='POST')return new Response('{',{status:200,headers:{'content-type':'application/json'}});
+        return response;
+      };
+      document.querySelector('#description').value='关闭标签页后的待恢复命令';
+      document.querySelector('#location-unknown').checked=true;
+      document.querySelector('#new-report-form').requestSubmit();
+    })()`);
+    await waitForSs007State(() => fixture.state.commandCalls.some(item => item.description === '关闭标签页后的待恢复命令'));
+    await submittingTab.waitFor("document.querySelector('#app-status')?.textContent.includes('结果未知')");
+    const command = fixture.state.commandCalls.find(item => item.description === '关闭标签页后的待恢复命令');
+    const pending = JSON.parse(await submittingTab.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+    assert.equal(pending.id, command.client_command_id);
+    assert.deepEqual(Object.keys(pending).sort(), ['id', 'scope', 'v']);
+    assert.equal(await submittingTab.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 1);
+
+    await submittingTab.close();
+    submittingTab = null;
+    fixture.state.commandStatusResponses.push({
+      status: 'ACCEPTED', client_command_id: command.client_command_id, request_ref: SS007_REFS.FIRST,
+      intake_no: 'INT-20260917-0001', accepted_revision: '1',
+      accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000',
+    });
+    recoveryTab = await createTab(browser, `${fixture.origin}/wecom/yixiaoxiu/`);
+    await recoveryTab.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${SS007_REFS.FIRST}'`);
+    assert.equal(fixture.state.commandStatusCalls.includes(command.client_command_id), true);
+    assert.equal(fixture.state.commandCalls.filter(item => item.client_command_id === command.client_command_id).length, 1);
+    assert.equal(await recoveryTab.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 0);
+  } finally {
+    await submittingTab?.close();
+    await recoveryTab?.close();
+  }
 });
 
 test('SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence', { timeout: 120000 }, async t => {
@@ -138,7 +183,10 @@ test('SS-007 same-browser tabs keep form input and accepted request references i
     await tab.waitFor("document.querySelector('#detail-description')?.textContent==='标签页二故障'");
     assert.equal(await browser.evaluate("document.body.textContent.includes('标签页二故障')"), false);
     assert.equal(await tab.evaluate("document.body.textContent.includes('标签页一故障')"), false);
-    assert.deepEqual(new Set(fixture.state.commandCalls.map(item => item.description)), new Set(['标签页一故障', '标签页二故障']));
+    const tabDescriptions = fixture.state.commandCalls.map(item => item.description)
+      .filter(value => value === '标签页一故障' || value === '标签页二故障');
+    assert.deepEqual(new Set(tabDescriptions), new Set(['标签页一故障', '标签页二故障']));
+    assert.equal(tabDescriptions.length, 2);
 
     const screenshotDirectory = new URL('../tmp/ss007-ui/', import.meta.url);
     await mkdir(screenshotDirectory, { recursive: true });
@@ -172,7 +220,7 @@ test('SS-007 status copy is exercised through browser responses for 429, 409, 40
   await navigate(path);
   await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
   await submit('触发503', '服务暂时不可用');
-  await browser.evaluate("sessionStorage.removeItem('yxx.self_service.pending_command')");
+  await browser.evaluate("sessionStorage.removeItem('yxx.self_service.pending_command');for(const key of Object.keys(localStorage)){if(key.startsWith('yxx.self_service.pending_command.'))localStorage.removeItem(key)}");
   await navigate('/wecom/yixiaoxiu/');
   await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
 });
@@ -241,11 +289,12 @@ test('SS-007 synthetic page lifecycle rejects a late detail response and logout 
   assert.equal(await browser.evaluate("document.body.textContent.includes('STALE-DETAIL-MUST-NOT-RENDER')"), false);
 
   const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
-  await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'00000000-0000-4000-8000-000000000077',scope:'${scope}'}));document.querySelector('#logout').click()`);
+  await browser.evaluate(`(() => {const value={v:3,id:'00000000-0000-4000-8000-000000000077',scope:'${scope}'};const record=JSON.stringify(value);sessionStorage.setItem('yxx.self_service.pending_command',record);localStorage.setItem('yxx.self_service.pending_command.'+value.id,record);document.querySelector('#logout').click()})()`);
   await browser.waitFor("document.querySelector('#logged-out-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('已退出')");
   const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
   assert.deepEqual(Object.keys(pending).sort(), ['id', 'scope', 'v']);
   assert.equal(pending.scope, scope);
+  assert.notEqual(await browser.evaluate("localStorage.getItem('yxx.self_service.pending_command.00000000-0000-4000-8000-000000000077')"), null);
   assert.equal(await browser.evaluate("document.body.textContent.includes('标签页一故障')"), false);
   assert.equal(await browser.evaluate("document.querySelector('#brand-link').hidden&&document.querySelector('#logout').hidden"), true);
   await browser.evaluate("document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))");

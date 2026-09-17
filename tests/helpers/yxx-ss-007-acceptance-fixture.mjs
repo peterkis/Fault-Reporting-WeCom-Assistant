@@ -45,6 +45,8 @@ export async function startSs007AcceptanceFixture() {
   const state = {
     authExpired: false,
     commandCalls: [],
+    commandStatusCalls: [],
+    commandStatusResponses: [],
     detailCalls: [],
     supplementCalls: [],
     logoutCalls: 0,
@@ -117,6 +119,8 @@ export async function startSs007AcceptanceFixture() {
       };
     },
     async commandStatus({ clientCommandId }) {
+      state.commandStatusCalls.push(clientCommandId);
+      if (state.commandStatusResponses.length) return state.commandStatusResponses.shift();
       throw httpError(404, `YXX_COMMAND_NOT_FOUND_${clientCommandId}`);
     },
   };

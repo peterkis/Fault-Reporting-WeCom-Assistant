@@ -6,8 +6,10 @@ const INTAKE_NO=/^INT-[0-9]{8}-[0-9]{4,}$/u;
 const LOCAL_TIME=/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/u;
 const refs={home:'/wecom/yixiaoxiu/',new:'/wecom/yixiaoxiu/reports/new',list:'/wecom/yixiaoxiu/reports'};
 const $=id=>document.getElementById(id);
-const state={generation:0,controller:null,busy:false,stopped:false,loggedOut:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,poll:null,hidden:false};
+const state={generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,poll:null,hidden:false};
 const pendingKey='yxx.self_service.pending_command';
+const durablePrefix=`${pendingKey}.`;
+const durableLimit=20;
 const pendingDelays=[1000,2000,4000,5000];
 const latestTimelineBoundary=String(Number.MAX_SAFE_INTEGER);
 const requestDeadlineMs=15000;
@@ -19,15 +21,38 @@ function messageFor(status){return ({400:'输入格式有误，请检查后重�
 function setStatus(textValue,kind=''){const value=$('app-status');value.textContent=textValue;value.className=`status ${kind}`;}
 function setView(view,title){for(const id of ['logged-out-view','home-view','new-view','reports-view','detail-view'])$(id).hidden=id!==view;$('page-title').textContent=title;}
 function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTimer);state.pendingTimer=null;if(resetAttempts)state.pendingAttempts=0;$('retry-pending').hidden=true;}
-function syncPendingButtons(){const pending=state.pendingCommandId!==null;$('submit-report').disabled=pending;$('submit-supplement').disabled=pending;}
-function remember(id){
- if(!UUID.test(id)||!RECOVERY_SCOPE.test(state.recoveryScope??''))return false;
- const record=JSON.stringify({v:2,id,scope:state.recoveryScope});
- try{sessionStorage.setItem(pendingKey,record);if(sessionStorage.getItem(pendingKey)!==record)throw new Error('storage verification');}
- catch{try{sessionStorage.removeItem(pendingKey);}catch{/* storage remains unavailable */}state.pendingCommandId=null;state.pendingScope=null;state.pendingLegacy=false;syncPendingButtons();return false;}
- cancelPendingRecovery(true);state.pendingCommandId=id;state.pendingScope=state.recoveryScope;state.pendingLegacy=false;syncPendingButtons();return true;
+function syncPendingButtons(){const blocked=state.pendingCommandId!==null||state.storageBlocked;$('submit-report').disabled=blocked;$('submit-supplement').disabled=blocked;}
+function durableKey(id){return `${durablePrefix}${id}`;}
+function durableKeys(){const keys=[];for(let index=0;index<localStorage.length;index+=1){const key=localStorage.key(index);if(key?.startsWith(durablePrefix))keys.push(key);}return keys;}
+function scopedRecord(value){return value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).sort().join(',')==='id,scope,v'&&(value.v===2||value.v===3)&&typeof value.id==='string'&&UUID.test(value.id)&&typeof value.scope==='string'&&RECOVERY_SCOPE.test(value.scope);}
+function pointTab(value){const record=JSON.stringify(value);sessionStorage.setItem(pendingKey,record);if(sessionStorage.getItem(pendingKey)!==record)throw new Error('storage verification');}
+function writeDurable(id,scope,{allowExisting=false}={}){
+ const key=durableKey(id),record=JSON.stringify({v:3,id,scope});let created=false;
+ try{
+  const existing=localStorage.getItem(key);
+  if(existing!==null)return allowExisting&&existing===record;
+  if(durableKeys().length>=durableLimit)return false;
+  localStorage.setItem(key,record);created=true;
+  if(localStorage.getItem(key)!==record)throw new Error('storage verification');
+  if(durableKeys().length>durableLimit){localStorage.removeItem(key);return false;}
+  return true;
+ }catch{if(created){try{if(localStorage.getItem(key)===record)localStorage.removeItem(key);}catch{/* durable storage remains unavailable */}}return false;}
 }
-function forget(){cancelPendingRecovery(true);state.pendingCommandId=null;state.pendingScope=null;state.pendingLegacy=false;try{sessionStorage.removeItem(pendingKey);}catch{/* storage is optional */}syncPendingButtons();}
+function removeDurable(id,expected=null){
+ if(!UUID.test(id??''))return;
+ try{const key=durableKey(id);if(expected===null||localStorage.getItem(key)===expected)localStorage.removeItem(key);}catch{/* retain an unresolved durable record */}
+}
+function setPending(value,{legacy=false}={}){const scope=legacy?null:value.scope;if(state.pendingCommandId!==value.id||state.pendingScope!==scope||state.pendingLegacy!==legacy)cancelPendingRecovery(true);state.pendingCommandId=value.id;state.pendingScope=scope;state.pendingLegacy=legacy;syncPendingButtons();return value.id;}
+function releaseTabPending(){cancelPendingRecovery(true);state.pendingCommandId=null;state.pendingScope=null;state.pendingLegacy=false;try{sessionStorage.removeItem(pendingKey);}catch{/* tab storage is optional after recovery */}syncPendingButtons();}
+function remember(id){
+ if(state.storageBlocked||!UUID.test(id)||!RECOVERY_SCOPE.test(state.recoveryScope??''))return false;
+ const value={v:3,id,scope:state.recoveryScope},record=JSON.stringify(value);
+ if(!writeDurable(id,value.scope))return false;
+ try{pointTab(value);}
+ catch{removeDurable(id,record);releaseTabPending();return false;}
+ setPending(value);return true;
+}
+function forget(){const id=state.pendingCommandId;releaseTabPending();removeDurable(id);}
 function clearClientDom(message='认证已失效，请重新认证。'){
  cancelPendingRecovery(true);state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();clearTimeout(state.poll);state.controller=null;window.__yxx_csrf=undefined;state.recoveryScope=null;state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
  readPending();
@@ -47,7 +72,32 @@ function prepareBootstrap(){
  for(const id of ['home-view','new-view','reports-view','detail-view'])$(id).hidden=true;
  setStatus('正在验证成员会话…');
 }
-function readPending(){try{const value=JSON.parse(sessionStorage.getItem(pendingKey)??'null');if(!UUID.test(value?.id))return null;const v2=value.v===2&&RECOVERY_SCOPE.test(value.scope??'');const v1=value.v===1&&value.scope===undefined;if(!v1&&!v2)return null;state.pendingCommandId=value.id;state.pendingScope=v2?value.scope:null;state.pendingLegacy=v1;syncPendingButtons();return value.id;}catch{return state.pendingCommandId;}}
+function readPending(){
+ try{
+  const value=JSON.parse(sessionStorage.getItem(pendingKey)??'null');
+  if(scopedRecord(value))return setPending(value);
+  if(value?.v===1&&UUID.test(value.id??'')&&value.scope===undefined)return setPending(value,{legacy:true});
+  return state.pendingCommandId;
+ }catch{return state.pendingCommandId;}
+}
+function migratePending(scope){
+ if(!state.pendingCommandId||state.pendingLegacy||state.pendingScope!==scope)return;
+ const value={v:3,id:state.pendingCommandId,scope};
+ if(!writeDurable(value.id,scope,{allowExisting:true}))return;
+ try{pointTab(value);setPending(value);}catch{/* keep the existing in-memory and durable recovery fence */}
+}
+function claimDurable(scope){
+ try{
+  for(const key of durableKeys().sort()){
+   const stored=localStorage.getItem(key);let value;try{value=JSON.parse(stored??'null');}catch{continue;}
+   if(value?.v!==3||!scopedRecord(value)||key!==durableKey(value.id)||value.scope!==scope)continue;
+   try{pointTab(value);}catch{/* the durable fence remains authoritative */}
+   state.storageBlocked=false;return setPending(value);
+  }
+  state.storageBlocked=false;syncPendingButtons();
+ }catch{state.storageBlocked=true;syncPendingButtons();throw ambiguousResult();}
+ return null;
+}
 function ambiguousResult(){const error=new Error('YXX_AMBIGUOUS_RESULT');error.code='YXX_AMBIGUOUS_RESULT';return error;}
 function acceptedReceipt(value,commandId,expectedRef=null){const strings=[value?.client_command_id,value?.request_ref,value?.intake_no,value?.accepted_revision,value?.accepted_at,value?.accepted_epoch_ms];if(!value||typeof value!=='object'||Array.isArray(value)||!strings.every(item=>typeof item==='string')||value.client_command_id!==commandId||value.status!=='ACCEPTED'||!REQUEST_REF.test(value.request_ref)||expectedRef!==null&&value.request_ref!==expectedRef||!INTAKE_NO.test(value.intake_no)||!/^[1-9][0-9]*$/u.test(value.accepted_revision)||!LOCAL_TIME.test(value.accepted_at)||!/^[0-9]+$/u.test(value.accepted_epoch_ms))throw ambiguousResult();return value;}
 function acceptedResponse(value,commandId,expectedRef=null){if(!value||typeof value!=='object'||Array.isArray(value)||value.ok!==true||typeof value.replayed!=='boolean')throw ambiguousResult();const receipt=acceptedReceipt(value.receipt,commandId,expectedRef);if(typeof value.location!=='string')throw ambiguousResult();let target;try{target=new URL(value.location,location.origin);}catch{throw ambiguousResult();}const path=`${ROOT}reports/${receipt.request_ref}`;if(target.origin!==location.origin||target.pathname!==path||target.search||target.hash)throw ambiguousResult();return {receipt,replayed:value.replayed,path};}
@@ -144,7 +194,7 @@ function schedulePendingRecovery(id,generation,csrf){
 async function recoverPending({restart=false}={}){
  const id=readPending();if(!id)return;
  if(!RECOVERY_SCOPE.test(state.recoveryScope??''))return;
- if(state.pendingScope&&state.pendingScope!==state.recoveryScope){forget();return;}
+ if(state.pendingScope&&state.pendingScope!==state.recoveryScope){releaseTabPending();return;}
  if(restart)cancelPendingRecovery(true);
  if(state.busy)return;
  cancelPendingRecovery(false);
@@ -210,9 +260,9 @@ async function bootstrap(){
   const nextScope=result.body.recovery_scope;
   if(!RECOVERY_SCOPE.test(nextScope??''))throw Object.assign(new Error(messageFor(503)),{status:503});
   readPending();
-  const scopeChanged=Boolean(previousScope&&previousScope!==nextScope||state.pendingScope&&state.pendingScope!==nextScope);
-  if(scopeChanged)forget();
+  if(previousScope&&previousScope!==nextScope||state.pendingScope&&state.pendingScope!==nextScope)releaseTabPending();
   state.recoveryScope=nextScope;window.__yxx_csrf=result.body.csrf_token;
+  if(state.pendingCommandId)migratePending(nextScope);else claimDurable(nextScope);
   const sameContext=Boolean(previousScope&&previousScope===nextScope&&previousCsrf&&previousCsrf===result.body.csrf_token);
   if(sameContext)restoreDraft(draft);
   const path=location.pathname;

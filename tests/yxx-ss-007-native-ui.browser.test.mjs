@@ -239,8 +239,8 @@ test('SS-007 a late detail response cannot restore an old member draft after ide
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
-test('SS-007 unavailable session storage blocks new POST commands', { timeout: 60000 }, async () => {
-  for (const mode of ['quota-error', 'silent-noop']) {
+test('SS-007 unavailable tab or durable storage blocks new POST commands', { timeout: 90000 }, async () => {
+  for (const mode of ['session-quota', 'session-noop', 'durable-quota', 'durable-noop']) {
     const f = await startFixture(); let browser;
     try {
       browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
@@ -251,8 +251,9 @@ test('SS-007 unavailable session storage blocks new POST commands', { timeout: 6
       await browser.evaluate(`(() => {
         const actual=Storage.prototype.setItem;
         Storage.prototype.setItem=function(key,value){
-          if(key==='yxx.self_service.pending_command'){
-            if('${mode}'==='quota-error')throw new DOMException('full','QuotaExceededError');
+          const blocked='${mode}'.startsWith('session-')?this===sessionStorage&&key==='yxx.self_service.pending_command':this===localStorage&&key.startsWith('yxx.self_service.pending_command.');
+          if(blocked){
+            if('${mode}'.endsWith('-quota'))throw new DOMException('full','QuotaExceededError');
             return;
           }
           return actual.call(this,key,value);
@@ -264,9 +265,61 @@ test('SS-007 unavailable session storage blocks new POST commands', { timeout: 6
       await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
       assert.equal(f.state.commandCalls.length, 0);
       assert.equal(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+      assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 0);
       assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), false);
     } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
   }
+});
+
+test('SS-007 durable recovery capacity fails closed without deleting older unknown commands', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate(`(() => {
+      const scope='b'.repeat(64);
+      for(let index=1;index<=20;index+=1){
+        const id='00000000-0000-4000-8000-'+String(index).padStart(12,'0');
+        localStorage.setItem('yxx.self_service.pending_command.'+id,JSON.stringify({v:3,id,scope}));
+      }
+      document.querySelector('#description').value='容量已满不得提交';
+      document.querySelector('#location-unknown').checked=true;
+      document.querySelector('#new-report-form').requestSubmit();
+    })()`);
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 20);
+    assert.equal(await browser.evaluate("Object.values(localStorage).every(value=>!value.includes('容量已满'))"), true);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 durable read failure blocks a later POST even when storage becomes writable', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000089';
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+    await browser.evaluate(`(() => {
+      const id='${commandId}',key='yxx.self_service.pending_command.'+id;
+      localStorage.setItem(key,JSON.stringify({v:3,id,scope:'${scope}'}));
+      const actual=Storage.prototype.getItem;let failed=false;
+      Storage.prototype.getItem=function(candidate){if(this===localStorage&&candidate===key&&!failed){failed=true;throw new DOMException('blocked','SecurityError')}return actual.call(this,candidate)};
+      document.dispatchEvent(new Event('visibilitychange'));
+    })()`);
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+    await browser.evaluate("document.querySelector('#description').value='读取失败后不得提交';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+    await new Promise(resolve => setTimeout(resolve, 100));
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), true);
+    assert.notEqual(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
 test('SS-007 ambiguous successful responses keep the original UUID and use GET-only recovery', { timeout: 120000 }, async () => {
@@ -351,7 +404,7 @@ test('SS-007 hanging accepted POSTs time out and stop after five bounded GET rec
   }
 });
 
-test('SS-007 v2 recovery scope clears a different member fence after a full reload', { timeout: 45000 }, async () => {
+test('SS-007 v2 recovery migrates durably without blocking another member or losing the original member fence', { timeout: 60000 }, async () => {
   const f = await startFixture(); let browser;
   const commandId = '00000000-0000-4000-8000-000000000096';
   try {
@@ -361,11 +414,22 @@ test('SS-007 v2 recovery scope clears a different member fence after a full relo
     await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
     await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
     const scopeA = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
-    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scopeA}'}));document.querySelector('#description').value='A成员旧草稿';document.cookie='yxx_session=member-b; Path=/';location.reload()`, { awaitPromise: false });
+    f.state.commandStatusError = Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
+    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scopeA}'}));document.querySelector('#description').value='A成员旧草稿'`);
+    await setSyntheticVisibility(browser, false);
+    await waitForState(() => f.state.commandStatusCalls.some(call => call.member === 'A' && call.clientCommandId === commandId));
+    await browser.waitFor(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')!==null`);
+    await browser.evaluate("document.cookie='yxx_session=member-b; Path=/';location.reload()", { awaitPromise: false });
     await browser.waitFor("document.querySelector('#new-view')?.hidden===false&&sessionStorage.getItem('yxx.self_service.pending_command')===null");
     assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
     assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), false);
     assert.equal(f.state.commandStatusCalls.some(call => call.member === 'B'), false);
+    assert.notEqual(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
+    const callsBeforeReturn = f.state.commandStatusCalls.length;
+    await browser.evaluate("document.cookie='yxx_session=member-a; Path=/';location.reload()", { awaitPromise: false });
+    await waitForState(() => f.state.commandStatusCalls.length > callsBeforeReturn);
+    assert.equal(JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')")).id, commandId);
+    assert.equal(f.state.commandCalls.length, 0);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
@@ -385,7 +449,8 @@ test('SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET on
     await setSyntheticVisibility(browser, false);
     await waitForState(() => f.state.commandStatusCalls.some(call => call.clientCommandId === commandId));
     const persisted = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
-    assert.deepEqual(persisted, { v: 2, id: commandId, scope });
+    assert.deepEqual(persisted, { v: 3, id: commandId, scope });
+    assert.notEqual(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
     assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
     assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), true);
     assert.equal(f.state.commandCalls.length, 0);
@@ -544,6 +609,7 @@ test('SS-007 pending recovery stays GET-only, survives 404, and is discarded on 
     await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&sessionStorage.getItem('yxx.self_service.pending_command')===null`);
     await new Promise(resolve => setTimeout(resolve, 1200));
     assert.equal(f.state.commandStatusCalls.length, beforeIdentityChange);
+    assert.equal(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
     assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
     assert.equal(await browser.evaluate("document.body.textContent.includes('YXX-AAAA')"), false);
     assert.equal(f.state.commandCalls.length, 0);
