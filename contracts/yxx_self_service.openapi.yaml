@@ -18,6 +18,7 @@ paths:
       security: [{WeComMember: []}]
       responses:
         '200': {description: 'Member-safe capabilities and CSRF token', content: {application/json: {schema: {$ref: './yxx_self_service_bootstrap.schema.json'}}}}
+        '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '503': {$ref: '#/components/responses/Unavailable'}
@@ -55,6 +56,7 @@ paths:
         '200': {description: 'Member-owned Web Requests and authorized Bot Tickets', content: {application/json: {schema: {$ref: './yxx_self_service_report_page.schema.json'}}}}
         '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/requests/{request_ref}:
     servers: [{url: /}]
@@ -67,7 +69,9 @@ paths:
       responses:
         '200': {description: 'Member-safe request detail', content: {application/json: {schema: {$ref: './yxx_self_service_request_detail.schema.json'}}}}
         '304': {description: 'Authorized unchanged representation'}
+        '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/requests/{request_ref}/timeline:
@@ -85,6 +89,7 @@ paths:
         '200': {description: 'Member-safe timeline without internal notes or identity', content: {application/json: {schema: {$ref: './yxx_self_service_timeline.schema.json'}}}}
         '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/requests/{request_ref}/supplements:
@@ -119,7 +124,9 @@ paths:
         - {in: path, name: client_command_id, required: true, schema: {type: string, format: uuid}}
       responses:
         '200': {description: 'Current member-owned command receipt', content: {application/json: {schema: {$ref: './yxx_self_service_receipt.schema.json'}}}}
+        '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /wecom/yixiaoxiu/:
