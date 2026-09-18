@@ -172,6 +172,29 @@ test('SS-007 refreshed member CSRF preserves the same-scope draft', { timeout: 4
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
+for (const [path, view] of [['/wecom/yixiaoxiu/', 'home-view'], ['/wecom/yixiaoxiu/reports/new', 'new-view']]) {
+  test(`SS-007 visible ${view} revalidates without a pending command`, { timeout: 45000 }, async () => {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      if (path !== '/wecom/yixiaoxiu/') await browser.evaluate(`location.assign('${path}')`, { awaitPromise: false });
+      await browser.waitFor(`document.querySelector('#${view}')?.hidden===false`);
+      await browser.evaluate("document.querySelector('#description').value='member A private draft'");
+      f.state.csrfOverride = 'rotated-synthetic-csrf-01234567890123456789';
+      await browser.waitFor(`window.__yxx_csrf==='${f.state.csrfOverride}'`);
+      assert.equal(await browser.evaluate("document.querySelector('#description').value"), 'member A private draft');
+      f.state.csrfOverride = null;
+      await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
+      await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&document.querySelector('#${view}')?.hidden===false`);
+      assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+      assert.equal(f.state.commandCalls.length, 0);
+      assert.equal(f.state.commandStatusCalls.length, 0);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  });
+}
+
 test('SS-007 visible report list revalidates a shared-cookie member change', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   try {

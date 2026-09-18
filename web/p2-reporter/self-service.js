@@ -312,7 +312,7 @@ async function bootstrap(){
   }
   await recoverPending();
  }catch(error){if(error.name!=='AbortError'&&validGeneration(operation.generation))setStatus(error.status?messageFor(error.status):messageFor(503),'error');}
- scheduleSessionRevalidation();
+ finally{finishOperation(operation);scheduleSessionRevalidation();}
 }
 document.addEventListener('visibilitychange',()=>{
  state.hidden=document.hidden;
