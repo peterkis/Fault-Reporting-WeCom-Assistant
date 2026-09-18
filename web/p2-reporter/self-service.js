@@ -6,7 +6,7 @@ const INTAKE_NO=/^INT-[0-9]{8}-[0-9]{4,}$/u;
 const LOCAL_TIME=/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/u;
 const refs={home:'/wecom/yixiaoxiu/',new:'/wecom/yixiaoxiu/reports/new',list:'/wecom/yixiaoxiu/reports'};
 const $=id=>document.getElementById(id);
-const state={sessionCheckDue:false,revalidationFocus:null,generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,sessionTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,hidden:false,hiddenDraft:null};
+const state={supplementFeedback:null,sessionCheckDue:false,revalidationFocus:null,generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,sessionTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,hidden:false,hiddenDraft:null};
 const pendingKey='yxx.self_service.pending_command';
 const durablePrefix=`${pendingKey}.`;
 const durableLimit=20;
@@ -60,7 +60,7 @@ function remember(id){
 }
 function forget(){const id=state.pendingCommandId;releaseTabPending();removeDurable(id);}
 function clearClientDom(message='认证已失效，请重新认证。',{preserveContext=false}={}){
- $('protected-views').hidden=true;state.revalidationFocus=null;state.sessionCheckDue=false;
+ $('protected-views').hidden=true;state.revalidationFocus=null;state.sessionCheckDue=false;state.supplementFeedback=null;
  cancelPendingRecovery(true);clearTimeout(state.sessionTimer);state.sessionTimer=null;state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();state.controller=null;state.hiddenDraft=null;if(!preserveContext){window.__yxx_csrf=undefined;state.recoveryScope=null;}state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
  readPending();
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
@@ -84,7 +84,7 @@ function captureDraft(){return Object.freeze({path:location.pathname,description
 function draftHasInput(draft){return Boolean(draft?.description||draft?.locationText||draft?.locationUnknown||draft?.impactScope!=='UNKNOWN'||draft?.serviceCode||draft?.department||draft?.extension||draft?.supplement);}
 function restoreDraft(draft){if(!draft||draft.path!==location.pathname)return;$('description').value=draft.description;$('location-text').value=draft.locationText;$('location-unknown').checked=draft.locationUnknown;$('impact-scope').value=draft.impactScope;$('service-code').value=draft.serviceCode;$('department').value=draft.department;$('extension').value=draft.extension;$('supplement-text').value=draft.supplement;}
 function prepareBootstrap(){
- $('protected-views').hidden=true;state.revalidationFocus=null;state.sessionCheckDue=false;
+ $('protected-views').hidden=true;state.revalidationFocus=null;state.sessionCheckDue=false;state.supplementFeedback=null;
  clearTimeout(state.sessionTimer);state.sessionTimer=null;state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];state.recoveryScope=null;window.__yxx_csrf=undefined;
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
  $('location-unknown').checked=false;$('impact-scope').value='UNKNOWN';clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';renderGuidance();$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-more-reports').hidden=true;$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;
@@ -212,7 +212,7 @@ function renderTimeline(timeline,{older=false}={}){
  $('timeline-window-note').textContent=state.timelineExpanded?'已加载较早记录；下次状态刷新会回到最近100条。':'显示最近100条处理记录；可按需加载更早记录。';
 }
 function renderDetail(detail,timeline){state.detail=detail;renderGuidance(detail);clear($('detail-facts'));$('detail-source').textContent='网页报修 · '+detail.intake_no;$('detail-status').textContent=statusText(detail.display_status);for(const [term,value] of [['位置',detail.safe_location||'未提供位置'],['输入版本',detail.input_revision],['已处理版本',detail.processed_revision],['最近更新',detail.updated_at]])$('detail-facts').append(node('dt',term),node('dd',value));$('detail-description').textContent=detail.safe_description||'（未提供）';clear($('detail-supplements'));for(const item of detail.supplements??[]){const li=node('li',`版本 ${item.input_revision}：${item.text??''}`);$('detail-supplements').append(li);}renderTimeline(timeline);$('detail-status').append(node('span',` · ${detail.ticket?.ticket_no?ticketSummary(detail.ticket):'尚未生成工单'}`));$('supplement-form').hidden=!detail.can_supplement;}
-function clearDetailState(){state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';renderGuidance();$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');}
+function clearDetailState(){state.supplementFeedback=null;state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';renderGuidance();$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');}
 async function loadTimeline(ref,operation,{cursor=null}={}){const query=new URLSearchParams({limit:'100'});if(cursor)query.set('cursor',cursor);else query.set('before',latestTimelineBoundary);const result=await fetchJson(`/api/yixiaoxiu/requests/${ref}/timeline?${query}`,{},operation.signal);return ownsOperation(operation)?result.body:null;}
 async function loadDetail(){
  if(state.busy||!state.detail)return;
@@ -225,7 +225,7 @@ async function loadDetail(){
   if(!timeline||!ownsOperation(operation))return;
   const body=detail.status===304&&state.detail?.request_ref===ref&&typeof state.detail?.input_revision==='string'?state.detail:detail.body;
   if(!body)throw Object.assign(new Error(messageFor(503)),{status:503});
-  renderDetail(body,timeline);if(detail.etag)state.detailEtag=detail.etag;if(!state.pendingCommandId)setStatus('已更新报修状态。','success');
+  renderDetail(body,timeline);if(detail.etag)state.detailEtag=detail.etag;if(!state.pendingCommandId)setStatus(state.supplementFeedback??'已更新报修状态。',state.supplementFeedback?'error':'success');
  }catch(error){if(error.name!=='AbortError'&&ownsOperation(operation)){if(error.status===404)clearDetailState();setStatus(error.status?messageFor(error.status):messageFor(503),'error');}}
  finally{if(finishOperation(operation))schedule();}
 }
@@ -294,7 +294,7 @@ async function submitNew(event){
  }finally{if(finishOperation(operation))syncPendingButtons();}
 }
 async function submitSupplement(event){
- event.preventDefault();if(state.busy||!state.detail)return;
+ event.preventDefault();if(state.busy||!state.detail)return;state.supplementFeedback=null;
  const pending=state.pendingCommandId??readPending();
  if(pending){state.pendingCommandId=pending;syncPendingButtons();setStatus('上次报修结果尚未确认，正在查询；不会重复提交。','error');void recoverPending();return;}
  const id=crypto.randomUUID(),text=$('supplement-text').value.trim();
@@ -308,6 +308,7 @@ async function submitSupplement(event){
  }catch(error){
   if(error.name==='AbortError')return;
   if(error.status&&error.status<500&&(ownsOperation(operation)||error.current_operation))forget();
+  if(error.status&&error.status<500&&ownsOperation(operation))state.supplementFeedback=error.status===409?'版本已变化，已刷新到最新版本；请确认草稿后重新提交。':messageFor(error.status);
   if(error.status===409&&ownsOperation(operation)){state.detailEtag=null;refresh=true;conflictRefresh=true;}
   if(ownsOperation(operation))setStatus(error.status===409?'版本已变化，正在刷新；草稿已保留。':error.status?messageFor(error.status):'结果未知，请保留本次命令并稍后查询。');
   if((!error.status||error.status>=500)&&ownsOperation(operation))schedulePendingRecovery(id,operation.generation);

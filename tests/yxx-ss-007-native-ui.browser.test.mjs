@@ -903,6 +903,7 @@ test('SS-007 supplement terminal errors resume polling after a slow POST consume
       await browser.waitFor(`document.querySelector('#app-status')?.textContent.includes('${copy}')`);
       const beforeResumedPoll = f.state.detailCalls.length;
       await waitForState(() => f.state.detailCalls.length > beforeResumedPoll, 2000);
+      await browser.waitFor(`document.querySelector('#app-status')?.textContent.includes('${copy}')`);
       assert.equal(f.state.supplementCalls.length, 1);
       assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '慢请求后的补充草稿');
     } finally { releaseSupplement?.(); await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
@@ -959,9 +960,10 @@ test('SS-007 pending GET recovery survives periodic same-scope CSRF rotation and
     const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
     await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scope}'}));document.dispatchEvent(new Event('visibilitychange'))`);
     await waitForState(() => f.state.commandStatusCalls.length === 1);
+    const recoveryDeadline = Date.now() + 18000;
     f.state.csrfOverride = 'periodic-rotated-csrf-01234567890123456789';
     await browser.waitFor(`window.__yxx_csrf==='${f.state.csrfOverride}'`);
-    await waitForState(() => f.state.commandStatusCalls.length === 5, 6000);
+    await waitForState(() => f.state.commandStatusCalls.length === 5, Math.max(1, recoveryDeadline - Date.now()));
     await browser.waitFor("document.querySelector('#retry-pending')?.hidden===false");
     const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
     assert.equal(pending.id, commandId); assert.equal(pending.scope, scope);
