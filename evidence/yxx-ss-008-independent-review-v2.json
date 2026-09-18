@@ -1,0 +1,41 @@
+{
+  "task": "YXX-SS-008",
+  "event_time": "2026-09-18 20:19:33",
+  "event_epoch_ms": "1789733973545",
+  "reviewed_head": "7f4e09df6da3ff661f68d1dbe239ce8851be8842",
+  "reviewed_tree": "71b814ce06bb8144839640bf1be2d795e22a512d",
+  "candidate_fingerprint": "511d07e086ac78f1890399db840473a7b23c46d3f34ed2658279bfcd50bd071b",
+  "severity_threshold": "MEDIUM",
+  "reviews": [
+    {
+      "axis": "SPEC",
+      "reviewer": "/root/ss008_spec_review",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "method": "Independent read-only source/spec review; exact HEAD/tree checked; acceptance sources inspected."
+    },
+    {
+      "axis": "STANDARDS",
+      "reviewer": "/root/ss008_standards_review",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "method": "Independent read-only source/standards review and executed postcommit identity regression; exact HEAD/tree/fingerprint checked."
+    }
+  ],
+  "resolved_findings": [
+    {
+      "severity": "MEDIUM",
+      "issue": "Postcommit identity revalidation did not compare original member context.",
+      "fix": "Both POST routes compare recovery_scope and CSRF before emitting receipt, preserving committed facts on mismatch.",
+      "red": "evidence/yxx-ss-008-postcommit-red.tap",
+      "green": "evidence/yxx-ss-008-postcommit-green.tap"
+    }
+  ],
+  "full_regression": "SEPARATE_EVIDENCE_REQUIRED",
+  "remote_review": "NOT_REQUESTED",
+  "github_checks": "NOT_CLAIMED",
+  "live_authorized": false,
+  "previous_review": "evidence/yxx-ss-008-independent-review.json",
+  "followup": "Both independent reviewers inspected the sole SS-003 test-fixture delta and verified this exact HEAD/tree. Existing business assertions remain; fresh APPLIED/NOOP and owned cleanup are now required.",
+  "runtime_unchanged_since": "a17563736677245af2e2164982e12d1ef1d2d493"
+}

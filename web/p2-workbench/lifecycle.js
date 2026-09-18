@@ -46,6 +46,12 @@ async function list(append=false){
 function section(label){const s=node('section',undefined,'detail-section');s.append(node('h3',label));$('lc-detail').append(s);return s;}
 function facts(parent,values){const dl=node('dl');for(const [key,val] of values)dl.append(node('dt',key),node('dd',String(val??'未设置')));parent.append(dl);}
 function dataView(parent,label,value){const d=node('details');d.append(node('summary',label),node('pre',JSON.stringify(value,null,2)));parent.append(d);}
+function webReport(value){
+  if(!value)return;
+  const report=section('网页报修 · 仅应用内查看进度');
+  facts(report,[['原始描述',value.description],['位置',value.location?.unknown?'位置不清楚':value.location?.text],['科室',value.reported_department_text],['分机',value.extension]]);
+  for(const item of value.supplements??[])report.append(node('p',`补充版本 ${item.input_revision}：${item.text??''}`));
+}
 function field(parent,label,control){const l=node('label',label,'field');l.append(control);parent.append(l);return control;}
 function choice(parent,label,options){const s=node('select');for(const [value,text] of options){const o=node('option',text);o.value=value;s.append(o);}return field(parent,label,s);}
 function commandForm(parent,label,makePayload,{note=false,options=null,holdUpdates=true,hint='确认后提交；外部通知经可靠投递队列发送。'}={}){
@@ -83,6 +89,7 @@ async function renderTicket(ticket,version){
   if(version!==epoch||editing||pending)return;
   $('lc-detail').replaceChildren();const head=node('div',undefined,'detail-header');head.append(node('h2',ticket.ticket_no,'ticket-number'),node('span',title(ticket.status),'badge'));$('lc-detail').append(head);
   facts($('lc-detail'),[['优先级',title(ticket.priority)],['建立时间',ticket.created_at],['更新 / 版本',ticket.updated_at+' / '+ticket.version]]);
+  webReport(ticket.web_report);
   const contactSection=section('上报人联系资料');
   if(contact.status==='RESOLVED'&&contact.contact){
     const missing=value=>value??'暂未获取';
@@ -90,11 +97,11 @@ async function renderTicket(ticket,version){
       ['所属部门',contact.departments.map(d=>(d.name??'部门名称暂未获取')+(d.role==='PRIMARY'?'（主部门）':'')).join('、')||'暂未获取'],
       ['手机',missing(contact.contact.mobile)],['联系电话 / 分机',missing(contact.contact.telephone)],['资料获取时间',missing(contact.fetched_at)]]);
     contactSection.append(node('p','报修时的企业微信资料；用于联系补充故障信息。','hint'));
-  }else contactSection.append(node('p','联系资料暂不可用，报修已正常受理。可通过会话联系上报人补充。','hint'));
+  }else contactSection.append(node('p',responsibility.conversations.length?'联系资料暂不可用，报修已正常受理。可通过会话联系上报人补充。':'此报修没有关联会话，聊天与人工回复不可用。上报人可在应用内查看进度。','hint'));
   const owners=section('双责任 · 沟通与解决相互独立'),grid=node('div',undefined,'responsibilities'),conversation=node('div'),resolver=node('div');
   conversation.append(node('strong','沟通负责人'));for(const c of responsibility.conversations)conversation.append(node('p',c.conversation_principal_name??'未分配沟通坐席'));
   if(!responsibility.conversations.length)conversation.append(node('p','尚无关联会话'));resolver.append(node('strong','故障处理人'),node('p',responsibility.ticket_assignee_name??'待接单'),node('p',responsibility.resolver_team_name??responsibility.resolver_team_id));grid.append(conversation,resolver);owners.append(grid);
-  owners.append(button('进入会话与人工回复',()=>{location.href='/workbench/';}));
+  if(responsibility.conversations.length)owners.append(button('进入会话与人工回复',()=>{location.href='/workbench/';}));
   const actionSection=section('工单操作'),bar=node('div',undefined,'actions'),confirm=node('div');actionSection.append(bar,confirm);
   for(const action of ticket.allowed_actions){
     const label=actions[action];if(!label)continue;
@@ -134,6 +141,7 @@ async function renderReview(review,version){
   const [journey,legs,decisions]=await Promise.all(['','/legs','/decisions'].map(p=>api('/api/contact-journeys/'+review.journey_id+p)));
   if(version!==epoch||editing||pending)return;$('lc-detail').replaceChildren(node('h2','人工判断与安全处理'),node('p','原始规则判定保持不变；人工结论以新版本追加。','hint'));
   facts($('lc-detail'),[['审核原因',review.review_reason_code],['优先级 / 状态',title(review.priority)+' / '+title(review.status)],['创建时间',review.created_at],['审核版本',review.row_version]]);
+  webReport(review.web_report);
   const source=section('来源与 Contact Journey');facts(source,[['入口',journey.origin_channel],['当前渠道',journey.current_channel],['链路状态',journey.status]]);
   dataView(source,'安全引用与渠道轨迹', {journey,legs});
   const result=section('规则判定、已知 / 缺失字段与 Provenance');dataView(result,'查看原始安全判定',review.safe_result);dataView(result,'原 Decision 与追加版本',decisions);

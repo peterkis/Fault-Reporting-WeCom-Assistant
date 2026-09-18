@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
 import { withP2012Database, applyThrough031, assertNoP2012Residual } from './p2-012-postgres-harness.mjs';
 import { migrateP2012 } from '../../scripts/p2-012-migrate.mjs';
+import { migrateCurrentBaselineWithYxx } from '../../scripts/migrate-current-baseline.mjs';
 import { createP2012Runtime } from '../../src/p2-012-workbench-assembly.mjs';
 import { createP2016OrchestrationWorker } from '../../src/p2-016-orchestration-adapters.mjs';
 import { createP2012PersonDestinationAuthorizer, createP2012DynamicWeComSender } from '../../src/p2-012-live-reporter-scope.mjs';
@@ -12,14 +13,15 @@ import { createPilotAccessService } from '../../src/p1-009-pilot-access-workbenc
 import { textHashP2016 } from '../../src/p2-016-domain-contracts.mjs';
 
 export const G2_RULE_FLAGS = Object.freeze({ RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true });
-export async function withG2Runtime(run,{extraAgents=false,directoryPort,ticketNotificationAdditionalEvents=[],reporterCount=3}={}) {
+export async function withG2Runtime(run,{extraAgents=false,directoryPort,ticketNotificationAdditionalEvents=[],reporterCount=3,webSchema=false}={}) {
   assert.ok(Number.isInteger(reporterCount)&&reporterCount>=3&&reporterCount<=20);
   const databaseUrl = process.env.PILOT_DATABASE_URL;
   assert.ok(databaseUrl, 'P2_G2_LOCAL_DATABASE_REQUIRED');
   assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(databaseUrl).hostname));
   try {
     await withP2012Database({ databaseUrl, purpose: 'g2runtime', run: async ({ pool, databaseUrl: isolated }) => {
-      await applyThrough031({ pool, databaseUrl: isolated }); await migrateP2012({ databaseUrl: isolated });
+      if(webSchema)await migrateCurrentBaselineWithYxx({databaseUrl:isolated});
+      else {await applyThrough031({ pool, databaseUrl: isolated }); await migrateP2012({ databaseUrl: isolated });}
       const admin = await createPilotAccessService({ pool }).upsertPrincipal({ wecomUserId: 'synthetic-g2-admin',
         displayName: '合成G2坐席', roles: ['ADMIN'], resolverTeamIds: ['PILOT_IT'] });
       const principals=[admin];

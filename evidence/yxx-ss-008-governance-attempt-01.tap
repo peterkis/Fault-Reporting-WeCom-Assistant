@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: SS-008 local successor never suppresses state, migration or historical evidence drift
+ok 1 - SS-008 local successor never suppresses state, migration or historical evidence drift
+  ---
+  duration_ms: 40723.0639
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 40849.6472

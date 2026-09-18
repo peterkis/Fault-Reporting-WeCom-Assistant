@@ -12,11 +12,13 @@ import { createPostgresPool } from './platform/postgres-pool.mjs';
 import { requireG2DatabaseScope } from './p2-g2-database-scope.mjs';
 import { G2_RESOURCE_SQL } from './p2-g2-resource-sampler.mjs';
 import { collectG2Reconciliation } from './p2-g2-reconciliation.mjs';
-import {readYxxG2AppConfiguration,YXX_G2_ENV_KEYS} from './p2-g2-yixiaoxiu-g2-config.mjs';
+import {readYxxG2AppConfiguration,YXX_G2_ENV_KEYS,yxxSelfServiceRoleEnvironment,readYxxSelfServiceFlags} from './p2-g2-yixiaoxiu-g2-config.mjs';
 
 export function createG2ProcessCluster({ manifest, env = process.env, budgetFile }) {
   const c = readG2Configuration({ manifest, env, candidateFingerprint: manifest?.candidate_fingerprint });
   readYxxG2AppConfiguration({manifest:c.manifest,env});
+  const webFlags=readYxxSelfServiceFlags(env);
+  if(Object.values(webFlags).some(Boolean)&&c.reporterPolicy!=='MEMBER_REQUIRED')failG2('CONFIGURATION_INVALID');
   if(c.liveApproved&&c.groupClosureWebhookRoutes.length!==c.manifest.scope.group_hashes.length)failG2('GROUP_CLOSURE_ROUTES_REQUIRED');
   verifyG2Candidate(c.manifest.candidate_fingerprint);
   verifyG2ApprovalFile(c.manifest);
@@ -32,6 +34,7 @@ export function createG2ProcessCluster({ manifest, env = process.env, budgetFile
     controlledMessageTypes: ['g2-synthetic-inbound', 'g2-provider-counts', 'g2-environment','g2-scope-counts'],
     roleEnvironment: role => ({ P2_G2_MANIFEST: JSON.stringify(c.manifest), WECOM_BOT_ID: c.botId,
       ...(role==='APP'&&c.reporterPolicy==='MEMBER_REQUIRED'?Object.fromEntries(YXX_G2_ENV_KEYS.map(k=>[k,env[k]])):{}),
+      ...yxxSelfServiceRoleEnvironment(role,env),
       ...(c.liveApproved ? Object.fromEntries(G2_LIVE_FUSES.map(k=>[k,env[k]])) : {}),
       PILOT_LOG_IDENTITY_HASH_KEY: c.identityHashKey, P2_G2_REPORTER_HMAC_SECRET: c.reporterHmacSecret,
       ...(role==='WORKER'&&c.memberDirectoryAccessToken?{P2_G2_DIRECTORY_ACCESS_TOKEN:c.memberDirectoryAccessToken}:{}),

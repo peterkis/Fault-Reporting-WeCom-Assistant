@@ -173,9 +173,18 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool } = {}) {
         LIMIT $${predicate.values.length+1}`,
       [...predicate.values,limit],
     );
+    const sessions=freezeArray(result.rows.map(row=>row.session_id)),threads=freezeArray(result.rows.map(row=>row.thread_id));
+    const remaining=Math.max(0,256-sessions.length-threads.length);
+    const broad=hasRole(principal,'ADMIN')||hasRole(principal,'DISPATCHER');
+    const tickets=!broad&&remaining>0?await pool.query(`SELECT t.id::text FROM pilot_ticket.ticket t
+      JOIN intake.service_intake i ON i.id=t.source_intake_id
+      WHERE i.source_provider='YIXIAOXIU_WEB'
+        AND (t.assignee_id=$1::uuid OR t.resolver_team_id=ANY($2::text[]))
+      ORDER BY t.id LIMIT $3`,[principal.principal_id,hasRole(principal,'HANDLER')?principal.team_ids:[],remaining]):{rows:[]};
     return Object.freeze({
-      allowed_session_ids: freezeArray(result.rows.map((row) => row.session_id)),
-      allowed_thread_ids: freezeArray(result.rows.map((row) => row.thread_id)),
+      allowed_session_ids: sessions,
+      allowed_thread_ids: threads,
+      ...(tickets.rows.length?{allowed_system_ticket_ids:freezeArray(tickets.rows.map(row=>row.id))}:{}),
       allow_system_events: hasRole(principal, 'ADMIN') || hasRole(principal, 'DISPATCHER'),
       allow_restricted_admin: hasRole(principal, 'ADMIN'),
     });

@@ -31,3 +31,25 @@ corrects the preserved Bot single/group chat-ID check without rewriting 033.
 The exact catalog delta and both checksums are recorded in
 `docs/runbooks/yixiaoxiu-self-service-contract-freeze.md` and verified by the
 migration tests before any runtime path is enabled.
+
+## SS-008 local assembly clarification
+
+SS-008 explicitly integrates the ADR-0019 verified delegated mapping adapter
+into MEMBER_SELF_SERVICE and FULL_SERVICE_LOOP locally. Its config hash,
+corp/app scope, approved member list and proof requirements remain mandatory;
+raw same-namespace matching is not substituted. This supersedes only the prior
+standalone-readonly assembly restriction, and authorizes no live conversion,
+deployment, sending or additional members.
+
+Disabling SELF_SERVICE_ENABLED closes new writes and the processor, while
+MY_REPORTS_ENABLED may retain already-authorized reads and command recovery.
+The bootstrap reports read_only and no write capabilities in that mode. The
+original profile/schema freeze is historical; the current profile contract
+expresses this shutdown state. All persistent defaults remain false.
+
+Sessionless Web Ticket realtime retains the existing SYSTEM envelope. Internal
+handlers receive only explicitly authorized Ticket aggregate IDs (same team or
+assignee predicate as the Ticket query), before SQL LIMIT/payload materialization.
+Those IDs share the existing 256-scope bound. ADMIN/DISPATCHER system access and
+manual-review restrictions stay unchanged; no fake Session or new DB scope is
+created. Realtime remains a projection, never a member authentication mechanism.

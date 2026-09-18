@@ -26,7 +26,7 @@ function messageFor(status){return ({400:'输入格式有误，请检查后重�
 function setStatus(textValue,kind=''){const value=$('app-status');value.textContent=textValue;value.className=`status ${kind}`;}
 function setView(view,title){for(const id of ['logged-out-view','home-view','new-view','reports-view','detail-view'])$(id).hidden=id!==view;$('page-title').textContent=title;}
 function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTimer);state.pendingTimer=null;if(resetAttempts)state.pendingAttempts=0;$('retry-pending').hidden=true;}
-function syncPendingButtons(){const blocked=state.pendingCommandId!==null||state.storageBlocked;$('submit-report').disabled=blocked;$('submit-supplement').disabled=blocked;}
+function syncPendingButtons(){const blocked=state.pendingCommandId!==null||state.storageBlocked||state.readOnly===true;$('submit-report').disabled=blocked;$('submit-supplement').disabled=blocked;}
 function durableKey(id){return `${durablePrefix}${id}`;}
 function durableKeys(){const keys=[];for(let index=0;index<localStorage.length;index+=1){const key=localStorage.key(index);if(key?.startsWith(durablePrefix))keys.push(key);}return keys;}
 function durableRecords(){const records=[];for(const key of durableKeys()){let value;try{value=JSON.parse(localStorage.getItem(key)??'null');}catch{continue;}if(value?.v!==3||!scopedRecord(value)||key!==durableKey(value.id))continue;records.push({key,value});}return records;}
@@ -328,6 +328,9 @@ async function bootstrap(){
   readPending();
   if(previousScope&&previousScope!==nextScope||state.pendingScope&&state.pendingScope!==nextScope)releaseTabPending();
   state.recoveryScope=nextScope;window.__yxx_csrf=result.body.csrf_token;
+  state.readOnly=result.body.read_only===true;
+  for(const link of document.querySelectorAll('a[href="/wecom/yixiaoxiu/reports/new"]'))link.hidden=!result.body.can_submit;
+  $('submit-report').disabled=!result.body.can_submit;
   if(state.pendingCommandId)migratePending(nextScope);else claimDurable(nextScope);
   const sameMemberScope=Boolean(previousScope&&previousScope===nextScope);
   if(sameMemberScope)restoreDraft(draft);

@@ -47,6 +47,14 @@ resolved before the next dependent ticket starts.
 | YXX-SS-004 | COMPLETE | shared rule/Ticket/Review orchestration, command boundary, lifecycle projection and isolated DB evidence |
 | YXX-SS-005 | COMPLETE | member query authorization, mixed Web/Bot pagination and safe progress evidence |
 | YXX-SS-006 | COMPLETE | supplement command, revision/race/recovery integration evidence |
-| YXX-SS-007 | IN_REVIEW | current aggregate: `evidence/yxx-ss-007-current-readiness-v33.json`; historical reports remain non-current |
-| YXX-SS-008..010 | PLANNED | depend on SS-007 review and real local DB/HTTP assembly |
+| YXX-SS-007 | COMPLETE | `evidence/yxx-ss-007-completion-reconciliation.json`: v33 sources/TAP verified, final PR review and merge reconciled |
+| YXX-SS-008 | COMPLETE | `evidence/yxx-ss-008-pr18-readiness-report.json`: PR18 readiness repair, isolated PostgreSQL/HTTP/browser/Worker, full regression and two independent reviews |
+| YXX-SS-009..010 | PLANNED | separately scoped regression and readiness closeout |
 | YXX-SS-011 | NOT AUTHORIZED | intentionally out of scope |
+
+## SS-008 execution baseline
+
+The user authorized completion reconciliation and continuation on merged main
+`2d9fda2065b1303620f247a9e4d9754f0a3472d9` (tree
+`b1397a10f7c11ec74c85d3582fd44a5e234302c4`). The original base above remains
+historical. This run permits local commits only; push/PR/merge/tag remain forbidden.

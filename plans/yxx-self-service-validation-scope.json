@@ -1,0 +1,9 @@
+{
+  "work_item": "YXX-SS-008",
+  "status": "LOCAL_IMPLEMENTATION_AND_VALIDATION",
+  "base_head": "2d9fda2065b1303620f247a9e4d9754f0a3472d9",
+  "base_tree": "b1397a10f7c11ec74c85d3582fd44a5e234302c4",
+  "authorization_evidence": "evidence/yxx-ss-007-completion-reconciliation.json",
+  "parent_readiness": "HISTORICAL_CREATION_V2_NOT_CURRENT_WEB_READINESS",
+  "live_authorized": false
+}

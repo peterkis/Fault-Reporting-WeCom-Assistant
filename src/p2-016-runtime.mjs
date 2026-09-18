@@ -24,6 +24,7 @@ import { createWeComWebOAuth } from './p2-g2-wecom-web-oauth.mjs';
 import { createWeComOAuthHttp } from './p2-g2-wecom-oauth-http.mjs';
 import {createYxxMemberExtension} from './p2-g2-yixiaoxiu-server.mjs';
 import {reporterAccessPolicy,validateYxxEntryConfig,failYxx} from './p2-g2-yixiaoxiu-contract.mjs';
+import {createYxxSelfServiceExtension} from './yxx-self-service-runtime.mjs';
 
 // Explicit composition of the existing Workbench/API/SSE and Communication worker, not a second server.
 export function createP2016Runtime({pool,flags={},principalId,principalIds=null,publicOrigin,listenPort=0,
@@ -31,11 +32,12 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   gatewayEnabled=false,senderEnabled=false,liveApproval=null,inboundScope=null,botId,secret,wsUrl,clientFactory,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,ruleEngine,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
-  reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={}}={}) {
+  reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null}={}) {
   const featureFlags=flagsP2016(flags),enabled=featureFlags.TICKET_LIFECYCLE_WORKBENCH_ENABLED;
   const policy=reporterAccessPolicy(reporterPolicy),memberConfig=validateYxxEntryConfig(reporterMemberEntry);
   if(policy==='MEMBER_REQUIRED'&&(!memberConfig.enabled||wecomWebOAuth.enabled!==true||!featureFlags.REPORTER_TIMELINE_ENABLED))failYxx('CONFIG_INVALID');
   if(memberConfig.enabled&&policy!=='MEMBER_REQUIRED')failYxx('CONFIG_INVALID');
+  if(yxxSelfService!==null&&policy!=='MEMBER_REQUIRED')failYxx('CONFIG_INVALID');
   if(!enabled)return Object.freeze({disabled:true,start:async()=>({disabled:true}),stop:async()=>({stopped:true,disabled:true})});
   if((gatewayEnabled||senderEnabled)&&!(liveApproval?.live===true&&liveApproval?.scope===true&&liveApproval?.send===true))failP2016('LIVE_APPROVAL_REQUIRED',403);
   const scope=gatewayEnabled?createP2016InboundScope(inboundScope):null;
@@ -51,7 +53,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   // A message is durably accepted before deterministic evaluation. Failed evaluation is recoverable from the Inbox/Intake.
   const operationalIntake=Object.freeze({accept:input=>scope&&!scope.accepts(input?.message)
     ?Promise.resolve({ok:false,error:{code:'P2_016_INBOUND_SCOPE_REJECTED',retryable:false}}):inbox.accept(input,intakeProcessor)});
-  let realtimeProjector,tickets,reviews,closure,incidentExtension=null,memberExtension=null;
+  let realtimeProjector,tickets,reviews,closure,incidentExtension=null,memberExtension=null,selfService=null;
   const runtime=createP2G1Runtime({pool,operationalIntake,principalId,principalIds,publicOrigin,listenPort,
     botId,secret,wsUrl,allowedTargetHashes,gatewayEnabled,senderEnabled,senderAdapter,clientFactory,testAuthTtlMs,
     projectionIntervalMs:1000,communicationIntervalMs:1000,closePoolOnStop,gatewayStatusProvider,communicationStatusProvider,requireGateway,
@@ -62,7 +64,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       reporterAccess:access,origin:reporterOrigin,allowedHosts,allowedTargetHashes,allowLocalHttp,linkMode:policy}),
     extensionFactory:({controlService,realtime})=>{
       realtimeProjector=createP2016RealtimeProjector({pool,enabled,wakeup:realtime.wakeup});
-      if(!orchestrationWorker&&ruleFlags.rule_first_orchestration_enabled&&ruleFlags.manual_review_queue_enabled)
+      if(yxxSelfService===null&&!orchestrationWorker&&ruleFlags.rule_first_orchestration_enabled&&ruleFlags.manual_review_queue_enabled)
         orchestrationWorker=createP2016OrchestrationWorker({pool,identityHmacKey,directoryPort,ruleEngine,notifications,realtime:realtimeProjector,personDestinationAuthorizer,communicationAppend});
       closure=createTicketClosureService({pool,beforeTransaction:realtimeProjector.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async input=>{
         const n=await notifications.project(input);await realtimeProjector.ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
@@ -74,18 +76,27 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
       if(policy==='MEMBER_REQUIRED')memberExtension=createYxxMemberExtension({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
-        reporterHmacSecret,reporterMemberEntry:memberConfig,access,incidentAdapter:incidentExtension?.reporterAdapter??null});
+        reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,access,incidentAdapter:incidentExtension?.reporterAdapter??null});
+      if(yxxSelfService!==null)selfService=createYxxSelfServiceExtension({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
+        reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,profile:'FULL_SERVICE_LOOP',featureFlags:yxxSelfService.featureFlags??{}});
       const reporterHttp=createP2016ReporterHttp({access,timeline:createP2016ReporterTimeline({pool,access,enabled:featureFlags.REPORTER_TIMELINE_ENABLED,incidentAdapter:incidentExtension?.reporterAdapter??null}),
         enabled:featureFlags.REPORTER_TIMELINE_ENABLED,publicOrigin:reporterOrigin,allowLocalHttp,accessPolicy:policy,memberHandler:memberExtension?.handler});
       return {
         readiness:async base=>{
           let schema=false;try{schema=(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='031_p2_016_ticket_lifecycle_workbench_notifications'")).rowCount===1;}catch{/* dependency stays not ready */}
           const incidentReady=incidentExtension?await incidentExtension.ready():true;
-          return {ok:base.ok&&schema&&incidentReady,base_service_ready:base.ok&&schema&&incidentReady,ai_enhancement_ready:false,ai_enabled:false,
-            checks:{...base.checks,p2_016_schema:schema},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
+          let selfServiceSchema=true;
+          if(selfService){
+            try{selfServiceSchema=(await pool.query(`SELECT migration_id FROM platform.schema_migration
+              WHERE migration_id IN ('033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check')`)).rowCount===2;}
+            catch{selfServiceSchema=false;}
+          }
+          const ready=base.ok&&schema&&incidentReady&&selfServiceSchema;
+          return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
+            checks:{...base.checks,p2_016_schema:schema,...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
         authenticatedHandler:async context=>(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
-        unauthenticatedHandler:async context=>policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context),
+        unauthenticatedHandler:async context=>(await selfService?.handler(context))||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),
         staticHandler:async(pathname,response)=>(await incidentExtension?.staticHandler?.(pathname,response))||ticketStatic(pathname,response),
         runOnce:async()=>{if(orchestrationWorker)await orchestrationWorker.processDueBatch({feature_flags:ruleFirstFlags,batch_size:20});await realtimeProjector.runOnce();await incidentExtension?.runOnce?.();},
       };
@@ -93,7 +104,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   });
   const systemActions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:closure.afterTicketAction});
   return Object.freeze({...runtime,query,tickets,reviews,reporterAccess:access,notifications,realtimeProjector,orchestrationWorker,incidentExtension,
-    stop:async()=>{memberExtension?.close();webOAuth.close?.();return runtime.stop();},
+    selfService,
+    stop:async()=>{await selfService?.close();memberExtension?.close();webOAuth.close?.();return runtime.stop();},
     // Explicit system job, never exposed as an HTTP/User/Reporter action. Scheduling belongs to the approved worker role.
     runAutoClose:async()=>closure.runAutoClose({actionService:systemActions,limit:20}),
     runAutoCloseReminders:async()=>closure.runAutoCloseReminders({limit:20})});

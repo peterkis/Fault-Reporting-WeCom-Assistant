@@ -162,6 +162,7 @@ const COMMAND_KEYS = Object.freeze([
 const COMMAND_KEY_SET = new Set(COMMAND_KEYS);
 const REQUIRED_COMMAND_KEYS = Object.freeze(COMMAND_KEYS.filter((key) => key !== 'expires_epoch_ms'));
 const AUTHORIZATION_KEYS = new Set([
+  'allowed_system_ticket_ids',
   'allowed_session_ids',
   'allowed_thread_ids',
   'allow_system_events',
@@ -1005,7 +1006,8 @@ export function normalizeRealtimeAuthorization(input) {
     snapshot.allowed_thread_ids,
     REALTIME_ERROR_CODES.forbidden,
   );
-  if (allowedSessionIds.length + allowedThreadIds.length > MAX_AUTHORIZATION_IDS) {
+  const allowedSystemTicketIds = normalizeUuidArray(snapshot.allowed_system_ticket_ids, REALTIME_ERROR_CODES.forbidden);
+  if (allowedSessionIds.length + allowedThreadIds.length + allowedSystemTicketIds.length > MAX_AUTHORIZATION_IDS) {
     fail(REALTIME_ERROR_CODES.forbidden);
   }
   const allowSystemEvents = snapshot.allow_system_events ?? false;
@@ -1016,6 +1018,7 @@ export function normalizeRealtimeAuthorization(input) {
   return Object.freeze({
     allowed_session_ids: allowedSessionIds,
     allowed_thread_ids: allowedThreadIds,
+    ...(allowedSystemTicketIds.length ? { allowed_system_ticket_ids: allowedSystemTicketIds } : {}),
     allow_system_events: allowSystemEvents,
     allow_restricted_admin: allowRestrictedAdmin,
   });
@@ -1084,7 +1087,8 @@ function isAuthorizedPersistedRow(row, authorization) {
     return false;
   }
   if (row.authorization_scope_type === 'SYSTEM') {
-    return row.authorization_scope_id === null && authorization.allow_system_events;
+    return row.authorization_scope_id === null && (authorization.allow_system_events
+      || row.aggregate_type === 'TICKET' && (authorization.allowed_system_ticket_ids ?? []).includes(row.aggregate_id));
   }
   if (typeof row.authorization_scope_id !== 'string') {
     return false;
@@ -1253,7 +1257,7 @@ export async function listAuthorizedRealtimeEvents(input) {
                  AND event.authorization_scope_id = ANY($4::uuid[]))
                OR (event.authorization_scope_type = 'SYSTEM'
                  AND event.authorization_scope_id IS NULL
-                 AND $5::boolean)
+                 AND ($5::boolean OR (event.aggregate_type='TICKET' AND event.aggregate_id=ANY($8::text[]))))
              )
              AND (
                event.visibility_scope = 'WORKBENCH'
@@ -1315,6 +1319,7 @@ export async function listAuthorizedRealtimeEvents(input) {
         authorization.allow_system_events,
         authorization.allow_restricted_admin,
         limit,
+        authorization.allowed_system_ticket_ids ?? [],
       ],
     ));
     if (rows.length === 0) {

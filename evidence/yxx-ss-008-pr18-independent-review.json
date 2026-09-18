@@ -1,0 +1,35 @@
+{
+  "task": "YXX-SS-008",
+  "event_time": "2026-09-18 21:47:25",
+  "event_epoch_ms": "1789739245910",
+  "reviewed_head": "1c448d607ebaabdd62820d06aabfd43194f1cfa1",
+  "reviewed_tree": "acec6e0237da2ab204c3fcc3f64b8a476840b598",
+  "candidate_fingerprint": "2e8bf189a993fda0b087229937a9390d9f6e1c24052ca178f7d0b36cd2de388b",
+  "severity_threshold": "MEDIUM",
+  "reviews": [
+    {
+      "axis": "SPEC",
+      "reviewer": "/root/ss008_spec_review",
+      "verdict": "PASS",
+      "unresolved_findings": 0
+    },
+    {
+      "axis": "STANDARDS",
+      "reviewer": "/root/ss008_standards_review",
+      "verdict": "PASS",
+      "unresolved_findings": 0
+    }
+  ],
+  "scope": "Exact three-file readiness fix delta from 05ceb8a; conditional marker checks, fail-closed behavior, old profile compatibility and real PostgreSQL/HTTP regression.",
+  "remote_review": {
+    "pr": 18,
+    "reviewed_head": "05ceb8a808b7ade2f136bd094aac841e44266d59",
+    "finding_id": 4047183674,
+    "severity": "P2",
+    "finding": "Mounted FULL self-service omitted migration 033/034 prerequisites from readiness.",
+    "current_candidate": "PENDING_REMOTE_REVIEW"
+  },
+  "full_regression": "SEPARATE_RESULT_REQUIRED",
+  "github_checks": "NOT_CLAIMED",
+  "live_authorized": false
+}

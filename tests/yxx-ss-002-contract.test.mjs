@@ -27,7 +27,10 @@ test('SS-002 closed schemas reject identity and operational authority fields',as
   assert.ok(profile.required.includes('x-readonly-write-denied'));
   assert.equal(profile.properties.YIXIAOXIU_SELF_SERVICE_ENABLED.default,false);assert.equal(profile.properties.YIXIAOXIU_MY_REPORTS_ENABLED.default,false);
   const selfBranch=JSON.stringify(profile.allOf.find(v=>JSON.stringify(v).includes('MEMBER_SELF_SERVICE')));
-  assert.match(selfBranch,/YIXIAOXIU_SELF_SERVICE_ENABLED.*const.*true/u);assert.match(selfBranch,/YIXIAOXIU_MY_REPORTS_ENABLED.*const.*true/u);
+  assert.match(selfBranch,/APP_BOUNDED_PUMP/u);
+  const writeBranch=profile.allOf.find(v=>v.if.properties.web_write?.const===true);
+  assert.equal(writeBranch.then.properties.YIXIAOXIU_SELF_SERVICE_ENABLED.const,true);
+  assert.equal(writeBranch.then.properties.YIXIAOXIU_MY_REPORTS_ENABLED.const,true);
   const oauthOnlyBranch=JSON.stringify(profile.allOf.find(v=>JSON.stringify(v).includes('OAUTH_ONLY')));
   assert.match(oauthOnlyBranch,/write_flag.*const.*false/u);assert.match(oauthOnlyBranch,/YIXIAOXIU_SELF_SERVICE_ENABLED.*const.*false/u);assert.match(oauthOnlyBranch,/YIXIAOXIU_MY_REPORTS_ENABLED.*const.*false/u);
   assert.ok(JSON.parse(await readFile('contracts/yxx_self_service_report_page.schema.json','utf8')).properties.items.items.required.includes('ticket'));

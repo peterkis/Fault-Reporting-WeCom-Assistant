@@ -15,7 +15,8 @@ import { verifyG2Candidate, verifyG2ApprovalFile, requirePreparedG2Candidate } f
 import { createG2SendGuard, createG2ProviderGate, approvalCheck } from '../src/p2-g2-send-guard.mjs';
 import { appendG2Communication } from '../src/p2-g2-communication-append.mjs';
 import { installG2NetworkBoundary, probeG2NetworkBoundary } from '../src/p2-g2-network-boundary.mjs';
-import {readYxxG2AppConfiguration} from '../src/p2-g2-yixiaoxiu-g2-config.mjs';
+import {readYxxG2AppConfiguration,readYxxSelfServiceFlags} from '../src/p2-g2-yixiaoxiu-g2-config.mjs';
+import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {createWeComOAuthCodeResolver} from '../src/p2-g2-wecom-oauth-provider.mjs';
 import {createWeComAppTokenProvider} from '../src/p2-g2-wecom-app-token.mjs';
 
@@ -31,7 +32,13 @@ export async function main(argv = process.argv.slice(2)) {
   verifyG2ApprovalFile(manifest);
   if(c.liveApproved)requirePreparedG2Candidate(manifest.candidate_fingerprint);
   const memberConfig=role==='APP'?readYxxG2AppConfiguration({manifest,env:process.env}):null;
-  installG2NetworkBoundary(manifest,{memberOAuthEnabled:memberConfig!==null});
+  const webFlags=readYxxSelfServiceFlags(process.env);
+  const yxxSelfService=Object.values(webFlags).some(Boolean)?{featureFlags:webFlags}:null;
+  if(yxxSelfService&&c.reporterPolicy!=='MEMBER_REQUIRED')failG2('CONFIGURATION_INVALID');
+  installG2NetworkBoundary(manifest,{memberOAuthEnabled:memberConfig!==null,memberDelegatedMappingEnabled:memberConfig?.identityMode==='VERIFIED_DELEGATED_MAPPING'});
+  const tokenProvider=memberConfig?createWeComAppTokenProvider({corpId:memberConfig.corpId,appSecret:process.env.APP_SECRET}):null;
+  const identityMapping=memberConfig?.identityMode==='VERIFIED_DELEGATED_MAPPING'
+    ?await createYxxDelegatedIdentityMapping({config:memberConfig,accessTokenProvider:tokenProvider}):null;
   const send = (request, result, ok = true) => process.send?.({ type: 'control-response', role, request_id: request.request_id, ok,
     ...(ok ? { result } : { error_code: 'P2_G2_CONTROL_REJECTED' }) });
   process.on('message', async message => {
@@ -46,8 +53,8 @@ export async function main(argv = process.argv.slice(2)) {
   const authorizer = pool => createP2012PersonDestinationAuthorizer({ pool, botId: c.botId,
     personHashes: manifest.scope.person_hashes, groupHashes: manifest.scope.group_hashes, testLabel: G2_TEST_PREFIX, labelSource: 'raw' });
   if (role === 'APP') return runApp({ runtimeFactory: options => createP2012Runtime({ ...options,
-    reporterPolicy:c.reporterPolicy,...(memberConfig?{reporterMemberEntry:memberConfig,wecomWebOAuth:{enabled:true,
-      corpId:memberConfig.corpId,agentId:memberConfig.agentId,resolveCode:createWeComOAuthCodeResolver({accessTokenProvider:createWeComAppTokenProvider({corpId:memberConfig.corpId,appSecret:process.env.APP_SECRET})})}}:{}),
+    reporterPolicy:c.reporterPolicy,identityMapping,yxxSelfService,...(memberConfig?{reporterMemberEntry:memberConfig,wecomWebOAuth:{enabled:true,
+      corpId:memberConfig.corpId,agentId:memberConfig.agentId,resolveCode:createWeComOAuthCodeResolver({accessTokenProvider:tokenProvider})}}:{}),
     flags: { TICKET_LIFECYCLE_WORKBENCH_ENABLED: true, REPORTER_TIMELINE_ENABLED: true, WECOM_TEMPLATE_CARD_ENABLED: true },
     incidentFlags: { INCIDENT_CORRELATION_ENABLED: true, INCIDENT_PUBLIC_NOTICE_ENABLED: true, INCIDENT_PRIVATE_NOTICE_ENABLED: true },
     incidentBackgroundMaintenance: false, communicationAppend: appendG2Communication,ticketNotificationAdditionalEvents:c.ticketNotificationAdditionalEvents,
@@ -63,7 +70,7 @@ export async function main(argv = process.argv.slice(2)) {
           readG2Configuration({manifest,role:'WORKER',candidateFingerprint:manifest.candidate_fingerprint});
           verifyG2Candidate(manifest.candidate_fingerprint);verifyG2ApprovalFile(manifest);
         }}),
-      ticketNotificationAdditionalEvents:c.ticketNotificationAdditionalEvents }) });
+      ticketNotificationAdditionalEvents:c.ticketNotificationAdditionalEvents,yxxSelfService }) });
   let client, gateway, operationalIntake, calls = 0, inFlight = 0;
   const pending = new WeakMap();
   class SyntheticSdk extends EventEmitter {

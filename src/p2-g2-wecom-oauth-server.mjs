@@ -3,7 +3,7 @@ import { createWeComOAuthHttp } from './p2-g2-wecom-oauth-http.mjs';
 
 // Authentication-only boot mode. Run instead of the full App until its separate live gates are ready.
 export function createWeComOAuthServer({oauth,publicOrigin,memberHandler=null,profile='OAUTH_ONLY'}){
-  if(!['OAUTH_ONLY','MEMBER_TICKET_READONLY'].includes(profile)
+  if(!['OAUTH_ONLY','MEMBER_TICKET_READONLY','MEMBER_SELF_SERVICE'].includes(profile)
     ||(profile==='OAUTH_ONLY')!==(memberHandler===null)
     ||memberHandler!==null&&typeof memberHandler!=='function')throw new TypeError('WECOM_OAUTH_CONFIG_INVALID');
   const host=new URL(publicOrigin).host;
@@ -18,6 +18,10 @@ export function createWeComOAuthServer({oauth,publicOrigin,memberHandler=null,pr
       const url=new URL(request.url??'/',publicOrigin);
       if(request.method==='GET'&&url.pathname==='/health/live'&&!url.search){
         response.writeHead(200,{'content-type':'application/json'});response.end(JSON.stringify({ok:true,mode:profile,...counts}));return;
+      }
+      if(profile!=='MEMBER_SELF_SERVICE'&&url.pathname.startsWith('/api/yixiaoxiu/')){
+        response.writeHead(403,{'content-type':'application/json'});
+        response.end(JSON.stringify({error:{code:'YXX_MEMBER_WRITE_DISABLED',retryable:false}}));return;
       }
       response.once('finish',()=>{
         if(url.pathname==='/wecom/yixiaoxiu/callback'&&response.statusCode===303)counts.authenticated_callbacks++;

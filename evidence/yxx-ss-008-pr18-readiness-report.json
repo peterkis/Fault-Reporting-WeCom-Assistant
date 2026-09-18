@@ -1,0 +1,488 @@
+{
+  "task": "YXX-SS-008",
+  "status": "COMPLETE",
+  "event_time": "2026-09-18 22:10:04",
+  "event_epoch_ms": "1789740604211",
+  "scope": "LOCAL_ASSEMBLY_AND_ISOLATED_VALIDATION_ONLY",
+  "branch": "codex/yxx-ss-008-assembly",
+  "base_head": "2d9fda2065b1303620f247a9e4d9754f0a3472d9",
+  "base_tree": "b1397a10f7c11ec74c85d3582fd44a5e234302c4",
+  "tested_head": "1c448d607ebaabdd62820d06aabfd43194f1cfa1",
+  "tested_tree": "acec6e0237da2ab204c3fcc3f64b8a476840b598",
+  "runtime_frozen_at": "1c448d607ebaabdd62820d06aabfd43194f1cfa1",
+  "candidate_fingerprint": "2e8bf189a993fda0b087229937a9390d9f6e1c24052ca178f7d0b36cd2de388b",
+  "candidate_files": 660,
+  "publication_binding": "The later publication commit changes evidence and the self-service task ledger only. Its own SHA is reported outside this document to avoid a circular binding.",
+  "implementation_commits": [
+    "77435e74153db536a821c991dbb85c30b8b92d8d docs(yxx): reconcile SS-007 completion after final review",
+    "a17563736677245af2e2164982e12d1ef1d2d493 feat(yxx): assemble self-service profiles and original workbench",
+    "7f4e09df6da3ff661f68d1dbe239ce8851be8842 test(yxx): isolate SS-003 migration fixture and prepare its baseline",
+    "05ceb8a808b7ade2f136bd094aac841e44266d59 docs(yxx): complete SS-008 with candidate-bound validation evidence",
+    "1c448d607ebaabdd62820d06aabfd43194f1cfa1 fix(yxx): require Web migrations for self-service readiness"
+  ],
+  "ss007": {
+    "status": "COMPLETE",
+    "reason": "The v33 ledger was published before final PR17 review and merge; it was never reconciled afterwards.",
+    "evidence": {
+      "path": "evidence/yxx-ss-007-completion-reconciliation.json",
+      "sha256": "a4b5550e740a5c3cb5ee5835cc522e463d3b77bec504a105225aedc95f99f054",
+      "raw_sha256": "a4b5550e740a5c3cb5ee5835cc522e463d3b77bec504a105225aedc95f99f054",
+      "encoding": "UTF8_LF",
+      "bytes": 1496
+    },
+    "github_checks": "NONE_NOT_PASS"
+  },
+  "twelve_tickets": [
+    {
+      "id": "YXX-SS-000",
+      "depends_on": [],
+      "status": "COMPLETE"
+    },
+    {
+      "id": "YXX-SS-001",
+      "depends_on": [
+        "YXX-SS-000"
+      ],
+      "status": "COMPLETE"
+    },
+    {
+      "id": "YXX-SS-002",
+      "depends_on": [
+        "YXX-SS-000"
+      ],
+      "status": "COMPLETE"
+    },
+    {
+      "id": "YXX-SS-003",
+      "depends_on": [
+        "YXX-SS-002"
+      ],
+      "status": "COMPLETE"
+    },
+    {
+      "id": "YXX-SS-004",
+      "depends_on": [
+        "YXX-SS-003"
+      ],
+      "status": "COMPLETE"
+    },
+    {
+      "id": "YXX-SS-005",
+      "depends_on": [
+        "YXX-SS-003"
+      ],
+      "status": "COMPLETE"
+    },
+    {
+      "id": "YXX-SS-006",
+      "depends_on": [
+        "YXX-SS-004"
+      ],
+      "status": "COMPLETE"
+    },
+    {
+      "id": "YXX-SS-007",
+      "depends_on": [
+        "YXX-SS-001",
+        "YXX-SS-002"
+      ],
+      "status": "COMPLETE"
+    },
+    {
+      "id": "YXX-SS-008",
+      "depends_on": [
+        "YXX-SS-004",
+        "YXX-SS-005",
+        "YXX-SS-006",
+        "YXX-SS-007"
+      ],
+      "status": "COMPLETE",
+      "evidence": "evidence/yxx-ss-008-pr18-readiness-report.json"
+    },
+    {
+      "id": "YXX-SS-009",
+      "depends_on": [
+        "YXX-SS-008"
+      ],
+      "status": "PLANNED"
+    },
+    {
+      "id": "YXX-SS-010",
+      "depends_on": [
+        "YXX-SS-009"
+      ],
+      "status": "PLANNED"
+    },
+    {
+      "id": "YXX-SS-011",
+      "depends_on": [
+        "YXX-SS-010"
+      ],
+      "status": "NOT_AUTHORIZED"
+    }
+  ],
+  "full_regression": {
+    "command": "node scripts/p2-g2-synthetic-e2e.mjs --suite=full",
+    "tests": 1155,
+    "pass": 1155,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "test_files": 183,
+    "old_files_covered": 171,
+    "old_files_missing": [],
+    "candidate_unchanged": true,
+    "node_version": "24.18.0",
+    "expose_gc": true,
+    "formal_natural_gc_observation": false,
+    "record": {
+      "path": "evidence/yxx-ss-008-pr18-full-regression-run.json",
+      "sha256": "26054e50aeea61a51825b2e7d6f76af9b86a2c7bf251921c5a5e8f708c8f5df6",
+      "raw_sha256": "26054e50aeea61a51825b2e7d6f76af9b86a2c7bf251921c5a5e8f708c8f5df6",
+      "encoding": "UTF8_LF",
+      "bytes": 39658
+    },
+    "tap": {
+      "path": "evidence/yxx-ss-008-pr18-full-regression.tap",
+      "sha256": "77883b1f54391c0f0e4c8a53c8f0c16c66cc1096eee23aa7dd5562bc7e3b6968",
+      "raw_sha256": "77883b1f54391c0f0e4c8a53c8f0c16c66cc1096eee23aa7dd5562bc7e3b6968",
+      "encoding": "UTF8_LF",
+      "bytes": 634892
+    },
+    "original_directory": "tmp/p2-g2-tests-9445c4c7-9725-4c50-8bf8-9599a2cd3eff"
+  },
+  "acceptance_matrix": [
+    {
+      "event_time": "2026-09-18 22:10:04",
+      "event_epoch_ms": "1789740604211",
+      "id": "YXX-AC-073",
+      "requirement": "真实网页到原坐席再到本人",
+      "result": "PASS",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads",
+          "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+        }
+      ]
+    },
+    {
+      "event_time": "2026-09-18 22:10:04",
+      "event_epoch_ms": "1789740604211",
+      "id": "YXX-AC-074",
+      "requirement": "旧三入口回归",
+      "result": "PASS",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 four actual sources coexist on 033/034 with independent lineage and Web APP_ONLY",
+          "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+        }
+      ]
+    },
+    {
+      "event_time": "2026-09-18 22:10:04",
+      "event_epoch_ms": "1789740604211",
+      "id": "YXX-AC-075",
+      "requirement": "四来源独立 lineage",
+      "result": "PASS",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 four actual sources coexist on 033/034 with independent lineage and Web APP_ONLY",
+          "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+        }
+      ]
+    },
+    {
+      "event_time": "2026-09-18 22:10:04",
+      "event_epoch_ms": "1789740604211",
+      "id": "YXX-AC-076",
+      "requirement": "无 Conversation 的原工作台",
+      "result": "PASS",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 four actual sources coexist on 033/034 with independent lineage and Web APP_ONLY",
+          "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+        }
+      ]
+    },
+    {
+      "event_time": "2026-09-18 22:10:04",
+      "event_epoch_ms": "1789740604211",
+      "id": "YXX-AC-077",
+      "requirement": "SELF 唯一 App 有界泵",
+      "result": "PASS",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads",
+          "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+        }
+      ]
+    },
+    {
+      "event_time": "2026-09-18 22:10:04",
+      "event_epoch_ms": "1789740604211",
+      "id": "YXX-AC-078",
+      "requirement": "FULL 原 Worker 所有权及角色资源",
+      "result": "PASS",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads",
+          "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+        },
+        {
+          "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+          "name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+          "sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9"
+        },
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 FULL readiness requires both Web migrations only when the extension is mounted",
+          "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+        }
+      ]
+    },
+    {
+      "event_time": "2026-09-18 22:10:04",
+      "event_epoch_ms": "1789740604211",
+      "id": "YXX-AC-079",
+      "requirement": "READONLY / OAuth-only 隔离",
+      "result": "PASS",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 OAUTH_ONLY never touches a supplied DB; READONLY rejects Web writes with erroneous flags",
+          "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+        }
+      ]
+    },
+    {
+      "event_time": "2026-09-18 22:10:04",
+      "event_epoch_ms": "1789740604211",
+      "id": "YXX-AC-080",
+      "requirement": "Web 全生命周期 APP_ONLY、旧 Bot 通知",
+      "result": "PASS",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads",
+          "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+        },
+        {
+          "file": "tests/p2-016-notification-delivery.integration.test.mjs",
+          "name": "PR8 member notifications enforce retained delivery authority and preserve retry versus unknown outcomes",
+          "sha256": "453eb11eea27605cecae9281f8b1e91df94924c65b0857695597e60418c8fc16"
+        }
+      ]
+    },
+    {
+      "event_time": "2026-09-18 22:10:04",
+      "event_epoch_ms": "1789740604211",
+      "id": "YXX-AC-081",
+      "requirement": "原锁顺序与身份/错误边界",
+      "result": "PASS",
+      "tests": [
+        {
+          "file": "tests/p2-016-projection-lock-order.integration.test.mjs",
+          "name": "PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source",
+          "sha256": "be42c7a735eda3d9be82f15ec3d4fa01fe179ee3105646318246273e03f55322"
+        },
+        {
+          "file": "tests/yxx-ss-008-native-boundary.test.mjs",
+          "name": "SS-008 submit and supplement suppress an old member receipt after a committed identity change",
+          "sha256": "15cd6ee649daf2e2be6881fb27d9d1d3c011e5c98c8b46b800957bd153d89311"
+        }
+      ]
+    },
+    {
+      "event_time": "2026-09-18 22:10:04",
+      "event_epoch_ms": "1789740604211",
+      "id": "YXX-AC-082",
+      "requirement": "关写不停本人查询",
+      "result": "PASS",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads",
+          "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+        }
+      ]
+    }
+  ],
+  "independent_review": {
+    "path": "evidence/yxx-ss-008-pr18-independent-review.json",
+    "sha256": "749b930aa563b6869dbe10d973c05f4a8a37f0b38ff7176d1645289b1c3f4230",
+    "raw_sha256": "749b930aa563b6869dbe10d973c05f4a8a37f0b38ff7176d1645289b1c3f4230",
+    "encoding": "UTF8_LF",
+    "bytes": 1253
+  },
+  "source_inventory": {
+    "path": "evidence/yxx-ss-008-pr18-source-inventory.json",
+    "sha256": "66b3b19261ee323e9c42982467024171386cdd4ec6391f5a0ab0e3c414e54d25",
+    "raw_sha256": "66b3b19261ee323e9c42982467024171386cdd4ec6391f5a0ab0e3c414e54d25",
+    "encoding": "UTF8_LF",
+    "bytes": 135356
+  },
+  "validators": {
+    "path": "evidence/yxx-ss-008-pr18-validator-results.json",
+    "sha256": "1358e16a8e06630e1c683d61123cfb9c554ac542cee422cdf8c32f577840ba4f",
+    "raw_sha256": "1358e16a8e06630e1c683d61123cfb9c554ac542cee422cdf8c32f577840ba4f",
+    "encoding": "UTF8_LF",
+    "bytes": 5241
+  },
+  "diagnosis": {
+    "path": "evidence/yxx-ss-008-regression-diagnosis.json",
+    "sha256": "c5c8e477007486d413004ff38fa8ab95e5e34495d8f4f8869fc53f5404f15273",
+    "raw_sha256": "c5c8e477007486d413004ff38fa8ab95e5e34495d8f4f8869fc53f5404f15273",
+    "encoding": "UTF8_LF",
+    "bytes": 3111
+  },
+  "source_and_catalog": {
+    "source_channel": "PORTAL",
+    "source_provider": "YIXIAOXIU_WEB",
+    "entry_mode": "APP_WEB_SELF_SERVICE",
+    "leg_type": "WEB_FORM",
+    "new_migrations": 0,
+    "inherited_unchanged_migrations": [
+      "033_yxx_self_service_intake.sql",
+      "034_yxx_self_service_direct_chat_check.sql"
+    ],
+    "historical_migrations_and_evidence": "UNCHANGED",
+    "web_fake_inbox_thread_session_direct_leg": 0
+  },
+  "authority": {
+    "accept": "Existing member command -> durable Web source / Intake / receipt COMMIT",
+    "process": "Existing shared rule engine -> original Review / unique Ticket Core",
+    "idempotency": "Same command replay retains receipt; no automatic new command ID",
+    "supplement": "Append-only, shared Intake lock and revision fence",
+    "reporter_list": "Own Web requests plus safely authorized own Bot Tickets; Web Ticket represented once",
+    "member_cookie_is_staff_identity": false,
+    "postcommit_identity_change": "Suppress old receipt, preserve committed fact; never claim rollback"
+  },
+  "profiles": {
+    "OAUTH_ONLY": "ZERO_DB",
+    "MEMBER_TICKET_READONLY": "WEB_WRITES_DENIED_REGARDLESS_OF_FLAGS",
+    "MEMBER_SELF_SERVICE": "APP_BOUNDED_PUMP",
+    "FULL_SERVICE_LOOP": "ORIGINAL_WORKER_ONLY_APP_PUMP_NULL",
+    "raw_same_namespace": false,
+    "web_delivery": "APP_ONLY",
+    "persistent_defaults": false,
+    "pool_limits": {
+      "APP": 4,
+      "WORKER": 2,
+      "GATEWAY": 1,
+      "controller": "SEPARATELY_ACCOUNTED"
+    },
+    "batch_default": 10,
+    "batch_maximum": 20,
+    "in_flight": 1,
+    "sse_clients": 32
+  },
+  "time": {
+    "domain": "Asia/Shanghai second text; epoch/deadline decimal strings",
+    "evidence": "g2EvidenceTime sampled event_time and event_epoch_ms together",
+    "arch005": "PASS"
+  },
+  "cleanup": {
+    "owned_databases": "Fixture cleanup assertions passed",
+    "worker": "Actual role stopped with exit 0",
+    "browser": "Owned headless browser closed by fixture",
+    "temporary_worktrees": "Owned worktree removed by negative-test finally",
+    "retained": "All failed/interrupted/final TAP and original full-run directories",
+    "preexisting_resources": "NOT_TOUCHED"
+  },
+  "user_file_protection": {
+    "path": ".gitignore",
+    "before_after_sha256": "0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092",
+    "index_blob": "942b2b8d94b4f1e9dda5369cbac0cbe31056d950",
+    "changed": false
+  },
+  "phase_fences": {
+    "last_completed_task": "P2-012",
+    "last_completed_gate": "P2-G1",
+    "last_completed_architecture_task": "ARCH-006",
+    "parent_gate": "NOT_PASSED",
+    "parent_readiness": "HISTORICAL_CREATION_V2",
+    "SS009": "PLANNED_NOT_EXECUTED_AS_A_TASK",
+    "SS010": "PLANNED",
+    "SS011": "NOT_AUTHORIZED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "BLOCKED_BY_P2_G2"
+  },
+  "limitations": [
+    "No formal natural-GC / 2C4G / 60-minute observation",
+    "No current parent --require-ready claim; SS-009/010 must bind their own readiness evidence",
+    "Current candidate remote review is pending at publication; absent GitHub checks are not CI success"
+  ],
+  "future_SS011_permission": [
+    "First finish SS-009 and SS-010",
+    "Explicit candidate fingerprint and deployment/DDL scope",
+    "Approved limited members, input scope, time window and allowed business writes",
+    "Explicit stop/rollback criteria and resource ownership; no sending unless separately approved"
+  ],
+  "not_run": [
+    "vendor configuration",
+    "cloud/nginx/SSH",
+    "real OAuth/SDK",
+    "production/hospital business data",
+    "real sending",
+    "P2-G2-LIVE",
+    "AI/OCR/RAG/intranet/P3",
+    "tag/release"
+  ],
+  "previous_local_report": {
+    "path": "evidence/yxx-ss-008-assembly-report.json",
+    "sha256": "36bc9983a8cf2c99b819c6d171af0dd10bc24fa189a9349cb15161d0b7c0a5a0",
+    "raw_sha256": "36bc9983a8cf2c99b819c6d171af0dd10bc24fa189a9349cb15161d0b7c0a5a0",
+    "encoding": "UTF8_LF",
+    "bytes": 15516
+  },
+  "remote_review_fix": {
+    "pr": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/18",
+    "comment_id": 4047183674,
+    "reviewed_head": "05ceb8a808b7ade2f136bd094aac841e44266d59",
+    "severity": "P2",
+    "issue": "FULL mounted Web handlers without checking migration 033/034 readiness.",
+    "change": "Require both markers whenever mounted. Missing marker or query failure yields HTTP 503 and base_service_ready=false. Unmounted FULL remains unchanged.",
+    "test": {
+      "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+      "name": "SS-008 FULL readiness requires both Web migrations only when the extension is mounted",
+      "sha256": "64b32f1ca13c56f0f3612f562248df3d9d18b8f62bcbe0353160a3718b43c3c6"
+    },
+    "red": {
+      "path": "evidence/yxx-ss-008-pr18-readiness-red.tap",
+      "sha256": "7cb52281a77596fb79f0fcf25f4dcde475745c955ddc4cd0053b5eac9e9f7a5e",
+      "raw_sha256": "7cb52281a77596fb79f0fcf25f4dcde475745c955ddc4cd0053b5eac9e9f7a5e",
+      "encoding": "UTF8_LF",
+      "bytes": 1684
+    },
+    "fixture_attempt": {
+      "path": "evidence/yxx-ss-008-pr18-readiness-green.tap",
+      "sha256": "d6e40c6eb61c4095cd4da112f82aa4443cca7c372423ddef42c1eaf9b29e387f",
+      "raw_sha256": "d6e40c6eb61c4095cd4da112f82aa4443cca7c372423ddef42c1eaf9b29e387f",
+      "encoding": "UTF8_LF",
+      "bytes": 1369
+    },
+    "fixture_attempt_result": "FAILED_PLATFORM_MIGRATION_ID_CHECK; the test-only temporary marker was corrected to a valid suffix without changing the constraint",
+    "targeted": {
+      "path": "evidence/yxx-ss-008-pr18-readiness-fixed.tap",
+      "sha256": "ce074e1bacdbf72e8561d167fcedeb61935a510fddc6d6200b33d508c25563a7",
+      "raw_sha256": "ce074e1bacdbf72e8561d167fcedeb61935a510fddc6d6200b33d508c25563a7",
+      "encoding": "UTF8_LF",
+      "bytes": 1652
+    },
+    "targeted_pass": 6,
+    "remote_current_candidate": "PENDING_REVIEW_AT_PUBLICATION"
+  },
+  "git_workflow": {
+    "authorization": "User explicitly requested commit, push, PR, @codex review, fixes and merge after no issues",
+    "pr": 18,
+    "merge": "PENDING_REMOTE_REVIEW"
+  }
+}

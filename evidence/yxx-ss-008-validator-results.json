@@ -1,0 +1,72 @@
+{
+  "task": "YXX-SS-008",
+  "event_time": "2026-09-18 19:46:22",
+  "event_epoch_ms": "1789731982603",
+  "results": [
+    {
+      "event_time": "2026-09-18 19:45:41",
+      "event_epoch_ms": "1789731941984",
+      "command": "node scripts/validate-v1-4-architecture.mjs",
+      "exit_code": 0,
+      "stdout": "V1.4 architecture validation passed (407 checks).\n",
+      "stderr": ""
+    },
+    {
+      "event_time": "2026-09-18 19:45:42",
+      "event_epoch_ms": "1789731942323",
+      "command": "node scripts/validate-arch-005-time-contract.mjs",
+      "exit_code": 0,
+      "stdout": "{\"test_id\":\"ARCH-005\",\"event\":\"arch_005_architecture_validation\",\"ok\":true,\"errors\":[],\"frozen_migration_count\":14,\"contract_date_time_format_count\":0,\"api_offset_timestamp_leak_count\":0,\"direct_pg_factory_bypass_count\":0,\"browser_timezone_display_mismatch_count\":0,\"event_ordering_violation_count\":0}\n",
+      "stderr": ""
+    },
+    {
+      "event_time": "2026-09-18 19:45:45",
+      "event_epoch_ms": "1789731945277",
+      "command": "node scripts/validate-arch-006-rule-first-service-loop.mjs",
+      "exit_code": 0,
+      "stdout": "ARCH-006 rule-first service loop validation passed (262 checks).\n",
+      "stderr": ""
+    },
+    {
+      "event_time": "2026-09-18 19:45:45",
+      "event_epoch_ms": "1789731945488",
+      "command": "node scripts/validate-p2-015-rule-first-intake.mjs",
+      "exit_code": 0,
+      "stdout": "{\"task\":\"P2-015\",\"ok\":true,\"checks\":88,\"deterministic_safe_route_coverage\":1,\"source_cases\":202,\"result_codes\":[\"ACKNOWLEDGEMENT\",\"BUSINESS_CONSULTATION\",\"INCIDENT_REVIEW_CANDIDATE\",\"MANUAL_REVIEW_REQUIRED\",\"NEEDS_DESCRIPTION\",\"OUT_OF_SCOPE\",\"RELATED_FOLLOW_UP\",\"SERVICE_REQUEST\",\"STATUS_QUERY\",\"TICKET_ELIGIBLE\"],\"model_provider_calls\":0,\"sender_calls\":0,\"incident_writes\":0,\"limits\":{\"workerCount\":1,\"poolMax\":4,\"defaultBatch\":20,\"maximumBatch\":100,\"defaultReviewPage\":30,\"maximumReviewPage\":100,\"messageWindowTurns\":50,\"evaluatedTextCharacters\":20000,\"openJourneyCandidates\":10,\"continuationTtlMinutes\":120,\"recoveryPollMilliseconds\":5000}}\n",
+      "stderr": ""
+    },
+    {
+      "event_time": "2026-09-18 19:45:53",
+      "event_epoch_ms": "1789731953607",
+      "command": "node scripts/validate-p2-016-ticket-lifecycle-workbench.mjs",
+      "exit_code": 0,
+      "stdout": "{\"task\":\"P2-016\",\"verification_revision\":\"8c332710dad9b6cf3f6796f3344c04d1c710ddf3\",\"successor_task\":\"P2-G2\",\"state\":\"DONE\",\"ok\":true,\"checks\":146,\"errors\":[],\"runtime_input_sha256\":\"b3592280fd02bb68cd9b63720f6d6b8fae88b86c81597bb730a3f7367e0f3117\",\"readiness_evidence_checked\":false,\"completion_evidence_checked\":true,\"historical_only\":true,\"current_runtime_verified\":false,\"successor_scope_checked\":true,\"frozen_checkout_cleanup_passed\":true}\n",
+      "stderr": ""
+    },
+    {
+      "event_time": "2026-09-18 19:46:18",
+      "event_epoch_ms": "1789731978205",
+      "command": "node scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "exit_code": 0,
+      "stdout": "{\"task\":\"P2-012\",\"state\":\"DONE\",\"ok\":true,\"checks\":265,\"errors\":[],\"runtime_input_sha256\":\"2a4094a8cdc58265c830c59b03201c0f87e2b69e35ee078023545a3d0b60f078\",\"readiness_evidence_checked\":false,\"completion_evidence_checked\":true,\"review_evidence_checked\":true,\"live_validation\":\"NOT_RUN\",\"historical_live_validation\":\"PASSED\",\"second_commit_created\":true,\"review_fix_commit_created\":true,\"http_openapi_review_fix_commit_created\":true,\"subscription_review_fix_commit_created\":true,\"paused_destination_fix_commit_created\":true,\"reporter_refresh_fix_commit_created\":true,\"historical_only\":true,\"verification_revision\":\"8c332710dad9b6cf3f6796f3344c04d1c710ddf3\",\"successor_task\":\"P2-G2\",\"current_runtime_verified\":false,\"successor_scope_checked\":true,\"frozen_checkout_cleanup_passed\":true}\n",
+      "stderr": ""
+    },
+    {
+      "event_time": "2026-09-18 19:46:22",
+      "event_epoch_ms": "1789731982147",
+      "command": "node scripts/validate-p2-g2-service-loop.mjs",
+      "exit_code": 0,
+      "stdout": "{\"ok\":true,\"gate\":\"P2-G2\",\"checks\":16,\"errors\":[],\"candidate_fingerprint\":\"b7172aa61e9b963fd5a689220727e1704689a2d932a93ac697388626ec78331e\",\"readiness_checked\":false,\"validation_scope\":\"LOCAL_IMPLEMENTATION_AND_VALIDATION\",\"parent_readiness\":\"HISTORICAL_CREATION_V2_NOT_CURRENT_WEB_READINESS\",\"live_validation\":\"NOT_RUN\",\"database_writes\":false,\"provider_calls\":0}\n",
+      "stderr": ""
+    },
+    {
+      "event_time": "2026-09-18 19:46:22",
+      "event_epoch_ms": "1789731982603",
+      "command": "node scripts/p2-g2-yixiaoxiu-check.mjs",
+      "exit_code": 0,
+      "stdout": "{\"ok\":true,\"work_item\":\"P2-G2-YXX-TICKET-ENTRY\",\"check_scope\":\"SOURCE_PREPARATION\",\"candidate_fingerprint\":\"b7172aa61e9b963fd5a689220727e1704689a2d932a93ac697388626ec78331e\",\"persistent_defaults_off\":true,\"readiness_checked\":false,\"live_authorized\":false,\"database_connections\":0,\"provider_calls\":0}\n",
+      "stderr": ""
+    }
+  ],
+  "require_ready": "NOT_RUN"
+}

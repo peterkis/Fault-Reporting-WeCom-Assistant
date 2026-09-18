@@ -6,6 +6,7 @@ import { G2_ROOT, g2CandidateInventory, requirePreparedG2Candidate } from '../sr
 import { G2_FROZEN_MERGE, g2PredecessorScopeValid } from '../src/p2-g2-predecessor-verification.mjs';
 import { G2_SCENARIO_IDS } from '../src/p2-g2-gate-evaluator.mjs';
 import { G2_REQUIRED_FLAGS, G2_FORBIDDEN_FLAGS, g2Hash } from '../src/p2-g2-validation-config.mjs';
+import {readYxxLocalValidationScope} from '../src/yxx-self-service-validation-scope.mjs';
 
 export function validateG2({requireReady=false}={}) {
   const errors=[];let checks=0;
@@ -15,11 +16,13 @@ export function validateG2({requireReady=false}={}) {
   const git=args=>execFileSync('git',['-c','safe.directory='+G2_ROOT.replaceAll('\\','/'),...args],
     {cwd:G2_ROOT,encoding:'utf8',windowsHide:true});
   const current=json('plans/current_phase.json');
+  let localScope=null;try{localScope=readYxxLocalValidationScope(G2_ROOT);}catch(e){check(false,e.code??'local successor scope invalid');}
   for(const file of ['MANIFEST.json','plans/current_phase.json','plans/master_backlog.json','plans/parallel_workstreams.json','tasks/master_backlog.json','project_summary.json']){
     const value=json(file);check(g2PredecessorScopeValid(file==='project_summary.json'?value.project:value),'successor state: '+file);
   }
   check(git(['merge-base',G2_FROZEN_MERGE,'HEAD']).trim()===G2_FROZEN_MERGE,'frozen merge ancestry');
-  check(!git(['diff','--name-only',G2_FROZEN_MERGE,'--','database/migrations']).trim(),'unchanged migrations 001-032');
+  const migrationChanges=git(['diff','--name-only',G2_FROZEN_MERGE,'--','database/migrations']).trim().split(/\r?\n/u).filter(Boolean);
+  check(migrationChanges.every(file=>localScope&&['database/migrations/033_yxx_self_service_intake.sql','database/migrations/034_yxx_self_service_direct_chat_check.sql'].includes(file)),'unchanged migrations 001-032; exact pinned 033/034 successor');
   check(!git(['ls-files','--others','--exclude-standard','--','database/migrations']).trim(),'no new migration');
   check(!git(['diff','--name-only','--diff-filter=MDR',G2_FROZEN_MERGE,'--','evidence']).trim(),'historical evidence immutable');
   const policy=json('config_examples/p2-g2-validation-policy.example.json');
@@ -33,11 +36,11 @@ export function validateG2({requireReady=false}={}) {
     const schema=json('contracts/p2_g2_'+name+'.schema.json');check(schema.type==='object'&&schema.additionalProperties===false,'closed schema: '+name);
   }
   const inventory=g2CandidateInventory();
-  const readyRequired=requireReady||current.p2_g2_status==='READY_FOR_LIVE_E2E';
+  const readyRequired=requireReady||(!localScope&&current.p2_g2_status==='READY_FOR_LIVE_E2E');
   if(readyRequired){try{requirePreparedG2Candidate(inventory.fingerprint);check(true,'current candidate readiness');}
     catch(e){check(false,'current candidate readiness: '+(e.code??'INVALID'));}}
   return {ok:errors.length===0,gate:'P2-G2',checks,errors,candidate_fingerprint:inventory.fingerprint,
-    readiness_checked:readyRequired,live_validation:'NOT_RUN',database_writes:false,provider_calls:0};
+    readiness_checked:readyRequired,validation_scope:localScope?.status??'PARENT_GATE',parent_readiness:localScope?.parent_readiness??null,live_validation:'NOT_RUN',database_writes:false,provider_calls:0};
 }
 export function main(argv=process.argv.slice(2)){
   if(argv.includes('--help')){console.log('Usage: node scripts/validate-p2-g2-service-loop.mjs [--require-ready]\nOffline governance, frozen history, scenario integrity and candidate checks. READY state always requires current full regression and two independent reviews.');return;}
