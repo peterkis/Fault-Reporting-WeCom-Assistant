@@ -1,0 +1,95 @@
+TAP version 13
+# Subtest: PR8 member card Worker delivers after the legacy Grant expires without renewing it
+ok 1 - PR8 member card Worker delivers after the legacy Grant expires without renewing it
+  ---
+  duration_ms: 1381.71
+  type: 'test'
+  ...
+# Subtest: P2-016 persisted card delivery, HMAC grants, one-use sessions and reporter-safe timeline
+ok 2 - P2-016 persisted card delivery, HMAC grants, one-use sessions and reporter-safe timeline
+  ---
+  duration_ms: 1549.7475
+  type: 'test'
+  ...
+# Subtest: PR8 member notifications enforce retained delivery authority and preserve retry versus unknown outcomes
+    # Subtest: CONSUMED Grant does not suppress a member notification
+    ok 1 - CONSUMED Grant does not suppress a member notification
+      ---
+      duration_ms: 93.3678
+      type: 'test'
+      ...
+    # Subtest: MISSING Grant does not suppress a member notification
+    ok 2 - MISSING Grant does not suppress a member notification
+      ---
+      duration_ms: 1139.2879
+      type: 'test'
+      ...
+    # Subtest: revoked public reference rejects before SDK
+    ok 3 - revoked public reference rejects before SDK
+      ---
+      duration_ms: 32.3575
+      type: 'test'
+      ...
+    # Subtest: wrong reporter rejects before SDK
+    ok 4 - wrong reporter rejects before SDK
+      ---
+      duration_ms: 30.9396
+      type: 'test'
+      ...
+    # Subtest: wrong Bot rejects before SDK
+    ok 5 - wrong Bot rejects before SDK
+      ---
+      duration_ms: 28.1916
+      type: 'test'
+      ...
+    # Subtest: forged content rejects before SDK
+    ok 6 - forged content rejects before SDK
+      ---
+      duration_ms: 29.2743
+      type: 'test'
+      ...
+    # Subtest: message retention elapsed rejects before SDK
+    ok 7 - message retention elapsed rejects before SDK
+      ---
+      duration_ms: 30.1781
+      type: 'test'
+      ...
+    # Subtest: intake retention elapsed rejects before SDK
+    ok 8 - intake retention elapsed rejects before SDK
+      ---
+      duration_ms: 25.5358
+      type: 'test'
+      ...
+    # Subtest: cross-linked notification Ticket rejects before SDK
+    ok 9 - cross-linked notification Ticket rejects before SDK
+      ---
+      duration_ms: 34.0267
+      type: 'test'
+      ...
+    # Subtest: pre-SDK database interruption retries safely and sends once
+    ok 10 - pre-SDK database interruption retries safely and sends once
+      ---
+      duration_ms: 30.0923
+      type: 'test'
+      ...
+    # Subtest: unknown provider receipt requires reconciliation and cannot auto-resend
+    ok 11 - unknown provider receipt requires reconciliation and cannot auto-resend
+      ---
+      duration_ms: 28.0255
+      type: 'test'
+      ...
+    1..11
+ok 3 - PR8 member notifications enforce retained delivery authority and preserve retry versus unknown outcomes
+  ---
+  duration_ms: 2921.5398
+  type: 'test'
+  ...
+1..3
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5987.2966

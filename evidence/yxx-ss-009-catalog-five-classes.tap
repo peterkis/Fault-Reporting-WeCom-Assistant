@@ -1,0 +1,11 @@
+✔ SS-009 catalog rejects weakened CHECK despite preserved names and fragments (1821.6238ms)
+✔ SS-009 migration check rolls back and five catalog drift classes fail closed (3441.0686ms)
+ℹ SS009_RECEIPT {"event_time":"2026-09-18 22:52:14","event_epoch_ms":"1789743134607","kind":"catalog","status":"PASS","candidate_fingerprint":"7cb9afd31b96cca1cd1ad21cdc7019730d56ad2198ac5f42a7e9e0147f42feda","drift_classes":["COLUMN","CHECK","FK","UNIQUE","INDEX"],"check_rollback":true,"forbidden_timezone_columns":0}
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5417.393

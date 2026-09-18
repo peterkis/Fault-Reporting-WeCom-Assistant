@@ -1,0 +1,15 @@
+{
+  "event_time": "2026-09-19 01:09:32",
+  "event_epoch_ms": "1789751372478",
+  "failed_run": "evidence/yxx-ss-009-full-second-failed-run.json",
+  "failure": "MISSING Grant notification delivery returns null before status assertion; parent fails because child fails",
+  "root_cause": "Fixture snapshots injected worker time before actual notification enqueue. Crossing the physical second boundary makes next_attempt_epoch_ms newer than the injected observation time, so the worker correctly finds no due delivery.",
+  "red": "evidence/yxx-ss-009-notification-delay-probe.tap",
+  "green": "evidence/yxx-ss-009-notification-fixture-green.tap",
+  "inconclusive_probe": "evidence/yxx-ss-009-notification-clock-probe.tap",
+  "fix": "Refresh fixture epoch once after notification transaction; retain deterministic 1100ms boundary crossing in MISSING child; later explicit expiry/retry advances unchanged.",
+  "runtime_changed": false,
+  "assertions_removed": 0,
+  "timeouts_increased": false,
+  "full_rerun_required": true
+}

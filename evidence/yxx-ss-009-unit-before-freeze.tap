@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: SS-009 evidence rejects a forged PASS summary without the matching successful TAP
+ok 1 - SS-009 evidence rejects a forged PASS summary without the matching successful TAP
+  ---
+  duration_ms: 1.7679
+  type: 'test'
+  ...
+# Subtest: SS-009 dedicated proof summaries cannot replace process capacity or catalog observations
+ok 2 - SS-009 dedicated proof summaries cannot replace process capacity or catalog observations
+  ---
+  duration_ms: 16.5582
+  type: 'test'
+  ...
+# Subtest: SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time
+ok 3 - SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time
+  ---
+  duration_ms: 28.6713
+  type: 'test'
+  ...
+# Subtest: SS-009 evidence references reject wrong hashes traversal and linked files
+ok 4 - SS-009 evidence references reject wrong hashes traversal and linked files
+  ---
+  duration_ms: 5.3006
+  type: 'test'
+  ...
+# Subtest: SS-009 governance preserves historical baseline user files parent gate and full collector coverage
+ok 5 - SS-009 governance preserves historical baseline user files parent gate and full collector coverage
+  ---
+  duration_ms: 4295.8363
+  type: 'test'
+  ...
+# Subtest: SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types
+ok 6 - SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types
+  ---
+  duration_ms: 7696.4492
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12273.4878

@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-19 01:47:42",
+  "event_epoch_ms": "1789753662015",
+  "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+  "work_item": "YXX-SS-009",
+  "status": "IMPLEMENTATION_AND_AUTOMATION_COMPLETE",
+  "base_head": "375d47b013017edb858206cc5f3475c9aed77dfd",
+  "tested_head": "e00455ff7982ffe40ddf91a0e764a72071dc88b3",
+  "tested_tree": "5a099ce3600e74881b9a11110590edc7e5a5560b",
+  "live_authorized": false,
+  "remote_review": "NOT_RUN",
+  "full_regression": {
+    "tests": 1176,
+    "pass": 1176,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_files": 190,
+    "candidate_unchanged": true
+  },
+  "run": {
+    "path": "evidence/yxx-ss-009-full-run.json",
+    "encoding": "UTF8_LF",
+    "sha256": "8163174133724fbd6499e97966a097012721bd437e23a190faac81eae34dcdbe"
+  },
+  "tap": {
+    "path": "evidence/yxx-ss-009-full.tap",
+    "encoding": "UTF8_LF",
+    "sha256": "6e3f57015f7c153635959f21119c183b1439c040a607c249babbf2adec3e1aeb"
+  },
+  "case_trace": {
+    "path": "evidence/yxx-ss-009-full-cases.jsonl",
+    "encoding": "UTF8_LF",
+    "sha256": "12d2b363c9b29e57b55dcc409795bce71b217a74431767649a429fcce0914243"
+  },
+  "fault": {
+    "path": "evidence/yxx-ss-009-fault.json",
+    "encoding": "UTF8_LF",
+    "sha256": "3a7804846596661cadb40c4d4e7ce0c1e7c5e432585b5ebad50147442de742c8"
+  },
+  "capacity": {
+    "path": "evidence/yxx-ss-009-capacity.json",
+    "encoding": "UTF8_LF",
+    "sha256": "6fb115590daec1607d27a602564a74203d0ef863ba0cd6a039ead5d248950ba9"
+  },
+  "catalog": {
+    "path": "evidence/yxx-ss-009-catalog.json",
+    "encoding": "UTF8_LF",
+    "sha256": "d57626f979a0444b7e1f25a8bf2d95e5b7393c03c322ce30055cbcd0784f2176"
+  },
+  "browser": {
+    "path": "evidence/yxx-ss-009-browser.json",
+    "encoding": "UTF8_LF",
+    "sha256": "7fb8b4a23f7e39e74477721089bb9f6e7680f7aee072b64dda32162f02bfaa53"
+  },
+  "source_audit": {
+    "path": "evidence/yxx-ss-009-source-audit.json",
+    "encoding": "UTF8_LF",
+    "sha256": "7d4bbcd7ac33c5f47a6e9b8489a43ef4e1ab0529a9d3f46e8e47892a9b9f0299"
+  },
+  "cleanup": {
+    "path": "evidence/yxx-ss-009-cleanup.json",
+    "encoding": "UTF8_LF",
+    "sha256": "0231ae7f4e0d696d9a071cf71f4e1774c4b868ca0a50fed5f8c4d22a2571b18f"
+  },
+  "validators": {
+    "path": "evidence/yxx-ss-009-validators.json",
+    "encoding": "UTF8_LF",
+    "sha256": "35d15c56358d0155104348a75ccd3e9db28148b9f03865ffe5a032a1702859f4"
+  },
+  "review": {
+    "path": "evidence/yxx-ss-009-independent-review.json",
+    "encoding": "UTF8_LF",
+    "sha256": "a6b9f0fe7a20814c2d88c1654e10d4030ae908a3a16d7edcda3126cbf69f00de"
+  },
+  "historical_coverage": {
+    "path": "evidence/yxx-ss-009-historical-coverage.json",
+    "encoding": "UTF8_LF",
+    "sha256": "206f82f8e6eac73a040464ea9bd42e7480e5ba541e8cbc339cf854ac782121fc"
+  },
+  "inventory": {
+    "path": "evidence/yxx-ss-009-source-inventory.json",
+    "encoding": "UTF8_LF",
+    "sha256": "944805ab4415fae458a198980fe415a85c07c1525048ccd9ddc49c6f893c5ec7"
+  },
+  "governance": {
+    "path": "evidence/yxx-ss-009-governance.json",
+    "encoding": "UTF8_LF",
+    "sha256": "495a84f52fcac9b54589112e896d869594729abef2758b3da0405fd692b2c58d"
+  },
+  "time_audit": {
+    "path": "evidence/yxx-ss-009-time-audit.json",
+    "encoding": "UTF8_LF",
+    "sha256": "c6f0dadd9536d0a84a0d34f5484ae57ffdf35ed8eaa31b5811780e28401bed1e"
+  },
+  "matrix": {
+    "path": "evidence/yxx-ss-009-acceptance.json",
+    "encoding": "UTF8_LF",
+    "sha256": "975a133d28301bf88fecc58839a64d66e00bf910723d0a856a3c5eb8ca6009cd"
+  },
+  "limitations": [
+    "Formal natural GC / 2C4G / 60 minutes NOT_RUN",
+    "SS010 PLANNED; SS011 NOT_AUTHORIZED",
+    "Parent G2 historical readiness unchanged; P2-G2-LIVE and AI not started"
+  ],
+  "strict_negative": {
+    "path": "evidence/yxx-ss-009-strict-negative.json",
+    "encoding": "UTF8_LF",
+    "sha256": "d0ce3ac92dfd1298d74ecaff6e7cfc36be3e8c800664cdff6dd6bb09f98d8016"
+  },
+  "local_verification": "PASS"
+}

@@ -1,0 +1,31 @@
+{
+  "event_time": "2026-09-19 01:44:48",
+  "event_epoch_ms": "1789753488682",
+  "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+  "reviews": [
+    {
+      "axis": "SPEC",
+      "reviewer": "/root/ss009_spec_audit",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+      "source": {
+        "path": "evidence/yxx-ss-009-spec-review.json",
+        "encoding": "UTF8_LF",
+        "sha256": "107ce123cb3ad35319a96b5bdc8cdbd1774bf45b37e03d743bfc65e377f1b1df"
+      }
+    },
+    {
+      "axis": "STANDARDS",
+      "reviewer": "/root/ss009_standards_audit",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+      "source": {
+        "path": "evidence/yxx-ss-009-standards-review.json",
+        "encoding": "UTF8_LF",
+        "sha256": "afa2e616c72a4333bf4589682abe5c67cb8d9900c71d15c2803992295ae63ff9"
+      }
+    }
+  ]
+}

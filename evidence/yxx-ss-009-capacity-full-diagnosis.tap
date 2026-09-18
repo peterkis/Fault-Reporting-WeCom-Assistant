@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: SS-009 FULL_SERVICE_LOOP actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers
+not ok 1 - SS-009 FULL_SERVICE_LOOP actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers
+  ---
+  duration_ms: 72016.6814
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-009-capacity.integration.test.mjs:22:66'
+  failureType: 'testCodeFailure'
+  error: 'SS009_RECOVERY_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    until (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-capacity.integration.test.mjs:20:176)
+    async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-capacity.integration.test.mjs:40:9)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-capacity.integration.test.mjs:24:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# SS009_CAPACITY_FAILURE {"profile":"FULL_SERVICE_LOOP","error":"SS009_RECOVERY_TIMEOUT","worker_messages":[{"type":"role-failed","role":"WORKER","error_code":"P2_G2_OWNED_SYNTHETIC_DATABASE_REQUIRED"}],"last_samples":[]}
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 72264.7488

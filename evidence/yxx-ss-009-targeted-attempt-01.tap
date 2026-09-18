@@ -1,0 +1,63 @@
+TAP version 13
+# Subtest: SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket
+ok 1 - SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket
+  ---
+  duration_ms: 15575.7535
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:10:27","event_epoch_ms":"1789744227385","kind":"browser","status":"PASS","candidate_fingerprint":"463ca8ef22c14c61da80faee5596f1c2b6a5b2bda4cf104b862be13b0d8b8d30","screenshots":[{"file":"tmp/ss009-ui/dc53d157-2b84-423f-b128-499eb00400a8.png","width":390,"height":844,"sha256":"456dd080866d15326fc09747ba81b9aa1159c4100c4b8857db14e6358600c8f8"},{"file":"tmp/ss009-ui/dc819b16-b4e0-40ff-9bf6-4ef57401bdd2.png","width":1440,"height":900,"sha256":"07577fbfeca069e018f02665dda3e79be72ea430c76b9c799d5e5efbc327a953"}],"real_pg":true,"real_browser":true,"tickets":2,"external_network_calls":0,"simulated_provider_calls":1}
+# Subtest: SS-009 catalog rejects weakened CHECK despite preserved names and fragments
+ok 2 - SS-009 catalog rejects weakened CHECK despite preserved names and fragments
+  ---
+  duration_ms: 2828.0857
+  type: 'test'
+  ...
+# Subtest: SS-009 migration check rolls back and five catalog drift classes fail closed
+ok 3 - SS-009 migration check rolls back and five catalog drift classes fail closed
+  ---
+  duration_ms: 3745.7205
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:10:34","event_epoch_ms":"1789744234594","kind":"catalog","status":"PASS","candidate_fingerprint":"463ca8ef22c14c61da80faee5596f1c2b6a5b2bda4cf104b862be13b0d8b8d30","drift_classes":["COLUMN","CHECK","FK","UNIQUE","INDEX"],"check_rollback":true,"forbidden_timezone_columns":0}
+# Subtest: SS-009 real process kills recover all acceptance and processing commit boundaries
+ok 4 - SS-009 real process kills recover all acceptance and processing commit boundaries
+  ---
+  duration_ms: 7039.9307
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:10:42","event_epoch_ms":"1789744242430","kind":"fault","status":"PASS","candidate_fingerprint":"cd36ea91878fb015201e031564d205d96137532e0ff54a01d89c82e5175d9954","real_kills":5,"cases":[{"action":"accept","barrier":"before-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"accept","barrier":"after-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"before-process","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"before-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"after-commit","receipt_count":1,"ticket_count":1,"recovered":true}],"owned_children_remaining":0,"owned_databases_remaining":0}
+# Subtest: SS-009 a terminated owned PostgreSQL backend preserves accepted input across a fresh processor
+ok 5 - SS-009 a terminated owned PostgreSQL backend preserves accepted input across a fresh processor
+  ---
+  duration_ms: 3539.6176
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:10:45","event_epoch_ms":"1789744245971","kind":"fault","status":"PASS","candidate_fingerprint":"cd36ea91878fb015201e031564d205d96137532e0ff54a01d89c82e5175d9954","owned_backend_terminated":true,"recovery_verified":true,"shared_database_service_stopped":false}
+# Subtest: SS-009 governance preserves historical baseline user files parent gate and full collector coverage
+ok 6 - SS-009 governance preserves historical baseline user files parent gate and full collector coverage
+  ---
+  duration_ms: 2577.5913
+  type: 'test'
+  ...
+# Subtest: SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types
+ok 7 - SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types
+  ---
+  duration_ms: 3774.9947
+  type: 'test'
+  ...
+# Subtest: SS-009 lost actual HTTP response recovers the same authorized command without a second intake
+ok 8 - SS-009 lost actual HTTP response recovers the same authorized command without a second intake
+  ---
+  duration_ms: 2972.0074
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:10:55","event_epoch_ms":"1789744255777","kind":"fault","status":"PASS","candidate_fingerprint":"cd36ea91878fb015201e031564d205d96137532e0ff54a01d89c82e5175d9954","http_response_lost":true,"same_command_recovered":true,"cross_member_denied":true,"batch_max":20}
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 43359.0136

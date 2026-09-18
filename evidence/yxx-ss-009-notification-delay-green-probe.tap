@@ -1,0 +1,83 @@
+TAP version 13
+# Subtest: PR8 member notifications enforce retained delivery authority and preserve retry versus unknown outcomes
+    # Subtest: CONSUMED Grant does not suppress a member notification
+    ok 1 - CONSUMED Grant does not suppress a member notification
+      ---
+      duration_ms: 1222.5352
+      type: 'test'
+      ...
+    # Subtest: MISSING Grant does not suppress a member notification
+    ok 2 - MISSING Grant does not suppress a member notification
+      ---
+      duration_ms: 1187.577
+      type: 'test'
+      ...
+    # Subtest: revoked public reference rejects before SDK
+    ok 3 - revoked public reference rejects before SDK
+      ---
+      duration_ms: 1230.8796
+      type: 'test'
+      ...
+    # Subtest: wrong reporter rejects before SDK
+    ok 4 - wrong reporter rejects before SDK
+      ---
+      duration_ms: 1206.4523
+      type: 'test'
+      ...
+    # Subtest: wrong Bot rejects before SDK
+    ok 5 - wrong Bot rejects before SDK
+      ---
+      duration_ms: 1226.7401
+      type: 'test'
+      ...
+    # Subtest: forged content rejects before SDK
+    ok 6 - forged content rejects before SDK
+      ---
+      duration_ms: 1197.4967
+      type: 'test'
+      ...
+    # Subtest: message retention elapsed rejects before SDK
+    ok 7 - message retention elapsed rejects before SDK
+      ---
+      duration_ms: 1213.9163
+      type: 'test'
+      ...
+    # Subtest: intake retention elapsed rejects before SDK
+    ok 8 - intake retention elapsed rejects before SDK
+      ---
+      duration_ms: 1192.1536
+      type: 'test'
+      ...
+    # Subtest: cross-linked notification Ticket rejects before SDK
+    ok 9 - cross-linked notification Ticket rejects before SDK
+      ---
+      duration_ms: 2319.6253
+      type: 'test'
+      ...
+    # Subtest: pre-SDK database interruption retries safely and sends once
+    ok 10 - pre-SDK database interruption retries safely and sends once
+      ---
+      duration_ms: 1226.4909
+      type: 'test'
+      ...
+    # Subtest: unknown provider receipt requires reconciliation and cannot auto-resend
+    ok 11 - unknown provider receipt requires reconciliation and cannot auto-resend
+      ---
+      duration_ms: 1209.0982
+      type: 'test'
+      ...
+    1..11
+ok 1 - PR8 member notifications enforce retained delivery authority and preserve retry versus unknown outcomes
+  ---
+  duration_ms: 18480.4448
+  type: 'test'
+  ...
+1..1
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18739.7444

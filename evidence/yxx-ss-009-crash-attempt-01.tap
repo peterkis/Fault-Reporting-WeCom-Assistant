@@ -1,0 +1,10 @@
+✔ SS-009 real process kills recover all acceptance and processing commit boundaries (4790.6659ms)
+ℹ SS009_RECEIPT {"event_time":"2026-09-18 22:53:21","event_epoch_ms":"1789743201474","kind":"fault","status":"PASS","candidate_fingerprint":"50bf065ec5d24ddcd5f290fd3509b4d227bc77bfc9af7e56471873db7cebd2d0","real_kills":5,"cases":[{"action":"accept","barrier":"before-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"accept","barrier":"after-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"before-process","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"before-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"after-commit","receipt_count":1,"ticket_count":1,"recovered":true}],"owned_children_remaining":0,"owned_databases_remaining":0}
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5125.6821

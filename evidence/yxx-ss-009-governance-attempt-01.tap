@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: SS-009 governance preserves historical baseline user files parent gate and full collector coverage
+ok 1 - SS-009 governance preserves historical baseline user files parent gate and full collector coverage
+  ---
+  duration_ms: 2088.3397
+  type: 'test'
+  ...
+# Subtest: SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types
+not ok 2 - SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types
+  ---
+  duration_ms: 3295.1389
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-009-governance.test.mjs:26:1'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\contracts\\yxx_self_service_command_receipt.schema.json'"
+  code: 'ENOENT'
+  stack: |-
+    readFileSync (node:fs:441:20)
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-governance.test.mjs:41:16)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5534.3283

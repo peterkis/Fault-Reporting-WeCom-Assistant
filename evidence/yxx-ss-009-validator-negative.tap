@@ -1,0 +1,11 @@
+✔ SS-009 evidence rejects a forged PASS summary without the matching successful TAP (0.8624ms)
+✔ SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time (18.5035ms)
+✔ SS-009 evidence references reject wrong hashes traversal and linked files (5.8706ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 176.1174

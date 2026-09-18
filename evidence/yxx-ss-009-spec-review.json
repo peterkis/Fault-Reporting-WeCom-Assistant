@@ -1,0 +1,62 @@
+{
+  "event_time": "2026-09-19 01:44:22",
+  "event_epoch_ms": "1789753462945",
+  "axis": "SPEC",
+  "reviewer": "/root/ss009_spec_audit",
+  "recorded_by": "/root",
+  "reviewed_head": "e00455ff7982ffe40ddf91a0e764a72071dc88b3",
+  "reviewed_tree": "5a099ce3600e74881b9a11110590edc7e5a5560b",
+  "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+  "scope": "CUMULATIVE_IMPLEMENTATION_AND_FROZEN_FULL_EXECUTION",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [
+    {
+      "severity": "P2",
+      "description": "Restart pump now scans pending without ref",
+      "resolved": true
+    },
+    {
+      "severity": "P2",
+      "description": "Measured post-close resource registry replaces hardcoded cleanup",
+      "resolved": true
+    },
+    {
+      "severity": "P2",
+      "description": "Official A/B historical fact and dedicated review/cleanup references",
+      "resolved": true
+    },
+    {
+      "severity": "P2",
+      "description": "A to B same-browser replacement during locked write",
+      "resolved": true
+    }
+  ],
+  "raw_execution_directory": "tmp/p2-g2-tests-6f72511f-a6a5-4c8a-a8df-7b4b41bf715f",
+  "verified": {
+    "tests": 1176,
+    "pass": 1176,
+    "test_files": 190,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "candidate_unchanged": true,
+    "cleanup_receipts": 11,
+    "owned_residuals": 0,
+    "historical_member_scenarios": 48,
+    "historical_g2_scenarios": 37,
+    "historical_sources": 202,
+    "normal_input_sources": 122
+  },
+  "summary": "Independent SPEC agent verified exact scenario bindings, five real kills, supplement/backend/HTTP recovery, both prescribed capacity profiles, browser/shared Ticket, measured cleanup and preserved historical limitations.",
+  "publication_gates_at_review": "Binder and actual 20-variant strict tamper checks NOT_RUN at review; must complete separately",
+  "preserved_limitations": [
+    "D12-005 unverified",
+    "D12-023 future P3",
+    "Existing semantic adjudications retained; original_semantics_all_passed=false",
+    "No remote review or live authorization"
+  ]
+}
