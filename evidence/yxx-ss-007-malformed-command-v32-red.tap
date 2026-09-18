@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: SS-007 command recovery rejects every query before dispatch or route fallthrough
+not ok 1 - SS-007 command recovery rejects every query before dispatch or route fallthrough
+  ---
+  duration_ms: 90.7438
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-http-errors.test.mjs:48:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    not-a-uuid
+    
+    404 !== 400
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 400
+  actual: 404
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-http-errors.test.mjs:73:14)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 214.3957

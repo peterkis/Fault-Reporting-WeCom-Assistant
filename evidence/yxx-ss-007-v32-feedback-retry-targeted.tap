@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: SS-007 supplement terminal errors resume polling after a slow POST consumes the timer
+ok 1 - SS-007 supplement terminal errors resume polling after a slow POST consumes the timer
+  ---
+  duration_ms: 9318.8091
+  type: 'test'
+  ...
+# Subtest: SS-007 pending GET recovery survives periodic same-scope CSRF rotation and reaches manual retry
+ok 2 - SS-007 pending GET recovery survives periodic same-scope CSRF rotation and reaches manual retry
+  ---
+  duration_ms: 14730.2509
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24410.4781
