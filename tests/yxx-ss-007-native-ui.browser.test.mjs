@@ -850,6 +850,35 @@ test('SS-007 pending recovery stays GET-only, survives 404, and is discarded on 
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
+test('SS-007 pending GET recovery survives periodic same-scope CSRF rotation and reaches manual retry', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000096';
+  try {
+    f.state.commandStatusResponses = Array.from({ length: 5 }, () => Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 }));
+    f.state.commandStatusResponses.push({ status: 'ACCEPTED', client_command_id: commandId, request_ref: REFS.A,
+      intake_no: 'INT-20260917-0001', accepted_revision: '1', accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' });
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scope}'}));document.dispatchEvent(new Event('visibilitychange'))`);
+    await waitForState(() => f.state.commandStatusCalls.length === 1);
+    f.state.csrfOverride = 'periodic-rotated-csrf-01234567890123456789';
+    await browser.waitFor(`window.__yxx_csrf==='${f.state.csrfOverride}'`);
+    await waitForState(() => f.state.commandStatusCalls.length === 5, 6000);
+    await browser.waitFor("document.querySelector('#retry-pending')?.hidden===false");
+    const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+    assert.equal(pending.id, commandId); assert.equal(pending.scope, scope);
+    assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled&&document.querySelector('#submit-supplement').disabled"), true);
+    await browser.evaluate("document.querySelector('#retry-pending').click()");
+    await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+    assert.equal(f.state.commandStatusCalls.length, 6);
+    assert.ok(f.state.commandStatusCalls.every(item => item.member === 'A' && item.clientCommandId === commandId));
+    assert.equal(f.state.commandCalls.length, 0); assert.equal(f.state.supplementCalls.length, 0);
+    assert.equal(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
 test('SS-007 pending recovery retries only GET, then requires an explicit bounded restart', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   const commandId = '00000000-0000-4000-8000-000000000098';

@@ -217,14 +217,14 @@ async function loadOlderTimeline(){
  }catch(error){if(error.name!=='AbortError'&&ownsOperation(operation)){if(error.status===404)clearDetailState();setStatus(error.status?messageFor(error.status):messageFor(503),'error');}}
  finally{if(finishOperation(operation)){ $('load-older-timeline').disabled=false;schedule(); }}
 }
-function schedulePendingRecovery(id,generation,csrf){
+function schedulePendingRecovery(id,generation){
  clearTimeout(state.pendingTimer);
  if(state.pendingAttempts>=5){$('retry-pending').hidden=false;setStatus(state.pendingLegacy?'这是一条旧版恢复记录，归属范围未知。仍未查到结果，可稍后继续查询；不会自动重交。':'仍未查到上次提交结果。可稍后点击“查询上次提交结果”；不会重复提交。','error');return;}
  const delay=pendingDelays[Math.max(0,state.pendingAttempts-1)];
  const recoveryScope=state.recoveryScope;
  const retry=()=>{
   state.pendingTimer=null;
-  if(state.pendingCommandId!==id||state.generation!==generation||state.hidden||state.stopped||window.__yxx_csrf!==csrf||state.recoveryScope!==recoveryScope)return;
+  if(state.pendingCommandId!==id||state.generation!==generation||state.hidden||state.stopped||state.recoveryScope!==recoveryScope)return;
   if(state.busy){state.pendingTimer=setTimeout(retry,250);return;}
   void recoverPending();
  };
@@ -238,13 +238,13 @@ async function recoverPending({restart=false}={}){
  if(state.busy)return;
  cancelPendingRecovery(false);
  const operation=beginOperation({busy:true});
- const csrf=window.__yxx_csrf;state.pendingAttempts+=1;let unresolved=false;
+ state.pendingAttempts+=1;let unresolved=false;
  try{
   const result=await fetchJson(`/api/yixiaoxiu/commands/${id}`,{},operation.signal);
   if(!ownsOperation(operation))return;
   const receipt=acceptedReceipt(result.body,id);forget();location.assign(`${ROOT}reports/${receipt.request_ref}`);return;
  }catch(error){if(error.name==='AbortError')return;if(ownsOperation(operation)){unresolved=true;if(error.status===404)setStatus('上次命令尚未可查询，正在有限重查；不会重复提交。','error');else setStatus('上次命令尚未确认，正在有限重查；不会重复提交。','error');}}
- finally{if(finishOperation(operation)){syncPendingButtons();schedule();if(unresolved) schedulePendingRecovery(id,operation.generation,csrf);}}
+ finally{if(finishOperation(operation)){syncPendingButtons();schedule();if(unresolved) schedulePendingRecovery(id,operation.generation);}}
 }
 async function submitNew(event){
  event.preventDefault();if(state.busy)return;
@@ -266,7 +266,7 @@ async function submitNew(event){
   if(error.name==='AbortError')return;
   if(error.status&&error.status<500&&(ownsOperation(operation)||error.current_operation))forget();
   if(ownsOperation(operation))setStatus(error.status?messageFor(error.status):'结果未知，请保留本次命令并稍后查询。','error');
-  if((!error.status||error.status>=500)&&ownsOperation(operation))schedulePendingRecovery(id,operation.generation,window.__yxx_csrf);
+  if((!error.status||error.status>=500)&&ownsOperation(operation))schedulePendingRecovery(id,operation.generation);
  }finally{if(finishOperation(operation))syncPendingButtons();}
 }
 async function submitSupplement(event){
@@ -286,7 +286,7 @@ async function submitSupplement(event){
   if(error.status&&error.status<500&&(ownsOperation(operation)||error.current_operation))forget();
   if(error.status===409&&ownsOperation(operation)){state.detailEtag=null;refresh=true;conflictRefresh=true;}
   if(ownsOperation(operation))setStatus(error.status===409?'版本已变化，正在刷新；草稿已保留。':error.status?messageFor(error.status):'结果未知，请保留本次命令并稍后查询。');
-  if((!error.status||error.status>=500)&&ownsOperation(operation))schedulePendingRecovery(id,operation.generation,window.__yxx_csrf);
+  if((!error.status||error.status>=500)&&ownsOperation(operation))schedulePendingRecovery(id,operation.generation);
  }finally{if(finishOperation(operation)){syncPendingButtons();if(state.detail&&validGeneration(operation.generation))schedule();}}
  if(refresh&&validGeneration(operation.generation)){await loadDetail();if(conflictRefresh&&validGeneration(operation.generation))setStatus('版本已变化，已刷新到最新版本；请确认草稿后重新提交。','error');}
 }
