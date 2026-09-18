@@ -84,8 +84,7 @@ function validatedReadAuth(auth, fallbackProfile, fallbackFlags) {
     || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== fallbackFlags.YIXIAOXIU_SELF_SERVICE_ENABLED
     || selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== fallbackFlags.YIXIAOXIU_MY_REPORTS_ENABLED
     || !['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(selectedProfile)
-    || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== true
-    || selectedProfile === 'MEMBER_SELF_SERVICE' && selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== true) {
+    || selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== true) {
     fail('YXX_MEMBER_READ_DISABLED');
   }
   const binding = text(auth.canonical_reporter_binding, 'YXX_COMMAND_AUTH_INVALID', 128);

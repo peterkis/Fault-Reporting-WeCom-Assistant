@@ -1,0 +1,10 @@
+{
+  "profile": "OAUTH_ONLY",
+  "YIXIAOXIU_SELF_SERVICE_ENABLED": false,
+  "YIXIAOXIU_MY_REPORTS_ENABLED": false,
+  "web_delivery_policy": "APP_ONLY",
+  "self_app_pool_max": 4,
+  "full_role_pool_max": { "APP": 4, "WORKER": 2, "GATEWAY": 1 },
+  "self_pump": { "batch_default": 10, "batch_maximum": 20, "poll_milliseconds": 5000, "in_flight_maximum": 1 },
+  "live_authorized": false
+}

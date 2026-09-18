@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
+import {createYxxDelegatedIdentityMapping,yxxIdentityConfigHash} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {entryConfig} from './helpers/p2-g2-yixiaoxiu-fixture.mjs';
 import {validateYxxEntryConfig} from '../src/p2-g2-yixiaoxiu-contract.mjs';
 import {createYxxMemberAuthorizer} from '../src/p2-g2-yixiaoxiu-authorizer.mjs';
@@ -68,7 +68,7 @@ test('delegated conversion rejects a non-cooperative Provider within its startup
  await assert.rejects(createYxxDelegatedIdentityMapping({config,accessTokenProvider:async()=> 'token',fetchImpl:async(_url,options)=>{signal=options.signal;return new Promise(()=>{});}}),{code:'YXX_ENTRY_UNAVAILABLE'});
  assert.equal(signal.aborted,true);assert.ok(Date.now()-started<7000);
 });
-test('readonly check stays offline and conversion failure prevents startup; full service loop cannot inherit mapped mode',async()=>{
+test('readonly check stays offline and conversion failure prevents startup; full mapped mode requires exact config proof',async()=>{
  const directory=mkdtempSync('tmp/yxx-mapping-check-'),file=directory+'/config.json';
  const deployment={...config,proofKind:'LIVE',proofRef:'synthetic-unit-proof-not-live-evidence',validationProfile:'DEPLOYMENT'};
  writeFileSync(file,JSON.stringify({reporterMemberEntry:deployment}));
@@ -80,6 +80,8 @@ test('readonly check stays offline and conversion failure prevents startup; full
  try{
   await serve(['--check'],env);assert.equal(calls,0);
   await assert.rejects(serve(['--serve'],env),{code:'YXX_ENTRY_UNAVAILABLE'});assert.equal(calls,2);
-  assert.throws(()=>readYxxG2AppConfiguration({manifest:{scope:{reporter_access_policy:'MEMBER_REQUIRED'}},env:{...env,YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG_JSON:JSON.stringify(deployment)}}),{code:'YXX_ENTRY_IDENTITY_NAMESPACE_UNVERIFIED'});
+  const fullEnv={...env,WECOM_BOT_ID:deployment.botId,YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG_JSON:JSON.stringify(deployment)};
+  assert.throws(()=>readYxxG2AppConfiguration({manifest:{scope:{reporter_access_policy:'MEMBER_REQUIRED'}},env:fullEnv}),{code:'YXX_ENTRY_CONFIG_INVALID'});
+  assert.deepEqual(readYxxG2AppConfiguration({manifest:{mode:'live',scope:{reporter_access_policy:'MEMBER_REQUIRED',member_entry_config_sha256:yxxIdentityConfigHash(deployment)}},env:fullEnv}),validateYxxEntryConfig(deployment));
  }finally{globalThis.fetch=original;unlinkSync(file);rmdirSync(directory);}
 });

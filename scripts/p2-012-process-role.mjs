@@ -17,11 +17,11 @@ const access=pool=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:proce
 const personAuthorizer=pool=>createP2012PersonDestinationAuthorizer({pool,botId:process.env.P2_012_SCOPE_BOT_ID,
   personHashes:(process.env.P2_012_TEST_USER_TARGET_HASHES??'').split(',').filter(Boolean),
   groupHashes:(process.env.P2_012_TEST_GROUP_TARGET_HASHES??'').split(',').filter(Boolean)});
-export function createP2012WorkerExtension({pool,reporterAccess,identityHashKey,personDestinationAuthorizer,testLabel=true,communicationAppend,ticketNotificationAdditionalEvents=[],directoryPort}){
+export function createP2012WorkerExtension({pool,reporterAccess,identityHashKey,personDestinationAuthorizer,testLabel=true,communicationAppend,ticketNotificationAdditionalEvents=[],directoryPort,yxxSelfService=null}){
   const incident=createP2012WorkbenchExtension({pool,featureFlags:P2012_TEST_FLAGS,testLabel,communicationAppend});
   const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents,explicitReferenceEnabled:true});
   const realtime=createP2016RealtimeProjector({pool,enabled:true});
-  const orchestrator=createP2016OrchestrationWorker({pool,notifications,realtime,identityHmacKey:identityHashKey,personDestinationAuthorizer,communicationAppend,directoryPort});
+  const orchestrator=createP2016OrchestrationWorker({pool,notifications,realtime,identityHmacKey:identityHashKey,personDestinationAuthorizer,communicationAppend,directoryPort,yxxSelfService});
   const closure=createTicketClosureService({pool,beforeTransaction:realtime.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async input=>{
     const n=await notifications.project(input);await realtime.ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
   }}});

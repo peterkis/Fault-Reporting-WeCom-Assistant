@@ -171,6 +171,8 @@ export function normalizeRealtimeAuthorization(value) {
       'allowed_session_ids',
       'allowedSessionIds',
       'allowed_thread_ids',
+      'allowed_system_ticket_ids',
+      'allowedSystemTicketIds',
       'allowedThreadIds',
       'allow_system_events',
       'allowSystemEvents',
@@ -210,6 +212,7 @@ export function normalizeRealtimeAuthorization(value) {
     return realtimeEventLog.normalizeRealtimeAuthorization({
       allowed_session_ids: aliasedValue('allowed_session_ids', 'allowedSessionIds'),
       allowed_thread_ids: aliasedValue('allowed_thread_ids', 'allowedThreadIds'),
+      allowed_system_ticket_ids: aliasedValue('allowed_system_ticket_ids', 'allowedSystemTicketIds'),
       allow_system_events: aliasedValue('allow_system_events', 'allowSystemEvents'),
       allow_restricted_admin: aliasedValue('allow_restricted_admin', 'allowRestrictedAdmin'),
     });

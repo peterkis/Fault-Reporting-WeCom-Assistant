@@ -4,7 +4,7 @@ import { syncBuiltinESMExports } from 'node:module';
 import { validateG2Manifest, failG2, g2Hash } from './p2-g2-validation-config.mjs';
 
 let installed=false;
-export function installG2NetworkBoundary(manifest,{memberOAuthEnabled=false}={}){
+export function installG2NetworkBoundary(manifest,{memberOAuthEnabled=false,memberDelegatedMappingEnabled=false}={}){
   if(typeof memberOAuthEnabled!=='boolean')failG2('NETWORK_ENDPOINT_NOT_APPROVED');
   manifest=validateG2Manifest(manifest);if(installed)failG2('NETWORK_BOUNDARY_ALREADY_INSTALLED');
   const allowed=new Set(['http://127.0.0.1:'+manifest.listen_port,manifest.reporter_origin]);
@@ -40,7 +40,12 @@ export function installG2NetworkBoundary(manifest,{memberOAuthEnabled=false}={})
         &&Boolean(parameters.get('code'))&&Buffer.byteLength(parameters.get('code'))<=512&&Boolean(parameters.get('access_token'))&&parameters.get('access_token').length<=4096)
         ||(target.pathname==='/cgi-bin/gettoken'&&parameters.getAll('corpid').length===1&&parameters.getAll('corpsecret').length===1
           &&Boolean(parameters.get('corpid'))&&parameters.get('corpid').length<=128&&Boolean(parameters.get('corpsecret'))&&parameters.get('corpsecret').length<=512));
-    if((!allowed.has(target.origin)&&!approvedWebhook&&!approvedDirectory&&!approvedMemberOAuth)||target.username||target.password||value?.socketPath)failG2('NETWORK_ENDPOINT_NOT_APPROVED');
+    const approvedMapping=memberOAuthEnabled&&memberDelegatedMappingEnabled&&manifest.mode==='live'
+      &&manifest.scope.reporter_access_policy==='MEMBER_REQUIRED'&&target.origin==='https://qyapi.weixin.qq.com'
+      &&method==='POST'&&target.pathname==='/cgi-bin/batch/userid_to_openuserid'&&!target.hash
+      &&parameters.size===1&&Boolean(parameters.get('access_token'))&&parameters.get('access_token').length<=4096
+      &&(!overrides?.path||overrides.path===target.pathname+target.search);
+    if((!allowed.has(target.origin)&&!approvedWebhook&&!approvedDirectory&&!approvedMemberOAuth&&!approvedMapping)||target.username||target.password||value?.socketPath)failG2('NETWORK_ENDPOINT_NOT_APPROVED');
     const servername=overrides?.servername??value?.servername;
     if(servername&&servername!==target.hostname)failG2('NETWORK_ENDPOINT_NOT_APPROVED');
     const headers=overrides?.headers??value?.headers;

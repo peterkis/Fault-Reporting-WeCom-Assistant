@@ -118,7 +118,7 @@ async function startFixture({ enabled = true } = {}) {
   const origin = `http://127.0.0.1:${reservation.address().port}`;
   await new Promise(resolve => reservation.close(resolve));
   const values = fixture(origin);
-  const native = enabled ? values.native : createYxxSelfServiceNativeHttp({ ...values.config, featureFlags: { ...FLAGS, YIXIAOXIU_SELF_SERVICE_ENABLED: false } });
+  const native = enabled ? values.native : createYxxSelfServiceNativeHttp({ ...values.config, featureFlags: { YIXIAOXIU_MY_REPORTS_ENABLED: false, YIXIAOXIU_SELF_SERVICE_ENABLED: false } });
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, origin);
     adaptSyntheticSession(request, response, url);

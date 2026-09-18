@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {allowYxxReadinessReportRefresh} from '../src/p2-g2-yixiaoxiu-readiness.mjs';
+import {readYxxLocalValidationScope} from '../src/yxx-self-service-validation-scope.mjs';
 import {g2CandidateInventory,requirePreparedG2Candidate} from '../src/p2-g2-candidate.mjs';
 
 const root = process.cwd();
@@ -223,9 +224,10 @@ const yxxAuthorized=p2g2Authorized&&views.every(v=>v.yixiaoxiu_member_ticket_ent
   &&v.yixiaoxiu_member_ticket_entry.authorization_evidence==='evidence/p2-g2-yxx-entry-start-authorization.md');
 const claimsReady=value=>value&&typeof value==='object'&&(value.p2_g2_status==='READY_FOR_LIVE_E2E'
   ||value.implementation_authorization_status==='P2_G2_READY_FOR_LIVE_E2E'||Object.values(value).some(claimsReady));
+let localScope=null;try{localScope=readYxxLocalValidationScope(root);}catch{check(false,'valid pinned local self-service successor scope');}
 let preservedCurrentReports=allowYxxReadinessReportRefresh({changes:historicalEvidence,authorized:yxxAuthorized,
   readBaseline:file=>execFileSync('git',['show','origin/main:'+file],{cwd:root}),readSnapshot:file=>fs.readFileSync(path.join(root,file)),
-  ready:stateFiles.some(file=>claimsReady(json(file))),verifyReady:()=>requirePreparedG2Candidate(g2CandidateInventory(root).fingerprint,root)});
+  ready:!localScope&&stateFiles.some(file=>claimsReady(json(file))),verifyReady:()=>requirePreparedG2Candidate(g2CandidateInventory(root).fingerprint,root)});
 if(historicalEvidence.length&&preservedCurrentReports){
   try{
     const authorization='evidence/p2-g2-yxx-entry-start-authorization.md';

@@ -120,8 +120,7 @@ function operationAllowed(context, operation, source) {
     if (selectedSource === 'WEB') fail('YXX_MEMBER_SOURCE_INVALID');
     return true;
   }
-  if (context.flags.YIXIAOXIU_SELF_SERVICE_ENABLED !== true
-    || context.flags.YIXIAOXIU_MY_REPORTS_ENABLED !== true) fail('YXX_MEMBER_READ_DISABLED', 403);
+  if (context.flags.YIXIAOXIU_MY_REPORTS_ENABLED !== true) fail('YXX_MEMBER_READ_DISABLED', 403);
   if (operation === YXX_MEMBER_READ_OPERATIONS.MY_REPORTS && selectedSource !== null && selectedSource !== 'WEB' && selectedSource !== 'BOT') {
     fail('YXX_MEMBER_SOURCE_INVALID');
   }

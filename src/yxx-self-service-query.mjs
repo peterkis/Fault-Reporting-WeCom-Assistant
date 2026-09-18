@@ -303,7 +303,8 @@ export function createYxxSelfServiceQuery({
            AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
            AND i.source_provider='YIXIAOXIU_WEB'`, [ref, context.scope.scopeHash, context.scope.sourceCorpScope, context.scope.sourceAppScope]);
       if (q.rowCount !== 1) fail('YXX_NOT_FOUND', 404);
-      return safeWebDetail({ ...q.rows[0], safe_clarification: null });
+      const detail=safeWebDetail({ ...q.rows[0], safe_clarification: null });
+      return {...detail,can_supplement:detail.can_supplement&&context.write_flag===true&&context.flags.YIXIAOXIU_SELF_SERVICE_ENABLED===true};
     });
   }
 

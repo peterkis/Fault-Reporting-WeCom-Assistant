@@ -200,6 +200,7 @@ export function createYxxSelfServiceNativeHttp({
   const configuredFlags = flags(featureFlags);
   const configured = Object.freeze({ profile, flags: configuredFlags });
   const serviceEnabled = writeEnabled(profile, configuredFlags);
+  const readEnabled = configuredFlags.YIXIAOXIU_MY_REPORTS_ENABLED;
 
   async function currentMember(request, { requireWrite = false } = {}) {
     const token = cookie(request, sessionCookieName);
@@ -223,9 +224,9 @@ export function createYxxSelfServiceNativeHttp({
   }
 
   async function nativePage({ request, response, requestRef }) {
-    if (!serviceEnabled) { page(response, 503, '医小修服务未启用', '当前仅保留原有认证提示。'); return true; }
+    if (!readEnabled) { page(response, 503, '医小修服务未启用', '当前仅保留原有认证提示。'); return true; }
     try {
-      await currentMember(request, { requireWrite: true });
+      await currentMember(request, { requireWrite: serviceEnabled });
       if (requestRef) {
         const detail = await query.detailWithEtag({ request, requestRef });
         if (detail?.status !== 200) throw error(detail?.status === 404 ? 'YXX_NOT_FOUND' : 'YXX_UNAVAILABLE', detail?.status === 404 ? 404 : 503);
@@ -248,20 +249,23 @@ export function createYxxSelfServiceNativeHttp({
     await asset(response, ['self-service.html', 'text/html']); return true;
   }
 
-  const handler = async ({ request, response, url }) => {
-    if (!url.pathname.startsWith(ROOT) && !url.pathname.startsWith('/api/yixiaoxiu/')) return false;
+  const handler = async ({ request, response, url: inputUrl }) => {
+    if (!inputUrl.pathname.startsWith(ROOT) && !inputUrl.pathname.startsWith('/api/yixiaoxiu/')) return false;
+    const url = new URL(request.url ?? '/', publicOrigin);
     const logoutRoute = request.method === 'POST' && url.pathname === `${ROOT}logout`;
     for (const [name, value] of Object.entries(HEADERS)) response.setHeader(name, value);
     try {
+      if(request.headers.host!==origin.host)throw error('YXX_ORIGIN_INVALID',403);
+      if(!request.url.startsWith('/')||request.url.startsWith('//')||request.url.split('?')[0]!==url.pathname)throw error('YXX_INPUT_INVALID');
       if (url.origin !== origin.origin || Buffer.byteLength(request.url ?? '', 'utf8') > 2048) throw error('YXX_INPUT_INVALID');
       if (ASSETS[url.pathname]) {
         if (request.method !== 'GET' || url.search) throw error('YXX_NOT_FOUND', 404);
         await asset(response, ASSETS[url.pathname]); return true;
       }
-      if (url.pathname === ROOT && (url.search === '?auth_return=1' || url.search === '')) {
+      if (request.method === 'GET' && url.pathname === ROOT && (url.search === '?auth_return=1' || url.search === '')) {
         if (url.search === '?auth_return=1') return oauthHttp({ request, response, url });
-        if (!serviceEnabled) return oauthHttp({ request, response, url });
-        try { await currentMember(request, { requireWrite: true }); await asset(response, ['self-service.html', 'text/html']); return true; }
+        if (!readEnabled) return oauthHttp({ request, response, url });
+        try { await currentMember(request, { requireWrite: serviceEnabled }); await asset(response, ['self-service.html', 'text/html']); return true; }
         catch (value) {
           const selected = mapError(value);
           if (selected.status === 401) return await oauthHttp({ request, response, url });
@@ -281,8 +285,9 @@ export function createYxxSelfServiceNativeHttp({
 
       if (url.pathname === '/api/yixiaoxiu/bootstrap' && request.method === 'GET') {
         if (url.search) throw error('YXX_INPUT_INVALID');
-        const context = await currentMember(request, { requireWrite: true });
-        json(response, 200, { authenticated: true, identity_mode: 'MEMBER_SELF_SERVICE', read_only: false,
+        if (!readEnabled) throw error('YXX_FORBIDDEN', 403);
+        const context = await currentMember(request, { requireWrite: serviceEnabled });
+        json(response, 200, { authenticated: true, identity_mode: 'MEMBER_SELF_SERVICE', read_only: !serviceEnabled,
           can_submit: serviceEnabled, can_supplement: serviceEnabled, csrf_token: context.csrf_token,
           recovery_scope: context.recovery_scope }); return true;
       }
@@ -323,6 +328,8 @@ export function createYxxSelfServiceNativeHttp({
         assertOrigin(request, origin.origin); const input = await body(request, 8 * 1024); const context = await currentMember(request, { requireWrite: true });
         if (header(request, 'x-csrf-token') !== context.csrf_token) throw error('YXX_FORBIDDEN', 403);
         const result = await supplement.accept({ request, input, requestRef: supplementMatch[1] });
+        const latest = await currentMember(request, { requireWrite: true });
+        if(latest.recovery_scope!==context.recovery_scope||latest.csrf_token!==context.csrf_token)throw error('YXX_AUTH_RECHECK_FAILED',503);
         json(response, result.replayed ? 200 : 202, { ok: true, replayed: result.replayed === true, receipt: result.receipt,
           location: `${ROOT}reports/${result.receipt.request_ref}` }); return true;
       }
@@ -332,6 +339,8 @@ export function createYxxSelfServiceNativeHttp({
         assertOrigin(request, origin.origin); const input = await body(request, 16 * 1024); const context = await currentMember(request, { requireWrite: true });
         if (header(request, 'x-csrf-token') !== context.csrf_token) throw error('YXX_FORBIDDEN', 403);
         const result = await command.accept({ request, input });
+        const latest = await currentMember(request, { requireWrite: true });
+        if(latest.recovery_scope!==context.recovery_scope||latest.csrf_token!==context.csrf_token)throw error('YXX_AUTH_RECHECK_FAILED',503);
         json(response, result.replayed ? 200 : 202, { ok: true, replayed: result.replayed === true, receipt: result.receipt,
           location: `${ROOT}reports/${result.receipt.request_ref}` }); return true;
       }

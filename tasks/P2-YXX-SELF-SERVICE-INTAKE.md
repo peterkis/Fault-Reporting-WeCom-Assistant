@@ -48,7 +48,8 @@ resolved before the next dependent ticket starts.
 | YXX-SS-005 | COMPLETE | member query authorization, mixed Web/Bot pagination and safe progress evidence |
 | YXX-SS-006 | COMPLETE | supplement command, revision/race/recovery integration evidence |
 | YXX-SS-007 | COMPLETE | `evidence/yxx-ss-007-completion-reconciliation.json`: v33 sources/TAP verified, final PR review and merge reconciled |
-| YXX-SS-008..010 | PLANNED | depend on SS-007 review and real local DB/HTTP assembly |
+| YXX-SS-008 | IN_REVIEW | local assembly implemented; final candidate validation pending |
+| YXX-SS-009..010 | PLANNED | separately scoped regression and readiness closeout |
 | YXX-SS-011 | NOT AUTHORIZED | intentionally out of scope |
 
 ## SS-008 execution baseline
