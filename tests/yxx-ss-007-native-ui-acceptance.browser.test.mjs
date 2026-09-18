@@ -114,6 +114,10 @@ test('SS-007 a new tab in the same browser recovers a closed tab command from du
   let submittingTab;
   let recoveryTab;
   try {
+    // The control tab must not independently claim the durable command when
+    // closing the submitting tab makes it visible again.
+    await navigate('/wecom/yixiaoxiu/self-service.css');
+    await browser.waitFor("location.pathname==='/wecom/yixiaoxiu/self-service.css'&&document.readyState==='complete'");
     const route = `${fixture.origin}/wecom/yixiaoxiu/reports/new`;
     submittingTab = await createTab(browser, route);
     await submittingTab.waitFor("document.querySelector('#new-view')?.hidden===false");
