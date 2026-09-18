@@ -4,7 +4,8 @@ import {readFile} from 'node:fs/promises';
 import {createHash,randomUUID} from 'node:crypto';
 import {createYxxSelfServiceStore,parseYxxRequestInput,parseYxxSupplementInput,YXX_WEB_LIMITS} from '../src/yxx-self-service-store.mjs';
 import {migrateYxxSelfService,yxxCatalogHash} from '../scripts/yxx-self-service-migrate.mjs';
-import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
+import {migrateCurrentBaseline,migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
+import {withP2016IsolatedDatabase,assertNoP2016Residual} from './helpers/p2-016-postgres-harness.mjs';
 
 const databaseUrl=process.env.PILOT_DATABASE_URL;
 
@@ -28,9 +29,11 @@ test('SS-003 migration and store contracts are source-complete',async()=>{
 });
 
 test('SS-003 fresh applied migration, idempotent Web acceptance and source constraints', {skip:!databaseUrl}, async()=>{
-  const applied=await migrateYxxSelfService({databaseUrl});assert.ok(['APPLIED','NOOP_ALREADY_APPLIED'].includes(applied.status));assert.equal(applied.inventory.forbidden_timezone_columns,0);
-  const {Pool}=await import('pg');const pool=new Pool({connectionString:databaseUrl,max:2});
-  try {
+  assert.ok(['localhost','127.0.0.1','[::1]'].includes(new URL(databaseUrl).hostname));
+  await withP2016IsolatedDatabase({databaseUrl,purpose:'yxx003',run:async({pool,databaseUrl:isolated})=>{
+    await migrateCurrentBaseline({databaseUrl:isolated});
+    const applied=await migrateYxxSelfService({databaseUrl:isolated});assert.equal(applied.status,'APPLIED');assert.equal(applied.inventory.forbidden_timezone_columns,0);
+    assert.equal((await migrateYxxSelfService({databaseUrl:isolated})).status,'NOOP_ALREADY_APPLIED');
     const store=createYxxSelfServiceStore({pool,scopeSecret:'yxx-self-service-test-secret-32-bytes'});
     const scope={scopeHash:createHash('sha256').update(randomUUID()).digest('hex'),sourceCorpScope:'synthetic-corp',sourceAppScope:'synthetic-app',proofRef:'tests/synthetic'};
     const input={schema_version:1,client_command_id:randomUUID(),description:'网页自助报修测试',location:{text:'本部8层',unknown:false},service_code:null,impact_scope:'SELF',reported_department_text:null,extension:null};
@@ -58,5 +61,6 @@ test('SS-003 fresh applied migration, idempotent Web acceptance and source const
     await assert.rejects(store.accept({scope,input}),error=>error.code==='YXX_NOT_FOUND'&&error.status===404);
     const events=await pool.query('SELECT event_type FROM intake.service_intake_event e JOIN intake.web_request_binding b ON b.intake_id=e.intake_id WHERE b.request_ref=$1 ORDER BY e.event_ordinal',[first.receipt.request_ref]);assert.deepEqual(events.rows.map(v=>v.event_type),['intake.web_received','intake.web_supplement_added']);
     const refs=await pool.query('SELECT source_channel,source_provider,source_bot_id,source_chat_type,primary_message_id FROM intake.service_intake i JOIN intake.web_request_binding b ON b.intake_id=i.id WHERE b.request_ref=$1',[first.receipt.request_ref]);assert.deepEqual(refs.rows[0],{source_channel:'PORTAL',source_provider:'YIXIAOXIU_WEB',source_bot_id:null,source_chat_type:null,primary_message_id:null});
-  } finally {await pool.end();}
+  }});
+  await assertNoP2016Residual({databaseUrl});
 });
