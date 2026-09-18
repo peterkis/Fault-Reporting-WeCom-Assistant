@@ -116,6 +116,8 @@ test('PR8 member notifications enforce retained delivery authority and preserve 
     const projector=createP2016TicketNotificationProjector({additionalEventTypes:['ticket.created'],enabled:true,cardEnabled:true,reporterAccess:access});
     async function fixture({noGrant=false}={}){
       epoch=String(Date.now());
+      // Cross the physical enqueue clock boundary in the missing-Grant regression.
+      if(noGrant)await new Promise(resolve=>setTimeout(resolve,1100));
       const seed=await seedPersistedIntake({pool,text:'synthetic',requestType:'INCIDENT',status:'RECEIVED'});
       const ticket=(await createPilotTicketCore({pool}).createForIntake({intakeId:seed.intakeId,occurredAt:seed.receivedAt,traceId:'synthetic'})).ticket;
       const notification=await transactionP2016(pool,async tx=>{
@@ -124,6 +126,8 @@ test('PR8 member notifications enforce retained delivery authority and preserve 
           reporterAccess:{...access,issueInTransaction:async()=>({})}}):projector;
         return selected.project({transaction:tx,ticket,event});
       });
+      // Observe after enqueue; later test-controlled advances still model expiry/retry.
+      epoch=String(Date.now());
       let calls=0,unknown=false;
       const sender=createP2016WeComSender({gateway:{getAuthenticatedClient:()=>({sendMessage:async()=>{calls++;return unknown?{}:{errcode:0};}})},
         enabled:true,cardEnabled:true,allowedTargetHashes:[textHashP2016('user-test')],reporterAccess:access,
