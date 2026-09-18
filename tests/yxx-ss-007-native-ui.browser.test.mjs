@@ -88,7 +88,7 @@ function fixture(origin) {
         intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: state.ticketStatus ? 'TICKET_CREATED' : 'WAITING_FOR_DETAILS', input_revision: revision, processed_revision: '0',
         needs_action: state.needsAction === undefined ? '请补充故障现象' : state.needsAction, updated_at: '2026-09-16 23:00:00', updated_epoch_ms: '1789570800000',
         created_at: '2026-09-16 23:00:00', created_epoch_ms: '1789570800000', safe_description: '<img src=x onerror=window.__xss=1>',
-        safe_location: '护士站', safe_clarification: state.safeClarification ?? null, supplements: [], can_supplement: true, ticket: ticket(state.ticketStatus) } };
+        safe_location: state.safeLocation === undefined ? '护士站' : state.safeLocation, safe_clarification: state.safeClarification ?? null, supplements: [], can_supplement: true, ticket: ticket(state.ticketStatus) } };
     },
     async timeline({ request, requestRef, limit, cursor, before }) {
       state.timelineCalls.push({ member: memberFor(request), requestRef, limit, cursor, before });
@@ -252,6 +252,31 @@ for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 's
     } finally { releaseContext?.(); await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
   });
 }
+
+test('SS-007 detail renders safe location as text and clears it when absent or invalidated', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    f.state.safeLocation = '<img src=x onerror=window.__locationXss=1>护士站';
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+    assert.equal(await browser.evaluate("document.querySelector('#detail-facts').textContent.includes('<img src=x onerror=window.__locationXss=1>护士站')"), true);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-facts img')===null&&window.__locationXss===undefined"), true);
+    f.state.safeLocation = null; f.state.detailRevision = '2';
+    await browser.waitFor("document.querySelector('#detail-facts').textContent.includes('未提供位置')");
+    assert.equal(await browser.evaluate("document.querySelector('#detail-facts').textContent.includes('护士站')"), false);
+    f.state.safeLocation = '住院楼三层'; f.state.detailRevision = '3';
+    await browser.waitFor("document.querySelector('#detail-facts').textContent.includes('住院楼三层')");
+    await setSyntheticVisibility(browser, true);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-facts').textContent"), '');
+    await setSyntheticVisibility(browser, false);
+    await browser.waitFor("document.querySelector('#detail-facts').textContent.includes('住院楼三层')");
+    f.state.detailNotFound = true;
+    await browser.waitFor("document.querySelector('#detail-facts').textContent===''");
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
 
 test('SS-007 detail renders follow-up guidance as text and clears obsolete or denied guidance', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
