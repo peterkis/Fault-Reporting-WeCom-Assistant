@@ -1,0 +1,42 @@
+{
+  "task": "YXX-SS-004",
+  "status": "COMPLETE",
+  "scope": "LOCAL_ISOLATED_ONLY",
+  "schema_migration": {
+    "base": "033_yxx_self_service_intake.sql (immutable)",
+    "forward_correction": "034_yxx_self_service_direct_chat_check.sql"
+  },
+  "branch": "phase2/yixiaoxiu-ss-004",
+  "profile_boundary": {
+    "member_self_service_app_pump": true,
+    "full_service_loop_owner": "EXISTING_P2_WORKER_WEB_HOOK",
+    "member_ticket_readonly_write": false,
+    "persistent_self_service_flag_default": false
+  },
+  "acceptance_observations": {
+    "concurrent_same_command": "one durable root/receipt and one Ticket; replays return the original receipt",
+    "same_command_different_body": "stable command conflict; original content remains unchanged",
+    "same_body_different_command": "independent Web roots",
+    "insufficient_description": "WAITING_DESCRIPTION with no Ticket",
+    "thanks_vs_thanks_plus_fault": "ACKNOWLEDGEMENT stays separate from fault recognition",
+    "rule_failure": "SAVEPOINT fallback to shared pending ManualReview",
+    "precommit_auth_recheck": "local protected recheck fences session generation and write permission before COMMIT",
+    "commit_boundary_recovery": "AC-037/038 before/after COMMIT fault boundaries recover after fresh process instances without partial or duplicate Ticket",
+    "stale_review": "old Web approval returns a version conflict; explicit CANCEL_REVIEW retires the stale queue item",
+    "worker_fairness": "FULL worker gives Web one bounded slot and falls back to the full Bot batch when Web has no due work",
+    "retention_listing": "my reports excludes expired binding and intake roots",
+    "timeline_and_scope": "ticket-created and later Ticket lifecycle events expose safe summaries through stable merged cursors; OUT_OF_SCOPE resolves to NOT_SERVICE without delivery",
+    "ticket_description_projection": "bounded Ticket title plus full safe Web description and supplements are available in the existing P2-016 and Pilot workbench detail paths",
+    "receipt_retention_replay": "revoked or expired Web receipts cannot be replayed and return the same safe not-found result as reads",
+    "poison_batch": "one failed root receives bounded retry metadata while a later root proceeds",
+    "web_side_effects": "Message/Outbox/Delivery/Grant/Conversation Session/Direct Leg remain zero"
+  },
+  "validation": [
+    {"command": "node --test --test-concurrency=1 tests/p2-015-worker.test.mjs tests/p2-015-rule-first-orchestration.integration.test.mjs tests/p2-016-manual-review.integration.test.mjs tests/yxx-ss-004-orchestration.integration.test.mjs", "result": "16 passed"},
+    {"command": "node --test --test-concurrency=1 tests/yxx-ss-004-orchestration.integration.test.mjs", "result": "4 passed (including AC-037/038 and pre-commit auth recheck)"},
+    {"command": "node --check on all touched modules", "result": "passed"},
+    {"command": "git diff --check", "result": "passed"},
+    {"command": "PR #14 Codex review on exact head d358e95; all review threads", "result": "completed with no new findings; resolved=all"}
+  ],
+  "forbidden_live_actions": ["REAL_OAUTH", "WECOM_SDK", "PRODUCTION_DB", "SSH", "CLOUD_PUBLISH", "SEND", "YXX-SS-011", "P2-G2-LIVE", "P2-008"]
+}

@@ -18,7 +18,36 @@ const ACTIONS=Object.freeze({
   ACKNOWLEDGE:['SEND_FIXED_ACKNOWLEDGEMENT'],MARK_OUT_OF_SCOPE:['SEND_FIXED_SCOPE_NOTICE'],
   KEEP_INCIDENT_REVIEW_CANDIDATE:[],CANCEL_REVIEW:[],
 });
+const WEB_ACTIONS=Object.freeze({
+  CONFIRM_TICKET_ELIGIBLE:['APPLY_INTAKE_CLASSIFICATION','CREATE_MINIMAL_TICKET'],
+  CLASSIFY_SERVICE_REQUEST:['APPLY_INTAKE_CLASSIFICATION','ROUTE_SERVICE_REQUEST'],
+  REQUEST_DESCRIPTION:['APPLY_INTAKE_CLASSIFICATION'],CLASSIFY_BUSINESS_CONSULTATION:['APPLY_INTAKE_CLASSIFICATION'],
+  ACKNOWLEDGE:['APPLY_INTAKE_CLASSIFICATION'],MARK_OUT_OF_SCOPE:['APPLY_INTAKE_CLASSIFICATION'],KEEP_INCIDENT_REVIEW_CANDIDATE:[],CANCEL_REVIEW:[],
+});
 function derivedCommand(id) {const h=textHashP2016('P2016_PERSON_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
+function boundedTicketTitle(value) {if(typeof value!=='string'||value.length===0)return null;let title='';for(const character of value){if(title.length+character.length>200)break;title+=character;}return title||null;}
+async function webReportForIntake(queryable,intakeId) {
+  let result;
+  try { result=await queryable.query(`SELECT i.source_provider,initial.safe_content AS initial_content,
+      COALESCE(supplements.items,'[]'::jsonb) AS supplement_items
+    FROM intake.service_intake i
+    JOIN intake.web_request_binding b ON b.intake_id=i.id
+      AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
+    LEFT JOIN LATERAL (SELECT s.safe_content FROM intake.web_submission s
+      WHERE s.intake_id=i.id AND s.kind='SUBMIT' AND s.retention_until>platform.local_now() ORDER BY s.input_revision LIMIT 1) initial ON TRUE
+    LEFT JOIN LATERAL (SELECT jsonb_agg(jsonb_build_object('input_revision',s.input_revision::text,
+      'text',s.safe_content->>'text') ORDER BY s.input_revision) AS items
+      FROM intake.web_submission s WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT' AND s.retention_until>platform.local_now()) supplements ON TRUE
+    WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()`,[intakeId]); }
+  catch(error) { if(error?.code==='42P01')return null; throw error; }
+  const row=result.rows[0];if(result.rowCount!==1||row.source_provider!=='YIXIAOXIU_WEB')return null;
+  const initial=row.initial_content&&typeof row.initial_content==='object'?row.initial_content:{};
+  const supplements=Array.isArray(row.supplement_items)?row.supplement_items:[];
+  return {source_kind:'WEB_REQUEST',description:typeof initial.description==='string'?initial.description:null,
+    location:initial.location??null,service_code:initial.service_code??null,impact_scope:initial.impact_scope??null,
+    reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
+    supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))};
+}
 export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2016TicketQuery({pool,enabled}),notificationProjector=null,realtimeProjector=null,
   communicationAppend=appendCommunication,now=()=>String(Date.now()),personDestinationAuthorizer=null}) {
   if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016();
@@ -52,7 +81,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
       const result=await store.list({transaction:pool,principal,priority,cursor:decoded?.page??null,limit:limitP2016(limit)});
       return publicP2016({items:result.items,next_cursor:result.next_cursor?cursorP2016({priority,page:result.next_cursor}):null});
     },
-    async getManualReviewDetail(input) {const {review}=await detail(input);return publicP2016({...review,allowed_resolutions:Object.keys(ACTIONS),unsupported_resolutions:['LINK_EXISTING_JOURNEY']});},
+    async getManualReviewDetail(input) {const {review}=await detail(input);const report=await webReportForIntake(pool,review.service_intake_id);return publicP2016({...review,...(report?{web_report:report}:{}),allowed_resolutions:Object.keys(ACTIONS),unsupported_resolutions:['LINK_EXISTING_JOURNEY']});},
     async journey({authContext,journeyId,part=null}) {
       const principal=await query.principal(authContext),predicate=ticketPredicateP2016(principal,2);
       const q=await pool.query(`SELECT j.* FROM intake.contact_journey j LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id
@@ -78,18 +107,21 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
       },run:async(transaction,{principal,review,store})=>{
         await realtimeProjector?.lock?.(transaction);
         await transaction.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[review.journey_id]);
-        const resolution=await store.resolve({transaction,principal,command:{...command,resolved_at:stampP2016(now).local}});
+         const resolvedAt=stampP2016(now).local;
+         const resolution=await store.resolve({transaction,principal,command:{...command,resolved_at:resolvedAt}});
         if(!resolution.resolution_decision_id)failP2016('REVIEW_ALREADY_RESOLVED',409);
-        const suggestions=ACTIONS[v.resolution_code].map((type,index)=>{
+        const source=(await transaction.query(`SELECT i.source_provider,i.source_bot_id,i.reporter_wecom_userid,i.source_chat_type,i.source_chat_id,i.summary,
+          i.retention_until,i.retention_until_epoch_ms::text,s.id::text AS session_id,s.row_version::integer
+          FROM intake.service_intake i LEFT JOIN conversation.session s ON s.service_intake_id=i.id AND s.status<>'ENDED'
+          WHERE i.id=$1::uuid`,[review.service_intake_id])).rows[0];
+        const webSource=source?.source_provider==='YIXIAOXIU_WEB';
+        const actionTypes=(webSource?WEB_ACTIONS:ACTIONS)[v.resolution_code];
+        const suggestions=actionTypes.map((type,index)=>{
           const payload={service_intake_id:review.service_intake_id,journey_ref:review.journey_id};
           return {action_type:type,action_ordinal:index+1,execution_policy:'HUMAN_CONFIRM_REQUIRED',safe_payload:payload,payload_hash:safeHash(payload)};
         });
         const decision=await decisions.ensureHumanActions({transaction,decisionId:resolution.resolution_decision_id,suggestions});
-        const source=(await transaction.query(`SELECT i.source_bot_id,i.reporter_wecom_userid,i.source_chat_type,i.source_chat_id,
-          i.retention_until,i.retention_until_epoch_ms::text,s.id::text AS session_id,s.row_version::integer
-          FROM intake.service_intake i LEFT JOIN conversation.session s ON s.service_intake_id=i.id AND s.status<>'ENDED'
-          WHERE i.id=$1::uuid`,[review.service_intake_id])).rows[0];
-        const fixed=createP2004FixedCommunicationPort({append:async input=>{
+        const fixed=webSource?null:createP2004FixedCommunicationPort({append:async input=>{
           const group=source.source_chat_type==='group';
           const guided=group&&v.resolution_code==='REQUEST_DESCRIPTION';
           const personAllowed=guided&&(personDestinationAuthorizer===null||await personDestinationAuthorizer({transaction,bot_id:source.source_bot_id,reporter_user_id:source.reporter_wecom_userid})===true);
@@ -106,18 +138,32 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
         const executor=createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),manualReviewStore:store,decisionStore:decisions,communicationPort:fixed,
           ticketCommandPort:{createMinimalTicket:async({transaction:tx,intake_id,occurred_at,trace_id})=>{
             const intakeId=await p2016TicketSourceIntake({transaction:tx,intakeId:intake_id});
-            const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id});
+            const result=await core.createForIntakeInTransaction({transaction:tx,intakeId,occurredAt:occurred_at,traceId:trace_id,title:boundedTicketTitle(source.summary)});
             if(result.created){const event=await appendTicketEvent({transaction:tx,ticket:result.ticket,eventType:'ticket.created',
               actor:{type:'PILOT_USER',id:principal.principal_id},traceId:trace_id});
-              if(notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});
+              if(!webSource&&notificationProjector)await notificationProjector.project({transaction:tx,ticket:result.ticket,event});
               if(realtimeProjector)await realtimeProjector.ticket({transaction:tx,ticket:result.ticket,event});}
             return result;
           }}});
-        const actions=await executor.execute({transaction,decision,context:{trace_id:'p2-016:'+command.client_command_id,
-          session_id:source.session_id??null,privacy_class:'INTERNAL',retention_until:source.retention_until,
-          retention_until_epoch_ms:source.retention_until_epoch_ms,destination:{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,
-            target_type:source.source_chat_type==='group'?'GROUP':'PERSON',target_id:source.source_chat_type==='group'?source.source_chat_id:source.reporter_wecom_userid}}});
+        const actionContext={trace_id:'p2-016:'+command.client_command_id,session_id:source.session_id??null,
+          privacy_class:webSource?'PERSONAL':'INTERNAL',retention_until:source.retention_until,
+          retention_until_epoch_ms:source.retention_until_epoch_ms,
+          ...(!webSource?{destination:{provider:'WECOM_AIBOT',channel_account_id:source.source_bot_id,
+            target_type:source.source_chat_type==='group'?'GROUP':'PERSON',target_id:source.source_chat_type==='group'?source.source_chat_id:source.reporter_wecom_userid}}:{})};
+        const actions=await executor.execute({transaction,decision:webSource?{...decision,applied_at:resolvedAt}:decision,context:actionContext});
         if(actions.some(a=>a.failed_safe))failP2016('REVIEW_ACTION_FAILED',409);
+        if(webSource&&v.resolution_code==='REQUEST_DESCRIPTION') {
+          const journeyUpdate=await transaction.query(`UPDATE intake.contact_journey
+            SET status='WAITING_DESCRIPTION',row_version=row_version+1,updated_at=GREATEST(created_at,platform.local_now())
+            WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id]);
+          if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
+        } else if(webSource&&['ACKNOWLEDGE','MARK_OUT_OF_SCOPE','CLASSIFY_BUSINESS_CONSULTATION'].includes(v.resolution_code)) {
+          const journeyUpdate=await transaction.query(`UPDATE intake.contact_journey
+            SET status='ENDED',ended_at=$2::timestamp without time zone,row_version=row_version+1,
+                updated_at=GREATEST(created_at,$2::timestamp without time zone)
+            WHERE id=$1::uuid AND status='WAITING_REVIEW' RETURNING id`,[review.journey_id,resolvedAt]);
+          if(journeyUpdate.rowCount!==1)failP2016('ACTION_FAILED',409);
+        }
         if(realtimeProjector)await realtimeProjector.review({transaction,reviewId});
         return {ok:true,review_id:reviewId,status:resolution.status,resolution_decision_id:resolution.resolution_decision_id,action_count:actions.length};
       }});

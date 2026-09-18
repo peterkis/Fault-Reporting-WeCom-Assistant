@@ -5,6 +5,15 @@ import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import { migrateP2015 } from './p2-015-migrate.mjs';
 import { migrateP2016,p2016CatalogHash } from './p2-016-migrate.mjs';
 import { migrateP2012,p2012CatalogHash } from './p2-012-migrate.mjs';
+import { migrateYxxSelfService } from './yxx-self-service-migrate.mjs';
+
+// Keep the historical baseline runner unchanged by default. The successor is
+// explicit so 033 can be validated in the same isolated database and chain.
+export async function migrateCurrentBaselineWithYxx(options={}) {
+  const baseline=await migrateCurrentBaseline(options);
+  const yxx=await migrateYxxSelfService(options);
+  return Object.freeze({...baseline,yxx});
+}
 
 async function p2016Tail({databaseUrl,mode,PoolFactory,p2015}) {
   const probe=PoolFactory({connectionString:databaseUrl,max:1,connectionTimeoutMillis:5000,application_name:'p2_012_baseline_probe'});

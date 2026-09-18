@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_profile.schema.json",
+  "title": "YXX self-service profile",
+  "type": "object", "additionalProperties": false,
+  "required": ["profile", "oauth", "business_read", "web_write", "processor", "external_delivery", "write_flag", "YIXIAOXIU_SELF_SERVICE_ENABLED", "YIXIAOXIU_MY_REPORTS_ENABLED", "x-readonly-write-denied"],
+  "properties": {
+    "profile": {"enum": ["OAUTH_ONLY", "MEMBER_TICKET_READONLY", "MEMBER_SELF_SERVICE", "FULL_SERVICE_LOOP"]},
+    "oauth": {"const": "WECom_MEMBER"}, "business_read": {"type": "boolean"}, "web_write": {"type": "boolean"},
+    "processor": {"enum": ["NONE", "APP_BOUNDED_PUMP", "EXISTING_WORKER"]},
+    "external_delivery": {"const": "NONE_FOR_WEB"}, "write_flag": {"type": "boolean"},
+    "YIXIAOXIU_SELF_SERVICE_ENABLED": {"type": "boolean", "default": false},
+    "YIXIAOXIU_MY_REPORTS_ENABLED": {"type": "boolean", "default": false},
+    "x-readonly-write-denied": {"const": true}
+  },
+  "allOf": [
+    {"if": {"properties": {"profile": {"const": "OAUTH_ONLY"}}}, "then": {"properties": {"business_read": {"const": false}, "web_write": {"const": false}, "processor": {"const": "NONE"}, "write_flag": {"const": false}, "YIXIAOXIU_SELF_SERVICE_ENABLED": {"const": false}, "YIXIAOXIU_MY_REPORTS_ENABLED": {"const": false}}}},
+    {"if": {"properties": {"profile": {"const": "MEMBER_TICKET_READONLY"}}}, "then": {"properties": {"web_write": {"const": false}, "processor": {"const": "NONE"}, "write_flag": {"const": false}}}},
+    {"if": {"properties": {"profile": {"const": "MEMBER_SELF_SERVICE"}}}, "then": {"properties": {"YIXIAOXIU_SELF_SERVICE_ENABLED": {"const": true}, "YIXIAOXIU_MY_REPORTS_ENABLED": {"const": true}, "web_write": {"const": true}, "write_flag": {"const": true}, "processor": {"const": "APP_BOUNDED_PUMP"}}}},
+    {"if": {"properties": {"profile": {"const": "FULL_SERVICE_LOOP"}}}, "then": {"properties": {"processor": {"const": "EXISTING_WORKER"}}}}
+  ]
+}

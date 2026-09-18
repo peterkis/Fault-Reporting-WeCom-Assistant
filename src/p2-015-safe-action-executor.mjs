@@ -76,7 +76,7 @@ export function createSafeActionExecutor({ intakeDecisionPort, ticketCommandPort
                   || (safeDecision.result_code === 'MANUAL_REVIEW_REQUIRED' && safeDecision.ticket_creation_recommended)
                   ? 'TICKET_ELIGIBLE' : safeDecision.result_code,
                 catalog_version: safeDecision.catalog_version, rule_set_version: safeDecision.rule_set_version,
-                occurred_at: safeDecision.observed_at, trace_id: safeContext.trace_id,
+                occurred_at: safeDecision.applied_at ?? safeDecision.observed_at, trace_id: safeContext.trace_id,
               } });
               refType = 'INTAKE'; refId = safeDecision.service_intake_id;
               break;

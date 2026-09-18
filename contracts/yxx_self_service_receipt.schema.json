@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_receipt.schema.json",
+  "title": "YXX self-service acceptance receipt",
+  "type": "object", "additionalProperties": false,
+  "required": ["client_command_id", "status", "request_ref", "intake_no", "accepted_revision", "accepted_at", "accepted_epoch_ms"],
+  "properties": {
+    "client_command_id": {"type": "string", "format": "uuid"},
+    "status": {"const": "ACCEPTED"},
+    "request_ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"},
+    "intake_no": {"type": "string", "pattern": "^INT-[0-9]{8}-[0-9]{4,}$"},
+    "accepted_revision": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+    "accepted_at": {"$ref": "./local_datetime.schema.json"},
+    "accepted_epoch_ms": {"$ref": "./epoch_ms_string.schema.json"}
+  }
+}

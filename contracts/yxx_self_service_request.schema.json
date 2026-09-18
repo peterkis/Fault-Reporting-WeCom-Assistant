@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_request.schema.json",
+  "title": "YXX self-service request input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "client_command_id", "description", "location", "service_code", "impact_scope", "reported_department_text", "extension"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "client_command_id": {"type": "string", "format": "uuid"},
+    "description": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "location": {
+      "type": "object", "additionalProperties": false, "required": ["text", "unknown"],
+      "properties": {
+        "text": {"type": ["string", "null"], "maxLength": 200},
+        "unknown": {"type": "boolean"}
+      },
+      "allOf": [{"if": {"properties": {"unknown": {"const": false}}}, "then": {"required": ["text"], "properties": {"text": {"type": "string", "minLength": 1}}}}]
+    },
+    "service_code": {"type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+    "impact_scope": {"type": "string", "enum": ["UNKNOWN", "SELF", "SINGLE_WORKSTATION", "MULTIPLE_USERS", "DEPARTMENT"]},
+    "reported_department_text": {"type": ["string", "null"], "maxLength": 100},
+    "extension": {"type": ["string", "null"], "pattern": "^[0-9][0-9 -]{0,19}$"}
+  }
+}

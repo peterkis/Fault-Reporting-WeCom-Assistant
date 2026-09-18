@@ -20,7 +20,10 @@ function publicDecision(row, actions, replayed) {
     safe_result: row.safe_result, requires_manual_review: row.requires_manual_review,
     ticket_creation_recommended: row.ticket_creation_recommended,
     incident_review_candidate: row.incident_review_candidate, status: row.status,
-    observed_at: row.observed_at, actions, replayed,
+    observed_at: row.observed_at, source_kind: row.source_kind ?? 'BOT',
+    primary_web_submission_id: row.primary_web_submission_id ?? null,
+    basis_input_revision: row.basis_input_revision === null || row.basis_input_revision === undefined
+      ? null : String(row.basis_input_revision), actions, replayed,
   });
 }
 
@@ -51,8 +54,9 @@ async function insertActions(transaction, row, decisionKey, suggestions) {
   return actions;
 }
 
-export function createDecisionStore({sourceWindowScope='JOURNEY'}={}) {
+export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false}={}) {
   if(!['JOURNEY','CHANNEL_LEG'].includes(sourceWindowScope))failP2015(P2_015_ERROR_CODES.inputInvalid);
+  if(typeof webSource!=='boolean')failP2015(P2_015_ERROR_CODES.inputInvalid);
   return Object.freeze({
     async ensureHumanActions({ transaction, decisionId, suggestions }) {
       const value = snapshotP2015Json(suggestions);
@@ -73,6 +77,15 @@ export function createDecisionStore({sourceWindowScope='JOURNEY'}={}) {
     async record({ transaction, input }) {
       if (!transaction?.query) failP2015(P2_015_ERROR_CODES.storageFailed);
       const value = snapshotP2015Json(input);
+      const sourceKind = value.source_kind ?? 'BOT';
+      if (!webSource && sourceKind !== 'BOT') failP2015(P2_015_ERROR_CODES.inputInvalid);
+      if (!['BOT', 'WEB'].includes(sourceKind)
+        || (sourceKind === 'WEB' && (typeof value.primary_web_submission_id !== 'string'
+          || !Number.isInteger(value.basis_input_revision) || value.basis_input_revision < 1))
+        || (sourceKind === 'BOT' && ((value.primary_web_submission_id !== undefined && value.primary_web_submission_id !== null)
+          || (value.basis_input_revision !== undefined && value.basis_input_revision !== null)))) {
+        failP2015(P2_015_ERROR_CODES.inputInvalid);
+      }
       const identity = {
         journey_id: value.journey_id,
         source_window_start_sequence: value.source_window_start_sequence,
@@ -82,6 +95,11 @@ export function createDecisionStore({sourceWindowScope='JOURNEY'}={}) {
         engine_version: value.engine_version,
         decision_policy_version: value.decision_policy_version,
       };
+      if (sourceKind === 'WEB') {
+        identity.source_kind = sourceKind;
+        identity.primary_web_submission_id = value.primary_web_submission_id;
+        identity.basis_input_revision = value.basis_input_revision;
+      }
       let keyVersion='v1';
       if(sourceWindowScope==='CHANNEL_LEG'){
         const leg=await transaction.query('SELECT leg_ordinal FROM intake.channel_leg WHERE id=$1::uuid AND journey_id=$2::uuid',[value.channel_leg_id,value.journey_id]);
@@ -92,11 +110,12 @@ export function createDecisionStore({sourceWindowScope='JOURNEY'}={}) {
       const decisionKey = `decision_${keyVersion}_${safeHash(identity)}`;
       const existing = await transaction.query(
         `SELECT id::text,journey_id::text,channel_leg_id::text,service_intake_id::text,
-                conversation_session_id::text,linked_ticket_id::text,decision_ordinal,decision_key,
+                conversation_session_id::text,linked_ticket_id::text,${webSource ? 'source_kind,primary_web_submission_id::text,basis_input_revision,' : ''}
+                decision_ordinal,decision_key,
                 source_window_start_sequence,source_window_end_sequence,source_message_count,source_hash,
                 catalog_version,rule_set_version,engine_version,decision_policy_version,result_code,
                 reason_code,input_hash,result_hash,safe_result,requires_manual_review,
-                ticket_creation_recommended,incident_review_candidate,status,observed_at
+                ticket_creation_recommended,incident_review_candidate,status,to_char(observed_at,'YYYY-MM-DD HH24:MI:SS') AS observed_at
            FROM intake.deterministic_decision WHERE decision_key=$1 FOR UPDATE`, [decisionKey],
       );
       if (existing.rowCount === 1) {
@@ -110,23 +129,28 @@ export function createDecisionStore({sourceWindowScope='JOURNEY'}={}) {
         'SELECT COALESCE(max(decision_ordinal),0)::integer + 1 AS ordinal FROM intake.deterministic_decision WHERE journey_id=$1::uuid',
         [value.journey_id],
       );
+      const sourceColumns = webSource ? 'source_kind,primary_web_submission_id,basis_input_revision,' : '';
+      const sourceValues = webSource ? '$6,$7::uuid,$8,' : '';
+      const parameter = (number) => `$${number + (webSource ? 3 : 0)}`;
       const inserted = await transaction.query(
         `INSERT INTO intake.deterministic_decision (
            journey_id,channel_leg_id,service_intake_id,conversation_session_id,linked_ticket_id,
+           ${sourceColumns}
            decision_ordinal,decision_key,source_window_start_sequence,source_window_end_sequence,
            source_message_count,source_hash,catalog_version,rule_set_version,engine_version,
            decision_policy_version,result_code,reason_code,input_hash,result_hash,safe_result,
            requires_manual_review,ticket_creation_recommended,incident_review_candidate,status,observed_at
-         ) VALUES ($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::uuid,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,
-           $16,$17,$18,$19,$20::jsonb,$21,$22,$23,'RECORDED',$24::timestamp without time zone)
+         ) VALUES ($1::uuid,$2::uuid,$3::uuid,$4::uuid,$5::uuid,${sourceValues}${parameter(6)},${parameter(7)},${parameter(8)},${parameter(9)},${parameter(10)},${parameter(11)},${parameter(12)},${parameter(13)},${parameter(14)},${parameter(15)},${parameter(16)},${parameter(17)},${parameter(18)},${parameter(19)},${parameter(20)}::jsonb,${parameter(21)},${parameter(22)},${parameter(23)},'RECORDED',${parameter(24)}::timestamp without time zone)
          RETURNING id::text,journey_id::text,channel_leg_id::text,service_intake_id::text,
-           conversation_session_id::text,linked_ticket_id::text,decision_ordinal,decision_key,
+           conversation_session_id::text,linked_ticket_id::text,${webSource ? 'source_kind,primary_web_submission_id::text,basis_input_revision,' : ''}
+           decision_ordinal,decision_key,
            source_window_start_sequence,source_window_end_sequence,source_message_count,source_hash,
            catalog_version,rule_set_version,engine_version,decision_policy_version,result_code,
            reason_code,input_hash,result_hash,safe_result,requires_manual_review,
-           ticket_creation_recommended,incident_review_candidate,status,observed_at`,
+           ticket_creation_recommended,incident_review_candidate,status,to_char(observed_at,'YYYY-MM-DD HH24:MI:SS') AS observed_at`,
         [value.journey_id, value.channel_leg_id, value.service_intake_id, value.conversation_session_id ?? null,
-          value.linked_ticket_id ?? null, ordinalResult.rows[0].ordinal, decisionKey,
+          value.linked_ticket_id ?? null, ...(webSource ? [sourceKind, sourceKind === 'WEB' ? value.primary_web_submission_id : null,
+            sourceKind === 'WEB' ? value.basis_input_revision : null] : []), ordinalResult.rows[0].ordinal, decisionKey,
           value.source_window_start_sequence, value.source_window_end_sequence, value.source_message_count,
           value.source_hash, value.catalog_version, value.rule_set_version, value.engine_version,
           value.decision_policy_version, value.result_code, value.reason_code, value.input_hash,

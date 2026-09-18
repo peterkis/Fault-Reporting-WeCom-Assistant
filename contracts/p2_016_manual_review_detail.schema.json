@@ -585,6 +585,9 @@
       "items": {
         "const": "LINK_EXISTING_JOURNEY"
       }
+    },
+    "web_report": {
+      "$ref": "p2_016_web_report.schema.json"
     }
   },
   "x-business-timezone": "Asia/Shanghai",

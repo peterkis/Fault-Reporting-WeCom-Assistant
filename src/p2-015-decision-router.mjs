@@ -83,9 +83,12 @@ function routeCode(output, context) {
 
 function actionSuggestions(resultCode, context, output) {
   const manualReview = resultCode === 'MANUAL_REVIEW_REQUIRED';
-  const actions = [...(ACTION_BY_RESULT[resultCode] ?? [])];
+  let actions = [...(ACTION_BY_RESULT[resultCode] ?? [])];
   if (manualReview && (output.domain_intent === 'INCIDENT_REPORT' || (output.symptom_codes?.length ?? 0) > 0)) {
     actions.unshift('APPLY_INTAKE_CLASSIFICATION', 'CREATE_MINIMAL_TICKET');
+  }
+  if (context.delivery_mode === 'APP_ONLY') {
+    actions = actions.filter((action) => !['REQUEST_ONE_DESCRIPTION', 'SEND_FIXED_ACKNOWLEDGEMENT', 'SEND_FIXED_SCOPE_NOTICE'].includes(action));
   }
   return actions.map((actionType, index) => {
     if (!P2_015_ACTION_TYPES.includes(actionType)) failP2015(P2_015_ERROR_CODES.inputInvalid);

@@ -54,6 +54,12 @@ test('P2-016 review resolution and Safe Action commit or roll back together',asy
       resolution_code:'KEEP_INCIDENT_REVIEW_CANDIDATE',resolution_reason_code:'KEEP_CANDIDATE'}});
     assert.equal(kept.ok,true);assert.equal(kept.action_count,0);
     assert.equal((await pool.query('SELECT count(*)::integer AS n FROM pilot_ticket.ticket')).rows[0].n,1);
+    await seed();
+    const botCancelReview=(await f.listManualReviews({authContext})).items[0];
+    const cancelled=await f.resolveManualReview({authContext,reviewId:botCancelReview.id,body:{client_command_id:randomUUID(),expected_row_version:botCancelReview.row_version,
+      resolution_code:'CANCEL_REVIEW',resolution_reason_code:'BOT_CANCELLED'}});
+    assert.equal(cancelled.ok,true);assert.equal(cancelled.action_count,0);
+    assert.equal((await pool.query('SELECT result_code FROM intake.deterministic_decision WHERE id=$1::uuid',[cancelled.resolution_decision_id])).rows[0].result_code,'MANUAL_REVIEW_REQUIRED');
   }});
   await assertNoP2016Residual({databaseUrl});
 });

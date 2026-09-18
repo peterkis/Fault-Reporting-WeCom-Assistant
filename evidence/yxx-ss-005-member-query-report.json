@@ -1,0 +1,43 @@
+{
+  "task": "YXX-SS-005",
+  "status": "COMPLETE",
+  "scope": "LOCAL_ISOLATED_ONLY",
+  "event_time": "2026-09-16 20:17:34",
+  "event_epoch_ms": "1789561054922",
+  "dependencies": ["YXX-SS-003"],
+  "implementation": {
+    "authorization": "server-derived member scope; protected recheck after every read",
+    "web": "owned retained Web roots, including roots without a Ticket",
+    "bot": "retained legacy Bot Tickets through reporter_public_ref ownership",
+    "pagination": "SQL ownership predicates precede LIMIT; HMAC cursor binds scope, source and snapshot",
+    "detail": "safe description/location/status and nullable Ticket; no review internals or raw identity",
+    "etag": "authorized 200/304 representation; changed Web content produces a new ETag",
+    "side_effects": "query paths issue no Grant, Delivery, Message, Session or Direct Leg"
+  },
+  "validation": [
+    {"command": "node --test --test-concurrency=1 tests/yxx-ss-005-member-queries.integration.test.mjs", "result": "3 passed with isolated PostgreSQL"},
+    {"command": "node --test --test-concurrency=1 tests/yxx-ss-003-schema.test.mjs tests/yxx-ss-004-orchestration.integration.test.mjs tests/yxx-ss-005-member-queries.integration.test.mjs", "result": "9 passed with isolated PostgreSQL"},
+    {"command": "node --test --test-concurrency=1 tests/p2-016-ticket-lifecycle.integration.test.mjs tests/p2-016-notification-delivery.integration.test.mjs tests/p2-016-orchestration.integration.test.mjs tests/p2-016-manual-review.integration.test.mjs tests/yxx-ss-003-schema.test.mjs tests/yxx-ss-004-orchestration.integration.test.mjs tests/yxx-ss-005-member-queries.integration.test.mjs", "result": "26 passed with isolated PostgreSQL"},
+    {"cases": ["OAUTH_ONLY zero database calls", "A/B ownership and cross-member denial", "mixed Web/Bot cursor", "source filter", "Web Ticket one row", "revoked detail/list", "304 recheck", "READONLY Bot read", "500-row mixed snapshot traversal", "late timeline event without cursor duplication"], "result": "passed"},
+    {"command": "node --check on SS-005 modules and test", "result": "passed"},
+    {"command": "git diff --check", "result": "passed"}
+  ],
+  "review_repairs": [
+    "write authorization now rejects authenticated profile/flag overrides of configured gates",
+    "report rows derive pending ManualReview state",
+    "supplement revision schema accepts 10 through 49",
+    "merged timeline uses occurred_at and deterministic source/id ordering while retaining high-water bounds",
+    "supplement and store read lookups bind canonical member to corp/app scope",
+    "pending supplement revisions do not repeat the old action prompt",
+    "SS-005 task ledger records COMPLETE",
+    "Web Ticket lifecycle actions remain APP_ONLY without notification side effects",
+    "waiting requester Web Tickets resume through the existing Ticket Action Core",
+    "report cursors bind corp/app scope as well as member and source",
+    "Web pump exceptions consume one bounded slot and do not stop Bot processing",
+    "late Web decision events retain discoverable source high-water ordinals",
+    "configured rule engine is shared by Bot and Web orchestration",
+    "Web processor exceptions leave the Bot batch capacity available",
+    "ascending timeline cursors keep their chronological boundary while tracking late source ordinals"
+  ],
+  "forbidden_live_actions": ["REAL_OAUTH", "WECOM_SDK", "PRODUCTION_DB", "SSH", "CLOUD_PUBLISH", "SEND", "YXX-SS-011", "P2-G2-LIVE", "P2-008"]
+}

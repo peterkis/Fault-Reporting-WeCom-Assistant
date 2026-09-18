@@ -213,6 +213,19 @@ export function createTicketClosureService({
   }
 
   async function afterTicketAction({ transaction, ticket, event, action }) {
+    const source = await transaction.query(
+      `SELECT source_channel, source_provider
+         FROM intake.service_intake
+        WHERE id = $1::uuid`,
+      [ticket.intake_id],
+    );
+    if (source.rowCount !== 1) {
+      throw new CardActionError('TICKET_INTAKE_NOT_FOUND');
+    }
+    if (source.rows[0].source_channel === 'PORTAL' && source.rows[0].source_provider === 'YIXIAOXIU_WEB') {
+      await setAutoCloseDeadline({ transaction, ticket, action });
+      return { card_tasks: [], notification: null, reason: 'WEB_APP_ONLY' };
+    }
     const cardTasks = await createCardTasks({ transaction, ticket, event, action });
     await setAutoCloseDeadline({ transaction, ticket, action });
     const notification = outbox

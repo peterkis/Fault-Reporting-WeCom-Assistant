@@ -1,0 +1,31 @@
+{
+  "work_item": "P2-YXX-SELF-SERVICE-INTAKE",
+  "source_spec": "D:/Projects/CodexPlans/yixiaoxiu_self_service_tickets_v1",
+  "base_commit": "4820dc8cde548f81db39e9159c5dbf00c0c006d5",
+  "base_tree": "9526b93b07fc36ccf0adfed680f849118db6f936",
+  "homepage": "/wecom/yixiaoxiu/",
+  "tickets": [
+    {"id":"YXX-SS-000","depends_on":[],"status":"COMPLETE"},
+    {"id":"YXX-SS-001","depends_on":["YXX-SS-000"],"status":"COMPLETE"},
+    {"id":"YXX-SS-002","depends_on":["YXX-SS-000"],"status":"COMPLETE"},
+    {"id":"YXX-SS-003","depends_on":["YXX-SS-002"],"status":"COMPLETE"},
+    {"id":"YXX-SS-004","depends_on":["YXX-SS-003"],"status":"COMPLETE"},
+    {"id":"YXX-SS-005","depends_on":["YXX-SS-003"],"status":"COMPLETE"},
+    {"id":"YXX-SS-006","depends_on":["YXX-SS-004"],"status":"PLANNED"},
+    {"id":"YXX-SS-007","depends_on":["YXX-SS-001","YXX-SS-002"],"status":"PLANNED"},
+    {"id":"YXX-SS-008","depends_on":["YXX-SS-004","YXX-SS-005","YXX-SS-006","YXX-SS-007"],"status":"PLANNED"},
+    {"id":"YXX-SS-009","depends_on":["YXX-SS-008"],"status":"PLANNED"},
+    {"id":"YXX-SS-010","depends_on":["YXX-SS-009"],"status":"PLANNED"},
+    {"id":"YXX-SS-011","depends_on":["YXX-SS-010"],"status":"NOT_AUTHORIZED"}
+  ],
+  "defaults": {
+    "real_network_calls": false,
+    "production_db_access": false,
+    "send": false,
+    "deploy": false,
+    "push": false,
+    "merge": false,
+    "p2_g2_live": false,
+    "p2_008": false
+  }
+}

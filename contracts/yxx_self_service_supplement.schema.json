@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_supplement.schema.json",
+  "title": "YXX self-service supplement input",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "client_command_id", "expected_input_revision", "text"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "client_command_id": {"type": "string", "format": "uuid"},
+    "expected_input_revision": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+    "text": {"type": "string", "minLength": 1, "maxLength": 2000}
+  }
+}

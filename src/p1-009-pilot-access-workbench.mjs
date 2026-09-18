@@ -120,6 +120,31 @@ function publicEvent(row, includeInternal) {
   return event;
 }
 
+async function webReportForIntake(transaction,intakeId) {
+  const available=await transaction.query(`SELECT to_regclass('intake.web_request_binding') AS binding,
+      to_regclass('intake.web_submission') AS submission`);
+  if(!available.rows[0]?.binding||!available.rows[0]?.submission)return null;
+  let result;
+  result=await transaction.query(`SELECT i.source_provider,initial.safe_content AS initial_content,
+      COALESCE(supplements.items,'[]'::jsonb) AS supplement_items
+    FROM intake.service_intake i
+    JOIN intake.web_request_binding b ON b.intake_id=i.id
+      AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
+    LEFT JOIN LATERAL (SELECT s.safe_content FROM intake.web_submission s
+      WHERE s.intake_id=i.id AND s.kind='SUBMIT' AND s.retention_until>platform.local_now() ORDER BY s.input_revision LIMIT 1) initial ON TRUE
+    LEFT JOIN LATERAL (SELECT jsonb_agg(jsonb_build_object('input_revision',s.input_revision::text,
+      'text',s.safe_content->>'text') ORDER BY s.input_revision) AS items
+      FROM intake.web_submission s WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT' AND s.retention_until>platform.local_now()) supplements ON TRUE
+    WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()`,[intakeId]);
+  const row=result.rows[0];if(result.rowCount!==1||row.source_provider!=='YIXIAOXIU_WEB')return null;
+  const initial=row.initial_content&&typeof row.initial_content==='object'?row.initial_content:{};
+  const supplements=Array.isArray(row.supplement_items)?row.supplement_items:[];
+  return {source_kind:'WEB_REQUEST',description:typeof initial.description==='string'?initial.description:null,
+    location:initial.location??null,service_code:initial.service_code??null,impact_scope:initial.impact_scope??null,
+    reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
+    supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))};
+}
+
 export async function applyPilotAccessMigration({ pool }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
@@ -279,9 +304,10 @@ export function createPilotAccessService({ pool } = {}) {
           ORDER BY created_at, event_ordinal`,
         [ticketId],
       );
+      const webReport=await webReportForIntake(transaction,ticket.source_intake_id);
       return {
         ok: true,
-        ticket: publicPilotTicket(ticket),
+        ticket: {...publicPilotTicket(ticket),...(webReport?{web_report:webReport}:{})},
         events: events.rows.map((event) => publicEvent(event, isStaff)),
       };
     }),

@@ -39,7 +39,7 @@ export function createWeComWebOAuth({enabled=false,corpId,agentId,publicOrigin,r
     begin({browserToken=null,returnPath='/wecom/yixiaoxiu/'}={}){
       if(closed)fail('WECOM_AUTH_UNAVAILABLE',503);
       sweep();if(pending.size>=1024)fail('WECOM_AUTH_BUSY',503);
-      if(typeof returnPath!=='string'||!/^\/wecom\/yixiaoxiu\/(?:tickets\/[A-Za-z0-9_-]{32}|continue\/[a-f0-9]{64})?$/u.test(returnPath))fail('WECOM_AUTH_REQUIRED',400);
+      if(typeof returnPath!=='string'||!/^\/wecom\/yixiaoxiu\/(?:\?auth_return=1|tickets\/[A-Za-z0-9_-]{32}|continue\/[a-f0-9]{64})?$/u.test(returnPath))fail('WECOM_AUTH_REQUIRED',400);
       browserToken=browserBinding(browserToken);
       const browser=hash(browserToken);
       if([...pending.values()].filter(v=>v.binding.group===browsers.get(browser).group).length>=8)fail('WECOM_AUTH_BUSY',503);

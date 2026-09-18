@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_bootstrap.schema.json",
+  "title": "YXX self-service bootstrap",
+  "type": "object", "additionalProperties": false,
+  "required": ["authenticated", "identity_mode", "read_only", "can_submit", "can_supplement", "csrf_token"],
+  "properties": {
+    "authenticated": {"const": true}, "identity_mode": {"const": "MEMBER_SELF_SERVICE"},
+    "read_only": {"const": false}, "can_submit": {"type": "boolean"}, "can_supplement": {"type": "boolean"},
+    "csrf_token": {"type": "string", "minLength": 32, "maxLength": 128}
+  }
+}

@@ -19,11 +19,33 @@ export function ticketActionAllowedP2016(principal,ticket,action) {
   if(!['start','request-information','resume','wait-vendor','resolve','reopen','add-note','transfer-assignment'].includes(action))return false;
   return ticket.assignee_id===principal.principal_id;
 }
-export function ticketViewP2016(row,principal) {
-  return publicP2016({...row,created_at:localP2016(row.created_at),updated_at:localP2016(row.updated_at),
+export function ticketViewP2016(row,principal,extra={}) {
+  return publicP2016({...row,...extra,created_at:localP2016(row.created_at),updated_at:localP2016(row.updated_at),
     external_status:EXTERNAL_TICKET_STATUS[row.status],
     allowed_actions:[...getTicketActionTransitions().filter(a=>a.from.includes(row.status)&&ticketActionAllowedP2016(principal,row,a.action)).map(a=>a.action),
       ...(ticketActionAllowedP2016(principal,row,'transfer-assignment')?['transfer-assignment']:[])]});
+}
+async function webReportForTicket(queryable,ticket) {
+  let q;
+  try { q=await queryable.query(`SELECT i.source_provider,initial.safe_content AS initial_content,
+      COALESCE(supplements.items,'[]'::jsonb) AS supplement_items
+    FROM intake.service_intake i
+    JOIN intake.web_request_binding b ON b.intake_id=i.id
+      AND b.revoked_at IS NULL AND b.retention_until>platform.local_now()
+    LEFT JOIN LATERAL (SELECT s.safe_content FROM intake.web_submission s
+      WHERE s.intake_id=i.id AND s.kind='SUBMIT' AND s.retention_until>platform.local_now() ORDER BY s.input_revision LIMIT 1) initial ON TRUE
+    LEFT JOIN LATERAL (SELECT jsonb_agg(jsonb_build_object('input_revision',s.input_revision::text,
+      'text',s.safe_content->>'text') ORDER BY s.input_revision) AS items
+      FROM intake.web_submission s WHERE s.intake_id=i.id AND s.kind='SUPPLEMENT' AND s.retention_until>platform.local_now()) supplements ON TRUE
+    WHERE i.id=$1::uuid AND i.retention_until>platform.local_now()`,[ticket.intake_id]); }
+  catch(error) { if(error?.code==='42P01')return null; throw error; }
+  const row=q.rows[0];if(q.rowCount!==1||row.source_provider!=='YIXIAOXIU_WEB')return null;
+  const initial=row.initial_content&&typeof row.initial_content==='object'?row.initial_content:{};
+  const supplements=Array.isArray(row.supplement_items)?row.supplement_items:[];
+  return publicP2016({source_kind:'WEB_REQUEST',description:typeof initial.description==='string'?initial.description:null,
+    location:initial.location??null,service_code:initial.service_code??null,impact_scope:initial.impact_scope??null,
+    reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
+    supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))});
 }
 export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool})}) {
   async function principal(authContext,queryable=pool) {
@@ -53,7 +75,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
       const items=q.rows.slice(0,n).map(r=>ticketViewP2016(r,p)),last=items.at(-1);
       return publicP2016({items,next_cursor:q.rows.length>n?cursorP2016({v:1,state,at:last.updated_at,id:last.id}):null});
     },
-    async detail(input) {const {ticket,principal:p}=await authorizedTicket(input);return ticketViewP2016(ticket,p);},
+    async detail(input) {const {ticket,principal:p}=await authorizedTicket(input);const report=await webReportForTicket(pool,ticket);return ticketViewP2016(ticket,p,report?{web_report:report}:{});},
     async reporterContact(input) {
       const {ticket}=await authorizedTicket(input);
       const q=await pool.query(`SELECT j.profile_resolution_status,j.profile_snapshot FROM intake.channel_leg l

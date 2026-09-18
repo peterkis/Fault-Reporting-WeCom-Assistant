@@ -25,7 +25,7 @@ paths:
   /wecom/yixiaoxiu/continue/{entryRef}: {"servers":[{"url":"/"}],"get":{"operationId":"continueYxxLegacyEntry","security":[],"parameters":[{"in":"path","name":"entryRef","required":true,"schema":{"type":"string","pattern":"^[a-f0-9]{64}$"}}],"description":"Current-browser continuation only. OAuth then validate current HMAC/digest, active ref and ownership; consumed/expired Grant locates without resurrection.","responses":{"302":{"description":"OAuth required"},"303":{"description":"Fixed canonical Ticket path after ownership"},"400":{"description":"Invalid closed input or duplicate/unknown query","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"401":{"description":"Current member authentication required","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"403":{"description":"Origin or member scope denied","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"404":{"description":"Unavailable Ticket returns JSON; missing, expired or foreign-browser continuation returns a generic HTML prompt to click the original card again.","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}},"text/html":{"schema":{"type":"string"}}}},"503":{"description":"Fail closed; no legacy fallback","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}}}}}
   /wecom/yixiaoxiu/login: {"servers":[{"url":"/"}],"get":{"operationId":"beginYxxOAuth","security":[],"x-reject-unknown-query":true,"responses":{"302":{"description":"snsapi_base on fixed provider and callback"},"400":{"description":"Invalid closed input or duplicate/unknown query","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"401":{"description":"Current member authentication required","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"403":{"description":"Origin or member scope denied","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"404":{"description":"Ticket not owned or not available; no existence disclosure","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}},"503":{"description":"Fail closed; no legacy fallback","content":{"application/json":{"schema":{"$ref":"./yixiaoxiu_error.schema.json"}}}}}}}
   /wecom/yixiaoxiu/callback: {"servers":[{"url":"/"}],"get":{"operationId":"completeYxxOAuth","security":[],"x-reject-unknown-query":true,"parameters":[{"in":"query","name":"code","required":true,"schema":{"type":"string","minLength":1,"maxLength":512}},{"in":"query","name":"state","required":true,"schema":{"type":"string","pattern":"^[a-f0-9]{64}$"}}],"description":"Single code/state only; cross-site navigation allowed; one-use browser binding, fixed local303. Errors are safe static OAuth HTML, not raw Provider text.","responses":{"303":{"description":"Clean server-intent destination"},"401":{"description":"Invalid/replayed OAuth context"},"403":{"description":"Not an eligible member"},"502":{"description":"Bounded Provider failure"},"503":{"description":"Disabled or at capacity"}}}}
-  /wecom/yixiaoxiu/: {"servers":[{"url":"/"}],"get":{"operationId":"getYxxHome","security":[{"WeComMember":[]}],"description":"Authentication status only; choose no Ticket, no listing or staff authority.","responses":{"200":{"description":"Static authentication home"},"401":{"description":"OAuth required"},"503":{"description":"Disabled"}}}}
+  /wecom/yixiaoxiu/: {"servers":[{"url":"/"}],"get":{"operationId":"getYxxHome","security":[{}, {"WeComMember":[]}],"description":"Authentication status only; choose no Ticket, no listing or staff authority. Missing session starts one bounded OAuth redirect; callback failures terminate without retry.","parameters":[{"in":"query","name":"auth_return","schema":{"type":"string","const":"1"},"description":"Internal one-use return marker; no identity or authorization data."}],"responses":{"200":{"description":"Static authentication home"},"302":{"description":"One bounded OAuth begin"},"303":{"description":"Normalize the exact auth_return marker to the bare root"},"401":{"description":"OAuth required or terminal invalid session"},"503":{"description":"Disabled"}}}}
   /reporter/: {"servers":[{"url":"/"}],"get":{"operationId":"getYxxAssetreporter","security":[],"description":"Static same-origin Reporter assets; member legacy landing clears fragment before prepare. No embedded business data.","responses":{"200":{"description":"Static HTML/JS/CSS"},"400":{"description":"Unsupported query or method"},"503":{"description":"Disabled"}}}}
   /reporter/open: {"servers":[{"url":"/"}],"get":{"operationId":"getYxxAssetreporteropen","security":[],"description":"Static same-origin Reporter assets; member legacy landing clears fragment before prepare. No embedded business data.","responses":{"200":{"description":"Static HTML/JS/CSS"},"400":{"description":"Unsupported query or method"},"503":{"description":"Disabled"}}}}
   /reporter/reporter.js: {"servers":[{"url":"/"}],"get":{"operationId":"getYxxAssetreporterreporterjs","security":[],"description":"Static same-origin Reporter assets; member legacy landing clears fragment before prepare. No embedded business data.","responses":{"200":{"description":"Static HTML/JS/CSS"},"400":{"description":"Unsupported query or method"},"503":{"description":"Disabled"}}}}
@@ -663,6 +663,36 @@ paths:
         "403": {description: "Role denied"}
         "404": {description: "Resource outside authorized scope"}
         "503": {description: "Feature disabled or temporarily unavailable"}
+  /api/yixiaoxiu/bootstrap:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1bootstrap'
+    servers: [{url: /}]
+  /api/yixiaoxiu/requests:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1requests'
+    servers: [{url: /}]
+  /api/yixiaoxiu/my-reports:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1my-reports'
+    servers: [{url: /}]
+  /api/yixiaoxiu/requests/{request_ref}:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1requests~1{request_ref}'
+    servers: [{url: /}]
+  /api/yixiaoxiu/requests/{request_ref}/timeline:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1requests~1{request_ref}~1timeline'
+    servers: [{url: /}]
+  /api/yixiaoxiu/requests/{request_ref}/supplements:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1requests~1{request_ref}~1supplements'
+    servers: [{url: /}]
+  /api/yixiaoxiu/commands/{client_command_id}:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1commands~1{client_command_id}'
+    servers: [{url: /}]
+  /wecom/yixiaoxiu/reports/new:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1wecom~1yixiaoxiu~1reports~1new'
+    servers: [{url: /}]
+  /wecom/yixiaoxiu/reports:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1wecom~1yixiaoxiu~1reports'
+    servers: [{url: /}]
+  /wecom/yixiaoxiu/reports/{request_ref}:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1wecom~1yixiaoxiu~1reports~1{request_ref}'
+    servers: [{url: /}]
 components:
   securitySchemes:
     WeComMember: {type: apiKey, in: cookie, name: __Host-wecom_session, description: "Secure HttpOnly member authentication only; per-request server ownership is required."}
