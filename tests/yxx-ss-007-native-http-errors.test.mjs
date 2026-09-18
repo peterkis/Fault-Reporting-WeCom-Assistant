@@ -198,6 +198,28 @@ test('SS-007 report source filters reject explicit empty and unknown values befo
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
+test('SS-007 timeline rejects an explicitly empty cursor before querying', async () => {
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  let native; let timelineCalls = 0;
+  const server = createServer(async (request, response) => native.handler({ request, response, url: new URL(request.url, origin) }));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
+    command: { accept() {} }, supplement: { accept() {} },
+    query: { list() {}, detailWithEtag() {}, async timeline() { timelineCalls += 1; return { items: [], next_cursor: null }; }, commandStatus() {} },
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: 'csrf-timeline-0123456789012345678901234567',
+      canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-timeline', source_app_scope: 'app-timeline' }),
+    featureFlags: flags, recoveryBindingSecret });
+  try {
+    const response = await fetch(`${origin}/api/yixiaoxiu/requests/${'A'.repeat(32)}/timeline?cursor=`, {
+      headers: { cookie: '__Host-wecom_session=synthetic' },
+    });
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: { code: 'YXX_INPUT_INVALID', retryable: false } });
+    assert.equal(timelineCalls, 0);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
 test('SS-007 write routes reject unknown query parameters before invoking commands', async () => {
   const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
   const csrf = 'csrf-write-query-0123456789012345678901234567';

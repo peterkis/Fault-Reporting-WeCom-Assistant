@@ -96,7 +96,7 @@ function fixture(origin) {
       const older = cursor !== null && cursor !== undefined;
       return { items: [{ event_type: older ? 'PROCESSING' : 'REQUEST_ACCEPTED', summary: older ? `更早记录 ${cursor}` : '最近记录',
         occurred_at: older ? '2026-09-16 22:00:00' : '2026-09-16 23:00:00', occurred_epoch_ms: older ? '1789567200000' : '1789570800000', ticket: ticket(state.timelineTicketStatus ?? state.ticketStatus) }],
-        next_cursor: state.timelineEnds ? null : older ? `${cursor}-next` : 'cursor-1' };
+        next_cursor: state.timelineEnds ? null : older ? `${cursor}-next` : 'cursor-0001' };
     },
     async commandStatus({ request, clientCommandId }) {
       state.commandStatusCalls.push({ member: memberFor(request), clientCommandId });
@@ -595,8 +595,8 @@ test('SS-007 synthetic visibility restore reloads cleared detail, bounds an endl
     assert.equal(f.state.timelineCalls.at(-1).before, String(Number.MAX_SAFE_INTEGER));
     const beforeOlder = f.state.timelineCalls.length;
     await browser.evaluate("document.querySelector('#load-older-timeline').click()");
-    await waitForState(() => f.state.timelineCalls.length > beforeOlder && f.state.timelineCalls.at(-1).cursor === 'cursor-1');
-    await browser.waitFor("document.querySelector('#detail-timeline')?.textContent.includes('更早记录 cursor-1')&&document.querySelector('#detail-timeline')?.textContent.includes('最近记录')");
+    await waitForState(() => f.state.timelineCalls.length > beforeOlder && f.state.timelineCalls.at(-1).cursor === 'cursor-0001');
+    await browser.waitFor("document.querySelector('#detail-timeline')?.textContent.includes('更早记录 cursor-0001')&&document.querySelector('#detail-timeline')?.textContent.includes('最近记录')");
     assert.equal(await browser.evaluate("document.querySelector('#load-older-timeline').hidden"), false);
     assert.equal(await browser.evaluate("document.querySelector('#timeline-window-note').textContent.includes('下次状态刷新')"), true);
 

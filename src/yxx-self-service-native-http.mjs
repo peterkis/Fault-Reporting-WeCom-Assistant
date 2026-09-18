@@ -298,12 +298,14 @@ export function createYxxSelfServiceNativeHttp({
         const timeline = url.pathname.endsWith('/timeline');
         const allowed = timeline ? new Set(['after', 'before', 'cursor', 'limit']) : new Set();
         if ([...url.searchParams.keys()].some((key) => !allowed.has(key) || url.searchParams.getAll(key).length !== 1)) throw error('YXX_INPUT_INVALID');
+        const timelineCursor = timeline ? url.searchParams.get('cursor') : null;
+        if (timelineCursor !== null && timelineCursor.length < 10) throw error('YXX_INPUT_INVALID');
         await currentMember(request);
         if (timeline) {
           const requestedLimit = url.searchParams.get('limit');
           const timelineLimit = requestedLimit === null ? undefined : Number(requestedLimit);
           if (timelineLimit !== undefined && (!Number.isSafeInteger(timelineLimit) || timelineLimit < 1 || timelineLimit > 100)) throw error('YXX_INPUT_INVALID');
-          json(response, 200, await query.timeline({ request, requestRef: detailMatch[1], after: url.searchParams.get('after'), before: url.searchParams.get('before'), cursor: url.searchParams.get('cursor'), limit: timelineLimit })); return true;
+          json(response, 200, await query.timeline({ request, requestRef: detailMatch[1], after: url.searchParams.get('after'), before: url.searchParams.get('before'), cursor: timelineCursor, limit: timelineLimit })); return true;
         }
         const result = await query.detailWithEtag({ request, requestRef: detailMatch[1], ifNoneMatch: header(request, 'if-none-match') });
         json(response, result.status, result.body, { etag: result.etag }); return true;

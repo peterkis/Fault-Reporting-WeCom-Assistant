@@ -1,6 +1,6 @@
 # YXX-SS-007 原生自助报修页面手册
 
-当前本地验证以 `evidence/yxx-ss-007-logout-broadcast-v22-report.json` 为准。
+当前本地验证以 `evidence/yxx-ss-007-current-readiness-v24.json` 为准。
 原始报告保留作历史记录；任务仍等待当前提交的外部审查。
 时间线默认显示最近100条，按按钮逐页加载更早记录；下一次轮询回到最新窗口。
 未知提交结果最多自动查询五次，之后可点击“查询上次提交结果”继续查询，
@@ -45,7 +45,8 @@ PostgreSQL，把页面接到已有规则、人工审核和 Unified Ticket Core �
 页面资源是 `web/p2-reporter/self-service.html`、`self-service.css` 和
 `self-service.js`。POST 只接受同源 JSON，并要求服务端下发的 CSRF；响应 `202`
 带真实 `request_ref`，页面不提前生成工单号。网络结果未知时，浏览器只在
-`localStorage` 按命令分别保留版本化的 opaque UUID 和恢复 scope，最多20条；
+`localStorage` 按命令分别保留版本化的 opaque UUID 和恢复 scope；每个恢复 scope
+最多20条有效 v3 记录，其他 scope 或格式无效的记录不计入该限额；
 `sessionStorage` 仅指向当前标签的命令。关闭标签后重新打开可查询原结果，
 恢复查询不会自动重发正文。满额时阻止新提交，不删除其他未知结果。
 恢复记录写入失败或读回不一致时停止提交，不发送 POST；恢复存储可用后再由用户提交。
@@ -56,8 +57,8 @@ PostgreSQL，把页面接到已有规则、人工审核和 Unified Ticket Core �
 退出会通过同源 BroadcastChannel 和 storage 事件广播固定的 `v1/logout` 标记，
 不携带命令 ID、恢复范围、Cookie、CSRF 或表单内容。其他打开标签收到后立即清空
 保护内容并进入终止页面，监听不会再次广播或启动认证。
-输入草稿仅暂存于当前调用内存；同身份范围且同CSRF核验成功后恢复，
-身份变化、CSRF轮换或核验失败不恢复。正文不写入浏览器存储。
+输入草稿仅暂存于当前调用内存；同一 `recovery_scope` 且重新核验成功后恢复，
+CSRF 轮换不改变该 scope；scope 变化或核验失败不恢复。正文不写入浏览器存储。
 
 列表、详情与时间线显示原 Ticket Core 状态的既有对外中文语义，不改变工单状态。
 详情页可见时每五秒最多发起一组 detail/timeline GET；隐藏、离页、退出或账号
