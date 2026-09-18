@@ -201,7 +201,7 @@ export function createYxxSelfServiceNativeHttp({
   const configured = Object.freeze({ profile, flags: configuredFlags });
   const serviceEnabled = writeEnabled(profile, configuredFlags);
 
-  async function currentMember(request) {
+  async function currentMember(request, { requireWrite = false } = {}) {
     const token = cookie(request, sessionCookieName);
     if (!token) throw error('YXX_AUTH_REQUIRED', 401);
     let member;
@@ -211,6 +211,7 @@ export function createYxxSelfServiceNativeHttp({
     if (!context || typeof context !== 'object' || Array.isArray(context)) throw error('YXX_AUTH_REQUIRED', 401);
     const selectedProfile = safeProfile(context, configured.profile);
     const selectedFlags = safeFlags(context, configured.flags);
+    if (requireWrite && (!serviceEnabled || context.write_flag !== true)) throw error('YXX_FORBIDDEN', 403);
     if (typeof context.csrf_token !== 'string' || context.csrf_token.length < 32 || context.csrf_token.length > 128) throw error('YXX_UNAVAILABLE', 503);
     return Object.freeze({ profile: selectedProfile, flags: selectedFlags, csrf_token: context.csrf_token,
       recovery_scope: recoveryScope(context, scopeSecret) });
@@ -224,7 +225,7 @@ export function createYxxSelfServiceNativeHttp({
   async function nativePage({ request, response, requestRef }) {
     if (!serviceEnabled) { page(response, 503, '医小修服务未启用', '当前仅保留原有认证提示。'); return true; }
     try {
-      await currentMember(request);
+      await currentMember(request, { requireWrite: true });
       if (requestRef) {
         const detail = await query.detailWithEtag({ request, requestRef });
         if (detail?.status !== 200) throw error(detail?.status === 404 ? 'YXX_NOT_FOUND' : 'YXX_UNAVAILABLE', detail?.status === 404 ? 404 : 503);
@@ -260,7 +261,7 @@ export function createYxxSelfServiceNativeHttp({
       if (url.pathname === ROOT && (url.search === '?auth_return=1' || url.search === '')) {
         if (url.search === '?auth_return=1') return oauthHttp({ request, response, url });
         if (!serviceEnabled) return oauthHttp({ request, response, url });
-        try { await currentMember(request); await asset(response, ['self-service.html', 'text/html']); return true; }
+        try { await currentMember(request, { requireWrite: true }); await asset(response, ['self-service.html', 'text/html']); return true; }
         catch (value) {
           const selected = mapError(value);
           if (selected.status === 401) return await oauthHttp({ request, response, url });
@@ -280,7 +281,7 @@ export function createYxxSelfServiceNativeHttp({
 
       if (url.pathname === '/api/yixiaoxiu/bootstrap' && request.method === 'GET') {
         if (url.search) throw error('YXX_INPUT_INVALID');
-        const context = await currentMember(request);
+        const context = await currentMember(request, { requireWrite: true });
         json(response, 200, { authenticated: true, identity_mode: 'MEMBER_SELF_SERVICE', read_only: false,
           can_submit: serviceEnabled, can_supplement: serviceEnabled, csrf_token: context.csrf_token,
           recovery_scope: context.recovery_scope }); return true;
@@ -315,7 +316,7 @@ export function createYxxSelfServiceNativeHttp({
       const supplementMatch = url.pathname.match(/^\/api\/yixiaoxiu\/requests\/([A-Za-z0-9_-]{32})\/supplements$/u);
       if (supplementMatch && request.method === 'POST') {
         if (url.search) throw error('YXX_INPUT_INVALID');
-        assertOrigin(request, origin.origin); const input = await body(request, 8 * 1024); const context = await currentMember(request);
+        assertOrigin(request, origin.origin); const input = await body(request, 8 * 1024); const context = await currentMember(request, { requireWrite: true });
         if (header(request, 'x-csrf-token') !== context.csrf_token) throw error('YXX_FORBIDDEN', 403);
         const result = await supplement.accept({ request, input, requestRef: supplementMatch[1] });
         json(response, result.replayed ? 200 : 202, { ok: true, replayed: result.replayed === true, receipt: result.receipt,
@@ -324,14 +325,15 @@ export function createYxxSelfServiceNativeHttp({
       const requestPath = url.pathname === '/api/yixiaoxiu/requests';
       if (requestPath && request.method === 'POST') {
         if (url.search) throw error('YXX_INPUT_INVALID');
-        assertOrigin(request, origin.origin); const input = await body(request, 16 * 1024); const context = await currentMember(request);
+        assertOrigin(request, origin.origin); const input = await body(request, 16 * 1024); const context = await currentMember(request, { requireWrite: true });
         if (header(request, 'x-csrf-token') !== context.csrf_token) throw error('YXX_FORBIDDEN', 403);
         const result = await command.accept({ request, input });
         json(response, result.replayed ? 200 : 202, { ok: true, replayed: result.replayed === true, receipt: result.receipt,
           location: `${ROOT}reports/${result.receipt.request_ref}` }); return true;
       }
       const commandMatch = url.pathname.match(/^\/api\/yixiaoxiu\/commands\/([0-9a-f-]{36})$/iu);
-      if (commandMatch && request.method === 'GET' && !url.search) {
+      if (commandMatch && request.method === 'GET') {
+        if (url.search) throw error('YXX_INPUT_INVALID');
         if (!COMMAND_ID.test(commandMatch[1])) throw error('YXX_INPUT_INVALID');
         await currentMember(request); json(response, 200, await query.commandStatus({ request, clientCommandId: commandMatch[1] })); return true;
       }

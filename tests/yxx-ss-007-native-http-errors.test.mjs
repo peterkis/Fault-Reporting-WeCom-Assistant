@@ -5,6 +5,74 @@ import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-h
 
 const recoveryBindingSecret = 'ss007-http-recovery-secret-0123456789abcdef';
 
+test('SS-007 native write UI requires an explicit member write flag while read APIs remain available', async () => {
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  const csrf = 'csrf-member-write-012345678901234567890';
+  let native, writeFlag, profile, writes = 0;
+  const server = createServer(async (request, response) => {
+    if (!await native.handler({ request, response, url: new URL(request.url, origin) })) { response.writeHead(404); response.end(); }
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const headers = { cookie: '__Host-wecom_session=synthetic', origin, 'content-type': 'application/json', 'x-csrf-token': csrf };
+  try {
+    for (profile of ['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP']) {
+      native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, profile, featureFlags: flags, recoveryBindingSecret,
+        oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
+        authenticateMember: async () => ({ profile, flags, write_flag: writeFlag, csrf_token: csrf,
+          canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-write', source_app_scope: 'app-write' }),
+        command: { accept() { writes++; } }, supplement: { accept() { writes++; } },
+        query: { list: () => ({ items: [] }), detailWithEtag: () => ({ status: 200, body: {} }), timeline() {}, commandStatus() {} } });
+      for (writeFlag of [false, undefined, 'true']) {
+        for (const path of ['/api/yixiaoxiu/bootstrap', '/wecom/yixiaoxiu/', '/wecom/yixiaoxiu/reports/new', `/wecom/yixiaoxiu/reports/${'A'.repeat(32)}`]) {
+          const response = await fetch(origin + path, { headers });
+          assert.equal(response.status, 403, `${profile} ${String(writeFlag)} ${path}`);
+          assert.doesNotMatch(await response.text(), /self-service\.js|<form/u);
+        }
+        for (const path of ['/api/yixiaoxiu/requests', `/api/yixiaoxiu/requests/${'A'.repeat(32)}/supplements`]) {
+          assert.equal((await fetch(origin + path, { method: 'POST', headers, body: '{}' })).status, 403);
+        }
+        assert.equal((await fetch(origin + '/api/yixiaoxiu/my-reports', { headers })).status, 200);
+      }
+      writeFlag = true;
+      const response = await fetch(origin + '/api/yixiaoxiu/bootstrap', { headers });
+      assert.equal(response.status, 200);
+      const bootstrap = await response.json();
+      assert.equal(bootstrap.can_submit, true); assert.equal(bootstrap.can_supplement, true);
+      assert.equal((await fetch(origin + '/wecom/yixiaoxiu/reports/new', { headers })).status, 200);
+    }
+    assert.equal(writes, 0);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test('SS-007 command recovery rejects every query before dispatch or route fallthrough', async () => {
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  let native, queries = 0, fallthrough = 0;
+  const server = createServer(async (request, response) => {
+    if (!await native.handler({ request, response, url: new URL(request.url, origin) })) { fallthrough++; response.writeHead(404); response.end(); }
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, featureFlags: flags, recoveryBindingSecret,
+    oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, write_flag: true,
+      csrf_token: 'csrf-command-012345678901234567890123', canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-command', source_app_scope: 'app-command' }),
+    command: { accept() {} }, supplement: { accept() {} },
+    query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() { queries++; return {}; } } });
+  const path = '/api/yixiaoxiu/commands/00000000-0000-4000-8000-000000000001';
+  const headers = { cookie: '__Host-wecom_session=synthetic' };
+  try {
+    for (const query of ['?extra=1', '?cursor=', '?extra=1&extra=2', '?%65xtra=1']) {
+      const response = await fetch(origin + path + query, { headers });
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), { error: { code: 'YXX_INPUT_INVALID', retryable: false } });
+    }
+    assert.equal(queries, 0); assert.equal(fallthrough, 0);
+    assert.equal((await fetch(origin + path, { headers })).status, 200);
+    assert.equal(queries, 1);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
 test('SS-007 native factory accepts only the OAuth callback session cookie', () => {
   const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
   const config = { publicOrigin: 'http://127.0.0.1:3000', oauth: { authenticate() {} }, oauthHttp() {},
@@ -81,7 +149,7 @@ test('SS-007 JSON bodies reject duplicate decoded keys before commands', async (
       client_command_id: input.client_command_id ?? '00000000-0000-4000-8000-000000000001', request_ref: 'A'.repeat(32), status: 'ACCEPTED',
       intake_no: 'INT-20260917-0001', accepted_revision: '1', accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' } }; } },
     supplement: { accept() {} }, query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
-    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: csrf,
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', write_flag: true, flags, csrf_token: csrf,
       canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-http', source_app_scope: 'app-http' }), featureFlags: flags,
     recoveryBindingSecret,
   });
@@ -109,7 +177,7 @@ test('SS-007 JSON bodies reject duplicate decoded keys before commands', async (
 
 test('SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes', async () => {
   const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
-  const context = { profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: 'csrf-one-0123456789012345678901234567',
+  const context = { profile: 'MEMBER_SELF_SERVICE', write_flag: true, flags, csrf_token: 'csrf-one-0123456789012345678901234567',
     canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-one', source_app_scope: 'app-one' };
   let native;
   const server = createServer(async (request, response) => native.handler({ request, response, url: new URL(request.url, origin) }));
@@ -154,7 +222,7 @@ test('SS-007 direct detail pages enforce ownership before rendering the shell', 
       if (outcome !== 200) throw Object.assign(new Error('private ownership detail'), { status: outcome, code: 'YXX_NOT_FOUND' });
       return { status: 200, body: {} };
     } },
-    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: 'csrf-page-0123456789012345678901234567',
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', write_flag: true, flags, csrf_token: 'csrf-page-0123456789012345678901234567',
       canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-page', source_app_scope: 'app-page' }),
     featureFlags: flags, recoveryBindingSecret });
   try {
@@ -182,7 +250,7 @@ test('SS-007 detail rejects an oversized If-None-Match before query dispatch', a
   native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
     command: { accept() {} }, supplement: { accept() {} },
     query: { list() {}, timeline() {}, commandStatus() {}, detailWithEtag() { detailCalls += 1; } },
-    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: 'csrf-etag-0123456789012345678901234567',
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', write_flag: true, flags, csrf_token: 'csrf-etag-0123456789012345678901234567',
       canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-etag', source_app_scope: 'app-etag' }),
     featureFlags: flags, recoveryBindingSecret });
   try {
@@ -205,7 +273,7 @@ test('SS-007 report source filters reject explicit empty and unknown values befo
   native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
     command: { accept() {} }, supplement: { accept() {} },
     query: { async list(input) { sources.push(input.source); return { items: [], next_cursor: null }; }, detailWithEtag() {}, timeline() {}, commandStatus() {} },
-    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: 'csrf-filter-0123456789012345678901234567',
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', write_flag: true, flags, csrf_token: 'csrf-filter-0123456789012345678901234567',
       canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-filter', source_app_scope: 'app-filter' }),
     featureFlags: flags, recoveryBindingSecret });
   try {
@@ -229,7 +297,7 @@ test('SS-007 timeline rejects an explicitly empty cursor before querying', async
   native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
     command: { accept() {} }, supplement: { accept() {} },
     query: { list() {}, detailWithEtag() {}, async timeline() { timelineCalls += 1; return { items: [], next_cursor: null }; }, commandStatus() {} },
-    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: 'csrf-timeline-0123456789012345678901234567',
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', write_flag: true, flags, csrf_token: 'csrf-timeline-0123456789012345678901234567',
       canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-timeline', source_app_scope: 'app-timeline' }),
     featureFlags: flags, recoveryBindingSecret });
   try {
@@ -254,7 +322,7 @@ test('SS-007 write routes reject unknown query parameters before invoking comman
     command: { async accept() { commandCalls += 1; return {}; } },
     supplement: { async accept() { supplementCalls += 1; return {}; } },
     query: { list() {}, detailWithEtag() {}, timeline() {}, commandStatus() {} },
-    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: csrf,
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', write_flag: true, flags, csrf_token: csrf,
       canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-write-query', source_app_scope: 'app-write-query' }),
     featureFlags: flags, recoveryBindingSecret,
   });

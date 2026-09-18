@@ -27,7 +27,7 @@ function adaptSyntheticSession(request, response, url) {
 
 function fixture(origin) {
   const state = { commandCalls: [], supplementCalls: [], listCalls: [], detailCalls: [], timelineCalls: [],
-    commandStatusCalls: [], next: 0, supplementConflict: false };
+    commandStatusCalls: [], next: 0, supplementConflict: false, writeFlag: true };
   const memberFor = (request) => (request.headers.cookie ?? '').includes('member-b') ? 'B' : 'A';
   const oauth = {
     authenticate(token) {
@@ -41,7 +41,7 @@ function fixture(origin) {
     state.contextCalls = (state.contextCalls ?? 0) + 1;
     if (state.contextGate) await state.contextGate;
     if (state.contextError) throw state.contextError;
-    return { profile: 'MEMBER_SELF_SERVICE', flags: FLAGS, csrf_token: state.csrfOverride ?? csrfFor(sessionToken),
+    return { profile: 'MEMBER_SELF_SERVICE', write_flag: state.writeFlag, flags: FLAGS, csrf_token: state.csrfOverride ?? csrfFor(sessionToken),
       canonical_reporter_binding: sessionToken === 'member-b' ? 'b'.repeat(64) : 'a'.repeat(64),
       source_corp_scope: 'corp-local', source_app_scope: 'app-local' };
   };
@@ -265,6 +265,23 @@ test('SS-007 visible report list revalidates a shared-cookie member change', { t
     assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${REFS.A}')`), false);
     assert.equal(await browser.evaluate('window.__oldMemberExposed'), false);
     assert.deepEqual(f.state.listCalls.slice(-2).map(item => item.member), ['A', 'B']);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 periodic bootstrap revokes an open write form when the member write flag is removed', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate("document.querySelector('#description').value='draft before permission revocation'");
+    f.state.writeFlag = false;
+    await browser.waitFor("document.querySelector('#app-status').textContent.includes('当前账号没有此项权限')");
+    assert.equal(await browser.evaluate("document.querySelector('#new-view').hidden"), true);
+    assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+    assert.equal(f.state.commandCalls.length, 0);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 

@@ -159,7 +159,7 @@ export async function startSs007AcceptanceFixture() {
     supplement,
     query,
     authenticateMember: async () => ({
-      profile: 'MEMBER_SELF_SERVICE', flags: SS007_FLAGS, csrf_token: csrf,
+      profile: 'MEMBER_SELF_SERVICE', write_flag: true, flags: SS007_FLAGS, csrf_token: csrf,
       canonical_reporter_binding: 'c'.repeat(64), source_corp_scope: 'corp-acceptance', source_app_scope: 'app-acceptance',
     }),
     featureFlags: SS007_FLAGS,
