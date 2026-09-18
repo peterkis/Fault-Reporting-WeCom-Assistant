@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {withP2016IsolatedDatabase} from './helpers/p2-016-postgres-harness.mjs';
+import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 import {migrateCurrentBaseline} from '../scripts/migrate-current-baseline.mjs';
 import {migrateYxxSelfService,yxxCatalogInventory,validateYxxCatalog} from '../scripts/yxx-self-service-migrate.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
@@ -9,8 +9,8 @@ import {randomUUID} from 'node:crypto';
 import {createYxxSelfServiceStore} from '../src/yxx-self-service-store.mjs';
 import {createYxxMemberCommandContext} from '../src/yxx-self-service-command.mjs';
 
-test('SS-009 catalog rejects weakened CHECK despite preserved names and fragments',async()=>{
-  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009schema',run:async({pool,databaseUrl})=>{
+test('SS-009 catalog rejects weakened CHECK despite preserved names and fragments',async t=>{
+  await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009schema',run:async({pool,databaseUrl,observeResource})=>{
     await migrateCurrentBaseline({databaseUrl});await migrateYxxSelfService({databaseUrl});
     await pool.query('ALTER TABLE intake.web_request_binding DROP CONSTRAINT web_binding_revision_check, ADD CONSTRAINT web_binding_revision_check CHECK (processed_revision <= input_revision OR true)');
     assert.throws(()=>validateYxxCatalog(null));
@@ -19,7 +19,7 @@ test('SS-009 catalog rejects weakened CHECK despite preserved names and fragment
 });
 
 test('SS-009 migration check rolls back and five catalog drift classes fail closed',async t=>{
-  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009drift',run:async({pool,databaseUrl})=>{
+  await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009drift',run:async({pool,databaseUrl,observeResource})=>{
     await migrateCurrentBaseline({databaseUrl});
     const before=await yxxCatalogInventory(pool);
     assert.equal((await migrateYxxSelfService({databaseUrl,mode:'check'})).status,'CHECK_ROLLBACK_SUCCEEDED');
@@ -44,8 +44,8 @@ test('SS-009 migration check rolls back and five catalog drift classes fail clos
   }});
 });
 
-test('SS-009 PostgreSQL rejects mixed Web Bot fields missing source and deferred orphan commits',async()=>{
-  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009fk',run:async({pool,databaseUrl})=>{
+test('SS-009 PostgreSQL rejects mixed Web Bot fields missing source and deferred orphan commits',async t=>{
+  await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009fk',run:async({pool,databaseUrl,observeResource})=>{
     await migrateCurrentBaseline({databaseUrl});await migrateYxxSelfService({databaseUrl});
     const flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
     const auth={profile:'MEMBER_SELF_SERVICE',flags,write_flag:true,csrf_token:'synthetic-csrf',canonical_reporter_binding:'a'.repeat(64),source_corp_scope:'synthetic-corp',source_app_scope:'synthetic-app',proof_ref:'tests/ss009'};

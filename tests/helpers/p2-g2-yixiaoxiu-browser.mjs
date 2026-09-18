@@ -55,7 +55,9 @@ export async function createYxxBrowserFixture({pool,createApp=null}){
     function newApp(){oauth=createWeComWebOAuth({enabled:true,publicOrigin:origin,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode,now:()=>authClock});
       app=createApp?createApp({oauth,origin}):createYxxReadonlyServer({pool,oauth,publicOrigin:origin,reporterHmacSecret:entryKey,reporterMemberEntry:entryConfig});}
     newApp();base=await listenYxx(app);
-    return {origin,certificateSpki,get providerCalls(){return providerCalls;},get pendingLogins(){return held.length;},get pendingDetails(){return heldDetail.length;},
+    return {origin,certificateSpki,
+      ownedResourceState:()=>({listeners:Number(proxy.listening)+Number(app.listening),sockets:sockets.size,tlsDirectories:existsSync(directory)?1:0}),
+      get providerCalls(){return providerCalls;},get pendingLogins(){return held.length;},get pendingDetails(){return heldDetail.length;},
       setMember:value=>{currentMember=value;},expireAuth:()=>{authClock+=900001;},holdLogins:()=>{hold=true;},releaseLogin:()=>{held.shift()?.();},
       releaseLogins:()=>{hold=false;for(const send of held.splice(0))send();},
       failNextTimeline:()=>{failTimeline=true;},holdDetails:()=>{holdDetail=true;},releaseDetails:()=>{holdDetail=false;for(const send of heldDetail.splice(0))send();},

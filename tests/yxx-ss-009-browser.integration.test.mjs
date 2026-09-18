@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {createYxxBrowserFixture} from './helpers/p2-g2-yixiaoxiu-browser.mjs';
-import {withP2016IsolatedDatabase} from './helpers/p2-016-postgres-harness.mjs';
+import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
 import {createYxxDelegatedIdentityMapping} from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
@@ -14,11 +14,14 @@ import {origin,secret,flags,config,oauthOptions,browser,post} from './helpers/yx
 
 test('SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket',{timeout:180000},async t=>{
   const screenshots=[];
-  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009ui',run:async({pool,databaseUrl})=>{
+  await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009ui',run:async({pool,databaseUrl,observeResource})=>{
     await migrateCurrentBaselineWithYxx({databaseUrl});
     const identityMapping=await createYxxDelegatedIdentityMapping({config,accessTokenProvider:async()=> 'synthetic',fetchImpl:async()=>new Response(JSON.stringify({errcode:0,open_userid_list:[{userid:'member-a',open_userid:'synthetic-A'},{userid:'member-b',open_userid:'synthetic-B'}]}))});
-    let runtime,fixture,tab,staffRuntime;
+    let runtime,fixture,tab,staffRuntime,proof,primaryError=null;
     try{
+      observeResource('tls_proxy_listeners',()=>fixture?.ownedResourceState().listeners??0);observeResource('tls_proxy_sockets',()=>fixture?.ownedResourceState().sockets??0);observeResource('tls_directory',()=>fixture?.ownedResourceState().tlsDirectories??0);
+      observeResource('member_listener',()=>runtime?.server.listening?1:0);observeResource('staff_listener',()=>staffRuntime?.server.listening?1:0);
+      observeResource('browser_process',()=>tab?.ownedResourceState().processes??0);observeResource('browser_profile',()=>tab?.ownedResourceState().profiles??0);observeResource('browser_command_timers',()=>tab?.ownedResourceState().commandTimers??0);observeResource('browser_socket',()=>tab?.ownedResourceState().sockets??0);
       fixture=await createYxxBrowserFixture({pool,createApp:({oauth,origin:publicOrigin})=>{
         runtime=createYxxProfile({pool,profile:'MEMBER_SELF_SERVICE',oauth,publicOrigin,reporterMemberEntry:config,identityMapping,reporterHmacSecret:secret,yxxSelfService:{featureFlags:flags,pollMilliseconds:100}});return runtime.server;
       }});runtime.selfService.start();tab=await fixture.launch({path:'/synthetic-start',width:390,height:844});
@@ -40,7 +43,8 @@ test('SS-009 real browser and PostgreSQL submit supplement review and original w
       mkdirSync('tmp/ss009-ui',{recursive:true});
       for(const [width,height] of [[390,844],[1440,900]]){await tab.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});assert.equal(await tab.evaluate('document.documentElement.scrollWidth>innerWidth'),false);const bytes=Buffer.from(await tab.screenshot(),'base64'),file='tmp/ss009-ui/'+randomUUID()+'.png';writeFileSync(file,bytes);screenshots.push({file,width,height,sha256:createHash('sha256').update(bytes).digest('hex')});}
       const storage=await tab.evaluate('JSON.stringify({local:{...localStorage},session:{...sessionStorage}})');assert.ok(!storage.includes('处方提交不了')&&!storage.includes('synthetic-A')&&!storage.includes('csrf'));
-      t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'browser',status:'PASS',candidate_fingerprint:g2CandidateInventory().fingerprint,screenshots,real_pg:true,real_browser:true,tickets:2,external_network_calls:0,simulated_provider_calls:fixture.providerCalls}));
-    }finally{await tab?.close();await staffRuntime?.stop();await runtime?.selfService.close();await fixture?.close();}
+      proof={...g2EvidenceTime(),kind:'browser',status:'PASS',candidate_fingerprint:g2CandidateInventory().fingerprint,screenshots,real_pg:true,real_browser:true,tickets:2,external_network_calls:0,simulated_provider_calls:fixture.providerCalls};
+    }catch(error){primaryError=error;}finally{await closeSS009Resources([()=>tab?.close(),()=>staffRuntime?.stop(),()=>runtime?.selfService.close(),()=>fixture?.close(),()=>runtime?.stop()],primaryError);}
+    t.diagnostic('SS009_RECEIPT '+JSON.stringify(proof));
   }});
 });

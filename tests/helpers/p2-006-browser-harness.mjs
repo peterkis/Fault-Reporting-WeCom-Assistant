@@ -140,7 +140,9 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     async function pressTab(){
       for(const type of ['rawKeyDown','keyUp'])await command('Input.dispatchKeyEvent',{type,key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
     }
-    return Object.freeze({executable,evaluate,pressTab,command,setTimezone:timezoneId=>command('Emulation.setTimezoneOverride',{timezoneId}),
+    return Object.freeze({executable,evaluate,pressTab,command,
+      ownedResourceState:()=>({processes:child.exitCode===null&&child.signalCode===null?1:0,profiles:existsSync(profile)?1:0,commandTimers:pending.size,sockets:socket?.readyState===WebSocket.CLOSED?0:1}),
+      setTimezone:timezoneId=>command('Emulation.setTimezoneOverride',{timezoneId}),
       screenshot:async()=>(await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})).data,
       waitFor:(expression,options)=>waitFor(()=>evaluate(expression),options),close});
   }catch(error){await closeBrowserTestResources([close],error);}

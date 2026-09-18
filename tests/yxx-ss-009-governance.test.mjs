@@ -15,6 +15,8 @@ test('SS-009 governance preserves historical baseline user files parent gate and
   assert.ok(readYxxLocalValidationScope(process.cwd()));
   const start=json('evidence/yxx-ss-009-start.json');assertG2EvidenceTime(start);
   assert.equal(evidenceHash(readFileSync('.gitignore')),start.gitignore_sha256);assert.equal(git(['rev-parse',':.gitignore']),start.gitignore_index);
+  const live=json('evidence/p2-g2-yxx-targeted-live-summary.json');assert.equal(live.identity.mode,'VERIFIED_DELEGATED_MAPPING');assert.equal(live.identity.raw_same_namespace,false);assert.equal(live.identity.official_A_B_conversion,'VERIFIED');assert.equal(live.full_p2_g2_live,'NOT_RUN');
+  const frozen=JSON.parse(execFileSync('git',['show',SS009_BASE+':evidence/p2-g2-yxx-targeted-live-summary.json'],{encoding:'utf8'}));assert.deepEqual(live,frozen);
   const phase=json('plans/current_phase.json');assert.equal(phase.last_completed_task,'P2-012');assert.equal(phase.last_completed_gate,'P2-G1');assert.equal(phase.last_completed_architecture_task,'ARCH-006');
   const files=g2TestFiles('full'),candidate=g2CandidateInventory();
   for(const name of ['evidence/p2-g2-yxx-entry-creation-v2-regression-run.json','evidence/yxx-ss-008-pr18-full-regression-run.json'])for(const file of json(name).files)assert.ok(files.includes(file.path));

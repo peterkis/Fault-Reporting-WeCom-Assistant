@@ -5,10 +5,20 @@ import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 import {mkdtempSync,mkdirSync,writeFileSync,rmSync,symlinkSync} from 'node:fs';
 import path from 'node:path';
 import {tmpdir} from 'node:os';
+import {closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 
 test('SS-009 evidence rejects a forged PASS summary without the matching successful TAP', () => {
   const run={suite:'full',exit_code:0,candidate_unchanged:true,counts:{tests:1155,pass:1155,fail:0,cancelled:0,skipped:0,todo:0}};
   assert.throws(()=>verifyYxxRun({run,tap:'not ok 1 - rejected\n',inventory:{fingerprint:'x',files:[]},baselineFiles:[]}));
+});
+
+test('SS-009 sampler and cleanup errors never skip later owned resource shutdown',async()=>{
+  const closed=[];
+  await assert.rejects(closeSS009Resources([
+    async()=>{closed.push('sampler');throw Error('synthetic sampling failure');},
+    async()=>{closed.push('app');},async()=>{closed.push('worker');},async()=>{closed.push('pool');}
+  ],Error('synthetic original failure')),AggregateError);
+  assert.deepEqual(closed,['sampler','app','worker','pool']);
 });
 
 test('SS-009 dedicated proof summaries cannot replace process capacity or catalog observations',()=>{

@@ -9,7 +9,7 @@ import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
 import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
 import {migrateCurrentBaselineWithYxx} from '../scripts/migrate-current-baseline.mjs';
-import {withP2016IsolatedDatabase} from './helpers/p2-016-postgres-harness.mjs';
+import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 import {configurationFixture} from './helpers/p2-g2-configuration-fixture.mjs';
 import {g2DatabaseIdentity,minimalG2Environment} from '../src/p2-g2-validation-config.mjs';
 import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
@@ -29,7 +29,7 @@ async function drain(pool){
 
 async function capacity(profile,t){
   const fingerprint=g2CandidateInventory().fingerprint,receipts=[];
-  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'g2ss009cap',max:1,run:async({pool:control,databaseUrl})=>{
+  await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'g2ss009cap',max:1,run:async({pool:control,databaseUrl,observeResource})=>{
     await migrateCurrentBaselineWithYxx({databaseUrl});
     const pool=createPostgresPool({connectionString:databaseUrl,max:4,application_name:'ss009_capacity_app'});
     const principal=await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'ss009-admin',displayName:'Synthetic capacity',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
@@ -37,7 +37,8 @@ async function capacity(profile,t){
     const staffRuntime=createYxxProfile({...options,profile:'FULL_SERVICE_LOOP',reporterPolicy:'MEMBER_REQUIRED',principalId:principal.id,
       flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true},wecomWebOAuth:oauthOptions,yxxSelfService:{featureFlags:flags}});
     const app=profile==='FULL_SERVICE_LOOP'?staffRuntime:createYxxProfile({...options,profile,oauth:createWeComWebOAuth(oauthOptions),yxxSelfService:{featureFlags:flags,pollMilliseconds:100}});
-    let primaryError=null;let worker,timer,sampling=Promise.resolve(),sampleBusy=false;const messages=[],latencies=[],samples=[];const start=performance.now(),cpuStart=process.cpuUsage();
+    let primaryError=null,samplingError=null,pumpStopped=null,samplingClosed=true;let worker,timer,sampling=Promise.resolve(),sampleBusy=false;const messages=[],latencies=[],samples=[];const start=performance.now(),cpuStart=process.cpuUsage();
+    observeResource('app_pool',()=>pool.totalCount);observeResource('member_listener',()=>app.server.listening?1:0);observeResource('staff_listener',()=>staffRuntime.server.listening?1:0);observeResource('worker_process',()=>worker&&worker.exitCode===null&&worker.signalCode===null?1:0);observeResource('sampler_in_flight',()=>sampleBusy?1:0);observeResource('sampler_timer',()=>samplingClosed?0:1);observeResource('self_pump',()=>app.selfService.pump&&!(pumpStopped?.stopped===true&&pumpStopped.running===false)?1:0);
     try{
       const started=await staffRuntime.start();if(app!==staffRuntime)await app.start();
       if(profile==='FULL_SERVICE_LOOP'){
@@ -47,10 +48,10 @@ async function capacity(profile,t){
         worker.on('message',m=>{if(m.type==='metrics-response')samples.push({...g2EvidenceTime(),role:'WORKER',...m.metrics});else messages.push(m);});
         await until(()=>{const failed=messages.find(m=>m.type==='role-failed');if(failed)throw Error(failed.error_code);return messages.find(m=>m.type==='role-ready');});
       }
-      timer=setInterval(()=>{if(sampleBusy)return;sampleBusy=true;sampling=(async()=>{
+      samplingClosed=false;timer=setInterval(()=>{if(sampleBusy)return;sampleBusy=true;sampling=(async()=>{
         const pending=(await control.query(`SELECT count(*)::int AS pending,COALESCE(EXTRACT(EPOCH FROM(platform.local_now()-min(created_at))),0)::float8 AS oldest_seconds FROM intake.web_request_binding WHERE input_revision>processed_revision`)).rows[0];
         samples.push({role:'APP',...g2EvidenceTime(),...process.memoryUsage(),pool_total:pool.totalCount,pool_waiting:pool.waitingCount,...pending});worker?.send({type:'metrics-request',request_id:randomUUID()});
-      })().finally(()=>{sampleBusy=false;});},100);
+      })().catch(error=>{samplingError=error;}).finally(()=>{sampleBusy=false;});},100);
       const member=browser(app.server),staff=browser(staffRuntime.server,started.cookie);await login(member);
       const csrf=(await member.request('/api/yixiaoxiu/bootstrap')).json().csrf_token,staffCsrf=(await staff.request('/api/lifecycle/bootstrap')).json().csrf_token;
       async function send(path,body,client=member,token=csrf){const at=performance.now(),r=await client.request(path,post(body,token));latencies.push(performance.now()-at);assert.ok([200,202].includes(r.status),r.text);return r.json();}
@@ -79,14 +80,18 @@ async function capacity(profile,t){
       assert.equal(messages.some(m=>m.type==='provider-send-request'),false);assert.ok(samples.length>0);assert.ok(samples.filter(s=>s.role==='APP').every(s=>s.pool_total<=4));
       latencies.sort((a,b)=>a-b);receipts.push({profile,...counts,submissions:500,supplements:2000,reviews:100,readers:32,duplicate_requests:12,artifacts,elapsed_ms:performance.now()-start,cpu:process.cpuUsage(cpuStart),latency_p50_ms:latencies[Math.floor(latencies.length*.5)],latency_p95_ms:latencies[Math.floor(latencies.length*.95)],samples,external_network_calls:0,gateway_processes:0,controller_pool_max:1,app_pool_max:4,worker_pool_max:worker?2:0,formal_2c4g_60min:false});
     }catch(error){primaryError=error;t.diagnostic('SS009_CAPACITY_FAILURE '+JSON.stringify({profile,error:error.message,worker_messages:messages.slice(-5),last_samples:samples.slice(-3)}));throw error;}finally{
-      clearInterval(timer);await sampling;await app.stop();if(app!==staffRuntime)await staffRuntime.stop();
-      if(worker&&worker.exitCode===null){const exited=once(worker,'exit');worker.send({type:'stop'});const kill=setTimeout(()=>worker.kill('SIGKILL'),10000);try{const [code]=await exited;if(!primaryError)assert.equal(code,0);}finally{clearTimeout(kill);}}
-      await pool.end();
+      await closeSS009Resources([
+        async()=>{clearInterval(timer);samplingClosed=true;await sampling;if(samplingError)throw samplingError;},
+        async()=>{pumpStopped=await app.selfService.pump?.stop();},
+        ()=>app.stop(),()=>app!==staffRuntime?staffRuntime.stop():undefined,
+        async()=>{if(worker&&worker.exitCode===null&&worker.signalCode===null){const exited=once(worker,'exit');if(worker.connected)worker.send({type:'stop'});const kill=setTimeout(()=>worker.kill('SIGKILL'),10000);try{const [code]=await exited;if(!primaryError)assert.equal(code,0);}finally{clearTimeout(kill);}}},
+        ()=>pool.end()
+      ],primaryError);
       assert.equal(pool.totalCount,0);assert.equal(app.server.listening,false);assert.equal(staffRuntime.server.listening,false);
-      if(worker)assert.notEqual(worker.exitCode,null);
+
     }
   }});
-  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'capacity',status:'PASS',candidate_fingerprint:fingerprint,profiles:receipts,owned_residuals:0}));
+  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'capacity',status:'PASS',candidate_fingerprint:fingerprint,profiles:receipts}));
 }
 test('SS-009 MEMBER_SELF_SERVICE actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers',{timeout:360000},t=>capacity('MEMBER_SELF_SERVICE',t));
 

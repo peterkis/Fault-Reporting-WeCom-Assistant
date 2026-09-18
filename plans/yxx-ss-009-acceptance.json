@@ -12,7 +12,8 @@
           "file": "tests/yxx-ss-009-governance.test.mjs",
           "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
         }
-      ]
+      ],
+      "evidence_kind": "governance"
     },
     {
       "id": "YXX-AC-002",
@@ -24,7 +25,8 @@
           "file": "tests/yxx-ss-009-governance.test.mjs",
           "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
         }
-      ]
+      ],
+      "evidence_kind": "governance"
     },
     {
       "id": "YXX-AC-003",
@@ -36,7 +38,8 @@
           "file": "tests/yxx-ss-009-governance.test.mjs",
           "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
         }
-      ]
+      ],
+      "evidence_kind": "governance"
     },
     {
       "id": "YXX-AC-004",
@@ -48,7 +51,8 @@
           "file": "tests/yxx-ss-009-governance.test.mjs",
           "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
         }
-      ]
+      ],
+      "evidence_kind": "governance"
     },
     {
       "id": "YXX-AC-005",
@@ -1072,7 +1076,8 @@
           "file": "tests/yxx-ss-009-governance.test.mjs",
           "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
         }
-      ]
+      ],
+      "evidence_kind": "historical_coverage"
     },
     {
       "id": "YXX-AC-084",
@@ -1084,7 +1089,8 @@
           "file": "tests/yxx-ss-009-evidence.test.mjs",
           "name": "SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time"
         }
-      ]
+      ],
+      "evidence_kind": "run"
     },
     {
       "id": "YXX-AC-085",
@@ -1096,19 +1102,16 @@
           "file": "tests/yxx-ss-009-governance.test.mjs",
           "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
         }
-      ]
+      ],
+      "evidence_kind": "inventory"
     },
     {
       "id": "YXX-AC-086",
       "scenario": "SPEC与STANDARDS",
       "expected": "两轴实际引用当前候选，无伪造独立审查",
       "status": "NOT_RUN",
-      "tests": [
-        {
-          "file": "tests/yxx-ss-009-evidence.test.mjs",
-          "name": "SS-009 evidence rejects a forged PASS summary without the matching successful TAP"
-        }
-      ]
+      "tests": [],
+      "evidence_kind": "review"
     },
     {
       "id": "YXX-AC-087",
@@ -1120,7 +1123,8 @@
           "file": "tests/yxx-ss-009-evidence.test.mjs",
           "name": "SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time"
         }
-      ]
+      ],
+      "evidence_kind": "strict_negative"
     },
     {
       "id": "YXX-AC-088",
@@ -1136,7 +1140,8 @@
           "file": "tests/yxx-ss-009-capacity.integration.test.mjs",
           "name": "SS-009 FULL_SERVICE_LOOP actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers"
         }
-      ]
+      ],
+      "evidence_kind": "capacity"
     },
     {
       "id": "YXX-AC-089",
@@ -1148,19 +1153,16 @@
           "file": "tests/yxx-ss-009-governance.test.mjs",
           "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
         }
-      ]
+      ],
+      "evidence_kind": "time_audit"
     },
     {
       "id": "YXX-AC-090",
       "scenario": "清理与历史保护",
       "expected": "自有运行资源关闭，受保护诊断保留如实记录",
       "status": "NOT_RUN",
-      "tests": [
-        {
-          "file": "tests/yxx-ss-009-governance.test.mjs",
-          "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
-        }
-      ]
+      "tests": [],
+      "evidence_kind": "cleanup"
     },
     {
       "id": "YXX-AC-091",

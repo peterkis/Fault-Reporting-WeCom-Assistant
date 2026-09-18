@@ -3,6 +3,8 @@ import {createPostgresPool} from '../../src/platform/postgres-pool.mjs';
 import {createYxxSelfServiceStore} from '../../src/yxx-self-service-store.mjs';
 import {createYxxMemberCommandContext} from '../../src/yxx-self-service-command.mjs';
 import {createYxxSelfServiceOrchestrator} from '../../src/yxx-self-service-orchestrator.mjs';
+if(process.env.SS009_STARTUP_MODE==='FAIL')throw Error('SS009_TEST_START_FAILED');
+if(process.env.SS009_STARTUP_MODE==='HOLD'){process.on('message',()=>{});await new Promise(()=>{});}
 const base=createPostgresPool({connectionString:process.env.PILOT_DATABASE_URL,max:2,application_name:'ss009_owned_crash'});
 base.on('error',()=>{});
 let barrier=null;
@@ -17,6 +19,7 @@ process.on('message',async m=>{
   try{barrier=m.barrier??null;let result;
     if(m.action==='accept')result=await command.accept({input:m.input,kind:m.kind??'SUBMIT',requestRef:m.ref,request:{headers:{'x-csrf-token':auth.csrf_token,'idempotency-key':m.input.client_command_id}}});
     else if(m.action==='process'){await pause('before-process');result=await processor.processOne({requestRef:m.ref});}
+    else if(m.action==='recover')result=await processor.processPending({batchSize:10});
     else if(m.action==='status')result=await command.commandStatus({request:{},clientCommandId:m.command});
     else if(m.action==='stop'){await base.end();process.disconnect();return;}
     process.send({type:'result',result});
