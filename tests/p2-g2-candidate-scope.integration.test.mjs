@@ -9,7 +9,13 @@ for(const [id,count,departments,scope] of [['D12-043',3,1,'DEPARTMENT'],['D12-04
       source:'WECOM_DIRECTORY',version:'synthetic-memberships-v1',memberships:[{
         department_ref:'synthetic-department-'+(Number(input.reporter_external_id.split('-').at(-1))%departments),role:'PRIMARY'}]}})});
     await withG2Runtime(async f=>{
-      for(let i=0;i<count;i++){await f.inbound('门诊系统进不去了',{chatType:'single',reporter:'synthetic-member-'+i});await f.pump();}
+      // This scenario evaluates one complete cohort. Keep background correlation
+      // from evaluating a smaller prefix while the fixture is still collecting it.
+      const cohort=await f.pool.connect();
+      try{
+        await cohort.query('BEGIN');await cohort.query("SELECT pg_advisory_xact_lock(hashtextextended('p2-015-incident-correlation/1',0))");
+        for(let i=0;i<count;i++){await f.inbound('门诊系统进不去了',{chatType:'single',reporter:'synthetic-member-'+i});await f.pump();if(count===8&&i===4)await new Promise(resolve=>setTimeout(resolve,500));}
+      }finally{await cohort.query('ROLLBACK');cohort.release();}
       const before=Number((await f.pool.query('SELECT count(*) FROM communication.delivery')).rows[0].count);
       await f.runtime.incidentExtension.runOnce();
       const items=(await f.get('/api/incident-candidates')).items;assert.equal(items.length,1);

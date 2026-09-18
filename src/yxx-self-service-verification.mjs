@@ -111,6 +111,7 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
   const passed=verifyYxxRun({run,tap,inventory,baselineFiles:baseline.files});
   const casesText=readYxxEvidence(root,report.case_trace);assert.equal(evidenceHash(casesText),run.case_trace_sha256);
   const cases=casesText.trim().split('\n').map(line=>JSON.parse(line));assert.equal(cases.length,run.counts.tests);
+  for(const c of cases){assertG2EvidenceTime(c);assert.equal(c.time_basis,'REPORTER_OBSERVED_AT');}
   assert.ok(cases.every(c=>c.event==='test:pass'&&!c.skip&&!c.todo));
   const executed=json(report.matrix);assert.equal(executed.scenarios.length,102);
   for(let i=0;i<102;i++){
@@ -145,6 +146,6 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
   const governance=json(report.governance);assert.equal(governance.identity.raw_same_namespace,false);assert.equal(governance.identity.official_A_B_conversion,'VERIFIED');assert.deepEqual(governance.identity,read('evidence/p2-g2-yxx-targeted-live-summary.json').identity);
   assert.equal(governance.gitignore_sha256,start.gitignore_sha256);assert.equal(governance.last_completed_gate,'P2-G1');
   const time=json(report.time_audit);assert.ok(time.sources.length>=8);for(const ref of time.sources)assertG2EvidenceTime(json(ref));
-  if(!preTamper){const negative=json(report.strict_negative);assert.equal(negative.actual_strict_entry,true);assert.equal(negative.positive_control,true);assert.equal(negative.owned_worktree_removed,true);assert.equal(negative.rejected.length,18);assert.equal(new Set(negative.rejected).size,18);}
+  if(!preTamper){const negative=json(report.strict_negative);assert.equal(negative.actual_strict_entry,true);assert.equal(negative.positive_control,true);assert.equal(negative.owned_worktree_removed,true);assert.equal(negative.rejected.length,20);assert.equal(new Set(negative.rejected).size,20);}
   return {ok:true,status:preTamper?'SS009_CORE_EVIDENCE_VALID_NOT_COMPLETE':'SS009_LOCAL_VERIFICATION_COMPLETE',candidate_fingerprint:inventory.fingerprint,live_authorized:false,parent_gate_advanced:false};
 }

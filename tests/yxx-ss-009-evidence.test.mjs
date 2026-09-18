@@ -6,10 +6,20 @@ import {mkdtempSync,mkdirSync,writeFileSync,rmSync,symlinkSync} from 'node:fs';
 import path from 'node:path';
 import {tmpdir} from 'node:os';
 import {closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
+import caseReporter from '../scripts/p2-g2-case-reporter.mjs';
+import {assertG2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 
 test('SS-009 evidence rejects a forged PASS summary without the matching successful TAP', () => {
   const run={suite:'full',exit_code:0,candidate_unchanged:true,counts:{tests:1155,pass:1155,fail:0,cancelled:0,skipped:0,todo:0}};
   assert.throws(()=>verifyYxxRun({run,tap:'not ok 1 - rejected\n',inventory:{fingerprint:'x',files:[]},baselineFiles:[]}));
+});
+
+test('SS-009 every structured test event has paired reporter observation time',async()=>{
+  async function* events(){yield {type:'test:pass',data:{name:'synthetic case',file:path.join(process.cwd(),'tests/yxx-ss-009-evidence.test.mjs'),line:1}};}
+  const rows=[];for await(const line of caseReporter(events()))rows.push(JSON.parse(line));
+  assert.equal(rows.length,1);assertG2EvidenceTime(rows[0]);assert.equal(rows[0].time_basis,'REPORTER_OBSERVED_AT');
+  assert.throws(()=>assertG2EvidenceTime({...rows[0],event_epoch_ms:undefined}));
+  assert.throws(()=>assertG2EvidenceTime({...rows[0],event_epoch_ms:String(BigInt(rows[0].event_epoch_ms)+10000n)}));
 });
 
 test('SS-009 sampler and cleanup errors never skip later owned resource shutdown',async()=>{

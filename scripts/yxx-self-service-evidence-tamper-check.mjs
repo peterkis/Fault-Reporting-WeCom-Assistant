@@ -11,16 +11,19 @@ import {validateYxxSelfService,evidenceHash,SS009_BASE} from '../src/yxx-self-se
 export function tamperCheck(){
   const owned=path.join(G2_ROOT,'tmp','ss009-tamper-'+randomUUID()),git=args=>execFileSync('git',args,{cwd:G2_ROOT,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe']});
   assert.match(path.relative(path.join(G2_ROOT,'tmp'),owned),/^ss009-tamper-[a-f0-9-]{36}$/u);
-  git(['worktree','add','--detach',owned,'HEAD']);const rejected=[];
+  git(['worktree','add','--detach',owned,'HEAD']);copyFileSync(path.join(G2_ROOT,'.gitignore'),path.join(owned,'.gitignore'));const rejected=[];
   const reportPath=path.join(owned,'evidence/yxx-ss-009-report.json');let original;
   const copy=()=>{for(const file of readdirSync(path.join(G2_ROOT,'evidence')).filter(f=>f.startsWith('yxx-ss-009-')))copyFileSync(path.join(G2_ROOT,'evidence',file),path.join(owned,'evidence',file));};
   try{
     copy();original=JSON.parse(readFileSync(reportPath,'utf8'));assert.equal(validateYxxSelfService({root:owned,requireReady:true,preTamper:true}).status,'SS009_CORE_EVIDENCE_VALID_NOT_COMPLETE');
     const artifact=(r,key,mutate)=>{const file=path.join(owned,r[key].path),value=JSON.parse(readFileSync(file,'utf8'));mutate(value);const text=JSON.stringify(value,null,2)+'\n';writeFileSync(file,text);r[key].sha256=evidenceHash(text);};
+    const trace=(r,mutate)=>{const file=path.join(owned,r.case_trace.path),rows=readFileSync(file,'utf8').trim().split('\n').map(line=>JSON.parse(line));mutate(rows[0]);const text=rows.map(row=>JSON.stringify(row)).join('\n')+'\n';writeFileSync(file,text);r.case_trace.sha256=evidenceHash(text);artifact(r,'run',run=>{run.case_trace_sha256=r.case_trace.sha256;});};
     const changes=[
       ['wrong TAP hash',r=>{r.tap.sha256='0'.repeat(64);}],
       ['missing published inventory',r=>{r.inventory.path='evidence/ss009-missing-inventory.json';}],
       ['changed published inventory',r=>artifact(r,'inventory',v=>{v.files.pop();})],
+      ['missing case observation time',r=>trace(r,c=>{delete c.event_time;})],
+      ['unpaired case observation time',r=>trace(r,c=>{c.event_epoch_ms=String(BigInt(c.event_epoch_ms)+10000n);})],
       ['wrong candidate',r=>{r.candidate_fingerprint='0'.repeat(64);}],
       ['old but real tested commit',r=>{r.tested_head=SS009_BASE;r.tested_tree=git(['rev-parse',SS009_BASE+'^{tree}']).trim();}],
       ['missing old file',r=>artifact(r,'run',v=>{v.files.pop();})],
