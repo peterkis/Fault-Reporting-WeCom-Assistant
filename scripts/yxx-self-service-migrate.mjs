@@ -1,3 +1,5 @@
+import {readFileSync} from 'node:fs';
+import {isDeepStrictEqual} from 'node:util';
 import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
@@ -7,12 +9,7 @@ export const YXX_MIGRATION_ID='033_yxx_self_service_intake';
 export const YXX_CORRECTIVE_MIGRATION_ID='034_yxx_self_service_direct_chat_check';
 const FILE=new URL('../database/migrations/033_yxx_self_service_intake.sql',import.meta.url);
 const CORRECTIVE_FILE=new URL('../database/migrations/034_yxx_self_service_direct_chat_check.sql',import.meta.url);
-const RELATIONS=Object.freeze(['intake.web_request_binding','intake.web_submission','intake.web_command_receipt']);
-const REQUIRED_COLUMNS=Object.freeze({
-  'intake.web_request_binding':['intake_id','request_ref','source_corp_scope','source_app_scope','canonical_reporter_binding','input_revision','processed_revision','next_attempt_epoch_ms','retry_count','last_safe_error_code','retention_until','retention_until_epoch_ms'],
-  'intake.web_submission':['id','intake_id','command_receipt_id','kind','input_revision','sequence_no','safe_content','canonical_content_hash','canonical_reporter_binding','received_at','received_epoch_ms','retention_until','retention_until_epoch_ms'],
-  'intake.web_command_receipt':['id','scope_hash','client_command_id','command_kind','command_hash','schema_version','result_intake_id','result_request_ref','accepted_revision','status','accepted_at','accepted_epoch_ms'],
-});
+const RELATIONS=Object.freeze(['intake.web_request_binding','intake.web_submission','intake.web_command_receipt','intake.service_intake','intake.service_intake_event','intake.contact_journey','intake.channel_leg','intake.deterministic_decision','intake.manual_review_item']);
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const fail=code=>{const error=new Error(code);error.code=code;throw error;};
 
@@ -48,36 +45,11 @@ export async function yxxCatalogInventory(tx){
 }
 
 export function yxxCatalogHash(inventory){return sha(JSON.stringify(inventory));}
-export function validateYxxCatalog(inventory){
-  if(!inventory||inventory.forbidden_timezone_columns!==0)fail('YXX_SELF_SERVICE_TIME_TYPE_DRIFT');
-  const relationSet=new Set(inventory.relations.map(v=>v.relation));
-  if(RELATIONS.some(v=>!relationSet.has(v)))fail('YXX_SELF_SERVICE_RELATION_DRIFT');
-  const columns=new Map();for(const row of inventory.columns){if(!columns.has(row.relation))columns.set(row.relation,new Set());columns.get(row.relation).add(row.name);}
-  for(const [relation,names] of Object.entries(REQUIRED_COLUMNS))if(names.some(name=>!columns.get(relation)?.has(name)))fail('YXX_SELF_SERVICE_COLUMN_DRIFT');
-  const constraints=new Map(inventory.constraints.map(v=>[v.name,v]));
-  const expectedConstraints={
-    web_binding_ref_check:['c','request_ref','^[A-Za-z0-9_-]{32}$'],
-    web_binding_revision_check:['c','processed_revision','input_revision'],
-    web_binding_retention_pair_check:['c','retention_until_epoch_ms','local_from_epoch_ms'],
-    web_submission_kind_check:['c','kind','SUBMIT'],
-    web_submission_intake_revision_unique:['u','intake_id','input_revision'],
-    web_command_receipt_idempotency_unique:['u','scope_hash','client_command_id'],
-    service_intake_web_source_check:['c','YIXIAOXIU_WEB','primary_web_submission_id'],
-    channel_leg_web_source_check:['c','WEB_FORM','web_submission_id'],
-    deterministic_decision_web_source_check:['c','source_kind','primary_web_submission_id'],
-    channel_leg_web_submission_fk:['f','web_submission'],
-    deterministic_decision_web_leg_fk:['f','channel_leg'],
-    service_intake_primary_web_submission_fk:['f','web_submission'],
-  };
-  for(const [name,[type,...fragments]] of Object.entries(expectedConstraints)){
-    const row=constraints.get(name);const definition=String(row?.definition??'');
-    if(!row||row.type!==type||row.validated!==true||row.deferrable!== (name==='service_intake_primary_web_submission_fk')||fragments.some(fragment=>!definition.includes(fragment)))fail('YXX_SELF_SERVICE_CONSTRAINT_DRIFT');
-  }
-  const indexes=new Set(inventory.indexes.filter(v=>v.valid&&v.ready).map(v=>v.name));
-  for(const name of ['web_binding_member_created_idx','web_binding_pending_idx','web_submission_intake_received_idx','web_receipt_result_idx'])if(!indexes.has(name))fail('YXX_SELF_SERVICE_INDEX_DRIFT');
-  const pending=inventory.indexes.find(v=>v.name==='web_binding_pending_idx');
-  if(!pending?.definition.includes("processed_revision < input_revision")||!pending.definition.includes("revoked_at IS NULL")||pending.unique_index)fail('YXX_SELF_SERVICE_INDEX_DRIFT');
-  for(const name of ['web_command_receipt_idempotency_unique','web_submission_intake_revision_unique'])if(constraints.get(name)?.deferrable||constraints.get(name)?.deferred)fail('YXX_SELF_SERVICE_CONSTRAINT_DRIFT');
+// Frozen catalog contracts are generated from immutable 033/034 on an isolated 032 baseline.
+// Require the exact stage, so 033 cannot masquerade as the corrected 034 schema.
+const EXPECTED_CATALOG=JSON.parse(readFileSync(new URL('../contracts/yxx_self_service_catalog.json',import.meta.url),'utf8'));
+export function validateYxxCatalog(inventory,{stage='034'}={}){
+  if(!['033','034'].includes(stage)||!isDeepStrictEqual(inventory,EXPECTED_CATALOG[stage]))fail('YXX_SELF_SERVICE_CATALOG_DRIFT');
   return inventory;
 }
 
@@ -116,7 +88,7 @@ export async function migrateYxxSelfService({databaseUrl,mode='apply',PoolFactor
       await client.query('ROLLBACK');
       return {status,mode,checksum_sha256:checksum,corrective_checksum_sha256:correctionChecksum};
     }
-    if(pending033){await client.query(body);validateYxxCatalog(await yxxCatalogInventory(client));if(mode!=='check')await insertMigrationMarker(client,YXX_MIGRATION_ID,checksum);}
+    if(pending033){await client.query(body);validateYxxCatalog(await yxxCatalogInventory(client),{stage:'033'});if(mode!=='check')await insertMigrationMarker(client,YXX_MIGRATION_ID,checksum);}
     if(pending034){await client.query(correctionBody);}
     const inventory=validateYxxCatalog(await yxxCatalogInventory(client));
     if(mode==='check'){
