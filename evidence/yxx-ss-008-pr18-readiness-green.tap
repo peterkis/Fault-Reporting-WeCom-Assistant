@@ -1,0 +1,29 @@
+TAP version 13
+# Subtest: SS-008 FULL readiness requires both Web migrations only when the extension is mounted
+not ok 1 - SS-008 FULL readiness requires both Web migrations only when the extension is mounted
+  ---
+  duration_ms: 1987.8443
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-008-assembly.integration.test.mjs:51:1'
+  failureType: 'testCodeFailure'
+  error: 'new row for relation "schema_migration" violates check constraint "platform_schema_migration_id_check"'
+  code: '23514'
+  name: 'error'
+  stack: |-
+    D:\Projects\Fault-Reporting-WeCom-Assistant\node_modules\pg-pool\index.js:45:11
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-008-assembly.integration.test.mjs:77:9)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-008-assembly.integration.test.mjs:55:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2263.3775

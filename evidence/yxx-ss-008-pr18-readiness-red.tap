@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: SS-008 FULL readiness requires both Web migrations only when the extension is mounted
+not ok 1 - SS-008 FULL readiness requires both Web migrations only when the extension is mounted
+  ---
+  duration_ms: 1972.2291
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-008-assembly.integration.test.mjs:51:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"ok":true,"base_service_ready":true,"ai_enhancement_ready":false,"ai_enabled":false,"checks":{"postgres":true,"migrations_001_021":true,"app_http":true,"workbench":true,"projection_worker":true,"projection_backlog_drained":true,"projection_failures_zero":true,"communication_worker":true,"gateway_authenticated":true,"human_only_flags":true,"p2_016_schema":true},"scope":"INTERNAL_BETA_NOT_PHASE2_GO"}
+    
+    200 !== 503
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 503
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-008-assembly.integration.test.mjs:68:83)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-008-assembly.integration.test.mjs:55:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2261.4781
