@@ -195,6 +195,57 @@ for (const [path, view] of [['/wecom/yixiaoxiu/', 'home-view'], ['/wecom/yixiaox
   });
 }
 
+for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 'same'], ['new', 'changed'], ['list', '503'], ['new', 'timeout']]) {
+  test(`SS-007 periodic revalidation hides ${route} while unresolved: ${outcome}`, { timeout: 45000 }, async () => {
+    const f = await startFixture(); let browser; let releaseContext;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      const path = route === 'new' ? '/wecom/yixiaoxiu/reports/new' : route === 'list' ? '/wecom/yixiaoxiu/reports' : `/wecom/yixiaoxiu/reports/${REFS.A}`;
+      const view = route === 'new' ? 'new-view' : route === 'list' ? 'reports-view' : 'detail-view';
+      await browser.evaluate(`location.assign('${path}')`, { awaitPromise: false });
+      await browser.waitFor(route === 'list' ? `document.querySelector('#report-list')?.textContent.includes('${REFS.A}')` : route === 'detail' ? "document.querySelector('#detail-description')?.textContent.includes('<img')" : "document.querySelector('#new-view')?.hidden===false");
+      await browser.evaluate("document.querySelector('#description').value='private draft';document.querySelector('#supplement-text').value='private supplement'");
+      const before = f.state.contextCalls;
+      f.state.contextGate = new Promise(resolve => { releaseContext = resolve; });
+      await waitForState(() => f.state.contextCalls > before, 10000);
+      assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
+      if (outcome === 'timeout') {
+        await browser.waitFor("document.querySelector('#app-status').textContent.includes('服务暂时不可用')");
+      } else {
+        if (outcome === '503') f.state.contextError = Object.assign(new Error('unavailable'), { status: 503, code: 'YXX_UNAVAILABLE' });
+        if (outcome === 'changed') {
+          // Replace the cookie before issuing another periodic check, not after
+          // the server has already authenticated this request's cookie.
+          f.state.contextGate = null; releaseContext();
+          await browser.waitFor(`document.querySelector('#${view}').hidden===false`);
+          f.state.contextGate = new Promise(resolve => { releaseContext = resolve; });
+          const next = f.state.contextCalls;
+          await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
+          await waitForState(() => f.state.contextCalls > next, 10000);
+          assert.equal(await browser.evaluate(`document.querySelector('#${view}').hidden`), true);
+        }
+        f.state.contextGate = null; releaseContext();
+      }
+      if (outcome === 'same' || outcome === 'changed') {
+        await browser.waitFor(`document.querySelector('#${view}').hidden===false`);
+        assert.equal(await browser.evaluate("document.querySelector('#description').value"), outcome === 'same' ? 'private draft' : '');
+        assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), outcome === 'same' ? 'private supplement' : '');
+      } else {
+        await browser.waitFor("document.querySelector('#app-status').textContent.includes('服务暂时不可用')");
+        assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
+        assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+        assert.equal(await browser.evaluate("document.querySelector('#report-list').textContent"), '');
+        f.state.contextGate = null; releaseContext();
+        await browser.evaluate("new Promise(resolve=>setTimeout(resolve,100))");
+        assert.equal(await browser.evaluate(`document.querySelector('#${view}').hidden`), true);
+      }
+      assert.equal(f.state.commandCalls.length, 0);
+    } finally { releaseContext?.(); await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  });
+}
+
 test('SS-007 visible report list revalidates a shared-cookie member change', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   try {

@@ -6,7 +6,7 @@ const INTAKE_NO=/^INT-[0-9]{8}-[0-9]{4,}$/u;
 const LOCAL_TIME=/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/u;
 const refs={home:'/wecom/yixiaoxiu/',new:'/wecom/yixiaoxiu/reports/new',list:'/wecom/yixiaoxiu/reports'};
 const $=id=>document.getElementById(id);
-const state={generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,sessionTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,poll:null,hidden:false,hiddenDraft:null};
+const state={generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,sessionTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,hidden:false,hiddenDraft:null};
 const pendingKey='yxx.self_service.pending_command';
 const durablePrefix=`${pendingKey}.`;
 const durableLimit=20;
@@ -60,13 +60,13 @@ function remember(id){
 }
 function forget(){const id=state.pendingCommandId;releaseTabPending();removeDurable(id);}
 function clearClientDom(message='认证已失效，请重新认证。',{preserveContext=false}={}){
- cancelPendingRecovery(true);clearTimeout(state.sessionTimer);state.sessionTimer=null;state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();clearTimeout(state.poll);state.controller=null;state.hiddenDraft=null;if(!preserveContext){window.__yxx_csrf=undefined;state.recoveryScope=null;}state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
+ cancelPendingRecovery(true);clearTimeout(state.sessionTimer);state.sessionTimer=null;state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();state.controller=null;state.hiddenDraft=null;if(!preserveContext){window.__yxx_csrf=undefined;state.recoveryScope=null;}state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
  readPending();
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
  $('location-unknown').checked=false;$('impact-scope').value='UNKNOWN';clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');setStatus(message,'error');
 }
 function showLoggedOut(message,kind='error',signInReady=true){
- state.loggedOut=true;state.stopped=true;state.hidden=document.hidden;cancelPendingRecovery(true);clearTimeout(state.sessionTimer);state.sessionTimer=null;clearTimeout(state.poll);
+ state.loggedOut=true;state.stopped=true;state.hidden=document.hidden;cancelPendingRecovery(true);clearTimeout(state.sessionTimer);state.sessionTimer=null;
  setView('logged-out-view','会话已结束');setStatus(message,kind);$('brand-link').hidden=true;$('logout').hidden=true;$('sign-in-link').hidden=!signInReady;
 }
 function invalidateFromPeer(){
@@ -83,7 +83,7 @@ function captureDraft(){return Object.freeze({path:location.pathname,description
 function draftHasInput(draft){return Boolean(draft?.description||draft?.locationText||draft?.locationUnknown||draft?.impactScope!=='UNKNOWN'||draft?.serviceCode||draft?.department||draft?.extension||draft?.supplement);}
 function restoreDraft(draft){if(!draft||draft.path!==location.pathname)return;$('description').value=draft.description;$('location-text').value=draft.locationText;$('location-unknown').checked=draft.locationUnknown;$('impact-scope').value=draft.impactScope;$('service-code').value=draft.serviceCode;$('department').value=draft.department;$('extension').value=draft.extension;$('supplement-text').value=draft.supplement;}
 function prepareBootstrap(){
- clearTimeout(state.sessionTimer);state.sessionTimer=null;clearTimeout(state.poll);state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];state.recoveryScope=null;window.__yxx_csrf=undefined;
+ clearTimeout(state.sessionTimer);state.sessionTimer=null;state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];state.recoveryScope=null;window.__yxx_csrf=undefined;
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
  $('location-unknown').checked=false;$('impact-scope').value='UNKNOWN';clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-more-reports').hidden=true;$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;
  for(const id of ['home-view','new-view','reports-view','detail-view'])$(id).hidden=true;
@@ -142,7 +142,12 @@ async function revalidateVisibleSession(){
  state.sessionTimer=null;
  if(state.hidden||state.loggedOut||state.stopped)return;
  if(state.controller||state.busy){scheduleSessionRevalidation();return;}
- const operation=beginOperation(),expectedScope=state.recoveryScope;
+ const operation=beginOperation({busy:true}),expectedScope=state.recoveryScope;
+ const views=['home-view','new-view','reports-view','detail-view'].map(id=>({element:$(id),hidden:$(id).hidden}));
+ const status={text:$('app-status').textContent,className:$('app-status').className};
+ 
+ for(const {element} of views)element.hidden=true;
+ setStatus('正在验证成员会话…');
  try{
   const result=await fetchJson('/api/yixiaoxiu/bootstrap',{},operation.signal);
   if(!ownsOperation(operation))return;
@@ -150,8 +155,10 @@ async function revalidateVisibleSession(){
   if(!RECOVERY_SCOPE.test(nextScope??''))throw Object.assign(new Error(messageFor(503)),{status:503});
   if(expectedScope!==nextScope){finishOperation(operation);clearClientDom('正在验证成员会话…');void bootstrap();return;}
   window.__yxx_csrf=result.body.csrf_token;
- }catch(error){if(error.name!=='AbortError'&&ownsOperation(operation)&&error.status<500)clearClientDom(messageFor(error.status));}
- finally{finishOperation(operation);scheduleSessionRevalidation();}
+  for(const {element,hidden} of views)element.hidden=hidden;
+  $('app-status').textContent=status.text;$('app-status').className=status.className;
+ }catch(error){if(ownsOperation(operation)){clearClientDom(messageFor(error.status??503));for(const {element} of views)element.hidden=true;}}
+ finally{if(finishOperation(operation)&&state.detail)void loadDetail();scheduleSessionRevalidation();}
 }
 function jsonHeaders(id,csrf){return {'content-type':'application/json','idempotency-key':id,'x-csrf-token':csrf,'sec-fetch-site':'same-origin'};}
 function statusText(value){return ({RECEIVED_PROCESSING:'已收到，正在处理',WAITING_FOR_DETAILS:'等待补充说明',UNDER_REVIEW:'人工审核中',TICKET_CREATED:'已生成工单',NOT_SERVICE:'非报修事项'})[value]??String(value??'状态未知');}
@@ -182,7 +189,7 @@ function renderTimeline(timeline,{older=false}={}){
  $('timeline-window-note').textContent=state.timelineExpanded?'已加载较早记录；下次状态刷新会回到最近100条。':'显示最近100条处理记录；可按需加载更早记录。';
 }
 function renderDetail(detail,timeline){state.detail=detail;clear($('detail-facts'));$('detail-source').textContent='网页报修 · '+detail.intake_no;$('detail-status').textContent=statusText(detail.display_status);for(const [term,value] of [['输入版本',detail.input_revision],['已处理版本',detail.processed_revision],['最近更新',detail.updated_at]])$('detail-facts').append(node('dt',term),node('dd',value));$('detail-description').textContent=detail.safe_description||'（未提供）';clear($('detail-supplements'));for(const item of detail.supplements??[]){const li=node('li',`版本 ${item.input_revision}：${item.text??''}`);$('detail-supplements').append(li);}renderTimeline(timeline);$('detail-status').append(node('span',` · ${detail.ticket?.ticket_no?ticketSummary(detail.ticket):'尚未生成工单'}`));$('supplement-form').hidden=!detail.can_supplement;}
-function clearDetailState(){clearTimeout(state.poll);state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');}
+function clearDetailState(){state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');}
 async function loadTimeline(ref,operation,{cursor=null}={}){const query=new URLSearchParams({limit:'100'});if(cursor)query.set('cursor',cursor);else query.set('before',latestTimelineBoundary);const result=await fetchJson(`/api/yixiaoxiu/requests/${ref}/timeline?${query}`,{},operation.signal);return ownsOperation(operation)?result.body:null;}
 async function loadDetail(){
  if(state.busy||!state.detail)return;
@@ -199,7 +206,7 @@ async function loadDetail(){
  }catch(error){if(error.name!=='AbortError'&&ownsOperation(operation)){if(error.status===404)clearDetailState();setStatus(error.status?messageFor(error.status):messageFor(503),'error');}}
  finally{if(finishOperation(operation))schedule();}
 }
-function schedule(){clearTimeout(state.poll);if(!state.hidden&&!state.stopped&&state.detail)state.poll=setTimeout(loadDetail,5000);}
+function schedule(){scheduleSessionRevalidation();}
 async function loadOlderTimeline(){
  if(state.busy||!state.detail||!state.timelineCursor)return;
  const operation=beginOperation({busy:true}),cursor=state.timelineCursor,ref=state.detail.request_ref;

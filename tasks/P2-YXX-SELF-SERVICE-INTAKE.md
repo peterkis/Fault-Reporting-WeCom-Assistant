@@ -47,6 +47,6 @@ resolved before the next dependent ticket starts.
 | YXX-SS-004 | COMPLETE | shared rule/Ticket/Review orchestration, command boundary, lifecycle projection and isolated DB evidence |
 | YXX-SS-005 | COMPLETE | member query authorization, mixed Web/Bot pagination and safe progress evidence |
 | YXX-SS-006 | COMPLETE | supplement command, revision/race/recovery integration evidence |
-| YXX-SS-007 | IN_REVIEW | current aggregate: `evidence/yxx-ss-007-current-readiness-v25.json`; historical reports remain non-current |
+| YXX-SS-007 | IN_REVIEW | current aggregate: `evidence/yxx-ss-007-current-readiness-v27.json`; historical reports remain non-current |
 | YXX-SS-008..010 | PLANNED | depend on SS-007 review and real local DB/HTTP assembly |
 | YXX-SS-011 | NOT AUTHORIZED | intentionally out of scope |
