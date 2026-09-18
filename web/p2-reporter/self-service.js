@@ -29,7 +29,7 @@ function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTi
 function syncPendingButtons(){const blocked=state.pendingCommandId!==null||state.storageBlocked;$('submit-report').disabled=blocked;$('submit-supplement').disabled=blocked;}
 function durableKey(id){return `${durablePrefix}${id}`;}
 function durableKeys(){const keys=[];for(let index=0;index<localStorage.length;index+=1){const key=localStorage.key(index);if(key?.startsWith(durablePrefix))keys.push(key);}return keys;}
-function durableRecords(scope){const records=[];for(const key of durableKeys()){let value;try{value=JSON.parse(localStorage.getItem(key)??'null');}catch{continue;}if(value?.v!==3||!scopedRecord(value)||key!==durableKey(value.id)||value.scope!==scope)continue;records.push({key,value});}return records;}
+function durableRecords(){const records=[];for(const key of durableKeys()){let value;try{value=JSON.parse(localStorage.getItem(key)??'null');}catch{continue;}if(value?.v!==3||!scopedRecord(value)||key!==durableKey(value.id))continue;records.push({key,value});}return records;}
 function scopedRecord(value){return value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).sort().join(',')==='id,scope,v'&&(value.v===2||value.v===3)&&typeof value.id==='string'&&UUID.test(value.id)&&typeof value.scope==='string'&&RECOVERY_SCOPE.test(value.scope);}
 function pointTab(value){const record=JSON.stringify(value);sessionStorage.setItem(pendingKey,record);if(sessionStorage.getItem(pendingKey)!==record)throw new Error('storage verification');}
 function writeDurable(id,scope,{allowExisting=false}={}){
@@ -37,10 +37,10 @@ function writeDurable(id,scope,{allowExisting=false}={}){
  try{
   const existing=localStorage.getItem(key);
   if(existing!==null)return allowExisting&&existing===record;
-  if(durableRecords(scope).length>=durableLimit)return false;
+  if(durableRecords().length>=durableLimit)return false;
   localStorage.setItem(key,record);created=true;
   if(localStorage.getItem(key)!==record)throw new Error('storage verification');
-  if(durableRecords(scope).length>durableLimit){localStorage.removeItem(key);return false;}
+  if(durableRecords().length>durableLimit){localStorage.removeItem(key);return false;}
   return true;
  }catch{if(created){try{if(localStorage.getItem(key)===record)localStorage.removeItem(key);}catch{/* durable storage remains unavailable */}}return false;}
 }

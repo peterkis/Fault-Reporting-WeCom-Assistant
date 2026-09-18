@@ -294,6 +294,10 @@ export function createYxxSelfServiceNativeHttp({
         await currentMember(request);
         json(response, 200, await query.list({ request, source: url.searchParams.get('source'), cursor: url.searchParams.get('cursor'), limit: url.searchParams.get('limit') })); return true;
       }
+      if (url.pathname.startsWith('/api/yixiaoxiu/requests/') && ['GET', 'POST'].includes(request.method)) {
+        const route = url.pathname.match(/^\/api\/yixiaoxiu\/requests\/([^/]*)(?:\/(timeline|supplements))?$/u);
+        if (!route || !REQUEST_REF.test(route[1])) throw error('YXX_INPUT_INVALID');
+      }
       const detailMatch = url.pathname.match(/^\/api\/yixiaoxiu\/requests\/([A-Za-z0-9_-]{32})(?:\/timeline)?$/u);
       if (detailMatch && request.method === 'GET') {
         const timeline = url.pathname.endsWith('/timeline');

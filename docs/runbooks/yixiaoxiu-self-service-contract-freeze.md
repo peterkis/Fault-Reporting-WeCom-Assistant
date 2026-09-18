@@ -53,7 +53,7 @@ and source corp/app scopes using a stable server-only recovery binding secret.
 It is not a credential and grants no read or write access. It must stay stable
 for the same member/scope when CSRF rotates or that member reauthenticates.
 
-The browser may persist only a version, opaque command UUID and opaque recovery scope for a pending command. Version 3 records use `{v:3,id,scope}` in a separate localStorage key per UUID, with a sessionStorage pointer for the current tab. The durable set is bounded to 20 records; storage failure or capacity exhaustion prevents a new POST. This extends the original tab-scoped recovery to survive tab closure. The stored fields are the opaque
+The browser may persist only a version, opaque command UUID and opaque recovery scope for a pending command. Version 3 records use `{v:3,id,scope}` in a separate localStorage key per UUID, with a sessionStorage pointer for the current tab. The durable set is bounded to 20 valid v3 records across all member and corp/app scopes in the same origin, not 20 per scope; storage failure or capacity exhaustion prevents a new POST. This extends the original tab-scoped recovery to survive tab closure. The stored fields are the opaque
 command UUID and this opaque recovery scope. Bootstrap compares the saved scope
 before resuming GET-only recovery. A different scope clears the previous
 member's DOM and tab pointer, without deleting durable records belonging to other scopes. A matching scope preserves the command fence

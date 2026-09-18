@@ -538,7 +538,7 @@ test('SS-007 durable recovery capacity fails closed without deleting older unkno
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
-test('SS-007 durable recovery quota is isolated by recovery scope', { timeout: 60000 }, async () => {
+test('SS-007 durable recovery quota covers all scopes without deleting other members records', { timeout: 60000 }, async () => {
   const f = await startFixture(); let browser;
   try {
     browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
@@ -547,24 +547,66 @@ test('SS-007 durable recovery quota is isolated by recovery scope', { timeout: 6
     await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
     await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
     await browser.evaluate(`(() => {
-      const scope='b'.repeat(64);
       for(let index=1;index<=20;index+=1){
         const id='00000000-0000-4000-8000-'+String(index).padStart(12,'0');
+        const scope=(index%2?'b':'c').repeat(64);
         localStorage.setItem('yxx.self_service.pending_command.'+id,JSON.stringify({v:3,id,scope}));
       }
       localStorage.setItem('yxx.self_service.pending_command.invalid','not-a-pending-record');
-      document.querySelector('#description').value='其他成员容量不阻断当前成员';
+      window.__existingDurable=JSON.stringify(Object.entries(localStorage).sort());
+      document.querySelector('#description').value='跨成员总容量已满';
       document.querySelector('#location-unknown').checked=true;
       document.querySelector('#new-report-form').requestSubmit();
     })()`);
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 21);
+    assert.equal(await browser.evaluate("JSON.stringify(Object.entries(localStorage).sort())===window.__existingDurable"), true);
+    assert.equal(await browser.evaluate("localStorage.getItem('yxx.self_service.pending_command.invalid')"), 'not-a-pending-record');
+    // Simulate a resolved fixture record freeing one slot; production must not
+    // evict another member's unresolved record to make space.
+    await browser.evaluate("localStorage.removeItem('yxx.self_service.pending_command.00000000-0000-4000-8000-000000000001');document.querySelector('#new-report-form').requestSubmit()");
     await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
     assert.equal(f.state.commandCalls.length, 1);
-    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 21);
-    assert.equal(await browser.evaluate("localStorage.getItem('yxx.self_service.pending_command.invalid')"), 'not-a-pending-record');
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 20);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
-test('SS-007 invalid durable recovery records do not consume the current scope quota', { timeout: 60000 }, async () => {
+test('SS-007 durable capacity recheck retains another scope record added during persistence', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate(`(() => {
+      const prefix='yxx.self_service.pending_command.';
+      for(let index=1;index<=19;index++){
+        const id='00000000-0000-4000-8000-'+String(index).padStart(12,'0');
+        localStorage.setItem(prefix+id,JSON.stringify({v:3,id,scope:'b'.repeat(64)}));
+      }
+      const actual=Storage.prototype.setItem;let injected=false;
+      Storage.prototype.setItem=function(key,value){
+        const result=actual.call(this,key,value);
+        if(this===localStorage&&key.startsWith(prefix)&&!injected){
+          injected=true;window.__attemptedDurableKey=key;
+          const id='00000000-0000-4000-8000-000000000020';
+          actual.call(this,prefix+id,JSON.stringify({v:3,id,scope:'c'.repeat(64)}));
+        }
+        return result;
+      };
+      document.querySelector('#description').value='并发容量校验';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit();
+    })()`);
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(await browser.evaluate("localStorage.getItem(window.__attemptedDurableKey)"), null);
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 20);
+    assert.equal(await browser.evaluate("JSON.parse(localStorage.getItem('yxx.self_service.pending_command.00000000-0000-4000-8000-000000000020')).scope"), 'c'.repeat(64));
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 invalid durable recovery records do not consume the global valid-record quota', { timeout: 60000 }, async () => {
   const f = await startFixture(); let browser;
   try {
     browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,

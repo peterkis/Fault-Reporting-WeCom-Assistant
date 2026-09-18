@@ -79,6 +79,38 @@ test('SS-007 command recovery rejects every query before dispatch or route fallt
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
+test('SS-007 malformed request references return 400 without dispatch or fallthrough', async () => {
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  let native, calls = 0, fallthrough = 0;
+  const server = createServer(async (request, response) => {
+    if (!await native.handler({ request, response, url: new URL(request.url, origin) })) { fallthrough++; response.writeHead(404); response.end(); }
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`, csrf = 'csrf-request-route-01234567890123456789';
+  const unknown = () => { calls++; throw Object.assign(new Error('unknown'), { status: 404, code: 'YXX_NOT_FOUND' }); };
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, featureFlags: flags, recoveryBindingSecret,
+    oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, write_flag: true, csrf_token: csrf,
+      canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-ref', source_app_scope: 'app-ref' }),
+    command: { accept() {} }, supplement: { accept: unknown },
+    query: { list() {}, detailWithEtag: unknown, timeline: unknown, commandStatus() {} } });
+  const headers = { cookie: '__Host-wecom_session=synthetic', origin, 'content-type': 'application/json', 'x-csrf-token': csrf };
+  try {
+    for (const [method, suffix] of [['GET', ''], ['GET', '/timeline'], ['POST', '/supplements']]) {
+      for (const ref of ['not-a-ref', '', 'A'.repeat(31), 'A'.repeat(33), '%21'.repeat(32), 'bad/extra']) {
+        const response = await fetch(origin + '/api/yixiaoxiu/requests/' + ref + suffix, { method, headers, ...(method === 'POST' ? { body: '{}' } : {}) });
+        assert.equal(response.status, 400, method + ' ' + ref + suffix);
+        assert.deepEqual(await response.json(), { error: { code: 'YXX_INPUT_INVALID', retryable: false } });
+      }
+    }
+    assert.equal(calls, 0); assert.equal(fallthrough, 0);
+    for (const [method, suffix] of [['GET', ''], ['GET', '/timeline'], ['POST', '/supplements']]) {
+      assert.equal((await fetch(origin + '/api/yixiaoxiu/requests/' + 'A'.repeat(32) + suffix, { method, headers, ...(method === 'POST' ? { body: '{}' } : {}) })).status, 404);
+    }
+    assert.equal(calls, 3); assert.equal(fallthrough, 0);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
 test('SS-007 native factory accepts only the OAuth callback session cookie', () => {
   const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
   const config = { publicOrigin: 'http://127.0.0.1:3000', oauth: { authenticate() {} }, oauthHttp() {},
