@@ -13,7 +13,7 @@ import {createYxxReadonlyServer} from '../../src/p2-g2-yixiaoxiu-server.mjs';
 import {entryConfig,entryKey,listenYxx,stopYxx} from './p2-g2-yixiaoxiu-fixture.mjs';
 import {launchSystemBrowser} from './p2-006-browser-harness.mjs';
 
-export async function createYxxBrowserFixture({pool}){
+export async function createYxxBrowserFixture({pool,createApp=null}){
   const directory=await mkdtemp(join(tmpdir(),'p2-g2-yxx-tls-'));
   const openssl=['D:/Program Files/Git/usr/bin/openssl.exe','C:/Program Files/Git/usr/bin/openssl.exe'].find(existsSync);
   if(!openssl)throw new Error('YXX_TEST_OPENSSL_REQUIRED');
@@ -53,7 +53,7 @@ export async function createYxxBrowserFixture({pool}){
       return new Response(JSON.stringify(userid?{errcode:0,userid}:{errcode:40029}));
     }});
     function newApp(){oauth=createWeComWebOAuth({enabled:true,publicOrigin:origin,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode,now:()=>authClock});
-      app=createYxxReadonlyServer({pool,oauth,publicOrigin:origin,reporterHmacSecret:entryKey,reporterMemberEntry:entryConfig});}
+      app=createApp?createApp({oauth,origin}):createYxxReadonlyServer({pool,oauth,publicOrigin:origin,reporterHmacSecret:entryKey,reporterMemberEntry:entryConfig});}
     newApp();base=await listenYxx(app);
     return {origin,certificateSpki,get providerCalls(){return providerCalls;},get pendingLogins(){return held.length;},get pendingDetails(){return heldDetail.length;},
       setMember:value=>{currentMember=value;},expireAuth:()=>{authClock+=900001;},holdLogins:()=>{hold=true;},releaseLogin:()=>{held.shift()?.();},

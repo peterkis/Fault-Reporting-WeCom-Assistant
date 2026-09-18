@@ -23,7 +23,8 @@ export async function runG2Tests({suite='g2',envFile='.env.pilot'}={}) {
   if(!['localhost','127.0.0.1','[::1]'].includes(url.hostname))failG2('LOCAL_DATABASE_REQUIRED');
   const environment={...minimalG2Environment(),PILOT_DATABASE_URL:settings.PILOT_DATABASE_URL};
   const directory='tmp/p2-g2-tests-'+randomUUID(),absolute=path.join(G2_ROOT,directory);mkdirSync(absolute,{recursive:true,mode:0o700});
-  const candidate=g2CandidateInventory(),args=['--expose-gc','--test','--test-concurrency=1','--test-reporter=tap',...files],started_physical_epoch_ms=String(Date.now());
+  const candidate=g2CandidateInventory(),args=['--expose-gc','--test','--test-concurrency=1','--test-reporter=tap','--test-reporter-destination=stdout',
+    '--test-reporter=./scripts/p2-g2-case-reporter.mjs','--test-reporter-destination='+directory+'/cases.jsonl',...files],started_physical_epoch_ms=String(Date.now());
   const collected=await new Promise(resolve=>{
     const child=spawn(process.execPath,args,{cwd:G2_ROOT,env:environment,windowsHide:true,stdio:['ignore','pipe','pipe']});
     let stdout='',stderr='',bytes=0,error=null;
@@ -44,7 +45,7 @@ export async function runG2Tests({suite='g2',envFile='.env.pilot'}={}) {
     candidate_unchanged:unchanged,expose_gc:true,formal_natural_gc_observation:false,model_environment_keys:0,
     args,files:files.map(file=>({path:file,sha256:candidate.files.find(entry=>entry.path===file).sha256})),
     exit_code:collected.exit_code,signal:collected.signal,error:collected.error,counts,
-    stdout_sha256:g2Hash(stdout),stderr_sha256:g2Hash(stderr),directory};
+    stdout_sha256:g2Hash(stdout),stderr_sha256:g2Hash(stderr),case_trace_sha256:g2Hash(readFileSync(path.join(absolute,'cases.jsonl'),'utf8')),directory};
   writeFileSync(path.join(absolute,'run.json'),JSON.stringify(record,null,2)+'\n',{mode:0o600});
   return {ok:collected.exit_code===0&&unchanged&&counts.tests>0&&counts.pass===counts.tests
     &&['fail','skipped','cancelled','todo'].every(k=>counts[k]===0),...record};

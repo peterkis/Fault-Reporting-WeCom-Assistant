@@ -1,0 +1,1250 @@
+{
+  "schema_version": 1,
+  "kind": "PLANNED_MAPPING_NOT_EXECUTION",
+  "scenarios": [
+    {
+      "id": "YXX-AC-001",
+      "scenario": "固定基线与来源",
+      "expected": "HEAD/源引用绑定PR9；网页URL为用户确认，不伪造厂家后台验证",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-governance.test.mjs",
+          "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-002",
+      "scenario": "事实时间线",
+      "expected": "旧1029/1044身份状态是历史；最新AB官方映射PASS且raw_same_namespace=false",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-governance.test.mjs",
+          "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-003",
+      "scenario": "用户文件保护",
+      "expected": "当前.gitignore字节和index前后相同；无自动恢复旧版本",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-governance.test.mjs",
+          "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-004",
+      "scenario": "子任务与父Gate",
+      "expected": "父最后完成Gate仍P2-G1；SS011/live/AI未授权",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-governance.test.mjs",
+          "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-005",
+      "scenario": "根主页未登录",
+      "expected": "仅一次自动OAuth；成功回到固定根路径",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+          "name": "SS-001 fixed homepage performs one bounded OAuth round trip and returns to the bare root"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-006",
+      "scenario": "根主页已登录",
+      "expected": "200现有提示；begin/Provider调用0",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+          "name": "SS-001 already authenticated and unusable cookies never begin a second OAuth flow"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-007",
+      "scenario": "Session自然失效",
+      "expected": "有限认证恢复，无失效Token复活",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+          "name": "SS-001 natural session expiry can recover only after the browser drops the expired cookie"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-008",
+      "scenario": "Cookie完全禁止",
+      "expected": "callback返回后进入终止提示，不无限302",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+          "name": "SS-001 already authenticated and unusable cookies never begin a second OAuth flow"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-009",
+      "scenario": "错state/重复callback",
+      "expected": "拒绝且不自动重新认证",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+          "name": "SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-010",
+      "scenario": "成员403与服务502503",
+      "expected": "不同安全提示，无自动retry",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+          "name": "SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect"
+        },
+        {
+          "file": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+          "name": "SS-001 callback/provider errors terminate with a safe error page and no redirect loop"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-011",
+      "scenario": "OAuth关闭与配置错误",
+      "expected": "503失败关闭，不展示伪登录态",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/p2-g2-wecom-oauth-http.test.mjs",
+          "name": "HTTP 关闭态拒绝所有认证路径且不调用提供商"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-012",
+      "scenario": "登出后工作台重开",
+      "expected": "手动新导航可启动新的有限认证",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+          "name": "YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-013",
+      "scenario": "两标签与卡片deep link",
+      "expected": "intent不串；不被首页handler吞掉",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+          "name": "YXX-15 YXX-43 same-browser OAuth intents retain independent ticket destinations and bounded capacity"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-014",
+      "scenario": "API与POST失效",
+      "expected": "JSON401，无302或POST自动重放",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+          "name": "SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-015",
+      "scenario": "两个OpenAPI解析",
+      "expected": "新增七API及页面/returnPath一致，operationId唯一",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-governance.test.mjs",
+          "name": "SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-016",
+      "scenario": "表单闭合身份边界",
+      "expected": "拒绝reporter/role/provider/target/时间等多余字段",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-002-contract.test.mjs",
+          "name": "SS-002 closed schemas reject identity and operational authority fields"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-017",
+      "scenario": "状态与收据区分",
+      "expected": "202接受不等于Ticket；未建单ticket=null",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-003-schema.test.mjs",
+          "name": "SS-003 fresh applied migration, idempotent Web acceptance and source constraints"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-018",
+      "scenario": "来源分支契约",
+      "expected": "WEB_FORM无Thread/Session/Inbox，Bot分支原约束保留",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-003-schema.test.mjs",
+          "name": "SS-003 fresh applied migration, idempotent Web acceptance and source constraints"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-019",
+      "scenario": "只读与写profile",
+      "expected": "READONLY即使误配writeFlag也无法写；新profile显式",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-002-contract.test.mjs",
+          "name": "SS-002 closed schemas reject identity and operational authority fields"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-020",
+      "scenario": "共同时间类型",
+      "expected": "LocalDateTime与EpochMs引用统一，无format date-time",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-governance.test.mjs",
+          "name": "SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-021",
+      "scenario": "fresh到033",
+      "expected": "完整既有链后033成功；新目录差异精确",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 migration check rolls back and five catalog drift classes fail closed"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-022",
+      "scenario": "032升级033",
+      "expected": "既有Bot数据/关联仍有效",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 migration check rolls back and five catalog drift classes fail closed"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-023",
+      "scenario": "repeat和check",
+      "expected": "重复无副作用；check回滚全部DDL",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 migration check rolls back and five catalog drift classes fail closed"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-024",
+      "scenario": "五类catalog漂移",
+      "expected": "缺列弱CHECK错FK错唯一错索引都拒绝",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 migration check rolls back and five catalog drift classes fail closed"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-025",
+      "scenario": "WEB来源缺失/混Bot",
+      "expected": "DB约束拒绝，不依赖UI保证",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 migration check rolls back and five catalog drift classes fail closed"
+        },
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 PostgreSQL rejects mixed Web Bot fields missing source and deferred orphan commits"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-026",
+      "scenario": "Bot旧非空与FK",
+      "expected": "缺失真实Inbox等仍拒绝",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 migration check rolls back and five catalog drift classes fail closed"
+        },
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 PostgreSQL rejects mixed Web Bot fields missing source and deferred orphan commits"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-027",
+      "scenario": "循环FK与幂等Unique",
+      "expected": "commit不能留下孤儿；ON CONFLICT约束非延迟",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 migration check rolls back and five catalog drift classes fail closed"
+        },
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 PostgreSQL rejects mixed Web Bot fields missing source and deferred orphan commits"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-028",
+      "scenario": "新时区类型",
+      "expected": "owned schema禁用类型0；日期BIGINT均字符串",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 migration check rolls back and five catalog drift classes fail closed"
+        },
+        {
+          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
+          "name": "SS-009 PostgreSQL rejects mixed Web Bot fields missing source and deferred orphan commits"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-029",
+      "scenario": "明确故障提交",
+      "expected": "真实202受理后共享规则创建最多一个真实Ticket",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
+          "name": "SS-004 accepts, processes, replays, and creates one Web Ticket through the existing Core"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-030",
+      "scenario": "信息不足提交",
+      "expected": "持久受理、WAITING_FOR_DETAILS、无虚构工单号",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
+          "name": "SS-004 keeps insufficient input pending for details and routes rule failure to shared review"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-031",
+      "scenario": "感谢与闲聊",
+      "expected": "独立谢谢非报修；谢谢+故障不能忽略故障",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
+          "name": "SS-004 keeps insufficient input pending for details and routes rule failure to shared review"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-032",
+      "scenario": "临床高风险",
+      "expected": "受理保留，现有人工审核可见，不自动确认根因",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
+          "name": "SS-004 keeps insufficient input pending for details and routes rule failure to shared review"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-033",
+      "scenario": "十二路同命令",
+      "expected": "一份root/source/receipt，Ticket不重复",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
+          "name": "SS-004 accepts, processes, replays, and creates one Web Ticket through the existing Core"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-034",
+      "scenario": "同ID不同正文",
+      "expected": "稳定409，旧事实不覆盖",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
+          "name": "SS-004 accepts, processes, replays, and creates one Web Ticket through the existing Core"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-035",
+      "scenario": "同正文不同ID",
+      "expected": "两次明确提交，不偷偷自动合并",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
+          "name": "SS-004 accepts, processes, replays, and creates one Web Ticket through the existing Core"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-036",
+      "scenario": "接受事务commit前kill",
+      "expected": "所有接受事实rollback，重试可成功",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-crash.integration.test.mjs",
+          "name": "SS-009 real process kills recover all acceptance and processing commit boundaries"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-037",
+      "scenario": "接受commit后kill",
+      "expected": "持久pending保留；重启只处理一次",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-crash.integration.test.mjs",
+          "name": "SS-009 real process kills recover all acceptance and processing commit boundaries"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-038",
+      "scenario": "处理commit前后kill",
+      "expected": "无部分Decision/Ticket或重复结果",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-crash.integration.test.mjs",
+          "name": "SS-009 real process kills recover all acceptance and processing commit boundaries"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-039",
+      "scenario": "规则执行异常",
+      "expected": "SAVEPOINT rollback部分副作用；人工兜底",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
+          "name": "SS-004 keeps insufficient input pending for details and routes rule failure to shared review"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-040",
+      "scenario": "处理DB不可用",
+      "expected": "已接受来源保留，安全退避可恢复，不假拒收",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-crash.integration.test.mjs",
+          "name": "SS-009 a terminated owned PostgreSQL backend preserves accepted input across a fresh processor"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-041",
+      "scenario": "响应丢失同ID查询",
+      "expected": "按本人收据查已接受，不自动换ID",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+          "name": "SS-009 lost actual HTTP response recovers the same authorized command without a second intake"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-042",
+      "scenario": "毒输入批次隔离",
+      "expected": "单root失败不阻塞后续且无紧密无限重试",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
+          "name": "SS-004 keeps insufficient input pending for details and routes rule failure to shared review"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-043",
+      "scenario": "没有Bot单聊",
+      "expected": "Web受理照常；Direct Leg/Provider/Delivery等0",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
+          "name": "SS-004 accepts, processes, replays, and creates one Web Ticket through the existing Core"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-044",
+      "scenario": "未建单可查",
+      "expected": "Web待处理/补充/审核都出现在本人列表",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+          "name": "SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-045",
+      "scenario": "Web成单不重复项",
+      "expected": "一个root仍一行；原Ticket链接可查",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+          "name": "SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-046",
+      "scenario": "本人旧Bot工单",
+      "expected": "通过原映射授权出现在列表；不展示所有群闲聊",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+          "name": "SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-047",
+      "scenario": "跨成员list/detail/cursor",
+      "expected": "SQL先授权再LIMIT；无越权",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+          "name": "SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-048",
+      "scenario": "混合500项分页",
+      "expected": "快照遍历无漏无重；新数据刷新后出现",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+          "name": "SS-005 traverses a 500-row mixed snapshot without loss or duplication"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-049",
+      "scenario": "304前撤销或过期",
+      "expected": "不能缓存绕过；统一安全拒绝",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+          "name": "SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail"
+        },
+        {
+          "file": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+          "name": "SS-009 locked HTTP supplements recheck logout write shutdown and request revocation"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-050",
+      "scenario": "身份切换在途SQL",
+      "expected": "旧身份晚到响应不暴露内容",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+          "name": "SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail"
+        },
+        {
+          "file": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+          "name": "SS-009 locked HTTP supplements recheck logout write shutdown and request revocation"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-051",
+      "scenario": "无权限的commandID",
+      "expected": "不泄露他人收据是否存在",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+          "name": "SS-009 lost actual HTTP response recovers the same authorized command without a second intake"
+        },
+        {
+          "file": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+          "name": "SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-052",
+      "scenario": "安全Timeline",
+      "expected": "内部备注/他人Incident/原始身份不外泄",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+          "name": "SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-053",
+      "scenario": "无通知也有查询ref",
+      "expected": "无需创建Grant/Message/Delivery取得URL",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+          "name": "SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-054",
+      "scenario": "合法连续补充",
+      "expected": "源事件追加，revision连续，原内容保持",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+          "name": "SS-006 accepts ordered supplements, replays idempotently, and fences concurrent stale versions"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-055",
+      "scenario": "补充重放",
+      "expected": "相同ID不增revision/source/receipt副本",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+          "name": "SS-006 accepts ordered supplements, replays idempotently, and fences concurrent stale versions"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-056",
+      "scenario": "两个新命令同旧版本",
+      "expected": "只一个成功另一个409，不覆盖",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+          "name": "SS-006 accepts ordered supplements, replays idempotently, and fences concurrent stale versions"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-057",
+      "scenario": "B补充A",
+      "expected": "404，业务变化0",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+          "name": "SS-006 accepts ordered supplements, replays idempotently, and fences concurrent stale versions"
+        },
+        {
+          "file": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+          "name": "SS-009 locked HTTP supplements recheck logout write shutdown and request revocation"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-058",
+      "scenario": "审核先于补充",
+      "expected": "新输入不被旧decision覆盖，Ticket只一张",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+          "name": "SS-006 preserves review history across both resolution orders and keeps one Ticket"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-059",
+      "scenario": "补充先于审核",
+      "expected": "旧basis审核409或明确新review，不静默通过",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+          "name": "SS-006 preserves review history across both resolution orders and keeps one Ticket"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-060",
+      "scenario": "已有Ticket补充",
+      "expected": "复用既有事件，绝不CREATE第二张",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+          "name": "SS-006 reuses Ticket supplements, rejects closed or revoked roots, and survives processing restart"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-061",
+      "scenario": "关闭撤销/已解决",
+      "expected": "关闭撤销拒绝；已解决追加不隐式重开",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+          "name": "SS-006 reuses Ticket supplements, rejects closed or revoked roots, and survives processing restart"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-062",
+      "scenario": "补充接受后重启",
+      "expected": "持久输入继续处理且不重复事件",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-crash.integration.test.mjs",
+          "name": "SS-009 real process kills recover all acceptance and processing commit boundaries"
+        },
+        {
+          "file": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+          "name": "SS-006 reuses Ticket supplements, rejects closed or revoked roots, and survives processing restart"
+        },
+        {
+          "file": "tests/yxx-ss-009-crash.integration.test.mjs",
+          "name": "SS-009 committed supplement survives a real kill without a second Ticket or duplicate event"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-063",
+      "scenario": "固定首页功能切换",
+      "expected": "同URL从提示页升级为服务页；关功能保留安全提示",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-007-native-http-errors.test.mjs",
+          "name": "SS-007 native write UI requires an explicit member write flag while read APIs remain available"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-064",
+      "scenario": "表单普通语言",
+      "expected": "描述/位置/不清楚可用；不强迫技术分类",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+          "name": "SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated"
+        },
+        {
+          "file": "tests/yxx-ss-009-browser.integration.test.mjs",
+          "name": "SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-065",
+      "scenario": "提交中与状态反馈",
+      "expected": "真实202/当前状态，按钮围栏，无乐观建单",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+          "name": "SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated"
+        },
+        {
+          "file": "tests/yxx-ss-009-browser.integration.test.mjs",
+          "name": "SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-066",
+      "scenario": "503429409401文案",
+      "expected": "区分服务/限流/版本/认证，不自动提交",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+          "name": "SS-007 status copy is exercised through browser responses for 429, 409, 401 and 503"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-067",
+      "scenario": "双标签不同报修",
+      "expected": "每个request-ref与输入互不串扰",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+          "name": "SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-068",
+      "scenario": "logout/身份切换/历史返回",
+      "expected": "清空敏感DOM/请求，无法晚到回显",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+          "name": "SS-007 logout invalidates every open same-origin tab without broadcasting sensitive data"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-069",
+      "scenario": "页面轮询/ETag失败恢复",
+      "expected": "单在途、隐藏页停减速，两请求成功后更新ETag",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+          "name": "SS-007 does not accept a new detail ETag when the paired timeline request fails"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-070",
+      "scenario": "XSS/富文本注入",
+      "expected": "只用textContent，payload不执行",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+          "name": "SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-071",
+      "scenario": "手机桌面可访问性",
+      "expected": "390/1440无横向溢出，label/focus/键盘可用",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+          "name": "SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated"
+        },
+        {
+          "file": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+          "name": "SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence"
+        },
+        {
+          "file": "tests/yxx-ss-009-browser.integration.test.mjs",
+          "name": "SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-072",
+      "scenario": "浏览器存储",
+      "expected": "无正文/CSRF/token/原始身份，仅有界opaque恢复ID",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+          "name": "SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated"
+        },
+        {
+          "file": "tests/yxx-ss-009-browser.integration.test.mjs",
+          "name": "SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-073",
+      "scenario": "真实网页到坐席到本人",
+      "expected": "非Mock数据库：审核/建单/处理/安全状态一致",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads"
+        },
+        {
+          "file": "tests/yxx-ss-009-browser.integration.test.mjs",
+          "name": "SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-074",
+      "scenario": "旧三入口回归",
+      "expected": "群inline/群转单聊/主动单聊保留既有行为",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 four actual sources coexist on 033/034 with independent lineage and Web APP_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-075",
+      "scenario": "四source lineage",
+      "expected": "Web有实际来源，不被旧Worker当single读取Inbox",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 four actual sources coexist on 033/034 with independent lineage and Web APP_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-076",
+      "scenario": "无Conversation的工作台",
+      "expected": "显示来源，缺沟通能力显式不可用，不造Session",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-077",
+      "scenario": "self profile进程",
+      "expected": "唯一App完成闭环，无Gateway/Sender，pool<=4",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-078",
+      "scenario": "full profile处理所有权",
+      "expected": "原Worker泵；App不重复启动，pool4/2/1",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads"
+        },
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 FULL readiness requires both Web migrations only when the extension is mounted"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-079",
+      "scenario": "只读/OAuth-only隔离",
+      "expected": "前者业务只读审计例外；后者零DB",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 OAUTH_ONLY never touches a supplied DB; READONLY rejects Web writes with erroneous flags"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-080",
+      "scenario": "网页生命周期通知",
+      "expected": "Web产生的Ticket各状态外部artifact=0，Bot旧通知不变",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-081",
+      "scenario": "原锁顺序与503",
+      "expected": "无反向Realtime锁序；服务失败与版本冲突分类保持",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads"
+        },
+        {
+          "file": "tests/yxx-ss-009-http-recovery.integration.test.mjs",
+          "name": "SS-009 locked HTTP supplements recheck logout write shutdown and request revocation"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-082",
+      "scenario": "关写不停读",
+      "expected": "禁提交/补充仍可读取已批准本人工单，无匿名降级",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-008-assembly.integration.test.mjs",
+          "name": "SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-083",
+      "scenario": "1056旧基线覆盖",
+      "expected": "171旧文件仍在collector，语义/来源未被删除代替",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-governance.test.mjs",
+          "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-084",
+      "scenario": "新完整回归",
+      "expected": "exit0且pass=tests；fail/cancelled/skipped/todo=0",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-evidence.test.mjs",
+          "name": "SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-085",
+      "scenario": "指纹绑定",
+      "expected": "源码/SQL/Contract/UI/test全部进入新候选，运行中不变",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-governance.test.mjs",
+          "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-086",
+      "scenario": "SPEC与STANDARDS",
+      "expected": "两轴实际引用当前候选，无伪造独立审查",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-evidence.test.mjs",
+          "name": "SS-009 evidence rejects a forged PASS summary without the matching successful TAP"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-087",
+      "scenario": "反向证据测试",
+      "expected": "错TAP/错场景/错hash/漏旧文件都不能READY",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-evidence.test.mjs",
+          "name": "SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-088",
+      "scenario": "资源短时容量",
+      "expected": "500报修/2000补充/100审核/32并发，pool/batch有界",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-capacity.integration.test.mjs",
+          "name": "SS-009 MEMBER_SELF_SERVICE actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers"
+        },
+        {
+          "file": "tests/yxx-ss-009-capacity.integration.test.mjs",
+          "name": "SS-009 FULL_SERVICE_LOOP actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-089",
+      "scenario": "时间Evidence",
+      "expected": "event_time与epoch字符串来自同一次采样且配对正确",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-governance.test.mjs",
+          "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-090",
+      "scenario": "清理与历史保护",
+      "expected": "自有运行资源关闭，受保护诊断保留如实记录",
+      "status": "NOT_RUN",
+      "tests": [
+        {
+          "file": "tests/yxx-ss-009-governance.test.mjs",
+          "name": "SS-009 governance preserves historical baseline user files parent gate and full collector coverage"
+        }
+      ]
+    },
+    {
+      "id": "YXX-AC-091",
+      "scenario": "当前报告与PR草稿",
+      "expected": "准确commit/tree指纹，不引用旧PASS证明新代码",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-092",
+      "scenario": "有限写live许可",
+      "expected": "DDL/受理写/内部操作/OAuth/发送分项默认关闭",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-093",
+      "scenario": "回退准备",
+      "expected": "关写保数据，不down migration，不降级LEGACY",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-094",
+      "scenario": "停止线",
+      "expected": "未push/PR/merge/tag，SS011与父G2未擅自授权",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-095",
+      "scenario": "固定主页真实点击",
+      "expected": "厂家无需再改URL，有限认证成功无循环",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-096",
+      "scenario": "A/B真实提交",
+      "expected": "批准人数/数量内实际表单建来源与受理",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-097",
+      "scenario": "真实待补充/审核",
+      "expected": "本人能补充，原坐席可处理，非报修不成单",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-098",
+      "scenario": "真实越权尝试",
+      "expected": "B不冒充/读取/补充A，拒绝留安全审计",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-099",
+      "scenario": "真实提交恢复",
+      "expected": "仅批准故障范围内无重复Ticket与丢受理",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-100",
+      "scenario": "真实安全结果与零发",
+      "expected": "原工作台到本人Timeline；Web外部artifact0",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-101",
+      "scenario": "现场关闭对账",
+      "expected": "关写回原profile，保留合法测试事实与审计",
+      "status": "NOT_RUN",
+      "tests": []
+    },
+    {
+      "id": "YXX-AC-102",
+      "scenario": "只关闭子任务",
+      "expected": "负责人确认后局部PASS，父G2和AI仍另行批准",
+      "status": "NOT_RUN",
+      "tests": []
+    }
+  ]
+}
