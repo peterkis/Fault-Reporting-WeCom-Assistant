@@ -195,6 +195,48 @@ for (const [path, view] of [['/wecom/yixiaoxiu/', 'home-view'], ['/wecom/yixiaox
   });
 }
 
+for (const kind of ['submission', 'detail', 'recovery', 'same-member submission']) {
+  test(`SS-007 hides protected content while ${kind} delays the session check`, { timeout: 45000 }, async () => {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      const path = kind === 'detail' ? `/wecom/yixiaoxiu/reports/${REFS.A}` : '/wecom/yixiaoxiu/reports/new';
+      await browser.evaluate(`location.assign('${path}')`, { awaitPromise: false });
+      await browser.waitFor(kind === 'detail' ? "document.querySelector('#load-older-timeline')?.hidden===false" : "document.querySelector('#new-view')?.hidden===false");
+      if (kind === 'recovery') f.state.commandError = Object.assign(new Error('unavailable'), { status: 503, code: 'YXX_UNAVAILABLE' });
+      await browser.evaluate(`(() => {
+        const actualFetch=window.fetch.bind(window);
+        window.fetch=(path,options)=>{
+          const held='${kind}'==='detail'?String(path).includes('/timeline?'):'${kind}'==='recovery'?String(path).includes('/commands/'):String(path)==='/api/yixiaoxiu/requests'&&options?.method==='POST';
+          if(!held)return actualFetch(path,options);
+          return new Promise((resolve,reject)=>{
+            window.__releaseBusy=()=>resolve(new Response(JSON.stringify({error:{code:'YXX_UNAVAILABLE'}}),{status:503,headers:{'content-type':'application/json'}}));
+            options.signal.addEventListener('abort',()=>reject(new DOMException('aborted','AbortError')),{once:true});
+          });
+        };
+        document.querySelector('#description').value='old member private draft';
+        if('${kind}'==='detail')document.querySelector('#load-older-timeline').click();
+        else{document.querySelector('#description').focus();document.querySelector('#description').setSelectionRange(2,7,'backward');document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit();}
+      })()`);
+      await browser.waitFor("typeof window.__releaseBusy==='function'");
+      f.state.enforceOwnership = true;
+      if (kind === 'same-member submission') f.state.csrfOverride = 'busy-same-member-csrf-01234567890123456789';
+      else await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
+      const protectedId = kind === 'detail' ? 'detail-description' : 'description';
+      await browser.waitFor(`document.getElementById('${protectedId}').getClientRects().length===0`, { timeoutMs: 7500 });
+      assert.equal(await browser.evaluate("document.querySelector('#protected-views').hidden"), true);
+      await browser.evaluate("window.__releaseBusy()");
+      await browser.waitFor(`window.__yxx_csrf==='${kind === 'same-member submission' ? f.state.csrfOverride : csrfFor('member-b')}'`);
+      assert.equal(await browser.evaluate("document.querySelector('#description').value"), kind === 'same-member submission' ? 'old member private draft' : '');
+      if (kind === 'same-member submission') assert.deepEqual(await browser.evaluate("[document.activeElement.id,document.activeElement.selectionStart,document.activeElement.selectionEnd,document.activeElement.selectionDirection]"), ['description',2,7,'backward']);
+      assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+      assert.equal(f.state.commandCalls.length, 0);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  });
+}
+
 for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 'same'], ['new', 'focus-moved'], ['new', 'changed'], ['list', '503'], ['new', 'timeout']]) {
   test(`SS-007 periodic revalidation hides ${route} while unresolved: ${outcome}`, { timeout: 45000 }, async () => {
     const f = await startFixture(); let browser; let releaseContext;

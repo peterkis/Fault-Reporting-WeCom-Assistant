@@ -331,7 +331,7 @@ export function createYxxSelfServiceNativeHttp({
         json(response, result.replayed ? 200 : 202, { ok: true, replayed: result.replayed === true, receipt: result.receipt,
           location: `${ROOT}reports/${result.receipt.request_ref}` }); return true;
       }
-      const commandMatch = url.pathname.match(/^\/api\/yixiaoxiu\/commands\/([0-9a-f-]{36})$/iu);
+      const commandMatch = url.pathname.match(/^\/api\/yixiaoxiu\/commands(?:\/(.*))?$/u);
       if (commandMatch && request.method === 'GET') {
         if (url.search) throw error('YXX_INPUT_INVALID');
         if (!COMMAND_ID.test(commandMatch[1])) throw error('YXX_INPUT_INVALID');

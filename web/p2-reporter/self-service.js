@@ -6,7 +6,7 @@ const INTAKE_NO=/^INT-[0-9]{8}-[0-9]{4,}$/u;
 const LOCAL_TIME=/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/u;
 const refs={home:'/wecom/yixiaoxiu/',new:'/wecom/yixiaoxiu/reports/new',list:'/wecom/yixiaoxiu/reports'};
 const $=id=>document.getElementById(id);
-const state={generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,sessionTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,hidden:false,hiddenDraft:null};
+const state={sessionCheckDue:false,revalidationFocus:null,generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,sessionTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,hidden:false,hiddenDraft:null};
 const pendingKey='yxx.self_service.pending_command';
 const durablePrefix=`${pendingKey}.`;
 const durableLimit=20;
@@ -60,6 +60,7 @@ function remember(id){
 }
 function forget(){const id=state.pendingCommandId;releaseTabPending();removeDurable(id);}
 function clearClientDom(message='认证已失效，请重新认证。',{preserveContext=false}={}){
+ $('protected-views').hidden=true;state.revalidationFocus=null;state.sessionCheckDue=false;
  cancelPendingRecovery(true);clearTimeout(state.sessionTimer);state.sessionTimer=null;state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();state.controller=null;state.hiddenDraft=null;if(!preserveContext){window.__yxx_csrf=undefined;state.recoveryScope=null;}state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
  readPending();
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
@@ -83,6 +84,7 @@ function captureDraft(){return Object.freeze({path:location.pathname,description
 function draftHasInput(draft){return Boolean(draft?.description||draft?.locationText||draft?.locationUnknown||draft?.impactScope!=='UNKNOWN'||draft?.serviceCode||draft?.department||draft?.extension||draft?.supplement);}
 function restoreDraft(draft){if(!draft||draft.path!==location.pathname)return;$('description').value=draft.description;$('location-text').value=draft.locationText;$('location-unknown').checked=draft.locationUnknown;$('impact-scope').value=draft.impactScope;$('service-code').value=draft.serviceCode;$('department').value=draft.department;$('extension').value=draft.extension;$('supplement-text').value=draft.supplement;}
 function prepareBootstrap(){
+ $('protected-views').hidden=true;state.revalidationFocus=null;state.sessionCheckDue=false;
  clearTimeout(state.sessionTimer);state.sessionTimer=null;state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];state.recoveryScope=null;window.__yxx_csrf=undefined;
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
  $('location-unknown').checked=false;$('impact-scope').value='UNKNOWN';clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';renderGuidance();$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-more-reports').hidden=true;$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;
@@ -136,18 +138,31 @@ async function fetchJson(path,options={},signal){
 }
 function beginOperation({busy=false}={}){state.controller?.abort();const controller=new AbortController();state.controller=controller;if(busy)state.busy=true;return {controller,signal:controller.signal,generation:state.generation};}
 function ownsOperation(operation){return state.controller===operation.controller&&state.generation===operation.generation&&!state.stopped;}
-function finishOperation(operation){if(!ownsOperation(operation))return false;state.controller=null;state.busy=false;return true;}
-function scheduleSessionRevalidation(){clearTimeout(state.sessionTimer);state.sessionTimer=null;if(!state.hidden&&!state.loggedOut&&!state.stopped&&RECOVERY_SCOPE.test(state.recoveryScope??''))state.sessionTimer=setTimeout(revalidateVisibleSession,sessionRevalidationMs);}
+function finishOperation(operation){if(!ownsOperation(operation))return false;state.controller=null;state.busy=false;if(state.sessionCheckDue)scheduleSessionRevalidation();return true;}
+function scheduleSessionRevalidation(){
+ if(state.hidden||state.loggedOut||state.stopped||!RECOVERY_SCOPE.test(state.recoveryScope??'')){clearTimeout(state.sessionTimer);state.sessionTimer=null;return;}
+ if(state.sessionTimer!==null&&!state.sessionCheckDue)return;
+ clearTimeout(state.sessionTimer);
+ state.sessionTimer=setTimeout(revalidateVisibleSession,state.sessionCheckDue&&!state.busy&&!state.controller?0:sessionRevalidationMs);
+}
+function concealProtectedViews(){
+ const container=$('protected-views');
+ if(!container.hidden){
+  const active=document.activeElement,focused=container.contains(active)?active:null;
+  state.revalidationFocus={focused,selection:focused&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd,focused.selectionDirection]:null};
+ }
+ container.hidden=true;
+}
 async function revalidateVisibleSession(){
  state.sessionTimer=null;
  if(state.hidden||state.loggedOut||state.stopped)return;
+ state.sessionCheckDue=true;
+ concealProtectedViews();
  if(state.controller||state.busy){scheduleSessionRevalidation();return;}
  const operation=beginOperation({busy:true}),expectedScope=state.recoveryScope;
  const views=['home-view','new-view','reports-view','detail-view'].map(id=>({element:$(id),hidden:$(id).hidden}));
  const status={text:$('app-status').textContent,className:$('app-status').className};
- const active=document.activeElement;
- const focused=views.some(({element,hidden})=>!hidden&&element.contains(active))?active:null;
- const selection=focused&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd,focused.selectionDirection]:null;
+ const {focused,selection}=state.revalidationFocus??{};
  for(const {element} of views)element.hidden=true;
  setStatus('正在验证成员会话…');
  try{
@@ -158,6 +173,7 @@ async function revalidateVisibleSession(){
   if(expectedScope!==nextScope){finishOperation(operation);clearClientDom('正在验证成员会话…');void bootstrap();return;}
   window.__yxx_csrf=result.body.csrf_token;
   for(const {element,hidden} of views)element.hidden=hidden;
+  $('protected-views').hidden=false;state.revalidationFocus=null;state.sessionCheckDue=false;
   $('app-status').textContent=status.text;$('app-status').className=status.className;
   if(focused?.isConnected&&(document.activeElement===document.body||document.activeElement===focused)){
    focused.focus({preventScroll:true});
@@ -325,6 +341,7 @@ async function bootstrap(){
    }else{setView('home-view','自助报修');setStatus('已验证成员会话，可开始自助报修。','success');}
   }
   await recoverPending();
+  if(validGeneration(operation.generation)&&!state.sessionCheckDue)$('protected-views').hidden=false;
  }catch(error){if(error.name!=='AbortError'&&validGeneration(operation.generation))setStatus(error.status?messageFor(error.status):messageFor(503),'error');}
  finally{finishOperation(operation);scheduleSessionRevalidation();}
 }

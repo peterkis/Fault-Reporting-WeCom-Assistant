@@ -68,6 +68,12 @@ test('SS-007 command recovery rejects every query before dispatch or route fallt
       assert.deepEqual(await response.json(), { error: { code: 'YXX_INPUT_INVALID', retryable: false } });
     }
     assert.equal(queries, 0); assert.equal(fallthrough, 0);
+    for (const id of ['not-a-uuid', 'g'.repeat(36), '0'.repeat(35), '', '00000000-0000-0000-0000-000000000000', 'bad/extra']) {
+      const response = await fetch(origin + '/api/yixiaoxiu/commands/' + id, { headers });
+      assert.equal(response.status, 400, id);
+      assert.deepEqual(await response.json(), { error: { code: 'YXX_INPUT_INVALID', retryable: false } });
+    }
+    assert.equal(queries, 0); assert.equal(fallthrough, 0);
     assert.equal((await fetch(origin + path, { headers })).status, 200);
     assert.equal(queries, 1);
   } finally { await new Promise(resolve => server.close(resolve)); }
