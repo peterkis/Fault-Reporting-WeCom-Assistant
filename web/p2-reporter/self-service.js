@@ -145,7 +145,6 @@ async function revalidateVisibleSession(){
  const operation=beginOperation({busy:true}),expectedScope=state.recoveryScope;
  const views=['home-view','new-view','reports-view','detail-view'].map(id=>({element:$(id),hidden:$(id).hidden}));
  const status={text:$('app-status').textContent,className:$('app-status').className};
- 
  for(const {element} of views)element.hidden=true;
  setStatus('正在验证成员会话…');
  try{
