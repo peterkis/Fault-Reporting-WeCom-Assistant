@@ -227,7 +227,11 @@
       "node --check web/p2-reporter/self-service.js",
       "node --check tests/yxx-ss-007-native-ui.browser.test.mjs"
     ],
-    "diff_check": "PASS",
+    "diff_check": {
+      "scope": "implementation changes ff067b65688ea214997af81407af512f70a3180a..d65f489a70cc5ba8e064f7d4e26e0786c58cf44e",
+      "result": "PASS",
+      "raw_log_note": "Failed and interrupted TAP logs retain original whitespace; those raw diagnostic artifacts are not normalized for diff whitespace checks."
+    },
     "post_test_runtime_changes": false
   },
   "review_fixes": [
