@@ -173,6 +173,28 @@ test('SS-007 direct detail pages enforce ownership before rendering the shell', 
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
+test('SS-007 detail rejects an oversized If-None-Match before query dispatch', async () => {
+  const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };
+  let native; let detailCalls = 0;
+  const server = createServer(async (request, response) => native.handler({ request, response, url: new URL(request.url, origin) }));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  native = createYxxSelfServiceNativeHttp({ publicOrigin: origin, oauth: { authenticate: () => ({}) }, oauthHttp: async () => false,
+    command: { accept() {} }, supplement: { accept() {} },
+    query: { list() {}, timeline() {}, commandStatus() {}, detailWithEtag() { detailCalls += 1; } },
+    authenticateMember: async () => ({ profile: 'MEMBER_SELF_SERVICE', flags, csrf_token: 'csrf-etag-0123456789012345678901234567',
+      canonical_reporter_binding: 'a'.repeat(64), source_corp_scope: 'corp-etag', source_app_scope: 'app-etag' }),
+    featureFlags: flags, recoveryBindingSecret });
+  try {
+    const response = await fetch(`${origin}/api/yixiaoxiu/requests/${'A'.repeat(32)}`, {
+      headers: { cookie: '__Host-wecom_session=synthetic', 'if-none-match': 'x'.repeat(257) },
+    });
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: { code: 'YXX_INPUT_INVALID', retryable: false } });
+    assert.equal(detailCalls, 0);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
 
 test('SS-007 report source filters reject explicit empty and unknown values before querying', async () => {
   const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };

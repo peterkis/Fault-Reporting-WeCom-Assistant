@@ -172,6 +172,28 @@ test('SS-007 refreshed member CSRF preserves the same-scope draft', { timeout: 4
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
 
+test('SS-007 visible report list revalidates a shared-cookie member change', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports')", { awaitPromise: false });
+    await browser.waitFor(`document.querySelector('#report-list')?.textContent.includes('${REFS.A}')`);
+    await browser.evaluate(`(() => {
+      window.__oldMemberExposed = false;
+      new MutationObserver(() => {
+        if (window.__yxx_csrf === '${csrfFor('member-b')}' && document.querySelector('#report-list')?.textContent.includes('${REFS.A}')) window.__oldMemberExposed = true;
+      }).observe(document.querySelector('#report-list'), { childList: true, subtree: true, characterData: true });
+      document.cookie = 'yxx_session=member-b; Path=/';
+    })()`);
+    await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&document.querySelector('#report-list')?.textContent.includes('${REFS.B}')`);
+    assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${REFS.A}')`), false);
+    assert.equal(await browser.evaluate('window.__oldMemberExposed'), false);
+    assert.deepEqual(f.state.listCalls.slice(-2).map(item => item.member), ['A', 'B']);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
 test('SS-007 permission revocation clears member data without showing an authentication-expired message', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   try {

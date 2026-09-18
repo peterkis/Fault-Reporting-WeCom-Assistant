@@ -6,13 +6,14 @@ const INTAKE_NO=/^INT-[0-9]{8}-[0-9]{4,}$/u;
 const LOCAL_TIME=/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/u;
 const refs={home:'/wecom/yixiaoxiu/',new:'/wecom/yixiaoxiu/reports/new',list:'/wecom/yixiaoxiu/reports'};
 const $=id=>document.getElementById(id);
-const state={generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,poll:null,hidden:false,hiddenDraft:null};
+const state={generation:0,controller:null,busy:false,stopped:false,loggedOut:false,storageBlocked:false,recoveryScope:null,pendingCommandId:null,pendingScope:null,pendingLegacy:false,pendingAttempts:0,pendingTimer:null,sessionTimer:null,listCursor:null,reportItems:[],detail:null,detailEtag:null,timelineItems:[],timelineCursor:null,timelineExpanded:false,poll:null,hidden:false,hiddenDraft:null};
 const pendingKey='yxx.self_service.pending_command';
 const durablePrefix=`${pendingKey}.`;
 const durableLimit=20;
 const pendingDelays=[1000,2000,4000,5000];
 const latestTimelineBoundary=String(Number.MAX_SAFE_INTEGER);
 const requestDeadlineMs=15000;
+const sessionRevalidationMs=5000;
 const ticketStatuses=Object.freeze({NEW:'等待受理',QUEUED:'等待受理',ACCEPTED:'已受理',IN_PROGRESS:'处理中',WAITING_REQUESTER:'待您补充',WAITING_VENDOR:'处理中',RESOLVED:'已处理，待确认',CLOSED:'已关闭',REOPENED:'重新处理中',CANCELLED:'已撤销',DUPLICATE_LINKED:'已关联公共故障'});
 const logoutStorageKey='yxx.self_service.logout_signal';
 const logoutStorageValue='v1';
@@ -59,13 +60,13 @@ function remember(id){
 }
 function forget(){const id=state.pendingCommandId;releaseTabPending();removeDurable(id);}
 function clearClientDom(message='认证已失效，请重新认证。',{preserveContext=false}={}){
- cancelPendingRecovery(true);state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();clearTimeout(state.poll);state.controller=null;state.hiddenDraft=null;if(!preserveContext){window.__yxx_csrf=undefined;state.recoveryScope=null;}state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
+ cancelPendingRecovery(true);clearTimeout(state.sessionTimer);state.sessionTimer=null;state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();clearTimeout(state.poll);state.controller=null;state.hiddenDraft=null;if(!preserveContext){window.__yxx_csrf=undefined;state.recoveryScope=null;}state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
  readPending();
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
  $('location-unknown').checked=false;$('impact-scope').value='UNKNOWN';clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;setView('home-view','自助报修');setStatus(message,'error');
 }
 function showLoggedOut(message,kind='error',signInReady=true){
- state.loggedOut=true;state.stopped=true;state.hidden=document.hidden;cancelPendingRecovery(true);clearTimeout(state.poll);
+ state.loggedOut=true;state.stopped=true;state.hidden=document.hidden;cancelPendingRecovery(true);clearTimeout(state.sessionTimer);state.sessionTimer=null;clearTimeout(state.poll);
  setView('logged-out-view','会话已结束');setStatus(message,kind);$('brand-link').hidden=true;$('logout').hidden=true;$('sign-in-link').hidden=!signInReady;
 }
 function invalidateFromPeer(){
@@ -82,7 +83,7 @@ function captureDraft(){return Object.freeze({path:location.pathname,description
 function draftHasInput(draft){return Boolean(draft?.description||draft?.locationText||draft?.locationUnknown||draft?.impactScope!=='UNKNOWN'||draft?.serviceCode||draft?.department||draft?.extension||draft?.supplement);}
 function restoreDraft(draft){if(!draft||draft.path!==location.pathname)return;$('description').value=draft.description;$('location-text').value=draft.locationText;$('location-unknown').checked=draft.locationUnknown;$('impact-scope').value=draft.impactScope;$('service-code').value=draft.serviceCode;$('department').value=draft.department;$('extension').value=draft.extension;$('supplement-text').value=draft.supplement;}
 function prepareBootstrap(){
- clearTimeout(state.poll);state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];state.recoveryScope=null;window.__yxx_csrf=undefined;
+ clearTimeout(state.sessionTimer);state.sessionTimer=null;clearTimeout(state.poll);state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];state.recoveryScope=null;window.__yxx_csrf=undefined;
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
  $('location-unknown').checked=false;$('impact-scope').value='UNKNOWN';clear($('report-list'));clear($('detail-facts'));clear($('detail-supplements'));clear($('detail-timeline'));$('detail-description').textContent='';$('detail-source').textContent='';$('detail-status').textContent='';$('timeline-window-note').textContent='';$('load-more-reports').hidden=true;$('load-older-timeline').hidden=true;$('supplement-form').hidden=true;
  for(const id of ['home-view','new-view','reports-view','detail-view'])$(id).hidden=true;
@@ -136,6 +137,22 @@ async function fetchJson(path,options={},signal){
 function beginOperation({busy=false}={}){state.controller?.abort();const controller=new AbortController();state.controller=controller;if(busy)state.busy=true;return {controller,signal:controller.signal,generation:state.generation};}
 function ownsOperation(operation){return state.controller===operation.controller&&state.generation===operation.generation&&!state.stopped;}
 function finishOperation(operation){if(!ownsOperation(operation))return false;state.controller=null;state.busy=false;return true;}
+function scheduleSessionRevalidation(){clearTimeout(state.sessionTimer);state.sessionTimer=null;if(!state.hidden&&!state.loggedOut&&!state.stopped&&RECOVERY_SCOPE.test(state.recoveryScope??''))state.sessionTimer=setTimeout(revalidateVisibleSession,sessionRevalidationMs);}
+async function revalidateVisibleSession(){
+ state.sessionTimer=null;
+ if(state.hidden||state.loggedOut||state.stopped)return;
+ if(state.controller||state.busy){scheduleSessionRevalidation();return;}
+ const operation=beginOperation(),expectedScope=state.recoveryScope;
+ try{
+  const result=await fetchJson('/api/yixiaoxiu/bootstrap',{},operation.signal);
+  if(!ownsOperation(operation))return;
+  const nextScope=result.body.recovery_scope;
+  if(!RECOVERY_SCOPE.test(nextScope??''))throw Object.assign(new Error(messageFor(503)),{status:503});
+  if(expectedScope!==nextScope){finishOperation(operation);clearClientDom('正在验证成员会话…');void bootstrap();return;}
+  window.__yxx_csrf=result.body.csrf_token;
+ }catch(error){if(error.name!=='AbortError'&&ownsOperation(operation)&&error.status<500)clearClientDom(messageFor(error.status));}
+ finally{finishOperation(operation);scheduleSessionRevalidation();}
+}
 function jsonHeaders(id,csrf){return {'content-type':'application/json','idempotency-key':id,'x-csrf-token':csrf,'sec-fetch-site':'same-origin'};}
 function statusText(value){return ({RECEIVED_PROCESSING:'已收到，正在处理',WAITING_FOR_DETAILS:'等待补充说明',UNDER_REVIEW:'人工审核中',TICKET_CREATED:'已生成工单',NOT_SERVICE:'非报修事项'})[value]??String(value??'状态未知');}
 function ticketStatusText(value){return ticketStatuses[value]??'状态未知';}
@@ -295,6 +312,7 @@ async function bootstrap(){
   }
   await recoverPending();
  }catch(error){if(error.name!=='AbortError'&&validGeneration(operation.generation))setStatus(error.status?messageFor(error.status):messageFor(503),'error');}
+ scheduleSessionRevalidation();
 }
 document.addEventListener('visibilitychange',()=>{
  state.hidden=document.hidden;

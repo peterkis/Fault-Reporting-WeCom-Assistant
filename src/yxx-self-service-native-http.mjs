@@ -300,6 +300,8 @@ export function createYxxSelfServiceNativeHttp({
         if ([...url.searchParams.keys()].some((key) => !allowed.has(key) || url.searchParams.getAll(key).length !== 1)) throw error('YXX_INPUT_INVALID');
         const timelineCursor = timeline ? url.searchParams.get('cursor') : null;
         if (timelineCursor !== null && timelineCursor.length < 10) throw error('YXX_INPUT_INVALID');
+        const ifNoneMatch = timeline ? null : header(request, 'if-none-match');
+        if (ifNoneMatch !== null && ifNoneMatch.length > 256) throw error('YXX_INPUT_INVALID');
         await currentMember(request);
         if (timeline) {
           const requestedLimit = url.searchParams.get('limit');
@@ -307,7 +309,7 @@ export function createYxxSelfServiceNativeHttp({
           if (timelineLimit !== undefined && (!Number.isSafeInteger(timelineLimit) || timelineLimit < 1 || timelineLimit > 100)) throw error('YXX_INPUT_INVALID');
           json(response, 200, await query.timeline({ request, requestRef: detailMatch[1], after: url.searchParams.get('after'), before: url.searchParams.get('before'), cursor: timelineCursor, limit: timelineLimit })); return true;
         }
-        const result = await query.detailWithEtag({ request, requestRef: detailMatch[1], ifNoneMatch: header(request, 'if-none-match') });
+        const result = await query.detailWithEtag({ request, requestRef: detailMatch[1], ifNoneMatch });
         json(response, result.status, result.body, { etag: result.etag }); return true;
       }
       const supplementMatch = url.pathname.match(/^\/api\/yixiaoxiu\/requests\/([A-Za-z0-9_-]{32})\/supplements$/u);
