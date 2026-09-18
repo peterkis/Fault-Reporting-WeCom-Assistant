@@ -1,0 +1,136 @@
+TAP version 13
+# Subtest: SS-001 fixed homepage performs one bounded OAuth round trip and returns to the bare root
+ok 1 - SS-001 fixed homepage performs one bounded OAuth round trip and returns to the bare root
+  ---
+  duration_ms: 61.8854
+  type: 'test'
+  ...
+# Subtest: SS-001 already authenticated and unusable cookies never begin a second OAuth flow
+ok 2 - SS-001 already authenticated and unusable cookies never begin a second OAuth flow
+  ---
+  duration_ms: 49.9218
+  type: 'test'
+  ...
+# Subtest: SS-001 callback/provider errors terminate with a safe error page and no redirect loop
+ok 3 - SS-001 callback/provider errors terminate with a safe error page and no redirect loop
+  ---
+  duration_ms: 6.7471
+  type: 'test'
+  ...
+# Subtest: SS-001 natural session expiry can recover only after the browser drops the expired cookie
+ok 4 - SS-001 natural session expiry can recover only after the browser drops the expired cookie
+  ---
+  duration_ms: 24.2194
+  type: 'test'
+  ...
+# Subtest: SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect
+ok 5 - SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect
+  ---
+  duration_ms: 54.2516
+  type: 'test'
+  ...
+# Subtest: SS-002 closed schemas reject identity and operational authority fields
+ok 6 - SS-002 closed schemas reject identity and operational authority fields
+  ---
+  duration_ms: 10.6122
+  type: 'test'
+  ...
+# Subtest: SS-002 both OpenAPI documents expose the same seven YXX operation references
+ok 7 - SS-002 both OpenAPI documents expose the same seven YXX operation references
+  ---
+  duration_ms: 4.5033
+  type: 'test'
+  ...
+# Subtest: SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY
+ok 8 - SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY
+  ---
+  duration_ms: 0.8506
+  type: 'test'
+  ...
+# Subtest: SS-007 native write UI requires an explicit member write flag while read APIs remain available
+ok 9 - SS-007 native write UI requires an explicit member write flag while read APIs remain available
+  ---
+  duration_ms: 641.389
+  type: 'test'
+  ...
+# Subtest: SS-007 command recovery rejects every query before dispatch or route fallthrough
+ok 10 - SS-007 command recovery rejects every query before dispatch or route fallthrough
+  ---
+  duration_ms: 97.1463
+  type: 'test'
+  ...
+# Subtest: SS-007 malformed request references return 400 without dispatch or fallthrough
+ok 11 - SS-007 malformed request references return 400 without dispatch or fallthrough
+  ---
+  duration_ms: 247.6331
+  type: 'test'
+  ...
+# Subtest: SS-007 native factory accepts only the OAuth callback session cookie
+ok 12 - SS-007 native factory accepts only the OAuth callback session cookie
+  ---
+  duration_ms: 0.8731
+  type: 'test'
+  ...
+# Subtest: SS-007 dependency failures remain terminal service or permission failures
+ok 13 - SS-007 dependency failures remain terminal service or permission failures
+  ---
+  duration_ms: 68.0038
+  type: 'test'
+  ...
+# Subtest: SS-007 JSON bodies reject duplicate decoded keys before commands
+ok 14 - SS-007 JSON bodies reject duplicate decoded keys before commands
+  ---
+  duration_ms: 62.3057
+  type: 'test'
+  ...
+# Subtest: SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+ok 15 - SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+  ---
+  duration_ms: 31.5145
+  type: 'test'
+  ...
+# Subtest: SS-007 direct detail pages enforce ownership before rendering the shell
+ok 16 - SS-007 direct detail pages enforce ownership before rendering the shell
+  ---
+  duration_ms: 38.7302
+  type: 'test'
+  ...
+# Subtest: SS-007 detail rejects an oversized If-None-Match before query dispatch
+ok 17 - SS-007 detail rejects an oversized If-None-Match before query dispatch
+  ---
+  duration_ms: 3.6045
+  type: 'test'
+  ...
+# Subtest: SS-007 report source filters reject explicit empty and unknown values before querying
+ok 18 - SS-007 report source filters reject explicit empty and unknown values before querying
+  ---
+  duration_ms: 46.0831
+  type: 'test'
+  ...
+# Subtest: SS-007 timeline rejects an explicitly empty cursor before querying
+ok 19 - SS-007 timeline rejects an explicitly empty cursor before querying
+  ---
+  duration_ms: 3.7394
+  type: 'test'
+  ...
+# Subtest: SS-007 write routes reject unknown query parameters before invoking commands
+ok 20 - SS-007 write routes reject unknown query parameters before invoking commands
+  ---
+  duration_ms: 76.1376
+  type: 'test'
+  ...
+# Subtest: SS-007 logout rejects unknown query and body fields without clearing sessions
+ok 21 - SS-007 logout rejects unknown query and body fields without clearing sessions
+  ---
+  duration_ms: 70.7361
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1541.2318

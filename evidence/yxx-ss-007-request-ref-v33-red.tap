@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: SS-007 malformed request references return 400 without dispatch or fallthrough
+not ok 1 - SS-007 malformed request references return 400 without dispatch or fallthrough
+  ---
+  duration_ms: 74.6666
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-http-errors.test.mjs:82:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    GET not-a-ref
+    
+    404 !== 400
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 400
+  actual: 404
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-http-errors.test.mjs:102:16)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 393.2924

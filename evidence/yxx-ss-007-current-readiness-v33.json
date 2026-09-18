@@ -1,0 +1,300 @@
+{
+  "task": "YXX-SS-007",
+  "status": "LOCAL_VALIDATION_COMPLETE_REVIEW_PENDING",
+  "event_time": "2026-09-18 18:46:30",
+  "base_head": "00b7d7b8c3872d25221e692d2b22661fba7c1268",
+  "tested_head": "f1680dbff0f8f8b732cc3f4d12e89ac3135b7cab",
+  "tested_tree": "fa1c9812144d60fd539105cb1ab2aa4d6f1803f9",
+  "source_binding": "Git blob SHA-256 and executed working-tree SHA-256 are bound separately. Only CRLF-to-LF normalization is allowed. The subsequent publication commit adds evidence only; every listed source must match this tested commit.",
+  "source_files": [
+    {
+      "path": "src/yxx-self-service-native-http.mjs",
+      "sha256": "8e7ccf1c387b07b40248730d587b7485cd8cebc4f71e503bf1d8cbe57e8befe4",
+      "tested_worktree_sha256": "8e7ccf1c387b07b40248730d587b7485cd8cebc4f71e503bf1d8cbe57e8befe4",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.js",
+      "sha256": "874b9f89b3cc46daa1558f17f310221009782a3b4a996de27531a446e5742e28",
+      "tested_worktree_sha256": "f083541c1d103d68326d319ca621d7d1231dfa37f3854184818f85b7e77e8adb",
+      "relation": "CRLF_TO_LF_ONLY"
+    },
+    {
+      "path": "web/p2-reporter/self-service.html",
+      "sha256": "22fdedd4b58e682696535014f46c915489807e8b9501671aae484a9f7d80abda",
+      "tested_worktree_sha256": "22fdedd4b58e682696535014f46c915489807e8b9501671aae484a9f7d80abda",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.css",
+      "sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "tested_worktree_sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+      "sha256": "2a8cfc67300ec988d711d79737607f74997076e0fd749c5ac3832dbb374f944c",
+      "tested_worktree_sha256": "2a8cfc67300ec988d711d79737607f74997076e0fd749c5ac3832dbb374f944c",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-002-contract.test.mjs",
+      "sha256": "79ae954923c845eab5ff7d70a210a4fc010c1fca138317fcf151ea34950cc1e2",
+      "tested_worktree_sha256": "79ae954923c845eab5ff7d70a210a4fc010c1fca138317fcf151ea34950cc1e2",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+      "sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "tested_worktree_sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+      "sha256": "ac89fdcb56f85d293a741037e43fa13a530c47792946f9498e88148aedcd0478",
+      "tested_worktree_sha256": "ac89fdcb56f85d293a741037e43fa13a530c47792946f9498e88148aedcd0478",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "sha256": "1a89c06b62a81c85e09d8763ac9ffebbe32e37163f216bdee99e9945b5239ae4",
+      "tested_worktree_sha256": "1a89c06b62a81c85e09d8763ac9ffebbe32e37163f216bdee99e9945b5239ae4",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "sha256": "87aeec7803311c5abea34764dde14dbe48ccf0af7a3d9ae1580e16979c7b4674",
+      "tested_worktree_sha256": "87aeec7803311c5abea34764dde14dbe48ccf0af7a3d9ae1580e16979c7b4674",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+      "sha256": "4742b6e9f95dea47a4035cbe7ddc6f56b30c15fdc9ca363b525a1d1fbc6bd391",
+      "tested_worktree_sha256": "4742b6e9f95dea47a4035cbe7ddc6f56b30c15fdc9ca363b525a1d1fbc6bd391",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/helpers/yxx-ss-007-acceptance-fixture.mjs",
+      "sha256": "d019bca3dbdf0144e45c796e07ab71013db58155ac28dfc189407a7facf3a7f5",
+      "tested_worktree_sha256": "d019bca3dbdf0144e45c796e07ab71013db58155ac28dfc189407a7facf3a7f5",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_bootstrap.schema.json",
+      "sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "tested_worktree_sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_contracts.d.ts",
+      "sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "tested_worktree_sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_request.schema.json",
+      "sha256": "62c53fa4b8ecc562231397e3f0b7e5441bdc02200e46d1977bff6b70ba8e6490",
+      "tested_worktree_sha256": "62c53fa4b8ecc562231397e3f0b7e5441bdc02200e46d1977bff6b70ba8e6490",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-contract-freeze.md",
+      "sha256": "186d7c67f4c0b6a9f962b49893918a1b697a39bea8843b872972c5137f32df82",
+      "tested_worktree_sha256": "186d7c67f4c0b6a9f962b49893918a1b697a39bea8843b872972c5137f32df82",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-native-ui.md",
+      "sha256": "458366f5edaf81d60aae9e30b02de579bab638600ba3e8dee83e0b64e4ae7253",
+      "tested_worktree_sha256": "458366f5edaf81d60aae9e30b02de579bab638600ba3e8dee83e0b64e4ae7253",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "plans/yxx-self-service-ticket-plan.json",
+      "sha256": "8a2178e142758aae9ae56c53266e7c04897137114f28b5541589accd23331be2",
+      "tested_worktree_sha256": "8a2178e142758aae9ae56c53266e7c04897137114f28b5541589accd23331be2",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tasks/P2-YXX-SELF-SERVICE-INTAKE.md",
+      "sha256": "e74cf3fb709d76adbb149b6132275eb8144694c473309d2dd7c7913ce864d0f8",
+      "tested_worktree_sha256": "e74cf3fb709d76adbb149b6132275eb8144694c473309d2dd7c7913ce864d0f8",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/helpers/p2-006-browser-harness.mjs",
+      "sha256": "3d11726a4d4f907a7a218c03dbda173a3b4268e0cef8045fd59ec62dfaae2149",
+      "tested_worktree_sha256": "a0886fa34cf3344c9deec969c7f2e91157bd4f85c11ee971d34ef066dba411f2",
+      "relation": "CRLF_TO_LF_ONLY"
+    },
+    {
+      "path": "tests/helpers/p2-015-postgres-harness.mjs",
+      "sha256": "e5034c711c70a826ab1e1a72aa0dc49a4429fd2c8d243ad002a9b243da943eeb",
+      "tested_worktree_sha256": "b3155539daa7837f7b9fa2d043f885b446a2f205099bfd53d70e3689c98ca765",
+      "relation": "CRLF_TO_LF_ONLY"
+    },
+    {
+      "path": "tests/helpers/p2-016-postgres-harness.mjs",
+      "sha256": "a50f6718e555c50c628bf26e40388a81a88f1e61fb169a8cfb86185a2fa10cfd",
+      "tested_worktree_sha256": "057edd7d273b41bd92ee49ab193f503d048893c58a704a75de9f8d371bd2a804",
+      "relation": "CRLF_TO_LF_ONLY"
+    },
+    {
+      "path": "src/yxx-self-service-authorization.mjs",
+      "sha256": "53441b18eb4e218d88b729eb968d6fa2615d025ccd60f90716029da1517ac9e9",
+      "tested_worktree_sha256": "53441b18eb4e218d88b729eb968d6fa2615d025ccd60f90716029da1517ac9e9",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "src/yxx-self-service-command.mjs",
+      "sha256": "c07dc2deec874e345d6e26092d06d6d706c24f11b48ed12f14d89628c7af86c9",
+      "tested_worktree_sha256": "c07dc2deec874e345d6e26092d06d6d706c24f11b48ed12f14d89628c7af86c9",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "src/yxx-self-service-orchestrator.mjs",
+      "sha256": "0fcde6c7f4de5b71d94a988f46ba43484f604693092348363a88c81867b22a83",
+      "tested_worktree_sha256": "0fcde6c7f4de5b71d94a988f46ba43484f604693092348363a88c81867b22a83",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "src/yxx-self-service-query.mjs",
+      "sha256": "f3acae1b2d8eeba7fd7efd27d4d485a09b09b1e2aca43504082a0314d2d1bb84",
+      "tested_worktree_sha256": "f3acae1b2d8eeba7fd7efd27d4d485a09b09b1e2aca43504082a0314d2d1bb84",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "src/yxx-self-service-store.mjs",
+      "sha256": "cff4dc93f8716f9c0d455c780700a68defaac2b1f910c64227e6558a8b2c5cc9",
+      "tested_worktree_sha256": "cff4dc93f8716f9c0d455c780700a68defaac2b1f910c64227e6558a8b2c5cc9",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "src/yxx-self-service-supplement.mjs",
+      "sha256": "3a52806e6c6695d0210fcba43027974859c93facb0bb10e0b657def8d7e90ff3",
+      "tested_worktree_sha256": "3a52806e6c6695d0210fcba43027974859c93facb0bb10e0b657def8d7e90ff3",
+      "relation": "IDENTICAL"
+    }
+  ],
+  "validation": {
+    "scope": "LOCAL_HTTP_BROWSER_CONTRACT_AND_ISOLATED_POSTGRES",
+    "aggregate": {
+      "tests": 81,
+      "pass": 81,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exit_code": 0
+    },
+    "suites": [
+      {
+        "name": "SS-001 + SS-002 + SS-007",
+        "command": "node --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-001-homepage-oauth.test.mjs tests/yxx-ss-002-contract.test.mjs tests/yxx-ss-007-*.test.mjs",
+        "tests": 74,
+        "pass": 74,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "exit_code": 0,
+        "tap": {
+          "path": "evidence/yxx-ss-007-current-readiness-v33-passed.tap",
+          "sha256": "f4e8d0d6520c9763cd9428e9c1eaa1b7f8e89d3d2b5f9d896b3cb0f619de7202",
+          "bytes": 17355
+        }
+      },
+      {
+        "name": "SS-005 + SS-006",
+        "command": "node --env-file=.env.pilot --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-005-member-queries.integration.test.mjs tests/yxx-ss-006-supplements-review.integration.test.mjs",
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "exit_code": 0,
+        "tap": {
+          "path": "evidence/yxx-ss-005-006-v33-passed.tap",
+          "sha256": "4e57cdbd29c73709209d30a629dff6a2c075176b68a8f97c369f139ed58bc626",
+          "bytes": 1798
+        },
+        "database": "isolated_local_postgresql",
+        "production_database": "NOT_RUN"
+      }
+    ],
+    "syntax_checks": [
+      "node --check web/p2-reporter/self-service.js",
+      "node --check src/yxx-self-service-native-http.mjs",
+      "node --check tests/yxx-ss-007-native-ui.browser.test.mjs"
+    ],
+    "diff_check": {
+      "scope": "implementation changes 00b7d7b8c3872d25221e692d2b22661fba7c1268..f1680dbff0f8f8b732cc3f4d12e89ac3135b7cab",
+      "result": "PASS",
+      "raw_log_note": "Failed and interrupted TAP logs retain original whitespace; those raw diagnostic artifacts are not normalized for diff whitespace checks."
+    },
+    "post_test_runtime_changes": false
+  },
+  "review_fixes": [
+    "P2: count all valid v3 durable records across member/corp/app scopes for both pre-write and post-write capacity checks. Preserve existing records; refuse new POST at the global 20-record limit. Align the runbook with the frozen global bound.",
+    "P2: claim request-reference route prefixes and validate reference/route shape before detail, timeline or supplement dispatch. Malformed references return 400; valid unknown member-owned references retain 404."
+  ],
+  "current_readiness": {
+    "current_aggregate": "evidence/yxx-ss-007-current-readiness-v33.json",
+    "superseded_historical_aggregate": "evidence/yxx-ss-007-current-readiness-v32.json",
+    "yxx_ss_007": "IN_REVIEW",
+    "yxx_ss_008": "PLANNED"
+  },
+  "review": {
+    "external_current_head": "PENDING",
+    "github_checks": "NOT_CLAIMED"
+  },
+  "historical_runs": [
+    {
+      "path": "evidence/yxx-ss-007-global-cap-v33-red.tap",
+      "result": "Cross-scope capacity regression failed on pre-repair runtime."
+    },
+    {
+      "path": "evidence/yxx-ss-007-request-ref-v33-red.tap",
+      "result": "Malformed request reference returned 404 instead of 400 before repair."
+    },
+    {
+      "path": "evidence/yxx-ss-007-global-cap-v33-targeted.tap",
+      "result": "3/3 same-scope/cross-scope/invalid-record quota tests passed."
+    },
+    {
+      "path": "evidence/yxx-ss-007-global-cap-v33-recheck.tap",
+      "result": "1/1 interleaved other-scope insertion test passed; only the attempted new record was removed and no POST was sent."
+    },
+    {
+      "path": "evidence/yxx-ss-007-request-ref-v33-targeted.tap",
+      "result": "HTTP errors suite passed after repair."
+    },
+    {
+      "path": "evidence/yxx-ss-007-v33-http-contract-targeted.tap",
+      "result": "21/21 HTTP and frozen-contract checks passed."
+    }
+  ],
+  "security_boundaries": [
+    "MEMBER_TICKET_READONLY remains business read-only; no write flag is enabled by this candidate.",
+    "No Bot message, chat Session, Direct Leg, real OAuth/SDK call, production database, SSH, send, deployment, SS-011, P2-G2-LIVE or P2-008.",
+    "Durable records remain opaque UUID plus recovery_scope; other-scope records are retained."
+  ],
+  "limitations": [
+    "Local synthetic browser and isolated PostgreSQL validation only; no live identity, send or deployment acceptance.",
+    "Current-head external review remains pending."
+  ],
+  "live": {
+    "oauth": "NOT_RUN",
+    "sdk": "NOT_RUN",
+    "production_db": "NOT_RUN",
+    "send": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "SS011": "NOT_AUTHORIZED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "BLOCKED"
+  },
+  "database_changes": "NONE",
+  "rollback": "Keep either self-service feature flag disabled.",
+  "event_epoch_ms": "1789728390369"
+}
