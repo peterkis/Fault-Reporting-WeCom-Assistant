@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads
+ok 1 - SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads
+  ---
+  duration_ms: 2520.565
+  type: 'test'
+  ...
+# Subtest: SS-008 OAUTH_ONLY never touches a supplied DB; READONLY rejects Web writes with erroneous flags
+ok 2 - SS-008 OAUTH_ONLY never touches a supplied DB; READONLY rejects Web writes with erroneous flags
+  ---
+  duration_ms: 8.2713
+  type: 'test'
+  ...
+# Subtest: SS-008 delegated proof and realtime ticket scope remain closed and bounded
+ok 3 - SS-008 delegated proof and realtime ticket scope remain closed and bounded
+  ---
+  duration_ms: 0.9949
+  type: 'test'
+  ...
+# Subtest: SS-008 four actual sources coexist on 033/034 with independent lineage and Web APP_ONLY
+not ok 4 - SS-008 four actual sources coexist on 033/034 with independent lineage and Web APP_ONLY
+  ---
+  duration_ms: 2304.7566
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-008-assembly.integration.test.mjs:137:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+        'APP_WEB_SELF_SERVICE',
+        'DIRECT_ORGANIC',
+    +   'GROUP_MENTION_INLINE',
+    -   'GROUP_MENTION_ONLY',
+        'GROUP_MENTION_TO_DIRECT_GUIDED'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'APP_WEB_SELF_SERVICE'
+    1: 'DIRECT_ORGANIC'
+    2: 'GROUP_MENTION_ONLY'
+    3: 'GROUP_MENTION_TO_DIRECT_GUIDED'
+  actual:
+    0: 'APP_WEB_SELF_SERVICE'
+    1: 'DIRECT_ORGANIC'
+    2: 'GROUP_MENTION_INLINE'
+    3: 'GROUP_MENTION_TO_DIRECT_GUIDED'
+  operator: 'deepStrictEqual'
+  stack: |-
+    withG2Runtime.webSchema (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-008-assembly.integration.test.mjs:158:14)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-g2-runtime-harness.mjs:76:9)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async withG2Runtime (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-g2-runtime-harness.mjs:22:5)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-008-assembly.integration.test.mjs:138:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 3
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5113.9807

@@ -1,0 +1,378 @@
+TAP version 13
+# Subtest: Realtime Event and Fallback Schemas parse as draft 2020-12 closed contracts
+ok 1 - Realtime Event and Fallback Schemas parse as draft 2020-12 closed contracts
+  ---
+  duration_ms: 9.6794
+  type: 'test'
+  ...
+# Subtest: Realtime vocabularies freeze all event, source, aggregate, scope and visibility values
+ok 2 - Realtime vocabularies freeze all event, source, aggregate, scope and visibility values
+  ---
+  duration_ms: 2.0921
+  type: 'test'
+  ...
+# Subtest: TypeScript declarations mirror every frozen Schema and runtime vocabulary
+ok 3 - TypeScript declarations mirror every frozen Schema and runtime vocabulary
+  ---
+  duration_ms: 3.0077
+  type: 'test'
+  ...
+# Subtest: authorized replay SQL clips scope and visibility before LIMIT and payload materialization
+ok 4 - authorized replay SQL clips scope and visibility before LIMIT and payload materialization
+  ---
+  duration_ms: 2.7691
+  type: 'test'
+  ...
+# Subtest: Fallback Schema freezes the six safe fields, four reasons and two strategies
+ok 5 - Fallback Schema freezes the six safe fields, four reasons and two strategies
+  ---
+  duration_ms: 1.5176
+  type: 'test'
+  ...
+# Subtest: normalization rejects invalid event, source, aggregate and scope vocabularies
+ok 6 - normalization rejects invalid event, source, aggregate and scope vocabularies
+  ---
+  duration_ms: 1.8198
+  type: 'test'
+  ...
+# Subtest: SESSION and THREAD require a UUID scope while SYSTEM requires null
+ok 7 - SESSION and THREAD require a UUID scope while SYSTEM requires null
+  ---
+  duration_ms: 1.7413
+  type: 'test'
+  ...
+# Subtest: normalization rejects invalid timestamps and requires expires_at after occurred_at
+ok 8 - normalization rejects invalid timestamps and requires expires_at after occurred_at
+  ---
+  duration_ms: 0.8459
+  type: 'test'
+  ...
+# Subtest: aggregate versions use nullable canonical PostgreSQL BIGINT strings
+ok 9 - aggregate versions use nullable canonical PostgreSQL BIGINT strings
+  ---
+  duration_ms: 0.842
+  type: 'test'
+  ...
+# Subtest: Last-Event-ID accepts zero and the BIGINT maximum without Number conversion
+ok 10 - Last-Event-ID accepts zero and the BIGINT maximum without Number conversion
+  ---
+  duration_ms: 0.3443
+  type: 'test'
+  ...
+# Subtest: Last-Event-ID rejects negative, decimal, scientific, signed, spaced and overflow forms
+ok 11 - Last-Event-ID rejects negative, decimal, scientific, signed, spaced and overflow forms
+  ---
+  duration_ms: 0.3039
+  type: 'test'
+  ...
+# Subtest: payload accepts only bounded plain finite JSON data
+ok 12 - payload accepts only bounded plain finite JSON data
+  ---
+  duration_ms: 0.9567
+  type: 'test'
+  ...
+# Subtest: payload enforces depth, node, object, array, string and canonical-byte limits
+ok 13 - payload enforces depth, node, object, array, string and canonical-byte limits
+  ---
+  duration_ms: 5.264
+  type: 'test'
+  ...
+# Subtest: payload rejects Proxy and accessor paths without invoking hostile code
+ok 14 - payload rejects Proxy and accessor paths without invoking hostile code
+  ---
+  duration_ms: 0.7178
+  type: 'test'
+  ...
+# Subtest: payload rejects toJSON, symbols and prototype-pollution keys
+ok 15 - payload rejects toJSON, symbols and prototype-pollution keys
+  ---
+  duration_ms: 0.6665
+  type: 'test'
+  ...
+# Subtest: payload rejects message content and sensitive identifier property names
+ok 16 - payload rejects message content and sensitive identifier property names
+  ---
+  duration_ms: 0.9798
+  type: 'test'
+  ...
+# Subtest: event key is stable, opaque and changes with its frozen identity tuple
+ok 17 - event key is stable, opaque and changes with its frozen identity tuple
+  ---
+  duration_ms: 2.0925
+  type: 'test'
+  ...
+# Subtest: event hash is canonical across payload key order and changes on semantic mutation
+ok 18 - event hash is canonical across payload key order and changes on semantic mutation
+  ---
+  duration_ms: 0.977
+  type: 'test'
+  ...
+# Subtest: event hash excludes expires_at, event_id and created_at
+ok 19 - event hash excludes expires_at, event_id and created_at
+  ---
+  duration_ms: 0.7144
+  type: 'test'
+  ...
+# Subtest: Conversation Item mapper exposes only the seven safe projection fields plus occurred_at
+ok 20 - Conversation Item mapper exposes only the seven safe projection fields plus occurred_at
+  ---
+  duration_ms: 0.6611
+  type: 'test'
+  ...
+# Subtest: Session fixture mapper freezes created and updated event variants with safe payloads
+ok 21 - Session fixture mapper freezes created and updated event variants with safe payloads
+  ---
+  duration_ms: 1.1219
+  type: 'test'
+  ...
+# Subtest: Timeline rebuilt fixture mapper exposes only count and canonical hash metadata
+ok 22 - Timeline rebuilt fixture mapper exposes only count and canonical hash metadata
+  ---
+  duration_ms: 0.5372
+  type: 'test'
+  ...
+# Subtest: public event view contains exactly nine safe fields and no publisher, source, hash or scope IDs
+ok 23 - public event view contains exactly nine safe fields and no publisher, source, hash or scope IDs
+  ---
+  duration_ms: 0.5574
+  type: 'test'
+  ...
+# Subtest: SSE event encoding uses id/type/single-line JSON and supports every frozen event type
+ok 24 - SSE event encoding uses id/type/single-line JSON and supports every frozen event type
+  ---
+  duration_ms: 3.6709
+  type: 'test'
+  ...
+# Subtest: SSE encoding rejects CR/LF event injection and never emits raw payload newlines
+ok 25 - SSE encoding rejects CR/LF event injection and never emits raw payload newlines
+  ---
+  duration_ms: 0.4961
+  type: 'test'
+  ...
+# Subtest: heartbeat is a comment frame and consumes no event id
+ok 26 - heartbeat is a comment frame and consumes no event id
+  ---
+  duration_ms: 0.2032
+  type: 'test'
+  ...
+# Subtest: authorization defaults to deny-all and rejects absent or malformed contexts
+ok 27 - authorization defaults to deny-all and rejects absent or malformed contexts
+  ---
+  duration_ms: 0.7534
+  type: 'test'
+  ...
+# Subtest: authorization normalizes bounded UUID sets without wildcard access
+ok 28 - authorization normalizes bounded UUID sets without wildcard access
+  ---
+  duration_ms: 0.3804
+  type: 'test'
+  ...
+# Subtest: restricted-admin defense-in-depth closes a malicious replay without delivering it
+ok 29 - restricted-admin defense-in-depth closes a malicious replay without delivering it
+  ---
+  duration_ms: 3.9689
+  type: 'test'
+  ...
+# Subtest: controlled principal disconnect closes only the selected SSE client
+ok 30 - controlled principal disconnect closes only the selected SSE client
+  ---
+  duration_ms: 5.1144
+  type: 'test'
+  ...
+# Subtest: disabled handler returns safe polling fallback with zero database calls and no timers
+ok 31 - disabled handler returns safe polling fallback with zero database calls and no timers
+  ---
+  duration_ms: 0.7919
+  type: 'test'
+  ...
+# Subtest: disabled event store fails before acquiring a database connection
+ok 32 - disabled event store fails before acquiring a database connection
+  ---
+  duration_ms: 0.6151
+  type: 'test'
+  ...
+# Subtest: disconnect during authentication never acquires replay, Hub, or timer resources
+ok 33 - disconnect during authentication never acquires replay, Hub, or timer resources
+  ---
+  duration_ms: 0.4227
+  type: 'test'
+  ...
+# Subtest: disconnect during authorization never acquires replay, Hub, or timer resources
+ok 34 - disconnect during authorization never acquires replay, Hub, or timer resources
+  ---
+  duration_ms: 0.4017
+  type: 'test'
+  ...
+# Subtest: Wakeup Hub admits 32 clients, rejects the 33rd, and releases capacity
+ok 35 - Wakeup Hub admits 32 clients, rejects the 33rd, and releases capacity
+  ---
+  duration_ms: 0.2837
+  type: 'test'
+  ...
+# Subtest: replay batch configuration accepts 200 and rejects 201
+ok 36 - replay batch configuration accepts 200 and rejects 201
+  ---
+  duration_ms: 0.2213
+  type: 'test'
+  ...
+# Subtest: list replay rejects limits above 200 before querying storage
+ok 37 - list replay rejects limits above 200 before querying storage
+  ---
+  duration_ms: 0.543
+  type: 'test'
+  ...
+# Subtest: backpressure waits for drain and releases only the affected stream
+ok 38 - backpressure waits for drain and releases only the affected stream
+  ---
+  duration_ms: 1.5249
+  type: 'test'
+  ...
+# Subtest: drain timeout disconnects only the slow client with bounded metrics
+ok 39 - drain timeout disconnects only the slow client with bounded metrics
+  ---
+  duration_ms: 4.8068
+  type: 'test'
+  ...
+# Subtest: retention gap after SSE headers closes the stream and reconnect returns 410 fallback
+ok 40 - retention gap after SSE headers closes the stream and reconnect returns 410 fallback
+  ---
+  duration_ms: 1.8579
+  type: 'test'
+  ...
+# Subtest: polling fallback normalizes canonical IDs and rejects unsafe forms
+ok 41 - polling fallback normalizes canonical IDs and rejects unsafe forms
+  ---
+  duration_ms: 0.2063
+  type: 'test'
+  ...
+# Subtest: public HTTP errors expose only stable codes and never raw authentication failures
+ok 42 - public HTTP errors expose only stable codes and never raw authentication failures
+  ---
+  duration_ms: 0.41
+  type: 'test'
+  ...
+# Subtest: delegated member conversion binds exact original Bot identities without normalizing encrypted IDs
+ok 43 - delegated member conversion binds exact original Bot identities without normalizing encrypted IDs
+  ---
+  duration_ms: 6.7783
+  type: 'test'
+  ...
+# Subtest: delegated configuration and public schema bound the approved roster and forbid invented proof
+ok 44 - delegated configuration and public schema bound the approved roster and forbid invented proof
+  ---
+  duration_ms: 8.5004
+  type: 'test'
+  ...
+# Subtest: delegated conversion permits omitted empty invalid list only with a complete one-to-one response
+ok 45 - delegated conversion permits omitted empty invalid list only with a complete one-to-one response
+  ---
+  duration_ms: 6.7763
+  type: 'test'
+  ...
+# Subtest: delegated conversion rejects partial, duplicate, foreign and malformed mappings without identity or token leaks
+ok 46 - delegated conversion rejects partial, duplicate, foreign and malformed mappings without identity or token leaks
+  ---
+  duration_ms: 5.7291
+  type: 'test'
+  ...
+# Subtest: delegated map cannot be reused under another scope or authorize an unlisted OAuth identity
+ok 47 - delegated map cannot be reused under another scope or authorize an unlisted OAuth identity
+  ---
+  duration_ms: 1.7593
+  type: 'test'
+  ...
+# {"ok":true,"profile":"MEMBER_TICKET_READONLY","configured":true,"database_connections":0,"provider_calls":0,"listener_started":false,"live_authorized":false}
+# Subtest: delegated conversion rejects a non-cooperative Provider within its startup deadline
+ok 48 - delegated conversion rejects a non-cooperative Provider within its startup deadline
+  ---
+  duration_ms: 5004.3407
+  type: 'test'
+  ...
+# Subtest: readonly check stays offline and conversion failure prevents startup; full mapped mode requires exact config proof
+ok 49 - readonly check stays offline and conversion failure prevents startup; full mapped mode requires exact config proof
+  ---
+  duration_ms: 6.1419
+  type: 'test'
+  ...
+# Subtest: member readiness refresh permits only authorized modifications with exact preserved baseline bytes
+ok 50 - member readiness refresh permits only authorized modifications with exact preserved baseline bytes
+  ---
+  duration_ms: 1.3345
+  type: 'test'
+  ...
+# Subtest: member readiness refuses old976, missing48, bypass gaps, missing baseline and false live claims
+    # Subtest: PR8 current member readiness rejects missing or noncanonical evidence time pairs
+    ok 1 - PR8 current member readiness rejects missing or noncanonical evidence time pairs
+      ---
+      duration_ms: 29.1263
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses unrelated passing names
+    ok 2 - member readiness refuses unrelated passing names
+      ---
+      duration_ms: 20.7275
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses a different TAP receipt
+    ok 3 - member readiness refuses a different TAP receipt
+      ---
+      duration_ms: 9.8041
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses different regression file hashes
+    ok 4 - member readiness refuses different regression file hashes
+      ---
+      duration_ms: 9.2061
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses unrelated scenario files
+    ok 5 - member readiness refuses unrelated scenario files
+      ---
+      duration_ms: 18.0028
+      type: 'test'
+      ...
+    1..5
+ok 51 - member readiness refuses old976, missing48, bypass gaps, missing baseline and false live claims
+  ---
+  duration_ms: 281.532
+  type: 'test'
+  ...
+# Subtest: YXX-33 complete G2 live configuration requires member policy and binds the server identity proof configuration
+ok 52 - YXX-33 complete G2 live configuration requires member policy and binds the server identity proof configuration
+  ---
+  duration_ms: 3.2077
+  type: 'test'
+  ...
+# Subtest: member App HTTP allowlist admits only fixed OAuth endpoints with bounded GET parameters through a local fake transport
+ok 53 - member App HTTP allowlist admits only fixed OAuth endpoints with bounded GET parameters through a local fake transport
+  ---
+  duration_ms: 6.5992
+  type: 'test'
+  ...
+# Subtest: SS-002 closed schemas reject identity and operational authority fields
+ok 54 - SS-002 closed schemas reject identity and operational authority fields
+  ---
+  duration_ms: 23.5487
+  type: 'test'
+  ...
+# Subtest: SS-002 both OpenAPI documents expose the same seven YXX operation references
+ok 55 - SS-002 both OpenAPI documents expose the same seven YXX operation references
+  ---
+  duration_ms: 7.8141
+  type: 'test'
+  ...
+# Subtest: SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY
+ok 56 - SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY
+  ---
+  duration_ms: 4.1389
+  type: 'test'
+  ...
+1..56
+# tests 61
+# suites 0
+# pass 61
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6428.9116

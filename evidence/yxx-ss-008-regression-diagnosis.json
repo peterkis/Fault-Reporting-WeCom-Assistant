@@ -1,0 +1,78 @@
+{
+  "task": "YXX-SS-008",
+  "event_time": "2026-09-18 20:22:01",
+  "event_epoch_ms": "1789734121735",
+  "status": "FIXTURE_ROOT_CAUSE_VERIFIED",
+  "failed_full_run": "evidence/yxx-ss-008-full-first-failed-run.json",
+  "failed_full_tap": "evidence/yxx-ss-008-full-first-failed.tap",
+  "failure": {
+    "test": "SS-003 fresh applied migration, idempotent Web acceptance and source constraints",
+    "code": "YXX_SELF_SERVICE_REQUIRES_032",
+    "counts": {
+      "tests": 1154,
+      "pass": 1153,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  },
+  "cause": "The pre-existing SS-003 test used the configured parent database directly and assumed migration 032 had already been installed. The Web migrator correctly rejected the absent prerequisite before applying Web DDL or test business writes.",
+  "isolated_reproduction": {
+    "setup": "Owned temporary PostgreSQL database migrated through 031",
+    "result": "Same REQUIRES_032 error",
+    "tap": "evidence/yxx-ss-008-ss003-fixture-red.tap",
+    "cleanup": "PASS"
+  },
+  "repair": {
+    "file": "tests/yxx-ss-003-schema.test.mjs",
+    "head": "7f4e09df6da3ff661f68d1dbe239ce8851be8842",
+    "runtime_changes": false,
+    "migration_changes": false,
+    "original_business_assertions_retained": true,
+    "steps": [
+      "Use existing owned isolated database lifecycle",
+      "Apply the original baseline through 032 in that database",
+      "Require APPLIED for first Web migration and NOOP_ALREADY_APPLIED for repeat",
+      "Retain all Web acceptance, idempotency, retention, window and source assertions",
+      "Require owned-resource cleanup"
+    ],
+    "targeted": {
+      "tap": "evidence/yxx-ss-008-ss003-fixture-green.tap",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  },
+  "earlier_diagnostics": [
+    {
+      "artifact": "tool transcript; initial assembly attempt",
+      "cause": "Fixture treated the original structured staff Cookie as a string; corrected fixture shape."
+    },
+    {
+      "artifact": "evidence/yxx-ss-008-assembly-attempt-02.tap",
+      "cause": "Fixture omitted the original Workbench If-Match header; header was added, concurrency contract unchanged."
+    },
+    {
+      "artifact": "evidence/yxx-ss-008-assembly-attempt-05.tap",
+      "cause": "Fixture used a noncanonical group entry name; corrected to actual GROUP_MENTION_INLINE."
+    },
+    {
+      "artifact": "evidence/yxx-ss-008-member-regression-attempt-01.tap",
+      "result": "INTERRUPTED_NOT_COMPLETION_EVIDENCE",
+      "cause": "Stopped before candidate freeze while assembly boundary changes continued."
+    },
+    {
+      "artifact": "evidence/yxx-ss-008-member-regression-attempt-02.tap",
+      "result": "80/81",
+      "cause": "The fully-disabled homepage fixture disabled writes but left reads enabled. Updated it to disable both flags; separate SS-008 acceptance verifies write-off/read-on."
+    }
+  ],
+  "full_retry": "SEPARATE_RESULT_REQUIRED",
+  "no_timeout_increase": true,
+  "no_scale_reduction": true,
+  "no_assertion_deletion": true
+}
