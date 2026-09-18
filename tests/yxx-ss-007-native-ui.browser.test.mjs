@@ -86,9 +86,9 @@ function fixture(origin) {
       if (ifNoneMatch === etag) return { status: 304, body: null, etag };
       return { status: 200, etag, body: { source_kind: 'WEB_REQUEST', request_ref: requestRef,
         intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: state.ticketStatus ? 'TICKET_CREATED' : 'WAITING_FOR_DETAILS', input_revision: revision, processed_revision: '0',
-        needs_action: '请补充故障现象', updated_at: '2026-09-16 23:00:00', updated_epoch_ms: '1789570800000',
+        needs_action: state.needsAction === undefined ? '请补充故障现象' : state.needsAction, updated_at: '2026-09-16 23:00:00', updated_epoch_ms: '1789570800000',
         created_at: '2026-09-16 23:00:00', created_epoch_ms: '1789570800000', safe_description: '<img src=x onerror=window.__xss=1>',
-        safe_location: '护士站', safe_clarification: null, supplements: [], can_supplement: true, ticket: ticket(state.ticketStatus) } };
+        safe_location: '护士站', safe_clarification: state.safeClarification ?? null, supplements: [], can_supplement: true, ticket: ticket(state.ticketStatus) } };
     },
     async timeline({ request, requestRef, limit, cursor, before }) {
       state.timelineCalls.push({ member: memberFor(request), requestRef, limit, cursor, before });
@@ -195,7 +195,7 @@ for (const [path, view] of [['/wecom/yixiaoxiu/', 'home-view'], ['/wecom/yixiaox
   });
 }
 
-for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 'same'], ['new', 'changed'], ['list', '503'], ['new', 'timeout']]) {
+for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 'same'], ['new', 'focus-moved'], ['new', 'changed'], ['list', '503'], ['new', 'timeout']]) {
   test(`SS-007 periodic revalidation hides ${route} while unresolved: ${outcome}`, { timeout: 45000 }, async () => {
     const f = await startFixture(); let browser; let releaseContext;
     try {
@@ -207,10 +207,13 @@ for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 's
       await browser.evaluate(`location.assign('${path}')`, { awaitPromise: false });
       await browser.waitFor(route === 'list' ? `document.querySelector('#report-list')?.textContent.includes('${REFS.A}')` : route === 'detail' ? "document.querySelector('#detail-description')?.textContent.includes('<img')" : "document.querySelector('#new-view')?.hidden===false");
       await browser.evaluate("document.querySelector('#description').value='private draft';document.querySelector('#supplement-text').value='private supplement'");
+      const field = route === 'new' ? 'description' : route === 'detail' ? 'supplement-text' : null;
+      if (field) await browser.evaluate(`document.getElementById('${field}').focus();document.getElementById('${field}').setSelectionRange(2,7,'backward')`);
       const before = f.state.contextCalls;
       f.state.contextGate = new Promise(resolve => { releaseContext = resolve; });
       await waitForState(() => f.state.contextCalls > before, 10000);
       assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
+      if (outcome === 'focus-moved') await browser.evaluate("document.querySelector('#logout').focus()");
       if (outcome === 'timeout') {
         await browser.waitFor("document.querySelector('#app-status').textContent.includes('服务暂时不可用')");
       } else {
@@ -228,10 +231,13 @@ for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 's
         }
         f.state.contextGate = null; releaseContext();
       }
-      if (outcome === 'same' || outcome === 'changed') {
+      if (outcome === 'same' || outcome === 'changed' || outcome === 'focus-moved') {
         await browser.waitFor(`document.querySelector('#${view}').hidden===false`);
-        assert.equal(await browser.evaluate("document.querySelector('#description').value"), outcome === 'same' ? 'private draft' : '');
-        assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), outcome === 'same' ? 'private supplement' : '');
+        assert.equal(await browser.evaluate("document.querySelector('#description').value"), outcome !== 'changed' ? 'private draft' : '');
+        assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), outcome !== 'changed' ? 'private supplement' : '');
+        if (field && outcome === 'same') assert.deepEqual(await browser.evaluate("[document.activeElement.id,document.activeElement.selectionStart,document.activeElement.selectionEnd,document.activeElement.selectionDirection]"), [field,2,7,'backward']);
+        if (outcome === 'focus-moved') assert.equal(await browser.evaluate('document.activeElement.id'), 'logout');
+        if (outcome === 'changed') assert.notEqual(await browser.evaluate('document.activeElement.id'), field);
       } else {
         await browser.waitFor("document.querySelector('#app-status').textContent.includes('服务暂时不可用')");
         assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
@@ -240,11 +246,34 @@ for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 's
         f.state.contextGate = null; releaseContext();
         await browser.evaluate("new Promise(resolve=>setTimeout(resolve,100))");
         assert.equal(await browser.evaluate(`document.querySelector('#${view}').hidden`), true);
+        if (field) assert.notEqual(await browser.evaluate('document.activeElement.id'), field);
       }
       assert.equal(f.state.commandCalls.length, 0);
     } finally { releaseContext?.(); await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
   });
 }
+
+test('SS-007 detail renders follow-up guidance as text and clears obsolete or denied guidance', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    f.state.safeClarification = '<img src=x onerror=window.__guidanceXss=1>请说明错误提示';
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+    assert.equal(await browser.evaluate("document.querySelector('#detail-needs-action')?.textContent.includes('请补充故障现象')"), true);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-clarification')?.textContent.includes('<img src=x onerror=window.__guidanceXss=1>')"), true);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-clarification img')===null&&window.__guidanceXss===undefined"), true);
+    f.state.needsAction = null; f.state.safeClarification = null; f.state.detailRevision = '2';
+    await browser.waitFor("document.querySelector('#detail-needs-action').hidden&&document.querySelector('#detail-needs-action').textContent===''&&document.querySelector('#detail-clarification').hidden&&document.querySelector('#detail-clarification').textContent===''");
+    f.state.needsAction = '请补充设备位置'; f.state.safeClarification = '请说明房间'; f.state.detailRevision = '3';
+    await browser.waitFor("document.querySelector('#detail-needs-action').textContent.includes('请补充设备位置')");
+    f.state.detailNotFound = true;
+    await browser.waitFor("document.querySelector('#detail-view').hidden");
+    await browser.waitFor("document.querySelector('#detail-needs-action').textContent===''&&document.querySelector('#detail-clarification').textContent===''");
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
 
 test('SS-007 visible report list revalidates a shared-cookie member change', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
