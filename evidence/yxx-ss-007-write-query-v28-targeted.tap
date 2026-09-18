@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: SS-007 native write UI requires an explicit member write flag while read APIs remain available
+ok 1 - SS-007 native write UI requires an explicit member write flag while read APIs remain available
+  ---
+  duration_ms: 690.7206
+  type: 'test'
+  ...
+# Subtest: SS-007 command recovery rejects every query before dispatch or route fallthrough
+ok 2 - SS-007 command recovery rejects every query before dispatch or route fallthrough
+  ---
+  duration_ms: 32.4218
+  type: 'test'
+  ...
+# Subtest: SS-007 native factory accepts only the OAuth callback session cookie
+ok 3 - SS-007 native factory accepts only the OAuth callback session cookie
+  ---
+  duration_ms: 0.6498
+  type: 'test'
+  ...
+# Subtest: SS-007 dependency failures remain terminal service or permission failures
+ok 4 - SS-007 dependency failures remain terminal service or permission failures
+  ---
+  duration_ms: 123.1411
+  type: 'test'
+  ...
+# Subtest: SS-007 JSON bodies reject duplicate decoded keys before commands
+ok 5 - SS-007 JSON bodies reject duplicate decoded keys before commands
+  ---
+  duration_ms: 58.556
+  type: 'test'
+  ...
+# Subtest: SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+ok 6 - SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+  ---
+  duration_ms: 32.1353
+  type: 'test'
+  ...
+# Subtest: SS-007 direct detail pages enforce ownership before rendering the shell
+ok 7 - SS-007 direct detail pages enforce ownership before rendering the shell
+  ---
+  duration_ms: 33.0918
+  type: 'test'
+  ...
+# Subtest: SS-007 detail rejects an oversized If-None-Match before query dispatch
+ok 8 - SS-007 detail rejects an oversized If-None-Match before query dispatch
+  ---
+  duration_ms: 3.711
+  type: 'test'
+  ...
+# Subtest: SS-007 report source filters reject explicit empty and unknown values before querying
+ok 9 - SS-007 report source filters reject explicit empty and unknown values before querying
+  ---
+  duration_ms: 112.7623
+  type: 'test'
+  ...
+# Subtest: SS-007 timeline rejects an explicitly empty cursor before querying
+ok 10 - SS-007 timeline rejects an explicitly empty cursor before querying
+  ---
+  duration_ms: 5.0384
+  type: 'test'
+  ...
+# Subtest: SS-007 write routes reject unknown query parameters before invoking commands
+ok 11 - SS-007 write routes reject unknown query parameters before invoking commands
+  ---
+  duration_ms: 91.4353
+  type: 'test'
+  ...
+# Subtest: SS-007 logout rejects unknown query and body fields without clearing sessions
+ok 12 - SS-007 logout rejects unknown query and body fields without clearing sessions
+  ---
+  duration_ms: 69.1912
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1362.3114
