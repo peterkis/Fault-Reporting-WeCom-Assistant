@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>医小修 · 自助报修</title>
+  <link rel="stylesheet" href="/wecom/yixiaoxiu/self-service.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" id="brand-link" href="/wecom/yixiaoxiu/">医小修</a>
+    <p class="eyebrow">医院信息故障自助服务</p>
+    <h1 id="page-title">自助报修</h1>
+  </header>
+  <main>
+    <p id="app-status" class="status" role="status" aria-live="polite">正在验证成员会话…</p>
+    <button id="retry-pending" class="secondary recovery-action" type="button" hidden>查询上次提交结果</button>
+    <section id="logged-out-view" class="panel" hidden>
+      <h2>会话已结束</h2>
+      <p>本页已停止访问您的报修数据。需要继续时，请重新进行成员认证。</p>
+      <a class="button" id="sign-in-link" href="/wecom/yixiaoxiu/login">重新登录</a>
+    </section>
+    <div id="protected-views">
+    <section id="home-view" class="panel" hidden>
+      <h2>需要帮助？</h2>
+      <p>请描述看到的故障现象。不要填写患者资料、账号口令或其他敏感信息。</p>
+      <nav class="actions" aria-label="自助服务操作">
+        <a class="button" id="new-report-link" href="/wecom/yixiaoxiu/reports/new">新建报修</a>
+        <a class="button secondary" id="my-reports-link" href="/wecom/yixiaoxiu/reports">我的报修</a>
+      </nav>
+    </section>
+    <section id="new-view" class="panel" hidden>
+      <h2>新建报修</h2>
+      <p class="quiet">提交后会先显示“已收到”，工单号只在真实工单生成后出现。</p>
+      <form id="new-report-form" novalidate>
+        <label for="description">故障现象 <span aria-hidden="true">*</span></label>
+        <textarea id="description" name="description" maxlength="4000" rows="6" required placeholder="例如：护士站这台电脑无法打印腕带"></textarea>
+        <label for="location-text">位置</label>
+        <input id="location-text" name="location" maxlength="200" autocomplete="off" placeholder="例如：住院楼8层护士站">
+        <label class="check"><input id="location-unknown" type="checkbox">位置暂不清楚</label>
+        <label for="impact-scope">影响范围</label>
+        <select id="impact-scope" name="impact_scope">
+          <option value="UNKNOWN">暂不清楚</option>
+          <option value="SELF">只有我</option>
+          <option value="SINGLE_WORKSTATION">一台电脑或设备</option>
+          <option value="MULTIPLE_USERS">多位用户</option>
+          <option value="DEPARTMENT">整个科室</option>
+        </select>
+        <label for="service-code">系统代码（可选）</label>
+        <input id="service-code" name="service_code" maxlength="64" autocomplete="off" placeholder="可留空；只填已知的大写代码">
+        <p class="quiet">普通系统或设备名称请写在故障现象里；不知道代码可以留空。</p>
+        <label for="department">科室（可选）</label>
+        <input id="department" name="department" maxlength="100" autocomplete="organization">
+        <label for="extension">分机（可选）</label>
+        <input id="extension" name="extension" inputmode="tel" maxlength="20" pattern="[0-9][0-9 -]{0,19}" autocomplete="tel">
+        <div class="form-actions"><button id="submit-report" type="submit">提交报修</button><a href="/wecom/yixiaoxiu/">取消</a></div>
+      </form>
+    </section>
+    <section id="reports-view" class="panel" hidden>
+      <div class="section-heading"><h2>我的报修</h2><a class="button small" href="/wecom/yixiaoxiu/reports/new">新建报修</a></div>
+      <p class="quiet">网页报修和本人可见的原有工单会分别标记来源。</p>
+      <ol id="report-list" class="report-list" aria-label="我的报修列表"></ol>
+      <button id="load-more-reports" class="secondary" type="button" hidden>加载更多</button>
+    </section>
+    <section id="detail-view" class="panel" hidden>
+      <div class="section-heading"><h2>报修详情</h2><a href="/wecom/yixiaoxiu/reports">返回列表</a></div>
+      <p id="detail-source" class="eyebrow"></p>
+      <p id="detail-status" class="state"></p>
+      <p id="detail-needs-action" class="preserved-text" hidden></p>
+      <p id="detail-clarification" class="preserved-text" hidden></p>
+      <dl id="detail-facts"></dl>
+      <h3>原始说明</h3><p id="detail-description" class="preserved-text"></p>
+      <h3>补充记录</h3><ol id="detail-supplements" class="preserved-list"></ol>
+      <h3>处理时间线</h3><ol id="detail-timeline" class="timeline"></ol>
+      <button id="load-older-timeline" class="secondary" type="button" hidden>加载更早记录</button>
+      <p id="timeline-window-note" class="quiet"></p>
+      <form id="supplement-form" hidden>
+        <label for="supplement-text">补充说明</label>
+        <textarea id="supplement-text" maxlength="2000" rows="4" required placeholder="补充一个新的、可观察的事实"></textarea>
+        <p class="quiet">提交时会绑定当前版本；如果版本变化，页面会提示刷新并保留这段草稿。</p>
+        <button id="submit-supplement" type="submit">提交补充</button>
+      </form>
+    </section>
+    </div>
+    <div class="global-actions"><button id="logout" class="link-button" type="button">退出当前会话</button></div>
+  </main>
+  <script type="module" src="/wecom/yixiaoxiu/self-service.js"></script>
+</body>
+</html>

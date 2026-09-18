@@ -1,0 +1,192 @@
+TAP version 13
+# Subtest: SS-001 fixed homepage performs one bounded OAuth round trip and returns to the bare root
+ok 1 - SS-001 fixed homepage performs one bounded OAuth round trip and returns to the bare root
+  ---
+  duration_ms: 83.4765
+  type: 'test'
+  ...
+# Subtest: SS-001 already authenticated and unusable cookies never begin a second OAuth flow
+ok 2 - SS-001 already authenticated and unusable cookies never begin a second OAuth flow
+  ---
+  duration_ms: 56.3815
+  type: 'test'
+  ...
+# Subtest: SS-001 callback/provider errors terminate with a safe error page and no redirect loop
+ok 3 - SS-001 callback/provider errors terminate with a safe error page and no redirect loop
+  ---
+  duration_ms: 9.0323
+  type: 'test'
+  ...
+# Subtest: SS-001 natural session expiry can recover only after the browser drops the expired cookie
+ok 4 - SS-001 natural session expiry can recover only after the browser drops the expired cookie
+  ---
+  duration_ms: 36.359
+  type: 'test'
+  ...
+# Subtest: SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect
+ok 5 - SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect
+  ---
+  duration_ms: 48.7957
+  type: 'test'
+  ...
+# Subtest: SS-002 closed schemas reject identity and operational authority fields
+ok 6 - SS-002 closed schemas reject identity and operational authority fields
+  ---
+  duration_ms: 10.8157
+  type: 'test'
+  ...
+# Subtest: SS-002 both OpenAPI documents expose the same seven YXX operation references
+ok 7 - SS-002 both OpenAPI documents expose the same seven YXX operation references
+  ---
+  duration_ms: 4.4774
+  type: 'test'
+  ...
+# Subtest: SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY
+ok 8 - SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY
+  ---
+  duration_ms: 1.2113
+  type: 'test'
+  ...
+# Subtest: SS-007 dependency failures remain terminal service or permission failures
+ok 9 - SS-007 dependency failures remain terminal service or permission failures
+  ---
+  duration_ms: 93.4413
+  type: 'test'
+  ...
+# Subtest: SS-007 JSON bodies reject duplicate decoded keys before commands
+ok 10 - SS-007 JSON bodies reject duplicate decoded keys before commands
+  ---
+  duration_ms: 77.1612
+  type: 'test'
+  ...
+# Subtest: SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+ok 11 - SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+  ---
+  duration_ms: 63.3056
+  type: 'test'
+  ...
+# Subtest: SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence
+ok 12 - SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence
+  ---
+  duration_ms: 4172.6061
+  type: 'test'
+  ...
+# local screenshot: tmp/ss007-ui/390x844.png
+# local screenshot: tmp/ss007-ui/1440x900.png
+# Subtest: SS-007 status copy is exercised through browser responses for 429, 409, 401 and 503
+ok 13 - SS-007 status copy is exercised through browser responses for 429, 409, 401 and 503
+  ---
+  duration_ms: 861.9235
+  type: 'test'
+  ...
+# Subtest: SS-007 supplement conflict refreshes the revision while retaining the draft without an automatic POST
+ok 14 - SS-007 supplement conflict refreshes the revision while retaining the draft without an automatic POST
+  ---
+  duration_ms: 385.5379
+  type: 'test'
+  ...
+# Subtest: SS-007 does not accept a new detail ETag when the paired timeline request fails
+ok 15 - SS-007 does not accept a new detail ETag when the paired timeline request fails
+  ---
+  duration_ms: 10174.3476
+  type: 'test'
+  ...
+# Subtest: SS-007 synthetic page lifecycle rejects a late detail response and UI logout clears browser state
+ok 16 - SS-007 synthetic page lifecycle rejects a late detail response and UI logout clears browser state
+  ---
+  duration_ms: 376.5421
+  type: 'test'
+  ...
+# Subtest: SS-007 refreshed member CSRF survives clearing the previous form
+ok 17 - SS-007 refreshed member CSRF survives clearing the previous form
+  ---
+  duration_ms: 1419.1851
+  type: 'test'
+  ...
+# Subtest: SS-007 visibility bootstrap hides member data before slow and failed revalidation
+ok 18 - SS-007 visibility bootstrap hides member data before slow and failed revalidation
+  ---
+  duration_ms: 4243.4674
+  type: 'test'
+  ...
+# Subtest: SS-007 a late detail response cannot restore an old member draft after identity rotation
+ok 19 - SS-007 a late detail response cannot restore an old member draft after identity rotation
+  ---
+  duration_ms: 2198.118
+  type: 'test'
+  ...
+# Subtest: SS-007 unavailable session storage blocks new POST commands
+ok 20 - SS-007 unavailable session storage blocks new POST commands
+  ---
+  duration_ms: 4145.6121
+  type: 'test'
+  ...
+# Subtest: SS-007 v2 recovery scope clears a different member fence after a full reload
+ok 21 - SS-007 v2 recovery scope clears a different member fence after a full reload
+  ---
+  duration_ms: 2030.8296
+  type: 'test'
+  ...
+# Subtest: SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET only
+ok 22 - SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET only
+  ---
+  duration_ms: 2151.9628
+  type: 'test'
+  ...
+# Subtest: SS-007 synthetic visibility restore reloads cleared detail, bounds an endless timeline, and reloads the first list page
+ok 23 - SS-007 synthetic visibility restore reloads cleared detail, bounds an endless timeline, and reloads the first list page
+  ---
+  duration_ms: 4339.8086
+  type: 'test'
+  ...
+# Subtest: SS-007 detail and timeline 404 clear rendered state and stop polling
+ok 24 - SS-007 detail and timeline 404 clear rendered state and stop polling
+  ---
+  duration_ms: 4374.8727
+  type: 'test'
+  ...
+# Subtest: SS-007 pending recovery stays GET-only, survives 404, and is discarded on an in-memory identity change
+ok 25 - SS-007 pending recovery stays GET-only, survives 404, and is discarded on an in-memory identity change
+  ---
+  duration_ms: 3372.3851
+  type: 'test'
+  ...
+# Subtest: SS-007 pending recovery retries only GET, then requires an explicit bounded restart
+ok 26 - SS-007 pending recovery retries only GET, then requires an explicit bounded restart
+  ---
+  duration_ms: 14373.9641
+  type: 'test'
+  ...
+# Subtest: SS-007 logout clears member DOM and timers before a hanging response
+ok 27 - SS-007 logout clears member DOM and timers before a hanging response
+  ---
+  duration_ms: 3594.1793
+  type: 'test'
+  ...
+# Subtest: SS-007 a stale unauthorized response cannot clear the newer member operation
+ok 28 - SS-007 a stale unauthorized response cannot clear the newer member operation
+  ---
+  duration_ms: 2208.1585
+  type: 'test'
+  ...
+# Subtest: SS-007 native HTTP keeps the fixed homepage gate and closed API boundary
+ok 29 - SS-007 native HTTP keeps the fixed homepage gate and closed API boundary
+  ---
+  duration_ms: 210.5257
+  type: 'test'
+  ...
+# Subtest: SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated
+ok 30 - SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated
+  ---
+  duration_ms: 10258.8898
+  type: 'test'
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 30
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 76520.8153

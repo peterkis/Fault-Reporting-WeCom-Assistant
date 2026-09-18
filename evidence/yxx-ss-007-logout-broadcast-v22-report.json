@@ -1,0 +1,125 @@
+{
+  "task": "YXX-SS-007",
+  "status": "LOCAL_VALIDATION_COMPLETE_REVIEW_PENDING",
+  "event_time": "2026-09-17 12:47:31",
+  "event_epoch_ms": "1789620451445",
+  "base_head": "ed60190e1735187ad4f5aa5ceac75829b9c92937",
+  "source_binding": "Git index blob hashes bind the reviewed candidate; tested_worktree_sha256 values bind executed working-tree bytes. Differences are verified CRLF-to-LF normalization only.",
+  "source_files": [
+    {
+      "path": "src/yxx-self-service-native-http.mjs",
+      "sha256": "6f43493fa754236d13bab188101f94c10ffa958b9556567f82f20044b49d5a33",
+      "tested_worktree_sha256": "6f43493fa754236d13bab188101f94c10ffa958b9556567f82f20044b49d5a33",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.js",
+      "sha256": "ca34f371a0731a3c0d619633f736252d3c641e00071e98456acc66b2a6a81e5b",
+      "tested_worktree_sha256": "f47a0fdeca621dccdf2f29c88c83f996a5704d3efc25b65ce1e59683f1d3471d",
+      "relation": "CRLF_TO_LF_ONLY"
+    },
+    {
+      "path": "web/p2-reporter/self-service.html",
+      "sha256": "9b06eb2460e3be955dccb1e3ffaecd0d74e4d7ac2d6545ac1692c418bc834562",
+      "tested_worktree_sha256": "9b06eb2460e3be955dccb1e3ffaecd0d74e4d7ac2d6545ac1692c418bc834562",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "sha256": "04afdebc76891141a2ce77153226092d41eba86841aec6f5a20dc2f095a0ca69",
+      "tested_worktree_sha256": "04afdebc76891141a2ce77153226092d41eba86841aec6f5a20dc2f095a0ca69",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+      "sha256": "7a8f439725b08a59a3527d38384fa48ecf64f7b4c48d7c0c2404ea805f4178c1",
+      "tested_worktree_sha256": "7a8f439725b08a59a3527d38384fa48ecf64f7b4c48d7c0c2404ea805f4178c1",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "sha256": "346fa063c792e2c503d51c1bfa5602c697e22cbc8cadb5380cd2606b889a1bc3",
+      "tested_worktree_sha256": "346fa063c792e2c503d51c1bfa5602c697e22cbc8cadb5380cd2606b889a1bc3",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-native-ui.md",
+      "sha256": "20d1a90640e4bfdfb004854072c58f67a0204186d272895dbdac8ec16cc0e616",
+      "tested_worktree_sha256": "20d1a90640e4bfdfb004854072c58f67a0204186d272895dbdac8ec16cc0e616",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-contract-freeze.md",
+      "sha256": "bb78234fb92d3a0afd508cbe05419de881d1911fcc48080d3c470072c556b460",
+      "tested_worktree_sha256": "bb78234fb92d3a0afd508cbe05419de881d1911fcc48080d3c470072c556b460",
+      "relation": "IDENTICAL"
+    }
+  ],
+  "validation": {
+    "command": "node --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-001-homepage-oauth.test.mjs tests/yxx-ss-002-contract.test.mjs tests/yxx-ss-007-*.test.mjs",
+    "tests": 44,
+    "pass": 44,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "scope": "Fixed homepage, contracts, native HTTP, all SS-007 browser and acceptance tests",
+    "artifacts": [
+      {
+        "path": "evidence/yxx-ss-007-logout-broadcast-v22-passed.tap",
+        "sha256": "ffbcf780cdba17c3038229ce2f1df9d35d57194ac301cfb55e22774fbfee25e1"
+      },
+      {
+        "path": "evidence/yxx-ss-007-logout-broadcast-v20-passed.tap",
+        "sha256": "79e7a81cd7c702ef59ec40dfc714ec824974f2b97130c5364eeee0f1d74e6ba8"
+      },
+      {
+        "path": "evidence/yxx-ss-007-logout-broadcast-targeted-v1-passed.tap",
+        "sha256": "6876e3e80caae14ceb090f5482a64fc7bbca0bb79344a9274576ac5d9ca6a2a8"
+      },
+      {
+        "path": "evidence/yxx-ss-007-logout-namespace-v2-passed.tap",
+        "sha256": "c5af55341825041ab59da0df9bf976c8f07b17e94739e9b3fa495f932663e0d8"
+      },
+      {
+        "path": "evidence/yxx-ss-007-logout-namespace-v1-passed.tap",
+        "sha256": "3155a605fdce998c4025e0a429a8c791a30768c5f93907821d175646f04cb0b2"
+      }
+    ]
+  },
+  "review_fixes": [
+    "Broadcast fixed logout invalidation to every same-origin open tab via BroadcastChannel and storage fallback; receivers clear protected DOM, stop polling and stay terminal without rebroadcast or bootstrap",
+    "Preserve existing YXX_ENTRY_* logout error namespace for invalid query, closed body, content type and origin",
+    "Restore synthetic member cookie before each shared-browser acceptance case after logout isolation test"
+  ],
+  "security_boundaries": [
+    "Signal contains only fixed v1/logout marker; no command ID, recovery scope, cookie, CSRF, form or identity values",
+    "Durable command records remain per UUID and are not deleted by cross-tab invalidation"
+  ],
+  "failure_history": [
+    {
+      "path": "evidence/yxx-ss-007-logout-broadcast-v19-failed.tap",
+      "sha256": "3f958facbc46705e133e9c4e2a7b33e17581375f191e4d9a69941b98038bd236",
+      "status": "FAILED_SETUP",
+      "pass": 31,
+      "fail": 5,
+      "cause": "Logout test cleared shared browser cookie; subsequent beforeEach did not restore the synthetic cookie",
+      "correction": "Restore the synthetic session cookie before each shared-browser acceptance case"
+    }
+  ],
+  "limitations": [
+    "All OAuth, SDK, production database, send, deployment and live Gate actions remain NOT_RUN",
+    "PR review is pending; GitHub checks are unavailable and are not treated as CI success"
+  ],
+  "live": {
+    "oauth": "NOT_RUN",
+    "sdk": "NOT_RUN",
+    "production_db": "NOT_RUN",
+    "send": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "SS011": "NOT_AUTHORIZED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "BLOCKED"
+  }
+}

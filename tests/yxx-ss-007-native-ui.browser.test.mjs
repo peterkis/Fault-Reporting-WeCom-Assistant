@@ -1,0 +1,1289 @@
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { test } from 'node:test';
+import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-http.mjs';
+import { EXTERNAL_TICKET_STATUS } from '../src/p1-005-pilot-ticket-core.mjs';
+import { launchSystemBrowser, closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
+import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
+
+const FLAGS = Object.freeze({ YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true });
+const REFS = Object.freeze({ A: 'A'.repeat(32), B: 'B'.repeat(32) });
+const RECOVERY_SECRET = 'ss007-recovery-secret-0123456789abcdef';
+const csrfFor = token => `csrf-${token}-012345678901234567890123`;
+
+function adaptSyntheticSession(request, response, url) {
+  request.headers.cookie = (request.headers.cookie ?? '').split(';').map(part => part.trim())
+    .map(part => part.startsWith('yxx_session=') ? `__Host-wecom_session=${part.slice('yxx_session='.length)}` : part).filter(Boolean).join('; ');
+  if (request.method === 'POST' && url.pathname === '/wecom/yixiaoxiu/logout') {
+    const writeHead = response.writeHead.bind(response);
+    response.writeHead = (status, headers = {}) => {
+      const existing = headers['set-cookie'] ?? [];
+      const cookies = Array.isArray(existing) ? existing : [existing];
+      return writeHead(status, { ...headers, 'set-cookie': [...cookies, 'yxx_session=; Path=/; SameSite=Lax; Max-Age=0'] });
+    };
+  }
+}
+
+function fixture(origin) {
+  const state = { commandCalls: [], supplementCalls: [], listCalls: [], detailCalls: [], timelineCalls: [],
+    commandStatusCalls: [], next: 0, supplementConflict: false, writeFlag: true };
+  const memberFor = (request) => (request.headers.cookie ?? '').includes('member-b') ? 'B' : 'A';
+  const oauth = {
+    authenticate(token) {
+      if (!['member-a', 'member-b'].includes(token)) throw new Error('expired');
+      return { userid: token };
+    },
+    logout() {},
+    begin() { return { location: `${origin}/wecom/yixiaoxiu/login?state=synthetic`, browserToken: 'synthetic-browser-token' }; },
+  };
+  const context = async ({ sessionToken }) => {
+    state.contextCalls = (state.contextCalls ?? 0) + 1;
+    if (state.contextGate) await state.contextGate;
+    if (state.contextError) throw state.contextError;
+    return { profile: 'MEMBER_SELF_SERVICE', write_flag: state.writeFlag, flags: FLAGS, csrf_token: state.csrfOverride ?? csrfFor(sessionToken),
+      canonical_reporter_binding: sessionToken === 'member-b' ? 'b'.repeat(64) : 'a'.repeat(64),
+      source_corp_scope: 'corp-local', source_app_scope: 'app-local' };
+  };
+  const receipt = (requestRef, clientCommandId, acceptedRevision = '1') => ({ client_command_id: clientCommandId,
+    status: 'ACCEPTED', request_ref: requestRef, intake_no: 'INT-20260917-0001', accepted_revision: acceptedRevision,
+    accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' });
+  const ticket = status => status ? { ticket_no: 'TCK-20260917-0001', status, updated_at: '2026-09-17 09:00:00' } : null;
+  const command = {
+    async accept({ request, input }) {
+      if (state.commandError) throw state.commandError;
+      state.commandCalls.push({ member: memberFor(request), input });
+      const requestRef = state.next++ % 2 === 0 ? REFS.A : REFS.B;
+      return { replayed: false, receipt: receipt(requestRef, input.client_command_id) };
+    },
+  };
+  const supplement = {
+    async accept({ request, requestRef, input }) {
+      state.supplementCalls.push({ member: memberFor(request), requestRef, input });
+      if (state.supplementGate) await state.supplementGate;
+      if (state.supplementError) throw state.supplementError;
+      if (state.supplementConflict) { const error = new Error('version'); error.code = 'YXX_VERSION_CONFLICT'; throw error; }
+      return { replayed: false, receipt: receipt(requestRef, input.client_command_id, String(Number(input.expected_input_revision) + 1)) };
+    },
+  };
+  const query = {
+    async list({ request, cursor }) {
+      const member = memberFor(request);
+      state.listCalls.push({ member, cursor });
+      if (state.paginatedLists && member === 'A') {
+        if (cursor === 'page-2') return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS.B, intake_no: 'YXX-PAGE-2', display_status: 'UNDER_REVIEW', created_at: '2026-09-16 22:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: null };
+        return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS.A, intake_no: 'YXX-PAGE-1', display_status: state.ticketStatus ? 'TICKET_CREATED' : 'RECEIVED_PROCESSING', created_at: '2026-09-16 23:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: 'page-2' };
+      }
+      return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS[member], intake_no: `YXX-${member}`, display_status: state.ticketStatus ? 'TICKET_CREATED' : 'RECEIVED_PROCESSING', created_at: '2026-09-16 23:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: null };
+    },
+    async detailWithEtag({ request, requestRef, ifNoneMatch }) {
+      const member = memberFor(request);
+      state.detailCalls.push({ member, requestRef, ifNoneMatch });
+      if (state.detailNotFound) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
+      if (state.enforceOwnership && requestRef !== REFS[member]) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
+      const revision = state.detailRevision ?? '1';
+      const etag = `"${requestRef}-v${revision}"`;
+      if (ifNoneMatch === etag) return { status: 304, body: null, etag };
+      return { status: 200, etag, body: { source_kind: 'WEB_REQUEST', request_ref: requestRef,
+        intake_no: `YXX-${requestRef.slice(0, 4)}`, display_status: state.ticketStatus ? 'TICKET_CREATED' : 'WAITING_FOR_DETAILS', input_revision: revision, processed_revision: '0',
+        needs_action: state.needsAction === undefined ? '请补充故障现象' : state.needsAction, updated_at: '2026-09-16 23:00:00', updated_epoch_ms: '1789570800000',
+        created_at: '2026-09-16 23:00:00', created_epoch_ms: '1789570800000', safe_description: '<img src=x onerror=window.__xss=1>',
+        safe_location: state.safeLocation === undefined ? '护士站' : state.safeLocation, safe_clarification: state.safeClarification ?? null, supplements: [], can_supplement: true, ticket: ticket(state.ticketStatus) } };
+    },
+    async timeline({ request, requestRef, limit, cursor, before }) {
+      state.timelineCalls.push({ member: memberFor(request), requestRef, limit, cursor, before });
+      if (state.timelineNotFound) { const value = new Error('not found'); value.code = 'YXX_NOT_FOUND'; value.status = 404; throw value; }
+      const older = cursor !== null && cursor !== undefined;
+      return { items: [{ event_type: older ? 'PROCESSING' : 'REQUEST_ACCEPTED', summary: older ? `更早记录 ${cursor}` : '最近记录',
+        occurred_at: older ? '2026-09-16 22:00:00' : '2026-09-16 23:00:00', occurred_epoch_ms: older ? '1789567200000' : '1789570800000', ticket: ticket(state.timelineTicketStatus ?? state.ticketStatus) }],
+        next_cursor: state.timelineEnds ? null : older ? `${cursor}-next` : 'cursor-0001' };
+    },
+    async commandStatus({ request, clientCommandId }) {
+      state.commandStatusCalls.push({ member: memberFor(request), clientCommandId });
+      if (state.commandStatusDelayMs) await new Promise(resolve => setTimeout(resolve, state.commandStatusDelayMs));
+      if (state.commandStatusResponses?.length) { const value = state.commandStatusResponses.shift(); if (value instanceof Error) throw value; return value; }
+      if (state.commandStatusError) throw state.commandStatusError;
+      return { status: 'ACCEPTED', client_command_id: clientCommandId, member: memberFor(request) };
+    },
+  };
+  const oauthHttp = async ({ response }) => { response.writeHead(401, { 'content-type': 'text/html; charset=utf-8' }); response.end('<p>旧认证提示</p>'); return true; };
+  const config = { publicOrigin: origin, oauth, oauthHttp, command, supplement, query,
+    authenticateMember: context, featureFlags: FLAGS, recoveryBindingSecret: RECOVERY_SECRET };
+  return { native: createYxxSelfServiceNativeHttp(config), config, state, oauth };
+}
+
+async function startFixture({ enabled = true } = {}) {
+  const reservation = createServer();
+  await new Promise(resolve => reservation.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${reservation.address().port}`;
+  await new Promise(resolve => reservation.close(resolve));
+  const values = fixture(origin);
+  const native = enabled ? values.native : createYxxSelfServiceNativeHttp({ ...values.config, featureFlags: { ...FLAGS, YIXIAOXIU_SELF_SERVICE_ENABLED: false } });
+  const server = createServer(async (request, response) => {
+    const url = new URL(request.url, origin);
+    adaptSyntheticSession(request, response, url);
+    const override = values.state.successBodyOverride;
+    if (override && request.method === 'POST' && url.pathname === override.path) {
+      values.state.successBodyOverride = null;
+      const end = response.end.bind(response);
+      response.end = override.hang ? () => undefined : (body, ...rest) => end(override.transform(String(body)), ...rest);
+    }
+    const handled = await native.handler({ request, response, url });
+    if (!handled && !response.writableEnded) { response.writeHead(404); response.end(); }
+  });
+  await new Promise(resolve => server.listen(Number(new URL(origin).port), '127.0.0.1', resolve));
+  return { origin, server, ...values };
+}
+
+async function closeServer(server) { await new Promise(resolve => server.close(resolve)); }
+
+async function waitForState(predicate, timeout = 5000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    if (predicate()) return;
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  assert.fail('timed out waiting for fixture state');
+}
+
+async function setSyntheticVisibility(browser, hidden) {
+  // Deterministic seam for the page's visibility handler; this does not claim
+  // that the operating system actually backgrounded the browser process.
+  await browser.evaluate(`Object.defineProperty(document,'hidden',{configurable:true,value:${hidden}});document.dispatchEvent(new Event('visibilitychange'))`);
+}
+
+test('SS-007 refreshed member CSRF preserves the same-scope draft', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate("document.querySelector('#description').value='旧会话草稿'");
+    f.state.csrfOverride = 'refreshed-synthetic-csrf-01234567890123456789';
+    await browser.evaluate("document.dispatchEvent(new Event('visibilitychange'))");
+    await browser.waitFor("document.querySelector('#description').value==='旧会话草稿'");
+    await browser.waitFor(`window.__yxx_csrf==='${f.state.csrfOverride}'`);
+    assert.equal(await browser.evaluate('window.__yxx_csrf'), f.state.csrfOverride);
+    await browser.evaluate("document.querySelector('#description').value='新会话报修';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+    await browser.waitFor("location.pathname==='/wecom/yixiaoxiu/reports/" + REFS.A + "'");
+    assert.equal(f.state.commandCalls.length, 1);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+for (const [path, view] of [['/wecom/yixiaoxiu/', 'home-view'], ['/wecom/yixiaoxiu/reports/new', 'new-view']]) {
+  test(`SS-007 visible ${view} revalidates without a pending command`, { timeout: 45000 }, async () => {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      if (path !== '/wecom/yixiaoxiu/') await browser.evaluate(`location.assign('${path}')`, { awaitPromise: false });
+      await browser.waitFor(`document.querySelector('#${view}')?.hidden===false`);
+      await browser.evaluate("document.querySelector('#description').value='member A private draft'");
+      f.state.csrfOverride = 'rotated-synthetic-csrf-01234567890123456789';
+      await browser.waitFor(`window.__yxx_csrf==='${f.state.csrfOverride}'`);
+      assert.equal(await browser.evaluate("document.querySelector('#description').value"), 'member A private draft');
+      f.state.csrfOverride = null;
+      await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
+      await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&document.querySelector('#${view}')?.hidden===false`);
+      assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+      assert.equal(f.state.commandCalls.length, 0);
+      assert.equal(f.state.commandStatusCalls.length, 0);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  });
+}
+
+for (const kind of ['submission', 'detail', 'recovery', 'same-member submission']) {
+  test(`SS-007 hides protected content while ${kind} delays the session check`, { timeout: 45000 }, async () => {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      const path = kind === 'detail' ? `/wecom/yixiaoxiu/reports/${REFS.A}` : '/wecom/yixiaoxiu/reports/new';
+      await browser.evaluate(`location.assign('${path}')`, { awaitPromise: false });
+      await browser.waitFor(kind === 'detail' ? "document.querySelector('#load-older-timeline')?.hidden===false" : "document.querySelector('#new-view')?.hidden===false");
+      if (kind === 'recovery') f.state.commandError = Object.assign(new Error('unavailable'), { status: 503, code: 'YXX_UNAVAILABLE' });
+      await browser.evaluate(`(() => {
+        const actualFetch=window.fetch.bind(window);
+        window.fetch=(path,options)=>{
+          const held='${kind}'==='detail'?String(path).includes('/timeline?'):'${kind}'==='recovery'?String(path).includes('/commands/'):String(path)==='/api/yixiaoxiu/requests'&&options?.method==='POST';
+          if(!held)return actualFetch(path,options);
+          return new Promise((resolve,reject)=>{
+            window.__releaseBusy=()=>resolve(new Response(JSON.stringify({error:{code:'YXX_UNAVAILABLE'}}),{status:503,headers:{'content-type':'application/json'}}));
+            options.signal.addEventListener('abort',()=>reject(new DOMException('aborted','AbortError')),{once:true});
+          });
+        };
+        document.querySelector('#description').value='old member private draft';
+        if('${kind}'==='detail')document.querySelector('#load-older-timeline').click();
+        else{document.querySelector('#description').focus();document.querySelector('#description').setSelectionRange(2,7,'backward');document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit();}
+      })()`);
+      await browser.waitFor("typeof window.__releaseBusy==='function'");
+      f.state.enforceOwnership = true;
+      if (kind === 'same-member submission') f.state.csrfOverride = 'busy-same-member-csrf-01234567890123456789';
+      else await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
+      const protectedId = kind === 'detail' ? 'detail-description' : 'description';
+      await browser.waitFor(`document.getElementById('${protectedId}').getClientRects().length===0`, { timeoutMs: 7500 });
+      assert.equal(await browser.evaluate("document.querySelector('#protected-views').hidden"), true);
+      await browser.evaluate("window.__releaseBusy()");
+      await browser.waitFor(`window.__yxx_csrf==='${kind === 'same-member submission' ? f.state.csrfOverride : csrfFor('member-b')}'`);
+      assert.equal(await browser.evaluate("document.querySelector('#description').value"), kind === 'same-member submission' ? 'old member private draft' : '');
+      if (kind === 'same-member submission') assert.deepEqual(await browser.evaluate("[document.activeElement.id,document.activeElement.selectionStart,document.activeElement.selectionEnd,document.activeElement.selectionDirection]"), ['description',2,7,'backward']);
+      assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+      assert.equal(f.state.commandCalls.length, 0);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  });
+}
+
+for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 'same'], ['new', 'focus-moved'], ['new', 'changed'], ['list', '503'], ['new', 'timeout']]) {
+  test(`SS-007 periodic revalidation hides ${route} while unresolved: ${outcome}`, { timeout: 45000 }, async () => {
+    const f = await startFixture(); let browser; let releaseContext;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      const path = route === 'new' ? '/wecom/yixiaoxiu/reports/new' : route === 'list' ? '/wecom/yixiaoxiu/reports' : `/wecom/yixiaoxiu/reports/${REFS.A}`;
+      const view = route === 'new' ? 'new-view' : route === 'list' ? 'reports-view' : 'detail-view';
+      await browser.evaluate(`location.assign('${path}')`, { awaitPromise: false });
+      await browser.waitFor(route === 'list' ? `document.querySelector('#report-list')?.textContent.includes('${REFS.A}')` : route === 'detail' ? "document.querySelector('#detail-description')?.textContent.includes('<img')" : "document.querySelector('#new-view')?.hidden===false");
+      await browser.evaluate("document.querySelector('#description').value='private draft';document.querySelector('#supplement-text').value='private supplement'");
+      const field = route === 'new' ? 'description' : route === 'detail' ? 'supplement-text' : null;
+      if (field) await browser.evaluate(`document.getElementById('${field}').focus();document.getElementById('${field}').setSelectionRange(2,7,'backward')`);
+      const before = f.state.contextCalls;
+      f.state.contextGate = new Promise(resolve => { releaseContext = resolve; });
+      await waitForState(() => f.state.contextCalls > before, 10000);
+      assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
+      if (outcome === 'focus-moved') await browser.evaluate("document.querySelector('#logout').focus()");
+      if (outcome === 'timeout') {
+        await browser.waitFor("document.querySelector('#app-status').textContent.includes('服务暂时不可用')");
+      } else {
+        if (outcome === '503') f.state.contextError = Object.assign(new Error('unavailable'), { status: 503, code: 'YXX_UNAVAILABLE' });
+        if (outcome === 'changed') {
+          // Replace the cookie before issuing another periodic check, not after
+          // the server has already authenticated this request's cookie.
+          f.state.contextGate = null; releaseContext();
+          await browser.waitFor(`document.querySelector('#${view}').hidden===false`);
+          f.state.contextGate = new Promise(resolve => { releaseContext = resolve; });
+          const next = f.state.contextCalls;
+          await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
+          await waitForState(() => f.state.contextCalls > next, 10000);
+          assert.equal(await browser.evaluate(`document.querySelector('#${view}').hidden`), true);
+        }
+        f.state.contextGate = null; releaseContext();
+      }
+      if (outcome === 'same' || outcome === 'changed' || outcome === 'focus-moved') {
+        await browser.waitFor(`document.querySelector('#${view}').hidden===false`);
+        assert.equal(await browser.evaluate("document.querySelector('#description').value"), outcome !== 'changed' ? 'private draft' : '');
+        assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), outcome !== 'changed' ? 'private supplement' : '');
+        if (field && outcome === 'same') assert.deepEqual(await browser.evaluate("[document.activeElement.id,document.activeElement.selectionStart,document.activeElement.selectionEnd,document.activeElement.selectionDirection]"), [field,2,7,'backward']);
+        if (outcome === 'focus-moved') assert.equal(await browser.evaluate('document.activeElement.id'), 'logout');
+        if (outcome === 'changed') assert.notEqual(await browser.evaluate('document.activeElement.id'), field);
+      } else {
+        await browser.waitFor("document.querySelector('#app-status').textContent.includes('服务暂时不可用')");
+        assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
+        assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+        assert.equal(await browser.evaluate("document.querySelector('#report-list').textContent"), '');
+        f.state.contextGate = null; releaseContext();
+        await browser.evaluate("new Promise(resolve=>setTimeout(resolve,100))");
+        assert.equal(await browser.evaluate(`document.querySelector('#${view}').hidden`), true);
+        if (field) assert.notEqual(await browser.evaluate('document.activeElement.id'), field);
+      }
+      assert.equal(f.state.commandCalls.length, 0);
+    } finally { releaseContext?.(); await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  });
+}
+
+test('SS-007 detail renders safe location as text and clears it when absent or invalidated', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    f.state.safeLocation = '<img src=x onerror=window.__locationXss=1>护士站';
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+    assert.equal(await browser.evaluate("document.querySelector('#detail-facts').textContent.includes('<img src=x onerror=window.__locationXss=1>护士站')"), true);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-facts img')===null&&window.__locationXss===undefined"), true);
+    f.state.safeLocation = null; f.state.detailRevision = '2';
+    await browser.waitFor("document.querySelector('#detail-facts').textContent.includes('未提供位置')");
+    assert.equal(await browser.evaluate("document.querySelector('#detail-facts').textContent.includes('护士站')"), false);
+    f.state.safeLocation = '住院楼三层'; f.state.detailRevision = '3';
+    await browser.waitFor("document.querySelector('#detail-facts').textContent.includes('住院楼三层')");
+    await setSyntheticVisibility(browser, true);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-facts').textContent"), '');
+    await setSyntheticVisibility(browser, false);
+    await browser.waitFor("document.querySelector('#detail-facts').textContent.includes('住院楼三层')");
+    f.state.detailNotFound = true;
+    await browser.waitFor("document.querySelector('#detail-facts').textContent===''");
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 detail renders follow-up guidance as text and clears obsolete or denied guidance', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    f.state.safeClarification = '<img src=x onerror=window.__guidanceXss=1>请说明错误提示';
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+    assert.equal(await browser.evaluate("document.querySelector('#detail-needs-action')?.textContent.includes('请补充故障现象')"), true);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-clarification')?.textContent.includes('<img src=x onerror=window.__guidanceXss=1>')"), true);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-clarification img')===null&&window.__guidanceXss===undefined"), true);
+    f.state.needsAction = null; f.state.safeClarification = null; f.state.detailRevision = '2';
+    await browser.waitFor("document.querySelector('#detail-needs-action').hidden&&document.querySelector('#detail-needs-action').textContent===''&&document.querySelector('#detail-clarification').hidden&&document.querySelector('#detail-clarification').textContent===''");
+    f.state.needsAction = '请补充设备位置'; f.state.safeClarification = '请说明房间'; f.state.detailRevision = '3';
+    await browser.waitFor("document.querySelector('#detail-needs-action').textContent.includes('请补充设备位置')");
+    f.state.detailNotFound = true;
+    await browser.waitFor("document.querySelector('#detail-view').hidden");
+    await browser.waitFor("document.querySelector('#detail-needs-action').textContent===''&&document.querySelector('#detail-clarification').textContent===''");
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 visible report list revalidates a shared-cookie member change', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports')", { awaitPromise: false });
+    await browser.waitFor(`document.querySelector('#report-list')?.textContent.includes('${REFS.A}')`);
+    await browser.evaluate(`(() => {
+      window.__oldMemberExposed = false;
+      new MutationObserver(() => {
+        if (window.__yxx_csrf === '${csrfFor('member-b')}' && document.querySelector('#report-list')?.textContent.includes('${REFS.A}')) window.__oldMemberExposed = true;
+      }).observe(document.querySelector('#report-list'), { childList: true, subtree: true, characterData: true });
+      document.cookie = 'yxx_session=member-b; Path=/';
+    })()`);
+    await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&document.querySelector('#report-list')?.textContent.includes('${REFS.B}')`);
+    assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${REFS.A}')`), false);
+    assert.equal(await browser.evaluate('window.__oldMemberExposed'), false);
+    assert.deepEqual(f.state.listCalls.slice(-2).map(item => item.member), ['A', 'B']);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 periodic bootstrap revokes an open write form when the member write flag is removed', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate("document.querySelector('#description').value='draft before permission revocation'");
+    f.state.writeFlag = false;
+    await browser.waitFor("document.querySelector('#app-status').textContent.includes('当前账号没有此项权限')");
+    assert.equal(await browser.evaluate("document.querySelector('#new-view').hidden"), true);
+    assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+    assert.equal(f.state.commandCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 permission revocation clears member data without showing an authentication-expired message', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    f.state.commandError = Object.assign(new Error('permission revoked'), { status: 403, code: 'YXX_FORBIDDEN' });
+    await browser.evaluate("document.querySelector('#description').value='权限撤销后不得提交';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('当前账号没有此项权限')");
+    assert.equal(await browser.evaluate("document.querySelector('#home-view').hidden"), false);
+    assert.equal(await browser.evaluate("location.pathname"), '/wecom/yixiaoxiu/reports/new');
+    assert.equal(f.state.commandCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 rejects an invalid extension before sending a report', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate("document.querySelector('#description').value='分机格式校验';document.querySelector('#location-unknown').checked=true;document.querySelector('#extension').value='+123';document.querySelector('#new-report-form').requestSubmit()");
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('分机仅支持数字、空格和短横线')");
+    assert.equal(await browser.evaluate("document.activeElement?.id"), 'extension');
+    assert.equal(await browser.evaluate("document.querySelector('#extension').getAttribute('pattern')"), '[0-9][0-9 -]{0,19}');
+    assert.equal(f.state.commandCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 visibility bootstrap hides member data before slow and failed revalidation', { timeout: 60000 }, async () => {
+  for (const mode of ['slow-detail', 'failed-list']) {
+    const f = await startFixture(); let browser; let releaseContext;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      const path = mode === 'slow-detail' ? `/wecom/yixiaoxiu/reports/${REFS.A}` : '/wecom/yixiaoxiu/reports';
+      await browser.evaluate(`location.assign('${path}')`, { awaitPromise: false });
+      if (mode === 'slow-detail') await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+      else await browser.waitFor(`document.querySelector('#report-list')?.textContent.includes('${REFS.A}')`);
+      if (mode === 'slow-detail') {
+        const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+        await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'00000000-0000-4000-8000-000000000094',scope:'${scope}'}))`);
+        f.state.contextGate = new Promise(resolve => { releaseContext = resolve; });
+      } else f.state.contextError = Object.assign(new Error('unavailable'), { status: 503, code: 'YXX_UNAVAILABLE' });
+      const beforeContext = f.state.contextCalls;
+      await setSyntheticVisibility(browser, false);
+      await waitForState(() => f.state.contextCalls > beforeContext);
+      assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
+      assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+      assert.equal(await browser.evaluate("document.querySelector('#report-list').textContent"), '');
+      assert.equal(await browser.evaluate("window.__yxx_csrf===undefined"), true);
+      if (mode === 'slow-detail') {
+        assert.notEqual(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+        f.state.contextGate = null; releaseContext();
+        await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+        assert.notEqual(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+      } else {
+        await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+        assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
+      }
+    } finally { releaseContext?.(); await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
+test('SS-007 a late detail response cannot restore an old member draft after identity rotation', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#supplement-form')?.hidden===false");
+    await browser.evaluate(`(() => {
+      document.querySelector('#supplement-text').value='A成员不得迟到恢复的草稿';
+      const actualFetch=window.fetch.bind(window);let held=true;
+      window.fetch=(path,options)=>{
+        if(held&&String(path)==='/api/yixiaoxiu/requests/${REFS.A}'){
+          held=false;
+          return new Promise(resolve=>{window.__releaseLateDraft=()=>resolve(new Response('{}',{status:200,headers:{'content-type':'application/json','etag':'"late"'}}));});
+        }
+        return actualFetch(path,options);
+      };
+      document.dispatchEvent(new Event('visibilitychange'));
+    })()`);
+    await browser.waitFor("typeof window.__releaseLateDraft==='function'");
+    f.state.enforceOwnership = true;
+    await browser.evaluate("document.cookie='yxx_session=member-b; Path=/';document.dispatchEvent(new Event('visibilitychange'))");
+    await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&document.querySelector('#home-view')?.hidden===false`);
+    await browser.evaluate("(async()=>{window.__releaseLateDraft();await new Promise(resolve=>setTimeout(resolve,100));})()");
+    assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '');
+    assert.equal(await browser.evaluate("document.body.textContent.includes('A成员不得迟到恢复的草稿')"), false);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 unavailable tab or durable storage blocks new POST commands', { timeout: 90000 }, async () => {
+  for (const mode of ['session-quota', 'session-noop', 'durable-quota', 'durable-noop']) {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+      await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+      await browser.evaluate(`(() => {
+        const actual=Storage.prototype.setItem;
+        Storage.prototype.setItem=function(key,value){
+          const blocked='${mode}'.startsWith('session-')?this===sessionStorage&&key==='yxx.self_service.pending_command':this===localStorage&&key.startsWith('yxx.self_service.pending_command.');
+          if(blocked){
+            if('${mode}'.endsWith('-quota'))throw new DOMException('full','QuotaExceededError');
+            return;
+          }
+          return actual.call(this,key,value);
+        };
+        document.querySelector('#description').value='存储不可用不得提交';
+        document.querySelector('#location-unknown').checked=true;
+        document.querySelector('#new-report-form').requestSubmit();
+      })()`);
+      await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+      assert.equal(f.state.commandCalls.length, 0);
+      assert.equal(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+      assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 0);
+      assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), false);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
+test('SS-007 durable recovery capacity fails closed without deleting older unknown commands', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+    await browser.evaluate(`(() => {
+      for(let index=1;index<=20;index+=1){
+        const id='00000000-0000-4000-8000-'+String(index).padStart(12,'0');
+        localStorage.setItem('yxx.self_service.pending_command.'+id,JSON.stringify({v:3,id,scope:'${scope}'}));
+      }
+      document.querySelector('#description').value='容量已满不得提交';
+      document.querySelector('#location-unknown').checked=true;
+      document.querySelector('#new-report-form').requestSubmit();
+    })()`);
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 20);
+    assert.equal(await browser.evaluate("Object.values(localStorage).every(value=>!value.includes('容量已满'))"), true);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 durable recovery quota covers all scopes without deleting other members records', { timeout: 60000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate(`(() => {
+      for(let index=1;index<=20;index+=1){
+        const id='00000000-0000-4000-8000-'+String(index).padStart(12,'0');
+        const scope=(index%2?'b':'c').repeat(64);
+        localStorage.setItem('yxx.self_service.pending_command.'+id,JSON.stringify({v:3,id,scope}));
+      }
+      localStorage.setItem('yxx.self_service.pending_command.invalid','not-a-pending-record');
+      window.__existingDurable=JSON.stringify(Object.entries(localStorage).sort());
+      document.querySelector('#description').value='跨成员总容量已满';
+      document.querySelector('#location-unknown').checked=true;
+      document.querySelector('#new-report-form').requestSubmit();
+    })()`);
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 21);
+    assert.equal(await browser.evaluate("JSON.stringify(Object.entries(localStorage).sort())===window.__existingDurable"), true);
+    assert.equal(await browser.evaluate("localStorage.getItem('yxx.self_service.pending_command.invalid')"), 'not-a-pending-record');
+    // Simulate a resolved fixture record freeing one slot; production must not
+    // evict another member's unresolved record to make space.
+    await browser.evaluate("localStorage.removeItem('yxx.self_service.pending_command.00000000-0000-4000-8000-000000000001');document.querySelector('#new-report-form').requestSubmit()");
+    await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+    assert.equal(f.state.commandCalls.length, 1);
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 20);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 durable capacity recheck retains another scope record added during persistence', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate(`(() => {
+      const prefix='yxx.self_service.pending_command.';
+      for(let index=1;index<=19;index++){
+        const id='00000000-0000-4000-8000-'+String(index).padStart(12,'0');
+        localStorage.setItem(prefix+id,JSON.stringify({v:3,id,scope:'b'.repeat(64)}));
+      }
+      const actual=Storage.prototype.setItem;let injected=false;
+      Storage.prototype.setItem=function(key,value){
+        const result=actual.call(this,key,value);
+        if(this===localStorage&&key.startsWith(prefix)&&!injected){
+          injected=true;window.__attemptedDurableKey=key;
+          const id='00000000-0000-4000-8000-000000000020';
+          actual.call(this,prefix+id,JSON.stringify({v:3,id,scope:'c'.repeat(64)}));
+        }
+        return result;
+      };
+      document.querySelector('#description').value='并发容量校验';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit();
+    })()`);
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(await browser.evaluate("localStorage.getItem(window.__attemptedDurableKey)"), null);
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 20);
+    assert.equal(await browser.evaluate("JSON.parse(localStorage.getItem('yxx.self_service.pending_command.00000000-0000-4000-8000-000000000020')).scope"), 'c'.repeat(64));
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 invalid durable recovery records do not consume the global valid-record quota', { timeout: 60000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate(`(() => {
+      for(let index=1;index<=20;index+=1) localStorage.setItem('yxx.self_service.pending_command.invalid-'+index,'not-a-pending-record');
+      document.querySelector('#description').value='无效恢复记录不阻断当前成员';
+      document.querySelector('#location-unknown').checked=true;
+      document.querySelector('#new-report-form').requestSubmit();
+    })()`);
+    await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+    assert.equal(f.state.commandCalls.length, 1);
+    assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.invalid-')).length"), 20);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 durable read failure blocks a later POST even when storage becomes writable', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000089';
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+    await browser.evaluate(`(() => {
+      const id='${commandId}',key='yxx.self_service.pending_command.'+id;
+      localStorage.setItem(key,JSON.stringify({v:3,id,scope:'${scope}'}));
+      const actual=Storage.prototype.getItem;let failed=false;
+      Storage.prototype.getItem=function(candidate){if(this===localStorage&&candidate===key&&!failed){failed=true;throw new DOMException('blocked','SecurityError')}return actual.call(this,candidate)};
+      document.dispatchEvent(new Event('visibilitychange'));
+    })()`);
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('服务暂时不可用')");
+    await browser.evaluate("document.querySelector('#description').value='读取失败后不得提交';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+    await new Promise(resolve => setTimeout(resolve, 100));
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), true);
+    assert.notEqual(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 ambiguous successful responses keep the original UUID and use GET-only recovery', { timeout: 120000 }, async () => {
+  const scenarios = [
+    { surface: 'new', mode: 'truncated' },
+    { surface: 'new', mode: 'external-location' },
+    { surface: 'new', mode: 'numeric-revision' },
+    { surface: 'supplement', mode: 'truncated' },
+    { surface: 'supplement', mode: 'wrong-request-ref' },
+  ];
+  for (const { surface, mode } of scenarios) {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      if (surface === 'new') {
+        await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+        await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+      } else {
+        await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+        await browser.waitFor("document.querySelector('#supplement-form')?.hidden===false");
+      }
+      const path = surface === 'new' ? '/api/yixiaoxiu/requests' : `/api/yixiaoxiu/requests/${REFS.A}/supplements`;
+      f.state.successBodyOverride = { path, transform: body => {
+        if (mode === 'truncated') return body.slice(0, 10);
+        const value = JSON.parse(body);
+        if (mode === 'external-location') value.location = `https://attacker.invalid/wecom/yixiaoxiu/reports/${value.receipt.request_ref}`;
+        else if (mode === 'numeric-revision') value.receipt.accepted_revision = 1;
+        else { value.receipt.request_ref = REFS.B; value.location = `/wecom/yixiaoxiu/reports/${REFS.B}`; }
+        return JSON.stringify(value);
+      } };
+      if (surface === 'new') await browser.evaluate("document.querySelector('#description').value='未知结果新报修';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+      else await browser.evaluate("document.querySelector('#supplement-text').value='未知结果补充草稿';document.querySelector('#supplement-form').requestSubmit()");
+      await waitForState(() => surface === 'new' ? f.state.commandCalls.length === 1 : f.state.supplementCalls.length === 1);
+      await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('结果未知')");
+      const call = surface === 'new' ? f.state.commandCalls[0] : f.state.supplementCalls[0];
+      const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+      assert.equal(pending.id, call.input.client_command_id);
+      assert.equal(await browser.evaluate('location.origin'), f.origin);
+      assert.equal(await browser.evaluate('location.pathname'), surface === 'new' ? '/wecom/yixiaoxiu/reports/new' : `/wecom/yixiaoxiu/reports/${REFS.A}`);
+      await waitForState(() => f.state.commandStatusCalls.some(item => item.clientCommandId === pending.id), 3000);
+      assert.equal(surface === 'new' ? f.state.commandCalls.length : f.state.supplementCalls.length, 1);
+      assert.equal(JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')")).id, pending.id);
+      if (surface === 'new') assert.equal(await browser.evaluate("document.querySelector('#description').value"), '未知结果新报修');
+      else assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '未知结果补充草稿');
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
+test('SS-007 hanging accepted POSTs time out and stop after five bounded GET recoveries', { timeout: 60000 }, async () => {
+  for (const surface of ['new', 'supplement']) {
+    const f = await startFixture(); let browser;
+    try {
+      f.state.commandStatusDelayMs = 250;
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      if (surface === 'new') {
+        await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+        await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+      } else {
+        await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+        await browser.waitFor("document.querySelector('#supplement-form')?.hidden===false");
+      }
+      await browser.evaluate("window.setTimeout=((actual)=>((callback,delay,...args)=>actual(callback,delay===15000?100:delay,...args)))(window.setTimeout.bind(window))");
+      f.state.successBodyOverride = { path: surface === 'new' ? '/api/yixiaoxiu/requests' : `/api/yixiaoxiu/requests/${REFS.A}/supplements`, hang: true };
+      if (surface === 'new') await browser.evaluate("document.querySelector('#description').value='连接悬挂新报修';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+      else await browser.evaluate("document.querySelector('#supplement-text').value='连接悬挂补充';document.querySelector('#supplement-form').requestSubmit()");
+      await waitForState(() => surface === 'new' ? f.state.commandCalls.length === 1 : f.state.supplementCalls.length === 1);
+      await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('结果未知')", { timeoutMs: 3000 });
+      const call = surface === 'new' ? f.state.commandCalls[0] : f.state.supplementCalls[0];
+      const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+      assert.equal(pending.id, call.input.client_command_id);
+      await waitForState(() => f.state.commandStatusCalls.length === 5, 18000);
+      await browser.waitFor("document.querySelector('#retry-pending')?.hidden===false");
+      assert.equal(surface === 'new' ? f.state.commandCalls.length : f.state.supplementCalls.length, 1);
+      assert.equal(JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')")).id, pending.id);
+      if (surface === 'new') assert.equal(await browser.evaluate("document.querySelector('#description').value"), '连接悬挂新报修');
+      else assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '连接悬挂补充');
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
+test('SS-007 v2 recovery migrates durably without blocking another member or losing the original member fence', { timeout: 60000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000096';
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    const scopeA = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+    f.state.commandStatusError = Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
+    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scopeA}'}));document.querySelector('#description').value='A成员旧草稿'`);
+    await setSyntheticVisibility(browser, false);
+    await waitForState(() => f.state.commandStatusCalls.some(call => call.member === 'A' && call.clientCommandId === commandId));
+    await browser.waitFor(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')!==null`);
+    await browser.evaluate("document.cookie='yxx_session=member-b; Path=/';location.reload()", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false&&sessionStorage.getItem('yxx.self_service.pending_command')===null");
+    assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+    assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), false);
+    assert.equal(f.state.commandStatusCalls.some(call => call.member === 'B'), false);
+    assert.notEqual(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
+    const callsBeforeReturn = f.state.commandStatusCalls.length;
+    await browser.evaluate("document.cookie='yxx_session=member-a; Path=/';location.reload()", { awaitPromise: false });
+    await waitForState(() => f.state.commandStatusCalls.length > callsBeforeReturn);
+    assert.equal(JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')")).id, commandId);
+    assert.equal(f.state.commandCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and restores the draft with GET only', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000095';
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+    f.state.commandStatusError = Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
+    await browser.evaluate(`(() => {
+      sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scope}'}));
+      document.querySelector('#description').value='需要重新确认的草稿';
+      document.querySelector('#location-text').value='住院楼8层护士站';
+      document.querySelector('#impact-scope').value='DEPARTMENT';
+      document.querySelector('#service-code').value='PRINTING';
+      document.querySelector('#department').value='护理部';
+      document.querySelector('#extension').value='8012';
+    })()`);
+    f.state.csrfOverride = 'rotated-same-member-csrf-012345678901234567890';
+    await setSyntheticVisibility(browser, false);
+    await waitForState(() => f.state.commandStatusCalls.some(call => call.clientCommandId === commandId));
+    const persisted = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+    assert.deepEqual(persisted, { v: 3, id: commandId, scope });
+    assert.notEqual(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
+    assert.deepEqual(await browser.evaluate(`({
+      description:document.querySelector('#description').value,
+      locationText:document.querySelector('#location-text').value,
+      locationUnknown:document.querySelector('#location-unknown').checked,
+      impactScope:document.querySelector('#impact-scope').value,
+      serviceCode:document.querySelector('#service-code').value,
+      department:document.querySelector('#department').value,
+      extension:document.querySelector('#extension').value,
+    })`), {
+      description: '需要重新确认的草稿', locationText: '住院楼8层护士站', locationUnknown: false,
+      impactScope: 'DEPARTMENT', serviceCode: 'PRINTING', department: '护理部', extension: '8012',
+    });
+    assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), true);
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(f.state.supplementCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 recovery scope changes discard the hidden member draft', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    await browser.evaluate("document.querySelector('#description').value='A成员草稿不得进入B成员页面';document.querySelector('#location-unknown').checked=true");
+    await setSyntheticVisibility(browser, true);
+    await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
+    await setSyntheticVisibility(browser, false);
+    await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&document.querySelector('#new-view')?.hidden===false`);
+    assert.equal(await browser.evaluate("document.querySelector('#description').value"), '');
+    assert.equal(await browser.evaluate("document.querySelector('#location-unknown').checked"), false);
+    assert.equal(await browser.evaluate("document.body.textContent.includes('A成员草稿不得进入B成员页面')"), false);
+    assert.equal(f.state.commandCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 synthetic visibility restore reloads cleared detail, bounds an endless timeline, and reloads the first list page', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#detail-source')?.textContent.includes('YXX-AAAA')");
+    const beforeRestore = f.state.detailCalls.length;
+    await setSyntheticVisibility(browser, true);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+    assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '');
+    await setSyntheticVisibility(browser, false);
+    await waitForState(() => f.state.detailCalls.length > beforeRestore && !f.state.detailCalls.at(-1).ifNoneMatch);
+    await browser.waitFor("document.querySelector('#detail-source')?.textContent.includes('YXX-AAAA')&&document.querySelector('#supplement-form')?.hidden===false");
+    assert.equal(await browser.evaluate("document.querySelector('#detail-facts').textContent.includes('undefined')"), false);
+    assert.equal(f.state.timelineCalls.at(-1).before, String(Number.MAX_SAFE_INTEGER));
+    const beforeOlder = f.state.timelineCalls.length;
+    await browser.evaluate("document.querySelector('#load-older-timeline').click()");
+    await waitForState(() => f.state.timelineCalls.length > beforeOlder && f.state.timelineCalls.at(-1).cursor === 'cursor-0001');
+    await browser.waitFor("document.querySelector('#detail-timeline')?.textContent.includes('更早记录 cursor-0001')&&document.querySelector('#detail-timeline')?.textContent.includes('最近记录')");
+    assert.equal(await browser.evaluate("document.querySelector('#load-older-timeline').hidden"), false);
+    assert.equal(await browser.evaluate("document.querySelector('#timeline-window-note').textContent.includes('下次状态刷新')"), true);
+
+    f.state.paginatedLists = true;
+    await browser.close();
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    const beforeList = f.state.listCalls.length;
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports')", { awaitPromise: false });
+    await waitForState(() => f.state.listCalls.length > beforeList);
+    await browser.waitFor(`document.querySelector('#report-list')?.textContent.includes('${REFS.A}')`);
+    await browser.evaluate("document.querySelector('#load-more-reports').click()");
+    await waitForState(() => f.state.listCalls.at(-1)?.cursor === 'page-2');
+    await browser.waitFor(`document.querySelector('#report-list')?.textContent.includes('${REFS.B}')`);
+    const beforeListRestore = f.state.listCalls.length;
+    await setSyntheticVisibility(browser, true);
+    await setSyntheticVisibility(browser, false);
+    await waitForState(() => f.state.listCalls.length > beforeListRestore);
+    assert.equal(f.state.listCalls.at(-1).cursor, null);
+    await browser.waitFor(`!document.querySelector('#report-list')?.textContent.includes('${REFS.B}')`);
+    assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${REFS.A}')`), true);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 renders authoritative ticket lifecycle status in list, detail, and timeline', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const statuses = ['IN_PROGRESS', 'WAITING_REQUESTER', 'RESOLVED', 'CLOSED'];
+  try {
+    f.state.ticketStatus = statuses[0]; f.state.timelineTicketStatus = statuses[0];
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports')", { awaitPromise: false });
+    await browser.waitFor(`document.querySelector('#report-list')?.textContent.includes('工单 TCK-20260917-0001 · ${EXTERNAL_TICKET_STATUS.IN_PROGRESS}')`);
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor(`document.querySelector('#detail-status')?.textContent.includes(${JSON.stringify(EXTERNAL_TICKET_STATUS.IN_PROGRESS)})`);
+    for (const status of statuses) {
+      f.state.ticketStatus = status; f.state.timelineTicketStatus = status;
+      const before = f.state.detailCalls.length;
+      await setSyntheticVisibility(browser, false);
+      await waitForState(() => f.state.detailCalls.length > before);
+      const expected = EXTERNAL_TICKET_STATUS[status];
+      await browser.waitFor(`document.querySelector('#detail-status')?.textContent.includes(${JSON.stringify(expected)})&&document.querySelector('#detail-timeline')?.textContent.includes(${JSON.stringify(expected)})`);
+    }
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 detail and timeline 404 clear rendered state and stop polling', { timeout: 60000 }, async () => {
+  for (const failureKind of ['detail', 'timeline']) {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+      await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+      await browser.evaluate("window.setTimeout=((actual)=>((callback,delay,...args)=>actual(callback,Math.min(delay,30),...args)))(window.setTimeout.bind(window))");
+      if (failureKind === 'detail') f.state.detailNotFound = true;
+      else f.state.timelineNotFound = true;
+      await setSyntheticVisibility(browser, false);
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('不存在')");
+      const callsAfter404 = failureKind === 'detail' ? f.state.detailCalls.length : f.state.timelineCalls.length;
+      await new Promise(resolve => setTimeout(resolve, 250));
+      assert.equal(failureKind === 'detail' ? f.state.detailCalls.length : f.state.timelineCalls.length, callsAfter404);
+      assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+      assert.equal(await browser.evaluate("document.querySelector('#detail-timeline').textContent"), '');
+      assert.equal(await browser.evaluate("document.querySelector('#supplement-form').hidden"), true);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
+test('SS-007 supplement terminal errors resume polling after a slow POST consumes the timer', { timeout: 60000 }, async () => {
+  for (const [status, code, copy] of [[413, 'YXX_BODY_TOO_LARGE', '内容超过允许大小'], [400, 'YXX_INPUT_INVALID', '输入格式有误']]) {
+    const f = await startFixture(); let browser; let releaseSupplement;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+      await browser.waitFor("document.querySelector('#supplement-form')?.hidden===false");
+      await browser.evaluate("window.setTimeout=((actual)=>((callback,delay,...args)=>actual(callback,delay===5000?500:delay,...args)))(window.setTimeout.bind(window))");
+      const beforeRefresh = f.state.detailCalls.length;
+      await setSyntheticVisibility(browser, false);
+      await waitForState(() => f.state.detailCalls.length > beforeRefresh);
+      await browser.waitFor("document.querySelector('#supplement-form')?.hidden===false");
+      f.state.supplementGate = new Promise(resolve => { releaseSupplement = resolve; });
+      f.state.supplementError = Object.assign(new Error(code), { status, code });
+      await browser.evaluate("document.querySelector('#supplement-text').value='慢请求后的补充草稿';document.querySelector('#supplement-form').requestSubmit()");
+      await waitForState(() => f.state.supplementCalls.length === 1);
+      const detailCallsDuringPost = f.state.detailCalls.length;
+      await new Promise(resolve => setTimeout(resolve, 650));
+      assert.equal(f.state.detailCalls.length, detailCallsDuringPost, 'the in-flight POST consumes the scheduled detail timer');
+      f.state.supplementGate = null; releaseSupplement();
+      await browser.waitFor(`document.querySelector('#app-status')?.textContent.includes('${copy}')`);
+      const beforeResumedPoll = f.state.detailCalls.length;
+      await waitForState(() => f.state.detailCalls.length > beforeResumedPoll, 2000);
+      await browser.waitFor(`document.querySelector('#app-status')?.textContent.includes('${copy}')`);
+      assert.equal(f.state.supplementCalls.length, 1);
+      assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '慢请求后的补充草稿');
+    } finally { releaseSupplement?.(); await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
+test('SS-007 pending recovery stays GET-only, survives 404, and is discarded on an in-memory identity change', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000099';
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+    f.state.commandStatusError = Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
+    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:1,id:'${commandId}'}))`);
+    const beforeRecovery = f.state.commandStatusCalls.length;
+    await setSyntheticVisibility(browser, true);
+    await setSyntheticVisibility(browser, false);
+    await waitForState(() => f.state.commandStatusCalls.length > beforeRecovery);
+    await browser.waitFor("document.querySelector('#app-status')?.textContent.includes('尚未可查询')");
+    assert.notEqual(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(f.state.supplementCalls.length, 0);
+
+    f.state.commandStatusError = null;
+    f.state.enforceOwnership = true;
+    const beforeIdentityChange = f.state.commandStatusCalls.length;
+    await setSyntheticVisibility(browser, true);
+    await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
+    await setSyntheticVisibility(browser, false);
+    await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&sessionStorage.getItem('yxx.self_service.pending_command')===null`);
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    assert.equal(f.state.commandStatusCalls.length, beforeIdentityChange);
+    assert.equal(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
+    assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+    assert.equal(await browser.evaluate("document.body.textContent.includes('YXX-AAAA')"), false);
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(f.state.supplementCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 pending GET recovery survives periodic same-scope CSRF rotation and reaches manual retry', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000096';
+  try {
+    f.state.commandStatusResponses = Array.from({ length: 5 }, () => Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 }));
+    f.state.commandStatusResponses.push({ status: 'ACCEPTED', client_command_id: commandId, request_ref: REFS.A,
+      intake_no: 'INT-20260917-0001', accepted_revision: '1', accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' });
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'${commandId}',scope:'${scope}'}));document.dispatchEvent(new Event('visibilitychange'))`);
+    await waitForState(() => f.state.commandStatusCalls.length === 1);
+    const recoveryDeadline = Date.now() + 18000;
+    f.state.csrfOverride = 'periodic-rotated-csrf-01234567890123456789';
+    await browser.waitFor(`window.__yxx_csrf==='${f.state.csrfOverride}'`);
+    await waitForState(() => f.state.commandStatusCalls.length === 5, Math.max(1, recoveryDeadline - Date.now()));
+    await browser.waitFor("document.querySelector('#retry-pending')?.hidden===false");
+    const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+    assert.equal(pending.id, commandId); assert.equal(pending.scope, scope);
+    assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled&&document.querySelector('#submit-supplement').disabled"), true);
+    await browser.evaluate("document.querySelector('#retry-pending').click()");
+    await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+    assert.equal(f.state.commandStatusCalls.length, 6);
+    assert.ok(f.state.commandStatusCalls.every(item => item.member === 'A' && item.clientCommandId === commandId));
+    assert.equal(f.state.commandCalls.length, 0); assert.equal(f.state.supplementCalls.length, 0);
+    assert.equal(await browser.evaluate(`localStorage.getItem('yxx.self_service.pending_command.${commandId}')`), null);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 pending recovery retries only GET, then requires an explicit bounded restart', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const commandId = '00000000-0000-4000-8000-000000000098';
+  const notFound = () => Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
+  try {
+    f.state.commandStatusResponses = [notFound(), notFound(), notFound(), notFound(), notFound(),
+      { status: 'ACCEPTED', client_command_id: commandId, request_ref: REFS.A, intake_no: 'INT-20260917-0001',
+        accepted_revision: '1', accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' }];
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:1,id:'${commandId}'}))`);
+    await setSyntheticVisibility(browser, false);
+    await waitForState(() => f.state.commandStatusCalls.length === 5, 18000);
+    await browser.waitFor("document.querySelector('#retry-pending')?.hidden===false");
+    assert.equal(await browser.evaluate("document.querySelector('#app-status').textContent.includes('旧版恢复记录')"), true);
+    assert.notEqual(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(f.state.supplementCalls.length, 0);
+    await browser.evaluate("document.querySelector('#retry-pending').click()");
+    await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+    assert.equal(f.state.commandStatusCalls.length, 6);
+    assert.equal(f.state.commandCalls.length, 0);
+    assert.equal(f.state.supplementCalls.length, 0);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 logout timeout keeps an opaque recovery fence on a terminal page', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`location.assign('/wecom/yixiaoxiu/reports/${REFS.A}')`, { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img')");
+    f.state.commandStatusError = Object.assign(new Error('not found'), { code: 'YXX_NOT_FOUND', status: 404 });
+    const scope = await browser.evaluate("fetch('/api/yixiaoxiu/bootstrap').then(response=>response.json()).then(value=>value.recovery_scope)");
+    await browser.evaluate(`(() => {
+      sessionStorage.setItem('yxx.self_service.pending_command',JSON.stringify({v:2,id:'00000000-0000-4000-8000-000000000097',scope:'${scope}'}));
+      document.dispatchEvent(new Event('visibilitychange'));
+    })()`);
+    await waitForState(() => f.state.commandStatusCalls.length === 1);
+    const recoveryCallsBeforeLogout = f.state.commandStatusCalls.length;
+    await browser.evaluate(`(() => {
+      const actualFetch=window.fetch.bind(window);
+      const actualSetTimeout=window.setTimeout.bind(window);
+      window.setTimeout=(callback,delay,...args)=>actualSetTimeout(callback,delay===15000?100:delay,...args);
+      window.fetch=(path,options)=>String(path).endsWith('/logout')?new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new DOMException('aborted','AbortError')),{once:true})):actualFetch(path,options);
+      document.querySelector('#logout').click();
+    })()`);
+    await browser.waitFor("document.querySelector('#logged-out-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('未能确认服务端退出')");
+    assert.equal(await browser.evaluate("document.querySelector('#detail-description').textContent"), '');
+    assert.equal(await browser.evaluate("document.querySelector('#detail-timeline').textContent"), '');
+    const pending = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+    assert.deepEqual(Object.keys(pending).sort(), ['id', 'scope', 'v']);
+    assert.equal(pending.scope, scope);
+    assert.equal(await browser.evaluate("window.__yxx_csrf===undefined"), true);
+    assert.equal(await browser.evaluate("document.querySelector('#retry-pending').hidden"), true);
+    await browser.evaluate("document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))");
+    assert.equal(await browser.evaluate("document.querySelector('#logged-out-view').hidden"), false);
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    assert.equal(f.state.commandStatusCalls.length, recoveryCallsBeforeLogout);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 logout failure stays terminal and does not reopen member data', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    const beforeContext = f.state.contextCalls;
+    await browser.evaluate(`(() => {
+      const actualFetch=window.fetch.bind(window);
+      window.fetch=(path,options)=>String(path).endsWith('/logout')?Promise.resolve(new Response(JSON.stringify({error:{code:'YXX_UNAVAILABLE'}}),{status:503,headers:{'content-type':'application/json'}})):actualFetch(path,options);
+      document.querySelector('#logout').click();
+    })()`);
+    await browser.waitFor("document.querySelector('#logged-out-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('未能确认服务端退出')");
+    await browser.evaluate("document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))");
+    await new Promise(resolve => setTimeout(resolve, 100));
+    assert.equal(f.state.contextCalls, beforeContext);
+    assert.equal(await browser.evaluate("document.querySelector('#logged-out-view').hidden"), false);
+    assert.equal(await browser.evaluate("document.querySelector('#sign-in-link').getAttribute('href')"), '/wecom/yixiaoxiu/login');
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 logout preserves an in-flight POST fence for same-member recovery and discards it for another member', { timeout: 90000 }, async () => {
+  for (const nextMember of ['member-a', 'member-b']) {
+    const f = await startFixture(); let browser;
+    try {
+      f.state.successBodyOverride = { path: '/api/yixiaoxiu/requests', hang: true };
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      await browser.evaluate("document.querySelector('#new-report-link').click()", { awaitPromise: false });
+      await browser.waitFor("document.querySelector('#new-view')?.hidden===false&&document.querySelector('#submit-report')?.disabled===false");
+      await browser.evaluate("document.querySelector('#description').value='退出期间待确认命令';document.querySelector('#location-text').value='护士站';document.querySelector('#new-report-form').requestSubmit()");
+      await waitForState(() => f.state.commandCalls.length === 1);
+      await browser.waitFor("sessionStorage.getItem('yxx.self_service.pending_command')!==null");
+      const commandId = f.state.commandCalls[0].input.client_command_id;
+      const pendingBefore = JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"));
+      assert.deepEqual(Object.keys(pendingBefore).sort(), ['id', 'scope', 'v']);
+      assert.equal(pendingBefore.id, commandId);
+      await browser.evaluate("document.querySelector('#logout').click()");
+      await browser.waitFor("document.querySelector('#logged-out-view')?.hidden===false&&document.querySelector('#app-status')?.textContent.includes('已退出')");
+      assert.equal(JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')")).id, commandId);
+      if (nextMember === 'member-a') {
+        f.state.commandStatusResponses = [{ status: 'ACCEPTED', client_command_id: commandId, request_ref: REFS.A,
+          intake_no: 'INT-20260917-0001', accepted_revision: '1', accepted_at: '2026-09-17 09:00:00', accepted_epoch_ms: '1789606800000' }];
+      }
+      await browser.evaluate(`document.cookie='yxx_session=${nextMember}; Path=/';location.assign('/wecom/yixiaoxiu/')`, { awaitPromise: false });
+      if (nextMember === 'member-a') {
+        await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+        assert.equal(f.state.commandStatusCalls.some(call => call.member === 'A' && call.clientCommandId === commandId), true);
+      } else {
+        await browser.waitFor("document.querySelector('#home-view')?.hidden===false&&sessionStorage.getItem('yxx.self_service.pending_command')===null");
+        assert.equal(f.state.commandStatusCalls.some(call => call.clientCommandId === commandId), false);
+      }
+      assert.equal(f.state.commandCalls.length, 1);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  }
+});
+
+test('SS-007 a stale unauthorized response cannot clear the newer member operation', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate(`(() => {
+      const actualFetch=window.fetch.bind(window);let first=true;
+      window.fetch=(path,options)=>{
+        if(first&&String(path).startsWith('/api/yixiaoxiu/my-reports')){
+          first=false;
+          return new Promise(resolve=>{window.__releaseStale=()=>resolve(new Response(JSON.stringify({error:{code:'YXX_AUTH_REQUIRED'}}),{status:401,headers:{'content-type':'application/json'}}));});
+        }
+        return actualFetch(path,options);
+      };
+      history.pushState({},'', '/wecom/yixiaoxiu/reports');
+    })()`);
+    await setSyntheticVisibility(browser, false);
+    await browser.waitFor("typeof window.__releaseStale==='function'");
+    await setSyntheticVisibility(browser, true);
+    await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
+    await setSyntheticVisibility(browser, false);
+    await browser.waitFor(`window.__yxx_csrf==='${csrfFor('member-b')}'&&document.querySelector('#report-list')?.textContent.includes('${REFS.B}')`);
+    await browser.evaluate("(async()=>{window.__releaseStale();await new Promise(resolve=>setTimeout(resolve,50));})()");
+    assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${REFS.B}')`), true);
+    assert.equal(await browser.evaluate("document.querySelector('#reports-view').hidden"), false);
+    assert.equal(await browser.evaluate(`window.__yxx_csrf==='${csrfFor('member-b')}'`), true);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 native HTTP keeps the fixed homepage gate and closed API boundary', async () => {
+  const fixtureState = await startFixture();
+  const disabledState = await startFixture({ enabled: false });
+  try {
+    const { origin, state } = fixtureState;
+    const get = (path, headers = {}) => fetch(origin + path, { headers });
+    const root = await get('/wecom/yixiaoxiu/', { cookie: 'yxx_session=member-a' });
+    assert.equal(root.status, 200);
+    assert.match(await root.text(), /自助报修/u);
+    const bootstrap = await get('/api/yixiaoxiu/bootstrap', { cookie: 'yxx_session=member-a' });
+    assert.equal(bootstrap.status, 200);
+    const bootstrapBody = await bootstrap.json();
+    await assertP2016Schema('yxx_self_service_bootstrap', bootstrapBody);
+    assert.equal(bootstrapBody.identity_mode, 'MEMBER_SELF_SERVICE');
+    assert.equal(bootstrapBody.read_only, false);
+    assert.equal(bootstrapBody.can_submit, true);
+    assert.equal(typeof bootstrapBody.csrf_token, 'string');
+    assert.equal((await get('/api/yixiaoxiu/bootstrap')).status, 401);
+    const malformedCommand = await get('/api/yixiaoxiu/commands/00000000-0000-0000-0000-000000000000', { cookie: 'yxx_session=member-a' });
+    assert.equal(malformedCommand.status, 400);
+    assert.equal((await malformedCommand.json()).error.code, 'YXX_INPUT_INVALID');
+    const disabledRoot = await fetch(disabledState.origin + '/wecom/yixiaoxiu/', { headers: { cookie: 'yxx_session=member-a' } });
+    assert.equal(disabledRoot.status, 401);
+    assert.doesNotMatch(await disabledRoot.text(), /new-report-form|我的报修/u);
+    const badOrigin = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin: 'https://attacker.invalid', 'content-type': 'application/json' }, body: '{}' });
+    assert.equal(badOrigin.status, 403);
+    const badCsrf = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000000', 'x-csrf-token': 'wrong', 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000000', description: '普通描述', location: { text: '护士站', unknown: false } }) });
+    assert.equal(badCsrf.status, 403);
+    assert.equal(state.commandCalls.length, 0);
+    const accepted = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000001', 'x-csrf-token': csrfFor('member-a'), 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000001', description: '普通描述', location: { text: '护士站', unknown: false } }) });
+    assert.equal(accepted.status, 202);
+    assert.equal((await accepted.json()).location, `/wecom/yixiaoxiu/reports/${REFS.A}`);
+    assert.equal(state.commandCalls.length, 1);
+    for (const message of ['YXX_INPUT_INVALID', 'YXX_CURSOR_INVALID', 'YXX_LIMIT_INVALID']) {
+      state.commandError = new TypeError(message);
+      const rejected = await fetch(origin + '/api/yixiaoxiu/requests', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'x-csrf-token': csrfFor('member-a') }, body: '{}' });
+      assert.equal(rejected.status, 400, message);
+    }
+    state.commandError = null;
+    const detail = await get(`/api/yixiaoxiu/requests/${REFS.A}`, { cookie: 'yxx_session=member-a' });
+    assert.equal(detail.status, 200);
+    const etag = detail.headers.get('etag');
+    assert.equal((await get(`/api/yixiaoxiu/requests/${REFS.A}`, { cookie: 'yxx_session=member-a', 'if-none-match': etag })).status, 304);
+    assert.equal((await get(`/api/yixiaoxiu/requests/${REFS.A}/timeline?limit=50`, { cookie: 'yxx_session=member-a' })).status, 200);
+    assert.equal(state.timelineCalls.at(-1).limit, 50);
+    const supplement = await fetch(origin + `/api/yixiaoxiu/requests/${REFS.A}/supplements`, { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000002', 'x-csrf-token': csrfFor('member-a'), 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000002', expected_input_revision: '1', text: '补充事实' }) });
+    assert.equal(supplement.status, 202);
+    assert.equal(state.supplementCalls.length, 1);
+    fixtureState.state.supplementConflict = true;
+    const conflict = await fetch(origin + `/api/yixiaoxiu/requests/${REFS.A}/supplements`, { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'idempotency-key': '00000000-0000-4000-8000-000000000003', 'x-csrf-token': csrfFor('member-a'), 'sec-fetch-site': 'same-origin' }, body: JSON.stringify({ schema_version: 1, client_command_id: '00000000-0000-4000-8000-000000000003', expected_input_revision: '1', text: '旧版本' }) });
+    assert.equal(conflict.status, 409);
+    assert.equal((await fetch(origin + '/wecom/yixiaoxiu/logout', { method: 'POST', headers: { cookie: 'yxx_session=member-a', origin, 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' }, body: '{}' })).status, 200);
+  } finally { await closeServer(fixtureState.server); await closeServer(disabledState.server); }
+});
+
+test('SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated', { timeout: 120000 }, async () => {
+  const fixtureState = await startFixture();
+  const browsers = [];
+  let failure;
+  try {
+    const { origin, state } = fixtureState;
+    for (const [width, height] of [[390, 844], [1440, 900]]) {
+      const browser = await launchSystemBrowser({ url: `${origin}/wecom/yixiaoxiu/`, width, height,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: `${origin}/wecom/yixiaoxiu/` }] });
+      browsers.push(browser);
+      await browser.waitFor("document.querySelector('#home-view').hidden===false");
+      assert.match(await browser.evaluate('document.cookie'), /yxx_session=member-a/u);
+      assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'), false);
+      assert.equal(await browser.evaluate("document.querySelectorAll('label[for]').length >= 7"), true);
+      assert.equal(await browser.evaluate("document.body.textContent.includes('患者资料')"), true);
+      assert.equal(await browser.evaluate("document.body.textContent.includes('工单号只在真实工单生成后出现')"), true);
+      assert.equal(await browser.evaluate("document.querySelectorAll('script[src]').length"), 1);
+      assert.equal(await browser.evaluate("document.querySelector('img')===null"), true);
+      assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('#logout')).color"), 'rgb(22, 78, 61)');
+      await browser.evaluate("document.querySelector('#new-report-link').click()");
+      await browser.waitFor("document.querySelector('#new-view').hidden===false");
+      await browser.waitFor("document.querySelector('#submit-report').disabled===false");
+      const beforeCommands = state.commandCalls.filter(call => call.member === 'A').length;
+      await browser.evaluate("document.querySelector('#description').value='网页故障';document.querySelector('#location-text').value='护士站';document.querySelector('#service-code').value='打印机';document.querySelector('#new-report-form').requestSubmit();document.querySelector('#new-report-form').requestSubmit()");
+      await browser.waitFor("/^\\/wecom\\/yixiaoxiu\\/reports\\/[A-Za-z0-9_-]{32}$/.test(location.pathname)");
+      await browser.waitFor("document.querySelector('#detail-description')?.textContent.includes('<img src=x')");
+      assert.equal(state.commandCalls.filter(call => call.member === 'A').length, beforeCommands + 1);
+      assert.equal(state.commandCalls.at(-1).input.service_code, null);
+      assert.equal(await browser.evaluate("document.querySelector('[onerror]')===null"), true);
+      assert.equal(await browser.evaluate("window.__xss===undefined"), true);
+      assert.equal(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')"), null);
+      assert.equal(await browser.evaluate("Object.keys(sessionStorage).every(key=>key==='yxx.self_service.pending_command')"), true);
+      assert.equal(await browser.evaluate("document.documentElement.scrollWidth>innerWidth"), false);
+      await browser.waitFor("document.querySelector('#supplement-form').hidden===false");
+      const beforeSupplements = state.supplementCalls.filter(call => call.member === 'A').length;
+      await browser.evaluate("document.querySelector('#supplement-text').value='补充事实';document.querySelector('#supplement-form').requestSubmit();document.querySelector('#supplement-form').requestSubmit()");
+      await browser.waitFor("document.querySelector('#submit-supplement').disabled===false");
+    assert.equal(state.supplementCalls.filter(call => call.member === 'A').length, beforeSupplements + 1);
+      assert.equal(state.timelineCalls.some(call => call.before === String(Number.MAX_SAFE_INTEGER)), true);
+      const focused = await browser.evaluate("document.activeElement?.id");
+      assert.equal(typeof focused, 'string');
+    }
+    const other = await launchSystemBrowser({ url: `${origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-b', url: `${origin}/wecom/yixiaoxiu/` }] });
+    browsers.push(other);
+    await other.waitFor("document.querySelector('#home-view').hidden===false");
+    await other.evaluate("location.assign('/wecom/yixiaoxiu/reports')", { awaitPromise: false });
+      await other.waitFor("document.querySelector('#reports-view').hidden===false");
+    assert.equal(await other.evaluate("document.querySelector('#report-list').textContent.includes('已收到，正在处理')"), true);
+    assert.equal(await other.evaluate("document.body.textContent.includes('B')"), true);
+    assert.equal(await other.evaluate("document.body.textContent.includes('A')"), false);
+    assert.equal(state.commandCalls.filter(call => call.member === 'B').length, 0);
+    const source = await readFile(new URL('../web/p2-reporter/self-service.js', import.meta.url), 'utf8');
+    assert.doesNotMatch(source, /innerHTML|outerHTML|eval\(/u);
+    assert.match(source, /AbortController/u);
+    assert.match(source, /visibilitychange/u);
+    assert.match(source, /state\.detailEtag=detail\.etag/u);
+  } catch (error) { failure = error; }
+  finally { await closeBrowserTestResources([...browsers.map(browser => browser.close), () => closeServer(fixtureState.server)], failure); }
+});

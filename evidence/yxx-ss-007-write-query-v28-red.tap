@@ -1,0 +1,56 @@
+TAP version 13
+# Subtest: SS-007 native write UI requires an explicit member write flag while read APIs remain available
+not ok 1 - SS-007 native write UI requires an explicit member write flag while read APIs remain available
+  ---
+  duration_ms: 33.8748
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-http-errors.test.mjs:8:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    MEMBER_SELF_SERVICE false /api/yixiaoxiu/bootstrap
+    
+    200 !== 403
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 403
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-http-errors.test.mjs:29:18)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: SS-007 command recovery rejects every query before dispatch or route fallthrough
+not ok 2 - SS-007 command recovery rejects every query before dispatch or route fallthrough
+  ---
+  duration_ms: 7.935
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-http-errors.test.mjs:48:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    404 !== 400
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 400
+  actual: 404
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-http-errors.test.mjs:67:14)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 180.1589

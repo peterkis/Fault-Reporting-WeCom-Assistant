@@ -1,0 +1,79 @@
+TAP version 13
+# Subtest: SS-007 hides protected content while submission delays the session check
+ok 1 - SS-007 hides protected content while submission delays the session check
+  ---
+  duration_ms: 19690.329
+  type: 'test'
+  ...
+# Subtest: SS-007 hides protected content while detail delays the session check
+ok 2 - SS-007 hides protected content while detail delays the session check
+  ---
+  duration_ms: 11713.0452
+  type: 'test'
+  ...
+# Subtest: SS-007 hides protected content while recovery delays the session check
+not ok 3 - SS-007 hides protected content while recovery delays the session check
+  ---
+  duration_ms: 36564.7434
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui.browser.test.mjs:199:3'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui.browser.test.mjs:230:7)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SS-007 periodic revalidation hides new while unresolved: same
+ok 4 - SS-007 periodic revalidation hides new while unresolved: same
+  ---
+  duration_ms: 6777.5644
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation hides list while unresolved: same
+ok 5 - SS-007 periodic revalidation hides list while unresolved: same
+  ---
+  duration_ms: 6880.8729
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation hides detail while unresolved: same
+ok 6 - SS-007 periodic revalidation hides detail while unresolved: same
+  ---
+  duration_ms: 6997.6585
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation hides new while unresolved: focus-moved
+ok 7 - SS-007 periodic revalidation hides new while unresolved: focus-moved
+  ---
+  duration_ms: 6699.1285
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation hides new while unresolved: changed
+ok 8 - SS-007 periodic revalidation hides new while unresolved: changed
+  ---
+  duration_ms: 12598.4167
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation hides list while unresolved: 503
+ok 9 - SS-007 periodic revalidation hides list while unresolved: 503
+  ---
+  duration_ms: 6988.1515
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation hides new while unresolved: timeout
+ok 10 - SS-007 periodic revalidation hides new while unresolved: timeout
+  ---
+  duration_ms: 21751.9091
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 9
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 136830.561

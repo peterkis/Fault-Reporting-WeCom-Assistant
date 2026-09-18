@@ -1,0 +1,73 @@
+TAP version 13
+# Subtest: SS-007 periodic revalidation hides new while unresolved: same
+not ok 1 - SS-007 periodic revalidation hides new while unresolved: same
+  ---
+  duration_ms: 9023.0469
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui.browser.test.mjs:199:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    +   '',
+    +   null,
+    +   null,
+    +   null
+    -   'description',
+    -   2,
+    -   7,
+    -   'backward'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'description'
+    1: 2
+    2: 7
+    3: 'backward'
+  actual:
+    0: ''
+    1: ~
+    2: ~
+    3: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui.browser.test.mjs:238:49)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: SS-007 detail renders follow-up guidance as text and clears obsolete or denied guidance
+not ok 2 - SS-007 detail renders follow-up guidance as text and clears obsolete or denied guidance
+  ---
+  duration_ms: 4382.6997
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui.browser.test.mjs:256:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui.browser.test.mjs:265:12)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13994.4415

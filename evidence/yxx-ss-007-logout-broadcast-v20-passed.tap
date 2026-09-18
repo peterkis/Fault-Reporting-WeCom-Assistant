@@ -1,0 +1,50 @@
+
+> fault-reporting-wecom-assistant@0.0.0-p1 test:yxx:ss:007
+> node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs --test-reporter=tap
+
+✔ SS-007 native factory accepts only the OAuth callback session cookie (1.174ms)
+✔ SS-007 dependency failures remain terminal service or permission failures (80.0086ms)
+✔ SS-007 JSON bodies reject duplicate decoded keys before commands (47.1933ms)
+✔ SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes (34.1313ms)
+✔ SS-007 direct detail pages enforce ownership before rendering the shell (32.1245ms)
+✔ SS-007 report source filters reject explicit empty and unknown values before querying (51.8333ms)
+✔ SS-007 logout rejects unknown query and body fields without clearing sessions (34.8687ms)
+✔ SS-007 a new tab in the same browser recovers a closed tab command from durable opaque storage (1047.9596ms)
+✔ SS-007 logout invalidates every open same-origin tab without broadcasting sensitive data (271.183ms)
+✔ SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence (701.9395ms)
+ℹ local screenshot: tmp/ss007-ui/390x844.png
+ℹ local screenshot: tmp/ss007-ui/1440x900.png
+✔ SS-007 status copy is exercised through browser responses for 429, 409, 401 and 503 (552.7616ms)
+✔ SS-007 supplement conflict refreshes the revision while retaining the draft without an automatic POST (338.9186ms)
+✔ SS-007 does not accept a new detail ETag when the paired timeline request fails (10117.0898ms)
+✔ SS-007 synthetic page lifecycle rejects a late detail response and logout reaches a terminal page (441.7985ms)
+✔ SS-007 refreshed member CSRF survives clearing the previous form (1581.5963ms)
+✔ SS-007 visibility bootstrap hides member data before slow and failed revalidation (3923.2369ms)
+✔ SS-007 a late detail response cannot restore an old member draft after identity rotation (1978.5333ms)
+✔ SS-007 unavailable tab or durable storage blocks new POST commands (7609.9284ms)
+✔ SS-007 durable recovery capacity fails closed without deleting older unknown commands (1885.8475ms)
+✔ SS-007 durable read failure blocks a later POST even when storage becomes writable (2055.1826ms)
+✔ SS-007 ambiguous successful responses keep the original UUID and use GET-only recovery (13912.5916ms)
+✔ SS-007 hanging accepted POSTs time out and stop after five bounded GET recoveries (30409.4569ms)
+✔ SS-007 v2 recovery migrates durably without blocking another member or losing the original member fence (1107.5146ms)
+✔ SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET only (1186.122ms)
+✔ SS-007 synthetic visibility restore reloads cleared detail, bounds an endless timeline, and reloads the first list page (4091.5954ms)
+✔ SS-007 renders authoritative ticket lifecycle status in list, detail, and timeline (2459.2913ms)
+✔ SS-007 detail and timeline 404 clear rendered state and stop polling (4440.0131ms)
+✔ SS-007 supplement terminal errors resume polling after a slow POST consumes the timer (5521.8642ms)
+✔ SS-007 pending recovery stays GET-only, survives 404, and is discarded on an in-memory identity change (2837.7154ms)
+✔ SS-007 pending recovery retries only GET, then requires an explicit bounded restart (13886.0551ms)
+✔ SS-007 logout timeout keeps an opaque recovery fence on a terminal page (3332.1438ms)
+✔ SS-007 logout failure stays terminal and does not reopen member data (1969.1415ms)
+✔ SS-007 logout preserves an in-flight POST fence for same-member recovery and discards it for another member (4817.9022ms)
+✔ SS-007 a stale unauthorized response cannot clear the newer member operation (2073.0388ms)
+✔ SS-007 native HTTP keeps the fixed homepage gate and closed API boundary (176.2285ms)
+✔ SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated (6760.701ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 132435.4436

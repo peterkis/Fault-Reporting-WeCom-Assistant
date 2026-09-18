@@ -1,0 +1,154 @@
+{
+  "task": "YXX-SS-007",
+  "status": "LOCAL_VALIDATION_COMPLETE_REVIEW_PENDING",
+  "event_time": "2026-09-17 09:40:24",
+  "event_epoch_ms": "1789609224059",
+  "base_head": "62fc01cac106cbd7207f92450ab19930055a06c3",
+  "source_binding": "sha256 binds staged Git blob bytes; tested_worktree_sha256 binds executed working-tree bytes. Each difference verified to be CRLF-to-LF normalization only. No implementation edits after validation.",
+  "source_files": [
+    {
+      "path": "src/yxx-self-service-native-http.mjs",
+      "sha256": "e7799b58baa21d8f03d62a0094bbfe1786661d35dbc630f5658700747f5b3ca3",
+      "tested_worktree_sha256": "e7799b58baa21d8f03d62a0094bbfe1786661d35dbc630f5658700747f5b3ca3",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.js",
+      "sha256": "a467ef4678a68d19ef44e1bb1d48488a4df7888c0e4126609357ed8236e757a3",
+      "tested_worktree_sha256": "ea96a7a1a133c4723191006f65ed9afb820b14a15b369fd649f906ce9ca296f9",
+      "relation": "CRLF_TO_LF_ONLY"
+    },
+    {
+      "path": "web/p2-reporter/self-service.html",
+      "sha256": "e0dde17067a2ffdbb4637454acc6cd962445b027319251d3696adef7a6660565",
+      "tested_worktree_sha256": "e0dde17067a2ffdbb4637454acc6cd962445b027319251d3696adef7a6660565",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.css",
+      "sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "tested_worktree_sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "sha256": "a51cd771d54898ca543105b883b0067479944fa5427d95235647a4bb21e7fadc",
+      "tested_worktree_sha256": "a51cd771d54898ca543105b883b0067479944fa5427d95235647a4bb21e7fadc",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "sha256": "b983c5ddc00a868062b8e2abc6a13b3dd3819c4fb3747eebae3c011ec0d172de",
+      "tested_worktree_sha256": "b983c5ddc00a868062b8e2abc6a13b3dd3819c4fb3747eebae3c011ec0d172de",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+      "sha256": "2eddaf1d6bbee86ffcec3578e2715e7e54a233278572e417b2216a6f08376643",
+      "tested_worktree_sha256": "2eddaf1d6bbee86ffcec3578e2715e7e54a233278572e417b2216a6f08376643",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/helpers/yxx-ss-007-acceptance-fixture.mjs",
+      "sha256": "709df5c04a1297ce2f82ec2cd7bb293e79588a78250245fcad091b40d249ec32",
+      "tested_worktree_sha256": "709df5c04a1297ce2f82ec2cd7bb293e79588a78250245fcad091b40d249ec32",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+      "sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "tested_worktree_sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_bootstrap.schema.json",
+      "sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "tested_worktree_sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_contracts.d.ts",
+      "sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "tested_worktree_sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-contract-freeze.md",
+      "sha256": "0cfc98453d62b73deeef26fe398f1af875bbfa6474fc06b4f2182b2a75420bca",
+      "tested_worktree_sha256": "0cfc98453d62b73deeef26fe398f1af875bbfa6474fc06b4f2182b2a75420bca",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-native-ui.md",
+      "sha256": "704907b1bf280954166e43b95253e190c0b58bb73d2790db4285c2ff7de13a11",
+      "tested_worktree_sha256": "704907b1bf280954166e43b95253e190c0b58bb73d2790db4285c2ff7de13a11",
+      "relation": "IDENTICAL"
+    }
+  ],
+  "validation": {
+    "command": "node --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-001-homepage-oauth.test.mjs tests/yxx-ss-002-contract.test.mjs tests/yxx-ss-007-*.test.mjs",
+    "tests": 32,
+    "pass": 32,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "scope": "LOCAL_HTTP_BROWSER_CONTRACT",
+    "result_basis": "Parent-observed process exit 0 and complete TAP",
+    "exit_code": 0,
+    "tap": {
+      "path": "evidence/yxx-ss-007-page-poll-v7-passed.tap",
+      "sha256": "11ad0c6a05f7363db266ca9da2357b6c7eaeb6815c0e52428b6fc4a615fd0260",
+      "tested_worktree_sha256": "ee818e01862bd005a59a551e0d6e805b2170aeb4c5e60b3de13eb72cc21c7fd7"
+    }
+  },
+  "review_fixes": [
+    "Direct owned report detail query precedes HTML response; unavailable detail returns 404 and dependency failure returns 503",
+    "Current supplement operation reschedules detail polling after terminal rejection",
+    "Evidence records both tested bytes and reviewed Git blob bytes"
+  ],
+  "prior_evidence_correction": {
+    "report": "evidence/yxx-ss-007-reauth-storage-v6-report.json",
+    "file": "web/p2-reporter/self-service.js",
+    "recorded_worktree_sha256": "9bc9aa1b41b4bed911de290a0f3bc91d6978503e9fab4c16ac8b619e223f898f",
+    "git_blob_sha256": "f10d6a50aa525bf42ccc8b454dbc8fc3ee578ed408b5674b57b6a8caef86eb54",
+    "verification": "Reversing the single polling fix in memory recreated the recorded working-tree hash; CRLF-to-LF normalization exactly matched prior HEAD blob. Prior report did not separately expose Git normalization."
+  },
+  "failure_history": [
+    {
+      "path": "evidence/yxx-ss-007-reauth-storage-v4-failed.tap",
+      "result": "27/29",
+      "cause": "Draft cleared on same-member visibility and old ETag test trigger incompatible with privacy clearing",
+      "correction": "Restore draft only after matching verification; exercise ETag behavior through actual polling, retaining original assertions"
+    },
+    {
+      "path": "evidence/yxx-ss-007-reauth-storage-v5-failed.tap",
+      "result": "28/29",
+      "cause": "P2_006_BROWSER_PROCESS_NOT_STOPPED during cleanup",
+      "status": "UNREPRODUCED",
+      "followup": "Read-only owned-profile process query found no residual browser; no broad kill or harness/cleanup-timeout change"
+    },
+    {
+      "result": "Earlier browser-only 12/13 failures",
+      "artifact": "Agent tool trace only; no standalone TAP saved",
+      "cause": "Old visibility ETag expectation and premature CSRF read before asynchronous bootstrap completion"
+    }
+  ],
+  "limitations": [
+    "PageTransitionEvent and document.hidden tests use deterministic browser seams, not real operating-system BFCache proof",
+    "Historical 498/500 list failure remains UNREPRODUCED; original and same-second diagnostic traversals now pass",
+    "SS-008 real DB/HTTP/workbench assembly and SS-009 full regression are not yet run",
+    "External current-commit review remains pending",
+    "Prior v5 browser cleanup failure remains UNREPRODUCED despite current successful cleanup"
+  ],
+  "live": {
+    "oauth": "NOT_RUN",
+    "sdk": "NOT_RUN",
+    "production_db": "NOT_RUN",
+    "send": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "SS011": "NOT_AUTHORIZED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "BLOCKED"
+  }
+}

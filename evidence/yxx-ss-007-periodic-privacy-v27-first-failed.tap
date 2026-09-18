@@ -1,0 +1,62 @@
+TAP version 13
+# Subtest: SS-007 periodic revalidation hides new while unresolved: same
+ok 1 - SS-007 periodic revalidation hides new while unresolved: same
+  ---
+  duration_ms: 6661.8546
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation hides list while unresolved: same
+ok 2 - SS-007 periodic revalidation hides list while unresolved: same
+  ---
+  duration_ms: 6655.8005
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation hides detail while unresolved: same
+not ok 3 - SS-007 periodic revalidation hides detail while unresolved: same
+  ---
+  duration_ms: 7212.8062
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui.browser.test.mjs:199:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui.browser.test.mjs:213:14)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SS-007 periodic revalidation hides new while unresolved: changed
+ok 4 - SS-007 periodic revalidation hides new while unresolved: changed
+  ---
+  duration_ms: 12039.7791
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation hides list while unresolved: 503
+ok 5 - SS-007 periodic revalidation hides list while unresolved: 503
+  ---
+  duration_ms: 7136.8821
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation hides new while unresolved: timeout
+ok 6 - SS-007 periodic revalidation hides new while unresolved: timeout
+  ---
+  duration_ms: 21979.1698
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61827.374

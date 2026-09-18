@@ -1,0 +1,147 @@
+{
+  "task": "YXX-SS-007",
+  "status": "LOCAL_VALIDATION_COMPLETE_REVIEW_PENDING",
+  "event_time": "2026-09-17 11:35:41",
+  "event_epoch_ms": "1789616141541",
+  "base_head": "117e2133f75b6c9a08c532c066cf4dae507ae27a",
+  "source_binding": "sha256 binds staged Git blob bytes; tested_worktree_sha256 binds executed working-tree bytes. Each difference verified to be CRLF-to-LF normalization only. No implementation edits after validation.",
+  "source_files": [
+    {
+      "path": "src/yxx-self-service-native-http.mjs",
+      "sha256": "9c472cbb4b273359ef56082adb22554f58bd92bcc35c39e786d96f440c4fc2ac",
+      "tested_worktree_sha256": "9c472cbb4b273359ef56082adb22554f58bd92bcc35c39e786d96f440c4fc2ac",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.js",
+      "sha256": "fe230a9db350701cb8935d2f365e2a1849c1ec0f5ac03e09a5b369d44018e1ab",
+      "tested_worktree_sha256": "735e7c6b4310bb0f542c530f3a00568a1b7746ab537b7eb90e5b15f15fe3aad2",
+      "relation": "CRLF_TO_LF_ONLY"
+    },
+    {
+      "path": "web/p2-reporter/self-service.html",
+      "sha256": "9b06eb2460e3be955dccb1e3ffaecd0d74e4d7ac2d6545ac1692c418bc834562",
+      "tested_worktree_sha256": "9b06eb2460e3be955dccb1e3ffaecd0d74e4d7ac2d6545ac1692c418bc834562",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.css",
+      "sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "tested_worktree_sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "sha256": "15e346f5e5a1130f6e442ab9e2d04e4198b593372d0eab129175b5c33f664476",
+      "tested_worktree_sha256": "15e346f5e5a1130f6e442ab9e2d04e4198b593372d0eab129175b5c33f664476",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "sha256": "67f168b57b817922128a94f44262c269b01d9acb6625acbc49eff161e0182d20",
+      "tested_worktree_sha256": "67f168b57b817922128a94f44262c269b01d9acb6625acbc49eff161e0182d20",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+      "sha256": "4f0f8fbbe8267ab7e5fc18227735ea984c4ac9fa821cf727480830ba55a351ca",
+      "tested_worktree_sha256": "4f0f8fbbe8267ab7e5fc18227735ea984c4ac9fa821cf727480830ba55a351ca",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/helpers/yxx-ss-007-acceptance-fixture.mjs",
+      "sha256": "5521d50cd1ea343c8bdb713cb422edb2bdc08642a51dfe338d460feec0b317bc",
+      "tested_worktree_sha256": "5521d50cd1ea343c8bdb713cb422edb2bdc08642a51dfe338d460feec0b317bc",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+      "sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "tested_worktree_sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_bootstrap.schema.json",
+      "sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "tested_worktree_sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_contracts.d.ts",
+      "sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "tested_worktree_sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-contract-freeze.md",
+      "sha256": "0cfc98453d62b73deeef26fe398f1af875bbfa6474fc06b4f2182b2a75420bca",
+      "tested_worktree_sha256": "0cfc98453d62b73deeef26fe398f1af875bbfa6474fc06b4f2182b2a75420bca",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-native-ui.md",
+      "sha256": "e64a782474cc006d37344531833db1b4b6ec148039e869be62e69f83b3adeea0",
+      "tested_worktree_sha256": "e64a782474cc006d37344531833db1b4b6ec148039e869be62e69f83b3adeea0",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service.openapi.yaml",
+      "sha256": "60d9bee38e9dc7ad0e0cdec775331814264bc0b18bc01c3062d9746917cd895b",
+      "tested_worktree_sha256": "60d9bee38e9dc7ad0e0cdec775331814264bc0b18bc01c3062d9746917cd895b",
+      "relation": "IDENTICAL"
+    }
+  ],
+  "validation": {
+    "command": "node --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-001-homepage-oauth.test.mjs tests/yxx-ss-002-contract.test.mjs tests/yxx-ss-007-*.test.mjs",
+    "tests": 40,
+    "pass": 40,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "tap": {
+      "path": "evidence/yxx-ss-007-logout-terminal-v15-passed.tap",
+      "sha256": "aa0b5bbae1969ba531ae612852c63e43e9de2c4a6128fec2914780d106ce943a",
+      "tested_worktree_sha256": "aa0b5bbae1969ba531ae612852c63e43e9de2c4a6128fec2914780d106ce943a",
+      "relation": "IDENTICAL"
+    },
+    "scope": "Homepage, contracts and all SS-007 HTTP/browser tests"
+  },
+  "parent_validation": "evidence/yxx-ss-007-logout-v14-report.json",
+  "review_fixes": [
+    "Logout stays in a cleared terminal view for success, failure and timeout; no automatic root navigation or visibility bootstrap",
+    "Explicit sign-in is unavailable while logout is in flight and enabled only after settlement",
+    "Preserve scope-bound opaque command record across logout; same-member sign-in recovers through GET, other-member scope discards it"
+  ],
+  "failure_history": [
+    {
+      "tap": {
+        "path": "evidence/yxx-ss-007-logout-terminal-targeted-v1-failed.tap",
+        "sha256": "8993561b4babf9248d26528c487e3eff75e43279703ad33efc48bb0fc9a283f7",
+        "tested_worktree_sha256": "8993561b4babf9248d26528c487e3eff75e43279703ad33efc48bb0fc9a283f7",
+        "relation": "IDENTICAL"
+      },
+      "pass": 3,
+      "fail": 1,
+      "correction": "New fixture follows homepage-to-form navigation and supplies required location; production validation and original recovery assertions retained"
+    }
+  ],
+  "limitations": [
+    "PageTransitionEvent and document.hidden tests use deterministic browser seams, not real operating-system BFCache proof",
+    "Historical 498/500 list failure remains UNREPRODUCED; original and same-second diagnostic traversals now pass",
+    "SS-008 real DB/HTTP/workbench assembly and SS-009 full regression are not yet run",
+    "External current-commit review remains pending",
+    "Prior v5 browser cleanup failure remains UNREPRODUCED despite current successful cleanup"
+  ],
+  "live": {
+    "oauth": "NOT_RUN",
+    "sdk": "NOT_RUN",
+    "production_db": "NOT_RUN",
+    "send": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "SS011": "NOT_AUTHORIZED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "BLOCKED"
+  }
+}

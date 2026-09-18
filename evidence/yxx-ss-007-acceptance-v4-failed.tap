@@ -1,0 +1,77 @@
+TAP version 13
+# Subtest: SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence
+not ok 1 - SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence
+  ---
+  duration_ms: 32809.0842
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui-acceptance.browser.test.mjs:99:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:119:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: SS-007 status copy is exercised through browser responses for 429, 409, 401 and 503
+not ok 2 - SS-007 status copy is exercised through browser responses for 429, 409, 401 and 503
+  ---
+  duration_ms: 30155.3559
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui-acceptance.browser.test.mjs:145:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+    async submit (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:151:5)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:153:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SS-007 supplement conflict refreshes the revision while retaining the draft without an automatic POST
+not ok 3 - SS-007 supplement conflict refreshes the revision while retaining the draft without an automatic POST
+  ---
+  duration_ms: 30135.877
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui-acceptance.browser.test.mjs:166:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:174:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SS-007 does not accept a new detail ETag when the paired timeline request fails
+not ok 4 - SS-007 does not accept a new detail ETag when the paired timeline request fails
+  ---
+  duration_ms: 30215.513
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui-acceptance.browser.test.mjs:181:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:190:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SS-007 synthetic page lifecycle rejects a late detail response and UI logout clears browser state
+ok 5 - SS-007 synthetic page lifecycle rejects a late detail response and UI logout clears browser state
+  ---
+  duration_ms: 421.7479
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 1
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 124337.9544

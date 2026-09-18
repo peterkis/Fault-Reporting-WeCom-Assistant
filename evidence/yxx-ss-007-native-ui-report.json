@@ -1,0 +1,42 @@
+{
+  "task": "YXX-SS-007",
+  "status": "COMPLETE",
+  "scope": "LOCAL_ISOLATED_HTTP_BROWSER_ONLY",
+  "event_time": "2026-09-16 23:41:48",
+  "event_epoch_ms": "1789573308029",
+  "dependencies": ["YXX-SS-001", "YXX-SS-002"],
+  "implementation": {
+    "homepage": "fixed /wecom/yixiaoxiu/ keeps bounded OAuth delegation until MEMBER_SELF_SERVICE and both flags are present",
+    "native_http": "same-origin native HTML, CSS and JavaScript routes for new report, my reports, detail, timeline, supplement, command recovery and logout",
+    "form": "plain-language description/location/unknown/impact form; location must be supplied or explicitly marked unknown; no technical classification gate or patient data field",
+    "writes": "202 Accepted carries the real request_ref location; no optimistic Ticket number; command and supplement POSTs keep backend idempotency and CSRF boundaries",
+    "read_model": "Web and member-owned Bot rows stay behind existing query authorization and Unified Ticket Core; detail exposes bounded safe supplement text",
+    "client_safety": "one in-flight fetch, visible-page five-second detail polling, hidden/pagehide abort and generation fences, ETag accepted only after detail plus timeline, textContent-only rendering, opaque bounded pending command id only",
+    "readonly": "factory accepts only MEMBER_SELF_SERVICE or FULL_SERVICE_LOOP; MEMBER_TICKET_READONLY remains outside the write surface"
+  },
+  "acceptance_cases": [
+    {"id": "YXX-AC-063", "result": "passed", "coverage": "fixed homepage serves native UI only for enabled self-service profile and otherwise delegates the existing authentication prompt"},
+    {"id": "YXX-AC-064", "result": "passed", "coverage": "browser form exposes description, location/unknown, optional service, impact, department and extension without requiring technical classification"},
+    {"id": "YXX-AC-065", "result": "passed", "coverage": "duplicate submit events are fenced, HTTP returns 202, and the UI navigates to the real request reference without inventing a Ticket"},
+    {"id": "YXX-AC-066", "result": "passed", "coverage": "isolated HTTP assertions cover 401, 403, 409 and native status mapping including 503/429 copy"},
+    {"id": "YXX-AC-067", "result": "passed", "coverage": "two isolated browser sessions use separate member cookies and receive separate request references/list rows"},
+    {"id": "YXX-AC-068", "result": "passed", "coverage": "logout/pagehide clear sensitive DOM state, abort fetches and handle BFCache pageshow with a fresh bootstrap"},
+    {"id": "YXX-AC-069", "result": "passed", "coverage": "source and browser checks cover one in-flight request, visibility/pagehide stop, five-second schedule and post-timeline ETag update"},
+    {"id": "YXX-AC-070", "result": "passed", "coverage": "malicious safe_description remains text and no element/event handler is created; source has no innerHTML/outerHTML/eval"},
+    {"id": "YXX-AC-071", "result": "passed", "coverage": "Chromium checks at 390x844 and 1440x900 confirm no horizontal overflow, labels and keyboard focus"},
+    {"id": "YXX-AC-072", "result": "passed", "coverage": "sessionStorage is limited to a versioned opaque UUID pending command record; no body, CSRF, cookie or raw identity is stored"}
+  ],
+  "validation": [
+    {"command": "npm.cmd run test:yxx:ss:007", "result": "2 passed with isolated native HTTP and Chromium browser"},
+    {"command": "$env:PILOT_DATABASE_URL='postgresql://postgres@127.0.0.1:55432/yxx_test'; npm.cmd run test:yxx:ss:005", "result": "4 passed with isolated PostgreSQL; one transient 498/500 mixed snapshot rerun passed"},
+    {"command": "$env:PILOT_DATABASE_URL='postgresql://postgres@127.0.0.1:55432/yxx_test'; npm.cmd run test:yxx:ss:006", "result": "3 passed with isolated PostgreSQL"},
+    {"command": "$env:PILOT_DATABASE_URL='postgresql://postgres@127.0.0.1:55432/yxx_test'; npm.cmd run test:yxx:ss:004", "result": "4 passed with isolated PostgreSQL"},
+    {"command": "npm.cmd run test:yxx:ss:003", "result": "1 passed, 1 intentional database test skipped without an explicit integration invocation"},
+    {"command": "node --check src/yxx-self-service-native-http.mjs src/yxx-self-service-query.mjs web/p2-reporter/self-service.js tests/yxx-ss-007-native-ui.browser.test.mjs", "result": "passed"},
+    {"command": "git diff --check", "result": "passed"}
+  ],
+  "side_effects": "No real OAuth, WeCom SDK, production database, Bot message, chat Session, Direct Leg, notification, SSH, cloud publish or external send was used.",
+  "rollback": "Keep YIXIAOXIU_SELF_SERVICE_ENABLED=false or YIXIAOXIU_MY_REPORTS_ENABLED=false; the native handler delegates the fixed homepage to the existing bounded authentication surface and does not remove accepted facts.",
+  "next_gate": "SS-008 must wire this native surface to real local DB/HTTP/rule/manual-review assembly before any live readiness claim.",
+  "forbidden_live_actions": ["REAL_OAUTH", "WECOM_SDK", "PRODUCTION_DB", "SSH", "CLOUD_PUBLISH", "SEND", "YXX-SS-011", "P2-G2-LIVE", "P2-008"]
+}

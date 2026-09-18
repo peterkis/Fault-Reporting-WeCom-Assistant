@@ -1,0 +1,135 @@
+{
+  "task": "YXX-SS-007",
+  "status": "LOCAL_VALIDATION_COMPLETE_REVIEW_PENDING",
+  "event_time": "2026-09-17 10:29:50",
+  "event_epoch_ms": "1789612190026",
+  "base_head": "161c915c929e9774be23a465bb61adf723280d2c",
+  "source_binding": "sha256 binds staged Git blob bytes; tested_worktree_sha256 binds executed working-tree bytes. Each difference verified to be CRLF-to-LF normalization only. No implementation edits after validation.",
+  "source_files": [
+    {
+      "path": "src/yxx-self-service-native-http.mjs",
+      "sha256": "17615d3278a5bc5583ba6b4644bd46b4088883b0cb9f5fe8c6192750554fcfaf",
+      "tested_worktree_sha256": "17615d3278a5bc5583ba6b4644bd46b4088883b0cb9f5fe8c6192750554fcfaf",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.js",
+      "sha256": "ee5610ac4edad6d524255bbd7f98426121c26db8ab87761b094a5ac595f1140f",
+      "tested_worktree_sha256": "8b365d38d6b4b5906b0f25385680533c8889047bd9dc9fc2ffbef514b6e756a3",
+      "relation": "CRLF_TO_LF_ONLY"
+    },
+    {
+      "path": "web/p2-reporter/self-service.html",
+      "sha256": "e0dde17067a2ffdbb4637454acc6cd962445b027319251d3696adef7a6660565",
+      "tested_worktree_sha256": "e0dde17067a2ffdbb4637454acc6cd962445b027319251d3696adef7a6660565",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.css",
+      "sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "tested_worktree_sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "sha256": "60f5b9de58a5839df0d85406cc34909bbade997579e2a9345a231a8296bcdc75",
+      "tested_worktree_sha256": "60f5b9de58a5839df0d85406cc34909bbade997579e2a9345a231a8296bcdc75",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "sha256": "727c076a35c1143c5958a3c3fcd2668c3241d9e5c57db228fcf848cc48c741d4",
+      "tested_worktree_sha256": "727c076a35c1143c5958a3c3fcd2668c3241d9e5c57db228fcf848cc48c741d4",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+      "sha256": "2eddaf1d6bbee86ffcec3578e2715e7e54a233278572e417b2216a6f08376643",
+      "tested_worktree_sha256": "2eddaf1d6bbee86ffcec3578e2715e7e54a233278572e417b2216a6f08376643",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/helpers/yxx-ss-007-acceptance-fixture.mjs",
+      "sha256": "5521d50cd1ea343c8bdb713cb422edb2bdc08642a51dfe338d460feec0b317bc",
+      "tested_worktree_sha256": "5521d50cd1ea343c8bdb713cb422edb2bdc08642a51dfe338d460feec0b317bc",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+      "sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "tested_worktree_sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_bootstrap.schema.json",
+      "sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "tested_worktree_sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_contracts.d.ts",
+      "sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "tested_worktree_sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-contract-freeze.md",
+      "sha256": "0cfc98453d62b73deeef26fe398f1af875bbfa6474fc06b4f2182b2a75420bca",
+      "tested_worktree_sha256": "0cfc98453d62b73deeef26fe398f1af875bbfa6474fc06b4f2182b2a75420bca",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-native-ui.md",
+      "sha256": "cdb2f4e282cfe89c37e3b2c44234d1493651079d2d580999438da7596470b3b0",
+      "tested_worktree_sha256": "cdb2f4e282cfe89c37e3b2c44234d1493651079d2d580999438da7596470b3b0",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service.openapi.yaml",
+      "sha256": "09141306ab4b9367468884a768ae55672d7d9cdcc3d6c3ee02f891469500cd15",
+      "tested_worktree_sha256": "09141306ab4b9367468884a768ae55672d7d9cdcc3d6c3ee02f891469500cd15",
+      "relation": "IDENTICAL"
+    }
+  ],
+  "validation": {
+    "command": "node --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-001-homepage-oauth.test.mjs tests/yxx-ss-002-contract.test.mjs tests/yxx-ss-007-*.test.mjs",
+    "tests": 35,
+    "pass": 35,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "tap": {
+      "path": "evidence/yxx-ss-007-response-v11-passed.tap",
+      "sha256": "0537f74d91f359e5bbbb42cb31b1f256f7a9320a3312d1747906b5792705af8c",
+      "tested_worktree_sha256": "0537f74d91f359e5bbbb42cb31b1f256f7a9320a3312d1747906b5792705af8c",
+      "relation": "IDENTICAL"
+    },
+    "scope": "Homepage, contracts and all SS-007 HTTP/browser tests"
+  },
+  "parent_validation": "evidence/yxx-ss-007-cookie-v10-report.json",
+  "review_fixes": [
+    "Malformed successful POST bodies preserve pending UUID and GET-only recovery",
+    "Validate complete receipt, command identity, supplement request identity and internal navigation before forgetting pending command",
+    "Validate command-status receipt before clearing recovery fence",
+    "Declare native-page bounded OAuth 302 and terminal member 403 responses"
+  ],
+  "limitations": [
+    "PageTransitionEvent and document.hidden tests use deterministic browser seams, not real operating-system BFCache proof",
+    "Historical 498/500 list failure remains UNREPRODUCED; original and same-second diagnostic traversals now pass",
+    "SS-008 real DB/HTTP/workbench assembly and SS-009 full regression are not yet run",
+    "External current-commit review remains pending",
+    "Prior v5 browser cleanup failure remains UNREPRODUCED despite current successful cleanup"
+  ],
+  "live": {
+    "oauth": "NOT_RUN",
+    "sdk": "NOT_RUN",
+    "production_db": "NOT_RUN",
+    "send": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "SS011": "NOT_AUTHORIZED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "BLOCKED"
+  }
+}

@@ -1,0 +1,110 @@
+TAP version 13
+# Subtest: SS-001 fixed homepage performs one bounded OAuth round trip and returns to the bare root
+ok 1 - SS-001 fixed homepage performs one bounded OAuth round trip and returns to the bare root
+  ---
+  duration_ms: 45.3784
+  type: 'test'
+  ...
+# Subtest: SS-001 already authenticated and unusable cookies never begin a second OAuth flow
+ok 2 - SS-001 already authenticated and unusable cookies never begin a second OAuth flow
+  ---
+  duration_ms: 41.7973
+  type: 'test'
+  ...
+# Subtest: SS-001 callback/provider errors terminate with a safe error page and no redirect loop
+ok 3 - SS-001 callback/provider errors terminate with a safe error page and no redirect loop
+  ---
+  duration_ms: 7.0728
+  type: 'test'
+  ...
+# Subtest: SS-001 natural session expiry can recover only after the browser drops the expired cookie
+ok 4 - SS-001 natural session expiry can recover only after the browser drops the expired cookie
+  ---
+  duration_ms: 23.9008
+  type: 'test'
+  ...
+# Subtest: SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect
+ok 5 - SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect
+  ---
+  duration_ms: 47.2316
+  type: 'test'
+  ...
+# Subtest: SS-002 closed schemas reject identity and operational authority fields
+ok 6 - SS-002 closed schemas reject identity and operational authority fields
+  ---
+  duration_ms: 7.4198
+  type: 'test'
+  ...
+# Subtest: SS-002 both OpenAPI documents expose the same seven YXX operation references
+ok 7 - SS-002 both OpenAPI documents expose the same seven YXX operation references
+  ---
+  duration_ms: 3.1394
+  type: 'test'
+  ...
+# Subtest: SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY
+ok 8 - SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY
+  ---
+  duration_ms: 0.7574
+  type: 'test'
+  ...
+# Subtest: SS-007 native factory accepts only the OAuth callback session cookie
+ok 9 - SS-007 native factory accepts only the OAuth callback session cookie
+  ---
+  duration_ms: 1.2782
+  type: 'test'
+  ...
+# Subtest: SS-007 dependency failures remain terminal service or permission failures
+ok 10 - SS-007 dependency failures remain terminal service or permission failures
+  ---
+  duration_ms: 127.7069
+  type: 'test'
+  ...
+# Subtest: SS-007 JSON bodies reject duplicate decoded keys before commands
+ok 11 - SS-007 JSON bodies reject duplicate decoded keys before commands
+  ---
+  duration_ms: 76.4947
+  type: 'test'
+  ...
+# Subtest: SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+ok 12 - SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+  ---
+  duration_ms: 46.0951
+  type: 'test'
+  ...
+# Subtest: SS-007 direct detail pages enforce ownership before rendering the shell
+ok 13 - SS-007 direct detail pages enforce ownership before rendering the shell
+  ---
+  duration_ms: 46.6849
+  type: 'test'
+  ...
+# Subtest: SS-007 detail rejects an oversized If-None-Match before query dispatch
+ok 14 - SS-007 detail rejects an oversized If-None-Match before query dispatch
+  ---
+  duration_ms: 3.6508
+  type: 'test'
+  ...
+# Subtest: SS-007 report source filters reject explicit empty and unknown values before querying
+ok 15 - SS-007 report source filters reject explicit empty and unknown values before querying
+  ---
+  duration_ms: 104.69
+  type: 'test'
+  ...
+# Subtest: SS-007 timeline rejects an explicitly empty cursor before querying
+ok 16 - SS-007 timeline rejects an explicitly empty cursor before querying
+  ---
+  duration_ms: 5.4278
+  type: 'test'
+  ...
+# Subtest: SS-007 write routes reject unknown query parameters before invoking commands
+ok 17 - SS-007 write routes reject unknown query parameters before invoking commands
+  ---
+  duration_ms: 72.3329
+  type: 'test'
+  ...
+# Subtest: SS-007 logout rejects unknown query and body fields without clearing sessions
+ok 18 - SS-007 logout rejects unknown query and body fields without clearing sessions
+  ---
+  duration_ms: 77.9549
+  type: 'test'
+  ...
+# Subtest: SS-007 a new tab in 

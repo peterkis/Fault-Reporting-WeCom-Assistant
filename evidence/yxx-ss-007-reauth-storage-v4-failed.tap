@@ -1,0 +1,211 @@
+TAP version 13
+# Subtest: SS-001 fixed homepage performs one bounded OAuth round trip and returns to the bare root
+ok 1 - SS-001 fixed homepage performs one bounded OAuth round trip and returns to the bare root
+  ---
+  duration_ms: 93.7505
+  type: 'test'
+  ...
+# Subtest: SS-001 already authenticated and unusable cookies never begin a second OAuth flow
+ok 2 - SS-001 already authenticated and unusable cookies never begin a second OAuth flow
+  ---
+  duration_ms: 71.2414
+  type: 'test'
+  ...
+# Subtest: SS-001 callback/provider errors terminate with a safe error page and no redirect loop
+ok 3 - SS-001 callback/provider errors terminate with a safe error page and no redirect loop
+  ---
+  duration_ms: 14.8847
+  type: 'test'
+  ...
+# Subtest: SS-001 natural session expiry can recover only after the browser drops the expired cookie
+ok 4 - SS-001 natural session expiry can recover only after the browser drops the expired cookie
+  ---
+  duration_ms: 34.6389
+  type: 'test'
+  ...
+# Subtest: SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect
+ok 5 - SS-001 fully disabled cookies, wrong state, member 403, and POST paths terminate without redirect
+  ---
+  duration_ms: 48.1319
+  type: 'test'
+  ...
+# Subtest: SS-002 closed schemas reject identity and operational authority fields
+ok 6 - SS-002 closed schemas reject identity and operational authority fields
+  ---
+  duration_ms: 16.3322
+  type: 'test'
+  ...
+# Subtest: SS-002 both OpenAPI documents expose the same seven YXX operation references
+ok 7 - SS-002 both OpenAPI documents expose the same seven YXX operation references
+  ---
+  duration_ms: 10.2177
+  type: 'test'
+  ...
+# Subtest: SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY
+ok 8 - SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY
+  ---
+  duration_ms: 2.7333
+  type: 'test'
+  ...
+# Subtest: SS-007 dependency failures remain terminal service or permission failures
+ok 9 - SS-007 dependency failures remain terminal service or permission failures
+  ---
+  duration_ms: 123.4153
+  type: 'test'
+  ...
+# Subtest: SS-007 JSON bodies reject duplicate decoded keys before commands
+ok 10 - SS-007 JSON bodies reject duplicate decoded keys before commands
+  ---
+  duration_ms: 89.2958
+  type: 'test'
+  ...
+# Subtest: SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+ok 11 - SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+  ---
+  duration_ms: 46.9257
+  type: 'test'
+  ...
+# Subtest: SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence
+not ok 12 - SS-007 same-browser tabs keep form input and accepted request references isolated and capture responsive evidence
+  ---
+  duration_ms: 31817.202
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui-acceptance.browser.test.mjs:109:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:128:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: SS-007 status copy is exercised through browser responses for 429, 409, 401 and 503
+ok 13 - SS-007 status copy is exercised through browser responses for 429, 409, 401 and 503
+  ---
+  duration_ms: 606.9513
+  type: 'test'
+  ...
+# Subtest: SS-007 supplement conflict refreshes the revision while retaining the draft without an automatic POST
+ok 14 - SS-007 supplement conflict refreshes the revision while retaining the draft without an automatic POST
+  ---
+  duration_ms: 465.9502
+  type: 'test'
+  ...
+# Subtest: SS-007 does not accept a new detail ETag when the paired timeline request fails
+not ok 15 - SS-007 does not accept a new detail ETag when the paired timeline request fails
+  ---
+  duration_ms: 313.5514
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui-acceptance.browser.test.mjs:190:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + null
+    - '"CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC-1"'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '"CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC-1"'
+  actual: ~
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs:200:10)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SS-007 synthetic page lifecycle rejects a late detail response and UI logout clears browser state
+ok 16 - SS-007 synthetic page lifecycle rejects a late detail response and UI logout clears browser state
+  ---
+  duration_ms: 597.8246
+  type: 'test'
+  ...
+# Subtest: SS-007 refreshed member CSRF survives clearing the previous form
+ok 17 - SS-007 refreshed member CSRF survives clearing the previous form
+  ---
+  duration_ms: 1469.5358
+  type: 'test'
+  ...
+# Subtest: SS-007 visibility bootstrap hides member data before slow and failed revalidation
+ok 18 - SS-007 visibility bootstrap hides member data before slow and failed revalidation
+  ---
+  duration_ms: 3434.0165
+  type: 'test'
+  ...
+# Subtest: SS-007 unavailable session storage blocks new POST commands
+ok 19 - SS-007 unavailable session storage blocks new POST commands
+  ---
+  duration_ms: 3085.1915
+  type: 'test'
+  ...
+# Subtest: SS-007 v2 recovery scope clears a different member fence after a full reload
+ok 20 - SS-007 v2 recovery scope clears a different member fence after a full reload
+  ---
+  duration_ms: 1830.0254
+  type: 'test'
+  ...
+# Subtest: SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET only
+ok 21 - SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and uses GET only
+  ---
+  duration_ms: 1991.0392
+  type: 'test'
+  ...
+# Subtest: SS-007 synthetic visibility restore reloads cleared detail, bounds an endless timeline, and reloads the first list page
+ok 22 - SS-007 synthetic visibility restore reloads cleared detail, bounds an endless timeline, and reloads the first list page
+  ---
+  duration_ms: 3437.6588
+  type: 'test'
+  ...
+# Subtest: SS-007 detail and timeline 404 clear rendered state and stop polling
+ok 23 - SS-007 detail and timeline 404 clear rendered state and stop polling
+  ---
+  duration_ms: 4119.3561
+  type: 'test'
+  ...
+# Subtest: SS-007 pending recovery stays GET-only, survives 404, and is discarded on an in-memory identity change
+ok 24 - SS-007 pending recovery stays GET-only, survives 404, and is discarded on an in-memory identity change
+  ---
+  duration_ms: 2933.7704
+  type: 'test'
+  ...
+# Subtest: SS-007 pending recovery retries only GET, then requires an explicit bounded restart
+ok 25 - SS-007 pending recovery retries only GET, then requires an explicit bounded restart
+  ---
+  duration_ms: 13882.3265
+  type: 'test'
+  ...
+# Subtest: SS-007 logout clears member DOM and timers before a hanging response
+ok 26 - SS-007 logout clears member DOM and timers before a hanging response
+  ---
+  duration_ms: 2833.5951
+  type: 'test'
+  ...
+# Subtest: SS-007 a stale unauthorized response cannot clear the newer member operation
+ok 27 - SS-007 a stale unauthorized response cannot clear the newer member operation
+  ---
+  duration_ms: 1730.7638
+  type: 'test'
+  ...
+# Subtest: SS-007 native HTTP keeps the fixed homepage gate and closed API boundary
+ok 28 - SS-007 native HTTP keeps the fixed homepage gate and closed API boundary
+  ---
+  duration_ms: 196.6195
+  type: 'test'
+  ...
+# Subtest: SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated
+ok 29 - SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated
+  ---
+  duration_ms: 7557.9403
+  type: 'test'
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 27
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 84517.401

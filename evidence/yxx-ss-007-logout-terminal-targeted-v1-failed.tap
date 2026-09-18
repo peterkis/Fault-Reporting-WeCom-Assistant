@@ -1,0 +1,43 @@
+TAP version 13
+# Subtest: SS-007 synthetic page lifecycle rejects a late detail response and logout reaches a terminal page
+ok 1 - SS-007 synthetic page lifecycle rejects a late detail response and logout reaches a terminal page
+  ---
+  duration_ms: 1248.8185
+  type: 'test'
+  ...
+# Subtest: SS-007 logout timeout keeps an opaque recovery fence on a terminal page
+ok 2 - SS-007 logout timeout keeps an opaque recovery fence on a terminal page
+  ---
+  duration_ms: 2514.918
+  type: 'test'
+  ...
+# Subtest: SS-007 logout failure stays terminal and does not reopen member data
+ok 3 - SS-007 logout failure stays terminal and does not reopen member data
+  ---
+  duration_ms: 1128.7372
+  type: 'test'
+  ...
+# Subtest: SS-007 logout preserves an in-flight POST fence for same-member recovery and discards it for another member
+not ok 4 - SS-007 logout preserves an in-flight POST fence for same-member recovery and discards it for another member
+  ---
+  duration_ms: 30947.0757
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-007-native-ui.browser.test.mjs:640:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_006_BROWSER_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    waitFor (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:27:20)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-007-native-ui.browser.test.mjs:647:7)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 3
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 36833.0344

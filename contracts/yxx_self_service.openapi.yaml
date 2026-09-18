@@ -18,6 +18,7 @@ paths:
       security: [{WeComMember: []}]
       responses:
         '200': {description: 'Member-safe capabilities and CSRF token', content: {application/json: {schema: {$ref: './yxx_self_service_bootstrap.schema.json'}}}}
+        '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '503': {$ref: '#/components/responses/Unavailable'}
@@ -55,6 +56,7 @@ paths:
         '200': {description: 'Member-owned Web Requests and authorized Bot Tickets', content: {application/json: {schema: {$ref: './yxx_self_service_report_page.schema.json'}}}}
         '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/requests/{request_ref}:
     servers: [{url: /}]
@@ -67,7 +69,9 @@ paths:
       responses:
         '200': {description: 'Member-safe request detail', content: {application/json: {schema: {$ref: './yxx_self_service_request_detail.schema.json'}}}}
         '304': {description: 'Authorized unchanged representation'}
+        '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/requests/{request_ref}/timeline:
@@ -85,6 +89,7 @@ paths:
         '200': {description: 'Member-safe timeline without internal notes or identity', content: {application/json: {schema: {$ref: './yxx_self_service_timeline.schema.json'}}}}
         '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/requests/{request_ref}/supplements:
@@ -107,6 +112,8 @@ paths:
         '404': {$ref: '#/components/responses/NotFound'}
         '409': {$ref: '#/components/responses/Conflict'}
         '413': {$ref: '#/components/responses/TooLarge'}
+        '415': {$ref: '#/components/responses/Invalid'}
+        '429': {$ref: '#/components/responses/Busy'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/commands/{client_command_id}:
     servers: [{url: /}]
@@ -117,7 +124,9 @@ paths:
         - {in: path, name: client_command_id, required: true, schema: {type: string, format: uuid}}
       responses:
         '200': {description: 'Current member-owned command receipt', content: {application/json: {schema: {$ref: './yxx_self_service_receipt.schema.json'}}}}
+        '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /wecom/yixiaoxiu/:
@@ -127,16 +136,16 @@ paths:
       security: [{}, {WeComMember: []}]
       description: 'The fixed homepage. It retains the existing prompt when the self-service profile or flags are disabled.'
       parameters: [{in: query, name: auth_return, schema: {type: string, const: '1'}, description: 'Internal one-use return marker; no identity or authorization data.'}]
-      responses: {'200': {description: 'Prompt or self-service home'}, '302': {description: 'One bounded OAuth begin'}, '303': {description: 'Normalize the exact auth_return marker to the bare root'}, '401': {description: 'Terminal authentication prompt'}, '503': {description: 'Fail closed'}}
+      responses: {'200': {description: 'Prompt or self-service home'}, '302': {description: 'One bounded OAuth begin'}, '303': {description: 'Normalize the exact auth_return marker to the bare root'}, '401': {description: 'Terminal authentication prompt'}, '403': {description: 'Member permission denied'}, '503': {description: 'Fail closed'}}
   /wecom/yixiaoxiu/reports/new:
     servers: [{url: /}]
-    get: {operationId: openYxxNewReport, security: [{WeComMember: []}], responses: {'200': {description: 'Native form'}, '401': {description: 'Authentication required'}, '503': {description: 'Disabled'}}}
+    get: {operationId: openYxxNewReport, security: [{WeComMember: []}], responses: {'200': {description: 'Native form'}, '302': {description: 'Bounded OAuth begin; returns to the fixed homepage'}, '401': {description: 'Authentication required'}, '403': {description: 'Member permission denied'}, '503': {description: 'Disabled'}}}
   /wecom/yixiaoxiu/reports:
     servers: [{url: /}]
-    get: {operationId: openYxxReports, security: [{WeComMember: []}], responses: {'200': {description: 'Native member report list'}, '401': {description: 'Authentication required'}, '503': {description: 'Disabled'}}}
+    get: {operationId: openYxxReports, security: [{WeComMember: []}], responses: {'200': {description: 'Native member report list'}, '302': {description: 'Bounded OAuth begin; returns to the fixed homepage'}, '401': {description: 'Authentication required'}, '403': {description: 'Member permission denied'}, '503': {description: 'Disabled'}}}
   /wecom/yixiaoxiu/reports/{request_ref}:
     servers: [{url: /}]
-    get: {operationId: openYxxReport, security: [{WeComMember: []}], parameters: [{ $ref: '#/components/parameters/RequestRef'}], responses: {'200': {description: 'Native safe detail'}, '401': {description: 'Authentication required'}, '404': {description: 'Not found or not owned'}, '503': {description: 'Disabled'}}}
+    get: {operationId: openYxxReport, security: [{WeComMember: []}], parameters: [{ $ref: '#/components/parameters/RequestRef'}], responses: {'200': {description: 'Native safe detail'}, '302': {description: 'Bounded OAuth begin; returns to the fixed homepage'}, '401': {description: 'Authentication required'}, '403': {description: 'Member permission denied'}, '404': {description: 'Not found or not owned'}, '503': {description: 'Disabled'}}}
 components:
   securitySchemes:
     WeComMember: {type: apiKey, in: cookie, name: __Host-wecom_session}

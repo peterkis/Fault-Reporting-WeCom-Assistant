@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: SS-005 authorization denies OAUTH_ONLY before touching the database and fences identity changes
+ok 1 - SS-005 authorization denies OAUTH_ONLY before touching the database and fences identity changes
+  ---
+  duration_ms: 2.7494
+  type: 'test'
+  ...
+# Subtest: SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail
+ok 2 - SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail
+  ---
+  duration_ms: 3943.0619
+  type: 'test'
+  ...
+# Subtest: SS-005 traverses a 500-row mixed snapshot without loss or duplication
+ok 3 - SS-005 traverses a 500-row mixed snapshot without loss or duplication
+  ---
+  duration_ms: 6042.8084
+  type: 'test'
+  ...
+# Subtest: SS-005 extends aggregate retention for a late accepted supplement
+ok 4 - SS-005 extends aggregate retention for a late accepted supplement
+  ---
+  duration_ms: 2952.2084
+  type: 'test'
+  ...
+# Subtest: SS-006 accepts ordered supplements, replays idempotently, and fences concurrent stale versions
+ok 5 - SS-006 accepts ordered supplements, replays idempotently, and fences concurrent stale versions
+  ---
+  duration_ms: 3009.9594
+  type: 'test'
+  ...
+# Subtest: SS-006 preserves review history across both resolution orders and keeps one Ticket
+ok 6 - SS-006 preserves review history across both resolution orders and keeps one Ticket
+  ---
+  duration_ms: 6665.9915
+  type: 'test'
+  ...
+# Subtest: SS-006 reuses Ticket supplements, rejects closed or revoked roots, and survives processing restart
+ok 7 - SS-006 reuses Ticket supplements, rejects closed or revoked roots, and survives processing restart
+  ---
+  duration_ms: 4387.7176
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 27460.7718

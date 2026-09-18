@@ -1,0 +1,225 @@
+{
+  "task": "YXX-SS-007",
+  "status": "LOCAL_VALIDATION_COMPLETE_REVIEW_PENDING",
+  "event_time": "2026-09-17 16:05:29",
+  "event_epoch_ms": "1789632329876",
+  "base_head": "96c120b17f0e8b912bf8e70d5279424e31f8596d",
+  "tested_head": "f5536f03fd47b168350b37dbc69408ac5f6ea545",
+  "tested_tree": "dafa88da014789e3dd55872c543a2ba5b72b632e",
+  "source_binding": "Git blob SHA-256 binds the implementation commit; tested_worktree_sha256 binds the executed working-tree bytes. Differences are classified as CRLF-to-LF normalization or rejected.",
+  "source_files": [
+    {
+      "path": "src/yxx-self-service-native-http.mjs",
+      "sha256": "523e4b2b6290872c148aa3643cbdc8d6844b6f39196d58430f7b808c17836845",
+      "tested_worktree_sha256": "523e4b2b6290872c148aa3643cbdc8d6844b6f39196d58430f7b808c17836845",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.js",
+      "sha256": "205ac7633293ac9692e33bc032618ac9f5bbc6e62ddb248e29a97b5c6834d12a",
+      "tested_worktree_sha256": "089e986c8eb0d3e8bf513b2873046dfd9deeabe4127ff075f12c48b359d8f097",
+      "relation": "CRLF_TO_LF_ONLY"
+    },
+    {
+      "path": "web/p2-reporter/self-service.html",
+      "sha256": "f98168469f717aeb5bc149d01232174013cbf9c845fed274dc116fb7c74533a1",
+      "tested_worktree_sha256": "f98168469f717aeb5bc149d01232174013cbf9c845fed274dc116fb7c74533a1",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "web/p2-reporter/self-service.css",
+      "sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "tested_worktree_sha256": "ca519c95f20a5d2cebeac13c44cfce65bc4708da2ffce01f247c750597356f5b",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+      "sha256": "2a8cfc67300ec988d711d79737607f74997076e0fd749c5ac3832dbb374f944c",
+      "tested_worktree_sha256": "2a8cfc67300ec988d711d79737607f74997076e0fd749c5ac3832dbb374f944c",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-002-contract.test.mjs",
+      "sha256": "79ae954923c845eab5ff7d70a210a4fc010c1fca138317fcf151ea34950cc1e2",
+      "tested_worktree_sha256": "79ae954923c845eab5ff7d70a210a4fc010c1fca138317fcf151ea34950cc1e2",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-005-member-queries.integration.test.mjs",
+      "sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "tested_worktree_sha256": "08cc50e02770ed7ca2daf2aa086ab7e0c8dbc27515da91d1b968a93aeca79c29",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+      "sha256": "ac89fdcb56f85d293a741037e43fa13a530c47792946f9498e88148aedcd0478",
+      "tested_worktree_sha256": "ac89fdcb56f85d293a741037e43fa13a530c47792946f9498e88148aedcd0478",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-http-errors.test.mjs",
+      "sha256": "ff06bd13c540a7c59ab7261ffee21f9464c3b045324325948eb4b59367966304",
+      "tested_worktree_sha256": "ff06bd13c540a7c59ab7261ffee21f9464c3b045324325948eb4b59367966304",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "sha256": "7d12778d4ebbab28ecc25d93cefd4d1c0f85e421995d0ccbe61f30c2ff523347",
+      "tested_worktree_sha256": "7d12778d4ebbab28ecc25d93cefd4d1c0f85e421995d0ccbe61f30c2ff523347",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs",
+      "sha256": "7a8f439725b08a59a3527d38384fa48ecf64f7b4c48d7c0c2404ea805f4178c1",
+      "tested_worktree_sha256": "7a8f439725b08a59a3527d38384fa48ecf64f7b4c48d7c0c2404ea805f4178c1",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "tests/helpers/yxx-ss-007-acceptance-fixture.mjs",
+      "sha256": "39b82a0cd89e764b1a45b48cd4f130afd7fb0ec1db1fee4b560f2e99168a64e7",
+      "tested_worktree_sha256": "39b82a0cd89e764b1a45b48cd4f130afd7fb0ec1db1fee4b560f2e99168a64e7",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_bootstrap.schema.json",
+      "sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "tested_worktree_sha256": "e84f2b6c2b150b9426dd76defe56690091544942a8868a7161e3f9d0bc1111a4",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_contracts.d.ts",
+      "sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "tested_worktree_sha256": "de84808af2fb75c7bbed618273dc37e73d8373049cc93a77b26c46c794c62b0d",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "contracts/yxx_self_service_request.schema.json",
+      "sha256": "62c53fa4b8ecc562231397e3f0b7e5441bdc02200e46d1977bff6b70ba8e6490",
+      "tested_worktree_sha256": "62c53fa4b8ecc562231397e3f0b7e5441bdc02200e46d1977bff6b70ba8e6490",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-contract-freeze.md",
+      "sha256": "bb78234fb92d3a0afd508cbe05419de881d1911fcc48080d3c470072c556b460",
+      "tested_worktree_sha256": "bb78234fb92d3a0afd508cbe05419de881d1911fcc48080d3c470072c556b460",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "docs/runbooks/yixiaoxiu-self-service-native-ui.md",
+      "sha256": "20d1a90640e4bfdfb004854072c58f67a0204186d272895dbdac8ec16cc0e616",
+      "tested_worktree_sha256": "20d1a90640e4bfdfb004854072c58f67a0204186d272895dbdac8ec16cc0e616",
+      "relation": "IDENTICAL"
+    },
+    {
+      "path": "plans/yxx-self-service-ticket-plan.json",
+      "sha256": "8a2178e142758aae9ae56c53266e7c04897137114f28b5541589accd23331be2",
+      "tested_worktree_sha256": "8a2178e142758aae9ae56c53266e7c04897137114f28b5541589accd23331be2",
+      "relation": "IDENTICAL"
+    }
+  ],
+  "validation": {
+    "scope": "LOCAL_HTTP_BROWSER_CONTRACT_AND_ISOLATED_POSTGRES",
+    "aggregate": {
+      "tests": 57,
+      "pass": 57,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "exit_code": 0
+    },
+    "suites": [
+      {
+        "name": "SS-001 + SS-002 + SS-007",
+        "command": "node --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-001-homepage-oauth.test.mjs tests/yxx-ss-002-contract.test.mjs tests/yxx-ss-007-*.test.mjs",
+        "tests": 50,
+        "pass": 50,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "exit_code": 0,
+        "tap": {
+          "path": "evidence/yxx-ss-007-current-readiness-v23-passed.tap",
+          "sha256": "12fbc9c224e2a6992474c9b9184a7dd0a47d9b70effb438ae79cda402a29da04",
+          "bytes": 12339
+        }
+      },
+      {
+        "name": "SS-005 + SS-006",
+        "command": "node --env-file=.env.pilot --test --test-reporter=tap --test-concurrency=1 tests/yxx-ss-005-member-queries.integration.test.mjs tests/yxx-ss-006-supplements-review.integration.test.mjs",
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "exit_code": 0,
+        "tap": {
+          "path": "evidence/yxx-ss-005-006-v23-passed.tap",
+          "sha256": "c9f6b2d30a82a9d3e67172d7b9ecc4f9185373b57e48d6920a62d3ab0a94f2a3",
+          "bytes": 1850
+        },
+        "database": "isolated_local_postgresql",
+        "production_database": "NOT_RUN"
+      }
+    ],
+    "syntax_checks": [
+      "node --check src/yxx-self-service-native-http.mjs",
+      "node --check web/p2-reporter/self-service.js"
+    ],
+    "diff_check": "PASS",
+    "post_test_runtime_changes": false
+  },
+  "review_fixes": [
+    "P2-01: restore in-memory drafts for the same recovery_scope across CSRF rotation; discard on scope change.",
+    "P2-02: separate 401 authentication-expired and 403 permission-denied UI/native-page messages without automatic OAuth for 403.",
+    "P2-03: reject query strings on both write routes before body parsing or business command invocation.",
+    "P2-04: enforce the durable recovery quota per valid v3 recovery_scope; ignore malformed or other-scope prefix records without deleting them.",
+    "P2-06: validate extension input in the browser and expose the matching HTML pattern."
+  ],
+  "current_readiness": {
+    "current_aggregate": "evidence/yxx-ss-007-current-readiness-v23.json",
+    "superseded_historical_aggregate": "evidence/yxx-ss-007-logout-broadcast-v22-report.json",
+    "yxx_ss_007": "IN_REVIEW",
+    "yxx_ss_008": "PLANNED"
+  },
+  "review": {
+    "local_delegation": {
+      "mode": "range",
+      "from": "96c120b17f0e8b912bf8e70d5279424e31f8596d",
+      "to": "f5536f03fd47b168350b37dbc69408ac5f6ea545",
+      "reviewable_files": 5,
+      "excluded_files": 0,
+      "coverage_rate": 1,
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "result": "NO_CRITICAL_HIGH_MEDIUM_FINDINGS"
+    },
+    "external_current_head": "LIMIT_REACHED",
+    "external_requested_head": "4d2c6cf94eaa4ea51c74c9065e305b8066d4c1c9",
+    "external_review_record": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/17#issuecomment-5711150718",
+    "github_checks": "UNAVAILABLE_OR_NOT_REPORTED"
+  },
+  "security_boundaries": [
+    "MEMBER_TICKET_READONLY remains business read-only; no write flag is enabled by this candidate.",
+    "No Bot message, chat Session, Direct Leg, real OAuth/SDK call, production database, SSH, send, deployment, SS-011, P2-G2-LIVE or P2-008.",
+    "Durable records remain opaque UUID plus recovery_scope; other-scope records are retained."
+  ],
+  "limitations": [
+    "Browser visibility/BFCache checks use deterministic local seams, not operating-system backgrounding proof.",
+    "External current-head Code Review was requested for e5a47d9, but the connector reported the Codex code-review usage limit; this report does not claim remote review passed.",
+    "SS-008 assembly, SS-009 regression and live validation remain outside this candidate."
+  ],
+  "live": {
+    "oauth": "NOT_RUN",
+    "sdk": "NOT_RUN",
+    "production_db": "NOT_RUN",
+    "send": "NOT_RUN",
+    "deploy": "NOT_RUN",
+    "SS011": "NOT_AUTHORIZED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "BLOCKED"
+  }
+}

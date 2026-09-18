@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: SS-007 native factory accepts only the OAuth callback session cookie
+ok 1 - SS-007 native factory accepts only the OAuth callback session cookie
+  ---
+  duration_ms: 1.4372
+  type: 'test'
+  ...
+# Subtest: SS-007 dependency failures remain terminal service or permission failures
+ok 2 - SS-007 dependency failures remain terminal service or permission failures
+  ---
+  duration_ms: 108.5185
+  type: 'test'
+  ...
+# Subtest: SS-007 JSON bodies reject duplicate decoded keys before commands
+ok 3 - SS-007 JSON bodies reject duplicate decoded keys before commands
+  ---
+  duration_ms: 50.6896
+  type: 'test'
+  ...
+# Subtest: SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+ok 4 - SS-007 recovery scope is stable across CSRF rotation and separates protected member scopes
+  ---
+  duration_ms: 45.9753
+  type: 'test'
+  ...
+# Subtest: SS-007 direct detail pages enforce ownership before rendering the shell
+ok 5 - SS-007 direct detail pages enforce ownership before rendering the shell
+  ---
+  duration_ms: 37.5456
+  type: 'test'
+  ...
+# Subtest: SS-007 report source filters reject explicit empty and unknown values before querying
+ok 6 - SS-007 report source filters reject explicit empty and unknown values before querying
+  ---
+  duration_ms: 99.0461
+  type: 'test'
+  ...
+# Subtest: SS-007 logout rejects unknown query and body fields without clearing sessions
+ok 7 - SS-007 logout rejects unknown query and body fields without clearing sessions
+  ---
+  duration_ms: 64.1733
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 502.4976
