@@ -7,7 +7,7 @@ import { createYxxProfile } from '../src/p2-g2-yixiaoxiu-profile.mjs';
 import { createWeComWebOAuth } from '../src/p2-g2-wecom-web-oauth.mjs';
 import { createYxxDelegatedIdentityMapping } from '../src/p2-g2-yixiaoxiu-delegated-identity.mjs';
 import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.mjs';
-import { migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
+import { migrateCurrentBaseline, migrateCurrentBaselineWithYxx } from '../scripts/migrate-current-baseline.mjs';
 import { withP2016IsolatedDatabase, assertNoP2016Residual } from './helpers/p2-016-postgres-harness.mjs';
 import { createPilotWorkbenchAuthorizationAdapter } from '../src/p2-006-workbench-authorization.mjs';
 import { listAuthorizedRealtimeEvents, normalizeRealtimeAuthorization } from '../src/p2-003-realtime-event-log.mjs';
@@ -47,6 +47,44 @@ const input=description=>({schema_version:1,client_command_id:randomUUID(),descr
 const post=(body,csrf)=>({method:'POST',body,headers:{origin,'content-type':'application/json','x-csrf-token':csrf,'idempotency-key':body.client_command_id,
   ...((body.expected_version??body.expected_row_version)!==undefined?{'if-match':'"'+(body.expected_version??body.expected_row_version)+'"'}:{})}});
 async function eventually(run){for(let i=0;i<100;i++){const value=await run();if(value)return value;await new Promise(r=>setTimeout(r,50));}throw Error('SS008_WAIT_FAILED');}
+
+test('SS-008 FULL readiness requires both Web migrations only when the extension is mounted', {timeout:180000},async()=>{
+  const databaseUrl=process.env.PILOT_DATABASE_URL;
+  assert.ok(databaseUrl,'isolated PostgreSQL configuration required');
+  assert.ok(['localhost','127.0.0.1','[::1]'].includes(new URL(databaseUrl).hostname));
+  await withP2016IsolatedDatabase({databaseUrl,purpose:'ss008ready',run:async({pool,databaseUrl:isolated})=>{
+    await migrateCurrentBaseline({databaseUrl:isolated});
+    const principal=await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'ss008-ready-admin',displayName:'Synthetic readiness',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+    const identityMapping=await mapping();
+    const create=yxxSelfService=>createYxxProfile({profile:'FULL_SERVICE_LOOP',pool,publicOrigin:origin,
+      reporterPolicy:'MEMBER_REQUIRED',reporterMemberEntry:config,identityMapping,reporterHmacSecret:secret,
+      principalId:principal.id,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true},
+      wecomWebOAuth:oauthOptions,yxxSelfService});
+    let runtime=create(null);
+    try{
+      await runtime.start();
+      const legacy=await browser(runtime.server).request('/health/ready');assert.equal(legacy.status,200,legacy.text);
+      await runtime.stop();runtime=create({featureFlags:flags});await runtime.start();
+      const missing=await browser(runtime.server).request('/health/ready');assert.equal(missing.status,503,missing.text);
+      assert.equal(missing.json().base_service_ready,false);assert.equal(missing.json().checks.yxx_self_service_schema,false);
+      await runtime.stop();
+      await migrateCurrentBaselineWithYxx({databaseUrl:isolated});
+      runtime=create({featureFlags:flags});await runtime.start();
+      const client=browser(runtime.server);
+      const ready=await client.request('/health/ready');assert.equal(ready.status,200,ready.text);
+      assert.equal(ready.json().checks.yxx_self_service_schema,true);
+      for(const id of ['033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check']){
+        await pool.query('UPDATE platform.schema_migration SET migration_id=$2 WHERE migration_id=$1',[id,id+'_ss008_missing']);
+        try{
+          const response=await client.request('/health/ready');assert.equal(response.status,503,response.text);
+          assert.equal(response.json().base_service_ready,false);assert.equal(response.json().checks.yxx_self_service_schema,false);
+        }finally{await pool.query('UPDATE platform.schema_migration SET migration_id=$1 WHERE migration_id=$2',[id,id+'_ss008_missing']);}
+        assert.equal((await client.request('/health/ready')).status,200);
+      }
+    }finally{await runtime.stop();}
+  }});
+  await assertNoP2016Residual({databaseUrl});
+});
 
 test('SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads', {timeout:180000},async()=>{
   const databaseUrl=process.env.PILOT_DATABASE_URL;

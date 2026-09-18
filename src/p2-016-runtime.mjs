@@ -85,8 +85,15 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
         readiness:async base=>{
           let schema=false;try{schema=(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='031_p2_016_ticket_lifecycle_workbench_notifications'")).rowCount===1;}catch{/* dependency stays not ready */}
           const incidentReady=incidentExtension?await incidentExtension.ready():true;
-          return {ok:base.ok&&schema&&incidentReady,base_service_ready:base.ok&&schema&&incidentReady,ai_enhancement_ready:false,ai_enabled:false,
-            checks:{...base.checks,p2_016_schema:schema},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
+          let selfServiceSchema=true;
+          if(selfService){
+            try{selfServiceSchema=(await pool.query(`SELECT migration_id FROM platform.schema_migration
+              WHERE migration_id IN ('033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check')`)).rowCount===2;}
+            catch{selfServiceSchema=false;}
+          }
+          const ready=base.ok&&schema&&incidentReady&&selfServiceSchema;
+          return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
+            checks:{...base.checks,p2_016_schema:schema,...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
         authenticatedHandler:async context=>(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
         unauthenticatedHandler:async context=>(await selfService?.handler(context))||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),

@@ -24,6 +24,12 @@ flags, and invokes the same processor through the existing Worker extension.
 App/Worker/Gateway pools stay 4/2/1; the existing controller pool is separate.
 The Gateway receives no Web flags. No new long-running service is introduced.
 
+When FULL mounts the self-service extension, `/health/ready` also requires both
+`033_yxx_self_service_intake` and `034_yxx_self_service_direct_chat_check` in the
+schema migration ledger. A missing marker or failed schema query makes
+`checks.yxx_self_service_schema` and `base_service_ready` false (HTTP 503).
+FULL without this extension retains its original readiness requirements.
+
 Both persistent flags default false. To close writes while preserving approved
 reads, keep MY_REPORTS_ENABLED true and set SELF_SERVICE_ENABLED false in an
 explicitly authorized configuration. Bootstrap becomes read-only, Submit and
