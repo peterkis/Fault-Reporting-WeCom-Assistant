@@ -1,0 +1,71 @@
+{
+  "event_time": "2026-09-19 10:01:47",
+  "event_epoch_ms": "1789783307785",
+  "candidate_fingerprint": "e22a34540c8124520e1043c9278078c597ad5638ab31c7de8f9b8c6eb2cc58b4",
+  "review_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/19#discussion_r4051873403",
+  "review_metadata_commit": "921212ef07a78b5580a1e32df1e276f5cd674d13",
+  "comment_object_prefix": "cb0e0a88",
+  "github_lookup": {
+    "status": 422,
+    "message": "No commit found for SHA: cb0e0a88"
+  },
+  "github_compare": {
+    "ahead_by": 1,
+    "behind_by": 0,
+    "merge_base": "cb345012130ec741efaa7d7843f74fb56e845023",
+    "status": "ahead"
+  },
+  "independent_non_shallow_https_clone_checks": [
+    {
+      "event_time": "2026-09-19 10:01:35",
+      "event_epoch_ms": "1789783295082",
+      "head": "921212ef07a78b5580a1e32df1e276f5cd674d13",
+      "parents": [
+        "cb345012130ec741efaa7d7843f74fb56e845023"
+      ],
+      "merge_base": "cb345012130ec741efaa7d7843f74fb56e845023",
+      "exit_code": 0,
+      "result": {
+        "ok": true,
+        "status": "SS009_LOCAL_VERIFICATION_COMPLETE",
+        "candidate_fingerprint": "e22a34540c8124520e1043c9278078c597ad5638ab31c7de8f9b8c6eb2cc58b4",
+        "live_authorized": false,
+        "parent_gate_advanced": false
+      }
+    },
+    {
+      "event_time": "2026-09-19 10:01:43",
+      "event_epoch_ms": "1789783303272",
+      "head": "b24ca702bc967edeaff77cc7f82951077d76c19d",
+      "parents": [
+        "375d47b013017edb858206cc5f3475c9aed77dfd",
+        "921212ef07a78b5580a1e32df1e276f5cd674d13"
+      ],
+      "merge_base": "cb345012130ec741efaa7d7843f74fb56e845023",
+      "exit_code": 0,
+      "result": {
+        "ok": true,
+        "status": "SS009_LOCAL_VERIFICATION_COMPLETE",
+        "candidate_fingerprint": "e22a34540c8124520e1043c9278078c597ad5638ab31c7de8f9b8c6eb2cc58b4",
+        "live_authorized": false,
+        "parent_gate_advanced": false
+      }
+    }
+  ],
+  "disposition": "NOT_REPRODUCED_ON_PUBLISHED_HEAD_OR_MERGE_PREVIEW",
+  "conclusion": "Published HEAD has the tested commit as its direct parent. The different object cited by review could not be resolved through the repository API or local object database. Its provenance is unknown; no environment cause is asserted.",
+  "runtime_changed": false,
+  "validator_relaxed": false,
+  "evidence_rebound": false,
+  "actual_pr_merge_performed": false,
+  "full_regression_rerun": false,
+  "reason": "Only supplemental verification evidence; candidate fingerprint unchanged.",
+  "cleanup": {
+    "event_time": "2026-09-19 10:01:48",
+    "event_epoch_ms": "1789783308199",
+    "status": "RETAINED_DIAGNOSTIC_CLONE",
+    "path": "tmp/ss009-pr19-history-verification",
+    "removal_attempted": false,
+    "reason": "Previously retained after automatic approval rejected deletion; no alternate deletion attempted."
+  }
+}
