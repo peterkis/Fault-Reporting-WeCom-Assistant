@@ -9,7 +9,7 @@ import {readYxxLocalValidationScope} from './yxx-self-service-validation-scope.m
 import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
 
 export const SS009_BASE='375d47b013017edb858206cc5f3475c9aed77dfd';
-export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r3-';
+export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r4-';
 export const SS009_VALIDATORS=['validate-v1-4-architecture.mjs','validate-arch-005-time-contract.mjs','validate-arch-006-rule-first-service-loop.mjs','validate-p2-015-rule-first-intake.mjs','validate-p2-016-ticket-lifecycle-workbench.mjs','validate-p2-012-human-confirmed-incident.mjs','validate-p2-g2-service-loop.mjs','p2-g2-yixiaoxiu-check.mjs'];
 export const evidenceHash=value=>createHash('sha256').update(value).digest('hex');
 const countKeys=['tests','pass','fail','cancelled','skipped','todo'];
@@ -95,7 +95,7 @@ export function readYxxEvidence(root,ref){
 export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTamper=false}={}){
   const git=args=>execFileSync('git',args,{cwd:root,windowsHide:true,encoding:'utf8'}).trim();
   assert.equal(git(['merge-base',SS009_BASE,'HEAD']),SS009_BASE);
-  readYxxLocalValidationScope(root);
+  if(!readYxxLocalValidationScope(root))throw Object.assign(new Error('SS009_LOCAL_VALIDATION_SCOPE_REQUIRED'),{code:'SS009_LOCAL_VALIDATION_SCOPE_REQUIRED'});
   assert.equal(git(['diff','--name-only','--diff-filter=MDR',SS009_BASE,'--','evidence']),'');
   const read=file=>JSON.parse(readFileSync(path.join(root,file),'utf8'));
   const start=read('evidence/yxx-ss-009-start.json');assertG2EvidenceTime(start);assert.equal(start.base_head,SS009_BASE);
@@ -160,6 +160,6 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
   const governance=json(report.governance);assert.equal(governance.identity.raw_same_namespace,false);assert.equal(governance.identity.official_A_B_conversion,'VERIFIED');assert.deepEqual(governance.identity,read('evidence/p2-g2-yxx-targeted-live-summary.json').identity);
   assert.equal(governance.gitignore_sha256,start.gitignore_sha256);assert.equal(governance.last_completed_gate,'P2-G1');
   const time=json(report.time_audit);assert.ok(time.sources.length>=8);for(const ref of time.sources)assertG2EvidenceTime(json(ref));
-  if(!preTamper){const negative=json(report.strict_negative);assert.equal(negative.actual_strict_entry,true);assert.equal(negative.positive_control,true);assert.equal(negative.owned_worktree_removed,true);assert.equal(negative.rejected.length,22);assert.equal(new Set(negative.rejected).size,22);}
+  if(!preTamper){const negative=json(report.strict_negative);assert.equal(negative.actual_strict_entry,true);assert.equal(negative.positive_control,true);assert.equal(negative.owned_worktree_removed,true);assert.equal(negative.rejected.length,23);assert.equal(new Set(negative.rejected).size,23);}
   return {ok:true,status:preTamper?'SS009_CORE_EVIDENCE_VALID_NOT_COMPLETE':'SS009_LOCAL_VERIFICATION_COMPLETE',candidate_fingerprint:inventory.fingerprint,live_authorized:false,parent_gate_advanced:false};
 }

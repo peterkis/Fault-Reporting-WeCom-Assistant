@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {readFileSync,writeFileSync,readdirSync,copyFileSync} from 'node:fs';
+import {readFileSync,writeFileSync,readdirSync,copyFileSync,unlinkSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
@@ -13,7 +13,8 @@ export function tamperCheck(){
   assert.match(path.relative(path.join(G2_ROOT,'tmp'),owned),/^ss009-tamper-[a-f0-9-]{36}$/u);
   git(['worktree','add','--detach',owned,'HEAD']);copyFileSync(path.join(G2_ROOT,'.gitignore'),path.join(owned,'.gitignore'));const rejected=[];
   const reportPath=path.join(owned,SS009_EVIDENCE_PREFIX+'report.json');let original;
-  const copy=()=>{for(const file of readdirSync(path.join(G2_ROOT,'evidence')).filter(f=>f.startsWith('yxx-ss-009-')))copyFileSync(path.join(G2_ROOT,'evidence',file),path.join(owned,'evidence',file));};
+  const copy=()=>{for(const file of readdirSync(path.join(G2_ROOT,'evidence')).filter(f=>f.startsWith('yxx-ss-009-')))copyFileSync(path.join(G2_ROOT,'evidence',file),path.join(owned,'evidence',file));
+    for(const file of ['plans/yxx-self-service-validation-scope.json','plans/current_phase.json'])copyFileSync(path.join(G2_ROOT,file),path.join(owned,file));};
   try{
     copy();original=JSON.parse(readFileSync(reportPath,'utf8'));assert.equal(validateYxxSelfService({root:owned,requireReady:true,preTamper:true}).status,'SS009_CORE_EVIDENCE_VALID_NOT_COMPLETE');
     const artifact=(r,key,mutate)=>{const file=path.join(owned,r[key].path),value=JSON.parse(readFileSync(file,'utf8'));mutate(value);const text=JSON.stringify(value,null,2)+'\n';writeFileSync(file,text);r[key].sha256=evidenceHash(text);};
@@ -41,6 +42,7 @@ export function tamperCheck(){
       ['path traversal',r=>{r.tap.path='evidence/../package.json';}],
       ['pending completion state',r=>{r.status='LOCAL_AUTOMATION_VERIFIED_PENDING_STRICT_GATE';r.local_verification='PASS';},'SS009_COMPLETION_STATE_REQUIRED'],
       ['missing local verification',r=>{r.status='IMPLEMENTATION_AND_AUTOMATION_COMPLETE';delete r.local_verification;},'SS009_COMPLETION_STATE_REQUIRED'],
+      ['missing local scope with changed parent phase',r=>{r.status='IMPLEMENTATION_AND_AUTOMATION_COMPLETE';r.local_verification='PASS';unlinkSync(path.join(owned,'plans/yxx-self-service-validation-scope.json'));const file=path.join(owned,'plans/current_phase.json'),phase=JSON.parse(readFileSync(file));phase.last_completed_gate='P2-G2';writeFileSync(file,JSON.stringify(phase,null,2)+'\n');},'SS009_LOCAL_VALIDATION_SCOPE_REQUIRED'],
     ];
     for(const [name,mutate,errorCode] of changes){copy();const r=structuredClone(original);mutate(r);writeFileSync(reportPath,JSON.stringify(r,null,2)+'\n');assert.throws(()=>validateYxxSelfService({root:owned,requireReady:true,preTamper:!errorCode}),errorCode?{code:errorCode}:undefined,name);rejected.push(name);}
   }finally{assert.match(path.relative(path.join(G2_ROOT,'tmp'),owned),/^ss009-tamper-[a-f0-9-]{36}$/u);git(['worktree','remove','--force',owned]);}

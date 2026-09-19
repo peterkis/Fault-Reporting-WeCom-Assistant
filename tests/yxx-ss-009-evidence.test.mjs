@@ -1,13 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { verifyYxxRun,evidenceHash,readYxxEvidence,verifyYxxReceipts,verifyYxxCompletionState } from '../src/yxx-self-service-verification.mjs';
+import { verifyYxxRun,evidenceHash,readYxxEvidence,verifyYxxReceipts,verifyYxxCompletionState,validateYxxSelfService } from '../src/yxx-self-service-verification.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
-import {mkdtempSync,mkdirSync,writeFileSync,rmSync,symlinkSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,writeFileSync,rmSync,symlinkSync,readFileSync,copyFileSync,unlinkSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {randomUUID} from 'node:crypto';
+import {G2_ROOT} from '../src/p2-g2-candidate.mjs';
 import path from 'node:path';
 import {tmpdir} from 'node:os';
 import {closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 import caseReporter from '../scripts/p2-g2-case-reporter.mjs';
 import {assertG2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+
+test('SS-009 requires local validation scope before accepting protected parent phase state',()=>{
+  const root=path.join(G2_ROOT,'tmp','ss009-scope-'+randomUUID());
+  const git=args=>execFileSync('git',args,{cwd:G2_ROOT,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe']});
+  git(['worktree','add','--detach',root,'HEAD']);
+  try{
+    copyFileSync(path.join(G2_ROOT,'.gitignore'),path.join(root,'.gitignore'));
+    assert.equal(validateYxxSelfService({root}).status,'STRUCTURE_VALID_NOT_READY');
+    const phasePath=path.join(root,'plans/current_phase.json'),phase=JSON.parse(readFileSync(phasePath));
+    phase.last_completed_gate='P2-G2';writeFileSync(phasePath,JSON.stringify(phase,null,2)+'\n');
+    const modes=[{}, {requireReady:true}, {requireReady:true,preTamper:true}];
+    for(const mode of modes)assert.throws(()=>validateYxxSelfService({root,...mode}),{code:'YXX_LOCAL_VALIDATION_SCOPE_INVALID'});
+    unlinkSync(path.join(root,'plans/yxx-self-service-validation-scope.json'));
+    for(const mode of modes)assert.throws(()=>validateYxxSelfService({root,...mode}),{code:'SS009_LOCAL_VALIDATION_SCOPE_REQUIRED'});
+  }finally{
+    assert.match(path.relative(path.join(G2_ROOT,'tmp'),root),/^ss009-scope-[a-f0-9-]{36}$/u);
+    git(['worktree','remove','--force',root]);
+  }
+});
 
 test('SS-009 strict completion requires finalized status and PASS while preTamper remains intermediate',()=>{
   const ready={status:'IMPLEMENTATION_AND_AUTOMATION_COMPLETE',local_verification:'PASS'};

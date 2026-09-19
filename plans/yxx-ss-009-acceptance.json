@@ -1128,6 +1128,10 @@
         {
           "file": "tests/yxx-ss-009-evidence.test.mjs",
           "name": "SS-009 strict completion requires finalized status and PASS while preTamper remains intermediate"
+        },
+        {
+          "file": "tests/yxx-ss-009-evidence.test.mjs",
+          "name": "SS-009 requires local validation scope before accepting protected parent phase state"
         }
       ],
       "evidence_kind": "strict_negative"
