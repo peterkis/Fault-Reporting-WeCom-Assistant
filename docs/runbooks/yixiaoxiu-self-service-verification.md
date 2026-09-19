@@ -17,6 +17,10 @@
 
 PR #19 后续审查指出 AC-022 与 AC-039 原映射未证明带既有 Bot 关联的升级及实际部分写入回滚。当前验收入口改用 `evidence/yxx-ss-009-r2-*` 后继证据，旧 `yxx-ss-009-*` 报告和运行保留为原候选快照，不再作为当前完成依据。新证据要求迁移前已填充的 032 Bot 图在 check、apply、重复迁移后保持原列值和关系，并能重放原命令；规则失败夹具必须先在 SAVEPOINT 内观察到真实写入，再验证该写入回滚且人工兜底提交。缺少任一实际收据时，严格校验拒绝完成。
 
+随后补齐完成态门禁，当前入口使用 `evidence/yxx-ss-009-r3-*`，r2 亦保留为历史快照。普通 `--require-ready` 同时要求报告 `status=IMPLEMENTATION_AND_AUTOMATION_COMPLETE` 与 `local_verification=PASS`，且仍逐项验证全部原始证据。Binder 的 `LOCAL_AUTOMATION_VERIFIED_PENDING_STRICT_GATE` 状态不能直接通过。`preTamper` 仅用于内部证据准备，返回 `SS009_CORE_EVIDENCE_VALID_NOT_COMPLETE`，不授予完成。
+
+发布顺序为：冻结并完成回归/审查 → Binder 生成待完成报告 → 内部正向对照与 22 类变造验证 → 确认所有证据收口后设置上述完成字段 → 执行普通严格入口。若普通严格入口失败，不能发布完成结论。缺字段、待完成或失败字段均应拒绝，不能通过跳过字段检查解决中断恢复。
+
 ### 提交历史与合并方式
 
 `--require-ready` 的输入不仅是文件快照，还包括完整 Git 祖先关系。先通过 GitHub PR 元数据取得实际 `head.sha`，核对本地 `git rev-parse HEAD`；再运行 `git merge-base <报告 tested_head> HEAD`，结果必须等于报告中的 `tested_head`。浅克隆须先补全所需历史；只有补全后仍不满足祖先关系，才是发布历史绑定不匹配。不能把另一个临时提交的结果归到 PR HEAD。

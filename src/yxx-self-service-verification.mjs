@@ -9,12 +9,18 @@ import {readYxxLocalValidationScope} from './yxx-self-service-validation-scope.m
 import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
 
 export const SS009_BASE='375d47b013017edb858206cc5f3475c9aed77dfd';
-export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r2-';
+export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r3-';
 export const SS009_VALIDATORS=['validate-v1-4-architecture.mjs','validate-arch-005-time-contract.mjs','validate-arch-006-rule-first-service-loop.mjs','validate-p2-015-rule-first-intake.mjs','validate-p2-016-ticket-lifecycle-workbench.mjs','validate-p2-012-human-confirmed-incident.mjs','validate-p2-g2-service-loop.mjs','p2-g2-yixiaoxiu-check.mjs'];
 export const evidenceHash=value=>createHash('sha256').update(value).digest('hex');
 const countKeys=['tests','pass','fail','cancelled','skipped','todo'];
 const normalize=value=>value.replaceAll('\r\n','\n');
 const testPath=file=>/^tests\/(?:p2-007\/)?[^/]+\.test\.mjs$/u.test(file);
+
+export function verifyYxxCompletionState(report,{preTamper=false}={}){
+  if(!preTamper&&(report?.status!=='IMPLEMENTATION_AND_AUTOMATION_COMPLETE'||report?.local_verification!=='PASS')){
+    throw Object.assign(new Error('SS009_COMPLETION_STATE_REQUIRED'),{code:'SS009_COMPLETION_STATE_REQUIRED'});
+  }
+}
 
 export function verifyYxxReceipts(kind,records){
   assert.ok(Array.isArray(records)&&records.length>0);
@@ -101,6 +107,7 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
     for(const t of s.tests){assert.ok(testPath(t.file));const source=readFileSync(path.join(root,t.file),'utf8');assert.ok(source.includes(t.name));}});
   if(!requireReady)return {ok:true,status:'STRUCTURE_VALID_NOT_READY',candidate_fingerprint:inventory.fingerprint};
   const report=read(SS009_EVIDENCE_PREFIX+'report.json');assertG2EvidenceTime(report);
+  verifyYxxCompletionState(report,{preTamper});
   assert.equal(report.candidate_fingerprint,inventory.fingerprint);assert.equal(report.live_authorized,false);
   assert.equal(git(['rev-parse',report.tested_head+'^{tree}']),report.tested_tree);
   assert.equal(git(['merge-base',report.tested_head,'HEAD']),report.tested_head);
@@ -153,6 +160,6 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
   const governance=json(report.governance);assert.equal(governance.identity.raw_same_namespace,false);assert.equal(governance.identity.official_A_B_conversion,'VERIFIED');assert.deepEqual(governance.identity,read('evidence/p2-g2-yxx-targeted-live-summary.json').identity);
   assert.equal(governance.gitignore_sha256,start.gitignore_sha256);assert.equal(governance.last_completed_gate,'P2-G1');
   const time=json(report.time_audit);assert.ok(time.sources.length>=8);for(const ref of time.sources)assertG2EvidenceTime(json(ref));
-  if(!preTamper){const negative=json(report.strict_negative);assert.equal(negative.actual_strict_entry,true);assert.equal(negative.positive_control,true);assert.equal(negative.owned_worktree_removed,true);assert.equal(negative.rejected.length,20);assert.equal(new Set(negative.rejected).size,20);}
+  if(!preTamper){const negative=json(report.strict_negative);assert.equal(negative.actual_strict_entry,true);assert.equal(negative.positive_control,true);assert.equal(negative.owned_worktree_removed,true);assert.equal(negative.rejected.length,22);assert.equal(new Set(negative.rejected).size,22);}
   return {ok:true,status:preTamper?'SS009_CORE_EVIDENCE_VALID_NOT_COMPLETE':'SS009_LOCAL_VERIFICATION_COMPLETE',candidate_fingerprint:inventory.fingerprint,live_authorized:false,parent_gate_advanced:false};
 }

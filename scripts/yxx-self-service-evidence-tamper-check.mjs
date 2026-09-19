@@ -39,8 +39,10 @@ export function tamperCheck(){
       ['unpaired time',r=>{r.event_epoch_ms=String(BigInt(r.event_epoch_ms)+10000n);}],
       ['false cleanup',r=>artifact(r,'cleanup',v=>{v.owned_residuals=1;})],
       ['path traversal',r=>{r.tap.path='evidence/../package.json';}],
+      ['pending completion state',r=>{r.status='LOCAL_AUTOMATION_VERIFIED_PENDING_STRICT_GATE';r.local_verification='PASS';},'SS009_COMPLETION_STATE_REQUIRED'],
+      ['missing local verification',r=>{r.status='IMPLEMENTATION_AND_AUTOMATION_COMPLETE';delete r.local_verification;},'SS009_COMPLETION_STATE_REQUIRED'],
     ];
-    for(const [name,mutate] of changes){copy();const r=structuredClone(original);mutate(r);writeFileSync(reportPath,JSON.stringify(r,null,2)+'\n');assert.throws(()=>validateYxxSelfService({root:owned,requireReady:true,preTamper:true}),undefined,name);rejected.push(name);}
+    for(const [name,mutate,errorCode] of changes){copy();const r=structuredClone(original);mutate(r);writeFileSync(reportPath,JSON.stringify(r,null,2)+'\n');assert.throws(()=>validateYxxSelfService({root:owned,requireReady:true,preTamper:!errorCode}),errorCode?{code:errorCode}:undefined,name);rejected.push(name);}
   }finally{assert.match(path.relative(path.join(G2_ROOT,'tmp'),owned),/^ss009-tamper-[a-f0-9-]{36}$/u);git(['worktree','remove','--force',owned]);}
   const receipt={...g2EvidenceTime(),candidate_fingerprint:g2CandidateInventory().fingerprint,status:'PASS',actual_strict_entry:true,positive_control:true,rejected,owned_worktree_removed:true};
   writeFileSync(path.join(G2_ROOT,SS009_EVIDENCE_PREFIX+'strict-negative.json'),JSON.stringify(receipt,null,2)+'\n');

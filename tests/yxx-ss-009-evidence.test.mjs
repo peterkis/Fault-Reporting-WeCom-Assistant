@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { verifyYxxRun,evidenceHash,readYxxEvidence,verifyYxxReceipts } from '../src/yxx-self-service-verification.mjs';
+import { verifyYxxRun,evidenceHash,readYxxEvidence,verifyYxxReceipts,verifyYxxCompletionState } from '../src/yxx-self-service-verification.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 import {mkdtempSync,mkdirSync,writeFileSync,rmSync,symlinkSync} from 'node:fs';
 import path from 'node:path';
@@ -8,6 +8,17 @@ import {tmpdir} from 'node:os';
 import {closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
 import caseReporter from '../scripts/p2-g2-case-reporter.mjs';
 import {assertG2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+
+test('SS-009 strict completion requires finalized status and PASS while preTamper remains intermediate',()=>{
+  const ready={status:'IMPLEMENTATION_AND_AUTOMATION_COMPLETE',local_verification:'PASS'};
+  assert.doesNotThrow(()=>verifyYxxCompletionState(ready));
+  for(const report of [undefined,{}, {...ready,status:undefined},{...ready,status:'LOCAL_AUTOMATION_VERIFIED_PENDING_STRICT_GATE'},
+    {...ready,status:'FAILED'},{...ready,local_verification:undefined},{...ready,local_verification:'FAILED'}]){
+    assert.throws(()=>verifyYxxCompletionState(report),{code:'SS009_COMPLETION_STATE_REQUIRED'});
+  }
+  assert.doesNotThrow(()=>verifyYxxCompletionState({status:'LOCAL_AUTOMATION_VERIFIED_PENDING_STRICT_GATE'},{preTamper:true}));
+  assert.doesNotThrow(()=>verifyYxxCompletionState(ready,{preTamper:false}));
+});
 
 test('SS-009 evidence rejects a forged PASS summary without the matching successful TAP', () => {
   const run={suite:'full',exit_code:0,candidate_unchanged:true,counts:{tests:1155,pass:1155,fail:0,cancelled:0,skipped:0,todo:0}};

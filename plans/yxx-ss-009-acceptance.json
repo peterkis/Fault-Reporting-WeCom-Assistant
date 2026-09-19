@@ -1124,6 +1124,10 @@
         {
           "file": "tests/yxx-ss-009-evidence.test.mjs",
           "name": "SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time"
+        },
+        {
+          "file": "tests/yxx-ss-009-evidence.test.mjs",
+          "name": "SS-009 strict completion requires finalized status and PASS while preTamper remains intermediate"
         }
       ],
       "evidence_kind": "strict_negative"
