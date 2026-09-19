@@ -1,0 +1,50 @@
+{
+  "event_time": "2026-09-19 09:42:01",
+  "event_epoch_ms": "1789782121036",
+  "candidate_fingerprint": "e22a34540c8124520e1043c9278078c597ad5638ab31c7de8f9b8c6eb2cc58b4",
+  "status": "PASS",
+  "records": [
+    {
+      "event_time": "2026-09-19 09:34:05",
+      "event_epoch_ms": "1789781645027",
+      "kind": "browser",
+      "status": "PASS",
+      "candidate_fingerprint": "e22a34540c8124520e1043c9278078c597ad5638ab31c7de8f9b8c6eb2cc58b4",
+      "screenshots": [
+        {
+          "file": "tmp/ss009-ui/2a1e505a-ef93-4371-9f99-8af30821fc10.png",
+          "width": 390,
+          "height": 844,
+          "sha256": "d4421560ed2f78de883493f983e055e55d0df99651db295991395fd1fe586812"
+        },
+        {
+          "file": "tmp/ss009-ui/197a5c51-95c0-4352-ad58-869dfda5c2eb.png",
+          "width": 1440,
+          "height": 900,
+          "sha256": "e6a7e9fc1dcf439801382242d3b0e4c83ef7cd547411892326cf16e1e3510a86"
+        }
+      ],
+      "real_pg": true,
+      "real_browser": true,
+      "tickets": 2,
+      "external_network_calls": 0,
+      "simulated_provider_calls": 1
+    }
+  ],
+  "images": [
+    {
+      "file": "tmp/ss009-ui/2a1e505a-ef93-4371-9f99-8af30821fc10.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "d4421560ed2f78de883493f983e055e55d0df99651db295991395fd1fe586812",
+      "path": "evidence/yxx-ss-009-r3-ui-390.png"
+    },
+    {
+      "file": "tmp/ss009-ui/197a5c51-95c0-4352-ad58-869dfda5c2eb.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e6a7e9fc1dcf439801382242d3b0e4c83ef7cd547411892326cf16e1e3510a86",
+      "path": "evidence/yxx-ss-009-r3-ui-1440.png"
+    }
+  ]
+}
