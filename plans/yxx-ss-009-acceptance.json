@@ -269,10 +269,11 @@
       "status": "NOT_RUN",
       "tests": [
         {
-          "file": "tests/yxx-ss-009-catalog.integration.test.mjs",
-          "name": "SS-009 migration check rolls back and five catalog drift classes fail closed"
+          "file": "tests/yxx-ss-009-review-regressions.integration.test.mjs",
+          "name": "SS-009 populated 032 Bot graph remains readable linked and replayable after 033 and 034"
         }
-      ]
+      ],
+      "evidence_kind": "catalog"
     },
     {
       "id": "YXX-AC-023",
@@ -489,10 +490,11 @@
       "status": "NOT_RUN",
       "tests": [
         {
-          "file": "tests/yxx-ss-004-orchestration.integration.test.mjs",
-          "name": "SS-004 keeps insufficient input pending for details and routes rule failure to shared review"
+          "file": "tests/yxx-ss-009-review-regressions.integration.test.mjs",
+          "name": "SS-009 rule savepoint removes a real partial write while committing manual fallback"
         }
-      ]
+      ],
+      "evidence_kind": "fault"
     },
     {
       "id": "YXX-AC-040",

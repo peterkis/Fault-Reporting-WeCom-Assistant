@@ -34,7 +34,19 @@ test('SS-009 sampler and cleanup errors never skip later owned resource shutdown
 test('SS-009 dedicated proof summaries cannot replace process capacity or catalog observations',()=>{
   for(const kind of ['fault','capacity','catalog'])assert.throws(()=>verifyYxxReceipts(kind,[{...g2EvidenceTime(),kind,status:'PASS'}]));
   const record={...g2EvidenceTime(),kind:'catalog',status:'PASS',drift_classes:['COLUMN','CHECK','FK','UNIQUE','INDEX'],check_rollback:true,forbidden_timezone_columns:0};
-  assert.equal(verifyYxxReceipts('catalog',[record]).length,1);
+  const populated={...g2EvidenceTime(),kind:'catalog',status:'PASS',populated_bot_upgrade:true,baseline:'032',migrations:['033','034'],linked_roots:4,existing_rows_unchanged:true,existing_command_replays:true,
+    graph_rows:Object.fromEntries(['channel.message_inbox','intake.service_intake','intake.service_intake_message','intake.service_intake_event','intake.contact_journey','intake.channel_leg','intake.deterministic_decision','intake.safe_action_suggestion','intake.manual_review_item','pilot_ticket.ticket','communication.message','communication.outbox','communication.delivery'].map(table=>[table,1]))};
+  assert.throws(()=>verifyYxxReceipts('catalog',[record]));
+  assert.equal(verifyYxxReceipts('catalog',[record,populated]).length,2);
+  assert.throws(()=>verifyYxxReceipts('catalog',[record,{...populated,graph_rows:{}}]));
+  const common={...g2EvidenceTime(),kind:'fault',status:'PASS'};
+  const fault=[{...common,real_kills:5,cases:[['accept','before-commit'],['accept','after-commit'],['process','before-process'],['process','before-commit'],['process','after-commit']].map(([action,barrier])=>({action,barrier,recovered:true,ticket_count:1,receipt_count:1}))},
+    {...common,owned_backend_terminated:true,recovery_verified:true,shared_database_service_stopped:false},
+    {...common,http_response_lost:true,same_command_recovered:true,cross_member_denied:true,batch_max:20},
+    {...common,savepoint_partial_write:true,partial_write_observed:true,partial_write_rolled_back:true,fallback_decisions:1,fallback_reviews:1,acceptance_retained:true}];
+  assert.equal(verifyYxxReceipts('fault',fault).length,4);
+  assert.throws(()=>verifyYxxReceipts('fault',fault.slice(0,3)));
+  assert.throws(()=>verifyYxxReceipts('fault',[...fault.slice(0,3),{...fault[3],partial_write_rolled_back:false}]));
   assert.throws(()=>verifyYxxReceipts('catalog',[{...record,drift_classes:['COLUMN']}]));
   assert.throws(()=>verifyYxxReceipts('catalog',[{...record,forbidden_timezone_columns:1}]));
 });

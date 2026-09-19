@@ -6,13 +6,13 @@ import {randomUUID} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import {G2_ROOT,g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
-import {validateYxxSelfService,evidenceHash,SS009_BASE} from '../src/yxx-self-service-verification.mjs';
+import {validateYxxSelfService,evidenceHash,SS009_BASE,SS009_EVIDENCE_PREFIX} from '../src/yxx-self-service-verification.mjs';
 
 export function tamperCheck(){
   const owned=path.join(G2_ROOT,'tmp','ss009-tamper-'+randomUUID()),git=args=>execFileSync('git',args,{cwd:G2_ROOT,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe']});
   assert.match(path.relative(path.join(G2_ROOT,'tmp'),owned),/^ss009-tamper-[a-f0-9-]{36}$/u);
   git(['worktree','add','--detach',owned,'HEAD']);copyFileSync(path.join(G2_ROOT,'.gitignore'),path.join(owned,'.gitignore'));const rejected=[];
-  const reportPath=path.join(owned,'evidence/yxx-ss-009-report.json');let original;
+  const reportPath=path.join(owned,SS009_EVIDENCE_PREFIX+'report.json');let original;
   const copy=()=>{for(const file of readdirSync(path.join(G2_ROOT,'evidence')).filter(f=>f.startsWith('yxx-ss-009-')))copyFileSync(path.join(G2_ROOT,'evidence',file),path.join(owned,'evidence',file));};
   try{
     copy();original=JSON.parse(readFileSync(reportPath,'utf8'));assert.equal(validateYxxSelfService({root:owned,requireReady:true,preTamper:true}).status,'SS009_CORE_EVIDENCE_VALID_NOT_COMPLETE');
@@ -43,9 +43,9 @@ export function tamperCheck(){
     for(const [name,mutate] of changes){copy();const r=structuredClone(original);mutate(r);writeFileSync(reportPath,JSON.stringify(r,null,2)+'\n');assert.throws(()=>validateYxxSelfService({root:owned,requireReady:true,preTamper:true}),undefined,name);rejected.push(name);}
   }finally{assert.match(path.relative(path.join(G2_ROOT,'tmp'),owned),/^ss009-tamper-[a-f0-9-]{36}$/u);git(['worktree','remove','--force',owned]);}
   const receipt={...g2EvidenceTime(),candidate_fingerprint:g2CandidateInventory().fingerprint,status:'PASS',actual_strict_entry:true,positive_control:true,rejected,owned_worktree_removed:true};
-  writeFileSync(path.join(G2_ROOT,'evidence/yxx-ss-009-strict-negative.json'),JSON.stringify(receipt,null,2)+'\n');
+  writeFileSync(path.join(G2_ROOT,SS009_EVIDENCE_PREFIX+'strict-negative.json'),JSON.stringify(receipt,null,2)+'\n');
   const ref=file=>({path:file,encoding:'UTF8_LF',sha256:evidenceHash(readFileSync(path.join(G2_ROOT,file),'utf8').replaceAll('\r\n','\n'))});
-  const finalPath=path.join(G2_ROOT,'evidence/yxx-ss-009-report.json'),final=JSON.parse(readFileSync(finalPath,'utf8'));final.strict_negative=ref('evidence/yxx-ss-009-strict-negative.json');
+  const finalPath=path.join(G2_ROOT,SS009_EVIDENCE_PREFIX+'report.json'),final=JSON.parse(readFileSync(finalPath,'utf8'));final.strict_negative=ref(SS009_EVIDENCE_PREFIX+'strict-negative.json');
   const matrixFile=path.join(G2_ROOT,final.matrix.path),matrix=JSON.parse(readFileSync(matrixFile,'utf8'));matrix.scenarios[86].evidence=final.strict_negative;writeFileSync(matrixFile,JSON.stringify(matrix,null,2)+'\n');final.matrix=ref(final.matrix.path);
   writeFileSync(finalPath,JSON.stringify(final,null,2)+'\n');return receipt;
 }

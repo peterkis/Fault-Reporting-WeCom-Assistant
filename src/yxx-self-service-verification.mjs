@@ -9,6 +9,7 @@ import {readYxxLocalValidationScope} from './yxx-self-service-validation-scope.m
 import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
 
 export const SS009_BASE='375d47b013017edb858206cc5f3475c9aed77dfd';
+export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r2-';
 export const SS009_VALIDATORS=['validate-v1-4-architecture.mjs','validate-arch-005-time-contract.mjs','validate-arch-006-rule-first-service-loop.mjs','validate-p2-015-rule-first-intake.mjs','validate-p2-016-ticket-lifecycle-workbench.mjs','validate-p2-012-human-confirmed-incident.mjs','validate-p2-g2-service-loop.mjs','p2-g2-yixiaoxiu-check.mjs'];
 export const evidenceHash=value=>createHash('sha256').update(value).digest('hex');
 const countKeys=['tests','pass','fail','cancelled','skipped','todo'];
@@ -24,6 +25,7 @@ export function verifyYxxReceipts(kind,records){
     for(const c of killed.cases){assert.equal(c.recovered,true);assert.equal(c.ticket_count,1);assert.equal(c.receipt_count,1);}
     assert.ok(records.some(r=>r.owned_backend_terminated&&r.recovery_verified&&r.shared_database_service_stopped===false));
     assert.ok(records.some(r=>r.http_response_lost&&r.same_command_recovered&&r.cross_member_denied&&r.batch_max===20));
+    assert.ok(records.some(r=>r.savepoint_partial_write===true&&r.partial_write_observed===true&&r.partial_write_rolled_back===true&&r.fallback_decisions===1&&r.fallback_reviews===1&&r.acceptance_retained===true));
   }
   if(kind==='capacity'){
     const profiles=records.flatMap(r=>r.profiles);assert.equal(profiles.length,2);
@@ -36,7 +38,12 @@ export function verifyYxxReceipts(kind,records){
       if(name==='FULL_SERVICE_LOOP')assert.ok(p.samples.some(s=>s.role==='WORKER'));
     }
   }
-  if(kind==='catalog'){const r=records.find(r=>r.check_rollback===true);assert.ok(r);assert.deepEqual(r.drift_classes,['COLUMN','CHECK','FK','UNIQUE','INDEX']);assert.equal(r.forbidden_timezone_columns,0);}
+  if(kind==='catalog'){
+    const r=records.find(r=>r.check_rollback===true);assert.ok(r);assert.deepEqual(r.drift_classes,['COLUMN','CHECK','FK','UNIQUE','INDEX']);assert.equal(r.forbidden_timezone_columns,0);
+    const populated=records.find(r=>r.populated_bot_upgrade===true);assert.ok(populated);assert.equal(populated.baseline,'032');assert.deepEqual(populated.migrations,['033','034']);
+    assert.equal(populated.existing_rows_unchanged,true);assert.equal(populated.existing_command_replays,true);assert.ok(populated.linked_roots>=2);
+    for(const table of ['channel.message_inbox','intake.service_intake','intake.service_intake_message','intake.service_intake_event','intake.contact_journey','intake.channel_leg','intake.deterministic_decision','intake.safe_action_suggestion','intake.manual_review_item','pilot_ticket.ticket','communication.message','communication.outbox','communication.delivery'])assert.ok(Number.isSafeInteger(populated.graph_rows?.[table])&&populated.graph_rows[table]>0,table);
+  }
   return records;
 }
 
@@ -93,7 +100,7 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
   matrix.scenarios.forEach((s,i)=>{assert.equal(s.id,'YXX-AC-'+String(i+1).padStart(3,'0'));assert.ok(Array.isArray(s.tests));if(i<90)assert.ok(s.tests.length>0||i===85&&s.evidence_kind==='review'||i===89&&s.evidence_kind==='cleanup');else assert.equal(s.status,'NOT_RUN');
     for(const t of s.tests){assert.ok(testPath(t.file));const source=readFileSync(path.join(root,t.file),'utf8');assert.ok(source.includes(t.name));}});
   if(!requireReady)return {ok:true,status:'STRUCTURE_VALID_NOT_READY',candidate_fingerprint:inventory.fingerprint};
-  const report=read('evidence/yxx-ss-009-report.json');assertG2EvidenceTime(report);
+  const report=read(SS009_EVIDENCE_PREFIX+'report.json');assertG2EvidenceTime(report);
   assert.equal(report.candidate_fingerprint,inventory.fingerprint);assert.equal(report.live_authorized,false);
   assert.equal(git(['rev-parse',report.tested_head+'^{tree}']),report.tested_tree);
   assert.equal(git(['merge-base',report.tested_head,'HEAD']),report.tested_head);
@@ -142,7 +149,7 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
   for(const required of ['owned_database','owned_database_backends','owned_child','app_pool','worker_process','browser_process','browser_profile','browser_command_timers'])assert.ok(measuredCleanup.some(r=>r.resources.some(x=>x.resource===required)));
   for(const r of receipts){assert.equal(r.candidate_fingerprint,inventory.fingerprint);assertG2EvidenceTime(r);}
   const browser=json(report.browser);assert.deepEqual(browser.records,receipts.filter(r=>r.kind==='browser'));assert.deepEqual(browser.images.map(i=>i.width),[390,1440]);
-  for(const image of browser.images){assert.match(image.path,/^evidence\/yxx-ss-009-ui-(?:390|1440)\.png$/u);const file=path.join(root,image.path);assert.ok(lstatSync(file).isFile()&&!lstatSync(file).isSymbolicLink());assert.equal(evidenceHash(readFileSync(file)),image.sha256);assert.ok(browser.records[0].screenshots.some(s=>s.width===image.width&&s.sha256===image.sha256));}
+  for(const image of browser.images){assert.ok([390,1440].some(width=>image.path===SS009_EVIDENCE_PREFIX+'ui-'+width+'.png'));const file=path.join(root,image.path);assert.ok(lstatSync(file).isFile()&&!lstatSync(file).isSymbolicLink());assert.equal(evidenceHash(readFileSync(file)),image.sha256);assert.ok(browser.records[0].screenshots.some(s=>s.width===image.width&&s.sha256===image.sha256));}
   const governance=json(report.governance);assert.equal(governance.identity.raw_same_namespace,false);assert.equal(governance.identity.official_A_B_conversion,'VERIFIED');assert.deepEqual(governance.identity,read('evidence/p2-g2-yxx-targeted-live-summary.json').identity);
   assert.equal(governance.gitignore_sha256,start.gitignore_sha256);assert.equal(governance.last_completed_gate,'P2-G1');
   const time=json(report.time_audit);assert.ok(time.sources.length>=8);for(const ref of time.sources)assertG2EvidenceTime(json(ref));
