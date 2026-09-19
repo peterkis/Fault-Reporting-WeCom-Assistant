@@ -1,0 +1,62 @@
+TAP version 13
+# Subtest: SS-009 evidence rejects a forged PASS summary without the matching successful TAP
+ok 1 - SS-009 evidence rejects a forged PASS summary without the matching successful TAP
+  ---
+  duration_ms: 1.4082
+  type: 'test'
+  ...
+# Subtest: SS-009 every structured test event has paired reporter observation time
+ok 2 - SS-009 every structured test event has paired reporter observation time
+  ---
+  duration_ms: 1.9209
+  type: 'test'
+  ...
+# Subtest: SS-009 sampler and cleanup errors never skip later owned resource shutdown
+ok 3 - SS-009 sampler and cleanup errors never skip later owned resource shutdown
+  ---
+  duration_ms: 1.7135
+  type: 'test'
+  ...
+# Subtest: SS-009 dedicated proof summaries cannot replace process capacity or catalog observations
+ok 4 - SS-009 dedicated proof summaries cannot replace process capacity or catalog observations
+  ---
+  duration_ms: 9.6184
+  type: 'test'
+  ...
+# Subtest: SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time
+ok 5 - SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time
+  ---
+  duration_ms: 22.6071
+  type: 'test'
+  ...
+# Subtest: SS-009 evidence references reject wrong hashes traversal and linked files
+ok 6 - SS-009 evidence references reject wrong hashes traversal and linked files
+  ---
+  duration_ms: 6.7367
+  type: 'test'
+  ...
+# Subtest: SS-009 populated 032 Bot graph remains readable linked and replayable after 033 and 034
+ok 7 - SS-009 populated 032 Bot graph remains readable linked and replayable after 033 and 034
+  ---
+  duration_ms: 4523.2227
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-19 08:01:03","event_epoch_ms":"1789776063379","candidate_fingerprint":"770a9ef6fb1433e068200deab8464d93e74c10f5d6d3b2225fd7eecddf8293b4","status":"PASS","kind":"catalog","populated_bot_upgrade":true,"baseline":"032","migrations":["033","034"],"graph_rows":{"channel.message_inbox":4,"intake.service_intake":4,"intake.service_intake_message":4,"intake.service_intake_event":9,"intake.contact_journey":4,"intake.channel_leg":4,"intake.deterministic_decision":4,"intake.safe_action_suggestion":9,"intake.manual_review_item":1,"pilot_ticket.ticket":2,"communication.message":1,"communication.outbox":1,"communication.delivery":1},"linked_roots":4,"existing_rows_unchanged":true,"existing_command_replays":true}
+# SS009_RECEIPT {"event_time":"2026-09-19 08:01:04","event_epoch_ms":"1789776064221","kind":"cleanup","status":"PASS","candidate_fingerprint":"770a9ef6fb1433e068200deab8464d93e74c10f5d6d3b2225fd7eecddf8293b4","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS-009 rule savepoint removes a real partial write while committing manual fallback
+ok 8 - SS-009 rule savepoint removes a real partial write while committing manual fallback
+  ---
+  duration_ms: 3989.1532
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-19 08:01:07","event_epoch_ms":"1789776067459","candidate_fingerprint":"770a9ef6fb1433e068200deab8464d93e74c10f5d6d3b2225fd7eecddf8293b4","status":"PASS","kind":"fault","savepoint_partial_write":true,"partial_write_observed":true,"partial_write_rolled_back":true,"fallback_decisions":1,"fallback_reviews":1,"acceptance_retained":true}
+# SS009_RECEIPT {"event_time":"2026-09-19 08:01:08","event_epoch_ms":"1789776068281","kind":"cleanup","status":"PASS","candidate_fingerprint":"770a9ef6fb1433e068200deab8464d93e74c10f5d6d3b2225fd7eecddf8293b4","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8854.2451

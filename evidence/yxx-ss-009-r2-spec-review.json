@@ -1,0 +1,56 @@
+{
+  "event_time": "2026-09-19 08:40:58",
+  "event_epoch_ms": "1789778458726",
+  "axis": "SPEC",
+  "reviewer": "/root/ss009_spec_audit",
+  "recorded_by": "/root",
+  "reviewed_head": "8f2270878fdab62ef6ecd2c49dcebca1521e8a0c",
+  "reviewed_tree": "d5646ba43e3874c41d50d2a8baa23c8fee1050b7",
+  "candidate_fingerprint": "674127ee770f471bad3c50e55ad276f05730f55cbe6bd2e024dffae4a642ba62",
+  "scope": "R2_IMPLEMENTATION_AND_FROZEN_FULL_EXECUTION",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [
+    {
+      "severity": "P2",
+      "scenario": "YXX-AC-022",
+      "review_comment": 4051497527,
+      "resolved": true,
+      "description": "Populated 032 Bot graph: all original columns, relationships and command replay preserved through check/apply/reapply."
+    },
+    {
+      "severity": "P2",
+      "scenario": "YXX-AC-039",
+      "review_comment": 4051497529,
+      "resolved": true,
+      "description": "Observed actual partial write inside savepoint is rolled back; acceptance and exactly one fallback decision/review persist."
+    }
+  ],
+  "raw_execution_directory": "tmp/p2-g2-tests-96778af9-ff8c-4ff1-9e72-7d219bc91520",
+  "verified": {
+    "tests": 1178,
+    "pass": 1178,
+    "test_files": 191,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "candidate_unchanged": true,
+    "cleanup_receipts": 13,
+    "owned_residuals": 0,
+    "historical_member_scenarios": 48,
+    "historical_g2_scenarios": 37,
+    "historical_sources": 202,
+    "normal_input_sources": 122
+  },
+  "summary": "Independent SPEC agent checked exact102 scenario bindings, both new actual receipts, inherited fault/capacity/browser coverage and historical semantic limitations.",
+  "publication_gates_at_review": "r2 Binder and20actual tamper variants and strict gate NOT_RUN at review; must execute separately",
+  "preserved_limitations": [
+    "D12-005 unverified",
+    "D12-023 future P3",
+    "Historical adjudications retained; original_semantics_all_passed=false",
+    "No current-candidate remote approval or live authorization"
+  ]
+}

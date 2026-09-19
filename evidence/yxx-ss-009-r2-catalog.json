@@ -1,0 +1,55 @@
+{
+  "event_time": "2026-09-19 08:40:59",
+  "event_epoch_ms": "1789778459711",
+  "candidate_fingerprint": "674127ee770f471bad3c50e55ad276f05730f55cbe6bd2e024dffae4a642ba62",
+  "status": "PASS",
+  "records": [
+    {
+      "event_time": "2026-09-19 08:38:12",
+      "event_epoch_ms": "1789778292264",
+      "kind": "catalog",
+      "status": "PASS",
+      "candidate_fingerprint": "674127ee770f471bad3c50e55ad276f05730f55cbe6bd2e024dffae4a642ba62",
+      "drift_classes": [
+        "COLUMN",
+        "CHECK",
+        "FK",
+        "UNIQUE",
+        "INDEX"
+      ],
+      "check_rollback": true,
+      "forbidden_timezone_columns": 0
+    },
+    {
+      "event_time": "2026-09-19 08:38:44",
+      "event_epoch_ms": "1789778324587",
+      "candidate_fingerprint": "674127ee770f471bad3c50e55ad276f05730f55cbe6bd2e024dffae4a642ba62",
+      "status": "PASS",
+      "kind": "catalog",
+      "populated_bot_upgrade": true,
+      "baseline": "032",
+      "migrations": [
+        "033",
+        "034"
+      ],
+      "graph_rows": {
+        "channel.message_inbox": 4,
+        "intake.service_intake": 4,
+        "intake.service_intake_message": 4,
+        "intake.service_intake_event": 9,
+        "intake.contact_journey": 4,
+        "intake.channel_leg": 4,
+        "intake.deterministic_decision": 4,
+        "intake.safe_action_suggestion": 9,
+        "intake.manual_review_item": 1,
+        "pilot_ticket.ticket": 2,
+        "communication.message": 1,
+        "communication.outbox": 1,
+        "communication.delivery": 1
+      },
+      "linked_roots": 4,
+      "existing_rows_unchanged": true,
+      "existing_command_replays": true
+    }
+  ]
+}
