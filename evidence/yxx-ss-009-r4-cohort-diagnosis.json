@@ -1,0 +1,24 @@
+{
+  "event_time": "2026-09-19 10:59:57",
+  "event_epoch_ms": "1789786797750",
+  "candidate_fingerprint": "08bc594b6702e35c21d5342d970745735e93ff0434f81c7e3fd035b69363ec04",
+  "failed_run": "evidence/yxx-ss-009-r4-full-first-failed-run.json",
+  "failed_tap": "evidence/yxx-ss-009-r4-full-first-failed.tap",
+  "observed": {
+    "actual_distinct_reporters": 4,
+    "expected_distinct_reporters": 5
+  },
+  "root_cause": "Background correlation observes a smaller prefix while the complete-cohort fixture is still collecting reports; the test subsequently reads that earlier candidate snapshot.",
+  "exact_reproducer": "evidence/yxx-ss-009-r4-cohort-four-red.tap",
+  "exact_green": "evidence/yxx-ss-009-r4-cohort-four-green.tap",
+  "additional_three_reporter_probe": "evidence/yxx-ss-009-r4-cohort-red.tap",
+  "source_targeted_green": "evidence/yxx-ss-009-r4-regression-fixes-green.tap",
+  "targeted_tests": 13,
+  "fix": "Use the existing database advisory lock across complete input collection in all five scope cases. Start a controlled in-flight correlation in the conflict case; catch its outcome immediately, release the lock, then await it on both success and failure.",
+  "runtime_changed": false,
+  "assertions_removed": 0,
+  "load_reduced": false,
+  "timeouts_increased": false,
+  "limitation": "This proves complete-cohort scope classification, not single-candidate or automatic-refresh behavior for production inputs arriving progressively.",
+  "full_rerun_required": true
+}

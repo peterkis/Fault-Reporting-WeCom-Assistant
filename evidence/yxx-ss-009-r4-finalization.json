@@ -1,0 +1,26 @@
+{
+  "event_time": "2026-09-19 11:49:30",
+  "event_epoch_ms": "1789789770089",
+  "candidate_fingerprint": "08bc594b6702e35c21d5342d970745735e93ff0434f81c7e3fd035b69363ec04",
+  "status": "PASS",
+  "pending_report": {
+    "path": "evidence/yxx-ss-009-r4-pending-report.json",
+    "encoding": "UTF8_LF",
+    "sha256": "4bbf2a3b8abcaabb337d0356ce5c474158f745a743cafc1b32f51c2747d89a98"
+  },
+  "pending_exit_code": 1,
+  "pending_output": {
+    "path": "evidence/yxx-ss-009-r4-pending-validation.txt",
+    "encoding": "UTF8_LF",
+    "sha256": "a79943a56ae3496244750c6a200a69638878b913d5de063b476b936f050c1665"
+  },
+  "pending_rejection_code": "SS009_COMPLETION_STATE_REQUIRED",
+  "internal_preparation_status": "SS009_CORE_EVIDENCE_VALID_NOT_COMPLETE",
+  "final_exit_code": 0,
+  "final_output": {
+    "path": "evidence/yxx-ss-009-r4-strict-validation.txt",
+    "encoding": "UTF8_LF",
+    "sha256": "35535fb7d6657d388d7a067e3eac5b67db7996ad251321af424aebf037d12230"
+  },
+  "final_status": "SS009_LOCAL_VERIFICATION_COMPLETE"
+}

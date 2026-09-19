@@ -1,0 +1,47 @@
+{
+  "event_time": "2026-09-19 11:44:56",
+  "event_epoch_ms": "1789789496085",
+  "axis": "STANDARDS",
+  "reviewer": "/root/ss009_standards_audit",
+  "recorded_by": "/root",
+  "reviewed_head": "4365a7b9680f0102156f44966823c858c7201ae4",
+  "reviewed_tree": "ca19866dcd4d5dc7bbb72c46a85dc84bf91ec88e",
+  "candidate_fingerprint": "08bc594b6702e35c21d5342d970745735e93ff0434f81c7e3fd035b69363ec04",
+  "scope": "R4_IMPLEMENTATION_AND_FROZEN_FULL_EXECUTION",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [
+    {
+      "severity": "P1",
+      "review_comment": 4051906582,
+      "resolved": true,
+      "description": "SS009 rejects missing local validation scope in default, strict and internal preparation modes; present scope retains protected parent-state validation."
+    }
+  ],
+  "raw_execution_directory": "tmp/p2-g2-tests-5fb3fc6a-69f5-4094-989d-45b89c070869",
+  "verified": {
+    "tests": 1180,
+    "pass": 1180,
+    "test_files": 191,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "candidate_unchanged": true,
+    "cleanup_receipts": 13,
+    "owned_residuals": 0,
+    "historical_member_scenarios": 48,
+    "historical_g2_scenarios": 37,
+    "historical_sources": 202,
+    "normal_input_sources": 122
+  },
+  "summary": "Independent STANDARDS verified Node24.18.0 expose-gc, file and trace hashes,1180paired-time events, scope guard and cohort cleanup, protected state/migrations/evidence/gitignore.",
+  "publication_gates_at_review": "Binder,23actual tamper checks and pending-rejection then completed-pass workflow NOT_RUN at review; execute separately",
+  "preserved_limitations": [
+    "Historical semantic adjudications retained; original_semantics_all_passed=false",
+    "Cohort fixture proves complete-input scope classification, not production automatic refresh",
+    "No current-candidate remote approval or live authorization"
+  ]
+}

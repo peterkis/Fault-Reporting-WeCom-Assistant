@@ -1,0 +1,1 @@
+{"ok":true,"work_item":"P2-G2-YXX-TICKET-ENTRY","check_scope":"SOURCE_PREPARATION","candidate_fingerprint":"08bc594b6702e35c21d5342d970745735e93ff0434f81c7e3fd035b69363ec04","persistent_defaults_off":true,"readiness_checked":false,"live_authorized":false,"database_connections":0,"provider_calls":0}

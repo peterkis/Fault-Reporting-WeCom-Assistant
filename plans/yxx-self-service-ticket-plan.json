@@ -14,7 +14,7 @@
     {"id":"YXX-SS-006","depends_on":["YXX-SS-004"],"status":"COMPLETE"},
     {"id":"YXX-SS-007","depends_on":["YXX-SS-001","YXX-SS-002"],"status":"COMPLETE"},
     {"id":"YXX-SS-008","depends_on":["YXX-SS-004","YXX-SS-005","YXX-SS-006","YXX-SS-007"],"status":"COMPLETE","evidence":"evidence/yxx-ss-008-pr18-readiness-report.json"},
-    {"id":"YXX-SS-009","depends_on":["YXX-SS-008"],"status":"IN_REVIEW","local_verification":"REVALIDATION_REQUIRED","remote_delivery_review":"CHANGES_REQUESTED","evidence":"evidence/yxx-ss-009-r4-report.json"},
+    {"id":"YXX-SS-009","depends_on":["YXX-SS-008"],"status":"IMPLEMENTATION_AND_AUTOMATION_COMPLETE","local_verification":"PASS","remote_delivery_review":"PENDING_CODEX_REVIEW","evidence":"evidence/yxx-ss-009-r4-report.json"},
     {"id":"YXX-SS-010","depends_on":["YXX-SS-009"],"status":"PLANNED"},
     {"id":"YXX-SS-011","depends_on":["YXX-SS-010"],"status":"NOT_AUTHORIZED"}
   ],
