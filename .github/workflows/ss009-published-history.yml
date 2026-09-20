@@ -30,18 +30,31 @@ jobs:
       CHECKOUT_ROLE: ${{ matrix.checkout }}
       GIT_NO_REPLACE_OBJECTS: '1'
     steps:
+      # Original SS-009 evidence hashes .gitignore as raw Windows CRLF bytes.
+      # Reproduce that checkout policy; never rewrite the frozen evidence hash.
+      - name: Configure the recorded Windows checkout line endings
+        run: git config --global core.autocrlf true
       - name: Checkout the exact event object with full history
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ matrix.checkout == 'head' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Retain the recorded checkout policy in this isolated repository
+        run: git config --local core.autocrlf true
       - name: Use Node 24
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
       - name: Prepare external log directory
         run: mkdir -p "$RUNNER_TEMP/ss009-history"
+      - name: Verify raw gitignore bytes against the original start receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-files --eol -- .gitignore
+          node --input-type=module -e 'import assert from "node:assert/strict"; import {readFileSync} from "node:fs"; import {createHash} from "node:crypto"; const expected=JSON.parse(readFileSync("evidence/yxx-ss-009-start.json","utf8")).gitignore_sha256; const actual=createHash("sha256").update(readFileSync(".gitignore")).digest("hex"); assert.equal(actual,expected); console.log(JSON.stringify({checkout_eol:"CRLF",gitignore_sha256:actual,original_receipt_unchanged:true}));' \
+            | tee "$RUNNER_TEMP/ss009-history/checkout-eol.json"
       - name: Test review-environment handling with real synthetic Git graphs
         shell: bash
         run: |
