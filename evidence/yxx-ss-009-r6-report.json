@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-20 17:10:28",
+  "event_epoch_ms": "1789895428464",
+  "candidate_fingerprint": "0c5178a938f9461eea1060ed7483965d4b99b48b0bf554f167be4f0d3c56d753",
+  "work_item": "YXX-SS-009",
+  "status": "IMPLEMENTATION_AND_AUTOMATION_COMPLETE",
+  "local_verification": "PASS",
+  "base_head": "375d47b013017edb858206cc5f3475c9aed77dfd",
+  "tested_head": "30ee4f6a9cc94b7a2c11228c1de3bc3d3880e0ba",
+  "tested_tree": "82b90150f1d665af97f6422b8c73a61d01bfeee8",
+  "live_authorized": false,
+  "remote_review": "NOT_RUN",
+  "full_regression": {
+    "tests": 1187,
+    "pass": 1187,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_files": 191,
+    "candidate_unchanged": true
+  },
+  "run": {
+    "path": "evidence/yxx-ss-009-r6-full-run.json",
+    "encoding": "UTF8_LF",
+    "sha256": "90431ed3c90ff68fb61484787f218f94a4fc158b40281ed1b4afa4e2828c1c7c"
+  },
+  "tap": {
+    "path": "evidence/yxx-ss-009-r6-full.tap",
+    "encoding": "UTF8_LF",
+    "sha256": "de6fe86e6d2321dfb0f103b24b7a004e5405dd69a5c24f9e13b408122636072c"
+  },
+  "case_trace": {
+    "path": "evidence/yxx-ss-009-r6-full-cases.jsonl",
+    "encoding": "UTF8_LF",
+    "sha256": "dad39479f1a2a131e1614c49e61bf668a193a222a40b070c7afabecc762e50a7"
+  },
+  "fault": {
+    "path": "evidence/yxx-ss-009-r6-fault.json",
+    "encoding": "UTF8_LF",
+    "sha256": "cff16fd2f089de81ba5a69f1fa6405e04d0ddd6e507fce69988cb04fb8f625bf"
+  },
+  "capacity": {
+    "path": "evidence/yxx-ss-009-r6-capacity.json",
+    "encoding": "UTF8_LF",
+    "sha256": "f3072bbbfb44f3b3b13c20a98c25b6fea9307f76cca90dc323f367e61ca715aa"
+  },
+  "catalog": {
+    "path": "evidence/yxx-ss-009-r6-catalog.json",
+    "encoding": "UTF8_LF",
+    "sha256": "c8f3f8c21df944f5dbbc94affbc6284cd010172039a8362ec688fbdc86428caf"
+  },
+  "browser": {
+    "path": "evidence/yxx-ss-009-r6-browser.json",
+    "encoding": "UTF8_LF",
+    "sha256": "3e0927328bfba201a59d6f457ff5fc88585b1e68bd98ed76fe5e996b81dcf7b1"
+  },
+  "source_audit": {
+    "path": "evidence/yxx-ss-009-r6-source-audit.json",
+    "encoding": "UTF8_LF",
+    "sha256": "ce666786b1a8dee1fb1a3b4bb15395d57a6d292945c9be9ed76c8a9b590e3d94"
+  },
+  "cleanup": {
+    "path": "evidence/yxx-ss-009-r6-cleanup.json",
+    "encoding": "UTF8_LF",
+    "sha256": "0da9ea05ce5ba53f14d88fa687ea9ef5d978c3dabd9b642e53e195c4f1d8efec"
+  },
+  "validators": {
+    "path": "evidence/yxx-ss-009-r6-validators.json",
+    "encoding": "UTF8_LF",
+    "sha256": "7f7357f71ac98427e215aa6ad921e02cd053d7510d7dfd2aa56c09aa94bd03f2"
+  },
+  "review": {
+    "path": "evidence/yxx-ss-009-r6-independent-review.json",
+    "encoding": "UTF8_LF",
+    "sha256": "acafda7a0561c506bb7abe049798c08816aac7d8a5b088b088c83288d9f06599"
+  },
+  "historical_coverage": {
+    "path": "evidence/yxx-ss-009-r6-historical-coverage.json",
+    "encoding": "UTF8_LF",
+    "sha256": "b15ba9229023183d00c58362cbf80317a62872765e74615e991edbc0a948c24c"
+  },
+  "inventory": {
+    "path": "evidence/yxx-ss-009-r6-source-inventory.json",
+    "encoding": "UTF8_LF",
+    "sha256": "25e16f1967801ce0b1dc053709b0635a83b78540fcfe4fd622182befeeeeea72"
+  },
+  "governance": {
+    "path": "evidence/yxx-ss-009-r6-governance.json",
+    "encoding": "UTF8_LF",
+    "sha256": "a9469dee66952d5e2ca8cf3056c272ecc1553c8951f4d4ae83a3d56ceff51df9"
+  },
+  "time_audit": {
+    "path": "evidence/yxx-ss-009-r6-time-audit.json",
+    "encoding": "UTF8_LF",
+    "sha256": "6f699510f97c0cd29aa0b62c7ae91681c340afdc44d8f0087dfd84313528dfbe"
+  },
+  "matrix": {
+    "path": "evidence/yxx-ss-009-r6-acceptance.json",
+    "encoding": "UTF8_LF",
+    "sha256": "11b9713eb94581ea138b6f09dba5f5429824c606b1576f8f65bd24f0c92064ab"
+  },
+  "limitations": [
+    "Formal natural GC / 2C4G / 60 minutes NOT_RUN",
+    "SS010 PLANNED; SS011 NOT_AUTHORIZED",
+    "Parent G2 historical readiness unchanged; P2-G2-LIVE and AI not started"
+  ],
+  "strict_negative": {
+    "path": "evidence/yxx-ss-009-r6-strict-negative.json",
+    "encoding": "UTF8_LF",
+    "sha256": "f53bb5df259aa1784544d18640545f35db467d0f2627faa5f38b77e184a37e7b"
+  }
+}

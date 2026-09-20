@@ -1,0 +1,31 @@
+{
+  "event_time": "2026-09-20 17:10:28",
+  "event_epoch_ms": "1789895428444",
+  "candidate_fingerprint": "0c5178a938f9461eea1060ed7483965d4b99b48b0bf554f167be4f0d3c56d753",
+  "reviews": [
+    {
+      "axis": "SPEC",
+      "reviewer": "/codex/subagent/Mendel/spec",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "candidate_fingerprint": "0c5178a938f9461eea1060ed7483965d4b99b48b0bf554f167be4f0d3c56d753",
+      "source": {
+        "path": "evidence/yxx-ss-009-r6-spec-review.json",
+        "encoding": "UTF8_LF",
+        "sha256": "925a04ada170badccc12dab5c9b1f8772f869c2bfbe57835eb213a90d2818d26"
+      }
+    },
+    {
+      "axis": "STANDARDS",
+      "reviewer": "/codex/subagent/Herschel/standards",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "candidate_fingerprint": "0c5178a938f9461eea1060ed7483965d4b99b48b0bf554f167be4f0d3c56d753",
+      "source": {
+        "path": "evidence/yxx-ss-009-r6-standards-review.json",
+        "encoding": "UTF8_LF",
+        "sha256": "e28efc3901280f0c1f232f0b6cee0ea09c3d27e605915b932a7c63c86d2d9321"
+      }
+    }
+  ]
+}

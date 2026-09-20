@@ -1,0 +1,18 @@
+{
+  "event_time": "2026-09-20 17:10:28",
+  "event_epoch_ms": "1789895428454",
+  "candidate_fingerprint": "0c5178a938f9461eea1060ed7483965d4b99b48b0bf554f167be4f0d3c56d753",
+  "identity": {
+    "mode": "VERIFIED_DELEGATED_MAPPING",
+    "raw_same_namespace": false,
+    "official_A_B_conversion": "VERIFIED"
+  },
+  "historical_identity_source": {
+    "path": "evidence/p2-g2-yxx-targeted-live-summary.json",
+    "encoding": "UTF8_LF",
+    "sha256": "07188a4ad59091304abc905cfd8c75f7fcce0963c3f9bca01297b3f6b4718546"
+  },
+  "gitignore_sha256": "0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092",
+  "last_completed_gate": "P2-G1",
+  "live_calls": 0
+}
