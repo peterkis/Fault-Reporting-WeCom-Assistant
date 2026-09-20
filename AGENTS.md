@@ -196,7 +196,7 @@ phase3/unified-operations
 
 - P3-G1：Contract + Outbound Transport；
 - P3-G2：First Intranet Source E2E；
-- P3-G3：Fault/Security/Reconciliation；
+- P3-G3：Multi-source Operations + Fault/Security/Reconciliation；
 - P3-G4：First Production Source Onboarding + Phase 3 Go。
 
 ## 9. 每个任务的完成标准
