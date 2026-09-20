@@ -5,9 +5,9 @@
 两层代码缺陷均已修复，当前候选的 Windows/隔离 PostgreSQL/真实浏览器全量回归已实际执行。**r6 Binder、严格完成态和远端 CI 尚未完成，不能合并或声称全部 CI 已通过。**
 
 - finding：Require an observed case for every listed test file；并修复 set-preserving file relabeling 可绕过文件来源校验的问题。
-- 覆盖修复提交：`9bee25cab09ae10cd1e0d02c52db0364791818d9`、`f8213ba`。
+- 覆盖修复提交：`9bee25cab09ae10cd1e0d02c52db0364791818d9`、`f8213ba`、`89cf07b`。
 - 产品测试提交：`01e0d79538afb0f4cf4eab1ba9364b344274ed28` 及当前 provenance 回归测试。
-- 本轮代码候选指纹：`5c98ba04915c4891f1b4d55c64ab456305708e82ae279121c18d9cb33f466d85`；证据前缀已冻结为 `evidence/yxx-ss-009-r6-`。后续任何候选文件变动均须重新计算，不能照抄本值。
+- 本轮代码候选指纹：`0c5178a938f9461eea1060ed7483965d4b99b48b0bf554f167be4f0d3c56d753`；证据前缀已冻结为 `evidence/yxx-ss-009-r6-`。后续任何候选文件变动均须重新计算，不能照抄本值。
 - r5 的 `91a6b21b...`、1182/1182 和原独立审查保留为历史事实，不为当前候选背书。
 - 计划状态已设为 `LOCAL_REVALIDATION_REQUIRED / PENDING_CURRENT_CANDIDATE_EVIDENCE`，原 r5 指针显式标注 `HISTORICAL_R5_NOT_CURRENT_CANDIDATE`。
 
@@ -19,13 +19,13 @@
 
 原名称/nesting/重复次数多重集、未知文件、TAP、摘要、完成态、候选指纹、源 blob、祖先链及历史证据约束均未删除或放宽。Binder 与 strict 原来已共用此 helper，因此两个入口都获得反向覆盖检查。
 
-仅依靠 trace 中可变的 `c.file` 与全局 TAP 名称多重集仍可把一个 case 跨文件重标，同时保持所有文件均被观察。新增 `scripts/p2-g2-file-coverage-reporter.mjs` 从 Node test runner 的文件级事件生成独立 `file_execution` 清单；runner 将每文件 `total/pass/fail/skipped/todo` 绑定到 `run.json`，helper 要求每文件成功计数与 trace 完全一致，失配返回 `SS009_TEST_FILE_PROVENANCE_MISMATCH`。
+仅依靠 trace 中可变的 `c.file` 与全局 TAP 名称多重集仍可把一个 case 跨文件重标，同时保持所有文件均被观察。新增 `scripts/p2-g2-file-coverage-reporter.mjs` 从 Node test runner 的文件级事件生成独立 `file_execution` 清单；runner 将每文件 `total/pass/fail/skipped/todo` 和成功 case 的 `name/nesting/line` 多重集摘要绑定到 `run.json`，helper 要求计数与身份摘要均与 trace 完全一致，失配返回 `SS009_TEST_FILE_PROVENANCE_MISMATCH`。
 
 原正向单元测试夹具列出 183 个文件却把 1155 个模拟 case 都归到一个文件；本轮将模拟 case 分布到这 183 个文件，而不是删除文件覆盖断言。当前 15 项证据测试覆盖共享名称/乱序、整文件省略且计数一致、set-preserving 文件重标、多个缺失文件及 skip/todo 不能充当执行证明。
 
 ## 已观察到的本地结果
 
-- 当前 full runner 目录：`tmp/p2-g2-tests-aaa2b731-7288-4fdb-ab70-7fc46b114259`。
+- 当前 full runner 目录：`tmp/p2-g2-tests-8afce8b9-8a4a-43b7-a008-10daffa2b2eb`。
 - Node `v24.18.0`、Git `2.48.1.windows.1`、本机 PostgreSQL `18.4`；临时 env 从本机 `.env.pilot` 生成并在 runner 退出后删除，未使用生产网络或 WeCom 凭据。
 - 全量实际结果：`1187/1187`，191 个测试文件，fail/cancelled/skipped/todo 均为 0，`candidate_unchanged=true`；`file_execution` 清单为 191/191，且已通过 helper 的每文件计数绑定。
 - 15/15 SS-009 证据测试、历史 bypass probe、8 个架构/阶段检查器均通过；隔离数据库、浏览器、子进程 cleanup 残留为 0。
@@ -66,7 +66,7 @@ node scripts/validate-yxx-self-service.mjs
 ## 恢复完成态的执行边界
 
 1. 拉取本分支；保护未提交工作，不 reset/force-push。确认本轮修复及测试已保留。只使用本次测试自有的本地 PostgreSQL、Node 24 和项目支持的系统浏览器。
-2. 本轮已将 `SS009_EVIDENCE_PREFIX` 切换为尚不存在的 r6，并在 `f8213ba` 后重新记录 HEAD/tree/指纹；**不要直接运行 Binder 覆盖 r5**。后续候选文件变动仍须重新计算并重跑全量回归。
+2. 本轮已将 `SS009_EVIDENCE_PREFIX` 切换为尚不存在的 r6，并在 `89cf07b` 后重新记录 HEAD/tree/指纹；**不要直接运行 Binder 覆盖 r5**。后续候选文件变动仍须重新计算并重跑全量回归。
 3. 使用只包含本次隔离测试数据库配置的本地 env 文件执行原全量 runner：`node scripts/p2-g2-synthetic-e2e.mjs --suite=full --env-file=.env.ss009-review`。不得使用生产配置，测试数以实际输出为准，不把预期值写作结果。
 4. 核对实际全量 TAP、trace、run.files、file_execution、全部原始故障/容量/catalog/浏览器/cleanup 收据及历史矩阵。保持运行前后候选不变；新 helper 必须确认每个 run.files 文件都有成功 case，且 per-file pass 计数与 trace 一致。
 5. 获取绑定新指纹、来源真实的 SPEC/STANDARDS 独立审查文件。不得改名复制 r5 审查或由同一执行者冒签两个独立 reviewer。
