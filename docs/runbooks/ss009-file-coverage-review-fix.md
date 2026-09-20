@@ -2,12 +2,12 @@
 
 ## 当前结论
 
-代码缺陷已修复，专项验证已实际执行。**当前候选的完整 SS-009 验收尚未重新完成，不能合并或声称全部 CI 已通过。**
+两层代码缺陷均已修复，当前候选的 Windows/隔离 PostgreSQL/真实浏览器全量回归已实际执行。**r6 Binder、严格完成态和远端 CI 尚未完成，不能合并或声称全部 CI 已通过。**
 
-- finding：`discussion_r4056171851`，Require an observed case for every listed test file。
-- 修复源提交：`9bee25cab09ae10cd1e0d02c52db0364791818d9`。
-- 产品测试提交：`01e0d79538afb0f4cf4eab1ba9364b344274ed28`。
-- 本轮代码候选指纹：`aafb25f80bec8a34748272f130656261e1a5862a4eee24cf4444338a4d4acd9e`。后续任何候选文件变动均须重新计算，不能照抄本值。
+- finding：Require an observed case for every listed test file；并修复 set-preserving file relabeling 可绕过文件来源校验的问题。
+- 覆盖修复提交：`9bee25cab09ae10cd1e0d02c52db0364791818d9`、`f8213ba`。
+- 产品测试提交：`01e0d79538afb0f4cf4eab1ba9364b344274ed28` 及当前 provenance 回归测试。
+- 本轮代码候选指纹：`5c98ba04915c4891f1b4d55c64ab456305708e82ae279121c18d9cb33f466d85`；证据前缀已冻结为 `evidence/yxx-ss-009-r6-`。后续任何候选文件变动均须重新计算，不能照抄本值。
 - r5 的 `91a6b21b...`、1182/1182 和原独立审查保留为历史事实，不为当前候选背书。
 - 计划状态已设为 `LOCAL_REVALIDATION_REQUIRED / PENDING_CURRENT_CANDIDATE_EVIDENCE`，原 r5 指针显式标注 `HISTORICAL_R5_NOT_CURRENT_CANDIDATE`。
 
@@ -19,17 +19,18 @@
 
 原名称/nesting/重复次数多重集、未知文件、TAP、摘要、完成态、候选指纹、源 blob、祖先链及历史证据约束均未删除或放宽。Binder 与 strict 原来已共用此 helper，因此两个入口都获得反向覆盖检查。
 
-原正向单元测试夹具列出 183 个文件却把 1155 个模拟 case 都归到一个文件；本轮将模拟 case 分布到这 183 个文件，而不是删除文件覆盖断言。新增四项单元测试覆盖共享名称/乱序、整文件省略且计数一致、文件来源重新分配、多个缺失文件及 skip/todo 不能充当执行证明。
+仅依靠 trace 中可变的 `c.file` 与全局 TAP 名称多重集仍可把一个 case 跨文件重标，同时保持所有文件均被观察。新增 `scripts/p2-g2-file-coverage-reporter.mjs` 从 Node test runner 的文件级事件生成独立 `file_execution` 清单；runner 将每文件 `total/pass/fail/skipped/todo` 绑定到 `run.json`，helper 要求每文件成功计数与 trace 完全一致，失配返回 `SS009_TEST_FILE_PROVENANCE_MISMATCH`。
 
-## 已观察到的远端结果
+原正向单元测试夹具列出 183 个文件却把 1155 个模拟 case 都归到一个文件；本轮将模拟 case 分布到这 183 个文件，而不是删除文件覆盖断言。当前 15 项证据测试覆盖共享名称/乱序、整文件省略且计数一致、set-preserving 文件重标、多个缺失文件及 skip/todo 不能充当执行证明。
 
-Actions run `35494180206`，head `89eede05b2d037b456c8cc47b867ccaaf3b05c98`，job `106034136893`：
+## 已观察到的本地结果
 
-- Node v24.20.0、Git 2.55.0，完整历史，记录的 CRLF 检出策略。
-- `tests/yxx-ss-009-evidence.test.mjs`：14/14，fail/cancelled/skipped/todo 均 0。
-- 结构验证返回 `STRUCTURE_VALID_NOT_READY`。
-- 八个既有架构/阶段检查器均 exit 0；这不是八个新的现场验收。
-- 真实历史 strict 入口变造实验通过，且当前候选指纹在实验前后未变化，实验 worktree 已清理。
+- 当前 full runner 目录：`tmp/p2-g2-tests-aaa2b731-7288-4fdb-ab70-7fc46b114259`。
+- Node `v24.18.0`、Git `2.48.1.windows.1`、本机 PostgreSQL `18.4`；临时 env 从本机 `.env.pilot` 生成并在 runner 退出后删除，未使用生产网络或 WeCom 凭据。
+- 全量实际结果：`1187/1187`，191 个测试文件，fail/cancelled/skipped/todo 均为 0，`candidate_unchanged=true`；`file_execution` 清单为 191/191，且已通过 helper 的每文件计数绑定。
+- 15/15 SS-009 证据测试、历史 bypass probe、8 个架构/阶段检查器均通过；隔离数据库、浏览器、子进程 cleanup 残留为 0。
+
+这些是本地当前候选结果，不是远端 CI、Codex APPROVED 或完成态证据。
 
 对原 r5 证据的实验证据：
 
@@ -46,7 +47,7 @@ Actions run `35494180206`，head `89eede05b2d037b456c8cc47b867ccaaf3b05c98`，jo
 
 `src/yxx-self-service-verification.mjs` 和产品测试属于已定义的候选指纹范围。本轮改动后，r5 报告不再匹配当前候选。原 `--require-ready` 因此应继续拒绝；不应修改原 r5 的指纹、tested_head、测试数字、独立审查，或把新文件加入候选排除项来制造通过。
 
-本轮没有重新执行完整 Windows + 隔离 PostgreSQL + 真实浏览器全量回归，也没有获取新候选的两轴独立审查或生成最终 r6 证据。原 `SS009 published history` workflow 和原严格命令未被跳过、替换或设为 continue-on-error。
+本轮已重新执行完整 Windows + 隔离 PostgreSQL + 真实浏览器全量回归；当前候选的两轴独立审查、Binder、tamper runner、最终 r6 证据、原 `SS009 published history` workflow 和严格完成态仍待完成。原严格命令没有被跳过、替换或设为 continue-on-error。
 
 本轮的绿色 `SS009 file execution coverage` workflow 仅证明本 P2 修复与专项检查，不是合并许可。SS010、SS011、父 Gate、Feature Flags 和真实发送/部署停止线均不推进。
 
@@ -65,9 +66,9 @@ node scripts/validate-yxx-self-service.mjs
 ## 恢复完成态的执行边界
 
 1. 拉取本分支；保护未提交工作，不 reset/force-push。确认本轮修复及测试已保留。只使用本次测试自有的本地 PostgreSQL、Node 24 和项目支持的系统浏览器。
-2. 在冻结前将 `SS009_EVIDENCE_PREFIX` 切换到一个尚不存在的新前缀，例如 r6。当前仍为 r5；**不要直接运行 Binder 覆盖 r5**。完成所有候选文件修改并提交，然后记录实际 HEAD/tree/指纹。
+2. 本轮已将 `SS009_EVIDENCE_PREFIX` 切换为尚不存在的 r6，并在 `f8213ba` 后重新记录 HEAD/tree/指纹；**不要直接运行 Binder 覆盖 r5**。后续候选文件变动仍须重新计算并重跑全量回归。
 3. 使用只包含本次隔离测试数据库配置的本地 env 文件执行原全量 runner：`node scripts/p2-g2-synthetic-e2e.mjs --suite=full --env-file=.env.ss009-review`。不得使用生产配置，测试数以实际输出为准，不把预期值写作结果。
-4. 核对实际全量 TAP、trace、run.files、全部原始故障/容量/catalog/浏览器/cleanup 收据及历史矩阵。保持运行前后候选不变；新 helper 必须确认每个 run.files 文件都有成功 case。
+4. 核对实际全量 TAP、trace、run.files、file_execution、全部原始故障/容量/catalog/浏览器/cleanup 收据及历史矩阵。保持运行前后候选不变；新 helper 必须确认每个 run.files 文件都有成功 case，且 per-file pass 计数与 trace 一致。
 5. 获取绑定新指纹、来源真实的 SPEC/STANDARDS 独立审查文件。不得改名复制 r5 审查或由同一执行者冒签两个独立 reviewer。
 6. 对实际成功 run 目录执行原 Binder、新前缀下的原 tamper runner，并保留 pending 完成态拒绝、最终完成态通过的真实结果。测试失败或证据缺失时停止，不手工拼接 PASS。
 7. 仅在完整条件满足后更新计划为完成态、切换 evidence 指针，删除本轮临时的 historical-only 标记。将新证据作为被测提交的后继提交发布；保留所有旧证据和失败记录。
