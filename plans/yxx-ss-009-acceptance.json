@@ -1132,6 +1132,14 @@
         {
           "file": "tests/yxx-ss-009-evidence.test.mjs",
           "name": "SS-009 requires local validation scope before accepting protected parent phase state"
+        },
+        {
+          "file": "tests/yxx-ss-009-evidence.test.mjs",
+          "name": "SS-009 complete trace matches TAP multiplicity nesting escaped names and collected files"
+        },
+        {
+          "file": "tests/yxx-ss-009-evidence.test.mjs",
+          "name": "SS-009 published regression summary equals all raw counts files and unchanged flag"
         }
       ],
       "evidence_kind": "strict_negative"

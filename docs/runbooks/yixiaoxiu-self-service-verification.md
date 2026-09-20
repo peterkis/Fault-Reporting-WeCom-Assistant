@@ -57,3 +57,7 @@ App pool<=4、Worker<=2；未启动 Gateway 时记0，控制器 pool 单独列�
 仅强制终止自有测试子进程或所属隔离库 backend，绝不停止共享数据库服务。
 数据库、进程、浏览器和 profile 均由 finally 清理；失败日志、TAP、截图和原运行目录保留诊断。
 原始外部身份、真实患者资料或 secret 不进入公共输出；模拟 Provider 调用与真实网络调用分别记录。
+
+## R5 完整执行绑定
+
+当前证据使用 evidence/yxx-ss-009-r5-*。严格入口及 Binder 对完整 case trace 与 Node24 TAP 成功记录按名称、嵌套层级和重复次数比较，文件必须属于本轮 collector。TAP 转义按 Node24 处理，并通过真实 Node TAP reporter 测试。报告 full_regression 必须精确等于原运行的全部计数、文件数和 candidate_unchanged。29类实际变造保留原23类，并增加未引用trace重复/未知文件/层级错误及三类回归汇总伪造；变造trace后重算run、时间审计和矩阵引用，不能靠旧hash导致假通过。

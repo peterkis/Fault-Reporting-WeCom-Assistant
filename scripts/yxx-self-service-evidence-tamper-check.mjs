@@ -18,13 +18,30 @@ export function tamperCheck(){
   try{
     copy();original=JSON.parse(readFileSync(reportPath,'utf8'));assert.equal(validateYxxSelfService({root:owned,requireReady:true,preTamper:true}).status,'SS009_CORE_EVIDENCE_VALID_NOT_COMPLETE');
     const artifact=(r,key,mutate)=>{const file=path.join(owned,r[key].path),value=JSON.parse(readFileSync(file,'utf8'));mutate(value);const text=JSON.stringify(value,null,2)+'\n';writeFileSync(file,text);r[key].sha256=evidenceHash(text);};
-    const trace=(r,mutate)=>{const file=path.join(owned,r.case_trace.path),rows=readFileSync(file,'utf8').trim().split('\n').map(line=>JSON.parse(line));mutate(rows[0]);const text=rows.map(row=>JSON.stringify(row)).join('\n')+'\n';writeFileSync(file,text);r.case_trace.sha256=evidenceHash(text);artifact(r,'run',run=>{run.case_trace_sha256=r.case_trace.sha256;});};
+    const trace=(r,mutate)=>{
+      const file=path.join(owned,r.case_trace.path),rows=readFileSync(file,'utf8').trim().split('\n').map(line=>JSON.parse(line));
+      const matrix=JSON.parse(readFileSync(path.join(owned,r.matrix.path),'utf8')),historical=JSON.parse(readFileSync(path.join(owned,r.historical_coverage.path),'utf8'));
+      const referenced=new Set([...matrix.scenarios.flatMap(s=>s.tests.map(t=>t.name)),...historical.bindings.flatMap(b=>b.scenarios.flatMap(s=>s.tests.map(t=>t.name)))]);
+      const unreferenced=rows.filter(c=>!referenced.has(c.name));assert.ok(unreferenced.length>=2);mutate(unreferenced[0],unreferenced[1]);
+      const text=rows.map(row=>JSON.stringify(row)).join('\n')+'\n';writeFileSync(file,text);r.case_trace.sha256=evidenceHash(text);
+      artifact(r,'run',run=>{run.case_trace_sha256=r.case_trace.sha256;});
+      // Rebind every dependent reference, so content checks, not stale hashes,
+      // reject these mutations of cases absent from the scenario mappings.
+      artifact(r,'time_audit',audit=>{for(const ref of audit.sources)if(ref.path===r.run.path)Object.assign(ref,r.run);});
+      artifact(r,'matrix',value=>{for(const s of value.scenarios){if(s.evidence?.path===r.run.path)s.evidence=r.run;if(s.evidence?.path===r.time_audit.path)s.evidence=r.time_audit;}});
+    };
     const changes=[
       ['wrong TAP hash',r=>{r.tap.sha256='0'.repeat(64);}],
       ['missing published inventory',r=>{r.inventory.path='evidence/ss009-missing-inventory.json';}],
       ['changed published inventory',r=>artifact(r,'inventory',v=>{v.files.pop();})],
       ['missing case observation time',r=>trace(r,c=>{delete c.event_time;})],
       ['unpaired case observation time',r=>trace(r,c=>{c.event_epoch_ms=String(BigInt(c.event_epoch_ms)+10000n);})],
+      ['duplicate unreferenced trace',r=>trace(r,(c,other)=>{Object.assign(c,other);})],
+      ['uncollected trace file',r=>trace(r,c=>{c.file='tests/not-collected.test.mjs';})],
+      ['wrong trace nesting',r=>trace(r,c=>{c.nesting++;})],
+      ['forged regression counts',r=>{r.full_regression.pass++;}],
+      ['forged regression file count',r=>{r.full_regression.test_files++;}],
+      ['forged regression unchanged flag',r=>{r.full_regression.candidate_unchanged=false;}],
       ['wrong candidate',r=>{r.candidate_fingerprint='0'.repeat(64);}],
       ['old but real tested commit',r=>{r.tested_head=SS009_BASE;r.tested_tree=git(['rev-parse',SS009_BASE+'^{tree}']).trim();}],
       ['missing old file',r=>artifact(r,'run',v=>{v.files.pop();})],

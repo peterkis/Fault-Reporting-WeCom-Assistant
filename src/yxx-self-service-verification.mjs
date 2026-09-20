@@ -9,7 +9,7 @@ import {readYxxLocalValidationScope} from './yxx-self-service-validation-scope.m
 import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
 
 export const SS009_BASE='375d47b013017edb858206cc5f3475c9aed77dfd';
-export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r4-';
+export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r5-';
 export const SS009_VALIDATORS=['validate-v1-4-architecture.mjs','validate-arch-005-time-contract.mjs','validate-arch-006-rule-first-service-loop.mjs','validate-p2-015-rule-first-intake.mjs','validate-p2-016-ticket-lifecycle-workbench.mjs','validate-p2-012-human-confirmed-incident.mjs','validate-p2-g2-service-loop.mjs','p2-g2-yixiaoxiu-check.mjs'];
 export const evidenceHash=value=>createHash('sha256').update(value).digest('hex');
 const countKeys=['tests','pass','fail','cancelled','skipped','todo'];
@@ -20,6 +20,29 @@ export function verifyYxxCompletionState(report,{preTamper=false}={}){
   if(!preTamper&&(report?.status!=='IMPLEMENTATION_AND_AUTOMATION_COMPLETE'||report?.local_verification!=='PASS')){
     throw Object.assign(new Error('SS009_COMPLETION_STATE_REQUIRED'),{code:'SS009_COMPLETION_STATE_REQUIRED'});
   }
+}
+
+export function verifyYxxRegressionSummary(summary,run){
+  assert.deepEqual(summary,{...run.counts,test_files:run.files.length,candidate_unchanged:run.candidate_unchanged});
+}
+
+export function verifyYxxCaseTrace({cases,run,tap}){
+  assert.equal(cases.length,run.counts.tests);
+  const files=new Set(run.files.map(f=>f.path));
+  // Node 24 TAP escapes controls before backslashes and hashes. Compare in
+  // that representation rather than ambiguously unescaping test names.
+  const controls={'\b':'b','\f':'f','\t':'t','\n':'n','\r':'r','\v':'v'};
+  const escape=name=>name.replace(/[\b\f\t\n\r\v]/gu,c=>'\\'+controls[c]).replaceAll('\\','\\\\').replaceAll('#','\\#');
+  const observed=cases.map(c=>{
+    assertG2EvidenceTime(c);assert.equal(c.time_basis,'REPORTER_OBSERVED_AT');
+    assert.equal(c.event,'test:pass');assert.equal(c.skip,false);assert.equal(c.todo,false);
+    assert.ok(files.has(c.file));assert.equal(typeof c.name,'string');assert.ok(Number.isSafeInteger(c.nesting)&&c.nesting>=0);
+    return JSON.stringify([c.nesting,escape(c.name)]);
+  });
+  const successes=[...normalize(tap).matchAll(/^( *)ok \d+ - (.+)$/gmu)].map(m=>{
+    assert.equal(m[1].length%4,0);return JSON.stringify([m[1].length/4,m[2]]);
+  });
+  assert.deepEqual(observed.sort(),successes.sort());
 }
 
 export function verifyYxxReceipts(kind,records){
@@ -69,7 +92,8 @@ export function verifyYxxRun({run,tap,inventory,baselineFiles}){
   assert.equal(run.expose_gc,true);assert.match(run.node_version,/^24\./u);
   assert.equal(run.candidate_unchanged,true);assert.equal(run.candidate_fingerprint,inventory.fingerprint);
   assert.equal(evidenceHash(tap),run.stdout_sha256);
-  assert.ok(!/^\s*not ok\b/mu.test(tap));assert.ok(!/^\s*ok .+#\s*(?:SKIP|TODO)\b/imu.test(tap));
+  assert.ok(!/^\s*not ok\b/mu.test(tap));
+  for(const [line] of tap.matchAll(/^ *ok .+$/gmu))assert.ok(!/(?:^|[^\\])(?:\\\\)*#\s*(?:SKIP|TODO)\b/iu.test(line));
   const counts={};for(const line of tap.split(/\r?\n/u)){const m=/^# (tests|pass|fail|cancelled|skipped|todo) (\d+)$/u.exec(line);if(m){assert.ok(!(m[1] in counts));counts[m[1]]=Number(m[2]);}}
   assert.deepEqual(counts,run.counts);assert.ok(counts.tests>=1155);assert.equal(counts.pass,counts.tests);
   for(const key of countKeys.slice(2))assert.equal(counts[key],0);
@@ -123,10 +147,10 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
   // Runner hashes its LF-normalized published TAP; original raw logs remain separate artifacts.
   const baseline=JSON.parse(execFileSync('git',['show',SS009_BASE+':evidence/yxx-ss-008-pr18-full-regression-run.json'],{cwd:root,encoding:'utf8'}));
   const passed=verifyYxxRun({run,tap,inventory,baselineFiles:baseline.files});
+  verifyYxxRegressionSummary(report.full_regression,run);
   const casesText=readYxxEvidence(root,report.case_trace);assert.equal(evidenceHash(casesText),run.case_trace_sha256);
-  const cases=casesText.trim().split('\n').map(line=>JSON.parse(line));assert.equal(cases.length,run.counts.tests);
-  for(const c of cases){assertG2EvidenceTime(c);assert.equal(c.time_basis,'REPORTER_OBSERVED_AT');}
-  assert.ok(cases.every(c=>c.event==='test:pass'&&!c.skip&&!c.todo));
+  const cases=casesText.trim().split('\n').map(line=>JSON.parse(line));
+  verifyYxxCaseTrace({cases,run,tap});
   const executed=json(report.matrix);assert.equal(executed.scenarios.length,102);
   for(let i=0;i<102;i++){
     const actual=executed.scenarios[i],planned=matrix.scenarios[i];assert.equal(actual.id,planned.id);
@@ -160,6 +184,6 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
   const governance=json(report.governance);assert.equal(governance.identity.raw_same_namespace,false);assert.equal(governance.identity.official_A_B_conversion,'VERIFIED');assert.deepEqual(governance.identity,read('evidence/p2-g2-yxx-targeted-live-summary.json').identity);
   assert.equal(governance.gitignore_sha256,start.gitignore_sha256);assert.equal(governance.last_completed_gate,'P2-G1');
   const time=json(report.time_audit);assert.ok(time.sources.length>=8);for(const ref of time.sources)assertG2EvidenceTime(json(ref));
-  if(!preTamper){const negative=json(report.strict_negative);assert.equal(negative.actual_strict_entry,true);assert.equal(negative.positive_control,true);assert.equal(negative.owned_worktree_removed,true);assert.equal(negative.rejected.length,23);assert.equal(new Set(negative.rejected).size,23);}
+  if(!preTamper){const negative=json(report.strict_negative);assert.equal(negative.actual_strict_entry,true);assert.equal(negative.positive_control,true);assert.equal(negative.owned_worktree_removed,true);assert.equal(negative.rejected.length,29);assert.equal(new Set(negative.rejected).size,29);}
   return {ok:true,status:preTamper?'SS009_CORE_EVIDENCE_VALID_NOT_COMPLETE':'SS009_LOCAL_VERIFICATION_COMPLETE',candidate_fingerprint:inventory.fingerprint,live_authorized:false,parent_gate_advanced:false};
 }

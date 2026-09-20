@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { verifyYxxRun,evidenceHash,readYxxEvidence,verifyYxxReceipts,verifyYxxCompletionState,validateYxxSelfService } from '../src/yxx-self-service-verification.mjs';
+import { verifyYxxRun,verifyYxxCaseTrace,verifyYxxRegressionSummary,evidenceHash,readYxxEvidence,verifyYxxReceipts,verifyYxxCompletionState,validateYxxSelfService } from '../src/yxx-self-service-verification.mjs';
+import {tap as tapReporter} from 'node:test/reporters';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 import {mkdtempSync,mkdirSync,writeFileSync,rmSync,symlinkSync,readFileSync,copyFileSync,unlinkSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
@@ -45,6 +46,34 @@ test('SS-009 strict completion requires finalized status and PASS while preTampe
 test('SS-009 evidence rejects a forged PASS summary without the matching successful TAP', () => {
   const run={suite:'full',exit_code:0,candidate_unchanged:true,counts:{tests:1155,pass:1155,fail:0,cancelled:0,skipped:0,todo:0}};
   assert.throws(()=>verifyYxxRun({run,tap:'not ok 1 - rejected\n',inventory:{fingerprint:'x',files:[]},baselineFiles:[]}));
+});
+
+test('SS-009 complete trace matches TAP multiplicity nesting escaped names and collected files',async()=>{
+  const names=['same name','same name','same name','literal # SKIP and \\ slash','control\nline\ttab'];
+  const cases=names.map((name,i)=>({...g2EvidenceTime(),time_basis:'REPORTER_OBSERVED_AT',event:'test:pass',name,file:'tests/example-'+(i%2)+'.test.mjs',line:i+1,nesting:i===1?1:0,skip:false,todo:false}));
+  const run={counts:{tests:5},files:[{path:'tests/example-0.test.mjs'},{path:'tests/example-1.test.mjs'}]};
+  async function* events(){for(const [i,c] of cases.entries())yield {type:'test:pass',data:{name:c.name,nesting:c.nesting,testNumber:i+1,details:{type:'test',duration_ms:1}}};}
+  let tap='';for await(const chunk of tapReporter(events()))tap+=chunk;
+  assert.doesNotThrow(()=>verifyYxxCaseTrace({cases:cases.toReversed(),run,tap}));
+  // Exercise the same Run -> Trace chain used by the strict validator/Binder.
+  const full=fixture(),escaped=/^ok 4 - (.+)$/mu.exec(tap)[1];
+  full.tap=full.tap.replace('ok 1 - case 0','ok 1 - '+escaped);full.run.stdout_sha256=evidenceHash(full.tap);
+  const fullCases=Array.from({length:1155},(_,i)=>({...cases[0],name:i===0?names[3]:'case '+i}));
+  assert.doesNotThrow(()=>{verifyYxxRun(full);verifyYxxCaseTrace({...full,cases:fullCases});});
+  for(const mutate of [rows=>{rows[0]=structuredClone(rows[3]);},rows=>{rows[0].file='tests/not-collected.test.mjs';},rows=>{rows[0].nesting=1;},rows=>{rows.pop();},rows=>{rows[0].name='invented';},rows=>{rows[0].skip=true;},rows=>{delete rows[0].event_time;}]){
+    const rows=structuredClone(cases);mutate(rows);assert.throws(()=>verifyYxxCaseTrace({cases:rows,run,tap}));
+  }
+});
+
+test('SS-009 published regression summary equals all raw counts files and unchanged flag',()=>{
+  const run={counts:{tests:4,pass:4,fail:0,cancelled:0,skipped:0,todo:0},files:[{},{}],candidate_unchanged:true};
+  const summary={tests:4,pass:4,fail:0,cancelled:0,skipped:0,todo:0,test_files:2,candidate_unchanged:true};
+  assert.doesNotThrow(()=>verifyYxxRegressionSummary(summary,run));
+  for(const key of Object.keys(summary)){
+    const changed={...summary,[key]:key==='candidate_unchanged'?false:999};assert.throws(()=>verifyYxxRegressionSummary(changed,run));
+    const missing={...summary};delete missing[key];assert.throws(()=>verifyYxxRegressionSummary(missing,run));
+  }
+  assert.throws(()=>verifyYxxRegressionSummary(undefined,run));
 });
 
 test('SS-009 every structured test event has paired reporter observation time',async()=>{

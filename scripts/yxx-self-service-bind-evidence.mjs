@@ -5,7 +5,7 @@ import {pathToFileURL} from 'node:url';
 import {g2CandidateInventory,G2_ROOT} from '../src/p2-g2-candidate.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 import {createG2SourceAudit} from '../src/p2-g2-source-audit.mjs';
-import {SS009_BASE,SS009_EVIDENCE_PREFIX,SS009_VALIDATORS,evidenceHash,verifyYxxRun,verifyYxxReceipts,historicalYxxBindings} from '../src/yxx-self-service-verification.mjs';
+import {SS009_BASE,SS009_EVIDENCE_PREFIX,SS009_VALIDATORS,evidenceHash,verifyYxxRun,verifyYxxCaseTrace,verifyYxxReceipts,historicalYxxBindings} from '../src/yxx-self-service-verification.mjs';
 
 export function bindYxxEvidence(directory){
   assert.match(directory,/^tmp\/p2-g2-tests-[a-f0-9-]{36}$/u);
@@ -14,6 +14,7 @@ export function bindYxxEvidence(directory){
   verifyYxxRun({run,tap,inventory,baselineFiles:read('evidence/yxx-ss-008-pr18-full-regression-run.json').files});
   assert.equal(evidenceHash(casesText),run.case_trace_sha256);
   const cases=casesText.trim().split('\n').map(line=>JSON.parse(line));
+  verifyYxxCaseTrace({cases,run,tap});
   const prefix=SS009_EVIDENCE_PREFIX,stamp=()=>({...g2EvidenceTime(),candidate_fingerprint:inventory.fingerprint});
   const ref=file=>({path:file,encoding:'UTF8_LF',sha256:evidenceHash(readFileSync(file,'utf8').replaceAll('\r\n','\n'))});
   const write=(suffix,data)=>{const file=prefix+suffix+'.json';writeFileSync(file,JSON.stringify(data,null,2)+'\n');return ref(file);};
