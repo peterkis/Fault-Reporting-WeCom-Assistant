@@ -9,7 +9,7 @@ import {readYxxLocalValidationScope} from './yxx-self-service-validation-scope.m
 import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
 
 export const SS009_BASE='375d47b013017edb858206cc5f3475c9aed77dfd';
-export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r5-';
+export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r6-';
 export const SS009_VALIDATORS=['validate-v1-4-architecture.mjs','validate-arch-005-time-contract.mjs','validate-arch-006-rule-first-service-loop.mjs','validate-p2-015-rule-first-intake.mjs','validate-p2-016-ticket-lifecycle-workbench.mjs','validate-p2-012-human-confirmed-incident.mjs','validate-p2-g2-service-loop.mjs','p2-g2-yixiaoxiu-check.mjs'];
 export const evidenceHash=value=>createHash('sha256').update(value).digest('hex');
 const countKeys=['tests','pass','fail','cancelled','skipped','todo'];
