@@ -29,15 +29,33 @@ export function verifyYxxRegressionSummary(summary,run){
 export function verifyYxxCaseTrace({cases,run,tap}){
   assert.equal(cases.length,run.counts.tests);
   const files=new Set(run.files.map(f=>f.path)),observedFiles=new Set();
+  const execution=Array.isArray(run.file_execution)?run.file_execution:null;
+  if(!execution)throw Object.assign(new Error('SS009_TEST_FILE_EXECUTION_PROVENANCE_REQUIRED'),{code:'SS009_TEST_FILE_EXECUTION_PROVENANCE_REQUIRED'});
+  const executionByFile=new Map();
+  for(const row of execution){
+    assert.equal(typeof row?.path,'string');assert.ok(files.has(row.path));assert.ok(!executionByFile.has(row.path));
+    for(const key of ['total','pass','fail','skipped','todo'])assert.ok(Number.isSafeInteger(row[key])&&row[key]>=0);
+    assert.equal(row.total,row.pass+row.fail+row.skipped+row.todo);executionByFile.set(row.path,row);
+  }
+  const missingExecution=[...files].filter(file=>!executionByFile.has(file));
+  if(missingExecution.length)throw Object.assign(new Error('SS009_TEST_FILE_EXECUTION_REQUIRED'),{
+    code:'SS009_TEST_FILE_EXECUTION_REQUIRED',missing_files:missingExecution.sort(),
+  });
+  const unexpectedExecution=[...executionByFile.keys()].filter(file=>!files.has(file));
+  if(unexpectedExecution.length)throw Object.assign(new Error('SS009_TEST_FILE_PROVENANCE_MISMATCH'),{
+    code:'SS009_TEST_FILE_PROVENANCE_MISMATCH',unexpected_files:unexpectedExecution.sort(),
+  });
   // Node 24 TAP escapes controls before backslashes and hashes. Compare in
   // that representation rather than ambiguously unescaping test names.
   const controls={'\b':'b','\f':'f','\t':'t','\n':'n','\r':'r','\v':'v'};
   const escape=name=>name.replace(/[\b\f\t\n\r\v]/gu,c=>'\\'+controls[c]).replaceAll('\\','\\\\').replaceAll('#','\\#');
+  const observedCounts=new Map();
   const observed=cases.map(c=>{
     assertG2EvidenceTime(c);assert.equal(c.time_basis,'REPORTER_OBSERVED_AT');
     assert.equal(c.event,'test:pass');assert.equal(c.skip,false);assert.equal(c.todo,false);
     assert.ok(files.has(c.file));assert.equal(typeof c.name,'string');assert.ok(Number.isSafeInteger(c.nesting)&&c.nesting>=0);
     observedFiles.add(c.file);
+    observedCounts.set(c.file,(observedCounts.get(c.file)??0)+1);
     return JSON.stringify([c.nesting,escape(c.name)]);
   });
   // The collected inventory is not proof of execution: require the reverse
@@ -45,6 +63,14 @@ export function verifyYxxCaseTrace({cases,run,tap}){
   const missingFiles=[...files].filter(file=>!observedFiles.has(file)).sort();
   if(missingFiles.length)throw Object.assign(new Error('SS009_TEST_FILE_EXECUTION_REQUIRED'),{
     code:'SS009_TEST_FILE_EXECUTION_REQUIRED',missing_files:missingFiles,
+  });
+  const provenanceMismatches=[...files].flatMap(file=>{
+    const row=executionByFile.get(file),observedPass=observedCounts.get(file)??0;
+    if(!row||row.pass!==observedPass||row.pass<1||row.fail!==0||row.skipped!==0||row.todo!==0)return [{file,recorded:row?.pass??null,observed:observedPass}];
+    return [];
+  });
+  if(provenanceMismatches.length)throw Object.assign(new Error('SS009_TEST_FILE_PROVENANCE_MISMATCH'),{
+    code:'SS009_TEST_FILE_PROVENANCE_MISMATCH',mismatches:provenanceMismatches,
   });
   const successes=[...normalize(tap).matchAll(/^( *)ok \d+ - (.+)$/gmu)].map(m=>{
     assert.equal(m[1].length%4,0);return JSON.stringify([m[1].length/4,m[2]]);

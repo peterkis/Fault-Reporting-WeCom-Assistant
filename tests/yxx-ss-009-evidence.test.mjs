@@ -51,7 +51,8 @@ test('SS-009 evidence rejects a forged PASS summary without the matching success
 test('SS-009 complete trace matches TAP multiplicity nesting escaped names and collected files',async()=>{
   const names=['same name','same name','same name','literal # SKIP and \\ slash','control\nline\ttab'];
   const cases=names.map((name,i)=>({...g2EvidenceTime(),time_basis:'REPORTER_OBSERVED_AT',event:'test:pass',name,file:'tests/example-'+(i%2)+'.test.mjs',line:i+1,nesting:i===1?1:0,skip:false,todo:false}));
-  const run={counts:{tests:5},files:[{path:'tests/example-0.test.mjs'},{path:'tests/example-1.test.mjs'}]};
+  const run={counts:{tests:5},files:[{path:'tests/example-0.test.mjs'},{path:'tests/example-1.test.mjs'}],file_execution:[
+    {path:'tests/example-0.test.mjs',total:3,pass:3,fail:0,skipped:0,todo:0},{path:'tests/example-1.test.mjs',total:2,pass:2,fail:0,skipped:0,todo:0}]};
   async function* events(){for(const [i,c] of cases.entries())yield {type:'test:pass',data:{name:c.name,nesting:c.nesting,testNumber:i+1,details:{type:'test',duration_ms:1}}};}
   let tap='';for await(const chunk of tapReporter(events()))tap+=chunk;
   assert.doesNotThrow(()=>verifyYxxCaseTrace({cases:cases.toReversed(),run,tap}));
@@ -70,7 +71,8 @@ function fileCoverageFixture(){
     ...g2EvidenceTime(),time_basis:'REPORTER_OBSERVED_AT',event:'test:pass',
     name:'same name',file,line:i+1,nesting:0,skip:false,todo:false,
   }));
-  return {cases,run:{counts:{tests:3},files:[{path:'tests/listed-a.test.mjs'},{path:'tests/listed-b.test.mjs'}]},
+  return {cases,run:{counts:{tests:3},files:[{path:'tests/listed-a.test.mjs'},{path:'tests/listed-b.test.mjs'}],file_execution:[
+      {path:'tests/listed-a.test.mjs',total:2,pass:2,fail:0,skipped:0,todo:0},{path:'tests/listed-b.test.mjs',total:1,pass:1,fail:0,skipped:0,todo:0}]},
     tap:'ok 1 - same name\nok 2 - same name\nok 3 - same name\n'};
 }
 
@@ -90,6 +92,12 @@ test('SS-009 trace rejects a whole omitted file after adjusting all trace and TA
 test('SS-009 trace rejects reassigned file provenance even when names nesting and counts match',()=>{
   const f=fileCoverageFixture();f.cases[1].file='tests/listed-a.test.mjs';
   assert.throws(()=>verifyYxxCaseTrace(f),{code:'SS009_TEST_FILE_EXECUTION_REQUIRED',missing_files:['tests/listed-b.test.mjs']});
+});
+
+test('SS-009 trace rejects set-preserving file relabeling against the independent execution manifest',()=>{
+  const f=fileCoverageFixture();f.cases[0].file='tests/listed-b.test.mjs';
+  assert.doesNotThrow(()=>assert.deepEqual(new Set(f.cases.map(c=>c.file)),new Set(f.run.files.map(file=>file.path))));
+  assert.throws(()=>verifyYxxCaseTrace(f),{code:'SS009_TEST_FILE_PROVENANCE_MISMATCH'});
 });
 
 test('SS-009 trace reports all unobserved files and skipped events cannot establish coverage',()=>{
@@ -154,7 +162,8 @@ function fixture(){
   const counts={tests:1155,pass:1155,fail:0,cancelled:0,skipped:0,todo:0};
   const tap=Array.from({length:1155},(_,i)=>`ok ${i+1} - case ${i}`).join('\n')+'\n'+Object.entries(counts).map(([k,v])=>`# ${k} ${v}`).join('\n')+'\n';
   const inventory={fingerprint:'b'.repeat(64),files};
-  const run={...g2EvidenceTime(),suite:'full',node_version:'24.0.0',expose_gc:true,exit_code:0,signal:null,error:null,candidate_unchanged:true,candidate_fingerprint:inventory.fingerprint,files:structuredClone(files),stdout_sha256:evidenceHash(tap),counts};
+  const fileExecution=files.map((file,i)=>{const pass=Math.floor(1155/files.length)+(i<1155%files.length?1:0);return {path:file.path,total:pass,pass,fail:0,skipped:0,todo:0};});
+  const run={...g2EvidenceTime(),suite:'full',node_version:'24.0.0',expose_gc:true,exit_code:0,signal:null,error:null,candidate_unchanged:true,candidate_fingerprint:inventory.fingerprint,files:structuredClone(files),file_execution:fileExecution,stdout_sha256:evidenceHash(tap),counts};
   return {run,tap,inventory,baselineFiles:files};
 }
 test('SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time',()=>{

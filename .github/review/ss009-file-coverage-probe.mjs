@@ -71,6 +71,8 @@ try{
   const {validateYxxSelfService:fixedValidator}=await import(pathToFileURL(path.join(checker,'src/yxx-self-service-verification.mjs')).href);
   copyFileSync(path.join(G2_ROOT,'.gitignore'),path.join(owned,'.gitignore'));
   const original=read(reportPath),run=read(original.run.path),cases=text(original.case_trace.path).trim().split('\n').map(JSON.parse);
+  const fileExecution=run.files.map(file=>{const pass=cases.filter(c=>c.file===file.path&&c.event==='test:pass'&&!c.skip&&!c.todo).length;return {path:file.path,total:pass,pass,fail:0,skipped:0,todo:0};});
+  const currentRun={...run,file_execution:fileExecution};
   const originalTap=text(original.tap.path),targets=cases.filter(c=>c.file===TARGET);
   assert.equal(targets.length,1);assert.equal(targets[0].nesting,0);
   assert.equal(new Set(cases.map(c=>c.file)).size,run.files.length);
@@ -79,7 +81,7 @@ try{
   assert.ok(!mappings.some(t=>t.file===TARGET||t.name===targets[0].name));
   const positive=legacy();
   assert.equal(fixedValidator({root:owned,requireReady:true}).status,'SS009_LOCAL_VERIFICATION_COMPLETE');
-  assert.doesNotThrow(()=>verifyYxxCaseTrace({cases,run,tap:originalTap}));
+  assert.doesNotThrow(()=>verifyYxxCaseTrace({cases,run:currentRun,tap:originalTap}));
   experiments.push({case:'original historical r5 positive control',legacy:positive,
     fixed:'ACCEPTED_HISTORICAL_FIXTURE',current_helper:'ACCEPTED',observed_files:run.files.length,observed_cases:cases.length});
 
@@ -93,7 +95,7 @@ try{
   const topLevel=(tap.match(/^ok \d+ - /gmu)??[]).length;let number=0;
   tap=tap.replace(/^ok \d+ - /gmu,()=>'ok '+(++number)+' - ');
   tap=tap.replace(/^1\.\.\d+$/gmu,'1..'+topLevel);
-  const missing=cases.filter(c=>c.file!==TARGET),updated=structuredClone(run),report=structuredClone(original);
+  const missing=cases.filter(c=>c.file!==TARGET),updated=structuredClone(currentRun),report=structuredClone(original);
   updated.counts.tests--;updated.counts.pass--;
   assert.ok(updated.counts.tests>=1155);
   const trace=missing.map(row=>JSON.stringify(row)).join('\n')+'\n';
