@@ -70,8 +70,8 @@ export function verifyYxxEvidenceHistory(root,{anchor=SS009_PUBLISHED_EVIDENCE_A
       if(blobHash(raw)!==entry.oid){
         // Preserve the repository's UTF8_LF evidence convention on Windows.
         // Unknown and binary formats are byte-exact; never normalize images.
-        assert.ok(textEvidence.test(name));
-        const text=new TextDecoder('utf-8',{fatal:true}).decode(raw);
+        assert.ok(textEvidence.test(name)&&!raw.includes(0));
+        const text=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(raw);
         assert.equal(blobHash(Buffer.from(text.replaceAll('\r\n','\n'))),entry.oid);
       }
     }catch{issues.push({file:name,layer:'WORKTREE'});}
