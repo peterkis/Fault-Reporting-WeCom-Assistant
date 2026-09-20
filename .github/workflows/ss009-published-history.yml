@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node --test .github/review/verify-published-history.test.mjs 2>&1 \
+          node --test --test-reporter=tap .github/review/verify-published-history.test.mjs 2>&1 \
             | tee "$RUNNER_TEMP/ss009-history/tooling-tests.tap"
       - name: Verify authoritative checkout identity before any ancestry finding
         shell: bash
@@ -61,11 +61,19 @@ jobs:
       - name: Install locked dependencies without lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run the unchanged strict evidence gate
+        id: strict
         shell: bash
         run: |
           set -euo pipefail
           node scripts/validate-yxx-self-service.mjs --require-ready \
             | tee "$RUNNER_TEMP/ss009-history/strict-readiness.json"
+      - name: Diagnose strict rejection without changing the gate
+        if: failure() && steps.strict.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module -e 'import {validateYxxSelfService} from "./src/yxx-self-service-verification.mjs"; console.log(validateYxxSelfService({requireReady:true}));' 2>&1 \
+            | tee "$RUNNER_TEMP/ss009-history/strict-diagnostic.txt"
       - name: Retain logs without writing into candidate or historical evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
