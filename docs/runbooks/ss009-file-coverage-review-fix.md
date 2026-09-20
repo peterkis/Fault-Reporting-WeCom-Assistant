@@ -2,7 +2,7 @@
 
 ## 当前结论
 
-两层代码缺陷均已修复，当前候选的 Windows/隔离 PostgreSQL/真实浏览器全量回归已实际执行。**r6 Binder、严格完成态和远端 CI 尚未完成，不能合并或声称全部 CI 已通过。**
+两层代码缺陷均已修复，当前候选的 Windows/隔离 PostgreSQL/真实浏览器全量回归、两轴审查、r6 Binder 和本地严格完成态均已实际执行。**远端 CI、PR review 完成态和 merge 尚未完成，不能合并或声称远端 CI 已通过。**
 
 - finding：Require an observed case for every listed test file；并修复 set-preserving file relabeling 可绕过文件来源校验的问题。
 - 覆盖修复提交：`9bee25cab09ae10cd1e0d02c52db0364791818d9`、`f8213ba`、`89cf07b`。
@@ -47,7 +47,7 @@
 
 `src/yxx-self-service-verification.mjs` 和产品测试属于已定义的候选指纹范围。本轮改动后，r5 报告不再匹配当前候选。原 `--require-ready` 因此应继续拒绝；不应修改原 r5 的指纹、tested_head、测试数字、独立审查，或把新文件加入候选排除项来制造通过。
 
-本轮已重新执行完整 Windows + 隔离 PostgreSQL + 真实浏览器全量回归；当前候选的两轴独立审查、Binder、tamper runner、最终 r6 证据、原 `SS009 published history` workflow 和严格完成态仍待完成。原严格命令没有被跳过、替换或设为 continue-on-error。
+本轮已重新执行完整 Windows + 隔离 PostgreSQL + 真实浏览器全量回归，并获取当前候选两轴独立审查、运行 Binder、tamper runner、生成最终 r6 证据及通过普通严格入口。原 `SS009 published history` workflow 的远端 head/merge preview 重跑仍待完成；原严格命令没有被跳过、替换或设为 continue-on-error。
 
 本轮的绿色 `SS009 file execution coverage` workflow 仅证明本 P2 修复与专项检查，不是合并许可。SS010、SS011、父 Gate、Feature Flags 和真实发送/部署停止线均不推进。
 
@@ -69,7 +69,7 @@ node scripts/validate-yxx-self-service.mjs
 2. 本轮已将 `SS009_EVIDENCE_PREFIX` 切换为尚不存在的 r6，并在 `89cf07b` 后重新记录 HEAD/tree/指纹；**不要直接运行 Binder 覆盖 r5**。后续候选文件变动仍须重新计算并重跑全量回归。
 3. 使用只包含本次隔离测试数据库配置的本地 env 文件执行原全量 runner：`node scripts/p2-g2-synthetic-e2e.mjs --suite=full --env-file=.env.ss009-review`。不得使用生产配置，测试数以实际输出为准，不把预期值写作结果。
 4. 核对实际全量 TAP、trace、run.files、file_execution、全部原始故障/容量/catalog/浏览器/cleanup 收据及历史矩阵。保持运行前后候选不变；新 helper 必须确认每个 run.files 文件都有成功 case，且 per-file pass 计数与 trace 一致。
-5. 获取绑定新指纹、来源真实的 SPEC/STANDARDS 独立审查文件。不得改名复制 r5 审查或由同一执行者冒签两个独立 reviewer。
-6. 对实际成功 run 目录执行原 Binder、新前缀下的原 tamper runner，并保留 pending 完成态拒绝、最终完成态通过的真实结果。测试失败或证据缺失时停止，不手工拼接 PASS。
-7. 仅在完整条件满足后更新计划为完成态、切换 evidence 指针，删除本轮临时的 historical-only 标记。将新证据作为被测提交的后继提交发布；保留所有旧证据和失败记录。
+5. 本轮已获取绑定新指纹、来源真实的 SPEC/STANDARDS 独立审查文件；不得改名复制 r5 审查或由同一执行者冒签两个独立 reviewer。
+6. 本轮已对实际成功 run 目录执行原 Binder、新前缀下的原 tamper runner，并保留 pending 完成态拒绝与最终完成态通过的真实结果。测试失败或证据缺失时停止，不手工拼接 PASS。
+7. 本轮已在完整条件满足后更新计划为完成态、切换 evidence 指针并保留所有旧证据和失败记录。新证据已作为被测提交的后继提交保存在本地；尚未 push。
 8. 在精确发布 head 与 GitHub merge preview 上重新跑原严格 CI。两者真实通过后，才恢复可交付结论。此执行单不授权 merge、deploy、真实外发、P2-G2-LIVE 或任何阶段推进。
