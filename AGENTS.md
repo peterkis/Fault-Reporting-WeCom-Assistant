@@ -1,5 +1,18 @@
 # AGENTS.md
 
+## Git 历史相关审核：先确认被审对象
+
+涉及 `tested_head`、祖先链、merge-base 或“证据与提交历史不一致”的审核，必须先区分已发布提交与审核环境临时重建的快照。详见 `.github/review/README.md`。
+
+- 权威 `expected_head` 必须取自 GitHub 本次 PR 事件或审核元数据的完整 SHA，不得使用本地 `HEAD` 自证，也不得把未知临时 SHA 称为已发布提交。
+- 在完整、干净的 checkout 执行 `node .github/review/verify-published-history.mjs --expected-head <权威完整SHA>`。GitHub merge preview 还须显式传入同一事件的 `--expected-merge` 与 `--expected-base`；不能自行制造单父提交代替。
+- `REVIEW_CHECKOUT_IDENTITY_MISMATCH`、浅克隆、replace/graft 或对象缺失属于审核环境/对象来源未确认。应获取本次权威提交的完整历史再验证；不能直接由该环境推导已发布 PR 存在 P1 祖先链缺陷。无法获取时如实说明本项未验证，继续检查其他可验证代码问题。
+- 预检通过只表示历史身份核验通过，永远不是 readiness/验收通过。必须继续执行原命令 `node scripts/validate-yxx-self-service.mjs --require-ready`；在身份确认后的真实发布对象上出现的断链或验收失败仍须报告并修复。
+- 禁止为了通过审核修改 `tested_head`、接受“同 tree 即合法祖先”、跳过祖先断言、伪造 PASS、重写旧证据或把临时快照的父提交改造成发布事实。真正 squash/rebase 改写交付历史时仍须保留真实被测祖先或重新生成证据。
+- 仅增加审核工具/文档的后继提交不等于候选源变化；不得仅因 PR head 前移就重绑已正确记录的被测提交。候选内容、完成态和原严格门禁仍按原实现核验。
+
+本规则是审核对象来源核验，不是忽略历史问题或免除业务测试的规则。
+
 2026-09-15 当前增量：ADR-0019 身份映射修补及 ADR-0020 定向建单模式本地验证完成，1056/1056、171测试文件及两轴独立审查通过。当前候选见 plans/current_phase.json 的 p2_g2_current_readiness（creation-v2 报告）。mapping-v1 的1053/1053与下文PR #8的1044/1044均为历史快照。A/B官方转换对应已证明；定向建单启动及工单结果以本次独立运行证据为准，A/B本人读取、他人拒绝及退出后新OAuth恢复已验证，云端已回退OAuth-only；多标签及旧Grant卡片现场未运行，结论见evidence/p2-g2-yxx-targeted-live-summary.json；完整P2-G2-LIVE/P2-008继续停止。
 
 
@@ -183,7 +196,7 @@ phase3/unified-operations
 
 - P3-G1：Contract + Outbound Transport；
 - P3-G2：First Intranet Source E2E；
-- P3-G3：Multi-source Operations + Fault/Security/Reconciliation；
+- P3-G3：Fault/Security/Reconciliation；
 - P3-G4：First Production Source Onboarding + Phase 3 Go。
 
 ## 9. 每个任务的完成标准
