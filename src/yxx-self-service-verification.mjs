@@ -28,7 +28,7 @@ export function verifyYxxRegressionSummary(summary,run){
 
 export function verifyYxxCaseTrace({cases,run,tap}){
   assert.equal(cases.length,run.counts.tests);
-  const files=new Set(run.files.map(f=>f.path));
+  const files=new Set(run.files.map(f=>f.path)),observedFiles=new Set();
   // Node 24 TAP escapes controls before backslashes and hashes. Compare in
   // that representation rather than ambiguously unescaping test names.
   const controls={'\b':'b','\f':'f','\t':'t','\n':'n','\r':'r','\v':'v'};
@@ -37,7 +37,14 @@ export function verifyYxxCaseTrace({cases,run,tap}){
     assertG2EvidenceTime(c);assert.equal(c.time_basis,'REPORTER_OBSERVED_AT');
     assert.equal(c.event,'test:pass');assert.equal(c.skip,false);assert.equal(c.todo,false);
     assert.ok(files.has(c.file));assert.equal(typeof c.name,'string');assert.ok(Number.isSafeInteger(c.nesting)&&c.nesting>=0);
+    observedFiles.add(c.file);
     return JSON.stringify([c.nesting,escape(c.name)]);
+  });
+  // The collected inventory is not proof of execution: require the reverse
+  // inclusion as well, including files absent from the acceptance mappings.
+  const missingFiles=[...files].filter(file=>!observedFiles.has(file)).sort();
+  if(missingFiles.length)throw Object.assign(new Error('SS009_TEST_FILE_EXECUTION_REQUIRED'),{
+    code:'SS009_TEST_FILE_EXECUTION_REQUIRED',missing_files:missingFiles,
   });
   const successes=[...normalize(tap).matchAll(/^( *)ok \d+ - (.+)$/gmu)].map(m=>{
     assert.equal(m[1].length%4,0);return JSON.stringify([m[1].length/4,m[2]]);
