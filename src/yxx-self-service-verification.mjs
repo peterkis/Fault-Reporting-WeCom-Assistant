@@ -7,9 +7,10 @@ import {g2CandidateInventory,G2_ROOT,G2_CANDIDATE_ROOTS,G2_CANDIDATE_FILES,G2_EX
 import {assertG2EvidenceTime} from './p2-g2-evidence-time.mjs';
 import {readYxxLocalValidationScope} from './yxx-self-service-validation-scope.mjs';
 import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
+import {verifyYxxEvidenceHistory} from './yxx-self-service-evidence-history.mjs';
 
 export const SS009_BASE='375d47b013017edb858206cc5f3475c9aed77dfd';
-export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r6-';
+export const SS009_EVIDENCE_PREFIX='evidence/yxx-ss-009-r7-';
 export const SS009_VALIDATORS=['validate-v1-4-architecture.mjs','validate-arch-005-time-contract.mjs','validate-arch-006-rule-first-service-loop.mjs','validate-p2-015-rule-first-intake.mjs','validate-p2-016-ticket-lifecycle-workbench.mjs','validate-p2-012-human-confirmed-incident.mjs','validate-p2-g2-service-loop.mjs','p2-g2-yixiaoxiu-check.mjs'];
 export const evidenceHash=value=>createHash('sha256').update(value).digest('hex');
 const countKeys=['tests','pass','fail','cancelled','skipped','todo'];
@@ -158,6 +159,7 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
   assert.equal(git(['merge-base',SS009_BASE,'HEAD']),SS009_BASE);
   if(!readYxxLocalValidationScope(root))throw Object.assign(new Error('SS009_LOCAL_VALIDATION_SCOPE_REQUIRED'),{code:'SS009_LOCAL_VALIDATION_SCOPE_REQUIRED'});
   assert.equal(git(['diff','--name-only','--diff-filter=MDR',SS009_BASE,'--','evidence']),'');
+  verifyYxxEvidenceHistory(root);
   const read=file=>JSON.parse(readFileSync(path.join(root,file),'utf8'));
   const start=read('evidence/yxx-ss-009-start.json');assertG2EvidenceTime(start);assert.equal(start.base_head,SS009_BASE);
   assert.equal(evidenceHash(readFileSync(path.join(root,'.gitignore'))),start.gitignore_sha256);
