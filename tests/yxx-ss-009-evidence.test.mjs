@@ -58,11 +58,47 @@ test('SS-009 complete trace matches TAP multiplicity nesting escaped names and c
   // Exercise the same Run -> Trace chain used by the strict validator/Binder.
   const full=fixture(),escaped=/^ok 4 - (.+)$/mu.exec(tap)[1];
   full.tap=full.tap.replace('ok 1 - case 0','ok 1 - '+escaped);full.run.stdout_sha256=evidenceHash(full.tap);
-  const fullCases=Array.from({length:1155},(_,i)=>({...cases[0],name:i===0?names[3]:'case '+i}));
+  const fullCases=Array.from({length:1155},(_,i)=>({...cases[0],name:i===0?names[3]:'case '+i,file:full.run.files[i%full.run.files.length].path}));
   assert.doesNotThrow(()=>{verifyYxxRun(full);verifyYxxCaseTrace({...full,cases:fullCases});});
   for(const mutate of [rows=>{rows[0]=structuredClone(rows[3]);},rows=>{rows[0].file='tests/not-collected.test.mjs';},rows=>{rows[0].nesting=1;},rows=>{rows.pop();},rows=>{rows[0].name='invented';},rows=>{rows[0].skip=true;},rows=>{delete rows[0].event_time;}]){
     const rows=structuredClone(cases);mutate(rows);assert.throws(()=>verifyYxxCaseTrace({cases:rows,run,tap}));
   }
+});
+
+function fileCoverageFixture(){
+  const cases=['tests/listed-a.test.mjs','tests/listed-b.test.mjs','tests/listed-a.test.mjs'].map((file,i)=>({
+    ...g2EvidenceTime(),time_basis:'REPORTER_OBSERVED_AT',event:'test:pass',
+    name:'same name',file,line:i+1,nesting:0,skip:false,todo:false,
+  }));
+  return {cases,run:{counts:{tests:3},files:[{path:'tests/listed-a.test.mjs'},{path:'tests/listed-b.test.mjs'}]},
+    tap:'ok 1 - same name\nok 2 - same name\nok 3 - same name\n'};
+}
+
+test('SS-009 trace covers every collected file regardless of shared names or event order',()=>{
+  const f=fileCoverageFixture();
+  assert.doesNotThrow(()=>verifyYxxCaseTrace(f));
+  assert.doesNotThrow(()=>verifyYxxCaseTrace({...f,cases:f.cases.toReversed(),run:{...f.run,files:f.run.files.toReversed()}}));
+});
+
+test('SS-009 trace rejects a whole omitted file after adjusting all trace and TAP counts',()=>{
+  const f=fileCoverageFixture();
+  f.cases=f.cases.filter(c=>c.file!=='tests/listed-b.test.mjs');
+  f.run.counts.tests=2;f.tap='ok 1 - same name\nok 2 - same name\n';
+  assert.throws(()=>verifyYxxCaseTrace(f),{code:'SS009_TEST_FILE_EXECUTION_REQUIRED',missing_files:['tests/listed-b.test.mjs']});
+});
+
+test('SS-009 trace rejects reassigned file provenance even when names nesting and counts match',()=>{
+  const f=fileCoverageFixture();f.cases[1].file='tests/listed-a.test.mjs';
+  assert.throws(()=>verifyYxxCaseTrace(f),{code:'SS009_TEST_FILE_EXECUTION_REQUIRED',missing_files:['tests/listed-b.test.mjs']});
+});
+
+test('SS-009 trace reports all unobserved files and skipped events cannot establish coverage',()=>{
+  const f=fileCoverageFixture();f.run.files.push({path:'tests/listed-d.test.mjs'},{path:'tests/listed-c.test.mjs'});
+  assert.throws(()=>verifyYxxCaseTrace(f),{code:'SS009_TEST_FILE_EXECUTION_REQUIRED',missing_files:['tests/listed-c.test.mjs','tests/listed-d.test.mjs']});
+  const skipped=fileCoverageFixture();skipped.cases[1].skip=true;
+  assert.throws(()=>verifyYxxCaseTrace(skipped));
+  const todo=fileCoverageFixture();todo.cases[1].todo=true;
+  assert.throws(()=>verifyYxxCaseTrace(todo));
 });
 
 test('SS-009 published regression summary equals all raw counts files and unchanged flag',()=>{
