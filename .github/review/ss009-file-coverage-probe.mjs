@@ -71,7 +71,7 @@ try{
   const {validateYxxSelfService:fixedValidator}=await import(pathToFileURL(path.join(checker,'src/yxx-self-service-verification.mjs')).href);
   copyFileSync(path.join(G2_ROOT,'.gitignore'),path.join(owned,'.gitignore'));
   const original=read(reportPath),run=read(original.run.path),cases=text(original.case_trace.path).trim().split('\n').map(JSON.parse);
-  const fileExecution=run.files.map(file=>{const pass=cases.filter(c=>c.file===file.path&&c.event==='test:pass'&&!c.skip&&!c.todo).length;return {path:file.path,total:pass,pass,fail:0,skipped:0,todo:0};});
+  const fileExecution=run.files.map(file=>{const rows=cases.filter(c=>c.file===file.path&&c.event==='test:pass'&&!c.skip&&!c.todo),identities=rows.map(c=>JSON.stringify([c.nesting,c.name,c.line??null])).sort();const pass=rows.length;return {path:file.path,total:pass,pass,fail:0,skipped:0,todo:0,identity_sha256:evidenceHash(JSON.stringify(identities))};});
   const currentRun={...run,file_execution:fileExecution};
   const originalTap=text(original.tap.path),targets=cases.filter(c=>c.file===TARGET);
   assert.equal(targets.length,1);assert.equal(targets[0].nesting,0);

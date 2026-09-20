@@ -35,6 +35,7 @@ export function verifyYxxCaseTrace({cases,run,tap}){
   for(const row of execution){
     assert.equal(typeof row?.path,'string');assert.ok(files.has(row.path));assert.ok(!executionByFile.has(row.path));
     for(const key of ['total','pass','fail','skipped','todo'])assert.ok(Number.isSafeInteger(row[key])&&row[key]>=0);
+    assert.match(row.identity_sha256,/^[a-f0-9]{64}$/u);
     assert.equal(row.total,row.pass+row.fail+row.skipped+row.todo);executionByFile.set(row.path,row);
   }
   const missingExecution=[...files].filter(file=>!executionByFile.has(file));
@@ -49,13 +50,15 @@ export function verifyYxxCaseTrace({cases,run,tap}){
   // that representation rather than ambiguously unescaping test names.
   const controls={'\b':'b','\f':'f','\t':'t','\n':'n','\r':'r','\v':'v'};
   const escape=name=>name.replace(/[\b\f\t\n\r\v]/gu,c=>'\\'+controls[c]).replaceAll('\\','\\\\').replaceAll('#','\\#');
-  const observedCounts=new Map();
+  const observedCounts=new Map(),observedIdentities=new Map();
   const observed=cases.map(c=>{
     assertG2EvidenceTime(c);assert.equal(c.time_basis,'REPORTER_OBSERVED_AT');
     assert.equal(c.event,'test:pass');assert.equal(c.skip,false);assert.equal(c.todo,false);
     assert.ok(files.has(c.file));assert.equal(typeof c.name,'string');assert.ok(Number.isSafeInteger(c.nesting)&&c.nesting>=0);
     observedFiles.add(c.file);
+    assert.ok(c.line===null||Number.isSafeInteger(c.line));
     observedCounts.set(c.file,(observedCounts.get(c.file)??0)+1);
+    const identities=observedIdentities.get(c.file)??[];identities.push(JSON.stringify([c.nesting,c.name,c.line??null]));observedIdentities.set(c.file,identities);
     return JSON.stringify([c.nesting,escape(c.name)]);
   });
   // The collected inventory is not proof of execution: require the reverse
@@ -66,7 +69,8 @@ export function verifyYxxCaseTrace({cases,run,tap}){
   });
   const provenanceMismatches=[...files].flatMap(file=>{
     const row=executionByFile.get(file),observedPass=observedCounts.get(file)??0;
-    if(!row||row.pass!==observedPass||row.pass<1||row.fail!==0||row.skipped!==0||row.todo!==0)return [{file,recorded:row?.pass??null,observed:observedPass}];
+    const identity_sha256=row?evidenceHash(JSON.stringify((observedIdentities.get(file)??[]).sort())):null;
+    if(!row||row.pass!==observedPass||row.pass<1||row.fail!==0||row.skipped!==0||row.todo!==0||row.identity_sha256!==identity_sha256)return [{file,recorded:row?.pass??null,observed:observedPass,recorded_identity:row?.identity_sha256??null,observed_identity:identity_sha256}];
     return [];
   });
   if(provenanceMismatches.length)throw Object.assign(new Error('SS009_TEST_FILE_PROVENANCE_MISMATCH'),{
