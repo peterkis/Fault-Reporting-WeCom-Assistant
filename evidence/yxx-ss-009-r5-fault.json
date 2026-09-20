@@ -1,0 +1,98 @@
+{
+  "event_time": "2026-09-20 12:02:00",
+  "event_epoch_ms": "1789876920862",
+  "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+  "status": "PASS",
+  "records": [
+    {
+      "event_time": "2026-09-20 11:59:31",
+      "event_epoch_ms": "1789876771906",
+      "kind": "fault",
+      "status": "PASS",
+      "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+      "real_kills": 5,
+      "cases": [
+        {
+          "action": "accept",
+          "barrier": "before-commit",
+          "receipt_count": 1,
+          "ticket_count": 1,
+          "recovered": true
+        },
+        {
+          "action": "accept",
+          "barrier": "after-commit",
+          "receipt_count": 1,
+          "ticket_count": 1,
+          "recovered": true
+        },
+        {
+          "action": "process",
+          "barrier": "before-process",
+          "receipt_count": 1,
+          "ticket_count": 1,
+          "recovered": true
+        },
+        {
+          "action": "process",
+          "barrier": "before-commit",
+          "receipt_count": 1,
+          "ticket_count": 1,
+          "recovered": true
+        },
+        {
+          "action": "process",
+          "barrier": "after-commit",
+          "receipt_count": 1,
+          "ticket_count": 1,
+          "recovered": true
+        }
+      ]
+    },
+    {
+      "event_time": "2026-09-20 11:59:35",
+      "event_epoch_ms": "1789876775668",
+      "kind": "fault",
+      "status": "PASS",
+      "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+      "supplement_real_kill": true,
+      "supplement_replayed": true,
+      "tickets": 1,
+      "supplement_events": 1
+    },
+    {
+      "event_time": "2026-09-20 11:59:39",
+      "event_epoch_ms": "1789876779424",
+      "kind": "fault",
+      "status": "PASS",
+      "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+      "owned_backend_terminated": true,
+      "recovery_verified": true,
+      "shared_database_service_stopped": false
+    },
+    {
+      "event_time": "2026-09-20 11:59:55",
+      "event_epoch_ms": "1789876795373",
+      "kind": "fault",
+      "status": "PASS",
+      "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+      "http_response_lost": true,
+      "same_command_recovered": true,
+      "cross_member_denied": true,
+      "batch_max": 20
+    },
+    {
+      "event_time": "2026-09-20 12:00:05",
+      "event_epoch_ms": "1789876805461",
+      "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+      "status": "PASS",
+      "kind": "fault",
+      "savepoint_partial_write": true,
+      "partial_write_observed": true,
+      "partial_write_rolled_back": true,
+      "fallback_decisions": 1,
+      "fallback_reviews": 1,
+      "acceptance_retained": true
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "event_time": "2026-09-20 12:02:00",
+  "event_epoch_ms": "1789876920351",
+  "axis": "STANDARDS",
+  "reviewer": "/root/ss009_standards_audit",
+  "recorded_by": "/root",
+  "reviewed_head": "dcf688038a76e471b443be33af4aad6278d72bd2",
+  "reviewed_tree": "4c8b81110b02155b9994018fd28b41b49367b21d",
+  "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+  "scope": "R5_IMPLEMENTATION_AND_FROZEN_FULL_EXECUTION",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [
+    {
+      "severity": "P2",
+      "review_comment": 4052130551,
+      "resolved": true,
+      "description": "Complete trace binds TAP success multiplicity and nesting; all trace files belong to run.files."
+    },
+    {
+      "severity": "P2",
+      "review_comment": 4052130553,
+      "resolved": true,
+      "description": "Published full_regression exactly equals raw run counts, collected file count and unchanged flag."
+    },
+    {
+      "severity": "P2",
+      "source": "STANDARDS_PRE_REVIEW",
+      "resolved": true,
+      "description": "Run validation distinguishes escaped literal hash names from real skip/todo directives; real reporter combination test RED then GREEN."
+    }
+  ],
+  "raw_execution_directory": "tmp/p2-g2-tests-1dbcf7e2-686b-4f05-bc66-f91658a63a9a",
+  "verified": {
+    "tests": 1182,
+    "pass": 1182,
+    "test_files": 191,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "exit_code": 0,
+    "candidate_unchanged": true,
+    "cleanup_receipts": 13,
+    "owned_residuals": 0,
+    "historical_member_scenarios": 48,
+    "historical_g2_scenarios": 37,
+    "historical_sources": 202,
+    "normal_input_sources": 122
+  },
+  "summary": "Independent STANDARDS verified Node24.18.0 expose-gc, complete actual trace with new helper, time/file/output hashes, resource receipts and protected files.",
+  "publication_gates_at_review": "Binder,29actual tamper checks and finalization NOT_RUN at review; execute separately",
+  "preserved_limitations": [
+    "Historical semantic adjudications retained; original_semantics_all_passed=false",
+    "No current-candidate remote approval or live authorization"
+  ]
+}

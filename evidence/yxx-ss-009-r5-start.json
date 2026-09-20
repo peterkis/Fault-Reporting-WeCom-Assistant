@@ -1,0 +1,26 @@
+{
+  "event_time": "2026-09-20 11:27:36",
+  "event_epoch_ms": "1789874856350",
+  "work_item": "YXX-SS-009",
+  "purpose": "PR19 review fixes",
+  "base_head": "c7a2ee9f3c1e183faeeefc046fbbc59f9961c8c8",
+  "branch": "codex/yxx-ss-009-verification",
+  "source_head": "dcf688038a76e471b443be33af4aad6278d72bd2",
+  "source_tree": "4c8b81110b02155b9994018fd28b41b49367b21d",
+  "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+  "review_comments": [
+    4052130551,
+    4052130553
+  ],
+  "gitignore_sha256": "0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092",
+  "gitignore_index": "942b2b8d94b4f1e9dda5369cbac0cbe31056d950",
+  "authorized": [
+    "local fixes",
+    "isolated verification",
+    "commit",
+    "push PR19 branch",
+    "request codex review"
+  ],
+  "merge": false,
+  "live_authorized": false
+}

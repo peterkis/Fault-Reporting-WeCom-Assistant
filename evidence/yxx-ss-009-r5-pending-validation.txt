@@ -1,0 +1,1 @@
+{"ok":false,"error_code":"YXX_VERIFICATION_REJECTED"}
