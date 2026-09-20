@@ -18,7 +18,7 @@ Rebinding a correct tested_head or generating another evidence revision cannot r
 
 ```text
 GitHub PR event / review metadata gives an authoritative full SHA
-  -> full, clean checkout of that exact object
+  -> full, clean checkout of that exact object using the recorded EOL policy
   -> verify-published-history.mjs
   -> unchanged validate-yxx-self-service.mjs --require-ready
 ```
@@ -38,14 +38,28 @@ The current report is read from the committed `plans/yxx-self-service-ticket-pla
 
 An environment problem does not exempt other independently reproducible code findings from review.
 
+## Recorded checkout line endings are also part of reproduction
+
+The unchanged strict validator checks `.gitignore` both as a Git blob and as raw working-tree bytes. The original start receipt records SHA-256 `0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092`, which is the CRLF checkout of the committed blob `942b2b8d94b4f1e9dda5369cbac0cbe31056d950`. An LF checkout of the same blob instead hashes to `77263d448627a427f2fe085f2b32bf4ffb1fc7b44d2bbc3d1240e632c65f9fdc`.
+
+Actions run `35489778695` reproduced the LF failure at `src/yxx-self-service-verification.mjs:126`, after authoritative history checks had already passed. This is a separate checkout-reproduction issue, not a failed ancestor assertion. The workflow now sets `core.autocrlf=true` **before checkout**, retains that setting in the isolated repository, and verifies the raw bytes against the original receipt. No `.gitignore`, start receipt, runtime source, candidate fingerprint or assertion was edited.
+
+For a new independent local review clone, set the policy during cloning, not after files have already been materialized:
+
+```sh
+git clone --config core.autocrlf=true --no-single-branch <REPOSITORY_URL> <NEW_REVIEW_DIRECTORY>
+```
+
+Do not reset or overwrite an existing development worktree just to reproduce this environment. Merely setting `core.autocrlf` after checkout does not necessarily rewrite already-present files. A default LF clone still fails the original raw-byte assertion; the documented CRLF clone reproduces the recorded contract without weakening it.
+
 ## Running locally
 
 Get the full head SHA from the GitHub PR API or the exact review's metadata, not from `git rev-parse HEAD`. A past review must be checked against its own recorded head, not silently against a newer revision.
 
-In a clean full checkout of that object:
+In a clean full checkout of that object using the recorded EOL policy:
 
 ```sh
-node --test .github/review/verify-published-history.test.mjs
+node --test --test-reporter=tap .github/review/verify-published-history.test.mjs
 node .github/review/verify-published-history.mjs --expected-head <FULL_SHA_FROM_GITHUB>
 node scripts/validate-yxx-self-service.mjs --require-ready
 ```
@@ -61,7 +75,7 @@ Logs must be written outside the checkout so they do not become untracked candid
 
 ## Automated reproducibility
 
-`.github/workflows/ss009-published-history.yml` runs on PR #19 with separate `head` and `merge` jobs. Each uses the event's exact SHA and `fetch-depth: 0`, runs the synthetic Git tests, runs the preflight, installs locked dependencies with lifecycle scripts disabled, and runs the unchanged strict CLI. Logs are uploaded from the runner's temporary directory, outside both the candidate inventory and historical evidence.
+`.github/workflows/ss009-published-history.yml` runs on PR #19 with separate `head` and `merge` jobs. Each uses the event's exact SHA, `fetch-depth: 0` and the recorded CRLF checkout policy, runs the synthetic Git tests, runs the preflight, installs locked dependencies with lifecycle scripts disabled, and runs the unchanged strict CLI. Logs are uploaded from the runner's temporary directory, outside both the candidate inventory and historical evidence. If the strict CLI rejects, a failure-only diagnostic invokes the same exported validator to expose the actual assertion without changing the failed job result.
 
 The workflow is intentionally scoped to this SS-009 delivery PR, not installed as a permanent frozen-SS009 gate for unrelated later work. The review preflight itself remains reusable. The workflow has read-only contents permissions, does not use pull_request_target, does not load environment files or production credentials, and does not deploy, merge, connect to WeCom, access hospital data, or advance any Gate.
 
@@ -71,6 +85,8 @@ These files belong to review infrastructure under `.github`, outside the already
 
 The repair's 22 synthetic Git tests passed locally with Node v22.16.0 and Git 2.47.3. They exercise actual temporary repositories, including a same-tree single-parent snapshot, a genuine published squash, two-parent previews, a real shallow clone, replacement refs, grafts, dirty trees, invalid reports, CLI argument validation, read-only behavior and inherited Git environment isolation. Temporary repositories are test-owned and removed after each test.
 
-The product's Node 24 runtime requirement is unchanged. CI uses Node 24. A local preflight test result does not claim a new product regression run, browser test, PostgreSQL run, independent product review, live validation or remote approval. The existing r5 `1182/1182` result remains the historical execution recorded by that report, not a result created by this repair. The remote strict result must be read from the actual completed Actions jobs.
+On repair commit `906c37fba0adf2b3487ffa367d55beb4918c572f`, Actions run `35489854027` completed successfully for both the published head (job `106022819249`) and the merge preview (job `106022819140`). Each passed the synthetic Git tests, original raw-byte receipt check, authoritative history preflight, and **unchanged strict CLI**. These are actual remote results, not inferred from the local tooling tests. Later documentation-only commits must still be evaluated by their own Actions run.
+
+The product's Node 24 runtime requirement is unchanged. CI uses Node 24. This verification does not claim a new full product regression run, browser test, PostgreSQL run, independent product review, live validation or Codex approval. The existing r5 `1182/1182` result remains the historical execution recorded by that report, not a new result created by this repair. The strict validator rechecks the existing evidence and its source binding.
 
 Appending review-only commits preserves the tested ancestor; it does not require replacing the recorded tested_head with the latest documentation commit. A genuine squash/rebase that loses the tested ancestor still cannot reuse completion evidence without regenerating it. No automatic PR merge is performed.
