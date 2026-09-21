@@ -13,7 +13,7 @@ import { createYxxSelfServiceOrchestrator, createYxxSelfServiceWorker } from './
 // Composition only: the existing command/store/Core retain all business authority.
 export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, reporterMemberEntry,
   identityMapping, reporterHmacSecret, profile = 'MEMBER_SELF_SERVICE', featureFlags = {},
-  ruleEngine, realtimeProjector, pollMilliseconds = 5000 } = {}) {
+  ruleEngine, realtimeProjector, pollMilliseconds = 5000, quota = Object.assign(async () => true, {localOnly:true}) } = {}) {
   const config = validateYxxEntryConfig(reporterMemberEntry);
   if (!['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(profile)
     || config.identityMode !== 'VERIFIED_DELEGATED_MAPPING'
@@ -36,7 +36,7 @@ export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, repor
   const store = createYxxSelfServiceStore({ pool, scopeSecret: reporterHmacSecret });
   const command = createYxxMemberCommandContext({ store, profile, flags: featureFlags, authenticate,
     recheck: Object.assign(({ request }) => authenticate(request), { localOnly: true }),
-    quota: Object.assign(async () => true, { localOnly: true }) });
+    quota });
   const authorization = createYxxSelfServiceAuthorization({ profile, flags: featureFlags, authenticate,
     recheck: Object.assign(authenticate, { localOnly: true }) });
   const query = createYxxSelfServiceQuery({ pool, store, authorization, scopeSecret: reporterHmacSecret });

@@ -50,7 +50,7 @@ resolved before the next dependent ticket starts.
 | YXX-SS-007 | COMPLETE | `evidence/yxx-ss-007-completion-reconciliation.json`: v33 sources/TAP verified, final PR review and merge reconciled |
 | YXX-SS-008 | COMPLETE | `evidence/yxx-ss-008-pr18-readiness-report.json`: PR18 readiness repair, isolated PostgreSQL/HTTP/browser/Worker, full regression and two independent reviews |
 | YXX-SS-009 | IMPLEMENTATION_AND_AUTOMATION_COMPLETE / local PASS | `evidence/yxx-ss-009-r7-report.json`; PR #19 discussion closeout is described below; no formal remote APPROVED claim |
-| YXX-SS-010 | PLANNED | separately scoped readiness closeout; not started by the review adjustment |
+| YXX-SS-010 | IMPLEMENTING / NOT_READY | local candidate and limited-write preparation; see the SS-010 execution baseline below |
 | YXX-SS-011 | NOT AUTHORIZED | intentionally out of scope |
 
 As of 2026-09-21, PR #19 at `0d1cfa2935f028ca5c0a97838615dad1ab453563`
@@ -69,3 +69,17 @@ The user authorized completion reconciliation and continuation on merged main
 `2d9fda2065b1303620f247a9e4d9754f0a3472d9` (tree
 `b1397a10f7c11ec74c85d3582fd44a5e234302c4`). The original base above remains
 historical. This run permits local commits only; push/PR/merge/tag remain forbidden.
+
+## SS-010 execution baseline
+
+The user explicitly rebased the new task scope onto PR #19's merge commit
+`c1af81a86951054f4898f043c43381a5842abbf2` (tree
+`54969cbcd2785f62b562ac32aa431e16ee300bd8`). PR #19 is merged; its earlier open
+status above is the recorded review-closeout snapshot. This does not rewrite
+r7's historical remote-review field as APPROVED.
+
+SS-010 permits local implementation, isolated validation, independent reviews
+and ordinary local commits only. No push/PR/merge/tag or live work. Its independent
+two-role dedicated-test-database runtime and owner authorization are specified
+in ADR-0022 and the [limited-write preparation runbook](../docs/runbooks/yixiaoxiu-limited-write-preparation.md).
+SS-011 remains NOT_AUTHORIZED and the parent Gate does not advance.
