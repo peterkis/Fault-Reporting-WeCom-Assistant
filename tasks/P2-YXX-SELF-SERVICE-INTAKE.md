@@ -49,8 +49,19 @@ resolved before the next dependent ticket starts.
 | YXX-SS-006 | COMPLETE | supplement command, revision/race/recovery integration evidence |
 | YXX-SS-007 | COMPLETE | `evidence/yxx-ss-007-completion-reconciliation.json`: v33 sources/TAP verified, final PR review and merge reconciled |
 | YXX-SS-008 | COMPLETE | `evidence/yxx-ss-008-pr18-readiness-report.json`: PR18 readiness repair, isolated PostgreSQL/HTTP/browser/Worker, full regression and two independent reviews |
-| YXX-SS-009..010 | PLANNED | separately scoped regression and readiness closeout |
+| YXX-SS-009 | IMPLEMENTATION_AND_AUTOMATION_COMPLETE / local PASS | `evidence/yxx-ss-009-r7-report.json`; PR #19 discussion closeout is described below; no formal remote APPROVED claim |
+| YXX-SS-010 | PLANNED | separately scoped readiness closeout; not started by the review adjustment |
 | YXX-SS-011 | NOT AUTHORIZED | intentionally out of scope |
+
+As of 2026-09-21, PR #19 at `0d1cfa2935f028ca5c0a97838615dad1ab453563`
+remains open with all 13 review threads resolved and its five current checks
+successful. The local published-history preflight and original strict readiness
+entry also pass on that clean published checkout. This rechecks existing evidence;
+it is not a new full PostgreSQL/browser regression. The machine plan's pending
+formal remote review field and immutable r7 report are not rewritten as APPROVED.
+Follow [review closeout and evidence reduction](../.github/review/README.md#审查结束条件与后续减量)
+for repeat findings and future work. Evidence reduction is a separate pending
+change, not an additional SS-009 acceptance condition.
 
 ## SS-008 execution baseline
 

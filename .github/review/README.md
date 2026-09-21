@@ -90,3 +90,31 @@ On repair commit `906c37fba0adf2b3487ffa367d55beb4918c572f`, Actions run `354898
 The product's Node 24 runtime requirement is unchanged. CI uses Node 24. This verification does not claim a new full product regression run, browser test, PostgreSQL run, independent product review, live validation or Codex approval. The existing r5 `1182/1182` result remains the historical execution recorded by that report, not a new result created by this repair. The strict validator rechecks the existing evidence and its source binding.
 
 Appending review-only commits preserves the tested ancestor; it does not require replacing the recorded tested_head with the latest documentation commit. A genuine squash/rebase that loses the tested ancestor still cannot reuse completion evidence without regenerating it. No automatic PR merge is performed.
+
+## 审查结束条件与后续减量
+
+以下规则自 2026-09-21 起用于后续工作；上文各修复轮次的运行结果是历史记录。
+
+### 本轮收口
+
+PR #19 在发布 HEAD `0d1cfa2935f028ca5c0a97838615dad1ab453563` 上的 r7 为当前验收依据。GitHub API 确认其直接父提交为 r7 的 `8b74de2eb63ea90e3ca23dabcdbc8f5afdadd7e5`；13 条线程均已解决。对应 [published history 运行](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/35518489329) 的 head/merge 检查通过。这是该提交的状态快照，线程解决不等于 APPROVED，也不表示 PR 已合并。
+
+- 本轮对象错配问题结束修复，不生成 r8，不重绑 tested_head，不修改旧报告中的 remote_review 快照。
+- 对重复意见，先核对意见所指发布对象及已有验证范围；已有结果适用时引用其结论。只有新的可复现缺陷或相关内容、依赖、环境及历史发生变化时，才按影响决定修复和重跑范围。
+- PR 描述、讨论及纯文档更新不自动要求完整候选再生成或再次请求机器人审查；已配置的必需 CI 仍正常执行。候选变化仍执行原验收契约要求的检查，不能用局部测试冒充完整验收。
+- 合并时保留被测祖先，使用保留历史的 merge commit；如果仓库策略不允许，先解决合并策略与验收契约的冲突。不得静默改用 squash/rebase 后沿用失去祖先的证据。合并仍按用户授权执行。
+
+### 后续独立减量工作（待实施，不阻塞本 PR）
+
+目标是减少原始产物的重复存储，保持历史可验证和业务行为不变。仅调整证据生成、存储和读取，不夹带业务重构，不新增治理平台或多层状态机。现有受保护 evidence 文件及 Git 历史保持原样，先对未来运行采用新格式；若要迁移旧产物，另行明确兼容契约后执行。
+
+1. Git 保留业务/测试源码、必要固定夹具和精简 manifest；manifest 记录运行标识、被测 SHA、候选摘要、结果及限制、原始制品位置、大小和 SHA-256。报告引用同一份原始回执，消除 TAP、capacity.records、cleanup.receipts 的重复内嵌。
+2. 原始 TAP、事件、容量采样、截图和诊断按运行归档。实施前确定存储位置、访问权限、责任人、保留期限及备份/恢复方式；正式验收不能只依赖会过期或随运行删除的 Actions 链接。敏感信息继续脱敏并限制访问。
+3. 校验器保留旧格式读取，新格式校验制品可取回、摘要及原有结果绑定。制品缺失、损坏或无访问权限时明确失败，不回退为 PASS。先验证独立取回和恢复，再切换新运行的产物写入；失败时可恢复原写入方式。
+4. 验收比较同一代表性运行的新旧产物：Git 新增字节和重复回执数量减少；旧报告仍可验证；独立取回、校验和恢复成功；业务风险覆盖与结果不变。只保留一次简短对比及必要制品，不为减量再建立重复证明链。
+
+权限隔离、幂等、事务中断恢复、升级保护、部分写入回滚和报修不丢失等风险测试继续保留。新增校验须说明具体失败场景、现有覆盖缺口和停止条件；仅有新的机器人评论或测试数量指标不构成扩建理由。
+
+### 后续交付顺序
+
+先按现有证据收口 PR #19，再在明确任务范围内推进业务交付及上述减量。正式自然 GC、真实 2C4G、60 分钟现场仍属未完成验证；自动化 PASS 不能替代现场结果。SS-010 保持 PLANNED，SS-011 保持 NOT_AUTHORIZED；本次调整不启动它们，不推进父 Gate，不授权真实发送、部署或生产数据访问。
