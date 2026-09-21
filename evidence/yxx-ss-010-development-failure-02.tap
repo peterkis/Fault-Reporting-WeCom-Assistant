@@ -1,0 +1,67 @@
+TAP version 13
+# Subtest: SS010 AC092 offline defaults and unapproved template never start runtime capabilities
+ok 1 - SS010 AC092 offline defaults and unapproved template never start runtime capabilities
+  ---
+  duration_ms: 3571.1009
+  type: 'test'
+  ...
+# Subtest: SS010 AC092 closed permissions identity window and conservative budget reject unsafe manifests
+ok 2 - SS010 AC092 closed permissions identity window and conservative budget reject unsafe manifests
+  ---
+  duration_ms: 2.6462
+  type: 'test'
+  ...
+# Subtest: SS010 AC094 unknown duplicate and run arguments fail without implicit authorization
+ok 3 - SS010 AC094 unknown duplicate and run arguments fail without implicit authorization
+  ---
+  duration_ms: 368.0875
+  type: 'test'
+  ...
+# Subtest: SS010 AC091 artifact references reject path traversal missing and corrupted execution data
+ok 4 - SS010 AC091 artifact references reject path traversal missing and corrupted execution data
+  ---
+  duration_ms: 1.9984
+  type: 'test'
+  ...
+# Subtest: SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets
+not ok 5 - SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets
+  ---
+  duration_ms: 2688.9063
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-010-runtime.integration.test.mjs:14:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"ok":false,"error":{"code":"P2_016_ACTION_FAILED","retryable":false},"replayed":false}
+    
+    503 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 503
+  operator: 'strictEqual'
+  stack: |-
+    run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-010-runtime.integration.test.mjs:32:16)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async withSS009Database (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/yxx-ss-009-resources.mjs:12:16)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-010-runtime.integration.test.mjs:15:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope
+ok 6 - SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope
+  ---
+  duration_ms: 2074.1111
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-21 09:32:07","event_epoch_ms":"1789954327970","kind":"cleanup","status":"PASS","candidate_fingerprint":"cd820ddb54d5631faeef72f0074879edf5b9d668753fc1d4f54b8e730577fa41","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..6
+# tests 6
+# suites 0
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9014.3535

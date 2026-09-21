@@ -15,7 +15,7 @@
     {"id":"YXX-SS-007","depends_on":["YXX-SS-001","YXX-SS-002"],"status":"COMPLETE"},
     {"id":"YXX-SS-008","depends_on":["YXX-SS-004","YXX-SS-005","YXX-SS-006","YXX-SS-007"],"status":"COMPLETE","evidence":"evidence/yxx-ss-008-pr18-readiness-report.json"},
     {"id":"YXX-SS-009","depends_on":["YXX-SS-008"],"status":"IMPLEMENTATION_AND_AUTOMATION_COMPLETE","local_verification":"PASS","remote_delivery_review":"PENDING_CODEX_REVIEW","evidence":"evidence/yxx-ss-009-r7-report.json","evidence_binding":"CURRENT_CANDIDATE_R7","revalidation_reason":"PR19 discussion_r4056616414: immutable published-evidence history protection is verified on the current candidate; r7 full local regression, independent SPEC/STANDARDS review, Binder, 29-class tamper regression, and strict readiness are complete. Historical r6 evidence remains preserved."},
-    {"id":"YXX-SS-010","depends_on":["YXX-SS-009"],"status":"IMPLEMENTING","local_verification":"NOT_READY","base_commit":"c1af81a86951054f4898f043c43381a5842abbf2"},
+    {"id":"YXX-SS-010","depends_on":["YXX-SS-009"],"status":"IMPLEMENTATION_AND_AUTOMATION_COMPLETE","local_verification":"PASS","base_commit":"c1af81a86951054f4898f043c43381a5842abbf2","readiness":"READY_FOR_LIMITED_WRITE_LIVE","evidence":"evidence/yxx-ss-010-report.json","tested_head":"c8e561a9cc58df1bf0c2c73a840001f9374c91f5","live_authorized":false,"live_result":"NOT_RUN","remote_ci":"NOT_RUN","remote_review":"NOT_RUN"},
     {"id":"YXX-SS-011","depends_on":["YXX-SS-010"],"status":"NOT_AUTHORIZED"}
   ],
   "defaults": {

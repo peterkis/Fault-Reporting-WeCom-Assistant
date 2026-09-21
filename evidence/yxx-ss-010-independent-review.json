@@ -1,0 +1,27 @@
+{
+  "event_time": "2026-09-21 09:59:32",
+  "event_epoch_ms": "1789955972789",
+  "work_item": "YXX-SS-010",
+  "base_commit": "c1af81a86951054f4898f043c43381a5842abbf2",
+  "candidate_fingerprint": "55ef93fdd28e4d47da70dbd259595f892cfe07cdabb452f6f6b591ba36c022d8",
+  "reviews": [
+    {
+      "axis": "SPEC",
+      "reviewer": "/root/ss010_spec_review",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "scope": "Read-only source review against user SS010 plan, ADR0022 and task contract. Initial startup, Provider window, resume-state, Incident-root and migration-check findings resolved."
+    },
+    {
+      "axis": "STANDARDS",
+      "reviewer": "/root/ss010_standards_review",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "scope": "Read-only source review against AGENTS, bounded module reuse and safety boundaries. Internal/public Origin, approval binding, Worker readiness and bounded process termination findings resolved."
+    }
+  ],
+  "limitations": [
+    "Not remote CI or GitHub APPROVED.",
+    "Reviewers did not execute full PostgreSQL/browser regression; execution is separately recorded."
+  ]
+}

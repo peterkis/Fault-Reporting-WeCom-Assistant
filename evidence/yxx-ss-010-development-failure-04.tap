@@ -1,0 +1,39 @@
+TAP version 13
+# Subtest: SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets
+not ok 1 - SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets
+  ---
+  duration_ms: 2535.7327
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-010-runtime.integration.test.mjs:14:1'
+  failureType: 'testCodeFailure'
+  error: 'Invalid value "undefined" for header "idempotency-key"'
+  code: 'ERR_HTTP_INVALID_HEADER_VALUE'
+  name: 'TypeError'
+  stack: |-
+    ClientRequest.setHeader (node:_http_outgoing:650:3)
+    new ClientRequest (node:_http_client:357:14)
+    request (node:http:108:10)
+    result (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/yxx-ss-009-http-fixture.mjs:17:17)
+    new Promise (<anonymous>)
+    Object.request (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/yxx-ss-009-http-fixture.mjs:16:24)
+    run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-010-runtime.integration.test.mjs:36:33)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async withSS009Database (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/yxx-ss-009-resources.mjs:12:16)
+  ...
+# Subtest: SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope
+ok 2 - SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope
+  ---
+  duration_ms: 2119.4328
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-21 09:33:30","event_epoch_ms":"1789954410159","kind":"cleanup","status":"PASS","candidate_fingerprint":"24e4f9ae1a53f2421d9f1b6a4b9a6450182b96e5bda2edc8bcbc86e8b220bef6","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4806.4156

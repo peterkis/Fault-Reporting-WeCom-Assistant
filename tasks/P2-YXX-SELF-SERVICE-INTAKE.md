@@ -50,7 +50,7 @@ resolved before the next dependent ticket starts.
 | YXX-SS-007 | COMPLETE | `evidence/yxx-ss-007-completion-reconciliation.json`: v33 sources/TAP verified, final PR review and merge reconciled |
 | YXX-SS-008 | COMPLETE | `evidence/yxx-ss-008-pr18-readiness-report.json`: PR18 readiness repair, isolated PostgreSQL/HTTP/browser/Worker, full regression and two independent reviews |
 | YXX-SS-009 | IMPLEMENTATION_AND_AUTOMATION_COMPLETE / local PASS | `evidence/yxx-ss-009-r7-report.json`; PR #19 discussion closeout is described below; no formal remote APPROVED claim |
-| YXX-SS-010 | IMPLEMENTING / NOT_READY | local candidate and limited-write preparation; see the SS-010 execution baseline below |
+| YXX-SS-010 | IMPLEMENTATION_AND_AUTOMATION_COMPLETE / READY_FOR_LIMITED_WRITE_LIVE | `evidence/yxx-ss-010-report.json`: 1217/1217 across 195 files; local strict readiness and two independent reviews PASS; live NOT_RUN |
 | YXX-SS-011 | NOT AUTHORIZED | intentionally out of scope |
 
 As of 2026-09-21, PR #19 at `0d1cfa2935f028ca5c0a97838615dad1ab453563`
@@ -83,3 +83,9 @@ and ordinary local commits only. No push/PR/merge/tag or live work. Its independ
 two-role dedicated-test-database runtime and owner authorization are specified
 in ADR-0022 and the [limited-write preparation runbook](../docs/runbooks/yixiaoxiu-limited-write-preparation.md).
 SS-011 remains NOT_AUTHORIZED and the parent Gate does not advance.
+
+The tested source commit is `c8e561a9cc58df1bf0c2c73a840001f9374c91f5`;
+the full run reports an unchanged candidate and zero failed/cancelled/skipped/todo
+tests. AC-091 through AC-094 are PASS in the new SS010 report; the old SS009 matrix
+remains unchanged. Only local commits were made. Remote CI/review are NOT_RUN.
+Formal natural GC, physical 2C4G and 60-minute observation remain NOT_RUN.

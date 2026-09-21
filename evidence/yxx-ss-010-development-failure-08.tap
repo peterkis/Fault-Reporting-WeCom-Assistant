@@ -1,0 +1,117 @@
+TAP version 13
+# Subtest: SS010 AC092 offline defaults and unapproved template never start runtime capabilities
+ok 1 - SS010 AC092 offline defaults and unapproved template never start runtime capabilities
+  ---
+  duration_ms: 3428.5036
+  type: 'test'
+  ...
+# Subtest: SS010 AC092 closed permissions identity window and conservative budget reject unsafe manifests
+ok 2 - SS010 AC092 closed permissions identity window and conservative budget reject unsafe manifests
+  ---
+  duration_ms: 3.0376
+  type: 'test'
+  ...
+# Subtest: SS010 AC094 unknown duplicate and run arguments fail without implicit authorization
+ok 3 - SS010 AC094 unknown duplicate and run arguments fail without implicit authorization
+  ---
+  duration_ms: 365.1858
+  type: 'test'
+  ...
+# Subtest: SS010 AC092 owner approval cannot be reused for changed window actors database or quotas
+ok 4 - SS010 AC092 owner approval cannot be reused for changed window actors database or quotas
+  ---
+  duration_ms: 1.3264
+  type: 'test'
+  ...
+# Subtest: SS010 AC091 artifact references reject path traversal missing and corrupted execution data
+ok 5 - SS010 AC091 artifact references reject path traversal missing and corrupted execution data
+  ---
+  duration_ms: 5.0334
+  type: 'test'
+  ...
+# Subtest: SS010 AC094 unresponsive owned child is hard-stopped with a bounded wait
+ok 6 - SS010 AC094 unresponsive owned child is hard-stopped with a bounded wait
+  ---
+  duration_ms: 126.9302
+  type: 'test'
+  ...
+# Subtest: SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets
+ok 7 - SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets
+  ---
+  duration_ms: 5122.2538
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-21 09:46:28","event_epoch_ms":"1789955188333","kind":"cleanup","status":"PASS","candidate_fingerprint":"5b4bd417a606a9bb1fec78be3b511f3de4f3b2d59725141115a235a819468265","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC092 preflight rejects occupied port drift and resumed foreign scope without processing pending
+ok 8 - SS010 AC092 preflight rejects occupied port drift and resumed foreign scope without processing pending
+  ---
+  duration_ms: 3338.2965
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-21 09:46:31","event_epoch_ms":"1789955191700","kind":"cleanup","status":"PASS","candidate_fingerprint":"5b4bd417a606a9bb1fec78be3b511f3de4f3b2d59725141115a235a819468265","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC092 concurrent global and supplement limits count committed commands and never charge replays
+ok 9 - SS010 AC092 concurrent global and supplement limits count committed commands and never charge replays
+  ---
+  duration_ms: 2043.1858
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-21 09:46:33","event_epoch_ms":"1789955193736","kind":"cleanup","status":"PASS","candidate_fingerprint":"5b4bd417a606a9bb1fec78be3b511f3de4f3b2d59725141115a235a819468265","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope
+not ok 10 - SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope
+  ---
+  duration_ms: 1910.4096
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-010-runtime.integration.test.mjs:121:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      Comparison {
+    +   code: '23514'
+    -   code: 'SS010_WINDOW_CLOSED'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    code: 'SS010_WINDOW_CLOSED'
+  actual:
+  error: 'new row for relation "ticket_command_receipt" violates check constraint "p2016_command_resource"'
+  stack: |-
+    D:\Projects\Fault-Reporting-WeCom-Assistant\node_modules\pg\lib\client.js:694:17
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async file:///D:/Projects/Fault-Reporting-WeCom-Assistant/src/p2-016-ticket-command-ledger.mjs:12:9
+    async transactionP2016 (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/src/p2-016-domain-contracts.mjs:70:46)
+    async waitForActual (node:assert:646:5)
+    async strict.rejects (node:assert:769:25)
+    async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-010-runtime.integration.test.mjs:134:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async withSS009Database (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/yxx-ss-009-resources.mjs:12:16)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-010-runtime.integration.test.mjs:122:3)
+  operator: 'rejects'
+  stack: |-
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-010-runtime.integration.test.mjs:134:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async withSS009Database (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/yxx-ss-009-resources.mjs:12:16)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-010-runtime.integration.test.mjs:122:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SS010 AC094 lost controller IPC stops roles without starting a Gateway or deleting facts
+ok 11 - SS010 AC094 lost controller IPC stops roles without starting a Gateway or deleting facts
+  ---
+  duration_ms: 2920.7151
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-21 09:46:38","event_epoch_ms":"1789955198550","kind":"cleanup","status":"PASS","candidate_fingerprint":"5b4bd417a606a9bb1fec78be3b511f3de4f3b2d59725141115a235a819468265","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..11
+# tests 11
+# suites 0
+# pass 10
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19671.325

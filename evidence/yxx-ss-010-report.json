@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-21 10:37:24",
+  "event_epoch_ms": "1789958244700",
+  "work_item": "YXX-SS-010",
+  "status": "IMPLEMENTATION_AND_AUTOMATION_COMPLETE",
+  "local_verification": "PASS",
+  "readiness": "READY_FOR_LIMITED_WRITE_LIVE",
+  "base_commit": "c1af81a86951054f4898f043c43381a5842abbf2",
+  "tested_head": "c8e561a9cc58df1bf0c2c73a840001f9374c91f5",
+  "tested_tree": "462229220be2cd5ebc2322bfd96487de1a78be71",
+  "candidate_fingerprint": "55ef93fdd28e4d47da70dbd259595f892cfe07cdabb452f6f6b591ba36c022d8",
+  "historical_baseline": {
+    "tests": 1056,
+    "test_files": 171,
+    "ref": "evidence/p2-g2-yxx-entry-creation-v2-parent-report.json"
+  },
+  "previous_candidate": {
+    "tests": 1205,
+    "test_files": 192,
+    "ref": "evidence/yxx-ss-009-r7-report.json"
+  },
+  "full_regression": {
+    "tests": 1217,
+    "pass": 1217,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_files": 195,
+    "candidate_unchanged": true
+  },
+  "run": {
+    "path": "evidence/yxx-ss-010-full-run.json",
+    "sha256": "22f5ea0421685cfab401eb8f901a9e34ba9033977f9d444dfb122c32e703b13d"
+  },
+  "tap": {
+    "path": "evidence/yxx-ss-010-full.tap",
+    "sha256": "95707d7ceb0a7d4152d428b42babf967738b878dc8242bb1d5099d330f725629"
+  },
+  "case_trace": {
+    "path": "evidence/yxx-ss-010-full-cases.jsonl",
+    "sha256": "f555ff58382d9975662cb48f0dda110ba3f73c111c172f61d0b704a6dad70dba"
+  },
+  "independent_review": {
+    "path": "evidence/yxx-ss-010-independent-review.json",
+    "sha256": "b39b18e5e1565065ac24d62c4ae908b15bba51300b677ef5a0b16cb6f7bd6e2f"
+  },
+  "historical_check": {
+    "path": "evidence/yxx-ss-010-historical-check.json",
+    "sha256": "627821c4eeda39d8a6c19dd2a1658c7f09e3cc0b33bc8ea7dbdecacbe7cbf7f8"
+  },
+  "browser": [
+    {
+      "path": "evidence/yxx-ss-010-ui-390.png",
+      "sha256": "ada06b9f7d43245c7662f1302750dd4aa541768d1f1874066e208c5b4b61850a",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "evidence/yxx-ss-010-ui-1440.png",
+      "sha256": "ee84f4bf21c9e81b007497b1c4886606a6b27fbb847238a465edce8dc99b900d",
+      "width": 1440,
+      "height": 900
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "YXX-AC-091",
+      "tests": [
+        "SS010 AC091 artifact references reject path traversal missing and corrupted execution data"
+      ],
+      "status": "PASS"
+    },
+    {
+      "id": "YXX-AC-092",
+      "tests": [
+        "SS010 AC092 offline defaults and unapproved template never start runtime capabilities",
+        "SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets",
+        "SS010 AC092 owner approval cannot be reused for changed window actors database or quotas",
+        "SS010 AC092 concurrent global and supplement limits count committed commands and never charge replays",
+        "SS010 AC092 preflight rejects occupied port drift and resumed foreign scope without processing pending"
+      ],
+      "status": "PASS"
+    },
+    {
+      "id": "YXX-AC-093",
+      "tests": [
+        "SS010 AC093 real browser limited roles complete supplement review and safe member feedback",
+        "SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope"
+      ],
+      "status": "PASS"
+    },
+    {
+      "id": "YXX-AC-094",
+      "tests": [
+        "SS010 AC094 unknown duplicate and run arguments fail without implicit authorization"
+      ],
+      "status": "PASS"
+    }
+  ],
+  "pending_live": [
+    "YXX-AC-095",
+    "YXX-AC-096",
+    "YXX-AC-097",
+    "YXX-AC-098",
+    "YXX-AC-099",
+    "YXX-AC-100",
+    "YXX-AC-101",
+    "YXX-AC-102"
+  ],
+  "live_authorized": false,
+  "live_result": "NOT_RUN",
+  "parent_gate_advanced": false,
+  "remote_ci": "NOT_RUN",
+  "remote_review": "NOT_RUN",
+  "limitations": [
+    "Dedicated initially business-empty test database only; resume retains the same run facts.",
+    "Real OAuth, deployment and SS011 writes NOT_RUN.",
+    "Formal natural GC, physical 2C4G and 60-minute observation NOT_RUN.",
+    "SS011 NOT_AUTHORIZED; P2-G2-LIVE and P2-008 stopped."
+  ]
+}

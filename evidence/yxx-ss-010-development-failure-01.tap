@@ -1,0 +1,111 @@
+node:internal/modules/esm/load:193
+    throw new ERR_UNSUPPORTED_ESM_URL_SCHEME(parsed, schemes);
+          ^
+
+Error [ERR_UNSUPPORTED_ESM_URL_SCHEME]: Only URLs with a scheme in: file, data, and node are supported by the default ESM loader. On Windows, absolute paths must be valid file:// URLs. Received protocol 'c:'
+    at throwIfUnsupportedURLScheme (node:internal/modules/esm/load:193:11)
+    at defaultLoadSync (node:internal/modules/esm/load:146:3)
+    at #loadAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:802:12)
+    at #loadSync (node:internal/modules/esm/loader:834:53)
+    at ModuleLoader.load (node:internal/modules/esm/loader:783:26)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:494:31)
+    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:560:36)
+    at afterResolve (node:internal/modules/esm/loader:607:52)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:613:12)
+    at node:internal/modules/esm/loader:632:32 {
+  code: 'ERR_UNSUPPORTED_ESM_URL_SCHEME'
+}
+
+Node.js v24.18.0
+✖ SS010 AC092 offline defaults and unapproved template never start runtime capabilities (73.4369ms)
+✔ SS010 AC092 closed permissions identity window and conservative budget reject unsafe manifests (3.4858ms)
+✔ SS010 AC094 unknown duplicate and run arguments fail without implicit authorization (368.4785ms)
+✔ SS010 AC091 artifact references reject path traversal missing and corrupted execution data (3.1056ms)
+✖ SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets (5261.7772ms)
+✔ SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope (2303.2179ms)
+ℹ SS009_RECEIPT {"event_time":"2026-09-21 09:31:27","event_epoch_ms":"1789954287621","kind":"cleanup","status":"PASS","candidate_fingerprint":"c121edfb168867b76024186f86101686747dff00b468e4a9a584140ba1167c17","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+✖ D:\Projects\Fault-Reporting-WeCom-Assistant\tests\yxx-ss-010-runtime.integration.test.mjs (0.222ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 4
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8336.8677
+
+✖ failing tests:
+
+test at tests\yxx-ss-010-contract.test.mjs:11:1
+✖ SS010 AC092 offline defaults and unapproved template never start runtime capabilities (73.4369ms)
+  Error: Command failed: C:\Program Files\nodejs\node.exe --import C:\Users\zqpet\AppData\Local\Temp\ss010-offline-s6N7a2\guard.mjs scripts/yxx-self-service-live.mjs
+  node:internal/modules/esm/load:193
+      throw new ERR_UNSUPPORTED_ESM_URL_SCHEME(parsed, schemes);
+            ^
+  
+  Error [ERR_UNSUPPORTED_ESM_URL_SCHEME]: Only URLs with a scheme in: file, data, and node are supported by the default ESM loader. On Windows, absolute paths must be valid file:// URLs. Received protocol 'c:'
+      at throwIfUnsupportedURLScheme (node:internal/modules/esm/load:193:11)
+      at defaultLoadSync (node:internal/modules/esm/load:146:3)
+      at #loadAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:802:12)
+      at #loadSync (node:internal/modules/esm/loader:834:53)
+      at ModuleLoader.load (node:internal/modules/esm/loader:783:26)
+      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:494:31)
+      at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:560:36)
+      at afterResolve (node:internal/modules/esm/loader:607:52)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:613:12)
+      at node:internal/modules/esm/loader:632:32 {
+    code: 'ERR_UNSUPPORTED_ESM_URL_SCHEME'
+  }
+  
+  Node.js v24.18.0
+  
+      at genericNodeError (node:internal/errors:985:15)
+      at wrappedFn (node:internal/errors:539:14)
+      at checkExecSyncError (node:child_process:925:11)
+      at execFileSync (node:child_process:961:15)
+      at TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-010-contract.test.mjs:19:31)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.start (node:internal/test_runner/test:1191:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    status: 1,
+    signal: null,
+    output: [ null, '', "node:internal/modules/esm/load:193\r\n    throw new ERR_UNSUPPORTED_ESM_URL_SCHEME(parsed, schemes);\r\n          ^\r\n\r\nError [ERR_UNSUPPORTED_ESM_URL_SCHEME]: Only URLs with a scheme in: file, data, and node are supported by the default ESM loader. On Windows, absolute paths must be valid file:// URLs. Received protocol 'c:'\r\n    at throwIfUnsupportedURLScheme (node:internal/modules/esm/load:193:11)\r\n    at defaultLoadSync (node:internal/modules/esm/load:146:3)\r\n    at #loadAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:802:12)\r\n    at #loadSync (node:internal/modules/esm/loader:834:53)\r\n    at ModuleLoader.load (node:internal/modules/esm/loader:783:26)\r\n    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:494:31)\r\n    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:560:36)\r\n    at afterResolve (node:internal/modules/esm/loader:607:52)\r\n    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:613:12)\r\n    at node:internal/modules/esm/loader:632:32 {\r\n  code: 'ERR_UNSUPPORTED_ESM_URL_SCHEME'\r\n}\r\n\r\nNode.js v24.18.0\r\n" ],
+    pid: 23272,
+    stdout: '',
+    stderr: "node:internal/modules/esm/load:193\r\n    throw new ERR_UNSUPPORTED_ESM_URL_SCHEME(parsed, schemes);\r\n          ^\r\n\r\nError [ERR_UNSUPPORTED_ESM_URL_SCHEME]: Only URLs with a scheme in: file, data, and node are supported by the default ESM loader. On Windows, absolute paths must be valid file:// URLs. Received protocol 'c:'\r\n    at throwIfUnsupportedURLScheme (node:internal/modules/esm/load:193:11)\r\n    at defaultLoadSync (node:internal/modules/esm/load:146:3)\r\n    at #loadAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:802:12)\r\n    at #loadSync (node:internal/modules/esm/loader:834:53)\r\n    at ModuleLoader.load (node:internal/modules/esm/loader:783:26)\r\n    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:494:31)\r\n    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:560:36)\r\n    at afterResolve (node:internal/modules/esm/loader:607:52)\r\n    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:613:12)\r\n    at node:internal/modules/esm/loader:632:32 {\r\n  code: 'ERR_UNSUPPORTED_ESM_URL_SCHEME'\r\n}\r\n\r\nNode.js v24.18.0\r\n"
+  }
+
+test at tests\yxx-ss-010-runtime.integration.test.mjs:14:1
+✖ SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets (5261.7772ms)
+  AssertionError [ERR_ASSERTION]: {"error":{"code":"P2_016_INPUT_INVALID","retryable":false}}
+  
+  400 !== 200
+  
+      at run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-010-runtime.integration.test.mjs:32:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+      at async withSS009Database (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/yxx-ss-009-resources.mjs:12:16)
+      at async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-010-runtime.integration.test.mjs:15:3)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\yxx-ss-010-runtime.integration.test.mjs:70:6
+✖ D:\Projects\Fault-Reporting-WeCom-Assistant\tests\yxx-ss-010-runtime.integration.test.mjs (0.222ms)
+  TypeError: closers is not iterable
+      at TestContext.closeBrowserTestResources (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-006-browser-harness.mjs:49:22)
+      at TestHook.runInAsyncScope (node:async_hooks:227:14)
+      at TestHook.run (node:internal/test_runner/test:1325:25)
+      at TestHook.run (node:internal/test_runner/test:1669:18)
+      at TestHook.run (node:internal/util:581:20)
+      at Test.runHook (node:internal/test_runner/test:1212:20)
+      at after (node:internal/test_runner/test:1265:20)
+      at Test.run (node:internal/test_runner/test:1351:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)

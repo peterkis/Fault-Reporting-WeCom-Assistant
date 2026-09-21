@@ -6,6 +6,8 @@
 
 验证结果以 `evidence/yxx-ss-010-report.json` 为准，包括实际全量计数、独立两轴审查、原始执行产物及 AC-091～094。没有推送或 GitHub checks，本地通过不标为远端 CI/APPROVED。
 
+本地被测源码：`c8e561a9cc58df1bf0c2c73a840001f9374c91f5`。全量 1217/1217、195 文件，fail/cancelled/skipped/todo 均为0，candidate_unchanged=true；SPEC/STANDARDS 两轴 PASS、0 未解决 Critical/High/Medium。最终原生 readiness CLI 返回 `READY_FOR_LIMITED_WRITE_LIVE / live_authorized=false / parent_gate_advanced=false`。
+
 审查重点：默认零副作用、批准scope绑定、重复命令和恢复配额、提交时停写、端口冲突不处理pending、Web无外发、内外Origin、Worker单一所有权、033/034就绪及关写保数据。
 
 数据库无新迁移，七项业务 API 保持契约。仅支持专用初始业务空库和同一run恢复；任意共享业务库不支持。完整G2及正式自然GC/2C4G/60分钟观察未运行。
