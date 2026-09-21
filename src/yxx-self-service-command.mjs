@@ -148,7 +148,7 @@ export function createYxxMemberCommandContext({ store, authenticate, recheck, pr
   }
 
   async function checkQuota(context, value, kind, transaction) {
-    try { return await quota({ profile: context.profile, kind, client_command_id: value.client_command_id, transaction }) === true; }
+    try { return await quota({ profile: context.profile, scope: context.scope, kind, client_command_id: value.client_command_id, transaction }) === true; }
     catch { return false; }
   }
 

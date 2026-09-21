@@ -32,7 +32,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   gatewayEnabled=false,senderEnabled=false,liveApproval=null,inboundScope=null,botId,secret,wsUrl,clientFactory,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,ruleEngine,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
-  reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null}={}) {
+  reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null}={}) {
   const featureFlags=flagsP2016(flags),enabled=featureFlags.TICKET_LIFECYCLE_WORKBENCH_ENABLED;
   const policy=reporterAccessPolicy(reporterPolicy),memberConfig=validateYxxEntryConfig(reporterMemberEntry);
   if(policy==='MEMBER_REQUIRED'&&(!memberConfig.enabled||wecomWebOAuth.enabled!==true||!featureFlags.REPORTER_TIMELINE_ENABLED))failYxx('CONFIG_INVALID');
@@ -78,7 +78,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       if(policy==='MEMBER_REQUIRED')memberExtension=createYxxMemberExtension({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
         reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,access,incidentAdapter:incidentExtension?.reporterAdapter??null});
       if(yxxSelfService!==null)selfService=createYxxSelfServiceExtension({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
-        reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,profile:'FULL_SERVICE_LOOP',featureFlags:yxxSelfService.featureFlags??{}});
+        reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,profile:'FULL_SERVICE_LOOP',featureFlags:yxxSelfService.featureFlags??{},quota:yxxSelfService.quota});
       const reporterHttp=createP2016ReporterHttp({access,timeline:createP2016ReporterTimeline({pool,access,enabled:featureFlags.REPORTER_TIMELINE_ENABLED,incidentAdapter:incidentExtension?.reporterAdapter??null}),
         enabled:featureFlags.REPORTER_TIMELINE_ENABLED,publicOrigin:reporterOrigin,allowLocalHttp,accessPolicy:policy,memberHandler:memberExtension?.handler});
       return {
@@ -96,7 +96,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
             checks:{...base.checks,p2_016_schema:schema,...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
         authenticatedHandler:async context=>(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
-        unauthenticatedHandler:async context=>(await selfService?.handler(context))||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),
+        unauthenticatedHandler:async context=>(await limitedRequestGuard?.(context))||(await selfService?.handler(context))||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),
         staticHandler:async(pathname,response)=>(await incidentExtension?.staticHandler?.(pathname,response))||ticketStatic(pathname,response),
         runOnce:async()=>{if(orchestrationWorker)await orchestrationWorker.processDueBatch({feature_flags:ruleFirstFlags,batch_size:20});await realtimeProjector.runOnce();await incidentExtension?.runOnce?.();},
       };
