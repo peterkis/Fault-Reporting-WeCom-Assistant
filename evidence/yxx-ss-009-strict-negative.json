@@ -1,0 +1,31 @@
+{
+  "event_time": "2026-09-19 01:46:25",
+  "event_epoch_ms": "1789753585046",
+  "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+  "status": "PASS",
+  "actual_strict_entry": true,
+  "positive_control": true,
+  "rejected": [
+    "wrong TAP hash",
+    "missing published inventory",
+    "changed published inventory",
+    "missing case observation time",
+    "unpaired case observation time",
+    "wrong candidate",
+    "old but real tested commit",
+    "missing old file",
+    "wrong file hash",
+    "missing scenario",
+    "wrong test file",
+    "wrong test name",
+    "missing independent axis",
+    "unresolved review",
+    "forged capacity summary",
+    "forged process summary",
+    "forged catalog summary",
+    "unpaired time",
+    "false cleanup",
+    "path traversal"
+  ],
+  "owned_worktree_removed": true
+}

@@ -1,0 +1,77 @@
+name: SS009 file execution coverage
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ss009-file-coverage-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    if: github.event.pull_request.number == 19
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      GIT_NO_REPLACE_OBJECTS: '1'
+    steps:
+      - name: Reproduce the recorded checkout policy
+        run: git config --global core.autocrlf true
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - run: git config --local core.autocrlf true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Prepare external logs and verify checkout identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ss009-file-coverage"
+          node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" \
+            | tee "$RUNNER_TEMP/ss009-file-coverage/history.json"
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run all evidence unit tests including the new coverage regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap tests/yxx-ss-009-evidence.test.mjs \
+            | tee "$RUNNER_TEMP/ss009-file-coverage/evidence-unit.tap"
+      - name: Reproduce the genuine old CLI bypass and require the fixed rejection
+        shell: bash
+        run: |
+          set -euo pipefail
+          node .github/review/ss009-file-coverage-probe.mjs \
+            | tee "$RUNNER_TEMP/ss009-file-coverage/historical-strict-probe.json"
+      - name: Run unchanged structure and architecture validators
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/validate-yxx-self-service.mjs \
+            | tee "$RUNNER_TEMP/ss009-file-coverage/structure.json"
+          node --input-type=module -e '
+            import assert from "node:assert/strict";
+            import {spawnSync} from "node:child_process";
+            import {SS009_VALIDATORS} from "./src/yxx-self-service-verification.mjs";
+            for(const file of SS009_VALIDATORS){
+              const r=spawnSync(process.execPath,["scripts/"+file],{encoding:"utf8"});
+              console.log(JSON.stringify({command:file,exit_code:r.status,stdout:r.stdout,stderr:r.stderr}));
+              assert.ifError(r.error);assert.equal(r.status,0,file);
+            }' | tee "$RUNNER_TEMP/ss009-file-coverage/validators.jsonl"
+      - name: Retain truthful scoped test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ss009-file-coverage-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ss009-file-coverage/
+          if-no-files-found: warn
+          retention-days: 30

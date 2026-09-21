@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-20 12:02:30",
+  "event_epoch_ms": "1789876950867",
+  "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+  "work_item": "YXX-SS-009",
+  "status": "LOCAL_AUTOMATION_VERIFIED_PENDING_STRICT_GATE",
+  "base_head": "375d47b013017edb858206cc5f3475c9aed77dfd",
+  "tested_head": "dcf688038a76e471b443be33af4aad6278d72bd2",
+  "tested_tree": "4c8b81110b02155b9994018fd28b41b49367b21d",
+  "live_authorized": false,
+  "remote_review": "NOT_RUN",
+  "full_regression": {
+    "tests": 1182,
+    "pass": 1182,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_files": 191,
+    "candidate_unchanged": true
+  },
+  "run": {
+    "path": "evidence/yxx-ss-009-r5-full-run.json",
+    "encoding": "UTF8_LF",
+    "sha256": "a9d0d29997e6bdaacd804422e180d3e8aff3f40343877a63bf98c626a016d041"
+  },
+  "tap": {
+    "path": "evidence/yxx-ss-009-r5-full.tap",
+    "encoding": "UTF8_LF",
+    "sha256": "c3f7eb43f6781a993fd28e6398a132d76fff418322cbf46feb1ec5f86b60b934"
+  },
+  "case_trace": {
+    "path": "evidence/yxx-ss-009-r5-full-cases.jsonl",
+    "encoding": "UTF8_LF",
+    "sha256": "62573e6fbb9fa9723efde595df7ac866da7f6a0bb46ad5597e245a7596b6a6b2"
+  },
+  "fault": {
+    "path": "evidence/yxx-ss-009-r5-fault.json",
+    "encoding": "UTF8_LF",
+    "sha256": "770286f7cca960a0b25f5e687798c59b7741234890b05931b118bcc8ce86328c"
+  },
+  "capacity": {
+    "path": "evidence/yxx-ss-009-r5-capacity.json",
+    "encoding": "UTF8_LF",
+    "sha256": "014eeb70a0170cb1595c81a57c463f3c2457d922b18834ffb915bbcd8e0c0773"
+  },
+  "catalog": {
+    "path": "evidence/yxx-ss-009-r5-catalog.json",
+    "encoding": "UTF8_LF",
+    "sha256": "07a09fe89c0acd08c4609e24a5bdae1a6b042c70a7c068e705749f4cd60492e7"
+  },
+  "browser": {
+    "path": "evidence/yxx-ss-009-r5-browser.json",
+    "encoding": "UTF8_LF",
+    "sha256": "21693659174de145056f6d777681f9a3e34af4e3a26d44fa99b232b191270bbc"
+  },
+  "source_audit": {
+    "path": "evidence/yxx-ss-009-r5-source-audit.json",
+    "encoding": "UTF8_LF",
+    "sha256": "412adbc9fe5dda2f3e5c8b9c6dcc22447e5cd8abd7d6f78442c0b90d5db61b3e"
+  },
+  "cleanup": {
+    "path": "evidence/yxx-ss-009-r5-cleanup.json",
+    "encoding": "UTF8_LF",
+    "sha256": "f0aed0a35db5a4e91c4f45f1c771d962647f3320bfe88479c8423795754ede55"
+  },
+  "validators": {
+    "path": "evidence/yxx-ss-009-r5-validators.json",
+    "encoding": "UTF8_LF",
+    "sha256": "edba3513895efb3fb3b680df8213bac1f0fc1956bb162ad5a416e37e61b2a53e"
+  },
+  "review": {
+    "path": "evidence/yxx-ss-009-r5-independent-review.json",
+    "encoding": "UTF8_LF",
+    "sha256": "249f195fa33de932bf24e89c0f2c42f734cf47177e6e1e4a4385e0dd2078686b"
+  },
+  "historical_coverage": {
+    "path": "evidence/yxx-ss-009-r5-historical-coverage.json",
+    "encoding": "UTF8_LF",
+    "sha256": "aacdb0599ed6d0a291b03937b0e67bc3675a8752721be35b8b28877169c03a8c"
+  },
+  "inventory": {
+    "path": "evidence/yxx-ss-009-r5-source-inventory.json",
+    "encoding": "UTF8_LF",
+    "sha256": "f63c3d746a44de9daa7be66f8aa2a5fd5dfeb87105723a590787f918d9d5f7b3"
+  },
+  "governance": {
+    "path": "evidence/yxx-ss-009-r5-governance.json",
+    "encoding": "UTF8_LF",
+    "sha256": "b582bdcba7a97f12c259e96bb6a708c4e3a62be10cec9167088d4b62fe6ef9ce"
+  },
+  "time_audit": {
+    "path": "evidence/yxx-ss-009-r5-time-audit.json",
+    "encoding": "UTF8_LF",
+    "sha256": "ac035c6649249761b46f3fd0696170aef93300fad8072e3dbccf2eee00157a25"
+  },
+  "matrix": {
+    "path": "evidence/yxx-ss-009-r5-acceptance.json",
+    "encoding": "UTF8_LF",
+    "sha256": "998cb4e75246082bbea0e381df06332fc83a089fe4c8cae763885f1046e92f60"
+  },
+  "limitations": [
+    "Formal natural GC / 2C4G / 60 minutes NOT_RUN",
+    "SS010 PLANNED; SS011 NOT_AUTHORIZED",
+    "Parent G2 historical readiness unchanged; P2-G2-LIVE and AI not started"
+  ],
+  "strict_negative": {
+    "path": "evidence/yxx-ss-009-r5-strict-negative.json",
+    "encoding": "UTF8_LF",
+    "sha256": "c3eba7837638820ec096f2351bd0d9d22fdb9bb33789754bf758ce5b308d6f45"
+  }
+}

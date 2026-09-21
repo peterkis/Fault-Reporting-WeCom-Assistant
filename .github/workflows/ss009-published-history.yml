@@ -1,0 +1,97 @@
+name: SS009 published history
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ss009-history-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    # This is the SS-009 delivery gate, not a permanent frozen-source gate for later PRs.
+    if: github.event.pull_request.number == 19
+    name: Published history and strict evidence (${{ matrix.checkout }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        checkout: [head, merge]
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
+      EXPECTED_MERGE: ${{ github.sha }}
+      CHECKOUT_ROLE: ${{ matrix.checkout }}
+      GIT_NO_REPLACE_OBJECTS: '1'
+    steps:
+      # Original SS-009 evidence hashes .gitignore as raw Windows CRLF bytes.
+      # Reproduce that checkout policy; never rewrite the frozen evidence hash.
+      - name: Configure the recorded Windows checkout line endings
+        run: git config --global core.autocrlf true
+      - name: Checkout the exact event object with full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ matrix.checkout == 'head' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Retain the recorded checkout policy in this isolated repository
+        run: git config --local core.autocrlf true
+      - name: Use Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Prepare external log directory
+        run: mkdir -p "$RUNNER_TEMP/ss009-history"
+      - name: Verify raw gitignore bytes against the original start receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-files --eol -- .gitignore
+          node --input-type=module -e 'import assert from "node:assert/strict"; import {readFileSync} from "node:fs"; import {createHash} from "node:crypto"; const expected=JSON.parse(readFileSync("evidence/yxx-ss-009-start.json","utf8")).gitignore_sha256; const actual=createHash("sha256").update(readFileSync(".gitignore")).digest("hex"); assert.equal(actual,expected); console.log(JSON.stringify({checkout_eol:"CRLF",gitignore_sha256:actual,original_receipt_unchanged:true}));' \
+            | tee "$RUNNER_TEMP/ss009-history/checkout-eol.json"
+      - name: Test review-environment handling with real synthetic Git graphs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test --test-reporter=tap .github/review/verify-published-history.test.mjs 2>&1 \
+            | tee "$RUNNER_TEMP/ss009-history/tooling-tests.tap"
+      - name: Verify authoritative checkout identity before any ancestry finding
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--expected-head "$EXPECTED_HEAD")
+          if [ "$CHECKOUT_ROLE" = merge ]; then
+            args+=(--expected-merge "$EXPECTED_MERGE" --expected-base "$EXPECTED_BASE")
+          fi
+          node .github/review/verify-published-history.mjs "${args[@]}" \
+            | tee "$RUNNER_TEMP/ss009-history/preflight.json"
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run the unchanged strict evidence gate
+        id: strict
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/validate-yxx-self-service.mjs --require-ready \
+            | tee "$RUNNER_TEMP/ss009-history/strict-readiness.json"
+      - name: Diagnose strict rejection without changing the gate
+        if: failure() && steps.strict.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module -e 'import {validateYxxSelfService} from "./src/yxx-self-service-verification.mjs"; console.log(validateYxxSelfService({requireReady:true}));' 2>&1 \
+            | tee "$RUNNER_TEMP/ss009-history/strict-diagnostic.txt"
+      - name: Retain logs without writing into candidate or historical evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ss009-history-${{ matrix.checkout }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ss009-history/
+          if-no-files-found: warn
+          retention-days: 30

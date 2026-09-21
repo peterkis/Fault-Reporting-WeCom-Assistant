@@ -1,0 +1,127 @@
+TAP version 13
+# Subtest: SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket
+ok 1 - SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket
+  ---
+  duration_ms: 18320.6774
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:06","event_epoch_ms":"1789746006699","kind":"browser","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","screenshots":[{"file":"tmp/ss009-ui/eef4c116-4c25-49c7-95cf-a35834deadce.png","width":390,"height":844,"sha256":"0f5294c652f08449d99eaca62673129f63fe36ee8d98e203b4cf39f1b67a613f"},{"file":"tmp/ss009-ui/e7f18d75-99a2-48d2-b539-867864401799.png","width":1440,"height":900,"sha256":"b6f9a38a4c5101cb00de5a160dd02f7353fb9e8881a5afe1b36185a68ce3bdb7"}],"real_pg":true,"real_browser":true,"tickets":2,"external_network_calls":0,"simulated_provider_calls":1}
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:07","event_epoch_ms":"1789746007976","kind":"cleanup","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"member_listener","remaining":0},{"resource":"staff_listener","remaining":0},{"resource":"browser_process","remaining":0},{"resource":"browser_profile","remaining":0},{"resource":"browser_command_timers","remaining":0},{"resource":"browser_socket","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS-009 catalog rejects weakened CHECK despite preserved names and fragments
+ok 2 - SS-009 catalog rejects weakened CHECK despite preserved names and fragments
+  ---
+  duration_ms: 2746.1856
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:10","event_epoch_ms":"1789746010989","kind":"cleanup","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS-009 migration check rolls back and five catalog drift classes fail closed
+ok 3 - SS-009 migration check rolls back and five catalog drift classes fail closed
+  ---
+  duration_ms: 2907.6081
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:13","event_epoch_ms":"1789746013638","kind":"catalog","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","drift_classes":["COLUMN","CHECK","FK","UNIQUE","INDEX"],"check_rollback":true,"forbidden_timezone_columns":0}
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:13","event_epoch_ms":"1789746013904","kind":"cleanup","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS-009 PostgreSQL rejects mixed Web Bot fields missing source and deferred orphan commits
+ok 4 - SS-009 PostgreSQL rejects mixed Web Bot fields missing source and deferred orphan commits
+  ---
+  duration_ms: 2353.2954
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:16","event_epoch_ms":"1789746016259","kind":"cleanup","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS-009 failed and stalled child startup releases every owned process
+ok 5 - SS-009 failed and stalled child startup releases every owned process
+  ---
+  duration_ms: 702.8938
+  type: 'test'
+  ...
+# Subtest: SS-009 real process kills recover all acceptance and processing commit boundaries
+ok 6 - SS-009 real process kills recover all acceptance and processing commit boundaries
+  ---
+  duration_ms: 5706.7968
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:22","event_epoch_ms":"1789746022789","kind":"cleanup","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:22","event_epoch_ms":"1789746022893","kind":"fault","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","real_kills":5,"cases":[{"action":"accept","barrier":"before-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"accept","barrier":"after-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"before-process","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"before-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"after-commit","receipt_count":1,"ticket_count":1,"recovered":true}],"owned_children_remaining":0,"owned_databases_remaining":0}
+# Subtest: SS-009 committed supplement survives a real kill without a second Ticket or duplicate event
+ok 7 - SS-009 committed supplement survives a real kill without a second Ticket or duplicate event
+  ---
+  duration_ms: 3307.2224
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:26","event_epoch_ms":"1789746026104","kind":"cleanup","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:26","event_epoch_ms":"1789746026202","kind":"fault","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","supplement_real_kill":true,"supplement_replayed":true,"tickets":1,"supplement_events":1}
+# Subtest: SS-009 a terminated owned PostgreSQL backend preserves accepted input across a fresh processor
+ok 8 - SS-009 a terminated owned PostgreSQL backend preserves accepted input across a fresh processor
+  ---
+  duration_ms: 3110.2966
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:29","event_epoch_ms":"1789746029195","kind":"cleanup","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:29","event_epoch_ms":"1789746029302","kind":"fault","status":"PASS","candidate_fingerprint":"9c130aacfdd5b65fd44d9b94bc7d8e765719769960121151a3c90f507264cd32","owned_backend_terminated":true,"recovery_verified":true,"shared_database_service_stopped":false}
+# Subtest: SS-009 evidence rejects a forged PASS summary without the matching successful TAP
+ok 9 - SS-009 evidence rejects a forged PASS summary without the matching successful TAP
+  ---
+  duration_ms: 1.0739
+  type: 'test'
+  ...
+# Subtest: SS-009 sampler and cleanup errors never skip later owned resource shutdown
+ok 10 - SS-009 sampler and cleanup errors never skip later owned resource shutdown
+  ---
+  duration_ms: 1.0663
+  type: 'test'
+  ...
+# Subtest: SS-009 dedicated proof summaries cannot replace process capacity or catalog observations
+ok 11 - SS-009 dedicated proof summaries cannot replace process capacity or catalog observations
+  ---
+  duration_ms: 7.2138
+  type: 'test'
+  ...
+# Subtest: SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time
+ok 12 - SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time
+  ---
+  duration_ms: 14.7886
+  type: 'test'
+  ...
+# Subtest: SS-009 evidence references reject wrong hashes traversal and linked files
+ok 13 - SS-009 evidence references reject wrong hashes traversal and linked files
+  ---
+  duration_ms: 4.6805
+  type: 'test'
+  ...
+# Subtest: SS-009 governance preserves historical baseline user files parent gate and full collector coverage
+ok 14 - SS-009 governance preserves historical baseline user files parent gate and full collector coverage
+  ---
+  duration_ms: 2393.2176
+  type: 'test'
+  ...
+# Subtest: SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types
+ok 15 - SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types
+  ---
+  duration_ms: 3513.0178
+  type: 'test'
+  ...
+# Subtest: SS-009 lost actual HTTP response recovers the same authorized command without a second intake
+ok 16 - SS-009 lost actual HTTP response recovers the same authorized command without a second intake
+  ---
+  duration_ms: 3147.8925
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:38","event_epoch_ms":"1789746038814","kind":"cleanup","status":"PASS","candidate_fingerprint":"f39f8efdbf12cae96f84da09a91a6cc66dc31b6a72736d1bf242d7d052f33738","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"http_listener","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:38","event_epoch_ms":"1789746038966","kind":"fault","status":"PASS","candidate_fingerprint":"f39f8efdbf12cae96f84da09a91a6cc66dc31b6a72736d1bf242d7d052f33738","http_response_lost":true,"same_command_recovered":true,"cross_member_denied":true,"batch_max":20}
+# Subtest: SS-009 locked HTTP supplements recheck logout write shutdown and request revocation
+ok 17 - SS-009 locked HTTP supplements recheck logout write shutdown and request revocation
+  ---
+  duration_ms: 3402.9859
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:40:42","event_epoch_ms":"1789746042401","kind":"cleanup","status":"PASS","candidate_fingerprint":"f39f8efdbf12cae96f84da09a91a6cc66dc31b6a72736d1bf242d7d052f33738","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"http_listener","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 53011.1322

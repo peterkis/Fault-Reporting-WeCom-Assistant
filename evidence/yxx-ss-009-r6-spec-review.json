@@ -1,0 +1,26 @@
+{
+  "event_time": "2026-09-20 17:08:48",
+  "event_epoch_ms": "1789895328353",
+  "axis": "SPEC",
+  "reviewer": "/codex/subagent/Mendel/spec",
+  "recorded_by": "/codex/ss009-local-review",
+  "reviewed_head": "30ee4f6a9cc94b7a2c11228c1de3bc3d3880e0ba",
+  "reviewed_tree": "82b90150f1d665af97f6422b8c73a61d01bfeee8",
+  "candidate_fingerprint": "0c5178a938f9461eea1060ed7483965d4b99b48b0bf554f167be4f0d3c56d753",
+  "scope": "R6_CURRENT_CANDIDATE_INCREMENTAL_COVERAGE_AND_PROVENANCE",
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [],
+  "verified": {
+    "focused_evidence_tests": 15,
+    "full_regression_tests": 1187,
+    "full_regression_pass": 1187,
+    "full_regression_test_files": 191,
+    "file_execution_entries": 191,
+    "candidate_unchanged": true,
+    "provenance_swap_rejected": true,
+    "r5_preserved": true
+  },
+  "summary": "SPEC review verified bidirectional file coverage, independent per-file identity digests, exact TAP/case binding, historical r5 preservation, and the stated no-live/no-merge boundary."
+}

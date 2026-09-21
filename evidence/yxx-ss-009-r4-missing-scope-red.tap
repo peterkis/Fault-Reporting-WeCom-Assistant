@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: strict readiness rejects removed authorization scope and modified parent phase
+not ok 1 - strict readiness rejects removed authorization scope and modified parent phase
+  ---
+  duration_ms: 10755.0701
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-r4-scope-red.test.mjs:7:1'
+  failureType: 'testCodeFailure'
+  error: 'missing scope must not bypass protected phase state'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'SS009_LOCAL_VERIFICATION_COMPLETE'
+  actual: 'SS009_LOCAL_VERIFICATION_COMPLETE'
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-r4-scope-red.test.mjs:14:12)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.start (node:internal/test_runner/test:1191:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10926.1869

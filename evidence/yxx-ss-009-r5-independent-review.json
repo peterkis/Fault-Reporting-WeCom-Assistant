@@ -1,0 +1,31 @@
+{
+  "event_time": "2026-09-20 12:02:30",
+  "event_epoch_ms": "1789876950793",
+  "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+  "reviews": [
+    {
+      "axis": "SPEC",
+      "reviewer": "/root/ss009_spec_audit",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+      "source": {
+        "path": "evidence/yxx-ss-009-r5-spec-review.json",
+        "encoding": "UTF8_LF",
+        "sha256": "516e8fecfd49df3a8cf7c775bee57d246f48f9ba8072b3f1f059240625b44181"
+      }
+    },
+    {
+      "axis": "STANDARDS",
+      "reviewer": "/root/ss009_standards_audit",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+      "source": {
+        "path": "evidence/yxx-ss-009-r5-standards-review.json",
+        "encoding": "UTF8_LF",
+        "sha256": "23cabb3c9dbee6c07f1203ea00bb2287a24b88b0ca64753d246c2a5d8d2288c0"
+      }
+    }
+  ]
+}

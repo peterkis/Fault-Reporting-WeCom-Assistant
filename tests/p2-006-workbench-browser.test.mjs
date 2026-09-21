@@ -24,11 +24,14 @@ async function reservePort() {
 
 function fixture() {
   let rowVersion = 1;
+  let refreshed = false;
+  // Persisted timeline items keep their identity across reads and SSE refreshes.
+  const userItemId=randomUUID(),agentItemId=randomUUID();
   const calls = { takeover: 0, transfer: 0, reply: 0, note: 0, list: 0 };
   const conversation = (id = SESSION_ID) => ({
     session: { session_id: id, status: 'OPEN', control_mode: 'HUMAN', generation_version: 1, row_version: rowVersion, last_activity_at: NOW },
     queue_state: 'unassigned', channel_label: '群聊会话', unread_count: 1,
-    last_item: { item_id: randomUUID(), sequence_no: '2', item_type: 'USER_MESSAGE', sender_kind: 'USER', visibility: 'EXTERNAL', text: '<img src=x onerror=window.__p2_006_xss=1>', safe_content: {}, occurred_at: NOW },
+    last_item: { item_id: userItemId, sequence_no: '2', item_type: 'USER_MESSAGE', sender_kind: 'USER', visibility: 'EXTERNAL', text: '<img src=x onerror=window.__p2_006_xss=1>', safe_content: {}, occurred_at: NOW },
     assignment: { status: 'UNASSIGNED', version: 0, assigned_to_me: false, assigned_display_name: null, assigned_at: null },
     handoff: null, ticket: null, latest_delivery: null, waiting_duration_seconds: 0,
     capabilities: ['VIEW', 'TAKEOVER', 'REQUEST_HANDOFF', 'TRANSFER', 'RELEASE', 'REPLY', 'INTERNAL_NOTE', 'READ_CURSOR'],
@@ -44,7 +47,7 @@ function fixture() {
     getBootstrap: async () => ({ authenticated: true, principal: { principal_id: PRINCIPAL_ID, display_name: 'Synthetic Admin', capabilities: conversation().capabilities }, ...expiry(), csrf_token: 'csrf-token-browser-test', feature_status: { workbench_enabled: true, realtime_sse_enabled: true, ai_enabled: false, incident_enabled: false, attachments_enabled: false }, polling_interval_ms: 60_000, sse_endpoint: '/api/realtime/events?scope=workbench', max_page_sizes: { conversations: 100, timeline: 200 } }),
     listConversations: async ({ state }) => { calls.list += 1; return { items: state === 'ended' ? [] : [conversation(), conversation(OTHER_ID)], next_cursor: null }; },
     getConversationDetail: async () => detail(),
-    listConversationItems: async () => ({ session_id: SESSION_ID, items: [conversation().last_item, { ...conversation().last_item, item_id: randomUUID(), sequence_no: '3', sender_kind: 'AGENT', text: '已收到，正在处理' }], before_sequence: '2', after_sequence: '3', has_more: false }),
+    listConversationItems: async () => ({ session_id: SESSION_ID, items: [{...conversation().last_item,...(refreshed?{text:'REFRESH_COMPLETE'}:{})}, { ...conversation().last_item, item_id: agentItemId, sequence_no: '3', sender_kind: 'AGENT', text: '已收到，正在处理' }], before_sequence: '2', after_sequence: '3', has_more: false }),
     listEligiblePrincipals: async () => ({ items: [{ principal_id: TARGET_ID, display_name: 'Synthetic Target', actions: ['TRANSFER_TARGET'] }] }),
     listConversationDeliveries: async () => ({ items: [] }),
   };
@@ -54,30 +57,41 @@ function fixture() {
     cancelHandoff: succeed('takeover'), advanceReadCursor: succeed('takeover'), reply: succeed('reply'), internalNote: succeed('note'),
     retryDelivery: succeed('takeover'), reconcileDelivery: succeed('takeover'),
   };
-  return { queryService, commandFacade, calls };
+  return { queryService, commandFacade, calls, markRefresh:()=>{refreshed=true;} };
 }
 
-async function withBrowser(width, height, run) {
+async function withBrowser(width, height, run, { controlledRealtime=false }={}) {
   const port = await reservePort();
   const origin = `http://127.0.0.1:${port}`;
   const values = fixture();
+  let refreshResponse,resolveSse;const sseReady=new Promise(resolve=>{resolveSse=resolve;});
   const server = createConversationWorkbenchHttpServer({
     enabled: true, ...values, publicOrigin: origin,
     authenticate: async () => ({ principal_id: PRINCIPAL_ID, auth_method: 'COOKIE', ...expiry(), csrf_token: 'csrf-token-browser-test' }),
-    sseHandler: async (_request, response) => { response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', 'x-accel-buffering': 'no' }); response.end('data: {}\n\n'); },
+    sseHandler: async (_request, response) => { response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', 'x-accel-buffering': 'no' });if(controlledRealtime){refreshResponse=response;response.flushHeaders();resolveSse();}else response.end('data: {}\n\n'); },
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });
   let browser;
   try {
     browser = await launchSystemBrowser({ url: `${origin}/workbench`, width, height });
     await browser.waitFor("document.readyState === 'complete' && document.querySelectorAll('[data-session-id]').length === 2");
-    return await run({ browser, calls: values.calls, origin });
+    if(controlledRealtime){let timer;try{await Promise.race([sseReady,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('P2_006_TEST_SSE_NOT_READY')),5000);})]);}finally{clearTimeout(timer);}}
+    return await run({ browser, calls: values.calls, origin,refresh:()=>{values.markRefresh();refreshResponse.write('data: {}\n\n');} });
   } finally {
     if (browser) await browser.close();
     server.closeAllConnections?.();
     await closeConversationWorkbenchServer(server);
   }
 }
+
+test('system browser fixture retains immutable timeline item identity across realtime refresh',{timeout:90000},async()=>{
+  await withBrowser(390,844,async({browser,refresh})=>{
+    await browser.evaluate(`document.querySelector('[data-session-id="${SESSION_ID}"]').click()`);
+    await browser.waitFor("document.querySelectorAll('#timeline .timeline-item').length===2");
+    refresh();await browser.waitFor("document.querySelector('#timeline').textContent.includes('REFRESH_COMPLETE')");
+    assert.equal(await browser.evaluate("document.querySelectorAll('#timeline .timeline-item').length"),2);
+  },{controlledRealtime:true});
+});
 
 for (const viewport of [{ label: 'desktop', width: 1440, height: 900 }, { label: 'mobile', width: 390, height: 844 }]) {
   test(`system browser ${viewport.label} workbench flow is responsive, refresh-safe and XSS-safe`, { timeout: 90_000 }, async (t) => {

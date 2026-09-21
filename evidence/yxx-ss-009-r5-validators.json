@@ -1,0 +1,96 @@
+{
+  "event_time": "2026-09-20 12:02:30",
+  "event_epoch_ms": "1789876950787",
+  "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+  "status": "PASS",
+  "results": [
+    {
+      "event_time": "2026-09-20 12:02:01",
+      "event_epoch_ms": "1789876921034",
+      "command": "node scripts/validate-v1-4-architecture.mjs",
+      "exit_code": 0,
+      "output": {
+        "path": "evidence/yxx-ss-009-r5-validate-v1-4-architecture.txt",
+        "encoding": "UTF8_LF",
+        "sha256": "ac1058ab8ed14699e2fa28e83e269153aa710adcaebb1dc701ffa9e6969c1981"
+      }
+    },
+    {
+      "event_time": "2026-09-20 12:02:01",
+      "event_epoch_ms": "1789876921313",
+      "command": "node scripts/validate-arch-005-time-contract.mjs",
+      "exit_code": 0,
+      "output": {
+        "path": "evidence/yxx-ss-009-r5-validate-arch-005-time-contract.txt",
+        "encoding": "UTF8_LF",
+        "sha256": "8a0bc90d5771e6f715c91ca4fda95d739d768a0bf495114493e478a2b009e0c1"
+      }
+    },
+    {
+      "event_time": "2026-09-20 12:02:02",
+      "event_epoch_ms": "1789876922998",
+      "command": "node scripts/validate-arch-006-rule-first-service-loop.mjs",
+      "exit_code": 0,
+      "output": {
+        "path": "evidence/yxx-ss-009-r5-validate-arch-006-rule-first-service-loop.txt",
+        "encoding": "UTF8_LF",
+        "sha256": "359a30988433ed102b00956b6e7a0a776c5cb045837783b3d22883e26b045a37"
+      }
+    },
+    {
+      "event_time": "2026-09-20 12:02:03",
+      "event_epoch_ms": "1789876923130",
+      "command": "node scripts/validate-p2-015-rule-first-intake.mjs",
+      "exit_code": 0,
+      "output": {
+        "path": "evidence/yxx-ss-009-r5-validate-p2-015-rule-first-intake.txt",
+        "encoding": "UTF8_LF",
+        "sha256": "7639d0da3bbbf7bb7672767ea8f1030473d6b86080bac9b20ffdd5cb7701cd11"
+      }
+    },
+    {
+      "event_time": "2026-09-20 12:02:16",
+      "event_epoch_ms": "1789876936317",
+      "command": "node scripts/validate-p2-016-ticket-lifecycle-workbench.mjs",
+      "exit_code": 0,
+      "output": {
+        "path": "evidence/yxx-ss-009-r5-validate-p2-016-ticket-lifecycle-workbench.txt",
+        "encoding": "UTF8_LF",
+        "sha256": "5cf7acc40ffd089577cd626f3d8636efcbcb2517303fbc0ffe48922561b89f09"
+      }
+    },
+    {
+      "event_time": "2026-09-20 12:02:26",
+      "event_epoch_ms": "1789876946693",
+      "command": "node scripts/validate-p2-012-human-confirmed-incident.mjs",
+      "exit_code": 0,
+      "output": {
+        "path": "evidence/yxx-ss-009-r5-validate-p2-012-human-confirmed-incident.txt",
+        "encoding": "UTF8_LF",
+        "sha256": "d4d8ec3ae4a2f3d2c8881d99af45cb440c6f6eb90eb0f5ad69ce13b1bd4af284"
+      }
+    },
+    {
+      "event_time": "2026-09-20 12:02:29",
+      "event_epoch_ms": "1789876949824",
+      "command": "node scripts/validate-p2-g2-service-loop.mjs",
+      "exit_code": 0,
+      "output": {
+        "path": "evidence/yxx-ss-009-r5-validate-p2-g2-service-loop.txt",
+        "encoding": "UTF8_LF",
+        "sha256": "77c238e6939de0cb59fde6de82581eb136f95d572269c8f046e410c808233136"
+      }
+    },
+    {
+      "event_time": "2026-09-20 12:02:30",
+      "event_epoch_ms": "1789876950785",
+      "command": "node scripts/p2-g2-yixiaoxiu-check.mjs",
+      "exit_code": 0,
+      "output": {
+        "path": "evidence/yxx-ss-009-r5-p2-g2-yixiaoxiu-check.txt",
+        "encoding": "UTF8_LF",
+        "sha256": "56a86d182d0cf21937c580aa7c2f761870dd2cd9a566d6adc98f79c3a872816a"
+      }
+    }
+  ]
+}

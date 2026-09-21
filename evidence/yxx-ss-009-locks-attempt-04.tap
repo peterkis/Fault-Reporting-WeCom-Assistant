@@ -1,0 +1,23 @@
+TAP version 13
+# Subtest: SS-009 lost actual HTTP response recovers the same authorized command without a second intake
+ok 1 - SS-009 lost actual HTTP response recovers the same authorized command without a second intake
+  ---
+  duration_ms: 2714.4349
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-09-18 23:28:33","event_epoch_ms":"1789745313521","kind":"fault","status":"PASS","candidate_fingerprint":"e8f05a1f85addaeaf2032f10e33007d1cf6c9e88b78fdc0b43ca61963fc3e999","http_response_lost":true,"same_command_recovered":true,"cross_member_denied":true,"batch_max":20}
+# Subtest: SS-009 locked HTTP supplements recheck logout write shutdown and request revocation
+ok 2 - SS-009 locked HTTP supplements recheck logout write shutdown and request revocation
+  ---
+  duration_ms: 2782.5981
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5755.8682

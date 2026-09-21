@@ -1,0 +1,2798 @@
+TAP version 13
+# Subtest: SS-009 populated 032 Bot graph remains readable linked and replayable after 033 and 034
+not ok 1 - SS-009 populated 032 Bot graph remains readable linked and replayable after 033 and 034
+  ---
+  duration_ms: 2354.7543
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-r2-upgrade-loss.test.mjs:25:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      {
+        'channel.message_inbox': [
+          {
+            bot_id: 'bot-test',
+            chat_id: 'group-5118b122',
+    ...
+        ],
+    +   'intake.service_intake_message': [],
+    -   'intake.service_intake_message': [
+    -     {
+    -       channel_message_id: 3,
+    -       intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42',
+    -       linked_at: '2026-09-03T12:00:00',
+    -       relation_type: 'PRIMARY',
+    -       sequence_no: 1,
+    -       trace_id: 'trace-msg-3dee6e4d'
+    -     },
+    -     {
+    -       channel_message_id: 1,
+    -       intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c',
+    -       linked_at: '2026-09-03T12:00:00',
+    -       relation_type: 'PRIMARY',
+    -       sequence_no: 1,
+    -       trace_id: 'trace-msg-5118b122'
+    -     },
+    -     {
+    -       channel_message_id: 2,
+    -       intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8',
+    -       linked_at: '2026-09-03T12:00:00',
+    -       relation_type: 'PRIMARY',
+    -       sequence_no: 1,
+    -       trace_id: 'trace-msg-74b2cb52'
+    -     },
+    -     {
+    -       channel_message_id: 4,
+    -       intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7',
+    -       linked_at: '2026-09-03T12:00:00',
+    -       relation_type: 'PRIMARY',
+    -       sequence_no: 1,
+    -       trace_id: 'trace-msg-84060db9'
+    -     }
+    -   ],
+        'pilot_ticket.ticket': [
+          {
+            assignee_id: null,
+            auto_close_at: null,
+            auto_close_epoch_ms: null,
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    channel.message_inbox:
+      0:
+        id: 1
+        bot_id: 'bot-test'
+        msg_id: 'msg-5118b122'
+        req_id: 'req-msg-5118b122'
+        chat_id: 'group-5118b122'
+        msg_type: 'text'
+        provider: 'WECOM_AIBOT'
+        raw_text: '处方提交不了'
+        trace_id: 'trace-msg-5118b122'
+        chat_type: 'group'
+        clean_text: '处方提交不了'
+        created_at: '2026-09-19T07:59:47'
+        create_time: ~
+        received_at: '2026-09-03T12:00:00'
+        completed_at: '2026-09-03T12:00:00'
+        privacy_class: 'INTERNAL'
+        schema_version: 1
+        sender_user_id: 'user-test'
+        idempotency_key: 'WECOM_AIBOT:msg-5118b122'
+        retention_until: '2026-10-03T12:00:00'
+        processing_status: 'COMPLETED'
+        received_epoch_ms: 1788408000000
+        response_snapshot:
+        normalized_message:
+          text:
+            content: '处方提交不了'
+          msgtype: 'text'
+          bot_mentioned: true
+        raw_payload_encrypted: ~
+        provider_create_epoch_ms: ~
+        retention_until_epoch_ms: 1791000000000
+      1:
+        id: 2
+        bot_id: 'bot-test'
+        msg_id: 'msg-74b2cb52'
+        req_id: 'req-msg-74b2cb52'
+        chat_id: ~
+        msg_type: 'text'
+        provider: 'WECOM_AIBOT'
+        raw_text: '重置密码'
+        trace_id: 'trace-msg-74b2cb52'
+        chat_type: 'single'
+        clean_text: '重置密码'
+        created_at: '2026-09-19T07:59:47'
+        create_time: ~
+        received_at: '2026-09-03T12:00:00'
+        completed_at: '2026-09-03T12:00:00'
+        privacy_class: 'INTERNAL'
+        schema_version: 1
+        sender_user_id: 'user-test'
+        idempotency_key: 'WECOM_AIBOT:msg-74b2cb52'
+        retention_until: '2026-10-03T12:00:00'
+        processing_status: 'COMPLETED'
+        received_epoch_ms: 1788408000000
+        response_snapshot:
+        normalized_message:
+          text:
+            content: '重置密码'
+          msgtype: 'text'
+          bot_mentioned: false
+        raw_payload_encrypted: ~
+        provider_create_epoch_ms: ~
+        retention_until_epoch_ms: 1791000000000
+      2:
+        id: 3
+        bot_id: 'bot-test'
+        msg_id: 'msg-3dee6e4d'
+        req_id: 'req-msg-3dee6e4d'
+        chat_id: 'group-3dee6e4d'
+        msg_type: 'text'
+        provider: 'WECOM_AIBOT'
+        raw_text: '系统不行'
+        trace_id: 'trace-msg-3dee6e4d'
+        chat_type: 'group'
+        clean_text: '系统不行'
+        created_at: '2026-09-19T07:59:47'
+        create_time: ~
+        received_at: '2026-09-03T12:00:00'
+        completed_at: '2026-09-03T12:00:00'
+        privacy_class: 'INTERNAL'
+        schema_version: 1
+        sender_user_id: 'user-test'
+        idempotency_key: 'WECOM_AIBOT:msg-3dee6e4d'
+        retention_until: '2026-10-03T12:00:00'
+        processing_status: 'COMPLETED'
+        received_epoch_ms: 1788408000000
+        response_snapshot:
+        normalized_message:
+          text:
+            content: '系统不行'
+          msgtype: 'text'
+          bot_mentioned: true
+        raw_payload_encrypted: ~
+        provider_create_epoch_ms: ~
+        retention_until_epoch_ms: 1791000000000
+      3:
+        id: 4
+        bot_id: 'bot-test'
+        msg_id: 'msg-84060db9'
+        req_id: 'req-msg-84060db9'
+        chat_id: 'group-84060db9'
+        msg_type: 'text'
+        provider: 'WECOM_AIBOT'
+        raw_text: '这个问题一直没处理我要投诉'
+        trace_id: 'trace-msg-84060db9'
+        chat_type: 'group'
+        clean_text: '这个问题一直没处理我要投诉'
+        created_at: '2026-09-19T07:59:47'
+        create_time: ~
+        received_at: '2026-09-03T12:00:00'
+        completed_at: '2026-09-03T12:00:00'
+        privacy_class: 'INTERNAL'
+        schema_version: 1
+        sender_user_id: 'user-test'
+        idempotency_key: 'WECOM_AIBOT:msg-84060db9'
+        retention_until: '2026-10-03T12:00:00'
+        processing_status: 'COMPLETED'
+        received_epoch_ms: 1788408000000
+        response_snapshot:
+        normalized_message:
+          text:
+            content: '这个问题一直没处理我要投诉'
+          msgtype: 'text'
+          bot_mentioned: true
+        raw_payload_encrypted: ~
+        provider_create_epoch_ms: ~
+        retention_until_epoch_ms: 1791000000000
+    intake.service_intake:
+      0:
+        id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        status: 'TICKET_CREATED'
+        summary: '处方提交不了'
+        version: 3
+        intake_no: 'INT-20260903-0001'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        request_type: 'INCIDENT'
+        message_count: 1
+        privacy_class: 'INTERNAL'
+        source_bot_id: 'bot-test'
+        source_channel: 'WECOM_GROUP'
+        source_chat_id: 'group-5118b122'
+        last_message_at: '2026-09-03T12:00:00'
+        pilot_ticket_id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+        retention_until: '2026-10-03T12:00:00'
+        source_provider: 'WECOM_AIBOT'
+        source_chat_type: 'group'
+        primary_message_id: 1
+        reported_campus_id: ~
+        reporter_wecom_userid: 'user-test'
+        reported_department_id: ~
+        reported_location_text: ~
+        retention_until_epoch_ms: 1791000000000
+        explicit_aggregation_boundary: false
+      1:
+        id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        status: 'TICKET_CREATED'
+        summary: '重置密码'
+        version: 3
+        intake_no: 'INT-20260903-0002'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        request_type: 'SERVICE_REQUEST'
+        message_count: 1
+        privacy_class: 'INTERNAL'
+        source_bot_id: 'bot-test'
+        source_channel: 'WECOM_DIRECT'
+        source_chat_id: ~
+        last_message_at: '2026-09-03T12:00:00'
+        pilot_ticket_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        retention_until: '2026-10-03T12:00:00'
+        source_provider: 'WECOM_AIBOT'
+        source_chat_type: 'single'
+        primary_message_id: 2
+        reported_campus_id: ~
+        reporter_wecom_userid: 'user-test'
+        reported_department_id: ~
+        reported_location_text: ~
+        retention_until_epoch_ms: 1791000000000
+        explicit_aggregation_boundary: false
+      2:
+        id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        status: 'WAITING_DESCRIPTION'
+        summary: '系统不行'
+        version: 2
+        intake_no: 'INT-20260903-0003'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        request_type: 'UNKNOWN'
+        message_count: 1
+        privacy_class: 'INTERNAL'
+        source_bot_id: 'bot-test'
+        source_channel: 'WECOM_GROUP'
+        source_chat_id: 'group-3dee6e4d'
+        last_message_at: '2026-09-03T12:00:00'
+        pilot_ticket_id: ~
+        retention_until: '2026-10-03T12:00:00'
+        source_provider: 'WECOM_AIBOT'
+        source_chat_type: 'group'
+        primary_message_id: 3
+        reported_campus_id: ~
+        reporter_wecom_userid: 'user-test'
+        reported_department_id: ~
+        reported_location_text: ~
+        retention_until_epoch_ms: 1791000000000
+        explicit_aggregation_boundary: false
+      3:
+        id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        status: 'WAITING_TRIAGE'
+        summary: '这个问题一直没处理我要投诉'
+        version: 1
+        intake_no: 'INT-20260903-0004'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        request_type: 'UNKNOWN'
+        message_count: 1
+        privacy_class: 'INTERNAL'
+        source_bot_id: 'bot-test'
+        source_channel: 'WECOM_GROUP'
+        source_chat_id: 'group-84060db9'
+        last_message_at: '2026-09-03T12:00:00'
+        pilot_ticket_id: ~
+        retention_until: '2026-10-03T12:00:00'
+        source_provider: 'WECOM_AIBOT'
+        source_chat_type: 'group'
+        primary_message_id: 4
+        reported_campus_id: ~
+        reporter_wecom_userid: 'user-test'
+        reported_department_id: ~
+        reported_location_text: ~
+        retention_until_epoch_ms: 1791000000000
+        explicit_aggregation_boundary: false
+    intake.service_intake_message:
+      0:
+        trace_id: 'trace-msg-3dee6e4d'
+        intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        linked_at: '2026-09-03T12:00:00'
+        sequence_no: 1
+        relation_type: 'PRIMARY'
+        channel_message_id: 3
+      1:
+        trace_id: 'trace-msg-5118b122'
+        intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        linked_at: '2026-09-03T12:00:00'
+        sequence_no: 1
+        relation_type: 'PRIMARY'
+        channel_message_id: 1
+      2:
+        trace_id: 'trace-msg-74b2cb52'
+        intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        linked_at: '2026-09-03T12:00:00'
+        sequence_no: 1
+        relation_type: 'PRIMARY'
+        channel_message_id: 2
+      3:
+        trace_id: 'trace-msg-84060db9'
+        intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        linked_at: '2026-09-03T12:00:00'
+        sequence_no: 1
+        relation_type: 'PRIMARY'
+        channel_message_id: 4
+    intake.service_intake_event:
+      0:
+        payload:
+          intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+          new_status: 'RECEIVED'
+          old_status: 'WAITING_TRIAGE'
+          decision_id: '01a0b6f6-4258-705f-b147-204ede981ab2'
+          catalog_version: '0.1.0-draft'
+          new_request_type: 'INCIDENT'
+          old_request_type: 'UNKNOWN'
+          rule_set_version: '0.1.4-g2'
+        event_id: '01a0b6f6-425f-700d-8b70-81351cf4a5b2'
+        trace_id: 'p2-015-1'
+        intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        event_type: 'intake.rule_decision_applied'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 2
+        aggregate_type: 'intake'
+        aggregate_version: 2
+      1:
+        payload:
+          intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+          ticket_id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+          ticket_no: 'IT-20260903-0001'
+          external_status: '等待受理'
+        event_id: '01a0b6f6-4269-7fb1-95b9-58dbc19710ab'
+        trace_id: 'p2-015-1'
+        intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        event_type: 'intake.ticket_created'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 3
+        aggregate_type: 'intake'
+        aggregate_version: 3
+      2:
+        payload:
+          intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+          new_status: 'RECEIVED'
+          old_status: 'WAITING_TRIAGE'
+          decision_id: '01a0b6f6-427a-7672-b9c7-5fefd53509aa'
+          catalog_version: '0.1.0-draft'
+          new_request_type: 'SERVICE_REQUEST'
+          old_request_type: 'UNKNOWN'
+          rule_set_version: '0.1.4-g2'
+        event_id: '01a0b6f6-427d-76fc-bac4-eba50482383a'
+        trace_id: 'p2-015-2'
+        intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        event_type: 'intake.rule_decision_applied'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 2
+        aggregate_type: 'intake'
+        aggregate_version: 2
+      3:
+        payload:
+          intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+          ticket_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+          ticket_no: 'IT-20260903-0002'
+          external_status: '等待受理'
+        event_id: '01a0b6f6-4280-717c-b6af-0dc2ba1a8490'
+        trace_id: 'p2-015-2'
+        intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        event_type: 'intake.ticket_created'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 3
+        aggregate_type: 'intake'
+        aggregate_version: 3
+      4:
+        payload:
+          intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+          new_status: 'WAITING_DESCRIPTION'
+          old_status: 'WAITING_TRIAGE'
+          decision_id: '01a0b6f6-4294-716d-9f3c-d6f37d9d14af'
+          catalog_version: '0.1.0-draft'
+          new_request_type: 'UNKNOWN'
+          old_request_type: 'UNKNOWN'
+          rule_set_version: '0.1.4-g2'
+        event_id: '01a0b6f6-4296-7df3-bb4a-67444c2db896'
+        trace_id: 'p2-015-3'
+        intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        event_type: 'intake.description_requested'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 2
+        aggregate_type: 'intake'
+        aggregate_version: 2
+      5:
+        payload:
+        event_id: '01a0b6f6-4238-778b-aac4-4ee2f44c5895'
+        trace_id: 'trace-intake-5118b122'
+        intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        event_type: 'intake.received'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 1
+        aggregate_type: 'intake'
+        aggregate_version: 1
+      6:
+        payload:
+        event_id: '01a0b6f6-426f-7932-a37e-999cbe5857b2'
+        trace_id: 'trace-intake-74b2cb52'
+        intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        event_type: 'intake.received'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 1
+        aggregate_type: 'intake'
+        aggregate_version: 1
+      7:
+        payload:
+        event_id: '01a0b6f6-4288-710c-b5df-7a9f4b3cf15b'
+        trace_id: 'trace-intake-3dee6e4d'
+        intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        event_type: 'intake.received'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 1
+        aggregate_type: 'intake'
+        aggregate_version: 1
+      8:
+        payload:
+        event_id: '01a0b6f6-42a6-7cfb-adf9-36fb09a4f574'
+        trace_id: 'trace-intake-84060db9'
+        intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        event_type: 'intake.received'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 1
+        aggregate_type: 'intake'
+        aggregate_version: 1
+    intake.contact_journey:
+      0:
+        id: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+        status: 'TICKET_LINKED'
+        ended_at: ~
+        created_at: '2026-09-19T07:59:47'
+        entry_mode: 'GROUP_MENTION_INLINE'
+        updated_at: '2026-09-19T07:59:47'
+        reported_at: '2026-09-03T12:00:00'
+        row_version: 2
+        creation_key: 'journey_v1_8b4a5c22ba7523c83fee76ae530608a638b30e910acd0b6173359711b5309587'
+        privacy_class: 'INTERNAL'
+        origin_channel: 'WECOM_GROUP'
+        current_channel: 'WECOM_GROUP'
+        retention_until: '2026-10-03T12:00:00'
+        last_activity_at: '2026-09-03T12:00:00'
+        linked_ticket_id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+        origin_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        profile_snapshot:
+        evaluation_due_at: '2026-09-03T12:00:00'
+        origin_session_id: ~
+        current_session_id: ~
+        profile_snapshot_hash: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a'
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        evaluation_due_epoch_ms: 1788408000000
+        retention_until_epoch_ms: 1791000000000
+        profile_resolution_status: 'DEFERRED'
+      1:
+        id: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+        status: 'TICKET_LINKED'
+        ended_at: ~
+        created_at: '2026-09-19T07:59:47'
+        entry_mode: 'DIRECT_ORGANIC'
+        updated_at: '2026-09-19T07:59:47'
+        reported_at: '2026-09-03T12:00:00'
+        row_version: 3
+        creation_key: 'journey_v1_0ca037e71fc8ce26c00f351d4bdafeaa4f96f9380af53c768a58db3c52eb9492'
+        privacy_class: 'INTERNAL'
+        origin_channel: 'WECOM_DIRECT'
+        current_channel: 'WECOM_DIRECT'
+        retention_until: '2026-10-03T12:00:00'
+        last_activity_at: '2026-09-03T12:00:00'
+        linked_ticket_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        origin_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        profile_snapshot:
+        evaluation_due_at: '2026-09-03T12:00:00'
+        origin_session_id: ~
+        current_session_id: ~
+        profile_snapshot_hash: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a'
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        evaluation_due_epoch_ms: 1788408000000
+        retention_until_epoch_ms: 1791000000000
+        profile_resolution_status: 'DEFERRED'
+      2:
+        id: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+        status: 'WAITING_DESCRIPTION'
+        ended_at: ~
+        created_at: '2026-09-19T07:59:47'
+        entry_mode: 'GROUP_MENTION_TO_DIRECT_GUIDED'
+        updated_at: '2026-09-19T07:59:47'
+        reported_at: '2026-09-03T12:00:00'
+        row_version: 2
+        creation_key: 'journey_v1_d775f8dcff0a80e4dc2babf1c7dd45656cbe3d2dd0fe34bcd0ddb96867684858'
+        privacy_class: 'INTERNAL'
+        origin_channel: 'WECOM_GROUP'
+        current_channel: 'WECOM_GROUP'
+        retention_until: '2026-10-03T12:00:00'
+        last_activity_at: '2026-09-03T12:00:00'
+        linked_ticket_id: ~
+        origin_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        profile_snapshot:
+        evaluation_due_at: '2026-09-03T12:00:03'
+        origin_session_id: ~
+        current_session_id: ~
+        profile_snapshot_hash: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a'
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        evaluation_due_epoch_ms: 1788408003000
+        retention_until_epoch_ms: 1791000000000
+        profile_resolution_status: 'DEFERRED'
+      3:
+        id: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+        status: 'WAITING_REVIEW'
+        ended_at: ~
+        created_at: '2026-09-19T07:59:47'
+        entry_mode: 'GROUP_MENTION_INLINE'
+        updated_at: '2026-09-19T07:59:47'
+        reported_at: '2026-09-03T12:00:00'
+        row_version: 2
+        creation_key: 'journey_v1_de7dd6ecc020388cdb37f5835a162d7720b0449aecc2972503377ac7c0c0cff7'
+        privacy_class: 'INTERNAL'
+        origin_channel: 'WECOM_GROUP'
+        current_channel: 'WECOM_GROUP'
+        retention_until: '2026-10-03T12:00:00'
+        last_activity_at: '2026-09-03T12:00:00'
+        linked_ticket_id: ~
+        origin_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        profile_snapshot:
+        evaluation_due_at: '2026-09-03T12:00:00'
+        origin_session_id: ~
+        current_session_id: ~
+        profile_snapshot_hash: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a'
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        evaluation_due_epoch_ms: 1788408000000
+        retention_until_epoch_ms: 1791000000000
+        profile_resolution_status: 'DEFERRED'
+    intake.channel_leg:
+      0:
+        id: '01a0b6f6-424c-73cb-9c3e-d5e88b95ea88'
+        status: 'OPEN'
+        leg_type: 'GROUP_ORIGIN'
+        closed_at: ~
+        opened_at: '2026-09-19T07:59:47'
+        created_at: '2026-09-19T07:59:47'
+        journey_id: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+        updated_at: '2026-09-19T07:59:47'
+        leg_ordinal: 1
+        row_version: 1
+        source_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        channel_identity_hash: 'd8c38e7d4d6297a2586a456e9b3759460f19b16f748f4f333aa6392f4df0256b'
+        provider_context_hash: '6062d7e9f32030f9ad020d3354771e962ee84e51b3ef6f47939540a067f63824'
+        conversation_thread_id: ~
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        conversation_session_id: ~
+        origin_channel_message_id: 1
+      1:
+        id: '01a0b6f6-4276-775b-a86a-2f9da4fa43eb'
+        status: 'OPEN'
+        leg_type: 'DIRECT_ORGANIC'
+        closed_at: ~
+        opened_at: '2026-09-19T07:59:47'
+        created_at: '2026-09-19T07:59:47'
+        journey_id: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+        updated_at: '2026-09-19T07:59:47'
+        leg_ordinal: 1
+        row_version: 1
+        source_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        channel_identity_hash: '9eecf48c9459519a14eeede2687a04b306b8ecfa72b791c9b512e1b5bd707d54'
+        provider_context_hash: '065e770e4d74f6222f1b0d35db4a4d1d59ba987b9f4ec11341deecd2e3c206d8'
+        conversation_thread_id: ~
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        conversation_session_id: ~
+        origin_channel_message_id: 2
+      2:
+        id: '01a0b6f6-428c-7237-ac02-34be23f99ce3'
+        status: 'OPEN'
+        leg_type: 'GROUP_ORIGIN'
+        closed_at: ~
+        opened_at: '2026-09-19T07:59:47'
+        created_at: '2026-09-19T07:59:47'
+        journey_id: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+        updated_at: '2026-09-19T07:59:47'
+        leg_ordinal: 1
+        row_version: 1
+        source_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        channel_identity_hash: '270a14679832d2b263804ecc559507e4280d90454d4183cce99038c1ad16ec56'
+        provider_context_hash: '6928afbb737ab04d8aca5ef518b4bdbd2bdf1339a5a8dd852da436fbd9972261'
+        conversation_thread_id: ~
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        conversation_session_id: ~
+        origin_channel_message_id: 3
+      3:
+        id: '01a0b6f6-42ab-7302-a812-25ab9354b650'
+        status: 'OPEN'
+        leg_type: 'GROUP_ORIGIN'
+        closed_at: ~
+        opened_at: '2026-09-19T07:59:47'
+        created_at: '2026-09-19T07:59:47'
+        journey_id: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+        updated_at: '2026-09-19T07:59:47'
+        leg_ordinal: 1
+        row_version: 1
+        source_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        channel_identity_hash: '98c8310d1bc70da604af7b7ba9b273860031365e0f0edd4403165402da24155f'
+        provider_context_hash: '9c551ad21b6d2159880349427616f1ee4edf438fee7835a3ebdbab8dec5b1663'
+        conversation_thread_id: ~
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        conversation_session_id: ~
+        origin_channel_message_id: 4
+    intake.deterministic_decision:
+      0:
+        id: '01a0b6f6-4258-705f-b147-204ede981ab2'
+        status: 'RECORDED'
+        created_at: '2026-09-19T07:59:47'
+        input_hash: '1834fe83230a27d61343ad09cba8cf1beec53a129b74bca81a023af8f501a5ee'
+        journey_id: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+        observed_at: '2026-09-03T12:00:00'
+        reason_code: 'EXPLICIT_TECHNICAL_FAULT'
+        result_code: 'TICKET_ELIGIBLE'
+        result_hash: '1c7ad5bb104905c84ab54c832c29088c69546dc0af972c3f869dbcbfc886f361'
+        safe_result:
+          conflicts:
+          input_hash: '1834fe83230a27d61343ad09cba8cf1beec53a129b74bca81a023af8f501a5ee'
+          reason_code: 'EXPLICIT_TECHNICAL_FAULT'
+          result_code: 'TICKET_ELIGIBLE'
+          result_hash: '1c7ad5bb104905c84ab54c832c29088c69546dc0af972c3f869dbcbfc886f361'
+          source_refs:
+            0: 'channel:1'
+          known_fields:
+            scope: 'UNKNOWN'
+            domain_intent: 'INCIDENT_REPORT'
+            symptom_codes:
+              0: 'TRANSACTION.SUBMIT_FAILED'
+            transaction_stage: 'FINAL_SUBMIT'
+            selected_service_code: 'CLINICAL.PRESCRIPTION_ENTRY'
+          privacy_flags:
+          engine_version: 'p2-007-adapter/1.0.0'
+          unknown_fields:
+            0: 'patient_scope'
+          catalog_version: '0.1.0-draft'
+          fact_provenance:
+            0:
+              status: 'ACTIVE'
+              fact_id: 'fact_785b6ab3b95c4c69263431d64c684fd2'
+              rule_id: 'ALIAS-075'
+              assertion: 'AFFIRMED'
+              field_path: 'service.selected_service_code'
+              source_ref: 'intake:01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: '28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7'
+              source_kind: 'REPORTER_EXPLICIT'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'CLINICAL.PRESCRIPTION_ENTRY'
+              reliability_tier: 92
+              rule_set_version: '0.1.4-g2'
+            1:
+              status: 'ACTIVE'
+              fact_id: 'fact_b92e708d4ee94dea40f1e799b6e8462f'
+              rule_id: 'SYMPTOM-053'
+              assertion: 'AFFIRMED'
+              field_path: 'fault.symptom_codes'
+              source_ref: 'intake:01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: '28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7'
+              source_kind: 'REPORTER_EXPLICIT'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'TRANSACTION.SUBMIT_FAILED'
+              reliability_tier: 90
+              rule_set_version: '0.1.4-g2'
+            2:
+              status: 'ACTIVE'
+              fact_id: 'fact_c129afa56ecab51cf2bfc269cf77a8dc'
+              rule_id: 'INT-001'
+              assertion: 'AFFIRMED'
+              field_path: 'classification.domain_intent'
+              source_ref: 'intake:01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: '28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7'
+              source_kind: 'DETERMINISTIC_RULE'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'INCIDENT_REPORT'
+              reliability_tier: 85
+              rule_set_version: '0.1.4-g2'
+            3:
+              status: 'ACTIVE'
+              fact_id: 'fact_cf1f996fa9ad4bb1c9066d53fa49a6a8'
+              rule_id: 'NORM-001'
+              assertion: 'AFFIRMED'
+              field_path: 'classification.transaction_stage'
+              source_ref: 'intake:01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: '28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7'
+              source_kind: 'DETERMINISTIC_RULE'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'FINAL_SUBMIT'
+              reliability_tier: 85
+              rule_set_version: '0.1.4-g2'
+          rule_set_version: '0.1.4-g2'
+          clinical_safety_risk: 'UNKNOWN'
+          manual_review_required: false
+          decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+          message_sequence_window:
+            end: 1
+            count: 1
+            start: 1
+          safe_action_suggestions:
+            0:
+              action_type: 'APPLY_INTAKE_CLASSIFICATION'
+              payload_hash: '146de82e60fc932e61e3560691d85aa39bac0de34041dbd2e5515f40dbf4fb1b'
+              safe_payload:
+                journey_ref: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+                template_code: ~
+                service_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+                clarification_code: ~
+              action_ordinal: 1
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+            1:
+              action_type: 'CREATE_MINIMAL_TICKET'
+              payload_hash: '146de82e60fc932e61e3560691d85aa39bac0de34041dbd2e5515f40dbf4fb1b'
+              safe_payload:
+                journey_ref: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+                template_code: ~
+                service_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+                clarification_code: ~
+              action_ordinal: 2
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+          incident_review_candidate: false
+          group_corroboration_safety:
+            eligible: true
+            assessment: 'CANONICAL_FIELDS_ONLY_NOT_MESSAGE_DECLASSIFICATION'
+            catalog_hash: 'bdc1d19be47b63f7716b4ed8d15805c01c0dddcc5daf6103661cbbc69258a9d7'
+            clinical_risk: 'UNKNOWN'
+            privacy_flags:
+            policy_version: 'canonical-same-group/1'
+            source_privacy_class: 'INTERNAL'
+          ticket_creation_recommended: true
+        source_hash: 'dfdf9c3dfd90be452f043df569f9ebc96f6c7f61e9d8384597393485715a7d2b'
+        decision_key: 'decision_v1_0be9f8314ff46d3e741dc0e450121ad201bdc435c9a64eca4a4a3c976fceee46'
+        channel_leg_id: '01a0b6f6-424c-73cb-9c3e-d5e88b95ea88'
+        engine_version: 'p2-007-adapter/1.0.0'
+        catalog_version: '0.1.0-draft'
+        decision_ordinal: 1
+        linked_ticket_id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+        rule_set_version: '0.1.4-g2'
+        service_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        source_message_count: 1
+        requires_manual_review: false
+        conversation_session_id: ~
+        decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+        incident_review_candidate: false
+        source_window_end_sequence: 1
+        ticket_creation_recommended: true
+        source_window_start_sequence: 1
+      1:
+        id: '01a0b6f6-427a-7672-b9c7-5fefd53509aa'
+        status: 'RECORDED'
+        created_at: '2026-09-19T07:59:47'
+        input_hash: '0e361cc6ecc7380934e839e594b8f3054c7461eb91dab0414f612e5118abaadc'
+        journey_id: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+        observed_at: '2026-09-03T12:00:00'
+        reason_code: 'DETERMINISTIC_SERVICE_REQUEST'
+        result_code: 'SERVICE_REQUEST'
+        result_hash: '617e056a90a627c5c888b216327c8f47226776ff0f87baabea7f07ffa5735b2b'
+        safe_result:
+          conflicts:
+          input_hash: '0e361cc6ecc7380934e839e594b8f3054c7461eb91dab0414f612e5118abaadc'
+          reason_code: 'DETERMINISTIC_SERVICE_REQUEST'
+          result_code: 'SERVICE_REQUEST'
+          result_hash: '617e056a90a627c5c888b216327c8f47226776ff0f87baabea7f07ffa5735b2b'
+          source_refs:
+            0: 'channel:2'
+          known_fields:
+            scope: 'UNKNOWN'
+            domain_intent: 'SERVICE_REQUEST'
+            symptom_codes:
+            transaction_stage: 'UNKNOWN'
+            selected_service_code: 'IDENTITY.PASSWORD_RESET'
+          privacy_flags:
+          engine_version: 'p2-007-adapter/1.0.0'
+          unknown_fields:
+            0: 'account_ref_secure'
+            1: 'system_context'
+          catalog_version: '0.1.0-draft'
+          fact_provenance:
+            0:
+              status: 'ACTIVE'
+              fact_id: 'fact_128f63f48337ac3ab23dbfec626214cf'
+              rule_id: 'ALIAS-261'
+              assertion: 'AFFIRMED'
+              field_path: 'service.selected_service_code'
+              source_ref: 'intake:01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: 'd70928debc2e80cdf099d55b89103a8549e714ba74cc5d72e7fc6ac5c32cff12'
+              source_kind: 'REPORTER_EXPLICIT'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'IDENTITY.PASSWORD_RESET'
+              reliability_tier: 92
+              rule_set_version: '0.1.4-g2'
+            1:
+              status: 'ACTIVE'
+              fact_id: 'fact_580d43c7193e2a0bac5327620b953109'
+              rule_id: 'INT-002'
+              assertion: 'AFFIRMED'
+              field_path: 'classification.domain_intent'
+              source_ref: 'intake:01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: 'd70928debc2e80cdf099d55b89103a8549e714ba74cc5d72e7fc6ac5c32cff12'
+              source_kind: 'DETERMINISTIC_RULE'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'SERVICE_REQUEST'
+              reliability_tier: 85
+              rule_set_version: '0.1.4-g2'
+          rule_set_version: '0.1.4-g2'
+          clinical_safety_risk: 'UNKNOWN'
+          manual_review_required: false
+          decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+          message_sequence_window:
+            end: 1
+            count: 1
+            start: 1
+          safe_action_suggestions:
+            0:
+              action_type: 'APPLY_INTAKE_CLASSIFICATION'
+              payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+              safe_payload:
+                journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+                template_code: ~
+                service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+                clarification_code: ~
+              action_ordinal: 1
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+            1:
+              action_type: 'ROUTE_SERVICE_REQUEST'
+              payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+              safe_payload:
+                journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+                template_code: ~
+                service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+                clarification_code: ~
+              action_ordinal: 2
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+            2:
+              action_type: 'CREATE_MINIMAL_TICKET'
+              payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+              safe_payload:
+                journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+                template_code: ~
+                service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+                clarification_code: ~
+              action_ordinal: 3
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+          incident_review_candidate: false
+          group_corroboration_safety:
+            eligible: false
+            assessment: 'CANONICAL_FIELDS_ONLY_NOT_MESSAGE_DECLASSIFICATION'
+            catalog_hash: 'bdc1d19be47b63f7716b4ed8d15805c01c0dddcc5daf6103661cbbc69258a9d7'
+            clinical_risk: 'UNKNOWN'
+            privacy_flags:
+              0: 'POSSIBLE_SENSITIVE_CONTEXT'
+            policy_version: 'canonical-same-group/1'
+            source_privacy_class: 'INTERNAL'
+          ticket_creation_recommended: true
+        source_hash: 'd9df5b82d432aed3bca2f41af2cc0b4ac43ec67b7553d75016f632b78340ca91'
+        decision_key: 'decision_v1_2fa9e53d7ee150c2b3edd555d9be310e823fe3660004d86b52bad73434b27e78'
+        channel_leg_id: '01a0b6f6-4276-775b-a86a-2f9da4fa43eb'
+        engine_version: 'p2-007-adapter/1.0.0'
+        catalog_version: '0.1.0-draft'
+        decision_ordinal: 1
+        linked_ticket_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        rule_set_version: '0.1.4-g2'
+        service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        source_message_count: 1
+        requires_manual_review: false
+        conversation_session_id: ~
+        decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+        incident_review_candidate: false
+        source_window_end_sequence: 1
+        ticket_creation_recommended: true
+        source_window_start_sequence: 1
+      2:
+        id: '01a0b6f6-4294-716d-9f3c-d6f37d9d14af'
+        status: 'RECORDED'
+        created_at: '2026-09-19T07:59:47'
+        input_hash: 'd2681ee6b3dbcc5f94e2d98d64bf9018512458c9221a026c219a37ae844bd903'
+        journey_id: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+        observed_at: '2026-09-03T12:00:00'
+        reason_code: 'ONE_DESCRIPTION_REQUIRED'
+        result_code: 'NEEDS_DESCRIPTION'
+        result_hash: '073bcbabe02f85942a78a6fc47763eb91c6d1fcd9df2fb531c5c8722e12f5704'
+        safe_result:
+          conflicts:
+          input_hash: 'd2681ee6b3dbcc5f94e2d98d64bf9018512458c9221a026c219a37ae844bd903'
+          reason_code: 'ONE_DESCRIPTION_REQUIRED'
+          result_code: 'NEEDS_DESCRIPTION'
+          result_hash: '073bcbabe02f85942a78a6fc47763eb91c6d1fcd9df2fb531c5c8722e12f5704'
+          source_refs:
+            0: 'channel:3'
+          known_fields:
+            scope: 'UNKNOWN'
+            domain_intent: 'UNKNOWN'
+            symptom_codes:
+            transaction_stage: 'UNKNOWN'
+            selected_service_code: ~
+          privacy_flags:
+          engine_version: 'p2-007-adapter/1.0.0'
+          unknown_fields:
+          catalog_version: '0.1.0-draft'
+          fact_provenance:
+          rule_set_version: '0.1.4-g2'
+          clinical_safety_risk: 'UNKNOWN'
+          manual_review_required: false
+          decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+          message_sequence_window:
+            end: 1
+            count: 1
+            start: 1
+          safe_action_suggestions:
+            0:
+              action_type: 'APPLY_INTAKE_CLASSIFICATION'
+              payload_hash: '2e3fa0dd33ba4a03045d72cafedba95c209571d3da9ebc9f69c470e4d95a0a38'
+              safe_payload:
+                journey_ref: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+                template_code: ~
+                service_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+                clarification_code: ~
+              action_ordinal: 1
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+            1:
+              action_type: 'REQUEST_ONE_DESCRIPTION'
+              payload_hash: '2f269481e3c6a76db8469d384770559b0817141617132c081e07ebe9488d66c2'
+              safe_payload:
+                journey_ref: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+                template_code: ~
+                service_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+                clarification_code: 'Q_WHICH_SYSTEM_OR_FUNCTION'
+              action_ordinal: 2
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+          incident_review_candidate: false
+          group_corroboration_safety:
+            eligible: false
+            assessment: 'CANONICAL_FIELDS_ONLY_NOT_MESSAGE_DECLASSIFICATION'
+            catalog_hash: 'bdc1d19be47b63f7716b4ed8d15805c01c0dddcc5daf6103661cbbc69258a9d7'
+            clinical_risk: 'UNKNOWN'
+            privacy_flags:
+            policy_version: 'canonical-same-group/1'
+            source_privacy_class: 'INTERNAL'
+          ticket_creation_recommended: false
+        source_hash: 'd6f5ff2c1acb17f7cc57b554c8971fe713ce84ce7e02bad38081a58a038b7ce2'
+        decision_key: 'decision_v1_7491d2e339f39be21da3e376a0a6ad79b531b19728d7585836ac3d15663f9f31'
+        channel_leg_id: '01a0b6f6-428c-7237-ac02-34be23f99ce3'
+        engine_version: 'p2-007-adapter/1.0.0'
+        catalog_version: '0.1.0-draft'
+        decision_ordinal: 1
+        linked_ticket_id: ~
+        rule_set_version: '0.1.4-g2'
+        service_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        source_message_count: 1
+        requires_manual_review: false
+        conversation_session_id: ~
+        decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+        incident_review_candidate: false
+        source_window_end_sequence: 1
+        ticket_creation_recommended: false
+        source_window_start_sequence: 1
+      3:
+        id: '01a0b6f6-42ad-7950-8527-3f051340ab62'
+        status: 'RECORDED'
+        created_at: '2026-09-19T07:59:47'
+        input_hash: '8e6c9ea6b371aa4197e8d9ff3a802d13f1dad899d2bc41ef34f432264ff66323'
+        journey_id: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+        observed_at: '2026-09-03T12:00:00'
+        reason_code: 'HUMAN_FOLLOW_UP_REQUIRED'
+        result_code: 'MANUAL_REVIEW_REQUIRED'
+        result_hash: 'a1be8f9df25fe529e8eb5e15ad507500e84acf43f4fcffca15de43881229e286'
+        safe_result:
+          conflicts:
+          input_hash: '8e6c9ea6b371aa4197e8d9ff3a802d13f1dad899d2bc41ef34f432264ff66323'
+          reason_code: 'HUMAN_FOLLOW_UP_REQUIRED'
+          result_code: 'MANUAL_REVIEW_REQUIRED'
+          result_hash: 'a1be8f9df25fe529e8eb5e15ad507500e84acf43f4fcffca15de43881229e286'
+          source_refs:
+            0: 'channel:4'
+          known_fields:
+            scope: 'UNKNOWN'
+            domain_intent: 'ESCALATION_COMPLAINT'
+            symptom_codes:
+            transaction_stage: 'UNKNOWN'
+            selected_service_code: ~
+          privacy_flags:
+          engine_version: 'p2-007-adapter/1.0.0'
+          unknown_fields:
+          catalog_version: '0.1.0-draft'
+          fact_provenance:
+            0:
+              status: 'ACTIVE'
+              fact_id: 'fact_08c698bdb38b6890ea71eb1e85c830f6'
+              rule_id: 'INT-006'
+              assertion: 'AFFIRMED'
+              field_path: 'classification.domain_intent'
+              source_ref: 'intake:01a0b6f6-42a5-786a-844e-18c71b8801c7'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: '2e1501c688e063d4dc5615d0f6271c56bd0d2ef845497cad1e9000b05c765207'
+              source_kind: 'DETERMINISTIC_RULE'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'ESCALATION_COMPLAINT'
+              reliability_tier: 85
+              rule_set_version: '0.1.4-g2'
+          rule_set_version: '0.1.4-g2'
+          clinical_safety_risk: 'UNKNOWN'
+          manual_review_required: true
+          decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+          message_sequence_window:
+            end: 1
+            count: 1
+            start: 1
+          safe_action_suggestions:
+            0:
+              action_type: 'APPLY_INTAKE_CLASSIFICATION'
+              payload_hash: '0b8aee980e773e2314358e0cd0b9780377d10fb35f202ea9109c340db3aa98fe'
+              safe_payload:
+                journey_ref: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+                template_code: ~
+                service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+                clarification_code: ~
+              action_ordinal: 1
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+            1:
+              action_type: 'ENQUEUE_MANUAL_REVIEW'
+              payload_hash: '0b8aee980e773e2314358e0cd0b9780377d10fb35f202ea9109c340db3aa98fe'
+              safe_payload:
+                journey_ref: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+                template_code: ~
+                service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+                clarification_code: ~
+              action_ordinal: 2
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+          incident_review_candidate: false
+          group_corroboration_safety:
+            eligible: false
+            assessment: 'CANONICAL_FIELDS_ONLY_NOT_MESSAGE_DECLASSIFICATION'
+            catalog_hash: 'bdc1d19be47b63f7716b4ed8d15805c01c0dddcc5daf6103661cbbc69258a9d7'
+            clinical_risk: 'UNKNOWN'
+            privacy_flags:
+            policy_version: 'canonical-same-group/1'
+            source_privacy_class: 'INTERNAL'
+          ticket_creation_recommended: false
+        source_hash: '99f7787c1a4e3fa0423ac32b34089ec99a4e8f10e1263c1cfc8fea53f6880e98'
+        decision_key: 'decision_v1_ea48ca688bf689b30db6591190c9268c2d2752608417c6897244a8dd0ea0616b'
+        channel_leg_id: '01a0b6f6-42ab-7302-a812-25ab9354b650'
+        engine_version: 'p2-007-adapter/1.0.0'
+        catalog_version: '0.1.0-draft'
+        decision_ordinal: 1
+        linked_ticket_id: ~
+        rule_set_version: '0.1.4-g2'
+        service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        source_message_count: 1
+        requires_manual_review: true
+        conversation_session_id: ~
+        decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+        incident_review_candidate: false
+        source_window_end_sequence: 1
+        ticket_creation_recommended: false
+        source_window_start_sequence: 1
+    intake.safe_action_suggestion:
+      0:
+        id: '01a0b6f6-425a-72a7-a1cc-372d50e90639'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_d767b379d475cb2975d987f2ed0ac6ad02e740196ea79d8f42e0890d4426285b'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'APPLY_INTAKE_CLASSIFICATION'
+        decision_id: '01a0b6f6-4258-705f-b147-204ede981ab2'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '146de82e60fc932e61e3560691d85aa39bac0de34041dbd2e5515f40dbf4fb1b'
+        safe_payload:
+          journey_ref: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+          template_code: ~
+          service_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        action_ordinal: 1
+        result_ref_type: 'INTAKE'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-425a-72a7-a1cc-372d50e90639'
+        execution_command_hash: '48e10b258953378b3fef1c7749d65a1ac8164c586e2289e388cfdad7f3a35d96'
+      1:
+        id: '01a0b6f6-425c-783f-9b08-4aaa31e37366'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_c08a89a4ca6b18ed6839aeac19c064c47386310dd1ed14b1048bc448467756bc'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'CREATE_MINIMAL_TICKET'
+        decision_id: '01a0b6f6-4258-705f-b147-204ede981ab2'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '146de82e60fc932e61e3560691d85aa39bac0de34041dbd2e5515f40dbf4fb1b'
+        safe_payload:
+          journey_ref: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+          template_code: ~
+          service_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+        action_ordinal: 2
+        result_ref_type: 'TICKET'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-425c-783f-9b08-4aaa31e37366'
+        execution_command_hash: 'a1cc181d438eb60672ad07c95a77d8a920762a1b6ec264e94c4e069b1f5b78bf'
+      2:
+        id: '01a0b6f6-427b-71a8-883a-97376d7583d0'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_8d14e2c6210adc8450b8fe9a5c96abf5038775411e9dc07d5339ac459a386b25'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'APPLY_INTAKE_CLASSIFICATION'
+        decision_id: '01a0b6f6-427a-7672-b9c7-5fefd53509aa'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+        safe_payload:
+          journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+          template_code: ~
+          service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        action_ordinal: 1
+        result_ref_type: 'INTAKE'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-427b-71a8-883a-97376d7583d0'
+        execution_command_hash: 'a469d2ad25ca9a0ec27adc3436e62a5cbc73c7fd1d33429107f24106cb7e1076'
+      3:
+        id: '01a0b6f6-427b-7998-b0a0-29bff2beebd6'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_d0d1720679f20511e714c1bdf23c313dbc3a84e388ea273d07ada65c22834c39'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'ROUTE_SERVICE_REQUEST'
+        decision_id: '01a0b6f6-427a-7672-b9c7-5fefd53509aa'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+        safe_payload:
+          journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+          template_code: ~
+          service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        action_ordinal: 2
+        result_ref_type: 'TICKET'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-427b-7998-b0a0-29bff2beebd6'
+        execution_command_hash: '5af9f058f8fd566bf20a8703d99ddb3be0e557885962f86bb9d70dbc69d7cf0d'
+      4:
+        id: '01a0b6f6-427c-7188-80f1-81cfae1beabd'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_92fa87f4a6491f0984e60d4b7788dc839f2ecdf3f497aff344f808f03a12ff7a'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'CREATE_MINIMAL_TICKET'
+        decision_id: '01a0b6f6-427a-7672-b9c7-5fefd53509aa'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+        safe_payload:
+          journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+          template_code: ~
+          service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        action_ordinal: 3
+        result_ref_type: 'TICKET'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-427c-7188-80f1-81cfae1beabd'
+        execution_command_hash: 'c53d99786bdb746335c0434eb7360f02a6be710aa27965770d8fb88d1f962671'
+      5:
+        id: '01a0b6f6-4295-70c3-bed7-bae2aacb33f3'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_f3a54e6262e2b2d7935f500343280c413b6cd49125aa5a387400c0bea6088f61'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'APPLY_INTAKE_CLASSIFICATION'
+        decision_id: '01a0b6f6-4294-716d-9f3c-d6f37d9d14af'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '2e3fa0dd33ba4a03045d72cafedba95c209571d3da9ebc9f69c470e4d95a0a38'
+        safe_payload:
+          journey_ref: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+          template_code: ~
+          service_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        action_ordinal: 1
+        result_ref_type: 'INTAKE'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-4295-70c3-bed7-bae2aacb33f3'
+        execution_command_hash: '1d93300dfdbbc0c9c386e2c45d1a43548a88ad42bb8a61db5ebb57e54dcda349'
+      6:
+        id: '01a0b6f6-4295-779d-a37a-c1e701745e8b'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_67b336d3143bc8ea78264c0f1c76bf7fc75b38463139338ca02112c966917b74'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'REQUEST_ONE_DESCRIPTION'
+        decision_id: '01a0b6f6-4294-716d-9f3c-d6f37d9d14af'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '2f269481e3c6a76db8469d384770559b0817141617132c081e07ebe9488d66c2'
+        safe_payload:
+          journey_ref: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+          template_code: ~
+          service_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+          clarification_code: 'Q_WHICH_SYSTEM_OR_FUNCTION'
+        result_ref_id: '01a0b6f6-429b-757b-abc8-403e2bcf18ac'
+        action_ordinal: 2
+        result_ref_type: 'COMMUNICATION'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-4295-779d-a37a-c1e701745e8b'
+        execution_command_hash: '459d6889ebb64648b078a49c6e630700896292425613519c6360a362050231db'
+      7:
+        id: '01a0b6f6-42ae-72ce-a0ce-1d308a3f79fd'
+        state: 'REPLAYED'
+        retryable: ~
+        action_key: 'action_v1_feb63651c765c249acad3d78d47d6c610122ac7861b11be69a4cb5cd48f11a13'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'APPLY_INTAKE_CLASSIFICATION'
+        decision_id: '01a0b6f6-42ad-7950-8527-3f051340ab62'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '0b8aee980e773e2314358e0cd0b9780377d10fb35f202ea9109c340db3aa98fe'
+        safe_payload:
+          journey_ref: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+          template_code: ~
+          service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        action_ordinal: 1
+        result_ref_type: 'INTAKE'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-42ae-72ce-a0ce-1d308a3f79fd'
+        execution_command_hash: '06648064d81f929912d755b92b22e6f6c4a2e20c2f134b1b69df380dafb219d8'
+      8:
+        id: '01a0b6f6-42ae-79f4-9ba7-ec0d10c9ddea'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_35a958770a7b6732b8aeba56dc9c65ed008689a255a1b38508b9f3601fe430a0'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'ENQUEUE_MANUAL_REVIEW'
+        decision_id: '01a0b6f6-42ad-7950-8527-3f051340ab62'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '0b8aee980e773e2314358e0cd0b9780377d10fb35f202ea9109c340db3aa98fe'
+        safe_payload:
+          journey_ref: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+          template_code: ~
+          service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-42bc-778b-b344-21a9742d67c5'
+        action_ordinal: 2
+        result_ref_type: 'MANUAL_REVIEW'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-42ae-79f4-9ba7-ec0d10c9ddea'
+        execution_command_hash: 'b742a40c555f1cf585599b3baae5588b075f60b70fd4e04adf95d2491a97a000'
+    intake.manual_review_item:
+      0:
+        id: '01a0b6f6-42bc-778b-b344-21a9742d67c5'
+        status: 'PENDING'
+        priority: 'NORMAL'
+        created_at: '2026-09-19T07:59:47'
+        journey_id: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+        review_key: 'review_v1_47b85c87ad049ec295a1d8c064cdf8ef36b47175896e041a8819843b52ed5412'
+        updated_at: '2026-09-19T07:59:47'
+        decision_id: '01a0b6f6-42ad-7950-8527-3f051340ab62'
+        resolved_at: ~
+        row_version: 1
+        resolution_code: ~
+        linked_ticket_id: ~
+        service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        review_reason_code: 'HUMAN_FOLLOW_UP_REQUIRED'
+        resolution_command_id: ~
+        resolution_decision_id: ~
+        resolution_reason_code: ~
+        resolution_command_hash: ~
+        resolved_by_principal_id: ~
+    pilot_ticket.ticket:
+      0:
+        id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+        title: '信息系统故障报修'
+        status: 'QUEUED'
+        version: 1
+        priority: 'NORMAL'
+        ticket_no: 'IT-20260903-0001'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        assignee_id: ~
+        request_type: 'INCIDENT'
+        auto_close_at: ~
+        closure_reason: ~
+        external_result: ~
+        resolver_team_id: 'PILOT_IT'
+        source_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        reported_campus_id: ~
+        auto_close_epoch_ms: ~
+        auto_close_reminder_at: ~
+        reported_department_id: ~
+        reported_location_text: ~
+        auto_close_reminder_epoch_ms: ~
+      1:
+        id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        title: '信息服务申请'
+        status: 'QUEUED'
+        version: 1
+        priority: 'NORMAL'
+        ticket_no: 'IT-20260903-0002'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        assignee_id: ~
+        request_type: 'SERVICE_REQUEST'
+        auto_close_at: ~
+        closure_reason: ~
+        external_result: ~
+        resolver_team_id: 'PILOT_IT'
+        source_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        reported_campus_id: ~
+        auto_close_epoch_ms: ~
+        auto_close_reminder_at: ~
+        reported_department_id: ~
+        reported_location_text: ~
+        auto_close_reminder_epoch_ms: ~
+    communication.message:
+      0:
+        id: '01a0b6f6-429b-757b-abc8-403e2bcf18ac'
+        content:
+          text: '为保护信息安全，请关注机器人单聊并在那里补充故障现象。'
+        purpose: 'SYSTEM_NOTIFICATION'
+        created_at: '2026-09-19T07:59:47'
+        session_id: ~
+        visibility: 'EXTERNAL'
+        sender_kind: 'SYSTEM'
+        command_hash: '14c64f9a8a6aa8daa9aae3dac4e5f69e48c3ac2c0927c5bf94c29263aaf87d2c'
+        content_hash: 'dfcbf4521cc107a3f9a40261e7da8aabfdd42608b4ce5c06811549d3128f22f6'
+        message_type: 'text'
+        privacy_class: 'INTERNAL'
+        retention_until: '2026-10-03T12:00:00'
+        client_command_id: '01a0b6f6-4295-779d-a37a-c1e701745e8b'
+        idempotency_scope: 'SYSTEM'
+        sender_system_code: 'RULE_FIRST_ORCHESTRATOR'
+        sender_principal_id: ~
+        retention_until_epoch_ms: 1791000000000
+        reply_to_conversation_item_id: ~
+    communication.outbox:
+      0:
+        id: '01a0b6f6-429c-776d-bb61-45afa1a8352c'
+        priority: 100
+        created_at: '2026-09-19T07:59:47'
+        message_id: '01a0b6f6-429b-757b-abc8-403e2bcf18ac'
+        route_policy: 'P2_015_FIXED_TEMPLATE'
+        idempotency_key: 'comm_v1_15313beec467e5f641e1bf4a8155de9d1cbde4b1c2364c086136940515f08b26'
+    communication.delivery:
+      0:
+        id: '01a0b6f6-429e-780e-96cd-23cbff7db271'
+        status: 'PENDING'
+        sent_at: ~
+        priority: 100
+        provider: 'WECOM_AIBOT'
+        outbox_id: '01a0b6f6-429c-776d-bb61-45afa1a8352c'
+        target_id: 'group-3dee6e4d'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        lease_token: ~
+        target_hash: '870ca40ca667329a5340f09bfdadeecca758c88ae1663f5f8daac4c1d1391bb4'
+        target_type: 'GROUP'
+        attempt_count: 0
+        sent_epoch_ms: ~
+        idempotency_key: 'comm_delivery_v1_84a230e1a2679941548513a2ffffd213c613e8cdd32af8084865b40901645ab2'
+        last_error_code: ~
+        next_attempt_at: '2026-09-19T07:59:47'
+        send_started_at: ~
+        lease_expires_at: ~
+        side_effect_state: 'NOT_ATTEMPTED'
+        channel_account_id: 'bot-test'
+        provider_message_id: ~
+        next_attempt_epoch_ms: 1789775987000
+        send_started_epoch_ms: ~
+        lease_expires_epoch_ms: ~
+  actual:
+    channel.message_inbox:
+      0:
+        id: 1
+        bot_id: 'bot-test'
+        msg_id: 'msg-5118b122'
+        req_id: 'req-msg-5118b122'
+        chat_id: 'group-5118b122'
+        msg_type: 'text'
+        provider: 'WECOM_AIBOT'
+        raw_text: '处方提交不了'
+        trace_id: 'trace-msg-5118b122'
+        chat_type: 'group'
+        clean_text: '处方提交不了'
+        created_at: '2026-09-19T07:59:47'
+        create_time: ~
+        received_at: '2026-09-03T12:00:00'
+        completed_at: '2026-09-03T12:00:00'
+        privacy_class: 'INTERNAL'
+        schema_version: 1
+        sender_user_id: 'user-test'
+        idempotency_key: 'WECOM_AIBOT:msg-5118b122'
+        retention_until: '2026-10-03T12:00:00'
+        processing_status: 'COMPLETED'
+        received_epoch_ms: 1788408000000
+        response_snapshot:
+        normalized_message:
+          text:
+            content: '处方提交不了'
+          msgtype: 'text'
+          bot_mentioned: true
+        raw_payload_encrypted: ~
+        provider_create_epoch_ms: ~
+        retention_until_epoch_ms: 1791000000000
+      1:
+        id: 2
+        bot_id: 'bot-test'
+        msg_id: 'msg-74b2cb52'
+        req_id: 'req-msg-74b2cb52'
+        chat_id: ~
+        msg_type: 'text'
+        provider: 'WECOM_AIBOT'
+        raw_text: '重置密码'
+        trace_id: 'trace-msg-74b2cb52'
+        chat_type: 'single'
+        clean_text: '重置密码'
+        created_at: '2026-09-19T07:59:47'
+        create_time: ~
+        received_at: '2026-09-03T12:00:00'
+        completed_at: '2026-09-03T12:00:00'
+        privacy_class: 'INTERNAL'
+        schema_version: 1
+        sender_user_id: 'user-test'
+        idempotency_key: 'WECOM_AIBOT:msg-74b2cb52'
+        retention_until: '2026-10-03T12:00:00'
+        processing_status: 'COMPLETED'
+        received_epoch_ms: 1788408000000
+        response_snapshot:
+        normalized_message:
+          text:
+            content: '重置密码'
+          msgtype: 'text'
+          bot_mentioned: false
+        raw_payload_encrypted: ~
+        provider_create_epoch_ms: ~
+        retention_until_epoch_ms: 1791000000000
+      2:
+        id: 3
+        bot_id: 'bot-test'
+        msg_id: 'msg-3dee6e4d'
+        req_id: 'req-msg-3dee6e4d'
+        chat_id: 'group-3dee6e4d'
+        msg_type: 'text'
+        provider: 'WECOM_AIBOT'
+        raw_text: '系统不行'
+        trace_id: 'trace-msg-3dee6e4d'
+        chat_type: 'group'
+        clean_text: '系统不行'
+        created_at: '2026-09-19T07:59:47'
+        create_time: ~
+        received_at: '2026-09-03T12:00:00'
+        completed_at: '2026-09-03T12:00:00'
+        privacy_class: 'INTERNAL'
+        schema_version: 1
+        sender_user_id: 'user-test'
+        idempotency_key: 'WECOM_AIBOT:msg-3dee6e4d'
+        retention_until: '2026-10-03T12:00:00'
+        processing_status: 'COMPLETED'
+        received_epoch_ms: 1788408000000
+        response_snapshot:
+        normalized_message:
+          text:
+            content: '系统不行'
+          msgtype: 'text'
+          bot_mentioned: true
+        raw_payload_encrypted: ~
+        provider_create_epoch_ms: ~
+        retention_until_epoch_ms: 1791000000000
+      3:
+        id: 4
+        bot_id: 'bot-test'
+        msg_id: 'msg-84060db9'
+        req_id: 'req-msg-84060db9'
+        chat_id: 'group-84060db9'
+        msg_type: 'text'
+        provider: 'WECOM_AIBOT'
+        raw_text: '这个问题一直没处理我要投诉'
+        trace_id: 'trace-msg-84060db9'
+        chat_type: 'group'
+        clean_text: '这个问题一直没处理我要投诉'
+        created_at: '2026-09-19T07:59:47'
+        create_time: ~
+        received_at: '2026-09-03T12:00:00'
+        completed_at: '2026-09-03T12:00:00'
+        privacy_class: 'INTERNAL'
+        schema_version: 1
+        sender_user_id: 'user-test'
+        idempotency_key: 'WECOM_AIBOT:msg-84060db9'
+        retention_until: '2026-10-03T12:00:00'
+        processing_status: 'COMPLETED'
+        received_epoch_ms: 1788408000000
+        response_snapshot:
+        normalized_message:
+          text:
+            content: '这个问题一直没处理我要投诉'
+          msgtype: 'text'
+          bot_mentioned: true
+        raw_payload_encrypted: ~
+        provider_create_epoch_ms: ~
+        retention_until_epoch_ms: 1791000000000
+    intake.service_intake:
+      0:
+        id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        status: 'TICKET_CREATED'
+        summary: '处方提交不了'
+        version: 3
+        intake_no: 'INT-20260903-0001'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        request_type: 'INCIDENT'
+        message_count: 1
+        privacy_class: 'INTERNAL'
+        source_bot_id: 'bot-test'
+        source_channel: 'WECOM_GROUP'
+        source_chat_id: 'group-5118b122'
+        last_message_at: '2026-09-03T12:00:00'
+        pilot_ticket_id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+        retention_until: '2026-10-03T12:00:00'
+        source_provider: 'WECOM_AIBOT'
+        source_chat_type: 'group'
+        primary_message_id: 1
+        reported_campus_id: ~
+        reporter_wecom_userid: 'user-test'
+        reported_department_id: ~
+        reported_location_text: ~
+        retention_until_epoch_ms: 1791000000000
+        explicit_aggregation_boundary: false
+      1:
+        id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        status: 'TICKET_CREATED'
+        summary: '重置密码'
+        version: 3
+        intake_no: 'INT-20260903-0002'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        request_type: 'SERVICE_REQUEST'
+        message_count: 1
+        privacy_class: 'INTERNAL'
+        source_bot_id: 'bot-test'
+        source_channel: 'WECOM_DIRECT'
+        source_chat_id: ~
+        last_message_at: '2026-09-03T12:00:00'
+        pilot_ticket_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        retention_until: '2026-10-03T12:00:00'
+        source_provider: 'WECOM_AIBOT'
+        source_chat_type: 'single'
+        primary_message_id: 2
+        reported_campus_id: ~
+        reporter_wecom_userid: 'user-test'
+        reported_department_id: ~
+        reported_location_text: ~
+        retention_until_epoch_ms: 1791000000000
+        explicit_aggregation_boundary: false
+      2:
+        id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        status: 'WAITING_DESCRIPTION'
+        summary: '系统不行'
+        version: 2
+        intake_no: 'INT-20260903-0003'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        request_type: 'UNKNOWN'
+        message_count: 1
+        privacy_class: 'INTERNAL'
+        source_bot_id: 'bot-test'
+        source_channel: 'WECOM_GROUP'
+        source_chat_id: 'group-3dee6e4d'
+        last_message_at: '2026-09-03T12:00:00'
+        pilot_ticket_id: ~
+        retention_until: '2026-10-03T12:00:00'
+        source_provider: 'WECOM_AIBOT'
+        source_chat_type: 'group'
+        primary_message_id: 3
+        reported_campus_id: ~
+        reporter_wecom_userid: 'user-test'
+        reported_department_id: ~
+        reported_location_text: ~
+        retention_until_epoch_ms: 1791000000000
+        explicit_aggregation_boundary: false
+      3:
+        id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        status: 'WAITING_TRIAGE'
+        summary: '这个问题一直没处理我要投诉'
+        version: 1
+        intake_no: 'INT-20260903-0004'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        request_type: 'UNKNOWN'
+        message_count: 1
+        privacy_class: 'INTERNAL'
+        source_bot_id: 'bot-test'
+        source_channel: 'WECOM_GROUP'
+        source_chat_id: 'group-84060db9'
+        last_message_at: '2026-09-03T12:00:00'
+        pilot_ticket_id: ~
+        retention_until: '2026-10-03T12:00:00'
+        source_provider: 'WECOM_AIBOT'
+        source_chat_type: 'group'
+        primary_message_id: 4
+        reported_campus_id: ~
+        reporter_wecom_userid: 'user-test'
+        reported_department_id: ~
+        reported_location_text: ~
+        retention_until_epoch_ms: 1791000000000
+        explicit_aggregation_boundary: false
+    intake.service_intake_message:
+    intake.service_intake_event:
+      0:
+        payload:
+          intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+          new_status: 'RECEIVED'
+          old_status: 'WAITING_TRIAGE'
+          decision_id: '01a0b6f6-4258-705f-b147-204ede981ab2'
+          catalog_version: '0.1.0-draft'
+          new_request_type: 'INCIDENT'
+          old_request_type: 'UNKNOWN'
+          rule_set_version: '0.1.4-g2'
+        event_id: '01a0b6f6-425f-700d-8b70-81351cf4a5b2'
+        trace_id: 'p2-015-1'
+        intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        event_type: 'intake.rule_decision_applied'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 2
+        aggregate_type: 'intake'
+        aggregate_version: 2
+      1:
+        payload:
+          intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+          ticket_id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+          ticket_no: 'IT-20260903-0001'
+          external_status: '等待受理'
+        event_id: '01a0b6f6-4269-7fb1-95b9-58dbc19710ab'
+        trace_id: 'p2-015-1'
+        intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        event_type: 'intake.ticket_created'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 3
+        aggregate_type: 'intake'
+        aggregate_version: 3
+      2:
+        payload:
+          intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+          new_status: 'RECEIVED'
+          old_status: 'WAITING_TRIAGE'
+          decision_id: '01a0b6f6-427a-7672-b9c7-5fefd53509aa'
+          catalog_version: '0.1.0-draft'
+          new_request_type: 'SERVICE_REQUEST'
+          old_request_type: 'UNKNOWN'
+          rule_set_version: '0.1.4-g2'
+        event_id: '01a0b6f6-427d-76fc-bac4-eba50482383a'
+        trace_id: 'p2-015-2'
+        intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        event_type: 'intake.rule_decision_applied'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 2
+        aggregate_type: 'intake'
+        aggregate_version: 2
+      3:
+        payload:
+          intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+          ticket_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+          ticket_no: 'IT-20260903-0002'
+          external_status: '等待受理'
+        event_id: '01a0b6f6-4280-717c-b6af-0dc2ba1a8490'
+        trace_id: 'p2-015-2'
+        intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        event_type: 'intake.ticket_created'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 3
+        aggregate_type: 'intake'
+        aggregate_version: 3
+      4:
+        payload:
+          intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+          new_status: 'WAITING_DESCRIPTION'
+          old_status: 'WAITING_TRIAGE'
+          decision_id: '01a0b6f6-4294-716d-9f3c-d6f37d9d14af'
+          catalog_version: '0.1.0-draft'
+          new_request_type: 'UNKNOWN'
+          old_request_type: 'UNKNOWN'
+          rule_set_version: '0.1.4-g2'
+        event_id: '01a0b6f6-4296-7df3-bb4a-67444c2db896'
+        trace_id: 'p2-015-3'
+        intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        event_type: 'intake.description_requested'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 2
+        aggregate_type: 'intake'
+        aggregate_version: 2
+      5:
+        payload:
+        event_id: '01a0b6f6-4238-778b-aac4-4ee2f44c5895'
+        trace_id: 'trace-intake-5118b122'
+        intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        event_type: 'intake.received'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 1
+        aggregate_type: 'intake'
+        aggregate_version: 1
+      6:
+        payload:
+        event_id: '01a0b6f6-426f-7932-a37e-999cbe5857b2'
+        trace_id: 'trace-intake-74b2cb52'
+        intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        event_type: 'intake.received'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 1
+        aggregate_type: 'intake'
+        aggregate_version: 1
+      7:
+        payload:
+        event_id: '01a0b6f6-4288-710c-b5df-7a9f4b3cf15b'
+        trace_id: 'trace-intake-3dee6e4d'
+        intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        event_type: 'intake.received'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 1
+        aggregate_type: 'intake'
+        aggregate_version: 1
+      8:
+        payload:
+        event_id: '01a0b6f6-42a6-7cfb-adf9-36fb09a4f574'
+        trace_id: 'trace-intake-84060db9'
+        intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        event_type: 'intake.received'
+        occurred_at: '2026-09-03T12:00:00'
+        event_ordinal: 1
+        aggregate_type: 'intake'
+        aggregate_version: 1
+    intake.contact_journey:
+      0:
+        id: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+        status: 'TICKET_LINKED'
+        ended_at: ~
+        created_at: '2026-09-19T07:59:47'
+        entry_mode: 'GROUP_MENTION_INLINE'
+        updated_at: '2026-09-19T07:59:47'
+        reported_at: '2026-09-03T12:00:00'
+        row_version: 2
+        creation_key: 'journey_v1_8b4a5c22ba7523c83fee76ae530608a638b30e910acd0b6173359711b5309587'
+        privacy_class: 'INTERNAL'
+        origin_channel: 'WECOM_GROUP'
+        current_channel: 'WECOM_GROUP'
+        retention_until: '2026-10-03T12:00:00'
+        last_activity_at: '2026-09-03T12:00:00'
+        linked_ticket_id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+        origin_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        profile_snapshot:
+        evaluation_due_at: '2026-09-03T12:00:00'
+        origin_session_id: ~
+        current_session_id: ~
+        profile_snapshot_hash: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a'
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        evaluation_due_epoch_ms: 1788408000000
+        retention_until_epoch_ms: 1791000000000
+        profile_resolution_status: 'DEFERRED'
+      1:
+        id: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+        status: 'TICKET_LINKED'
+        ended_at: ~
+        created_at: '2026-09-19T07:59:47'
+        entry_mode: 'DIRECT_ORGANIC'
+        updated_at: '2026-09-19T07:59:47'
+        reported_at: '2026-09-03T12:00:00'
+        row_version: 3
+        creation_key: 'journey_v1_0ca037e71fc8ce26c00f351d4bdafeaa4f96f9380af53c768a58db3c52eb9492'
+        privacy_class: 'INTERNAL'
+        origin_channel: 'WECOM_DIRECT'
+        current_channel: 'WECOM_DIRECT'
+        retention_until: '2026-10-03T12:00:00'
+        last_activity_at: '2026-09-03T12:00:00'
+        linked_ticket_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        origin_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        profile_snapshot:
+        evaluation_due_at: '2026-09-03T12:00:00'
+        origin_session_id: ~
+        current_session_id: ~
+        profile_snapshot_hash: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a'
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        evaluation_due_epoch_ms: 1788408000000
+        retention_until_epoch_ms: 1791000000000
+        profile_resolution_status: 'DEFERRED'
+      2:
+        id: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+        status: 'WAITING_DESCRIPTION'
+        ended_at: ~
+        created_at: '2026-09-19T07:59:47'
+        entry_mode: 'GROUP_MENTION_TO_DIRECT_GUIDED'
+        updated_at: '2026-09-19T07:59:47'
+        reported_at: '2026-09-03T12:00:00'
+        row_version: 2
+        creation_key: 'journey_v1_d775f8dcff0a80e4dc2babf1c7dd45656cbe3d2dd0fe34bcd0ddb96867684858'
+        privacy_class: 'INTERNAL'
+        origin_channel: 'WECOM_GROUP'
+        current_channel: 'WECOM_GROUP'
+        retention_until: '2026-10-03T12:00:00'
+        last_activity_at: '2026-09-03T12:00:00'
+        linked_ticket_id: ~
+        origin_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        profile_snapshot:
+        evaluation_due_at: '2026-09-03T12:00:03'
+        origin_session_id: ~
+        current_session_id: ~
+        profile_snapshot_hash: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a'
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        evaluation_due_epoch_ms: 1788408003000
+        retention_until_epoch_ms: 1791000000000
+        profile_resolution_status: 'DEFERRED'
+      3:
+        id: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+        status: 'WAITING_REVIEW'
+        ended_at: ~
+        created_at: '2026-09-19T07:59:47'
+        entry_mode: 'GROUP_MENTION_INLINE'
+        updated_at: '2026-09-19T07:59:47'
+        reported_at: '2026-09-03T12:00:00'
+        row_version: 2
+        creation_key: 'journey_v1_de7dd6ecc020388cdb37f5835a162d7720b0449aecc2972503377ac7c0c0cff7'
+        privacy_class: 'INTERNAL'
+        origin_channel: 'WECOM_GROUP'
+        current_channel: 'WECOM_GROUP'
+        retention_until: '2026-10-03T12:00:00'
+        last_activity_at: '2026-09-03T12:00:00'
+        linked_ticket_id: ~
+        origin_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        profile_snapshot:
+        evaluation_due_at: '2026-09-03T12:00:00'
+        origin_session_id: ~
+        current_session_id: ~
+        profile_snapshot_hash: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a'
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        evaluation_due_epoch_ms: 1788408000000
+        retention_until_epoch_ms: 1791000000000
+        profile_resolution_status: 'DEFERRED'
+    intake.channel_leg:
+      0:
+        id: '01a0b6f6-424c-73cb-9c3e-d5e88b95ea88'
+        status: 'OPEN'
+        leg_type: 'GROUP_ORIGIN'
+        closed_at: ~
+        opened_at: '2026-09-19T07:59:47'
+        created_at: '2026-09-19T07:59:47'
+        journey_id: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+        updated_at: '2026-09-19T07:59:47'
+        leg_ordinal: 1
+        row_version: 1
+        source_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        channel_identity_hash: 'd8c38e7d4d6297a2586a456e9b3759460f19b16f748f4f333aa6392f4df0256b'
+        provider_context_hash: '6062d7e9f32030f9ad020d3354771e962ee84e51b3ef6f47939540a067f63824'
+        conversation_thread_id: ~
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        conversation_session_id: ~
+        origin_channel_message_id: 1
+      1:
+        id: '01a0b6f6-4276-775b-a86a-2f9da4fa43eb'
+        status: 'OPEN'
+        leg_type: 'DIRECT_ORGANIC'
+        closed_at: ~
+        opened_at: '2026-09-19T07:59:47'
+        created_at: '2026-09-19T07:59:47'
+        journey_id: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+        updated_at: '2026-09-19T07:59:47'
+        leg_ordinal: 1
+        row_version: 1
+        source_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        channel_identity_hash: '9eecf48c9459519a14eeede2687a04b306b8ecfa72b791c9b512e1b5bd707d54'
+        provider_context_hash: '065e770e4d74f6222f1b0d35db4a4d1d59ba987b9f4ec11341deecd2e3c206d8'
+        conversation_thread_id: ~
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        conversation_session_id: ~
+        origin_channel_message_id: 2
+      2:
+        id: '01a0b6f6-428c-7237-ac02-34be23f99ce3'
+        status: 'OPEN'
+        leg_type: 'GROUP_ORIGIN'
+        closed_at: ~
+        opened_at: '2026-09-19T07:59:47'
+        created_at: '2026-09-19T07:59:47'
+        journey_id: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+        updated_at: '2026-09-19T07:59:47'
+        leg_ordinal: 1
+        row_version: 1
+        source_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        channel_identity_hash: '270a14679832d2b263804ecc559507e4280d90454d4183cce99038c1ad16ec56'
+        provider_context_hash: '6928afbb737ab04d8aca5ef518b4bdbd2bdf1339a5a8dd852da436fbd9972261'
+        conversation_thread_id: ~
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        conversation_session_id: ~
+        origin_channel_message_id: 3
+      3:
+        id: '01a0b6f6-42ab-7302-a812-25ab9354b650'
+        status: 'OPEN'
+        leg_type: 'GROUP_ORIGIN'
+        closed_at: ~
+        opened_at: '2026-09-19T07:59:47'
+        created_at: '2026-09-19T07:59:47'
+        journey_id: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+        updated_at: '2026-09-19T07:59:47'
+        leg_ordinal: 1
+        row_version: 1
+        source_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        channel_identity_hash: '98c8310d1bc70da604af7b7ba9b273860031365e0f0edd4403165402da24155f'
+        provider_context_hash: '9c551ad21b6d2159880349427616f1ee4edf438fee7835a3ebdbab8dec5b1663'
+        conversation_thread_id: ~
+        reporter_identity_hash: 'd0b13418085bf8c16f4eb7a5054cfeb5fa6ca290551b811cbbe75f19646faa34'
+        conversation_session_id: ~
+        origin_channel_message_id: 4
+    intake.deterministic_decision:
+      0:
+        id: '01a0b6f6-4258-705f-b147-204ede981ab2'
+        status: 'RECORDED'
+        created_at: '2026-09-19T07:59:47'
+        input_hash: '1834fe83230a27d61343ad09cba8cf1beec53a129b74bca81a023af8f501a5ee'
+        journey_id: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+        observed_at: '2026-09-03T12:00:00'
+        reason_code: 'EXPLICIT_TECHNICAL_FAULT'
+        result_code: 'TICKET_ELIGIBLE'
+        result_hash: '1c7ad5bb104905c84ab54c832c29088c69546dc0af972c3f869dbcbfc886f361'
+        safe_result:
+          conflicts:
+          input_hash: '1834fe83230a27d61343ad09cba8cf1beec53a129b74bca81a023af8f501a5ee'
+          reason_code: 'EXPLICIT_TECHNICAL_FAULT'
+          result_code: 'TICKET_ELIGIBLE'
+          result_hash: '1c7ad5bb104905c84ab54c832c29088c69546dc0af972c3f869dbcbfc886f361'
+          source_refs:
+            0: 'channel:1'
+          known_fields:
+            scope: 'UNKNOWN'
+            domain_intent: 'INCIDENT_REPORT'
+            symptom_codes:
+              0: 'TRANSACTION.SUBMIT_FAILED'
+            transaction_stage: 'FINAL_SUBMIT'
+            selected_service_code: 'CLINICAL.PRESCRIPTION_ENTRY'
+          privacy_flags:
+          engine_version: 'p2-007-adapter/1.0.0'
+          unknown_fields:
+            0: 'patient_scope'
+          catalog_version: '0.1.0-draft'
+          fact_provenance:
+            0:
+              status: 'ACTIVE'
+              fact_id: 'fact_785b6ab3b95c4c69263431d64c684fd2'
+              rule_id: 'ALIAS-075'
+              assertion: 'AFFIRMED'
+              field_path: 'service.selected_service_code'
+              source_ref: 'intake:01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: '28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7'
+              source_kind: 'REPORTER_EXPLICIT'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'CLINICAL.PRESCRIPTION_ENTRY'
+              reliability_tier: 92
+              rule_set_version: '0.1.4-g2'
+            1:
+              status: 'ACTIVE'
+              fact_id: 'fact_b92e708d4ee94dea40f1e799b6e8462f'
+              rule_id: 'SYMPTOM-053'
+              assertion: 'AFFIRMED'
+              field_path: 'fault.symptom_codes'
+              source_ref: 'intake:01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: '28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7'
+              source_kind: 'REPORTER_EXPLICIT'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'TRANSACTION.SUBMIT_FAILED'
+              reliability_tier: 90
+              rule_set_version: '0.1.4-g2'
+            2:
+              status: 'ACTIVE'
+              fact_id: 'fact_c129afa56ecab51cf2bfc269cf77a8dc'
+              rule_id: 'INT-001'
+              assertion: 'AFFIRMED'
+              field_path: 'classification.domain_intent'
+              source_ref: 'intake:01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: '28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7'
+              source_kind: 'DETERMINISTIC_RULE'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'INCIDENT_REPORT'
+              reliability_tier: 85
+              rule_set_version: '0.1.4-g2'
+            3:
+              status: 'ACTIVE'
+              fact_id: 'fact_cf1f996fa9ad4bb1c9066d53fa49a6a8'
+              rule_id: 'NORM-001'
+              assertion: 'AFFIRMED'
+              field_path: 'classification.transaction_stage'
+              source_ref: 'intake:01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: '28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7'
+              source_kind: 'DETERMINISTIC_RULE'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'FINAL_SUBMIT'
+              reliability_tier: 85
+              rule_set_version: '0.1.4-g2'
+          rule_set_version: '0.1.4-g2'
+          clinical_safety_risk: 'UNKNOWN'
+          manual_review_required: false
+          decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+          message_sequence_window:
+            end: 1
+            count: 1
+            start: 1
+          safe_action_suggestions:
+            0:
+              action_type: 'APPLY_INTAKE_CLASSIFICATION'
+              payload_hash: '146de82e60fc932e61e3560691d85aa39bac0de34041dbd2e5515f40dbf4fb1b'
+              safe_payload:
+                journey_ref: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+                template_code: ~
+                service_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+                clarification_code: ~
+              action_ordinal: 1
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+            1:
+              action_type: 'CREATE_MINIMAL_TICKET'
+              payload_hash: '146de82e60fc932e61e3560691d85aa39bac0de34041dbd2e5515f40dbf4fb1b'
+              safe_payload:
+                journey_ref: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+                template_code: ~
+                service_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+                clarification_code: ~
+              action_ordinal: 2
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+          incident_review_candidate: false
+          group_corroboration_safety:
+            eligible: true
+            assessment: 'CANONICAL_FIELDS_ONLY_NOT_MESSAGE_DECLASSIFICATION'
+            catalog_hash: 'bdc1d19be47b63f7716b4ed8d15805c01c0dddcc5daf6103661cbbc69258a9d7'
+            clinical_risk: 'UNKNOWN'
+            privacy_flags:
+            policy_version: 'canonical-same-group/1'
+            source_privacy_class: 'INTERNAL'
+          ticket_creation_recommended: true
+        source_hash: 'dfdf9c3dfd90be452f043df569f9ebc96f6c7f61e9d8384597393485715a7d2b'
+        decision_key: 'decision_v1_0be9f8314ff46d3e741dc0e450121ad201bdc435c9a64eca4a4a3c976fceee46'
+        channel_leg_id: '01a0b6f6-424c-73cb-9c3e-d5e88b95ea88'
+        engine_version: 'p2-007-adapter/1.0.0'
+        catalog_version: '0.1.0-draft'
+        decision_ordinal: 1
+        linked_ticket_id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+        rule_set_version: '0.1.4-g2'
+        service_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        source_message_count: 1
+        requires_manual_review: false
+        conversation_session_id: ~
+        decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+        incident_review_candidate: false
+        source_window_end_sequence: 1
+        ticket_creation_recommended: true
+        source_window_start_sequence: 1
+      1:
+        id: '01a0b6f6-427a-7672-b9c7-5fefd53509aa'
+        status: 'RECORDED'
+        created_at: '2026-09-19T07:59:47'
+        input_hash: '0e361cc6ecc7380934e839e594b8f3054c7461eb91dab0414f612e5118abaadc'
+        journey_id: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+        observed_at: '2026-09-03T12:00:00'
+        reason_code: 'DETERMINISTIC_SERVICE_REQUEST'
+        result_code: 'SERVICE_REQUEST'
+        result_hash: '617e056a90a627c5c888b216327c8f47226776ff0f87baabea7f07ffa5735b2b'
+        safe_result:
+          conflicts:
+          input_hash: '0e361cc6ecc7380934e839e594b8f3054c7461eb91dab0414f612e5118abaadc'
+          reason_code: 'DETERMINISTIC_SERVICE_REQUEST'
+          result_code: 'SERVICE_REQUEST'
+          result_hash: '617e056a90a627c5c888b216327c8f47226776ff0f87baabea7f07ffa5735b2b'
+          source_refs:
+            0: 'channel:2'
+          known_fields:
+            scope: 'UNKNOWN'
+            domain_intent: 'SERVICE_REQUEST'
+            symptom_codes:
+            transaction_stage: 'UNKNOWN'
+            selected_service_code: 'IDENTITY.PASSWORD_RESET'
+          privacy_flags:
+          engine_version: 'p2-007-adapter/1.0.0'
+          unknown_fields:
+            0: 'account_ref_secure'
+            1: 'system_context'
+          catalog_version: '0.1.0-draft'
+          fact_provenance:
+            0:
+              status: 'ACTIVE'
+              fact_id: 'fact_128f63f48337ac3ab23dbfec626214cf'
+              rule_id: 'ALIAS-261'
+              assertion: 'AFFIRMED'
+              field_path: 'service.selected_service_code'
+              source_ref: 'intake:01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: 'd70928debc2e80cdf099d55b89103a8549e714ba74cc5d72e7fc6ac5c32cff12'
+              source_kind: 'REPORTER_EXPLICIT'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'IDENTITY.PASSWORD_RESET'
+              reliability_tier: 92
+              rule_set_version: '0.1.4-g2'
+            1:
+              status: 'ACTIVE'
+              fact_id: 'fact_580d43c7193e2a0bac5327620b953109'
+              rule_id: 'INT-002'
+              assertion: 'AFFIRMED'
+              field_path: 'classification.domain_intent'
+              source_ref: 'intake:01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: 'd70928debc2e80cdf099d55b89103a8549e714ba74cc5d72e7fc6ac5c32cff12'
+              source_kind: 'DETERMINISTIC_RULE'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'SERVICE_REQUEST'
+              reliability_tier: 85
+              rule_set_version: '0.1.4-g2'
+          rule_set_version: '0.1.4-g2'
+          clinical_safety_risk: 'UNKNOWN'
+          manual_review_required: false
+          decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+          message_sequence_window:
+            end: 1
+            count: 1
+            start: 1
+          safe_action_suggestions:
+            0:
+              action_type: 'APPLY_INTAKE_CLASSIFICATION'
+              payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+              safe_payload:
+                journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+                template_code: ~
+                service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+                clarification_code: ~
+              action_ordinal: 1
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+            1:
+              action_type: 'ROUTE_SERVICE_REQUEST'
+              payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+              safe_payload:
+                journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+                template_code: ~
+                service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+                clarification_code: ~
+              action_ordinal: 2
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+            2:
+              action_type: 'CREATE_MINIMAL_TICKET'
+              payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+              safe_payload:
+                journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+                template_code: ~
+                service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+                clarification_code: ~
+              action_ordinal: 3
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+          incident_review_candidate: false
+          group_corroboration_safety:
+            eligible: false
+            assessment: 'CANONICAL_FIELDS_ONLY_NOT_MESSAGE_DECLASSIFICATION'
+            catalog_hash: 'bdc1d19be47b63f7716b4ed8d15805c01c0dddcc5daf6103661cbbc69258a9d7'
+            clinical_risk: 'UNKNOWN'
+            privacy_flags:
+              0: 'POSSIBLE_SENSITIVE_CONTEXT'
+            policy_version: 'canonical-same-group/1'
+            source_privacy_class: 'INTERNAL'
+          ticket_creation_recommended: true
+        source_hash: 'd9df5b82d432aed3bca2f41af2cc0b4ac43ec67b7553d75016f632b78340ca91'
+        decision_key: 'decision_v1_2fa9e53d7ee150c2b3edd555d9be310e823fe3660004d86b52bad73434b27e78'
+        channel_leg_id: '01a0b6f6-4276-775b-a86a-2f9da4fa43eb'
+        engine_version: 'p2-007-adapter/1.0.0'
+        catalog_version: '0.1.0-draft'
+        decision_ordinal: 1
+        linked_ticket_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        rule_set_version: '0.1.4-g2'
+        service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        source_message_count: 1
+        requires_manual_review: false
+        conversation_session_id: ~
+        decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+        incident_review_candidate: false
+        source_window_end_sequence: 1
+        ticket_creation_recommended: true
+        source_window_start_sequence: 1
+      2:
+        id: '01a0b6f6-4294-716d-9f3c-d6f37d9d14af'
+        status: 'RECORDED'
+        created_at: '2026-09-19T07:59:47'
+        input_hash: 'd2681ee6b3dbcc5f94e2d98d64bf9018512458c9221a026c219a37ae844bd903'
+        journey_id: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+        observed_at: '2026-09-03T12:00:00'
+        reason_code: 'ONE_DESCRIPTION_REQUIRED'
+        result_code: 'NEEDS_DESCRIPTION'
+        result_hash: '073bcbabe02f85942a78a6fc47763eb91c6d1fcd9df2fb531c5c8722e12f5704'
+        safe_result:
+          conflicts:
+          input_hash: 'd2681ee6b3dbcc5f94e2d98d64bf9018512458c9221a026c219a37ae844bd903'
+          reason_code: 'ONE_DESCRIPTION_REQUIRED'
+          result_code: 'NEEDS_DESCRIPTION'
+          result_hash: '073bcbabe02f85942a78a6fc47763eb91c6d1fcd9df2fb531c5c8722e12f5704'
+          source_refs:
+            0: 'channel:3'
+          known_fields:
+            scope: 'UNKNOWN'
+            domain_intent: 'UNKNOWN'
+            symptom_codes:
+            transaction_stage: 'UNKNOWN'
+            selected_service_code: ~
+          privacy_flags:
+          engine_version: 'p2-007-adapter/1.0.0'
+          unknown_fields:
+          catalog_version: '0.1.0-draft'
+          fact_provenance:
+          rule_set_version: '0.1.4-g2'
+          clinical_safety_risk: 'UNKNOWN'
+          manual_review_required: false
+          decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+          message_sequence_window:
+            end: 1
+            count: 1
+            start: 1
+          safe_action_suggestions:
+            0:
+              action_type: 'APPLY_INTAKE_CLASSIFICATION'
+              payload_hash: '2e3fa0dd33ba4a03045d72cafedba95c209571d3da9ebc9f69c470e4d95a0a38'
+              safe_payload:
+                journey_ref: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+                template_code: ~
+                service_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+                clarification_code: ~
+              action_ordinal: 1
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+            1:
+              action_type: 'REQUEST_ONE_DESCRIPTION'
+              payload_hash: '2f269481e3c6a76db8469d384770559b0817141617132c081e07ebe9488d66c2'
+              safe_payload:
+                journey_ref: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+                template_code: ~
+                service_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+                clarification_code: 'Q_WHICH_SYSTEM_OR_FUNCTION'
+              action_ordinal: 2
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+          incident_review_candidate: false
+          group_corroboration_safety:
+            eligible: false
+            assessment: 'CANONICAL_FIELDS_ONLY_NOT_MESSAGE_DECLASSIFICATION'
+            catalog_hash: 'bdc1d19be47b63f7716b4ed8d15805c01c0dddcc5daf6103661cbbc69258a9d7'
+            clinical_risk: 'UNKNOWN'
+            privacy_flags:
+            policy_version: 'canonical-same-group/1'
+            source_privacy_class: 'INTERNAL'
+          ticket_creation_recommended: false
+        source_hash: 'd6f5ff2c1acb17f7cc57b554c8971fe713ce84ce7e02bad38081a58a038b7ce2'
+        decision_key: 'decision_v1_7491d2e339f39be21da3e376a0a6ad79b531b19728d7585836ac3d15663f9f31'
+        channel_leg_id: '01a0b6f6-428c-7237-ac02-34be23f99ce3'
+        engine_version: 'p2-007-adapter/1.0.0'
+        catalog_version: '0.1.0-draft'
+        decision_ordinal: 1
+        linked_ticket_id: ~
+        rule_set_version: '0.1.4-g2'
+        service_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        source_message_count: 1
+        requires_manual_review: false
+        conversation_session_id: ~
+        decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+        incident_review_candidate: false
+        source_window_end_sequence: 1
+        ticket_creation_recommended: false
+        source_window_start_sequence: 1
+      3:
+        id: '01a0b6f6-42ad-7950-8527-3f051340ab62'
+        status: 'RECORDED'
+        created_at: '2026-09-19T07:59:47'
+        input_hash: '8e6c9ea6b371aa4197e8d9ff3a802d13f1dad899d2bc41ef34f432264ff66323'
+        journey_id: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+        observed_at: '2026-09-03T12:00:00'
+        reason_code: 'HUMAN_FOLLOW_UP_REQUIRED'
+        result_code: 'MANUAL_REVIEW_REQUIRED'
+        result_hash: 'a1be8f9df25fe529e8eb5e15ad507500e84acf43f4fcffca15de43881229e286'
+        safe_result:
+          conflicts:
+          input_hash: '8e6c9ea6b371aa4197e8d9ff3a802d13f1dad899d2bc41ef34f432264ff66323'
+          reason_code: 'HUMAN_FOLLOW_UP_REQUIRED'
+          result_code: 'MANUAL_REVIEW_REQUIRED'
+          result_hash: 'a1be8f9df25fe529e8eb5e15ad507500e84acf43f4fcffca15de43881229e286'
+          source_refs:
+            0: 'channel:4'
+          known_fields:
+            scope: 'UNKNOWN'
+            domain_intent: 'ESCALATION_COMPLAINT'
+            symptom_codes:
+            transaction_stage: 'UNKNOWN'
+            selected_service_code: ~
+          privacy_flags:
+          engine_version: 'p2-007-adapter/1.0.0'
+          unknown_fields:
+          catalog_version: '0.1.0-draft'
+          fact_provenance:
+            0:
+              status: 'ACTIVE'
+              fact_id: 'fact_08c698bdb38b6890ea71eb1e85c830f6'
+              rule_id: 'INT-006'
+              assertion: 'AFFIRMED'
+              field_path: 'classification.domain_intent'
+              source_ref: 'intake:01a0b6f6-42a5-786a-844e-18c71b8801c7'
+              observed_at: '2026-09-03 12:00:00'
+              sensitivity: 'INTERNAL'
+              source_hash: '2e1501c688e063d4dc5615d0f6271c56bd0d2ef845497cad1e9000b05c765207'
+              source_kind: 'DETERMINISTIC_RULE'
+              catalog_version: '0.1.0-draft'
+              confidence_level: 'STRONG'
+              normalized_value: 'ESCALATION_COMPLAINT'
+              reliability_tier: 85
+              rule_set_version: '0.1.4-g2'
+          rule_set_version: '0.1.4-g2'
+          clinical_safety_risk: 'UNKNOWN'
+          manual_review_required: true
+          decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+          message_sequence_window:
+            end: 1
+            count: 1
+            start: 1
+          safe_action_suggestions:
+            0:
+              action_type: 'APPLY_INTAKE_CLASSIFICATION'
+              payload_hash: '0b8aee980e773e2314358e0cd0b9780377d10fb35f202ea9109c340db3aa98fe'
+              safe_payload:
+                journey_ref: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+                template_code: ~
+                service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+                clarification_code: ~
+              action_ordinal: 1
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+            1:
+              action_type: 'ENQUEUE_MANUAL_REVIEW'
+              payload_hash: '0b8aee980e773e2314358e0cd0b9780377d10fb35f202ea9109c340db3aa98fe'
+              safe_payload:
+                journey_ref: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+                template_code: ~
+                service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+                clarification_code: ~
+              action_ordinal: 2
+              execution_policy: 'AUTO_SAFE_DB_ONLY'
+          incident_review_candidate: false
+          group_corroboration_safety:
+            eligible: false
+            assessment: 'CANONICAL_FIELDS_ONLY_NOT_MESSAGE_DECLASSIFICATION'
+            catalog_hash: 'bdc1d19be47b63f7716b4ed8d15805c01c0dddcc5daf6103661cbbc69258a9d7'
+            clinical_risk: 'UNKNOWN'
+            privacy_flags:
+            policy_version: 'canonical-same-group/1'
+            source_privacy_class: 'INTERNAL'
+          ticket_creation_recommended: false
+        source_hash: '99f7787c1a4e3fa0423ac32b34089ec99a4e8f10e1263c1cfc8fea53f6880e98'
+        decision_key: 'decision_v1_ea48ca688bf689b30db6591190c9268c2d2752608417c6897244a8dd0ea0616b'
+        channel_leg_id: '01a0b6f6-42ab-7302-a812-25ab9354b650'
+        engine_version: 'p2-007-adapter/1.0.0'
+        catalog_version: '0.1.0-draft'
+        decision_ordinal: 1
+        linked_ticket_id: ~
+        rule_set_version: '0.1.4-g2'
+        service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        source_message_count: 1
+        requires_manual_review: true
+        conversation_session_id: ~
+        decision_policy_version: 'p2-015-safe-route/1.0.9-g2'
+        incident_review_candidate: false
+        source_window_end_sequence: 1
+        ticket_creation_recommended: false
+        source_window_start_sequence: 1
+    intake.safe_action_suggestion:
+      0:
+        id: '01a0b6f6-425a-72a7-a1cc-372d50e90639'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_d767b379d475cb2975d987f2ed0ac6ad02e740196ea79d8f42e0890d4426285b'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'APPLY_INTAKE_CLASSIFICATION'
+        decision_id: '01a0b6f6-4258-705f-b147-204ede981ab2'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '146de82e60fc932e61e3560691d85aa39bac0de34041dbd2e5515f40dbf4fb1b'
+        safe_payload:
+          journey_ref: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+          template_code: ~
+          service_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        action_ordinal: 1
+        result_ref_type: 'INTAKE'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-425a-72a7-a1cc-372d50e90639'
+        execution_command_hash: '48e10b258953378b3fef1c7749d65a1ac8164c586e2289e388cfdad7f3a35d96'
+      1:
+        id: '01a0b6f6-425c-783f-9b08-4aaa31e37366'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_c08a89a4ca6b18ed6839aeac19c064c47386310dd1ed14b1048bc448467756bc'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'CREATE_MINIMAL_TICKET'
+        decision_id: '01a0b6f6-4258-705f-b147-204ede981ab2'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '146de82e60fc932e61e3560691d85aa39bac0de34041dbd2e5515f40dbf4fb1b'
+        safe_payload:
+          journey_ref: '01a0b6f6-4247-7a38-98be-a60a0aade38a'
+          template_code: ~
+          service_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+        action_ordinal: 2
+        result_ref_type: 'TICKET'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-425c-783f-9b08-4aaa31e37366'
+        execution_command_hash: 'a1cc181d438eb60672ad07c95a77d8a920762a1b6ec264e94c4e069b1f5b78bf'
+      2:
+        id: '01a0b6f6-427b-71a8-883a-97376d7583d0'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_8d14e2c6210adc8450b8fe9a5c96abf5038775411e9dc07d5339ac459a386b25'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'APPLY_INTAKE_CLASSIFICATION'
+        decision_id: '01a0b6f6-427a-7672-b9c7-5fefd53509aa'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+        safe_payload:
+          journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+          template_code: ~
+          service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        action_ordinal: 1
+        result_ref_type: 'INTAKE'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-427b-71a8-883a-97376d7583d0'
+        execution_command_hash: 'a469d2ad25ca9a0ec27adc3436e62a5cbc73c7fd1d33429107f24106cb7e1076'
+      3:
+        id: '01a0b6f6-427b-7998-b0a0-29bff2beebd6'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_d0d1720679f20511e714c1bdf23c313dbc3a84e388ea273d07ada65c22834c39'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'ROUTE_SERVICE_REQUEST'
+        decision_id: '01a0b6f6-427a-7672-b9c7-5fefd53509aa'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+        safe_payload:
+          journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+          template_code: ~
+          service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        action_ordinal: 2
+        result_ref_type: 'TICKET'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-427b-7998-b0a0-29bff2beebd6'
+        execution_command_hash: '5af9f058f8fd566bf20a8703d99ddb3be0e557885962f86bb9d70dbc69d7cf0d'
+      4:
+        id: '01a0b6f6-427c-7188-80f1-81cfae1beabd'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_92fa87f4a6491f0984e60d4b7788dc839f2ecdf3f497aff344f808f03a12ff7a'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'CREATE_MINIMAL_TICKET'
+        decision_id: '01a0b6f6-427a-7672-b9c7-5fefd53509aa'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '418a651ce607eb3c04484c3f26879d148de6d3c7b66d729adafa19d11c6102d7'
+        safe_payload:
+          journey_ref: '01a0b6f6-4275-7247-91be-68f0cc6868d9'
+          template_code: ~
+          service_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        action_ordinal: 3
+        result_ref_type: 'TICKET'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-427c-7188-80f1-81cfae1beabd'
+        execution_command_hash: 'c53d99786bdb746335c0434eb7360f02a6be710aa27965770d8fb88d1f962671'
+      5:
+        id: '01a0b6f6-4295-70c3-bed7-bae2aacb33f3'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_f3a54e6262e2b2d7935f500343280c413b6cd49125aa5a387400c0bea6088f61'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'APPLY_INTAKE_CLASSIFICATION'
+        decision_id: '01a0b6f6-4294-716d-9f3c-d6f37d9d14af'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '2e3fa0dd33ba4a03045d72cafedba95c209571d3da9ebc9f69c470e4d95a0a38'
+        safe_payload:
+          journey_ref: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+          template_code: ~
+          service_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+        action_ordinal: 1
+        result_ref_type: 'INTAKE'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-4295-70c3-bed7-bae2aacb33f3'
+        execution_command_hash: '1d93300dfdbbc0c9c386e2c45d1a43548a88ad42bb8a61db5ebb57e54dcda349'
+      6:
+        id: '01a0b6f6-4295-779d-a37a-c1e701745e8b'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_67b336d3143bc8ea78264c0f1c76bf7fc75b38463139338ca02112c966917b74'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'REQUEST_ONE_DESCRIPTION'
+        decision_id: '01a0b6f6-4294-716d-9f3c-d6f37d9d14af'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '2f269481e3c6a76db8469d384770559b0817141617132c081e07ebe9488d66c2'
+        safe_payload:
+          journey_ref: '01a0b6f6-428b-7413-b152-ecaab88271c2'
+          template_code: ~
+          service_intake_id: '01a0b6f6-4287-7017-bb20-aef6c493de42'
+          clarification_code: 'Q_WHICH_SYSTEM_OR_FUNCTION'
+        result_ref_id: '01a0b6f6-429b-757b-abc8-403e2bcf18ac'
+        action_ordinal: 2
+        result_ref_type: 'COMMUNICATION'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-4295-779d-a37a-c1e701745e8b'
+        execution_command_hash: '459d6889ebb64648b078a49c6e630700896292425613519c6360a362050231db'
+      7:
+        id: '01a0b6f6-42ae-72ce-a0ce-1d308a3f79fd'
+        state: 'REPLAYED'
+        retryable: ~
+        action_key: 'action_v1_feb63651c765c249acad3d78d47d6c610122ac7861b11be69a4cb5cd48f11a13'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'APPLY_INTAKE_CLASSIFICATION'
+        decision_id: '01a0b6f6-42ad-7950-8527-3f051340ab62'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '0b8aee980e773e2314358e0cd0b9780377d10fb35f202ea9109c340db3aa98fe'
+        safe_payload:
+          journey_ref: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+          template_code: ~
+          service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        action_ordinal: 1
+        result_ref_type: 'INTAKE'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-42ae-72ce-a0ce-1d308a3f79fd'
+        execution_command_hash: '06648064d81f929912d755b92b22e6f6c4a2e20c2f134b1b69df380dafb219d8'
+      8:
+        id: '01a0b6f6-42ae-79f4-9ba7-ec0d10c9ddea'
+        state: 'EXECUTED'
+        retryable: ~
+        action_key: 'action_v1_35a958770a7b6732b8aeba56dc9c65ed008689a255a1b38508b9f3601fe430a0'
+        created_at: '2026-09-19T07:59:47'
+        error_code: ~
+        updated_at: '2026-09-03T12:00:00'
+        action_type: 'ENQUEUE_MANUAL_REVIEW'
+        decision_id: '01a0b6f6-42ad-7950-8527-3f051340ab62'
+        executed_at: '2026-09-03T12:00:00'
+        row_version: 2
+        payload_hash: '0b8aee980e773e2314358e0cd0b9780377d10fb35f202ea9109c340db3aa98fe'
+        safe_payload:
+          journey_ref: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+          template_code: ~
+          service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+          clarification_code: ~
+        result_ref_id: '01a0b6f6-42bc-778b-b344-21a9742d67c5'
+        action_ordinal: 2
+        result_ref_type: 'MANUAL_REVIEW'
+        execution_policy: 'AUTO_SAFE_DB_ONLY'
+        execution_command_id: '01a0b6f6-42ae-79f4-9ba7-ec0d10c9ddea'
+        execution_command_hash: 'b742a40c555f1cf585599b3baae5588b075f60b70fd4e04adf95d2491a97a000'
+    intake.manual_review_item:
+      0:
+        id: '01a0b6f6-42bc-778b-b344-21a9742d67c5'
+        status: 'PENDING'
+        priority: 'NORMAL'
+        created_at: '2026-09-19T07:59:47'
+        journey_id: '01a0b6f6-42aa-7302-9ce6-a31841e6fc4f'
+        review_key: 'review_v1_47b85c87ad049ec295a1d8c064cdf8ef36b47175896e041a8819843b52ed5412'
+        updated_at: '2026-09-19T07:59:47'
+        decision_id: '01a0b6f6-42ad-7950-8527-3f051340ab62'
+        resolved_at: ~
+        row_version: 1
+        resolution_code: ~
+        linked_ticket_id: ~
+        service_intake_id: '01a0b6f6-42a5-786a-844e-18c71b8801c7'
+        review_reason_code: 'HUMAN_FOLLOW_UP_REQUIRED'
+        resolution_command_id: ~
+        resolution_decision_id: ~
+        resolution_reason_code: ~
+        resolution_command_hash: ~
+        resolved_by_principal_id: ~
+    pilot_ticket.ticket:
+      0:
+        id: '01a0b6f6-4267-70f4-814d-0eb58208d2e5'
+        title: '信息系统故障报修'
+        status: 'QUEUED'
+        version: 1
+        priority: 'NORMAL'
+        ticket_no: 'IT-20260903-0001'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        assignee_id: ~
+        request_type: 'INCIDENT'
+        auto_close_at: ~
+        closure_reason: ~
+        external_result: ~
+        resolver_team_id: 'PILOT_IT'
+        source_intake_id: '01a0b6f6-4232-7d1a-b06b-a5566dd7f50c'
+        reported_campus_id: ~
+        auto_close_epoch_ms: ~
+        auto_close_reminder_at: ~
+        reported_department_id: ~
+        reported_location_text: ~
+        auto_close_reminder_epoch_ms: ~
+      1:
+        id: '01a0b6f6-427e-7720-a2af-c56d4f6b6e07'
+        title: '信息服务申请'
+        status: 'QUEUED'
+        version: 1
+        priority: 'NORMAL'
+        ticket_no: 'IT-20260903-0002'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        assignee_id: ~
+        request_type: 'SERVICE_REQUEST'
+        auto_close_at: ~
+        closure_reason: ~
+        external_result: ~
+        resolver_team_id: 'PILOT_IT'
+        source_intake_id: '01a0b6f6-426e-734f-8a40-3c044ce62bc8'
+        reported_campus_id: ~
+        auto_close_epoch_ms: ~
+        auto_close_reminder_at: ~
+        reported_department_id: ~
+        reported_location_text: ~
+        auto_close_reminder_epoch_ms: ~
+    communication.message:
+      0:
+        id: '01a0b6f6-429b-757b-abc8-403e2bcf18ac'
+        content:
+          text: '为保护信息安全，请关注机器人单聊并在那里补充故障现象。'
+        purpose: 'SYSTEM_NOTIFICATION'
+        created_at: '2026-09-19T07:59:47'
+        session_id: ~
+        visibility: 'EXTERNAL'
+        sender_kind: 'SYSTEM'
+        command_hash: '14c64f9a8a6aa8daa9aae3dac4e5f69e48c3ac2c0927c5bf94c29263aaf87d2c'
+        content_hash: 'dfcbf4521cc107a3f9a40261e7da8aabfdd42608b4ce5c06811549d3128f22f6'
+        message_type: 'text'
+        privacy_class: 'INTERNAL'
+        retention_until: '2026-10-03T12:00:00'
+        client_command_id: '01a0b6f6-4295-779d-a37a-c1e701745e8b'
+        idempotency_scope: 'SYSTEM'
+        sender_system_code: 'RULE_FIRST_ORCHESTRATOR'
+        sender_principal_id: ~
+        retention_until_epoch_ms: 1791000000000
+        reply_to_conversation_item_id: ~
+    communication.outbox:
+      0:
+        id: '01a0b6f6-429c-776d-bb61-45afa1a8352c'
+        priority: 100
+        created_at: '2026-09-19T07:59:47'
+        message_id: '01a0b6f6-429b-757b-abc8-403e2bcf18ac'
+        route_policy: 'P2_015_FIXED_TEMPLATE'
+        idempotency_key: 'comm_v1_15313beec467e5f641e1bf4a8155de9d1cbde4b1c2364c086136940515f08b26'
+    communication.delivery:
+      0:
+        id: '01a0b6f6-429e-780e-96cd-23cbff7db271'
+        status: 'PENDING'
+        sent_at: ~
+        priority: 100
+        provider: 'WECOM_AIBOT'
+        outbox_id: '01a0b6f6-429c-776d-bb61-45afa1a8352c'
+        target_id: 'group-3dee6e4d'
+        created_at: '2026-09-19T07:59:47'
+        updated_at: '2026-09-19T07:59:47'
+        lease_token: ~
+        target_hash: '870ca40ca667329a5340f09bfdadeecca758c88ae1663f5f8daac4c1d1391bb4'
+        target_type: 'GROUP'
+        attempt_count: 0
+        sent_epoch_ms: ~
+        idempotency_key: 'comm_delivery_v1_84a230e1a2679941548513a2ffffd213c613e8cdd32af8084865b40901645ab2'
+        last_error_code: ~
+        next_attempt_at: '2026-09-19T07:59:47'
+        send_started_at: ~
+        lease_expires_at: ~
+        side_effect_state: 'NOT_ATTEMPTED'
+        channel_account_id: 'bot-test'
+        provider_message_id: ~
+        next_attempt_epoch_ms: 1789775987000
+        send_started_epoch_ms: ~
+        lease_expires_epoch_ms: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-r2-upgrade-loss.test.mjs:45:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async withSS009Database (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/yxx-ss-009-resources.mjs:12:16)
+    async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-r2-upgrade-loss.test.mjs:26:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2536.2741

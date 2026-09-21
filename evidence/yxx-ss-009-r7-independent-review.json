@@ -1,0 +1,31 @@
+{
+  "event_time": "2026-09-20 22:47:19",
+  "event_epoch_ms": "1789915639461",
+  "candidate_fingerprint": "00388c36beb41ad0c6b1f6f96bc38172f657fa26f80124e8a3385603b2101749",
+  "reviews": [
+    {
+      "axis": "SPEC",
+      "reviewer": "/codex/subagent/Euler/spec",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "candidate_fingerprint": "00388c36beb41ad0c6b1f6f96bc38172f657fa26f80124e8a3385603b2101749",
+      "source": {
+        "path": "evidence/yxx-ss-009-r7-spec-review.json",
+        "encoding": "UTF8_LF",
+        "sha256": "8627be065971a2f3a3e095023d68c110b1aa02e42505ec0385e76b36952c49c5"
+      }
+    },
+    {
+      "axis": "STANDARDS",
+      "reviewer": "/codex/subagent/Averroes/standards",
+      "verdict": "PASS",
+      "unresolved_findings": 0,
+      "candidate_fingerprint": "00388c36beb41ad0c6b1f6f96bc38172f657fa26f80124e8a3385603b2101749",
+      "source": {
+        "path": "evidence/yxx-ss-009-r7-standards-review.json",
+        "encoding": "UTF8_LF",
+        "sha256": "1078a394fd3db725af9ff47c14eda6f09c729f6d44ede25eece0a58802a8e672"
+      }
+    }
+  ]
+}

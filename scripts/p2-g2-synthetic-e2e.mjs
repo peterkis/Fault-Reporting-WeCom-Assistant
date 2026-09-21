@@ -23,7 +23,9 @@ export async function runG2Tests({suite='g2',envFile='.env.pilot'}={}) {
   if(!['localhost','127.0.0.1','[::1]'].includes(url.hostname))failG2('LOCAL_DATABASE_REQUIRED');
   const environment={...minimalG2Environment(),PILOT_DATABASE_URL:settings.PILOT_DATABASE_URL};
   const directory='tmp/p2-g2-tests-'+randomUUID(),absolute=path.join(G2_ROOT,directory);mkdirSync(absolute,{recursive:true,mode:0o700});
-  const candidate=g2CandidateInventory(),args=['--expose-gc','--test','--test-concurrency=1','--test-reporter=tap',...files],started_physical_epoch_ms=String(Date.now());
+  const candidate=g2CandidateInventory(),args=['--expose-gc','--test','--test-concurrency=1','--test-reporter=tap','--test-reporter-destination=stdout',
+    '--test-reporter=./scripts/p2-g2-case-reporter.mjs','--test-reporter-destination='+directory+'/cases.jsonl',
+    '--test-reporter=./scripts/p2-g2-file-coverage-reporter.mjs','--test-reporter-destination='+directory+'/file-coverage.json',...files],started_physical_epoch_ms=String(Date.now());
   const collected=await new Promise(resolve=>{
     const child=spawn(process.execPath,args,{cwd:G2_ROOT,env:environment,windowsHide:true,stdio:['ignore','pipe','pipe']});
     let stdout='',stderr='',bytes=0,error=null;
@@ -36,15 +38,16 @@ export async function runG2Tests({suite='g2',envFile='.env.pilot'}={}) {
   const redact=text=>[settings.PILOT_DATABASE_URL,url.password,decodeURIComponent(url.password)].filter(Boolean).reduce((s,secret)=>s.replaceAll(secret,'[REDACTED]'),text);
   const stdout=redact(collected.stdout),stderr=redact(collected.stderr);
   writeFileSync(path.join(absolute,'result.tap'),stdout,{mode:0o600});writeFileSync(path.join(absolute,'stderr.txt'),stderr,{mode:0o600});
+  const fileExecution=JSON.parse(readFileSync(path.join(absolute,'file-coverage.json'),'utf8'));
   const counts={};for(const line of stdout.split(/\r?\n/u)){const m=/^# (tests|pass|fail|skipped|cancelled|todo) (\d+)$/u.exec(line);if(m)counts[m[1]]=Number(m[2]);}
   const unchanged=g2CandidateInventory().fingerprint===candidate.fingerprint;
   const completed_physical_epoch_ms=String(Date.now());
   const record={schema_version:1,gate:'P2-G2',mode:'SYNTHETIC_AUTOMATION',suite,candidate_fingerprint:candidate.fingerprint,
     ...g2EvidenceTime(completed_physical_epoch_ms),started_physical_epoch_ms,completed_physical_epoch_ms,node_version:process.versions.node,os_platform:process.platform,os_release:os.release(),architecture:process.arch,
     candidate_unchanged:unchanged,expose_gc:true,formal_natural_gc_observation:false,model_environment_keys:0,
-    args,files:files.map(file=>({path:file,sha256:candidate.files.find(entry=>entry.path===file).sha256})),
+    args,files:files.map(file=>({path:file,sha256:candidate.files.find(entry=>entry.path===file).sha256})),file_execution:fileExecution.files,
     exit_code:collected.exit_code,signal:collected.signal,error:collected.error,counts,
-    stdout_sha256:g2Hash(stdout),stderr_sha256:g2Hash(stderr),directory};
+    stdout_sha256:g2Hash(stdout),stderr_sha256:g2Hash(stderr),case_trace_sha256:g2Hash(readFileSync(path.join(absolute,'cases.jsonl'),'utf8')),directory};
   writeFileSync(path.join(absolute,'run.json'),JSON.stringify(record,null,2)+'\n',{mode:0o600});
   return {ok:collected.exit_code===0&&unchanged&&counts.tests>0&&counts.pass===counts.tests
     &&['fail','skipped','cancelled','todo'].every(k=>counts[k]===0),...record};

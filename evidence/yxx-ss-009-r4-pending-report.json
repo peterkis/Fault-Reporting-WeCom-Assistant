@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-19 11:45:21",
+  "event_epoch_ms": "1789789521588",
+  "candidate_fingerprint": "08bc594b6702e35c21d5342d970745735e93ff0434f81c7e3fd035b69363ec04",
+  "work_item": "YXX-SS-009",
+  "status": "LOCAL_AUTOMATION_VERIFIED_PENDING_STRICT_GATE",
+  "base_head": "375d47b013017edb858206cc5f3475c9aed77dfd",
+  "tested_head": "4365a7b9680f0102156f44966823c858c7201ae4",
+  "tested_tree": "ca19866dcd4d5dc7bbb72c46a85dc84bf91ec88e",
+  "live_authorized": false,
+  "remote_review": "NOT_RUN",
+  "full_regression": {
+    "tests": 1180,
+    "pass": 1180,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_files": 191,
+    "candidate_unchanged": true
+  },
+  "run": {
+    "path": "evidence/yxx-ss-009-r4-full-run.json",
+    "encoding": "UTF8_LF",
+    "sha256": "2618117cf464a693f8e81a7d9fccb46d290e6c9f8b862ac4f43c7cf307e48f48"
+  },
+  "tap": {
+    "path": "evidence/yxx-ss-009-r4-full.tap",
+    "encoding": "UTF8_LF",
+    "sha256": "ee0aa85a34b7b8d3cdea11baffef2553ee133eaf2efaed47f73b061465bbbe82"
+  },
+  "case_trace": {
+    "path": "evidence/yxx-ss-009-r4-full-cases.jsonl",
+    "encoding": "UTF8_LF",
+    "sha256": "a04e11ca71a584a54bfdcfaa1f188e8119cdee5bb3cf6798b9a0082de9f4c33d"
+  },
+  "fault": {
+    "path": "evidence/yxx-ss-009-r4-fault.json",
+    "encoding": "UTF8_LF",
+    "sha256": "c3a7f10e5b9434cece9299a1c6f31a009c040f7c75d712209be2eca194739aa2"
+  },
+  "capacity": {
+    "path": "evidence/yxx-ss-009-r4-capacity.json",
+    "encoding": "UTF8_LF",
+    "sha256": "3fb35e5eca83db53e673b1dad6523af8625bac158545f3f6ebfa863a67158b62"
+  },
+  "catalog": {
+    "path": "evidence/yxx-ss-009-r4-catalog.json",
+    "encoding": "UTF8_LF",
+    "sha256": "601604ec2f1456689edd5f0a90f0aafa738e8c9e457e8aee8d1ba938c02c08af"
+  },
+  "browser": {
+    "path": "evidence/yxx-ss-009-r4-browser.json",
+    "encoding": "UTF8_LF",
+    "sha256": "31e853c9c571ef0e62d2e7797b253bf7c7213bc77e29332ad785b4d51549c62f"
+  },
+  "source_audit": {
+    "path": "evidence/yxx-ss-009-r4-source-audit.json",
+    "encoding": "UTF8_LF",
+    "sha256": "da4233b232cb8d978257f5e009db9f6b1e03155deca4a8cd0185ba445bcff628"
+  },
+  "cleanup": {
+    "path": "evidence/yxx-ss-009-r4-cleanup.json",
+    "encoding": "UTF8_LF",
+    "sha256": "e789e23680e3c7aded633b3dcb5d57c9661a242864d1f2179f9e9aa5d88b773b"
+  },
+  "validators": {
+    "path": "evidence/yxx-ss-009-r4-validators.json",
+    "encoding": "UTF8_LF",
+    "sha256": "e3102e28d903a334b0283278805e586cf018b6e036134abf8a7338e436b3a5a6"
+  },
+  "review": {
+    "path": "evidence/yxx-ss-009-r4-independent-review.json",
+    "encoding": "UTF8_LF",
+    "sha256": "dc6121f3eaadf46dd940f36cc2f0d3c9ce06efca99086f49e163b290195e08be"
+  },
+  "historical_coverage": {
+    "path": "evidence/yxx-ss-009-r4-historical-coverage.json",
+    "encoding": "UTF8_LF",
+    "sha256": "0a282e80c91d430d7ad9f6efaa13fcb1dada8ed49a69f0c8449ba7440b175f3b"
+  },
+  "inventory": {
+    "path": "evidence/yxx-ss-009-r4-source-inventory.json",
+    "encoding": "UTF8_LF",
+    "sha256": "6cfe84d43dab5a64c0588b732394b355fefa816861b2fb1d01efe80c104e557a"
+  },
+  "governance": {
+    "path": "evidence/yxx-ss-009-r4-governance.json",
+    "encoding": "UTF8_LF",
+    "sha256": "b5a9699c3f1181522f293750c744c4c79664d45825604386c07164d3e6da1d1f"
+  },
+  "time_audit": {
+    "path": "evidence/yxx-ss-009-r4-time-audit.json",
+    "encoding": "UTF8_LF",
+    "sha256": "709b6f1b2cb468bd102753f4773756a7f8f9951244aafe1977d9f0c4f046b4d9"
+  },
+  "matrix": {
+    "path": "evidence/yxx-ss-009-r4-acceptance.json",
+    "encoding": "UTF8_LF",
+    "sha256": "729b2fd34401922b5d8ed68eabeb0410d3ea47f89b0ce3d81503d0bc5164851a"
+  },
+  "limitations": [
+    "Formal natural GC / 2C4G / 60 minutes NOT_RUN",
+    "SS010 PLANNED; SS011 NOT_AUTHORIZED",
+    "Parent G2 historical readiness unchanged; P2-G2-LIVE and AI not started"
+  ],
+  "strict_negative": {
+    "path": "evidence/yxx-ss-009-r4-strict-negative.json",
+    "encoding": "UTF8_LF",
+    "sha256": "e372cc61b591c7eb2c714e56878b8c0ffa2448567fd2e13f7e4e49aba58fc82f"
+  }
+}

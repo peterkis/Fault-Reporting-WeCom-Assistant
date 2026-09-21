@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: SS-009 FULL_SERVICE_LOOP actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers
+not ok 1 - SS-009 FULL_SERVICE_LOOP actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers
+  ---
+  duration_ms: 67504.4292
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tests\\yxx-ss-009-capacity.integration.test.mjs:83:1'
+  failureType: 'testCodeFailure'
+  error: 'SS009_RECOVERY_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    until (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-capacity.integration.test.mjs:20:176)
+    async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-capacity.integration.test.mjs:53:7)
+    async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async capacity (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-capacity.integration.test.mjs:24:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# SS009_CAPACITY_FAILURE {"profile":"FULL_SERVICE_LOOP","error":"SS009_RECOVERY_TIMEOUT","worker_messages":[{"type":"worker-status","role":"WORKER","ready":true,"failure_count":0,"last_error_code":null},{"type":"worker-status","role":"WORKER","ready":true,"failure_count":0,"last_error_code":null},{"type":"worker-status","role":"WORKER","ready":true,"failure_count":0,"last_error_code":null},{"type":"worker-status","role":"WORKER","ready":true,"failure_count":0,"last_error_code":null},{"type":"worker-status","role":"WORKER","ready":true,"failure_count":0,"last_error_code":null}],"last_samples":[{"role":"WORKER","rss_bytes":143646720,"heap_used_bytes":41538048,"heap_total_bytes":87343104,"external_bytes":6304884,"cpu_percent":13.864,"event_loop_delay_p95_ms":34.603007,"active_resources":3,"active_timers":1,"active_sockets":2,"active_file_handles":0,"active_handles":2,"uptime_seconds":65.065,"pool_total":1,"pool_idle":0,"pool_waiting":0,"pool_max":2},{"role":"APP","event_time":"2026-09-18 23:15:25","event_epoch_ms":"1789744525398","rss":92311552,"heapTotal":24166400,"heapUsed":21992200,"external":5747617,"arrayBuffers":1395076,"pool_total":1,"pool_waiting":0,"pending":248,"oldest_seconds":63},{"role":"WORKER","rss_bytes":143839232,"heap_used_bytes":41741200,"heap_total_bytes":87343104,"external_bytes":6374107,"cpu_percent":15.902,"event_loop_delay_p95_ms":34.603007,"active_resources":4,"active_timers":2,"active_sockets":2,"active_file_handles":0,"active_handles":2,"uptime_seconds":65.166,"pool_total":1,"pool_idle":1,"pool_waiting":0,"pool_max":2}]}
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 67827.8632

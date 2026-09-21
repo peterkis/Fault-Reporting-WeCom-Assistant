@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-09-19 09:47:24",
+  "event_epoch_ms": "1789782444646",
+  "candidate_fingerprint": "e22a34540c8124520e1043c9278078c597ad5638ab31c7de8f9b8c6eb2cc58b4",
+  "work_item": "YXX-SS-009",
+  "status": "IMPLEMENTATION_AND_AUTOMATION_COMPLETE",
+  "base_head": "375d47b013017edb858206cc5f3475c9aed77dfd",
+  "tested_head": "cb345012130ec741efaa7d7843f74fb56e845023",
+  "tested_tree": "a9cbcf7aa8f576a728850ba3f420e03ca78ac698",
+  "live_authorized": false,
+  "remote_review": "NOT_RUN",
+  "full_regression": {
+    "tests": 1179,
+    "pass": 1179,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "test_files": 191,
+    "candidate_unchanged": true
+  },
+  "run": {
+    "path": "evidence/yxx-ss-009-r3-full-run.json",
+    "encoding": "UTF8_LF",
+    "sha256": "e49b5f26797d43fdac3c6748ebf17e61df9c9fccd7ac7c6dc2f49d5105a2bf63"
+  },
+  "tap": {
+    "path": "evidence/yxx-ss-009-r3-full.tap",
+    "encoding": "UTF8_LF",
+    "sha256": "18852c3cdc7148511581336520ea33f1621a10a8a6c73ac9ff31dfd02f713fcf"
+  },
+  "case_trace": {
+    "path": "evidence/yxx-ss-009-r3-full-cases.jsonl",
+    "encoding": "UTF8_LF",
+    "sha256": "b9c3244315681504e5cdd768622ca57711d9a755674876635c4aa09933fbc362"
+  },
+  "fault": {
+    "path": "evidence/yxx-ss-009-r3-fault.json",
+    "encoding": "UTF8_LF",
+    "sha256": "e2f55ede4f3c264b0f0bb8932ac6013adc67ff765db954475592164946f4edc5"
+  },
+  "capacity": {
+    "path": "evidence/yxx-ss-009-r3-capacity.json",
+    "encoding": "UTF8_LF",
+    "sha256": "36b6bdc1ea77e792bcffecbcf7405df4d38132a6771f8071aad66f026ff0c800"
+  },
+  "catalog": {
+    "path": "evidence/yxx-ss-009-r3-catalog.json",
+    "encoding": "UTF8_LF",
+    "sha256": "e8d1cd7456266b6af4fa666639d7b6647c76bfbba3c08f282b3205a25af2dd66"
+  },
+  "browser": {
+    "path": "evidence/yxx-ss-009-r3-browser.json",
+    "encoding": "UTF8_LF",
+    "sha256": "5536fc093f09d7c5ff932d842dfbdcc15391aedb116a56c7f320d0e5de988838"
+  },
+  "source_audit": {
+    "path": "evidence/yxx-ss-009-r3-source-audit.json",
+    "encoding": "UTF8_LF",
+    "sha256": "a08ccc79dbde02652d1d830d322bbeb497668c2173ab2f2907904267ea3ce2df"
+  },
+  "cleanup": {
+    "path": "evidence/yxx-ss-009-r3-cleanup.json",
+    "encoding": "UTF8_LF",
+    "sha256": "4ee0f582ad4990025b479db7aa3ae41201bba489526611717259c40c0cce5ca4"
+  },
+  "validators": {
+    "path": "evidence/yxx-ss-009-r3-validators.json",
+    "encoding": "UTF8_LF",
+    "sha256": "06648830c4da39ad6c94d22c46db5ed4c80402aeb2b17e090ee4e852382e4be5"
+  },
+  "review": {
+    "path": "evidence/yxx-ss-009-r3-independent-review.json",
+    "encoding": "UTF8_LF",
+    "sha256": "84fa60fa6d0e03a0bd3a75900a4cc5cc8863ab225d7313ddf0e673e15fb08868"
+  },
+  "historical_coverage": {
+    "path": "evidence/yxx-ss-009-r3-historical-coverage.json",
+    "encoding": "UTF8_LF",
+    "sha256": "324eb8a045a767626dc8bc5156dabc1ab960b6b9d06feb10f947c23504e1d205"
+  },
+  "inventory": {
+    "path": "evidence/yxx-ss-009-r3-source-inventory.json",
+    "encoding": "UTF8_LF",
+    "sha256": "e65c80c7536a1f5e3de29ad3370575e01867d62d3f9948b2b2909f430e4dadb5"
+  },
+  "governance": {
+    "path": "evidence/yxx-ss-009-r3-governance.json",
+    "encoding": "UTF8_LF",
+    "sha256": "16c78c31c7b436229f9b769d2e0766cf858750ac6208816ad82c0bd51d64586e"
+  },
+  "time_audit": {
+    "path": "evidence/yxx-ss-009-r3-time-audit.json",
+    "encoding": "UTF8_LF",
+    "sha256": "fecddc34f1f317e3c263fe5110c15e560e9bedb01f36e3e01d936ccd2d04d6fb"
+  },
+  "matrix": {
+    "path": "evidence/yxx-ss-009-r3-acceptance.json",
+    "encoding": "UTF8_LF",
+    "sha256": "454f40bed2bca95cf5c62c585fe0f6d7768f84862da7aeaac2677cdd9d58b925"
+  },
+  "limitations": [
+    "Formal natural GC / 2C4G / 60 minutes NOT_RUN",
+    "SS010 PLANNED; SS011 NOT_AUTHORIZED",
+    "Parent G2 historical readiness unchanged; P2-G2-LIVE and AI not started"
+  ],
+  "strict_negative": {
+    "path": "evidence/yxx-ss-009-r3-strict-negative.json",
+    "encoding": "UTF8_LF",
+    "sha256": "225694f2e6552f89c82175c275fe629d0d6555d2b0b0cc88eae45d29a7b67ae1"
+  },
+  "local_verification": "PASS"
+}

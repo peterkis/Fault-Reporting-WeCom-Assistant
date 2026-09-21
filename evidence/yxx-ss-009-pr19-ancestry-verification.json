@@ -1,0 +1,66 @@
+{
+  "event_time": "2026-09-19 07:36:07",
+  "event_epoch_ms": "1789774567596",
+  "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+  "review_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/19#discussion_r4051414191",
+  "reviewed_head": "01f1f1d0a62e54f2f296ed46cbf87d3686daa3d8",
+  "tested_head": "e00455ff7982ffe40ddf91a0e764a72071dc88b3",
+  "disposition": "NOT_REPRODUCED_PUBLISHED_HISTORY_CONTRADICTS_FINDING",
+  "transport": "HTTPS",
+  "verification": "Independent full clone from GitHub; no local object sharing or history replacement",
+  "shallow": false,
+  "published_head_check": {
+    "event_time": "2026-09-19 07:35:45",
+    "event_epoch_ms": "1789774545621",
+    "head": "01f1f1d0a62e54f2f296ed46cbf87d3686daa3d8",
+    "tree": "7f534f0ef26ade17932fb26a873ef6076aae436f",
+    "parents": [
+      "e00455ff7982ffe40ddf91a0e764a72071dc88b3"
+    ],
+    "merge_base": "e00455ff7982ffe40ddf91a0e764a72071dc88b3",
+    "command": "node scripts/validate-yxx-self-service.mjs --require-ready",
+    "exit_code": 0,
+    "result": {
+      "ok": true,
+      "status": "SS009_LOCAL_VERIFICATION_COMPLETE",
+      "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+      "live_authorized": false,
+      "parent_gate_advanced": false
+    }
+  },
+  "github_generated_merge_preview_check": {
+    "event_time": "2026-09-19 07:36:04",
+    "event_epoch_ms": "1789774564211",
+    "head": "c76008a279390d408bea36732136e1be4d06ea6c",
+    "tree": "7f534f0ef26ade17932fb26a873ef6076aae436f",
+    "parents": [
+      "375d47b013017edb858206cc5f3475c9aed77dfd",
+      "01f1f1d0a62e54f2f296ed46cbf87d3686daa3d8"
+    ],
+    "merge_base": "e00455ff7982ffe40ddf91a0e764a72071dc88b3",
+    "command": "node scripts/validate-yxx-self-service.mjs --require-ready",
+    "exit_code": 0,
+    "result": {
+      "ok": true,
+      "status": "SS009_LOCAL_VERIFICATION_COMPLETE",
+      "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+      "live_authorized": false,
+      "parent_gate_advanced": false
+    }
+  },
+  "actual_pr_merge_performed": false,
+  "runtime_changed": false,
+  "validator_relaxed": false,
+  "full_regression_rerun": false,
+  "full_regression_rerun_reason": "Evidence-only clarification; candidate inventory unchanged",
+  "conclusion": "The tested commit is the direct parent of the published PR head and an ancestor of the GitHub-generated merge preview. Strict verification succeeds in both independent checkouts. The remote review environment history is unknown; no cause is asserted for its contrary merge-base result.",
+  "cleanup": {
+    "event_time": "2026-09-19 07:36:37",
+    "event_epoch_ms": "1789774597549",
+    "status": "RETAINED_POLICY_BLOCKED",
+    "owned_clone_removed": false,
+    "retained_path": "tmp/ss009-pr19-history-verification",
+    "reason": "Automatic approval review rejected the Remove-Item operation: blocked by policy. No alternate deletion attempted.",
+    "preexisting_resources_touched": false
+  }
+}

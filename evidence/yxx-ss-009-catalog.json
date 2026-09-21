@@ -1,0 +1,24 @@
+{
+  "event_time": "2026-09-19 01:44:23",
+  "event_epoch_ms": "1789753463731",
+  "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+  "status": "PASS",
+  "records": [
+    {
+      "event_time": "2026-09-19 01:41:32",
+      "event_epoch_ms": "1789753292027",
+      "kind": "catalog",
+      "status": "PASS",
+      "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+      "drift_classes": [
+        "COLUMN",
+        "CHECK",
+        "FK",
+        "UNIQUE",
+        "INDEX"
+      ],
+      "check_rollback": true,
+      "forbidden_timezone_columns": 0
+    }
+  ]
+}

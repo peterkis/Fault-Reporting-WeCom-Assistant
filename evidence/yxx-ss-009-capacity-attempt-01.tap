@@ -1,0 +1,52 @@
+✖ SS-009 MEMBER_SELF_SERVICE actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers (13786.0048ms)
+✖ SS-009 FULL_SERVICE_LOOP actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers (72743.9874ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 86825.3712
+
+✖ failing tests:
+
+test at tests\yxx-ss-009-capacity.integration.test.mjs:22:66
+✖ SS-009 MEMBER_SELF_SERVICE actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers (13786.0048ms)
+  AssertionError [ERR_ASSERTION]: [{"display_status":"COMPLETED","count":100},{"display_status":"TICKET","count":250},{"display_status":"WAITING_DESCRIPTION","count":150}]
+  
+  250 !== 200
+  
+      at run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-capacity.integration.test.mjs:55:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+      at async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-capacity.integration.test.mjs:24:3)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 250,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\yxx-ss-009-capacity.integration.test.mjs:22:66
+✖ SS-009 FULL_SERVICE_LOOP actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers (72743.9874ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  null !== 0
+  
+      at run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-capacity.integration.test.mjs:75:195)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+      at async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/yxx-ss-009-capacity.integration.test.mjs:24:3)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

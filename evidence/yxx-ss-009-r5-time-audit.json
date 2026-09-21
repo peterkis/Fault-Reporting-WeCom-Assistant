@@ -1,0 +1,67 @@
+{
+  "event_time": "2026-09-20 12:02:30",
+  "event_epoch_ms": "1789876950840",
+  "candidate_fingerprint": "91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd",
+  "sources": [
+    {
+      "path": "evidence/yxx-ss-009-r5-full-run.json",
+      "encoding": "UTF8_LF",
+      "sha256": "a9d0d29997e6bdaacd804422e180d3e8aff3f40343877a63bf98c626a016d041"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-fault.json",
+      "encoding": "UTF8_LF",
+      "sha256": "770286f7cca960a0b25f5e687798c59b7741234890b05931b118bcc8ce86328c"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-capacity.json",
+      "encoding": "UTF8_LF",
+      "sha256": "014eeb70a0170cb1595c81a57c463f3c2457d922b18834ffb915bbcd8e0c0773"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-catalog.json",
+      "encoding": "UTF8_LF",
+      "sha256": "07a09fe89c0acd08c4609e24a5bdae1a6b042c70a7c068e705749f4cd60492e7"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-browser.json",
+      "encoding": "UTF8_LF",
+      "sha256": "21693659174de145056f6d777681f9a3e34af4e3a26d44fa99b232b191270bbc"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-source-audit.json",
+      "encoding": "UTF8_LF",
+      "sha256": "412adbc9fe5dda2f3e5c8b9c6dcc22447e5cd8abd7d6f78442c0b90d5db61b3e"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-cleanup.json",
+      "encoding": "UTF8_LF",
+      "sha256": "f0aed0a35db5a4e91c4f45f1c771d962647f3320bfe88479c8423795754ede55"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-validators.json",
+      "encoding": "UTF8_LF",
+      "sha256": "edba3513895efb3fb3b680df8213bac1f0fc1956bb162ad5a416e37e61b2a53e"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-independent-review.json",
+      "encoding": "UTF8_LF",
+      "sha256": "249f195fa33de932bf24e89c0f2c42f734cf47177e6e1e4a4385e0dd2078686b"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-historical-coverage.json",
+      "encoding": "UTF8_LF",
+      "sha256": "aacdb0599ed6d0a291b03937b0e67bc3675a8752721be35b8b28877169c03a8c"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-source-inventory.json",
+      "encoding": "UTF8_LF",
+      "sha256": "f63c3d746a44de9daa7be66f8aa2a5fd5dfeb87105723a590787f918d9d5f7b3"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r5-governance.json",
+      "encoding": "UTF8_LF",
+      "sha256": "b582bdcba7a97f12c259e96bb6a708c4e3a62be10cec9167088d4b62fe6ef9ce"
+    }
+  ]
+}

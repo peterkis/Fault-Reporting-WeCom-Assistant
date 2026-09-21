@@ -1,0 +1,46 @@
+{
+  "event_time": "2026-09-19 00:34:46",
+  "event_epoch_ms": "1789749286910",
+  "candidate_fingerprint": "27b040905f45b7b95af63a51af1a882525d1faffec56cb97b4a633000a0df3c4",
+  "status": "FIXED_PENDING_FULL_REGRESSION_AND_REVIEW",
+  "failed_run": "evidence/yxx-ss-009-full-first-failed-run.json",
+  "counts": {
+    "tests": 1174,
+    "pass": 1172,
+    "fail": 2,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "issues": [
+    {
+      "test": "system browser mobile workbench flow is responsive, refresh-safe and XSS-safe",
+      "symptom": "Wait for two timeline items timed out",
+      "cause": "Fixture manufactured new item IDs on every read; a real SSE refresh appended duplicates, deterministically4 instead of2",
+      "red": "evidence/yxx-ss-009-browser-race-red.tap",
+      "fix": "Persist fixture item IDs; add controlled actual SSE refresh test; UI and timeout unchanged"
+    },
+    {
+      "test": "D12-045 actual independent reports use trusted primary memberships without inventing locations",
+      "symptom": "Two candidates instead of one",
+      "cause": "Background correlation ran during collection and observed a smaller prefix cohort",
+      "red": "evidence/yxx-ss-009-candidate-race-red.tap",
+      "fix": "Hold the existing correlation advisory lock only during fixture cohort collection; release before original manual and background correlation; retain8 reports and120000ms semantics; add500ms interleaving to exercise barrier"
+    },
+    {
+      "test": "SS-009 every structured test event has paired reporter observation time",
+      "cause": "New JSONL projection omitted paired per-record platform observation time",
+      "red": "evidence/yxx-ss-009-trace-time-red.tap",
+      "fix": "Single g2EvidenceTime sample per event; assert each pair in strict validator; never retroactively stamp failed trace"
+    }
+  ],
+  "green": "evidence/yxx-ss-009-regression-fixes-green.tap",
+  "repeat_runs": [
+    "evidence/yxx-ss-009-regression-repeat-1.tap",
+    "evidence/yxx-ss-009-regression-repeat-2.tap"
+  ],
+  "production_runtime_changed": false,
+  "test_timeouts_increased": false,
+  "assertions_removed": false,
+  "load_reduced": false
+}

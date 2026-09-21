@@ -1,0 +1,1 @@
+{"ok":true,"status":"SS009_LOCAL_VERIFICATION_COMPLETE","candidate_fingerprint":"91a6b21bacf35dd937e005e8b469bb10598b472cb2c3a9c9583941f10ad671dd","live_authorized":false,"parent_gate_advanced":false}

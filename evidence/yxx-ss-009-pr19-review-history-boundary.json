@@ -1,0 +1,70 @@
+{
+  "event_time": "2026-09-19 07:46:31",
+  "event_epoch_ms": "1789775191297",
+  "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+  "review_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/19#discussion_r4051464693",
+  "review_metadata_commit": "0b96b4e984c1f9f485cf05a6da138b9e9dc6a05f",
+  "commit_named_in_comment": "6261c9128fbf9223f6ed8aabee4b34444853fad1",
+  "comment_object_lookup": {
+    "github_http_status": 404,
+    "available_in_local_repository": false
+  },
+  "github_compare": {
+    "ahead_by": 2,
+    "behind_by": 0,
+    "merge_base": "e00455ff7982ffe40ddf91a0e764a72071dc88b3",
+    "status": "ahead"
+  },
+  "checks": [
+    {
+      "event_time": "2026-09-19 07:46:20",
+      "event_epoch_ms": "1789775180723",
+      "head": "0b96b4e984c1f9f485cf05a6da138b9e9dc6a05f",
+      "parents": [
+        "01f1f1d0a62e54f2f296ed46cbf87d3686daa3d8"
+      ],
+      "merge_base": "e00455ff7982ffe40ddf91a0e764a72071dc88b3",
+      "exit_code": 0,
+      "result": {
+        "ok": true,
+        "status": "SS009_LOCAL_VERIFICATION_COMPLETE",
+        "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+        "live_authorized": false,
+        "parent_gate_advanced": false
+      }
+    },
+    {
+      "event_time": "2026-09-19 07:46:27",
+      "event_epoch_ms": "1789775187654",
+      "head": "cee7292e1106cab711b3eb1bfbb25acfe4dbb400",
+      "parents": [
+        "375d47b013017edb858206cc5f3475c9aed77dfd",
+        "0b96b4e984c1f9f485cf05a6da138b9e9dc6a05f"
+      ],
+      "merge_base": "e00455ff7982ffe40ddf91a0e764a72071dc88b3",
+      "exit_code": 0,
+      "result": {
+        "ok": true,
+        "status": "SS009_LOCAL_VERIFICATION_COMPLETE",
+        "candidate_fingerprint": "2349482261c74f7ebcc532683b945ca9469b2428464d3da8af73d60d56c836fb",
+        "live_authorized": false,
+        "parent_gate_advanced": false
+      }
+    }
+  ],
+  "disposition": "PUBLISHED_HEAD_VALID_COMMENT_NAMES_DIFFERENT_UNAVAILABLE_OBJECT",
+  "documentation_fix": "Document full-history checkout and ancestry-preserving merge requirement; rewritten snapshots remain correctly rejected.",
+  "validator_changed": false,
+  "business_code_changed": false,
+  "actual_pr_merge_performed": false,
+  "full_regression_rerun": false,
+  "reason": "Only runbook and supplemental evidence changed; tested candidate fingerprint remains unchanged.",
+  "cleanup": {
+    "event_time": "2026-09-19 07:46:31",
+    "event_epoch_ms": "1789775191704",
+    "status": "RETAINED_POLICY_BLOCKED",
+    "retained_path": "tmp/ss009-pr19-history-verification",
+    "reason": "Reuse the retained clone; prior automatic approval rejected removal. No new deletion attempted.",
+    "preexisting_resources_touched": false
+  }
+}

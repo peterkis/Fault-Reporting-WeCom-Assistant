@@ -1,0 +1,1509 @@
+{
+  "event_time": "2026-09-20 17:10:28",
+  "event_epoch_ms": "1789895428445",
+  "candidate_fingerprint": "0c5178a938f9461eea1060ed7483965d4b99b48b0bf554f167be4f0d3c56d753",
+  "bindings": [
+    {
+      "kind": "member",
+      "count": 48,
+      "source": "evidence/p2-g2-yxx-entry-creation-v2-scenario-matrix.json",
+      "source_sha256": "aa12b9b0f774795d69c463ad1d974f178e8817a7df5ff3be4b0b11d49e31f4f2",
+      "scenarios": [
+        {
+          "id": "YXX-01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+              "name": "YXX-01 member Sender validates persisted delivery binding without reading a Grant before its mock SDK call",
+              "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+              "name": "YXX-01 both member card click regions use one canonical ref without a grant or identity",
+              "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+            }
+          ]
+        },
+        {
+          "id": "YXX-02",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-03",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-03 member detail equals the complete legacy safe projection field for field",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-04",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-05",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+              "name": "YXX-05 OAuth rejects non-member, interconnected identity and accessor responses without invoking getters",
+              "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+            }
+          ]
+        },
+        {
+          "id": "YXX-06",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+              "name": "YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint",
+              "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-06 YXX-08 different Bot and malformed or unknown refs cannot broaden ownership",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-07",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+              "name": "YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback",
+              "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+              "name": "YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint",
+              "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-07 live namespace unknown stays denied after successful synthetic member authentication",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-08",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-06 YXX-08 different Bot and malformed or unknown refs cannot broaden ownership",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-09",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-09 YXX-37 revoked ref denies a formerly matching ETag before 304",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-10",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-10 Intake retention expiry removes eligibility using the actual persisted deadline",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-11",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-11 closed retained Ticket stays readable and member query does not reopen it",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-12",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-13",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+              "name": "YXX-13 explicit fresh login refreshes browser binding without extending authentication or polling lifetime",
+              "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+            }
+          ]
+        },
+        {
+          "id": "YXX-14",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-15",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+              "name": "YXX-15 YXX-43 same-browser OAuth intents retain independent ticket destinations and bounded capacity",
+              "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+            }
+          ]
+        },
+        {
+          "id": "YXX-16",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+              "name": "YXX-16 YXX-17 YXX-18 YXX-43 opaque intents reject replay, foreign browser, arbitrary return paths and release expired slots",
+              "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+            }
+          ]
+        },
+        {
+          "id": "YXX-17",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-17 YXX-18 callback pollution and arbitrary return query do not consume the valid intent",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+              "name": "YXX-16 YXX-17 YXX-18 YXX-43 opaque intents reject replay, foreign browser, arbitrary return paths and release expired slots",
+              "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+            }
+          ]
+        },
+        {
+          "id": "YXX-18",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-17 YXX-18 callback pollution and arbitrary return query do not consume the valid intent",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+              "name": "YXX-16 YXX-17 YXX-18 YXX-43 opaque intents reject replay, foreign browser, arbitrary return paths and release expired slots",
+              "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+            }
+          ]
+        },
+        {
+          "id": "YXX-19",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            }
+          ]
+        },
+        {
+          "id": "YXX-20",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+              "name": "YXX-20 non-cooperative injected provider times out and remains fenced with no queued calls",
+              "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+            }
+          ]
+        },
+        {
+          "id": "YXX-21",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-wecom-app-token-failure.test.mjs",
+              "name": "提前失效的应用令牌被清除，30秒刷新保护后新登录获取新令牌，不重试 code",
+              "sha256": "ef03353435e8f095e569c4eae5fd2f79f5ca8c75d29c3044aba045860228ec9a"
+            },
+            {
+              "file": "tests/p2-g2-wecom-app-token-failure.test.mjs",
+              "name": "无效 code 只使本次登录失败，不能撤销其他成员共用的健康应用令牌",
+              "sha256": "ef03353435e8f095e569c4eae5fd2f79f5ca8c75d29c3044aba045860228ec9a"
+            }
+          ]
+        },
+        {
+          "id": "YXX-22",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-22 YXX-37 OAuth logout during real authorized SQL read prevents any late detail or 304 response",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+              "name": "YXX-22 browser logout invalidates pending and in-flight callbacks without minting late sessions",
+              "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+            }
+          ]
+        },
+        {
+          "id": "YXX-23",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-24",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            }
+          ]
+        },
+        {
+          "id": "YXX-25",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-25 YXX-29 anonymous old entry scanning prepares only context and requires real OAuth flow",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-26",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-26 wrong member possession cannot consume or lock the original grant",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-27",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-27 consumed and expired signed grants locate only under fresh member ownership",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-28",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-28 revoked, forged and rotated-key grants reject without using a parsed UUID as proof",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-29",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-25 YXX-29 anonymous old entry scanning prepares only context and requires real OAuth flow",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-30",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-30 YXX-31 YXX-32 old Reporter Cookie, anonymous exchange and bootstrap confer no member permission",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-31",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-30 YXX-31 YXX-32 old Reporter Cookie, anonymous exchange and bootstrap confer no member permission",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-32",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-30 YXX-31 YXX-32 old Reporter Cookie, anonymous exchange and bootstrap confer no member permission",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-32 both logout aliases revoke member sessions and stop old-cookie fallback",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-33",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+              "name": "YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback",
+              "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+              "name": "YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint",
+              "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs",
+              "name": "YXX-33 YXX-45 FULL_SERVICE_LOOP composes the same member policy and keeps member Cookie outside staff authority",
+              "sha256": "2c6afe044fc78032ba1a2836dede822f794d23dfb3df5fcd43e4b187dc519d89"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-readiness.test.mjs",
+              "name": "YXX-33 complete G2 live configuration requires member policy and binds the server identity proof configuration",
+              "sha256": "9193374aed96ec5499961eae9301797c4168440cc59d76605324aea423ffaf64"
+            }
+          ]
+        },
+        {
+          "id": "YXX-34",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-34 exact Origin, Host, CORS and POST boundaries reject contamination",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-35",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+              "name": "YXX-35 closed member schemas expose authentication mode without raw identity or nullable Ticket guessing",
+              "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-contract.test.mjs",
+              "name": "YXX-35 configuration refuses Proxy, accessors, toJSON, cycles and loose identity coercions",
+              "sha256": "cdd0edf2c36a85fd0e2447de89df78fdad37d754f1a996590998e9b88f9550f3"
+            }
+          ]
+        },
+        {
+          "id": "YXX-36",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            }
+          ]
+        },
+        {
+          "id": "YXX-37",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-09 YXX-37 revoked ref denies a formerly matching ETag before 304",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-22 YXX-37 OAuth logout during real authorized SQL read prevents any late detail or 304 response",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-38",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-incident.integration.test.mjs",
+              "name": "YXX-38 member-safe Incident milestones disappear on unlink without changing the other reporter facts",
+              "sha256": "cab8eaf04b5b1412be459fa4c946cb0afb67d66554cc34be69e5a02568f03882"
+            }
+          ]
+        },
+        {
+          "id": "YXX-39",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-39 same-second pagination uses ordinals and rejects a cursor from another ref",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-40",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            }
+          ]
+        },
+        {
+          "id": "YXX-41",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-browser.test.mjs",
+              "name": "YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844",
+              "sha256": "01cf2d07d13daad9f7592f9498b98b3b59f7f6c0c73446c7310756889f6d666d"
+            }
+          ]
+        },
+        {
+          "id": "YXX-42",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs",
+              "name": "YXX-42 100 authenticated sessions and 32 simultaneous PostgreSQL HTTP reads stay bounded and preserve catalog",
+              "sha256": "2c6afe044fc78032ba1a2836dede822f794d23dfb3df5fcd43e4b187dc519d89"
+            }
+          ]
+        },
+        {
+          "id": "YXX-43",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+              "name": "YXX-15 YXX-43 same-browser OAuth intents retain independent ticket destinations and bounded capacity",
+              "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+              "name": "YXX-16 YXX-17 YXX-18 YXX-43 opaque intents reject replay, foreign browser, arbitrary return paths and release expired slots",
+              "sha256": "c81e89a5fa857ab454675a419f78a0a07bb59b1c3085bf96766a8cfb90eebe52"
+            }
+          ]
+        },
+        {
+          "id": "YXX-44",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs",
+              "name": "YXX-44 actual App process stop and restart loses ephemeral authentication then restores the canonical ref",
+              "sha256": "2c6afe044fc78032ba1a2836dede822f794d23dfb3df5fcd43e4b187dc519d89"
+            }
+          ]
+        },
+        {
+          "id": "YXX-45",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs",
+              "name": "YXX-45 OAUTH_ONLY is zero DB and MEMBER_TICKET_READONLY exposes no business write or staff API",
+              "sha256": "2c6afe044fc78032ba1a2836dede822f794d23dfb3df5fcd43e4b187dc519d89"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs",
+              "name": "YXX-33 YXX-45 FULL_SERVICE_LOOP composes the same member policy and keeps member Cookie outside staff authority",
+              "sha256": "2c6afe044fc78032ba1a2836dede822f794d23dfb3df5fcd43e4b187dc519d89"
+            }
+          ]
+        },
+        {
+          "id": "YXX-46",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-47",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            },
+            {
+              "file": "tests/p2-g2-yixiaoxiu-member.integration.test.mjs",
+              "name": "YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification",
+              "sha256": "d740f3bdae5034b222a373e69b23123eb4c1daf146e057faf13256e5a0b879b1"
+            }
+          ]
+        },
+        {
+          "id": "YXX-48",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+              "name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+              "sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9"
+            },
+            {
+              "file": "tests/p2-g2-service-route-readiness.integration.test.mjs",
+              "name": "P2-G2 ten-route prerequisite: committed decisions have an executable next step",
+              "sha256": "ff84ffa566b71707d91895aec799e1632edfc5ab14fae1eac33582102f90d52b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "g2",
+      "count": 37,
+      "source": "evidence/p2-g2-yxx-entry-creation-v2-g2-scenario-matrix.json",
+      "source_sha256": "9870b254ead08574ccfdbb26cf09fa1016515e2ea7542e3019649ad3c7baae99",
+      "scenarios": [
+        {
+          "id": "G2-E01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-multichannel-source.integration.test.mjs",
+              "name": "independent multichannel source: P2-007-X001",
+              "sha256": "f9672f3fd80035980381ee9bd485616c11cbd32af01d097ffa684db2dc73921c"
+            },
+            {
+              "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+              "name": "P2-G2 group clarification does not create private artifacts before a real Direct Leg",
+              "sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5"
+            }
+          ]
+        },
+        {
+          "id": "G2-E02",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+              "name": "P2-G2 group clarification does not create private artifacts before a real Direct Leg",
+              "sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5"
+            },
+            {
+              "file": "tests/p2-g2-three-entry-profile.integration.test.mjs",
+              "name": "G2 business profile one completes group clarification, admission and human conversation without any Direct Leg",
+              "sha256": "3a3927f16c0c5cfca843decc228dcd7a0e89df773647616e2ad5c69de83db0f2"
+            }
+          ]
+        },
+        {
+          "id": "G2-E03",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-explicit-continuation.integration.test.mjs",
+              "name": "G2 explicit reference comes from actual group Outbox and binds a fresh Direct Leg without a second Ticket",
+              "sha256": "40478fd2b3335419f76e7f3015d3099fa2490e9b0272a0d6f2aacde40b0aa53e"
+            },
+            {
+              "file": "tests/p2-016-guided-journey.integration.test.mjs",
+              "name": "P2-016 real-format group wakeup and direct description remain one Journey through public queries",
+              "sha256": "d01030593570d48d6d69eef1ea93be99693971c89bad2258ef2c5623f8c86d4b"
+            }
+          ]
+        },
+        {
+          "id": "G2-E04",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+              "name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+              "sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9"
+            },
+            {
+              "file": "tests/p2-g2-multichannel-source.integration.test.mjs",
+              "name": "independent multichannel source: P2-007-X004",
+              "sha256": "f9672f3fd80035980381ee9bd485616c11cbd32af01d097ffa684db2dc73921c"
+            }
+          ]
+        },
+        {
+          "id": "G2-E05",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-direct-session-boundary.integration.test.mjs",
+              "name": "P2-G2 D12-030 active Direct session survives the P1 90-second fragment window",
+              "sha256": "f49cc529fdc9b7058112887f8939a88fb706ec3e9a4e146906f3719423bac1ec"
+            },
+            {
+              "file": "tests/p2-g2-three-entry-profile.integration.test.mjs",
+              "name": "group active session continues after 120 seconds but respects Reporter, explicit new fault and idle boundaries",
+              "sha256": "3a3927f16c0c5cfca843decc228dcd7a0e89df773647616e2ad5c69de83db0f2"
+            },
+            {
+              "file": "tests/p2-g2-multi-turn-gold.integration.test.mjs",
+              "name": "original same-Reporter fragments use normal media/text Frames and one persistent Direct Session",
+              "sha256": "d9ad681347c3823e390835aefb20d04841ecc933b018d8560bdfe157f664c469"
+            },
+            {
+              "file": "tests/p2-g2-direct-session-boundary.integration.test.mjs",
+              "name": "explicit new-fault Direct report does not consume an unrelated pending group guidance Journey",
+              "sha256": "f49cc529fdc9b7058112887f8939a88fb706ec3e9a4e146906f3719423bac1ec"
+            }
+          ]
+        },
+        {
+          "id": "G2-E06",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-single-text-gold.integration.test.mjs",
+              "name": "P2-G2 original single-Reporter texts reach their independently adjudicated safe route via real Inbox and Worker",
+              "sha256": "3440f77c4602c281ae1197be213e6674aa47447e45e598bdd7208c4a1039b96b"
+            },
+            {
+              "file": "tests/p2-g2-recognition-boundaries.test.mjs",
+              "name": "P2-G2 thanks with a current fault remains an accepted fault; recovery does not close or create a Ticket",
+              "sha256": "2e4dee681c07afc1913f6b47e6e895d29914d8f5f90d75f8371b5090fd50e580"
+            },
+            {
+              "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+              "name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+              "sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b"
+            }
+          ]
+        },
+        {
+          "id": "G2-E07",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-critical-intake.integration.test.mjs",
+              "name": "X035 explicit critical endpoint fault accepted from UNKNOWN Intake reaches a real human queue without a public Incident",
+              "sha256": "f2ec0dc825acc7f6bbee1905c0790e2611f27291a6bc226d9840b31f494dcda7"
+            },
+            {
+              "file": "tests/p2-g2-association-boundary.integration.test.mjs",
+              "name": "G2-E07/J01 independent inactive/association evidence survives RULE_EXCEPTION",
+              "sha256": "9d9aa31182ec29322a3251d39de320f9cbf5d4d3238172968d74432513e34d49"
+            },
+            {
+              "file": "tests/p2-g2-association-boundary.integration.test.mjs",
+              "name": "G2-J01 review enqueue database fault rolls back current Ticket/Decision/actions while preserving Inbox",
+              "sha256": "9d9aa31182ec29322a3251d39de320f9cbf5d4d3238172968d74432513e34d49"
+            },
+            {
+              "file": "tests/p2-g2-review-real-browser.integration.test.mjs",
+              "name": "G2-E07 the actual high-risk inbound Review is visible and resolved in the browser while its original Decision and Ticket survive",
+              "sha256": "48e4b404d8f42b0698ba282e1ebec32217232037d5c02e4787107cd71fa31732"
+            }
+          ]
+        },
+        {
+          "id": "G2-E08",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g1-human-only-assembly.integration.test.mjs",
+              "name": "P2-G1 P1 commit, durable projection recovery, duplicate idempotency, participant isolation and catalog invariance",
+              "sha256": "6047e455751e79d49b29377b08180e32d35867484039c0ddb967d8ad1e0eca55"
+            },
+            {
+              "file": "tests/p2-015-worker-restart.integration.test.mjs",
+              "name": "crash before commit leaves no partial facts; crash after commit restarts as replay",
+              "sha256": "33bd435af30415b35e7fd215c95f99d142cbca40ade3df2e7a2cc8c7c1594223"
+            },
+            {
+              "file": "tests/p1-004-service-intake.test.mjs",
+              "name": "reversed lock acquisition still aggregates bounded timestamp inversion and preserves valid update time",
+              "sha256": "e9350b8fd677fc38e4ea8263bf7c7de822c1b2617c2faed00511d0236af5ab18"
+            },
+            {
+              "file": "tests/p1-004-service-intake.test.mjs",
+              "name": "Channel Message replay returns the original Intake result without duplicate relations or events",
+              "sha256": "e9350b8fd677fc38e4ea8263bf7c7de822c1b2617c2faed00511d0236af5ab18"
+            },
+            {
+              "file": "tests/p2-g2-same-second-ingress.integration.test.mjs",
+              "name": "G2-E08 twelve reverse-ordered normal Frames in one local second preserve durable arrival sequence and one Ticket after duplicate replay",
+              "sha256": "a1c2edf6b14c6577ccb530104db45ddaef01302fc0b3b6dc0d92379dd478bf2e"
+            },
+            {
+              "file": "tests/p2-g2-late-conversation-binding.integration.test.mjs",
+              "name": "late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket",
+              "sha256": "cf68b236e4da79a089fe54c0f2bb2f053e6f7895870a28e6e322ba16a56bec2e"
+            },
+            {
+              "file": "tests/p2-g2-conversation-binding-boundaries.integration.test.mjs",
+              "name": "bounded binding scan advances beyond twenty invalid HMAC rows and twelve concurrent cycles never rewrite accepted facts",
+              "sha256": "d92907f5c020c3bc85fad393f9ce0977b4249a1e5f40dec8adc407bff7ea39b1"
+            }
+          ]
+        },
+        {
+          "id": "G2-J01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-association-boundary.integration.test.mjs",
+              "name": "G2-J01 continuation wrong Bot/Reporter, expired, revoked and reused token reject against real normal-ingress prerequisites",
+              "sha256": "9d9aa31182ec29322a3251d39de320f9cbf5d4d3238172968d74432513e34d49"
+            },
+            {
+              "file": "tests/p2-g2-association-boundary.integration.test.mjs",
+              "name": "G2-J01 ambiguous association preserves current report admission: 处方提交不了",
+              "sha256": "9d9aa31182ec29322a3251d39de320f9cbf5d4d3238172968d74432513e34d49"
+            },
+            {
+              "file": "tests/p2-g2-direct-session-boundary.integration.test.mjs",
+              "name": "explicit new-fault Direct report does not consume an unrelated pending group guidance Journey",
+              "sha256": "f49cc529fdc9b7058112887f8939a88fb706ec3e9a4e146906f3719423bac1ec"
+            }
+          ]
+        },
+        {
+          "id": "G2-J02",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-directory-source.integration.test.mjs",
+              "name": "D12-020 actually unresolved directory does not prevent persisted Intake and minimal Ticket",
+              "sha256": "a2f1c52e4043fbe3c3103f7d7ae92d7bac40175a601756a33d6151c9e9c43310"
+            },
+            {
+              "file": "tests/p2-g2-directory-source.integration.test.mjs",
+              "name": "D12-019/021/022/026 directory snapshot and occurrence evidence remain independent and HTTP excludes internal profile",
+              "sha256": "a2f1c52e4043fbe3c3103f7d7ae92d7bac40175a601756a33d6151c9e9c43310"
+            },
+            {
+              "file": "tests/p2-g2-member-contact.integration.test.mjs",
+              "name": "unavailable profile leaves admitted fault accessible with explicit missing contact",
+              "sha256": "835d8bf12f4359ec75be63fe69378a8319f01fc140615fb239da3946d481a4bf"
+            },
+            {
+              "file": "tests/p2-g2-member-contact.integration.test.mjs",
+              "name": "group fault exposes trusted contact only through authorized internal ticket endpoint",
+              "sha256": "835d8bf12f4359ec75be63fe69378a8319f01fc140615fb239da3946d481a4bf"
+            }
+          ]
+        },
+        {
+          "id": "G2-T01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+              "name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+              "sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b"
+            },
+            {
+              "file": "tests/p2-016-ticket-lifecycle.integration.test.mjs",
+              "name": "P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility",
+              "sha256": "5da8f34c9acb8efcad4deb3a150e03c44a9e4a63ab7a91189d71ede68d4caffe"
+            }
+          ]
+        },
+        {
+          "id": "G2-T02",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+              "name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+              "sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b"
+            },
+            {
+              "file": "tests/p2-016-ticket-browser.integration.test.mjs",
+              "name": "Real DB internal browser traverses every user lifecycle action, transfer and atomic takeover/accept",
+              "sha256": "79416cd5fc18de6b011dea22b6395f106726fe005658f4cc416700adfdf582e9"
+            },
+            {
+              "file": "tests/p2-016-orchestration.integration.test.mjs",
+              "name": "P2-016 existing rule worker creates Ticket notifications, safe group/direct guidance and SYSTEM-only timeout closure",
+              "sha256": "a3ceb8575b89e714292294c7e173437e800aaefe01582c1d55dfaa1ccc0c6b9c"
+            },
+            {
+              "file": "tests/p1-010-ticket-closure.test.mjs",
+              "name": "supplement, card confirmation, duplicate card protection, close, and reopen preserve a real Ticket lifecycle",
+              "sha256": "10528daf48b5c9b3919b53e6790dfe63f44e7003c3f6671a48201e656d31d44d"
+            }
+          ]
+        },
+        {
+          "id": "G2-T03",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-responsibility-browser.integration.test.mjs",
+              "name": "G2-T03 two isolated agent browsers transfer Ticket responsibility while Conversation owner remains independent",
+              "sha256": "1499a376bd4bc25859940381a54783df7f731e01e6f2e2376dc6611da6aa1ef9"
+            },
+            {
+              "file": "tests/p2-016-ticket-lifecycle.integration.test.mjs",
+              "name": "P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility",
+              "sha256": "5da8f34c9acb8efcad4deb3a150e03c44a9e4a63ab7a91189d71ede68d4caffe"
+            }
+          ]
+        },
+        {
+          "id": "G2-T04",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-016-ticket-lifecycle.integration.test.mjs",
+              "name": "P2-016 Ticket lifecycle, command persistence, authorization and independent responsibility",
+              "sha256": "5da8f34c9acb8efcad4deb3a150e03c44a9e4a63ab7a91189d71ede68d4caffe"
+            },
+            {
+              "file": "tests/p2-016-workbench-browser.test.mjs",
+              "name": "confirmation survives realtime refetch and rejects a stale version instead of overwriting the form",
+              "sha256": "7bdc201862f876a51d747ce953da2d648276371290cb102a6b80cb704e6af10e"
+            },
+            {
+              "file": "tests/p2-g2-command-outcome-browser.test.mjs",
+              "name": "P2-G2 generic proxy 503 after commit keeps the command id for reconciliation; stable failure and conflict stay distinct",
+              "sha256": "af3b1eb165a0b2f14de88d06a990c7af9f4593763e3da4c4784b7fd606161fd4"
+            }
+          ]
+        },
+        {
+          "id": "G2-N01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+              "name": "P2-G2 App manual-review clarification uses the same Direct Leg generation guard",
+              "sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5"
+            },
+            {
+              "file": "tests/p2-g2-send-guard.integration.test.mjs",
+              "name": "Gate guard checks actual PostgreSQL Delivery binding and preserves existing Direct Leg and numeric ACK sender",
+              "sha256": "aede8722d5d637f2f0acec2f185b3864a2c7309c3a61bd9f20be7fa40a4265d8"
+            },
+            {
+              "file": "tests/p2-g2-approval-binding.test.mjs",
+              "name": "SDK boundary rechecks a revoked approval after asynchronous destination/grant work",
+              "sha256": "de4d9ec5d89a6507a933886bcf309a07d80ce3ed1171ca930efee36a1aec4853"
+            },
+            {
+              "file": "tests/p2-g2-human-source.integration.test.mjs",
+              "name": "real human command source: P2-007-X024/D12-040",
+              "sha256": "ef142cf017c1758d90a5fdcaed83428121d40a4c4856119be2b14798a77709d9"
+            },
+            {
+              "file": "tests/p2-g2-late-conversation-binding.integration.test.mjs",
+              "name": "late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket",
+              "sha256": "cf68b236e4da79a089fe54c0f2bb2f053e6f7895870a28e6e322ba16a56bec2e"
+            },
+            {
+              "file": "tests/p2-g2-conversation-binding-boundaries.integration.test.mjs",
+              "name": "bounded binding scan advances beyond twenty invalid HMAC rows and twelve concurrent cycles never rewrite accepted facts",
+              "sha256": "d92907f5c020c3bc85fad393f9ce0977b4249a1e5f40dec8adc407bff7ea39b1"
+            },
+            {
+              "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+              "name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+              "sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9"
+            }
+          ]
+        },
+        {
+          "id": "G2-N02",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-direct-leg.integration.test.mjs",
+              "name": "P2-G2 establishing Direct Leg never backfills old Ticket cards; new events can notify",
+              "sha256": "c70b5d5216608652026cf86a8194412813c6d170332c33ba1be9b969af1bbef5"
+            }
+          ]
+        },
+        {
+          "id": "G2-N03",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-provider-receipts.test.mjs",
+              "name": "numeric SDK receipts survive restart, preserve errors and exclude SDK payload and identity",
+              "sha256": "d03d9c270d29beead0a499166597862bf8cecc3b65de1706ea30455a6bdcca24"
+            },
+            {
+              "file": "tests/p2-g2-notification-source.integration.test.mjs",
+              "name": "original UNKNOWN source requires reconciliation after a real Outbox attempt",
+              "sha256": "f7ca73acbf60cba84032f46e5552e7b3ba9ce55069e6b10d75adf62b8acf850c"
+            },
+            {
+              "file": "tests/p2-g2-send-budget.test.mjs",
+              "name": "ACK, UNKNOWN and crash between reservation and result never authorize resend",
+              "sha256": "8429f109c659cf6c2dcae4ce02a0619a0e762edc5bff86dcb472ae63f661146a"
+            }
+          ]
+        },
+        {
+          "id": "G2-N04",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-reporter-source.integration.test.mjs",
+              "name": "D12-016/058/059/060/061 three real Ticket grants isolate Reporter HTTP access; card event callback stays unsupported",
+              "sha256": "0e6d21b4b31e8dd8ccc349041f7161fa8c027154afc4fb1f346c6cabc09d4037"
+            },
+            {
+              "file": "tests/p2-016-reporter-browser.test.mjs",
+              "name": "Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout",
+              "sha256": "6a4680d01f8c796670a325a04059cb2ea1aacbe95117cb88a3da496e4a07a109"
+            }
+          ]
+        },
+        {
+          "id": "G2-I01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-cross-reporter.integration.test.mjs",
+              "name": "X031 three real independent reports generate one review candidate from persisted facts",
+              "sha256": "411df835bae2f01e0a569fc51c45ee60ab75fe509d9c59874492127a501a99fe"
+            },
+            {
+              "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+              "name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+              "sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b"
+            }
+          ]
+        },
+        {
+          "id": "G2-I02",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+              "name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+              "sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b"
+            },
+            {
+              "file": "tests/p2-012-incident.integration.test.mjs",
+              "name": "P2-012 real database human confirmation, idempotency, recovery isolation and notification facts",
+              "sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc"
+            }
+          ]
+        },
+        {
+          "id": "G2-I03",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-service-loop-browser.integration.test.mjs",
+              "name": "G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership",
+              "sha256": "70620e0a65379a7f04ac818eb32aa95da1f180e4f2f94524ba31cd807e47421b"
+            },
+            {
+              "file": "tests/p2-012-incident.integration.test.mjs",
+              "name": "P2-012 real database human confirmation, idempotency, recovery isolation and notification facts",
+              "sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc"
+            }
+          ]
+        },
+        {
+          "id": "G2-I04",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-012-incident.integration.test.mjs",
+              "name": "P2-012 maintenance expires a bounded ordered batch through private SYSTEM commands without notifications",
+              "sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc"
+            },
+            {
+              "file": "tests/p2-012-incident.integration.test.mjs",
+              "name": "P2-012 maintenance replays concurrent scans, handles human/time races and surfaces a still-due failure",
+              "sha256": "7547589319121574654897637a35a1525669a3de6f91ded0a578971ac4c63afc"
+            },
+            {
+              "file": "tests/p2-012-process-assembly.integration.test.mjs",
+              "name": "P2-012 network-off three-role assembly serves Incident and closes children, sockets and pools",
+              "sha256": "cda895a9d268ba0e3cec5d91558a361859c9103824493c445fa64fde81795480"
+            },
+            {
+              "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+              "name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+              "sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9"
+            }
+          ]
+        },
+        {
+          "id": "G2-I05",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-012-subscription-review.integration.test.mjs",
+              "name": "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+              "sha256": "4f4b80cf23efcba6897b957caf55e8c2e95b7d395d48653ab040a20030495a2e"
+            },
+            {
+              "file": "tests/p2-012-scope-candidate.integration.test.mjs",
+              "name": "P2-012 real direct-leg eligibility suppresses group-only Ticket artifacts and validates persisted destination scope",
+              "sha256": "edcb259277a473f448a98ca95c0606e97f928f14f36aa3619ce85088dde7aea1"
+            },
+            {
+              "file": "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+              "name": "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation",
+              "sha256": "c6c5ad17d4400745207ea407c0ee97df252d175c8e92e82338d69cdfe9dad2a6"
+            }
+          ]
+        },
+        {
+          "id": "G2-I06",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-012-subscription-review.integration.test.mjs",
+              "name": "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+              "sha256": "4f4b80cf23efcba6897b957caf55e8c2e95b7d395d48653ab040a20030495a2e"
+            },
+            {
+              "file": "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+              "name": "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation",
+              "sha256": "c6c5ad17d4400745207ea407c0ee97df252d175c8e92e82338d69cdfe9dad2a6"
+            }
+          ]
+        },
+        {
+          "id": "G2-I07",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-012-workbench-browser.test.mjs",
+              "name": "P2-012 database-backed browser 1440x900 human confirmation, refresh and accessibility",
+              "sha256": "dbf8268cfc72a70831119e214afa9a63a21e9a9127a13c3b5834c03d8c478395"
+            },
+            {
+              "file": "tests/p2-012-subscription-review.integration.test.mjs",
+              "name": "P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation",
+              "sha256": "4f4b80cf23efcba6897b957caf55e8c2e95b7d395d48653ab040a20030495a2e"
+            },
+            {
+              "file": "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+              "name": "G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation",
+              "sha256": "c6c5ad17d4400745207ea407c0ee97df252d175c8e92e82338d69cdfe9dad2a6"
+            }
+          ]
+        },
+        {
+          "id": "G2-C01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-012-workbench.integration.test.mjs",
+              "name": "P2-012 actual HTTP preserves notification failure, rollback and durable replay before explicit recovery",
+              "sha256": "0401889cbfd232492733303d08f97322d3b5da2c1f4d680353e064cb071edd68"
+            },
+            {
+              "file": "tests/p2-g2-command-outcome-browser.test.mjs",
+              "name": "P2-G2 generic proxy 503 after commit keeps the command id for reconciliation; stable failure and conflict stay distinct",
+              "sha256": "af3b1eb165a0b2f14de88d06a990c7af9f4593763e3da4c4784b7fd606161fd4"
+            }
+          ]
+        },
+        {
+          "id": "G2-C02",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-openapi-routing.integration.test.mjs",
+              "name": "P2-G2 parsed OpenAPI server and Incident paths resolve to the actual authenticated HTTP route",
+              "sha256": "920b0ff4e0a7eb4bc9c4482fa19cf2073bbda6024ec0e9b727efcbeded16b422"
+            },
+            {
+              "file": "tests/p2-012-client-contract-review.test.mjs",
+              "name": "P2-012 real TypeScript consumers accept nullable cursors and optional owner teams",
+              "sha256": "b1146d72ba3554b6558debf2d18dd68eb6f8e9765cfb4163f0bece568ffe1b89"
+            },
+            {
+              "file": "tests/p2-012-client-contract-review.test.mjs",
+              "name": "P2-012 parsed OpenAPI incident state filters match all runtime states and queue aliases",
+              "sha256": "b1146d72ba3554b6558debf2d18dd68eb6f8e9765cfb4163f0bece568ffe1b89"
+            }
+          ]
+        },
+        {
+          "id": "G2-R01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-016-reporter-surface.integration.test.mjs",
+              "name": "Reporter grant expiry, HMAC rotation, one-consume concurrency, session expiry/revocation and cross-ticket isolation",
+              "sha256": "71bbc95bd5a1679d165a5790ba66b4e7a0dc12022b7a2a5bf324bb51f6999bce"
+            },
+            {
+              "file": "tests/p2-012-reporter-http.integration.test.mjs",
+              "name": "P2-012 Reporter HTTP preserves bound grants, refresh ETag, safe milestones and unlink visibility",
+              "sha256": "a129b0582fdd12e592708f494424d047f83699ff6c444b3e05a84d234fe64dfa"
+            },
+            {
+              "file": "tests/p2-016-reporter-browser.test.mjs",
+              "name": "Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout",
+              "sha256": "6a4680d01f8c796670a325a04059cb2ea1aacbe95117cb88a3da496e4a07a109"
+            }
+          ]
+        },
+        {
+          "id": "G2-R02",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-012-reporter-refresh-browser.test.mjs",
+              "name": "Reporter browser retries incomplete ETag render after transient timeline failure for milestone addition and removal",
+              "sha256": "26ae9631dc7686acbb147012e6932ee242172ea32617266c9e0ef78100a529f2"
+            }
+          ]
+        },
+        {
+          "id": "G2-R03",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-016-reporter-surface.integration.test.mjs",
+              "name": "Reporter grant expiry, HMAC rotation, one-consume concurrency, session expiry/revocation and cross-ticket isolation",
+              "sha256": "71bbc95bd5a1679d165a5790ba66b4e7a0dc12022b7a2a5bf324bb51f6999bce"
+            },
+            {
+              "file": "tests/p2-016-reporter-browser.test.mjs",
+              "name": "Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout",
+              "sha256": "6a4680d01f8c796670a325a04059cb2ea1aacbe95117cb88a3da496e4a07a109"
+            }
+          ]
+        },
+        {
+          "id": "G2-F01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+              "name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+              "sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9"
+            },
+            {
+              "file": "tests/p2-g1-human-only-assembly.test.mjs",
+              "name": "gateway permits one active WSClient, gates readiness on authentication, reconnects and shuts down cleanly",
+              "sha256": "f5a7213c67141e1018522e2411a6d8f5f8685c8ddcc06ce777a959b0643e8f44"
+            }
+          ]
+        },
+        {
+          "id": "G2-F02",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+              "name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+              "sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9"
+            },
+            {
+              "file": "tests/p2-016-restart.integration.test.mjs",
+              "name": "P2-016 real process crash/restart: response loss replays receipt; unknown send reconciles and ACK never resends",
+              "sha256": "ebb8c887e03062aebc40eee2a280a5c710d480a9bdf81a3750ad8f334412ca22"
+            },
+            {
+              "file": "tests/p2-015-worker-restart.integration.test.mjs",
+              "name": "crash before commit leaves no partial facts; crash after commit restarts as replay",
+              "sha256": "33bd435af30415b35e7fd215c95f99d142cbca40ade3df2e7a2cc8c7c1594223"
+            },
+            {
+              "file": "tests/p2-g2-late-conversation-binding.integration.test.mjs",
+              "name": "late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket",
+              "sha256": "cf68b236e4da79a089fe54c0f2bb2f053e6f7895870a28e6e322ba16a56bec2e"
+            },
+            {
+              "file": "tests/p2-g2-conversation-binding-boundaries.integration.test.mjs",
+              "name": "bounded binding scan advances beyond twenty invalid HMAC rows and twelve concurrent cycles never rewrite accepted facts",
+              "sha256": "d92907f5c020c3bc85fad393f9ce0977b4249a1e5f40dec8adc407bff7ea39b1"
+            }
+          ]
+        },
+        {
+          "id": "G2-F03",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-association-boundary.integration.test.mjs",
+              "name": "G2-J01 review enqueue database fault rolls back current Ticket/Decision/actions while preserving Inbox",
+              "sha256": "9d9aa31182ec29322a3251d39de320f9cbf5d4d3238172968d74432513e34d49"
+            },
+            {
+              "file": "tests/p2-012-workbench.integration.test.mjs",
+              "name": "P2-012 actual HTTP preserves notification failure, rollback and durable replay before explicit recovery",
+              "sha256": "0401889cbfd232492733303d08f97322d3b5da2c1f4d680353e064cb071edd68"
+            },
+            {
+              "file": "tests/p2-g2-conversation-binding-boundaries.integration.test.mjs",
+              "name": "post-acceptance binding failure rolls back both references and explicitly preserves the already committed new Ticket",
+              "sha256": "d92907f5c020c3bc85fad393f9ce0977b4249a1e5f40dec8adc407bff7ea39b1"
+            }
+          ]
+        },
+        {
+          "id": "G2-F04",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g1-human-only-assembly.integration.test.mjs",
+              "name": "P2-G1 isolated PostgreSQL Replay Gap drives real Edge through Last-Event-ID, 410 and refetch",
+              "sha256": "6047e455751e79d49b29377b08180e32d35867484039c0ddb967d8ad1e0eca55"
+            },
+            {
+              "file": "tests/p2-003-realtime-event-log.integration.test.mjs",
+              "name": "P2-003 localhost SSE admits 32 clients, rejects 33, heartbeats, delivers and releases resources",
+              "sha256": "08bc4d28ef3194b36785d8eeabfc841036a4c09836f3dec2bc6ba23aa1890b9f"
+            },
+            {
+              "file": "tests/p2-003-realtime-event-log.integration.test.mjs",
+              "name": "P2-003 real paused slow client is isolated while normal delivery and append continue",
+              "sha256": "08bc4d28ef3194b36785d8eeabfc841036a4c09836f3dec2bc6ba23aa1890b9f"
+            },
+            {
+              "file": "tests/p2-g1-human-only-assembly-browser.test.mjs",
+              "name": "P2-G1 system browser preserves native SSE reconnect and sends Last-Event-ID",
+              "sha256": "7be094f12894142313bed32fe3116bbf7d8e7674e631d0572db54239cce80812"
+            }
+          ]
+        },
+        {
+          "id": "G2-A01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+              "name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+              "sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9"
+            },
+            {
+              "file": "tests/p2-g2-cli-network.test.mjs",
+              "name": "process HTTP policy permits owned health traffic and blocks model endpoints, redirects and option overrides",
+              "sha256": "91ff3e12afbc0f38247950d583a226a035a08978705555bc63bf2e03285c8527"
+            }
+          ]
+        },
+        {
+          "id": "G2-A02",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-validation-config.test.mjs",
+              "name": "P2-G2 missing required flags and every AI/P3 activation fail before assembly",
+              "sha256": "d1fa1d74bc266d517c3cd513d9d4dc0c0b9b0fd6adbff4786ce62cd33896f2e1"
+            },
+            {
+              "file": "tests/p2-g2-validation-config.test.mjs",
+              "name": "P2-G2 environment allowlist strips model secrets, old approvals and accidental Node hooks",
+              "sha256": "d1fa1d74bc266d517c3cd513d9d4dc0c0b9b0fd6adbff4786ce62cd33896f2e1"
+            }
+          ]
+        },
+        {
+          "id": "G2-O01",
+          "live_result": "NOT_RUN",
+          "tests": [
+            {
+              "file": "tests/p2-g2-process-assembly.integration.test.mjs",
+              "name": "P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK",
+              "sha256": "aee9f5c59b8f1289b107e67fe4142ba3532207e5a32dcba27398ca74f15a18e9"
+            },
+            {
+              "file": "tests/p2-g2-gate-evaluator.test.mjs",
+              "name": "P2-G2 approved Gateway fault requires recovery and excludes both adjacent intervals from the steady hour",
+              "sha256": "d060229adb374c55ac5e38a419fb9316a07b8718c24381e4acfefcc0c24f0580"
+            },
+            {
+              "file": "tests/p2-g2-gate-evaluator.test.mjs",
+              "name": "P2-G2 has no latency percentile before a client observation, and requires a real measurement by the end",
+              "sha256": "d060229adb374c55ac5e38a419fb9316a07b8718c24381e4acfefcc0c24f0580"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "baseline_files": 171,
+  "previous_candidate_files": 183,
+  "original_semantics_all_passed": false,
+  "semantic_review": {
+    "status": "REVIEWED_WITH_PRESERVED_LIMITATIONS",
+    "review": {
+      "path": "evidence/yxx-ss-009-r6-independent-review.json",
+      "encoding": "UTF8_LF",
+      "sha256": "acafda7a0561c506bb7abe049798c08816aac7d8a5b088b088c83288d9f06599"
+    }
+  }
+}

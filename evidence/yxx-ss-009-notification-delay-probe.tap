@@ -1,0 +1,213 @@
+TAP version 13
+# Subtest: PR8 member notifications enforce retained delivery authority and preserve retry versus unknown outcomes
+    # Subtest: CONSUMED Grant does not suppress a member notification
+    not ok 1 - CONSUMED Grant does not suppress a member notification
+      ---
+      duration_ms: 1222.6664
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-notification-delay.test.mjs:134:55'
+      failureType: 'testCodeFailure'
+      error: "Cannot read properties of null (reading 'status')"
+      code: 'ERR_TEST_FAILURE'
+      name: 'TypeError'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:138:40)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:134:47)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:109:3)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: MISSING Grant does not suppress a member notification
+    not ok 2 - MISSING Grant does not suppress a member notification
+      ---
+      duration_ms: 1189.0786
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-notification-delay.test.mjs:134:55'
+      failureType: 'testCodeFailure'
+      error: "Cannot read properties of null (reading 'status')"
+      code: 'ERR_TEST_FAILURE'
+      name: 'TypeError'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:138:40)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:134:47)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:109:3)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: revoked public reference rejects before SDK
+    not ok 3 - revoked public reference rejects before SDK
+      ---
+      duration_ms: 1171.626
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-notification-delay.test.mjs:149:48'
+      failureType: 'testCodeFailure'
+      error: "Cannot read properties of null (reading 'status')"
+      code: 'ERR_TEST_FAILURE'
+      name: 'TypeError'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:150:80)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:149:40)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:109:3)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: wrong reporter rejects before SDK
+    not ok 4 - wrong reporter rejects before SDK
+      ---
+      duration_ms: 1196.6995
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-notification-delay.test.mjs:149:48'
+      failureType: 'testCodeFailure'
+      error: "Cannot read properties of null (reading 'status')"
+      code: 'ERR_TEST_FAILURE'
+      name: 'TypeError'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:150:80)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:149:40)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:109:3)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: wrong Bot rejects before SDK
+    not ok 5 - wrong Bot rejects before SDK
+      ---
+      duration_ms: 1179.0287
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-notification-delay.test.mjs:149:48'
+      failureType: 'testCodeFailure'
+      error: "Cannot read properties of null (reading 'status')"
+      code: 'ERR_TEST_FAILURE'
+      name: 'TypeError'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:150:80)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:149:40)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:109:3)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: forged content rejects before SDK
+    not ok 6 - forged content rejects before SDK
+      ---
+      duration_ms: 1202.0774
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-notification-delay.test.mjs:149:48'
+      failureType: 'testCodeFailure'
+      error: "Cannot read properties of null (reading 'status')"
+      code: 'ERR_TEST_FAILURE'
+      name: 'TypeError'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:150:80)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:149:40)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:109:3)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: message retention elapsed rejects before SDK
+    ok 7 - message retention elapsed rejects before SDK
+      ---
+      duration_ms: 1228.8667
+      type: 'test'
+      ...
+    # Subtest: intake retention elapsed rejects before SDK
+    not ok 8 - intake retention elapsed rejects before SDK
+      ---
+      duration_ms: 1183.1627
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-notification-delay.test.mjs:149:48'
+      failureType: 'testCodeFailure'
+      error: "Cannot read properties of null (reading 'status')"
+      code: 'ERR_TEST_FAILURE'
+      name: 'TypeError'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:150:80)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:149:40)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:109:3)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: cross-linked notification Ticket rejects before SDK
+    ok 9 - cross-linked notification Ticket rejects before SDK
+      ---
+      duration_ms: 2334.251
+      type: 'test'
+      ...
+    # Subtest: pre-SDK database interruption retries safely and sends once
+    not ok 10 - pre-SDK database interruption retries safely and sends once
+      ---
+      duration_ms: 1178.37
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-notification-delay.test.mjs:152:13'
+      failureType: 'testCodeFailure'
+      error: "Cannot read properties of null (reading 'status')"
+      code: 'ERR_TEST_FAILURE'
+      name: 'TypeError'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:153:79)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:152:5)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:109:3)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    # Subtest: unknown provider receipt requires reconciliation and cannot auto-resend
+    not ok 11 - unknown provider receipt requires reconciliation and cannot auto-resend
+      ---
+      duration_ms: 1179.967
+      type: 'test'
+      location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-notification-delay.test.mjs:157:13'
+      failureType: 'testCodeFailure'
+      error: "Cannot read properties of null (reading 'status')"
+      code: 'ERR_TEST_FAILURE'
+      name: 'TypeError'
+      stack: |-
+        TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:158:79)
+        process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async run (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:157:5)
+        async withP2015IsolatedDatabase (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+        async TestContext.<anonymous> (file:///D:/Projects/Fault-Reporting-WeCom-Assistant/tmp/ss009-notification-delay.test.mjs:109:3)
+        async Test.run (node:internal/test_runner/test:1332:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+    1..11
+not ok 1 - PR8 member notifications enforce retained delivery authority and preserve retry versus unknown outcomes
+  ---
+  duration_ms: 17821.1511
+  type: 'test'
+  location: 'D:\\Projects\\Fault-Reporting-WeCom-Assistant\\tmp\\ss009-notification-delay.test.mjs:108:1'
+  failureType: 'subtestsFailed'
+  error: '9 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 12
+# suites 0
+# pass 2
+# fail 10
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18039.5579

@@ -1,0 +1,41 @@
+{
+  "event_time": "2026-09-18 23:19:30",
+  "event_epoch_ms": "1789744770067",
+  "status": "DIAGNOSED_PENDING_FINAL_RUN",
+  "corrections": [
+    {
+      "issue": "High-risk explicit faults already own minimal tickets plus manual review",
+      "change": "Keep shared rules; assert 250 pre-review tickets and301 final tickets; use explicit human-follow-up complaint for50 non-ticket reviews",
+      "failure": "evidence/yxx-ss-009-capacity-attempt-01.tap"
+    },
+    {
+      "issue": "Worker rejects non-owned DB naming",
+      "code": "P2_G2_OWNED_SYNTHETIC_DATABASE_REQUIRED",
+      "change": "Owned isolated purpose g2ss009cap",
+      "failure": "evidence/yxx-ss-009-capacity-full-diagnosis.tap"
+    },
+    {
+      "issue": "60s drain incompatible with one reserved Web slot per250ms Worker cycle",
+      "observation": {
+        "elapsed_seconds": 65,
+        "processed": 252,
+        "pending": 248,
+        "worker_failures": 0
+      },
+      "change": "180s absolute drain;10s stall rejection;360s test limit and complete load unchanged",
+      "independent_reviewer": "/root/ss009_spec_audit",
+      "independent_assessment": "Legitimate fixture correction; no business throughput change and not a capacity PASS",
+      "failure": "evidence/yxx-ss-009-capacity-full-attempt-03.tap"
+    },
+    {
+      "issue": "Browser assertion targeted facts list, but ticket status is rendered in detail-status",
+      "change": "Assert actual status element; no UI behavior change",
+      "failure": "evidence/yxx-ss-009-browser-attempt-01.tap"
+    },
+    {
+      "issue": "Wrong test-only receipt schema filename",
+      "change": "Use actual yxx_self_service_receipt.schema.json",
+      "failure": "evidence/yxx-ss-009-governance-attempt-01.tap"
+    }
+  ]
+}

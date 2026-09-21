@@ -1,0 +1,227 @@
+{
+  "event_time": "2026-09-19 09:48:44",
+  "event_epoch_ms": "1789782524929",
+  "candidate_fingerprint": "e22a34540c8124520e1043c9278078c597ad5638ab31c7de8f9b8c6eb2cc58b4",
+  "status": "PASS",
+  "scope": "NEW_SS009_PUBLICATION_ARTIFACTS",
+  "scanned_files": 51,
+  "secret_rule_hits": [],
+  "synthetic_data_only_by_fixture_construction": true,
+  "clinical_record_search": "NOT_PERFORMED_NO_BUSINESS_DATABASE_ACCESS",
+  "changed_protected_paths": "",
+  "changed_historical_evidence": "",
+  "gitignore": {
+    "sha256": "0350afa8c952a92ee938901ae5e079c993c87d5ff1bb672a4e7a827f5d52d092",
+    "index": "942b2b8d94b4f1e9dda5369cbac0cbe31056d950"
+  },
+  "artifact_hashes": [
+    {
+      "path": "evidence/yxx-ss-009-r3-acceptance.json",
+      "sha256": "454f40bed2bca95cf5c62c585fe0f6d7768f84862da7aeaac2677cdd9d58b925"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-browser.json",
+      "sha256": "5536fc093f09d7c5ff932d842dfbdcc15391aedb116a56c7f320d0e5de988838"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-capacity.json",
+      "sha256": "36b6bdc1ea77e792bcffecbcf7405df4d38132a6771f8071aad66f026ff0c800"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-catalog.json",
+      "sha256": "e8d1cd7456266b6af4fa666639d7b6647c76bfbba3c08f282b3205a25af2dd66"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-cleanup.json",
+      "sha256": "4ee0f582ad4990025b479db7aa3ae41201bba489526611717259c40c0cce5ca4"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-fault.json",
+      "sha256": "e2f55ede4f3c264b0f0bb8932ac6013adc67ff765db954475592164946f4edc5"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-finalization.json",
+      "sha256": "923b8a64a222c08f16e67f6fe7dedd97dd1e4bbfe9e0a24c68038fee99a134f1"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-full-cases.jsonl",
+      "sha256": "b9c3244315681504e5cdd768622ca57711d9a755674876635c4aa09933fbc362"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-full-run.json",
+      "sha256": "e49b5f26797d43fdac3c6748ebf17e61df9c9fccd7ac7c6dc2f49d5105a2bf63"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-full-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-full.tap",
+      "sha256": "18852c3cdc7148511581336520ea33f1621a10a8a6c73ac9ff31dfd02f713fcf"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-governance.json",
+      "sha256": "16c78c31c7b436229f9b769d2e0766cf858750ac6208816ad82c0bd51d64586e"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-historical-coverage.json",
+      "sha256": "324eb8a045a767626dc8bc5156dabc1ab960b6b9d06feb10f947c23504e1d205"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-independent-review.json",
+      "sha256": "84fa60fa6d0e03a0bd3a75900a4cc5cc8863ab225d7313ddf0e673e15fb08868"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-p2-g2-yixiaoxiu-check-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-p2-g2-yixiaoxiu-check.txt",
+      "sha256": "0fabaaab57777d510db7c6a6d18d9465a9578e834530227c31050d4d028cb517"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-pending-report-red.tap",
+      "sha256": "97318adfcec5c013b3cfcd8858bc688ffd67ddd6dbc73fa7f0aae06821a51444"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-pending-report.json",
+      "sha256": "f156a25af2835c3d7f9f878209d6c900c78d9dc6003378c86f14aac00c809cc6"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-pending-validation-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-pending-validation.txt",
+      "sha256": "a79943a56ae3496244750c6a200a69638878b913d5de063b476b936f050c1665"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-report.json",
+      "sha256": "6eac9b15b47d2413a31b0be49f18e23b0c26542b3b446e3111f7968786dde0a4"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-review-fix-report.md",
+      "sha256": "97fd2a2f45bd6a433200747c2b2c146e47db64bac3189c3ca0914047c8f13ea9"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-source-audit.json",
+      "sha256": "a08ccc79dbde02652d1d830d322bbeb497668c2173ab2f2907904267ea3ce2df"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-source-inventory.json",
+      "sha256": "e65c80c7536a1f5e3de29ad3370575e01867d62d3f9948b2b2909f430e4dadb5"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-spec-review.json",
+      "sha256": "479b8cc87014403414a86261f0b9d58556e936ec5e3c90678998ba774acd0f59"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-standards-review.json",
+      "sha256": "7b762d0b40adaf63a41db1e72a927efe5e62a1ac1f9ecc298b983c38bafbc7af"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-state-guard-green.tap",
+      "sha256": "d371d1d16d20934845960a5515e40e30553897d45930dcf68f05e5b4070b2c6e"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-strict-negative.json",
+      "sha256": "225694f2e6552f89c82175c275fe629d0d6555d2b0b0cc88eae45d29a7b67ae1"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-strict-validation-receipt.json",
+      "sha256": "075e780c80aaf99284d41d6a15ba43a866ae06cf11f411becabd9742528903bf"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-strict-validation-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-strict-validation.txt",
+      "sha256": "c84f83bdb9be84adb048991e6b8a80924a37c263c8bf0949523e7a970692b7b7"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-tamper-output.txt",
+      "sha256": "3afc54ead6274c57fd663e1a489333668e7446906e52de7370c7fe511e94d4e2"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-tamper-stderr.txt",
+      "sha256": "1437b8351a1602c114b506aeaad3cf084628bfe5149e8754fe2b800b781425ac"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-time-audit.json",
+      "sha256": "fecddc34f1f317e3c263fe5110c15e560e9bedb01f36e3e01d936ccd2d04d6fb"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-ui-1440.png",
+      "sha256": "e6a7e9fc1dcf439801382242d3b0e4c83ef7cd547411892326cf16e1e3510a86"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-ui-390.png",
+      "sha256": "d4421560ed2f78de883493f983e055e55d0df99651db295991395fd1fe586812"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-arch-005-time-contract-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-arch-005-time-contract.txt",
+      "sha256": "8a0bc90d5771e6f715c91ca4fda95d739d768a0bf495114493e478a2b009e0c1"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-arch-006-rule-first-service-loop-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-arch-006-rule-first-service-loop.txt",
+      "sha256": "359a30988433ed102b00956b6e7a0a776c5cb045837783b3d22883e26b045a37"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-p2-012-human-confirmed-incident-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-p2-012-human-confirmed-incident.txt",
+      "sha256": "d4d8ec3ae4a2f3d2c8881d99af45cb440c6f6eb90eb0f5ad69ce13b1bd4af284"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-p2-015-rule-first-intake-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-p2-015-rule-first-intake.txt",
+      "sha256": "7639d0da3bbbf7bb7672767ea8f1030473d6b86080bac9b20ffdd5cb7701cd11"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-p2-016-ticket-lifecycle-workbench-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-p2-016-ticket-lifecycle-workbench.txt",
+      "sha256": "5cf7acc40ffd089577cd626f3d8636efcbcb2517303fbc0ffe48922561b89f09"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-p2-g2-service-loop-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-p2-g2-service-loop.txt",
+      "sha256": "6963bdddfb8858ade9e9cde44263c58f85476e6e2ccd17fa8113e616bb72759d"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-v1-4-architecture-stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validate-v1-4-architecture.txt",
+      "sha256": "ac1058ab8ed14699e2fa28e83e269153aa710adcaebb1dc701ffa9e6969c1981"
+    },
+    {
+      "path": "evidence/yxx-ss-009-r3-validators.json",
+      "sha256": "06648830c4da39ad6c94d22c46db5ed4c80402aeb2b17e090ee4e852382e4be5"
+    }
+  ],
+  "limitations": [
+    "Pattern and configured-secret scanning complements synthetic fixture construction and screenshot inspection; it is not a hospital data discovery scan.",
+    "Failed diagnostic runs and their original time formats are retained, not rewritten as current accepted events."
+  ]
+}

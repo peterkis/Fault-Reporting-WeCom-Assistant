@@ -1,0 +1,16 @@
+{
+  "event_time": "2026-09-19 08:44:57",
+  "event_epoch_ms": "1789778697385",
+  "ok": true,
+  "status": "SS009_LOCAL_VERIFICATION_COMPLETE",
+  "candidate_fingerprint": "674127ee770f471bad3c50e55ad276f05730f55cbe6bd2e024dffae4a642ba62",
+  "live_authorized": false,
+  "parent_gate_advanced": false,
+  "command": "node scripts/validate-yxx-self-service.mjs --require-ready",
+  "exit_code": 0,
+  "output": {
+    "path": "evidence/yxx-ss-009-r2-strict-validation.txt",
+    "encoding": "UTF8_LF",
+    "sha256": "261febedc4eb4539dc33d556c474ca461b5a86b610d67491181dab9e5801aa8e"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "event_time": "2026-09-19 08:04:25",
+  "event_epoch_ms": "1789776265796",
+  "candidate_fingerprint": "674127ee770f471bad3c50e55ad276f05730f55cbe6bd2e024dffae4a642ba62",
+  "source_head": "8f2270878fdab62ef6ecd2c49dcebca1521e8a0c",
+  "source_tree": "d5646ba43e3874c41d50d2a8baa23c8fee1050b7",
+  "status": "IMPLEMENTATION_REVIEWED_FULL_VERIFICATION_PENDING",
+  "review_findings": [
+    {
+      "id": 4051497527,
+      "severity": "P2",
+      "scenario": "YXX-AC-022",
+      "resolution": "Populate 13 existing Bot tables through the original orchestrator before upgrade; compare all original 032 columns after check/apply/reapply and verify graph joins plus command replay."
+    },
+    {
+      "id": 4051497529,
+      "severity": "P2",
+      "scenario": "YXX-AC-039",
+      "resolution": "Observe actual UPDATE within production savepoint through test-only transaction wrapper, then throw; assert original value restored and one fallback decision/review committed."
+    }
+  ],
+  "negative_controls": [
+    "yxx-ss-009-r2-upgrade-loss-red.tap",
+    "yxx-ss-009-r2-missing-rollback-red.tap",
+    "yxx-ss-009-r2-proof-guard-red.tap"
+  ],
+  "targeted": {
+    "path": "evidence/yxx-ss-009-r2-targeted-final.tap",
+    "tests": 8,
+    "pass": 8,
+    "fail": 0
+  },
+  "implementation_reviews": [
+    {
+      "axis": "SPEC",
+      "reviewer": "/root/ss009_spec_audit",
+      "verdict": "PASS",
+      "unresolved_findings": 0
+    },
+    {
+      "axis": "STANDARDS",
+      "reviewer": "/root/ss009_standards_audit",
+      "verdict": "PASS",
+      "unresolved_findings": 0
+    }
+  ],
+  "historical_snapshot": "evidence/yxx-ss-009-report.json",
+  "current_prefix": "evidence/yxx-ss-009-r2-",
+  "business_runtime_changed": false,
+  "migrations_changed": false,
+  "old_evidence_overwritten": false
+}
