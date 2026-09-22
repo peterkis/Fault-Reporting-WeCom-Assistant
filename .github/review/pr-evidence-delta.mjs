@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {execFileSync,spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import adjudicated from './pr21-evidence-exceptions.json' with {type:'json'};
+const records=text=>text.split('\0').filter(Boolean);
 
 // PR event base/head define this change, not a replacement SS009 trust anchor.
 export function verifyPrEvidenceDelta({root=process.cwd(),base,head}={}) {
@@ -26,16 +27,28 @@ export function verifyPrEvidenceDelta({root=process.cwd(),base,head}={}) {
   for(const line of git(['rev-list','--parents',`${base}..${head}`]).trim().split('\n').filter(Boolean)){
     const [commit,...parents]=line.split(' ');
     const baseParents=parents.length>1?parents.filter(parent=>isAncestor(parent,base)):[];
+    const baseParent=baseParents.length===1?baseParents[0]:undefined;
+    const prParent=baseParent?parents.find(parent=>parent!==baseParent):undefined;
+    const prTouched=new Set();
+    if(prParent){
+      const common=git(['merge-base',base,prParent]).trim();
+      for(const path of records(git(['log','--format=','--name-only','-z','--no-renames','--full-history','--diff-merges=separate',`${common}..${prParent}`,'--','evidence/']))){
+        prTouched.add(path);
+      }
+    }
     for(const parent of parents){
       // A synchronization merge imports the current base into an older PR
       // branch. Its non-base parent sees base evidence as a false rewrite;
-      // inspect the base-side edge instead, where real PR changes remain.
-      if(baseParents.length===1&&parent!==baseParents[0])continue;
-      const raw=git(['diff-tree','-r','--raw','-z','--no-abbrev','--no-renames','--no-ext-diff','--diff-filter=a',parent,commit,'--','evidence/']).split('\0').filter(Boolean);
+      // inspect only PR-touched paths on that edge. A path imported solely
+      // from base is ignored, but an add/add collision remains visible.
+      const prEdge=prParent===parent;
+      const filter=prEdge?'ACDMRT':'a';
+      const raw=git(['diff-tree','-r','--raw','-z','--no-abbrev','--no-renames','--no-ext-diff',`--diff-filter=${filter}`,parent,commit,'--','evidence/']).split('\0').filter(Boolean);
       assert.equal(raw.length%2,0);
       for(let i=0;i<raw.length;i+=2){
         const [oldMode,newMode,before,after,status]=raw[i].slice(1).split(' ');
         const change={commit,parent,path:raw[i+1],before,after,oldMode,newMode,status};
+        if(prEdge&&!prTouched.has(change.path))continue;
         const allowed=adjudicated.some(entry=>Object.keys(change).every(key=>entry[key]===change[key]));
         (allowed?accepted:changed).push(change);
       }

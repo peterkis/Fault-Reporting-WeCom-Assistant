@@ -72,3 +72,23 @@ test('PR21 accepts only the five adjudicated transitions, never later changes to
     rmSync(root,{recursive:true,force:true});
   }
 });
+
+test('sync merge rejects an add/add evidence collision resolved to base',()=>{
+  const root=mkdtempSync(path.join(tmpdir(),'pr-evidence-test-'));
+  const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe']}).trim();
+  const commit=()=>{git(['add','.']);git(['-c','user.name=Test','-c','user.email=test@example.invalid','-c','commit.gpgsign=false','commit','-m','fixture']);return git(['rev-parse','HEAD']);};
+  try{
+    git(['init']);mkdirSync(path.join(root,'evidence'));writeFileSync(path.join(root,'evidence/original.md'),'original\n');const oldBase=commit();
+    git(['checkout','-b','base-update',oldBase]);
+    writeFileSync(path.join(root,'evidence/collision.md'),'base version\n');const currentBase=commit();
+    git(['checkout','-b','pr-change',oldBase]);
+    writeFileSync(path.join(root,'evidence/collision.md'),'pr version\n');commit();
+    assert.throws(()=>git(['merge','--no-ff','base-update','-m','sync current base']));
+    git(['checkout','--theirs','--','evidence/collision.md']);git(['add','evidence/collision.md']);
+    const head=commit();
+    assert.throws(()=>verifyPrEvidenceDelta({root,base:currentBase,head}),/rewrites or removes committed evidence/);
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.match(path.basename(root),/^pr-evidence-test-/u);
+    rmSync(root,{recursive:true,force:true});
+  }
+});
