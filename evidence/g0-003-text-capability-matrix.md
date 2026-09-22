@@ -38,3 +38,38 @@
 已邀请第二账号加入包含机器人的测试群。首次在群内 `@` 机器人时，企业微信提示“不在通讯录范围”，本机捕获器未收到 Frame；该次事件不构成消息投递失败。范围修正后重新测试，已于 `2026-08-26T08:15:19Z` 捕获到该第二账号的群内 @ Frame。
 
 G0-003 的安全样例已齐全，任务状态为 `DONE`。G0-004 仍须等待用户确认后才可进入。
+
+## 2026-09-22 用户个人信息字段补充验证
+
+本轮只验证“回调直接提供什么”和“是否需要另行查询个人资料”，不把回调中的身份标识当作个人资料，也不保存用户 A 的原始标识、原文或响应 URL。群聊和单聊均由同一测试用户 A 触发；运行时输出和追加的 JSONL 仍只保留字段名、字节数与哈希。
+
+| 场景 | 实测回调 | 回调直接可得 | 回调直接不可得 | 状态 |
+| --- | --- | --- | --- | --- |
+| 用户 A 在群内 `@bot` | `2026-09-22T08:52:18Z`，`chattype=group` | `from.userid`、`chatid`、`msgid`、`aibotid`、`msgtype`、消息内容、`response_url` | 姓名、部门名称/部门资料、职务、手机号、性别、邮箱、头像、二维码、地址等个人资料字段 | 身份与会话上下文通过；个人资料字段未提供 |
+| 用户 A 与 bot 单聊 | `2026-09-22T08:52:58Z`，`chattype=single` | `from.userid`、`msgid`、`aibotid`、`msgtype`、消息内容、`response_url` | 同上；且本回调没有 `chatid` | 身份通过；个人资料字段未提供 |
+| 群聊与单聊身份关联 | 两条样例的 `sender_user_id_hash` 均为 `eed67fb12c02e975` | 在同一 Bot 命名空间内可判断为同一发送者 | 不等于已完成 Bot 命名空间到代开发应用命名空间的授权映射 | 仅限本 Bot、脱敏、当前样例 |
+
+### 需要另行调用的个人资料能力
+
+官方 [智能机器人长连接回调](https://developer.work.weixin.qq.com/document/path/101463) 只定义 `from.userid`，没有姓名、部门、手机号等资料字段。若业务确实需要成员资料，必须走独立的企业应用通讯录接口，而不是从群聊或单聊回调猜测：
+
+1. 先按当前 Bot 与应用的身份命名空间选择官方转换接口：自建应用对接 Bot 可用 [`batch/openuserid_to_userid`](https://developer.work.weixin.qq.com/document/path/101521)；代开发/第三方应用按场景使用 [`userid_to_openuserid` 或对应的服务商转换接口](https://developer.work.weixin.qq.com/document/path/97106)。转换本身只解决 ID 对应关系，不授予资料访问权。
+2. 再以有权限的应用 `access_token` 调用 [`user/get`](https://developer.work.weixin.qq.com/document/path/96255)。接口可能返回 `name`、`department`（部门 ID 列表）、`position`、`is_leader_in_dept`、`direct_leader`、`status`、`main_department`、`extattr`、`external_profile` 等；具体字段仍受应用类型、可见范围和管理员授权限制。
+3. `mobile`、`gender`、`email`、`biz_mail`、`avatar`、`qr_code`、`address` 等敏感字段，对新建自建/代开发应用需要管理员授权并由成员本人完成 OAuth2 手工授权（`snsapi_privateinfo`）；用户给 Bot 发消息不等于完成该授权。
+
+本仓库 `evidence/g0-005-http-template-card-20260922.md` 的同日定向验证中，`user/get` Provider 返回 `errcode=0`，但仅观察到 `userid`，`name`、`department`、`gender`、`mobile`、`avatar` 未返回。因此当前租户的“进一步读取完整个人资料”只能标为 `部分通过/未证明`；空字段不能解释为用户没有资料，必须先补齐应用可见范围和授权。该 HTTP 结果不改变本 Bot WebSocket 回调的结论，也不构成 P2-G2-LIVE 授权。
+
+上段保留的是前一轮 HTTP 读取运行的原始观察；以下追加的用户 A 复核是新的、同日的独立调用，不能合并为同一次 `user/get` 返回。
+
+### 2026-09-22 用户 A 的 `userid → user/get` 后续复核
+
+本次用上一节群聊/单聊捕获到的发送者哈希核对配置测试用户，哈希一致后才执行只读目录调用；原始 userid、转换后的 open_userid、姓名、手机号和部门名称均未写入终端或 Evidence。
+
+| 步骤 | 脱敏结果 | 状态 |
+| --- | --- | --- |
+| Bot 用户 ID与配置用户核对 | `sender_user_id_hash` 一致 | 通过 |
+| `POST batch/userid_to_openuserid` | `errcode=0`，成功映射 1 个，无效 0 个 | 通过 |
+| `GET user/get` | `errcode=0`；返回 userid、姓名、1 个部门 ID、别名、账号状态；职务为空，手机号、性别、邮箱、头像、二维码、地址等未返回 | 部分通过 |
+| `GET department/get` | 1 个部门 ID 成功解析出部门名称 | 通过 |
+
+因此，当前应用在已确认可见范围内可以通过 `userid` 取得有限成员资料和部门名称；这不是 Bot 回调直接携带的资料，也不证明敏感字段已获授权。`mobile`、`gender`、`email`、`avatar` 等仍需按官方 OAuth2/管理员授权规则处理。

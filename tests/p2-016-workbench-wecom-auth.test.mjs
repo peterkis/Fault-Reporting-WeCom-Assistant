@@ -81,6 +81,7 @@ function cookieValue(headers, name) {
 test('workbench WeCom auth creates QR redirect, consumes state once, and persists a session', async () => {
   const pool = fakePool();
   const auth = createWeComWorkbenchAuthentication({ pool, publicOrigin: origin, corpId: 'ww-test', agentId: '1000001',
+    identityHashKey:'synthetic-identity-key-1234567890',
     accessTokenProvider: async () => 'token', fetchImpl: async url => url.pathname.endsWith('/batch/userid_to_openuserid')
       ? response({ errcode: 0, open_userid_list: [{ userid: 'staff-raw', open_userid: 'open-staff' }] })
       : response({ errcode: 0, userid: url.searchParams.get('code') === 'raw-code' ? 'staff-raw' : 'open-staff' }), now: () => 1_000_000 });
