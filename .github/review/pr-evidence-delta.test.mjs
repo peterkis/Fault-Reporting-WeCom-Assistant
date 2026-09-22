@@ -82,10 +82,16 @@ test('sync merge rejects an add/add evidence collision resolved to base',()=>{
     git(['checkout','-b','base-update',oldBase]);
     writeFileSync(path.join(root,'evidence/collision.md'),'base version\n');const currentBase=commit();
     git(['checkout','-b','pr-change',oldBase]);
-    writeFileSync(path.join(root,'evidence/collision.md'),'pr version\n');commit();
-    assert.throws(()=>git(['merge','--no-ff','base-update','-m','sync current base']));
-    git(['checkout','--theirs','--','evidence/collision.md']);git(['add','evidence/collision.md']);
-    const head=commit();
+    writeFileSync(path.join(root,'evidence/collision.md'),'pr version\n');const prHead=commit();
+    // Build the resolved add/add merge tree directly so Git version and
+    // conflict-style differences cannot change the graph under test.
+    const baseTree=git(['rev-parse','base-update^{tree}']);
+    const mergeHead=execFileSync('git',['commit-tree',baseTree,'-p',prHead,'-p',currentBase,'-m','sync current base'],{
+      cwd:root,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe'],
+      env:{...process.env,GIT_AUTHOR_NAME:'Test',GIT_AUTHOR_EMAIL:'test@example.invalid',GIT_COMMITTER_NAME:'Test',GIT_COMMITTER_EMAIL:'test@example.invalid'},
+    }).trim();
+    git(['checkout','--detach',mergeHead]);
+    const head=git(['rev-parse','HEAD']);
     assert.throws(()=>verifyPrEvidenceDelta({root,base:currentBase,head}),/rewrites or removes committed evidence/);
   }finally{
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.match(path.basename(root),/^pr-evidence-test-/u);
