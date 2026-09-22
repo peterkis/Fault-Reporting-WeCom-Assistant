@@ -22,7 +22,6 @@ jobs:
       # GitHub PR #19 final published head; historical validation, never current readiness.
       SS009_FIXTURE: 41edd855e7bc55149facb6a4b2e0076776c22e66
       SS009_BASE: 375d47b013017edb858206cc5f3475c9aed77dfd
-      SS009_CHECKOUT: ${{ runner.temp }}/ss009-frozen
       GIT_NO_REPLACE_OBJECTS: '1'
     steps:
       - name: Preserve the recorded checkout line endings
@@ -52,9 +51,9 @@ jobs:
         run: |
           set -euo pipefail
           git merge-base --is-ancestor "$SS009_FIXTURE" "$EXPECTED_HEAD"
-          git clone --shared --no-checkout --config core.autocrlf=true . "$SS009_CHECKOUT"
-          git -C "$SS009_CHECKOUT" checkout --detach "$SS009_FIXTURE"
-          git -C "$SS009_CHECKOUT" update-ref refs/remotes/origin/main "$SS009_BASE"
+          git clone --shared --no-checkout --config core.autocrlf=true . "$RUNNER_TEMP/ss009-frozen"
+          git -C "$RUNNER_TEMP/ss009-frozen" checkout --detach "$SS009_FIXTURE"
+          git -C "$RUNNER_TEMP/ss009-frozen" update-ref refs/remotes/origin/main "$SS009_BASE"
       - run: npm ci --ignore-scripts --no-audit --no-fund
         working-directory: ${{ runner.temp }}/ss009-frozen
       - name: Verify historical fixture identity and unchanged strict readiness
