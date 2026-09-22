@@ -1,0 +1,42 @@
+[
+  {
+    "commit": "f29da5fb14d3e9a5c60ec27edbd6feedf69e3270",
+    "parent": "0a71e0844d6f3b481df73490f1f13636d1c576c0",
+    "path": "evidence/g0-003-frame-captures.jsonl",
+    "before": "bec7864b0c989d1ebf73f2a5301868af5bafc2e6",
+    "after": "f201ceb0f40a23d04c451e65429030e73bcbc435",
+    "oldMode": "100644", "newMode": "100644", "status": "M"
+  },
+  {
+    "commit": "f29da5fb14d3e9a5c60ec27edbd6feedf69e3270",
+    "parent": "0a71e0844d6f3b481df73490f1f13636d1c576c0",
+    "path": "evidence/g0-003-text-capability-matrix.md",
+    "before": "d44cf02d7d395494f0ac4091404e70e3b99b2786",
+    "after": "1626fe29eae4cc2234dbddded97895b36f293392",
+    "oldMode": "100644", "newMode": "100644", "status": "M"
+  },
+  {
+    "commit": "f29da5fb14d3e9a5c60ec27edbd6feedf69e3270",
+    "parent": "0a71e0844d6f3b481df73490f1f13636d1c576c0",
+    "path": "evidence/g0-005-http-template-card-20260922.md",
+    "before": "d9e866d952a59ade5e79e3d59060e8882fddeafe",
+    "after": "9c238b639b0ef6e63df4b4b8e6ab0286e93f5684",
+    "oldMode": "100644", "newMode": "100644", "status": "M"
+  },
+  {
+    "commit": "87b12ab6d0929fc069326a58159917cda075a4a4",
+    "parent": "f29da5fb14d3e9a5c60ec27edbd6feedf69e3270",
+    "path": "evidence/g0-005-active-push-matrix.md",
+    "before": "9bbadb5e3e140d3f3097cf386dc3ba198d37fd8d",
+    "after": "a1fab3b6e8bdeadaf1fc10f3bd4b8f725e74a6a8",
+    "oldMode": "100644", "newMode": "100644", "status": "M"
+  },
+  {
+    "commit": "87b12ab6d0929fc069326a58159917cda075a4a4",
+    "parent": "f29da5fb14d3e9a5c60ec27edbd6feedf69e3270",
+    "path": "evidence/g0-005-http-template-card-20260922.md",
+    "before": "9c238b639b0ef6e63df4b4b8e6ab0286e93f5684",
+    "after": "01cc72075f7a800acfb7cf26bc7aaac1ea0354ce",
+    "oldMode": "100644", "newMode": "100644", "status": "M"
+  }
+]
