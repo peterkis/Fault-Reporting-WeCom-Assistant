@@ -44,9 +44,11 @@ G0-005 原有矩阵验证的是智能机器人 WebSocket `aibot_send_msg`。代�
 | H02 | Bot userid 命名空间转换 | `batch/userid_to_openuserid` 的一对一转换；无效成员必须明确拒绝 |
 | H03 | HTTP 模板卡片 Provider ACK | `message/send`、`msgtype=template_card`、`card_type=text_notice`，保留数值 `errcode`、结果类别和脱敏目标摘要 |
 | H04 | HTTP 成员读取 | `user/get` 返回 `userid`、`name`、`department`、`gender`、`mobile`、`avatar` 的字段可用性；空字段按授权结果解释 |
+| H04A | 成员本人 OAuth2 敏感字段 | `snsapi_privateinfo` + `agentid` → `auth/getuserinfo.user_ticket` → `auth/getuserdetail`；只记录字段可用性 |
+| H04B | 部门层级读取 | `department/get` 逐级读取成员部门和父部门；证据只保留层级结论，不保留部门值 |
 | H05 | 客户端展示与通知 | 独立人工观察；Provider `errcode=0` 不得替代客户端证据 |
 
-当前 H03 已取得 Provider ACK；H05 尚未人工确认。H01 的正式服务商永久授权码链路当前未运行；本机 `.env.pilot` 的现有应用令牌路径不能代替 H01。
+当前 H03 已取得 Provider ACK；H04A 已取得成员本人授权后的性别、手机号和头像字段；H04A 的邮箱、企业邮箱、地址和个人二维码本次未返回；H04B 部门层级读取通过。H05 尚未人工确认。H01 的正式服务商永久授权码链路当前未运行；本机 `.env.pilot` 的现有应用令牌路径不能代替 H01。全部个人值、凭据和头像 URL 均未写入矩阵。
 
 ## 3. 连接生命周期
 

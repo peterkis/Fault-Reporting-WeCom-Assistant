@@ -43,7 +43,8 @@ G0-005 已完成。单聊在线/离线显示与通知、群 `chatid` 主动投�
 | 场景 | 接口/方法 | 能力结论 | 当前状态 |
 |---|---|---|---|
 | 成员命名空间转换 | `POST /cgi-bin/batch/userid_to_openuserid` | Bot 明文 userid 转为应用接口可用的 `open_userid`；无效列表为 0 | 通过 |
-| 成员详情读取 | `GET /cgi-bin/user/get` | 转换后的成员 ID 可读取；姓名、部门、性别、手机号、头像受管理员/OAuth2 授权控制 | ID 读取通过；敏感字段未授权 |
+| 成员详情读取 | `GET /cgi-bin/user/get` | 转换后的成员 ID 可读取；姓名、部门、别名、激活状态等字段可用性已脱敏验证 | 非敏感资料通过；敏感字段见下一行 |
+| 成员本人 OAuth2 敏感字段 | `snsapi_privateinfo` → `auth/getuserinfo` → `auth/getuserdetail` | 成员本人授权后性别、手机号、头像字段返回；邮箱、企业邮箱、地址、个人二维码本次未返回 | 部分通过；未写入业务库 |
 | 文本通知型模板卡片 | `POST /cgi-bin/message/send`，`msgtype=template_card`、`card_type=text_notice` | Provider 返回 `errcode=0` 并返回消息 ID；请求启用重复消息检查，单次调用 | Provider ACK 通过 |
 | 客户端展示/通知 | 企业微信客户端人工观察 | 不能由 `errcode=0` 推断显示、通知或点击 | `NOT_RUN` |
 | 正式服务商 Token 链 | `POST /cgi-bin/service/get_corp_token` | 需要 `suite_access_token + auth_corpid + permanent_code`；当前 `.env.pilot` 未配置该链路 | `NOT_RUN` |
