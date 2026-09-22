@@ -97,6 +97,7 @@ git diff --check
 ```text
 AGENTS.md
 CONTEXT.md
+docs/domain-modeling/conversation-context-reference.md
 README.md
 MANIFEST.json
 project_summary.json
@@ -112,6 +113,8 @@ docs/41_p2_005_assignment_handoff_generation_fence.md
 docs/42_p2_006_realtime_web_workbench.md
 evidence/p2-g1-project-owner-approval.md
 ```
+
+`CONTEXT.md` 提供全项目业务词汇；`docs/domain-modeling/conversation-context-reference.md` 保留既有 Conversation Center 技术定义与变更前置要求，两者必须一起阅读。涉及投影/重建、实时回放、通信、控制、受理编排或工单命令时，继续读取参考文件指向的对应实现文档。其中历史阶段/验收状态不作为当前 readiness 依据，当前状态按架构基线、Accepted ADR 和当前计划核验。
 
 外部包：
 

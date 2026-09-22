@@ -2,6 +2,8 @@
 
 本词汇表统一报修受理、会话协作、工单处理、公共故障和通知中的业务用语。它定义概念含义，不宣称任何能力已经实现或获准启用。
 
+> **既有 P2 契约变更必读**：修改会话身份、时间线投影/重建、实时回放、通信投递、接管/控制、受理编排或工单命令前，必须同时阅读 [Conversation Center 技术词汇与变更前置要求](docs/domain-modeling/conversation-context-reference.md)，并按其中入口阅读对应实现文档。该文件保留 `Projection Checkpoint`、`Timeline Rebuild`、`Generation Version`、`Ticket Command Receipt` 等既有定义与不变量；本词汇表不替代这些约束。参考文件中的阶段和验收状态属于历史快照，当前状态仍按架构基线、Accepted ADR 和当前计划核验。
+
 ## Language
 
 ### 人员与责任

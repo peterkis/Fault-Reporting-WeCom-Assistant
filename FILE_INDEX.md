@@ -85,7 +85,8 @@
 
 ## P2-001 契约与实现
 
-- `CONTEXT.md`：Conversation Center 统一领域语言；
+- [CONTEXT.md](CONTEXT.md)：全项目业务词汇及既有 P2 契约的必读入口；
+- [Conversation Center 技术词汇与变更前置要求](docs/domain-modeling/conversation-context-reference.md)：修改既有 P2 会话、投影/重建、实时回放、通信、控制、受理或工单命令时必须与根词汇表一起阅读，并跟随其中的实现文档入口；技术定义继续适用，阶段状态按当前基线核验；
 - `contracts/conversation_thread.schema.json`：Thread 契约；
 - `contracts/conversation_session.schema.json`：Session 契约；
 - `contracts/conversation_item.schema.json`：Item 冻结契约；其持久化由 migration 011 实现；
