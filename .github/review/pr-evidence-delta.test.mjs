@@ -24,6 +24,15 @@ test('PR evidence additions pass; rewrites and rewrite-restore history fail',()=
     git(['-c','user.name=Test','-c','user.email=test@example.invalid','-c','commit.gpgsign=false','merge','--no-ff','-s','ours','side','-m','retain original tree']);
     head=git(['rev-parse','HEAD']);
     assert.throws(()=>verifyPrEvidenceDelta({root,base,head}),/rewrites or removes committed evidence/);
+    git(['checkout','-b','old-base']);
+    writeFileSync(path.join(root,'evidence/base-update.md'),'base update\n');
+    const currentBase=commit();
+    git(['checkout','-b','sync-pr',base]);
+    writeFileSync(path.join(root,'source.md'),'pr change\n');
+    commit();
+    git(['-c','user.name=Test','-c','user.email=test@example.invalid','-c','commit.gpgsign=false','merge','--no-ff','old-base','-m','sync current base']);
+    head=git(['rev-parse','HEAD']);
+    assert.equal(verifyPrEvidenceDelta({root,base:currentBase,head}).status,'PR_EVIDENCE_DELTA_PASS_NOT_READINESS');
   }finally{
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.match(path.basename(root),/^pr-evidence-test-/u);
     rmSync(root,{recursive:true,force:true});
