@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "work_item": "YXX-SS-011",
+  "kind": "UNEXECUTED_ACCEPTANCE_MATRIX",
+  "run_id": null,
+  "live_authorized": false,
+  "live_result": "NOT_RUN",
+  "parent_gate_advanced": false,
+  "cases": [
+    {
+      "id": "YXX-AC-095",
+      "name": "固定主页认证",
+      "action": "A/B分别从原企业微信入口登录并再次访问",
+      "expected": "认证无循环，身份正确",
+      "evidence_required": "客户端记录、脱敏OAuth计数、会话身份校验",
+      "status": "NOT_RUN",
+      "event_time": null,
+      "event_epoch_ms": null,
+      "artifacts": [],
+      "observed": null
+    },
+    {
+      "id": "YXX-AC-096",
+      "name": "真实提交",
+      "action": "S1=A明确故障；S2=B明确故障",
+      "expected": "实际Web来源/Intake，至少一条规则直接建单",
+      "evidence_required": "请求收据、来源/Intake/Ticket关联、规则Decision",
+      "status": "NOT_RUN",
+      "event_time": null,
+      "event_epoch_ms": null,
+      "artifacts": [],
+      "observed": null
+    },
+    {
+      "id": "YXX-AC-097",
+      "name": "补充与审核",
+      "action": "S3=A缺字段后补充；S4=B非报修；S5=A高风险描述人工审核",
+      "expected": "补充参与判断；非报修无Ticket；原坐席审核后建单",
+      "evidence_required": "补充及审核记录、Decision、同一Ticket及UI",
+      "status": "NOT_RUN",
+      "event_time": null,
+      "event_epoch_ms": null,
+      "artifacts": [],
+      "observed": null
+    },
+    {
+      "id": "YXX-AC-098",
+      "name": "越权拒绝",
+      "action": "B读/补充A请求、查询A命令、换A cursor、伪造身份字段",
+      "expected": "拒绝，无泄漏/越权写，安全审计",
+      "evidence_required": "脱敏HTTP结果、前后计数和审计；不保存Cookie",
+      "status": "NOT_RUN",
+      "event_time": null,
+      "event_epoch_ms": null,
+      "artifacts": [],
+      "observed": null
+    },
+    {
+      "id": "YXX-AC-099",
+      "name": "幂等恢复",
+      "action": "重放S1原ID；不同内容同ID；S6=B恢复测试",
+      "expected": "同结果或冲突；响应丢失及同run恢复无丢单/重复/预算重置",
+      "evidence_required": "命令/Intake/Ticket计数、pending前后状态、恢复日志",
+      "status": "NOT_RUN",
+      "event_time": null,
+      "event_epoch_ms": null,
+      "artifacts": [],
+      "observed": null
+    },
+    {
+      "id": "YXX-AC-100",
+      "name": "安全反馈与零发",
+      "action": "原坐席推进接单、等待/恢复、解决/关闭；A/B查看本人Timeline",
+      "expected": "同一Ticket状态一致，内部备注不外泄，外发0",
+      "evidence_required": "UI/事件对应；Web关联外部对象逐项计数；OAuth单列",
+      "status": "NOT_RUN",
+      "event_time": null,
+      "event_epoch_ms": null,
+      "artifacts": [],
+      "observed": null
+    },
+    {
+      "id": "YXX-AC-101",
+      "name": "关闭对账",
+      "action": "停写、对账、停本次进程、启动批准读取服务",
+      "expected": "提交/补充拒绝，查询安全；pending明确，事实保留，资源释放",
+      "evidence_required": "停止回执、连接/端口核验、最终对账、只读HTTP结果",
+      "status": "NOT_RUN",
+      "event_time": null,
+      "event_epoch_ms": null,
+      "artifacts": [],
+      "observed": null
+    },
+    {
+      "id": "YXX-AC-102",
+      "name": "负责人确认",
+      "action": "负责人查看本次实际结果与限制",
+      "expected": "仅SS011局部通过，父Gate不推进",
+      "evidence_required": "负责人真实确认引用",
+      "status": "NOT_RUN",
+      "event_time": null,
+      "event_epoch_ms": null,
+      "artifacts": [],
+      "observed": null
+    }
+  ]
+}

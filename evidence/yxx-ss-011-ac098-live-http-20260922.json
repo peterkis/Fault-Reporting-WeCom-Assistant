@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "run_id": "SS011-AC098-HTTP-20260922T093807+0800",
+  "event_time_start": "2026-09-22 09:38:07 +08:00",
+  "event_epoch_ms_start": 1790041087000,
+  "event_time_end": "2026-09-22 09:38:33 +08:00",
+  "event_epoch_ms_end": 1790041113000,
+  "candidate_release": "ss011-member-c4cf9c922234",
+  "http_capture": {
+    "proxy": "nginx private access log, temporary and restored",
+    "raw_line_count": 10,
+    "raw_log_sha256": "a1fe5d792093dda7e5c9c08905e4ce87bf1a655c7613abf29a9cab4781428802",
+    "raw_log_retained": false,
+    "target_requests": [
+      {
+        "event_time": "2026-09-22 09:38:18 +08:00",
+        "event_epoch_ms": 1790041098000,
+        "method": "GET",
+        "path": "/api/yixiaoxiu/requests/Cb108qRQbv5EKQ2apS6Wkz3lF2DGEBzJ",
+        "status": 404,
+        "response_bytes": 63,
+        "result": "cross_member_detail_denied"
+      },
+      {
+        "event_time": "2026-09-22 09:38:24 +08:00",
+        "event_epoch_ms": 1790041104000,
+        "method": "GET",
+        "path": "/api/yixiaoxiu/commands/6cd93284-ec74-40ba-b455-755fc00fdf1e",
+        "status": 404,
+        "response_bytes": 63,
+        "result": "cross_member_command_denied"
+      },
+      {
+        "event_time": "2026-09-22 09:38:33 +08:00",
+        "event_epoch_ms": 1790041113000,
+        "method": "GET",
+        "path": "/api/yixiaoxiu/my-reports",
+        "query_sha256": "55192d6de57da30655572d975ccbb27615c10f973fcb845fe121b550048ca4bf",
+        "query_length": 265,
+        "status": 400,
+        "response_bytes": 68,
+        "result": "foreign_cursor_rejected"
+      }
+    ]
+  },
+  "database_before_reference": "evidence/yxx-ss-011-ac099-recovery-baseline-20260922.md",
+  "database_after": {
+    "web_command_receipts": 9,
+    "web_submissions": 9,
+    "web_bindings": 6,
+    "web_intakes": 6,
+    "web_intake_events": 18,
+    "web_tickets": 2,
+    "web_ticket_events": 9,
+    "operations_audit_events": 0,
+    "communication_outbox": 0,
+    "communication_messages": 0,
+    "communication_deliveries": 0,
+    "notification_outbox": 0,
+    "latest_receipt": "2026-09-21 17:02:50",
+    "latest_submission": "2026-09-21 17:02:50",
+    "latest_binding": "2026-09-21 17:02:53"
+  },
+  "delta_from_baseline": {
+    "web_command_receipts": 0,
+    "web_submissions": 0,
+    "web_intakes": 0,
+    "web_tickets": 0,
+    "web_ticket_events": 0,
+    "communication_outbox": 0,
+    "communication_messages": 0,
+    "communication_deliveries": 0,
+    "notification_outbox": 0
+  },
+  "audit": {
+    "proxy_access_audit": "captured four member API requests; redacted summary retained",
+    "operations_audit_event_rows": 0,
+    "domain_write_events_added": 0,
+    "note": "The current member read authorization path does not append operations.audit_event rows; the protected proxy access record is the HTTP security audit artifact for this run."
+  },
+  "cleanup": {
+    "nginx_backup_sha256": "e41786c28372ce5d5a6da846e3207bec62798ab26f374998e6800f9b5260816e",
+    "nginx_config_restored": true,
+    "temporary_access_log_removed": true,
+    "member_service_running": true,
+    "cookies_or_request_bodies_retained": false
+  },
+  "scope_result": "HTTP_COMMAND_CURSOR_CROSS_MEMBER_POST_AND_FORGED_IDENTITY_CAPTURE_COMPLETE",
+  "remaining_ac098_items": [],
+  "cross_member_followup": "evidence/yxx-ss-011-ac098-cross-member-write-20260922.md"
+}

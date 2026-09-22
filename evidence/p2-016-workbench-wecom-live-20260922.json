@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "work_item": "P2-016-WORKBENCH-WECOM-AUTH",
+  "event_time": "2026-09-22 13:09:00+08:00",
+  "status": "PUBLIC_CONTROLLED_VALIDATION_PASSED",
+  "authorization": {
+    "owner_authorized_live_deployment_and_qr_validation": true,
+    "external_send_enabled": false,
+    "gateway_started": false,
+    "sender_started": false,
+    "ai_enabled": false,
+    "p2_g2_gate_advanced": false,
+    "phase2_go_claimed": false
+  },
+  "candidate": {
+    "release": "/opt/fault-reporting-wecom/p2-g2/releases/workbench-wecom-574442522676",
+    "archive_sha256": "e9aee883ebd9cc346a586c1beae97a11540ca950b9417e6fb8bebbae0bab3fbc",
+    "files": 448,
+    "node_image": "node@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e",
+    "node_version": "v24.20.0"
+  },
+  "database": {
+    "migration_035": "APPLIED",
+    "post_apply_status": "NOOP_ALREADY_APPLIED",
+    "backup": "/opt/fault-reporting-wecom/p2-g2/backups/workbench-wecom-20260922T043855Z/source-db.dump",
+    "backup_sha256": "b2e8bb8d0952ce3e11a5b61371a2d147d688f71fdd29a045853e0939734eea05",
+    "delivery_attempts": 0
+  },
+  "runtime": {
+    "management_container": "ss011-management",
+    "member_container": "ss011-yxx-self-service",
+    "proxy_container": "nginx",
+    "management_app_and_worker": "RUNNING",
+    "health_ready": true,
+    "base_service_ready": true,
+    "workbench_wecom_auth_ready": true,
+    "nginx_restart_count": 0,
+    "nginx_config_sha256": "002a89066da603bddc7117730cfcb14822269adff60f64656f5754819dec91f8",
+    "nginx_backup_sha256": "134b91d7ee891a0ba74e979438c93452121e962dbeb13a02014e7eeccad8ede3"
+  },
+  "public_probes": {
+    "origin": "https://cd3120.mobimedical.cn",
+    "workbench": 302,
+    "workbench_lifecycle": 302,
+    "unauthenticated_bootstrap": 401,
+    "unknown_api": 404,
+    "health_ready": 404,
+    "metrics": 404,
+    "workbench_static": 200,
+    "member_oauth_entry": 302
+  },
+  "qr_validation": {
+    "human_action": "TEST_USER_A_SCANNED_AND_COMPLETED_WECHAT_LOGIN",
+    "raw_userid_code_state_cookie_token_recorded": false,
+    "latest_auth_event": "LOGIN_SUCCEEDED/OAUTH_LOGIN",
+    "active_sessions": 1,
+    "mapped_sessions": 1,
+    "eligible_sessions": 1,
+    "principal_role_recheck": true
+  },
+  "rollback": {
+    "old_release_preserved": true,
+    "old_management_containers_preserved": true,
+    "nginx_backup_preserved": true,
+    "database_backup_preserved": true,
+    "down_migration_executed": false,
+    "external_notification_replay": false
+  }
+}

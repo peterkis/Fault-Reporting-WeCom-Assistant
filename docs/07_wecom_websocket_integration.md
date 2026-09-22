@@ -34,6 +34,20 @@ https://github.com/WecomTeam/aibot-node-sdk
 | W13 | 多实例同时连接 | 生产单活策略依据 |
 | W14 | H5 跳转 | 企业微信移动端网络可达 |
 
+### 补充：代开发应用 HTTP 能力矩阵（不计入 W01-W14）
+
+G0-005 原有矩阵验证的是智能机器人 WebSocket `aibot_send_msg`。代开发应用的应用消息接口走独立 HTTPS 路径，不能把两者的 ACK、目标 ID 或客户端结论互相替代。
+
+| 编号 | 验证项 | 预期输出 |
+|---|---|---|
+| H01 | 服务商授权企业 Token | `service/get_corp_token` 的 `access_token` 与 `expires_in`；需 `suite_access_token`、`auth_corpid`、`permanent_code` |
+| H02 | Bot userid 命名空间转换 | `batch/userid_to_openuserid` 的一对一转换；无效成员必须明确拒绝 |
+| H03 | HTTP 模板卡片 Provider ACK | `message/send`、`msgtype=template_card`、`card_type=text_notice`，保留数值 `errcode`、结果类别和脱敏目标摘要 |
+| H04 | HTTP 成员读取 | `user/get` 返回 `userid`、`name`、`department`、`gender`、`mobile`、`avatar` 的字段可用性；空字段按授权结果解释 |
+| H05 | 客户端展示与通知 | 独立人工观察；Provider `errcode=0` 不得替代客户端证据 |
+
+当前 H03 已取得 Provider ACK；H05 尚未人工确认。H01 的正式服务商永久授权码链路当前未运行；本机 `.env.pilot` 的现有应用令牌路径不能代替 H01。
+
 ## 3. 连接生命周期
 
 建议内部状态：
@@ -146,6 +160,47 @@ SDK 回调处理器只允许执行：
 所有主动推送来源于 Pilot Outbox，而不是 Ticket 控制器直接调用 SDK。Phase 3 的通知所有权必须通过切换计划明确。
 
 主动媒体投递同样先上传临时素材，再由 Outbox 的 Delivery 调用 `aibot_send_msg`；回调 `req_id` 不参与该路径。
+
+### 7.1 代开发应用 HTTP 模板卡片主动推送
+
+该路径用于服务商代开发应用通过授权企业 access_token 调用企业应用消息接口；它不使用 Bot WebSocket 的 `sendMessage(chatid, body)`、回调 `req_id` 或 `aibot_send_msg`。
+
+官方方法：
+
+```text
+POST https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=ACCESS_TOKEN
+```
+
+请求的最小固定形状：
+
+```json
+{
+  "touser": "OPEN_USERID",
+  "msgtype": "template_card",
+  "agentid": 123,
+  "template_card": {
+    "card_type": "text_notice",
+    "main_title": { "title": "标题", "desc": "辅助说明" },
+    "sub_title_text": "通知正文",
+    "card_action": { "type": 1, "url": "https://work.weixin.qq.com" },
+    "task_id": "unique-task-id"
+  },
+  "enable_duplicate_check": 1,
+  "duplicate_check_interval": 1800
+}
+```
+
+接口使用规则：
+
+- 正式服务商 Token 由 `service/get_corp_token` 根据 `suite_access_token`、`auth_corpid` 和 `permanent_code` 获取；Token 只在服务端缓存，不进入前端、日志或 Evidence。
+- 当前应用凭据路径可使用 `GET /cgi-bin/gettoken?corpid=CORP_ID&corpsecret=APP_SECRET`，但只有在凭据确实属于该企业应用时才成立；它不能替代正式代开发应用的永久授权码链路。
+- Bot 明文 userid 先经 `batch/userid_to_openuserid` 转换，再作为 `OPEN_USERID` 使用；禁止直接混用 Bot 与应用命名空间。
+- `text_notice` 必须有合法 `card_action`；URL 只允许批准的 HTTPS host，不能携带 Secret、Token、userid、OAuth code 或状态凭据。
+- `enable_duplicate_check=1` 只能作为提供方重复消息保护；业务仍必须经过 Communication/Outbox/Delivery 的幂等、UNKNOWN 对账和客户端可见性门禁。
+- 官方发送限制需按应用账号上限、单成员 30 次/分钟和 1000 次/小时控制；`errcode=0` 只表示请求被接受，不表示客户端已显示或通知。
+- `invaliduser`、`unlicenseduser`、全目标无效和敏感字段未返回均按权限/范围结果处理，不得盲目重试或把空字段解释为真实个人资料缺失。
+
+本次脱敏验证摘要见 [`evidence/g0-005-http-template-card-20260922.md`](../evidence/g0-005-http-template-card-20260922.md)；它只记录当前 Provider ACK 和字段可用性，不构成正式服务商 Token 链、客户端展示或 P2-G2-LIVE 批准。
 
 ## 8. 卡片按钮
 

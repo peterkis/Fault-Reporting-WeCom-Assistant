@@ -3,6 +3,14 @@ const labels={LOW:'低',MEDIUM:'中',HIGH:'高',CRITICAL:'需重点关注',ROOM:
 let mode='candidates',selected=null,next=null,items=[],bootstrap=null,busy=false,loading=false,editing=false,stopped=false,stream=null,timer=null,retry=null,generation=0;
 let childCursors={};
 const controllers=new Set();const say=s=>$('status').textContent=s;
+async function logout(){
+  $('incident-logout').disabled=true;
+  try{
+    const response=await fetch('/workbench/logout',{method:'POST',credentials:'same-origin',headers:{'X-CSRF-Token':bootstrap?.csrf_token??''}});
+    if(!response.ok)throw new Error('WORKBENCH_LOGOUT_FAILED');
+    location.replace('/workbench');
+  }catch(error){$('incident-logout').disabled=false;say(error.message);}
+}
 function button(label,fn){const b=node('button',label);b.type='button';b.onclick=()=>void fn();return b;}
 function stop(){generation++;stopped=true;stream?.close();clearInterval(timer);for(const c of controllers)c.abort();$('list').replaceChildren();$('detail').replaceChildren();say('访问已失效，请重新登录。');}
 async function api(path,options={}){const c=new AbortController();controllers.add(c);const t=setTimeout(()=>c.abort(),15000);try{
@@ -95,6 +103,7 @@ async function refresh(append=false){if(stopped||busy||editing||loading)return;l
 }
 for(const id of ['candidates','active','finished'])$(id).onclick=()=>{if(busy)return;mode=id;selected=null;childCursors={};editing=false;generation++;remember();$('detail').replaceChildren();$('queue-title').textContent=$(id).textContent;void refresh();};
 $('refresh').onclick=()=>{editing=false;void refresh();};$('more').onclick=()=>void refresh(true);$('retry').onclick=()=>retry&&execute(retry.path,retry.body,retry.id);
+$('incident-logout').onclick=()=>{void logout();};
 window.addEventListener('pagehide',()=>{stopped=true;stream?.close();clearInterval(timer);for(const c of controllers)c.abort();});
 try{const saved=new URLSearchParams(location.hash.slice(1));if(['candidates','active','finished'].includes(saved.get('mode')))mode=saved.get('mode');if(/^[a-f0-9-]{36}$/iu.test(saved.get('selected')??''))selected=saved.get('selected');
   $('queue-title').textContent=$(mode).textContent;

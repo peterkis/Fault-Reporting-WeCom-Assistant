@@ -12,14 +12,29 @@ import { createP2016DirectIntakeProcessor, P2016_DIRECT_IDLE_TIMEOUT_MS } from '
 import { createTicketClosureService } from '../src/p1-010-ticket-closure.mjs';
 import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mjs';
 import { P2016_LIVE_FUSES,P2016_TEST_FLAGS } from '../src/p2-016-live-configuration.mjs';
+import { createWeComWorkbenchAuthentication } from '../src/p2-016-workbench-wecom-auth.mjs';
 
 const access=pool=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:process.env.P2_016_REPORTER_HMAC_SECRET});
 export async function main(argv=process.argv.slice(2)){
   if(typeof process.send!=='function'||argv.length!==1||!['--role=app','--role=worker','--role=gateway'].includes(argv[0]))throw new Error('P2_016_ROLE_INVALID');
   if((process.env.P2_G1_GATEWAY_ENABLED==='true'||process.env.P2_G1_SENDER_ENABLED==='true')&&P2016_LIVE_FUSES.some(k=>process.env[k]!=='true')&&argv[0]==='--role=gateway')throw new Error('P2_016_LIVE_APPROVAL_REQUIRED');
-  if(argv[0]==='--role=app')return runApp({runtimeFactory:options=>createP2016Runtime({...options,flags:P2016_TEST_FLAGS,
-    reporterOrigin:process.env.P2_016_REPORTER_ORIGIN,reporterHmacSecret:process.env.P2_016_REPORTER_HMAC_SECRET,
-    allowedHosts:process.env.P2_016_REPORTER_ALLOWED_HOSTS.split(',')})});
+  if(argv[0]==='--role=app'){
+    const workbenchLoginEnabled=process.env.WORKBENCH_WECOM_LOGIN_ENABLED==='true';
+    const publicOrigin=process.env.WORKBENCH_PUBLIC_ORIGIN;
+    return runApp({
+      publicOrigin:workbenchLoginEnabled?publicOrigin:null,
+      externalSendEnabled:process.env.WORKBENCH_EXTERNAL_SEND_ENABLED==='true',
+      authenticationFactory:workbenchLoginEnabled?async({pool,publicOrigin:resolvedOrigin})=>{
+        const auth=createWeComWorkbenchAuthentication({pool,publicOrigin:resolvedOrigin,corpId:process.env.CORP_ID,
+          agentId:process.env.APP_ID,appSecret:process.env.APP_SECRET});
+        await auth.initialize();
+        return auth;
+      }:null,
+      runtimeFactory:options=>createP2016Runtime({...options,workbenchAuthentication:options.authentication,flags:P2016_TEST_FLAGS,
+        reporterOrigin:process.env.P2_016_REPORTER_ORIGIN,reporterHmacSecret:process.env.P2_016_REPORTER_HMAC_SECRET,
+        allowedHosts:process.env.P2_016_REPORTER_ALLOWED_HOSTS.split(',')}),
+    });
+  }
   if(argv[0]==='--role=gateway')return runGateway({
     intakeFactory:({pool})=>{
       const scope=createP2016InboundScope({bot_id:process.env.WECOM_BOT_ID,person_hashes:process.env.P2_016_TEST_USER_TARGET_HASHES.split(','),group_hashes:process.env.P2_016_TEST_GROUP_TARGET_HASHES.split(',')});

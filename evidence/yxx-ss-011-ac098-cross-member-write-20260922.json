@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "run_id": "SS011-AC098-CROSS-MEMBER-20260922T095925+0800",
+  "event_time_start": "2026-09-22 09:59:25 +08:00",
+  "event_epoch_ms_start": 1790042365000,
+  "event_time_end": "2026-09-22 09:59:30 +08:00",
+  "event_epoch_ms_end": 1790042370000,
+  "candidate_release": "ss011-member-c4cf9c922234",
+  "method": "temporary same-origin probe page in B's authenticated WeCom webview",
+  "valid_http_results": [
+    {
+      "event_time": "2026-09-22 09:59:25 +08:00",
+      "event_epoch_ms": 1790042365000,
+      "method": "GET",
+      "path": "/api/yixiaoxiu/bootstrap",
+      "status": 200,
+      "result": "B_authenticated"
+    },
+    {
+      "event_time": "2026-09-22 09:59:30 +08:00",
+      "event_epoch_ms": 1790042370000,
+      "method": "POST",
+      "path": "/api/yixiaoxiu/requests/<A request_ref>/supplements",
+      "status": 404,
+      "response_bytes": 63,
+      "error_code": "YXX_NOT_FOUND",
+      "result": "cross_member_supplement_denied"
+    },
+    {
+      "event_time": "2026-09-22 09:59:30 +08:00",
+      "event_epoch_ms": 1790042370000,
+      "method": "GET",
+      "path": "/api/yixiaoxiu/my-reports",
+      "query_sha256": "3dab6ad4c588fd30e8002444abb40f0d1556d48f023288b3a851e5849ed7f157",
+      "query_length": 99,
+      "status": 400,
+      "response_bytes": 67,
+      "error_code": "YXX_INPUT_INVALID",
+      "result": "forged_identity_field_rejected"
+    }
+  ],
+  "discarded_attempts": [
+    {"event_time": "2026-09-22 09:53:00 +08:00", "result": "malformed_probe_body_rejected_400", "accepted_as_evidence": false},
+    {"event_time": "2026-09-22 09:57:15 +08:00", "result": "expired_session_bootstrap_401", "accepted_as_evidence": false}
+  ],
+  "database_before": {
+    "web_command_receipts": 9,
+    "web_submissions": 9,
+    "web_bindings": 6,
+    "web_intakes": 6,
+    "web_tickets": 2,
+    "communication_outbox": 0,
+    "communication_messages": 0,
+    "notification_outbox": 0
+  },
+  "database_after": {
+    "web_command_receipts": 9,
+    "web_submissions": 9,
+    "web_bindings": 6,
+    "web_intakes": 6,
+    "web_intake_events": 18,
+    "web_tickets": 2,
+    "web_ticket_events": 9,
+    "operations_audit_events": 0,
+    "communication_outbox": 0,
+    "communication_messages": 0,
+    "communication_deliveries": 0,
+    "notification_outbox": 0,
+    "latest_receipt": "2026-09-21 17:02:50",
+    "latest_submission": "2026-09-21 17:02:50",
+    "latest_binding": "2026-09-21 17:02:53"
+  },
+  "delta": {"web_command_receipts": 0, "web_submissions": 0, "web_intakes": 0, "web_tickets": 0, "communication_outbox": 0, "communication_messages": 0, "notification_outbox": 0},
+  "audit": {
+    "proxy_raw_log_sha256": "8a250e7524ed7c3e9248b9a019d6d92588ef41460ce41fe8f38036ee3abf2b70",
+    "proxy_raw_log_retained": false,
+    "operations_audit_event_rows": 0,
+    "domain_write_events_added": 0,
+    "note": "The member read/command authorization path does not append operations.audit_event rows; the protected temporary proxy access log is the HTTP audit artifact."
+  },
+  "cleanup": {
+    "nginx_backup_sha256": "e41786c28372ce5d5a6da846e3207bec62798ab26f374998e6800f9b5260816e",
+    "nginx_config_restored": true,
+    "probe_page_removed": true,
+    "probe_log_removed": true,
+    "cookies_or_request_bodies_retained": false
+  },
+  "result": "AC098_CROSS_MEMBER_POST_AND_FORGED_IDENTITY_HTTP_EVIDENCE_COMPLETE"
+}

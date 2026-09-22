@@ -51,7 +51,7 @@ resolved before the next dependent ticket starts.
 | YXX-SS-008 | COMPLETE | `evidence/yxx-ss-008-pr18-readiness-report.json`: PR18 readiness repair, isolated PostgreSQL/HTTP/browser/Worker, full regression and two independent reviews |
 | YXX-SS-009 | IMPLEMENTATION_AND_AUTOMATION_COMPLETE / local PASS | `evidence/yxx-ss-009-r7-report.json`; PR #19 discussion closeout is described below; no formal remote APPROVED claim |
 | YXX-SS-010 | IMPLEMENTATION_AND_AUTOMATION_COMPLETE / READY_FOR_LIMITED_WRITE_LIVE | `evidence/yxx-ss-010-report.json`: 1217/1217 across 195 files; local strict readiness and two independent reviews PASS; live NOT_RUN |
-| YXX-SS-011 | NOT AUTHORIZED | intentionally out of scope |
+| YXX-SS-011 | DEPLOYED / waiting A-B human click | `evidence/yxx-ss-011-live-deployment-report.json`; AC-095 through AC-102 NOT_RUN |
 
 As of 2026-09-21, PR #19 at `0d1cfa2935f028ca5c0a97838615dad1ab453563`
 remains open with all 13 review threads resolved and its five current checks
@@ -89,3 +89,37 @@ the full run reports an unchanged candidate and zero failed/cancelled/skipped/to
 tests. AC-091 through AC-094 are PASS in the new SS010 report; the old SS009 matrix
 remains unchanged. Only local commits were made. Remote CI/review are NOT_RUN.
 Formal natural GC, physical 2C4G and 60-minute observation remain NOT_RUN.
+
+## SS-011 offline preparation
+
+The user requested implementation of the SS-011 plan, including its explicit
+pending-environment and separate live-approval stops. Offline preparation is
+recorded in `evidence/yxx-ss-011-preparation-report.json`; the operational checklist
+is `docs/runbooks/yixiaoxiu-ss011-execution.md`. The GitHub-observed PR20 merge is
+`a58577d66733b3ec39f5d74af9ff44c70b79fe38`. Its PR-head CI has two SUCCESS and two
+SKIPPED jobs, and a Codex no-major-issues comment, not a formal APPROVED review.
+This successor observation does not rewrite SS010's historical remote fields.
+
+The user subsequently authorized the local workstation to control the live
+window and confirmed that A/B can click the WeCom member entry. The current
+candidate is deployed in a stopped-Gateway state: `/wecom/yixiaoxiu/` now emits
+the real OAuth redirect, while the previous OAuth-only container is preserved
+and stopped. The unified management workbench is deployed loopback-only on
+port 43124 and is reachable after an SSH local tunnel at
+`http://127.0.0.1:43124/workbench/lifecycle`; its short-lived staff cookies are
+kept in protected cloud state. Nginx was not changed and no public workbench
+route was added. See `evidence/yxx-ss-011-live-deployment-report.json`.
+Target host/database, actors, window, permissions and archival details remain
+pending in `plans/yxx-ss-011-execution-inputs.json`. The live matrix remains NOT_RUN;
+no live authorization, deployment, OAuth, database connection or Gate advancement
+has occurred during this preparation.
+
+Subsequent user authorization permitted use of the configured cloud host,
+configuration backups, a dedicated test database, A/B as both reporters and staff,
+A as owner, and restore into an independent drill database. This cloud preparation
+is complete, including real backups, isolated restore verification and new-test-DB
+migrations. The original source database, configuration and running OAuth/nginx
+services are preserved. The drill database is retained with connections disabled.
+See `evidence/yxx-ss-011-cloud-preparation-report.json` for current facts and retained
+failed attempts. This supersedes the offline-only operational snapshot above;
+it does not authorize or claim completion of the still-unexecuted Web live matrix.

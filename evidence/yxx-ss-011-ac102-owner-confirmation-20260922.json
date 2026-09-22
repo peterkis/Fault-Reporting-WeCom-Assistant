@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "work_item": "SS-011",
+  "acceptance_id": "AC-102",
+  "event_time": "2026-09-22 10:24:10 +08:00",
+  "event_epoch_ms": 1790043850000,
+  "confirmation_source": "负责人在当前任务中明确确认",
+  "confirmed_scope": {
+    "ac101": "AC-101 关写、停止、只读回退证据接受",
+    "ss011_state": "局部完成，保留未完成项和限制",
+    "parent_gate_progression": false,
+    "p2_g2": "不推进",
+    "p2_008": "不推进",
+    "ai": "不推进"
+  },
+  "evidence": [
+    "evidence/yxx-ss-011-ac101-write-off-readonly-20260922.md",
+    "evidence/yxx-ss-011-ac098-live-http-20260922.md",
+    "evidence/yxx-ss-011-ac098-cross-member-write-20260922.md"
+  ],
+  "remaining_boundaries": [
+    "AC-096 的 B 独立明确故障建单证据仍未补齐",
+    "AC-099 当前被测运行器的真实响应丢失/停止恢复仍未完成",
+    "SS-011 不声明整体验收通过，不产生发布、生产上线或父 Gate 批准"
+  ],
+  "result": "AC102_OWNER_CONFIRMED_PARTIAL_CLOSE_ONLY"
+}

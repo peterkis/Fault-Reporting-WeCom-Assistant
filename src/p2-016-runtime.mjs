@@ -32,7 +32,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   gatewayEnabled=false,senderEnabled=false,liveApproval=null,inboundScope=null,botId,secret,wsUrl,clientFactory,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,ruleEngine,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
-  reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null}={}) {
+  reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,
+  workbenchAuthentication=null,externalSendEnabled=true}={}) {
   const featureFlags=flagsP2016(flags),enabled=featureFlags.TICKET_LIFECYCLE_WORKBENCH_ENABLED;
   const policy=reporterAccessPolicy(reporterPolicy),memberConfig=validateYxxEntryConfig(reporterMemberEntry);
   if(policy==='MEMBER_REQUIRED'&&(!memberConfig.enabled||wecomWebOAuth.enabled!==true||!featureFlags.REPORTER_TIMELINE_ENABLED))failYxx('CONFIG_INVALID');
@@ -56,6 +57,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   let realtimeProjector,tickets,reviews,closure,incidentExtension=null,memberExtension=null,selfService=null;
   const runtime=createP2G1Runtime({pool,operationalIntake,principalId,principalIds,publicOrigin,listenPort,
     botId,secret,wsUrl,allowedTargetHashes,gatewayEnabled,senderEnabled,senderAdapter,clientFactory,testAuthTtlMs,
+    authentication:workbenchAuthentication,externalSendEnabled,
     projectionIntervalMs:1000,communicationIntervalMs:1000,closePoolOnStop,gatewayStatusProvider,communicationStatusProvider,requireGateway,
     realtimeAppender:appendP2016Realtime,
     projectionTransactionStart:({transaction})=>lockP2016Realtime(transaction),
@@ -71,7 +73,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       }}});
       tickets=createP2016TicketCommandFacade({pool,enabled,query,controlService,closure,notificationProjector:notifications,realtimeProjector:realtimeProjector.ticket});
       reviews=createP2016ManualReviewFacade({pool,enabled,query,notificationProjector:notifications,realtimeProjector,personDestinationAuthorizer,communicationAppend});
-      const deliveryControl=createP2016DeliveryControl({pool,query,enabled});
+      const deliveryControl=createP2016DeliveryControl({pool,query,enabled,externalSendEnabled});
       incidentExtension=incidentExtensionFactory?.({pool,realtime,query})??null;
       const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
@@ -84,6 +86,12 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       return {
         readiness:async base=>{
           let schema=false;try{schema=(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='031_p2_016_ticket_lifecycle_workbench_notifications'")).rowCount===1;}catch{/* dependency stays not ready */}
+          let workbenchAuthSchema=true;
+          if(workbenchAuthentication){
+            try{workbenchAuthSchema=(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='035_p2_016_workbench_wecom_auth'")).rowCount===1
+              &&typeof workbenchAuthentication.mappingDigest==='function'&&Boolean(workbenchAuthentication.mappingDigest());}
+            catch{workbenchAuthSchema=false;}
+          }
           const incidentReady=incidentExtension?await incidentExtension.ready():true;
           let selfServiceSchema=true;
           if(selfService){
@@ -91,12 +99,14 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
               WHERE migration_id IN ('033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check')`)).rowCount===2;}
             catch{selfServiceSchema=false;}
           }
-          const ready=base.ok&&schema&&incidentReady&&selfServiceSchema;
+          const ready=base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema;
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
-            checks:{...base.checks,p2_016_schema:schema,...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
+            checks:{...base.checks,p2_016_schema:schema,workbench_wecom_auth:workbenchAuthSchema,...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
         authenticatedHandler:async context=>(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
-        unauthenticatedHandler:async context=>(await limitedRequestGuard?.(context))||(await selfService?.handler(context))||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),
+        unauthenticatedHandler:async context=>(await workbenchAuthentication?.unauthenticatedHandler?.(context))
+          ||(await limitedRequestGuard?.(context))||(await selfService?.handler(context))
+          ||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),
         staticHandler:async(pathname,response)=>(await incidentExtension?.staticHandler?.(pathname,response))||ticketStatic(pathname,response),
         runOnce:async()=>{if(orchestrationWorker)await orchestrationWorker.processDueBatch({feature_flags:ruleFirstFlags,batch_size:20});await realtimeProjector.runOnce();await incidentExtension?.runOnce?.();},
       };

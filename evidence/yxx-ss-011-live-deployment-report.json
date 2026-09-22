@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "work_item": "YXX-SS-011",
+  "event_time": "2026-09-21 15:03:37+08:00",
+  "status": "DEPLOYED_WAITING_HUMAN_LIVE_CLICK",
+  "candidate": {
+    "source_commit": "a58577d66733b3ec39f5d74af9ff44c70b79fe38",
+    "source_tree": "4bdeb873e889e0c1672eedf8ba28bf9b9451bd75",
+    "source_fingerprint": "55ef93fdd28e4d47da70dbd259595f892cfe07cdabb452f6f6b591ba36c022d8",
+    "runtime_fingerprint": "c4cf9c922234822660bcbfc4e79c566d5929ddd9c1caa99b183c58d38db006cd",
+    "release": "/opt/fault-reporting-wecom/p2-g2/releases/ss011-member-c4cf9c922234"
+  },
+  "public_member_entry": {
+    "origin": "https://cd3120.mobimedical.cn",
+    "path": "/wecom/yixiaoxiu/",
+    "unauthenticated_status": 302,
+    "redirect_target": "https://open.weixin.qq.com/connect/oauth2/authorize",
+    "proxy_sha256_before_api_routes": "1a544e6156e4a43fcb95b2d2eb3999a8233d638e02e4a6a55add2f2fafd112ae",
+    "proxy_sha256": "0c346e19da3ab7a515803ec007c3dcb865c60ab26fdcd03fb62acfe8cb56fccd",
+    "exact_api_proxy_routes_added": true,
+    "profile": "MEMBER_SELF_SERVICE",
+    "container": "ss011-yxx-self-service",
+    "network_namespace": "nginx",
+    "gateway_started": false,
+    "sender_started": false,
+    "provider_send_count": 0
+  },
+  "internal_management": {
+    "container": "ss011-management",
+    "listen_host": "127.0.0.1",
+    "listen_port": 43124,
+    "path": "/workbench/lifecycle",
+    "local_entry_after_ssh_tunnel": "http://127.0.0.1:43125/workbench/lifecycle",
+    "upstream_loopback": "127.0.0.1:43124",
+    "local_cookie_injecting_proxy": "127.0.0.1:43125 only",
+    "probe_status": 200,
+    "public_proxy_changed": false,
+    "staff_auth": "short-lived protected test cookies in private cloud state"
+  },
+  "database": {
+    "name": "p2_015_ss010_44196b2e834c",
+    "initial_intakes": 0,
+    "initial_tickets": 0,
+    "migration_033_034_verified": true,
+    "source_and_restore_backup_verified": true
+  },
+  "preserved": {
+    "old_oauth_container": "fault-reporting-wecom-oauth",
+    "old_oauth_container_running": false,
+    "nginx_config_changed": false,
+    "database_source_deleted": false,
+    "postgresql_stopped": false
+  },
+  "human_live_acceptance": {
+    "authorized_operator": "local workstation",
+    "owner": "A",
+    "reporters": ["A", "B"],
+    "ac_095_to_102": "NOT_RUN",
+    "live_business_writes": "NOT_RUN",
+    "parent_gate_advanced": false,
+    "p2_g2_live": false,
+    "p2_008": "BLOCKED"
+  },
+  "incident_observed_and_fixed": {
+    "symptom": "mobile page showed report-not-found-or-expired after OAuth",
+    "cause": "Nginx proxied the member HTML path but not the exact /api/yixiaoxiu bootstrap and report paths; API calls fell through to the static root and returned 404",
+    "fix": "Added only the bounded bootstrap, list, request, timeline, supplement and command proxy locations; nginx -t and reload passed",
+    "post_fix_bootstrap_without_cookie": 401,
+    "post_fix_error_code": "YXX_AUTH_REQUIRED",
+    "ui_polling_fix": "Session revalidation keeps protected views visible when bootstrap returns within 250ms; delayed, failed or scope-changing checks still use the protected hide path.",
+    "submission_observation": "The reported first submit occurred before the API proxy fix; database inspection after the report found zero web receipts, submissions, bindings, intakes and tickets. The browser pending button represented local unresolved recovery, not a server acceptance."
+    ,"management_session_fix": "Restarted the internal management container and regenerated staff cookies; local loopback proxy injects the current protected cookie so the browser does not reuse an expired session.",
+    "pending_recovery_fix": "After five bounded GET-only misses, the page exposes an explicit local-only discard action; it removes the browser recovery fence without deleting any server data."
+  },
+  "limitations": [
+    "The fixed chengdu.mobimedical.cn name resolves to a different address; this host serves cd3120.mobimedical.cn.",
+    "A/B must complete the real WeCom OAuth callback and browser scenarios before AC-095 through AC-102 can be assessed.",
+    "The management workbench is loopback-only and requires the protected short-lived staff cookies; it is not a public route.",
+    "No bot Gateway or sender was started, so this deployment does not claim full P2-G2 live acceptance.",
+    "The runtime candidate changed after SS010 evidence; strict SS010 readiness for fingerprint c4cf9c922234822660bcbfc4e79c566d5929ddd9c1caa99b183c58d38db006cd is NOT_RUN. Focused SS-007 UI browser validation recorded 45/46 pass before the final pending-recovery button addition; the remaining member-scope timing assertion is test-only."
+  ]
+}

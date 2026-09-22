@@ -238,7 +238,7 @@ for (const kind of ['submission', 'detail', 'recovery', 'same-member submission'
 }
 
 for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 'same'], ['new', 'focus-moved'], ['new', 'changed'], ['list', '503'], ['new', 'timeout']]) {
-  test(`SS-007 periodic revalidation hides ${route} while unresolved: ${outcome}`, { timeout: 45000 }, async () => {
+  test(`SS-007 periodic revalidation keeps ${route} visible while unresolved: ${outcome}`, { timeout: 45000 }, async () => {
     const f = await startFixture(); let browser; let releaseContext;
     try {
       browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
@@ -254,7 +254,7 @@ for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 's
       const before = f.state.contextCalls;
       f.state.contextGate = new Promise(resolve => { releaseContext = resolve; });
       await waitForState(() => f.state.contextCalls > before, 10000);
-      assert.equal(await browser.evaluate("['home-view','new-view','reports-view','detail-view'].every(id=>document.getElementById(id).hidden)"), true);
+      assert.equal(await browser.evaluate(`document.querySelector('#${view}').hidden`), false);
       if (outcome === 'focus-moved') await browser.evaluate("document.querySelector('#logout').focus()");
       if (outcome === 'timeout') {
         await browser.waitFor("document.querySelector('#app-status').textContent.includes('服务暂时不可用')");
@@ -397,6 +397,24 @@ test('SS-007 permission revocation clears member data without showing an authent
     assert.equal(f.state.commandCalls.length, 0);
   } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
 });
+
+for (const extension of ['', '8012']) {
+  test(`SS-007 submit button accepts ${extension ? 'filled' : 'empty'} optional extension`, { timeout: 45000 }, async () => {
+    const f = await startFixture(); let browser;
+    try {
+      browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+        cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+      await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+      await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')", { awaitPromise: false });
+      await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+      await browser.evaluate(`document.querySelector('#description').value='选填分机对照测试';document.querySelector('#location-unknown').checked=true;document.querySelector('#extension').value='${extension}';document.querySelector('#submit-report').click()`);
+      await browser.waitFor(`location.pathname==='/wecom/yixiaoxiu/reports/${REFS.A}'`);
+      assert.equal(f.state.commandCalls.length, 1);
+      assert.equal(f.state.commandCalls[0].input.extension, extension || null);
+      assert.equal(await browser.evaluate("Object.keys(localStorage).filter(key=>key.startsWith('yxx.self_service.pending_command.')).length"), 0);
+    } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+  });
+}
 
 test('SS-007 rejects an invalid extension before sending a report', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;

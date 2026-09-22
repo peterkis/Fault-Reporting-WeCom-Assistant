@@ -25,7 +25,7 @@ function validGeneration(g){return g===state.generation&&!state.stopped;}
 function messageFor(status){return ({400:'输入格式有误，请检查后重试。',401:'认证已失效，请重新认证。',403:'当前账号没有此项权限。',404:'报修不存在、已撤销或已过期。',409:'版本或状态已变化，请刷新后重试。',413:'内容超过允许大小。',415:'请求格式不受支持。',429:'操作太频繁，请稍后再试。',503:'服务暂时不可用，请稍后刷新。'})[status]??'网络暂不可用，请稍后重试。';}
 function setStatus(textValue,kind=''){const value=$('app-status');value.textContent=textValue;value.className=`status ${kind}`;}
 function setView(view,title){for(const id of ['logged-out-view','home-view','new-view','reports-view','detail-view'])$(id).hidden=id!==view;$('page-title').textContent=title;}
-function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTimer);state.pendingTimer=null;if(resetAttempts)state.pendingAttempts=0;$('retry-pending').hidden=true;}
+function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTimer);state.pendingTimer=null;if(resetAttempts)state.pendingAttempts=0;$('retry-pending').hidden=true;$('discard-pending').hidden=true;}
 function syncPendingButtons(){const blocked=state.pendingCommandId!==null||state.storageBlocked||state.readOnly===true;$('submit-report').disabled=blocked;$('submit-supplement').disabled=blocked;}
 function durableKey(id){return `${durablePrefix}${id}`;}
 function durableKeys(){const keys=[];for(let index=0;index<localStorage.length;index+=1){const key=localStorage.key(index);if(key?.startsWith(durablePrefix))keys.push(key);}return keys;}
@@ -156,31 +156,34 @@ function concealProtectedViews(){
 async function revalidateVisibleSession(){
  state.sessionTimer=null;
  if(state.hidden||state.loggedOut||state.stopped)return;
- state.sessionCheckDue=true;
- concealProtectedViews();
- if(state.controller||state.busy){scheduleSessionRevalidation();return;}
- const operation=beginOperation({busy:true}),expectedScope=state.recoveryScope;
- const views=['home-view','new-view','reports-view','detail-view'].map(id=>({element:$(id),hidden:$(id).hidden}));
- const status={text:$('app-status').textContent,className:$('app-status').className};
- const {focused,selection}=state.revalidationFocus??{};
- for(const {element} of views)element.hidden=true;
- setStatus('正在验证成员会话…');
- try{
+  state.sessionCheckDue=true;
+  if(state.controller||state.busy){
+   setTimeout(()=>{if(state.sessionCheckDue&&!state.stopped){concealProtectedViews();setStatus('正在验证成员会话…');}},250);
+   scheduleSessionRevalidation();return;
+  }
+  const operation=beginOperation({busy:true}),expectedScope=state.recoveryScope;
+  const views=['home-view','new-view','reports-view','detail-view'].map(id=>({element:$(id),hidden:$(id).hidden}));
+  const status={text:$('app-status').textContent,className:$('app-status').className};
+  const {focused,selection}=state.revalidationFocus??{};
+  const concealTimer=setTimeout(()=>{
+   if(!state.sessionCheckDue||state.stopped)return;
+   concealProtectedViews();for(const {element} of views)element.hidden=true;setStatus('正在验证成员会话…');
+  },250);
+  try{
   const result=await fetchJson('/api/yixiaoxiu/bootstrap',{},operation.signal);
   if(!ownsOperation(operation))return;
   const nextScope=result.body.recovery_scope;
   if(!RECOVERY_SCOPE.test(nextScope??''))throw Object.assign(new Error(messageFor(503)),{status:503});
-  if(expectedScope!==nextScope){finishOperation(operation);clearClientDom('正在验证成员会话…');void bootstrap();return;}
+   if(expectedScope!==nextScope){finishOperation(operation);clearClientDom('正在验证成员会话…');for(const {element} of views)element.hidden=true;void bootstrap();return;}
   window.__yxx_csrf=result.body.csrf_token;
-  for(const {element,hidden} of views)element.hidden=hidden;
-  $('protected-views').hidden=false;state.revalidationFocus=null;state.sessionCheckDue=false;
-  $('app-status').textContent=status.text;$('app-status').className=status.className;
-  if(focused?.isConnected&&(document.activeElement===document.body||document.activeElement===focused)){
-   focused.focus({preventScroll:true});
-   if(selection)focused.setSelectionRange(...selection);
-  }
- }catch(error){if(ownsOperation(operation)){clearClientDom(messageFor(error.status??503));for(const {element} of views)element.hidden=true;}}
- finally{if(finishOperation(operation)&&state.detail)void loadDetail();scheduleSessionRevalidation();}
+   clearTimeout(concealTimer);for(const {element,hidden} of views)element.hidden=hidden;
+   $('protected-views').hidden=false;state.revalidationFocus=null;state.sessionCheckDue=false;
+   $('app-status').textContent=status.text;$('app-status').className=status.className;
+   if(focused?.isConnected&&(document.activeElement===document.body||document.activeElement===focused)){
+    focused.focus({preventScroll:true});if(selection)focused.setSelectionRange(...selection);
+   }
+  }catch(error){clearTimeout(concealTimer);if(ownsOperation(operation)){clearClientDom(messageFor(error.status??503));for(const {element} of views)element.hidden=true;}}
+  finally{clearTimeout(concealTimer);if(finishOperation(operation)&&state.detail)void loadDetail();scheduleSessionRevalidation();}
 }
 function jsonHeaders(id,csrf){return {'content-type':'application/json','idempotency-key':id,'x-csrf-token':csrf,'sec-fetch-site':'same-origin'};}
 function statusText(value){return ({RECEIVED_PROCESSING:'已收到，正在处理',WAITING_FOR_DETAILS:'等待补充说明',UNDER_REVIEW:'人工审核中',TICKET_CREATED:'已生成工单',NOT_SERVICE:'非报修事项'})[value]??String(value??'状态未知');}
@@ -243,7 +246,7 @@ async function loadOlderTimeline(){
 }
 function schedulePendingRecovery(id,generation){
  clearTimeout(state.pendingTimer);
- if(state.pendingAttempts>=5){$('retry-pending').hidden=false;setStatus(state.pendingLegacy?'这是一条旧版恢复记录，归属范围未知。仍未查到结果，可稍后继续查询；不会自动重交。':'仍未查到上次提交结果。可稍后点击“查询上次提交结果”；不会重复提交。','error');return;}
+ if(state.pendingAttempts>=5){$('retry-pending').hidden=false;$('discard-pending').hidden=false;setStatus(state.pendingLegacy?'这是一条旧版恢复记录，归属范围未知。仍未查到结果，可稍后继续查询；不会自动重交。':'仍未查到上次提交结果。可继续查询，或确认未受理后清除本地记录重新填写。','error');return;}
  const delay=pendingDelays[Math.max(0,state.pendingAttempts-1)];
  const recoveryScope=state.recoveryScope;
  const retry=()=>{
@@ -362,6 +365,7 @@ $('supplement-form').addEventListener('submit',submitSupplement);
 $('load-more-reports').addEventListener('click',()=>loadReports(true));
 $('load-older-timeline').addEventListener('click',loadOlderTimeline);
 $('retry-pending').addEventListener('click',()=>void recoverPending({restart:true}));
+$('discard-pending').addEventListener('click',()=>{if(!state.pendingCommandId)return;forget();setStatus('已清除本地未确认记录，请重新填写。','success');});
 $('logout').addEventListener('click',async()=>{
  clearClientDom('正在退出当前会话…');showLoggedOut('正在退出当前会话…','',false);broadcastLogout();
  const generation=state.generation,controller=new AbortController();

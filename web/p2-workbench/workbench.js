@@ -5,7 +5,7 @@ const elements = Object.freeze(Object.fromEntries([
   'workspace','conversation-list','load-more-conversations','timeline','load-history','conversation-view','empty-state',
   'conversation-title','conversation-channel','session-facts','control-actions','ticket-panel','delivery-panel','composer',
   'message-text','message-label','composer-hint','send-message','connection-dot','connection-label','detail-panel','status-live',
-  'refresh-list','mobile-back','toggle-details','close-details','test-session-label',
+  'refresh-list','mobile-back','toggle-details','close-details','test-session-label','logout',
 ].map((id) => [id, document.getElementById(id)])));
 
 const restored = loadRefreshState();
@@ -37,6 +37,18 @@ async function api(path, options = {}) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.error?.code ?? `HTTP_${response.status}`);
   return body;
+}
+
+async function logout() {
+  elements.logout.disabled = true;
+  try {
+    const response = await fetch('/workbench/logout', { method: 'POST', credentials: 'same-origin', headers: { 'x-csrf-token': csrfToken ?? '' } });
+    if (!response.ok) throw new Error('WORKBENCH_LOGOUT_FAILED');
+    location.replace('/workbench');
+  } catch (error) {
+    elements.logout.disabled = false;
+    announce(error.message);
+  }
 }
 
 function renderList() {
@@ -169,6 +181,7 @@ elements['load-more-conversations'].addEventListener('click', () => { void loadC
 elements['load-history'].addEventListener('click', async () => { if (!state.items.length) return; const page = await api(`/api/conversations/${state.selectedSessionId}/items?before_sequence=${state.items[0].sequence_no}`); setState({ type: 'ITEMS', items: page.items, prepend: true }); renderTimeline(); });
 elements['refresh-list'].addEventListener('click', () => { void loadConversations(); }); elements['mobile-back'].addEventListener('click', () => elements.workspace.classList.remove('show-conversation'));
 elements['toggle-details'].addEventListener('click', () => elements['detail-panel'].classList.add('open')); elements['close-details'].addEventListener('click', () => elements['detail-panel'].classList.remove('open'));
+elements.logout.addEventListener('click', () => { void logout(); });
 window.addEventListener('pagehide', () => { eventSource?.close(); clearInterval(pollTimer); activeController?.abort(); });
 
 void boot().catch((error) => { elements['connection-label'].textContent = '不可用'; announce(error.message); });

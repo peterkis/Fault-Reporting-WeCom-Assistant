@@ -60,7 +60,7 @@ function configuredPrincipals() {
   return values;
 }
 
-export async function runApp({runtimeFactory=createP2G1Runtime}={}) {
+export async function runApp({runtimeFactory=createP2G1Runtime,authenticationFactory=null,publicOrigin=null,externalSendEnabled=true}={}) {
   const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
     max: 4,
@@ -69,21 +69,35 @@ export async function runApp({runtimeFactory=createP2G1Runtime}={}) {
   });
   const metrics = createP2G1ProcessMetrics({ role: 'APP' });
   const peer = { gatewayAuthenticated: !truth('P2_G1_REQUIRE_GATEWAY'), workerReady: false };
-  const runtime = runtimeFactory({
-    pool,
-    operationalIntake: createP2G1PilotOperationalIntake({ pool, identityHashKey: required('PILOT_LOG_IDENTITY_HASH_KEY', /^.{16,}$/u) }),
-    principalIds: configuredPrincipals(),
-    publicOrigin: `http://127.0.0.1:${Number(required('P2_G1_LISTEN_PORT', /^[0-9]{4,5}$/u))}`,
-    listenPort: Number(process.env.P2_G1_LISTEN_PORT),
-    allowedTargetHashes: [],
-    gatewayEnabled: false,
-    senderEnabled: false,
-    gatewayStatusProvider: { getStatus: () => ({ enabled: truth('P2_G1_REQUIRE_GATEWAY'), authenticated: peer.gatewayAuthenticated }) },
-    communicationStatusProvider: { isReady: () => peer.workerReady },
-    requireGateway: truth('P2_G1_REQUIRE_GATEWAY'),
-    testAuthTtlMs: Number(required('P2_G1_TEST_AUTH_TTL_MS', /^[0-9]{5,7}$/u)),
-    closePoolOnStop: true,
-  });
+  const resolvedOrigin=publicOrigin??`http://127.0.0.1:${Number(required('P2_G1_LISTEN_PORT', /^[0-9]{4,5}$/u))}`;
+  let authentication = null;
+  let runtime;
+  try {
+    authentication=authenticationFactory?await authenticationFactory({pool,publicOrigin:resolvedOrigin}):null;
+    runtime = runtimeFactory({
+      pool,
+      operationalIntake: createP2G1PilotOperationalIntake({ pool, identityHashKey: required('PILOT_LOG_IDENTITY_HASH_KEY', /^.{16,}$/u) }),
+      principalIds: configuredPrincipals(),
+      publicOrigin: resolvedOrigin,
+      listenPort: Number(process.env.P2_G1_LISTEN_PORT),
+      allowedTargetHashes: [],
+      gatewayEnabled: false,
+      senderEnabled: false,
+      gatewayStatusProvider: { getStatus: () => ({ enabled: truth('P2_G1_REQUIRE_GATEWAY'), authenticated: peer.gatewayAuthenticated }) },
+      communicationStatusProvider: { isReady: () => peer.workerReady },
+      requireGateway: truth('P2_G1_REQUIRE_GATEWAY'),
+      testAuthTtlMs: process.env.P2_G1_TEST_AUTH_TTL_MS === undefined ? 15 * 60_000
+        : Number(required('P2_G1_TEST_AUTH_TTL_MS', /^[0-9]{5,7}$/u)),
+      authentication,
+      externalSendEnabled,
+      closePoolOnStop: true,
+    });
+  } catch (error) {
+    await authentication?.close?.();
+    await pool.end();
+    metrics.close();
+    throw error;
+  }
   let stopping = false;
   async function stop() {
     if (stopping) return;

@@ -10,6 +10,14 @@ const controllers=new Set();
 function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function button(text,run,cls){const b=node('button',text,cls);b.type='button';b.addEventListener('click',()=>void run());return b;}
 function say(text){$('lc-status').textContent=text;}
+async function logout(){
+  $('lc-logout').disabled=true;
+  try{
+    const response=await fetch('/workbench/logout',{method:'POST',credentials:'same-origin',headers:{'X-CSRF-Token':bootstrap?.csrf_token??''}});
+    if(!response.ok)throw new Error('WORKBENCH_LOGOUT_FAILED');
+    location.replace('/workbench');
+  }catch(error){$('lc-logout').disabled=false;say(error.message);}
+}
 function title(value){return statuses[value]??value??'未设置';}
 function expire(){stopped=true;stream?.close();clearInterval(timer);for(const c of controllers)c.abort();$('lc-detail').replaceChildren();$('lc-list').replaceChildren();$('lc-connection').textContent='认证已失效';say('坐席会话已过期，请重新登录；未提交内容不再发送。');}
 async function api(path,options={}){
@@ -179,6 +187,7 @@ $('lc-refresh').addEventListener('click',()=>{if(pending)return;editing=false;de
 $('lc-more').addEventListener('click',async()=>{if(loading)return;loading=true;try{await list(true);}catch{say('加载失败，请重试。');}finally{loading=false;}});
 $('lc-priority').addEventListener('change',()=>{priority=$('lc-priority').value;selected=null;epoch++;remember();void refresh();});
 $('lc-retry-command').addEventListener('click',()=>{if(retryCommand)void execute(retryCommand);});
+$('lc-logout').addEventListener('click',()=>{void logout();});
 window.addEventListener('pagehide',()=>{stopped=true;stream?.close();clearInterval(timer);for(const c of controllers)c.abort();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});
 try{

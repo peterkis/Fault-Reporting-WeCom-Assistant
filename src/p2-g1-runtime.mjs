@@ -38,6 +38,8 @@ export function createP2G1Runtime({
   communicationStatusProvider = null,
   requireGateway = gatewayEnabled,
   testAuthTtlMs = 15 * 60_000,
+  authentication = null,
+  externalSendEnabled = true,
   clientFactory,
   projectionIntervalMs = 250,
   communicationIntervalMs = 250,
@@ -57,10 +59,12 @@ export function createP2G1Runtime({
     || (gatewayStatusProvider !== null && typeof gatewayStatusProvider?.getStatus !== 'function')
     || (communicationStatusProvider !== null && typeof communicationStatusProvider?.isReady !== 'function')
     || typeof requireGateway !== 'boolean'
-    || !Number.isInteger(testAuthTtlMs) || testAuthTtlMs < 10_000 || testAuthTtlMs > P2_G1_TEST_AUTH_MAX_TTL_MS) {
+    || !Number.isInteger(testAuthTtlMs) || testAuthTtlMs < 10_000 || testAuthTtlMs > P2_G1_TEST_AUTH_MAX_TTL_MS
+    || (authentication !== null && typeof authentication?.authenticate !== 'function')
+    || typeof externalSendEnabled !== 'boolean') {
     throw new TypeError('P2_G1_RUNTIME_CONFIGURATION_INVALID');
   }
-  const authenticate = createP2G1TestAuthentication({ pool, principalId, principalIds, publicOrigin, ttlMs: testAuthTtlMs });
+  const authPort = authentication ?? createP2G1TestAuthentication({ pool, principalId, principalIds, publicOrigin, ttlMs: testAuthTtlMs });
   const authorization = createPilotWorkbenchAuthorizationAdapter({ pool });
   const controlAuthorization = createPilotConversationControlAuthorization({ pool });
   const controlService = createConversationControlService({
@@ -78,6 +82,7 @@ export function createP2G1Runtime({
     pool,
     authorize: authorization,
     enabled: true,
+    externalSendEnabled,
     operatorPort: createCommunicationDeliveryOperatorPort({ pool }),
     reconciliationPort: createCommunicationReconciliationPort({ pool }),
   });
@@ -86,7 +91,7 @@ export function createP2G1Runtime({
     refreshAuthorization: true,
     pool,
     maxClients: 32,
-    authenticate: authenticate.authenticate,
+    authenticate: authPort.authenticate,
     authorize: async (authContext) => {
       const principal = await authorization.resolvePrincipal(authContext);
       return authorization.resolveRealtimeAuthorization(principal,{limit:realtimeScopeLimit});
@@ -150,7 +155,7 @@ export function createP2G1Runtime({
     enabled: true,
     queryService,
     commandFacade,
-    authenticate: authenticate.authenticate,
+    authenticate: authPort.authenticate,
     sseHandler: realtime,
     healthProvider,
     publicOrigin,
@@ -183,7 +188,8 @@ export function createP2G1Runtime({
       listening = true;
       if (gatewayEnabled) await gateway.start();
       scheduleWorkers();
-      return Object.freeze({ address, cookie: authenticate.browserCookie(), cookies: authenticate.browserCookies() });
+      const cookies = typeof authPort.browserCookies === 'function' ? authPort.browserCookies() : undefined;
+      return Object.freeze({ address, ...(cookies ? { cookie: cookies[0], cookies } : {}) });
     } catch (error) {
       await stop();
       throw error;
@@ -201,6 +207,7 @@ export function createP2G1Runtime({
     server.closeAllConnections?.();
     await closeConversationWorkbenchServer(server);
     listening = false;
+    await authPort.close?.();
     await observability.close();
     if (closePoolOnStop && typeof pool.end === 'function') await pool.end();
     return Object.freeze({ stopped: true });
@@ -215,7 +222,7 @@ export function createP2G1Runtime({
     coordinator,
     communicationWorker,
     observability,
-    authenticate,
+    authenticate: authPort,
     assembly,
     disconnectRealtimePrincipal: (index = 0) => {
       const identities = principalIds ?? [principalId];

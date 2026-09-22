@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "kind": "PLANNING_WORKSHEET_NOT_AUTHORIZATION",
+  "live_authorized": false,
+  "candidate": {
+    "commit": "a58577d66733b3ec39f5d74af9ff44c70b79fe38",
+    "tree": "4bdeb873e889e0c1672eedf8ba28bf9b9451bd75",
+    "app_version": "a58577d66733b3ec39f5d74af9ff44c70b79fe38",
+    "fingerprint": "55ef93fdd28e4d47da70dbd259595f892cfe07cdabb452f6f6b591ba36c022d8",
+    "tested_head": "c8e561a9cc58df1bf0c2c73a840001f9374c91f5",
+    "authority": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/20",
+    "binding": "PREPARATION_SELECTION_NOT_LIVE_APPROVAL"
+  },
+  "recommended_limits": {
+    "max_new_intakes": 6,
+    "max_supplements": 8,
+    "max_new_tickets": 6,
+    "per_member_intakes": 3,
+    "per_member_supplements": 4
+  },
+  "questions": [
+    {
+      "id": "environment",
+      "question": "目标主机、内部访问方式、专用数据库和端口",
+      "recommendation": "沿用现有云主机，新建 loopback 专用库；名称后缀仅十六进制或下划线",
+      "answer": "Confirmed existing cloud host from .env.pilot. PostgreSQL 18.6 present; dedicated database p2_015_ss010_44196b2e834c prepared. Public/internal port switching not yet activated.",
+      "status": "CONFIRMED_WITH_REMAINING_ACTIVATION_DETAILS"
+    },
+    {
+      "id": "actors",
+      "question": "A/B 保护配置引用、两个坐席、负责人、批准人、服务器操作者、回退联系人",
+      "recommendation": "沿用 A/B 历史映射，重新核对适用性；不公开原始身份",
+      "answer": "A=PILOT_TEST_ACCOUNT_USER_ID; B=P2_G2_SECOND_TEST_ACCOUNT_USER_ID. Both are reporters and staff. Owner A. Historical protected member configuration matches current 8 identity fields.",
+      "status": "CONFIRMED_WITH_REMAINING_ACTIVATION_DETAILS"
+    },
+    {
+      "id": "window",
+      "question": "开始/结束时间与配额",
+      "recommendation": "45～60分钟；受理6、补充8、潜在Ticket6；每成员受理3、补充4",
+      "answer": null,
+      "status": "PENDING_USER_INPUT"
+    },
+    {
+      "id": "operations",
+      "question": "数据库连接、建库和基础schema、备份、033/034检查/应用、部署、代理、内部动作和后台处理范围",
+      "recommendation": "逐项明确；runner不自动建库/迁移/部署",
+      "answer": "User authorized cloud preparation, configuration backup, dedicated database provisioning/migrations and isolated backup/restore. Completed in stopped state; no public proxy changes or live runtime.",
+      "status": "CONFIRMED_WITH_REMAINING_ACTIVATION_DETAILS"
+    },
+    {
+      "id": "recovery",
+      "question": "响应丢失及限定运行器停止/恢复范围",
+      "recommendation": "包含两项；不作用于主机/数据库级故障",
+      "answer": "User selected restoring existing data to an independent drill database, preserving the source; completed. This is not yet web submission response-loss/restart AC099.",
+      "status": "CONFIRMED_WITH_REMAINING_ACTIVATION_DETAILS"
+    },
+    {
+      "id": "rollback",
+      "question": "结束后读取服务的启动方式与许可",
+      "recommendation": "当前被测版本 MEMBER_SELF_SERVICE，MY_REPORTS_ENABLED=true，SELF_SERVICE_ENABLED=false",
+      "answer": null,
+      "status": "PENDING_USER_INPUT"
+    },
+    {
+      "id": "archive",
+      "question": "原始证据目录、权限、备份、责任人、保留期限",
+      "recommendation": "受保护存储，Git只保留脱敏摘要与引用",
+      "answer": "Root-protected cloud backup directory /var/backups/fault-reporting-wecom/ss011-20260921T062750Z. Retention and off-host backup not yet determined.",
+      "status": "CONFIRMED_WITH_REMAINING_ACTIVATION_DETAILS"
+    },
+    {
+      "id": "publication",
+      "question": "本地提交、push、PR、merge范围",
+      "recommendation": "本轮不提交、不push、不创建PR或merge",
+      "answer": null,
+      "status": "PENDING_USER_INPUT"
+    }
+  ],
+  "cloud_preparation_evidence": "evidence/yxx-ss-011-cloud-preparation-report.json"
+}

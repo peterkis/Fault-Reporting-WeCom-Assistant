@@ -54,6 +54,14 @@
 - `evidence/arch-006-capability-gap-inventory.md` / `.json`：当前能力与装配缺口的双格式盘点；
 - `evidence/arch-006-rule-first-service-loop-rebaseline-report.md`：ARCH-006 完成验证与范围证明。
 
+## Gate 0 企业微信能力验证
+
+- `docs/07_wecom_websocket_integration.md`：Bot WebSocket 能力矩阵，以及独立的代开发应用 HTTP 模板卡片/成员读取方法说明；
+- `evidence/g0-005-active-push-matrix.md`：Bot 主动推送矩阵与代开发应用 HTTP 模板卡片主动推送补充矩阵；
+- `evidence/g0-005-http-template-card-20260922.md`：HTTP `message/send`、`template_card/text_notice`、Token/命名空间、权限、频率和脱敏验证结果；
+- `evidence/g0-006-template-card-matrix.md`：Bot WebSocket 模板卡片按钮回调与 5 秒更新时限矩阵；
+- `docs/32_wecom_global_error_code_governance.md`：企业微信数值 `errcode`、ACK/UNKNOWN、重试和 Evidence 脱敏规范。
+
 ## ADR
 
 - `adr/0007_pilot_ticket_core_then_adapter.md`：Superseded 历史指针；
@@ -321,6 +329,8 @@
 - `scripts/p2-g2-cloud-package.mjs`：无凭据、停止态代码包及逐文件指纹。
 - `scripts/p2-g2-postgres-native.sh`：新Ubuntu24.04主机上的原生PostgreSQL18基础安装/只读检查，不创建应用库或运行仓库迁移。
 - `docs/runbooks/p2-g2-cloud-deployment-operations.md`、`p2-g2-postgresql-deployment-decision.md`：实际部署、启动停止、选型、数据位置、巡检升级/备份/回滚与业务激活缺项。
+- `docs/runbooks/p2-016-workbench-wecom-login.md`、`database/migrations/035_p2_016_workbench_wecom_auth.sql`、`src/p2-016-workbench-wecom-auth.mjs`：管理工作台企业微信 Web/二维码登录、官方 open_userid 映射、PostgreSQL 会话、CSRF/退出和公网代理停止线；本轮未执行云端迁移或公网开放。
+- `evidence/p2-016-workbench-wecom-live-20260922.json` / `.md`：负责人授权后的公网部署、035迁移、App/Worker就绪、精确代理探针和脱敏扫码回调结果；不等同于P2-G2 Live或Phase 2 Go。
 - `evidence/p2-g2-cloud-deployment-record.json`、`p2-g2-cloud-deployment-authorization.md`：新增云部署授权、原生PG/停止态代码/依赖与远端验证记录。
 - `src/p2-g2-validation-config.mjs`、`p2-g2-candidate.mjs`、`p2-g2-evidence.mjs`、`p2-g2-gate-evaluator.mjs`：当前候选绑定、配置校验、追加证据与纯判定；现已包括各类source-reader与现场CLI；READY仍须当前完整回归/独立审查。
 - `src/p2-g2-service-loop-assembly.mjs`、`scripts/p2-g2-process-role.mjs`：有限三角色合成装配；真实发送入口保持拒绝。

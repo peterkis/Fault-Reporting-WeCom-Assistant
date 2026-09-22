@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "work_item": "YXX-SS-011",
+  "event_time": "2026-09-21 14:36:25",
+  "event_epoch_ms": "1789972585518",
+  "status": "CLOUD_PREPARATION_COMPLETE_WAITING_LIVE_WINDOW",
+  "authorization_basis": "User authorized existing cloud host, preserving configuration backups, dedicated test database, A/B as reporters and staff, A as owner; user chose restore into an independent drill database.",
+  "server": {
+    "cpu_count": 2,
+    "memory_kib": 3813268,
+    "postgresql": "18.6",
+    "listen": "localhost"
+  },
+  "backup_restore": {
+    "status": "BACKUP_AND_ISOLATED_RESTORE_PASS",
+    "backup_directory": "/var/backups/fault-reporting-wecom/ss011-20260921T062750Z",
+    "source_database": "p2_g2_live_db3f37e173c345d4",
+    "restore_database": "ss011_restore_20260921t062750z",
+    "table_count": 55,
+    "row_counts_and_digests_match": true,
+    "sequence_count": 4,
+    "sequences_match": true,
+    "column_digest_match": true,
+    "constraint_count": 1359,
+    "constraint_raw_text_equal": false,
+    "constraints_reparsed_equally_in_isolated_transaction": [
+      "conversation.control_event.conversation_control_event_reason_check",
+      "conversation.control_event.conversation_control_event_scope_check",
+      "conversation.handoff.conversation_handoff_reason_check",
+      "conversation.item.conversation_item_projection_variant_check",
+      "conversation.item_source_binding.conversation_item_source_binding_projection_variant_check",
+      "conversation.item_source_binding.conversation_item_source_binding_projector_name_length_check",
+      "conversation.item_source_binding.conversation_item_source_binding_projector_version_length_check",
+      "conversation.item_source_binding.conversation_item_source_binding_source_stream_length_check",
+      "conversation.projection_checkpoint.conversation_projection_checkpoint_projector_name_length_check",
+      "conversation.projection_checkpoint.conversation_projection_checkpoint_source_stream_length_check",
+      "conversation.projection_checkpoint.conversation_projection_checkpoint_version_length_check",
+      "conversation.realtime_event.conversation_realtime_event_aggregate_id_check",
+      "conversation.realtime_event.conversation_realtime_event_publisher_name_check",
+      "conversation.realtime_event.conversation_realtime_event_publisher_version_check",
+      "conversation.realtime_event.conversation_realtime_event_source_id_check",
+      "conversation.realtime_event.conversation_realtime_event_type_format_check",
+      "conversation.realtime_event.conversation_realtime_event_variant_check",
+      "intake.deterministic_decision.deterministic_decision_version_check"
+    ],
+    "configuration_files_verified": 11,
+    "configuration_unchanged": true,
+    "existing_services_preserved": true,
+    "dump_sha256": "4e810beba3506d01012f91cf285bd34110fba764bd209de4a2bf77219904c691",
+    "configuration_sha256": "cabcbe9f68a7d741056de0405530584f9bdab101a8b5e48d0a834ed331eaa195",
+    "dump_bytes": 742598,
+    "restore_database_retained_connections_disabled": true,
+    "postgresql_retained": true,
+    "initial_attempt": "Raw constraint text comparison failed; original backup and restored database retained, then differences checked by PostgreSQL parser in rolled-back temporary tables",
+    "limitations": [
+      "Logical restore; ownership and ACL not restored to keep drill isolated",
+      "No off-host backup yet",
+      "Not PITR or application-level acceptance",
+      "SS011 AC099 submission recovery remains NOT_RUN"
+    ]
+  },
+  "staging": {
+    "status": "STOPPED_SS011_CANDIDATE_AND_DATABASE_PREPARED",
+    "root": "/opt/fault-reporting-wecom/p2-g2/ss011-preparation-20260921",
+    "release": "/opt/fault-reporting-wecom/p2-g2/ss011-preparation-20260921/candidate",
+    "candidate_commit": "a58577d66733b3ec39f5d74af9ff44c70b79fe38",
+    "node_version": "v24.20.0",
+    "readiness": {
+      "ok": true,
+      "status": "READY_FOR_LIMITED_WRITE_LIVE",
+      "tested_head": "c8e561a9cc58df1bf0c2c73a840001f9374c91f5",
+      "candidate_fingerprint": "55ef93fdd28e4d47da70dbd259595f892cfe07cdabb452f6f6b591ba36c022d8",
+      "database_connections": 0,
+      "provider_calls": 0,
+      "listener_started": false,
+      "live_authorized": false,
+      "live_result": "NOT_RUN",
+      "parent_gate_advanced": false
+    },
+    "database": {
+      "name": "p2_015_ss010_44196b2e834c",
+      "oid": "22832"
+    },
+    "counts": {
+      "intakes": 0,
+      "tickets": 0
+    },
+    "principal_count": 2,
+    "principal_roles": [
+      "REPORTER",
+      "HANDLER",
+      "DISPATCHER"
+    ],
+    "migration_status": "APPLIED",
+    "member_to_staff": "A/B each mapped to their own existing configured member userid; private UUIDs retained",
+    "live_runtime_started": false,
+    "oauth_calls": 0,
+    "proxy_changed": false,
+    "existing_services_changed": false
+  },
+  "final_check": {
+    "status": "CLOUD_PREPARATION_VERIFIED_NOT_LIVE",
+    "identity": {
+      "historical_configuration_found": true,
+      "matches": true,
+      "compared_fields": [
+        "corpId",
+        "agentId",
+        "botId",
+        "reporterUserIds",
+        "proofRef",
+        "identityMode",
+        "proofKind",
+        "validationProfile"
+      ]
+    },
+    "migration_markers": [
+      {
+        "id": "033_yxx_self_service_intake",
+        "checksum": "31138708c83f041558c95123554c610dbbf0672a0c3c30c1aed3d4c22edde7e9"
+      },
+      {
+        "id": "034_yxx_self_service_direct_chat_check",
+        "checksum": "b134e8821890abf3cfb2d8c73b4655b4f57e8e7db891fcd931c5b3e303107180"
+      }
+    ],
+    "candidate_clean": true,
+    "active_containers": [
+      "fault-reporting-wecom-oauth",
+      "nginx"
+    ],
+    "prepared_database_backup": "/var/backups/fault-reporting-wecom/ss011-20260921T062750Z/ss011-prepared.dump",
+    "prepared_database_backup_sha256": "dba0542a5cf016f1f64ed88b7324834451f07298113a477dba20ecce3f3fffbd",
+    "state_directory_created": false,
+    "runtime_started": false,
+    "live_authorized": false
+  },
+  "live_authorized": false,
+  "live_result": "NOT_RUN",
+  "parent_gate_advanced": false,
+  "owner": "A",
+  "pending": [
+    "Exact live window and A/B client availability",
+    "Complete scope-bound owner approval record before runner startup",
+    "Public proxy and internal access switching details before activation",
+    "Evidence retention and off-host backup arrangements"
+  ],
+  "failures_retained": [
+    {
+      "step": "restore comparison",
+      "result": "Initial raw constraint text mismatch; PostgreSQL reparse equivalence verified in isolated rolled-back transactions; source unchanged."
+    },
+    {
+      "step": "staging checkout",
+      "result": "Bundle clone had no default HEAD; explicitly checked out authoritative merge SHA, then clean checkout/readiness verified."
+    }
+  ],
+  "operation_scripts": [
+    {
+      "path": "tmp/ss011-cloud-inspect.py",
+      "sha256": "2c957e02dbc6706851d05a2013a6cdc3baa1ca5c4ce7c6a909723dcd1d42e514",
+      "storage": "local ignored operational helper; not product candidate"
+    },
+    {
+      "path": "tmp/ss011-backup-restore.py",
+      "sha256": "8f2fa2d6ca161c634e16966b208750189649eea59ca08643ff5ab6729c81d448",
+      "storage": "local ignored operational helper; not product candidate"
+    },
+    {
+      "path": "tmp/ss011-stage.py",
+      "sha256": "af35597debeb346671c772a180b48eaf6e493f75822130cb8882594714c52ddd",
+      "storage": "local ignored operational helper; not product candidate"
+    },
+    {
+      "path": "tmp/ss011-final-check.py",
+      "sha256": "1ae919faa4feefd1f98615cc4c76af9b3b23db6a7871b6e7cb1066761dfc85d3",
+      "storage": "local ignored operational helper; not product candidate"
+    }
+  ]
+}

@@ -35,3 +35,17 @@
 | 无效 chatid | 通过（预期拒绝） | `2026-08-27T02:20:58Z` 向一次性生成的无效 `chatid` 主动投递被拒绝，稳定归类为 `WECOM_PUSH_REJECTED`，`provider_errcode=93006`，耗时 `197` ms；原始目标和 SDK 错误文本未写入证据。 |
 
 G0-005 已完成。单聊在线/离线显示与通知、群 `chatid` 主动投递、触发成员退群后的群目标行为、重复发送、无效目标错误码，以及三种群 @ 路径均已取得真实结论。主动推送的 SDK 回执只表示通道接受或拒绝；本矩阵中的显示、通知和群 @ 结论均已由测试人员人工观察确认。G0-006 须等待用户明确确认后才可开始。
+
+## 补充矩阵：代开发应用 HTTP 模板卡片主动推送
+
+本节是独立于上述 Bot WebSocket `aibot_send_msg` 的 HTTP 应用消息路径，不修改原有 G0-005/G0-006 结论。接口方法、请求体、Token/命名空间、频率、错误与关闭规则见 [`evidence/g0-005-http-template-card-20260922.md`](g0-005-http-template-card-20260922.md)。
+
+| 场景 | 接口/方法 | 能力结论 | 当前状态 |
+|---|---|---|---|
+| 成员命名空间转换 | `POST /cgi-bin/batch/userid_to_openuserid` | Bot 明文 userid 转为应用接口可用的 `open_userid`；无效列表为 0 | 通过 |
+| 成员详情读取 | `GET /cgi-bin/user/get` | 转换后的成员 ID 可读取；姓名、部门、性别、手机号、头像受管理员/OAuth2 授权控制 | ID 读取通过；敏感字段未授权 |
+| 文本通知型模板卡片 | `POST /cgi-bin/message/send`，`msgtype=template_card`、`card_type=text_notice` | Provider 返回 `errcode=0` 并返回消息 ID；请求启用重复消息检查，单次调用 | Provider ACK 通过 |
+| 客户端展示/通知 | 企业微信客户端人工观察 | 不能由 `errcode=0` 推断显示、通知或点击 | `NOT_RUN` |
+| 正式服务商 Token 链 | `POST /cgi-bin/service/get_corp_token` | 需要 `suite_access_token + auth_corpid + permanent_code`；当前 `.env.pilot` 未配置该链路 | `NOT_RUN` |
+
+本补充验证只证明当前应用凭据路径的 Provider ACK，不推进 P2-G2-LIVE，不打开持久 Feature Flag，也不替代后续 Outbox/Delivery、客户端显示和正式服务商授权链验证。

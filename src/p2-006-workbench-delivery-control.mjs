@@ -7,11 +7,12 @@ function invalid() { throw new WorkbenchError(WORKBENCH_ERROR_CODES.requestInval
 function uuid(value) { if (typeof value !== 'string' || !UUID_PATTERN.test(value)) invalid(); return value.toLowerCase(); }
 function reason(value) { if (typeof value !== 'string' || !/^[A-Z0-9_]{1,128}$/u.test(value)) invalid(); return value; }
 
-export function createWorkbenchDeliveryControl({ pool, authorize, operatorPort, reconciliationPort, enabled = false } = {}) {
+export function createWorkbenchDeliveryControl({ pool, authorize, operatorPort, reconciliationPort, enabled = false,
+  externalSendEnabled = true } = {}) {
   if (!pool || typeof pool.query !== 'function' || !authorize
     || !operatorPort || typeof operatorPort.scheduleRetry !== 'function'
     || !reconciliationPort || typeof reconciliationPort.reconcileUnknownDelivery !== 'function'
-    || typeof enabled !== 'boolean') throw new TypeError('Workbench delivery control configuration is invalid.');
+    || typeof enabled !== 'boolean' || typeof externalSendEnabled !== 'boolean') throw new TypeError('Workbench delivery control configuration is invalid.');
 
   async function context({ authContext, deliveryId }) {
     if (!enabled) throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled, 503);
@@ -31,6 +32,7 @@ export function createWorkbenchDeliveryControl({ pool, authorize, operatorPort, 
   }
 
   async function retry({ authContext, deliveryId, reason_code = 'OPERATOR_RETRY' }) {
+    if (!externalSendEnabled) throw new WorkbenchError(WORKBENCH_ERROR_CODES.externalSendDisabled, 403);
     const { principal, row, deliveryId: id } = await context({ authContext, deliveryId });
     if (!await authorize.authorizeSession({ principal, sessionId: row.session_id, action: 'DELIVERY_RETRY' })) {
       throw new WorkbenchError(WORKBENCH_ERROR_CODES.forbidden, 403);
@@ -44,6 +46,7 @@ export function createWorkbenchDeliveryControl({ pool, authorize, operatorPort, 
   }
 
   async function reconcile({ authContext, deliveryId, resolution, reason_code }) {
+    if (!externalSendEnabled) throw new WorkbenchError(WORKBENCH_ERROR_CODES.externalSendDisabled, 403);
     const { principal, row, deliveryId: id } = await context({ authContext, deliveryId });
     if (!authorize.isAdmin(principal) || !RESOLUTIONS.has(resolution)) {
       throw new WorkbenchError(WORKBENCH_ERROR_CODES.forbidden, 403);

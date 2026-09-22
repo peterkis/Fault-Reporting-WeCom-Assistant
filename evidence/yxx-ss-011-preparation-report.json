@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "work_item": "YXX-SS-011",
+  "status": "OFFLINE_PREPARATION_COMPLETE_LIVE_BLOCKED",
+  "event_time": "2026-09-21 14:17:34",
+  "event_epoch_ms": "1789971454589",
+  "candidate": {
+    "commit": "a58577d66733b3ec39f5d74af9ff44c70b79fe38",
+    "tree": "4bdeb873e889e0c1672eedf8ba28bf9b9451bd75",
+    "app_version": "a58577d66733b3ec39f5d74af9ff44c70b79fe38",
+    "fingerprint": "55ef93fdd28e4d47da70dbd259595f892cfe07cdabb452f6f6b591ba36c022d8",
+    "tested_head": "c8e561a9cc58df1bf0c2c73a840001f9374c91f5",
+    "authority": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/20",
+    "binding": "PREPARATION_SELECTION_NOT_LIVE_APPROVAL"
+  },
+  "pr20": {
+    "state": "MERGED",
+    "head": "5b8b031942b0b2cf04eecfc3f245cf3e947daecb",
+    "merge": "a58577d66733b3ec39f5d74af9ff44c70b79fe38",
+    "merged_at": "2026-09-21T03:10:34Z",
+    "checks_success": 2,
+    "checks_skipped": 2,
+    "formal_review_state": "NO_FORMAL_APPROVED_REVIEW",
+    "codex_comment": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/20#issuecomment-5754749976",
+    "codex_result": "NO_MAJOR_ISSUES_ON_5b8b031942",
+    "scope": "PR head checks, not a new merged-head full regression"
+  },
+  "checks_ref": "evidence/yxx-ss-011-preparation-checks.json",
+  "ss010_readiness": "PASS",
+  "ss009_current_checkout": {
+    "status": "REJECTED",
+    "reason": "Historical r7 fingerprint differs from SS010 source; src/yxx-self-service-verification.mjs:174",
+    "historical_result_ref": "evidence/yxx-ss-010-historical-check.json",
+    "historical_check_rerun": false
+  },
+  "identity": {
+    "historical_ref": "evidence/p2-g2-yxx-targeted-live-summary.json",
+    "historical_official_conversion": "VERIFIED",
+    "current_configuration_applicability": "UNVERIFIED"
+  },
+  "full_regression_rerun": false,
+  "live_authorized": false,
+  "live_result": "NOT_RUN",
+  "server_inspection": "NOT_RUN",
+  "database_connections": 0,
+  "oauth_calls": 0,
+  "deployment": "NOT_RUN",
+  "parent_gate_advanced": false,
+  "owner_acceptance": null,
+  "limitations": [
+    "Preparation does not authorize any live operation.",
+    "Private template contains no credentials and remains exactly the unapproved template; target-host ACL not verified.",
+    "Prepared candidate must run in a clean exact checkout, not this workspace with uncommitted preparation files.",
+    "Runtime evidence collection and read-only rollback deployment require concrete target details before execution."
+  ]
+}
