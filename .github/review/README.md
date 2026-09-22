@@ -1,5 +1,32 @@
 # Published-history review preflight
 
+## 2026-09-22 successor CI scope correction
+
+PR #21's Ubuntu and Windows evidence-history jobs reproduced
+`YXX_LOCAL_VALIDATION_SCOPE_INVALID` because the SS-009 scope regression created
+a worktree at current HEAD. That HEAD contains the authorized successor migration
+035, whereas the historical SS-008 scope freezes the original migration directory.
+The historical scope and validator remain unchanged and still reject that current
+checkout; they must not be relaxed or represented as current workbench readiness.
+
+The workflow now executes all original SS-009 tests, r6 mutation probes, architecture
+checks and the unchanged strict CLI in a separate CRLF clone at PR #19's final
+published head `41edd855e7bc55149facb6a4b2e0076776c22e66` (GitHub PR API verified).
+The isolated clone's `origin/main` is set to that PR's GitHub-verified base
+`375d47b013017edb858206cc5f3475c9aed77dfd`, because original architecture validators
+compare that ref. The live checkout and its refs are untouched. Its ancestry and exact identity are checked before use. Outputs explicitly identify
+the historical fixture. Missing history, tampering or strict failures remain fatal.
+
+On the actual PR head the job retains the published-object preflight, runs current
+OAuth/workbench unit and HTTP regression tests, and checks the PR event's base-to-head
+evidence history. `pr-evidence-delta.mjs` rejects modifications/deletions, including
+an added evidence file subsequently rewritten and then restored. Its base is the
+GitHub PR event base, not a replacement for the original SS009 trust anchor; no
+override is passed to the historical validator. This distinguishes evidence already
+in the parent release from changes proposed in the current PR. It does not certify
+the current candidate against a historical report. PostgreSQL/browser and live
+acceptance remain independently reported in the delivery evidence.
+
 ## Why PR #19 kept receiving the same ancestry finding
 
 The latest finding was attached to the published review head `20c2f032106e897b3ac802355b5218e363646a3d`, but its body evaluated `3fdfeeedefee5afade93004320765d6ac43ffe60` instead.
