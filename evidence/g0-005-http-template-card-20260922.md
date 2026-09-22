@@ -113,3 +113,14 @@ GET https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token=ACCESS_TOKEN&useri
 - 本能力不打开持久 Feature Flag，不改变现有 Bot WebSocket Sender、Outbox 或模板卡片运行时。
 - 发生超时、断线或无响应时记录 `UNKNOWN`，不得盲目重发；有 `errcode=0` 后不得由同一 Delivery 直接重发。
 - `invaliduser`、`unlicenseduser` 或全目标无效时按目标/权限错误处理；先修复命名空间、可见范围或授权，再创建新的受控发送意图。
+
+## 同日后续：从 Bot 回调 userid 读取用户资料
+
+上一节“本次定向验证结果”保留的是前一次读取成员运行的原始结论；本节是随后针对用户 A 的脱敏复核，不覆盖前一条记录。
+
+- 通过上一轮 Bot 群聊/单聊帧的 `sender_user_id_hash` 与配置测试用户做哈希比对，确认测试对象一致。
+- 先调用 `batch/userid_to_openuserid`，得到 `errcode=0`、1 个成功映射、0 个无效成员；未把任一原始或转换后的 ID 写入证据。
+- 再调用 `user/get`，得到 `errcode=0`。本次观察到 `userid`、`name`、一个部门 ID、`alias` 和激活状态；`position` 为空，`mobile`、`gender`、`email`、`avatar`、`telephone`、`address`、`qr_code` 等未返回。
+- 随后对该部门 ID 调用 `department/get`，得到 `errcode=0` 且部门名称字段存在；部门 ID 与部门名称都不进入本证据。
+
+本次结论为 `PROFILE_LOOKUP_PARTIAL_PASS`：通过 Bot userid 做命名空间转换后，可以读取当前应用可见范围内的非敏感成员资料和部门名称；不能据此声称敏感个人字段已授权，也不能把 Bot 回调本身说成携带完整用户资料。
