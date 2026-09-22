@@ -18,7 +18,7 @@ test('P2-016 actual HTTP assembly: fail-closed flags, auth, CSRF, Ticket actions
     const intake=await seedPersistedIntake({pool,text:'合成故障',requestType:'INCIDENT',status:'RECEIVED'});
     const ticket=(await createPilotTicketCore({pool}).createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'synthetic-http'})).ticket;
     const listenPort=await port(),origin='http://127.0.0.1:'+listenPort;
-    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,principalId:principal.id,listenPort});
+    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,principalId:principal.id,listenPort,externalSendEnabled:false});
     let streamReader;const abort=new AbortController();
     try{
       const started=await runtime.start(),cookie=started.cookie.name+'='+started.cookie.value;
@@ -38,6 +38,14 @@ test('P2-016 actual HTTP assembly: fail-closed flags, auth, CSRF, Ticket actions
       const replay=await post({'x-csrf-token':bootstrap.csrf_token});assert.equal((await replay.json()).replayed,true);
       const detail=await (await get('/api/tickets/'+ticket.id)).json();assert.equal(detail.status,'ACCEPTED');assert.equal(typeof detail.updated_at,'string');
       const notifications=await (await get('/api/tickets/'+ticket.id+'/deliveries')).json();assert.equal(notifications.items.length,1);
+      for(const action of ['retry','reconcile']){
+        const body={client_command_id:randomUUID(),reason_code:'OPERATOR_VERIFIED',...(action==='reconcile'?{resolution:'CANCEL'}:{})};
+        const denied=await fetch(`${origin}/api/tickets/${ticket.id}/deliveries/${notifications.items[0].delivery_id}/${action}`,{
+          method:'POST',headers:{cookie,origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':body.client_command_id},body:JSON.stringify(body)});
+        assert.equal(denied.status,403);
+        assert.equal((await denied.json()).error.code,'WORKBENCH_EXTERNAL_SEND_DISABLED');
+      }
+      assert.deepEqual(await (await get('/api/tickets/'+ticket.id+'/deliveries')).json(),notifications);
       const events=(await pool.query("SELECT event_type,payload FROM conversation.realtime_event WHERE publisher_name='P2_016_WORKBENCH' ORDER BY event_id")).rows;
       assert.ok(events.some(e=>e.event_type==='ticket.command.committed'));assert.ok(events.some(e=>e.event_type==='ticket.notification.created'));
       assert.doesNotMatch(JSON.stringify(events),/synthetic-p2016-http|reporter_wecom_userid|target_id/u);

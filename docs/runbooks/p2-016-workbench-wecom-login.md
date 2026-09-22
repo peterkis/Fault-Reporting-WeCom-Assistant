@@ -23,6 +23,10 @@ GET /workbench
 
 `state` 与 `__Host-wecom_workbench_intent` 浏览器绑定，5 分钟过期且只能消费一次。OAuth `code` 只交给服务端解析；日志和审计只保存结果类别、原因码、Principal/身份哈希与时间，不保存 raw userid、code、state 或 token。
 
+登录回调采用单并发准入；忙时在消费 state 前返回 `503 WORKBENCH_AUTH_BUSY`，用户可刷新当前回调重试。已调用 Provider 的 code 不自动重放；Provider 超时仍未结束时继续拒绝新的回调准入。
+
+App 对登录开始和回调分别限制每分钟 30 次，超额在写库前返回 `429 WORKBENCH_AUTH_RATE_LIMITED`。预算为进程全局固定窗口，不信任代理 IP；进程重启会重置窗口。现有单 App 部署适用，多副本时需重新设计共享限流。
+
 ## 身份与权限
 
 启动时只读取 `pilot_ticket.pilot_principal` 中 `is_active=true` 且拥有 `HANDLER`、`DISPATCHER` 或 `ADMIN` 的有限白名单，按最多 32 个一批调用官方 `batch/userid_to_openuserid`。运行时只接受转换后的 `open_userid`，转换失败、缺失、重复或数量不一致时整个登录端口保持未就绪。
@@ -38,6 +42,10 @@ GET /workbench
 - `pilot_ticket.workbench_auth_event`：脱敏登录、拒绝、OAuth 错误、退出、过期和撤销审计。
 
 Cookie 使用 `__Host-`、`Secure`、`HttpOnly`、`SameSite=Lax`；CSRF Cookie 为非 HttpOnly，仅用于双提交校验。API 未认证固定返回 JSON `401`，不跳转 OAuth；写请求要求精确 Origin、非跨站 Fetch Metadata、幂等键、CSRF 和既有版本校验。
+
+新增身份审计摘要使用 `PILOT_LOG_IDENTITY_HASH_KEY`（至少 16 bytes）的 HMAC-SHA256，并绑定企业、应用和用途。旧审计摘要不回填；密钥变更影响新摘要，不改变会话凭证校验。
+
+App 初始化后每分钟串行执行技术记录清理，每表每批最多 200 行：删除过期 login intent；删除超过 30 天的认证审计；删除已绝对过期且无剩余审计引用的会话。有效会话、最近审计及业务事实保留。清理失败只记录固定错误事件，并在下个周期重试；关闭 App 会等待本轮清理结束。本次没有改写 035 或新增业务迁移。
 
 ## 配置
 
@@ -56,13 +64,14 @@ WORKBENCH_EXTERNAL_SEND_ENABLED=false
 
 ## 迁移与验证命令
 
-以下命令需要在目标数据库上下文中执行。`--check` 只校验并回滚，`--status` 只读；本次实现没有替云端执行迁移或启用公网路由。
+以下命令需要在目标数据库上下文中执行。`--check` 校验并回滚，`--status` 检查迁移标记。2026-09-22 经负责人授权，已完成云端 035 迁移、公网管理路由配置与 A 扫码回调验证，见 [本次现场记录](../../evidence/p2-016-workbench-wecom-live-20260922.md)。该历史记录仅证明所列验证范围；后续修复的部署与验收须记录对应版本。
 
 ```powershell
 npm run p2:016:workbench-auth:status
 npm run p2:016:workbench-auth:check
 npm run p2:016:workbench-auth:migrate
 npm run test:p2:016:workbench-auth
+npm run test:p2:016:workbench-auth:integration
 ```
 
 应用启动前应先完成 035 迁移并完成身份映射初始化。若映射摘要不存在、数据库 marker 缺失或 Provider 调用失败，`/health/ready` 不通过，登录端口返回 `WORKBENCH_AUTH_NOT_READY`，不得通过 Nginx 暴露。

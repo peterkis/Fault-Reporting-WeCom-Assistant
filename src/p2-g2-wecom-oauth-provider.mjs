@@ -13,7 +13,7 @@ export async function readWeComResponse(response,signal){
 export function createWeComOAuthCodeResolver({accessTokenProvider,fetchImpl=fetch}={}) {
   if(typeof accessTokenProvider!=='function')throw new TypeError('WECOM_TOKEN_PROVIDER_REQUIRED');
   let inFlight=false;
-  return async code=>{
+  const resolve = async code=>{
     if(typeof code!=='string'||!code||Buffer.byteLength(code)>512)throw new WeComOAuthError('WECOM_AUTH_REQUIRED');
     if(inFlight)throw new WeComOAuthError('WECOM_AUTH_BUSY',503);
     inFlight=true;
@@ -40,4 +40,6 @@ export function createWeComOAuthCodeResolver({accessTokenProvider,fetchImpl=fetc
     // A non-cooperative provider stays fenced until it settles; do not accumulate background calls.
     try{return await Promise.race([operation,deadline]);}finally{controller.abort();clearTimeout(timer);}
   };
+  resolve.isBusy=()=>inFlight;
+  return resolve;
 }

@@ -269,6 +269,8 @@ for (const [route, outcome] of [['new', 'same'], ['list', 'same'], ['detail', 's
           const next = f.state.contextCalls;
           await browser.evaluate("document.cookie='yxx_session=member-b; Path=/'");
           await waitForState(() => f.state.contextCalls > next, 10000);
+          // The UI has a short anti-flicker grace period; hold the response until concealed.
+          await browser.waitFor(`document.querySelector('#${view}').hidden===true`);
           assert.equal(await browser.evaluate(`document.querySelector('#${view}').hidden`), true);
         }
         f.state.contextGate = null; releaseContext();
@@ -745,6 +747,8 @@ test('SS-007 hanging accepted POSTs time out and stop after five bounded GET rec
       await waitForState(() => f.state.commandStatusCalls.length === 5, 18000);
       await browser.waitFor("document.querySelector('#retry-pending')?.hidden===false");
       assert.equal(surface === 'new' ? f.state.commandCalls.length : f.state.supplementCalls.length, 1);
+      await browser.evaluate("document.querySelector('#discard-pending')?.click()");
+      assert.equal(await browser.evaluate(`document.querySelector('#${surface === 'new' ? 'submit-report' : 'submit-supplement'}').disabled`), true);
       assert.equal(JSON.parse(await browser.evaluate("sessionStorage.getItem('yxx.self_service.pending_command')")).id, pending.id);
       if (surface === 'new') assert.equal(await browser.evaluate("document.querySelector('#description').value"), '连接悬挂新报修');
       else assert.equal(await browser.evaluate("document.querySelector('#supplement-text').value"), '连接悬挂补充');

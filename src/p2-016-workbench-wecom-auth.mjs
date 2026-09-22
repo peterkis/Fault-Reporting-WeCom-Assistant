@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { createWeComAppTokenProvider } from './p2-g2-wecom-app-token.mjs';
 import { createWeComOAuthCodeResolver } from './p2-g2-wecom-oauth-provider.mjs';
 import { readWeComResponse } from './p2-g2-wecom-oauth-provider.mjs';
@@ -80,15 +80,19 @@ export function createWeComWorkbenchAuthentication({
   corpId,
   agentId,
   appSecret,
+  identityHashKey,
   accessTokenProvider = null,
   fetchImpl = fetch,
   now = Date.now,
   absoluteTtlMs = DEFAULT_ABSOLUTE_TTL_MS,
   idleTtlMs = DEFAULT_IDLE_TTL_MS,
   maxAllowlist = MAX_ALLOWLIST,
+  loginRequestsPerMinute = 30,
 } = {}) {
   requireConfig({ pool, publicOrigin, corpId, agentId, absoluteTtlMs, idleTtlMs });
-  if (typeof fetchImpl !== 'function' || !Number.isSafeInteger(maxAllowlist) || maxAllowlist < 1 || maxAllowlist > 256) {
+  if (!Number.isSafeInteger(loginRequestsPerMinute) || loginRequestsPerMinute<1 || loginRequestsPerMinute>60
+    || typeof identityHashKey !== 'string' || Buffer.byteLength(identityHashKey)<16
+    || typeof fetchImpl !== 'function' || !Number.isSafeInteger(maxAllowlist) || maxAllowlist < 1 || maxAllowlist > 256) {
     throw new TypeError('WORKBENCH_AUTH_CONFIGURATION_INVALID');
   }
   const tokenProvider = accessTokenProvider ?? createWeComAppTokenProvider({ corpId, appSecret, fetchImpl });
@@ -97,6 +101,33 @@ export function createWeComWorkbenchAuthentication({
   let closed = false;
   let initialized = false;
   let mappingDigest = null;
+  let callbackBusy = false;
+  let maintenanceTimer=null;
+  let maintenanceTask=null;
+  function runMaintenance() {
+    ensureReady();
+    if(maintenanceTask)return maintenanceTask;
+    const epoch=Number(now());
+    maintenanceTask=(async()=>{
+      const intents=await pool.query(`DELETE FROM pilot_ticket.workbench_login_intent WHERE intent_id IN
+        (SELECT intent_id FROM pilot_ticket.workbench_login_intent WHERE expires_epoch_ms<=$1 ORDER BY expires_epoch_ms LIMIT 200)`,[epoch]);
+      const events=await pool.query(`DELETE FROM pilot_ticket.workbench_auth_event WHERE id IN
+        (SELECT id FROM pilot_ticket.workbench_auth_event WHERE occurred_at<platform.local_from_epoch_ms($1) ORDER BY occurred_at,id LIMIT 200)`,[epoch-30*86400000]);
+      const sessions=await pool.query(`DELETE FROM pilot_ticket.workbench_auth_session s WHERE s.session_id IN
+        (SELECT x.session_id FROM pilot_ticket.workbench_auth_session x WHERE x.expires_epoch_ms<=$1
+          AND NOT EXISTS(SELECT 1 FROM pilot_ticket.workbench_auth_event e WHERE e.session_id=x.session_id)
+          ORDER BY x.expires_epoch_ms LIMIT 200)`,[epoch]);
+      return {intents:intents.rowCount,events:events.rowCount,sessions:sessions.rowCount};
+    })().finally(()=>{maintenanceTask=null;});
+    return maintenanceTask;
+  }
+  const budgets=new Map();
+  function admit(kind) {
+    const epoch=Number(now());let budget=budgets.get(kind);
+    if(!budget || epoch-budget.start>=60000){budget={start:epoch,count:0};budgets.set(kind,budget);}
+    if(budget.count>=loginRequestsPerMinute)fail(WORKBENCH_ERROR_CODES.authRateLimited,429);
+    budget.count++;
+  }
   const principalByUserId = new Map();
 
   async function audit({ sessionId = null, principalId = null, identityHash = null, eventType, reasonCode, providerErrcode = null }) {
@@ -145,6 +176,12 @@ export function createWeComWorkbenchAuthentication({
     for (const [key, value] of next) principalByUserId.set(key, value);
     mappingDigest = hash(JSON.stringify([...principalByUserId.entries()].sort(([a], [b]) => a.localeCompare(b))));
     initialized = true;
+    if(!maintenanceTimer){
+      maintenanceTimer=setInterval(()=>{void runMaintenance().catch(()=>{
+        console.error(JSON.stringify({event:'WORKBENCH_AUTH_MAINTENANCE_FAILED'}));
+      });},60000);
+      maintenanceTimer.unref?.();
+    }
     return Object.freeze({ principal_count: rows.length, mapping_digest: mappingDigest });
   }
 
@@ -155,6 +192,7 @@ export function createWeComWorkbenchAuthentication({
   async function begin({ request, response, returnPath = ROOT } = {}) {
     ensureReady();
     if (!validPath(returnPath)) fail(WORKBENCH_ERROR_CODES.authStateInvalid, 400);
+    admit('start');
     const state = random();
     const browserBinding = random();
     const created = Number(now());
@@ -201,7 +239,8 @@ export function createWeComWorkbenchAuthentication({
     }
     const userid = identity?.userid;
     const principalId = typeof userid === 'string' ? principalByUserId.get(userid) : null;
-    const identityHash = typeof userid === 'string' ? hash(userid) : null;
+    const identityHash = typeof userid === 'string'
+      ? createHmac('sha256',identityHashKey).update(JSON.stringify(['workbench-identity-v1',corpId,agentId,userid])).digest('hex') : null;
     if (!principalId || !UUID.test(principalId)) {
       await audit({ identityHash, eventType: 'LOGIN_REJECTED', reasonCode: 'PRINCIPAL_NOT_ALLOWED' });
       fail(WORKBENCH_ERROR_CODES.forbidden, 403);
@@ -303,7 +342,15 @@ export function createWeComWorkbenchAuthentication({
 
   async function handler({ request, response, url }) {
     if (url.pathname === LOGIN_PATH && request.method === 'GET' && !url.search) { await begin({ request, response }); return true; }
-    if (url.pathname === CALLBACK_PATH && request.method === 'GET') { await complete({ request, response, url }); return true; }
+    if (url.pathname === CALLBACK_PATH && request.method === 'GET') {
+      admit('callback');
+      // Reserve before the first database await; a busy callback must retain its state.
+      // The resolver also fences providers that remain in flight after a timeout.
+      if (callbackBusy || resolveCode.isBusy()) fail(WORKBENCH_ERROR_CODES.authBusy,503);
+      callbackBusy=true;
+      try { await complete({request,response,url}); return true; }
+      finally { callbackBusy=false; }
+    }
     if (url.pathname === LOGOUT_PATH && request.method === 'POST' && !url.search) { await logout({ request, response }); return true; }
     if (PAGE_PATHS.has(url.pathname) && request.method === 'GET') {
       if (await authenticate(request)) return false;
@@ -316,7 +363,8 @@ export function createWeComWorkbenchAuthentication({
     initialize: refreshIdentityMapping,
     mappingDigest: () => mappingDigest,
     authenticate,
+    runMaintenance,
     unauthenticatedHandler: handler,
-    close: () => { closed = true; principalByUserId.clear(); },
+    close: async () => { closed = true; clearInterval(maintenanceTimer); principalByUserId.clear(); await maintenanceTask?.catch(()=>{}); },
   });
 }

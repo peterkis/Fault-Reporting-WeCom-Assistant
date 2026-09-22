@@ -25,7 +25,7 @@ function validGeneration(g){return g===state.generation&&!state.stopped;}
 function messageFor(status){return ({400:'输入格式有误，请检查后重试。',401:'认证已失效，请重新认证。',403:'当前账号没有此项权限。',404:'报修不存在、已撤销或已过期。',409:'版本或状态已变化，请刷新后重试。',413:'内容超过允许大小。',415:'请求格式不受支持。',429:'操作太频繁，请稍后再试。',503:'服务暂时不可用，请稍后刷新。'})[status]??'网络暂不可用，请稍后重试。';}
 function setStatus(textValue,kind=''){const value=$('app-status');value.textContent=textValue;value.className=`status ${kind}`;}
 function setView(view,title){for(const id of ['logged-out-view','home-view','new-view','reports-view','detail-view'])$(id).hidden=id!==view;$('page-title').textContent=title;}
-function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTimer);state.pendingTimer=null;if(resetAttempts)state.pendingAttempts=0;$('retry-pending').hidden=true;$('discard-pending').hidden=true;}
+function cancelPendingRecovery(resetAttempts=false){clearTimeout(state.pendingTimer);state.pendingTimer=null;if(resetAttempts)state.pendingAttempts=0;$('retry-pending').hidden=true;}
 function syncPendingButtons(){const blocked=state.pendingCommandId!==null||state.storageBlocked||state.readOnly===true;$('submit-report').disabled=blocked;$('submit-supplement').disabled=blocked;}
 function durableKey(id){return `${durablePrefix}${id}`;}
 function durableKeys(){const keys=[];for(let index=0;index<localStorage.length;index+=1){const key=localStorage.key(index);if(key?.startsWith(durablePrefix))keys.push(key);}return keys;}
@@ -246,7 +246,7 @@ async function loadOlderTimeline(){
 }
 function schedulePendingRecovery(id,generation){
  clearTimeout(state.pendingTimer);
- if(state.pendingAttempts>=5){$('retry-pending').hidden=false;$('discard-pending').hidden=false;setStatus(state.pendingLegacy?'这是一条旧版恢复记录，归属范围未知。仍未查到结果，可稍后继续查询；不会自动重交。':'仍未查到上次提交结果。可继续查询，或确认未受理后清除本地记录重新填写。','error');return;}
+ if(state.pendingAttempts>=5){$('retry-pending').hidden=false;setStatus(state.pendingLegacy?'这是一条旧版恢复记录，归属范围未知。仍未查到结果，可稍后继续查询；不会自动重交。':'仍未查到上次提交结果。请稍后继续查询；为避免重复报修，暂不能重新提交。','error');return;}
  const delay=pendingDelays[Math.max(0,state.pendingAttempts-1)];
  const recoveryScope=state.recoveryScope;
  const retry=()=>{
@@ -365,7 +365,6 @@ $('supplement-form').addEventListener('submit',submitSupplement);
 $('load-more-reports').addEventListener('click',()=>loadReports(true));
 $('load-older-timeline').addEventListener('click',loadOlderTimeline);
 $('retry-pending').addEventListener('click',()=>void recoverPending({restart:true}));
-$('discard-pending').addEventListener('click',()=>{if(!state.pendingCommandId)return;forget();setStatus('已清除本地未确认记录，请重新填写。','success');});
 $('logout').addEventListener('click',async()=>{
  clearClientDom('正在退出当前会话…');showLoggedOut('正在退出当前会话…','',false);broadcastLogout();
  const generation=state.generation,controller=new AbortController();

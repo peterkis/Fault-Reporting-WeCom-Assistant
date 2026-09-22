@@ -1,12 +1,15 @@
 import { createCommunicationDeliveryOperatorPort,createCommunicationReconciliationPort } from './p2-004-communication-delivery-worker.mjs';
 import { createP2016CommandLedger } from './p2-016-ticket-command-ledger.mjs';
 import { exactP2016,uuidP2016,codeP2016,failP2016,guardP2016 } from './p2-016-domain-contracts.mjs';
+import { WorkbenchError, WORKBENCH_ERROR_CODES } from './p2-006-workbench-query.mjs';
 
-export function createP2016DeliveryControl({pool,query,enabled=false}) {
+export function createP2016DeliveryControl({pool,query,enabled=false,externalSendEnabled=true}) {
+  if(typeof externalSendEnabled!=='boolean')throw new TypeError('WORKBENCH_EXTERNAL_SEND_CONFIGURATION_INVALID');
   const ledger=createP2016CommandLedger({pool}),operator=createCommunicationDeliveryOperatorPort({pool}),reconciliation=createCommunicationReconciliationPort({pool});
   return Object.freeze({
     async perform({authContext,ticketId,deliveryId,action,body}) {
       guardP2016(enabled);
+      if(!externalSendEnabled)throw new WorkbenchError(WORKBENCH_ERROR_CODES.externalSendDisabled,403);
       const v=exactP2016(body,['client_command_id','reason_code','resolution'],['client_command_id','reason_code']);
       if(!['retry','reconcile'].includes(action)||action==='retry'&&v.resolution!==undefined
         ||action==='reconcile'&&!['CONFIRMED_SENT','CONFIRMED_NOT_SENT_REQUEUE','CANCEL'].includes(v.resolution))failP2016();

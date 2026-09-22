@@ -26,7 +26,7 @@ export async function main(argv=process.argv.slice(2)){
       externalSendEnabled:process.env.WORKBENCH_EXTERNAL_SEND_ENABLED==='true',
       authenticationFactory:workbenchLoginEnabled?async({pool,publicOrigin:resolvedOrigin})=>{
         const auth=createWeComWorkbenchAuthentication({pool,publicOrigin:resolvedOrigin,corpId:process.env.CORP_ID,
-          agentId:process.env.APP_ID,appSecret:process.env.APP_SECRET});
+          agentId:process.env.APP_ID,appSecret:process.env.APP_SECRET,identityHashKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY});
         await auth.initialize();
         return auth;
       }:null,
