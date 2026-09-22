@@ -97,6 +97,32 @@ GET https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token=ACCESS_TOKEN&useri
 
 重点字段：`userid`、`name`、`department`、`gender`、`mobile`、`avatar`。其中姓名、部门查看范围以及性别、手机号、头像等敏感字段必须按企业管理员授权和成员 OAuth2 授权结果解释，空字段不能推断为“用户没有该信息”。
 
+### 4.1 成员本人 OAuth2 敏感字段
+
+成员本人手工授权使用 `scope=snsapi_privateinfo`，并必须携带 `agentid`：
+
+```text
+https://open.weixin.qq.com/connect/oauth2/authorize
+  ?appid=CORP_ID
+  &redirect_uri=URLENCODED_CALLBACK
+  &response_type=code
+  &scope=snsapi_privateinfo
+  &state=ONE_TIME_STATE
+  &agentid=APP_ID
+  #wechat_redirect
+```
+
+服务端顺序为：
+
+```text
+code
+→ GET /cgi-bin/auth/getuserinfo
+→ user_ticket
+→ POST /cgi-bin/auth/getuserdetail
+```
+
+`code`、`state`、`user_ticket`、原始 userid、转换后的 open_userid、手机号和头像 URL 不进入日志、Evidence 或业务库。成员本人授权完成后，`getuserdetail` 只在服务端读取并立即做脱敏归档。
+
 ## 本次定向验证结果
 
 | 场景 | Provider 结果 | 客户端/字段结论 | 状态 |
@@ -113,3 +139,29 @@ GET https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token=ACCESS_TOKEN&useri
 - 本能力不打开持久 Feature Flag，不改变现有 Bot WebSocket Sender、Outbox 或模板卡片运行时。
 - 发生超时、断线或无响应时记录 `UNKNOWN`，不得盲目重发；有 `errcode=0` 后不得由同一 Delivery 直接重发。
 - `invaliduser`、`unlicenseduser` 或全目标无效时按目标/权限错误处理；先修复命名空间、可见范围或授权，再创建新的受控发送意图。
+
+## 同日后续：从 Bot 回调 userid 读取用户资料
+
+上一节“本次定向验证结果”保留的是前一次读取成员运行的原始结论；本节是随后针对用户 A 的脱敏复核，不覆盖前一条记录。
+
+- 通过上一轮 Bot 群聊/单聊帧的 `sender_user_id_hash` 与配置测试用户做哈希比对，确认测试对象一致。
+- 先调用 `batch/userid_to_openuserid`，得到 `errcode=0`、1 个成功映射、0 个无效成员；未把任一原始或转换后的 ID 写入证据。
+- 再调用 `user/get`，得到 `errcode=0`。本次观察到 `userid`、`name`、一个部门 ID、`alias` 和激活状态；`position` 为空，`mobile`、`gender`、`email`、`avatar`、`telephone`、`address`、`qr_code` 等未返回。
+- 随后对该部门 ID 调用 `department/get`，得到 `errcode=0` 且部门名称字段存在；部门 ID 与部门名称都不进入本证据。
+
+本次结论为 `PROFILE_LOOKUP_PARTIAL_PASS`：通过 Bot userid 做命名空间转换后，可以读取当前应用可见范围内的非敏感成员资料和部门名称；不能据此声称敏感个人字段已授权，也不能把 Bot 回调本身说成携带完整用户资料。
+
+## 同日后续：成员本人 OAuth2 敏感字段脱敏验证
+
+本节记录 2026-09-22 测试用户 A 完成本人授权后的新增结果，不保存任何个人字段原文，也不覆盖前述未授权运行的历史结论。
+
+| 接口/场景 | Provider 结果 | 脱敏字段结论 | 状态 |
+|---|---|---|---|
+| OAuth2 授权入口 | `scope=snsapi_privateinfo`，携带 `agentid` | 浏览器绑定 state；只允许测试用户 A；原始 code/state 未保存 | 通过 |
+| `auth/getuserinfo` | `errcode=0` | 测试用户身份匹配；`user_ticket` 已返回但未保存 | 通过 |
+| `auth/getuserdetail` | `errcode=0` | `userid`、`gender`、`mobile`、`avatar` 字段已返回；实际值、号码和 URL 均未保存 | 敏感字段部分通过 |
+| `user/get`（同一授权用户） | `errcode=0` | `name`、`department`、`alias`、激活状态、部门负责人标记等字段已返回；`position` 为空；实际姓名、别名和 ID 未保存 | 非敏感资料部分通过 |
+| `department/get` | 每级 `errcode=0` | 成员部门及父部门层级可逐级读取；部门名称、ID 和负责人值不进入本证据 | 部门层级通过 |
+| 敏感字段未返回 | Provider 未返回字段 | `email`、`biz_mail`、`address`、`qr_code` 本次未返回；未执行企业超级管理员配置变更，不能推断永久不可获取 | 本次未取得 |
+
+本次 `H04` 结论升级为 `PROFILE_PRIVATEINFO_PARTIAL_PASS`：成员本人 OAuth2 已能取得性别、手机号和头像字段；邮箱、企业邮箱、地址、个人二维码仍未取得。工单系统暂不保存任何上述用户资料，等待字段保留范围单独决定。

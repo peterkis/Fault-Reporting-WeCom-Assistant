@@ -1,5 +1,32 @@
 # Published-history review preflight
 
+## 2026-09-22 successor CI scope correction
+
+PR #21's Ubuntu and Windows evidence-history jobs reproduced
+`YXX_LOCAL_VALIDATION_SCOPE_INVALID` because the SS-009 scope regression created
+a worktree at current HEAD. That HEAD contains the authorized successor migration
+035, whereas the historical SS-008 scope freezes the original migration directory.
+The historical scope and validator remain unchanged and still reject that current
+checkout; they must not be relaxed or represented as current workbench readiness.
+
+The workflow now executes all original SS-009 tests, r6 mutation probes, architecture
+checks and the unchanged strict CLI in a separate CRLF clone at PR #19's final
+published head `41edd855e7bc55149facb6a4b2e0076776c22e66` (GitHub PR API verified).
+The isolated clone's `origin/main` is set to that PR's GitHub-verified base
+`375d47b013017edb858206cc5f3475c9aed77dfd`, because original architecture validators
+compare that ref. The live checkout and its refs are untouched. Its ancestry and exact identity are checked before use. Outputs explicitly identify
+the historical fixture. Missing history, tampering or strict failures remain fatal.
+
+On the actual PR head the job retains the published-object preflight, runs current
+OAuth/workbench unit and HTTP regression tests, and checks the PR event's base-to-head
+evidence history. `pr-evidence-delta.mjs` rejects modifications/deletions, including
+an added evidence file subsequently rewritten and then restored. Its base is the
+GitHub PR event base, not a replacement for the original SS009 trust anchor; no
+override is passed to the historical validator. This distinguishes evidence already
+in the parent release from changes proposed in the current PR. It does not certify
+the current candidate against a historical report. PostgreSQL/browser and live
+acceptance remain independently reported in the delivery evidence.
+
 ## Why PR #19 kept receiving the same ancestry finding
 
 The latest finding was attached to the published review head `20c2f032106e897b3ac802355b5218e363646a3d`, but its body evaluated `3fdfeeedefee5afade93004320765d6ac43ffe60` instead.
@@ -92,6 +119,20 @@ The product's Node 24 runtime requirement is unchanged. CI uses Node 24. This ve
 Appending review-only commits preserves the tested ancestor; it does not require replacing the recorded tested_head with the latest documentation commit. A genuine squash/rebase that loses the tested ancestor still cannot reuse completion evidence without regenerating it. No automatic PR merge is performed.
 
 ## 审查结束条件与后续减量
+
+### PR #21 五次既有 G0 修改的一次性处置（2026-09-22）
+
+负责人在本次修复会话明确选择“同意：仅对这五次既有修改登记精确例外”。这是对已发布违规的具名处置，不宣称这些修改原本符合不可改写规则。
+
+- `f29da5fb14d3e9a5c60ec27edbd6feedf69e3270`：帧 JSONL 追加两条脱敏记录、文本能力矩阵追加复核、HTTP 记录追加非敏感资料复核。
+- `87b12ab6d0929fc069326a58159917cda075a4a4`：主动推送矩阵覆写一条成员资料结论并增加 OAuth2 行；HTTP 记录插入 OAuth2 流程及追加授权结果。矩阵覆写事实不能用“只是追加”掩盖。
+- HTTP 记录中把 H04A 结果归到 H04 的错误由 [既有具名更正](../../evidence/g0-005-http-template-card-h04a-correction-20260922.md) 替代；这次处置不升级任一能力结论，不补造现场证据或授权。
+
+精确清单为 `pr21-evidence-exceptions.json`，每项绑定提交、直接父提交、路径、前后 blob、前后文件模式及变更类型。检查器仍遍历 PR 原始 base/head 间全部提交及每个合并父边，输出实际遇到的已处置项；只有完整匹配的五个历史转换可通过。以后同路径的追加、插入、改写、删除、改名、模式变化及改后恢复仍失败。清单不是路径白名单，不从 PR 输入或环境变量接收豁免。
+
+不移动 SS009 信任锚或 PR 检查起点，不改写 Git 历史，不修改现有 evidence、r7 或原 SS009 校验器。SS009 的原严格 CLI 和篡改探针继续在 GitHub 已发布 PR #19 固定对象中执行；其通过只证明历史验收可复现，当前工作台回归单独运行。新增测试针对的具体缺口是：一次性历史处置必须通过，而未来同路径变动必须仍被拒绝。撤销处置可移除清单匹配，门禁会恢复拒绝这五次变动。
+
+本地验证（Node 24.18.0）：精确处置测试先 RED 后 GREEN，2/2 测试通过，包含后续五类修改、各自恢复提交及合并侧隐藏覆写；当前工作台/OAuth 回归 56/56 通过。PR #19 已发布 `41edd855e7bc55149facb6a4b2e0076776c22e66` 的独立完整 CRLF checkout 中，原严格 CLI、33/33 证据测试及 r6 篡改探针通过。没有新建 r8、重跑 PostgreSQL/浏览器全量验收或调用企业微信。
 
 以下规则自 2026-09-21 起用于后续工作；上文各修复轮次的运行结果是历史记录。
 

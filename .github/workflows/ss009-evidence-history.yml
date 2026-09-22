@@ -18,6 +18,10 @@ jobs:
         shell: bash
     env:
       EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
+      # GitHub PR #19 final published head; historical validation, never current readiness.
+      SS009_FIXTURE: 41edd855e7bc55149facb6a4b2e0076776c22e66
+      SS009_BASE: 375d47b013017edb858206cc5f3475c9aed77dfd
       GIT_NO_REPLACE_OBJECTS: '1'
     steps:
       - name: Preserve the recorded checkout line endings
@@ -37,15 +41,39 @@ jobs:
           mkdir -p "$RUNNER_TEMP/ss009-evidence-history"
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" | tee "$RUNNER_TEMP/ss009-evidence-history/preflight.json"
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Run existing evidence and new immutable-history tests
+      - name: Check current PR evidence history and current source regressions
+        run: |
+          set -euo pipefail
+          node --test .github/review/pr-evidence-delta.test.mjs
+          node .github/review/pr-evidence-delta.mjs | tee "$RUNNER_TEMP/ss009-evidence-history/pr-delta.json"
+          node --test --test-concurrency=1 tests/p2-016-workbench-wecom-auth.test.mjs tests/p2-g2-wecom-web-oauth.test.mjs tests/p2-g2-wecom-oauth-server.test.mjs tests/p2-g2-wecom-oauth-http.test.mjs tests/p2-g2-yixiaoxiu-oauth.test.mjs tests/yxx-ss-001-homepage-oauth.test.mjs tests/p2-006-workbench.test.mjs tests/p2-g1-human-only-assembly.test.mjs | tee "$RUNNER_TEMP/ss009-evidence-history/current-source.txt"
+      - name: Reconstruct the published SS009 fixture with its original frozen scope
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$SS009_FIXTURE" "$EXPECTED_HEAD"
+          git clone --shared --no-checkout --config core.autocrlf=true . "$RUNNER_TEMP/ss009-frozen"
+          git -C "$RUNNER_TEMP/ss009-frozen" checkout --detach "$SS009_FIXTURE"
+          git -C "$RUNNER_TEMP/ss009-frozen" update-ref refs/remotes/origin/main "$SS009_BASE"
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: ${{ runner.temp }}/ss009-frozen
+      - name: Verify historical fixture identity and unchanged strict readiness
+        working-directory: ${{ runner.temp }}/ss009-frozen
+        run: |
+          set -euo pipefail
+          node .github/review/verify-published-history.mjs --expected-head "$SS009_FIXTURE" | tee "$RUNNER_TEMP/ss009-evidence-history/historical-preflight.json"
+          node scripts/validate-yxx-self-service.mjs --require-ready | tee "$RUNNER_TEMP/ss009-evidence-history/historical-strict.json"
+      - name: Run the original SS009 evidence and immutable-history tests
+        working-directory: ${{ runner.temp }}/ss009-frozen
         run: |
           set -euo pipefail
           node --test --test-reporter=tap tests/yxx-ss-009-evidence.test.mjs tests/yxx-ss-009-evidence-history.test.mjs | tee "$RUNNER_TEMP/ss009-evidence-history/unit.tap"
-      - name: Reproduce the genuine r6 bypass and require rejection in every current mode
+      - name: Reproduce historical r6 bypass and require rejection in all validator modes
+        working-directory: ${{ runner.temp }}/ss009-frozen
         run: |
           set -euo pipefail
           node .github/review/ss009-evidence-history-probe.mjs | tee "$RUNNER_TEMP/ss009-evidence-history/r6-rewrite-probe.json"
       - name: Run the unchanged architecture and structure checks
+        working-directory: ${{ runner.temp }}/ss009-frozen
         run: |
           set -euo pipefail
           node scripts/validate-yxx-self-service.mjs | tee "$RUNNER_TEMP/ss009-evidence-history/structure.json"
@@ -58,7 +86,7 @@ jobs:
               console.log(JSON.stringify({command:file,exit_code:r.status,stdout:r.stdout,stderr:r.stderr}));
               assert.ifError(r.error);assert.equal(r.status,0,file);
             }' | tee "$RUNNER_TEMP/ss009-evidence-history/validators.jsonl"
-      - name: Retain scoped results, including failures
+      - name: Retain current and historical results, including failures
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
