@@ -78,7 +78,7 @@ test('sync merge rejects an add/add evidence collision resolved to base',()=>{
   const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe']}).trim();
   const commit=()=>{git(['add','.']);git(['-c','user.name=Test','-c','user.email=test@example.invalid','-c','commit.gpgsign=false','commit','-m','fixture']);return git(['rev-parse','HEAD']);};
   try{
-    git(['init']);mkdirSync(path.join(root,'evidence'));writeFileSync(path.join(root,'evidence/original.md'),'original\n');const oldBase=commit();
+    git(['init']);git(['config','core.autocrlf','false']);mkdirSync(path.join(root,'evidence'));writeFileSync(path.join(root,'evidence/original.md'),'original\n');const oldBase=commit();
     git(['checkout','-b','base-update',oldBase]);
     writeFileSync(path.join(root,'evidence/collision.md'),'base version\n');const currentBase=commit();
     git(['checkout','-b','pr-change',oldBase]);
