@@ -36,7 +36,7 @@ test('PR21 accepts only the five adjudicated transitions, never later changes to
   const base='627d5f72959b4b2a085d734c311712363f87a3f8';
   const published='7fedc500054b547437a8acc9a8e8647e1d4f07e4';
   const file='evidence/g0-005-active-push-matrix.md';
-  const commit=()=>{git(['add','evidence']);git(['-c','user.name=Test','-c','user.email=test@example.invalid','-c','commit.gpgsign=false','commit','-m','fixture']);return git(['rev-parse','HEAD']);};
+  const commit=(stage=true)=>{if(stage)git(['add','evidence']);git(['-c','user.name=Test','-c','user.email=test@example.invalid','-c','commit.gpgsign=false','commit','-m','fixture']);return git(['rev-parse','HEAD']);};
   try{
     git(['clone','--shared','--no-checkout',process.cwd(),'.']);
     git(['checkout','--detach',published]);
@@ -51,7 +51,8 @@ test('PR21 accepts only the five adjudicated transitions, never later changes to
       ['mode',()=>git(['update-index','--chmod=+x',file])],
     ]){
       git(['checkout','-b',name,published]);change();
-      const head=commit();
+      // update-index already stages the mode; git add would undo it on POSIX.
+      const head=commit(name!=='mode');
       assert.throws(()=>verifyPrEvidenceDelta({root,base,head}),/rewrites or removes committed evidence/);
       git(['restore','--source='+published,'--staged','--worktree','evidence']);
       const restored=commit();
