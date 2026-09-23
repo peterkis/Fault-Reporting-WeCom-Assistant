@@ -7,6 +7,8 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "prototype:admin": "npm --prefix web/admin-workbench-prototype run dev",
+    "prototype:admin:build": "npm --prefix web/admin-workbench-prototype run build",
     "g0:002:valid": "node --env-file=.env src/g0-002-sdk-lifecycle.mjs --mode=valid",
     "g0:002:invalid": "node --env-file=.env src/g0-002-sdk-lifecycle.mjs --mode=invalid-secret",
     "g0:002:sigterm": "node --env-file=.env src/g0-002-sdk-lifecycle.mjs --mode=valid --self-sigterm-after-auth",
