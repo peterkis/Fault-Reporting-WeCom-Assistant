@@ -1,260 +1,244 @@
-# Conversation Center
+# 医院信息故障报修与统一工单服务
 
-2026-09-11 P2-G2-YXX-TICKET-ENTRY 本地实现与隔离自动化完成：当前候选1044/1044、166测试文件及两轴独立审查通过。PR #7的976项仅为历史输入；交接先读 `evidence/p2-g2-yxx-entry-report.json`、父就绪报告及 `docs/runbooks/yixiaoxiu-member-ticket-entry.md`。真实身份对应仍未证明（IDENTITY_NAMESPACE_LIVE_VERIFICATION_PENDING），定向现场及P2-G2-LIVE未授权/未运行，P2-008继续阻断。
+本词汇表统一报修受理、会话协作、工单处理、公共故障和通知中的业务用语。它定义概念含义，不宣称任何能力已经实现或获准启用。
 
-This context defines the domain language for the lightweight Conversation Center in V1.4. It keeps conversation identity, service topics, timeline entries, and the authoritative ticket lifecycle distinct.
+> **既有 P2 契约变更必读**：修改会话身份、时间线投影/重建、实时回放、通信投递、接管/控制、受理编排或工单命令前，必须同时阅读 [Conversation Center 技术词汇与变更前置要求](docs/domain-modeling/conversation-context-reference.md)，并按其中入口阅读对应实现文档。该文件保留 `Projection Checkpoint`、`Timeline Rebuild`、`Generation Version`、`Ticket Command Receipt` 等既有定义与不变量；本词汇表不替代这些约束。参考文件中的阶段和验收状态属于历史快照，当前状态仍按架构基线、Accepted ADR 和当前计划核验。
 
-For P2-002 timeline projection, source mapping, ordering, checkpoint, or rebuild work, read
-`docs/38_p2_002_timeline_projector.md` before changing a Contract, migration, runtime, or test.
+## Language
 
-For P2-003 durable realtime replay, authorization clipping, SSE, backpressure, or retention work,
-read `docs/39_p2_003_realtime_event_log_sse.md`. Realtime objects never become domain facts.
+### 人员与责任
 
-For P2-004 Communication Message, committed Outbox, per-target Delivery, Sender/Worker,
-reconciliation, internal note, or P1 notification compatibility work, read
-`docs/40_p2_004_unified_communication.md`. Communication facts never own Ticket state.
+**人员（Person）**：具有持续身份的自然人；在不同报修和处理活动中可以承担不同角色。
+_Avoid_: 企业微信账号、登录会话、笼统的 User
 
-For P2-005 Assignment, Handoff, per-principal Read Cursor, Control Event, Generation Fence,
-or assigned Communication authorization, read
-`docs/41_p2_005_assignment_handoff_generation_fence.md`. Control facts never own Ticket state.
+**外部身份绑定（External Identity Binding）**：某个人员与特定来源、组织和应用范围内外部身份的经核验关联。
+_Avoid_: 姓名匹配、跨应用同名账号
 
-For P2-006 Workbench REST, Pilot authorization, Human-only commands, Delivery control,
-SSE routing, Polling fallback, or the Internal Alpha / Reference Client, read
-`docs/42_p2_006_realtime_web_workbench.md`. The reference client is replaceable and does
-not authorize P2-G1 assembly or a production frontend.
+**人员资料快照（Reporter Profile Snapshot）**：报修发生时记录的报修人姓名、所属部门等资料及其来源。
+_Avoid_: 当前人员资料、故障发生位置
 
-For the post-ARCH-006 rule-first sequence, deterministic result contract, Contact Journey,
-Manual Review, complete Ticket lifecycle, Reporter-safe Timeline, notification policy, or
-human-confirmed Incident boundary, read `docs/50_arch_006_ai_optional_rule_first_service_loop.md`
-through `docs/54_p2_g2_deterministic_full_service_loop_gate.md` before changing a future
-Contract, migration, Runtime, UI, task dependency, or Gate.
+**报修人（Reporter）**：对一次故障提出报修并有权获知其处理进展的人，是人员在该次服务中的角色。
+_Avoid_: 客服、所有群成员、通知接收人必然拥有工单
 
-P2-015 is implemented behind default-false flags. For its persisted Journey/Leg,
-continuation, deterministic Decision, Manual Review, Safe Action, internal Query/Command
-Port, or Worker behavior, read `docs/55_p2_015_rule_first_intake_orchestration.md` through
-`docs/57_p2_015_manual_review_and_safe_actions.md`. This implementation does not authorize
-P2-016 UI/REST, P2-012 Incident, P2-G2, AI/OCR, or production enablement.
+**参与者（Participant）**：在某一沟通窗口中参与某个服务主题的人。
+_Avoid_: 整个群、会话窗口、必然是报修人
 
-P2-016 is DONE after owner-approved targeted live validation. For completion or handoff,
-read `evidence/p2-016-ticket-lifecycle-workbench-report.md` and
-`evidence/p2-016-project-owner-approval.md`. P2-012 is DONE after owner-approved targeted live validation. Read `evidence/p2-012-human-confirmed-incident-report.md`, `evidence/p2-012-project-owner-approval.md`, and docs 62–65 for implementation and source-summary limitations. P2-G2 preparation is independently authorized through READY_FOR_LIVE_E2E; read `evidence/p2-g2-start-authorization.md`. Live work and P2-008 require separate authorization.
-P2-015 remains completed and its historical evidence is immutable. P2-016's separately
-authorized implementation reuses narrow backward-compatible seams; this is not a second
-P2-015 completion. For Workbench, Reporter access, and notification work, read
-`docs/58_p2_016_manual_review_workbench.md` through `docs/61_p2_016_wecom_notifications_template_card.md`.
+**操作主体（Principal）**：在一次受控操作中被识别并承担权限与审计责任的主体。
+_Avoid_: 人员主档、前端自报角色
 
-## Conversation identity
+**客服（Service Agent）**：承担受理、沟通、复核或协调工作的工作人员；可在具备权限时自行处理故障。
+_Avoid_: 客户、报修人、自动拥有全部权限的管理员
 
-**Channel Account**:
-The provider account through which a conversation is held, such as a WeCom bot identity.
-_Avoid_: Bot implementation, application instance
+**调度员（Dispatcher）**：具有分派、撤销分派和转派职责的工作人员角色，可由具备权限的客服兼任。
+_Avoid_: 任意客服、当前处理人
 
-**Chat Type**:
-The kind of provider conversation, either a direct conversation with one participant or a group conversation.
-_Avoid_: Message type, channel mode
+**处理人（Handler）**：当前承担某张工单故障处理责任的工作人员，可以是工程师或具备处理权限的客服。
+_Avoid_: 会话负责人、报修人
 
-**External Thread Key**:
-The provider-issued identity of a long-lived conversation within a Channel Account and Chat Type.
-_Avoid_: Message ID, Session ID
+**处理组（Resolver Team）**：承担一类或一组工单处理责任的工作组织。
+_Avoid_: 报修人所属科室、群聊
 
-**Conversation Thread**:
-A long-lived communication window identified by its provider, Channel Account, Chat Type, and External Thread Key.
-_Avoid_: Conversation Session, Ticket, chat message
+**会话责任（Conversation Assignment）**：谁负责与报修人沟通的当前责任关系。
+_Avoid_: 工单处理责任、会话所有权
 
-**Participant**:
-The person whose service topic is being handled within a Conversation Thread, including one member of a group conversation.
-_Avoid_: Chat, reporter account
+**工单责任（Ticket Assignment）**：哪一个处理组及处理人负责解决某张工单的责任关系。
+_Avoid_: 会话责任、关注人
 
-## Service conversation
+### 报修与受理
 
-**Conversation Session**:
-A continuous service topic inside a Conversation Thread, bounded by a topic change or the end of the topic.
-_Avoid_: Thread, Ticket, chat window
+**故障（Fault）**：业务使用中出现的异常或能力失效，是报修描述的对象。
+_Avoid_: 一条消息、一张工单、公共故障必然成立
 
-**Session Scope**:
-The combination of a Conversation Thread, a Participant, and an optional Service Intake that keeps one service topic’s context together.
-_Avoid_: Ticket scope, global conversation
+**报修（Fault Report）**：报修人表达故障及请求协助的业务行为和陈述。
+_Avoid_: 已受理、已建单、消息发送成功
 
-**Service Intake**:
-A recorded request for service that captures one requester’s need and may be associated with the authoritative Unified Ticket.
-_Avoid_: Conversation, Ticket event, Incident
+**服务受理（Service Intake）**：对一次服务诉求正式记录并持续跟进的受理记录，可关联后续工单。
+_Avoid_: 工单、聊天记录、受理即已开始处理
 
-**Control Mode**:
-The declared human/AI operating mode of a Conversation Session: HUMAN, COPILOT, or AUTO.
-_Avoid_: Session status, assignment state
+**报修回执（Report Receipt）**：系统已记录本次报修的凭据，不代表已经形成工单或已有处理人。
+_Avoid_: 工单编号、解决通知
 
-**Human**:
-The mode in which a person retains control of externally visible replies; it is the default Conversation Session mode.
-_Avoid_: Agent, operator identity
+**网页提交（Web Submission）**：报修人通过网页提供的一次初始报修或后续补充。
+_Avoid_: Bot 消息、虚构的聊天会话
 
-**Copilot**:
-The mode in which AI may suggest a draft while a person retains reply control.
-_Avoid_: Automatic reply, delegated agent
+**报修信息补充（Report Supplement）**：针对同一次受理或工单追加的背景、现象、位置或附件信息。
+_Avoid_: 新故障自动合并、处理结果反馈、隐式重开
 
-**Auto**:
-The mode name reserved for an approved controlled-automation policy; it is not permission for unrestricted automatic replies.
-_Avoid_: AI enabled, autonomous operation
+**报修接触旅程（Contact Journey）**：围绕一次服务诉求跨一个或多个沟通渠道建立的连续业务关联。
+_Avoid_: 合并群聊和单聊窗口、按时间接近自动并单
 
-## Timeline and lifecycle
-
-**Conversation Item**:
-A deletable and rebuildable timeline projection associated with a Conversation Session, such as a user message, reply, note, or domain event.
-_Avoid_: Channel Message, Ticket Event, Delivery fact, authoritative event
-
-**Timeline Source Fact**:
-An authoritative Channel Message, Ticket Event, Communication Message/Delivery, or future Handoff Event read without mutation by the projector.
-_Avoid_: Conversation Item, projection input copy
-
-**Timeline Source Record**:
-A normalized, privacy-trimmed, versioned projector input that references one Source Fact and one Projection Variant.
-_Avoid_: Source Fact, raw provider payload, second event store
-
-**Projection Variant**:
-The stable distinction between independently visible Items derived from one Source Fact, such as STATUS, EXTERNAL_NOTE, or INTERNAL_NOTE.
-_Avoid_: Source Type, Item Type
-
-**Source Binding**:
-The one-to-one persisted relationship between a complete projector/source/variant/session identity and its Conversation Item. It is the idempotency defense, not ownership of the Source Fact.
-_Avoid_: Source Fact, global cursor, Ticket binding
-
-**Canonical Order**:
-The deterministic Session ordering tuple of occurred time, fixed source rank, source ordinal, source type, source identity, and Projection Variant.
-_Avoid_: Timestamp-only order, database row order
-
-**Projection Checkpoint**:
-The global scan-optimization cursor for one projector and source stream. Only incremental projectBatch advances it with compare-and-set semantics in the same transaction as corresponding Items and Bindings; a single-Session rebuild locks but preserves it.
-_Avoid_: Business fact, idempotency key, Redis cursor
-
-**Timeline Rebuild**:
-An explicitly authorized, single-Session transaction that locks the relevant global checkpoints and Session, rejects a stale snapshot against every existing Binding identity/hash/privacy/retention fence, replaces only Item/Binding projection state, verifies the persisted canonical hash, and leaves global checkpoints unchanged.
-_Avoid_: Source repair, Ticket replay, ordinary incremental append
-
-**Timeline Audience**:
-The explicit query boundary EXTERNAL, WORKBENCH, or RESTRICTED_ADMIN used to filter Item visibility; no privileged audience is implicit.
-_Avoid_: Visibility stored on an Item, browser-only authorization
-
-**Realtime Event**:
-An immutable, retention-bounded communication projection appended after a source fact exists and used only for authorized workbench replay.
-_Avoid_: Ticket Event, Timeline Source Fact, business event ownership
-
-**Communication Message**:
-An append-only externally intended message or internal note fact. It does not own Ticket or Session state.
-_Avoid_: Conversation Item, Provider request, Ticket Event
-
-**Communication Outbox**:
-An immutable send intent committed with its Communication Message before external side effects.
-_Avoid_: Delivery status, attempt log, in-memory queue
-
-**Communication Delivery**:
-The current per-target delivery state containing the internal target needed by the Worker.
-_Avoid_: Outbox intent, Delivery Attempt, public API view
-
-**Delivery Attempt**:
-The audit fact for one started/finalized delivery attempt or explicit reconciliation resolution.
-_Avoid_: Current Delivery state, retry scheduler
-
-**Realtime Cursor**:
-The canonical PostgreSQL BIGINT event ID string last observed by one client; it is compared with the durable high watermark and retention floor.
-_Avoid_: Projection Checkpoint, identity sequence value, array offset
-
-**Retention Floor**:
-The monotonic per-stream event ID at or below which replay is no longer guaranteed after an atomic contiguous-prefix cleanup.
-_Avoid_: Client cursor, deletion scheduler position, fact retention policy
-
-**Wakeup Hub**:
-A process-local, payload-free latency hint that asks connected SSE writers to query PostgreSQL again; it has no replay or delivery authority.
-_Avoid_: Event queue, broker, source of truth
-
-**Generation Version**:
-The monotonic generation marker for the current Conversation Session context.
-_Avoid_: Model version, Session status
-
-**Current Assignment**:
-The single current internal Principal responsibility state for a Session; it is separate from Control Mode.
-_Avoid_: Session owner, Ticket assignee copy
-
-**Conversation Assignment**:
-The authoritative answer to who is responsible for communicating with the requester. It is
-owned by Conversation Control and must not copy or override Ticket Assignment.
-_Avoid_: Ticket handler, resolver owner
-
-**Ticket Assignment**:
-The authoritative Unified Ticket Core responsibility for who resolves the fault and which
-resolver team owns the work. It must not be inferred from Conversation Assignment.
-_Avoid_: current communication seat, Conversation owner
-
-**Contact Journey**:
-The persisted business association across one or more independent group/direct Channel Legs
-for one service contact. It never merges raw Threads or owns Ticket state.
-_Avoid_: Conversation Thread merge, time-only correlation
-
-**Manual Review Item**:
-The first-class durable safe-routing outcome for ambiguous, conflicting, high-risk, or
-otherwise non-automatable input. It is a valid rule result, not a classification failure.
-_Avoid_: ignored message, boolean-only warning
-
-**Handoff**:
-An independently audited request/accept/release/cancel lifecycle for transferring a Session to human control.
-_Avoid_: Assignment history row, mode flag
-
-**Read Cursor**:
-One Principal's monotonic last-visible Item sequence for one Session.
-_Avoid_: global unread count, Realtime cursor
-
-**Control Event**:
-An append-only Assignment/Handoff/Cursor/Generation audit and command-idempotency fact.
-_Avoid_: Realtime Event, Ticket Event
-
-**Row Version**:
-The revision marker for a Conversation Session representation.
-_Avoid_: Generation Version, Ticket version
-
-**Workbench Authentication Port**:
-The injected boundary that establishes an internal Principal, authentication method,
-expiry, and Cookie-mode CSRF context without creating a password or login store.
-_Avoid_: browser-provided role, local identity database, hospital SSO implementation
-
-**Internal Alpha / Reference Client**:
-The replaceable native HTML/CSS/ES Module client used to exercise the P2-006 REST,
-authorization, command, Timeline, Delivery, SSE, and Polling contracts.
-_Avoid_: final production frontend, approved design system, production deployment
-
-**Unified Ticket**:
-The authoritative record of service handling lifecycle, separate from conversation identity and communication history.
-_Avoid_: Conversation Session, Service Intake, second ticket
-
-**Reporter Access Grant**:
-A short-lived, single-use capability delivered to the original reporter for one Ticket's safe progress view.
-_Avoid_: Ticket number credential, permanent public link, hospital identity
-
-**Bound Reporter Session**:
-A read-only access session bound to one Reporter Access Grant and one Unified Ticket; it confers no internal Workbench role or Ticket action authority.
-_Avoid_: hospital SSO session, internal agent session, verified clinical identity
-
-**Ticket Command Receipt**:
-The durable outcome of one principal's identified Ticket command, preserving a single outcome when that command is retried.
-_Avoid_: Ticket Event, Delivery Attempt, global command ownership
-
-## Human-confirmed Incident
-
-**Incident Candidate Review**:
-The internal review of one persisted deterministic Decision and its immutable result hash; confirmation requires a human decision about scope and selected reports.
-_Avoid_: Incident, automatic merge, cluster hash identity
-
-**Incident**:
-A human-confirmed shared fault with its own scope, responsibility and lifecycle. It preserves each reporter's individual Intake and Ticket.
-_Avoid_: primary Ticket, merged Ticket, Candidate
-
-**Incident Report**:
-One individual report's audited relationship to a Candidate Review or Incident, with independent link and impact states.
-_Avoid_: deduplicated reporter, Subscription, shared recovery
-
-**Reporter Subscription**:
-One reporter's notification relationship to an Incident across their reports and channels, using the established internal reporter binding.
-_Avoid_: personnel master record, raw WeCom identity, Ticket ownership
-
-**Primary Ticket Reference**:
-An optional, explicitly selected linked Ticket that serves as the Incident's internal handling reference.
-_Avoid_: only surviving Ticket, Incident owner, automatic Ticket closure
-
-For P2-G2 readiness handoff or a separately authorized live run, read `evidence/p2-g2-automated-readiness-report.json`, its current `source_evidence` references and `evidence/p2-g2-yxx-entry-report.json`, and `prompts/P2-G2_rule_first_service_loop_runbook.md`. PR #7 preparation was READY_FOR_LIVE_E2E; current member-entry preparation is READY_FOR_LIVE_E2E with live identity correspondence and targeted-live authorization still pending; P2-G1 remains the last completed Gate, P2-G2-LIVE is not authorized, and P2-008 remains blocked.
+**渠道接触段（Channel Leg）**：接触旅程中在一个渠道发生的一段接触，包括群聊、单聊或网页报修。
+_Avoid_: 新工单、群聊成员
+
+**续接引用（Continuation Reference）**：用于明确延续某次报修接触的受控关联凭据。
+_Avoid_: 身份认证凭证、工单访问授权
+
+**受理判定（Intake Decision）**：依据已记录材料对诉求性质、已知事实、缺失信息和下一步处理所作的判断。
+_Avoid_: 模型直接建单、最终故障诊断
+
+**事实出处（Fact Provenance）**：某项判定所使用事实的来源及形成依据。
+_Avoid_: 无依据猜测、置信度本身就是事实
+
+**人工复核项（Manual Review Item）**：需要工作人员判断或确认的待办，可与最小工单同时存在。
+_Avoid_: 丢弃消息、识别失败即未受理、必须没有工单
+
+**公共故障候选（Incident Candidate）**：多个报修可能共同指向一个公共故障的待确认线索。
+_Avoid_: 已确认公共故障、自动并单结果
+
+**故障发生位置（Occurrence Location）**：本次故障实际发生的场所或业务位置。
+_Avoid_: 报修人所属科室、资产登记位置
+
+### 会话协作
+
+**渠道账号（Channel Account）**：承载一次沟通所使用的渠道身份。
+_Avoid_: 报修人、服务端进程
+
+**会话类型（Chat Type）**：沟通窗口属于群聊还是单聊的分类。
+_Avoid_: 消息类型、报修类型
+
+**会话窗口（Conversation Thread）**：参与者进行沟通的持续窗口，例如某个群聊或单聊窗口。
+_Avoid_: 服务主题、工单
+
+**服务会话（Conversation Session）**：会话窗口内围绕一个服务主题进行的连续沟通。
+_Avoid_: 登录会话、整个群、工单
+
+**会话范围（Session Scope）**：限定某个参与者及其服务主题所涵盖沟通内容的边界。
+_Avoid_: 全群共享上下文、工单授权
+
+**渠道消息（Channel Message）**：某个渠道实际收到的一条沟通消息。
+_Avoid_: 服务受理、工单事件、网页提交
+
+**沟通记录项（Conversation Item）**：服务会话时间线上展示的一项消息、备注或业务进展。
+_Avoid_: 工单状态权威、原始渠道消息本身
+
+**控制模式（Control Mode）**：服务会话由人工控制、由 AI 辅助人工，或在获准策略内受控自动运行的方式。
+_Avoid_: 工单状态、责任分配
+
+**人工模式（Human）**：由工作人员控制外部回复的服务方式。
+_Avoid_: 操作人身份、自动回复
+
+**辅助模式（Copilot）**：AI 提供建议或草稿、工作人员保留回复决定权的服务方式。
+_Avoid_: 自动发送、AI 处理责任
+
+**受控自动模式（Auto）**：仅在明确授权的策略范围内自动处理沟通的服务方式。
+_Avoid_: 无限制自动化、AI 已启用即获准操作
+
+**人工接管（Handoff）**：将服务会话交由工作人员控制的、有明确请求和承接结果的过程。
+_Avoid_: 工单派单、工单转派
+
+**阅读位置（Read Cursor）**：某位工作人员在一个服务会话中已经阅读到的位置。
+_Avoid_: 全员已读、报修人已收到通知
+
+### 工单及动作
+
+**工单（Ticket；既有称 Unified Ticket）**：具有稳定编号、处理责任和生命周期的故障处理记录。
+_Avoid_: 消息、服务会话、服务受理、公共故障
+
+**派单（Assign Ticket）**：为待处理工单明确指定处理组和处理人的责任动作。
+_Avoid_: 接单、开始处理、发送通知
+
+**接单（Accept Ticket）**：处理人明确承接工单处理责任的动作；自行处理可包含向自己分配责任。
+_Avoid_: 受理报修、派单、会话接管
+
+**开始处理（Start Work）**：处理人确认已经开始实际处置的动作。
+_Avoid_: 已派单、已接单
+
+**转派（Transfer Assignment）**：将仍有效的工单处理责任从当前人员或处理组移交给另一人员或组的动作。
+_Avoid_: 取消工单、改变会话责任
+
+**撤销派单（Unassign Ticket）**：撤回当前分派并将工单交回待分配队列的责任动作，保留报修和处理历史。
+_Avoid_: 取消工单、删除工单、撤销已发生的工作
+
+**解决（Resolve Ticket）**：处理人报告本次技术处置完成并给出结果，等待后续确认或关闭。
+_Avoid_: 最终关闭、通知已送达
+
+**恢复确认（Confirm Resolution）**：报修人确认故障已经恢复的明确业务表达。
+_Avoid_: 泛泛的谢谢、客服标记解决、满意度评分
+
+**关闭（Close Ticket）**：按明确关闭依据结束本轮处理，例如报修人确认恢复或符合已生效的超时规则。
+_Avoid_: 解决、取消、不可再次开启
+
+**重开（Reopen Ticket）**：因同一故障仍未恢复或再次需要处置，使已解决或已关闭工单重新进入处理流程的动作。
+_Avoid_: 复制新工单、自动已经派工、新的无关故障
+
+**处理轮次（Handling Cycle）**：一张工单从首次处理或一次重开到本轮结束的连续处理阶段。
+_Avoid_: 新工单编号、每一次转派
+
+**再次派工（Reassign after Reopen）**：工单重开后，在新的处理轮次明确分配处理责任的动作。
+_Avoid_: 重开本身、旧派单通知重试
+
+**取消工单（Cancel Ticket）**：因误报、无效或不再需要服务等明确原因终止工单的动作。
+_Avoid_: 撤销派单、正常解决关闭
+
+**处理结果反馈（Resolution Feedback）**：报修人针对某一轮处理表达已恢复、未恢复或评价意见的记录。
+_Avoid_: 报修背景补充、自动关闭授权、自动重开授权
+
+**工单事件（Ticket Event）**：某张工单已发生业务变化的不可覆盖历史事实。
+_Avoid_: 通知投递记录、时间线展示项
+
+**内部备注（Internal Note）**：仅供授权工作人员协作使用的信息。
+_Avoid_: 给报修人的回复、外部通知内容
+
+**报修人进展时间线（Reporter Timeline）**：报修人有权查看的受理和工单进展记录。
+_Avoid_: 内部完整操作日志、全量会话记录
+
+### 公共故障
+
+**公共故障复核（Incident Candidate Review）**：工作人员对公共故障候选及所选报修范围的确认过程。
+_Avoid_: 自动合并工单、一般报修复核
+
+**公共故障（Incident）**：经人工确认、影响多个报修或一定服务范围的共同故障，具有独立责任和处理过程。
+_Avoid_: 任意单人故障、只剩一张主工单
+
+**公共故障报修关联（Incident Report）**：一项个人报修与公共故障或其候选的有据关联。
+_Avoid_: 删除重复报修人、订阅关系
+
+**报修人订阅（Reporter Subscription）**：报修人接收特定公共故障进展通知的关系。
+_Avoid_: 人员主档、任意工单读取权限
+
+**主处理工单引用（Primary Ticket Reference）**：为公共故障明确选定的内部处理参考工单。
+_Avoid_: 唯一幸存工单、其他工单自动关闭
+
+### 通知与访问
+
+**沟通消息（Communication Message）**：一项拟对外表达的内容或明确标为内部的协作备注。
+_Avoid_: 企业微信报文、工单事件
+
+**通知意图（Notification Intent）**：某项业务进展需要告知特定接收人的记录。
+_Avoid_: 已发送、已读、工单状态变化本身
+
+**报修原始来源（Report Origin）**：一次报修最初进入服务流程的渠道及来源窗口；后续补充、查询或转单聊不改变该来源。
+_Avoid_: 当前打开的页面、最近一次沟通渠道
+
+**通知路由策略（Notification Routing Policy）**：依据报修原始来源和业务通知节点，确定接收人及一条或多条发送路径的规则。
+_Avoid_: 任意选择可用通道、最后一次消息来自哪里就发到哪里
+
+**消息推送（WeCom Message Push）**：本项目用于向报修来源群发送消息并强 @ 原报修人的企业微信能力，与 Bot 接收报修和私聊回复分别建模。
+_Avoid_: Bot 群内回复、Bot 私聊、医小修应用模板通知
+
+**Bot 私聊回复（Bot Direct Reply）**：Bot 向报修人单独回复的沟通行为，包括收到群内 @Bot 后向该用户发起的回复。
+_Avoid_: 在原群回复、消息推送强 @
+
+**来源群状态通知（Origin Group Status Notification）**：通过消息推送向报修原始群发送的简短进展通知，以强 @ 提醒原报修人，并配有该报修人的 Bot 私聊通知。
+_Avoid_: Bot 群内回复、任意群广播、完整报修内容公开、群消息成功即私聊成功
+
+**待发承诺（Communication Outbox）**：已经记录、等待可靠执行的对外发送意图。
+_Avoid_: 实际送达、发送尝试
+
+**通知投递（Communication Delivery）**：一项通知面向一个确定目标的发送结果跟踪。
+_Avoid_: 处理进度、报修人确认恢复
+
+**投递尝试（Delivery Attempt）**：针对一次投递开展的一次发送或结果核对活动及其记录。
+_Avoid_: 新通知、工单事件
+
+**医小修应用通知（Yixiaoxiu App Notification）**：以医小修企业应用为发送渠道、向报修人告知服务进展的消息。
+_Avoid_: Bot 私聊卡片、H5 页面刷新、网页通知提示
+
+**报修人访问授权（Reporter Access Grant）**：针对指定报修人的指定工单进展访问许可。
+_Avoid_: 工单号即密码、永久公开链接、员工权限
+
+**绑定访问会话（Bound Reporter Session）**：由既定报修人访问授权形成的限定工单访问会话。
+_Avoid_: 医小修成员身份、内部工作台登录
+
+**成员身份（Member Identity）**：在特定企业应用范围内确认的成员身份。
+_Avoid_: 所有工单的访问权、内部工作人员权限

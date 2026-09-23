@@ -24,6 +24,15 @@ test('PR evidence additions pass; rewrites and rewrite-restore history fail',()=
     git(['-c','user.name=Test','-c','user.email=test@example.invalid','-c','commit.gpgsign=false','merge','--no-ff','-s','ours','side','-m','retain original tree']);
     head=git(['rev-parse','HEAD']);
     assert.throws(()=>verifyPrEvidenceDelta({root,base,head}),/rewrites or removes committed evidence/);
+    git(['checkout','-b','old-base']);
+    writeFileSync(path.join(root,'evidence/base-update.md'),'base update\n');
+    const currentBase=commit();
+    git(['checkout','-b','sync-pr',base]);
+    writeFileSync(path.join(root,'source.md'),'pr change\n');
+    commit();
+    git(['-c','user.name=Test','-c','user.email=test@example.invalid','-c','commit.gpgsign=false','merge','--no-ff','old-base','-m','sync current base']);
+    head=git(['rev-parse','HEAD']);
+    assert.equal(verifyPrEvidenceDelta({root,base:currentBase,head}).status,'PR_EVIDENCE_DELTA_PASS_NOT_READINESS');
   }finally{
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.match(path.basename(root),/^pr-evidence-test-/u);
     rmSync(root,{recursive:true,force:true});
@@ -58,6 +67,32 @@ test('PR21 accepts only the five adjudicated transitions, never later changes to
       const restored=commit();
       assert.throws(()=>verifyPrEvidenceDelta({root,base,head:restored}),/rewrites or removes committed evidence/);
     }
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.match(path.basename(root),/^pr-evidence-test-/u);
+    rmSync(root,{recursive:true,force:true});
+  }
+});
+
+test('sync merge rejects an add/add evidence collision resolved to base',()=>{
+  const root=mkdtempSync(path.join(tmpdir(),'pr-evidence-test-'));
+  const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe']}).trim();
+  const commit=()=>{git(['add','.']);git(['-c','user.name=Test','-c','user.email=test@example.invalid','-c','commit.gpgsign=false','commit','-m','fixture']);return git(['rev-parse','HEAD']);};
+  try{
+    git(['init']);git(['config','core.autocrlf','false']);mkdirSync(path.join(root,'evidence'));writeFileSync(path.join(root,'evidence/original.md'),'original\n');const oldBase=commit();
+    git(['checkout','-b','base-update',oldBase]);
+    writeFileSync(path.join(root,'evidence/collision.md'),'base version\n');const currentBase=commit();
+    git(['checkout','-b','pr-change',oldBase]);
+    writeFileSync(path.join(root,'evidence/collision.md'),'pr version\n');const prHead=commit();
+    // Build the resolved add/add merge tree directly so Git version and
+    // conflict-style differences cannot change the graph under test.
+    const baseTree=git(['rev-parse','base-update^{tree}']);
+    const mergeHead=execFileSync('git',['commit-tree',baseTree,'-p',prHead,'-p',currentBase,'-m','sync current base'],{
+      cwd:root,encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe'],
+      env:{...process.env,GIT_AUTHOR_NAME:'Test',GIT_AUTHOR_EMAIL:'test@example.invalid',GIT_COMMITTER_NAME:'Test',GIT_COMMITTER_EMAIL:'test@example.invalid'},
+    }).trim();
+    git(['checkout','--detach',mergeHead]);
+    const head=git(['rev-parse','HEAD']);
+    assert.throws(()=>verifyPrEvidenceDelta({root,base:currentBase,head}),/rewrites or removes committed evidence/);
   }finally{
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.match(path.basename(root),/^pr-evidence-test-/u);
     rmSync(root,{recursive:true,force:true});
