@@ -5,9 +5,12 @@ import {
   createFailClosedUidResolver,
   matchDirectoryProfile,
   normalizeOrganizationTree,
+  THIRD_STAFF_DIRECTORY_LIMITS,
 } from '../src/p2-007-staff-directory-contracts.mjs';
 import { createThirdPartyStaffDirectoryAdapter } from '../src/p2-007-third-party-staff-directory-adapter.mjs';
 import { createThirdPartyStaffDirectory } from '../src/p2-007-third-party-staff-directory.mjs';
+import { sha256Canonical } from '../src/p2-007-domain-utils.mjs';
+import { syntheticDirectoryTree } from './helpers/p2-007-directory-fixture.mjs';
 
 const USER = Object.freeze({
   user_id: 'provider-user-a',
@@ -217,3 +220,105 @@ test('normalization accepts depth 16 and bounds deep/cyclic input before recursi
   current.children.push({ id: 'd17', name: 'too deep', children: [] });
   assert.throws(() => normalizeOrganizationTree([root]), { code: 'THIRD_STAFF_DIRECTORY_DEPTH_EXCEEDED' });
 });
+
+
+for (const [departments, members] of [[1, 2_500], [333, 4_290], [5_000, 20_000]]) {
+  test(`directory capacity: ${departments} departments / ${members} full-field members`, () => {
+    const input = syntheticDirectoryTree({ departments, members });
+    const bytes = Buffer.byteLength(JSON.stringify({ result: 'TRUE', data: input }));
+    assert.ok(bytes < THIRD_STAFF_DIRECTORY_LIMITS.maximumResponseBytes);
+    const normalized = normalizeOrganizationTree(input);
+    assert.equal(normalized.counts.departments, departments);
+    assert.equal(normalized.counts.members, members);
+    assert.equal(normalized.counts.memberships, members);
+    if (departments === 333) assert.equal(normalized.counts.max_depth, 4);
+    assert.match(normalized.snapshot_version, /^[a-f0-9]{64}$/u);
+    assert.ok(Object.isFrozen(normalized.members.at(-1)));
+    assert.ok(Object.isFrozen(normalized.memberships));
+  });
+}
+
+test('directory capacity includes 40000 memberships without limiting each person to one department', () => {
+  const input = syntheticDirectoryTree({ departments: 5_000, members: 20_000,
+    additionalMemberships: 20_000, fullFields: false });
+  assert.ok(Buffer.byteLength(JSON.stringify({ result: 'TRUE', data: input }))
+    < THIRD_STAFF_DIRECTORY_LIMITS.maximumResponseBytes);
+  const normalized = normalizeOrganizationTree(input);
+  assert.equal(normalized.counts.departments, 5_000);
+  assert.equal(normalized.counts.members, 20_000);
+  assert.equal(normalized.counts.memberships, 40_000);
+  assert.equal(normalized.memberships.filter(row => row.provider_user_id === 'u00000').length, 2);
+  assert.equal(normalized.members.at(-1).nickname, null);
+});
+
+test('directory hash preserves the existing canonical format and generic JSON guards', () => {
+  for (const input of [[], treeResponse().data, syntheticDirectoryTree({ departments: 10, members: 25 })]) {
+    const { snapshot_version, counts, ...value } = normalizeOrganizationTree(input);
+    assert.equal(snapshot_version, sha256Canonical(value));
+  }
+  assert.throws(() => sha256Canonical(Array.from({ length: 5_001 }, () => null)),
+    { code: 'P2_007_LIMIT_EXCEEDED' });
+  assert.throws(() => sha256Canonical(Array.from({ length: 4_000 }, () => ({ a: 1, b: 2, c: 3, d: 4 }))),
+    { code: 'P2_007_LIMIT_EXCEEDED' });
+});
+
+test('formal-size hash is invariant under order but changes with profile or membership data', () => {
+  const input = syntheticDirectoryTree();
+  const original = normalizeOrganizationTree(input);
+  const reordered = structuredClone(input);
+  function reverse(nodes) {
+    nodes.reverse();
+    for (const node of nodes) { node.users.reverse(); reverse(node.children); }
+  }
+  reverse(reordered);
+  assert.equal(normalizeOrganizationTree(reordered).snapshot_version, original.snapshot_version);
+  const changedProfile = structuredClone(input);
+  changedProfile[0].users[0].nickname = 'Synthetic changed name';
+  assert.notEqual(normalizeOrganizationTree(changedProfile).snapshot_version, original.snapshot_version);
+  const changedMembership = structuredClone(input);
+  changedMembership[0].children[0].users.push(changedMembership[0].users.pop());
+  const changed = normalizeOrganizationTree(changedMembership);
+  assert.equal(changed.counts.members, original.counts.members);
+  assert.equal(changed.counts.memberships, original.counts.memberships);
+  assert.notEqual(changed.snapshot_version, original.snapshot_version);
+});
+
+test('directory budgets reject excess departments, members and raw membership occurrences', () => {
+  const limits = { ...THIRD_STAFF_DIRECTORY_LIMITS, maximumDepartments: 2,
+    maximumMembers: 2, maximumMemberships: 3 };
+  const atLimit = syntheticDirectoryTree({ departments: 2, members: 2, additionalMemberships: 1, fullFields: false });
+  assert.equal(normalizeOrganizationTree(atLimit, limits).counts.memberships, 3);
+  assert.throws(() => normalizeOrganizationTree(syntheticDirectoryTree({ departments: 3, members: 2, fullFields: false }), limits),
+    { code: 'THIRD_STAFF_DIRECTORY_DEPARTMENT_LIMIT_EXCEEDED' });
+  assert.throws(() => normalizeOrganizationTree(syntheticDirectoryTree({ departments: 2, members: 3, fullFields: false }), limits),
+    { code: 'THIRD_STAFF_DIRECTORY_MEMBER_LIMIT_EXCEEDED' });
+  assert.throws(() => normalizeOrganizationTree(syntheticDirectoryTree({ departments: 2, members: 2,
+    additionalMemberships: 2, fullFields: false }), limits),
+  { code: 'THIRD_STAFF_DIRECTORY_MEMBERSHIP_LIMIT_EXCEEDED' });
+  const repeated = structuredClone(atLimit);
+  repeated[0].users.push({ ...repeated[0].users[0] });
+  assert.throws(() => normalizeOrganizationTree(repeated, limits),
+    { code: 'THIRD_STAFF_DIRECTORY_MEMBERSHIP_LIMIT_EXCEEDED' });
+});
+
+test('non-finite and above-ceiling directory budgets fail closed', () => {
+  for (const key of ['maximumDepartments', 'maximumMembers', 'maximumMemberships', 'maximumDepth']) {
+    for (const invalid of [NaN, Infinity, -1, 1.5, Number.MAX_SAFE_INTEGER]) {
+      assert.throws(() => normalizeOrganizationTree([], { ...THIRD_STAFF_DIRECTORY_LIMITS, [key]: invalid }),
+        { code: 'THIRD_STAFF_DIRECTORY_LIMITS_INVALID' });
+    }
+  }
+});
+
+
+for (const [label, options, code] of [
+  ['departments', { departments: 5_001, members: 0 }, 'THIRD_STAFF_DIRECTORY_DEPARTMENT_LIMIT_EXCEEDED'],
+  ['members', { departments: 1, members: 20_001 }, 'THIRD_STAFF_DIRECTORY_MEMBER_LIMIT_EXCEEDED'],
+  ['memberships', { departments: 5_000, members: 20_000, additionalMemberships: 20_001 },
+    'THIRD_STAFF_DIRECTORY_MEMBERSHIP_LIMIT_EXCEEDED'],
+]) {
+  test(`directory capacity rejects the first ${label} above its hard ceiling`, () => {
+    const input = syntheticDirectoryTree({ ...options, fullFields: false });
+    assert.throws(() => normalizeOrganizationTree(input), { code });
+  });
+}

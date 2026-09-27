@@ -10,6 +10,7 @@ on:
       - 'scripts/p2-012-process-role.mjs'
       - 'scripts/p2-007-migrate.mjs'
       - 'tests/p2-007-*.mjs'
+      - 'tests/helpers/p2-007-*.mjs'
       - 'tests/p2-015-*.mjs'
       - 'tests/helpers/p2-015-postgres-harness.mjs'
       - 'tests/helpers/p2-016-postgres-harness.mjs'

@@ -6,6 +6,10 @@ import { migrateThirdPartyStaffDirectory, validateThirdPartyStaffDirectoryCatalo
 import { createThirdPartyStaffDirectoryStore } from '../src/p2-007-staff-directory-store.mjs';
 import { withP2016IsolatedDatabase, applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
 
+import { createThirdPartyStaffDirectoryAdapter } from '../src/p2-007-third-party-staff-directory-adapter.mjs';
+import { createThirdPartyStaffDirectorySyncJob } from '../src/p2-007-staff-directory-sync.mjs';
+import { syntheticDirectoryTree } from './helpers/p2-007-directory-fixture.mjs';
+
 const databaseUrl = process.env.PILOT_DATABASE_URL;
 
 async function prepare({ pool, databaseUrl: isolated }) {
@@ -131,5 +135,56 @@ test('detail enrichment and publication share the source lock and preserve commi
     assert.equal(current.sex, '1'); assert.equal(current.avatar_url, 'https://avatar.example.test/a');
     assert.equal(current.memberships[0].department_ref, 'dept-b');
     assert.equal(current.snapshot_version, 'c'.repeat(64));
+  }});
+});
+
+
+test('formal-size synthetic HTTP tree hashes, publishes and remains readable after a rejected refresh', { timeout: 30_000 }, async () => {
+  assert.ok(databaseUrl, 'PILOT_DATABASE_URL is required; database tests must not be skipped');
+  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'p2007size', run: async ({ pool, databaseUrl: isolated }) => {
+    await prepare({ pool, databaseUrl: isolated });
+    const store = createThirdPartyStaffDirectoryStore({ pool });
+    const data = syntheticDirectoryTree();
+    let rejectRefresh = false;
+    const calls = [];
+    const provider = createThirdPartyStaffDirectoryAdapter({
+      keyProvider: () => 'synthetic-capacity-key',
+      fetchImpl: async url => {
+        calls.push(new URL(url).pathname);
+        if (url.endsWith('/getToken')) return new Response(JSON.stringify({ result: 'TRUE', data: { token: 'synthetic-token' } }));
+        assert.ok(url.endsWith('/getOrganizationTree'), 'unexpected provider endpoint');
+        const body = { result: 'TRUE', data: rejectRefresh ? [...data, { id: 'd00000', name: 'duplicate' }] : data };
+        // Exercise readJson, normalization, canonical hash and the real PG store,
+        // not a pre-built snapshot with an arbitrary version string.
+        return new Response(JSON.stringify(body));
+      },
+    });
+    const job = createThirdPartyStaffDirectorySyncJob({ enabled: true, provider, store, rootRef: 'd00000' });
+    try {
+      const result = await job.runOnce({ force: true });
+      assert.equal(result.status, 'SUCCEEDED');
+      assert.deepEqual(result.counts, { departments: 333, members: 4_290, memberships: 4_290, max_depth: 4 });
+      assert.match(result.snapshot_version, /^[a-f0-9]{64}$/u);
+      const current = (await pool.query(`SELECT snapshot_version,department_count,member_count,membership_count
+        FROM directory.current_snapshot WHERE source_scope='FORMAL'`)).rows[0];
+      assert.deepEqual(current, { snapshot_version: result.snapshot_version, department_count: 333,
+        member_count: 4_290, membership_count: 4_290 });
+      for (const [relation, count] of [['department_current', 333], ['member_current', 4_290], ['membership_current', 4_290]]) {
+        assert.equal(Number((await pool.query(`SELECT count(*) AS count FROM directory.${relation}`)).rows[0].count), count);
+      }
+      const last = await store.findMemberByProviderUserId({ source_scope: 'FORMAL', provider_user_id: 'u04289' });
+      assert.equal(last.employee_id, 'e04289');
+      assert.equal(last.snapshot_version, result.snapshot_version);
+      assert.equal(last.memberships.length, 1);
+
+      rejectRefresh = true;
+      const rejected = await job.runOnce({ force: true });
+      assert.deepEqual(rejected, { status: 'FAILED', error_code: 'THIRD_STAFF_DIRECTORY_DUPLICATE_DEPARTMENT' });
+      assert.deepEqual(await store.findMemberByProviderUserId({ source_scope: 'FORMAL', provider_user_id: 'u04289' }), last);
+      assert.deepEqual((await pool.query(`SELECT snapshot_version,department_count,member_count,membership_count
+        FROM directory.current_snapshot WHERE source_scope='FORMAL'`)).rows[0], current);
+      assert.deepEqual((await pool.query('SELECT status FROM directory.sync_run ORDER BY status')).rows.map(row => row.status), ['FAILED', 'SUCCEEDED']);
+      assert.deepEqual(calls, ['/8024/token/getToken', '/8024/token/getOrganizationTree', '/8024/token/getOrganizationTree']);
+    } finally { provider.close(); await job.stop(); }
   }});
 });
