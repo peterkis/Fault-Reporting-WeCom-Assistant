@@ -35,6 +35,22 @@ function treeResponse() {
   };
 }
 
+test('ambiguous HTTP-200 UID rejection retains the token for other reporters', async () => {
+  let tokens=0,details=0;
+  const adapter=createThirdPartyStaffDirectoryAdapter({keyProvider:()=> 'synthetic-key',uidResolver:createBotRawUidResolver(),
+    fetchImpl:async url=>{
+      if(String(url).endsWith('/getToken')){tokens++;return jsonResponse({result:'TRUE',data:{token:'synthetic-token'}});}
+      details++;
+      if(details<=2)return jsonResponse({result:'FALSE',errorcode:-1,msg:'synthetic ambiguous rejection'});
+      return jsonResponse({result:'TRUE',data:{user_id:'member',employee_id:'employee'}});
+    }});
+  const input={source_identity:{namespace:'WECOM_AIBOT',value:'synthetic-uid'}};
+  assert.equal((await adapter.getPersonProfile(input)).status,'DEFERRED');
+  assert.equal((await adapter.getPersonProfile(input)).reason_code,'PROVIDER_REJECTION_UNCLASSIFIED');
+  assert.equal((await adapter.getPersonProfile(input)).status,'RESOLVED');
+  assert.equal(tokens,1);assert.equal(details,3);adapter.close();
+});
+
 test('organization tree normalization preserves memberships and records observed gid type', () => {
   const normalized = normalizeOrganizationTree(treeResponse().data);
   assert.equal(normalized.departments.length, 2);

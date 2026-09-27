@@ -171,9 +171,11 @@ export function createThirdPartyStaffDirectoryAdapter({
     const token = await getToken(signal);
     const body = await post('/token/getUserInfo', { token, uid: resolution.uid }, limits.maximumDetailResponseBytes, signal);
     if (body?.result !== 'TRUE') {
-      invalidateToken(token);
+      // Formal evidence uses -1 for both invalid tokens and unknown UIDs.
+      // A business rejection does not prove authentication failure; retain the
+      // shared token and defer rather than guessing that the member is absent.
       return Object.freeze({
-        status: 'NOT_FOUND', reason_code: 'PROVIDER_UID_REJECTED',
+        status: 'DEFERRED', reason_code: 'PROVIDER_REJECTION_UNCLASSIFIED',
         resolution_method: resolution.method ?? null,
       });
     }

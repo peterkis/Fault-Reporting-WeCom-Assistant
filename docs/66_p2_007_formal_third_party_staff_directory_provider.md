@@ -120,6 +120,10 @@ uid=<ProviderUidResolver 输出>
 
 失败响应按 `result=FALSE`、`errorcode` 和 `msg` 分类。原始错误文本不进入普通日志或 Evidence。
 
+正式负向证据中无效 Token 与不存在 UID 的 `errorcode` 均为 `-1`，不能据此确认鉴权失败或人员不存在。
+详情 HTTP-200 业务拒绝因此返回 `DEFERRED / PROVIDER_REJECTION_UNCLASSIFIED`，保留共享 Token；HTTP 401/403 清除对应缓存 Token。
+在服务商提供可区分的业务错误契约前，不根据原始错误文案猜测身份或自动重试；管理员确认 Token 失效后可显式调用 `invalidateToken()`，下一次独立请求重新获取。
+
 ## 4. ID 命名空间与用户 A 结果
 
 | 名称 | 命名空间 | 处理规则 |
