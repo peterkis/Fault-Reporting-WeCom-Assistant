@@ -1,0 +1,79 @@
+name: T00 isolated baseline validation
+on:
+  push:
+    branches: ['codex/typescript-t00-validation-only']
+    paths: ['.github/t00-baseline/**', '.github/workflows/t00-baseline-validation.yml']
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: t00_synthetic_only
+          POSTGRES_DB: t00_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          persist-credentials: false
+      - name: Resolve and assert the current PR subject via GitHub
+        id: subject
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.request
+          from pathlib import Path
+          target=json.loads(Path('harness/.github/t00-baseline/target.json').read_text())
+          url='https://api.github.com/repos/peterkis/Fault-Reporting-WeCom-Assistant/pulls/24'
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req,timeout=30) as response: pr=json.load(response)
+          sha=pr['head']['sha']
+          assert re.fullmatch(r'[0-9a-f]{40}',sha) and sha==target['head']
+          assert pr['head']['repo']['full_name']=='peterkis/Fault-Reporting-WeCom-Assistant'
+          assert pr['state']=='open' and pr['base']['ref']=='main'
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output: output.write('sha='+sha+'\n')
+          root=Path(os.environ['RUNNER_TEMP'])/'t00-baseline';root.mkdir()
+          (root/'subject.json').write_text(json.dumps({'pr':24,'head':sha,'base':pr['base']['sha'],'metadata_source':url},indent=2)+'\n')
+          PY
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ steps.subject.outputs.sha }}
+          fetch-depth: 0
+          path: subject
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Run unchanged baseline commands on the authoritative subject
+        env:
+          EXPECTED_HEAD: ${{ steps.subject.outputs.sha }}
+          PILOT_DATABASE_URL: postgresql://postgres:t00_synthetic_only@127.0.0.1:5432/t00_ci
+          FORCE_COLOR: '0'
+        run: python3 harness/.github/t00-baseline/run-baseline.py "$GITHUB_WORKSPACE/subject" "$RUNNER_TEMP/t00-baseline"
+      - name: Retain verification tools and exact subject source
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/t00-baseline/tools"
+          cp harness/.github/t00-baseline/*.py harness/.github/t00-baseline/*.json "$RUNNER_TEMP/t00-baseline/tools/"
+          cp harness/.github/workflows/t00-baseline-validation.yml "$RUNNER_TEMP/t00-baseline/tools/"
+          if [ -d subject/.git ]; then
+            git -C subject rev-parse HEAD > "$RUNNER_TEMP/t00-baseline/source-sha.txt"
+            git -C subject archive --format=tar HEAD | gzip > "$RUNNER_TEMP/t00-baseline/source.tar.gz"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: t00-baseline-${{ github.run_id }}
+          path: ${{ runner.temp }}/t00-baseline/
+          retention-days: 30
