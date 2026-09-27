@@ -17,6 +17,27 @@ _Avoid_: 姓名匹配、跨应用同名账号
 **人员资料快照（Reporter Profile Snapshot）**：报修发生时记录的报修人姓名、所属部门等资料及其来源。
 _Avoid_: 当前人员资料、故障发生位置
 
+**第三方人员目录 Provider（Third-party Staff Directory Provider）**：提供组织关系和人员资料的外部服务来源及其防腐适配器，不是系统 Person，也不拥有 Ticket 状态或历史工单事实。
+_Avoid_: 人员主档、第二套 Person、第三方返回值直接等于内部人员事实
+
+**当前目录快照（Current Directory Snapshot）**：最近一次成功同步后可供系统查询的组织和人员资料，只代表当前观察状态；后续同步可以替换它。
+_Avoid_: 报修时人员资料快照、不可变历史组织关系
+
+**报修时人员资料快照（Reporter-at-Report Snapshot）**：首次成功解析报修人时记录的资料和组织关系，作为该次报修的历史事实，不随当前目录或人员调岗变化。
+_Avoid_: 当前目录、读取工单时重新查询得到的当前部门
+
+**第三方目录人员标识（Third-party Directory User ID）**：第三方组织树和详情返回的 `user_id`，只在第三方目录命名空间内有效。
+_Avoid_: 未注明来源的用户 ID、企业微信 `userid`、官方 `open_userid`
+
+**第三方查询 UID（Third-party Query UID）**：传给第三方 `getUserInfo.uid` 的查询输入，由显式 `ProviderUidResolver` 产生；不能因为返回字段叫 `user_id` 就自动认为二者等价。
+_Avoid_: 自动猜测的跨系统 ID、姓名匹配、手机号匹配
+
+**组织关系快照（Organization Membership Snapshot）**：人员在特定观察时刻所属部门及其层级关系，可作为报修时快照的一部分。
+_Avoid_: 当前部门对历史工单的回写、故障发生位置
+
+**字段可用性（Field Availability）**：接口是否返回某字段、字段类型及是否非空的验证结论，不等于系统已批准或必须持久化该字段。
+_Avoid_: 接口返回即永久留存、字段存在即身份等价
+
 **报修人（Reporter）**：对一次故障提出报修并有权获知其处理进展的人，是人员在该次服务中的角色。
 _Avoid_: 客服、所有群成员、通知接收人必然拥有工单
 

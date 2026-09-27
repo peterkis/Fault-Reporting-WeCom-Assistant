@@ -47,6 +47,19 @@ name/department=UNKNOWN
 intake/ticket continue
 ```
 
+正式三方人员目录 Provider 作为可选的资料来源适配器，不改变 `Person`、`Ticket` 或 `WECOM_DIRECTORY` 的既有权威边界。解析顺序固定为：
+
+```text
+reporter_identity_hash
+→ 当前第三方目录绑定/快照
+→ 命中则使用 PostgreSQL 本地当前目录
+→ 未命中才调用显式 ProviderUidResolver + getUserInfo
+→ 严格核对第三方 user_id、employee_id/tuishiben_id
+→ 保存 reporter_at_report 快照
+```
+
+`reporter_current` 表示最近一次成功同步的当前目录资料；`reporter_at_report` 表示报修发生时已确认的资料和组织关系。人员调岗只改变当前目录，不得改写历史工单的报修人部门。第三方详情返回的 `sex` 可进入当前目录和报修时快照；`avatar` 只进入当前目录，不进入历史快照。完整正式接口矩阵见 [P2-007 正式三方人员目录 Provider](66_p2_007_formal_third_party_staff_directory_provider.md)。
+
 后期人员主索引接入时增加新的 identity binding，禁止修改历史 `person_id`。
 
 ## 3. Provider Context 与 continuation_ref

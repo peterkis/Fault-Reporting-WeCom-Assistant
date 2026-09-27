@@ -118,7 +118,7 @@ function orchestrationContext({ intake, journey, window, traceId }) {
   return result;
 }
 
-export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPort = DeferredDirectory(),
+export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPort = DeferredDirectory(), directorySource = 'WECOM_DIRECTORY',
   ruleEngine = null, journeyStore = createContactJourneyStore(), continuationService = createContinuationRefService(),
   decisionStore = createDecisionStore(), safeActionExecutor, decisionOverride = null } = {}) {
   if (!pool?.connect || typeof identityHmacKey !== 'string' || identityHmacKey.length < 16
@@ -260,7 +260,8 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
     const preload = await loadIntake(pool, intakeId, false);
     const reporterHash = reporterIdentityHash({ provider: preload.source_provider, bot_id: preload.source_bot_id,
       reporter_external_id: preload.reporter_wecom_userid, hmac_key: identityHmacKey });
-    const profile = await directoryPort.resolve({ reporter_identity_hash: reporterHash, source: 'WECOM_DIRECTORY',
+    const profile = await directoryPort.resolve({ reporter_identity_hash: reporterHash, source: directorySource,
+      source_namespace: preload.source_provider, source_provider: preload.source_provider,
       bot_id:preload.source_bot_id,reporter_external_id:preload.reporter_wecom_userid });
     return freezePublic({ service_intake_id: preload.id, primary_message_id: preload.primary_message_id,
       reporter_hash: reporterHash, profile });

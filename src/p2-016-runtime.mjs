@@ -30,7 +30,7 @@ import {createYxxSelfServiceExtension} from './yxx-self-service-runtime.mjs';
 export function createP2016Runtime({pool,flags={},principalId,principalIds=null,publicOrigin,listenPort=0,
   reporterHmacSecret,reporterOrigin=publicOrigin,allowedHosts=[],allowedTargetHashes=[],allowLocalHttp=false,
   gatewayEnabled=false,senderEnabled=false,liveApproval=null,inboundScope=null,botId,secret,wsUrl,clientFactory,
-  senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,ruleEngine,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
+  senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,directorySource='WECOM_DIRECTORY',directoryStore=null,directorySourceScope='FORMAL',directorySyncJob=null,ruleEngine,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
   reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,
   workbenchAuthentication=null,externalSendEnabled=true}={}) {
@@ -48,7 +48,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   const webOAuth=createWeComWebOAuth({...wecomWebOAuth,publicOrigin:reporterOrigin});
   const oauthHttp=createWeComOAuthHttp({oauth:webOAuth,publicOrigin:reporterOrigin});
   const notifications=createP2016TicketNotificationProjector({enabled,cardEnabled:featureFlags.WECOM_TEMPLATE_CARD_ENABLED,reporterAccess:access,explicitReferenceEnabled:featureFlags.REPORTER_TIMELINE_ENABLED,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents});
-  const query=createP2016TicketQuery({pool,enabled});
+  const query=createP2016TicketQuery({pool,enabled,directoryStore,directorySourceScope});
   const ruleFlags=normalizeP2015FeatureFlags(ruleFirstFlags);
   const inbox=createChannelMessageInbox({pool}),intakeProcessor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS});
   // A message is durably accepted before deterministic evaluation. Failed evaluation is recoverable from the Inbox/Intake.
@@ -66,8 +66,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       reporterAccess:access,origin:reporterOrigin,allowedHosts,allowedTargetHashes,allowLocalHttp,linkMode:policy}),
     extensionFactory:({controlService,realtime})=>{
       realtimeProjector=createP2016RealtimeProjector({pool,enabled,wakeup:realtime.wakeup});
-      if(yxxSelfService===null&&!orchestrationWorker&&ruleFlags.rule_first_orchestration_enabled&&ruleFlags.manual_review_queue_enabled)
-        orchestrationWorker=createP2016OrchestrationWorker({pool,identityHmacKey,directoryPort,ruleEngine,notifications,realtime:realtimeProjector,personDestinationAuthorizer,communicationAppend});
+      if(yxxSelfService===null&&!orchestrationWorker&&(directorySyncJob||ruleFlags.rule_first_orchestration_enabled&&ruleFlags.manual_review_queue_enabled))
+        orchestrationWorker=createP2016OrchestrationWorker({pool,identityHmacKey,directoryPort,directorySource,directorySyncJob,ruleEngine,notifications,realtime:realtimeProjector,personDestinationAuthorizer,communicationAppend});
       closure=createTicketClosureService({pool,beforeTransaction:realtimeProjector.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async input=>{
         const n=await notifications.project(input);await realtimeProjector.ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
       }}});

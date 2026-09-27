@@ -52,6 +52,19 @@ G0-005 原有矩阵验证的是智能机器人 WebSocket `aibot_send_msg`。代�
 
 H04 保留 `PROFILE_LOOKUP_PARTIAL_PASS`（`user/get` 的非敏感资料部分通过）；`PROFILE_PRIVATEINFO_PARTIAL_PASS` 只属于 H04A，不能据此升级 H04；H04B 仍为独立的部门层级读取结论。原 HTTP 记录第 167 行误写 H04，该编号结论以 [H04A 更正记录](../evidence/g0-005-http-template-card-h04a-correction-20260922.md) 为准；原始逐接口观察不变。
 
+### H06-H09：正式三方人员目录 Provider（独立矩阵）
+
+正式三方人员目录接口不是 Bot WebSocket，也不是企业微信官方 `user/get` 目录。正式基址为 `https://rd-api.mobimedical.cn/8024`，请求统一使用 `application/x-www-form-urlencoded`。字段级请求、响应、Token 和留存说明见 [P2-007 正式三方人员目录 Provider](66_p2_007_formal_third_party_staff_directory_provider.md)。
+
+| 编号 | 验证项 | 结论 |
+|---|---|---|
+| H06 | `/token/getToken` 使用 `THIRD_STAFF_INFO_SYNC_KEY` 获取服务商 Token | `PASS` |
+| H07 | `/token/getOrganizationTree` 获取成都市第三人民医院完整组织树及部门控制 | `PASS` |
+| H08 | `/token/getUserInfo` 返回 `employee_id`、`user_id`、`nickname`、`phoneno`、`sex`、`avatar` | `PASS`；`sex/avatar` 抽样 20/20 可用 |
+| H09 | 用户 A 的 Bot、官方转换 ID、第三方目录 ID 对应 | `PARTIAL`；仅显式 Bot 原始 UID 路径现场成功 |
+
+H06-H09 的正式脱敏证据为：`evidence/third-party-staff-info-sync-formal-20260926.json`、`evidence/third-party-staff-info-detail-formal-20260926.json` 和 `evidence/third-party-id-mapping-formal-direct-user-id-20260927.json`。`wecom_id` 不作为主匹配键；官方 `open_userid` 和组织树 `user_id` 不能未经 Resolver 直接当作 `getUserInfo.uid`。该矩阵不包含测试环境，不代表目录持久化、生产启用或 P2 Gate 批准。
+
 ## 3. 连接生命周期
 
 建议内部状态：

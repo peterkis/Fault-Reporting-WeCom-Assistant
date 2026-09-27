@@ -57,6 +57,7 @@
 ## Gate 0 企业微信能力验证
 
 - `docs/07_wecom_websocket_integration.md`：Bot WebSocket 能力矩阵，以及独立的代开发应用 HTTP 模板卡片/成员读取方法说明；
+- `docs/66_p2_007_formal_third_party_staff_directory_provider.md`：正式三方人员目录 Token、组织树、人员详情、ID 命名空间、字段留存和 Provider 使用边界；
 - `evidence/g0-005-active-push-matrix.md`：Bot 主动推送矩阵与代开发应用 HTTP 模板卡片主动推送补充矩阵；
 - `evidence/g0-005-http-template-card-20260922.md`：HTTP `message/send`、`template_card/text_notice`、Token/命名空间、权限、频率和脱敏验证结果；
 - `evidence/g0-006-template-card-matrix.md`：Bot WebSocket 模板卡片按钮回调与 5 秒更新时限矩阵；
@@ -69,6 +70,7 @@
 - `adr/0011_lightweight_conversation_center_2c4g.md`：轻量 Conversation Center；
 - `adr/0012_greenfield_p3_no_historical_ticket_compatibility.md`：P3 绿地化、取消历史 Ticket 兼容。
 - `adr/0017_ai_optional_rule_first_service_loop.md`：规则/人工主路径、AI 可选以及 P2-G2 至 P2-G5 新顺序。
+- `adr/0025_third_party_staff_directory_provider.md`：正式三方人员目录 Provider、UID Resolver、当前目录与报修时快照边界；
 
 ## 阶段计划
 
@@ -144,6 +146,7 @@
 - `src/p2-016-inbound-scope.mjs`、`p2-016-live-configuration.mjs`、`p2-016-live-cluster.mjs`、`scripts/p2-016-process-role.mjs`：批准范围及 App/Worker/Gateway 三角色。
 - `scripts/p2-016-live-check.mjs`、`scripts/p2-016-live-e2e.mjs`：默认不发送、必须由负责人审批的现场入口；不生成虚假客户端或批准 Evidence。
 - `scripts/validate-p2-016-ticket-lifecycle-workbench.mjs`：冻结历史、默认关闭、契约、READY/DONE 指纹、负责人批准及两阶段提交门禁。
+- `scripts/validate-p2-016-historical.mjs`：在固定历史提交的独立 CRLF checkout 中运行 P2-016 历史验证；输出明确标记 `historical_only`，不代表当前候选。
 - `web/p2-workbench/lifecycle.*`、`web/p2-reporter/*`：原生 Internal Beta 及 Reporter-only 页面。
 - `tests/p2-016-*.test.mjs`、`tests/helpers/p2-016-*.mjs`：Contract、Unit、真实 PostgreSQL/Browser、崩溃恢复、容量与现场失败关闭测试。
 
@@ -239,6 +242,9 @@
 
 ## 设计与契约
 
+- `src/p2-007-staff-directory-contracts.mjs`、`src/p2-007-third-party-staff-directory-adapter.mjs`、`src/p2-007-third-party-staff-directory.mjs`：第三方目录领域契约、正式 HTTP 防腐转换、显式 UID Resolver 和可注入装配；
+- `src/p2-007-third-party-reporter-directory.mjs`、`src/p2-007-staff-directory-store.mjs`、`src/p2-007-staff-directory-sync.mjs`：本地当前目录优先、报修快照、同步发布和 Worker 维护任务；
+- `database/migrations/036_p2_007_third_party_staff_directory.sql`、`scripts/p2-007-migrate.mjs`：当前目录及受限身份绑定的前向迁移；
 - `docs/33_conversation_center_and_handoff.md`；
 - `docs/34_ai_context_and_deepseek.md`；
 - `docs/35_unified_ticket_and_intranet_connectors.md`；

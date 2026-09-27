@@ -1,0 +1,69 @@
+{
+  "schema_version": "third-party-id-mapping-direct-user-id-verification-v1",
+  "run_id": "54a23e12-f50c-4590-afb4-c006d6458fe6",
+  "environment": "formal",
+  "recorded_at": "2026-09-27T02:09:08.568Z",
+  "candidate": {
+    "git_sha": "a077e1f53fda09a371313ba0c3be56a60adbb39d",
+    "node_version": "v24.19.0"
+  },
+  "scope": {
+    "subject": "USER_A",
+    "current_yxx_oauth": "NOT_RUN",
+    "historical_yxx_evidence": "PASS_HISTORICAL_EVIDENCE",
+    "wecom_id_used_as_primary": false,
+    "raw_values_recorded": false
+  },
+  "official_conversion": {
+    "http_status": 200,
+    "errcode": 0,
+    "returned_count": 1,
+    "invalid_count": 0,
+    "status": "PASS"
+  },
+  "provider_directory": {
+    "http_status": 200,
+    "result": "TRUE",
+    "tree_user_count": 4290
+  },
+  "detail_matrix": {
+    "official_open_userid": {
+      "result": "FALSE",
+      "status": "REJECTED_AS_NON_EMPLOYEE_UID"
+    },
+    "bot_raw_userid": {
+      "result": "TRUE",
+      "returned_user_id_tree_match_count": 1,
+      "employee_id_match": true,
+      "user_id_match": true,
+      "nickname_match": true,
+      "phone_match": true,
+      "sex_present": true,
+      "avatar_present": true,
+      "avatar_non_empty": true,
+      "status": "ALTERNATE_UID_ACCEPTED_SAME_PERSON"
+    },
+    "corrected_tree_user_id": {
+      "result": "FALSE",
+      "status": "REJECTED_AS_NON_EMPLOYEE_UID"
+    }
+  },
+  "safety": {
+    "raw_ids_persisted": false,
+    "raw_personal_values_persisted": false,
+    "raw_tokens_persisted": false,
+    "database_touched": false,
+    "app_runtime_started": false,
+    "automatic_retry": false
+  },
+  "gate": {
+    "status": "PARTIAL",
+    "conclusion": "BOT_UID_ACCURATE_THIRD_PARTY_DETAIL_MATCH",
+    "not_claimed": [
+      "CURRENT_YXX_OAUTH_MATCH",
+      "OFFICIAL_OPEN_USERID_ACCEPTED_AS_PROVIDER_UID",
+      "TREE_USER_ID_ACCEPTED_AS_PROVIDER_UID",
+      "FULL_THREE_SOURCE_CURRENT_LIVE_MAPPING"
+    ]
+  }
+}

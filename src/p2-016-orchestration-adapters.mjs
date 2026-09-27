@@ -13,7 +13,7 @@ import { reconcileP2016ConversationBindings } from './p2-016-conversation-bindin
 import { createYxxSelfServiceOrchestrator } from './yxx-self-service-orchestrator.mjs';
 
 function guidanceId(id){const h=textHashP2016('P2016_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
-export function createP2016OrchestrationWorker({pool,identityHmacKey,notifications,realtime,directoryPort,ruleEngine,now,personDestinationAuthorizer=null,communicationAppend=appendCommunication,yxxSelfService=null}){
+export function createP2016OrchestrationWorker({pool,identityHmacKey,notifications,realtime,directoryPort,directorySource='WECOM_DIRECTORY',ruleEngine,now,directorySyncJob=null,personDestinationAuthorizer=null,communicationAppend=appendCommunication,yxxSelfService=null}){
   if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016();
   const core=createPilotTicketCore({pool}),decisions=createDecisionStore({sourceWindowScope:'CHANNEL_LEG'}),reviews=createManualReviewStore();
   const communicationPort={appendFixed:async({transaction,action,context})=>{
@@ -40,7 +40,7 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio
       return result;
     }},
   });
-  const orchestrator=createRuleFirstOrchestrator({pool,identityHmacKey,safeActionExecutor:executor,decisionStore:decisions,
+  const orchestrator=createRuleFirstOrchestrator({pool,identityHmacKey,safeActionExecutor:executor,decisionStore:decisions,directorySource,
     journeyStore:createP2016GuidedJourneyStore({now}),decisionOverride:p2016AssociationDecision,
     ...(directoryPort?{directoryPort}:{}),...(ruleEngine?{ruleEngine}:{})});
   // Scheduling cursor only: restart may rescan, but never invents or owns facts.
@@ -48,7 +48,7 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio
   const webOrchestrator=yxxSelfService===null?null:createYxxSelfServiceOrchestrator({pool,profile:'FULL_SERVICE_LOOP',ruleEngine,
     realtimeProjector:realtime,
     featureFlags:yxxSelfService.featureFlags??{YIXIAOXIU_SELF_SERVICE_ENABLED:false,YIXIAOXIU_MY_REPORTS_ENABLED:false}});
-  return createP2015Worker({pool,orchestrator,webOrchestrator,beforeClaim:realtime.lock,afterBatch:async()=>{
+  return createP2015Worker({pool,orchestrator,webOrchestrator,directorySyncJob,beforeClaim:realtime.lock,afterBatch:async()=>{
     const scan=await reconcileP2016ConversationBindings({pool,identityHmacKey,beforeTransaction:realtime.lock,afterLegId:bindingCursor});
     bindingCursor=scan.scan_exhausted?null:scan.last_examined_id;
   }});

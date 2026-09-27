@@ -47,7 +47,7 @@ async function webReportForTicket(queryable,ticket) {
     reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
     supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))});
 }
-export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool})}) {
+export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL'}) {
   async function principal(authContext,queryable=pool) {
     guardP2016(enabled);const p=await authorization.resolvePrincipal(authContext,{queryable});
     if(!p)failP2016('FORBIDDEN',403);return p;
@@ -78,7 +78,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
     async detail(input) {const {ticket,principal:p}=await authorizedTicket(input);const report=await webReportForTicket(pool,ticket);return ticketViewP2016(ticket,p,report?{web_report:report}:{});},
     async reporterContact(input) {
       const {ticket}=await authorizedTicket(input);
-      const q=await pool.query(`SELECT j.profile_resolution_status,j.profile_snapshot FROM intake.channel_leg l
+      const q=await pool.query(`SELECT j.profile_resolution_status,j.profile_snapshot,j.reporter_identity_hash FROM intake.channel_leg l
         JOIN intake.contact_journey j ON j.id=l.journey_id
         JOIN intake.service_intake i ON i.id=j.origin_intake_id
         WHERE l.source_intake_id=$1::uuid AND l.reporter_identity_hash=j.reporter_identity_hash
@@ -86,14 +86,24 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
           AND i.retention_until_epoch_ms>platform.physical_epoch_ms() LIMIT 1`,[ticket.intake_id]);
       const row=q.rows[0],snapshot=row?.profile_snapshot;
       const string=value=>typeof value==='string'&&value.length>0&&value.length<=256?value:null;
-      if(row?.profile_resolution_status!=='RESOLVED'||snapshot?.source!=='WECOM_DIRECTORY'||!string(snapshot.version))
+      const url=value=>typeof value==='string'&&value.length>0&&value.length<=2048&&value.startsWith('https://')?value:null;
+      if(row?.profile_resolution_status!=='RESOLVED'||!['WECOM_DIRECTORY','THIRD_PARTY_STAFF_DIRECTORY'].includes(snapshot?.source)||!string(snapshot.version))
         return publicP2016({status:'DEFERRED',contact:null,departments:[],fetched_at:null});
-      return publicP2016({status:'RESOLVED',contact:snapshot.contact?{
+      const historical={status:'RESOLVED',contact:snapshot.contact?{
         name:string(snapshot.contact.name),userid:string(snapshot.contact.userid),
         mobile:string(snapshot.contact.mobile),telephone:string(snapshot.contact.telephone)}:null,
         departments:(Array.isArray(snapshot.memberships)?snapshot.memberships:[]).slice(0,20).map(m=>({
           name:string(m?.name),department_ref:string(m?.department_ref),role:['PRIMARY','SECONDARY','ROTATION'].includes(m?.role)?m.role:'UNKNOWN'})),
-        fetched_at:string(snapshot.fetched_at)});
+        ...(snapshot.source==='THIRD_PARTY_STAFF_DIRECTORY'?{sex:string(snapshot.sex)}:{}),fetched_at:string(snapshot.fetched_at)};
+      if(snapshot.source!=='THIRD_PARTY_STAFF_DIRECTORY'||!directoryStore)return publicP2016(historical);
+      let current=null;
+      try { current=await directoryStore.findByReporterHash({source_scope:directorySourceScope,reporter_identity_hash:row.reporter_identity_hash}); }
+      catch { current=null; }
+      return publicP2016({...historical,current_profile:current?{
+        status:'RESOLVED',contact:{name:string(current.nickname),mobile:string(current.phone)},sex:string(current.sex),
+        avatar_url:url(current.avatar_url),departments:(Array.isArray(current.memberships)?current.memberships:[]).slice(0,20).map(m=>({
+          name:string(m?.name),department_ref:string(m?.department_ref),role:'MEMBER'})),fetched_at:string(current.fetched_at),
+      }:{status:'STALE',contact:null,sex:null,avatar_url:null,departments:[],fetched_at:null}});
     },
     async events({cursor=null,limit,...input}) {
       const {ticket}=await authorizedTicket(input),n=limitP2016(limit,200);

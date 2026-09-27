@@ -27,6 +27,8 @@
 | 公共故障 Incident | 人工确认的公共故障、报修关联和订阅 | 引用个人受理/工单；不吞并、不自动关闭个人工单 |
 | 可靠通信 Communication | 沟通内容、发送意图、投递和尝试 | 根据已批准策略送达；不修改 Ticket 状态 |
 
+第三方人员目录属于身份与访问上下文的外部资料来源。它提供“当前目录快照”和受控人员详情，不创建第二套 Person；报修受理在首次成功解析时写入独立的 `Reporter Profile Snapshot`，后续目录同步不得回写历史工单。
+
 报修人门户和内部工作台是这些上下文的查询与操作界面，不再建立独立的“门户工单”。服务目录/分类属于受理规则支撑；审计、运行监测、配置和投影是支持能力。AI 是受理分析与沟通建议的可选能力，不作为拥有 Ticket 的新核心上下文。未来内网 Integration 仅保留既有边界，不启动 P3。
 
 ```mermaid
@@ -80,6 +82,7 @@ SDK 升级理想影响面是企业微信 SDK 包装和对应适配器契约测�
 | WeComAppNotificationAdapter | 应用通知意图 → 投递结果 | 应用收件身份、模板卡片或批准的消息载荷、Provider 回执 |
 | WeComMemberIdentityAdapter | 成员认证结果/外部绑定证明 | OAuth 返回、企业/应用范围、官方身份转换 |
 | WeComDirectoryAdapter | 有来源的人员资料快照或 DEFERRED | 目录字段、组织、停用状态、缺失/冲突 |
+| ThirdPartyStaffDirectoryAdapter | 正式三方目录的组织树同步和人员详情 | `/token/*`、服务商字段、Token、UID Resolver 和协议错误不泄漏到领域 |
 | WorkbenchIdentityAdapter | 内部 Principal 与角色范围 | 工作台认证；保持与医小修成员会话隔离 |
 | YixiaoxiuWebAdapter | 已认证网页提交/本人查询/补充/反馈命令 | HTTP、Cookie、CSRF、网页 DTO，不伪造 Bot 消息 |
 
@@ -270,8 +273,8 @@ H5 完工反馈须独立于 supplement：RESOLVED 下确认恢复或提交未恢
 | D5 工作台体验 | Notion 风格信息架构与交互；共享事实和契约 | 双责任可区分、操作可恢复、外显/内部信息隔离、浏览器验收 |
 | D6 Windows 宿主 | Tauri 封装与身份/升级/原生能力边界 | 不持有 Provider 密钥、登录回调与失效、真实桌面验收 |
 
-这只是后续拆任务顺序，不新增已授权运行任务。每个增量都要有输入输出、契约、数据库变更或明确无变更、资源预算、默认关闭方式、Unit/Contract/Integration 及适用浏览器验证、证据、回退方式与 backlog 状态。仅在具体能力需要时引入前向迁移，不重写旧迁移、复制 Ticket 表或重绑历史 tested_head。
+这只是后续拆任务顺序，不新增已授权运行任务。每个增量都要有输入输出、契约、数据库变更或明确无变更、资源预算、默认关闭方式、Unit/Contract/Integration 及适用浏览器验证、证据、回退方式与 backlog 状态。仅在具体能力需要时引入前向迁移，不重写旧迁移、复制 Ticket 表或重绑历史 tested_head。P2-007 正式三方人员目录 Provider 的独立实现和 migration 036 受 [ADR-0025](../../adr/0025_third_party_staff_directory_provider.md) 约束，默认关闭，不改变本阶段 Gate。
 
 同机约束继续为一个 App/API/SSE、一个 Worker、一个活动 Gateway、一个 PostgreSQL；AI/Communication/Integration 并发各 1，SSE 默认 32，连接池总量建议不超过 8。新增领域边界不增加常驻进程。
 
-本次交付仅改变文档，无数据库变更、运行时变更、Feature Flag 变更、业务通知发送或部署。用户后续已授权提交、推送、创建 PR 和请求 Codex review；这不扩大业务运行范围。验证限文档一致性，运行/现场能力不以本提案代替验收。
+本文件的总体设计仍不等同于生产运行或 Gate 验收。P2-007 Provider 增量另有正式接口文档、前向迁移、默认关闭的运行时装配和独立测试；它不扩大 P2-G2-LIVE、P2-008 或生产上线授权。
