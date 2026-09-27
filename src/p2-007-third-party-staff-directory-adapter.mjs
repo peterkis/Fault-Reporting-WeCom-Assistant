@@ -24,13 +24,35 @@ function boundedText(value, code, maximum = 512) {
 }
 
 async function readJson(response, maximumBytes) {
-  if (!response || typeof response.arrayBuffer !== 'function') throw failure('THIRD_STAFF_DIRECTORY_RESPONSE_INVALID');
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.byteLength > maximumBytes) throw failure('THIRD_STAFF_DIRECTORY_RESPONSE_TOO_LARGE');
-  let body;
-  try { body = JSON.parse(bytes.toString('utf8')); } catch { throw failure('THIRD_STAFF_DIRECTORY_JSON_INVALID'); }
-  if (!response.ok) throw failure(`THIRD_STAFF_DIRECTORY_HTTP_${response.status}`);
-  return body;
+  if (!response) throw failure('THIRD_STAFF_DIRECTORY_RESPONSE_INVALID');
+  if (typeof response.body?.getReader !== 'function') {
+    if (!response.ok) throw failure(`THIRD_STAFF_DIRECTORY_HTTP_${response.status}`);
+    throw failure('THIRD_STAFF_DIRECTORY_RESPONSE_INVALID');
+  }
+  const reader = response.body.getReader();
+  let complete = false;
+  try {
+    // Authentication failures need no body parsing (including HTML error pages).
+    if (!response.ok) throw failure(`THIRD_STAFF_DIRECTORY_HTTP_${response.status}`);
+    const length = response.headers?.get('content-length');
+    if (typeof length === 'string' && /^\d+$/u.test(length)
+      && BigInt(length) > BigInt(maximumBytes)) throw failure('THIRD_STAFF_DIRECTORY_RESPONSE_TOO_LARGE');
+    const bytes = Buffer.allocUnsafe(maximumBytes);
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) { complete = true; break; }
+      if (!(value instanceof Uint8Array)) throw failure('THIRD_STAFF_DIRECTORY_RESPONSE_INVALID');
+      if (value.byteLength > maximumBytes - size) throw failure('THIRD_STAFF_DIRECTORY_RESPONSE_TOO_LARGE');
+      bytes.set(value, size);
+      size += value.byteLength;
+    }
+    try { return JSON.parse(bytes.subarray(0, size).toString('utf8')); }
+    catch { throw failure('THIRD_STAFF_DIRECTORY_JSON_INVALID'); }
+  } finally {
+    if (!complete) await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
 }
 
 function createRequestSignal(parentSignal, timeoutMs) {
@@ -76,6 +98,8 @@ export function createThirdPartyStaffDirectoryAdapter({
     const request = createRequestSignal(parentSignal, timeoutMs);
     try {
       await beforeRequest({ path, signal: request.signal });
+      request.signal.throwIfAborted();
+      if (closed) throw failure('THIRD_STAFF_DIRECTORY_ADAPTER_CLOSED');
       const response = await fetchImpl(`${origin}${path}`, {
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
@@ -84,12 +108,18 @@ export function createThirdPartyStaffDirectoryAdapter({
         signal: request.signal,
       });
       return await readJson(response, maximumBytes);
+    } catch (error) {
+      if (['THIRD_STAFF_DIRECTORY_HTTP_401', 'THIRD_STAFF_DIRECTORY_HTTP_403'].includes(error?.code)) {
+        invalidateToken(fields.token);
+      }
+      throw error;
     } finally {
       request.clear();
     }
   }
 
   async function getToken(signal) {
+    if (closed) throw failure('THIRD_STAFF_DIRECTORY_ADAPTER_CLOSED');
     if (cachedToken) return cachedToken;
     if (tokenInFlight) return tokenInFlight;
     tokenInFlight = (async () => {
@@ -99,14 +129,16 @@ export function createThirdPartyStaffDirectoryAdapter({
       if (body?.result !== 'TRUE' || typeof body?.data?.token !== 'string' || body.data.token.length === 0) {
         throw failure('THIRD_STAFF_DIRECTORY_TOKEN_REJECTED');
       }
-      cachedToken = body.data.token;
+      if (closed) throw failure('THIRD_STAFF_DIRECTORY_ADAPTER_CLOSED');
+      cachedToken = boundedText(body.data.token, 'THIRD_STAFF_DIRECTORY_TOKEN_REJECTED', 4_096);
       return cachedToken;
     })();
     try { return await tokenInFlight; } finally { tokenInFlight = null; }
   }
 
-  function invalidateToken() {
-    cachedToken = null;
+  function invalidateToken(rejectedToken = cachedToken) {
+    // A delayed rejection of an older request must not evict a refreshed token.
+    if (cachedToken === rejectedToken) cachedToken = null;
   }
 
   async function syncOrganizationTree({ source_scope: sourceScope = 'FORMAL', root_ref: rootRef, signal } = {}) {
@@ -119,7 +151,7 @@ export function createThirdPartyStaffDirectoryAdapter({
       get_user: 'get',
     }, limits.maximumResponseBytes, signal);
     if (body?.result !== 'TRUE' || !Array.isArray(body.data)) {
-      invalidateToken();
+      invalidateToken(token);
       throw failure('THIRD_STAFF_DIRECTORY_TREE_REJECTED');
     }
     const normalized = normalizeOrganizationTree(body.data, limits);
@@ -139,7 +171,7 @@ export function createThirdPartyStaffDirectoryAdapter({
     const token = await getToken(signal);
     const body = await post('/token/getUserInfo', { token, uid: resolution.uid }, limits.maximumDetailResponseBytes, signal);
     if (body?.result !== 'TRUE') {
-      invalidateToken();
+      invalidateToken(token);
       return Object.freeze({
         status: 'NOT_FOUND', reason_code: 'PROVIDER_UID_REJECTED',
         resolution_method: resolution.method ?? null,

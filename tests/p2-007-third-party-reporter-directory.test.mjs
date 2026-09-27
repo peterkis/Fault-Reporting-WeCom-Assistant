@@ -83,3 +83,20 @@ test('disabled provider remains deferred without touching the store', async () =
   assert.deepEqual(await port.resolve(input()), { status: 'DEFERRED', snapshot: {} });
   assert.equal(reads, 0);
 });
+
+for (const [epoch, expected] of [
+  ['2026-09-27T00:00:00.000Z', '2026-09-27 08:00:00'],
+  ['2026-09-27T23:59:59.123Z', '2026-09-28 07:59:59'],
+]) {
+  test(`default report clock uses Shanghai local time at ${epoch}`, async t => {
+    t.mock.method(Date, 'now', () => Date.parse(epoch));
+    const port = createThirdPartyReporterDirectory({ enabled: true,
+      store: { findByReporterHash: async () => member, findMemberByProviderUserId() {}, saveResolvedProfile() {} },
+      provider: { getPersonProfile() { throw new Error('unexpected provider access'); } },
+    });
+    const result = await port.resolve(input());
+    assert.equal(result.snapshot.fetched_at, expected);
+    assert.equal(result.snapshot.valid_at, member.fetched_at);
+    assert.equal(Object.hasOwn(result.snapshot, 'avatar_url'), false);
+  });
+}

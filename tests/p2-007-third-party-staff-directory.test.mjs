@@ -18,8 +18,7 @@ const USER = Object.freeze({
 });
 
 function jsonResponse(value, status = 200) {
-  const body = Buffer.from(JSON.stringify(value), 'utf8');
-  return { ok: status >= 200 && status < 300, status, arrayBuffer: async () => body };
+  return new Response(JSON.stringify(value), { status });
 }
 
 function treeResponse() {
@@ -124,4 +123,97 @@ test('composition is safe to construct while disabled and exposes future injecti
   assert.deepEqual(await directory.reporterDirectory.resolve({ source: 'THIRD_PARTY_STAFF_DIRECTORY' }), { status: 'DEFERRED', snapshot: {} });
   assert.deepEqual(await directory.syncJob.runOnce({ force: true }), { status: 'DISABLED', skipped: true });
   directory.close();
+});
+
+for (const status of [401, 403]) {
+  for (const endpoint of ['tree', 'detail']) {
+    test(`${endpoint} HTTP ${status} evicts the rejected token without an immediate retry`, async () => {
+      let tokenCalls = 0, calls = 0;
+      const adapter = createThirdPartyStaffDirectoryAdapter({
+        keyProvider: () => 'synthetic-key', uidResolver: createBotRawUidResolver(),
+        fetchImpl: async (url, options) => {
+          if (url.endsWith('/getToken')) return jsonResponse({ result: 'TRUE', data: { token: `token-${++tokenCalls}` } });
+          calls++;
+          if (calls === 1) return new Response('<html>unauthorized</html>', { status });
+          assert.equal(new URLSearchParams(options.body).get('token'), 'token-2');
+          return jsonResponse(endpoint === 'tree' ? treeResponse() : { result: 'TRUE', data: {
+            user_id: 'provider-user-a', employee_id: 'EMP-A', nickname: '用户 A',
+          } });
+        },
+      });
+      const run = () => endpoint === 'tree' ? adapter.syncOrganizationTree({ root_ref: 'root' })
+        : adapter.getPersonProfile({ source_identity: { namespace: 'WECOM_AIBOT', value: 'bot-a' } });
+      await assert.rejects(run(), { code: `THIRD_STAFF_DIRECTORY_HTTP_${status}` });
+      assert.equal(calls, 1);
+      await run();
+      assert.equal(tokenCalls, 2);
+      assert.equal(calls, 2);
+      adapter.close();
+    });
+  }
+}
+
+for (const endpoint of ['token', 'tree', 'detail']) {
+  for (const declared of [false, true]) {
+    test(`${endpoint} response cap cancels ${declared ? 'Content-Length' : 'chunked'} overflow before full buffering`, async () => {
+      let pulls = 0, cancelled = false;
+      const stream = new ReadableStream({
+        pull(controller) { pulls++; controller.enqueue(new Uint8Array(129)); },
+        cancel() { cancelled = true; },
+      }, { highWaterMark: 0 });
+      const response = new Response(stream, { headers: declared ? { 'content-length': '1000000' } : {} });
+      const adapter = createThirdPartyStaffDirectoryAdapter({ keyProvider: () => 'synthetic-key',
+        uidResolver: createBotRawUidResolver(),
+        limits: { maximumTokenResponseBytes: 256, maximumResponseBytes: 256, maximumDetailResponseBytes: 256 },
+        fetchImpl: async url => endpoint === 'token' || !url.endsWith('/getToken') ? response
+          : jsonResponse({ result: 'TRUE', data: { token: 'synthetic-token' } }),
+      });
+      const pending = endpoint === 'detail'
+        ? adapter.getPersonProfile({ source_identity: { namespace: 'WECOM_AIBOT', value: 'bot-a' } })
+        : adapter.syncOrganizationTree({ root_ref: 'root' });
+      await assert.rejects(pending, { code: 'THIRD_STAFF_DIRECTORY_RESPONSE_TOO_LARGE' });
+      assert.equal(pulls, declared ? 0 : 2);
+      assert.equal(cancelled, true);
+      adapter.close();
+    });
+  }
+}
+
+test('late authentication failure cannot evict a newer cached token', { timeout: 5000 }, async () => {
+  let tokens = 0, requests = 0;
+  const failures = [Promise.withResolvers(), Promise.withResolvers()];
+  const entered = [Promise.withResolvers(), Promise.withResolvers()];
+  const adapter = createThirdPartyStaffDirectoryAdapter({ keyProvider: () => 'synthetic-key',
+    fetchImpl: async (url, options) => {
+      if (url.endsWith('/getToken')) return jsonResponse({ result: 'TRUE', data: { token: `token-${++tokens}` } });
+      const index = requests++;
+      if (index < 2) { entered[index].resolve(); return failures[index].promise; }
+      assert.equal(new URLSearchParams(options.body).get('token'), 'token-2');
+      return jsonResponse(treeResponse());
+    },
+  });
+  const first = assert.rejects(adapter.syncOrganizationTree({ root_ref: 'root' }), { code: 'THIRD_STAFF_DIRECTORY_HTTP_401' });
+  await entered[0].promise;
+  const second = assert.rejects(adapter.syncOrganizationTree({ root_ref: 'root' }), { code: 'THIRD_STAFF_DIRECTORY_HTTP_403' });
+  await entered[1].promise;
+  failures[0].resolve(new Response(null, { status: 401 }));
+  await first;
+  await adapter.syncOrganizationTree({ root_ref: 'root' });
+  failures[1].resolve(new Response('not-json', { status: 403 }));
+  await second;
+  await adapter.syncOrganizationTree({ root_ref: 'root' });
+  assert.equal(tokens, 2);
+  adapter.close();
+});
+
+test('normalization accepts depth 16 and bounds deep/cyclic input before recursion', () => {
+  const root = { id: 'd0', name: 'root', children: [] };
+  let current = root;
+  for (let depth = 1; depth <= 16; depth++) {
+    const child = { id: `d${depth}`, name: 'department', children: [] };
+    current.children.push(child); current = child;
+  }
+  assert.equal(normalizeOrganizationTree([root]).counts.max_depth, 16);
+  current.children.push({ id: 'd17', name: 'too deep', children: [] });
+  assert.throws(() => normalizeOrganizationTree([root]), { code: 'THIRD_STAFF_DIRECTORY_DEPTH_EXCEEDED' });
 });

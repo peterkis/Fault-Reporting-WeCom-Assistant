@@ -28,15 +28,15 @@ function optionalText(value, maximum = 256) {
   return value;
 }
 
-function detectCycle(value, ancestors = new Set()) {
+function detectCycle(value, maximumDepth, ancestors = new Set(), depth = 0) {
   if (!value || typeof value !== 'object') return;
   if (ancestors.has(value)) fail('THIRD_STAFF_DIRECTORY_CYCLE');
+  if (depth > maximumDepth) fail('THIRD_STAFF_DIRECTORY_DEPTH_EXCEEDED');
   ancestors.add(value);
   if (Array.isArray(value)) {
-    for (const item of value) detectCycle(item, ancestors);
+    for (const item of value) detectCycle(item, maximumDepth, ancestors, depth + 1);
   } else {
-    detectCycle(value.children, ancestors);
-    if (Array.isArray(value.children)) for (const child of value.children) detectCycle(child, ancestors);
+    detectCycle(value.children, maximumDepth, ancestors, depth + 1);
   }
   ancestors.delete(value);
 }
@@ -65,9 +65,9 @@ function normalizeUser(value) {
 }
 
 export function normalizeOrganizationTree(input, limits = THIRD_STAFF_DIRECTORY_LIMITS) {
-  detectCycle(input);
+  detectCycle(input, limits.maximumDepth * 2 + 2);
   const data = assertPlainJson(input, {
-    maxDepth: limits.maximumDepth + 4,
+    maxDepth: limits.maximumDepth * 2 + 4,
     maxNodes: limits.maximumDepartments + limits.maximumMembers * 3,
     maxArrayLength: limits.maximumMembers,
     maxStringLength: 4_096,

@@ -118,7 +118,7 @@
     "p2:007:migrate": "node --env-file=.env.pilot scripts/p2-007-migrate.mjs",
     "p2:007:migrate:check": "node --env-file=.env.pilot scripts/p2-007-migrate.mjs --check",
     "p2:007:migrate:status": "node --env-file=.env.pilot scripts/p2-007-migrate.mjs --status",
-    "test:p2:007": "node --test --test-concurrency=1 tests/p2-007-third-party-staff-directory.test.mjs tests/p2-007-third-party-reporter-directory.test.mjs tests/p2-007-staff-directory-sync.test.mjs tests/p2-007-staff-directory-worker.test.mjs tests/p2-007-third-party-current-profile-query.test.mjs",
+    "test:p2:007": "node --experimental-test-module-mocks --test --test-concurrency=1 tests/p2-007-third-party-staff-directory.test.mjs tests/p2-007-third-party-reporter-directory.test.mjs tests/p2-007-staff-directory-sync.test.mjs tests/p2-007-staff-directory-worker.test.mjs tests/p2-007-third-party-current-profile-query.test.mjs tests/p2-007-staff-directory-process-options.test.mjs tests/p2-007-staff-directory-process-role.test.mjs",
     "test:p2:007:integration": "node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-007-third-party-staff-directory.integration.test.mjs",
     "validate:p2:015": "node scripts/validate-p2-015-rule-first-intake.mjs",
     "p2:016:migrate": "node --env-file=.env.pilot scripts/p2-016-migrate.mjs",

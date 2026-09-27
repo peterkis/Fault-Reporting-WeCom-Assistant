@@ -180,10 +180,21 @@ test('continuation refs are hashed, reporter/bot bound, expiring, revocable and 
 
 test('frozen migrations and P2-007 modules outside the authorized G2 rule-engine increment remain unchanged', () => {
   const root = path.resolve(import.meta.dirname, '..');
-  const names = spawnSync('git', ['-c', `safe.directory=${root.replaceAll('\\','/')}`, 'diff', '--name-only', '8c332710dad9b6cf3f6796f3344c04d1c710ddf3', '--', 'database/migrations/001_*', 'database/migrations/002_*', 'database/migrations/003_*', 'database/migrations/004_*', 'database/migrations/005_*', 'database/migrations/006_*', 'database/migrations/007_*', 'database/migrations/008_*', 'database/migrations/009_*', 'database/migrations/010_*', 'database/migrations/011_*', 'database/migrations/012_*', 'database/migrations/020_*', 'database/migrations/021_*', 'database/migrations/022_*', 'src/p2-007-*'], { cwd: root, encoding: 'utf8' });
+  const names = spawnSync('git', ['-c', `safe.directory=${root.replaceAll('\\','/')}`, 'diff', '--no-renames', '--name-status', '8c332710dad9b6cf3f6796f3344c04d1c710ddf3', '--', 'database/migrations/001_*', 'database/migrations/002_*', 'database/migrations/003_*', 'database/migrations/004_*', 'database/migrations/005_*', 'database/migrations/006_*', 'database/migrations/007_*', 'database/migrations/008_*', 'database/migrations/009_*', 'database/migrations/010_*', 'database/migrations/011_*', 'database/migrations/012_*', 'database/migrations/020_*', 'database/migrations/021_*', 'database/migrations/022_*', 'src/p2-007-*'], { cwd: root, encoding: 'utf8' });
   assert.equal(names.status, 0);
-  // Explicit exception: evidence/p2-g2-gold-repair-authorization.md. All migrations and sibling modules stay frozen.
-  assert.deepEqual(names.stdout.trim().split(/\r?\n/u).filter(Boolean).filter(file=>file!=='src/p2-007-rule-engine.mjs'),[]);
+  // The gold repair may modify only the existing rule engine. ADR-0025
+  // authorizes these new modules, not changes/deletions to frozen siblings.
+  const additions = new Set([
+    'src/p2-007-staff-directory-contracts.mjs', 'src/p2-007-staff-directory-store.mjs',
+    'src/p2-007-staff-directory-sync.mjs', 'src/p2-007-third-party-reporter-directory.mjs',
+    'src/p2-007-third-party-staff-directory-adapter.mjs', 'src/p2-007-third-party-staff-directory.mjs',
+  ]);
+  const unexpected = names.stdout.trim().split(/\r?\n/u).filter(Boolean).filter(line => {
+    const [status, file] = line.split('\t');
+    return !(status === 'M' && file === 'src/p2-007-rule-engine.mjs')
+      && !(status === 'A' && additions.has(file));
+  });
+  assert.deepEqual(unexpected, []);
 });
 
 test.after(async () => { if (databaseUrl) await assertNoP2015Residual({ databaseUrl }); });

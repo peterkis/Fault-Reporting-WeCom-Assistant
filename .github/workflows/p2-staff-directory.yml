@@ -7,8 +7,12 @@ on:
       - 'src/p2-015-*.mjs'
       - 'src/p2-016-*.mjs'
       - 'scripts/p2-016-process-role.mjs'
+      - 'scripts/p2-012-process-role.mjs'
       - 'scripts/p2-007-migrate.mjs'
       - 'tests/p2-007-*.mjs'
+      - 'tests/p2-015-*.mjs'
+      - 'package.json'
+      - 'package-lock.json'
       - 'database/migrations/036*'
       - 'web/admin-workbench-prototype/**'
 permissions:
@@ -39,6 +43,13 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Published checkout identity (not readiness)
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/directory-review"
+          node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" 2>&1 | tee "$RUNNER_TEMP/directory-review/history-identity.txt"
       - name: Current directory and orchestration regression
         run: |
           set -euo pipefail
@@ -46,6 +57,23 @@ jobs:
           npm run test:p2:007 2>&1 | tee "$RUNNER_TEMP/directory-review/unit.txt"
           node --test --test-concurrency=1 tests/p2-007-third-party-staff-directory.integration.test.mjs 2>&1 | tee "$RUNNER_TEMP/directory-review/postgres.txt"
           npm run test:p2:015 2>&1 | tee "$RUNNER_TEMP/directory-review/orchestration.txt"
+      - name: Architecture regression
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/directory-review"
+          npm run validate:architecture:v1.4 2>&1 | tee "$RUNNER_TEMP/directory-review/architecture.txt"
+      - name: Prototype typecheck and build (not production acceptance)
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          npm ci --prefix web/admin-workbench-prototype --ignore-scripts --no-audit --no-fund
+          npm run prototype:admin:build 2>&1 | tee "$RUNNER_TEMP/directory-review/prototype-build.txt"
+      - name: Frozen historical validation (not current readiness)
+        if: ${{ !cancelled() }}
+        run: |
+          set -euo pipefail
+          npm run validate:p2:016:historical 2>&1 | tee "$RUNNER_TEMP/directory-review/historical.txt"
       - name: Exact tracked source for this review
         if: always()
         run: |
@@ -57,4 +85,4 @@ jobs:
         with:
           name: directory-review-${{ github.run_id }}
           path: ${{ runner.temp }}/directory-review/
-          retention-days: 1
+          retention-days: 14

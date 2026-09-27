@@ -99,6 +99,7 @@ export function createThirdPartyStaffDirectoryStore({ pool } = {}) {
       throw failure('THIRD_STAFF_DIRECTORY_IDENTITY_CONFLICT');
     }
     return withTransaction(pool, async transaction => {
+      await transaction.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`THIRD_STAFF_DIRECTORY_SYNC:${sourceScope}`]);
       await transaction.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`THIRD_STAFF_DIRECTORY_BINDING:${sourceScope}:${reporterHash}`]);
       const current = await selectMember(transaction, sourceScope, profile.provider_user_id, true);
       if (!current) throw failure('THIRD_STAFF_DIRECTORY_MEMBER_NOT_CURRENT');
@@ -143,7 +144,18 @@ export function createThirdPartyStaffDirectoryStore({ pool } = {}) {
       [sourceScope, rootHash, snapshot.snapshot_version, snapshot.counts.departments, snapshot.counts.members,
         snapshot.counts.memberships, JSON.stringify(snapshot.protocol_warnings ?? [])]);
       await transaction.query('DELETE FROM directory.membership_current WHERE source_scope=$1', [sourceScope]);
-      await transaction.query('DELETE FROM directory.member_current WHERE source_scope=$1', [sourceScope]);
+      // Compare identities before replacing tree fields. A reused provider ID
+      // must neither inherit enrichment nor retain an old reporter binding.
+      await transaction.query(`UPDATE directory.identity_binding b SET binding_status='STALE'
+        WHERE b.source_scope=$1 AND b.binding_status='ACTIVE' AND NOT EXISTS (
+          SELECT 1 FROM directory.member_current m
+          JOIN jsonb_to_recordset($2::jsonb) AS r(provider_user_id text,employee_id text)
+            ON r.provider_user_id=m.provider_user_id AND r.employee_id=m.employee_id
+          WHERE m.source_scope=b.source_scope AND m.provider_user_id=b.provider_user_id)`,
+      [sourceScope, JSON.stringify(snapshot.members)]);
+      await transaction.query(`DELETE FROM directory.member_current m WHERE m.source_scope=$1 AND NOT EXISTS (
+        SELECT 1 FROM jsonb_to_recordset($2::jsonb) AS r(provider_user_id text)
+        WHERE r.provider_user_id=m.provider_user_id)`, [sourceScope, JSON.stringify(snapshot.members)]);
       await transaction.query('DELETE FROM directory.department_current WHERE source_scope=$1', [sourceScope]);
       await transaction.query(`INSERT INTO directory.department_current(
           source_scope,provider_department_id,parent_provider_department_id,name,provider_gid,provider_gid_type,
@@ -153,10 +165,16 @@ export function createThirdPartyStaffDirectoryStore({ pool } = {}) {
           FROM jsonb_to_recordset($3::jsonb) AS r(provider_department_id text,parent_provider_department_id text,
             name text,provider_gid text,provider_gid_type text,depth integer)`,
       [sourceScope, snapshot.snapshot_version, JSON.stringify(snapshot.departments)]);
-      await transaction.query(`INSERT INTO directory.member_current(
+      await transaction.query(`INSERT INTO directory.member_current AS existing(
           source_scope,provider_user_id,employee_id,nickname,phone,provider_wecom_id,snapshot_version,fetched_at)
         SELECT $1,r.provider_user_id,r.employee_id,r.nickname,r.phone,r.provider_wecom_id,$2,platform.local_now()
-          FROM jsonb_to_recordset($3::jsonb) AS r(provider_user_id text,employee_id text,nickname text,phone text,provider_wecom_id text)`,
+          FROM jsonb_to_recordset($3::jsonb) AS r(provider_user_id text,employee_id text,nickname text,phone text,provider_wecom_id text)
+        ON CONFLICT (source_scope,provider_user_id) DO UPDATE SET
+          sex=CASE WHEN existing.employee_id=EXCLUDED.employee_id THEN existing.sex ELSE NULL END,
+          avatar_url=CASE WHEN existing.employee_id=EXCLUDED.employee_id THEN existing.avatar_url ELSE NULL END,
+          employee_id=EXCLUDED.employee_id,nickname=EXCLUDED.nickname,phone=EXCLUDED.phone,
+          provider_wecom_id=EXCLUDED.provider_wecom_id,account_status=EXCLUDED.account_status,
+          snapshot_version=EXCLUDED.snapshot_version,fetched_at=EXCLUDED.fetched_at,updated_at=platform.local_now()`,
       [sourceScope, snapshot.snapshot_version, JSON.stringify(snapshot.members)]);
       await transaction.query(`INSERT INTO directory.membership_current(
           source_scope,provider_user_id,provider_department_id,snapshot_version)
@@ -172,11 +190,9 @@ export function createThirdPartyStaffDirectoryStore({ pool } = {}) {
           fetched_at=EXCLUDED.fetched_at,published_at=EXCLUDED.published_at`,
       [sourceScope, snapshot.snapshot_version, rootHash, snapshot.counts.departments, snapshot.counts.members,
         snapshot.counts.memberships]);
-      await transaction.query(`UPDATE directory.identity_binding b SET
-          binding_status=CASE WHEN b.binding_status='ACTIVE' AND EXISTS (SELECT 1 FROM directory.member_current m
-            WHERE m.source_scope=b.source_scope AND m.provider_user_id=b.provider_user_id) THEN 'ACTIVE' ELSE 'STALE' END,
+      await transaction.query(`UPDATE directory.identity_binding SET
           bound_snapshot_version=$2,last_verified_at=platform.local_now()
-        WHERE b.source_scope=$1`, [sourceScope, snapshot.snapshot_version]);
+        WHERE source_scope=$1 AND binding_status='ACTIVE'`, [sourceScope, snapshot.snapshot_version]);
       await transaction.query(`UPDATE directory.sync_run SET status='SUCCEEDED',completed_at=platform.local_now()
         WHERE run_id=$1::uuid`, [run.rows[0].run_id]);
       return Object.freeze({ run_id: run.rows[0].run_id, status: 'SUCCEEDED', snapshot_version: snapshot.snapshot_version, counts: snapshot.counts });

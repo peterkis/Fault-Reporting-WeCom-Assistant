@@ -14,9 +14,9 @@ https://rd-api.mobimedical.cn/8024
 
 正式脱敏证据：
 
-- [组织树与人员详情正式验证](../evidence/third-party-staff-info-sync-formal-20260926.json)
-- [人员详情字段正式验证](../evidence/third-party-staff-info-detail-formal-20260926.json)
-- [用户 A 正式 ID 对应验证](../evidence/third-party-id-mapping-formal-direct-user-id-20260927.json)
+- [组织树与人员详情正式验证](../../evidence/third-party-staff-info-sync-formal-20260926.json)
+- [人员详情字段正式验证](../../evidence/third-party-staff-info-detail-formal-20260926.json)
+- [用户 A 正式 ID 对应验证](../../evidence/third-party-id-mapping-formal-direct-user-id-20260927.json)
 
 测试地址和测试环境证据不属于本 Provider 的正式能力结论。原始响应、key、token、姓名、手机号、工号、用户 ID 和头像 URL 不写入本文。
 
@@ -196,3 +196,41 @@ createP2016Runtime({
 ```
 
 示例中的 key 只表示运行时注入点，不应出现在源代码、日志或文档中。
+
+
+## 7. 已接入的进程角色与修复验证边界
+
+`scripts/p2-016-process-role.mjs` 和 `scripts/p2-012-process-role.mjs` 通过
+`createThirdPartyStaffDirectoryProcessOptions` 读取开关。未设置或严格为 `false` 时，
+不构造 Provider、目录 Store 或同步任务；其他非 `true` 值会报配置错误，避免静默误配。
+
+在独立授权且迁移 030 → 031 → 035 → 036 完成后，两个启动器均按以下职责装配：
+
+| 角色 | 开启后的行为 | 不承担的职责 |
+|---|---|---|
+| App | 使用现有连接池读取 FORMAL 当前目录，向授权查询提供 `reporter_current` | 不创建 HTTP Provider，不执行同步或详情回源 |
+| Worker | 校验根节点及密钥配置，注入报修解析 Port、明确的来源和日常同步任务 | 不创建额外进程、连接池或独立定时器 |
+| Gateway | 保留原来的入站、发送和批准范围 | 不读取人员目录，不持有第三方密钥 |
+
+Worker 明确选择只接受 `WECOM_AIBOT` 原始 ID 的 Resolver Profile；其他命名空间
+仍为 DEFERRED，不回退到姓名、手机号、工号或第三方 `user_id` 猜测。此选择是查询路径，
+不是全员身份对应已被证明；每次首次绑定仍须通过当前目录的严格交叉核验。
+
+P2-G2 和医小修受限自助入口使用独立的授权清单、网络策略及装配流程，本开关不绕过这些
+边界，也不将这些入口自动切换到第三方 Provider。原来的全部发送授权和停止线不变。
+
+目录刷新只为同一来源、同一第三方人员 ID 且工号未变的成员保留 `sex`、`avatar_url`。
+人员移除或人员 ID 被另一工号复用时，原 ACTIVE 绑定转为 STALE；新身份不得继承原资料。
+已失效或冲突的绑定不会仅因后续组织同步自动恢复。同步发布和详情保存使用同一来源事务锁，
+失败发布回滚整个事务，保留上一版目录；历史报修快照不参与刷新。
+
+HTTP 401/403（包括 HTML 错误页）会使本次被拒绝的缓存 Token 失效；下一次操作重新取 Token，
+当前请求不自动重试。旧请求的延迟失败不得清除后来已更新的 Token。响应先检查可用的
+Content-Length，再按字节上限读取流；无长度、分块或错误长度也不能绕过实际读取上限，
+超限立即取消读取。组织树、详情、Token 分别沿用 4 MiB、256 KiB、64 KiB 上限。
+报修快照时间统一使用平台的 Asia/Shanghai 本地时间格式，包含跨日转换。
+
+回归入口为 `npm run test:p2:007`、目录 PostgreSQL 集成测试及 `npm run test:p2:015`。
+GitHub Actions 在 PR 事件给定的完整 head SHA 上以 Node 24 / PostgreSQL 18 执行，保存
+原始日志和源码 SHA；另行检查架构与原型类型/构建。冻结历史校验输出中的
+`historical_only=true` 只证明原历史版本，不代替当前候选的 readiness 或现场批准。

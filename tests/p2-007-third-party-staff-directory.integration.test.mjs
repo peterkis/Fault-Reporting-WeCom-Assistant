@@ -63,6 +63,73 @@ test('current directory replacement keeps bindings usable and exposes only curre
     const current = await store.findByReporterHash({ source_scope: 'FORMAL', reporter_identity_hash: 'b'.repeat(64) });
     assert.equal(current.snapshot_version, 'c'.repeat(64));
     assert.equal(current.memberships[0].department_ref, 'dept-b');
-    assert.equal(current.avatar_url, null);
+    assert.equal(current.sex, '1');
+    assert.equal(current.avatar_url, 'https://avatar.example.test/a');
+  }});
+});
+
+test('failed publication rolls back; reused IDs and removed members cannot inherit profiles or active bindings', async () => {
+  assert.ok(databaseUrl, 'PILOT_DATABASE_URL is required');
+  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'p2007identity', run: async ({ pool, databaseUrl: isolated }) => {
+    await prepare({ pool, databaseUrl: isolated });
+    const store = createThirdPartyStaffDirectoryStore({ pool });
+    const key = { source_scope: 'FORMAL', reporter_identity_hash: 'b'.repeat(64) };
+    const publish = value => store.publishSnapshot({ source_scope: 'FORMAL', root_ref: 'root', snapshot: value });
+    await publish(snapshot('a'.repeat(64)));
+    const member = await store.findMemberByProviderUserId({ source_scope: 'FORMAL', provider_user_id: 'provider-user-a' });
+    await store.saveResolvedProfile({ ...key, member, profile: { provider_user_id: 'provider-user-a', employee_id: 'EMP-A', sex: '1', avatar_url: 'https://avatar.example.test/a' } });
+    const before = await store.findByReporterHash(key);
+    const broken = snapshot('c'.repeat(64));
+    broken.memberships[0].provider_department_id = 'missing';
+    await assert.rejects(publish(broken), { code: '23503' });
+    assert.deepEqual(await store.findByReporterHash(key), before);
+    assert.equal((await pool.query('SELECT count(*)::integer AS count FROM directory.sync_run')).rows[0].count, 1);
+
+    const replacement = snapshot('d'.repeat(64));
+    replacement.members[0].employee_id = 'EMP-B';
+    await publish(replacement);
+    assert.equal(await store.findByReporterHash(key), null);
+    const replaced = await store.findMemberByProviderUserId({ source_scope: 'FORMAL', provider_user_id: 'provider-user-a' });
+    assert.equal(replaced.sex, null); assert.equal(replaced.avatar_url, null);
+    assert.equal((await pool.query('SELECT binding_status FROM directory.identity_binding')).rows[0].binding_status, 'STALE');
+    await assert.rejects(store.saveResolvedProfile({ ...key, member, profile: { provider_user_id: 'provider-user-a', employee_id: 'EMP-A' } }), { code: 'THIRD_STAFF_DIRECTORY_IDENTITY_CONFLICT' });
+
+    const empty = snapshot('e'.repeat(64)); empty.members = []; empty.memberships = [];
+    empty.counts.members = 0; empty.counts.memberships = 0;
+    await publish(empty);
+    await publish(snapshot('f'.repeat(64)));
+    assert.equal(await store.findByReporterHash(key), null);
+    assert.equal((await store.findMemberByProviderUserId({ source_scope: 'FORMAL', provider_user_id: 'provider-user-a' })).avatar_url, null);
+  }});
+});
+
+test('detail enrichment and publication share the source lock and preserve committed enrichment', async () => {
+  assert.ok(databaseUrl, 'PILOT_DATABASE_URL is required');
+  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'p2007concurrent', run: async ({ pool, databaseUrl: isolated }) => {
+    await prepare({ pool, databaseUrl: isolated });
+    const store = createThirdPartyStaffDirectoryStore({ pool });
+    await store.publishSnapshot({ source_scope: 'FORMAL', root_ref: 'root', snapshot: snapshot('a'.repeat(64)) });
+    const member = await store.findMemberByProviderUserId({ source_scope: 'FORMAL', provider_user_id: 'provider-user-a' });
+    const locks = [];
+    const observed = createThirdPartyStaffDirectoryStore({ pool: {
+      query: (...args) => pool.query(...args),
+      connect: async () => {
+        const client = await pool.connect();
+        return { release: value => client.release(value), query: (sql, values) => {
+          if (sql.includes('pg_advisory_xact_lock') && values?.[0]?.startsWith('THIRD_STAFF_DIRECTORY_SYNC:')) locks.push(values[0]);
+          return client.query(sql, values);
+        } };
+      },
+    } });
+    const key = { source_scope: 'FORMAL', reporter_identity_hash: 'b'.repeat(64) };
+    await Promise.all([
+      observed.saveResolvedProfile({ ...key, member, profile: { provider_user_id: 'provider-user-a', employee_id: 'EMP-A', sex: '1', avatar_url: 'https://avatar.example.test/a' } }),
+      observed.publishSnapshot({ source_scope: 'FORMAL', root_ref: 'root', snapshot: snapshot('c'.repeat(64), 'dept-b') }),
+    ]);
+    assert.deepEqual(locks, ['THIRD_STAFF_DIRECTORY_SYNC:FORMAL', 'THIRD_STAFF_DIRECTORY_SYNC:FORMAL']);
+    const current = await store.findByReporterHash(key);
+    assert.equal(current.sex, '1'); assert.equal(current.avatar_url, 'https://avatar.example.test/a');
+    assert.equal(current.memberships[0].department_ref, 'dept-b');
+    assert.equal(current.snapshot_version, 'c'.repeat(64));
   }});
 });

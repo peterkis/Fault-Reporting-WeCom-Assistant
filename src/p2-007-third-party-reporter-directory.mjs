@@ -1,3 +1,4 @@
+import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 import { createReporterDirectoryPort } from './p2-015-contact-journey.mjs';
 import { matchDirectoryProfile, THIRD_STAFF_SOURCE } from './p2-007-staff-directory-contracts.mjs';
 import { sha256Canonical } from './p2-007-domain-utils.mjs';
@@ -25,7 +26,7 @@ export function createThirdPartyReporterDirectory({
   provider,
   sourceScope = 'FORMAL',
   timeoutMs = 2_000,
-  now = () => new Date().toISOString().replace('T', ' ').replace('Z', ''),
+  now = () => formatEpochMsToShanghaiLocal(String(Date.now())),
 } = {}) {
   if (!enabled) return createReporterDirectoryPort({ timeoutMs, resolveProfile: async () => ({ status: 'DEFERRED' }) });
   if (!store || typeof store.findByReporterHash !== 'function'
@@ -71,6 +72,7 @@ export function createThirdPartyReporterDirectory({
       const saved = await store.saveResolvedProfile({
         source_scope: sourceScope,
         reporter_identity_hash: input.reporter_identity_hash,
+        source_namespace: input.source_namespace ?? input.source_provider ?? 'WECOM_AIBOT',
         profile: detail.profile,
         member,
         resolution_method: detail.resolution_method ?? null,
