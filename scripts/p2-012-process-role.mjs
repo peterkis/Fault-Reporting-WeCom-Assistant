@@ -1,3 +1,4 @@
+import { createThirdPartyStaffDirectoryProcessOptions, requireStaffDirectorySchema } from '../src/p2-007-third-party-staff-directory.mjs';
 import { pathToFileURL } from 'node:url';
 import { runApp,runGateway,runWorker } from './p2-g1-process-role.mjs';
 import { createP2012Runtime,createP2012WorkbenchExtension } from '../src/p2-012-workbench-assembly.mjs';
@@ -17,11 +18,11 @@ const access=pool=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:proce
 const personAuthorizer=pool=>createP2012PersonDestinationAuthorizer({pool,botId:process.env.P2_012_SCOPE_BOT_ID,
   personHashes:(process.env.P2_012_TEST_USER_TARGET_HASHES??'').split(',').filter(Boolean),
   groupHashes:(process.env.P2_012_TEST_GROUP_TARGET_HASHES??'').split(',').filter(Boolean)});
-export function createP2012WorkerExtension({pool,reporterAccess,identityHashKey,personDestinationAuthorizer,testLabel=true,communicationAppend,ticketNotificationAdditionalEvents=[],directoryPort,yxxSelfService=null}){
+export function createP2012WorkerExtension({pool,reporterAccess,identityHashKey,personDestinationAuthorizer,testLabel=true,communicationAppend,ticketNotificationAdditionalEvents=[],directoryPort,directorySource='WECOM_DIRECTORY',directorySyncJob=null,yxxSelfService=null}){
   const incident=createP2012WorkbenchExtension({pool,featureFlags:P2012_TEST_FLAGS,testLabel,communicationAppend});
   const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents,explicitReferenceEnabled:true});
   const realtime=createP2016RealtimeProjector({pool,enabled:true});
-  const orchestrator=createP2016OrchestrationWorker({pool,notifications,realtime,identityHmacKey:identityHashKey,personDestinationAuthorizer,communicationAppend,directoryPort,yxxSelfService});
+  const orchestrator=createP2016OrchestrationWorker({pool,notifications,realtime,identityHmacKey:identityHashKey,personDestinationAuthorizer,communicationAppend,directoryPort,directorySource,directorySyncJob,yxxSelfService});
   const closure=createTicketClosureService({pool,beforeTransaction:realtime.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async input=>{
     const n=await notifications.project(input);await realtime.ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
   }}});
@@ -35,7 +36,7 @@ export function createP2012WorkerExtension({pool,reporterAccess,identityHashKey,
 export async function main(argv=process.argv.slice(2)){
   if(typeof process.send!=='function'||argv.length!==1||!['--role=app','--role=worker','--role=gateway'].includes(argv[0]))throw new Error('P2_012_ROLE_INVALID');
   if((process.env.P2_G1_GATEWAY_ENABLED==='true'||process.env.P2_G1_SENDER_ENABLED==='true')&&P2012_LIVE_FUSES.some(k=>process.env[k]!=='true'))throw new Error('P2_012_LIVE_APPROVAL_REQUIRED');
-  if(argv[0]==='--role=app')return runApp({runtimeFactory:options=>createP2012Runtime({...options,flags:P2016_TEST_FLAGS,incidentFlags:P2012_TEST_FLAGS,incidentTestLabel:true,
+  if(argv[0]==='--role=app')return runApp({runtimeFactory:options=>createP2012Runtime({...options,...createThirdPartyStaffDirectoryProcessOptions({pool:options.pool,role:'APP'}),flags:P2016_TEST_FLAGS,incidentFlags:P2012_TEST_FLAGS,incidentTestLabel:true,
     personDestinationAuthorizer:personAuthorizer(options.pool),
     reporterOrigin:process.env.P2_012_REPORTER_ORIGIN,reporterHmacSecret:process.env.P2_012_REPORTER_HMAC_SECRET,
     allowedHosts:process.env.P2_012_REPORTER_ALLOWED_HOSTS.split(',')})});
@@ -54,7 +55,7 @@ export async function main(argv=process.argv.slice(2)){
       botId:process.env.WECOM_BOT_ID,cardEnabled:true,reporterAccess:access(pool),origin:process.env.P2_012_REPORTER_ORIGIN,
       allowedHosts:process.env.P2_012_REPORTER_ALLOWED_HOSTS.split(',')}),
   });
-  return runWorker({extensionFactory:({pool})=>createP2012WorkerExtension({pool,reporterAccess:access(pool),
+  return runWorker({beforeReady:requireStaffDirectorySchema,extensionFactory:({pool})=>createP2012WorkerExtension({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,reporterAccess:access(pool),
     identityHashKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY,personDestinationAuthorizer:personAuthorizer(pool)})});
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await main().catch(()=>{

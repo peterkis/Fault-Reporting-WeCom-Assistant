@@ -1,0 +1,78 @@
+{
+  "schema_version": "third-party-staff-info-detail-verification-v1",
+  "run_id": "575b34b3-b656-4355-83f1-f0dbaa5e8408",
+  "environment": "formal",
+  "base_url": "https://rd-api.mobimedical.cn/8024",
+  "protocol": "application/x-www-form-urlencoded",
+  "recorded_at": "2026-09-26T14:17:10.509Z",
+  "candidate": {
+    "git_sha": "a077e1f53fda09a371313ba0c3be56a60adbb39d",
+    "node_version": "v24.19.0"
+  },
+  "configuration": {
+    "key_configured": true,
+    "raw_key_recorded": false
+  },
+  "request_summary": {
+    "token": {
+      "http_status": 200,
+      "result": "TRUE",
+      "elapsed_ms": 641
+    },
+    "organization_tree": {
+      "http_status": 200,
+      "result": "TRUE",
+      "elapsed_ms": 1266
+    },
+    "user_detail": {
+      "request_count": 20,
+      "success_count": 20,
+      "all_http_status_200": true,
+      "all_result_true": true
+    }
+  },
+  "sample": {
+    "cap": 20,
+    "selected_count": 20,
+    "omitted_count": 234
+  },
+  "field_verification": {
+    "employee_id": {
+      "present_count": 20,
+      "match_count": 20,
+      "type_counts": {
+        "string": 20
+      }
+    },
+    "sex": {
+      "present_count": 20,
+      "non_empty_count": 20,
+      "type_counts": {
+        "string": 20
+      },
+      "raw_values_recorded": false
+    },
+    "avatar": {
+      "present_count": 20,
+      "non_empty_count": 20,
+      "https_count": 20,
+      "type_counts": {
+        "string": 20
+      },
+      "raw_values_recorded": false,
+      "avatar_fetched": false
+    }
+  },
+  "safety": {
+    "raw_personal_values_persisted": false,
+    "raw_responses_persisted": false,
+    "token_persisted": false,
+    "database_touched": false,
+    "app_runtime_started": false,
+    "automatic_retry": false
+  },
+  "gate": {
+    "status": "PASS",
+    "scope": "formal_user_detail_fields_only"
+  }
+}

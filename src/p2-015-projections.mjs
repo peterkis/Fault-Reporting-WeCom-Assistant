@@ -1,7 +1,9 @@
 import { freezePublic, snapshotP2015Json } from './p2-015-domain-contracts.mjs';
 
+import { snapshotReporterProfileEnvelope, freezeReporterProfileEnvelope } from './p2-015-reporter-profile.mjs';
+
 export function projectContactJourney(row, { restricted = false } = {}) {
-  const value = snapshotP2015Json(row);
+  const value = snapshotReporterProfileEnvelope(row);
   const result = {
     id: value.id, origin_intake_id: value.origin_intake_id, linked_ticket_id: value.linked_ticket_id,
     entry_mode: value.entry_mode, origin_channel: value.origin_channel, current_channel: value.current_channel,
@@ -10,7 +12,7 @@ export function projectContactJourney(row, { restricted = false } = {}) {
     last_activity_at: value.last_activity_at, ended_at: value.ended_at,
   };
   if (restricted) result.profile_snapshot = value.profile_snapshot;
-  return freezePublic(result);
+  return restricted ? freezeReporterProfileEnvelope(result) : freezePublic(result);
 }
 
 export function projectDecision(row) {

@@ -23,11 +23,13 @@ async function withTransaction(pool, operation) {
 }
 
 export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
+  directorySyncJob = null,
   beforeClaim = null,
   afterBatch = null,
   pollMilliseconds = P2_015_LIMITS.recoveryPollMilliseconds } = {}) {
   if (!pool?.connect || !orchestrator?.preparePersistedIntake || !orchestrator?.processInTransaction
     || (webOrchestrator !== null && typeof webOrchestrator.processPendingFromWorker !== 'function')
+    || (directorySyncJob !== null && typeof directorySyncJob.runIfDue !== 'function')
     || (beforeClaim !== null && typeof beforeClaim !== 'function') || (afterBatch !== null && typeof afterBatch !== 'function')
     || !Number.isInteger(pollMilliseconds) || pollMilliseconds < 100 || pollMilliseconds > 60_000) {
     failP2015(P2_015_ERROR_CODES.inputInvalid);
@@ -39,8 +41,14 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
   async function processDueBatch(input = {}) {
     const value = snapshotP2015Json(input);
     const flags = normalizeP2015FeatureFlags(value.feature_flags ?? {});
+    let directorySync = null;
+    if (directorySyncJob && !value.signal?.aborted) {
+      try { directorySync = await directorySyncJob.runIfDue({ signal: value.signal }); }
+      catch { directorySync = { status: 'FAILED', error_code: 'THIRD_STAFF_DIRECTORY_MAINTENANCE_FAILED' }; }
+    }
     if (!flags.rule_first_orchestration_enabled || !flags.manual_review_queue_enabled) {
-      return freezePublic({ processed: 0, claimed: 0, disabled: true, model_provider_calls: 0 });
+      return freezePublic({ processed: 0, claimed: 0, disabled: true, model_provider_calls: 0,
+        ...(directorySyncJob ? { directory_sync: directorySync } : {}) });
     }
     const batchSize = normalizeLimit(value.batch_size, P2_015_LIMITS.defaultBatch, P2_015_LIMITS.maximumBatch);
     const nowEpochMs = value.now_epoch_ms ?? String(Date.now());
@@ -111,7 +119,8 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
       error.accepted_batch_committed=true;error.processed=processed;throw error;
     }
     return freezePublic({ processed, claimed, disabled: false, results, web_result: webResult,
-      model_provider_calls: 0, batch_size: batchSize });
+      model_provider_calls: 0, batch_size: batchSize,
+      ...(directorySyncJob ? { directory_sync: directorySync } : {}) });
   }
 
   function schedule(featureFlags, signal) {

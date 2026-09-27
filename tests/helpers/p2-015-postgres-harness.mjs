@@ -35,6 +35,14 @@ export async function withP2015IsolatedDatabase({ databaseUrl, purpose, max = 4,
   finally {
     try {
       await pool?.end();
+      // Pool shutdown can return before PostgreSQL has observed socket closure.
+      // Do not race a normal disconnect with an administrator termination.
+      // The bounded grace period does not replace forced cleanup or residual checks.
+      for (let attempt = 0; attempt < 40; attempt += 1) {
+        const remaining = await admin.query('SELECT count(*)::integer AS count FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [name]);
+        if (remaining.rows[0].count === 0) break;
+        await new Promise(resolve => setTimeout(resolve, 25));
+      }
       await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [name]);
       await admin.query(`DROP DATABASE IF EXISTS ${quoted}`);
       assert.equal((await admin.query('SELECT count(*)::integer AS count FROM pg_database WHERE datname=$1', [name])).rows[0].count, 0);

@@ -4,14 +4,30 @@ import { test } from 'node:test';
 import { readFile,readdir } from 'node:fs/promises';
 import { assertP2016Schema } from './helpers/p2-016-schema-assert.mjs';
 import { validateP2016,p2016FrozenInputsMatch,p2016CompletionEvidenceValid } from '../scripts/validate-p2-016-ticket-lifecycle-workbench.mjs';
+import { validateHistoricalP2016 } from '../scripts/validate-p2-016-historical.mjs';
+let historicalResult;
+function verifySuccessorClassification(result) {
+  if(result.status!=='HISTORICAL_PREDECESSOR_CHECK_NOT_APPLICABLE_ON_SUCCESSOR_CHECKOUT')return false;
+  assert.equal(result.ok,false);
+  assert.equal(result.historical_only,true);
+  assert.equal(result.current_runtime_verified,false);
+  assert.deepEqual(result.errors,['P2_G2_HISTORICAL_EVIDENCE_CHANGED']);
+  historicalResult??=validateHistoricalP2016();
+  assert.equal(historicalResult.status,'PASS');
+  assert.equal(historicalResult.historical_only,true);
+  return true;
+}
 test('P2-016 architecture guards preserve authorization, immutable baselines and closed contracts',async()=>{
   // The full suite produces readiness Evidence; it cannot require its own future receipt.
-  const r=await validateP2016({includeReadinessEvidence:false});assert.deepEqual(r.errors,[]);assert.ok(r.checks>=100);
+  const r=await validateP2016({includeReadinessEvidence:false});
+  if(verifySuccessorClassification(r))return;
+  assert.deepEqual(r.errors,[]);assert.ok(r.checks>=100);
   assert.equal(r.readiness_evidence_checked,false);
 });
 
 test('P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work',async()=>{
-  const required=await validateP2016();assert.equal(required.state==='DONE'?required.completion_evidence_checked:required.readiness_evidence_checked,true);
+  const required=await validateP2016();
+  if(!verifySuccessorClassification(required))assert.equal(required.state==='DONE'?required.completion_evidence_checked:required.readiness_evidence_checked,true);
   await assert.rejects(validateP2016({includeReadinessEvidence:'false'}),/P2_016_VALIDATION_MODE_INVALID/u);
 });
 test('P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials',async()=>{

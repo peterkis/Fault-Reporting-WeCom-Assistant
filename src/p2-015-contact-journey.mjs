@@ -8,6 +8,9 @@ import {
   snapshotP2015Json,
 } from './p2-015-domain-contracts.mjs';
 
+import { deepFreeze } from './p2-007-domain-utils.mjs';
+import { snapshotReporterProfile, snapshotReporterProfileEnvelope, hashReporterProfile } from './p2-015-reporter-profile.mjs';
+
 const ENTRY_CHANNEL = Object.freeze({
   GROUP_MENTION_INLINE: 'WECOM_GROUP',
   GROUP_MENTION_TO_DIRECT_GUIDED: 'WECOM_GROUP',
@@ -26,12 +29,12 @@ export function createReporterDirectoryPort({ resolveProfile, timeoutMs = 500 } 
       try {
         const pending = Promise.resolve().then(() => resolveProfile(snapshotP2015Json(input), { signal: controller.signal }))
           .finally(() => { inFlight = false; });
-        const result = snapshotP2015Json(await Promise.race([pending, new Promise(resolve => {
+        const result = snapshotReporterProfileEnvelope(await Promise.race([pending, new Promise(resolve => {
           timer = setTimeout(() => { controller.abort(); resolve({ status: 'DEFERRED' }); }, timeoutMs);
-        })]));
+        })]), 'snapshot');
         if (!['RESOLVED', 'DEFERRED', 'NOT_FOUND', 'NOT_REQUIRED'].includes(result.status)) failP2015(P2_015_ERROR_CODES.inputInvalid);
-        const snapshot = result.status === 'RESOLVED' ? snapshotP2015Json(result.snapshot ?? {}) : {};
-        return freezePublic({ status: result.status, snapshot });
+        const snapshot = result.status === 'RESOLVED' ? (result.snapshot ?? {}) : {};
+        return deepFreeze({ status: result.status, snapshot });
       } catch (error) {
         if (error?.code === P2_015_ERROR_CODES.inputInvalid) throw error;
         return freezePublic({ status: 'DEFERRED', snapshot: {} });
@@ -78,7 +81,7 @@ export function createContactJourneyStore() {
   return Object.freeze({
     async ensureJourney({ transaction, input }) {
       if (!transaction?.query) failP2015(P2_015_ERROR_CODES.storageFailed);
-      const value = snapshotP2015Json(input);
+      const value = snapshotReporterProfileEnvelope(input);
       if (!P2_015_ENTRY_MODES.includes(value.entry_mode)) failP2015(P2_015_ERROR_CODES.inputInvalid);
       const originChannel = ENTRY_CHANNEL[value.entry_mode];
       const creationKey = `journey_v1_${safeHash({ intake: value.origin_intake_id, entry_mode: value.entry_mode })}`;
@@ -98,8 +101,8 @@ export function createContactJourneyStore() {
         }
         return publicJourney(row, true);
       }
-      const profileSnapshot = snapshotP2015Json(value.profile_snapshot ?? {});
-      const profileHash = safeHash(profileSnapshot);
+      const profileSnapshot = snapshotReporterProfile(value.profile_snapshot ?? {});
+      const profileHash = hashReporterProfile(profileSnapshot);
       const inserted = await transaction.query(
         `INSERT INTO intake.contact_journey (
            creation_key, origin_intake_id, origin_session_id, current_session_id, linked_ticket_id,

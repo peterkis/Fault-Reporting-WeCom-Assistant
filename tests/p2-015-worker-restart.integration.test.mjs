@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { createRuleEngine } from '../src/p2-007-rule-engine.mjs';
 import { createPilotTicketCore } from '../src/p1-005-pilot-ticket-core.mjs';
 import { createDecisionStore } from '../src/p2-015-decision-store.mjs';
@@ -32,8 +33,8 @@ function waitLine(child, timeout = 20_000) {
 function waitExit(child) { return new Promise((resolve) => child.once('exit', (code, signal) => resolve({ code, signal }))); }
 
 function startChild(mode, isolated, intakeId) {
-  return spawn(process.execPath, [childUrl.pathname.slice(1).replace(/^\/[A-Za-z]:/u, (value) => value.slice(1)), mode, intakeId ?? ''], {
-    cwd: new URL('..', import.meta.url).pathname.slice(1), env: { ...process.env, PILOT_DATABASE_URL: isolated },
+  return spawn(process.execPath, [fileURLToPath(childUrl), mode, intakeId ?? ''], {
+    cwd: fileURLToPath(new URL('..', import.meta.url)), env: { ...process.env, PILOT_DATABASE_URL: isolated },
     stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
   });
 }

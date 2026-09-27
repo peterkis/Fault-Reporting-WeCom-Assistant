@@ -215,7 +215,7 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake
   send({ type: 'role-ready', role: 'GATEWAY', authenticated, pool_max: 1 });
 }
 
-export async function runWorker({extensionFactory=null,reportCycleHealth=false}={}) {
+export async function runWorker({extensionFactory=null,reportCycleHealth=false,beforeReady=null}={}) {
   const enabled = truth('P2_G1_SENDER_ENABLED');
   const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
@@ -223,6 +223,8 @@ export async function runWorker({extensionFactory=null,reportCycleHealth=false}=
     connectionTimeoutMillis: 2_000,
     application_name: 'p2_g1_worker',
   });
+  try { await beforeReady?.({pool}); }
+  catch(error) { await pool.end(); throw error; }
   const metrics = createP2G1ProcessMetrics({ role: 'WORKER' });
   const pending = new Map();
   const sender = Object.freeze({

@@ -1,0 +1,201 @@
+{
+  "schema_version": "third-party-staff-info-sync-verification-v1",
+  "run_id": "a5fb3c06-674f-4d9c-bf80-c57b0b410412",
+  "environment": "formal",
+  "base_url": "https://rd-api.mobimedical.cn/8024",
+  "protocol": "application/x-www-form-urlencoded",
+  "started_at": "2026-09-26T14:08:31.310Z",
+  "candidate": {
+    "git_sha": "a077e1f53fda09a371313ba0c3be56a60adbb39d",
+    "node_version": "v24.19.0",
+    "docx_sha256": "6ac357c28b8ecabea6490c8ddcf6e12b930e9bda12fcf9090dded7c4d7ae023c"
+  },
+  "configuration": {
+    "key_configured": true,
+    "same_key_explicitly_requested": true,
+    "raw_key_recorded": false
+  },
+  "request_summary": {
+    "token": {
+      "http_status": 200,
+      "result": "TRUE",
+      "provider_error_code": null,
+      "elapsed_ms": 196
+    },
+    "full_tree": {
+      "http_status": 200,
+      "result": "TRUE",
+      "response_bytes": 691832,
+      "elapsed_ms": 877
+    },
+    "repeat_full_tree": {
+      "http_status": 200,
+      "result": "TRUE",
+      "response_bytes": 691832,
+      "elapsed_ms": 735
+    },
+    "user_detail_calls": {
+      "count": 20,
+      "success_count": 20,
+      "all_http_status_200": true
+    }
+  },
+  "organization_tree": {
+    "department_count": 333,
+    "user_count": 4290,
+    "max_depth": 4,
+    "duplicate_department_ids": 0,
+    "cycles": 0,
+    "invalid_nodes": 0,
+    "department_id_types": [
+      "string"
+    ],
+    "gid_types": [
+      "number"
+    ],
+    "field_stats": {
+      "user_id": {
+        "present": 4290,
+        "types": {
+          "string": 4290
+        }
+      },
+      "nickname": {
+        "present": 4290,
+        "types": {
+          "string": 4290
+        }
+      },
+      "phone": {
+        "present": 4290,
+        "types": {
+          "string": 4290
+        }
+      },
+      "tuishiben_id": {
+        "present": 4290,
+        "types": {
+          "string": 4290
+        }
+      },
+      "wecom_id": {
+        "present": 4290,
+        "types": {
+          "string": 4290
+        }
+      }
+    },
+    "structure_digest": "10fdcb9bef64bf510ed55a70c1698a537f7455c5a07d07f9fbe6a49dadd533ed",
+    "target_controls": {
+      "no_child": {
+        "target_had_children": true,
+        "returned_child_count": 0,
+        "passed": true
+      },
+      "get_user": {
+        "target_had_users": true,
+        "target_user_count": 106,
+        "with_get_user_returned_user_records": 106,
+        "without_get_user_returned_user_records": 0,
+        "passed": true
+      }
+    }
+  },
+  "user_details": {
+    "sample_cap": 20,
+    "selected_count": 20,
+    "omitted_sample_count": 234,
+    "success_count": 20,
+    "employee_id_match_count": 20,
+    "nickname_match_count": 20,
+    "phone_match_count": 20,
+    "user_id_match_count": 20,
+    "mismatches": 0,
+    "field_availability": {
+      "avatar": {
+        "present": 20,
+        "types": {
+          "string": 20
+        }
+      },
+      "employee_id": {
+        "present": 20,
+        "types": {
+          "string": 20
+        }
+      },
+      "nickname": {
+        "present": 20,
+        "types": {
+          "string": 20
+        }
+      },
+      "phoneno": {
+        "present": 20,
+        "types": {
+          "string": 20
+        }
+      },
+      "user_id": {
+        "present": 20,
+        "types": {
+          "string": 20
+        }
+      },
+      "sex": {
+        "present": 20,
+        "types": {
+          "string": 20
+        }
+      }
+    },
+    "avatar_https_count": 20
+  },
+  "negative_cases": {
+    "missing_key": {
+      "http_status": 200,
+      "result": "FALSE",
+      "provider_error_code": -1,
+      "status": "PASS"
+    },
+    "invalid_token": {
+      "http_status": 200,
+      "result": "FALSE",
+      "provider_error_code": -1,
+      "status": "PASS"
+    },
+    "unknown_uid": {
+      "http_status": 200,
+      "result": "FALSE",
+      "provider_error_code": -1,
+      "status": "PASS"
+    }
+  },
+  "repeatability": {
+    "same_structure_summary": true,
+    "same_identity_sets": true,
+    "changed_during_run": false
+  },
+  "protocol_differences": [
+    "JSON_COMPATIBILITY_NOT_RUN",
+    "GID_DOCUMENTED_STRING_OBSERVED_NUMBER"
+  ],
+  "safety": {
+    "raw_responses_persisted": false,
+    "raw_personal_values_persisted": false,
+    "token_persisted": false,
+    "database_touched": false,
+    "app_runtime_started": false,
+    "automatic_retry": false
+  },
+  "gate": {
+    "status": "PASS",
+    "scope": "formal_provider_interface_only",
+    "not_claimed": [
+      "production_release",
+      "person_data_retention_approval",
+      "P2_GATE_APPROVAL",
+      "WECOM_DIRECTORY_PERSISTENCE"
+    ]
+  }
+}
