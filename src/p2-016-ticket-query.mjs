@@ -4,6 +4,11 @@ import { getTicketActionTransitions } from './p1-006-ticket-state-actions.mjs';
 import { failP2016,guardP2016,uuidP2016,limitP2016,localP2016,cursorP2016,decodeCursorP2016,publicP2016 } from './p2-016-domain-contracts.mjs';
 
 const BROAD=p=>p.roles.some(r=>['ADMIN','DISPATCHER'].includes(r));
+const HISTORICAL_MEMBERSHIP_ROLES=Object.freeze({
+  WECOM_DIRECTORY:Object.freeze(['PRIMARY','SECONDARY','ROTATION']),
+  THIRD_PARTY_STAFF_DIRECTORY:Object.freeze(['MEMBER']),
+});
+const historicalMembershipRole=(source,role)=>HISTORICAL_MEMBERSHIP_ROLES[source]?.includes(role)?role:'UNKNOWN';
 export const ticketFieldsP2016=`t.id::text,t.ticket_no,t.request_type,t.status,t.priority,t.resolver_team_id,
  t.assignee_id::text,t.version,t.created_at,t.updated_at,t.source_intake_id::text AS intake_id`;
 export function ticketPredicateP2016(principal,start=1) {
@@ -93,7 +98,7 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
         name:string(snapshot.contact.name),userid:string(snapshot.contact.userid),
         mobile:string(snapshot.contact.mobile),telephone:string(snapshot.contact.telephone)}:null,
         departments:(Array.isArray(snapshot.memberships)?snapshot.memberships:[]).slice(0,20).map(m=>({
-          name:string(m?.name),department_ref:string(m?.department_ref),role:['PRIMARY','SECONDARY','ROTATION'].includes(m?.role)?m.role:'UNKNOWN'})),
+          name:string(m?.name),department_ref:string(m?.department_ref),role:historicalMembershipRole(snapshot.source,m?.role)})),
         ...(snapshot.source==='THIRD_PARTY_STAFF_DIRECTORY'?{sex:string(snapshot.sex)}:{}),fetched_at:string(snapshot.fetched_at)};
       if(snapshot.source!=='THIRD_PARTY_STAFF_DIRECTORY'||!directoryStore)return publicP2016(historical);
       let current=null;
