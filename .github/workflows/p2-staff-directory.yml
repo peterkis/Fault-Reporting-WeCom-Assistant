@@ -9,6 +9,9 @@ on:
       - 'scripts/p2-016-process-role.mjs'
       - 'scripts/p2-012-process-role.mjs'
       - 'scripts/p2-007-migrate.mjs'
+      - 'scripts/p2-g1-process-role.mjs'
+      - 'tests/p2-016-workbench-http.integration.test.mjs'
+      - 'tests/p2-016-schema-contract.test.mjs'
       - 'tests/p2-007-*.mjs'
       - 'tests/helpers/p2-007-*.mjs'
       - 'tests/p2-015-*.mjs'
@@ -61,6 +64,7 @@ jobs:
           node --test --test-concurrency=1 tests/p2-007-third-party-staff-directory.integration.test.mjs 2>&1 | tee "$RUNNER_TEMP/directory-review/postgres.txt"
           npm run test:p2:015 2>&1 | tee "$RUNNER_TEMP/directory-review/orchestration.txt"
           node --test tests/p2-016-schema-contract.test.mjs 2>&1 | tee "$RUNNER_TEMP/directory-review/p2016-scope.txt"
+          node --test --test-concurrency=1 tests/p2-016-workbench-http.integration.test.mjs tests/p2-016-live-cluster.integration.test.mjs 2>&1 | tee "$RUNNER_TEMP/directory-review/runtime.txt"
       - name: Architecture regression
         if: ${{ !cancelled() }}
         run: |

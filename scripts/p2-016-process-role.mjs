@@ -1,4 +1,4 @@
-import { createThirdPartyStaffDirectoryProcessOptions } from '../src/p2-007-third-party-staff-directory.mjs';
+import { createThirdPartyStaffDirectoryProcessOptions, requireStaffDirectorySchema } from '../src/p2-007-third-party-staff-directory.mjs';
 import { pathToFileURL } from 'node:url';
 import { runApp,runGateway,runWorker } from './p2-g1-process-role.mjs';
 import { createP2016Runtime } from '../src/p2-016-runtime.mjs';
@@ -45,7 +45,7 @@ export async function main(argv=process.argv.slice(2)){
     senderFactory:({pool,...options})=>createP2016WeComSender({...options,cardEnabled:true,reporterAccess:access(pool),
       origin:process.env.P2_016_REPORTER_ORIGIN,allowedHosts:process.env.P2_016_REPORTER_ALLOWED_HOSTS.split(',')}),
   });
-  return runWorker({extensionFactory:({pool})=>{
+  return runWorker({beforeReady:requireStaffDirectorySchema,extensionFactory:({pool})=>{
     const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access(pool)});
     const realtime=createP2016RealtimeProjector({pool,enabled:true});
     const orchestrator=createP2016OrchestrationWorker({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,notifications,realtime,identityHmacKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY});

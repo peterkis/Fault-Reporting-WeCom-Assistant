@@ -92,15 +92,14 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
       const row=q.rows[0],snapshot=row?.profile_snapshot;
       const string=value=>typeof value==='string'&&value.length>0&&value.length<=256?value:null;
       const url=value=>typeof value==='string'&&value.length>0&&value.length<=2048&&value.startsWith('https://')?value:null;
-      if(row?.profile_resolution_status!=='RESOLVED'||!['WECOM_DIRECTORY','THIRD_PARTY_STAFF_DIRECTORY'].includes(snapshot?.source)||!string(snapshot.version))
-        return publicP2016({status:'DEFERRED',contact:null,departments:[],fetched_at:null});
-      const historical={status:'RESOLVED',contact:snapshot.contact?{
+      const resolved=row?.profile_resolution_status==='RESOLVED'&&['WECOM_DIRECTORY','THIRD_PARTY_STAFF_DIRECTORY'].includes(snapshot?.source)&&string(snapshot.version);
+      const historical=!resolved?{status:'DEFERRED',contact:null,departments:[],fetched_at:null}:{status:'RESOLVED',contact:snapshot.contact?{
         name:string(snapshot.contact.name),userid:string(snapshot.contact.userid),
         mobile:string(snapshot.contact.mobile),telephone:string(snapshot.contact.telephone)}:null,
         departments:(Array.isArray(snapshot.memberships)?snapshot.memberships:[]).slice(0,20).map(m=>({
           name:string(m?.name),department_ref:snapshot.source==='THIRD_PARTY_STAFF_DIRECTORY'?null:string(m?.department_ref),role:historicalMembershipRole(snapshot.source,m?.role)})),
         ...(snapshot.source==='THIRD_PARTY_STAFF_DIRECTORY'?{sex:string(snapshot.sex)}:{}),fetched_at:string(snapshot.fetched_at)};
-      if(snapshot.source!=='THIRD_PARTY_STAFF_DIRECTORY'||!directoryStore)return publicP2016(historical);
+      if(!directoryStore||!row?.reporter_identity_hash||(resolved&&snapshot.source!=='THIRD_PARTY_STAFF_DIRECTORY'))return publicP2016(historical);
       let current=null;
       try { current=await directoryStore.findByReporterHash({source_scope:directorySourceScope,reporter_identity_hash:row.reporter_identity_hash}); }
       catch { current=null; }

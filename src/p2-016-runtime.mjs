@@ -25,6 +25,7 @@ import { createWeComOAuthHttp } from './p2-g2-wecom-oauth-http.mjs';
 import {createYxxMemberExtension} from './p2-g2-yixiaoxiu-server.mjs';
 import {reporterAccessPolicy,validateYxxEntryConfig,failYxx} from './p2-g2-yixiaoxiu-contract.mjs';
 import {createYxxSelfServiceExtension} from './yxx-self-service-runtime.mjs';
+import { staffDirectorySchemaReady } from './p2-007-third-party-staff-directory.mjs';
 
 // Explicit composition of the existing Workbench/API/SSE and Communication worker, not a second server.
 export function createP2016Runtime({pool,flags={},principalId,principalIds=null,publicOrigin,listenPort=0,
@@ -99,9 +100,10 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
               WHERE migration_id IN ('033_yxx_self_service_intake','034_yxx_self_service_direct_chat_check')`)).rowCount===2;}
             catch{selfServiceSchema=false;}
           }
-          const ready=base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema;
+          const directorySchema=!directoryStore||await staffDirectorySchemaReady(pool);
+          const ready=base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema;
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
-            checks:{...base.checks,p2_016_schema:schema,workbench_wecom_auth:workbenchAuthSchema,...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
+            checks:{...base.checks,p2_016_schema:schema,workbench_wecom_auth:workbenchAuthSchema,...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
         authenticatedHandler:async context=>(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
         unauthenticatedHandler:async context=>(await workbenchAuthentication?.unauthenticatedHandler?.(context))

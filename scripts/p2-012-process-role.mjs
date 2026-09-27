@@ -1,4 +1,4 @@
-import { createThirdPartyStaffDirectoryProcessOptions } from '../src/p2-007-third-party-staff-directory.mjs';
+import { createThirdPartyStaffDirectoryProcessOptions, requireStaffDirectorySchema } from '../src/p2-007-third-party-staff-directory.mjs';
 import { pathToFileURL } from 'node:url';
 import { runApp,runGateway,runWorker } from './p2-g1-process-role.mjs';
 import { createP2012Runtime,createP2012WorkbenchExtension } from '../src/p2-012-workbench-assembly.mjs';
@@ -55,7 +55,7 @@ export async function main(argv=process.argv.slice(2)){
       botId:process.env.WECOM_BOT_ID,cardEnabled:true,reporterAccess:access(pool),origin:process.env.P2_012_REPORTER_ORIGIN,
       allowedHosts:process.env.P2_012_REPORTER_ALLOWED_HOSTS.split(',')}),
   });
-  return runWorker({extensionFactory:({pool})=>createP2012WorkerExtension({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,reporterAccess:access(pool),
+  return runWorker({beforeReady:requireStaffDirectorySchema,extensionFactory:({pool})=>createP2012WorkerExtension({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,reporterAccess:access(pool),
     identityHashKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY,personDestinationAuthorizer:personAuthorizer(pool)})});
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await main().catch(()=>{

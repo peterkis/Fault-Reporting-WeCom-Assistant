@@ -4,6 +4,18 @@ import { createThirdPartyStaffDirectoryStore } from './p2-007-staff-directory-st
 import { createThirdPartyStaffDirectorySyncJob } from './p2-007-staff-directory-sync.mjs';
 import { createBotRawUidResolver, THIRD_STAFF_SOURCE } from './p2-007-staff-directory-contracts.mjs';
 
+export async function staffDirectorySchemaReady(pool) {
+  try {
+    return (await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='036_p2_007_third_party_staff_directory'")).rowCount === 1;
+  } catch { return false; }
+}
+
+export async function requireStaffDirectorySchema({ pool, env = process.env }) {
+  if (env.THIRD_STAFF_DIRECTORY_ENABLED === 'true' && !await staffDirectorySchemaReady(pool)) {
+    throw new Error('THIRD_STAFF_DIRECTORY_REQUIRES_036');
+  }
+}
+
 export function createThirdPartyStaffDirectory({
   pool,
   enabled = false,

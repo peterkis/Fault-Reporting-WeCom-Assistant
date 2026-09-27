@@ -8,6 +8,8 @@ import { createP2016Runtime } from '../src/p2-016-runtime.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
 import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
+import { migrateWorkbenchAuth } from '../scripts/p2-016-workbench-auth-migrate.mjs';
+import { migrateThirdPartyStaffDirectory } from '../scripts/p2-007-migrate.mjs';
 async function port(){const p=createServer();await new Promise(r=>p.listen(0,'127.0.0.1',r));const n=p.address().port;await new Promise(r=>p.close(r));return n;}
 test('P2-016 actual HTTP assembly: fail-closed flags, auth, CSRF, Ticket actions and durable SSE',async()=>{
   assert.deepEqual(await createP2016Runtime().start(),{disabled:true});
@@ -57,5 +59,16 @@ test('P2-016 actual HTTP assembly: fail-closed flags, auth, CSRF, Ticket actions
       assert.ok([401,403].includes((await get('/api/tickets')).status));
     }finally{abort.abort();await streamReader?.cancel().catch(()=>{});await runtime.stop();}
     assert.equal(runtime.server.listening,false);
+    const directoryRuntime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,principalId:principal.id,listenPort,externalSendEnabled:false,directoryStore:{}});
+    try {
+      await directoryRuntime.start();
+      const missing=await (await fetch(origin+'/health/ready')).json();
+      assert.equal(missing.base_service_ready,false);
+      assert.equal(missing.checks.third_staff_directory_schema,false);
+      await migrateWorkbenchAuth({databaseUrl});
+      await migrateThirdPartyStaffDirectory({databaseUrl});
+      const applied=await (await fetch(origin+'/health/ready')).json();
+      assert.equal(applied.checks.third_staff_directory_schema,true);
+    } finally { await directoryRuntime.stop(); }
   }});
 });

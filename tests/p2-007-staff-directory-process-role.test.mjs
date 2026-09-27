@@ -1,11 +1,11 @@
 import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 
-const pool = { query: async () => ({ rows: [], rowCount: 0 }), connect: async () => { throw new Error('unexpected database call'); } };
+const pool = { query: async () => ({ rows: [], rowCount: 1 }), connect: async () => { throw new Error('unexpected database call'); } };
 let appOptions, workerOptions;
 mock.module('../scripts/p2-g1-process-role.mjs', { namedExports: {
   runApp: options => options.runtimeFactory({ pool, publicOrigin: 'https://example.test' }),
-  runWorker: options => options.extensionFactory({ pool }),
+  runWorker: async options => { await options.beforeReady?.({pool}); return options.extensionFactory({ pool }); },
   runGateway: () => 'gateway',
 } });
 mock.module('../src/p2-016-runtime.mjs', { namedExports: {

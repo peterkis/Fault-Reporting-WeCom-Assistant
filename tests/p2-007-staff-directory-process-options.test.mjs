@@ -1,6 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createThirdPartyStaffDirectoryProcessOptions as options } from '../src/p2-007-third-party-staff-directory.mjs';
+import { staffDirectorySchemaReady, requireStaffDirectorySchema } from '../src/p2-007-third-party-staff-directory.mjs';
+
+test('enabled directory requires the local 036 marker before Worker readiness', async () => {
+  const missing={query:async()=>({rowCount:0})};
+  const applied={query:async sql=>{assert.match(sql,/036_p2_007_third_party_staff_directory/);return {rowCount:1};}};
+  assert.equal(await staffDirectorySchemaReady(missing),false);
+  assert.equal(await staffDirectorySchemaReady({query:async()=>{throw new Error('offline');}}),false);
+  assert.equal(await staffDirectorySchemaReady(applied),true);
+  await assert.rejects(requireStaffDirectorySchema({pool:missing,env:{THIRD_STAFF_DIRECTORY_ENABLED:'true'}}),/REQUIRES_036/);
+  await requireStaffDirectorySchema({pool:applied,env:{THIRD_STAFF_DIRECTORY_ENABLED:'true'}});
+  await requireStaffDirectorySchema({pool:{query:()=>{throw new Error('must not query');}},env:{}});
+});
 
 const env = { THIRD_STAFF_DIRECTORY_ENABLED: 'true', THIRD_STAFF_DIRECTORY_ROOT_ID: 'synthetic-root', THIRD_STAFF_INFO_SYNC_KEY: 'synthetic-key' };
 const unexpected = () => { throw new Error('unexpected directory construction'); };
