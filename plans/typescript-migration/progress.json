@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
+  "source_tree": "42201d12279dc9c95b64912f13cc72284388c514",
+  "current_batch": "T00",
+  "current_execution_status": "BASELINE_INCOMPLETE",
+  "policy_files": "PREPARED_FOR_DRAFT_REVIEW",
+  "completed_batches": [],
+  "batches": {
+    "T00": "PLANNED", "T01": "PLANNED", "T02": "PLANNED", "T03-01": "PLANNED",
+    "T04-01": "PLANNED", "T04-02": "PLANNED", "T04-03": "PLANNED", "T04-04": "PLANNED", "T04-05": "PLANNED",
+    "T05-01": "PLANNED", "T05-02": "PLANNED", "T05-03": "PLANNED", "T05-04": "PLANNED", "T05-05": "PLANNED", "T05-06": "PLANNED", "T05-07": "PLANNED", "T05-08": "PLANNED",
+    "T06-01": "PLANNED", "T06-02": "PLANNED",
+    "T07-01": "PLANNED", "T07-02": "PLANNED", "T07-03": "PLANNED", "T07-04": "PLANNED", "T07-05": "PLANNED", "T07-06": "PLANNED",
+    "T08-01": "PLANNED", "T08-02": "PLANNED",
+    "T09-01": "PLANNED", "T09-02": "PLANNED", "T09-03": "PLANNED", "T09-04": "PLANNED", "T09-05": "PLANNED",
+    "T10-01": "PLANNED", "T10-02": "PLANNED", "T10-03": "PLANNED", "T10-04": "PLANNED", "T10-05": "PLANNED",
+    "T11": "PLANNED", "T12": "PLANNED"
+  },
+  "next_batch": "T01",
+  "next_batch_authorized_to_start": false,
+  "required_before_next_batch": [
+    "Complete T00 Node24/PG18 baseline selection on a full authoritative checkout.",
+    "Run plan verify_baseline.py, current published-history preflight and unchanged current --require-ready; retain exact nonzero codes, never relabel archive/no-Git failures as known product readiness.",
+    "Complete policy self-review, independent review and authorized merge; then use the new main for T01."
+  ],
+  "migration_readiness": "NOT_STARTED",
+  "production_readiness": "NOT_CLAIMED",
+  "types": "NOT_APPLICABLE_T00",
+  "build": "NOT_APPLICABLE_T00",
+  "blocked_items": [
+    {"id": "ENV_NODE24_PG18", "status": "OPEN", "reason": "Session has Node22.16.0, no PostgreSQL server; DNS unavailable and offline npm install failed ENOTCACHED."},
+    {"id": "FULL_GIT_BASELINE", "status": "OPEN", "reason": "Authorized source artifact has exact main tree but no .git history; no fabricated clone/parents. Existing PR CI can verify published head identity, not execute the package-specific baseline tool."},
+    {"id": "CURRENT_STRICT_READINESS", "status": "OPEN", "reason": "Not executed on a full current source checkout. Frozen CI results are not substitutes."}
+  ],
+  "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence."
+}

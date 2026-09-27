@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "scope": "POLICY_BASELINE",
+  "batch_id": "T00",
+  "status": "BASELINE_INCOMPLETE",
+  "source_base": "9cb71da1370781670faedbc5a24668720e8df0be",
+  "source_tree": "42201d12279dc9c95b64912f13cc72284388c514",
+  "tested_representation": "EXACT_SOURCE_ARCHIVE_NOT_FULL_GIT_CHECKOUT",
+  "host": "ARCHIVE_SNAPSHOT_NOT_SOURCE_HOST",
+  "types": "NOT_APPLICABLE_T00",
+  "build": "NOT_APPLICABLE_T00",
+  "executed_checks": [
+    {
+      "id": "baseline-tool",
+      "command": [
+        "python",
+        "<PLAN_ROOT>/tools/verify_baseline.py",
+        "--repo",
+        "<ARCHIVE_ROOT>",
+        "--baseline",
+        "<PLAN_ROOT>/data/baseline.json",
+        "--mode",
+        "exact"
+      ],
+      "host": "ARCHIVE_SNAPSHOT_NOT_SOURCE_HOST",
+      "node_version": "v22.16.0",
+      "exit_code": 2,
+      "started_at": "2026-09-27T20:09:31.618325+00:00",
+      "finished_at": "2026-09-27T20:09:32.181387+00:00",
+      "log": "baseline-tool.txt",
+      "sha256": "b186e0974dc6070bdd89fd1fab9b9c49428469714fe5638085838b9d3ac6350b",
+      "log_distribution": "T00 accompanying verification archive; not frozen repository Evidence",
+      "reason": "BLOCKED_BASELINE: GIT_COMMAND_FAILED: rev-parse --show-toplevel; archive has no Git metadata."
+    },
+    {
+      "id": "architecture",
+      "command": [
+        "node",
+        "scripts/validate-v1-4-architecture.mjs"
+      ],
+      "host": "ARCHIVE_SNAPSHOT_NOT_SOURCE_HOST",
+      "node_version": "v22.16.0",
+      "exit_code": 0,
+      "started_at": "2026-09-27T20:09:32.181483+00:00",
+      "finished_at": "2026-09-27T20:09:32.216848+00:00",
+      "log": "architecture.txt",
+      "sha256": "ac1058ab8ed14699e2fa28e83e269153aa710adcaebb1dc701ffa9e6969c1981",
+      "log_distribution": "T00 accompanying verification archive; not frozen repository Evidence",
+      "counts": {
+        "architecture_checks": 407
+      }
+    },
+    {
+      "id": "platform-time",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "tests/platform-time-contract.test.mjs"
+      ],
+      "host": "ARCHIVE_SNAPSHOT_NOT_SOURCE_HOST",
+      "node_version": "v22.16.0",
+      "exit_code": 0,
+      "started_at": "2026-09-27T20:09:32.216894+00:00",
+      "finished_at": "2026-09-27T20:09:32.439205+00:00",
+      "log": "platform-time.txt",
+      "sha256": "60f4925a99ccd4ef97edae30f84e00144f1a57a7335bb5150fe486f3434db682",
+      "log_distribution": "T00 accompanying verification archive; not frozen repository Evidence",
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "todo": 0
+      }
+    },
+    {
+      "id": "directory-unit",
+      "command": [
+        "npm",
+        "run",
+        "test:p2:007"
+      ],
+      "host": "ARCHIVE_SNAPSHOT_NOT_SOURCE_HOST",
+      "node_version": "v22.16.0",
+      "exit_code": 1,
+      "started_at": "2026-09-27T20:09:32.439262+00:00",
+      "finished_at": "2026-09-27T20:09:34.481857+00:00",
+      "log": "directory-unit.txt",
+      "sha256": "955e04ef6555d8414b3ff95fca30f6ec10e7630bda93dfb9e6f54e45be7d892f",
+      "log_distribution": "T00 accompanying verification archive; not frozen repository Evidence",
+      "counts": {
+        "tests": 57,
+        "pass": 55,
+        "fail": 2,
+        "skipped": 0,
+        "cancelled": 0,
+        "todo": 0
+      },
+      "failure_class": "ENVIRONMENT_MODULE_LOAD_FAILURE",
+      "failure_code": "ERR_MODULE_NOT_FOUND",
+      "failed_entry_files": [
+        "tests/p2-007-staff-directory-process-role.test.mjs",
+        "tests/p2-007-third-party-current-profile-query.test.mjs"
+      ],
+      "reason": "pg dependency missing; failures are not reclassified as skipped tests or product bugs."
+    }
+  ],
+  "dependency_install": {
+    "command": "npm ci --ignore-scripts --no-audit --no-fund --offline",
+    "exit_code": 1,
+    "error_code": "ENOTCACHED",
+    "node_version": "v22.16.0",
+    "engine_requirement": ">=24 <25",
+    "log": "npm-offline.txt",
+    "log_sha256": "efbb3e9acf0c2b46fa9e1a005da3f871e1003d53a7e51dee9146316be312fe83"
+  },
+  "required_node24_pg18_selection": "NOT_RUN_REQUIRED_ENVIRONMENT",
+  "required_selection_manifest": "../baseline-tests.json",
+  "current_published_history_preflight": "NOT_RUN_IN_SESSION_FULL_GIT_ABSENT",
+  "current_strict_readiness": "NOT_RUN",
+  "frozen_p2016_historical_wrapper": "NOT_RUN_THIS_T00",
+  "online_pr_checks": "See exact-head PR CI and final status comment; these do not replace the missing directory PG baseline or current strict check.",
+  "self_review": "NOT_PASSED_REQUIRED_BASELINE_INCOMPLETE",
+  "codex_review": "NOT_REQUESTED_BEFORE_T00_GATES",
+  "new_type_escape_exceptions": [],
+  "runtime_files_changed": 0,
+  "dependency_files_changed": 0,
+  "next_batch_started": false,
+  "merge_authorized_by_this_receipt": false,
+  "production_approval": false,
+  "log_clock_note": "Execution timestamps are tool-observed UTC, not a production event clock or manually corrected date."
+}
