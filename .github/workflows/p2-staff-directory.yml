@@ -1,0 +1,60 @@
+name: P2 staff directory regression
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/p2-staff-directory.yml'
+      - 'src/p2-007-*.mjs'
+      - 'src/p2-015-*.mjs'
+      - 'src/p2-016-*.mjs'
+      - 'scripts/p2-016-process-role.mjs'
+      - 'scripts/p2-007-migrate.mjs'
+      - 'tests/p2-007-*.mjs'
+      - 'database/migrations/036*'
+      - 'web/admin-workbench-prototype/**'
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: directory_ci_only
+          POSTGRES_DB: directory_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PILOT_DATABASE_URL: postgresql://postgres:directory_ci_only@127.0.0.1:5432/directory_ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Current directory and orchestration regression
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/directory-review"
+          npm run test:p2:007 2>&1 | tee "$RUNNER_TEMP/directory-review/unit.txt"
+          node --test --test-concurrency=1 tests/p2-007-third-party-staff-directory.integration.test.mjs 2>&1 | tee "$RUNNER_TEMP/directory-review/postgres.txt"
+          npm run test:p2:015 2>&1 | tee "$RUNNER_TEMP/directory-review/orchestration.txt"
+      - name: Exact tracked source for this review
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/directory-review"
+          git rev-parse HEAD > "$RUNNER_TEMP/directory-review/source-sha.txt"
+          git archive --format=tar HEAD | gzip > "$RUNNER_TEMP/directory-review/source.tar.gz"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: directory-review-${{ github.run_id }}
+          path: ${{ runner.temp }}/directory-review/
+          retention-days: 1
