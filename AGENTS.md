@@ -233,3 +233,15 @@ phase3/unified-operations
 - 无期限双写或双状态所有权；
 - 以 2C4G 环境为由牺牲入站持久化、人工回复或可靠通知；
 - 未通过 Gate 就启用真实内网 Connector。
+
+
+## 11. TypeScript 增量迁移编码条款（T00）
+
+本迁移分支及本 PR 合并后的新增开发遵循 [ADR-0026](adr/0026_typescript_strict_incremental_migration.md)。执行入口为 [plans/typescript-migration/README.md](plans/typescript-migration/README.md)，本条不改写上文任何已完成状态、业务 Gate 或现场批准。
+
+- 活动后端目标为 Node.js 24 + TypeScript strict + ESM；源码 `.mts`、产物 `.mjs`，相对运行时导入保留 `.mjs`。新增生产 JS/MJS 禁止；现有文件的独立缺陷修复不构成新增模块豁免。
+- T00 只记录政策与基线，不安装编译依赖、不改 src/scripts/tests/SQL/Evidence、不改 package 文件。先完成 T01/T02 的管线和宿主验证，再迁移既有生产后缀。
+- 181 个主线目标及具体 legacy 文件以 scope.json 为准；测试入口与 helper 以 test-routing.json 为准。临时工具 JS 只能按具体路径、原因和删除阶段登记，当前例外为空，不开放目录级豁免。
+- strict 不得被 any、ts-ignore、ts-nocheck、as unknown as 或空检查范围替代；负向类型测试的 ts-expect-error 须有原因。运行时输入守卫、事务、身份、时间和哈希语义保持不变。
+- 源码、编译运行树、固定历史 checkout 分别验证；不得保留同名源码双实现、用源码跳板或回退源码掩盖缺失制品。旧 MJS 复制保持原字节，迁移模块只运行本次编译产物。
+- T00 缺必要基线时标 BASELINE_INCOMPLETE，types/build 标 NOT_APPLICABLE_T00；不得将历史结果或 Node 22 试跑当作当前 Node 24/PG18 基线。所有批次待真实验收与合并，不自动推进或部署。

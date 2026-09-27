@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "status": "POLICY_BASELINE_RECORDED",
+  "scope": "T00_POLICY_BASELINE_NOT_MIGRATION_OR_PRODUCTION_PASS",
+  "tested_head": "ae296330e742cffd810094d46c79c64acc6f05ce",
+  "tested_tree": "7e45acffcfe075f5e346cd83455c2e012cbb771c",
+  "original_main": "9cb71da1370781670faedbc5a24668720e8df0be",
+  "node_version": "v24.21.0",
+  "postgres_server_version_num": "180006",
+  "artifact": {
+    "run_id": 36359328367,
+    "workflow_commit": "bb042ddd8a4620139a2aa7e15a0ad5b361f83015",
+    "artifact_id": 10945495484,
+    "sha256": "f5c5c22299a4e557cc1992980e907ab01c3476b4dc1eace639c92552c1eef4c7",
+    "run_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/36359328367",
+    "archive_name": "T00-PR24-baseline-36359328367.zip",
+    "retention_days": 30,
+    "expires_at": "2026-10-27T23:38:56Z"
+  },
+  "original_plan_tool_sha256": "7b8eef7e97f402fcb2552e8b84029317a92b6cc553480dcc92e2f1520920832a",
+  "original_plan_baseline_sha256": "ebc5a39a46bfddbd1a61dd6c0a33e8bb3b3f9bedeaca41ebfc08d9f880510150",
+  "selected_file_count": 17,
+  "tests": 96,
+  "pass": 96,
+  "fail": 0,
+  "skipped": 0,
+  "cancelled": 0,
+  "todo": 0,
+  "checks": [
+    {"id": "node-version","exit_code": 0,"timed_out": false,"counts": {},"log": "node-version.txt","sha256": "f2ec568164f99546161909b0189b57bb5be3e80f8e2ccd8a51a4aed8c4055a04","host": "SOURCE_HOST"},
+    {"id": "npm-version","exit_code": 0,"timed_out": false,"counts": {},"log": "npm-version.txt","sha256": "005206ab803f8881d8227540b7980b37e723b69a8849edb31734a90b7e7964e2","host": "SOURCE_HOST"},
+    {"id": "plan-descendant","exit_code": 0,"timed_out": false,"counts": {},"log": "plan-descendant.txt","sha256": "4281e5a75548f9d0747a9230c81287d25faf5be3d80396806fcfa2895aed354f","host": "SOURCE_HOST"},
+    {"id": "published-history","exit_code": 0,"timed_out": false,"counts": {},"log": "published-history.txt","sha256": "ca2bcd4bc64d372e43d5eba6d8a184f53f61f459ab4c04fb86f51f6ccf547731","host": "SOURCE_HOST"},
+    {"id": "original-checkout","exit_code": 0,"timed_out": false,"counts": {},"log": "original-checkout.txt","sha256": "e0ac531caa465cb00de0fc36d8f034ee614d0e409764d7205bbbacdc03e0fb63","host": "SOURCE_HOST"},
+    {"id": "plan-exact","exit_code": 0,"timed_out": false,"counts": {},"log": "plan-exact.txt","sha256": "0c56cd338acf8a6769d152574d7f6a17315b24864492ef265890ab8997297312","host": "INITIAL_BASELINE_SOURCE_HOST"},
+    {"id": "install","exit_code": 0,"timed_out": false,"counts": {},"log": "install.txt","sha256": "fa049348664d767e6b6da0f568d812d846837b9e90877285f3a0d978500b8884","host": "SOURCE_HOST"},
+    {"id": "base-install","exit_code": 0,"timed_out": false,"counts": {},"log": "base-install.txt","sha256": "3b16619539051924e2b89b60906649f793d68b8b2132ffe62e4b13a533b8d3d3","host": "INITIAL_BASELINE_SOURCE_HOST"},
+    {"id": "pg-before","exit_code": 0,"timed_out": false,"counts": {},"log": "pg-before.txt","sha256": "4cf0fe20da0b8e29d4ad817e45be46beb973492ffc257e78474af9593f5f08af","host": "SOURCE_HOST"},
+    {"id": "directory-unit","exit_code": 0,"timed_out": false,"counts": {"tests": 59,"pass": 59,"fail": 0,"cancelled": 0,"skipped": 0,"todo": 0},"log": "directory-unit.txt","sha256": "9c30746afcfff6d92c9dde5b3b52a49a5c7112000f56daefbb0bc6b20ec49782","host": "SOURCE_HOST"},
+    {"id": "directory-pg","exit_code": 0,"timed_out": false,"counts": {"tests": 6,"pass": 6,"fail": 0,"cancelled": 0,"skipped": 0,"todo": 0},"log": "directory-pg.txt","sha256": "9916e0b955e5876e59d29ebd5faeb15db241a7e3a8f0dbe34dcb4225d700566b","host": "SOURCE_HOST"},
+    {"id": "orchestration","exit_code": 0,"timed_out": false,"counts": {"tests": 23,"pass": 23,"fail": 0,"cancelled": 0,"skipped": 0,"todo": 0},"log": "orchestration.txt","sha256": "2e1972ee773a96feeeeb831a7f9c1a35735684847e7a960f1f3e271e2b61ac0b","host": "SOURCE_HOST"},
+    {"id": "p2016-schema","exit_code": 0,"timed_out": false,"counts": {"tests": 6,"pass": 6,"fail": 0,"cancelled": 0,"skipped": 0,"todo": 0},"log": "p2016-schema.txt","sha256": "39fe19eaf0e3aff3bb4ece56794e929c01da90c2f28c3b0266e0baf931a4402f","host": "SOURCE_HOST"},
+    {"id": "p2016-runtime","exit_code": 0,"timed_out": false,"counts": {"tests": 2,"pass": 2,"fail": 0,"cancelled": 0,"skipped": 0,"todo": 0},"log": "p2016-runtime.txt","sha256": "003a53367556653bbcd5d2b3995e46f5fcfa221560801e38b2b6ce63de84c2cf","host": "SOURCE_HOST"},
+    {"id": "architecture","exit_code": 0,"timed_out": false,"counts": {},"log": "architecture.txt","sha256": "ac1058ab8ed14699e2fa28e83e269153aa710adcaebb1dc701ffa9e6969c1981","host": "SOURCE_HOST"},
+    {"id": "current-strict","exit_code": 1,"timed_out": false,"counts": {},"log": "current-strict.txt","sha256": "a79943a56ae3496244750c6a200a69638878b913d5de063b476b936f050c1665","host": "SOURCE_HOST"},
+    {"id": "base-strict","exit_code": 1,"timed_out": false,"counts": {},"log": "base-strict.txt","sha256": "a79943a56ae3496244750c6a200a69638878b913d5de063b476b936f050c1665","host": "INITIAL_BASELINE_SOURCE_HOST"},
+    {"id": "current-strict-diagnostic","exit_code": 1,"timed_out": false,"counts": {},"log": "current-strict-diagnostic.txt","sha256": "990586aa7f1d7b45f7b415914e8edfeb64de210a22059be1fe5b94058824077f","host": "SOURCE_HOST"},
+    {"id": "base-strict-diagnostic","exit_code": 1,"timed_out": false,"counts": {},"log": "base-strict-diagnostic.txt","sha256": "674cf217e8421179a57b16b2d2864de024b15dba351e2092115bedb91d7df75e","host": "INITIAL_BASELINE_SOURCE_HOST"},
+    {"id": "p2016-historical","exit_code": 0,"timed_out": false,"counts": {},"log": "p2016-historical.txt","sha256": "4ba0117c8abc0b2b8d13f3cda62d3e97cc8d80aa1c6372f9c3f20ae05c35210d","host": "SOURCE_HOST"},
+    {"id": "pg-after","exit_code": 0,"timed_out": false,"counts": {},"log": "pg-after.txt","sha256": "4cf0fe20da0b8e29d4ad817e45be46beb973492ffc257e78474af9593f5f08af","host": "SOURCE_HOST"},
+    {"id": "final-tracked-integrity","exit_code": 0,"timed_out": false,"counts": {},"log": "final-tracked-integrity.txt","sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","host": "SOURCE_HOST"},
+    {"id": "original-worktree-removal","exit_code": 0,"timed_out": false,"counts": {},"log": "original-worktree-removal.txt","sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","host": "SOURCE_HOST"}
+  ],
+  "strict_readiness": {
+    "status": "KNOWN_BASELINE_NOT_READY",
+    "cli_output": {
+      "ok": false,
+      "error_code": "YXX_VERIFICATION_REJECTED"
+    },
+    "current_exit_code": 1,
+    "base_exit_code": 1,
+    "current_guard_code": "YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+    "base_guard_code": "YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+    "guard_site": "src/yxx-self-service-verification.mjs:160:7",
+    "interpretation": "Both complete authoritative checkouts reject at the unchanged local-scope guard. This is not a passed current strict gate. No Evidence, migration, state or validator was changed."
+  },
+  "historical": {
+    "entry": "npm run validate:p2:016:historical",
+    "status": "PASS",
+    "historical_only": true,
+    "frozen_ref": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
+    "checkout_line_ending_policy": "core.autocrlf=true"
+  },
+  "isolated_cleanup": {
+    "other_databases": 0,
+    "other_client_backends": 0,
+    "original_worktree_removed": true
+  },
+  "policy_scope": {
+    "runtime_and_protected_paths_unchanged": true,
+    "scope_json_unchanged": true,
+    "test_routing_json_unchanged": true,
+    "validation_workflow_in_pr": false,
+    "types": "NOT_APPLICABLE_T00",
+    "build": "NOT_APPLICABLE_T00"
+  },
+  "final_head_note": "This immutable run describes tested_head, not every future head. Final-head execution, self-review, Codex review and merge must be verified from PR #24 and its referenced exact-head runs. Do not promote this record to independent review approval."
+}
