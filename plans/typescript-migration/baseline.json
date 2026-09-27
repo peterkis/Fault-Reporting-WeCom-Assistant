@@ -37,8 +37,10 @@
     {"name": "test_inventory", "count": 207, "missing_paths": []}
   ],
   "full_git_history_in_session": false,
-  "history_identity": "NOT_ATTESTED_BY_ARCHIVE",
-  "baseline_status": "BASELINE_INCOMPLETE",
+  "history_identity": "FULL_GITHUB_CHECKOUT_VERIFIED_ONLINE",
+  "baseline_status": "POLICY_BASELINE_RECORDED",
   "compiler": "NOT_APPLICABLE_T00",
-  "build": "NOT_APPLICABLE_T00"
+  "build": "NOT_APPLICABLE_T00",
+  "online_verification": {"record": "verification/T00-baseline.json","tested_head": "ae296330e742cffd810094d46c79c64acc6f05ce","full_git_history": true,"plan_exact_exit": 0,"plan_descendant_exit": 0,"published_history_exit": 0,"node_version": "v24.21.0","postgres_major": 18,"selected_files": 17,"tests_passed": 96,"current_strict_readiness": "KNOWN_BASELINE_NOT_READY"},
+  "archive_limitations_note": "full_git_history_in_session=false describes the original local archive only. The separate online SOURCE_HOST execution is recorded above; older environment failures remain in Git history."
 }

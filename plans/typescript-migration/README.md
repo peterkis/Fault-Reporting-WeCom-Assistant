@@ -1,6 +1,6 @@
 # TypeScript 迁移 · T00 政策与基线
 
-**状态：BASELINE_INCOMPLETE；本 PR 为可审阅草案，不是 T00 验收通过。**
+**状态：POLICY_BASELINE_RECORDED；T00 必要基线已实际记录，最终自审、Codex 复审与合并状态以 PR #24 为准。**
 本次只执行用户授权的 T00；T01 及以后未开始。运行源码、依赖、SQL、历史 Evidence、现有 workflow 和业务阶段状态均不修改。
 
 ## 1. 读取顺序与事实源
@@ -13,16 +13,16 @@
 | [baseline.json](baseline.json) | 外部获取的 main SHA、tree、计划与归档来源、2072 个文件的内容核对 |
 | [scope.json](scope.json) | 181 个命名目标、34 个文件批次、G0 和现有脚本保留边界 |
 | [test-routing.json](test-routing.json) | 207 个测试入口、42 个支持文件、宿主分类初稿；不是可执行路由 |
-| [baseline-tests.json](baseline-tests.json) | 当前人员目录 CI 的 17 个测试文件选择集及缺失环境 |
-| [progress.json](progress.json) | 全部批次 PLANNED；当前只准备 T00，禁止越过未完成门禁 |
-| [receipts/T00.json](receipts/T00.json) | 会话隔离副本的实际执行结果、失败和未执行项 |
+| [baseline-tests.json](baseline-tests.json) | 固定的 17 个测试文件选择集及本轮实际结果 |
+| [progress.json](progress.json) | T00 基线已记录；其余批次 PLANNED，T01 未开始 |
+| [receipts/T00.json](receipts/T00.json) | 本轮完整 SOURCE_HOST 执行及原失败回执的精确引用 |
 
 上游交付包：`WeCom_TypeScript_Migration_Plan_v1_20260927.zip`，其 SHA-256 与两份提示词摘要记录于 baseline.json。
 完整原计划未复制进仓库，以避免把 39 份提示词和所有历史清单重复当成实施产物；后续仍从该 ZIP 的 `prompts/00_DISPATCHER.md`、对应阶段提示词及 `tools/verify_baseline.py` 读取。解压在仓库外，记该根目录为 PLAN_ROOT。
 
 权威起点是 GitHub main `9cb71da1370781670faedbc5a24668720e8df0be`，tree `42201d12279dc9c95b64912f13cc72284388c514`。
 本批内容盘点使用 PR #23 最终 CI 的 `fe69cac7...` 源码归档；全部 Git blob 和 tree 与 main 一致。
-**这证明文件内容一致，不证明无 Git 的归档具有真实祖先链或能通过当前 readiness。** 用户本机和生产服务器未被访问。
+最初归档只证明文件内容一致；本轮另外在完整 Git checkout 执行了原计划核验器及原历史身份预检，未用同 tree 冒充祖先。用户本机和生产服务器未被访问。
 
 ## 2. 当前已完成与未完成
 
@@ -30,18 +30,33 @@
 `tests/` 下 247 个 MJS 中，205 个为测试入口、42 个为支持文件；再加 `.github/review/` 下 2 个测试入口，合计 207。
 G0 不是全部脱离运行：`g0-002-sdk-lifecycle.mjs` 的 logger 仍在 Gateway 链路中，T05 必须验证其窄类型边界。
 
-会话实际环境为 Node 22.16.0，不满足 Node 24。无 PostgreSQL 18；离线锁定依赖安装返回 ENOTCACHED。
-架构检查 407 项通过、时间契约 4/4 通过；目录试跑报告 57 项中 55 通过、2 个文件因缺少 pg 加载失败。
-随包 Git 核验器在无 .git 的归档上返回 BLOCKED_BASELINE，未制造临时父提交或伪造真实 checkout。
-这些只属于 **ARCHIVE_SNAPSHOT 的诊断记录**，不是本 PR 的 Node24/PG18 基线通过。
+### 本轮已补齐的执行
 
-当前缺项：完整 Git 上的原计划 baseline 工具、Node24/PG18 下的 17 文件选择集、当前版本的 --require-ready、P2-016 独立历史入口。
-现有 SS009 PR workflow 可验证新 head 的身份和其选中的当前源码回归，并另外验证冻结历史对象；其结果在 PR 中关联真实 head。
-人员目录 workflow 使用源码路径过滤，不会由 T00 纯文档修改触发。不得修改源码、创建一次性写入工作流或扩大 T00 范围来诱导执行。
+验证运行 [36359328367](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/36359328367)；被测 PR 提交为 `ae296330e742cffd810094d46c79c64acc6f05ce`，不是承载只读验证工具的 `bb042ddd...` 提交。
+完整结果与原始日志 SHA-256 见 [verification/T00-baseline.json](verification/T00-baseline.json)。
 
-## 3. 在合适环境补齐基线
+| 检查 | 实际结果 |
+|---|---|
+| 原计划工具：原 main exact / PR descendant | 均 exit 0；完整历史，工作树干净 |
+| 原发布对象身份预检 | exit 0，仅身份/祖先，不是 readiness |
+| Node24/PG18 的 17 文件选择集 | 59 + 6 + 23 + 6 + 2 = 96/96，零失败、零跳过 |
+| 架构检查 | 407 checks，exit 0 |
+| 当前原始 --require-ready | exit 1，YXX_VERIFICATION_REJECTED |
+| 原 main 的相同 --require-ready | 同样 exit 1；二者内部守卫均 YXX_LOCAL_VALIDATION_SCOPE_INVALID |
+| 原 P2-016 独立历史入口 | exit 0；原 8c332710... REF、core.autocrlf=true |
+| 隔离资源清理 | 其他数据库和客户端连接均为 0；原 main worktree 已移除 |
 
-以下是**后续执行步骤，不是本次已执行记录**。使用用户批准的隔离 Node24/PG18 环境和完整 Git checkout，不读取真实 .env.pilot、不连接正式 Provider。
+当前严格验收的实际结果保留为 **KNOWN_BASELINE_NOT_READY**，不是通过，也不是无环境而跳过。T00 的原任务要求如实记录已存在的非就绪结果，不允许为变绿重写冻结 Evidence、SQL 或验证器。types/build 为 NOT_APPLICABLE_T00。
+
+原会话 Node22 的目录加载失败、离线 ENOTCACHED 和归档无 Git 错误，仍保留在 `ae296330...:plans/typescript-migration/receipts/T00.json` 及原交付包中；这些旧失败没有被重标成通过。本轮必要执行缺口已闭合，96 项目标测试不代表全部 207 个测试入口或生产验收。
+
+验证工具仅位于不合入主线的 `codex/typescript-t00-validation-only` 分支，工作流权限为 contents/read 与 pull-requests/read。它通过 GitHub API 确认 PR head，再独立 checkout 被测对象；无正式密钥、真实 Provider 或写远端能力。本 PR 的 `.github/`、业务源码及原有 CI 均保持零变更。
+
+原始 ZIP：`T00-PR24-baseline-36359328367.zip`，artifact `10945495484`，SHA-256 为 `f5c5c22299a4e557cc1992980e907ab01c3476b4dc1eace639c92552c1eef4c7`。Actions 保留 30 天，已取回用于交接；需要长期复核时保存交付 ZIP，不依赖过期链接。最终记录提交仍须按新的真实 head 复跑并在 PR 回填，不能拿本次旧 head 记录套所有后继提交。
+
+## 3. 复核与后继提交的执行方式
+
+以下是可复用的复核步骤；本轮已执行结果以第 2 节及 verification 记录为准。使用用户批准的隔离 Node24/PG18 环境和完整 Git checkout，不读取真实 .env.pilot、不连接正式 Provider。
 日志写仓库外的 LOG_ROOT，保留原始 exit、测试计数、skipped、环境和外部确认的被测 SHA。不要把日志重写入冻结 Evidence。
 
 1. 读取 GitHub 当前 main 和本 PR head 的完整 SHA；检查当前分支、工作树、浅克隆和已有用户内容。未经授权不 reset、clean、stash、删除分支或更改生产配置。
@@ -72,9 +87,9 @@ npm run validate:p2:016:historical
 
 ## 4. 关闭本批与后续
 
-补齐环境基线后更新本目录的回执与 progress，仍不改原业务 backlog。
+本目录已记录必要环境基线，未改变原业务 backlog。文档更新后的最终 head 还须完成独立验证与审查，不能由回执自我批准。
 自审检查最终 diff 必须仅包含 T00 允许路径；types/build 是 NOT_APPLICABLE_T00，类型逃逸例外保持为空。
-提交后绑定实际 GitHub head 及相应 CI；满足 T00 门禁后再发起独立 `@codex review`。当前草案不宣称自审通过、外审通过或可合并。
+提交后绑定实际 GitHub head 及相应 CI；满足 T00 门禁后再发起独立 `@codex review`。自审/外审/合并状态由 PR #24 的真实记录确认，不由本文件预填。
 
 仅在 T00 基线记录完成、独立审查及用户授权合并之后，T01 才以新的 main 为起点。
 T01/T02 建立类型管线和测试宿主；T03 起才迁移既有模块。T00 的政策生效不代表编译器已经安装或有自动禁止 JS 的 CI。
@@ -82,4 +97,4 @@ T01/T02 建立类型管线和测试宿主；T03 起才迁移既有模块。T00 �
 ## 5. 回滚与边界
 
 未合并时保留草案及日志，不推进下一批。已合并后只通过独立 revert PR 回滚本政策，不重写用户历史、不清理用户目录。
-不自动合并、部署、发送企业微信消息、访问正式人员接口或写生产库；不改变开关、资源上限、唯一 Ticket Core 和任何现场批准。
+本次用户授权仅在 T00 门禁、自审和 Codex 复审满足后合并 PR #24；未满足条件时不得合并。不部署、发送企业微信消息、访问正式人员接口或写生产库；不改变开关、资源上限、唯一 Ticket Core 和任何现场批准。
