@@ -70,7 +70,7 @@ test('current directory replacement keeps bindings usable and exposes only curre
 
 test('failed publication rolls back; reused IDs and removed members cannot inherit profiles or active bindings', async () => {
   assert.ok(databaseUrl, 'PILOT_DATABASE_URL is required');
-  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'p2007identity', run: async ({ pool, databaseUrl: isolated }) => {
+  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'p2007id', run: async ({ pool, databaseUrl: isolated }) => {
     await prepare({ pool, databaseUrl: isolated });
     const store = createThirdPartyStaffDirectoryStore({ pool });
     const key = { source_scope: 'FORMAL', reporter_identity_hash: 'b'.repeat(64) };
@@ -105,7 +105,7 @@ test('failed publication rolls back; reused IDs and removed members cannot inher
 
 test('detail enrichment and publication share the source lock and preserve committed enrichment', async () => {
   assert.ok(databaseUrl, 'PILOT_DATABASE_URL is required');
-  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'p2007concurrent', run: async ({ pool, databaseUrl: isolated }) => {
+  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'p2007race', run: async ({ pool, databaseUrl: isolated }) => {
     await prepare({ pool, databaseUrl: isolated });
     const store = createThirdPartyStaffDirectoryStore({ pool });
     await store.publishSnapshot({ source_scope: 'FORMAL', root_ref: 'root', snapshot: snapshot('a'.repeat(64)) });
