@@ -173,7 +173,8 @@ export function createThirdPartyStaffDirectoryStore({ pool } = {}) {
           sex=CASE WHEN existing.employee_id=EXCLUDED.employee_id THEN existing.sex ELSE NULL END,
           avatar_url=CASE WHEN existing.employee_id=EXCLUDED.employee_id THEN existing.avatar_url ELSE NULL END,
           employee_id=EXCLUDED.employee_id,nickname=EXCLUDED.nickname,phone=EXCLUDED.phone,
-          provider_wecom_id=EXCLUDED.provider_wecom_id,account_status=EXCLUDED.account_status,
+          provider_wecom_id=EXCLUDED.provider_wecom_id,
+          account_status=CASE WHEN existing.employee_id=EXCLUDED.employee_id THEN existing.account_status ELSE EXCLUDED.account_status END,
           snapshot_version=EXCLUDED.snapshot_version,fetched_at=EXCLUDED.fetched_at,updated_at=platform.local_now()`,
       [sourceScope, snapshot.snapshot_version, JSON.stringify(snapshot.members)]);
       await transaction.query(`INSERT INTO directory.membership_current(

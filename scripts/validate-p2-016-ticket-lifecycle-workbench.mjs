@@ -41,7 +41,15 @@ export async function validateP2016({includeReadinessEvidence=true}={}){
   if(typeof includeReadinessEvidence!=='boolean')throw new Error('P2_016_VALIDATION_MODE_INVALID');
   const errors=[];let checks=0;const check=(ok,message)=>{checks++;if(!ok)errors.push(message);};
   const state=JSON.parse(await read('plans/current_phase.json'));
-  if(isG2SuccessorState(state))return verifyG2Predecessor('P2-016',includeReadinessEvidence);
+  if(isG2SuccessorState(state)){
+    const result=verifyG2Predecessor('P2-016',includeReadinessEvidence);
+    // Preserve the strict failure and its evidence; classify only this known
+    // successor mismatch. The separate frozen checkout proves historical PASS.
+    if(result.errors?.length===1&&result.errors[0]==='P2_G2_HISTORICAL_EVIDENCE_CHANGED')
+      return {...result,status:'HISTORICAL_PREDECESSOR_CHECK_NOT_APPLICABLE_ON_SUCCESSOR_CHECKOUT',
+        current_runtime_verified:false,historical_validation_command:'npm run validate:p2:016:historical'};
+    return result;
+  }
   const successorActive=['P2_012_AUTHORIZED','P2_012_READY_FOR_TARGETED_LIVE_VALIDATION'].includes(state.implementation_authorization_status);
   const successorDone=state.implementation_authorization_status==='P2_012_DONE_AWAITING_P2_G2_AUTHORIZATION';
   const successor=successorActive||successorDone;

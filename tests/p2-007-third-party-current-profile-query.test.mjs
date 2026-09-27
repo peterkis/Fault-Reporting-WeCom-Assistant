@@ -30,10 +30,12 @@ test('ticket reporter contact separates historical report snapshot from current 
   });
   const result = await query.reporterContact({ authContext: {}, ticketId });
   assert.equal(result.contact.name, '报修时姓名');
-  assert.equal(result.departments[0].department_ref, 'dept-old');
+  assert.equal(result.departments[0].department_ref, null);
+  assert.equal(result.departments[0].name, '报修时部门');
   assert.equal(result.departments[0].role, 'MEMBER');
   assert.equal(result.current_profile.contact.name, '当前姓名');
-  assert.equal(result.current_profile.departments[0].department_ref, 'dept-new');
+  assert.equal(result.current_profile.departments[0].department_ref, null);
+  assert.doesNotMatch(JSON.stringify(result), /dept-old|dept-new/);
   assert.equal(result.current_profile.departments[0].role, 'MEMBER');
   assert.equal(result.current_profile.avatar_url, 'https://avatar.example.test/current');
 });

@@ -77,9 +77,11 @@ test('current directory replacement keeps bindings usable and exposes only curre
     assert.equal(saved.sex, '1');
     assert.equal(saved.avatar_url, 'https://avatar.example.test/a');
     assert.equal((await store.findByReporterHash({ source_scope: 'FORMAL', reporter_identity_hash: 'b'.repeat(64) })).provider_user_id, 'provider-user-a');
+    await pool.query("UPDATE directory.member_current SET account_status='INACTIVE' WHERE provider_user_id='provider-user-a'");
     await store.publishSnapshot({ source_scope: 'FORMAL', root_ref: 'root', snapshot: snapshot('c'.repeat(64), 'dept-b') });
     const current = await store.findByReporterHash({ source_scope: 'FORMAL', reporter_identity_hash: 'b'.repeat(64) });
     assert.equal(current.snapshot_version, 'c'.repeat(64));
+    assert.equal(current.account_status, 'INACTIVE');
     assert.equal(current.memberships[0].department_ref, 'dept-b');
     assert.equal(current.sex, '1');
     assert.equal(current.avatar_url, 'https://avatar.example.test/a');

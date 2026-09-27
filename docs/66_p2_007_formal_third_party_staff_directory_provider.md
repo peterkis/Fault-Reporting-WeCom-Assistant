@@ -149,6 +149,13 @@ uid=<ProviderUidResolver 输出>
 - 当前目录变化只影响 `reporter_current`；报修时快照 `reporter_at_report` 不被覆盖。
 - Provider 原始 ID、Bot ID、`open_userid`、查询 UID、Token 和 key 不进入公共投影、普通日志或 Evidence。
 
+人员目录中的部门引用及已存在的受限报修快照仅用于内部关联。工单联系人接口的第三方历史/当前部门仅输出名称、角色，`department_ref` 固定为 `null`；原有 WeCom 投影保持原契约。
+目录刷新对 `user_id` 和工号同时相同的人员保留性别、头像和账号状态；标识复用时清除增强资料、账号状态恢复 `UNKNOWN`，旧绑定保持 `STALE`。
+
+当前 successor 的 P2-016 历史前置校验若只遇到 `P2_G2_HISTORICAL_EVIDENCE_CHANGED`，输出
+`HISTORICAL_PREDECESSOR_CHECK_NOT_APPLICABLE_ON_SUCCESSOR_CHECKOUT`，保留 `ok=false`、原错误与非零退出码。
+全量测试对此检查失败关闭语义，并实际运行独立固定历史 checkout；历史通过不赋予当前 readiness。
+
 ## 6. Provider 使用边界
 
 领域层只依赖窄 Port：
