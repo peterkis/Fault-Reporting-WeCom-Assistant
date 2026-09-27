@@ -1,7 +1,7 @@
 import { formatEpochMsToShanghaiLocal } from './platform/time-contract.mjs';
 import { createReporterDirectoryPort } from './p2-015-contact-journey.mjs';
 import { matchDirectoryProfile, THIRD_STAFF_SOURCE } from './p2-007-staff-directory-contracts.mjs';
-import { sha256Canonical } from './p2-007-domain-utils.mjs';
+import { hashReporterProfile } from './p2-015-reporter-profile.mjs';
 
 function reportSnapshot(current, detail = null, now) {
   const name = detail?.display_name ?? current.nickname ?? null;
@@ -17,7 +17,7 @@ function reportSnapshot(current, detail = null, now) {
     sex,
     memberships: Array.isArray(current.memberships) ? current.memberships : [],
   };
-  return { ...snapshot, version: `third-party-member-${sha256Canonical(snapshot)}` };
+  return { ...snapshot, version: `third-party-member-${hashReporterProfile(snapshot)}` };
 }
 
 export function createThirdPartyReporterDirectory({

@@ -1,3 +1,4 @@
+import { freezeReporterProfileEnvelope } from './p2-015-reporter-profile.mjs';
 import { createRuleEngine } from './p2-007-rule-engine.mjs';
 import { parseExplicitContinuation } from './p2-015-explicit-continuation.mjs';
 import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
@@ -263,8 +264,8 @@ export function createRuleFirstOrchestrator({ pool, identityHmacKey, directoryPo
     const profile = await directoryPort.resolve({ reporter_identity_hash: reporterHash, source: directorySource,
       source_namespace: preload.source_provider, source_provider: preload.source_provider,
       bot_id:preload.source_bot_id,reporter_external_id:preload.reporter_wecom_userid });
-    return freezePublic({ service_intake_id: preload.id, primary_message_id: preload.primary_message_id,
-      reporter_hash: reporterHash, profile });
+    return Object.freeze({ ...freezePublic({ service_intake_id: preload.id, primary_message_id: preload.primary_message_id,
+      reporter_hash: reporterHash }), profile: freezeReporterProfileEnvelope(profile, 'snapshot') });
   }
 
   return Object.freeze({ processPersistedIntake, preparePersistedIntake, processInTransaction });
