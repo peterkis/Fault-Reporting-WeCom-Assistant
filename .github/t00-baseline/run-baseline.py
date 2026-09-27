@@ -143,7 +143,13 @@ catch(e){console.log(JSON.stringify({ok:false,code:e.code??e.name,site:String(e.
     tests_ok = all(passed(r) and set(r['counts']) == {'tests','pass','fail','cancelled','skipped','todo'}
         and r['counts']['tests'] > 0 and r['counts']['pass'] == r['counts']['tests']
         and all(r['counts'][key] == 0 for key in ['fail','skipped','cancelled','todo']) for r in test_records)
-    strict_known = (strict['exit_code'] == base_strict['exit_code'] == 1
+    current_diagnostic = json.loads(output('current-strict-diagnostic'))
+    base_diagnostic = json.loads(output('base-strict-diagnostic'))
+    same_guard = (current_diagnostic.get('code') == base_diagnostic.get('code')
+        == 'YXX_LOCAL_VALIDATION_SCOPE_INVALID'
+        and current_diagnostic.get('site', '').rsplit('yxx-self-service-verification.mjs:', 1)[-1]
+        == base_diagnostic.get('site', '').rsplit('yxx-self-service-verification.mjs:', 1)[-1])
+    strict_known = (same_guard and strict['exit_code'] == base_strict['exit_code'] == 1
         and output('current-strict') == output('base-strict') == '{"ok":false,"error_code":"YXX_VERIFICATION_REJECTED"}'
         and not strict['timed_out'] and not base_strict['timed_out'])
     strict_ok = passed(strict) or strict_known
@@ -156,6 +162,7 @@ catch(e){console.log(JSON.stringify({ok:false,code:e.code??e.name,site:String(e.
         'tests':sum(r['counts'].get('tests',0) for r in test_records), 'commands':records,
         'current_strict_status':'PASS' if passed(strict) else 'KNOWN_BASELINE_NOT_READY' if strict_known else 'UNCLASSIFIED_FAILURE',
         'current_strict_exit':strict['exit_code'], 'base_strict_exit':base_strict['exit_code'],
+        'current_strict_guard':current_diagnostic.get('code'), 'base_strict_guard':base_diagnostic.get('code'),
         'no_runtime_or_frozen_changes':True, 'inventory_unchanged':True,
         'types':'NOT_APPLICABLE_T00','build':'NOT_APPLICABLE_T00','production_ready':False,
         'self_review':'NOT_PERFORMED_BY_RUNNER','external_review':'NOT_PERFORMED_BY_RUNNER','merge_approval':False}
