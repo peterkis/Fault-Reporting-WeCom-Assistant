@@ -25,3 +25,5 @@ The registry includes the initial 29 direct and 166 reverse-dependency files, th
 Read the exact-head PR/CI results and the accompanying external log archive for completion; this document does not self-certify a future head. Independent review and merge approval remain separate. Rollback is a dedicated revert PR covering tools, routes, source-host adaptations and current-test repairs together; there is no database migration or production activation to roll back.
 
 Browser screenshots and synthetic SS010 state directories live outside the verified runtime tree. SS007 native UI and SS009 capacity files have explicit 900-second whole-file budgets (original case timeouts and serial execution remain unchanged); the runner records the actual budget. Local diagnostic logs include preserved original timeouts and artifact-contamination failures; corrected checks do not erase them.
+
+The existing P2-G1 browser-session test launcher also discovers standard Linux Chrome/Chromium paths, matching the existing test harness. Its loopback restriction, cookies, headless options, telemetry and cleanup remain unchanged; this support-file change does not activate a live script.

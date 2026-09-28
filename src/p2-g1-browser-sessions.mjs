@@ -9,6 +9,8 @@ const BROWSER_CANDIDATES = Object.freeze([
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+  '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable',
+  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/opt/google/chrome/chrome',
 ]);
 
 const SAFE_REALTIME_EVENT_TYPES = Object.freeze([
