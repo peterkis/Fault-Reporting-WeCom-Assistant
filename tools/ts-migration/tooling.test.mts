@@ -59,8 +59,25 @@ test('T01 build and negative checks run on an owned full clone, never on user so
       assert.ok(config && typeof config === 'object');
       alter(root, relative, JSON.stringify({ ...config, include: ['tests/migration-canary.test.mts'] }), () => assert.throws(() => program(root, relative), /MIGRATION_UNCHECKED_TARGET/u));
     });
+    await t.test('new untyped production is rejected even if a current inventory edit calls it legacy', () => {
+      for (const relative of ['src/new-service.mjs', 'scripts/new-service.mjs', 'src/new-service.js', 'src/new-service.cjs']) {
+        alter(root, relative, 'export const untyped = true;', () => {
+          assert.throws(() => program(root, 'tsconfig.migration.json'), /MIGRATION_NEW_UNTYPED_PRODUCTION/u);
+          alter(root, 'plans/typescript-migration/scope.json', '{}', () => assert.throws(() => build(root), /MIGRATION_NEW_UNTYPED_PRODUCTION/u));
+          assert.equal(existsSync(path.join(root, '.build/artifact-proof.json')), false);
+        });
+      }
+    });
+    await t.test('parentheses, satisfies and angle assertions cannot disguise double casts', () => {
+      for (const expression of ['value as unknown as string', '(value as unknown) as string', '(((value as unknown))) as string',
+        '(value as unknown satisfies unknown) as string', '<string>(<unknown>value)']) {
+        alter(root, 'src/assertion-negative.mts', 'const value = 1; export const result = ' + expression + ';', () => {
+          assert.throws(() => program(root, 'tsconfig.migration.json'), /MIGRATION_TYPE_ESCAPE/u);
+        });
+      }
+    });
     await t.test('same logical MJS and MTS are rejected and stale success is removed', () => {
-      alter(root, 'src/migration-canary.mjs', 'export const duplicate = true;', () => {
+      alter(root, 'src/platform/time-contract.mts', 'export const duplicate = true;', () => {
         assert.throws(() => build(root), /MIGRATION_OUTPUT_COLLISION/u);
         assert.equal(existsSync(path.join(root, '.build/artifact-proof.json')), false);
         assert.equal(existsSync(path.join(root, '.build/runtime/build-manifest.json')), false);

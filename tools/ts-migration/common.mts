@@ -36,6 +36,24 @@ export function workspaceFiles(root: string): string[] {
   const raw = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8', windowsHide: true });
   return [...new Set(raw.split('\0').filter(Boolean))].filter(p => existsSync(path.join(root, p))).sort();
 }
+// T00 was independently reviewed and merged; current policy edits cannot silently
+// grow the set of JavaScript files grandfathered into the migration.
+const LEGACY_POLICY_BASE = '162ffe7651c97329ace63532bd1f9739cf03550a';
+export function assertProductionSources(root: string): void {
+  const policy = record(JSON.parse(git(root, ['show', LEGACY_POLICY_BASE + ':plans/typescript-migration/scope.json'])) as unknown);
+  const legacy = new Set([...Object.values(record(policy.migration_batches)).flatMap(strings),
+    ...strings(policy.legacy_g0), ...strings(policy.retained_existing_tooling)]);
+  for (const file of workspaceFiles(root).filter(f => /^(src|scripts)\//u.test(f) && /\.(?:[cm]?js|[cm]?ts|jsx|tsx)$/iu.test(f))) {
+    if (file.endsWith('.mts')) continue;
+    if (!file.endsWith('.mjs') || !legacy.has(file)) throw new Error('MIGRATION_NEW_UNTYPED_PRODUCTION: ' + file);
+  }
+}
+function unwrapAssertionOperand(node: ts.Expression): ts.Expression {
+  while (ts.isParenthesizedExpression(node) || ts.isSatisfiesExpression(node)) node = node.expression;
+  return node;
+}
+const isAssertion = (node: ts.Node): node is ts.AsExpression | ts.TypeAssertion => ts.isAsExpression(node) || ts.isTypeAssertionExpression(node);
+
 export function codeFiles(root: string): string[] {
   return workspaceFiles(root).filter(p => /^(src|scripts|tests)\/.+\.(mjs|mts)$/u.test(p) && !p.startsWith('tests/types/') && !p.endsWith('.d.mts'));
 }
@@ -53,6 +71,7 @@ export function resources(root: string): string[] {
 }
 export function outputPath(source: string): string { return source.endsWith('.mts') ? source.slice(0, -4) + '.mjs' : source; }
 export function mappings(root: string): { source: string; path: string; kind: OutputFile['kind'] }[] {
+  assertProductionSources(root);
   const outputs = new Map<string, { source: string; path: string; kind: OutputFile['kind'] }>();
   const add = (source: string, out: string, kind: OutputFile['kind']): void => {
     relativePath(source); relativePath(out);
@@ -94,6 +113,7 @@ export function parsedConfig(root: string, name: string): ts.ParsedCommandLine {
 }
 export const diagnosticHost = (root: string): ts.FormatDiagnosticsHost => ({ getCanonicalFileName: p => p, getCurrentDirectory: () => root, getNewLine: () => '\n' });
 export function program(root: string, name: string): ts.Program {
+  assertProductionSources(root);
   const locked = record(readJson(safeFile(root, 'package.json'))), dev = record(locked.devDependencies);
   if (dev.typescript !== ts.version || typeof dev['@types/node'] !== 'string' || !/^24\.\d+\.\d+$/u.test(dev['@types/node']) || typeof dev['@types/pg'] !== 'string' || !/^8\.\d+\.\d+$/u.test(dev['@types/pg'])) throw new Error('MIGRATION_COMPILER_VERSION_MISMATCH');
   const p = parsedConfig(root, name); const result = ts.createProgram(p.fileNames, p.options);
@@ -107,7 +127,7 @@ export function program(root: string, name: string): ts.Program {
     if (!source) throw new Error('MIGRATION_MISSING_TARGET');
     const visit = (node: ts.Node): void => {
       if (node.kind === ts.SyntaxKind.AnyKeyword || ts.isNonNullExpression(node)
-        || ts.isAsExpression(node) && ts.isAsExpression(node.expression)) throw new Error('MIGRATION_TYPE_ESCAPE: ' + f);
+        || isAssertion(node) && isAssertion(unwrapAssertionOperand(node.expression))) throw new Error('MIGRATION_TYPE_ESCAPE: ' + f);
       ts.forEachChild(node, visit);
     };
     visit(source);
