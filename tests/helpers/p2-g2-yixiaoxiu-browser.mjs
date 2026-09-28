@@ -14,9 +14,9 @@ import {entryConfig,entryKey,listenYxx,stopYxx} from './p2-g2-yixiaoxiu-fixture.
 import {launchSystemBrowser} from './p2-006-browser-harness.mjs';
 
 export async function createYxxBrowserFixture({pool,createApp=null}){
-  const directory=await mkdtemp(join(tmpdir(),'p2-g2-yxx-tls-'));
-  const openssl=['D:/Program Files/Git/usr/bin/openssl.exe','C:/Program Files/Git/usr/bin/openssl.exe'].find(existsSync);
+  const openssl=['D:/Program Files/Git/usr/bin/openssl.exe','C:/Program Files/Git/usr/bin/openssl.exe','/usr/bin/openssl','/bin/openssl','/usr/local/bin/openssl'].find(existsSync);
   if(!openssl)throw new Error('YXX_TEST_OPENSSL_REQUIRED');
+  const directory=await mkdtemp(join(tmpdir(),'p2-g2-yxx-tls-'));
   let proxy,app,origin,base,oauth,currentMember='synthetic-A',providerCalls=0,hold=false,authClock=Date.now();
   const codes=new Map(),held=[],sockets=new Set();
   let failTimeline=false,holdDetail=false;const heldDetail=[];
