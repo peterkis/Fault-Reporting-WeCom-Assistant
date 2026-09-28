@@ -166,10 +166,22 @@
     "test:yxx:ss:004": "node --test --test-concurrency=1 tests/yxx-ss-004-orchestration.integration.test.mjs",
     "test:yxx:ss:005": "node --test --test-concurrency=1 tests/yxx-ss-005-member-queries.integration.test.mjs",
     "test:yxx:ss:006": "node --test --test-concurrency=1 tests/yxx-ss-006-supplements-review.integration.test.mjs",
-    "test:yxx:ss:007": "node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs"
+    "test:yxx:ss:007": "node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs",
+    "migration:tools": "node --experimental-strip-types tools/ts-migration/bootstrap.mts",
+    "migration:typecheck": "npm run migration:tools && node .build/tools/gate.mjs types",
+    "migration:build": "npm run migration:tools && node .build/tools/build.mjs",
+    "migration:type-tests": "npm run migration:tools && node .build/tools/gate.mjs type-tests",
+    "migration:test": "node .build/tools/run-tests.mjs",
+    "migration:gate": "npm run migration:tools && node .build/tools/gate.mjs",
+    "migration:verify-artifact": "node .build/tools/verify-artifact.mjs"
   },
   "dependencies": {
     "@wecom/aibot-node-sdk": "1.0.6",
     "pg": "8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "@types/pg": "8.23.1",
+    "typescript": "5.9.3"
   }
 }

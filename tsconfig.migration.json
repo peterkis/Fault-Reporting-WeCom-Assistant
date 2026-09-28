@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./.build/emit",
+    "allowJs": true,
+    "checkJs": false
+  },
+  "include": [
+    "src/**/*.mts",
+    "scripts/**/*.mts",
+    "tests/**/*.mts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".build",
+    "web/admin-workbench-prototype",
+    "tests/types"
+  ]
+}

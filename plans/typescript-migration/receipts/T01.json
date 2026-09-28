@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "batch_id": "T01",
+  "base": "162ffe7651c97329ace63532bd1f9739cf03550a",
+  "scope": "STRICT_TOOLCHAIN_AND_SHADOW_BUILD",
+  "status": "IMPLEMENTED_PENDING_EXACT_HEAD_CI_AND_REVIEW",
+  "runtime_migrations": 0,
+  "compiler": "5.9.3",
+  "node_types": "24.19.0",
+  "pg_types": "8.23.1",
+  "local_environment": {
+    "node": "24.21.0",
+    "git": "FULL_MAIN_BUNDLE_FROM_READ_ONLY_ACTIONS",
+    "postgres": "NOT_AVAILABLE_LOCAL_USE_ISOLATED_CI"
+  },
+  "local_diagnostics": {
+    "tooling_tests": {
+      "tests": 19,
+      "pass": 19,
+      "fail": 0,
+      "skipped": 0
+    },
+    "directory_unit": {
+      "tests": 59,
+      "pass": 59,
+      "fail": 0,
+      "skipped": 0
+    },
+    "architecture_checks": 407,
+    "runtime_canary": {
+      "tests": 1,
+      "pass": 1
+    }
+  },
+  "required_remote": [
+    "Windows/Ubuntu strict compiler, negative fixtures and deterministic artifact",
+    "Node24/PG18 unchanged 17-file baseline",
+    "Current strict readiness failure remains separately recorded"
+  ],
+  "new_type_escape_exceptions": [],
+  "test_only_javascript_fixture": {
+    "path": "tests/fixtures/ts-migration/caller.mjs",
+    "reason": "Prove an unchanged-style MJS consumer can import an emitted MJS from typed source. Not a production module.",
+    "removal_stage": "T03 after equivalent typed-production coverage exists"
+  },
+  "self_review": "PENDING_FINAL_HEAD_COMMENT",
+  "codex_review": "NOT_REQUESTED",
+  "merge": "NOT_AUTHORIZED_AUTOMATICALLY",
+  "activation": "NOT_AUTHORIZED",
+  "final_evidence_location": "Exact-head PR review and Actions artifact; no receipt self-certification."
+}

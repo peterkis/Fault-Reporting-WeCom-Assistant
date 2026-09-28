@@ -1,0 +1,111 @@
+name: TypeScript migration
+on:
+  pull_request:
+  push:
+    branches: ['codex/typescript-t01-foundation', 'codex/typescript-t02-hosts']
+permissions:
+  contents: read
+jobs:
+  tooling:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Strict types, negative canary and deterministic shadow builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/types-review"
+          npm run migration:gate 2>&1 | tee "$RUNNER_TEMP/types-review/gate.txt"
+          node --test --test-reporter=tap .build/tools/tooling.test.mjs 2>&1 | tee "$RUNNER_TEMP/types-review/tooling.txt"
+          npm run migration:verify-artifact 2>&1 | tee "$RUNNER_TEMP/types-review/artifact.txt"
+          cp .build/artifact-proof.json .build/runtime/build-manifest.json "$RUNNER_TEMP/types-review/"
+          git rev-parse HEAD > "$RUNNER_TEMP/types-review/source-sha.txt"
+          git diff --exit-code
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: types-tooling-${{ matrix.os }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/types-review/
+          retention-days: 14
+  source-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: migration_ci_only
+          POSTGRES_DB: migration_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      PILOT_DATABASE_URL: postgresql://postgres:migration_ci_only@127.0.0.1:5432/migration_ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Unchanged SOURCE_HOST baseline selection
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          mkdir -p "$OUT"
+          node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" 2>&1 | tee "$OUT/identity.txt"
+          npm run test:p2:007 2>&1 | tee "$OUT/directory.txt"
+          node --test --test-reporter=tap --test-concurrency=1 tests/p2-007-third-party-staff-directory.integration.test.mjs 2>&1 | tee "$OUT/postgres.txt"
+          npm run test:p2:015 2>&1 | tee "$OUT/orchestration.txt"
+          node --test --test-reporter=tap tests/p2-016-schema-contract.test.mjs 2>&1 | tee "$OUT/schema.txt"
+          node --test --test-reporter=tap --test-concurrency=1 tests/p2-016-workbench-http.integration.test.mjs tests/p2-016-live-cluster.integration.test.mjs 2>&1 | tee "$OUT/runtime.txt"
+          npm run validate:architecture:v1.4 2>&1 | tee "$OUT/architecture.txt"
+          npm run validate:p2:016:historical 2>&1 | tee "$OUT/historical.txt"
+      - name: Retain the existing strict non-readiness, never promote it to PASS
+        shell: bash
+        run: |
+          set -uo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          RC=0
+          node scripts/validate-yxx-self-service.mjs --require-ready > "$OUT/current-strict.txt" 2>&1 || RC=$?
+          cat "$OUT/current-strict.txt"
+          echo "$RC" > "$OUT/current-strict-exit.txt"
+          test "$RC" = 1 || exit 1
+          grep -q YXX_VERIFICATION_REJECTED "$OUT/current-strict.txt" || exit 1
+          node --input-type=module -e "import {validateYxxSelfService} from './src/yxx-self-service-verification.mjs'; try {validateYxxSelfService({requireReady:true}); process.exitCode=1;} catch(e) {if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e; console.log(JSON.stringify({status:'KNOWN_BASELINE_NOT_READY',code:e.code}));}" 2>&1 | tee "$OUT/strict-classification.txt"
+      - name: Exact source and dependency identity
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/types-baseline"
+          git rev-parse HEAD > "$RUNNER_TEMP/types-baseline/source-sha.txt"
+          git archive --format=tar HEAD | gzip > "$RUNNER_TEMP/types-baseline/source.tar.gz"
+          git bundle create "$RUNNER_TEMP/types-baseline/source.bundle" HEAD
+          node --version > "$RUNNER_TEMP/types-baseline/node-version.txt"
+          git diff --exit-code
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: types-baseline-${{ github.run_id }}
+          path: ${{ runner.temp }}/types-baseline/
+          retention-days: 14
