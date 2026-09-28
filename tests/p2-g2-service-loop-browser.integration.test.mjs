@@ -13,11 +13,10 @@ test('G2-T01/I01/I02/I03 actual browser controls complete a normal-source servic
     const cut=f.cookie.indexOf('='),browser=await launchSystemBrowser({url:f.origin+'/workbench/incidents#mode=candidates&selected='+candidate[0].id,
       width:1440,height:1000,cookies:[{name:f.cookie.slice(0,cut),value:f.cookie.slice(cut+1),url:f.origin}]});
     const click=async(label,index=0)=>{
-      try { await browser.waitFor(`Array.from(document.querySelectorAll('#lc-detail button, #detail button')).filter(b=>b.textContent===${JSON.stringify(label)}&&!b.disabled).length>${index}`); } catch(error) {
+      try { await browser.waitFor(`(()=>{const button=Array.from(document.querySelectorAll('#lc-detail button, #detail button')).filter(b=>b.textContent===${JSON.stringify(label)}&&!b.disabled)[${index}];if(!button)return false;button.click();return true;})()`); } catch(error) {
         t.diagnostic(JSON.stringify({waiting_for:label,buttons:await browser.evaluate("Array.from(document.querySelectorAll('button')).map(b=>({text:b.textContent,disabled:b.disabled}))"),
           status:await browser.evaluate("document.querySelector('#lc-status')?.textContent??document.querySelector('#status')?.textContent")}));throw error;
       }
-      await browser.evaluate(`Array.from(document.querySelectorAll('#lc-detail button, #detail button')).filter(b=>b.textContent===${JSON.stringify(label)})[${index}].click()`);
     };
     const incidentAction=async(label,fill=null,index=0)=>{
       await click(label,index);await browser.waitFor("!!document.querySelector('#detail form')");

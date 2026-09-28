@@ -13,6 +13,17 @@ function applicationName(purpose) {
   return value;
 }
 
+// Track from connect: totalCount excludes clients whose close is still in flight.
+async function closeOwnedPool(pool, disconnects) {
+  let timer;
+  try {
+    await Promise.race([
+      (async () => { await pool.end(); await Promise.all(disconnects); })(),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('P2_004_POOL_CLOSE_TIMEOUT')), 5000); }),
+    ]);
+  } finally { clearTimeout(timer); }
+}
+
 export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4, run }) {
   assert.equal(typeof databaseUrl, 'string');
   assert.match(purpose, /^[a-z0-9]{1,12}$/u);
@@ -22,6 +33,7 @@ export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4,
   createdDatabases.add(databaseName);
   const quotedName = `"${databaseName}"`;
   const adminPool = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: applicationName('admin') });
+  const disconnects = new Set();
   let pool;
   let result;
   let runError;
@@ -32,12 +44,17 @@ export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4,
     const isolated = new URL(databaseUrl);
     isolated.pathname = `/${databaseName}`;
     pool = createPostgresPool({ connectionString: isolated.toString(), max, connectionTimeoutMillis: 2_000, application_name: applicationName(purpose) });
+    pool.on('connect', client => {
+      const disconnected = new Promise(resolve => client.once('end', resolve));
+      disconnects.add(disconnected);
+      disconnected.then(() => disconnects.delete(disconnected));
+    });
     result = await run({ pool, databaseName, databaseUrl: isolated.toString() });
   } catch (error) {
     runError = error;
   } finally {
     try {
-      if (pool) await pool.end();
+      if (pool) await closeOwnedPool(pool, disconnects);
       await adminPool.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()', [databaseName]);
       await adminPool.query(`DROP DATABASE IF EXISTS ${quotedName}`);
       const residual = await adminPool.query('SELECT count(*)::integer AS count FROM pg_database WHERE datname = $1', [databaseName]);

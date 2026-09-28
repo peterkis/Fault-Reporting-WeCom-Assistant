@@ -17,6 +17,12 @@ on:
       - 'tests/p2-015-*.mjs'
       - 'tests/helpers/p2-015-postgres-harness.mjs'
       - 'tests/helpers/p2-016-postgres-harness.mjs'
+      - 'src/platform/**'
+      - 'src/**/*.mts'
+      - 'scripts/**/*.mts'
+      - 'tools/ts-migration/**'
+      - 'plans/typescript-migration/**'
+      - 'tsconfig*.json'
       - 'package.json'
       - 'package-lock.json'
       - 'database/migrations/036*'
@@ -49,6 +55,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
+      - name: Prepare the YAML parser required by frozen OpenAPI tests
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Published checkout identity (not readiness)
         env:
@@ -61,11 +69,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/directory-review"
-          npm run test:p2:007 2>&1 | tee "$RUNNER_TEMP/directory-review/unit.txt"
-          node --test --test-concurrency=1 tests/p2-007-third-party-staff-directory.integration.test.mjs 2>&1 | tee "$RUNNER_TEMP/directory-review/postgres.txt"
-          npm run test:p2:015 2>&1 | tee "$RUNNER_TEMP/directory-review/orchestration.txt"
-          node --test tests/p2-016-schema-contract.test.mjs 2>&1 | tee "$RUNNER_TEMP/directory-review/p2016-scope.txt"
-          node --test --test-concurrency=1 tests/p2-016-workbench-http.integration.test.mjs tests/p2-016-live-cluster.integration.test.mjs 2>&1 | tee "$RUNNER_TEMP/directory-review/runtime.txt"
+          npm run migration:tools
+          node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$RUNNER_TEMP/directory-review/current" 2>&1 | tee "$RUNNER_TEMP/directory-review/current.txt"
       - name: Architecture regression
         if: ${{ !cancelled() }}
         run: |

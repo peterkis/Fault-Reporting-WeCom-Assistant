@@ -1,3 +1,5 @@
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
@@ -40,8 +42,8 @@ test('SS-009 real browser and PostgreSQL submit supplement review and original w
       for(const action of ['queue','accept','start','resolve','confirm']){const d=(await staff.request('/api/tickets/'+ticket.id)).json();if(action==='queue'&&d.status==='QUEUED')continue;const r=await staff.request('/api/tickets/'+ticket.id+'/'+action,post({client_command_id:randomUUID(),expected_version:d.version,reason_code:'SS009_'+action.toUpperCase()},csrf));assert.equal(r.status,200,r.text);}
       await tab.evaluate('location.reload()',{awaitPromise:false});await tab.waitFor("document.querySelector('#detail-status')?.textContent.includes('关闭')");
       assert.equal((await pool.query('SELECT count(*)::int AS n FROM pilot_ticket.ticket')).rows[0].n,2);
-      mkdirSync('tmp/ss009-ui',{recursive:true});
-      for(const [width,height] of [[390,844],[1440,900]]){await tab.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});assert.equal(await tab.evaluate('document.documentElement.scrollWidth>innerWidth'),false);const bytes=Buffer.from(await tab.screenshot(),'base64'),file='tmp/ss009-ui/'+randomUUID()+'.png';writeFileSync(file,bytes);screenshots.push({file,width,height,sha256:createHash('sha256').update(bytes).digest('hex')});}
+      const screenshotDirectory=join(tmpdir(),'ss009-ui-'+randomUUID());mkdirSync(screenshotDirectory,{recursive:true});
+      for(const [width,height] of [[390,844],[1440,900]]){await tab.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});assert.equal(await tab.evaluate('document.documentElement.scrollWidth>innerWidth'),false);const bytes=Buffer.from(await tab.screenshot(),'base64'),file=join(screenshotDirectory,randomUUID()+'.png');writeFileSync(file,bytes);screenshots.push({file,width,height,sha256:createHash('sha256').update(bytes).digest('hex')});}
       const storage=await tab.evaluate('JSON.stringify({local:{...localStorage},session:{...sessionStorage}})');assert.ok(!storage.includes('处方提交不了')&&!storage.includes('synthetic-A')&&!storage.includes('csrf'));
       proof={...g2EvidenceTime(),kind:'browser',status:'PASS',candidate_fingerprint:g2CandidateInventory().fingerprint,screenshots,real_pg:true,real_browser:true,tickets:2,external_network_calls:0,simulated_provider_calls:fixture.providerCalls};
     }catch(error){primaryError=error;}finally{await closeSS009Resources([()=>tab?.close(),()=>staffRuntime?.stop(),()=>runtime?.selfService.close(),()=>fixture?.close(),()=>runtime?.stop()],primaryError);}

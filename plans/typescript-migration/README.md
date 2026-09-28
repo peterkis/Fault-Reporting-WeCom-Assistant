@@ -3,8 +3,9 @@
 ## 当前交接
 
 T00 已通过 PR #24 合并；T01 已通过 PR #25 独立审查并合并。
-T02 从 main `84d39b964d02db335c6c0c900d56d5b0a383f621` 开始，当前实现等待精确提交的远端验证和独立复审。
-不要把工作区测试、历史回执或本文件当作最终 PR 审查结果。T03 尚未授权开始；不自动合并或部署。
+T02 已通过 PR #26 合并，merge 为 `7eefaa99591bfaa2e787701efd315ff701c51f35`。
+当前执行 [T03 前置补齐](T03-prerequisite.md)，尚待精确 head CI、独立复审与单独合并决定。
+不要把工作区测试、历史回执或本文件当作最终 PR 审查结果。T03 四模块迁移须在前置 PR 获授权合并后开始；不自动合并或部署。
 
 先读根 AGENTS.md、CONTEXT.md、ADR-0026，再读 [T02 实施说明](T02.md)、[进度](progress.json) 和 [T02 原回执](receipts/T02.json) 和 [接续回执](receipts/T02-followup.json)。
 原计划包 `WeCom_TypeScript_Migration_Plan_v1_20260927.zip` 的 `prompts/00_DISPATCHER.md`、`prompts/T02.md` 是本批执行输入；不重做 181 个迁移目标与 34 批次的 [scope.json](scope.json)。
@@ -21,7 +22,8 @@ T02 从 main `84d39b964d02db335c6c0c900d56d5b0a383f621` 开始，当前实现等
 ```sh
 npm ci --ignore-scripts --no-audit --no-fund
 npm run migration:gate
-node --test .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs
+node --test .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs
+npm run migration:gate -- --batch T03-01
 node .build/tools/run-tests.mjs --selection t02-time
 ```
 
@@ -40,3 +42,5 @@ ARCH-005 对部分冻结 SQL 使用原 CRLF 检出字节。CI 在 checkout 前�
 T00 的 baseline.json、baseline-tests.json、verification 和原回执继续描述它们原本绑定的提交。T01 回执亦不重写旧 tested_head。
 最终 T02 结果以 PR 精确 head、对应 CI 原始制品、自审及 Codex 实际回复为准。
 当前业务状态、Evidence、SQL 和现场批准不变。影子构建不是生产激活；没有调用正式 Provider、生产写库或真实企业微信发送。
+
+批次登记见 [batches.json](batches.json)：29 个直接、166 个反向影响测试加完整人员目录基线与补充项，去重后 179 文件。SOURCE_HOST 读取真实 checkout，运行实现由已验证制品加载。当前严格 CLI 需要先构建；缺失制品不能算已知非就绪。历史与当前基线兼容结果分开记录，旧回执不改写。

@@ -17,12 +17,15 @@ export function g2PredecessorScopeValid(v) {
     && (v.next_task_candidate ?? v.next_task) === (ready ? 'P2-G2-LIVE' : 'P2-G2') && v.next_task_authorized === !ready
     && JSON.stringify(v.authorized_gates) === JSON.stringify(['P2-G1', 'P2-G2']);
 }
-const git = (args, cwd = root) => execFileSync('git', ['-c', 'safe.directory=' + root.replaceAll('\\', '/'),
+const gitAt = (args, cwd) => execFileSync('git', ['-c', 'safe.directory=' + root.replaceAll('\\', '/'),
   '-c', 'safe.directory=' + cwd.replaceAll('\\', '/'), ...args], { cwd, encoding: 'utf8', windowsHide: true, maxBuffer: 8000000 });
 
 // Run each predecessor's unchanged validator in its exact completed checkout. This validates history only;
 // it cannot certify the current G2 Runtime or turn a historical live result into G2 readiness.
-export function verifyG2Predecessor(task, includeReadinessEvidence) {
+export function verifyG2Predecessor(task, includeReadinessEvidence, { sourceRoot = root } = {}) {
+  const root = realpathSync(sourceRoot);
+  const git = (args, cwd = root) => gitAt(args, cwd);
+  if (realpathSync(git(['rev-parse', '--show-toplevel']).trim()) !== root) failG2('PREDECESSOR_SOURCE_ROOT_INVALID');
   if (!['P2-012', 'P2-016'].includes(task) || typeof includeReadinessEvidence !== 'boolean') failG2('PREDECESSOR_ARGUMENTS_INVALID');
   const errors = [];
   for (const p of ['MANIFEST.json', 'plans/current_phase.json', 'plans/master_backlog.json', 'plans/parallel_workstreams.json', 'tasks/master_backlog.json', 'project_summary.json']) {

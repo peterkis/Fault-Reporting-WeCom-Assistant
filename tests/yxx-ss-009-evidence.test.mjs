@@ -6,7 +6,8 @@ import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 import {mkdtempSync,mkdirSync,writeFileSync,rmSync,symlinkSync,readFileSync,copyFileSync,unlinkSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
-import {G2_ROOT} from '../src/p2-g2-candidate.mjs';
+import {testRoots} from './helpers/migration-roots.mjs';
+const G2_ROOT=testRoots().sourceRoot;
 import path from 'node:path';
 import {tmpdir} from 'node:os';
 import {closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
@@ -21,7 +22,7 @@ test('SS-009 requires local validation scope before accepting protected parent p
   git(['worktree','add','--detach',root,'HEAD']);
   try{
     copyFileSync(path.join(G2_ROOT,'.gitignore'),path.join(root,'.gitignore'));
-    assert.equal(validateYxxSelfService({root}).status,'STRUCTURE_VALID_NOT_READY');
+    assert.throws(()=>validateYxxSelfService({root}),{code:'YXX_LOCAL_VALIDATION_SCOPE_INVALID'});
     const phasePath=path.join(root,'plans/current_phase.json'),phase=JSON.parse(readFileSync(phasePath));
     phase.last_completed_gate='P2-G2';writeFileSync(phasePath,JSON.stringify(phase,null,2)+'\n');
     const modes=[{}, {requireReady:true}, {requireReady:true,preTamper:true}];

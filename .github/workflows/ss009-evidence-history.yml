@@ -40,13 +40,16 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/ss009-evidence-history"
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" | tee "$RUNNER_TEMP/ss009-evidence-history/preflight.json"
+      - name: Prepare the YAML parser required by current and historical OpenAPI tests
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Check current PR evidence history and current source regressions
         run: |
           set -euo pipefail
           node --test .github/review/pr-evidence-delta.test.mjs
           node .github/review/pr-evidence-delta.mjs | tee "$RUNNER_TEMP/ss009-evidence-history/pr-delta.json"
-          node --test --test-concurrency=1 tests/p2-016-workbench-wecom-auth.test.mjs tests/p2-g2-wecom-web-oauth.test.mjs tests/p2-g2-wecom-oauth-server.test.mjs tests/p2-g2-wecom-oauth-http.test.mjs tests/p2-g2-yixiaoxiu-oauth.test.mjs tests/yxx-ss-001-homepage-oauth.test.mjs tests/p2-006-workbench.test.mjs tests/p2-g1-human-only-assembly.test.mjs | tee "$RUNNER_TEMP/ss009-evidence-history/current-source.txt"
+          npm run migration:tools
+          node .build/tools/run-tests.mjs --selection t03-current-ci | tee "$RUNNER_TEMP/ss009-evidence-history/current-source.txt"
       - name: Reconstruct the published SS009 fixture with its original frozen scope
         run: |
           set -euo pipefail
@@ -66,7 +69,7 @@ jobs:
         working-directory: ${{ runner.temp }}/ss009-frozen
         run: |
           set -euo pipefail
-          node --test --test-reporter=tap tests/yxx-ss-009-evidence.test.mjs tests/yxx-ss-009-evidence-history.test.mjs | tee "$RUNNER_TEMP/ss009-evidence-history/unit.tap"
+          node --test --test-reporter=tap tests/yxx-ss-009-evidence.test.mjs tests/yxx-ss-009-evidence-history.test.mjs tests/yxx-ss-009-governance.test.mjs | tee "$RUNNER_TEMP/ss009-evidence-history/unit.tap"
       - name: Reproduce historical r6 bypass and require rejection in all validator modes
         working-directory: ${{ runner.temp }}/ss009-frozen
         run: |

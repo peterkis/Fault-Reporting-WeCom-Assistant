@@ -25,17 +25,21 @@ for(const [width,height] of [[1440,900],[390,844]])test('Reporter browser '+widt
     const grant=await runtime.reporterAccess.deliveryGrant({deliveryId:notification.delivery_id});let browser,primaryError=null;
     try{
       await runtime.start();browser=await launchSystemBrowser({url:origin+'/reporter/open#grant='+grant.token,width,height,redirectPaths:['/reporter/']});
+      async function reloadReporter(predicate){
+        await browser.evaluate("document.documentElement.dataset.reporterReloading='1';location.reload()",{awaitPromise:false});
+        await browser.waitFor("!document.documentElement.dataset.reporterReloading && document.readyState==='complete' && ("+predicate+")");
+      }
       await browser.waitFor("document.querySelector('#ticket').hidden===false");
       assert.equal(await browser.evaluate('location.hash'),'');assert.equal(await browser.evaluate('location.pathname'),'/reporter/');
       assert.equal(await browser.evaluate('localStorage.length+sessionStorage.length'),0);assert.equal(await browser.evaluate('document.cookie.includes("p2016_reporter")'),false);
       const visible=await browser.evaluate('document.body.textContent');assert.ok(visible.includes(ticket.ticket_no));assert.doesNotMatch(visible,/patient-test|10\.0\.0\.2|user-test|<img/u);assert.ok(!visible.includes(ticket.id));assert.ok(!visible.includes(grant.token));
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
       const times=await browser.evaluate('document.querySelector("#times").textContent');
-      for(const zone of ['Asia/Shanghai','UTC','America/New_York']){await browser.setTimezone(zone);await browser.evaluate('location.reload()',{awaitPromise:false});await browser.waitFor("document.querySelector('#ticket').hidden===false");assert.equal(await browser.evaluate('document.querySelector("#times").textContent'),times);}
+      for(const zone of ['Asia/Shanghai','UTC','America/New_York']){await browser.setTimezone(zone);await reloadReporter("document.querySelector('#ticket')?.hidden===false && document.querySelector('#times')?.textContent.length>0");assert.equal(await browser.evaluate('document.querySelector("#times").textContent'),times);}
       const denied=await fetch(origin+'/api/reporter/access/exchange',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({grant:grant.token})});assert.equal(denied.status,401);
       const csrf=await fetch(origin+'/api/reporter/logout',{method:'POST',headers:{origin:'https://attacker.invalid','content-type':'application/json'},body:'{}'});assert.equal(csrf.status,403);
       await browser.evaluate('document.querySelector("#logout").click()');await browser.waitFor("document.querySelector('#status').textContent==='已退出访问。'");
-      await browser.evaluate('location.reload()',{awaitPromise:false});await browser.waitFor("document.querySelector('#status').textContent.includes('访问已失效')");
+      await reloadReporter("document.querySelector('#status')?.textContent.includes('访问已失效')");
       if(width===1440){
         const before=await browser.evaluate("performance.getEntriesByType('resource').filter(e=>e.name.includes('/api/reporter/')).map(e=>e.name)");
         assert.equal(before.some(url=>url.includes('/access/exchange')),false,'reload after logout must not replay a consumed Grant');

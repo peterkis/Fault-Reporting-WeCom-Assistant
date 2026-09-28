@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "batch": "T03-01-PREREQUISITE",
+  "base": "7eefaa99591bfaa2e787701efd315ff701c51f35",
+  "status": "VALIDATION_IN_PROGRESS_NOT_MERGED",
+  "selected_count": 179,
+  "tool_tests": {
+    "tests": 50,
+    "pass": 50,
+    "fail": 0,
+    "skipped": 0,
+    "log": "tooling-revised.txt"
+  },
+  "business_results": "All 179 selected files passed across diagnostic segments; NOT a single complete gate PASS. Exact-head full CI required.",
+  "known_nonreadiness": "YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+  "historical_results": {
+    "ss009_original_tests": "17/17",
+    "ss009_strict": "PASS_HISTORICAL_ONLY",
+    "p2016_fixed_wrapper": "PASS_HISTORICAL_ONLY"
+  },
+  "raw_logs": "D:/Agent-Prompts/T03_Prerequisite_20260928/logs",
+  "review": "Local standards and specification reviews: no unresolved P1/P2; published-head external review pending",
+  "database_change": false,
+  "feature_flag_change": false,
+  "runtime_dependency_change": false,
+  "four_platform_modules_migrated": false,
+  "next_batch_authorized_to_start": false,
+  "rollback": "Dedicated revert PR; no database rollback",
+  "final_result_source": "Exact published-head PR and CI artifacts; this receipt is not self-certifying",
+  "diagnostic_index": "logs/diagnostic-file-index.json",
+  "ss010_final_regression": {
+    "tests": 6,
+    "pass": 6,
+    "artifact_verification": "PASS",
+    "log": "ss010-external-state.txt"
+  }
+}

@@ -49,7 +49,7 @@ export async function validateP2016({includeReadinessEvidence=true}={}){
   const errors=[];let checks=0;const check=(ok,message)=>{checks++;if(!ok)errors.push(message);};
   const state=JSON.parse(await read('plans/current_phase.json'));
   if(isG2SuccessorState(state)){
-    const result=verifyG2Predecessor('P2-016',includeReadinessEvidence);
+    const result=verifyG2Predecessor('P2-016',includeReadinessEvidence,{sourceRoot:root});
     // Preserve the strict failure and its evidence; classify only this known
     // successor mismatch. The separate frozen checkout proves historical PASS.
     if(result.errors?.length===1&&result.errors[0]==='P2_G2_HISTORICAL_EVIDENCE_CHANGED')

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
-import { sourceRoot, hash, record } from './common.mjs';
+import { sourceRoot, hash, record, git } from './common.mjs';
 
 // A side-effect-free observation uses real exported guards and data, not a type-only fixture.
 const probe = `
@@ -26,12 +26,13 @@ function observe(root: string): Record<string, unknown> {
   if (result.status !== 0 || result.error) throw new Error('MIGRATION_OBSERVATION_FAILED: ' + result.stderr);
   return record(JSON.parse(result.stdout.trim()) as unknown);
 }
-export function compareRuntime(root: string): Record<string, unknown> {
-  const reference = observe(root), first = build(root), digest = verifyArtifact(root);
+export function compareRuntime(root: string, referenceRoot: string): Record<string, unknown> {
+  if (git(referenceRoot, ['rev-parse', 'HEAD']) !== '7eefaa99591bfaa2e787701efd315ff701c51f35' || git(referenceRoot, ['status', '--porcelain'])) throw new Error('MIGRATION_REFERENCE_NOT_CLEAN_T02');
+  const reference = observe(referenceRoot), first = build(root), digest = verifyArtifact(root);
   const one = observe(path.join(root, '.build/runtime'));
   const second = build(root), two = observe(path.join(root, '.build/runtime'));
   assert.deepEqual(reference, one); assert.deepEqual(one, two);
   assert.equal(digest, verifyArtifact(root)); assert.deepEqual(first.outputs, second.outputs);
   return { status: 'SOURCE_AND_TWO_SHADOWS_EQUIVALENT', observation: reference, observation_sha256: hash(JSON.stringify(reference)), manifest_sha256: digest, production_ready: false };
 }
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) console.log(JSON.stringify(compareRuntime(sourceRoot())));
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) console.log(JSON.stringify(compareRuntime(sourceRoot(), process.argv[2] ?? (() => { throw new Error('MIGRATION_REFERENCE_ROOT_REQUIRED'); })())));

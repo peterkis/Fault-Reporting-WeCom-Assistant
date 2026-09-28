@@ -1,3 +1,4 @@
+import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -101,6 +102,7 @@ async function withIsolatedDatabase(callback) {
 before(async () => {
   if (pool) {
     await applyChannelMessageInboxMigration({ pool });
+    await migrateCurrentBaseline({ databaseUrl });
   }
 });
 

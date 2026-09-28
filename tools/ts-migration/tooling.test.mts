@@ -9,10 +9,11 @@ import { verifyArtifact } from './verify-artifact.mjs';
 import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFiles } from './common.mjs';
 
 const original = sourceRoot();
-function scratch(): string {
+function scratch(reference = false): string {
   const root = mkdtempSync(path.join(tmpdir(), 'types-migration-test-'));
   execFileSync('git', ['clone', '--quiet', '--no-hardlinks', original, root], { stdio: 'pipe', windowsHide: true });
-  for (const relative of workspaceFiles(original)) {
+  if (reference) execFileSync('git', ['checkout', '--quiet', '--detach', '7eefaa99591bfaa2e787701efd315ff701c51f35'], { cwd: root, windowsHide: true });
+  for (const relative of reference ? [] : workspaceFiles(original)) {
     const target = path.join(root, relative); mkdirSync(path.dirname(target), { recursive: true });
     copyFileSync(path.join(original, relative), target);
   }
@@ -69,7 +70,7 @@ test('T01 build and negative checks run on an owned full clone, never on user so
       }
     });
     await t.test('a committed MTS migration cannot be silently restored as grandfathered MJS', () => {
-      const retiredRoot = scratch();
+      const retiredRoot = scratch(true);
       try {
         const js = path.join(retiredRoot, 'src/platform/time-contract.mjs');
         const typed = path.join(retiredRoot, 'src/platform/time-contract.mts');
@@ -123,7 +124,7 @@ test('T01 build and negative checks run on an owned full clone, never on user so
       }
     });
     await t.test('same logical MJS and MTS are rejected and stale success is removed', () => {
-      alter(root, 'src/platform/time-contract.mts', 'export const duplicate = true;', () => {
+      alter(root, 'src/g0-002-sdk-lifecycle.mts', 'export const duplicate = true;', () => {
         assert.throws(() => build(root), /MIGRATION_OUTPUT_COLLISION/u);
         assert.equal(existsSync(path.join(root, '.build/artifact-proof.json')), false);
         assert.equal(existsSync(path.join(root, '.build/runtime/build-manifest.json')), false);
