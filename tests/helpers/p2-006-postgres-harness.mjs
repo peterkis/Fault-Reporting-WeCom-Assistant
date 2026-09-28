@@ -6,34 +6,36 @@ const token = randomUUID().replaceAll('-', '_').slice(0, 12);
 const created = new Set(); const applications = new Set();
 function app(purpose) { const value = `p2_006_${purpose}_${token}`.slice(0, 63); applications.add(value); return value; }
 
-// pg-pool removes clients from totalCount before their socket close callbacks.
-// Await the public remove events before terminating any residual owned backend.
-async function closeOwnedPool(pool) {
-  let remaining = pool.totalCount;
-  if (!remaining) { await pool.end(); return; }
-  let timer, onRemove;
-  const closed = new Promise((resolve, reject) => {
-    timer = setTimeout(() => reject(new Error('P2_006_POOL_CLOSE_TIMEOUT')), 5000);
-    onRemove = () => { if (--remaining === 0) resolve(); };
-    pool.on('remove', onRemove);
-  });
-  try { await Promise.all([pool.end(), closed]); }
-  finally { clearTimeout(timer); pool.off('remove', onRemove); }
+// Track from connect: totalCount excludes clients whose close is still in flight.
+async function closeOwnedPool(pool, disconnects) {
+  let timer;
+  try {
+    await Promise.race([
+      (async () => { await pool.end(); await Promise.all(disconnects); })(),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('P2_006_POOL_CLOSE_TIMEOUT')), 5000); }),
+    ]);
+  } finally { clearTimeout(timer); }
 }
 
 export async function withP2006IsolatedDatabase({ databaseUrl, purpose, max = 4, run }) {
   assert.match(purpose, /^[a-z0-9]{1,12}$/u); assert.ok(max >= 1 && max <= 4);
   const name = `p2_006_${purpose}_${randomUUID().replaceAll('-', '_')}`; created.add(name); const quoted = `"${name}"`;
   const admin = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: app('admin') });
+  const disconnects = new Set();
   let pool; let result; let failure;
   try {
     await admin.query(`CREATE DATABASE ${quoted} TEMPLATE template0`);
     const isolated = new URL(databaseUrl); isolated.pathname = `/${name}`;
     pool = createPostgresPool({ connectionString: isolated.toString(), max, connectionTimeoutMillis: 2_000, application_name: app(purpose) });
+    pool.on('connect', client => {
+      const disconnected = new Promise(resolve => client.once('end', resolve));
+      disconnects.add(disconnected);
+      disconnected.then(() => disconnects.delete(disconnected));
+    });
     result = await run({ pool, databaseUrl: isolated.toString(), databaseName: name });
   } catch (error) { failure = error; }
   finally {
-    try { if (pool) await closeOwnedPool(pool); await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [name]); await admin.query(`DROP DATABASE IF EXISTS ${quoted}`); }
+    try { if (pool) await closeOwnedPool(pool, disconnects); await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()', [name]); await admin.query(`DROP DATABASE IF EXISTS ${quoted}`); }
     catch (error) { failure ??= error; }
     finally { await admin.end().catch((error) => { failure ??= error; }); }
   }
