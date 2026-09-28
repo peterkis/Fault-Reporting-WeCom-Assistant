@@ -68,6 +68,20 @@ test('T01 build and negative checks run on an owned full clone, never on user so
         });
       }
     });
+    await t.test('a committed MTS migration cannot be silently restored as grandfathered MJS', () => {
+      const retiredRoot = scratch();
+      try {
+        const js = path.join(retiredRoot, 'src/platform/time-contract.mjs');
+        const typed = path.join(retiredRoot, 'src/platform/time-contract.mts');
+        const originalBytes = readFileSync(js);
+        rmSync(js); writeFileSync(typed, originalBytes);
+        execFileSync('git', ['add', 'src/platform/time-contract.mjs', 'src/platform/time-contract.mts'], { cwd: retiredRoot });
+        execFileSync('git', ['-c', 'user.name=Migration test fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--quiet', '-m', 'Synthetic fixture: record typed migration'], { cwd: retiredRoot });
+        rmSync(typed); writeFileSync(js, originalBytes);
+        assert.throws(() => program(retiredRoot, 'tsconfig.migration.json'), /MIGRATION_RETIRED_LEGACY/u);
+        assert.throws(() => build(retiredRoot), /MIGRATION_RETIRED_LEGACY/u);
+      } finally { rmSync(retiredRoot, { recursive: true, force: true }); }
+    });
     await t.test('parentheses, satisfies and angle assertions cannot disguise double casts', () => {
       for (const expression of ['value as unknown as string', '(value as unknown) as string', '(((value as unknown))) as string',
         '(value as unknown satisfies unknown) as string', '<string>(<unknown>value)']) {

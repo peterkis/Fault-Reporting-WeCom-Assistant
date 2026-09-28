@@ -44,8 +44,12 @@ export function assertProductionSources(root: string): void {
   const legacy = new Set([...Object.values(record(policy.migration_batches)).flatMap(strings),
     ...strings(policy.legacy_g0), ...strings(policy.retained_existing_tooling)]);
   const historicalTools = new Set(git(root, ['ls-tree', '-r', '--name-only', LEGACY_POLICY_BASE, '--', 'tools', '.github/review']).split('\n'));
+  if (git(root, ['rev-parse', '--is-shallow-repository']) !== 'false') throw new Error('MIGRATION_FULL_HISTORY_REQUIRED');
+  const retired = new Set(git(root, ['log', '--format=', '--name-only', '--diff-filter=A', '--no-renames', '-z', LEGACY_POLICY_BASE + '..HEAD', '--', 'src', 'scripts', 'tools', '.github/review'])
+    .split('\0').map(p => p.trim()).filter(p => p.endsWith('.mts') && !p.endsWith('.d.mts')).map(p => p.slice(0, -4) + '.mjs'));
   for (const file of workspaceFiles(root).filter(f => /^(src|scripts|tools|\.github\/review)\//u.test(f) && /\.(?:[cm]?js|[cm]?ts|jsx|tsx)$/iu.test(f))) {
     const tooling = /^(tools|\.github\/review)\//u.test(file);
+    if (retired.has(file)) throw new Error('MIGRATION_RETIRED_LEGACY: ' + file);
     if (file.endsWith('.mts') || /\.d\.ts$/u.test(file)) {
       if (tooling && !file.startsWith('tools/ts-migration/')) throw new Error('MIGRATION_UNREGISTERED_TYPED_TOOL: ' + file);
       continue;
