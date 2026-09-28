@@ -14,8 +14,8 @@ export function noLinks(target: string): void {
 }
 export function sourceRoot(cwd = process.cwd()): string {
   if (Number(process.versions.node.split('.')[0]) !== 24) throw new Error('MIGRATION_NODE24_REQUIRED');
-  const root = realpathSync(execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', windowsHide: true }).trim());
-  if (realpathSync(cwd) !== root) throw new Error('MIGRATION_REQUIRES_REPOSITORY_ROOT');
+  const root = realpathSync.native(execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', windowsHide: true }).trim());
+  if (path.relative(root, realpathSync.native(cwd)) !== '') throw new Error('MIGRATION_REQUIRES_REPOSITORY_ROOT');
   return root;
 }
 export function controlledBuildRoot(root: string): string {
