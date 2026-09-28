@@ -36,6 +36,7 @@ jobs:
           BASE="$RUNNER_TEMP/types-t02-reference"
           git clone --no-local --config core.autocrlf=true . "$BASE"
           git -C "$BASE" checkout --detach 7eefaa99591bfaa2e787701efd315ff701c51f35
+          git -C "$BASE" update-ref refs/remotes/origin/main 7eefaa99591bfaa2e787701efd315ff701c51f35
           npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
       - name: Strict tools, real compiler canary and host rejection tests
         shell: bash
@@ -99,6 +100,7 @@ jobs:
           BASE="$RUNNER_TEMP/types-t02-reference"
           git clone --no-local --config core.autocrlf=true . "$BASE"
           git -C "$BASE" checkout --detach 7eefaa99591bfaa2e787701efd315ff701c51f35
+          git -C "$BASE" update-ref refs/remotes/origin/main 7eefaa99591bfaa2e787701efd315ff701c51f35
           npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
       - name: Same 17-file baseline on SOURCE then two independent shadows
         shell: bash
@@ -114,13 +116,25 @@ jobs:
           node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-1" 2>&1 | tee "$OUT/shadow-1.txt"
           node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-2" 2>&1 | tee "$OUT/shadow-2.txt"
           node .build/tools/observe-runtime.mjs "$RUNNER_TEMP/types-t02-reference" 2>&1 | tee "$OUT/observations.jsonl"
+      - name: Observe untouched T02 P2-005 cleanup (diagnostic only)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          OUT="$RUNNER_TEMP/types-baseline"
+          RC=0
+          (cd "$RUNNER_TEMP/types-t02-reference" && node --test --test-reporter=tap --test-concurrency=1 tests/p2-005-conversation-control.integration.test.mjs) > "$OUT/t02-cleanup-observation.txt" 2>&1 || RC=$?
+          echo "$RC" > "$OUT/t02-cleanup-observation-exit.txt"
+          echo "REFERENCE_OBSERVATION_ONLY exit=$RC; not current acceptance"
       - name: Entire T03 dependency batch on real PG18 and browser hosts
         if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
-          npm run migration:gate -- --batch T03-01 --report-dir "$OUT/t03-batch" > "$OUT/t03-batch.txt" 2>&1
+          if ! npm run migration:gate -- --batch T03-01 --report-dir "$OUT/t03-batch" > "$OUT/t03-batch.txt" 2>&1; then
+            tail -n 100 "$OUT/t03-batch.txt"
+            exit 1
+          fi
       - name: T02 artifact identity and source architecture
         if: ${{ !cancelled() }}
         shell: bash
