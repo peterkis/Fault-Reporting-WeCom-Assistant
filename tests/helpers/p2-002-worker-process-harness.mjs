@@ -46,7 +46,7 @@ export function spawnP2002WorkerProcess({
   const workerToken = `p2_002_child_${randomUUID().replaceAll('-', '_')}`;
   const child = fork(CHILD_PATH, [], {
     cwd: fileURLToPath(new URL('../..', import.meta.url)),
-    execArgv: [`--env-file=${ENV_FILE_PATH}`],
+    execArgv: [],
     env: childEnvironment({
       P2_002_CHILD_MODE: mode,
       P2_002_TEST_DATABASE_NAME: databaseName,
