@@ -79,6 +79,12 @@ const assignment: AssignmentMetadata = {
 const actionService: TicketActionService = createTicketActionService({});
 const channel: NotificationChannel = 'WECOM_DIRECT';
 const target: NotificationTarget = { channel, targetKey: 'reporter-id' };
+const minimalNotificationEvent: NotificationEvent = {
+  event_id: 'event-id',
+  event_type: 'ticket.created',
+  aggregate_version: 1,
+  external_note: null,
+};
 declare const notificationEvent: NotificationEvent;
 const unsupportedNotificationEvent: NotificationEvent = {
   ...notificationEvent,
@@ -192,4 +198,4 @@ const invalidEpochOptions: NotificationDeliveryWorkerOptions = { pool: workerPoo
 void [status, ticketInput, ticketCore, processor, actionInput, assignment, actionService, outbox, worker,
   invalidPriority, invalidStatus, invalidAction, invalidActor, invalidActionInput,
   invalidOptionalNote, incompleteAssignment, invalidOptionalResolverTeam, invalidChannel, invalidTarget,
-  invalidEpochOptions, unsupportedNotificationEvent];
+  invalidEpochOptions, minimalNotificationEvent, unsupportedNotificationEvent];
