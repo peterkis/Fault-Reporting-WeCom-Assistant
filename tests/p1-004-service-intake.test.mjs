@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
 import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
 import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from '../src/platform/postgres-types.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
@@ -118,6 +119,8 @@ before(async () => {
   if (pool) {
     await applyChannelMessageInboxMigration({ pool });
     await applyServiceIntakeMigration({ pool });
+    // Current runtime consumes ARCH-005 local timestamps; 001/002 alone are historical DDL.
+    await migrateCurrentBaseline({ databaseUrl });
   }
 });
 
