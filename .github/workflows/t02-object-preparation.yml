@@ -1,0 +1,72 @@
+name: T02 exact Git object preparation
+on:
+  push:
+    branches: ['codex/typescript-t02-object-preparation']
+permissions:
+  contents: write
+jobs:
+  prepare-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify the transparent patch and create only its exact Git tree
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, lzma, os, pathlib, subprocess, urllib.request
+          REPO = 'peterkis/Fault-Reporting-WeCom-Assistant'
+          BASE = '84d39b964d02db335c6c0c900d56d5b0a383f621'
+          BASE_TREE = '532bdb12e45917ea7870270e5c283e916150aa4b'
+          EXPECTED_TREE = '5a2b042053b35d317c0e7ada1f81631f6aaee608'
+          api = 'https://api.github.com/repos/' + REPO
+          def request(path, body=None):
+              data = None if body is None else json.dumps(body, ensure_ascii=False).encode('utf8')
+              req = urllib.request.Request(api + path, data=data, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  return json.load(response)
+          assert request('/git/ref/heads/main')['object']['sha'] == BASE, 'MAIN_MOVED'
+          packed = b''.join(pathlib.Path('.github/t02-object-preparation/part%d.xz' % i).read_bytes() for i in range(1,9))
+          assert len(packed) == 39268
+          assert hashlib.sha256(packed).hexdigest() == 'c3d5ad10e635e6b2c629e4726085dddcde69122df0d825e91f183dd5a1a53b12'
+          patch = lzma.decompress(packed, memlimit=256*1024*1024)
+          assert len(patch) == 226034
+          assert hashlib.sha256(patch).hexdigest() == 'aa4eb9ca6be4520267889ba5551666202ee65728a329fecebdb2059a5560c07c'
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 't02-subject'
+          subprocess.run(['git','worktree','add','--detach',str(target),BASE],check=True)
+          def git(*args):
+              return subprocess.check_output(['git','-C',str(target),*args])
+          assert git('rev-parse','HEAD^{tree}').decode().strip() == BASE_TREE
+          subprocess.run(['git','-C',str(target),'apply','--check','--index','-'],input=patch,check=True)
+          subprocess.run(['git','-C',str(target),'apply','--index','-'],input=patch,check=True)
+          git('diff','--cached','--check')
+          tree = git('write-tree').decode().strip()
+          assert tree == EXPECTED_TREE, (tree,EXPECTED_TREE)
+          names = [p.decode() for p in git('diff','--cached','--name-only','-z').split(b'\0') if p]
+          assert len(names) == 43 and len(set(names)) == 43
+          assert not any(p.startswith(('database/','evidence/')) or p in ('package-lock.json','.env.example','AGENTS.md','plans/current_phase.json') for p in names)
+          assert not any('object-preparation' in p for p in names)
+          entries = []
+          for name in names:
+              mode = git('ls-files','-s','--',name).decode().split()[0]
+              assert mode == '100644'
+              entries.append({'path':name,'mode':mode,'type':'blob','content':git('show',':'+name).decode('utf8')})
+          # Git objects only: no commit creation, ref update, push, subject-code execution or deployment.
+          result = request('/git/trees', {'base_tree':BASE_TREE,'tree':entries})
+          assert result['sha'] == EXPECTED_TREE
+          assert request('/git/ref/heads/main')['object']['sha'] == BASE
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 't02-object-proof'
+          output.mkdir()
+          (output/'proof.json').write_text(json.dumps({'source_base':BASE,'base_tree':BASE_TREE,'prepared_tree':result['sha'],'changed_files':names,'patch_sha256':hashlib.sha256(patch).hexdigest(),'subject_code_executed':False,'remote_refs_written':False,'merge_authorized':False},indent=2)+'\n')
+          (output/'t02.patch').write_bytes(patch)
+          print(json.dumps({'prepared_tree':result['sha'],'changed_files':len(names),'refs_written':False}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: t02-object-proof-${{ github.run_id }}
+          path: ${{ runner.temp }}/t02-object-proof/
+          retention-days: 14
