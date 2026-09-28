@@ -20,6 +20,8 @@ test('batch selection includes every T03 reverse dependency and the personnel ba
 test('batch CLI runs non-canary tests and reports failure without certifying review', async t => {
   const root = mkdtempSync(path.join(tmpdir(), 'migration-batch-test-'));
   execFileSync('git', ['clone', '--quiet', '--no-hardlinks', original, root], { windowsHide: true, stdio: 'pipe' });
+  // Overlay deletions as well as additions, so uncommitted renames cannot create dual sources.
+  { const current = new Set(workspaceFiles(original)); for (const relative of workspaceFiles(root)) if (!current.has(relative)) rmSync(path.join(root, relative)); }
   for (const relative of workspaceFiles(original)) {
     const target = path.join(root, relative); mkdirSync(path.dirname(target), { recursive: true }); copyFileSync(path.join(original, relative), target);
   }

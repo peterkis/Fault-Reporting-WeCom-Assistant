@@ -2,20 +2,21 @@
   "schema_version": 1,
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "42201d12279dc9c95b64912f13cc72284388c514",
-  "current_batch": "T03-01-PG-CALLBACK-FIX",
+  "current_batch": "T03-01",
   "current_execution_status": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
     "T01",
     "T02",
-    "T03-01-PREREQUISITE"
+    "T03-01-PREREQUISITE",
+    "T03-01-PG-CALLBACK-FIX"
   ],
   "batches": {
     "T00": "MERGED",
     "T01": "MERGED",
     "T02": "MERGED",
-    "T03-01": "BLOCKED_PENDING_CALLBACK_FIX",
+    "T03-01": "UNDER_VALIDATION",
     "T04-01": "PLANNED",
     "T04-02": "PLANNED",
     "T04-03": "PLANNED",
@@ -51,15 +52,15 @@
     "T10-05": "PLANNED",
     "T11": "PLANNED",
     "T12": "PLANNED",
-    "T03-01-PREREQUISITE": "MERGED"
+    "T03-01-PREREQUISITE": "MERGED",
+    "T03-01-PG-CALLBACK-FIX": "MERGED"
   },
-  "next_batch": "T03-01",
+  "next_batch": "T04-01",
   "next_batch_authorized_to_start": false,
   "required_before_next_batch": [
-    "Independent PG callback fix exact-head CI and review.",
-    "Separately authorized fix merge before resuming four-module T03-01 migration."
+    "T03-01 exact-head CI and independent review, separately authorized merge; stop before T04-01."
   ],
-  "migration_readiness": "T03_PREREQUISITE_MERGED_CALLBACK_FIX_UNDER_VALIDATION",
+  "migration_readiness": "T03_PLATFORM_UNDER_VALIDATION",
   "production_readiness": "NOT_CLAIMED",
   "types": "IMPLEMENTED_FINAL_RESULTS_IN_EXACT_HEAD_PR",
   "build": "IMPLEMENTED_FINAL_RESULTS_IN_EXACT_HEAD_PR",
@@ -85,7 +86,7 @@
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
-  "completed_batches_note": "T00 through T02 and prerequisite PR27 merges verified; T03-01 production migration remains paused for an independently authorized baseline defect fix.",
+  "completed_batches_note": "T00 through T02, prerequisite PR27 and independent callback fix PR28 merged.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
   "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",
@@ -93,6 +94,10 @@
     "pr": 27,
     "merge": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023"
   },
-  "current_followup_receipt": "receipts/T03-pg-callback-fix.json",
-  "publication_result_source": "Exact published-head CI artifacts and PR review; no future PASS is certified by this file."
+  "current_followup_receipt": "receipts/T03-01.json",
+  "publication_result_source": "Exact published-head CI artifacts and PR review; no future PASS is certified by this file.",
+  "callback_fix": {
+    "pr": 28,
+    "merge": "d2d462c8b98b6a379584f0dbc6d1786011aad573"
+  }
 }

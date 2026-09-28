@@ -1,0 +1,33 @@
+{
+  "batch": "T03-01",
+  "base": "d2d462c8b98b6a379584f0dbc6d1786011aad573",
+  "status": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
+  "production_mappings": {
+    "src/platform/time-contract.mjs": "src/platform/time-contract.mts",
+    "src/platform/postgres-types.mjs": "src/platform/postgres-types.mts",
+    "src/platform/legacy-migration-guard.mjs": "src/platform/legacy-migration-guard.mts",
+    "src/platform/postgres-pool.mjs": "src/platform/postgres-pool.mts"
+  },
+  "automated_full_batch": "NOT_RUN_AT_RECEIPT_CREATION",
+  "selected_file_count": 181,
+  "local_platform_initial": {
+    "tests": 15,
+    "pass": 15
+  },
+  "types": "LOCAL_STRICT_PROGRAM_PASS_SUBJECT_TO_FINAL_DIFF",
+  "behavior_reference": "Authentic T02; PR28 callback fix intentionally differs and is separately regression-tested",
+  "type_escapes": {
+    "new_any": 0,
+    "suppression": 0,
+    "double_assertion": 0,
+    "non_null_assertion": 0,
+    "allowed_assertions": "Existing-brand boundaries; regex-proven tuple/index shapes; own-property access; dynamic query adaptation; parser format correlation. Vendor surfaces detailed in T03-01.md."
+  },
+  "raw_archive": "D:/Agent-Prompts/T03_Platform_20260928",
+  "review": "FINAL_EXACT_HEAD_REVIEW_PENDING",
+  "database_change": false,
+  "production_ready": false,
+  "next_batch": "T04-01",
+  "next_batch_authorized": false,
+  "rollback": "Separate revert PR, no database rollback"
+}

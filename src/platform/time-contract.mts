@@ -1,4 +1,5 @@
 import { types as utilTypes } from 'node:util';
+import type { LocalDate, LocalTime, LocalDateTime, PhysicalEpochMs } from '../../contracts/time_contracts.js';
 
 export const BUSINESS_TIMEZONE = 'Asia/Shanghai';
 export const LOCAL_DATE_PATTERN = /^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/u;
@@ -15,37 +16,40 @@ export const TIME_CONTRACT_ERROR_CODES = Object.freeze({
 });
 
 export class TimeContractError extends TypeError {
-  constructor(code) {
+  declare code: string;
+  constructor(code: string) {
     super(code);
     this.name = 'TimeContractError';
     this.code = code;
   }
 }
 
-function fail(code) {
+function fail(code: string): never {
   throw new TimeContractError(code);
 }
 
-function plainPrimitiveString(value, code) {
+function plainPrimitiveString(value: unknown, code: string): string {
   if (typeof value !== 'string' || utilTypes.isProxy(value)) fail(code);
   return value;
 }
 
-function leapYear(year) {
+function leapYear(year: number): boolean {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
 
-function validCalendarDate(year, month, day) {
+function validCalendarDate(year: number, month: number, day: number): boolean {
   if (year < 1) return false;
-  const maximum = [31, leapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  // Called only after the date pattern has checked month 01..12.
+  const maximum = [31, leapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1] as number;
   return day >= 1 && day <= maximum;
 }
 
-function calendarParts(value, pattern, code) {
+function calendarParts(value: unknown, pattern: RegExp, code: string): string {
   const text = plainPrimitiveString(value, code);
   const match = pattern.exec(text);
   if (!match) fail(code);
-  const [date] = text.split(' ');
+  // A split always has a first item; the pattern above validated the calendar shape.
+  const [date] = text.split(' ') as [string, ...string[]];
   const [yearText, monthText, dayText] = date.split('-');
   const year = Number(yearText);
   const month = Number(monthText);
@@ -54,21 +58,21 @@ function calendarParts(value, pattern, code) {
   return text;
 }
 
-export function assertLocalDate(value) {
-  return calendarParts(value, LOCAL_DATE_PATTERN, TIME_CONTRACT_ERROR_CODES.localDateInvalid);
+export function assertLocalDate(value: unknown): LocalDate {
+  return calendarParts(value, LOCAL_DATE_PATTERN, TIME_CONTRACT_ERROR_CODES.localDateInvalid) as LocalDate;
 }
 
-export function assertLocalTime(value) {
+export function assertLocalTime(value: unknown): LocalTime {
   const text = plainPrimitiveString(value, TIME_CONTRACT_ERROR_CODES.localTimeInvalid);
   if (!LOCAL_TIME_PATTERN.test(text)) fail(TIME_CONTRACT_ERROR_CODES.localTimeInvalid);
-  return text;
+  return text as LocalTime;
 }
 
-export function assertLocalDateTime(value) {
-  return calendarParts(value, LOCAL_DATETIME_PATTERN, TIME_CONTRACT_ERROR_CODES.localDateTimeInvalid);
+export function assertLocalDateTime(value: unknown): LocalDateTime {
+  return calendarParts(value, LOCAL_DATETIME_PATTERN, TIME_CONTRACT_ERROR_CODES.localDateTimeInvalid) as LocalDateTime;
 }
 
-export function assertEpochMsString(value) {
+export function assertEpochMsString(value: unknown): PhysicalEpochMs {
   const text = plainPrimitiveString(value, TIME_CONTRACT_ERROR_CODES.epochMsInvalid);
   if (!EPOCH_MS_STRING_PATTERN.test(text)) fail(TIME_CONTRACT_ERROR_CODES.epochMsInvalid);
   try {
@@ -76,7 +80,7 @@ export function assertEpochMsString(value) {
   } catch {
     fail(TIME_CONTRACT_ERROR_CODES.epochMsInvalid);
   }
-  return text;
+  return text as PhysicalEpochMs;
 }
 
 const shanghaiFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -92,15 +96,15 @@ const shanghaiFormatter = new Intl.DateTimeFormat('en-CA', {
   second: '2-digit',
 });
 
-function partMap(parts) {
-  const values = Object.create(null);
+function partMap(parts: Intl.DateTimeFormatPart[]): Record<string, string> {
+  const values: Record<string, string> = Object.create(null);
   for (const part of parts) {
     if (part.type !== 'literal') values[part.type] = part.value;
   }
   return values;
 }
 
-export function formatEpochMsToShanghaiLocal(value) {
+export function formatEpochMsToShanghaiLocal(value: unknown): LocalDateTime {
   const text = assertEpochMsString(value);
   const epoch = BigInt(text);
   if (epoch > 8_640_000_000_000_000n) fail(TIME_CONTRACT_ERROR_CODES.epochMsOutOfRange);
@@ -112,7 +116,7 @@ export function formatEpochMsToShanghaiLocal(value) {
   );
 }
 
-function daysFromCivil(year, month, day) {
+function daysFromCivil(year: number, month: number, day: number): number {
   const adjustedYear = year - (month <= 2 ? 1 : 0);
   const era = Math.floor(adjustedYear / 400);
   const yearOfEra = adjustedYear - era * 400;
@@ -122,11 +126,12 @@ function daysFromCivil(year, month, day) {
   return era * 146_097 + dayOfEra - 719_468;
 }
 
-export function shanghaiLocalToEpochMs(value) {
+export function shanghaiLocalToEpochMs(value: unknown): PhysicalEpochMs {
   const local = assertLocalDateTime(value);
-  const [date, time] = local.split(' ');
-  const [year, month, day] = date.split('-').map(Number);
-  const [hour, minute, second] = time.split(':').map(Number);
+  // assertLocalDateTime validated both components and all six numeric fields.
+  const [date, time] = local.split(' ') as [string, string];
+  const [year, month, day] = date.split('-').map(Number) as [number, number, number];
+  const [hour, minute, second] = time.split(':').map(Number) as [number, number, number];
   const utcSeconds = BigInt(daysFromCivil(year, month, day)) * 86_400n
     + BigInt(hour * 3600 + minute * 60 + second)
     - 28_800n;
@@ -134,7 +139,7 @@ export function shanghaiLocalToEpochMs(value) {
   return assertEpochMsString(String(utcSeconds * 1000n));
 }
 
-export function addEpochMilliseconds(value, deltaMs) {
+export function addEpochMilliseconds(value: unknown, deltaMs: number): PhysicalEpochMs {
   const epoch = BigInt(assertEpochMsString(value));
   if (!Number.isSafeInteger(deltaMs)) fail(TIME_CONTRACT_ERROR_CODES.epochMsInvalid);
   const result = epoch + BigInt(deltaMs);
@@ -142,16 +147,16 @@ export function addEpochMilliseconds(value, deltaMs) {
   return assertEpochMsString(String(result));
 }
 
-export function nowShanghaiLocal({ nowEpochMs = String(Date.now()) } = {}) {
+export function nowShanghaiLocal({ nowEpochMs = String(Date.now()) }: { nowEpochMs?: unknown } = {}): LocalDateTime {
   return formatEpochMsToShanghaiLocal(assertEpochMsString(nowEpochMs));
 }
 
-export function compareLocalDateTime(left, right) {
+export function compareLocalDateTime(left: unknown, right: unknown): -1 | 0 | 1 {
   const a = assertLocalDateTime(left);
   const b = assertLocalDateTime(right);
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-export function localDateTimeToDisplay(value) {
+export function localDateTimeToDisplay(value: unknown): string {
   return assertLocalDateTime(value).slice(0, 16);
 }
