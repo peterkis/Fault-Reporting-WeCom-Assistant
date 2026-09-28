@@ -134,7 +134,7 @@ export function program(root: string, name: string): ts.Program {
   // .d.ts/.d.mts, but never vendor declarations from the locked dependencies.
   for (const source of result.getSourceFiles()) {
     const f = slash(path.relative(root, source.fileName));
-    if (f.startsWith('../') || f.startsWith('node_modules/') || !/\.(?:mts|ts)$/u.test(f)) continue;
+    if (path.isAbsolute(f) || f.startsWith('../') || f.startsWith('node_modules/') || !/\.(?:mts|ts)$/u.test(f)) continue;
     safeFile(root, f);
     const visit = (node: ts.Node): void => {
       if (node.kind === ts.SyntaxKind.AnyKeyword || ts.isNonNullExpression(node)
