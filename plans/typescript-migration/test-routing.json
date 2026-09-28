@@ -5,7 +5,7 @@
   "legacy_entry_count": 207,
   "entries": [
     {"path":"tests/platform-postgres-callback.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
-    {"path":"tests/platform-boundary-contracts.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/platform-boundary-contracts.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":".github/review/pr-evidence-delta.test.mjs","mode":"SOURCE_HOST","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":".github/review/verify-published-history.test.mjs","mode":"SOURCE_HOST","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/arch-005-time-contract-architecture.test.mjs","mode":"SOURCE_HOST","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},

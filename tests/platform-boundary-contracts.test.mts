@@ -84,3 +84,16 @@ test('injected factories keep capabilities, config bounds and session initializa
   const pool=createPostgresPool({max:1});
   assert.equal(pool.options.max,1);assert.equal(pool.options.options,POSTGRES_TIME_SESSION_OPTIONS);await pool.end();
 });
+
+test('locked native Client.connect returns the same guarded client with usable query capability', async () => {
+  const connectionString = process.env.PILOT_DATABASE_URL;
+  if (!connectionString) throw new Error('POSTGRES_NATIVE_CLIENT_TEST_DATABASE_REQUIRED');
+  const client = createPostgresClient({connectionString});
+  try {
+    const connected = await client.connect();
+    assert.equal(connected, client);
+    assert.throws(()=>connected.query('SELECT $1::timestamptz',[new Date()]),{code:'POSTGRES_DATE_PARAMETER_FORBIDDEN'});
+    const result = await connected.query<{value: string; timezone: string}>("SELECT $1::text AS value, current_setting('TimeZone') AS timezone",['same-client']);
+    assert.deepEqual(result.rows,[{value:'same-client',timezone:'Asia/Shanghai'}]);
+  } finally { await client.end(); }
+});
