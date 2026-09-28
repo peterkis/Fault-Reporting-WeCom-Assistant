@@ -9,6 +9,7 @@
     "T00",
     "T01",
     "T02",
+    "T03-01",
     "T03-01-PREREQUISITE",
     "T03-01-PG-CALLBACK-FIX"
   ],
@@ -16,7 +17,7 @@
     "T00": "MERGED",
     "T01": "MERGED",
     "T02": "MERGED",
-    "T03-01": "UNDER_VALIDATION",
+    "T03-01": "MERGED",
     "T04-01": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
     "T04-02": "PLANNED",
     "T04-03": "PLANNED",
@@ -86,7 +87,7 @@
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
-  "completed_batches_note": "T00 through T02, prerequisite PR27 and independent callback fix PR28 merged.",
+  "completed_batches_note": "T00 through T03-01 merged, including prerequisite PR27 and independent callback fix PR28.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
   "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",

@@ -393,6 +393,7 @@ async function withTimeout<T>(operation: Promise<T>, timeoutMs: number): Promise
   }
 }
 
+export function createNotificationDeliveryWorker(options: NotificationDeliveryWorkerOptions): NotificationDeliveryWorker;
 export function createNotificationDeliveryWorker({
   pool,
   sender,

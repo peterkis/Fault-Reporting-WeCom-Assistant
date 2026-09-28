@@ -655,6 +655,9 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
   });
 }
 
+export function createPilotTicketProcessor(
+  options: PilotTicketProcessorOptions,
+): (input: PilotTicketProcessorInput) => Promise<PilotTicketProcessorResult>;
 export function createPilotTicketProcessor({
   serviceIntakeProcessor,
   ticketCore,

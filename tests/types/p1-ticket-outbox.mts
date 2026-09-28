@@ -2,10 +2,13 @@ import type { LocalDateTime, PhysicalEpochMs } from '../../contracts/time_contra
 import type { PostgresPoolClient } from '../../src/platform/postgres-pool.mjs';
 import {
   createPilotTicketCore,
+  createPilotTicketProcessor,
   isTicketStatus,
   type PilotTicketCreateResult,
   type PilotTicketInput,
   type PilotTicketRow,
+  type PilotTicketCore,
+  type ServiceIntakeProcessor,
   type PublicIntakeEvent,
   type PublicPilotTicket,
   type TicketPriority,
@@ -46,6 +49,13 @@ const ticketInput: PilotTicketInput = {
   priority,
 };
 const ticketCore = createPilotTicketCore({ defaultResolverTeamId: 'PILOT_IT' });
+declare const serviceIntakeProcessor: ServiceIntakeProcessor;
+declare const processorTicketCore: PilotTicketCore;
+const processor = createPilotTicketProcessor({ serviceIntakeProcessor, ticketCore: processorTicketCore });
+// @ts-expect-error -- The processor's mandatory Service Intake dependency cannot be omitted.
+createPilotTicketProcessor({ ticketCore: processorTicketCore });
+// @ts-expect-error -- The processor's mandatory Pilot Ticket Core dependency cannot be omitted.
+createPilotTicketProcessor({ serviceIntakeProcessor });
 const validAction: TicketAction = 'accept';
 const actor: TicketActor = { type: 'PILOT_USER', id: 'operator-id' };
 const actionInput: TicketActionInput = {
@@ -78,6 +88,8 @@ const worker = createNotificationDeliveryWorker({
   }),
   nowEpochMs: () => epochMs,
 });
+// @ts-expect-error -- A delivery worker must receive its mandatory sender dependency.
+createNotificationDeliveryWorker({});
 
 declare const ticketResult: PilotTicketCreateResult;
 if (ticketResult.created) {
@@ -166,7 +178,7 @@ createNotificationDeliveryWorker({ sender: async () => ({ ok: true }), nowEpochM
 // @ts-expect-error -- The epoch option carries a branded string, never a number.
 const invalidEpochOptions: NotificationDeliveryWorkerOptions = { sender: async () => ({ ok: true }), nowEpochMs: () => 1 };
 
-void [status, ticketInput, ticketCore, actionInput, assignment, actionService, outbox, worker,
+void [status, ticketInput, ticketCore, processor, actionInput, assignment, actionService, outbox, worker,
   invalidPriority, invalidStatus, invalidAction, invalidActor, invalidActionInput,
   invalidOptionalNote, incompleteAssignment, invalidOptionalResolverTeam, invalidChannel, invalidTarget,
   invalidEpochOptions];
