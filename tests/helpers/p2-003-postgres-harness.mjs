@@ -102,6 +102,7 @@ export async function withP2003IsolatedDatabase({
   let result;
   let runFailure;
   let cleanupFailure;
+  const disconnects = new Set();
 
   try {
     await adminPool.query(`CREATE DATABASE ${quotedDatabaseName} TEMPLATE template0`);
@@ -112,6 +113,11 @@ export async function withP2003IsolatedDatabase({
       max,
       connectionTimeoutMillis: 2_000,
       application_name: applicationName,
+    });
+    isolatedPool.on('connect', client => {
+      const disconnected = new Promise(resolve => client.once('end', resolve));
+      disconnects.add(disconnected);
+      disconnected.then(() => disconnects.delete(disconnected));
     });
     result = await run({
       pool: isolatedPool,
@@ -125,6 +131,14 @@ export async function withP2003IsolatedDatabase({
     try {
       if (isolatedPool) {
         await isolatedPool.end();
+        // Pool removal precedes socket close; wait before terminating our residual backends.
+        let timer;
+        try {
+          await Promise.race([
+            Promise.all(disconnects),
+            new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('P2_003_CLIENT_DISCONNECT_TIMEOUT')), 5_000); }),
+          ]);
+        } finally { clearTimeout(timer); }
       }
       await adminPool.query(
         `SELECT pg_terminate_backend(pid)

@@ -3,7 +3,7 @@
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "42201d12279dc9c95b64912f13cc72284388c514",
   "current_batch": "T02",
-  "current_execution_status": "FIXES_PENDING_EXACT_PUBLISHED_HEAD_VALIDATION",
+  "current_execution_status": "IMPLEMENTATION_COMPLETE_NOT_MERGED",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
@@ -12,7 +12,7 @@
   "batches": {
     "T00": "MERGED",
     "T01": "MERGED",
-    "T02": "IN_PROGRESS",
+    "T02": "IMPLEMENTED_NOT_MERGED",
     "T03-01": "PLANNED",
     "T04-01": "PLANNED",
     "T04-02": "PLANNED",
@@ -56,10 +56,10 @@
     "T02 exact published-head remote gates and independent Codex review.",
     "User-authorized T02 merge; T03 is outside the current request."
   ],
-  "migration_readiness": "T01_MERGED_T02_PENDING_VERIFICATION",
+  "migration_readiness": "T01_MERGED_T02_IMPLEMENTED_NOT_MERGED",
   "production_readiness": "NOT_CLAIMED",
-  "types": "IMPLEMENTED_PENDING_EXACT_HEAD_CI",
-  "build": "IMPLEMENTED_PENDING_EXACT_HEAD_CI",
+  "types": "IMPLEMENTED_FINAL_RESULTS_IN_EXACT_HEAD_PR",
+  "build": "IMPLEMENTED_FINAL_RESULTS_IN_EXACT_HEAD_PR",
   "blocked_items": [
     {
       "id": "ENV_NODE24_PG18",
@@ -92,5 +92,6 @@
     "merge": "84d39b964d02db335c6c0c900d56d5b0a383f621",
     "review_comment": 5862134148
   },
-  "current_followup_receipt": "receipts/T02-followup.json"
+  "current_followup_receipt": "receipts/T02-followup.json",
+  "publication_result_source": "Exact published-head CI artifacts and PR review; no future PASS is certified by this file."
 }
