@@ -1,3 +1,4 @@
+import { validateHistoricalP2016 } from '../scripts/validate-p2-016-historical.mjs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
@@ -40,8 +41,9 @@ test('P2-012 both parsed OpenAPI documents declare canonical subscription destin
 });
 
 test('P2-012 static authorization, frozen predecessors, scope, schemas and synthetic fixture gate',async()=>{
-  const r=await validateP2012({includeReadinessEvidence:false});assert.deepEqual(r.errors,[]);assert.ok(r.checks>=150);
-  assert.equal(r.readiness_evidence_checked,false);await assert.rejects(validateP2012({includeReadinessEvidence:'false'}),/P2_012_VALIDATION_MODE_INVALID/u);
+  const r=await validateP2012({includeReadinessEvidence:false});assert.deepEqual(r.errors,['P2_G2_HISTORICAL_EVIDENCE_CHANGED']);assert.equal(r.ok,false);assert.equal(r.historical_only,true);
+  assert.equal(validateHistoricalP2016().status,'PASS');
+  await assert.rejects(validateP2012({includeReadinessEvidence:'false'}),/P2_012_VALIDATION_MODE_INVALID/u);
   const text=await readFile('tests/fixtures/p2-012/incident-scenarios.v1.jsonl','utf8'),manifest=JSON.parse(await readFile('tests/fixtures/p2-012/incident-scenarios-manifest.v1.json','utf8'));
   assert.equal(createHash('sha256').update(text).digest('hex'),manifest.sha256);assert.equal(text.trim().split('\n').length,13);
   for(const row of text.trim().split('\n').map(JSON.parse)){assert.equal(row.synthetic,true);assert.equal(row.automatic_incident,false);assert.equal(row.human_confirmation_required,true);assert.equal(row.model_calls,0);}

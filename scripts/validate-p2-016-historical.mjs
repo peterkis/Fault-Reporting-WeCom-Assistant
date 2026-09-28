@@ -67,7 +67,7 @@ export function validateHistoricalP2016({ sourceRoot = root, ref = P2_016_HISTOR
     const validator = run(process.execPath, ['scripts/validate-p2-016-ticket-lifecycle-workbench.mjs'], checkout,
       { logDir: logRoot, logName: 'validator' });
     const tests = run(process.execPath, ['--test', '--test-concurrency=1',
-      'tests/p2-016-contracts.test.mjs', 'tests/p2-016-schema-contract.test.mjs'], checkout,
+      'tests/p2-016-contracts.test.mjs', 'tests/p2-016-schema-contract.test.mjs', 'tests/p2-012-schema-live-guards.test.mjs'], checkout,
     { logDir: logRoot, logName: 'historical-unit-tests' });
     const validatorPassed = validator.exit_code === 0;
     const testsPassed = tests.exit_code === 0;
