@@ -1,5 +1,5 @@
 import type { LocalDateTime, PhysicalEpochMs } from '../../contracts/time_contracts.js';
-import type { PostgresPoolClient } from '../../src/platform/postgres-pool.mjs';
+import type { PostgresPool, PostgresPoolClient } from '../../src/platform/postgres-pool.mjs';
 import {
   createPilotTicketCore,
   createPilotTicketProcessor,
@@ -78,10 +78,12 @@ const assignment: AssignmentMetadata = {
 const actionService: TicketActionService = createTicketActionService({});
 const channel: NotificationChannel = 'WECOM_DIRECT';
 const target: NotificationTarget = { channel, targetKey: 'reporter-id' };
+declare const workerPool: PostgresPool;
 const outbox = createNotificationOutbox({
   targetsForEvent: async () => [target],
 });
 const worker = createNotificationDeliveryWorker({
+  pool: workerPool,
   sender: async ({ channel: senderChannel, targetKey }) => ({
     ok: senderChannel === channel && targetKey === target.targetKey,
     providerMessageId: null,
@@ -90,6 +92,8 @@ const worker = createNotificationDeliveryWorker({
 });
 // @ts-expect-error -- A delivery worker must receive its mandatory sender dependency.
 createNotificationDeliveryWorker({});
+// @ts-expect-error -- A delivery worker must receive its mandatory PostgreSQL pool dependency.
+createNotificationDeliveryWorker({ sender: async () => ({ ok: true }) });
 
 declare const ticketResult: PilotTicketCreateResult;
 if (ticketResult.created) {
@@ -176,7 +180,7 @@ const invalidTarget: NotificationTarget = { channel: 'EMAIL', targetKey: 'report
 // @ts-expect-error -- Epoch providers must return the branded non-negative epoch string.
 createNotificationDeliveryWorker({ sender: async () => ({ ok: true }), nowEpochMs: () => 1 });
 // @ts-expect-error -- The epoch option carries a branded string, never a number.
-const invalidEpochOptions: NotificationDeliveryWorkerOptions = { sender: async () => ({ ok: true }), nowEpochMs: () => 1 };
+const invalidEpochOptions: NotificationDeliveryWorkerOptions = { pool: workerPool, sender: async () => ({ ok: true }), nowEpochMs: () => 1 };
 
 void [status, ticketInput, ticketCore, processor, actionInput, assignment, actionService, outbox, worker,
   invalidPriority, invalidStatus, invalidAction, invalidActor, invalidActionInput,

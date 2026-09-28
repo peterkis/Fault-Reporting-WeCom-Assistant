@@ -74,7 +74,7 @@ export interface NotificationDeliveryWorker {
   runOnce(input?: { limit?: number }): Promise<{ processed: number; results: PublicDelivery[] }>;
 }
 export interface NotificationDeliveryWorkerOptions {
-  pool?: PostgresPool;
+  pool: PostgresPool;
   sender: NotificationSender;
   now?: () => Date;
   nowEpochMs?: (() => PhysicalEpochMs) | null;
