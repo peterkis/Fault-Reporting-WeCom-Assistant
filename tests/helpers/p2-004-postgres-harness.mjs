@@ -13,6 +13,21 @@ function applicationName(purpose) {
   return value;
 }
 
+// pg-pool removes clients from totalCount before their socket close callbacks.
+// Await the public remove events before terminating any residual owned backend.
+async function closeOwnedPool(pool) {
+  let remaining = pool.totalCount;
+  if (!remaining) { await pool.end(); return; }
+  let timer, onRemove;
+  const closed = new Promise((resolve, reject) => {
+    timer = setTimeout(() => reject(new Error('P2_004_POOL_CLOSE_TIMEOUT')), 5000);
+    onRemove = () => { if (--remaining === 0) resolve(); };
+    pool.on('remove', onRemove);
+  });
+  try { await Promise.all([pool.end(), closed]); }
+  finally { clearTimeout(timer); pool.off('remove', onRemove); }
+}
+
 export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4, run }) {
   assert.equal(typeof databaseUrl, 'string');
   assert.match(purpose, /^[a-z0-9]{1,12}$/u);
@@ -37,7 +52,7 @@ export async function withP2004IsolatedDatabase({ databaseUrl, purpose, max = 4,
     runError = error;
   } finally {
     try {
-      if (pool) await pool.end();
+      if (pool) await closeOwnedPool(pool);
       await adminPool.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()', [databaseName]);
       await adminPool.query(`DROP DATABASE IF EXISTS ${quotedName}`);
       const residual = await adminPool.query('SELECT count(*)::integer AS count FROM pg_database WHERE datname = $1', [databaseName]);
