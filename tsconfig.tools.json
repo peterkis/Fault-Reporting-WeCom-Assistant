@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./tools/ts-migration",
+    "outDir": "./.build/tools",
+    "allowJs": false
+  },
+  "include": [
+    "tools/ts-migration/**/*.mts"
+  ]
+}

@@ -26,3 +26,6 @@ secrets/
 
 # Local architecture increment backups
 .v*-backup/
+
+# Controlled TypeScript migration outputs (never source or evidence)
+/.build/
