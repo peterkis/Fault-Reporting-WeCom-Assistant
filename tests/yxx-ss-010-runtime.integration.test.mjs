@@ -1,3 +1,4 @@
+import {tmpdir} from 'node:os';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -18,7 +19,7 @@ import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestr
 
 test('SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets',{timeout:180000},async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss010',run:async context=>{
-    const {pool}=context,fixture=await runtimeFixture(context),directory=path.resolve('tmp','ss010-runtime-'+randomUUID());
+    const {pool}=context,fixture=await runtimeFixture(context),directory=path.join(tmpdir(),'ss010-runtime-'+randomUUID());
     fixture.manifest.public_origin='https://chengdu.mobimedical.cn';
     let runtime;
     try{
@@ -42,7 +43,7 @@ test('SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access 
       assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref)).json().ticket.status,'CLOSED');
       assert.equal((await staff.request('/api/tickets/'+randomUUID()+'/accept',post({client_command_id:randomUUID(),expected_version:'1',reason_code:'SS010'},csrf))).status,403);
       assert.equal((await staff.request('/api/conversations/'+randomUUID()+'/claim',post({client_command_id:randomUUID()},csrf))).status,403);
-      assert.equal((await startLimitedRuntime({...fixture,stateDirectory:path.resolve('tmp','ss010-competing-'+randomUUID()),synthetic:true}).then(()=>null,e=>e.code)),'SS010_COMPETING_RUNTIME');
+      assert.equal((await startLimitedRuntime({...fixture,stateDirectory:path.join(tmpdir(),'ss010-competing-'+randomUUID()),synthetic:true}).then(()=>null,e=>e.code)),'SS010_COMPETING_RUNTIME');
       assert.equal((await runtime.stop()).cleanup_passed,true);
       assert.equal(JSON.parse(readFileSync(runtime.stateFile)).counts.intakes,1);
       runtime=await startLimitedRuntime({...fixture,stateDirectory:directory,resume:true,synthetic:true});
@@ -72,7 +73,7 @@ test('SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access 
 
 test('SS010 AC092 preflight rejects occupied port drift and resumed foreign scope without processing pending',{timeout:90000},async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss010',run:async context=>{
-    const fixture=await runtimeFixture(context),directory=path.resolve('tmp','ss010-preflight-'+randomUUID());
+    const fixture=await runtimeFixture(context),directory=path.join(tmpdir(),'ss010-preflight-'+randomUUID());
     const incident=(await context.pool.query(`WITH deadline AS MATERIALIZED (SELECT platform.physical_epoch_ms()+86400000 AS epoch)
       INSERT INTO incident.incident(incident_no,status,confirmed_scope,service_family,symptom_family,severity,safe_title,safe_public_summary_code,owner_principal_id,retention_until,retention_until_epoch_ms)
       SELECT 'INC-'||upper(replace($1,'-','')),'CONFIRMED_LOCAL','LOCAL','TEST','TEST','LOW','公共信息系统故障','PUBLIC_IT_INCIDENT',$2::uuid,
@@ -90,7 +91,7 @@ test('SS010 AC092 preflight rejects occupied port drift and resumed foreign scop
     finally{await new Promise(resolve=>occupied.close(resolve));}
     assert.equal((await context.pool.query('SELECT processed_revision::text AS revision FROM intake.web_request_binding')).rows[0].revision,'0');
     assert.equal((await context.pool.query('SELECT count(*)::int AS n FROM pilot_ticket.ticket')).rows[0].n,0);
-    await assert.rejects(startLimitedRuntime({...fixture,stateDirectory:path.resolve('tmp','ss010-reset-'+randomUUID()),synthetic:true}),{code:'SS010_DATABASE_SCOPE'});
+    await assert.rejects(startLimitedRuntime({...fixture,stateDirectory:path.join(tmpdir(),'ss010-reset-'+randomUUID()),synthetic:true}),{code:'SS010_DATABASE_SCOPE'});
     const changed=structuredClone(fixture.manifest);changed.limits.max_supplements++;
     await assert.rejects(startLimitedRuntime({...fixture,manifest:changed,stateDirectory:directory,resume:true,synthetic:true}),{code:'SS010_RESUME_BINDING_MISMATCH'});
     const stateFile=path.join(directory,'state.json'),original=readFileSync(stateFile,'utf8'),state=JSON.parse(original);
@@ -151,7 +152,7 @@ test('SS010 AC093 commit-time revocation rolls back facts and new runs cannot re
     await assert.rejects(ledger.execute({command:{client_command_id:randomUUID(),action:'queue',ticket_id:ticketId},authorize:async()=>({principal:{principal_id:fixture.manifest.principal_ids[0]}}),
       run:async()=>{revoked=true;throw Error('ordinary business error');}}),{code:'SS010_WINDOW_CLOSED'});
     assert.equal((await context.pool.query('SELECT count(*)::int AS n FROM pilot_ticket.ticket_command_receipt')).rows[0].n,0);
-    const missing=path.resolve('tmp','ss010-missing-'+randomUUID());await assert.rejects(startLimitedRuntime({...fixture,stateDirectory:missing,resume:true,synthetic:true}),{code:'SS010_RESUME_STATE_REQUIRED'});
+    const missing=path.join(tmpdir(),'ss010-missing-'+randomUUID());await assert.rejects(startLimitedRuntime({...fixture,stateDirectory:missing,resume:true,synthetic:true}),{code:'SS010_RESUME_STATE_REQUIRED'});
     const wrong=structuredClone(fixture.manifest);wrong.database.oid='1';await assert.rejects(startLimitedRuntime({...fixture,manifest:wrong,stateDirectory:missing,synthetic:true}),{code:'SS010_DATABASE_IDENTITY_MISMATCH'});
   }});
 });
@@ -159,7 +160,7 @@ test('SS010 AC094 lost controller IPC stops roles without starting a Gateway or 
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss010',run:async context=>{
     const fixture=await runtimeFixture(context);let runtime;
     try{
-      runtime=await startLimitedRuntime({...fixture,stateDirectory:path.resolve('tmp','ss010-loss-'+randomUUID()),synthetic:true});
+      runtime=await startLimitedRuntime({...fixture,stateDirectory:path.join(tmpdir(),'ss010-loss-'+randomUUID()),synthetic:true});
       runtime.children.get('APP').disconnect();
       await eventually(()=>runtime.status().status==='STOPPED');
       assert.equal(runtime.status().reason,'ROLE_EXITED');assert.equal(runtime.children.has('GATEWAY'),false);

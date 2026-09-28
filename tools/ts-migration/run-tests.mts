@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { hash, record, slash, sourceRoot, outputPath, codeFiles, strings, git } from './common.mjs';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
@@ -55,12 +55,15 @@ export function runSelection(root: string, selection: Selection, options: { refe
     if (target.cwd !== root) mkdirSync(path.join(target.cwd, 'tmp'), { recursive: true });
     const nodeFlags = [...new Set([...selection.flags, ...entry.node_flags])];
     if (!nodeFlags.some(f => f.startsWith('--test-concurrency='))) nodeFlags.push('--test-concurrency=1');
-    const args = [...nodeFlags, '--test', '--test-reporter=tap', target.file];
+    const sourceHook = !options.reference && entry.mode === 'SOURCE_HOST' ? ['--import', pathToFileURL(path.join(root, '.build/tools/source-hook.mjs')).href] : [];
+    const args = [...sourceHook, ...nodeFlags, '--test', '--test-reporter=tap', target.file];
+    // Preserve the serial browser recovery and two 360-second capacity case budgets.
+    const timeoutMs = ['tests/yxx-ss-007-native-ui.browser.test.mjs', 'tests/yxx-ss-009-capacity.integration.test.mjs'].includes(entry.path) ? 900_000 : 240_000;
     const prefix = String(index + 1).padStart(3, '0') + '-' + path.basename(entry.path);
-    const fileResult: Record<string, unknown> = { path: entry.path, runtime_path: outputPath(entry.path), mode: target.mode, node_flags: nodeFlags, status: 'RUNNING' };
+    const fileResult: Record<string, unknown> = { path: entry.path, runtime_path: outputPath(entry.path), mode: target.mode, node_flags: [...sourceHook, ...nodeFlags], status: 'RUNNING', timeout_ms: timeoutMs };
     files.push(fileResult);
     try {
-      const result = spawnSync(process.execPath, args, { cwd: target.cwd, env: { ...env, NODE_V8_COVERAGE: coverage }, encoding: 'utf8', windowsHide: true, timeout: 240_000, maxBuffer: 32 * 1024 * 1024 });
+      const result = spawnSync(process.execPath, args, { cwd: target.cwd, env: { ...env, NODE_V8_COVERAGE: coverage }, encoding: 'utf8', windowsHide: true, timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024 });
       const redact = (text: string): string => {
         const raw = env.PILOT_DATABASE_URL;
         const secrets = raw ? [raw, new URL(raw).password, decodeURIComponent(new URL(raw).password)].filter(Boolean) : [];
@@ -76,6 +79,7 @@ export function runSelection(root: string, selection: Selection, options: { refe
       for (const key of Object.keys(total) as (keyof Counts)[]) total[key] += c[key];
       if (!loaded.some(p => path.relative(p, target.file) === '')) throw new Error('MIGRATION_TEST_NOT_EXECUTED: ' + entry.path);
       const projectLoaded = loaded.filter(p => !path.relative(root, p).startsWith('..') && !path.isAbsolute(path.relative(root,p))).map(p => slash(path.relative(root, p)));
+      if (!options.reference && projectLoaded.some(p => p.startsWith('src/'))) throw new Error('MIGRATION_SOURCE_IMPLEMENTATION_LOADED: ' + entry.path);
       if (!options.reference && entry.mode !== 'SOURCE_HOST' && projectLoaded.some(p => /^(?:src|scripts|tests)\//u.test(p))) throw new Error('MIGRATION_RUNTIME_LOADED_SOURCE: ' + entry.path);
       fileResult.loaded_project_files = projectLoaded;
       const requiredChildren = strings(routes.subprocesses[entry.path] ?? []).map(p => options.reference ? p : '.build/runtime/' + outputPath(p));

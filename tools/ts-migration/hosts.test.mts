@@ -10,10 +10,11 @@ import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { counts, runSelection } from './run-tests.mjs';
 const original = sourceRoot();
-function scratch(): string {
+function scratch(reference = false): string {
   const root=mkdtempSync(path.join(tmpdir(),'t02-host-test-'));
   execFileSync('git',['clone','--quiet','--no-hardlinks',original,root],{windowsHide:true,stdio:'pipe'});
-  for(const relative of workspaceFiles(original)){const target=path.join(root,relative);mkdirSync(path.dirname(target),{recursive:true});copyFileSync(path.join(original,relative),target);}
+  if(reference)execFileSync('git',['checkout','--quiet','--detach','7eefaa99591bfaa2e787701efd315ff701c51f35'],{cwd:root,windowsHide:true});
+  for(const relative of reference?[]:workspaceFiles(original)){const target=path.join(root,relative);mkdirSync(path.dirname(target),{recursive:true});copyFileSync(path.join(original,relative),target);}
   symlinkSync(path.join(original,'node_modules'),path.join(root,'node_modules'),process.platform==='win32'?'junction':'dir');
   return root;
 }
@@ -48,7 +49,8 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
   });
   await t.test('legacy G2 executor refuses typed source tests before reading an env file',()=>{
     const code="import assert from 'node:assert/strict'; import {runG2Tests} from './scripts/p2-g2-synthetic-e2e.mjs'; await assert.rejects(runG2Tests({suite:'full',envFile:'does-not-exist'}),{code:'P2_G2_TYPED_TESTS_REQUIRE_MIGRATION_RUNNER'});";
-    execFileSync(process.execPath,['--input-type=module','-e',code],{cwd:root,windowsHide:true});
+    const reference=scratch(true);
+    try{execFileSync(process.execPath,['--input-type=module','-e',code],{cwd:reference,windowsHide:true});}finally{rmSync(reference,{recursive:true,force:true});}
   });
   await t.test('all contract declarations must enter the real type program',()=>{
     program(root,'tsconfig.type-tests.json');
@@ -90,7 +92,7 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
     });
   });
   await t.test('candidate binds MTS, declaration and build-control bytes',()=>{
-    const probe="import {g2CandidateInventory} from './src/p2-g2-candidate.mjs'; console.log(g2CandidateInventory().fingerprint);";
+    const probe="import {g2CandidateInventory} from './.build/runtime/src/p2-g2-candidate.mjs'; console.log(g2CandidateInventory(process.cwd()).fingerprint);";
     const fingerprint=()=>execFileSync(process.execPath,['--input-type=module','-e',probe],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
     const before=fingerprint();
     for(const p of ['src/migration-canary.mts','tests/types/contracts.mts','contracts/time_contracts.d.ts','tsconfig.type-tests.json','tools/ts-migration/resources.json'])alter(root,p,readFileSync(path.join(root,p),'utf8')+'\n// synthetic change',()=>assert.notEqual(fingerprint(),before));

@@ -146,7 +146,7 @@ export async function validateP2012({includeReadinessEvidence=true}={}){
   if(typeof includeReadinessEvidence!=='boolean')throw new Error('P2_012_VALIDATION_MODE_INVALID');
   const errors=[];let checks=0;const check=(ok,message)=>{checks++;if(!ok)errors.push(message);};
   const state=await json('plans/current_phase.json'),ready=state.p2_012_status==='READY_FOR_TARGETED_LIVE_VALIDATION',done=state.p2_012_status==='DONE';
-  if(isG2SuccessorState(state))return verifyG2Predecessor('P2-012',includeReadinessEvidence);
+  if(isG2SuccessorState(state))return verifyG2Predecessor('P2-012',includeReadinessEvidence,{sourceRoot:process.cwd()});
   const completion=done?await json(COMPLETION):null,hardening=completion?.pr_review_hardening,httpHardening=completion?.pr_review_http_openapi_hardening,subHardening=completion?.pr_review_subscription_contract_hardening,pausedHardening=completion?.pr_review_paused_destination_hardening,refreshHardening=completion?.pr_review_reporter_refresh_hardening;
   check(['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION','DONE'].includes(state.p2_012_status),'P2-012 has a recognized lifecycle state');
   const files=['MANIFEST.json','plans/current_phase.json','plans/master_backlog.json','plans/parallel_workstreams.json','tasks/master_backlog.json','project_summary.json'];

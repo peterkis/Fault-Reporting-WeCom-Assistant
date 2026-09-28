@@ -7,10 +7,10 @@ import { verifyArtifact } from './verify-artifact.mjs';
 
 const probe = `
 import {pathToFileURL} from 'node:url';import path from 'node:path';
-const root=process.cwd();const m=await import(pathToFileURL(path.join(root,'src/p2-g2-candidate.mjs')));
+const root=process.env.T03_INVENTORY_ROOT;const runtime=process.cwd();const m=await import(pathToFileURL(path.join(runtime,'src/p2-g2-candidate.mjs')));
 const inventory=m.g2CandidateInventory(root);let rejection,liveRejection;
-const config=await import(pathToFileURL(path.join(root,'src/p2-g2-validation-config.mjs')));
-const {configurationFixture}=await import(pathToFileURL(path.join(root,'tests/helpers/p2-g2-configuration-fixture.mjs')));
+const config=await import(pathToFileURL(path.join(runtime,'src/p2-g2-validation-config.mjs')));
+const {configurationFixture}=await import(pathToFileURL(path.join(runtime,'tests/helpers/p2-g2-configuration-fixture.mjs')));
 const old=configurationFixture('live');old.manifest.candidate_fingerprint=process.env.T02_OLD_SOURCE_FINGERPRINT??'0'.repeat(64);
 try{config.readG2Configuration({...old,candidateFingerprint:inventory.fingerprint});}catch(e){liveRejection=e.code??e.message;}
 
@@ -19,7 +19,7 @@ console.log(JSON.stringify({schema:inventory.schema_version,fingerprint:inventor
 export function g2Fingerprints(root: string): Record<string, unknown> {
   const manifest = verifyArtifact(root);
   const get = (cwd: string, old?: string): Record<string, unknown> => {
-    const result = spawnSync(process.execPath, ['--input-type=module','-e',probe], { cwd, env:{ PATH:process.env.PATH, SystemRoot:process.env.SystemRoot, ...(old ? {T02_OLD_SOURCE_FINGERPRINT:old}: {}) }, encoding:'utf8',windowsHide:true,timeout:30_000,maxBuffer:4*1024*1024 });
+    const result = spawnSync(process.execPath, ['--input-type=module','-e',probe], { cwd:path.join(root,'.build/runtime'), env:{ T03_INVENTORY_ROOT:cwd, PATH:process.env.PATH, SystemRoot:process.env.SystemRoot, ...(old ? {T02_OLD_SOURCE_FINGERPRINT:old}: {}) }, encoding:'utf8',windowsHide:true,timeout:30_000,maxBuffer:4*1024*1024 });
     if(result.status!==0 || result.error)throw new Error('MIGRATION_G2_INVENTORY_FAILED: '+result.stderr);
     return record(JSON.parse(result.stdout.trim()) as unknown);
   };

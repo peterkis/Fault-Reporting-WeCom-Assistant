@@ -2,7 +2,7 @@ name: TypeScript migration
 on:
   pull_request:
   push:
-    branches: ['codex/typescript-t01-foundation', 'codex/typescript-t02-hosts']
+    branches: ['codex/typescript-t01-foundation', 'codex/typescript-t02-hosts', 'codex/typescript-t03-prerequisite', 'codex/typescript-t03-platform']
 permissions:
   contents: read
 jobs:
@@ -12,7 +12,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - name: Preserve the recorded current-source SQL checkout representation
         run: git config --global core.autocrlf true
@@ -27,6 +27,14 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Authentic merged T02 reference (never current TypeScript source)
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="$RUNNER_TEMP/types-t02-reference"
+          git clone --no-local --config core.autocrlf=true . "$BASE"
+          git -C "$BASE" checkout --detach 7eefaa99591bfaa2e787701efd315ff701c51f35
+          npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
       - name: Strict tools, real compiler canary and host rejection tests
         shell: bash
         run: |
@@ -34,8 +42,8 @@ jobs:
           OUT="$RUNNER_TEMP/types-review"
           mkdir -p "$OUT"
           npm run migration:gate 2>&1 | tee "$OUT/gate.txt"
-          node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs 2>&1 | tee "$OUT/tooling.txt"
-          node .build/tools/observe-runtime.mjs 2>&1 | tee "$OUT/observations.jsonl"
+          node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs 2>&1 | tee "$OUT/tooling.txt"
+          node .build/tools/observe-runtime.mjs "$RUNNER_TEMP/types-t02-reference" 2>&1 | tee "$OUT/observations.jsonl"
           node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
           node .build/tools/browser-smoke.mjs 2>&1 | tee "$OUT/real-browser.txt"
           node .build/tools/run-tests.mjs --selection t02-source --report-dir "$OUT/source" 2>&1 | tee "$OUT/source.txt"
@@ -52,7 +60,7 @@ jobs:
           retention-days: 14
   source-baseline:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     services:
       postgres:
         image: postgres:18
@@ -80,6 +88,14 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Authentic merged T02 reference (never current TypeScript source)
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="$RUNNER_TEMP/types-t02-reference"
+          git clone --no-local --config core.autocrlf=true . "$BASE"
+          git -C "$BASE" checkout --detach 7eefaa99591bfaa2e787701efd315ff701c51f35
+          npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
       - name: Same 17-file baseline on SOURCE then two independent shadows
         shell: bash
         env:
@@ -90,52 +106,17 @@ jobs:
           mkdir -p "$OUT"
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" 2>&1 | tee "$OUT/identity.txt"
           npm run migration:tools
-          node .build/tools/run-tests.mjs --selection t02-baseline --reference-source --report-dir "$OUT/reference" 2>&1 | tee "$OUT/reference.txt"
+          (cd "$RUNNER_TEMP/types-t02-reference" && npm run migration:tools && node .build/tools/run-tests.mjs --selection t02-baseline --reference-source --report-dir "$OUT/reference") 2>&1 | tee "$OUT/reference.txt"
           node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-1" 2>&1 | tee "$OUT/shadow-1.txt"
           node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-2" 2>&1 | tee "$OUT/shadow-2.txt"
-          node .build/tools/observe-runtime.mjs 2>&1 | tee "$OUT/observations.jsonl"
-      - name: T02 process integration
+          node .build/tools/observe-runtime.mjs "$RUNNER_TEMP/types-t02-reference" 2>&1 | tee "$OUT/observations.jsonl"
+      - name: Entire T03 dependency batch on real PG18 and browser hosts
         if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
-          node .build/tools/run-tests.mjs --selection t02-process --report-dir "$OUT/process" 2>&1 | tee "$OUT/process.txt"
-      - name: T02 sql integration
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          node .build/tools/run-tests.mjs --selection t02-sql --report-dir "$OUT/sql" 2>&1 | tee "$OUT/sql.txt"
-      - name: T02 browser integration
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          node .build/tools/run-tests.mjs --selection t02-browser --report-dir "$OUT/browser" 2>&1 | tee "$OUT/browser.txt"
-      - name: T02 g2 integration
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          node .build/tools/run-tests.mjs --selection t02-g2 --report-dir "$OUT/g2" 2>&1 | tee "$OUT/g2.txt"
-      - name: T02 mixed integration
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          node .build/tools/run-tests.mjs --selection t02-mixed --report-dir "$OUT/mixed" 2>&1 | tee "$OUT/mixed.txt"
-      - name: T02 corrected runtime hosts
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          node .build/tools/run-tests.mjs --selection t02-routed --report-dir "$OUT/routed" 2>&1 | tee "$OUT/routed.txt"
+          node .build/tools/gate.mjs --batch T03-01 --report-dir "$OUT/t03-batch" > "$OUT/t03-batch.txt" 2>&1
       - name: T02 artifact identity and source architecture
         if: ${{ !cancelled() }}
         shell: bash
@@ -152,26 +133,26 @@ jobs:
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
           node .build/tools/run-tests.mjs --frozen p2016 --report-dir "$OUT/historical" 2>&1 | tee "$OUT/historical.txt"
-      - name: Compare unchanged known non-readiness against authentic merged T01
+      - name: Compare unchanged known non-readiness against authentic merged T02
         if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
-          BASE="$RUNNER_TEMP/types-t01-reference"
+          BASE="$RUNNER_TEMP/types-t02-reference"
           printf '%s\n' "import net from 'node:net';import cp from 'node:child_process';import {syncBuiltinESMExports} from 'node:module';const fail=()=>{process.stderr.write('T02_FORBIDDEN_RUNTIME_IO');process.exit(97);};net.Socket.prototype.connect=fail;net.Server.prototype.listen=fail;cp.fork=fail;cp.spawn=fail;globalThis.fetch=fail;syncBuiltinESMExports();" > "$OUT/offline-guard.mjs"
-          git worktree add --detach "$BASE" 84d39b964d02db335c6c0c900d56d5b0a383f621
           npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
           for LABEL in current base; do
             CWD="$GITHUB_WORKSPACE"; if [ "$LABEL" = base ]; then CWD="$BASE"; fi
+            HOOK=(); if [ "$LABEL" = current ]; then HOOK=(--import "$GITHUB_WORKSPACE/.build/tools/source-hook.mjs"); fi
             RC=0; (cd "$CWD" && node scripts/validate-yxx-self-service.mjs --require-ready) > "$OUT/$LABEL-strict.txt" 2>&1 || RC=$?
             echo "$RC" > "$OUT/$LABEL-strict-exit.txt"; test "$RC" = 1
             grep -q YXX_VERIFICATION_REJECTED "$OUT/$LABEL-strict.txt"
-            (cd "$CWD" && node --input-type=module -e "import {validateYxxSelfService} from './src/yxx-self-service-verification.mjs'; try {validateYxxSelfService({requireReady:true}); process.exitCode=1;} catch(e) {if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e; console.log(JSON.stringify({status:'KNOWN_BASELINE_NOT_READY',code:e.code}));}") > "$OUT/$LABEL-strict-classification.txt" 2>&1
+            (cd "$CWD" && node "${HOOK[@]}" --input-type=module -e "import {validateYxxSelfService} from './src/yxx-self-service-verification.mjs'; try {validateYxxSelfService({root:process.cwd(),requireReady:true}); process.exitCode=1;} catch(e) {if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e; console.log(JSON.stringify({status:'KNOWN_BASELINE_NOT_READY',code:e.code}));}") > "$OUT/$LABEL-strict-classification.txt" 2>&1
             RC=0; (cd "$CWD" && node --import "$OUT/offline-guard.mjs" scripts/yxx-self-service-readiness.mjs) > "$OUT/$LABEL-ss010.txt" 2>&1 || RC=$?
             echo "$RC" > "$OUT/$LABEL-ss010-exit.txt"; test "$RC" = 1
             grep -q 'SS010_NOT_READY' "$OUT/$LABEL-ss010.txt"
-            (cd "$CWD" && node --import "$OUT/offline-guard.mjs" --input-type=module -e "import {checkSS010} from './src/yxx-self-service-readiness.mjs'; try{checkSS010();process.exitCode=1;}catch(e){if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e;console.log(e.code);}") > "$OUT/$LABEL-ss010-internal.txt" 2>&1
+            (cd "$CWD" && node "${HOOK[@]}" --import "$OUT/offline-guard.mjs" --input-type=module -e "import {checkSS010} from './src/yxx-self-service-readiness.mjs'; try{checkSS010({root:process.cwd()});process.exitCode=1;}catch(e){if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e;console.log(e.code);}") > "$OUT/$LABEL-ss010-internal.txt" 2>&1
             RC=0; (cd "$CWD" && node scripts/validate-arch-006-rule-first-service-loop.mjs) > "$OUT/$LABEL-arch006.txt" 2>&1 || RC=$?
             echo "$RC" > "$OUT/$LABEL-arch006-exit.txt"; test "$RC" = 1
           done
@@ -181,7 +162,6 @@ jobs:
           grep -q 'ARCH-006 validation failed with 2 error(s)' "$OUT/current-arch006.txt"
           grep -q 'valid pinned local self-service successor scope' "$OUT/current-arch006.txt"
           cmp "$OUT/current-strict-classification.txt" "$OUT/base-strict-classification.txt"
-          git worktree remove --force "$BASE"
       - name: Exact source, environment and cleanup identity
         if: always()
         shell: bash

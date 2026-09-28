@@ -1,3 +1,5 @@
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
@@ -23,7 +25,7 @@ test('SS010 AC093 real browser limited roles complete supplement review and safe
         });outgoing.on('error',()=>{response.writeHead(503);response.end();});request.pipe(outgoing);
       })});
       setup.manifest.public_origin=fixture.origin;
-      runtime=await startLimitedRuntime({...setup,stateDirectory:path.resolve('tmp','ss010-browser-'+randomUUID()),synthetic:true});
+      runtime=await startLimitedRuntime({...setup,stateDirectory:path.join(tmpdir(),'ss010-browser-'+randomUUID()),synthetic:true});
       tab=await fixture.launch({path:'/wecom/yixiaoxiu/',width:390,height:844});
       await tab.waitFor("document.querySelector('#home-view')?.hidden===false");
       await tab.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')",{awaitPromise:false});
@@ -41,11 +43,11 @@ test('SS010 AC093 real browser limited roles complete supplement review and safe
       const result=await staff.request('/api/manual-reviews/'+review.id+'/resolve',post({client_command_id:randomUUID(),expected_row_version:review.row_version,resolution_code:'CONFIRM_TICKET_ELIGIBLE',resolution_reason_code:'SS010_SYNTHETIC'},csrf));
       assert.equal(result.status,200,result.text);
       await tab.evaluate('location.reload()',{awaitPromise:false});await tab.waitFor("document.querySelector('#detail-status')?.textContent.includes('已生成工单')");
-      mkdirSync('tmp/ss010-ui',{recursive:true});
+      const screenshotDirectory=join(tmpdir(),'ss010-ui-'+randomUUID());mkdirSync(screenshotDirectory,{recursive:true});
       for(const [width,height] of [[390,844],[1440,900]]){
         await tab.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
         assert.equal(await tab.evaluate('document.documentElement.scrollWidth>innerWidth'),false);
-        const data=Buffer.from(await tab.screenshot(),'base64'),file='tmp/ss010-ui/'+randomUUID()+'.png';writeFileSync(file,data);
+        const data=Buffer.from(await tab.screenshot(),'base64'),file=join(screenshotDirectory,randomUUID()+'.png');writeFileSync(file,data);
         screenshots.push({file,width,height,sha256:createHash('sha256').update(data).digest('hex')});
       }
       assert.equal((await context.pool.query('SELECT count(*)::int AS n FROM intake.web_submission')).rows[0].n,2);

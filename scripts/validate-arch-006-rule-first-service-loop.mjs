@@ -1,9 +1,16 @@
+import pathMigration from 'node:path';
+import { fileURLToPath as migrationFilePath } from 'node:url';
+const migrationRoot = migrationFilePath(new URL('../', import.meta.url));
+if (!(pathMigration.basename(pathMigration.resolve(migrationRoot)) === 'runtime' && pathMigration.basename(pathMigration.dirname(pathMigration.resolve(migrationRoot))) === '.build')) {
+  const { installSourceHost } = await import('../.build/tools/source-host.mjs');
+  installSourceHost(migrationRoot);
+}
+const {allowYxxReadinessReportRefresh} = await import('../src/p2-g2-yixiaoxiu-readiness.mjs');
+const {readYxxLocalValidationScope} = await import('../src/yxx-self-service-validation-scope.mjs');
+const {g2CandidateInventory,requirePreparedG2Candidate} = await import('../src/p2-g2-candidate.mjs');
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import {allowYxxReadinessReportRefresh} from '../src/p2-g2-yixiaoxiu-readiness.mjs';
-import {readYxxLocalValidationScope} from '../src/yxx-self-service-validation-scope.mjs';
-import {g2CandidateInventory,requirePreparedG2Candidate} from '../src/p2-g2-candidate.mjs';
 
 const root = process.cwd();
 const errors = [];
