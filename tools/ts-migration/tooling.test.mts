@@ -89,10 +89,12 @@ test('T01 build and negative checks run on an owned full clone, never on user so
         ['src/declaration-negative.d.mts', 'export const unchecked: any;'],
         ['src/declaration-negative.d.mts', '// @ts-ignore\nexport const invalid: MissingType;'],
         ['src/declaration-negative.d.ts', 'export const unchecked: any;'],
+        ['contracts/declaration-negative.d.cts', 'export const unchecked: any;'],
+        ['contracts/declaration-negative.d.cts', '// @ts-ignore\nexport const invalid: MissingType;'],
       ]) {
         if (!relative || !content) throw new Error('invalid negative fixture');
         alter(root, relative, content, () => {
-          const specifier = relative.endsWith('.d.mts') ? './declaration-negative.mjs' : './declaration-negative.js';
+          const specifier = relative.endsWith('.d.cts') ? '../contracts/declaration-negative.cjs' : relative.endsWith('.d.mts') ? './declaration-negative.mjs' : './declaration-negative.js';
           alter(root, 'src/declaration-negative-consumer.mts', `import { ${content.includes('unchecked') ? 'unchecked' : 'invalid'} } from '${specifier}';`, () => {
             assert.throws(() => program(root, 'tsconfig.migration.json'), /MIGRATION_TYPE_(?:ESCAPE|SUPPRESSION)/u);
           });
