@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
+      - name: Prepare the YAML parser required by current and historical OpenAPI tests
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Authentic merged T02 reference (never current TypeScript source)
         shell: bash
@@ -87,6 +89,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
+      - name: Prepare the YAML parser required by current and historical OpenAPI tests
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Authentic merged T02 reference (never current TypeScript source)
         shell: bash
@@ -116,7 +120,7 @@ jobs:
         run: |
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
-          node .build/tools/gate.mjs --batch T03-01 --report-dir "$OUT/t03-batch" > "$OUT/t03-batch.txt" 2>&1
+          npm run migration:gate -- --batch T03-01 --report-dir "$OUT/t03-batch" > "$OUT/t03-batch.txt" 2>&1
       - name: T02 artifact identity and source architecture
         if: ${{ !cancelled() }}
         shell: bash

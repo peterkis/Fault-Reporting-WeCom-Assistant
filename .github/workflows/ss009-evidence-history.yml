@@ -40,6 +40,8 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/ss009-evidence-history"
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" | tee "$RUNNER_TEMP/ss009-evidence-history/preflight.json"
+      - name: Prepare the YAML parser required by current and historical OpenAPI tests
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Check current PR evidence history and current source regressions
         run: |
