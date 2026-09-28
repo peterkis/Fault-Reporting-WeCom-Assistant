@@ -1,4 +1,7 @@
-export async function arch005MigrationApplied(queryable) {
+interface MigrationRow { marker_table_exists?: unknown; applied?: unknown }
+export interface MigrationQueryable { query(text: string): Promise<{ rows: MigrationRow[] }> }
+
+export async function arch005MigrationApplied(queryable: MigrationQueryable): Promise<boolean> {
   if (!queryable || typeof queryable.query !== 'function') {
     throw new TypeError('LEGACY_MIGRATION_QUERYABLE_REQUIRED');
   }
@@ -22,7 +25,7 @@ export async function arch005MigrationApplied(queryable) {
   return marker.rows[0]?.applied === true;
 }
 
-export async function stopLegacyMigrationAfterArch005(queryable, migrationId) {
+export async function stopLegacyMigrationAfterArch005(queryable: MigrationQueryable, migrationId: string): Promise<void> {
   if (await arch005MigrationApplied(queryable)) {
     process.stdout.write(`${JSON.stringify({
       ok: true,
@@ -31,7 +34,7 @@ export async function stopLegacyMigrationAfterArch005(queryable, migrationId) {
       superseded_by: '022_arch_005_asia_shanghai_time_contract',
       write_performed: false,
     })}\n`);
-    const error = new Error('LEGACY_MIGRATION_SUPERSEDED');
+    const error: Error & { code?: string; migration_id?: string } = new Error('LEGACY_MIGRATION_SUPERSEDED');
     error.code = 'LEGACY_MIGRATION_SUPERSEDED';
     error.migration_id = migrationId;
     throw error;

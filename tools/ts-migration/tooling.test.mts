@@ -13,6 +13,8 @@ function scratch(reference = false): string {
   const root = mkdtempSync(path.join(tmpdir(), 'types-migration-test-'));
   execFileSync('git', ['clone', '--quiet', '--no-hardlinks', original, root], { stdio: 'pipe', windowsHide: true });
   if (reference) execFileSync('git', ['checkout', '--quiet', '--detach', '7eefaa99591bfaa2e787701efd315ff701c51f35'], { cwd: root, windowsHide: true });
+  // Overlay deletions as well as additions, so uncommitted renames cannot create dual sources.
+  if (!reference) { const current = new Set(workspaceFiles(original)); for (const relative of workspaceFiles(root)) if (!current.has(relative)) rmSync(path.join(root, relative)); }
   for (const relative of reference ? [] : workspaceFiles(original)) {
     const target = path.join(root, relative); mkdirSync(path.dirname(target), { recursive: true });
     copyFileSync(path.join(original, relative), target);
@@ -72,11 +74,11 @@ test('T01 build and negative checks run on an owned full clone, never on user so
     await t.test('a committed MTS migration cannot be silently restored as grandfathered MJS', () => {
       const retiredRoot = scratch(true);
       try {
-        const js = path.join(retiredRoot, 'src/platform/time-contract.mjs');
-        const typed = path.join(retiredRoot, 'src/platform/time-contract.mts');
+        const js = path.join(retiredRoot, 'src/g0-002-sdk-lifecycle.mjs');
+        const typed = path.join(retiredRoot, 'src/g0-002-sdk-lifecycle.mts');
         const originalBytes = readFileSync(js);
         rmSync(js); writeFileSync(typed, originalBytes);
-        execFileSync('git', ['add', 'src/platform/time-contract.mjs', 'src/platform/time-contract.mts'], { cwd: retiredRoot });
+        execFileSync('git', ['add', 'src/g0-002-sdk-lifecycle.mjs', 'src/g0-002-sdk-lifecycle.mts'], { cwd: retiredRoot });
         execFileSync('git', ['-c', 'user.name=Migration test fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--quiet', '-m', 'Synthetic fixture: record typed migration'], { cwd: retiredRoot });
         rmSync(typed); writeFileSync(js, originalBytes);
         assert.throws(() => program(retiredRoot, 'tsconfig.migration.json'), /MIGRATION_RETIRED_LEGACY/u);

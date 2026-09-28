@@ -5,6 +5,7 @@
   "legacy_entry_count": 207,
   "entries": [
     {"path":"tests/platform-postgres-callback.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/platform-boundary-contracts.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":".github/review/pr-evidence-delta.test.mjs","mode":"SOURCE_HOST","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":".github/review/verify-published-history.test.mjs","mode":"SOURCE_HOST","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/arch-005-time-contract-architecture.test.mjs","mode":"SOURCE_HOST","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -289,6 +290,7 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "t03-platform": ["tests/platform-boundary-contracts.test.mts", "tests/platform-time-contract.test.mjs", "tests/platform-postgres-time.integration.test.mjs", "tests/platform-postgres-callback.integration.test.mts"],
     "pg-callback-fix": ["tests/platform-postgres-callback.integration.test.mts"],
     "t03-current-ci": ["tests/p2-016-workbench-wecom-auth.test.mjs","tests/p2-g2-wecom-web-oauth.test.mjs","tests/p2-g2-wecom-oauth-server.test.mjs","tests/p2-g2-wecom-oauth-http.test.mjs","tests/p2-g2-yixiaoxiu-oauth.test.mjs","tests/yxx-ss-001-homepage-oauth.test.mjs","tests/p2-006-workbench.test.mjs","tests/p2-g1-human-only-assembly.test.mjs"],
     "t02-routed": ["tests/p2-g2-cli-network.test.mjs", "tests/p2-g2-current-evidence.test.mjs", "tests/p2-g2-evidence.test.mjs", "tests/p2-g2-gate-evaluator.test.mjs", "tests/p2-g2-ready-candidate.test.mjs", "tests/p2-g2-source-audit.test.mjs", "tests/yxx-ss-009-evidence-history.test.mjs"],

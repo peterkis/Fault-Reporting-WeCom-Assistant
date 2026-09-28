@@ -6,6 +6,7 @@
   "target_count": 181,
   "target_breakdown": {"non_g0_src": 173, "active_launchers": 8},
   "target_path_rule": "Replace only the final .mjs suffix of each explicitly listed source path with .mts. Runtime relative imports and emitted paths remain .mjs.",
+  "current_module_map": {"src/platform/time-contract.mjs": "src/platform/time-contract.mts", "src/platform/postgres-types.mjs": "src/platform/postgres-types.mts", "src/platform/legacy-migration-guard.mjs": "src/platform/legacy-migration-guard.mts", "src/platform/postgres-pool.mjs": "src/platform/postgres-pool.mts"},
   "migration_batches": {
     "T03-01": ["src/platform/time-contract.mjs", "src/platform/postgres-types.mjs", "src/platform/legacy-migration-guard.mjs", "src/platform/postgres-pool.mjs"],
     "T04-01": ["src/p1-005-pilot-ticket-core.mjs", "src/p1-006-ticket-state-actions.mjs", "src/p1-007-notification-outbox.mjs"],
