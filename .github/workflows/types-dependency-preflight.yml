@@ -1,0 +1,43 @@
+name: TypeScript isolated dependency preflight
+on:
+  push:
+    branches: ['codex/typescript-dependency-preflight']
+permissions:
+  contents: read
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 162ffe7651c97329ace63532bd1f9739cf03550a
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Fetch exact compiler and major-bounded type declarations
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-preflight"
+          mkdir -p "$OUT"
+          git rev-parse HEAD > "$OUT/source-sha.txt"
+          git bundle create "$OUT/repository.bundle" refs/remotes/origin/main
+          node --version > "$OUT/node-version.txt"
+          npm view typescript@5.9.3 version dist.integrity engines --json > "$OUT/typescript-registry.json"
+          npm install --save-dev --save-exact --ignore-scripts --no-audit --no-fund typescript@5.9.3 @types/node@24 @types/pg@8
+          node -e "const p=require('./package.json'); if(p.dependencies['@wecom/aibot-node-sdk']!=='1.0.6'||p.dependencies.pg!=='8.23.0'||p.engines.node!=='>=24 <25')throw Error('runtime drift');" 
+          npm ls --all --json > "$OUT/npm-tree.json"
+          cp package.json package-lock.json "$OUT/"
+          cp "$(which node)" "$OUT/node24"
+          tar -czf "$OUT/node_modules.tar.gz" node_modules
+          cd "$OUT"
+          sha256sum repository.bundle node24 node_modules.tar.gz package.json package-lock.json > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: types-dependency-preflight
+          path: ${{ runner.temp }}/types-preflight/
+          retention-days: 14
