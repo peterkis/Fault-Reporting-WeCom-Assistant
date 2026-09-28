@@ -1,7 +1,7 @@
 {
   "batch": "T04-01",
   "base": "3e00c00834a0a1659e72bf22f2c3db0298df3096",
-  "tested_head": "7d687dfb35d77777a0a7ccd6da278866db5489f6",
+  "tested_head": "6190bc0541160a8b63ad16e6bb8b61320fca8ff3",
   "branch": "codex/t04-01-review-followup",
   "status": "REVIEW_REQUESTED",
   "production_mappings": {
@@ -28,12 +28,12 @@
   "type_tests": "PASS",
   "build": {
     "status": "PASS",
-    "source": "7d687dfb35d77777a0a7ccd6da278866db5489f6",
-    "input_hash": "5bd50772c3b408e55917b6db4fcbbfd65fba822fd10125cc7dbf5f09f80cf1e7",
+    "source": "6190bc0541160a8b63ad16e6bb8b61320fca8ff3",
+    "input_hash": "a1980610b50d713da8cf0a22a32742a4bb9568d3932ad8ce2a7993dcebd59f5d",
     "typed": 11,
     "unchecked_legacy": 502,
     "outputs": 732,
-    "manifest_sha256": "e59e85caf6960096d44fdcaf126b4d1ed645f2b16bd889f86948f4f3ac9f6e5a",
+    "manifest_sha256": "8e01269eeb5f8fcac1304f8ab1312e7e0f7fc63209a218215b21590c1223a2d3",
     "clean_builds_identical": true
   },
   "artifact": "PASS",
@@ -42,8 +42,8 @@
     "behavior": "PASS",
     "report": "D:/Agent-Prompts/T04-01_Implementation_20260928/t04-01-batch-exact-6167a90-rerun",
     "source_head": "6167a908cd29ee27555059bdba33c8b38511f05c",
-    "carried_forward_to_head": "7d687dfb35d77777a0a7ccd6da278866db5489f6",
-    "runtime_delta_since_evidence": "Only erased TypeScript overload signatures, the mandatory worker pool type, progress metadata, migration entrypoint documentation, and NotificationEvent event-type narrowing changed; no emitted runtime behavior changed.",
+    "carried_forward_to_head": "6190bc0541160a8b63ad16e6bb8b61320fca8ff3",
+    "runtime_delta_since_evidence": "Only erased TypeScript overload signatures, the mandatory worker pool type, progress metadata, migration entrypoint documentation, NotificationEvent event-type narrowing, and the restored minimal NotificationEvent shape changed; no emitted runtime behavior changed.",
     "source_dirty": false,
     "selected_files": 153,
     "not_run": 0,
