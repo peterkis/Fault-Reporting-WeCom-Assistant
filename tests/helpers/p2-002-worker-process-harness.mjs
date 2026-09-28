@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const CHILD_PATH = fileURLToPath(new URL('./p2-002-worker-child.mjs', import.meta.url));
-const ENV_FILE_PATH = fileURLToPath(new URL('../../.env.pilot', import.meta.url));
 const SAFE_INHERITED_ENVIRONMENT_KEYS = Object.freeze([
   'SystemRoot',
   'SYSTEMROOT',
@@ -16,9 +15,12 @@ const SAFE_INHERITED_ENVIRONMENT_KEYS = Object.freeze([
   'TEMP',
   'TMP',
   'TMPDIR',
+  'PILOT_DATABASE_URL',
 ]);
 
 function childEnvironment(values) {
+  const databaseUrl = process.env.PILOT_DATABASE_URL;
+  if (!databaseUrl || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(databaseUrl).hostname)) throw new Error('P2_002_ISOLATED_LOCAL_DATABASE_REQUIRED');
   const environment = Object.create(null);
   for (const key of SAFE_INHERITED_ENVIRONMENT_KEYS) {
     if (typeof process.env[key] === 'string') {

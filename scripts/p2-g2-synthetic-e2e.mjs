@@ -11,9 +11,9 @@ import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 
 export function g2TestFiles(suite='g2') {
   if(!['g2','integration','browser','full'].includes(suite))failG2('TEST_SUITE_INVALID');
-  const root=readdirSync(path.join(G2_ROOT,'tests')).filter(n=>n.endsWith('.test.mjs')&&(suite==='full'||n.startsWith('p2-g2-'))
-    &&(suite!=='integration'||n.endsWith('.integration.test.mjs'))&&(suite!=='browser'||n.includes('browser'))).sort().map(n=>'tests/'+n);
-  if(suite==='full')root.push(...readdirSync(path.join(G2_ROOT,'tests/p2-007')).filter(n=>n.endsWith('.test.mjs')).sort().map(n=>'tests/p2-007/'+n));
+  const root=readdirSync(path.join(G2_ROOT,'tests')).filter(n=>/\.test\.(?:mjs|mts)$/u.test(n)&&(suite==='full'||n.startsWith('p2-g2-'))
+    &&(suite!=='integration'||/\.integration\.test\.(?:mjs|mts)$/u.test(n))&&(suite!=='browser'||n.includes('browser'))).sort().map(n=>'tests/'+n);
+  if(suite==='full')root.push(...readdirSync(path.join(G2_ROOT,'tests/p2-007')).filter(n=>/\.test\.(?:mjs|mts)$/u.test(n)).sort().map(n=>'tests/p2-007/'+n));
   return root;
 }
 export async function runG2Tests({suite='g2',envFile='.env.pilot'}={}) {

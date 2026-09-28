@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "batch_id": "T02",
+  "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
+  "status": "IMPLEMENTED_PENDING_REMOTE_VALIDATION",
+  "prerequisite": {
+    "pr": 25,
+    "merge": "84d39b964d02db335c6c0c900d56d5b0a383f621",
+    "codex": "NO_MAJOR_ISSUES_AT_aefcde0328"
+  },
+  "required_remote_validation": "NOT_RUN_AT_PREPUBLICATION",
+  "self_review": "PENDING_FINAL_PUBLISHED_HEAD",
+  "codex_review": "NOT_REQUESTED_AT_PREPUBLICATION",
+  "local_diagnostics": {
+    "node": "24.21.0",
+    "typescript": "5.9.3",
+    "tooling_tests": {
+      "pass": 25,
+      "fail": 0,
+      "skipped": 0
+    },
+    "host_tests": {
+      "pass": 13,
+      "fail": 0,
+      "skipped": 0
+    },
+    "staged_directory": {
+      "pass": 59,
+      "fail": 0,
+      "skipped": 0
+    },
+    "staged_time": {
+      "pass": 4,
+      "fail": 0,
+      "skipped": 0
+    },
+    "source_architecture_tests": {
+      "pass": 20,
+      "fail": 0,
+      "skipped": 0
+    },
+    "mixed_realtime": {
+      "pass": 42,
+      "fail": 0,
+      "skipped": 0
+    },
+    "source_two_shadow_observation": "EQUAL",
+    "postgres18": "NOT_RUN_LOCAL",
+    "real_browser": "NOT_RUN_LOCAL"
+  },
+  "known_baseline_nonreadiness": [
+    "Original --require-ready: YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+    "Original ARCH-006: identical two scope/READY errors at base and current; exit1 retained"
+  ],
+  "migration_targets_changed": false,
+  "production_modules_renamed": 0,
+  "schema_or_sql_changed": false,
+  "type_escape_exceptions": [],
+  "test_only_mjs_exception": "tests/helpers/migration-roots.mjs, until T11; never imported by production",
+  "next_batch": "T03-01",
+  "next_batch_authorized": false,
+  "auto_merge": false,
+  "production_ready": false,
+  "final_result_location": "Exact published-head CI, PR self-review and Codex response; this prepublication receipt does not certify a future commit."
+}

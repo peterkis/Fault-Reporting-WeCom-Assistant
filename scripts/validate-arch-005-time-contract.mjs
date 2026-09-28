@@ -1,9 +1,17 @@
+import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const ROOT = process.cwd();
+function sourcePath(relative) {
+  const original = path.join(ROOT, relative);
+  const typed = original.endsWith('.mjs') ? original.slice(0, -4) + '.mts' : null;
+  if (typed && existsSync(original) && existsSync(typed)) throw new Error('MIGRATION_DUAL_SOURCE:' + relative);
+  return typed && existsSync(typed) ? typed : original;
+}
+
 const FROZEN_MIGRATIONS = Object.freeze({
   '001_p1_003_channel_message_inbox.sql': '4fe183af28d730c951d7582c9fb49733f4987f5891628c9f0b45418211912ab3',
   '002_p1_004_service_intake.sql': '55bad50008a591db26df4ac8f387092ed972988e677a331d9eee05a4bd8b1631',
@@ -47,7 +55,7 @@ export async function validateArch005TimeContract() {
     check(createHash('sha256').update(bytes).digest('hex') === expected, `ARCH_005_FROZEN_MIGRATION_CHANGED:${name}`);
   }
 
-  const contractFiles = (await filesUnder('contracts')).filter((file) => /\.(?:json|ya?ml|md|d\.ts)$/u.test(file));
+  const contractFiles = (await filesUnder('contracts')).filter((file) => /\.(?:json|ya?ml|md|d\.(?:ts|mts|cts))$/u.test(file));
   let dateTimeFormats = 0;
   let offsetTimestampLeaks = 0;
   for (const file of contractFiles) {
@@ -65,12 +73,12 @@ export async function validateArch005TimeContract() {
   check(!/timestamptz|timestamp with time zone|timetz|time with time zone|tstzrange|tstzmultirange/iu.test(draft), 'ARCH_005_SCHEMA_DRAFT_FORBIDDEN_TYPE');
 
   const runtimeFiles = [
-    ...(await filesUnder('src')).filter((file) => file.endsWith('.mjs')),
-    ...(await filesUnder('scripts')).filter((file) => file.endsWith('.mjs')),
+    ...(await filesUnder('src')).filter((file) => /\.(?:mjs|mts)$/u.test(file) && !file.endsWith('.d.mts')),
+    ...(await filesUnder('scripts')).filter((file) => /\.(?:mjs|mts)$/u.test(file) && !file.endsWith('.d.mts')),
   ];
   const directPg = [];
   for (const file of runtimeFiles) {
-    if (rel(file) === 'src/platform/postgres-pool.mjs' || rel(file) === 'src/platform/postgres-types.mjs') continue;
+    if (/^src\/platform\/postgres-(?:pool|types)\.(?:mjs|mts)$/u.test(rel(file))) continue;
     const text = await readFile(file, 'utf8');
     if (/from ['"]pg['"]|\bnew Pool\s*\(/u.test(text)) directPg.push(rel(file));
   }
@@ -94,7 +102,7 @@ export async function validateArch005TimeContract() {
     'web/p2-workbench/workbench.js',
   ];
   for (const relative of criticalBusinessFiles) {
-    const text = await readFile(path.join(ROOT, relative), 'utf8');
+    const text = await readFile(sourcePath(relative), 'utf8');
     check(!/Date\.parse\s*\(|\.toISOString\s*\(|toLocale(?:String|DateString|TimeString)\s*\(/u.test(text), `ARCH_005_BUSINESS_DATE_API:${relative}`);
   }
   const workbench = await readFile(path.join(ROOT, 'web/p2-workbench/workbench.js'), 'utf8');
@@ -110,7 +118,7 @@ export async function validateArch005TimeContract() {
   ];
   let eventOrderingViolations = 0;
   for (const [relative, token] of eventOrderingContracts) {
-    const text = await readFile(path.join(ROOT, relative), 'utf8');
+    const text = await readFile(sourcePath(relative), 'utf8');
     if (!text.includes(token)) {
       eventOrderingViolations += 1;
       errors.push(`ARCH_005_EVENT_ORDERING_CONTRACT_MISSING:${relative}:${token}`);

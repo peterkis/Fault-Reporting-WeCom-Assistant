@@ -1,4 +1,4 @@
-import type { LocalDateTime } from './time_contracts';
+import type { LocalDateTime } from './time_contracts.js';
 
 export type P2007EntryMode =
   | "GROUP_MENTION_INLINE"

@@ -1,4 +1,4 @@
-import type { LocalDateTime } from './time_contracts';
+import type { LocalDateTime } from './time_contracts.js';
 
 export type ConversationAssignmentStatus = 'UNASSIGNED' | 'ASSIGNED';
 export type ConversationHandoffStatus = 'REQUESTED' | 'ACCEPTED' | 'RELEASED' | 'CANCELLED';

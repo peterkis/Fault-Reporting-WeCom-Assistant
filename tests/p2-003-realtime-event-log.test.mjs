@@ -1,3 +1,4 @@
+import { sourceFile } from './helpers/migration-roots.mjs';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { readFile } from 'node:fs/promises';
@@ -376,7 +377,7 @@ test('TypeScript declarations mirror every frozen Schema and runtime vocabulary'
 
 test('authorized replay SQL clips scope and visibility before LIMIT and payload materialization', async () => {
   const source = await readFile(
-    new URL('../src/p2-003-realtime-event-log.mjs', import.meta.url),
+    sourceFile('src/p2-003-realtime-event-log.mjs'),
     'utf8',
   );
   const authorizedIdsStart = source.indexOf('authorized_ids AS MATERIALIZED');

@@ -1,3 +1,4 @@
+import {existsSync} from 'node:fs';
 import { readFile,readdir } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -7,13 +8,19 @@ import {isG2SuccessorState,verifyG2Predecessor} from '../src/p2-g2-predecessor-v
 const root=fileURLToPath(new URL('../',import.meta.url));
 const base='b1b8e4deb14e6290ca45aea12d92baaef4728c11',authorization='3599fa479c752ed75cd4652e5ffdaee2b212ad24';
 const git=(...args)=>execFileSync('git',['-c','safe.directory='+root.replaceAll('\\','/'),'-c','core.safecrlf=false',...args],{cwd:root,encoding:'utf8',maxBuffer:8000000});
-const read=p=>readFile(path.join(root,p),'utf8');
+function sourcePath(relative) {
+  const original = path.join(root, relative);
+  const typed = original.endsWith('.mjs') ? original.slice(0, -4) + '.mts' : null;
+  if (typed && existsSync(original) && existsSync(typed)) throw new Error('MIGRATION_DUAL_SOURCE:' + relative);
+  return typed && existsSync(typed) ? typed : original;
+}
+const read=p=>readFile(sourcePath(p),'utf8');
 const liveCandidate='3752596720f20524ff989ee9cf913b9e104e32a4c2095c48fc83804e7e75f863';
 const completionPath='evidence/p2-016-ticket-lifecycle-workbench-report.json';
 const closeoutOnly=new Set(['scripts/validate-p2-016-ticket-lifecycle-workbench.mjs','scripts/validate-v1-4-architecture.mjs',
   'scripts/validate-arch-006-rule-first-service-loop.mjs','tests/p2-016-schema-contract.test.mjs',
   'tests/v1-4-architecture-baseline.test.mjs','tests/arch-006-rule-first-service-loop.test.mjs','tests/arch-005-time-contract-architecture.test.mjs']);
-function candidateFiles(){return git('ls-files','--cached','--others','--exclude-standard').split(/\r?\n/u).filter(p=>/^(?:src\/|web\/|contracts\/|scripts\/|tests\/|package(?:-lock)?\.json$|database\/|\.env\.(?:example|pilot\.example)$)/u.test(p)).sort();}
+function candidateFiles(){return git('ls-files','--cached','--others','--exclude-standard').split(/\r?\n/u).filter(p=>/^(?:src\/|web\/|contracts\/|scripts\/|tests\/|tools\/ts-migration\/|plans\/typescript-migration\/|tsconfig[^/]*\.json$|\.github\/workflows\/types-migration\.yml$|package(?:-lock)?\.json$|database\/|\.env\.(?:example|pilot\.example)$)/u.test(p)).sort();}
 export function p2016FrozenInputsMatch(before,after){
   if(!Array.isArray(before)||!Array.isArray(after)||before.length!==after.length)return false;
   const old=new Map(before.map(r=>[r.path,r.sha256])),current=new Map(after.map(r=>[r.path,r.sha256]));
@@ -57,7 +64,7 @@ export async function validateP2016({includeReadinessEvidence=true}={}){
   const revision=successor?completedRevision:'HEAD';
   let historicalContent=null;
   const candidateRead=p=>successor?historicalContent.get(p):read(p);
-  const files=()=>successor?git('ls-tree','-r','--name-only',revision).split(/\r?\n/u).filter(p=>/^(?:src\/|web\/|contracts\/|scripts\/|tests\/|package(?:-lock)?\.json$|database\/|\.env\.(?:example|pilot\.example)$)/u.test(p)).sort():candidateFiles();
+  const files=()=>successor?git('ls-tree','-r','--name-only',revision).split(/\r?\n/u).filter(p=>/^(?:src\/|web\/|contracts\/|scripts\/|tests\/|tools\/ts-migration\/|plans\/typescript-migration\/|tsconfig[^/]*\.json$|\.github\/workflows\/types-migration\.yml$|package(?:-lock)?\.json$|database\/|\.env\.(?:example|pilot\.example)$)/u.test(p)).sort():candidateFiles();
   if(successor){
     const names=files(),raw=execFileSync('git',['-c','safe.directory='+root.replaceAll('\\','/'),'cat-file','--batch'],{cwd:root,input:names.map(p=>revision+':'+p).join('\n')+'\n',maxBuffer:32000000});
     historicalContent=new Map();let offset=0;for(const p of names){const end=raw.indexOf(10,offset),header=raw.subarray(offset,end).toString('utf8');if(!/^[a-f0-9]+ blob [0-9]+$/u.test(header))throw new Error('P2_016_HISTORICAL_INPUT_INVALID');const bytes=Number(header.split(' ').at(-1));historicalContent.set(p,raw.subarray(end+1,end+1+bytes).toString('utf8'));offset=end+bytes+2;}
@@ -83,8 +90,8 @@ export async function validateP2016({includeReadinessEvidence=true}={}){
   check((await read('evidence/p2-016-start-authorization.md')).replaceAll('\r\n','\n')===git('show',authorization+':evidence/p2-016-start-authorization.md').replaceAll('\r\n','\n'),'authorization Evidence is immutable');
   const migrations=(await readdir(path.join(root,'database/migrations'))).filter(p=>/^\d{3}_.*\.sql$/u.test(p)&&Number(p.slice(0,3))<=30);
   for(const name of migrations)check((await read('database/migrations/'+name)).replaceAll('\r\n','\n')===git('show',base+':database/migrations/'+name).replaceAll('\r\n','\n'),'historical migration unchanged: '+name);
-  for(const name of (await readdir(path.join(root,'src'))).filter(p=>p.startsWith('p2-007')&&p.endsWith('.mjs')))
-    check((await read('src/'+name)).replaceAll('\r\n','\n')===git('show',base+':src/'+name).replaceAll('\r\n','\n'),'P2-007 runtime unchanged: '+name);
+  for(const name of (await readdir(path.join(root,'src'))).filter(p=>p.startsWith('p2-007')&&/\.(?:mjs|mts)$/u.test(p)))
+    check((await read('src/'+name)).replaceAll('\r\n','\n')===git('show',base+':src/'+name.replace(/\.mts$/u,'.mjs')).replaceAll('\r\n','\n'),'P2-007 runtime unchanged: '+name);
   const sql=await read('database/migrations/031_p2_016_ticket_lifecycle_workbench_notifications.sql');
   check((sql.match(/CREATE TABLE /gu)??[]).length===6,'031 creates exactly six supporting relations');
   check(!/CREATE\s+(?:OR REPLACE\s+)?(?:FUNCTION|TRIGGER|EXTENSION)|TIMESTAMPTZ|TIMESTAMP\s+WITH\s+TIME\s+ZONE/iu.test(sql),'031 has no function/trigger/extension or offset time type');

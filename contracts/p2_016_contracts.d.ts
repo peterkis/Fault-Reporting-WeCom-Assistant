@@ -1,4 +1,4 @@
-import type { LocalDateTime, PhysicalEpochMs } from './time_contracts';
+import type { LocalDateTime, PhysicalEpochMs } from './time_contracts.js';
 
 /** P2-016 Internal Beta contracts. Plain JSON only. All business timestamps are Asia/Shanghai local strings. */
 

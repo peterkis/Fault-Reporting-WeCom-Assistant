@@ -3,7 +3,7 @@ import {readFileSync,lstatSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {g2CandidateInventory,G2_ROOT,G2_CANDIDATE_ROOTS,G2_CANDIDATE_FILES,G2_EXCLUDED_LOCAL_FILES} from './p2-g2-candidate.mjs';
+import {g2CandidateInventory,G2_ROOT,isG2CandidatePath} from './p2-g2-candidate.mjs';
 import {validateYxxSelfService,verifyYxxRun,verifyYxxCaseTrace,verifyYxxRegressionSummary,evidenceHash} from './yxx-self-service-verification.mjs';
 import {SS010_BASE,limitedTemplate,validateLimitedManifest} from './yxx-limited-write-contract.mjs';
 import {assertG2EvidenceTime} from './p2-g2-evidence-time.mjs';
@@ -47,7 +47,7 @@ export function checkSS010({root=G2_ROOT,requireReady=false}={}){
   assert.equal(git(['merge-base',SS010_BASE,report.tested_head]),SS010_BASE);
   const objects=new Map(git(['ls-tree','-r',report.tested_head]).split('\n').map(line=>{const [meta,name]=line.split('\t');return [name,meta.split(' ')[2]];}));
   const testedFiles=[...objects.keys()].filter(file=>
-    (G2_CANDIDATE_FILES.includes(file)||G2_CANDIDATE_ROOTS.some(dir=>file.startsWith(dir+'/')))&&!G2_EXCLUDED_LOCAL_FILES.includes(file));
+    isG2CandidatePath(file));
   assert.deepEqual(testedFiles.sort(),inventory.files.map(file=>file.path).sort());
   for(const file of inventory.files){
     const raw=readFileSync(path.join(root,file.path)),content=file.encoding==='BINARY'?raw:Buffer.from(lf(raw.toString('utf8')));

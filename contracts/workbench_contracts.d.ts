@@ -1,4 +1,4 @@
-import type { LocalDateTime, PhysicalEpochMs } from './time_contracts';
+import type { LocalDateTime, PhysicalEpochMs } from './time_contracts.js';
 
 export type WorkbenchAuthMethod = 'COOKIE' | 'BEARER';
 export interface WorkbenchAuthContext { principal_id: string; auth_method: WorkbenchAuthMethod; expires_at: LocalDateTime; expires_epoch_ms: PhysicalEpochMs; csrf_token?: string }

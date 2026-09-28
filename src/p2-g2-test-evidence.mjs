@@ -15,7 +15,7 @@ export function deriveG2TestEvidence(proof,manifest,{root=G2_ROOT}={}){
     ||!/^\d{13}$/u.test(run.completed_physical_epoch_ms??'')||!/^\d{13}$/u.test(run.started_physical_epoch_ms??'')
     ||BigInt(run.completed_physical_epoch_ms)<BigInt(run.started_physical_epoch_ms)||run.expose_gc!==true
     ||!Array.isArray(run.args)||!run.args.includes('--expose-gc'))failG2('TEST_PROOF_INVALID');
-  const inventory=g2CandidateInventory(root),files=inventory.files.filter(f=>/^tests\/(?:p2-007\/)?[^/]+\.test\.mjs$/u.test(f.path));
+  const inventory=g2CandidateInventory(root),files=inventory.files.filter(f=>/^tests\/(?:[^/]+\/)*[^/]+\.test\.(?:mjs|mts)$/u.test(f.path));
   if(!Array.isArray(run.files)||run.files.length!==files.length||new Set(run.files.map(f=>f.path)).size!==files.length
     ||files.some(f=>!run.files.some(actual=>actual.path===f.path&&actual.sha256===f.sha256)))failG2('TEST_FILES_NOT_VERIFIED');
   const tap=readG2SourceFile(run.directory+'/result.tap',{root,sha256:run.stdout_sha256}).toString('utf8');

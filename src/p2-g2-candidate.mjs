@@ -11,6 +11,14 @@ import {readG2CurrentEvidence} from './p2-g2-current-evidence.mjs';
 export const G2_ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const G2_CANDIDATE_ROOTS = Object.freeze(['src', 'scripts', 'web', 'contracts', 'config', 'config_examples', 'database/migrations', 'tests']);
 export const G2_CANDIDATE_FILES = Object.freeze(['package.json', 'package-lock.json', '.env.example']);
+// Optional on legacy fixtures; every present build control is part of the current candidate.
+export const G2_CANDIDATE_CONTROL_ROOTS = Object.freeze(['tools/ts-migration', 'plans/typescript-migration', '.github/workflows']);
+export const G2_CANDIDATE_CONTROL_FILES = Object.freeze(['tsconfig.base.json', 'tsconfig.tools.json', 'tsconfig.migration.json', 'tsconfig.type-tests.json', 'build-manifest.json']);
+export function isG2CandidatePath(file) {
+  return !G2_EXCLUDED_LOCAL_FILES.includes(file) && (G2_CANDIDATE_FILES.includes(file)
+    || G2_CANDIDATE_CONTROL_FILES.includes(file) || [...G2_CANDIDATE_ROOTS, ...G2_CANDIDATE_CONTROL_ROOTS].some(dir => file.startsWith(dir + '/')));
+}
+
 // This ignored local example is not read by a Runtime. .env.example and Gate manifest semantics are included.
 export const G2_EXCLUDED_LOCAL_FILES = Object.freeze(['config/pilot.env.example']);
 export function g2CandidateInventory(root = G2_ROOT) {
@@ -24,7 +32,7 @@ export function g2CandidateInventory(root = G2_ROOT) {
       return;
     }
     if (!stat.isFile() || stat.size > 16 * 1024 * 1024 || files.length >= 2048) failG2('CANDIDATE_INVENTORY_LIMIT');
-    const binary = !/\.(mjs|js|ts|json|jsonl|yaml|yml|sql|css|html|md|txt|sh|py)$/u.test(relative) && relative !== '.env.example';
+    const binary = !/\.(mjs|cjs|js|mts|cts|ts|tsx|json|jsonl|yaml|yml|sql|css|html|md|txt|sh|py)$/u.test(relative) && relative !== '.env.example';
     const raw = readFileSync(absolute);
     const content = binary ? raw : Buffer.from(new TextDecoder('utf-8', { fatal: true }).decode(raw).replaceAll('\r\n', '\n'));
     files.push({ path: relative, sha256: g2Hash(content), bytes: content.length, encoding: binary ? 'BINARY' : 'UTF8_LF' });
@@ -33,8 +41,11 @@ export function g2CandidateInventory(root = G2_ROOT) {
     if(selected==='config'&&!existsSync(path.join(root,selected)))continue;
     add(selected);
   }
+  for (const selected of [...G2_CANDIDATE_CONTROL_ROOTS, ...G2_CANDIDATE_CONTROL_FILES]) {
+    if (existsSync(path.join(root, selected))) add(selected);
+  }
   files.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
-  return Object.freeze({ schema_version: 1, gate: 'P2-G2', algorithm: 'SHA256_SORTED_PATH_CONTENT_UTF8_LF',
+  return Object.freeze({ schema_version: 2, gate: 'P2-G2', algorithm: 'SHA256_SORTED_PATH_CONTENT_UTF8_LF_BUILD_INPUTS_V2',
     fingerprint: g2Hash(JSON.stringify(files)), file_count: files.length, excluded_local_files: G2_EXCLUDED_LOCAL_FILES, files });
 }
 export function verifyG2Candidate(expected, root = G2_ROOT) {
@@ -105,7 +116,7 @@ export function requirePreparedG2Candidate(fingerprint, root=G2_ROOT){
   if([run,matrix,review,sourceAudit].some(v=>v?.candidate_fingerprint!==fingerprint))reject();
   const inventory=g2CandidateInventory(root);
   if(inventory.fingerprint!==fingerprint)failG2('CANDIDATE_CHANGED');
-  const files=inventory.files.filter(f=>/^tests\/(?:p2-007\/)?[^/]+\.test\.mjs$/u.test(f.path));
+  const files=inventory.files.filter(f=>/^tests\/(?:[^/]+\/)*[^/]+\.test\.(?:mjs|mts)$/u.test(f.path));
   if(run.suite!=='full'||run.mode!=='SYNTHETIC_AUTOMATION'||run.exit_code!==0||run.error!==null
     ||run.signal!==null||run.candidate_unchanged!==true||run.stdout_sha256!==f.tap_sha256
     ||keys.some(k=>run.counts?.[k]!==f[k])||!Array.isArray(run.files)||run.files.length!==files.length
@@ -129,7 +140,7 @@ export function requirePreparedG2Candidate(fingerprint, root=G2_ROOT){
       ||source.scenario_matrix_sha256!==r.source_evidence.scenario_matrix.sha256
       ||!Array.isArray(source.findings)||source.findings.some(f=>f.resolved!==true))reject();
   }
-  if(inventory.files.some(file=>file.path==='src/p2-g2-yixiaoxiu-authorizer.mjs')){
+  if(inventory.files.some(file=>/^src\/p2-g2-yixiaoxiu-authorizer\.(?:mjs|mts)$/u.test(file.path))){
     requirePreparedYxxCandidate({fingerprint,root,fullRegression:f,passedNames,verifiedRun:run,verifiedRunReference:r.source_evidence.regression_run});
   }
   return r;

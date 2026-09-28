@@ -1,3 +1,4 @@
+import {sourceFile} from './helpers/migration-roots.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -62,7 +63,7 @@ test('SS-002 both OpenAPI documents expose the same seven YXX operation referenc
 });
 
 test('SS-002 catalog plan keeps migration 033 conditional and Web APP_ONLY',async()=>{
-  const plan=JSON.parse(await readFile('docs/runbooks/yixiaoxiu-self-service-catalog-plan.json','utf8'));
+  const plan=JSON.parse(await readFile(sourceFile('docs/runbooks/yixiaoxiu-self-service-catalog-plan.json'),'utf8'));
   assert.equal(plan.migration,'033_yxx_self_service_intake.sql');
   assert.deepEqual(plan.new_tables,['intake.web_request_binding','intake.web_submission','intake.web_command_receipt']);
   assert.ok(plan.shared_tables['intake.service_intake'].alter.includes('primary_web_submission_id UUID'));

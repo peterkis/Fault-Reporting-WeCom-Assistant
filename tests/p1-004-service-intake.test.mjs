@@ -1,3 +1,4 @@
+import { sourceFile } from './helpers/migration-roots.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -1034,17 +1035,17 @@ test('migration is limited to Service Intake, message relations and Intake audit
   assert.doesNotMatch(sql, /\bVARCHAR\b/iu);
 
   const source = readFileSync(
-    new URL('../src/p1-004-service-intake.mjs', import.meta.url),
+    sourceFile('src/p1-004-service-intake.mjs'),
     'utf8',
   );
   assert.match(source, /GREATEST\(4,\s*char_length\([^)]*sequence_value/iu);
   const migrationRunner = readFileSync(
-    new URL('../scripts/p1-004-migrate.mjs', import.meta.url),
+    sourceFile('scripts/p1-004-migrate.mjs'),
     'utf8',
   );
   assert.match(migrationRunner, /mapServiceIntakeMigrationFailure\(error\)/u);
   const verifier = readFileSync(
-    new URL('../scripts/p1-004-verify.mjs', import.meta.url),
+    sourceFile('scripts/p1-004-verify.mjs'),
     'utf8',
   );
   assert.match(verifier, /pilot_ticket_schema_exists:\s*false/u);

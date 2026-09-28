@@ -10,12 +10,30 @@ function check(condition, message) {
   if (!condition) errors.push(message);
 }
 
+function sourcePath(relative) {
+  const original = path.join(root, relative);
+  const typed = original.endsWith('.mjs') ? original.slice(0, -4) + '.mts' : null;
+  if (typed && fs.existsSync(original) && fs.existsSync(typed)) throw new Error('MIGRATION_DUAL_SOURCE:' + relative);
+  return typed && fs.existsSync(typed) ? typed : original;
+}
+
 function read(relativePath) {
-  return fs.readFileSync(path.join(root, relativePath), 'utf8');
+  return fs.readFileSync(sourcePath(relativePath), 'utf8');
 }
 
 function json(relativePath) {
   return JSON.parse(read(relativePath));
+}
+
+function testScriptMatches(name, expected) {
+  if (pkg.scripts[name] === expected) return true;
+  if (pkg.scripts[name] !== 'npm run migration:tools && node .build/tools/run-tests.mjs --alias ' + name) return false;
+  const routes = json('plans/typescript-migration/test-routing.json');
+  const alias = routes.legacy_commands?.[name];
+  if (routes.schema_version !== 2 || alias?.original !== expected) return false;
+  const tokens = expected.split(/\s+/u).slice(1).filter(t => t !== '--test' && t !== '--env-file=.env.pilot');
+  return sameArray(alias.node_flags, tokens.filter(t => t.startsWith('--')))
+    && sameArray(alias.patterns, tokens.filter(t => !t.startsWith('--')));
 }
 
 function sameArray(actual, expected) {
@@ -783,11 +801,11 @@ const p2002Authorization = read('evidence/p2-002-start-authorization.md');
 check(p2002Authorization.includes('项目负责人正式、独立授权启动 P2-002'), 'P2-002 authorization remains preserved');
 
 check(pkg.scripts['validate:architecture:v1.4'] === 'node scripts/validate-v1-4-architecture.mjs', 'package exposes V1.4 validator');
-check(pkg.scripts['test:architecture:v1.4'] === 'node --test tests/v1-4-architecture-baseline.test.mjs', 'package exposes V1.4 architecture tests');
+check(testScriptMatches('test:architecture:v1.4', 'node --test tests/v1-4-architecture-baseline.test.mjs'), 'package exposes V1.4 architecture tests');
 check(pkg.scripts['arch:006:validate'] === 'node scripts/validate-arch-006-rule-first-service-loop.mjs', 'package exposes ARCH-006 validator');
-check(pkg.scripts['test:arch:006'] === 'node --test --test-concurrency=1 tests/arch-006-rule-first-service-loop.test.mjs', 'package exposes ARCH-006 tests');
-check(pkg.scripts['test:p2:001'] === 'node --test tests/p2-001-conversation-contracts.test.mjs', 'package preserves P2-001 unit tests');
-check(pkg.scripts['test:p2:002'] === 'node --test tests/p2-002-timeline-projector.test.mjs', 'package preserves P2-002 unit tests');
+check(testScriptMatches('test:arch:006', 'node --test --test-concurrency=1 tests/arch-006-rule-first-service-loop.test.mjs'), 'package exposes ARCH-006 tests');
+check(testScriptMatches('test:p2:001', 'node --test tests/p2-001-conversation-contracts.test.mjs'), 'package preserves P2-001 unit tests');
+check(testScriptMatches('test:p2:002', 'node --test tests/p2-002-timeline-projector.test.mjs'), 'package preserves P2-002 unit tests');
 check(pkg.dependencies['@wecom/aibot-node-sdk'] === '1.0.6', 'WeCom SDK remains pinned');
 check(pkg.dependencies.pg === '8.23.0', 'pg remains pinned');
 
@@ -820,8 +838,8 @@ for (const relativePath of p2003Files) {
 }
 check(pkg.scripts['p2:003:migrate'] === 'node --env-file=.env.pilot scripts/p2-003-migrate.mjs', 'package exposes migration 012 command');
 check(pkg.scripts['p2:003:retention:check'] === 'node --env-file=.env.pilot scripts/p2-003-retention.mjs --check', 'package exposes retention check command');
-check(pkg.scripts['test:p2:003'] === 'node --test tests/p2-003-realtime-event-log.test.mjs', 'package exposes P2-003 unit tests');
-check(pkg.scripts['test:p2:003:integration'] === 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-003-realtime-event-log.integration.test.mjs', 'package exposes serial P2-003 integration tests');
+check(testScriptMatches('test:p2:003', 'node --test tests/p2-003-realtime-event-log.test.mjs'), 'package exposes P2-003 unit tests');
+check(testScriptMatches('test:p2:003:integration', 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-003-realtime-event-log.integration.test.mjs'), 'package exposes serial P2-003 integration tests');
 
 {
   const completionDate = current.p2_004_completed_at;
@@ -851,8 +869,8 @@ check(pkg.scripts['test:p2:003:integration'] === 'node --env-file=.env.pilot --t
   ]) check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-004 completion');
   check(pkg.scripts['p2:004:migrate'] === 'node --env-file=.env.pilot scripts/p2-004-migrate.mjs', 'package exposes migration 020 command');
   check(pkg.scripts['p2:004:migrate:check'] === 'node --env-file=.env.pilot scripts/p2-004-migrate.mjs --check', 'package exposes migration 020 check command');
-  check(pkg.scripts['test:p2:004'] === 'node --test tests/p2-004-communication-core.test.mjs', 'package exposes P2-004 unit tests');
-  check(pkg.scripts['test:p2:004:integration'] === 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-004-communication-core.integration.test.mjs', 'package exposes serial P2-004 integration tests');
+  check(testScriptMatches('test:p2:004', 'node --test tests/p2-004-communication-core.test.mjs'), 'package exposes P2-004 unit tests');
+  check(testScriptMatches('test:p2:004:integration', 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-004-communication-core.integration.test.mjs'), 'package exposes serial P2-004 integration tests');
   const communicationMigration = read('database/migrations/020_p2_004_unified_communication.sql');
   check((communicationMigration.match(/CREATE TABLE IF NOT EXISTS\s+communication\./giu) ?? []).length === 4, 'migration 020 creates exactly four communication tables');
   check(!/\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|TRUNCATE)\s+(?:TABLE\s+)?notification\./iu.test(communicationMigration), 'migration 020 never mutates notification facts');
@@ -875,8 +893,8 @@ for (const relativePath of [
 ]) check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-005');
 check(pkg.scripts['p2:005:migrate'] === 'node --env-file=.env.pilot scripts/p2-005-migrate.mjs', 'package exposes migration 021 command');
 check(pkg.scripts['p2:005:migrate:check'] === 'node --env-file=.env.pilot scripts/p2-005-migrate.mjs --check', 'package exposes migration 021 check command');
-check(pkg.scripts['test:p2:005'] === 'node --test tests/p2-005-conversation-control.test.mjs', 'package exposes P2-005 unit tests');
-check(pkg.scripts['test:p2:005:integration'] === 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-005-conversation-control.integration.test.mjs', 'package exposes serial P2-005 integration tests');
+check(testScriptMatches('test:p2:005', 'node --test tests/p2-005-conversation-control.test.mjs'), 'package exposes P2-005 unit tests');
+check(testScriptMatches('test:p2:005:integration', 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-005-conversation-control.integration.test.mjs'), 'package exposes serial P2-005 integration tests');
 const controlMigration = read('database/migrations/021_p2_005_conversation_control.sql');
 check((controlMigration.match(/CREATE TABLE IF NOT EXISTS\s+conversation\./giu) ?? []).length === 4, 'migration 021 creates exactly four conversation control tables');
 check(!/ALTER\s+TABLE\s+conversation\.session/iu.test(controlMigration), 'migration 021 does not alter conversation.session');
@@ -903,9 +921,9 @@ if (profile?.p2006Status === 'DONE') {
     'tests/p2-006-workbench-browser.test.mjs',
   ]) check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-006');
   check(!fs.existsSync(path.join(root, 'database/migrations/022_p2_006_realtime_workbench.sql')), 'P2-006 creates no migration 022');
-  check(pkg.scripts['test:p2:006'] === 'node --test tests/p2-006-workbench.test.mjs', 'package exposes P2-006 unit tests');
-  check(pkg.scripts['test:p2:006:integration'] === 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-006-workbench.integration.test.mjs', 'package exposes P2-006 integration tests');
-  check(pkg.scripts['test:p2:006:browser'] === 'node --test tests/p2-006-workbench-browser.test.mjs', 'package exposes real browser tests');
+  check(testScriptMatches('test:p2:006', 'node --test tests/p2-006-workbench.test.mjs'), 'package exposes P2-006 unit tests');
+  check(testScriptMatches('test:p2:006:integration', 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-006-workbench.integration.test.mjs'), 'package exposes P2-006 integration tests');
+  check(testScriptMatches('test:p2:006:browser', 'node --test tests/p2-006-workbench-browser.test.mjs'), 'package exposes real browser tests');
 }
 
 if (errors.length > 0) {

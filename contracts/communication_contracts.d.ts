@@ -1,4 +1,4 @@
-import type { LocalDateTime, PhysicalEpochMs } from './time_contracts';
+import type { LocalDateTime, PhysicalEpochMs } from './time_contracts.js';
 
 export type CommunicationSenderKind = 'AGENT' | 'AI' | 'SYSTEM';
 export type CommunicationMessageType = 'text' | 'markdown' | 'image' | 'file' | 'mixed' | 'template_card';

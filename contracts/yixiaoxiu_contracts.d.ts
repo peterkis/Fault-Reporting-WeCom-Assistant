@@ -1,5 +1,5 @@
-import type {P2016ReporterSession,P2016ReporterTicketView,P2016ReporterTimeline} from './p2_016_contracts';
-import type {ReporterMilestone} from './p2_012_contracts';
+import type {P2016ReporterSession,P2016ReporterTicketView,P2016ReporterTimeline} from './p2_016_contracts.js';
+import type {ReporterMilestone} from './p2_012_contracts.js';
 
 export type ReporterAccessPolicy = 'LEGACY_BOUND_GRANT' | 'MEMBER_REQUIRED';
 export type YixiaoxiuRuntimeProfile = 'OAUTH_ONLY' | 'MEMBER_TICKET_READONLY' | 'FULL_SERVICE_LOOP';

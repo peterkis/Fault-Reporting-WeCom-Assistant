@@ -97,9 +97,9 @@ export function mappings(root: string): { source: string; path: string; kind: Ou
   return [...outputs.values()].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 }
 export function inputs(root: string): FileDigest[] {
-  const files = workspaceFiles(root).filter(p => /^(src|scripts|tests|contracts|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter))\//u.test(p)
+  const files = workspaceFiles(root).filter(p => /^(src|scripts|tests|contracts|database\/migrations|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter))\//u.test(p)
     || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example'].includes(p)
-    || p.startsWith('plans/typescript-migration/') || p === '.github/workflows/types-migration.yml');
+    || p.startsWith('plans/typescript-migration/') || p.startsWith('.github/workflows/'));
   return files.map(p => ({ path: p, sha256: hash(readFileSync(safeFile(root, p))) }));
 }
 export function identity(root: string): SourceIdentity {

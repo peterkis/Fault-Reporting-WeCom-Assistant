@@ -12,8 +12,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
+      - name: Preserve the recorded current-source SQL checkout representation
+        run: git config --global core.autocrlf true
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -23,16 +25,22 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Strict types, negative canary and deterministic shadow builds
+      - name: Strict tools, real compiler canary and host rejection tests
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/types-review"
-          npm run migration:gate 2>&1 | tee "$RUNNER_TEMP/types-review/gate.txt"
-          node --test --test-reporter=tap .build/tools/tooling.test.mjs 2>&1 | tee "$RUNNER_TEMP/types-review/tooling.txt"
-          npm run migration:verify-artifact 2>&1 | tee "$RUNNER_TEMP/types-review/artifact.txt"
-          cp .build/artifact-proof.json .build/runtime/build-manifest.json "$RUNNER_TEMP/types-review/"
-          git rev-parse HEAD > "$RUNNER_TEMP/types-review/source-sha.txt"
+          OUT="$RUNNER_TEMP/types-review"
+          mkdir -p "$OUT"
+          npm run migration:gate 2>&1 | tee "$OUT/gate.txt"
+          node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs 2>&1 | tee "$OUT/tooling.txt"
+          node .build/tools/observe-runtime.mjs 2>&1 | tee "$OUT/observations.jsonl"
+          node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
+          node .build/tools/browser-smoke.mjs 2>&1 | tee "$OUT/real-browser.txt"
+          node .build/tools/run-tests.mjs --selection t02-source --report-dir "$OUT/source" 2>&1 | tee "$OUT/source.txt"
+          node .build/tools/run-tests.mjs --selection t02-time --report-dir "$OUT/time" 2>&1 | tee "$OUT/time.txt"
+          npm run migration:verify-artifact 2>&1 | tee "$OUT/artifact.txt"
+          cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
+          git rev-parse HEAD > "$OUT/source-sha.txt"
           git diff --exit-code
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
@@ -42,7 +50,7 @@ jobs:
           retention-days: 14
   source-baseline:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:18
@@ -54,8 +62,11 @@ jobs:
           --health-cmd "pg_isready -U postgres" --health-interval 5s
           --health-timeout 5s --health-retries 10
     env:
+      TS_MIGRATION_TEST_DB_ISOLATED: '1'
       PILOT_DATABASE_URL: postgresql://postgres:migration_ci_only@127.0.0.1:5432/migration_ci
     steps:
+      - name: Preserve the recorded current-source SQL checkout representation
+        run: git config --global core.autocrlf true
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -65,7 +76,7 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Unchanged SOURCE_HOST baseline selection
+      - name: Same 17-file baseline on SOURCE then two independent shadows
         shell: bash
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -74,34 +85,60 @@ jobs:
           OUT="$RUNNER_TEMP/types-baseline"
           mkdir -p "$OUT"
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" 2>&1 | tee "$OUT/identity.txt"
-          npm run test:p2:007 2>&1 | tee "$OUT/directory.txt"
-          node --test --test-reporter=tap --test-concurrency=1 tests/p2-007-third-party-staff-directory.integration.test.mjs 2>&1 | tee "$OUT/postgres.txt"
-          npm run test:p2:015 2>&1 | tee "$OUT/orchestration.txt"
-          node --test --test-reporter=tap tests/p2-016-schema-contract.test.mjs 2>&1 | tee "$OUT/schema.txt"
-          node --test --test-reporter=tap --test-concurrency=1 tests/p2-016-workbench-http.integration.test.mjs tests/p2-016-live-cluster.integration.test.mjs 2>&1 | tee "$OUT/runtime.txt"
-          npm run validate:architecture:v1.4 2>&1 | tee "$OUT/architecture.txt"
-          npm run validate:p2:016:historical 2>&1 | tee "$OUT/historical.txt"
-      - name: Retain the existing strict non-readiness, never promote it to PASS
+          npm run migration:tools
+          node .build/tools/run-tests.mjs --selection t02-baseline --reference-source --report-dir "$OUT/reference" 2>&1 | tee "$OUT/reference.txt"
+          node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-1" 2>&1 | tee "$OUT/shadow-1.txt"
+          node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-2" 2>&1 | tee "$OUT/shadow-2.txt"
+          node .build/tools/observe-runtime.mjs 2>&1 | tee "$OUT/observations.jsonl"
+      - name: Real test subprocess, SQL, browser and synthetic G2 paths
         shell: bash
         run: |
-          set -uo pipefail
+          set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
-          RC=0
-          node scripts/validate-yxx-self-service.mjs --require-ready > "$OUT/current-strict.txt" 2>&1 || RC=$?
-          cat "$OUT/current-strict.txt"
-          echo "$RC" > "$OUT/current-strict-exit.txt"
-          test "$RC" = 1 || exit 1
-          grep -q YXX_VERIFICATION_REJECTED "$OUT/current-strict.txt" || exit 1
-          node --input-type=module -e "import {validateYxxSelfService} from './src/yxx-self-service-verification.mjs'; try {validateYxxSelfService({requireReady:true}); process.exitCode=1;} catch(e) {if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e; console.log(JSON.stringify({status:'KNOWN_BASELINE_NOT_READY',code:e.code}));}" 2>&1 | tee "$OUT/strict-classification.txt"
-      - name: Exact source and dependency identity
+          for GROUP in process sql browser g2; do
+            node .build/tools/run-tests.mjs --selection "t02-$GROUP" --report-dir "$OUT/$GROUP" 2>&1 | tee "$OUT/$GROUP.txt"
+          done
+          node .build/tools/run-tests.mjs --alias test:p1:004 --report-dir "$OUT/intake" 2>&1 | tee "$OUT/intake.txt"
+          node .build/tools/run-tests.mjs --alias test:p2:003 --report-dir "$OUT/realtime" 2>&1 | tee "$OUT/realtime.txt"
+          node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
+          cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
+          npm run validate:architecture:v1.4 2>&1 | tee "$OUT/architecture.txt"
+          npm run validate:p2:016:historical 2>&1 | tee "$OUT/historical.txt"
+      - name: Compare unchanged known non-readiness against authentic merged T01
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          BASE="$RUNNER_TEMP/types-t01-reference"
+          git worktree add --detach "$BASE" 84d39b964d02db335c6c0c900d56d5b0a383f621
+          npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
+          for LABEL in current base; do
+            CWD="$GITHUB_WORKSPACE"; if [ "$LABEL" = base ]; then CWD="$BASE"; fi
+            RC=0; (cd "$CWD" && node scripts/validate-yxx-self-service.mjs --require-ready) > "$OUT/$LABEL-strict.txt" 2>&1 || RC=$?
+            echo "$RC" > "$OUT/$LABEL-strict-exit.txt"; test "$RC" = 1
+            grep -q YXX_VERIFICATION_REJECTED "$OUT/$LABEL-strict.txt"
+            (cd "$CWD" && node --input-type=module -e "import {validateYxxSelfService} from './src/yxx-self-service-verification.mjs'; try {validateYxxSelfService({requireReady:true}); process.exitCode=1;} catch(e) {if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e; console.log(JSON.stringify({status:'KNOWN_BASELINE_NOT_READY',code:e.code}));}") > "$OUT/$LABEL-strict-classification.txt" 2>&1
+            RC=0; (cd "$CWD" && node scripts/validate-arch-006-rule-first-service-loop.mjs) > "$OUT/$LABEL-arch006.txt" 2>&1 || RC=$?
+            echo "$RC" > "$OUT/$LABEL-arch006-exit.txt"; test "$RC" = 1
+          done
+          cmp "$OUT/current-arch006.txt" "$OUT/base-arch006.txt"
+          grep -q 'ARCH-006 validation failed with 2 error(s)' "$OUT/current-arch006.txt"
+          grep -q 'valid pinned local self-service successor scope' "$OUT/current-arch006.txt"
+          cmp "$OUT/current-strict-classification.txt" "$OUT/base-strict-classification.txt"
+          git worktree remove --force "$BASE"
+      - name: Exact source, environment and cleanup identity
         if: always()
         shell: bash
         run: |
-          mkdir -p "$RUNNER_TEMP/types-baseline"
-          git rev-parse HEAD > "$RUNNER_TEMP/types-baseline/source-sha.txt"
-          git archive --format=tar HEAD | gzip > "$RUNNER_TEMP/types-baseline/source.tar.gz"
-          git bundle create "$RUNNER_TEMP/types-baseline/source.bundle" HEAD
-          node --version > "$RUNNER_TEMP/types-baseline/node-version.txt"
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          mkdir -p "$OUT"
+          git rev-parse HEAD > "$OUT/source-sha.txt"
+          git archive --format=tar HEAD | gzip > "$OUT/source.tar.gz"
+          git bundle create "$OUT/source.bundle" HEAD
+          node --version > "$OUT/node-version.txt"
+          node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.PILOT_DATABASE_URL});try{const r=await p.query(\"SELECT datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1','migration_ci')\");console.log(JSON.stringify({remaining_databases:r.rows}));if(r.rowCount)process.exitCode=1;console.log((await p.query('SHOW server_version')).rows);}finally{await p.end();}" 2>&1 | tee "$OUT/database-cleanup.txt"
           git diff --exit-code
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
