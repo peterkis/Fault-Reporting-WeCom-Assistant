@@ -236,6 +236,7 @@
         "tests/p2-016-live-cluster.integration.test.mjs"
       ],
       "supplemental_tests": [
+        "tests/platform-postgres-callback.integration.test.mts",
         "tests/arch-005-time-contract-architecture.test.mjs",
         "tests/p2-g2-current-evidence.test.mjs",
         "tests/p2-g2-wecom-oauth-server.test.mjs",

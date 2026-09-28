@@ -1,0 +1,23 @@
+{
+  "batch": "T03-01-PG-CALLBACK-FIX",
+  "base": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023",
+  "status": "VALIDATION_IN_PROGRESS_NOT_MERGED",
+  "authorization": "User approved an independent defect-fix PR after the T02/current-base callback guard bypass was reproduced.",
+  "production_changes": ["src/platform/postgres-pool.mjs: guard callback-acquired client before forwarding the original callback"],
+  "new_runtime_test": "tests/platform-postgres-callback.integration.test.mts",
+  "targeted_tests": {"tests": 4, "pass": 4, "fail": 0},
+  "red_log": "logs/pg-callback-red-clean.txt",
+  "green_log": "logs/pg-callback-regression.txt",
+  "baseline_observation": "logs/connect-baseline.json",
+  "raw_archive": "D:/Agent-Prompts/T03_Implementation_20260928",
+  "selected_batch_files": 180,
+  "full_batch": "NOT_RUN_AT_RECEIPT_CREATION",
+  "review": "PENDING_EXACT_PUBLISHED_HEAD",
+  "final_result_source": "Current PR exact-head CI and review artifacts; this committed snapshot is not self-certifying",
+  "database_change": false,
+  "dependency_change": false,
+  "frozen_evidence_change": false,
+  "four_modules_migrated": false,
+  "next_batch_authorized_to_start": false,
+  "rollback": "Independent revert PR; no database rollback"
+}

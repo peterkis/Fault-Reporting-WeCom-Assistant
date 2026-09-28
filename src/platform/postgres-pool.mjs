@@ -95,6 +95,13 @@ export function createPostgresPool(config, { PoolClass = Pool } = {}) {
   if (typeof pool.connect === 'function') {
     const originalConnect = pool.connect.bind(pool);
     pool.connect = async function guardedConnect(...args) {
+      const callback = args[0];
+      if (typeof callback === 'function') {
+        args[0] = function guardedConnectCallback(...callbackArgs) {
+          if (callbackArgs.length > 1) callbackArgs[1] = guardQuery(callbackArgs[1]);
+          return Reflect.apply(callback, this, callbackArgs);
+        };
+      }
       const client = await originalConnect(...args);
       return guardQuery(client);
     };
