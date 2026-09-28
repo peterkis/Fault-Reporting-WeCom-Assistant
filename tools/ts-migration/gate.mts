@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { diagnosticHost, hash, parsedConfig, program, sourceRoot } from './common.mjs';
+import { diagnosticHost, hash, parsedConfig, program, slash, sourceRoot } from './common.mjs';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { runTests } from './run-tests.mjs';
@@ -11,7 +11,7 @@ export function typeGate(root: string): void {
 }
 export function negativeTypes(root: string): void {
   const options = { ...parsedConfig(root, 'tsconfig.type-tests.json').options, noEmit: true };
-  const filename = path.join(root, 'tests/types/__intentional_negative__.mts');
+  const filename = slash(path.join(root, 'tests/types/__intentional_negative__.mts'));
   for (const bad of [false, true]) {
     const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
     host.getSourceFile = (f, language, onError, shouldCreate) => f === filename ? ts.createSourceFile(f,

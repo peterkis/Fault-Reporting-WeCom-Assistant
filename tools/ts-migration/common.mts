@@ -89,7 +89,7 @@ export function parsedConfig(root: string, name: string): ts.ParsedCommandLine {
   }
   if (['noImplicitAny','strictNullChecks','strictFunctionTypes','strictBindCallApply','strictPropertyInitialization','noImplicitThis','alwaysStrict'].some(key => o[key] === false)) throw new Error('MIGRATION_STRICT_OVERRIDE');
   if (o.noCheck || o.skipLibCheck || o.module !== ts.ModuleKind.NodeNext || o.moduleResolution !== ts.ModuleResolutionKind.NodeNext) throw new Error('MIGRATION_COMPILER_BYPASS');
-  if (name !== 'tsconfig.type-tests.json' && (o.noEmit || o.outDir !== path.join(root, name === 'tsconfig.tools.json' ? '.build/tools' : '.build/emit'))) throw new Error('MIGRATION_INVALID_EMIT_DIRECTORY');
+  if (name !== 'tsconfig.type-tests.json' && (o.noEmit || slash(o.outDir ?? '') !== slash(path.join(root, name === 'tsconfig.tools.json' ? '.build/tools' : '.build/emit')))) throw new Error('MIGRATION_INVALID_EMIT_DIRECTORY');
   return parsed;
 }
 export const diagnosticHost = (root: string): ts.FormatDiagnosticsHost => ({ getCanonicalFileName: p => p, getCurrentDirectory: () => root, getNewLine: () => '\n' });
@@ -102,8 +102,8 @@ export function program(root: string, name: string): ts.Program {
     : /^(src|scripts|tests)\/.+\.mts$/u.test(f) && !f.startsWith('tests/types/') && !f.endsWith('.d.mts'));
   if (!typed.length) throw new Error('MIGRATION_EMPTY_PROGRAM: ' + name);
   for (const f of typed) {
-    if (!result.getSourceFile(path.join(root, f)) || !p.fileNames.includes(path.join(root, f))) throw new Error('MIGRATION_UNCHECKED_TARGET: ' + f);
-    const source = result.getSourceFile(path.join(root, f));
+    if (!result.getSourceFile(slash(path.join(root, f))) || !p.fileNames.some(input => slash(input) === slash(path.join(root, f)))) throw new Error('MIGRATION_UNCHECKED_TARGET: ' + f);
+    const source = result.getSourceFile(slash(path.join(root, f)));
     if (!source) throw new Error('MIGRATION_MISSING_TARGET');
     const visit = (node: ts.Node): void => {
       if (node.kind === ts.SyntaxKind.AnyKeyword || ts.isNonNullExpression(node)

@@ -86,8 +86,8 @@ jobs:
         run: |
           set -uo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
-          node scripts/validate-yxx-self-service.mjs --require-ready > "$OUT/current-strict.txt" 2>&1
-          RC=$?
+          RC=0
+          node scripts/validate-yxx-self-service.mjs --require-ready > "$OUT/current-strict.txt" 2>&1 || RC=$?
           cat "$OUT/current-strict.txt"
           echo "$RC" > "$OUT/current-strict-exit.txt"
           test "$RC" = 1 || exit 1
