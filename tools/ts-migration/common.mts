@@ -43,9 +43,14 @@ export function assertProductionSources(root: string): void {
   const policy = record(JSON.parse(git(root, ['show', LEGACY_POLICY_BASE + ':plans/typescript-migration/scope.json'])) as unknown);
   const legacy = new Set([...Object.values(record(policy.migration_batches)).flatMap(strings),
     ...strings(policy.legacy_g0), ...strings(policy.retained_existing_tooling)]);
-  for (const file of workspaceFiles(root).filter(f => /^(src|scripts)\//u.test(f) && /\.(?:[cm]?js|[cm]?ts|jsx|tsx)$/iu.test(f))) {
-    if (file.endsWith('.mts')) continue;
-    if (!file.endsWith('.mjs') || !legacy.has(file)) throw new Error('MIGRATION_NEW_UNTYPED_PRODUCTION: ' + file);
+  const historicalTools = new Set(git(root, ['ls-tree', '-r', '--name-only', LEGACY_POLICY_BASE, '--', 'tools', '.github/review']).split('\n'));
+  for (const file of workspaceFiles(root).filter(f => /^(src|scripts|tools|\.github\/review)\//u.test(f) && /\.(?:[cm]?js|[cm]?ts|jsx|tsx)$/iu.test(f))) {
+    const tooling = /^(tools|\.github\/review)\//u.test(file);
+    if (file.endsWith('.mts') || /\.d\.ts$/u.test(file)) {
+      if (tooling && !file.startsWith('tools/ts-migration/')) throw new Error('MIGRATION_UNREGISTERED_TYPED_TOOL: ' + file);
+      continue;
+    }
+    if (!file.endsWith('.mjs') || !(tooling ? historicalTools : legacy).has(file)) throw new Error(tooling ? 'MIGRATION_NEW_UNTYPED_TOOL: ' + file : 'MIGRATION_NEW_UNTYPED_PRODUCTION: ' + file);
   }
 }
 function unwrapAssertionOperand(node: ts.Expression): ts.Expression {
@@ -119,23 +124,39 @@ export function program(root: string, name: string): ts.Program {
   const p = parsedConfig(root, name); const result = ts.createProgram(p.fileNames, p.options);
   const typed = workspaceFiles(root).filter(f => name === 'tsconfig.tools.json' ? /^tools\/ts-migration\/.+\.mts$/u.test(f)
     : name === 'tsconfig.type-tests.json' ? /^tests\/types\/.+\.mts$/u.test(f)
-    : /^(src|scripts|tests)\/.+\.mts$/u.test(f) && !f.startsWith('tests/types/') && !f.endsWith('.d.mts'));
+    : /^(src|scripts|tests)\/.+\.mts$/u.test(f) && !f.startsWith('tests/types/'));
   if (!typed.length) throw new Error('MIGRATION_EMPTY_PROGRAM: ' + name);
   for (const f of typed) {
     if (!result.getSourceFile(slash(path.join(root, f))) || !p.fileNames.some(input => slash(input) === slash(path.join(root, f)))) throw new Error('MIGRATION_UNCHECKED_TARGET: ' + f);
-    const source = result.getSourceFile(slash(path.join(root, f)));
-    if (!source) throw new Error('MIGRATION_MISSING_TARGET');
+  }
+  // Declaration files can otherwise introduce explicit any into typed consumers.
+  // Scan every local input actually loaded by the program, including transitive
+  // .d.ts/.d.mts, but never vendor declarations from the locked dependencies.
+  for (const source of result.getSourceFiles()) {
+    const f = slash(path.relative(root, source.fileName));
+    if (f.startsWith('../') || f.startsWith('node_modules/') || !/\.(?:mts|ts)$/u.test(f)) continue;
+    safeFile(root, f);
     const visit = (node: ts.Node): void => {
       if (node.kind === ts.SyntaxKind.AnyKeyword || ts.isNonNullExpression(node)
         || isAssertion(node) && isAssertion(unwrapAssertionOperand(node.expression))) throw new Error('MIGRATION_TYPE_ESCAPE: ' + f);
       ts.forEachChild(node, visit);
     };
     visit(source);
-    const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, source.text);
-    for (let token = scanner.scan(); token !== ts.SyntaxKind.EndOfFileToken; token = scanner.scan()) {
-      if (token !== ts.SyntaxKind.SingleLineCommentTrivia && token !== ts.SyntaxKind.MultiLineCommentTrivia) continue;
-      const comment = scanner.getTokenText();
-      if (/@ts-(?:ignore|nocheck)\b/u.test(comment) || /@ts-expect-error/u.test(comment) && (!f.startsWith('tests/types/') || !/@ts-expect-error -- .{8}/u.test(comment))) throw new Error('MIGRATION_TYPE_SUPPRESSION: ' + f);
+    const comments = new Map<number, string>();
+    const collectComments = (node: ts.Node): void => {
+      for (const range of [...(ts.getLeadingCommentRanges(source.text, node.pos) ?? []), ...(ts.getTrailingCommentRanges(source.text, node.end) ?? [])]) {
+        comments.set(range.pos, source.text.slice(range.pos, range.end));
+      }
+      for (const child of node.getChildren(source)) collectComments(child);
+    };
+    collectComments(source);
+    for (const comment of comments.values()) {
+      if (/@ts-(?:ignore|nocheck)\b/u.test(comment)) throw new Error('MIGRATION_TYPE_SUPPRESSION: ' + f);
+      for (const directive of comment.matchAll(/@ts-expect-error([^\r\n]*)/gu)) {
+        const suffix = directive[1] ?? '';
+        const explanation = suffix.match(/^\s+--\s*(.*?)(?:\*\/)?$/u)?.[1] ?? '';
+        if (!f.startsWith('tests/types/') || !/[\p{L}\p{N}]/u.test(explanation) || explanation.replace(/\s/gu, '').length < 8) throw new Error('MIGRATION_TYPE_SUPPRESSION: ' + f);
+      }
     }
   }
   const errors = ts.getPreEmitDiagnostics(result);

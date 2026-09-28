@@ -76,6 +76,36 @@ test('T01 build and negative checks run on an owned full clone, never on user so
         });
       }
     });
+    await t.test('new JavaScript tools are not grandfathered by a directory', () => {
+      for (const relative of ['tools/helper.mjs', '.github/review/helper.mjs', 'tools/ts-migration/helper.js']) {
+        alter(root, relative, 'export const unchecked = 1;', () => {
+          assert.throws(() => program(root, 'tsconfig.tools.json'), /MIGRATION_NEW_UNTYPED_TOOL/u);
+          assert.throws(() => build(root), /MIGRATION_NEW_UNTYPED_TOOL/u);
+        });
+      }
+    });
+    await t.test('local declarations cannot hide any or a suppressed error', () => {
+      for (const [relative, content] of [
+        ['src/declaration-negative.d.mts', 'export const unchecked: any;'],
+        ['src/declaration-negative.d.mts', '// @ts-ignore\nexport const invalid: MissingType;'],
+        ['src/declaration-negative.d.ts', 'export const unchecked: any;'],
+      ]) {
+        if (!relative || !content) throw new Error('invalid negative fixture');
+        alter(root, relative, content, () => {
+          const specifier = relative.endsWith('.d.mts') ? './declaration-negative.mjs' : './declaration-negative.js';
+          alter(root, 'src/declaration-negative-consumer.mts', `import { ${content.includes('unchecked') ? 'unchecked' : 'invalid'} } from '${specifier}';`, () => {
+            assert.throws(() => program(root, 'tsconfig.migration.json'), /MIGRATION_TYPE_(?:ESCAPE|SUPPRESSION)/u);
+          });
+        });
+      }
+    });
+    await t.test('expect-error requires substantive explanation rather than padding', () => {
+      for (const reason of ['        ', '\t\t\t\t\t\t\t\t', '********']) {
+        alter(root, 'tests/types/padding-negative.mts', `// @ts-expect-error -- ${reason}\nconst rejected: number = 'wrong';`, () => {
+          assert.throws(() => program(root, 'tsconfig.type-tests.json'), /MIGRATION_TYPE_SUPPRESSION/u);
+        });
+      }
+    });
     await t.test('same logical MJS and MTS are rejected and stale success is removed', () => {
       alter(root, 'src/platform/time-contract.mts', 'export const duplicate = true;', () => {
         assert.throws(() => build(root), /MIGRATION_OUTPUT_COLLISION/u);
