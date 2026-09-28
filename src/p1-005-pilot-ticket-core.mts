@@ -1,11 +1,65 @@
 import { readFile } from 'node:fs/promises';
+import type { LocalDateTime } from '../contracts/time_contracts.js';
 import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import { assertLocalDateTime } from './platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
+import type { PostgresPool, PostgresPoolClient } from './platform/postgres-pool.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/003_p1_005_pilot_ticket_core.sql', import.meta.url);
-const TICKET_CREATING_REQUEST_TYPES = new Set(['INCIDENT', 'SERVICE_REQUEST']);
-const TICKET_STATUSES = new Set([
+export type TicketRequestType =
+  | 'INCIDENT'
+  | 'SERVICE_REQUEST'
+  | 'QUESTION'
+  | 'COMPLAINT'
+  | 'STATUS_QUERY'
+  | 'FOLLOW_UP'
+  | 'CHATTER'
+  | 'UNKNOWN';
+export type TicketStatus =
+  | 'NEW'
+  | 'QUEUED'
+  | 'ACCEPTED'
+  | 'IN_PROGRESS'
+  | 'WAITING_REQUESTER'
+  | 'WAITING_VENDOR'
+  | 'RESOLVED'
+  | 'CLOSED'
+  | 'REOPENED'
+  | 'CANCELLED'
+  | 'DUPLICATE_LINKED';
+export type TicketPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+export type IntakeStatus =
+  | 'RECEIVED'
+  | 'TICKET_CREATED'
+  | 'WAITING_DESCRIPTION'
+  | 'WAITING_TRIAGE'
+  | 'LINKED_INCIDENT'
+  | 'COMPLETED'
+  | 'IGNORED'
+  | 'FAILED';
+export type IntakeSourceChannel = 'WECOM_GROUP' | 'WECOM_DIRECT' | 'PORTAL' | 'MANUAL';
+export type IntakeEventType =
+  | 'intake.received'
+  | 'intake.needs_clarification'
+  | 'intake.message_added'
+  | 'intake.clarification_added'
+  | 'intake.ticket_created';
+export type PilotTicketErrorCode =
+  | 'PILOT_TICKET_INTAKE_ID_REQUIRED'
+  | 'PILOT_TICKET_POOL_REQUIRED'
+  | 'PILOT_TICKET_TRANSACTION_REQUIRED'
+  | 'PILOT_TICKET_TRACE_ID_REQUIRED'
+  | 'PILOT_TICKET_OCCURRED_AT_INVALID'
+  | 'PILOT_TICKET_TITLE_INVALID'
+  | 'PILOT_TICKET_RESOLVER_TEAM_REQUIRED'
+  | 'PILOT_TICKET_PRIORITY_INVALID'
+  | 'PILOT_TICKET_INTAKE_NOT_FOUND'
+  | 'PILOT_TICKET_INTAKE_LINK_CORRUPT'
+  | 'PILOT_TICKET_NUMBER_CONFLICT'
+  | 'PILOT_TICKET_PROCESSOR_INPUT_INVALID';
+
+const TICKET_CREATING_REQUEST_TYPES = new Set<TicketRequestType>(['INCIDENT', 'SERVICE_REQUEST']);
+const TICKET_STATUSES = new Set<TicketStatus>([
   'NEW',
   'QUEUED',
   'ACCEPTED',
@@ -18,9 +72,9 @@ const TICKET_STATUSES = new Set([
   'CANCELLED',
   'DUPLICATE_LINKED',
 ]);
-const PRIORITIES = new Set(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
+const PRIORITIES = new Set<TicketPriority>(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
 
-export const EXTERNAL_TICKET_STATUS = Object.freeze({
+export const EXTERNAL_TICKET_STATUS: Readonly<Record<TicketStatus, string>> = Object.freeze({
   NEW: '等待受理',
   QUEUED: '等待受理',
   ACCEPTED: '已受理',
@@ -35,39 +89,214 @@ export const EXTERNAL_TICKET_STATUS = Object.freeze({
 });
 
 export class PilotTicketInputError extends Error {
-  constructor(code) {
+  declare code: PilotTicketErrorCode;
+  constructor(code: PilotTicketErrorCode) {
     super(code);
     this.code = code;
   }
 }
 
-function isRecord(value) {
+export interface PilotTicketRow {
+  id: string;
+  ticket_no: string;
+  source_intake_id: string;
+  title: string;
+  request_type: TicketRequestType;
+  status: TicketStatus;
+  priority: TicketPriority;
+  resolver_team_id: string;
+  assignee_id: string | null;
+  external_result: string | null;
+  closure_reason: string | null;
+  created_at: string;
+  updated_at: string;
+  version: number;
+}
+
+export interface ServiceIntakeRow {
+  id: string;
+  intake_no: string;
+  source_channel: IntakeSourceChannel;
+  reporter_wecom_userid: string;
+  request_type: TicketRequestType;
+  reported_campus_id: string | null;
+  reported_department_id: string | null;
+  reported_location_text: string | null;
+  status: IntakeStatus;
+  pilot_ticket_id: string | null;
+  created_at: string;
+  updated_at: string;
+  version: number;
+}
+
+export interface ServiceIntakeEventRow {
+  event_id: string;
+  event_type: IntakeEventType;
+  aggregate_type: 'intake';
+  aggregate_id: string;
+  aggregate_version: number;
+  event_ordinal: number;
+  occurred_at: string;
+  trace_id: string;
+  payload: unknown;
+}
+
+interface TicketCreationSelectionRow extends ServiceIntakeRow {
+  existing_ticket_id: string | null;
+  existing_ticket_no: string;
+  existing_source_intake_id: string;
+  existing_title: string;
+  existing_request_type: TicketRequestType;
+  existing_status: TicketStatus;
+  existing_priority: TicketPriority;
+  existing_resolver_team_id: string;
+  existing_assignee_id: string | null;
+  existing_external_result: string | null;
+  existing_closure_reason: string | null;
+  existing_created_at: string;
+  existing_updated_at: string;
+  existing_version: number;
+}
+
+export interface PublicPilotTicket {
+  id: string;
+  ticket_no: string;
+  intake_id: string;
+  title: string;
+  request_type: TicketRequestType;
+  status: TicketStatus;
+  external_status: string;
+  priority: TicketPriority;
+  resolver_team_id: string;
+  assignee_id: string | null;
+  external_result: string | null;
+  closure_reason: string | null;
+  created_at: LocalDateTime;
+  updated_at: LocalDateTime;
+  version: number;
+}
+
+export interface PublicIntake {
+  id: string;
+  intake_no: string;
+  source_channel: IntakeSourceChannel;
+  reporter_wecom_userid: string;
+  reporter_person_id: null;
+  request_type: TicketRequestType;
+  summary: null;
+  reported_campus_id: string | null;
+  reported_department_id: string | null;
+  reported_location_text: string | null;
+  status: IntakeStatus;
+  ticket_id: string | null;
+  incident_id: null;
+  created_at: LocalDateTime;
+  updated_at: LocalDateTime;
+  version: number;
+}
+
+export interface PublicIntakeEvent {
+  event_id: string;
+  event_type: IntakeEventType;
+  aggregate_type: 'intake';
+  aggregate_id: string;
+  aggregate_version: number;
+  event_ordinal: number;
+  occurred_at: LocalDateTime;
+  trace_id: string;
+  payload: unknown;
+}
+
+export interface PilotTicketInput {
+  intakeId: string;
+  transaction: PostgresPoolClient;
+  occurredAt: LocalDateTime;
+  traceId: string;
+  title?: string | null;
+  resolverTeamId?: string;
+  priority?: TicketPriority;
+}
+
+export type PilotTicketCreateInput = Omit<PilotTicketInput, 'transaction'>;
+export type PilotTicketCreateResult =
+  | { created: true; intake: PublicIntake; ticket: PublicPilotTicket; intakeEvent: PublicIntakeEvent }
+  | { created: false; intake: PublicIntake; ticket: PublicPilotTicket | null; intakeEvent: null };
+
+export interface PilotTicketCore {
+  createForIntakeInTransaction(input: PilotTicketInput): Promise<PilotTicketCreateResult>;
+  createForIntake(input: PilotTicketCreateInput): Promise<PilotTicketCreateResult>;
+}
+
+export interface PilotTicketMessage {
+  id: string;
+  idempotency_key: string;
+  received_at: LocalDateTime;
+  [key: string]: unknown;
+}
+
+export interface PilotTicketProcessorInput {
+  transaction: PostgresPoolClient;
+  message: PilotTicketMessage;
+  [key: string]: unknown;
+}
+
+export interface PilotTicketProcessorIntakeResult {
+  intake: PublicIntake;
+  events: PublicIntakeEvent[];
+  [key: string]: unknown;
+}
+
+export interface PilotTicketProcessorResult extends PilotTicketProcessorIntakeResult {
+  ticket: PublicPilotTicket | null;
+  lifecycle: unknown;
+}
+
+export type ServiceIntakeProcessor = (input: PilotTicketProcessorInput) => Promise<PilotTicketProcessorIntakeResult>;
+export type TicketCreatedHook = (input: {
+  transaction: PostgresPoolClient;
+  ticket: PublicPilotTicket;
+  intake: PublicIntake;
+  message: PilotTicketMessage;
+}) => unknown | Promise<unknown>;
+
+export interface PilotTicketCoreOptions {
+  pool?: PostgresPool;
+  defaultResolverTeamId?: string;
+}
+
+export interface PilotTicketProcessorOptions {
+  serviceIntakeProcessor: ServiceIntakeProcessor;
+  ticketCore: PilotTicketCore;
+  onTicketCreated?: TicketCreatedHook | null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function iso(value) {
+function iso(value: unknown): LocalDateTime {
   return postgresTimestampToLocalDateTime(value);
 }
 
-function nonEmptyString(value, code, maximum = Number.POSITIVE_INFINITY) {
+function nonEmptyString(value: unknown, code: PilotTicketErrorCode, maximum = Number.POSITIVE_INFINITY): string {
   if (typeof value !== 'string' || value.length === 0 || value.length > maximum) {
     throw new PilotTicketInputError(code);
   }
   return value;
 }
 
-function nullableString(value, code, maximum) {
+function nullableString(value: unknown, code: PilotTicketErrorCode, maximum: number): string | null {
   if (value === null || value === undefined) {
     return null;
   }
   return nonEmptyString(value, code, maximum);
 }
 
-function titleForRequestType(requestType) {
+function titleForRequestType(requestType: TicketRequestType): string {
   return requestType === 'SERVICE_REQUEST' ? '信息服务申请' : '信息系统故障报修';
 }
 
-function publicTicket(row) {
+function publicTicket(row: PilotTicketRow): PublicPilotTicket {
   return {
     id: row.id,
     ticket_no: row.ticket_no,
@@ -87,7 +316,7 @@ function publicTicket(row) {
   };
 }
 
-function publicIntake(row) {
+function publicIntake(row: ServiceIntakeRow): PublicIntake {
   return {
     id: row.id,
     intake_no: row.intake_no,
@@ -108,7 +337,7 @@ function publicIntake(row) {
   };
 }
 
-function publicIntakeEvent(row) {
+function publicIntakeEvent(row: ServiceIntakeEventRow): PublicIntakeEvent {
   return {
     event_id: row.event_id,
     event_type: row.event_type,
@@ -122,8 +351,20 @@ function publicIntakeEvent(row) {
   };
 }
 
-async function appendIntakeTicketCreatedEvent({ transaction, intake, ticket, occurredAt, traceId }) {
-  const inserted = await transaction.query(
+async function appendIntakeTicketCreatedEvent({
+  transaction,
+  intake,
+  ticket,
+  occurredAt,
+  traceId,
+}: {
+  transaction: PostgresPoolClient;
+  intake: ServiceIntakeRow;
+  ticket: PilotTicketRow;
+  occurredAt: LocalDateTime;
+  traceId: string;
+}): Promise<PublicIntakeEvent> {
+  const inserted = await transaction.query<ServiceIntakeEventRow>(
     `INSERT INTO intake.service_intake_event (
         event_type, intake_id, aggregate_version, event_ordinal,
         occurred_at, trace_id, payload
@@ -153,10 +394,15 @@ async function appendIntakeTicketCreatedEvent({ transaction, intake, ticket, occ
       }),
     ],
   );
-  return publicIntakeEvent(inserted.rows[0]);
+  const row = inserted.rows[0];
+  if (!row) throw new Error('PILOT_TICKET_INTAKE_EVENT_NOT_RETURNED');
+  return publicIntakeEvent(row);
 }
 
-async function withTransaction(pool, operation) {
+async function withTransaction<T>(
+  pool: PostgresPool | undefined,
+  operation: (transaction: PostgresPoolClient) => Promise<T>,
+): Promise<T> {
   if (!pool || typeof pool.connect !== 'function') {
     throw new PilotTicketInputError('PILOT_TICKET_POOL_REQUIRED');
   }
@@ -179,7 +425,23 @@ async function withTransaction(pool, operation) {
   }
 }
 
-function validateCreateInput({ intakeId, transaction, occurredAt, traceId, title, resolverTeamId, priority }) {
+function validateCreateInput({
+  intakeId,
+  transaction,
+  occurredAt,
+  traceId,
+  title,
+  resolverTeamId,
+  priority,
+}: {
+  intakeId: string;
+  transaction: PostgresPoolClient;
+  occurredAt: unknown;
+  traceId: string;
+  title: string | null | undefined;
+  resolverTeamId: string;
+  priority: TicketPriority;
+}): LocalDateTime {
   nonEmptyString(intakeId, 'PILOT_TICKET_INTAKE_ID_REQUIRED', 64);
   if (!transaction || typeof transaction.query !== 'function') {
     throw new PilotTicketInputError('PILOT_TICKET_TRANSACTION_REQUIRED');
@@ -198,7 +460,7 @@ function validateCreateInput({ intakeId, transaction, occurredAt, traceId, title
   return time;
 }
 
-export async function applyPilotTicketCoreMigration({ pool }) {
+export async function applyPilotTicketCoreMigration({ pool }: { pool: PostgresPool }): Promise<void | { status: 'LEGACY_MIGRATION_SUPERSEDED' }> {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
@@ -207,7 +469,7 @@ export async function applyPilotTicketCoreMigration({ pool }) {
   await pool.query(sql);
 }
 
-export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT' } = {}) {
+export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT' }: PilotTicketCoreOptions = {}): PilotTicketCore {
   nonEmptyString(defaultResolverTeamId, 'PILOT_TICKET_RESOLVER_TEAM_REQUIRED', 64);
 
   async function createForIntakeInTransaction({
@@ -218,7 +480,7 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
     title = null,
     resolverTeamId = defaultResolverTeamId,
     priority = 'NORMAL',
-  }) {
+  }: PilotTicketInput): Promise<PilotTicketCreateResult> {
     const occurredAtIso = validateCreateInput({
       intakeId,
       transaction,
@@ -228,7 +490,7 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
       resolverTeamId,
       priority,
     });
-    const selected = await transaction.query(
+    const selected = await transaction.query<TicketCreationSelectionRow>(
       `SELECT intake.id::text AS id,
               intake.intake_no,
               intake.source_channel,
@@ -266,6 +528,7 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
       throw new PilotTicketInputError('PILOT_TICKET_INTAKE_NOT_FOUND');
     }
     const intake = selected.rows[0];
+    if (!intake) throw new PilotTicketInputError('PILOT_TICKET_INTAKE_NOT_FOUND');
     if (intake.pilot_ticket_id !== null && intake.existing_ticket_id === null) {
       throw new PilotTicketInputError('PILOT_TICKET_INTAKE_LINK_CORRUPT');
     }
@@ -301,7 +564,7 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
       };
     }
 
-    const createdTicket = await transaction.query(
+    const createdTicket = await transaction.query<PilotTicketRow>(
       `WITH generated_number AS (
           SELECT nextval('pilot_ticket.ticket_number_seq')::text AS sequence_value
        )
@@ -335,7 +598,8 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
       ],
     );
     const ticket = createdTicket.rows[0];
-    const linked = await transaction.query(
+    if (!ticket) throw new Error('PILOT_TICKET_NOT_RETURNED');
+    const linked = await transaction.query<ServiceIntakeRow>(
       `UPDATE intake.service_intake
           SET pilot_ticket_id = $2::uuid,
               status = 'TICKET_CREATED',
@@ -352,6 +616,7 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
       [intake.id, ticket.id],
     );
     const linkedIntake = linked.rows[0];
+    if (!linkedIntake) throw new Error('PILOT_TICKET_INTAKE_NOT_RETURNED');
     const intakeEvent = await appendIntakeTicketCreatedEvent({
       transaction,
       intake: linkedIntake,
@@ -369,7 +634,7 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
 
   return Object.freeze({
     createForIntakeInTransaction,
-    createForIntake: async (input) => {
+    createForIntake: async (input: PilotTicketCreateInput): Promise<PilotTicketCreateResult> => {
       try {
         return await withTransaction(
           pool,
@@ -377,7 +642,9 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
         );
       } catch (error) {
         if (
-          error?.code === '23505'
+          isRecord(error)
+          && error.code === '23505'
+          && typeof error.constraint === 'string'
           && ['ticket_ticket_no_key', 'ticket_number_unique'].includes(error.constraint)
         ) {
           throw new PilotTicketInputError('PILOT_TICKET_NUMBER_CONFLICT');
@@ -388,11 +655,14 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
   });
 }
 
+export function createPilotTicketProcessor(
+  options: PilotTicketProcessorOptions,
+): (input: PilotTicketProcessorInput) => Promise<PilotTicketProcessorResult>;
 export function createPilotTicketProcessor({
   serviceIntakeProcessor,
   ticketCore,
   onTicketCreated = null,
-} = {}) {
+}: Partial<PilotTicketProcessorOptions> = {}): (input: PilotTicketProcessorInput) => Promise<PilotTicketProcessorResult> {
   if (typeof serviceIntakeProcessor !== 'function') {
     throw new TypeError('A Service Intake processor is required.');
   }
@@ -402,7 +672,7 @@ export function createPilotTicketProcessor({
   if (onTicketCreated !== null && typeof onTicketCreated !== 'function') {
     throw new TypeError('onTicketCreated must be a function when supplied.');
   }
-  return async function processPilotTicket(input) {
+  return async function processPilotTicket(input: PilotTicketProcessorInput): Promise<PilotTicketProcessorResult> {
     if (!isRecord(input) || !isRecord(input.message) || !input.transaction) {
       throw new PilotTicketInputError('PILOT_TICKET_PROCESSOR_INPUT_INVALID');
     }
@@ -433,10 +703,10 @@ export function createPilotTicketProcessor({
   };
 }
 
-export function isTicketStatus(value) {
-  return TICKET_STATUSES.has(value);
+export function isTicketStatus(value: unknown): value is TicketStatus {
+  return typeof value === 'string' && TICKET_STATUSES.has(value as TicketStatus);
 }
 
-export function publicPilotTicket(row) {
+export function publicPilotTicket(row: PilotTicketRow): PublicPilotTicket {
   return publicTicket(row);
 }

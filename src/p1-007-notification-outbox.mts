@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import type { LocalDateTime, PhysicalEpochMs } from '../contracts/time_contracts.js';
 import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import {
   addEpochMilliseconds,
@@ -8,10 +9,125 @@ import {
   formatEpochMsToShanghaiLocal,
 } from './platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
+import type { PostgresPool, PostgresPoolClient } from './platform/postgres-pool.mjs';
+import type { PublicPilotTicket } from './p1-005-pilot-ticket-core.mjs';
+import type { PublicTicketEvent, TicketEventType } from './p1-006-ticket-state-actions.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/005_p1_007_notification_outbox.sql', import.meta.url);
-const CHANNELS = new Set(['WECOM_DIRECT', 'PILOT_TEAM']);
-const TEMPLATE_CODES = Object.freeze({
+export type NotificationChannel = 'WECOM_DIRECT' | 'PILOT_TEAM';
+export type NotificationEventType = Extract<TicketEventType,
+  | 'ticket.created'
+  | 'ticket.queued'
+  | 'ticket.accepted'
+  | 'ticket.started'
+  | 'ticket.waiting_requester'
+  | 'ticket.waiting_vendor'
+  | 'ticket.resumed'
+  | 'ticket.resolved'
+  | 'ticket.closed'
+  | 'ticket.reopened'
+  | 'ticket.cancelled'
+  | 'ticket.note_added'
+  | 'ticket.information_added'
+  | 'ticket.auto_close_reminder'>;
+export type DeliveryStatus = 'PENDING' | 'SENDING' | 'SENT' | 'DEAD_LETTER';
+export interface NotificationTarget {
+  channel: NotificationChannel;
+  targetKey: string;
+}
+export interface NotificationCardTask {
+  task_id: string;
+  action_key: string;
+  expires_at: string;
+}
+export type NotificationTicket = Pick<PublicPilotTicket, 'id' | 'ticket_no' | 'external_status' | 'intake_id' | 'resolver_team_id'>;
+export type NotificationEvent = Pick<PublicTicketEvent, 'event_id' | 'event_type' | 'aggregate_version' | 'external_note'>;
+export interface NotificationSenderInput {
+  channel: NotificationChannel;
+  targetKey: string;
+  idempotencyKey: string;
+  payload: unknown;
+  templateCode: string;
+}
+export type NotificationSender = (input: NotificationSenderInput) => unknown | Promise<unknown>;
+export interface PublicDelivery {
+  id: string;
+  outbox_id: string;
+  channel: NotificationChannel;
+  status: DeliveryStatus;
+  attempt_count: number;
+  last_error_code: string | null;
+  provider_message_id: string | null;
+  sent_at: LocalDateTime | null;
+}
+export interface NotificationOutbox {
+  enqueueTicketEvent(input: {
+    transaction: PostgresPoolClient;
+    ticket: NotificationTicket;
+    event: NotificationEvent;
+    cardTasks?: NotificationCardTask[];
+  }): Promise<{ outbox_id: string; delivery_ids: string[] }>;
+}
+export interface NotificationDeliveryWorker {
+  deliver(input: { deliveryId: string }): Promise<PublicDelivery | null>;
+  getDelivery(input: { deliveryId: string }): Promise<PublicDelivery | null>;
+  runOnce(input?: { limit?: number }): Promise<{ processed: number; results: PublicDelivery[] }>;
+}
+export interface NotificationDeliveryWorkerOptions {
+  pool: PostgresPool;
+  sender: NotificationSender;
+  now?: () => Date;
+  nowEpochMs?: (() => PhysicalEpochMs) | null;
+  retryBaseMs?: number;
+  maxAttempts?: number;
+  leaseMs?: number;
+  sendTimeoutMs?: number;
+  maxDeliveriesPerTargetWindow?: number;
+  rateLimitWindowMs?: number;
+}
+export interface NotificationTargetInput {
+  transaction: PostgresPoolClient;
+  ticket: NotificationTicket;
+  event: NotificationEvent;
+}
+interface NotificationPlan {
+  reporter: boolean;
+  team: boolean;
+}
+interface DeliveryClaimRow {
+  id: string;
+  outbox_id: string;
+  channel: NotificationChannel;
+  target_key: string;
+  idempotency_key: string;
+  attempt_count: number;
+  payload: unknown;
+  template_code: string;
+  event_type: NotificationEventType;
+  ticket_priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+}
+interface DeliveryClaim extends DeliveryClaimRow {
+  leaseToken: string;
+  claimedAt: { epoch_ms: PhysicalEpochMs; local_datetime: LocalDateTime };
+}
+interface DeliveryRow {
+  id: string;
+  outbox_id: string;
+  channel: NotificationChannel;
+  status: DeliveryStatus;
+  attempt_count: number;
+  lease_token: string | null;
+  last_error_code: string | null;
+  provider_message_id: string | null;
+  sent_at: string | null;
+  sent_epoch_ms: string | null;
+}
+type DeliveryOutcome =
+  | { ok: true; providerMessageId: string | null }
+  | { ok: false; errorCode: string };
+
+const CHANNELS = new Set<NotificationChannel>(['WECOM_DIRECT', 'PILOT_TEAM']);
+const TEMPLATE_CODES: Readonly<Partial<Record<TicketEventType, string>>> = Object.freeze({
   'ticket.created': 'TICKET_CREATED',
   'ticket.accepted': 'TICKET_ACCEPTED',
   'ticket.started': 'TICKET_STARTED',
@@ -23,7 +139,7 @@ const TEMPLATE_CODES = Object.freeze({
   'ticket.information_added': 'TICKET_INFORMATION_ADDED',
   'ticket.auto_close_reminder': 'TICKET_AUTO_CLOSE_REMINDER',
 });
-const NOTIFICATION_MATRIX = Object.freeze({
+const NOTIFICATION_MATRIX: Readonly<Partial<Record<TicketEventType, NotificationPlan>>> = Object.freeze({
   'ticket.created': Object.freeze({ reporter: true, team: true }),
   'ticket.queued': Object.freeze({ reporter: false, team: true }),
   'ticket.accepted': Object.freeze({ reporter: true, team: true }),
@@ -40,43 +156,50 @@ const NOTIFICATION_MATRIX = Object.freeze({
   'ticket.auto_close_reminder': Object.freeze({ reporter: true, team: true }),
 });
 
-function isRecord(value) {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function iso(value) {
+function isNotificationChannel(value: unknown): value is NotificationChannel {
+  return typeof value === 'string' && CHANNELS.has(value as NotificationChannel);
+}
+
+function iso(value: unknown): LocalDateTime {
   return postgresTimestampToLocalDateTime(value);
 }
 
-function clock(nowEpochMs, legacyNow) {
-  let epochMs;
+function clock(
+  nowEpochMs: (() => PhysicalEpochMs) | null | undefined,
+  legacyNow: () => Date,
+): { epoch_ms: PhysicalEpochMs; local_datetime: LocalDateTime } {
+  let epochMs: PhysicalEpochMs;
   if (typeof nowEpochMs === 'function') epochMs = assertEpochMsString(nowEpochMs());
   else {
     const value = legacyNow();
     if (!(value instanceof Date) || !Number.isFinite(value.getTime()) || value.getTime() < 0) {
       throw new TypeError('clock must return non-negative epoch milliseconds.');
     }
-    epochMs = String(Math.trunc(value.getTime()));
+    epochMs = assertEpochMsString(String(Math.trunc(value.getTime())));
   }
   return Object.freeze({ epoch_ms: epochMs, local_datetime: formatEpochMsToShanghaiLocal(epochMs) });
 }
 
-function nonEmpty(value, code, maximum) {
+function nonEmpty(value: unknown, code: string, maximum: number): string {
   if (typeof value !== 'string' || value.length === 0 || value.length > maximum) {
     throw new TypeError(code);
   }
   return value;
 }
 
-function hashTarget(targetKey) {
+function hashTarget(targetKey: string): string {
   return createHash('sha256').update(targetKey).digest('hex');
 }
 
-function templateCodeFor(eventType) {
+function templateCodeFor(eventType: TicketEventType): string {
   return TEMPLATE_CODES[eventType] ?? 'TICKET_UPDATE';
 }
 
-function publicDelivery(row) {
+function publicDelivery(row: DeliveryRow): PublicDelivery {
   return {
     id: row.id,
     outbox_id: row.outbox_id,
@@ -89,7 +212,10 @@ function publicDelivery(row) {
   };
 }
 
-async function withTransaction(pool, operation) {
+async function withTransaction<T>(
+  pool: PostgresPool | undefined,
+  operation: (transaction: PostgresPoolClient) => Promise<T>,
+): Promise<T> {
   if (!pool || typeof pool.connect !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
@@ -112,14 +238,14 @@ async function withTransaction(pool, operation) {
   }
 }
 
-async function defaultTargetsForEvent({ transaction, ticket, event }) {
+async function defaultTargetsForEvent({ transaction, ticket, event }: NotificationTargetInput): Promise<NotificationTarget[]> {
   const plan = NOTIFICATION_MATRIX[event.event_type];
   if (!plan) {
     throw new TypeError('Notification matrix entry is required.');
   }
-  const targets = [];
+  const targets: NotificationTarget[] = [];
   if (plan.reporter) {
-    const reporter = await transaction.query(
+    const reporter = await transaction.query<{ reporter_wecom_userid: string }>(
       `SELECT reporter_wecom_userid
          FROM intake.service_intake
         WHERE id = $1::uuid`,
@@ -128,7 +254,9 @@ async function defaultTargetsForEvent({ transaction, ticket, event }) {
     if (reporter.rowCount !== 1) {
       throw new Error('NOTIFICATION_INTAKE_NOT_FOUND');
     }
-    targets.push({ channel: 'WECOM_DIRECT', targetKey: reporter.rows[0].reporter_wecom_userid });
+    const reporterRow = reporter.rows[0];
+    if (!reporterRow) throw new Error('NOTIFICATION_INTAKE_NOT_FOUND');
+    targets.push({ channel: 'WECOM_DIRECT', targetKey: reporterRow.reporter_wecom_userid });
   }
   if (plan.team) {
     targets.push({ channel: 'PILOT_TEAM', targetKey: `TEAM:${ticket.resolver_team_id}` });
@@ -136,13 +264,13 @@ async function defaultTargetsForEvent({ transaction, ticket, event }) {
   return targets;
 }
 
-function validateTargets(targets) {
+function validateTargets(targets: unknown): NotificationTarget[] {
   if (!Array.isArray(targets) || targets.length === 0) {
     throw new TypeError('At least one notification target is required.');
   }
   const seen = new Set();
   return targets.map((target) => {
-    if (!isRecord(target) || !CHANNELS.has(target.channel)) {
+    if (!isRecord(target) || !isNotificationChannel(target.channel)) {
       throw new TypeError('Notification target channel is invalid.');
     }
     const targetKey = nonEmpty(target.targetKey, 'Notification target key is invalid.', 512);
@@ -155,7 +283,7 @@ function validateTargets(targets) {
   });
 }
 
-export async function applyNotificationOutboxMigration({ pool }) {
+export async function applyNotificationOutboxMigration({ pool }: { pool: PostgresPool }): Promise<void | { status: 'LEGACY_MIGRATION_SUPERSEDED' }> {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
@@ -164,12 +292,19 @@ export async function applyNotificationOutboxMigration({ pool }) {
   await pool.query(sql);
 }
 
-export function createNotificationOutbox({ targetsForEvent = defaultTargetsForEvent } = {}) {
+export function createNotificationOutbox({
+  targetsForEvent = defaultTargetsForEvent,
+}: { targetsForEvent?: (input: NotificationTargetInput) => NotificationTarget[] | Promise<NotificationTarget[]> } = {}): NotificationOutbox {
   if (typeof targetsForEvent !== 'function') {
     throw new TypeError('targetsForEvent must be a function.');
   }
   return Object.freeze({
-    enqueueTicketEvent: async ({ transaction, ticket, event, cardTasks = [] }) => {
+    enqueueTicketEvent: async ({ transaction, ticket, event, cardTasks = [] }: {
+      transaction: PostgresPoolClient;
+      ticket: NotificationTicket;
+      event: NotificationEvent;
+      cardTasks?: NotificationCardTask[];
+    }): Promise<{ outbox_id: string; delivery_ids: string[] }> => {
       if (!transaction || typeof transaction.query !== 'function' || !ticket || !event) {
         throw new TypeError('A transaction, Ticket, and Ticket Event are required.');
       }
@@ -184,7 +319,7 @@ export function createNotificationOutbox({ targetsForEvent = defaultTargetsForEv
           expires_at: task.expires_at,
         })),
       };
-      const outbox = await transaction.query(
+      const outbox = await transaction.query<{ id: string }>(
         `INSERT INTO notification.outbox (
             ticket_id, ticket_event_id, event_type, aggregate_version, template_code, payload
          ) VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6::jsonb)
@@ -200,6 +335,8 @@ export function createNotificationOutbox({ targetsForEvent = defaultTargetsForEv
           JSON.stringify(payload),
         ],
       );
+      const outboxRow = outbox.rows[0];
+      if (!outboxRow) throw new Error('NOTIFICATION_OUTBOX_NOT_RETURNED');
       const targets = validateTargets(await targetsForEvent({ transaction, ticket, event }));
       const deliveryIds = [];
       for (const target of targets) {
@@ -211,41 +348,42 @@ export function createNotificationOutbox({ targetsForEvent = defaultTargetsForEv
           hashTarget(target.targetKey),
           templateCode,
         ].join(':');
-        const delivery = await transaction.query(
+        const delivery = await transaction.query<{ id: string }>(
           `INSERT INTO notification.delivery (
               outbox_id, channel, target_key, idempotency_key
            ) VALUES ($1::uuid, $2, $3, $4)
            ON CONFLICT (idempotency_key)
            DO UPDATE SET id = notification.delivery.id
            RETURNING id::text`,
-          [outbox.rows[0].id, target.channel, target.targetKey, idempotencyKey],
+          [outboxRow.id, target.channel, target.targetKey, idempotencyKey],
         );
-        deliveryIds.push(delivery.rows[0].id);
+        const deliveryRow = delivery.rows[0];
+        if (!deliveryRow) throw new Error('NOTIFICATION_DELIVERY_NOT_RETURNED');
+        deliveryIds.push(deliveryRow.id);
       }
       return {
-        outbox_id: outbox.rows[0].id,
+        outbox_id: outboxRow.id,
         delivery_ids: deliveryIds,
       };
     },
   });
 }
 
-function deliveryErrorCode(error) {
-  if (typeof error?.code === 'string' && error.code.length > 0 && error.code.length <= 128) {
+function deliveryErrorCode(error: unknown): string {
+  if (isRecord(error) && typeof error.code === 'string' && error.code.length > 0 && error.code.length <= 128) {
     return error.code;
   }
   return 'WECOM_SEND_FAILED';
 }
 
-async function withTimeout(operation, timeoutMs) {
-  let timeout;
+async function withTimeout<T>(operation: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       operation,
-      new Promise((_, reject) => {
+      new Promise<T>((_, reject) => {
         timeout = setTimeout(() => {
-          const error = new Error('Notification delivery timed out.');
-          error.code = 'WECOM_SEND_TIMEOUT';
+          const error = Object.assign(new Error('Notification delivery timed out.'), { code: 'WECOM_SEND_TIMEOUT' });
           reject(error);
         }, timeoutMs);
       }),
@@ -255,6 +393,7 @@ async function withTimeout(operation, timeoutMs) {
   }
 }
 
+export function createNotificationDeliveryWorker(options: NotificationDeliveryWorkerOptions): NotificationDeliveryWorker;
 export function createNotificationDeliveryWorker({
   pool,
   sender,
@@ -266,11 +405,12 @@ export function createNotificationDeliveryWorker({
   sendTimeoutMs = 5_000,
   maxDeliveriesPerTargetWindow = 20,
   rateLimitWindowMs = 60_000,
-} = {}) {
+}: Partial<NotificationDeliveryWorkerOptions> = {}): NotificationDeliveryWorker {
   if (typeof sender !== 'function' || typeof now !== 'function'
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function')) {
     throw new TypeError('A notification sender is required.');
   }
+  const send = sender;
   for (const [name, value] of Object.entries({
     retryBaseMs,
     maxAttempts,
@@ -287,14 +427,14 @@ export function createNotificationDeliveryWorker({
     throw new TypeError('sendTimeoutMs must not exceed leaseMs.');
   }
 
-  async function claimOne(deliveryId = null) {
+  async function claimOne(deliveryId: string | null = null): Promise<DeliveryClaim | null> {
     const claimedAt = clock(nowEpochMs, now);
     const rateLimitStart = BigInt(claimedAt.epoch_ms) > BigInt(rateLimitWindowMs)
       ? String(BigInt(claimedAt.epoch_ms) - BigInt(rateLimitWindowMs)) : '0';
     const leaseToken = randomUUID();
     return withTransaction(pool, async (transaction) => {
       const selected = deliveryId === null
-        ? await transaction.query(
+          ? await transaction.query<DeliveryClaimRow>(
           `SELECT delivery.id::text, delivery.outbox_id::text, delivery.channel,
                   delivery.target_key, delivery.idempotency_key, delivery.attempt_count,
                   outbox.payload, outbox.template_code, outbox.event_type,
@@ -333,7 +473,7 @@ export function createNotificationDeliveryWorker({
             LIMIT 1`,
           [claimedAt.epoch_ms, rateLimitStart, maxDeliveriesPerTargetWindow],
         )
-        : await transaction.query(
+        : await transaction.query<DeliveryClaimRow>(
           `SELECT delivery.id::text, delivery.outbox_id::text, delivery.channel,
                   delivery.target_key, delivery.idempotency_key, delivery.attempt_count,
                   outbox.payload, outbox.template_code, outbox.event_type,
@@ -369,6 +509,7 @@ export function createNotificationDeliveryWorker({
         return null;
       }
       const claimed = selected.rows[0];
+      if (!claimed) return null;
       const leaseExpiresAt = addEpochMilliseconds(claimedAt.epoch_ms, leaseMs);
       await transaction.query(
         `UPDATE notification.delivery
@@ -383,10 +524,10 @@ export function createNotificationDeliveryWorker({
     });
   }
 
-  async function finalize(claim, outcome) {
+  async function finalize(claim: DeliveryClaim, outcome: DeliveryOutcome): Promise<PublicDelivery | null> {
     const completedAt = clock(nowEpochMs, now);
     return withTransaction(pool, async (transaction) => {
-      const selected = await transaction.query(
+      const selected = await transaction.query<DeliveryRow>(
         `SELECT id::text, outbox_id::text, channel, status, attempt_count,
                 lease_token::text, last_error_code, provider_message_id, sent_at, sent_epoch_ms::text
            FROM notification.delivery
@@ -394,14 +535,14 @@ export function createNotificationDeliveryWorker({
           FOR UPDATE`,
         [claim.id],
       );
-      if (selected.rowCount !== 1 || selected.rows[0].status !== 'SENDING'
-        || selected.rows[0].lease_token !== claim.leaseToken) {
+      const current = selected.rows[0];
+      if (selected.rowCount !== 1 || !current || current.status !== 'SENDING'
+        || current.lease_token !== claim.leaseToken) {
         return null;
       }
-      const current = selected.rows[0];
       const attemptNo = current.attempt_count + 1;
       if (outcome.ok) {
-        const updated = await transaction.query(
+        const updated = await transaction.query<DeliveryRow>(
           `UPDATE notification.delivery
               SET status = 'SENT',
                    attempt_count = $2,
@@ -425,14 +566,16 @@ export function createNotificationDeliveryWorker({
           [claim.id, attemptNo, outcome.providerMessageId ?? null,
             completedAt.local_datetime, completedAt.epoch_ms],
         );
-        return publicDelivery(updated.rows[0]);
+        const updatedRow = updated.rows[0];
+        if (!updatedRow) throw new Error('NOTIFICATION_DELIVERY_NOT_RETURNED');
+        return publicDelivery(updatedRow);
       }
       const terminal = attemptNo >= maxAttempts;
       const nextAttemptAt = addEpochMilliseconds(
         completedAt.epoch_ms,
         retryBaseMs * (2 ** Math.max(0, attemptNo - 1)),
       );
-      const updated = await transaction.query(
+      const updated = await transaction.query<DeliveryRow>(
         `UPDATE notification.delivery
             SET status = $2,
                 attempt_count = $3,
@@ -467,49 +610,58 @@ export function createNotificationDeliveryWorker({
           completedAt.epoch_ms,
         ],
       );
-      return publicDelivery(updated.rows[0]);
+      const updatedRow = updated.rows[0];
+      if (!updatedRow) throw new Error('NOTIFICATION_DELIVERY_NOT_RETURNED');
+      return publicDelivery(updatedRow);
     });
   }
 
-  async function deliverClaimed(claim) {
+  async function deliverClaimed(claim: DeliveryClaim): Promise<PublicDelivery | null> {
     try {
-      const response = await withTimeout(Promise.resolve(sender({
+      const response = await withTimeout(Promise.resolve(send({
         channel: claim.channel,
         targetKey: claim.target_key,
         idempotencyKey: claim.idempotency_key,
         payload: claim.payload,
         templateCode: claim.template_code,
       })), sendTimeoutMs);
-      if (!response || response.ok !== true) {
-        const error = new Error('Notification sender rejected delivery.');
-        error.code = response?.code ?? 'WECOM_SEND_REJECTED';
+      if (!isRecord(response) || response.ok !== true) {
+        const code = isRecord(response) && typeof response.code === 'string'
+          ? response.code : 'WECOM_SEND_REJECTED';
+        const error = Object.assign(new Error('Notification sender rejected delivery.'), { code });
         throw error;
       }
-      return finalize(claim, { ok: true, providerMessageId: response.providerMessageId ?? null });
+      const providerMessageId = response.providerMessageId === null || typeof response.providerMessageId === 'string'
+        ? response.providerMessageId : null;
+      return finalize(claim, { ok: true, providerMessageId });
     } catch (error) {
       return finalize(claim, { ok: false, errorCode: deliveryErrorCode(error) });
     }
   }
 
-  async function deliver({ deliveryId }) {
+  async function deliver({ deliveryId }: { deliveryId: string }): Promise<PublicDelivery | null> {
     nonEmpty(deliveryId, 'Delivery id is required.', 64);
     const claim = await claimOne(deliveryId);
     return claim === null ? null : deliverClaimed(claim);
   }
 
-  async function getDelivery({ deliveryId }) {
+  async function getDelivery({ deliveryId }: { deliveryId: string }): Promise<PublicDelivery | null> {
     nonEmpty(deliveryId, 'Delivery id is required.', 64);
-    const selected = await pool.query(
+    if (!pool || typeof pool.query !== 'function') {
+      throw new TypeError('A PostgreSQL pool is required.');
+    }
+    const selected = await pool.query<DeliveryRow>(
       `SELECT id::text, outbox_id::text, channel, status, attempt_count,
               last_error_code, provider_message_id, sent_at
          FROM notification.delivery
         WHERE id = $1::uuid`,
       [deliveryId],
     );
-    return selected.rowCount === 1 ? publicDelivery(selected.rows[0]) : null;
+    const row = selected.rows[0];
+    return selected.rowCount === 1 && row ? publicDelivery(row) : null;
   }
 
-  async function runOnce({ limit = 10 } = {}) {
+  async function runOnce({ limit = 10 }: { limit?: number } = {}): Promise<{ processed: number; results: PublicDelivery[] }> {
     if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
       throw new TypeError('limit must be an integer from 1 through 100.');
     }
