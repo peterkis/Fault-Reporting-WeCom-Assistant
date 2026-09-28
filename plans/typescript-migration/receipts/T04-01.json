@@ -1,7 +1,7 @@
 {
   "batch": "T04-01",
   "base": "3e00c00834a0a1659e72bf22f2c3db0298df3096",
-  "tested_head": "740e6c2dca28eea15904337e6295d31f5a8c78f7",
+  "tested_head": "b43b37cd0950dff2d858a8839748a4bbb14d9ebf",
   "branch": "codex/typescript-t04-01",
   "status": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
   "production_mappings": {
@@ -28,12 +28,12 @@
   "type_tests": "PASS",
   "build": {
     "status": "PASS",
-    "source": "740e6c2dca28eea15904337e6295d31f5a8c78f7",
-    "input_hash": "45f9db108f6cbccc1c2f609bc905decf13b29d24220a991625e6f160f0d192e3",
+    "source": "b43b37cd0950dff2d858a8839748a4bbb14d9ebf",
+    "input_hash": "02ad9af5457780c1c27fafcc3a881c261dcbba264629a1fddcaf3575aecf5dff",
     "typed": 11,
     "unchecked_legacy": 502,
     "outputs": 732,
-    "manifest_sha256": "c854891e3281d2d3cb122baac30beb03766a42c6a380d3cab052b05402fa6a00",
+    "manifest_sha256": "0212c358cc6cefae8db1066973ce512e5260c338f3de91d4da381e630bc36403",
     "clean_builds_identical": true
   },
   "artifact": "PASS",
@@ -42,8 +42,8 @@
     "behavior": "PASS",
     "report": "D:/Agent-Prompts/T04-01_Implementation_20260928/t04-01-batch-exact-6167a90-rerun",
     "source_head": "6167a908cd29ee27555059bdba33c8b38511f05c",
-    "carried_forward_to_head": "740e6c2dca28eea15904337e6295d31f5a8c78f7",
-    "runtime_delta_since_evidence": "Only erased TypeScript overload signatures and progress metadata changed; no emitted runtime behavior changed.",
+    "carried_forward_to_head": "b43b37cd0950dff2d858a8839748a4bbb14d9ebf",
+    "runtime_delta_since_evidence": "Only erased TypeScript overload signatures, the mandatory worker pool type, progress metadata, and migration entrypoint documentation changed; no emitted runtime behavior changed.",
     "source_dirty": false,
     "selected_files": 153,
     "not_run": 0,
