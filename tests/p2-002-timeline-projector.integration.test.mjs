@@ -58,6 +58,21 @@ const PROJECTOR_NAME = 'CONVERSATION_TIMELINE';
 const PROJECTOR_VERSION = '1';
 const RETENTION_UNTIL = '2027-08-30 08:00:00';
 
+integrationTest('P2-002 cleanup waits for owned client disconnect before terminating residual backends', async () => {
+  const errors = [];
+  await withP2002IsolatedDatabase({ databaseUrl, purpose: 'disconnect', run: async ({ pool }) => {
+    pool.on('error', error => errors.push(error.message));
+    pool.on('connect', client => {
+      const end = client.end.bind(client);
+      // Exercise the real socket-close window deterministically, with a real PG connection.
+      client.end = (...args) => setTimeout(() => end(...args), 100);
+    });
+    await pool.query('SELECT 1');
+  } });
+  await delay(150);
+  assert.deepEqual(errors, []);
+});
+
 async function applyBaseMigrations(pool) {
   await applyChannelMessageInboxMigration({ pool });
   await applyServiceIntakeMigration({ pool });

@@ -1,4 +1,4 @@
-import type { LocalDateTime, PhysicalEpochMs } from './time_contracts';
+import type { LocalDateTime, PhysicalEpochMs } from './time_contracts.js';
 
 /**
  * P2-002 rebuildable Conversation Timeline projection contracts.

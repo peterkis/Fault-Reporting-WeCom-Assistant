@@ -34,6 +34,7 @@ export async function withP2002IsolatedDatabase({
   });
   let isolatedPool;
   let runFailure;
+  const disconnects = new Set();
 
   try {
     await adminPool.query(`CREATE DATABASE ${quotedDatabaseName} TEMPLATE template0`);
@@ -41,6 +42,11 @@ export async function withP2002IsolatedDatabase({
       connectionString: databaseUrlForP2002Database(databaseUrl, databaseName),
       max,
       connectionTimeoutMillis: 2_000,
+    });
+    isolatedPool.on('connect', client => {
+      const disconnected = new Promise(resolve => client.once('end', resolve));
+      disconnects.add(disconnected);
+      disconnected.then(() => disconnects.delete(disconnected));
     });
     return await run({ pool: isolatedPool, databaseName });
   } catch (error) {
@@ -51,6 +57,15 @@ export async function withP2002IsolatedDatabase({
     try {
       if (isolatedPool) {
         await isolatedPool.end();
+        // pg-pool removes clients before their asynchronous socket close completes.
+        // Do not terminate those same backends while they are still closing.
+        let timer;
+        try {
+          await Promise.race([
+            Promise.all(disconnects),
+            new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('P2_002_CLIENT_DISCONNECT_TIMEOUT')), 5_000); }),
+          ]);
+        } finally { clearTimeout(timer); }
       }
       await adminPool.query(
         `SELECT pg_terminate_backend(pid)

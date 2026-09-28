@@ -78,9 +78,11 @@ export async function insertP2003MinimalEvents({
   sessionId,
   expired = false,
   sourceOffset = 0,
+  payloadPaddingBytes = 0,
 }) {
   assert.ok(Number.isSafeInteger(count) && count >= 1 && count <= 10_000);
   assert.ok(Number.isSafeInteger(sourceOffset) && sourceOffset >= 0);
+  assert.ok(Number.isInteger(payloadPaddingBytes) && payloadPaddingBytes >= 0 && payloadPaddingBytes <= 2_048);
   assert.match(sessionId, UUID_PATTERN);
   await ensureP2003StreamState(pool);
   const result = await pool.query(
@@ -105,7 +107,8 @@ export async function insertP2003MinimalEvents({
             'SESSION',
             $3::uuid,
             'WORKBENCH',
-            jsonb_build_object('ordinal', $2::bigint + ordinal),
+            jsonb_build_object('ordinal', $2::bigint + ordinal)
+              || CASE WHEN $5::integer > 0 THEN jsonb_build_object('padding', repeat('x', $5::integer)) ELSE '{}'::jsonb END,
             lpad(to_hex(100000::bigint + $2::bigint + ordinal), 64, '0'),
             lpad(to_hex(200000::bigint + $2::bigint + ordinal), 64, '0'),
             TIMESTAMP WITHOUT TIME ZONE '2026-08-31 09:00:00',
@@ -115,7 +118,7 @@ export async function insertP2003MinimalEvents({
             END
        FROM generate_series(1, $1::integer) AS ordinal
       RETURNING event_id::text`,
-    [count, sourceOffset, sessionId, expired],
+    [count, sourceOffset, sessionId, expired, payloadPaddingBytes],
   );
   const ids = result.rows.map((row) => row.event_id);
   return Object.freeze({

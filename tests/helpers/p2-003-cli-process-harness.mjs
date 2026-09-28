@@ -21,6 +21,7 @@ const SAFE_INHERITED_ENVIRONMENT_KEYS = Object.freeze([
   'TEMP',
   'TMP',
   'TMPDIR',
+  'NODE_V8_COVERAGE',
 ]);
 const activeChildren = new Set();
 

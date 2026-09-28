@@ -1,6 +1,5 @@
 {
   "schema_version": 1,
-  "purpose": "Explicit synthetic test/runtime resources; no evidence, secrets, real environment or source fallback.",
   "files": [
     ".env.example",
     "config_examples/conversation_policy.example.json",

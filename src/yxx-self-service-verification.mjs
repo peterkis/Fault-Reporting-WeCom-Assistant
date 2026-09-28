@@ -3,7 +3,7 @@ import {readFileSync,lstatSync} from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {g2CandidateInventory,G2_ROOT,G2_CANDIDATE_ROOTS,G2_CANDIDATE_FILES,G2_EXCLUDED_LOCAL_FILES} from './p2-g2-candidate.mjs';
+import {g2CandidateInventory,G2_ROOT,isG2CandidatePath} from './p2-g2-candidate.mjs';
 import {assertG2EvidenceTime} from './p2-g2-evidence-time.mjs';
 import {readYxxLocalValidationScope} from './yxx-self-service-validation-scope.mjs';
 import {createG2SourceAudit} from './p2-g2-source-audit.mjs';
@@ -15,7 +15,7 @@ export const SS009_VALIDATORS=['validate-v1-4-architecture.mjs','validate-arch-0
 export const evidenceHash=value=>createHash('sha256').update(value).digest('hex');
 const countKeys=['tests','pass','fail','cancelled','skipped','todo'];
 const normalize=value=>value.replaceAll('\r\n','\n');
-const testPath=file=>/^tests\/(?:p2-007\/)?[^/]+\.test\.mjs$/u.test(file);
+const testPath=file=>/^tests\/(?:[^/]+\/)*[^/]+\.test\.(?:mjs|mts)$/u.test(file);
 
 export function verifyYxxCompletionState(report,{preTamper=false}={}){
   if(!preTamper&&(report?.status!=='IMPLEMENTATION_AND_AUTOMATION_COMPLETE'||report?.local_verification!=='PASS')){
@@ -177,7 +177,7 @@ export function validateYxxSelfService({root=G2_ROOT,requireReady=false,preTampe
   assert.equal(normalize(execFileSync('git',['show',report.tested_head+':plans/yxx-ss-009-acceptance.json'],{cwd:root,encoding:'utf8'})),normalize(readFileSync(path.join(root,'plans/yxx-ss-009-acceptance.json'),'utf8')));
   const entries=git(['ls-tree','-r',report.tested_head]).split('\n').map(line=>line.split('\t'));
   const objects=new Map(entries.map(([meta,name])=>[name,meta.split(' ')[2]]));
-  const tracked=[...objects.keys()].filter(f=>(G2_CANDIDATE_FILES.includes(f)||G2_CANDIDATE_ROOTS.some(p=>f.startsWith(p+'/')))&&!G2_EXCLUDED_LOCAL_FILES.includes(f));
+  const tracked=[...objects.keys()].filter(f=>isG2CandidatePath(f));
   assert.deepEqual(tracked.sort(),inventory.files.map(f=>f.path).sort());
   for(const f of inventory.files){const raw=readFileSync(path.join(root,f.path)),bytes=f.encoding==='BINARY'?raw:Buffer.from(normalize(raw.toString('utf8')));const blob=createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex');assert.equal(objects.get(f.path),blob);}
   const json=ref=>{const value=JSON.parse(readYxxEvidence(root,ref));assertG2EvidenceTime(value);assert.equal(value.candidate_fingerprint,inventory.fingerprint);return value;};

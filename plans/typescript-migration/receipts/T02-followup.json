@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "batch_id": "T02",
+  "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
+  "continued_published_head": "b9064c8c473137d9ccab8bf82a530e12779fd50c",
+  "status": "IMPLEMENTATION_COMPLETE_FINAL_PUBLICATION_RESULTS_EXTERNAL",
+  "prior_failed_run": 36377908819,
+  "local_diagnostics_only": {
+    "node": "24.18.0",
+    "isolated_postgresql_major": 18,
+    "worker_and_cleanup": "RED_TO_GREEN_14_OF_14",
+    "process": 24,
+    "sql": "PASS",
+    "browser": 6,
+    "g2": 12,
+    "mixed": 77,
+    "corrected_runtime_hosts": 73,
+    "source_baseline": 96,
+    "shadow_1": 96,
+    "shadow_2": 96,
+    "skipped": 0,
+    "p2003_followup": "real PG cleanup RED/GREEN and paused-client load fixture, 2/2; final published-head process suite required"
+  },
+  "known_baseline_not_ready": [
+    "YXX_VERIFICATION_REJECTED / YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+    "ARCH-006 two identical scope/READY errors",
+    "SS010_NOT_READY / YXX_LOCAL_VALIDATION_SCOPE_INVALID"
+  ],
+  "source_history_preserved": true,
+  "frozen_evidence_modified": false,
+  "sql_modified": false,
+  "type_escape_exceptions": [],
+  "external_review": "PENDING",
+  "final_evidence": "Published-head Actions artifacts and PR review, archived outside the repository; this receipt does not certify a future commit.",
+  "auto_merge": false,
+  "next_batch_authorized": false,
+  "production_ready": false,
+  "published_attempts": [
+    {
+      "head": "c4fb87321d0d0d1dc4919b2f12bdf5d3bf4370fc",
+      "run": 36388111922,
+      "conclusion": "FAIL",
+      "failure": "P2-003 cleanup race and insufficient Linux TCP backpressure fixture",
+      "tooling_per_platform": 43,
+      "source_and_two_shadows_each": 96,
+      "remaining_groups": "PASS"
+    },
+    {
+      "head": "c3f803389f1e15c0903a41f705bdd820c204e3cc",
+      "run": 36389083167,
+      "conclusion": "FAIL",
+      "failure": "Linux native HTTP highWaterMark reached the application guard before drain-timeout; reproduced on Windows with explicit 64 KiB transport",
+      "cleanup_race": "RESOLVED",
+      "remaining_groups": "PASS"
+    }
+  ]
+}

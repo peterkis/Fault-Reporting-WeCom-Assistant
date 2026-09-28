@@ -1,20 +1,30 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync, accessSync, constants } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 
-const candidates = [
+export const systemBrowserCandidates = Object.freeze([
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-];
-export function findSystemBrowser() {
-  const executable=candidates.find(existsSync);
-  if(!executable)throw new Error('P2_006_SYSTEM_EDGE_OR_CHROME_REQUIRED');
-  return executable;
+  '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable',
+  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/opt/google/chrome/chrome',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+]);
+export function findSystemBrowser({ executable = process.env.TS_MIGRATION_BROWSER_EXECUTABLE, candidates = systemBrowserCandidates } = {}) {
+  if (executable !== undefined) {
+    if (!isAbsolute(executable) || !existsSync(executable) || !statSync(executable).isFile()) throw new Error('P2_006_EXPLICIT_BROWSER_INVALID');
+    try { accessSync(executable, process.platform === 'win32' ? constants.F_OK : constants.X_OK); }
+    catch { throw new Error('P2_006_EXPLICIT_BROWSER_INVALID'); }
+    return executable;
+  }
+  const available = candidates.find(p => { try { return statSync(p).isFile(); } catch { return false; } });
+  if (!available) throw new Error('P2_006_SYSTEM_EDGE_OR_CHROME_REQUIRED');
+  return available;
 }
 const delay=milliseconds=>new Promise(resolveDelay=>setTimeout(resolveDelay,milliseconds));
 async function waitFor(fn,{timeoutMs=30000,intervalMs=50,signal}={}){

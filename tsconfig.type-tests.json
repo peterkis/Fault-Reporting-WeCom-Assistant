@@ -6,7 +6,8 @@
     "checkJs": false
   },
   "include": [
-    "tests/types/**/*.mts"
+    "tests/types/**/*.mts",
+    "contracts/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",

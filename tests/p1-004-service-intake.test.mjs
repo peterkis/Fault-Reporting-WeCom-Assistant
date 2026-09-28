@@ -1,8 +1,10 @@
+import { sourceFile } from './helpers/migration-roots.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { after, before, test } from 'node:test';
 import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
 import { formatEpochMsToShanghaiLocal, shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from '../src/platform/postgres-types.mjs';
 import { adaptWeComSdkFrame } from '../src/p1-002-wecom-sdk-adapter.mjs';
@@ -117,6 +119,8 @@ before(async () => {
   if (pool) {
     await applyChannelMessageInboxMigration({ pool });
     await applyServiceIntakeMigration({ pool });
+    // Current runtime consumes ARCH-005 local timestamps; 001/002 alone are historical DDL.
+    await migrateCurrentBaseline({ databaseUrl });
   }
 });
 
@@ -1034,17 +1038,17 @@ test('migration is limited to Service Intake, message relations and Intake audit
   assert.doesNotMatch(sql, /\bVARCHAR\b/iu);
 
   const source = readFileSync(
-    new URL('../src/p1-004-service-intake.mjs', import.meta.url),
+    sourceFile('src/p1-004-service-intake.mjs'),
     'utf8',
   );
   assert.match(source, /GREATEST\(4,\s*char_length\([^)]*sequence_value/iu);
   const migrationRunner = readFileSync(
-    new URL('../scripts/p1-004-migrate.mjs', import.meta.url),
+    sourceFile('scripts/p1-004-migrate.mjs'),
     'utf8',
   );
   assert.match(migrationRunner, /mapServiceIntakeMigrationFailure\(error\)/u);
   const verifier = readFileSync(
-    new URL('../scripts/p1-004-verify.mjs', import.meta.url),
+    sourceFile('scripts/p1-004-verify.mjs'),
     'utf8',
   );
   assert.match(verifier, /pilot_ticket_schema_exists:\s*false/u);

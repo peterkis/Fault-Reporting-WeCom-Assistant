@@ -2,16 +2,17 @@
   "schema_version": 1,
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "42201d12279dc9c95b64912f13cc72284388c514",
-  "current_batch": "T01",
-  "current_execution_status": "IMPLEMENTED_PENDING_EXACT_HEAD_VALIDATION",
+  "current_batch": "T02",
+  "current_execution_status": "IMPLEMENTATION_COMPLETE_NOT_MERGED",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
-    "T00"
+    "T00",
+    "T01"
   ],
   "batches": {
     "T00": "MERGED",
-    "T01": "IMPLEMENTED_PENDING_EXACT_HEAD_VALIDATION",
-    "T02": "PLANNED",
+    "T01": "MERGED",
+    "T02": "IMPLEMENTED_NOT_MERGED",
     "T03-01": "PLANNED",
     "T04-01": "PLANNED",
     "T04-02": "PLANNED",
@@ -49,16 +50,16 @@
     "T11": "PLANNED",
     "T12": "PLANNED"
   },
-  "next_batch": "T02",
+  "next_batch": "T03-01",
   "next_batch_authorized_to_start": false,
   "required_before_next_batch": [
-    "Complete exact-head T01 CI and independent Codex review.",
-    "The user requested T01 and T02 implementation/review, not automatic merge. A later T02 dependent PR must identify its unmerged T01 base and must not claim merged-main completion."
+    "T02 exact published-head remote gates and independent Codex review.",
+    "User-authorized T02 merge; T03 is outside the current request."
   ],
-  "migration_readiness": "T01_SHADOW_TOOLCHAIN_NOT_ACTIVATED",
+  "migration_readiness": "T01_MERGED_T02_IMPLEMENTED_NOT_MERGED",
   "production_readiness": "NOT_CLAIMED",
-  "types": "IMPLEMENTED_PENDING_EXACT_HEAD_CI",
-  "build": "IMPLEMENTED_PENDING_EXACT_HEAD_CI",
+  "types": "IMPLEMENTED_FINAL_RESULTS_IN_EXACT_HEAD_PR",
+  "build": "IMPLEMENTED_FINAL_RESULTS_IN_EXACT_HEAD_PR",
   "blocked_items": [
     {
       "id": "ENV_NODE24_PG18",
@@ -84,5 +85,13 @@
   "completed_batches_note": "Merged/reviewed batches are not self-certified by this pre-merge file. T00 execution is recorded; resolve actual PR #24 merge and external-review state before starting T01.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
-  "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a"
+  "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",
+  "prerequisite": {
+    "pr": 25,
+    "head": "aefcde03284088e2a0780b644ee40f8e8afb95d8",
+    "merge": "84d39b964d02db335c6c0c900d56d5b0a383f621",
+    "review_comment": 5862134148
+  },
+  "current_followup_receipt": "receipts/T02-followup.json",
+  "publication_result_source": "Exact published-head CI artifacts and PR review; no future PASS is certified by this file."
 }

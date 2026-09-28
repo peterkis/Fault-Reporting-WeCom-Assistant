@@ -1,3 +1,4 @@
+import { sourceFile } from './helpers/migration-roots.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
@@ -87,7 +88,7 @@ async function facts(pool, requestRef) {
 }
 
 test('SS-004 Web adapter is shared-rule, APP_ONLY, and never creates message-side facts', async () => {
-  const source = await readFile('src/yxx-self-service-orchestrator.mjs', 'utf8');
+  const source = await readFile(sourceFile('src/yxx-self-service-orchestrator.mjs'), 'utf8');
   assert.match(source, /source_kind: 'WEB'/u);
   assert.match(source, /delivery_mode: 'APP_ONLY'/u);
   assert.match(source, /WEB_FORM/u);

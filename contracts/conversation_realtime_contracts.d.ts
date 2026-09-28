@@ -1,4 +1,4 @@
-import type { LocalDateTime, PhysicalEpochMs } from './time_contracts';
+import type { LocalDateTime, PhysicalEpochMs } from './time_contracts.js';
 
 /**
  * P2-003 durable realtime event projection, replay, authorization, SSE, and

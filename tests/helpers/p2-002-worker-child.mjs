@@ -1,4 +1,5 @@
 import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
+import { takeCoverage } from 'node:v8';
 import {
   TIMELINE_ERROR_CODES,
   TimelineProjectionError,
@@ -37,6 +38,8 @@ function isolatedDatabaseUrl() {
 }
 
 function sendSafe(message) {
+  // The crash/replay test deliberately kills this process; flush before its IPC checkpoint.
+  if (process.env.NODE_V8_COVERAGE) takeCoverage();
   return new Promise((resolve, reject) => {
     if (typeof process.send !== 'function' || !process.connected) {
       reject(new Error('P2_002_CHILD_IPC_REQUIRED'));

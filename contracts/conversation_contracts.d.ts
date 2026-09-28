@@ -1,4 +1,4 @@
-import type { LocalDateTime } from './time_contracts';
+import type { LocalDateTime } from './time_contracts.js';
 
 /**
  * P2-001 Conversation Thread, Session, and Item contracts.

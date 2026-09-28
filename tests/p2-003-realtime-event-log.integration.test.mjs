@@ -62,6 +62,19 @@ if (typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
 }
 
 const TEST_TIMEOUT = 120_000;
+test('P2-003 cleanup waits for owned client disconnect before terminating residual backends', async () => {
+  const errors = [];
+  await withP2003IsolatedDatabase({ databaseUrl, purpose: 'disconnect', run: async ({ pool }) => {
+    pool.on('error', error => errors.push(error.message));
+    pool.on('connect', client => {
+      const end = client.end.bind(client);
+      client.end = (...args) => setTimeout(() => end(...args), 100);
+    });
+    await pool.query('SELECT 1');
+  } });
+  await delay(150);
+  assert.deepEqual(errors, []);
+});
 const STREAM_NAME = REALTIME_STREAM_NAME ?? 'CONVERSATION_WORKBENCH';
 
 async function applyBaseMigrations(pool) {
@@ -1549,6 +1562,9 @@ test('P2-003 real paused slow client is isolated while normal delivery and appen
           count: 5_000,
           sessionId,
           sourceOffset: 100_000,
+          // Minimal frames fit in Linux TCP buffers without sustained backpressure.
+          // Keep 5,000 real events but offer >10 MiB, below the existing per-frame bound.
+          payloadPaddingBytes: 2_048,
         });
         await serverProcess.wakeup();
         const activeSlowWriteWindow = await waitForServerMetrics(
@@ -1649,6 +1665,7 @@ test('P2-003 real paused slow client is isolated while normal delivery and appen
         assert.ok(metrics.max_writable_length <= 65_536 + 4_096);
         evidence = {
           slow_disconnect_count: metrics.slow_client_disconnect_count,
+          bulk_payload_padding_bytes: 2_048,
           normal_client_received: normalClient.snapshot().event_count,
           persisted_event_count: persisted.rows[0].event_count,
           slow_disconnect_polls: slowClosed.polls,
