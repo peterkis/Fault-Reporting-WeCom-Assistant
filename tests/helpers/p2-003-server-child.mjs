@@ -166,7 +166,9 @@ try {
       allow_restricted_admin: principal.role === 'ADMIN',
     }),
   });
-  server = createServer(handler);
+  // Exercise drain-timeout separately from the 64 KiB application buffer guard.
+  // Node defaults differ by platform (16 KiB on Windows, 64 KiB on Linux).
+  server = createServer({ highWaterMark: 16_384 }, handler);
   server.on('connection', (socket) => {
     sockets.add(socket);
     socket.once('close', () => sockets.delete(socket));

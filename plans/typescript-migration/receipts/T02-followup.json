@@ -44,6 +44,14 @@
       "tooling_per_platform": 43,
       "source_and_two_shadows_each": 96,
       "remaining_groups": "PASS"
+    },
+    {
+      "head": "c3f803389f1e15c0903a41f705bdd820c204e3cc",
+      "run": 36389083167,
+      "conclusion": "FAIL",
+      "failure": "Linux native HTTP highWaterMark reached the application guard before drain-timeout; reproduced on Windows with explicit 64 KiB transport",
+      "cleanup_race": "RESOLVED",
+      "remaining_groups": "PASS"
     }
   ]
 }
