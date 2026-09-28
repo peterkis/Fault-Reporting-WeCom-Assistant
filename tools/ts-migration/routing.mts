@@ -5,7 +5,7 @@ export const ROUTING_BASE = '84d39b964d02db335c6c0c900d56d5b0a383f621';
 export type Host = 'SOURCE_HOST' | 'STAGED_RUNTIME' | 'MIXED_EXPLICIT_ROOTS';
 export type Entry = { path: string; mode: Host; node_flags: string[]; requires_database: boolean; requires_browser: boolean; requires_powershell: boolean; requires_pyyaml: boolean };
 export type Selection = { entries: Entry[]; flags: string[]; label: string };
-export type Routes = { entries: Entry[]; selections: Record<string, unknown>; aliases: Record<string, unknown> };
+export type Routes = { entries: Entry[]; selections: Record<string, unknown>; aliases: Record<string, unknown>; frozen: Record<string, unknown>; subprocesses: Record<string, unknown> };
 export const logical = (p: string): string => p.endsWith('.mts') ? p.slice(0, -4) + '.mjs' : p;
 const hostNames = new Set(['SOURCE_HOST', 'STAGED_RUNTIME', 'MIXED_EXPLICIT_ROOTS']);
 export function flags(value: unknown): string[] {
@@ -44,7 +44,14 @@ export function loadRoutes(root: string): Routes {
     if (JSON.stringify(flags(spec.node_flags)) !== JSON.stringify(reconstructed.flags)
       || JSON.stringify(strings(spec.patterns)) !== JSON.stringify(reconstructed.patterns)) throw new Error('MIGRATION_TEST_ALIAS_SELECTION_DRIFT: ' + name);
   }
-  return { entries, selections: record(raw.selections), aliases };
+  const frozen = record(raw.frozen_checks);
+  if (JSON.stringify(frozen) !== JSON.stringify({ p2016: { mode: 'FROZEN_CHECKOUT', command: ['node', 'scripts/validate-p2-016-historical.mjs'], entry_host: 'SOURCE_HOST', historical_only: true } })) throw new Error('MIGRATION_FROZEN_ROUTE_DRIFT');
+  const subprocesses = record(raw.subprocess_entries);
+  for (const [entry, targets] of Object.entries(subprocesses)) {
+    if (!declared.includes(entry)) throw new Error('MIGRATION_SUBPROCESS_ENTRY_UNKNOWN');
+    for (const target of strings(targets)) safeFile(root, target);
+  }
+  return { entries, selections: record(raw.selections), aliases, frozen, subprocesses };
 }
 export function parseOriginal(command: string): { flags: string[]; patterns: string[] } {
   if (command.startsWith('node scripts/p2-g2-synthetic-e2e.mjs --suite=')) {

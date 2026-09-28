@@ -18,7 +18,9 @@ export function g2TestFiles(suite='g2') {
 }
 export async function runG2Tests({suite='g2',envFile='.env.pilot'}={}) {
   if(Number(process.versions.node.split('.')[0])!==24)failG2('NODE_24_REQUIRED');
-  const files=g2TestFiles(suite),settings=parseEnv(readFileSync(path.resolve(G2_ROOT,envFile),'utf8'));
+  const files=g2TestFiles(suite);
+  if(files.some(file=>file.endsWith('.mts')))failG2('TYPED_TESTS_REQUIRE_MIGRATION_RUNNER');
+  const settings=parseEnv(readFileSync(path.resolve(G2_ROOT,envFile),'utf8'));
   let url;try{url=new URL(settings.PILOT_DATABASE_URL);}catch{failG2('DATABASE_CONFIGURATION_INVALID');}
   if(!['localhost','127.0.0.1','[::1]'].includes(url.hostname))failG2('LOCAL_DATABASE_REQUIRED');
   const environment={...minimalG2Environment(),PILOT_DATABASE_URL:settings.PILOT_DATABASE_URL};

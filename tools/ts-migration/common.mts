@@ -133,6 +133,11 @@ export function program(root: string, name: string): ts.Program {
   for (const f of typed) {
     if (!result.getSourceFile(slash(path.join(root, f))) || !p.fileNames.some(input => slash(input) === slash(path.join(root, f)))) throw new Error('MIGRATION_UNCHECKED_TARGET: ' + f);
   }
+  if (name === 'tsconfig.type-tests.json') {
+    for (const f of workspaceFiles(root).filter(f => /^contracts\/.+\.d\.(?:ts|mts)$/u.test(f))) {
+      if (!result.getSourceFile(slash(path.join(root, f)))) throw new Error('MIGRATION_UNCHECKED_CONTRACT: ' + f);
+    }
+  }
   // Declaration files can otherwise introduce explicit any into typed consumers.
   // Scan every local input actually loaded by the program, including transitive
   // .d.ts/.d.mts, but never vendor declarations from the locked dependencies.

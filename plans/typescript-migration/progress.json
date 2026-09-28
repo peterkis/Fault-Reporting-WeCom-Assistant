@@ -3,7 +3,7 @@
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "42201d12279dc9c95b64912f13cc72284388c514",
   "current_batch": "T02",
-  "current_execution_status": "IMPLEMENTED_PENDING_REMOTE_VALIDATION",
+  "current_execution_status": "FIXES_PENDING_EXACT_PUBLISHED_HEAD_VALIDATION",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
@@ -91,5 +91,6 @@
     "head": "aefcde03284088e2a0780b644ee40f8e8afb95d8",
     "merge": "84d39b964d02db335c6c0c900d56d5b0a383f621",
     "review_comment": 5862134148
-  }
+  },
+  "current_followup_receipt": "receipts/T02-followup.json"
 }

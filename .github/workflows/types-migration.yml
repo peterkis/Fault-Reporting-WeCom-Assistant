@@ -94,20 +94,64 @@ jobs:
           node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-1" 2>&1 | tee "$OUT/shadow-1.txt"
           node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-2" 2>&1 | tee "$OUT/shadow-2.txt"
           node .build/tools/observe-runtime.mjs 2>&1 | tee "$OUT/observations.jsonl"
-      - name: Real test subprocess, SQL, browser and synthetic G2 paths
+      - name: T02 process integration
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
-          for GROUP in process sql browser g2; do
-            node .build/tools/run-tests.mjs --selection "t02-$GROUP" --report-dir "$OUT/$GROUP" 2>&1 | tee "$OUT/$GROUP.txt"
-          done
-          node .build/tools/run-tests.mjs --alias test:p1:004 --report-dir "$OUT/intake" 2>&1 | tee "$OUT/intake.txt"
-          node .build/tools/run-tests.mjs --alias test:p2:003 --report-dir "$OUT/realtime" 2>&1 | tee "$OUT/realtime.txt"
+          node .build/tools/run-tests.mjs --selection t02-process --report-dir "$OUT/process" 2>&1 | tee "$OUT/process.txt"
+      - name: T02 sql integration
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          node .build/tools/run-tests.mjs --selection t02-sql --report-dir "$OUT/sql" 2>&1 | tee "$OUT/sql.txt"
+      - name: T02 browser integration
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          node .build/tools/run-tests.mjs --selection t02-browser --report-dir "$OUT/browser" 2>&1 | tee "$OUT/browser.txt"
+      - name: T02 g2 integration
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          node .build/tools/run-tests.mjs --selection t02-g2 --report-dir "$OUT/g2" 2>&1 | tee "$OUT/g2.txt"
+      - name: T02 mixed integration
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          node .build/tools/run-tests.mjs --selection t02-mixed --report-dir "$OUT/mixed" 2>&1 | tee "$OUT/mixed.txt"
+      - name: T02 corrected runtime hosts
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          node .build/tools/run-tests.mjs --selection t02-routed --report-dir "$OUT/routed" 2>&1 | tee "$OUT/routed.txt"
+      - name: T02 artifact identity and source architecture
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
           node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
           cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
           npm run validate:architecture:v1.4 2>&1 | tee "$OUT/architecture.txt"
-          npm run validate:p2:016:historical 2>&1 | tee "$OUT/historical.txt"
+      - name: T02 frozen P2-016 checkout
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          node .build/tools/run-tests.mjs --frozen p2016 --report-dir "$OUT/historical" 2>&1 | tee "$OUT/historical.txt"
       - name: Compare unchanged known non-readiness against authentic merged T01
         if: ${{ !cancelled() }}
         shell: bash
@@ -115,6 +159,7 @@ jobs:
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
           BASE="$RUNNER_TEMP/types-t01-reference"
+          printf '%s\n' "import net from 'node:net';import cp from 'node:child_process';import {syncBuiltinESMExports} from 'node:module';const fail=()=>{process.stderr.write('T02_FORBIDDEN_RUNTIME_IO');process.exit(97);};net.Socket.prototype.connect=fail;net.Server.prototype.listen=fail;cp.fork=fail;cp.spawn=fail;globalThis.fetch=fail;syncBuiltinESMExports();" > "$OUT/offline-guard.mjs"
           git worktree add --detach "$BASE" 84d39b964d02db335c6c0c900d56d5b0a383f621
           npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
           for LABEL in current base; do
@@ -123,9 +168,15 @@ jobs:
             echo "$RC" > "$OUT/$LABEL-strict-exit.txt"; test "$RC" = 1
             grep -q YXX_VERIFICATION_REJECTED "$OUT/$LABEL-strict.txt"
             (cd "$CWD" && node --input-type=module -e "import {validateYxxSelfService} from './src/yxx-self-service-verification.mjs'; try {validateYxxSelfService({requireReady:true}); process.exitCode=1;} catch(e) {if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e; console.log(JSON.stringify({status:'KNOWN_BASELINE_NOT_READY',code:e.code}));}") > "$OUT/$LABEL-strict-classification.txt" 2>&1
+            RC=0; (cd "$CWD" && node --import "$OUT/offline-guard.mjs" scripts/yxx-self-service-readiness.mjs) > "$OUT/$LABEL-ss010.txt" 2>&1 || RC=$?
+            echo "$RC" > "$OUT/$LABEL-ss010-exit.txt"; test "$RC" = 1
+            grep -q 'SS010_NOT_READY' "$OUT/$LABEL-ss010.txt"
+            (cd "$CWD" && node --import "$OUT/offline-guard.mjs" --input-type=module -e "import {checkSS010} from './src/yxx-self-service-readiness.mjs'; try{checkSS010();process.exitCode=1;}catch(e){if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e;console.log(e.code);}") > "$OUT/$LABEL-ss010-internal.txt" 2>&1
             RC=0; (cd "$CWD" && node scripts/validate-arch-006-rule-first-service-loop.mjs) > "$OUT/$LABEL-arch006.txt" 2>&1 || RC=$?
             echo "$RC" > "$OUT/$LABEL-arch006-exit.txt"; test "$RC" = 1
           done
+          cmp "$OUT/current-ss010-internal.txt" "$OUT/base-ss010-internal.txt"
+          cmp "$OUT/current-ss010.txt" "$OUT/base-ss010.txt"
           cmp "$OUT/current-arch006.txt" "$OUT/base-arch006.txt"
           grep -q 'ARCH-006 validation failed with 2 error(s)' "$OUT/current-arch006.txt"
           grep -q 'valid pinned local self-service successor scope' "$OUT/current-arch006.txt"

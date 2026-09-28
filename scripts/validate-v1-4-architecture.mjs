@@ -401,7 +401,7 @@ if (profile) {
   if (Object.hasOwn(profile, 'lastCompletedArchitectureTask')) {
     check(p2Summary?.last_completed_architecture_task === profile.lastCompletedArchitectureTask, 'project P2 summary has the profile last completed architecture task');
     const completionEvidence = 'evidence/arch-005-targeted-live-revalidation.md';
-    check(fs.existsSync(path.join(root, completionEvidence)), 'ARCH-005 completion evidence exists');
+    check(fs.existsSync(sourcePath(completionEvidence)), 'ARCH-005 completion evidence exists');
     check(manifest.arch_005_completion_evidence === completionEvidence
       && current.arch_005_completion_evidence === completionEvidence
       && backlog.arch_005_completion_evidence === completionEvidence
@@ -411,7 +411,7 @@ if (profile) {
     'all lifecycle views link ARCH-005 completion evidence');
     if (profile.lastCompletedArchitectureTask === 'ARCH-006') {
       const arch006Evidence = 'evidence/arch-006-rule-first-service-loop-rebaseline-report.md';
-      check(fs.existsSync(path.join(root, arch006Evidence)), 'ARCH-006 completion evidence exists');
+      check(fs.existsSync(sourcePath(arch006Evidence)), 'ARCH-006 completion evidence exists');
       check([manifest, current, backlog, parallel, taskIndex, projectSummary.project]
         .every((view) => view.arch_006_status === 'DONE'
           && view.arch_006_completed_at === '2026-09-03'
@@ -430,7 +430,7 @@ if (profile?.p2g2Status) {
   const gateViews = [manifest,current,backlog,parallel,taskIndex,projectSummary.project,projectSummary.phase_model.find(p=>p.id==='P2')];
   check(gateViews.every(v=>v.p2_g2_status===profile.p2g2Status && v.p2_g2_authorized_at==='2026-09-08'
     && v.p2_g2_authorization_evidence===authorization && v.p2_g2_base_commit==='8c332710dad9b6cf3f6796f3344c04d1c710ddf3'), 'P2-G2 independent preparation authorization is synchronized');
-  check(fs.existsSync(path.join(root,authorization)) && read(authorization).includes('READY_FOR_LIVE_E2E')
+  check(fs.existsSync(sourcePath(authorization)) && read(authorization).includes('READY_FOR_LIVE_E2E')
     && read(authorization).includes('本轮不授权真实企业微信发送'), 'P2-G2 preparation retains the independent live stop line');
   check(!backlog.tasks.some(t=>t.id==='P2-G2') && !current.authorized_tasks.includes('P2-G2'), 'P2-G2 is authorized as a Gate, never a Runtime task');
   check(gateViews.every(v=>!Object.hasOwn(v,'p2_g2_completed_at') && !Object.hasOwn(v,'p2_g2_owner_approval_evidence')), 'P2-G2 preparation cannot claim completion or owner acceptance');
@@ -501,7 +501,7 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
     check(p2015?.status === (p2015Done ? 'DONE' : 'AUTHORIZED') && p2015?.authorization_status === 'AUTHORIZED'
       && p2015?.authorized_at === '2026-09-03'
       && p2015?.authorization_evidence === 'evidence/p2-015-start-authorization.md', 'P2-015 is independently authorized');
-    check(fs.existsSync(path.join(root, 'evidence/p2-015-start-authorization.md')), 'P2-015 authorization evidence exists');
+    check(fs.existsSync(sourcePath('evidence/p2-015-start-authorization.md')), 'P2-015 authorization evidence exists');
     check([manifest, current, backlog, parallel, taskIndex, projectSummary.project]
       .every((view) => view.p2_015_status === (p2015Done ? 'DONE' : 'AUTHORIZED')
         && view.p2_015_authorized_at === '2026-09-03'
@@ -509,7 +509,7 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
     'all lifecycle views link P2-015 authorization');
     if (p2015Done) {
       const completion = 'evidence/p2-015-rule-first-intake-orchestration-report.md';
-      check(fs.existsSync(path.join(root, completion)), 'P2-015 completion evidence exists');
+      check(fs.existsSync(sourcePath(completion)), 'P2-015 completion evidence exists');
       check([manifest, current, backlog, parallel, taskIndex, projectSummary.project]
         .every((view) => view.p2_015_completed_at === '2026-09-03' && view.p2_015_completion_evidence === completion),
       'all lifecycle views link P2-015 completion');
@@ -536,8 +536,8 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
       && p2View?.implementation_authorization_status === lifecycleStatus
       && p2View?.next_task_candidate === profile.candidate && p2View?.next_task_authorized === profile.candidateAuthorized,
     'nested P2 summary mirrors authorization');
-    check(fs.existsSync(path.join(root, authorization)), 'P2-016 authorization evidence exists');
-    if (fs.existsSync(path.join(root, authorization))) {
+    check(fs.existsSync(sourcePath(authorization)), 'P2-016 authorization evidence exists');
+    if (fs.existsSync(sourcePath(authorization))) {
       const receipt = read(authorization);
       check(receipt.includes('## Historical ledger reconciliation')
         && receipt.includes('aa1153881fdf9f692d497b1850feda70c0ed45b8')
@@ -549,7 +549,7 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
     if(p2016Done){
       const completion='evidence/p2-016-ticket-lifecycle-workbench-report.md',owner='evidence/p2-016-project-owner-approval.md';
       check(p2016.completed_at==='2026-09-04'&&p2016.evidence===completion&&p2016.owner_approval_evidence===owner,'P2-016 backlog links approved completion');
-      check(fs.existsSync(path.join(root,completion))&&fs.existsSync(path.join(root,owner))&&read(owner).includes('P2_016_TARGETED_LIVE_VALIDATION=APPROVED'),'P2-016 DONE requires explicit owner-approved live evidence');
+      check(fs.existsSync(sourcePath(completion))&&fs.existsSync(sourcePath(owner))&&read(owner).includes('P2_016_TARGETED_LIVE_VALIDATION=APPROVED'),'P2-016 DONE requires explicit owner-approved live evidence');
     }
     const ledger = read('tickets/P2_ai_enhancement_tasks.md');
     const p2015Section = ledger.split('## P2-015 ')[1]?.split('\n## ')[0] ?? '';
@@ -572,7 +572,7 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
     check(p2012?.status===profile.p2012Status && p2012?.authorization_status==='AUTHORIZED'
       && p2012?.authorized_at==='2026-09-04' && p2012?.authorization_evidence===auth
       && p2012?.migration_reservation==='032', 'P2-012 has exact independent authorization');
-    check(fs.existsSync(path.join(root,auth)) && read(auth).includes('30a394e85973f5a300b841b23d2c358998796ba6')
+    check(fs.existsSync(sourcePath(auth)) && read(auth).includes('30a394e85973f5a300b841b23d2c358998796ba6')
       && read(auth).includes('不创建第二提交'), 'P2-012 records baseline and targeted-live stop line');
     check([manifest,current,backlog,parallel,taskIndex,projectSummary.project,projectSummary.phase_model.find(p=>p.id==='P2')]
       .every(v=>v.p2_012_status===profile.p2012Status && v.p2_012_authorization_evidence===auth
@@ -583,7 +583,7 @@ if (profile?.lastCompletedArchitectureTask === 'ARCH-006') {
       'P2-012 authorization or approved completion is synchronized');
     check(read(p2012.task_file).includes('- Status: '+profile.p2012Status), 'P2-012 task document agrees with authorization');
     if(p2012Done)check(p2012.completed_at==='2026-09-07'&&p2012.evidence===completion&&p2012.owner_approval_evidence===owner
-      &&fs.existsSync(path.join(root,completion))&&fs.existsSync(path.join(root,owner))
+      &&fs.existsSync(sourcePath(completion))&&fs.existsSync(sourcePath(owner))
       &&read(owner).includes('P2_012_TARGETED_LIVE_VALIDATION=APPROVED'),'P2-012 DONE requires explicit approved live evidence');
   } else check(p2012?.status === 'TODO' && p2012?.authorization_status === 'REQUIRES_SEPARATE_AUTHORIZATION', 'P2-012 remains unauthorized TODO');
   check(p2008?.status === 'TODO' && p2008?.authorization_status === 'BLOCKED_BY_P2_G2', 'P2-008 is blocked by P2-G2');
@@ -673,7 +673,7 @@ if (profile?.p2g1Status === 'PASSED') {
   const completionViews = [manifest, current, backlog, parallel, taskIndex, projectSummary.project];
   check(completionViews.every((view) => view.p2_g1_completed_at === '2026-09-02'), 'all lifecycle views record the P2-G1 completion date');
   check(completionViews.every((view) => view.p2_g1_completion_evidence === completionEvidence), 'all lifecycle views link the P2-G1 approval evidence');
-  check(fs.existsSync(path.join(root, completionEvidence)), 'P2-G1 approval evidence exists');
+  check(fs.existsSync(sourcePath(completionEvidence)), 'P2-G1 approval evidence exists');
   const approval = read(completionEvidence);
   check(approval.includes('决策：PASSED'), 'P2-G1 approval records PASSED');
   check(approval.includes('16a02a56e60bd3cdb845b069caa4e6847d3fff52'), 'P2-G1 approval identifies the live candidate');
@@ -759,38 +759,38 @@ const p2002Files = [
   'tests/p2-002-timeline-projector.integration.test.mjs',
 ];
 for (const relativePath of p2002Files) {
-  check(fs.existsSync(path.join(root, relativePath)), relativePath + ' remains present for P2-002');
+  check(fs.existsSync(sourcePath(relativePath)), relativePath + ' remains present for P2-002');
 }
 
-check(fs.existsSync(path.join(root, 'tasks/P2-003_realtime_event_log_sse.md')), 'P2-003 task record exists');
-check(fs.existsSync(path.join(root, 'evidence/p2-003-start-authorization.md')), 'P2-003 authorization evidence exists');
+check(fs.existsSync(sourcePath('tasks/P2-003_realtime_event_log_sse.md')), 'P2-003 task record exists');
+check(fs.existsSync(sourcePath('evidence/p2-003-start-authorization.md')), 'P2-003 authorization evidence exists');
 const p2003Authorization = read('evidence/p2-003-start-authorization.md');
 check(p2003Authorization.includes('项目负责人正式、独立授权启动 P2-003。完成 P2-003 后必须停止。'), 'P2-003 authorization has the exact completion stop line');
 check(p2003Authorization.includes('P2-004 及以后任务、P2-G1 组装和所有生产功能仍须另行授权。'), 'P2-003 authorization has the exact next-task and gate stop line');
 check(p2003Authorization.includes(P2_003_SOURCE_BASE), 'P2-003 authorization names the exact frozen base');
 check(p2003Authorization.includes('所有 P2/P3 Feature Flag 继续为') && p2003Authorization.includes('false'), 'P2-003 authorization keeps all feature flags false');
-check(fs.existsSync(path.join(root, 'tasks/P2-004_unified_communication_outbox_delivery.md')), 'P2-004 task record exists');
-check(fs.existsSync(path.join(root, 'evidence/p2-004-start-authorization.md')), 'P2-004 authorization evidence exists');
+check(fs.existsSync(sourcePath('tasks/P2-004_unified_communication_outbox_delivery.md')), 'P2-004 task record exists');
+check(fs.existsSync(sourcePath('evidence/p2-004-start-authorization.md')), 'P2-004 authorization evidence exists');
 const p2004Authorization = read('evidence/p2-004-start-authorization.md');
 check(p2004Authorization.includes('项目负责人正式、独立授权启动 P2-004。完成 P2-004 后必须停止。'), 'P2-004 authorization has the exact completion stop line');
 check(p2004Authorization.includes('P2-005 及以后任务、P2-G1 组装和所有生产功能仍须另行授权。'), 'P2-004 authorization has the exact next-task and gate stop line');
 check(p2004Authorization.includes(P2_004_SOURCE_BASE), 'P2-004 authorization names the exact frozen base');
 check(p2004Authorization.includes('所有 P2/P3 Feature Flag 继续为') && p2004Authorization.includes('false'), 'P2-004 authorization keeps all feature flags false');
-check(fs.existsSync(path.join(root, 'tasks/P2-005_assignment_handoff_read_cursor_generation_fence.md')), 'P2-005 task record exists');
-check(fs.existsSync(path.join(root, 'evidence/p2-005-start-authorization.md')), 'P2-005 authorization evidence exists');
+check(fs.existsSync(sourcePath('tasks/P2-005_assignment_handoff_read_cursor_generation_fence.md')), 'P2-005 task record exists');
+check(fs.existsSync(sourcePath('evidence/p2-005-start-authorization.md')), 'P2-005 authorization evidence exists');
 const p2005Authorization = read('evidence/p2-005-start-authorization.md');
 check(p2005Authorization.includes('项目负责人正式、独立授权启动 P2-005。'), 'P2-005 authorization has the exact start line');
 check(p2005Authorization.includes('完成 P2-005 后必须停止。'), 'P2-005 authorization has the exact completion stop line');
 check(p2005Authorization.includes('P2-006、P2-G1 和后续生产功能仍须另行授权。'), 'P2-005 authorization has the exact next-task and gate stop line');
 check(p2005Authorization.includes(P2_005_SOURCE_BASE), 'P2-005 authorization names the exact frozen base');
 check(p2005Authorization.includes('所有 P2/P3 Feature Flag 继续为') && p2005Authorization.includes('false'), 'P2-005 authorization keeps all feature flags false');
-check(fs.existsSync(path.join(root, 'evidence/p2-006-start-authorization.md')), 'P2-006 authorization evidence exists');
+check(fs.existsSync(sourcePath('evidence/p2-006-start-authorization.md')), 'P2-006 authorization evidence exists');
 const p2006Authorization = read('evidence/p2-006-start-authorization.md');
 check(p2006Authorization.includes('项目负责人正式、独立授权启动 P2-006。'), 'P2-006 authorization has the exact start line');
 check(p2006Authorization.includes('完成 P2-006 后必须停止。'), 'P2-006 authorization has the exact completion stop line');
 check(p2006Authorization.includes('P2-G1 组装、P2-007 及以后任务和所有生产功能仍须另行授权。'), 'P2-006 authorization has the exact next-task and gate stop line');
 check(p2006Authorization.includes(P2_006_SOURCE_BASE), 'P2-006 authorization names the exact frozen base');
-check(fs.existsSync(path.join(root, 'tasks/P2-006_realtime_web_workbench_rest_authorization.md')), 'P2-006 task record exists');
+check(fs.existsSync(sourcePath('tasks/P2-006_realtime_web_workbench_rest_authorization.md')), 'P2-006 task record exists');
 
 const p1Approval = read('evidence/p1-012-project-owner-go-approval.md');
 check(p1Approval.includes('“我批准了”'), 'P1 owner approval remains preserved');
@@ -834,7 +834,7 @@ const p2003Files = [
     'tests/p2-003-realtime-event-log.integration.test.mjs',
 ];
 for (const relativePath of p2003Files) {
-  check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-003 completion');
+  check(fs.existsSync(sourcePath(relativePath)), relativePath + ' exists for P2-003 completion');
 }
 check(pkg.scripts['p2:003:migrate'] === 'node --env-file=.env.pilot scripts/p2-003-migrate.mjs', 'package exposes migration 012 command');
 check(pkg.scripts['p2:003:retention:check'] === 'node --env-file=.env.pilot scripts/p2-003-retention.mjs --check', 'package exposes retention check command');
@@ -866,7 +866,7 @@ check(testScriptMatches('test:p2:003:integration', 'node --env-file=.env.pilot -
     'tests/p2-004-communication-core.test.mjs',
     'tests/p2-004-communication-core.integration.test.mjs',
     completionEvidence,
-  ]) check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-004 completion');
+  ]) check(fs.existsSync(sourcePath(relativePath)), relativePath + ' exists for P2-004 completion');
   check(pkg.scripts['p2:004:migrate'] === 'node --env-file=.env.pilot scripts/p2-004-migrate.mjs', 'package exposes migration 020 command');
   check(pkg.scripts['p2:004:migrate:check'] === 'node --env-file=.env.pilot scripts/p2-004-migrate.mjs --check', 'package exposes migration 020 check command');
   check(testScriptMatches('test:p2:004', 'node --test tests/p2-004-communication-core.test.mjs'), 'package exposes P2-004 unit tests');
@@ -890,7 +890,7 @@ for (const relativePath of [
   'src/p2-005-conversation-control-projections.mjs',
   'tests/p2-005-conversation-control.test.mjs',
   'tests/p2-005-conversation-control.integration.test.mjs',
-]) check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-005');
+]) check(fs.existsSync(sourcePath(relativePath)), relativePath + ' exists for P2-005');
 check(pkg.scripts['p2:005:migrate'] === 'node --env-file=.env.pilot scripts/p2-005-migrate.mjs', 'package exposes migration 021 command');
 check(pkg.scripts['p2:005:migrate:check'] === 'node --env-file=.env.pilot scripts/p2-005-migrate.mjs --check', 'package exposes migration 021 check command');
 check(testScriptMatches('test:p2:005', 'node --test tests/p2-005-conversation-control.test.mjs'), 'package exposes P2-005 unit tests');
@@ -911,7 +911,7 @@ if (profile?.p2006Status === 'DONE') {
   check(taskIndex.p2_006_completed_at === completionDate && taskIndex.p2_006_completion_evidence === completionEvidence, 'task index mirrors P2-006 completion metadata');
   check(projectSummary.project.p2_006_completed_at === completionDate && projectSummary.project.p2_006_completion_evidence === completionEvidence, 'project summary mirrors P2-006 completion metadata');
   check(p2006?.completed_at === completionDate && p2006?.evidence === completionEvidence, 'master backlog mirrors P2-006 completion metadata');
-  check(fs.existsSync(path.join(root, completionEvidence)), 'P2-006 completion evidence exists');
+  check(fs.existsSync(sourcePath(completionEvidence)), 'P2-006 completion evidence exists');
   for (const relativePath of [
     'docs/42_p2_006_realtime_web_workbench.md', 'src/p2-006-workbench-query.mjs',
     'src/p2-006-workbench-authorization.mjs', 'src/p2-006-workbench-command-facade.mjs',
@@ -919,8 +919,8 @@ if (profile?.p2006Status === 'DONE') {
     'src/p2-006-workbench-static.mjs', 'web/p2-workbench/index.html',
     'tests/p2-006-workbench.test.mjs', 'tests/p2-006-workbench.integration.test.mjs',
     'tests/p2-006-workbench-browser.test.mjs',
-  ]) check(fs.existsSync(path.join(root, relativePath)), relativePath + ' exists for P2-006');
-  check(!fs.existsSync(path.join(root, 'database/migrations/022_p2_006_realtime_workbench.sql')), 'P2-006 creates no migration 022');
+  ]) check(fs.existsSync(sourcePath(relativePath)), relativePath + ' exists for P2-006');
+  check(!fs.existsSync(sourcePath('database/migrations/022_p2_006_realtime_workbench.sql')), 'P2-006 creates no migration 022');
   check(testScriptMatches('test:p2:006', 'node --test tests/p2-006-workbench.test.mjs'), 'package exposes P2-006 unit tests');
   check(testScriptMatches('test:p2:006:integration', 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-006-workbench.integration.test.mjs'), 'package exposes P2-006 integration tests');
   check(testScriptMatches('test:p2:006:browser', 'node --test tests/p2-006-workbench-browser.test.mjs'), 'package exposes real browser tests');

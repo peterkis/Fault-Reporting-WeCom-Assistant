@@ -6,7 +6,7 @@ T00 已通过 PR #24 合并；T01 已通过 PR #25 独立审查并合并。
 T02 从 main `84d39b964d02db335c6c0c900d56d5b0a383f621` 开始，当前实现等待精确提交的远端验证和独立复审。
 不要把工作区测试、历史回执或本文件当作最终 PR 审查结果。T03 尚未授权开始；不自动合并或部署。
 
-先读根 AGENTS.md、CONTEXT.md、ADR-0026，再读 [T02 实施说明](T02.md)、[进度](progress.json) 和 [T02 回执](receipts/T02.json)。
+先读根 AGENTS.md、CONTEXT.md、ADR-0026，再读 [T02 实施说明](T02.md)、[进度](progress.json) 和 [T02 原回执](receipts/T02.json) 和 [接续回执](receipts/T02-followup.json)。
 原计划包 `WeCom_TypeScript_Migration_Plan_v1_20260927.zip` 的 `prompts/00_DISPATCHER.md`、`prompts/T02.md` 是本批执行输入；不重做 181 个迁移目标与 34 批次的 [scope.json](scope.json)。
 
 ## 两类根目录与历史对象

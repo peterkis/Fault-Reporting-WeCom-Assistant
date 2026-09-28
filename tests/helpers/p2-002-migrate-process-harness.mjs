@@ -16,6 +16,7 @@ const SAFE_INHERITED_ENVIRONMENT_KEYS = Object.freeze([
   'TMP',
   'TMPDIR',
   'PILOT_DATABASE_URL',
+  'NODE_V8_COVERAGE',
 ]);
 
 function childEnvironment(values) {

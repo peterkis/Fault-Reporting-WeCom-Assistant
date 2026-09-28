@@ -5,10 +5,10 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync,
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { loadRoutes, select, expandPatterns, testEnvironment, execution, type Entry } from './routing.mjs';
-import { sourceRoot, workspaceFiles, record } from './common.mjs';
+import { sourceRoot, workspaceFiles, record, program } from './common.mjs';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
-import { counts } from './run-tests.mjs';
+import { counts, runSelection } from './run-tests.mjs';
 const original = sourceRoot();
 function scratch(): string {
   const root=mkdtempSync(path.join(tmpdir(),'t02-host-test-'));
@@ -41,6 +41,18 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
     alter(root,'plans/typescript-migration/test-routing.json',JSON.stringify({...doc,legacy_commands:{...aliases,'test:p2:003:integration':{...spec,node_flags:[]}}}),()=>assert.throws(()=>loadRoutes(root),/ALIAS_SELECTION_DRIFT/u));
     const {[ 'test:p2:003:integration' ]: ignored,...rest}=aliases;void ignored;
     alter(root,'plans/typescript-migration/test-routing.json',JSON.stringify({...doc,legacy_commands:rest}),()=>assert.throws(()=>loadRoutes(root),/ALIAS_INVENTORY/u));
+  });
+  await t.test('frozen checks cannot be redirected to current runtime',()=>{
+    const doc=record(JSON.parse(raw) as unknown);
+    alter(root,'plans/typescript-migration/test-routing.json',JSON.stringify({...doc,frozen_checks:{}}),()=>assert.throws(()=>loadRoutes(root),/FROZEN_ROUTE/u));
+  });
+  await t.test('legacy G2 executor refuses typed source tests before reading an env file',()=>{
+    const code="import assert from 'node:assert/strict'; import {runG2Tests} from './scripts/p2-g2-synthetic-e2e.mjs'; await assert.rejects(runG2Tests({suite:'full',envFile:'does-not-exist'}),{code:'P2_G2_TYPED_TESTS_REQUIRE_MIGRATION_RUNNER'});";
+    execFileSync(process.execPath,['--input-type=module','-e',code],{cwd:root,windowsHide:true});
+  });
+  await t.test('all contract declarations must enter the real type program',()=>{
+    program(root,'tsconfig.type-tests.json');
+    alter(root,'contracts/unconsumed.d.mts','export interface MissingConsumer { id: string }',()=>assert.throws(()=>program(root,'tsconfig.type-tests.json'),/UNCHECKED_CONTRACT/u));
   });
   const db=routes.entries.filter(e=>e.requires_database);
   await t.test('database tests fail closed before test launch',()=>{
@@ -86,6 +98,24 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
   await t.test('browser discovery rejects missing explicit path and retains platform candidates',()=>{
     const code="import assert from 'node:assert/strict'; import {findSystemBrowser,systemBrowserCandidates} from './tests/helpers/p2-006-browser-harness.mjs'; assert.ok(systemBrowserCandidates.some(p=>p.startsWith('/usr/bin/'))); assert.ok(systemBrowserCandidates.some(p=>p.startsWith('C:'))); assert.throws(()=>findSystemBrowser({executable:'relative invalid'}),/EXPLICIT_BROWSER_INVALID/); assert.throws(()=>findSystemBrowser({candidates:[]}),/SYSTEM_EDGE_OR_CHROME_REQUIRED/); console.log('PASS');";
     assert.match(execFileSync(process.execPath,['--input-type=module','-e',code],{cwd:root,encoding:'utf8',windowsHide:true}),/PASS/u);
+  });
+  await t.test('worker launch rejects absent synthetic database before spawning',()=>{
+    const code="import assert from 'node:assert/strict'; import {spawnP2002WorkerProcess} from './tests/helpers/p2-002-worker-process-harness.mjs'; delete process.env.PILOT_DATABASE_URL; assert.throws(()=>spawnP2002WorkerProcess({}),/ISOLATED_LOCAL_DATABASE_REQUIRED/);";
+    execFileSync(process.execPath,['--input-type=module','-e',code],{cwd:root,windowsHide:true});
+  });
+  await t.test('a real failing test leaves FAIL and unexecuted files in its receipt',()=>{
+    const log=mkdtempSync(path.join(tmpdir(),'t02-failed-results-'));
+    try {
+      alter(root,'tests/migration-canary.test.mts',"import {test} from 'node:test'; test('intentional runtime failure',()=>{throw new Error('T02_EXPECTED_FAILURE');});",()=>{
+        build(root);
+        const selection={label:'negative',flags:[],entries:[...select(routes,'selection','canary').entries,...select(routes,'selection','t02-time').entries]};
+        assert.throws(()=>runSelection(root,selection,{reportDir:log}),/TEST_NOT_PASS/u);
+        const receipt=record(JSON.parse(readFileSync(path.join(log,'summary.json'),'utf8')) as unknown);
+        assert.equal(receipt.status,'SELECTED_TESTS_FAIL');
+        assert.deepEqual(receipt.not_run,['tests/platform-time-contract.test.mjs']);
+        assert.ok(Array.isArray(receipt.files));assert.equal(record(receipt.files[0]).status,'FAIL');
+      });
+    }finally{rmSync(log,{recursive:true,force:true});}
   });
  }finally{rmSync(root,{recursive:true,force:true});}
 });
