@@ -1,0 +1,31 @@
+name: T02 verified Git object preparation
+on:
+  push:
+    branches: ['codex/typescript-t02-prepare']
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: preparation
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 84d39b964d02db335c6c0c900d56d5b0a383f621
+          path: subject
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Apply digest-bound patch and create Git objects without updating refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python preparation/.t02-preparation/prepare.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: t02-prepared-${{ github.run_id }}
+          path: ${{ runner.temp }}/t02-prepared/
+          retention-days: 14
