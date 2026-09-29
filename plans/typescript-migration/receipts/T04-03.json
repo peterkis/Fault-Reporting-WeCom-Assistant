@@ -1,0 +1,33 @@
+{
+  "batch": "T04-03",
+  "base": "cc1299ea3b30c92f5356258b31963f0c67e7e7ae",
+  "branch": "codex/typescript-t04-03",
+  "status": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
+  "tested_head": null,
+  "production_mappings": {
+    "src/p1-011-pilot-operations-baseline.mjs": "src/p1-011-pilot-operations-baseline.mts"
+  },
+  "support_changes": {
+    "src/p1-005-pilot-ticket-core.mts": "Separate raw input message type from persisted message id; erased runtime unchanged.",
+    "src/p1-010-ticket-closure.mts": "Use raw input message contract for lifecycle/supplement inputs; erased runtime unchanged.",
+    "package.json": "Move compilation into premigration:gate; gate arguments reach gate directly. No dependency changes.",
+    "tools/ts-migration/batches.test.mts": "Exercise npm entry, spaces, failure, skip, unknown batch and normal gate.",
+    "tools/ts-migration/hosts.test.mts": "Inventory grows from 210 to 211 registered entries.",
+    "tests": "Real implementation type contracts, default arguments, transaction ownership, log failures, replay and backup/restore idempotency."
+  },
+  "selected_files": 96,
+  "direct_tests": 9,
+  "transitive_impacted_tests": 69,
+  "baseline_tests": 17,
+  "supplemental_tests": 12,
+  "database_change": false,
+  "production_ready": false,
+  "typecheck": "FINAL_NOT_RUN",
+  "behavior": "FINAL_NOT_RUN",
+  "review": "NOT_RUN",
+  "ci": "NOT_RUN_NOT_PUBLISHED",
+  "strict_readiness": "CURRENT_NOT_RUN",
+  "next_batch": "T04-04",
+  "next_batch_authorized": false,
+  "rollback": "Separate revert PR of source, types and gate wiring; no database rollback or production activation."
+}

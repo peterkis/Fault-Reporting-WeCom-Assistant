@@ -172,7 +172,8 @@
     "migration:build": "npm run migration:tools && node .build/tools/build.mjs",
     "migration:type-tests": "npm run migration:tools && node .build/tools/gate.mjs type-tests",
     "migration:test": "node .build/tools/run-tests.mjs",
-    "migration:gate": "npm run migration:tools && node .build/tools/gate.mjs",
+    "premigration:gate": "npm run migration:tools",
+    "migration:gate": "node .build/tools/gate.mjs",
     "migration:verify-artifact": "node .build/tools/verify-artifact.mjs"
   },
   "dependencies": {

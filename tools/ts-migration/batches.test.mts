@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -39,10 +39,13 @@ test('batch CLI runs non-canary tests and reports failure without certifying rev
     setBatch({ ...fixture, impacted_tests: ['tests/absent.test.mjs'] }); assert.throws(() => batchSelection(root, 'T03-01'), /UNKNOWN_TEST/u);
   });
   setBatch(fixture);
+  const npmPath = execFileSync(process.platform === 'win32' ? 'where.exe' : 'which', ['npm'], { encoding: 'utf8', windowsHide: true }).trim().split(/\r?\n/u)[0];
+  assert.ok(npmPath);
+  const npmCli = process.platform === 'win32' ? path.join(path.dirname(npmPath), 'node_modules/npm/bin/npm-cli.js') : realpathSync(npmPath);
   for (const scenario of ['pass', 'fail', 'skip'] as const) await t.test(scenario, () => {
     writeFileSync(path.join(root, file), `import {test} from 'node:test'; import assert from 'node:assert/strict'; test('real batch probe', {skip:${scenario === 'skip'}},()=>assert.equal(1,${scenario === 'fail' ? 2 : 1}));\n`);
-    const report = mkdtempSync(path.join(tmpdir(), 'migration-batch-report-'));
-    const run = spawnSync(process.execPath, [path.join(original, '.build/tools/gate.mjs'), '--batch', 'T03-01', '--report-dir', report], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
+    const report = mkdtempSync(path.join(tmpdir(), 'migration batch report '));
+    const run = spawnSync(process.execPath, [npmCli, 'run', 'migration:gate', '--', '--batch', 'T03-01', '--report-dir', report], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
     assert.equal(run.status, scenario === 'pass' ? 0 : 1, run.stderr);
     const summary = record(JSON.parse(readFileSync(path.join(report, 'tests/summary.json'), 'utf8')) as unknown);
     assert.deepEqual(summary.selected_files, [file]); assert.deepEqual(summary.not_run, []);
@@ -50,6 +53,14 @@ test('batch CLI runs non-canary tests and reports failure without certifying rev
     assert.equal(receipt.behavior, scenario === 'pass' ? 'PASS' : 'FAIL');
     assert.equal(receipt.review, 'NOT_RUN'); assert.equal(receipt.production_ready, false);
     if (scenario !== 'pass') assert.doesNotMatch(run.stdout, /MIGRATION_AUTOMATED_CHECKS_PASS/u);
+  });
+  await t.test('npm wrapper rejects unknown batches and preserves the no-argument gate', () => {
+    const rejected = spawnSync(process.execPath, [npmCli, 'run', 'migration:gate', '--', '--batch', 'UNKNOWN'], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
+    assert.notEqual(rejected.status, 0);
+    assert.match(rejected.stderr, /MIGRATION_UNKNOWN_BATCH/u);
+    const normal = spawnSync(process.execPath, [npmCli, 'run', 'migration:gate'], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
+    assert.equal(normal.status, 0, normal.stdout + normal.stderr);
+    assert.match(normal.stdout, /MIGRATION_GATE_PASS/u);
   });
   await t.test('source review executes only the emitted implementation after a real rename', () => {
     // Use a retained legacy module independent of the forthcoming platform type tests.
@@ -76,4 +87,10 @@ test('batch CLI runs non-canary tests and reports failure without certifying rev
     assert.match(missing.stdout + missing.stderr, /ENOENT/u);
   });
   // Preserve the owned clone and reports for diagnosis; no user checkout is mutated.
+});
+
+test('T04-03 selection includes operations, reverse dependencies, baseline and compatibility tests', () => {
+  const selected = batchSelection(original, 'T04-03');
+  assert.equal(selected.entries.length, 96);
+  for (const name of ['tests/p1-011-typescript-compatibility.test.mjs', 'tests/p1-011-encrypted-backup.test.mjs', 'tests/p2-007-third-party-staff-directory.integration.test.mjs', 'tests/yxx-ss-010-runtime.integration.test.mjs']) assert.ok(selected.entries.some(e => e.path === name));
 });

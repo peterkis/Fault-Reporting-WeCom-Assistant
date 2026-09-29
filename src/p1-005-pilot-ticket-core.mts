@@ -234,10 +234,14 @@ export interface PilotTicketMessage {
   [key: string]: unknown;
 }
 
+/** Incoming channel messages have no persisted intake-message id yet. */
+export interface PilotTicketInputMessage {
+  idempotency_key: string;
+  received_at: LocalDateTime;
+}
 export interface PilotTicketProcessorInput {
   transaction: PostgresTransaction;
-  message: PilotTicketMessage;
-  [key: string]: unknown;
+  message: PilotTicketInputMessage;
 }
 
 export interface PilotTicketProcessorIntakeResult {
@@ -256,7 +260,7 @@ export type TicketCreatedHook = (input: {
   transaction: PostgresTransaction;
   ticket: PublicPilotTicket;
   intake: PublicIntake;
-  message: PilotTicketMessage;
+  message: PilotTicketInputMessage;
 }) => unknown | Promise<unknown>;
 
 export interface PilotTicketCoreOptions {
