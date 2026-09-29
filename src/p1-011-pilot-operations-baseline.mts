@@ -29,7 +29,7 @@ type Labels = { dependency?: OptionalDependency };
 interface Metric { name: MetricName; labels: Labels; value: number }
 interface TelemetrySink { increment(name: MetricName, labels?: Labels, amount?: number): void; setGauge(name: MetricName, labels: Labels | undefined, value: number): void }
 interface ReadinessOptions { coreChecks: Record<CoreDependency, Check>; optionalChecks?: Partial<Record<OptionalDependency, Check>>; telemetry?: TelemetrySink; alerts?: AlertSink | null }
-interface BoundaryOptions<I, O> { acceptCore: (input: I) => O | PromiseLike<O>; optionalEnhancements?: Partial<Record<OptionalDependency, (core: O) => unknown>>; telemetry?: Pick<TelemetrySink, 'increment'>; alerts?: AlertSink | null }
+interface BoundaryOptions<I, O> { acceptCore: (input: I) => O | PromiseLike<O>; optionalEnhancements?: Partial<Record<OptionalDependency, (core: Awaited<O>) => unknown>>; telemetry?: Pick<TelemetrySink, 'increment'>; alerts?: AlertSink | null }
 type LifecycleOptions = NonNullable<Parameters<typeof createTicketLifecycleProcessor>[0]>;
 type Inbox = ReturnType<typeof createChannelMessageInbox>;
 type IntakeResult = Awaited<ReturnType<Inbox['accept']>>;
@@ -40,8 +40,9 @@ interface BackupInput extends TransactionInput { backupId: string; checksumSha25
 interface RestoreInput extends TransactionInput { backupId: string; restoreId: string; verifiedObjectCount: number; status?: 'SUCCEEDED' | 'FAILED'; failureCode?: string | null; completedAt?: string | Date }
 interface RestoreFailureInput extends TransactionInput { backupId?: string | null; restoreId: string; failureCode: string; completedAt?: string | Date }
 interface BackupRow { id: string; backup_id: string; checksum_sha256: string; size_bytes: string; encryption_key_id: string; retention_until: string; created_at: string }
-interface RestoreInsertRow { id: string; restore_id: string; status: 'SUCCEEDED' | 'FAILED'; verified_object_count: number; failure_code: string | null; completed_at: string }
-interface RestoreRow extends RestoreInsertRow { backup_id: string }
+interface RestoreFields { id: string; restore_id: string; verified_object_count: string; completed_at: string }
+type RestoreInsertRow = RestoreFields & ({ status: 'SUCCEEDED'; failure_code: null } | { status: 'FAILED'; failure_code: string });
+type RestoreRow = RestoreInsertRow & { backup_id: string };
 interface AuditRow { id: string; event_type: string; trace_id: string | null; subject_hash: string | null; metadata: Record<string, unknown>; occurred_at: string }
 interface AuditInput { eventKey?: string; eventType?: string; actorId?: string | null; traceId?: string | null; subjectHash?: string | null; metadata?: unknown; occurredAt?: string | Date }
 
@@ -49,14 +50,16 @@ interface ReadinessResult { readonly ready: boolean; readonly core_failures: rea
 interface ReadinessService { assess(): Promise<Readonly<ReadinessResult>> }
 interface OperationalIntake<T extends TelemetrySink, A extends AlertSink> { accept(request: unknown): Promise<IntakeResult>; assessReadiness(): Promise<Readonly<ReadinessResult>>; telemetry: T; alerts: A }
 type BackupCheckpoint = ReturnType<typeof publicBackupCheckpoint>;
-type RestoreDrill = ReturnType<typeof publicRestoreDrill>;
+interface PublicRestoreFields { readonly id: string; readonly backup_id: string; readonly restore_id: string; readonly completed_at: LocalDateTime }
+type LinkedRestoreFailure = Readonly<PublicRestoreFields & { status: 'FAILED'; verified_object_count: 0; failure_code: string }>;
+type RestoreDrill = Readonly<PublicRestoreFields & { status: 'SUCCEEDED'; verified_object_count: number; failure_code: null }> | LinkedRestoreFailure;
 interface UnlinkedRestoreFailure { readonly backup_id: null; readonly restore_id: string; readonly status: 'FAILED'; readonly verified_object_count: 0; readonly failure_code: string; readonly completed_at: LocalDateTime }
 type AuditResult = Readonly<{ ok: false; error: Readonly<{ code: 'FORBIDDEN'; retryable: false }> }> | Readonly<{ ok: true; items: readonly Readonly<Omit<AuditRow, 'occurred_at'> & { occurred_at: LocalDateTime }>[] }>;
 interface FreshnessResult { readonly fresh: boolean; readonly code: 'PILOT_BACKUP_STALE' | null; readonly latest_checkpoint_at: LocalDateTime | null }
 interface OperationsService {
   recordBackupCheckpoint(input: BackupInput): Promise<BackupCheckpoint>;
   recordRestoreDrill(input: RestoreInput): Promise<RestoreDrill>;
-  recordRestoreDrillFailure(input: RestoreFailureInput): Promise<RestoreDrill | UnlinkedRestoreFailure>;
+  recordRestoreDrillFailure(input: RestoreFailureInput): Promise<LinkedRestoreFailure | UnlinkedRestoreFailure>;
   assessBackupFreshness(input: TransactionInput & { maximumAgeMs: number }): Promise<FreshnessResult>;
   listAuditEvents(input: TransactionInput & { actorId: string; limit?: number }): Promise<AuditResult>;
 }
@@ -433,7 +436,7 @@ export function createPilotReadinessService({
  * execute only after that result and cannot turn a committed core result into a
  * failed admission.
  */
-export function createCoreIntakeSafetyBoundary<I, O>(options: BoundaryOptions<I, O>): Readonly<{ accept(input: I): Promise<Readonly<{ core: O; degraded_dependencies: readonly OptionalDependency[] }>> }>;
+export function createCoreIntakeSafetyBoundary<I, O>(options: BoundaryOptions<I, O>): Readonly<{ accept(input: I): Promise<Readonly<{ core: Awaited<O>; degraded_dependencies: readonly OptionalDependency[] }>> }>;
 export function createCoreIntakeSafetyBoundary<I, O>({
   acceptCore,
   optionalEnhancements = {},
@@ -453,7 +456,7 @@ export function createCoreIntakeSafetyBoundary<I, O>({
     const core = await (acceptCore as (input: I) => O | PromiseLike<O>)(input);
     const degradedDependencies: OptionalDependency[] = [];
     for (const dependency of (Object.keys(optionalEnhancements) as OptionalDependency[]).sort()) {
-      if (!(await probe(() => (optionalEnhancements[dependency] as (core: O) => unknown)(core)))) {
+      if (!(await probe(() => (optionalEnhancements[dependency] as (core: Awaited<O>) => unknown)(core)))) {
         degradedDependencies.push(dependency);
         telemetry.increment('pilot_optional_dependency_degraded_total', { dependency });
         alerts?.raise('PILOT_OPTIONAL_DEPENDENCY_DEGRADED', dependency);
@@ -787,6 +790,7 @@ function publicBackupCheckpoint(row: BackupRow) {
   });
 }
 
+function publicRestoreDrill(row: RestoreRow): RestoreDrill;
 function publicRestoreDrill(row: RestoreRow) {
   return Object.freeze({
     id: row.id,
@@ -993,14 +997,14 @@ export function createPilotOperationsService({ pool, now = () => new Date(), ale
     });
   }
 
-  async function recordRestoreDrillFailure(input: RestoreFailureInput): Promise<RestoreDrill | UnlinkedRestoreFailure>;
+  async function recordRestoreDrillFailure(input: RestoreFailureInput): Promise<LinkedRestoreFailure | UnlinkedRestoreFailure>;
   async function recordRestoreDrillFailure({
     transaction = null,
     backupId = null,
     restoreId,
     failureCode,
     completedAt = now(),
-  }: Partial<RestoreFailureInput> = {}): Promise<RestoreDrill | UnlinkedRestoreFailure> {
+  }: Partial<RestoreFailureInput> = {}): Promise<LinkedRestoreFailure | UnlinkedRestoreFailure> {
     const normalizedRestoreId = opaqueId(restoreId, 'restoreId is invalid.', 'restore-');
     const normalizedFailureCode = safeErrorCode(failureCode, 'failureCode is invalid.');
     const normalizedCompletedAt = iso(completedAt, 'completedAt is invalid.');
@@ -1013,7 +1017,7 @@ export function createPilotOperationsService({ pool, now = () => new Date(), ale
         status: 'FAILED',
         failureCode: normalizedFailureCode,
         completedAt: normalizedCompletedAt,
-      } as RestoreInput);
+      } as RestoreInput) as Promise<LinkedRestoreFailure>; // The call fixes status to FAILED after validating failureCode.
     }
     return executeInTransaction(pool as PostgresPool, transaction, async (database) => {
       await insertAuditEvent(database, {

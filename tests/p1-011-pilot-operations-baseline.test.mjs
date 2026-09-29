@@ -510,6 +510,9 @@ integrationTest('P1-011 preserves safe backup and restore checkpoints in an admi
     });
     const repeatedRestore = await operations.recordRestoreDrill({ transaction, backupId, restoreId: restore.restore_id, verifiedObjectCount: 12 });
     assert.deepEqual(repeatedRestore, restore);
+    const storedRestore = await transaction.query('SELECT verified_object_count FROM operations.restore_drill WHERE restore_id = $1', [restore.restore_id]);
+    assert.equal(typeof storedRestore.rows[0].verified_object_count, 'string');
+    assert.equal(typeof restore.verified_object_count, 'number');
     await assert.rejects(operations.recordRestoreDrill({ transaction, backupId, restoreId: restore.restore_id, verifiedObjectCount: 13 }), { code: 'P1_011_RESTORE_DRILL_CONFLICT' });
     const failedRestore = await operations.recordRestoreDrillFailure({
       transaction,

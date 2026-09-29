@@ -43,3 +43,17 @@ createChannelMessageInbox({ pool }).accept({}, createTicketLifecycleProcessor(li
 const operational = createPilotOperationalIntake({ ...lifecycleOptions, pool, coreChecks: { postgres: () => ({ ok: true }), intake: () => ({ ok: true }), outbox: () => ({ ok: true }) }, identityHashKey: 'synthetic', writeLogRecord() {} });
 operational.telemetry.snapshot();
 operational.alerts.snapshot();
+
+const awaitedBoundary = createCoreIntakeSafetyBoundary<string, Promise<number>>({ acceptCore: async input => input.length, optionalEnhancements: { ai: core => ({ ok: core > 0 }) } });
+const awaitedCore: number = (await awaitedBoundary.accept('synthetic')).core;
+void awaitedCore;
+
+const restore = await operations.recordRestoreDrill({ transaction, backupId: 'backup-test', restoreId: 'restore-test', verifiedObjectCount: 1 });
+const count: number = restore.verified_object_count;
+if (restore.status === 'FAILED') { const failureCode: string = restore.failure_code; const zero: 0 = restore.verified_object_count; void [failureCode, zero]; }
+else { const noFailure: null = restore.failure_code; void noFailure; }
+const failureStatus: 'FAILED' = failed.status;
+const failureCode: string = failed.failure_code;
+// @ts-expect-error -- Public restore count is converted from the database string to a number.
+const databaseCount: string = restore.verified_object_count;
+void [count, failureStatus, failureCode, databaseCount];
