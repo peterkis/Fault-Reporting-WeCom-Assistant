@@ -46,7 +46,19 @@
     "comparison": "Same original validator failure at yxx-self-service-validation-scope.mjs:30:109 on clean base and current implementation. Later strict checks are not reached; no readiness claim.",
     "baseline_history_preflight": "PASS_WITH_GITHUB_MAIN_SHA",
     "log": "C:\\Users\\zqpet\\.codex\\artifacts\\wecom-t04-03-20260929-a5e7ed7\\wecom-t04-03-final-readiness.log",
-    "detail_log": "C:\\Users\\zqpet\\.codex\\artifacts\\wecom-t04-03-20260929-a5e7ed7\\wecom-t04-03-final-readiness-detail.log"
+    "detail_log": "C:\\Users\\zqpet\\.codex\\artifacts\\wecom-t04-03-20260929-a5e7ed7\\wecom-t04-03-final-readiness-detail.log",
+    "diagnosis": {
+      "classification": "PREEXISTING_HISTORICAL_SCOPE_REJECTION_NOT_T04_03_DEFECT",
+      "historical_scope_base": "2d9fda2065b1303620f247a9e4d9754f0a3472d9",
+      "expected_migration_files": 20,
+      "current_migration_files": 22,
+      "additional_files": {
+        "database/migrations/035_p2_016_workbench_wecom_auth.sql": "627d5f72959b4b2a085d734c311712363f87a3f8",
+        "database/migrations/036_p2_007_third_party_staff_directory.sql": "19d123c0798eb13281c056a619cb117ff3b87559"
+      },
+      "t04_03_changed_validator_scope_or_sql": false,
+      "disposition": "Retain original rejection as known baseline; do not delete valid later migrations, rewrite frozen scope/evidence, or weaken the exact-list assertion to claim readiness."
+    }
   },
   "next_batch": "T04-04",
   "next_batch_authorized": false,
@@ -504,5 +516,12 @@
     }
   ],
   "artifact_directory": "C:\\Users\\zqpet\\.codex\\artifacts\\wecom-t04-03-20260929-a5e7ed7",
-  "artifact_index_sha256": "502cca86c2ff5d9d10d4557e6daa0cabbf73c0c00caae38fcc573d432d871716"
+  "artifact_index_sha256": "502cca86c2ff5d9d10d4557e6daa0cabbf73c0c00caae38fcc573d432d871716",
+  "remaining_delivery_items": {
+    "code_defects": "NONE_KNOWN_AFTER_LOCAL_TWO_AXIS_REVIEW",
+    "publication_identity": "PENDING_PUBLICATION_AUTHORIZATION",
+    "external_review": "PENDING_EXTERNAL_COMMENT_AUTHORIZATION",
+    "remote_ci": "NOT_RUN; prior PR jobs blocked by account billing/spending limit",
+    "merge_and_deployment": "NOT_AUTHORIZED_NOT_REQUESTED"
+  }
 }
