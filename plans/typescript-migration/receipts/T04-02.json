@@ -35,6 +35,12 @@
     "clean_builds_identical": true
   },
   "artifact": "ARTIFACT_VERIFIED_NOT_ACTIVATED",
+  "gate_invocation": {
+    "planned_wrapper": "npm run migration:gate -- --batch T04-02 --report-dir <outside>",
+    "wrapper_result": "MIGRATION_UNKNOWN_GATE_ARGUMENT",
+    "executed_equivalent": "node .build/tools/gate.mjs --batch T04-02 --report-dir <outside>",
+    "reason": "npm forwards the batch arguments into the migration:tools pre-step in this worktree; package scripts were not changed."
+  },
   "tooling_tests": {
     "status": "PASS",
     "command": "node --test .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs",
