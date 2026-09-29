@@ -1,5 +1,5 @@
 import type { LocalDateTime, PhysicalEpochMs } from '../../contracts/time_contracts.js';
-import type { PostgresPool, PostgresPoolClient } from '../../src/platform/postgres-pool.mjs';
+import type { PostgresPool, PostgresPoolClient, PostgresTransaction } from '../../src/platform/postgres-pool.mjs';
 import {
   createPilotTicketCore,
   createPilotTicketProcessor,
@@ -33,8 +33,11 @@ import {
   type NotificationSender,
   type NotificationTarget,
 } from '../../src/p1-007-notification-outbox.mjs';
+import { createChannelMessageInbox } from '../../src/p1-003-channel-message-inbox.mjs';
+import { createTicketClosureService } from '../../src/p1-010-ticket-closure.mjs';
 
 declare const transaction: PostgresPoolClient;
+declare const restrictedTransaction: PostgresTransaction;
 declare const occurredAt: LocalDateTime;
 declare const epochMs: PhysicalEpochMs;
 
@@ -49,6 +52,7 @@ const ticketInput: PilotTicketInput = {
   resolverTeamId: 'PILOT_IT',
   priority,
 };
+const restrictedTicketInput: PilotTicketInput = { ...ticketInput, transaction: restrictedTransaction };
 const ticketCore = createPilotTicketCore({ defaultResolverTeamId: 'PILOT_IT' });
 declare const serviceIntakeProcessor: ServiceIntakeProcessor;
 declare const processorTicketCore: PilotTicketCore;
@@ -95,6 +99,21 @@ declare const workerPool: PostgresPool;
 const outbox = createNotificationOutbox({
   targetsForEvent: async () => [target],
 });
+const inbox = createChannelMessageInbox({ pool: workerPool });
+const closure = createTicketClosureService({
+  pool: workerPool,
+  outbox,
+  resolveReporterActor: async () => actor,
+});
+void inbox.accept({}, async ({ transaction: inboxTransaction }) => {
+  await inboxTransaction.query('SELECT 1');
+  // @ts-expect-error -- The Inbox callback receives a query-only transaction view.
+  inboxTransaction.release();
+  return {};
+});
+// @ts-expect-error -- A query-only transaction view must not be used as a pool/client owner.
+const invalidOwnedTransaction: PostgresPoolClient = restrictedTransaction;
+void [restrictedTicketInput, closure, invalidOwnedTransaction];
 const worker = createNotificationDeliveryWorker({
   pool: workerPool,
   sender: async ({ channel: senderChannel, targetKey }) => ({

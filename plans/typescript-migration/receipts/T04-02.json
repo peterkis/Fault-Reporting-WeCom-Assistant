@@ -1,0 +1,120 @@
+{
+  "batch": "T04-02",
+  "base": "aeee2a37e2aa63eecdd6d9e97ce167acb3a01e04",
+  "tested_head": "acfc4fcd719c09ee22fa040ff6adb112eca58e9b",
+  "tested_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
+  "branch": "codex/typescript-t04-02",
+  "status": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
+  "production_mappings": {
+    "src/p1-003-channel-message-inbox.mjs": "src/p1-003-channel-message-inbox.mts",
+    "src/p1-010-ticket-closure.mjs": "src/p1-010-ticket-closure.mts"
+  },
+  "physical_lines": 1599,
+  "direct_tests": 25,
+  "transitive_impacted_tests": 83,
+  "baseline_tests": 17,
+  "supplemental_tests": 10,
+  "typecheck": {
+    "status": "PASS",
+    "compiler": "5.9.3",
+    "typed_modules": 13,
+    "new_any": 0,
+    "suppression": 0,
+    "double_assertion": 0,
+    "non_null_assertion": 0
+  },
+  "type_tests": "PASS",
+  "build": {
+    "status": "STAGED_NOT_ACTIVATED",
+    "source": "acfc4fcd719c09ee22fa040ff6adb112eca58e9b",
+    "input_hash": "42c28370a744d939b33fe16465a794a1bbb81a6b1a9fad77cffc1692ca2c8b9d",
+    "typed": 13,
+    "unchecked_legacy": 500,
+    "outputs": 734,
+    "manifest_sha256": "c4f6f97604fe759d9213d4cc5409581161514b419f0777dd96fb1f7827b29902",
+    "clean_builds_identical": true
+  },
+  "artifact": "ARTIFACT_VERIFIED_NOT_ACTIVATED",
+  "gate_invocation": {
+    "planned_wrapper": "npm run migration:gate -- --batch T04-02 --report-dir <outside>",
+    "wrapper_result": "MIGRATION_UNKNOWN_GATE_ARGUMENT",
+    "executed_equivalent": "node .build/tools/gate.mjs --batch T04-02 --report-dir <outside>",
+    "reason": "npm forwards the batch arguments into the migration:tools pre-step in this worktree; package scripts were not changed."
+  },
+  "tooling_tests": {
+    "status": "PASS",
+    "command": "node --test .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs",
+    "tests": 50,
+    "pass": 50,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "automated_full_batch": {
+    "status": "MIGRATION_AUTOMATED_CHECKS_PASS_NOT_REVIEW",
+    "behavior": "PASS",
+    "report": "C:/Users/zqpet/AppData/Local/Temp/wecom-t04-02-final-fix-chrome-bg-20260929200607",
+    "source_head": "acfc4fcd719c09ee22fa040ff6adb112eca58e9b",
+    "source_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
+    "source_dirty": false,
+    "manifest_sha256": "c4f6f97604fe759d9213d4cc5409581161514b419f0777dd96fb1f7827b29902",
+    "selected_files": 108,
+    "not_run": 0,
+    "tests": 662,
+    "pass": 662,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "production_ready": false,
+    "runtime_delta_since_reference": "The T04-02 TypeScript module migrations, shared query-only transaction typing seam, migration metadata, workflow wiring and the auto-close omitted-input compatibility fix changed; no SQL, Evidence, business contract or Feature Flag changed."
+  },
+  "transient_failed_attempts": [
+    {
+      "report": "C:/Users/zqpet/AppData/Local/Temp/wecom-t04-02-final-20260929172425",
+      "file": "tests/p2-g2-member-contact.integration.test.mjs",
+      "error_code": "P2_006_BROWSER_WAIT_TIMEOUT",
+      "recovery": "The same compiled file reran with explicit Chrome at 2/2; the final explicit-Chrome full batch passed 661/661."
+    },
+    {
+      "report": "C:/Users/zqpet/AppData/Local/Temp/wecom-t04-02-final-chrome-bg-20260929184910",
+      "file": "tests/p1-003-channel-message-inbox.test.mjs",
+      "error_code": "ECONNREFUSED_127.0.0.1_55432",
+      "recovery": "The dedicated PostgreSQL cluster had stopped; it was restarted from the same data directory and the final batch passed 661/661."
+    }
+  ],
+  "database_preflight": {
+    "engine": "PostgreSQL 18.4",
+    "mode": "isolated loopback",
+    "database": "migration_ci",
+    "data_directory": "C:/Users/zqpet/AppData/Local/Temp/wecom-t04-02-pg-20260929164800",
+    "schema_change_in_batch": false,
+    "database_cleanup": "Dedicated PostgreSQL stopped after validation; port 55432 reports no response; data directory and reports retained."
+  },
+  "runtime_environment": {
+    "node": "v24.18.0",
+    "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+    "real_provider_or_external_network": false,
+    "real_production_write": false,
+    "real_deployment": false
+  },
+  "strict_readiness": {
+    "status": "KNOWN_BASELINE_NOT_READY",
+    "command": "node scripts/validate-yxx-self-service.mjs --require-ready",
+    "exit_code": 1,
+    "error_code": "YXX_VERIFICATION_REJECTED"
+  },
+  "codex_review": {
+    "status": "COMPLETED_NO_NEW_FINDINGS",
+    "reviewed_head": "acfc4fcd719c09ee22fa040ff6adb112eca58e9b",
+    "review_comment": "The prior P2 finding was fixed and the second review completed without additional findings."
+  },
+  "review": "NOT_RUN",
+  "ci": "NOT_RUN_AUTHORITATIVE_PUBLISHED_HEAD_NOT_SUPPLIED",
+  "database_change": false,
+  "production_ready": false,
+  "next_batch": "T04-03",
+  "next_batch_authorized": false,
+  "rollback": "Separate revert PR, no database rollback; keep feature flags disabled."
+}

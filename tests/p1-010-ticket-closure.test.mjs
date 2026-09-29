@@ -151,6 +151,14 @@ after(async () => {
   await pool.end();
 });
 
+test('runAutoClose without input preserves the explicit action-service validation error', async () => {
+  const closure = createTicketClosureService({ resolveReporterActor: () => null });
+  await assert.rejects(
+    () => closure.runAutoClose(),
+    { name: 'TypeError', message: 'A Ticket Action service is required.' },
+  );
+});
+
 integrationTest('supplement, card confirmation, duplicate card protection, close, and reopen preserve a real Ticket lifecycle', async () => {
   let clock = Date.now() + 1_000;
   const reporterWeComUserId = `reporter-p1-010-${randomUUID()}-${'x'.repeat(140)}`;

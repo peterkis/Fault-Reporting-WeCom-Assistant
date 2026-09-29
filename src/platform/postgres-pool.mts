@@ -18,6 +18,19 @@ interface SessionClient { query(text: string): unknown }
 interface PoolTarget { query: Callable; connect?: Callable }
 interface ClientTarget extends SessionClient { connect: Callable }
 export type PostgresPoolClient = Omit<PoolClient, 'query'> & { query: PostgresQuery };
+export type PostgresQueryRow = QueryResultRow;
+export type PostgresQueryResult<R extends QueryResultRow = Record<string, unknown>> = QueryResult<R>;
+/**
+ * A transaction capability intentionally limited to parameterized SQL queries.
+ * It is safe to pass this view to domain callbacks because it cannot commit,
+ * roll back, release, or acquire another connection.
+ */
+export interface PostgresTransaction {
+  query<R extends QueryResultRow = Record<string, unknown>>(
+    text: string,
+    values?: unknown[],
+  ): Promise<QueryResult<R>>;
+}
 export type PostgresPool<T extends PoolTarget = Pool> = Omit<T, 'query' | 'connect' | (T extends Pool ? 'on' : never)> & {
   query: T extends Pool ? PostgresQuery : T['query'];
 } & (T extends Pool ? {

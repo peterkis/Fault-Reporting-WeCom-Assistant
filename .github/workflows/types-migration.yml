@@ -2,7 +2,7 @@ name: TypeScript migration
 on:
   pull_request:
   push:
-    branches: ['codex/typescript-t01-foundation', 'codex/typescript-t02-hosts', 'codex/typescript-t03-prerequisite', 'codex/typescript-t03-platform', 'codex/typescript-t04-01']
+    branches: ['codex/typescript-t01-foundation', 'codex/typescript-t02-hosts', 'codex/typescript-t03-prerequisite', 'codex/typescript-t03-platform', 'codex/typescript-t04-01', 'codex/typescript-t04-02']
 permissions:
   contents: read
 jobs:
@@ -143,6 +143,16 @@ jobs:
           OUT="$RUNNER_TEMP/types-baseline"
           if ! npm run migration:gate -- --batch T04-01 --report-dir "$OUT/t04-01-batch" > "$OUT/t04-01-batch.txt" 2>&1; then
             tail -n 100 "$OUT/t04-01-batch.txt"
+            exit 1
+          fi
+      - name: Entire T04-02 dependency batch on real PG18 and browser hosts
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          if ! npm run migration:gate -- --batch T04-02 --report-dir "$OUT/t04-02-batch" > "$OUT/t04-02-batch.txt" 2>&1; then
+            tail -n 100 "$OUT/t04-02-batch.txt"
             exit 1
           fi
       - name: T02 artifact identity and source architecture

@@ -6,10 +6,10 @@ T00 已通过 PR #24 合并；T01 已通过 PR #25 独立审查并合并。
 T02 已通过 PR #26 合并，merge 为 `7eefaa99591bfaa2e787701efd315ff701c51f35`。
 [T03 前置补齐](T03-prerequisite.md) 已通过 PR #27 合并，merge 为 `16312fd6cc9149f89f6cad866da5e3cf7b3ba023`。
 独立 [PG callback 边界修复](T03-pg-callback-fix.md) 已通过 PR #28 合并，merge 为 `d2d462c8b98b6a379584f0dbc6d1786011aad573`。当前实施 [T03-01 平台四模块迁移](T03-01.md)。
-T03-01 已通过 PR #29 合并，merge 为 `3e00c00834a0a1659e72bf22f2c3db0298df3096`；当前实施 [T04-01 P1 入站、Ticket、Outbox 与运维核心迁移](T04-01.md)。
+T03-01 已通过 PR #29 合并，merge 为 `3e00c00834a0a1659e72bf22f2c3db0298df3096`；T04-01 已通过 PR #31 合并，当前主线为 `aeee2a37e2aa63eecdd6d9e97ce167acb3a01e04`；当前实施 [T04-02 P1 入站、Ticket、Outbox 与运维核心迁移](T04-02.md)。
 不要把工作区测试、历史回执或本文件当作最终 PR 审查结果。不自动合并或部署；T04-02 只能在 T04-01 精确 head CI、独立审查和授权合并后启动。
 
-先读根 AGENTS.md、CONTEXT.md、ADR-0026，再读 [当前迁移说明](T04-01.md)、[进度](progress.json) 和 [迁移回执](receipts/T04-01.json)。T03、T02 与前置回执保留为历史快照。
+先读根 AGENTS.md、CONTEXT.md、ADR-0026，再读 [当前迁移说明](T04-02.md)、[进度](progress.json) 和 [迁移回执](receipts/T04-02.json)。T04-01、T03、T02 与前置回执保留为历史快照。
 原计划包 `WeCom_TypeScript_Migration_Plan_v1_20260927.zip` 的 `prompts/00_DISPATCHER.md`、`prompts/T04-01.md` 是当前批次执行输入；T04-01 只迁移三个明确登记的生产模块，不重做 181 个迁移目标与既有 [scope.json](scope.json)。
 
 ## 两类根目录与历史对象

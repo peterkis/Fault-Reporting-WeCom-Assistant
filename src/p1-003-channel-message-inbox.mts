@@ -1,12 +1,20 @@
 import { readFile } from 'node:fs/promises';
 import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import { types as utilTypes } from 'node:util';
+import type { LocalDateTime, PhysicalEpochMs } from '../contracts/time_contracts.js';
 import {
   assertEpochMsString,
   assertLocalDateTime,
   formatEpochMsToShanghaiLocal,
   shanghaiLocalToEpochMs,
 } from './platform/time-contract.mjs';
+import type {
+  PostgresPool,
+  PostgresPoolClient,
+  PostgresQueryResult,
+  PostgresQueryRow,
+  PostgresTransaction,
+} from './platform/postgres-pool.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/001_p1_003_channel_message_inbox.sql', import.meta.url);
 const PRIVACY_CLASSES = new Set([
@@ -35,40 +43,129 @@ const MESSAGE_FIELDS = [
   'received_at',
   'content',
   'quote',
-];
+] as const;
+
+type PrivacyClass = 'PUBLIC' | 'INTERNAL' | 'SENSITIVE_INTERNAL' | 'PERSONAL' | 'PATIENT_SENSITIVE' | 'SECRET';
+type MessageType = 'text' | 'image' | 'mixed' | 'voice' | 'file' | 'video';
+type QuoteMessageType = Exclude<MessageType, 'video'>;
+type ChatType = 'single' | 'group';
+
+interface TextContent {
+  kind: 'text';
+  text: { raw: string; clean: string };
+  source?: 'VOICE_TRANSCRIPT';
+}
+
+interface MediaContent {
+  kind: 'media';
+  media: { type: 'image' | 'file' | 'video'; source_index: number; download_ref: string };
+}
+
+type MessageContent = TextContent | MediaContent;
+
+interface MessageQuote {
+  msg_type: QuoteMessageType;
+  content: MessageContent[];
+}
+
+interface InboxMessage {
+  schema_version: 1;
+  provider: 'WECOM_AIBOT';
+  idempotency_key: string;
+  msg_id: string;
+  req_id: string;
+  bot_id: string;
+  chat_type: ChatType;
+  chat_id: string | null;
+  sender_user_id: string;
+  msg_type: MessageType;
+  provider_create_epoch_ms: PhysicalEpochMs | null;
+  create_time: LocalDateTime | null;
+  received_epoch_ms: PhysicalEpochMs;
+  received_at: LocalDateTime;
+  content: MessageContent[];
+  quote: MessageQuote | null;
+}
+
+interface InboxRequest {
+  message: InboxMessage;
+  traceId: string;
+  privacyClass: PrivacyClass;
+  retentionUntil: LocalDateTime;
+  rawPayloadEncrypted?: Uint8Array;
+  retentionUntilEpochMs?: PhysicalEpochMs;
+}
+
+type PlainJson = null | boolean | number | string | PlainJson[] | { [key: string]: PlainJson };
+type ProcessingResult = Record<string, unknown>;
+interface ProcessFirstInput {
+  channelMessageId: string;
+  message: InboxMessage;
+  transaction: PostgresTransaction;
+}
+type ProcessFirst = (input: ProcessFirstInput) => ProcessingResult | Promise<ProcessingResult>;
+interface InboxSuccess {
+  ok: true;
+  duplicate: boolean;
+  channelMessageId: string;
+  result: ProcessingResult;
+}
+interface InboxFailure {
+  ok: false;
+  error: { code: string; retryable: boolean; reason?: string };
+}
+type InboxResult = InboxSuccess | InboxFailure;
+interface InboxService {
+  accept(request: unknown, processFirst: ProcessFirst): Promise<InboxResult>;
+}
+interface InboxMigrationOptions { pool: PostgresPool }
+interface TimeContractRow { enabled: boolean }
+interface InsertedMessageRow { id: string }
+interface ExistingMessageRow {
+  id: string;
+  processing_status: string;
+  response_snapshot: ProcessingResult;
+}
 
 class InboxInputError extends Error {
-  constructor(reason) {
+  declare reason: string;
+  constructor(reason: string) {
     super(reason);
     this.reason = reason;
   }
 }
 
-function isRecord(value) {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function storageSafeString(value) {
-  return typeof value === 'string' && value.isWellFormed() && !value.includes('\u0000');
+function storageSafeString(value: unknown): value is string {
+  if (typeof value !== 'string' || value.includes('\u0000')) return false;
+  try {
+    encodeURIComponent(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-function boundedString(value, maxLength) {
+function boundedString(value: unknown, maxLength: number): value is string {
   return storageSafeString(value) && value.length > 0 && value.length <= maxLength;
 }
 
-function validDateTime(value) {
+function validDateTime(value: unknown): value is LocalDateTime {
   try { assertLocalDateTime(value); return true; }
   catch { return false; }
 }
 
-function hasExactFields(value, required, optional = []) {
+function hasExactFields(value: object, required: readonly string[], optional: readonly string[] = []): boolean {
   const keys = Object.keys(value);
   const allowed = new Set([...required, ...optional]);
   return required.every((field) => Object.hasOwn(value, field))
     && keys.every((field) => allowed.has(field));
 }
 
-function validateContent(content, reason) {
+function validateContent(content: unknown, reason: string): asserts content is MessageContent[] {
   if (!Array.isArray(content) || content.length < 1 || content.length > 10) {
     throw new InboxInputError(reason);
   }
@@ -95,13 +192,16 @@ function validateContent(content, reason) {
       if (!hasExactFields(item, ['kind', 'media']) || !isRecord(item.media)) {
         throw new InboxInputError(reason);
       }
+      const media = item.media as { type: unknown; source_index: unknown; download_ref: unknown };
       if (
-        !hasExactFields(item.media, ['type', 'source_index', 'download_ref'])
-        || !['image', 'file', 'video'].includes(item.media.type)
-        || !Number.isInteger(item.media.source_index)
-        || item.media.source_index < 0
-        || item.media.source_index > 9
-        || !/^wmr_[a-f0-9]{32}$/.test(item.media.download_ref)
+        !hasExactFields(media, ['type', 'source_index', 'download_ref'])
+        || typeof media.type !== 'string'
+        || !['image', 'file', 'video'].includes(media.type)
+        || !Number.isInteger(media.source_index)
+        || (media.source_index as number) < 0
+        || (media.source_index as number) > 9
+        || typeof media.download_ref !== 'string'
+        || !/^wmr_[a-f0-9]{32}$/.test(media.download_ref)
       ) {
         throw new InboxInputError(reason);
       }
@@ -111,71 +211,71 @@ function validateContent(content, reason) {
   }
 }
 
-function validateMessage(message) {
+function validateMessage(message: unknown): asserts message is InboxMessage {
   if (!isRecord(message)) {
     throw new InboxInputError('MESSAGE_OBJECT_REQUIRED');
   }
   if (!hasExactFields(message, MESSAGE_FIELDS)) {
     throw new InboxInputError('MESSAGE_FIELDS_INVALID');
   }
-  if (message.schema_version !== 1) {
+  const candidate = message as Record<string, unknown> & InboxMessage;
+  if (candidate.schema_version !== 1) {
     throw new InboxInputError('MESSAGE_SCHEMA_VERSION_INVALID');
   }
-  if (message.provider !== 'WECOM_AIBOT' || !boundedString(message.msg_id, 256)) {
+  if (candidate.provider !== 'WECOM_AIBOT' || !boundedString(candidate.msg_id, 256)) {
     throw new InboxInputError('MESSAGE_IDENTITY_INVALID');
   }
-  if (message.idempotency_key !== `${message.provider}:${message.msg_id}`) {
+  if (candidate.idempotency_key !== `${candidate.provider}:${candidate.msg_id}`) {
     throw new InboxInputError('IDEMPOTENCY_KEY_INVALID');
   }
-  if (!boundedString(message.req_id, 256) || !boundedString(message.bot_id, 256)) {
+  if (!boundedString(candidate.req_id, 256) || !boundedString(candidate.bot_id, 256)) {
     throw new InboxInputError('MESSAGE_CHANNEL_IDENTITY_INVALID');
   }
-  if (!['single', 'group'].includes(message.chat_type)) {
+  if (!['single', 'group'].includes(candidate.chat_type)) {
     throw new InboxInputError('MESSAGE_CHAT_TYPE_INVALID');
   }
   if (
-    (message.chat_type === 'single' && message.chat_id !== null)
-    || (message.chat_type === 'group' && !boundedString(message.chat_id, 256))
+    (candidate.chat_type === 'single' && candidate.chat_id !== null)
+    || (candidate.chat_type === 'group' && !boundedString(candidate.chat_id, 256))
   ) {
     throw new InboxInputError('MESSAGE_CHAT_ID_INVALID');
   }
-  if (!boundedString(message.sender_user_id, 256) || !MESSAGE_TYPES.has(message.msg_type)) {
+  if (!boundedString(candidate.sender_user_id, 256) || !MESSAGE_TYPES.has(candidate.msg_type)) {
     throw new InboxInputError('MESSAGE_CONTENT_IDENTITY_INVALID');
   }
-  if (message.create_time !== null && !validDateTime(message.create_time)) {
+  if (candidate.create_time !== null && !validDateTime(candidate.create_time)) {
     throw new InboxInputError('MESSAGE_CREATE_TIME_INVALID');
   }
-  if (!validDateTime(message.received_at)) {
+  if (!validDateTime(candidate.received_at)) {
     throw new InboxInputError('MESSAGE_RECEIVED_AT_INVALID');
   }
   try {
-    const receivedEpochMs = assertEpochMsString(message.received_epoch_ms);
-    if (formatEpochMsToShanghaiLocal(receivedEpochMs) !== message.received_at) {
+    const receivedEpochMs = assertEpochMsString(candidate.received_epoch_ms);
+    if (formatEpochMsToShanghaiLocal(receivedEpochMs) !== candidate.received_at) {
       throw new Error('received mismatch');
     }
-    if (message.provider_create_epoch_ms === null) {
-      if (message.create_time !== null) throw new Error('provider mismatch');
+    if (candidate.provider_create_epoch_ms === null) {
+      if (candidate.create_time !== null) throw new Error('provider mismatch');
     } else {
-      const providerEpochMs = assertEpochMsString(message.provider_create_epoch_ms);
-      if (formatEpochMsToShanghaiLocal(providerEpochMs) !== message.create_time) throw new Error('provider mismatch');
+      const providerEpochMs = assertEpochMsString(candidate.provider_create_epoch_ms);
+      if (formatEpochMsToShanghaiLocal(providerEpochMs) !== candidate.create_time) throw new Error('provider mismatch');
     }
   } catch {
     throw new InboxInputError('MESSAGE_EPOCH_TIME_MISMATCH');
   }
-  validateContent(message.content, 'MESSAGE_CONTENT_INVALID');
-  if (message.quote !== null) {
+  validateContent(candidate.content, 'MESSAGE_CONTENT_INVALID');
+  if (candidate.quote !== null) {
     if (
-      !isRecord(message.quote)
-      || !hasExactFields(message.quote, ['msg_type', 'content'])
-      || !['text', 'image', 'mixed', 'voice', 'file'].includes(message.quote.msg_type)
+      !hasExactFields(candidate.quote, ['msg_type', 'content'])
+      || !['text', 'image', 'mixed', 'voice', 'file'].includes(candidate.quote.msg_type)
     ) {
       throw new InboxInputError('MESSAGE_QUOTE_INVALID');
     }
-    validateContent(message.quote.content, 'MESSAGE_QUOTE_INVALID');
+    validateContent(candidate.quote.content, 'MESSAGE_QUOTE_INVALID');
   }
 }
 
-function validateRequest(request) {
+function validateRequest(request: unknown): asserts request is InboxRequest {
   if (!isRecord(request)) {
     throw new InboxInputError('REQUEST_OBJECT_REQUIRED');
   }
@@ -186,55 +286,56 @@ function validateRequest(request) {
   )) {
     throw new InboxInputError('REQUEST_FIELDS_INVALID');
   }
-  validateMessage(request.message);
-  if (!boundedString(request.traceId, 128)) {
+  const candidate = request as Record<string, unknown> & InboxRequest;
+  validateMessage(candidate.message);
+  if (!boundedString(candidate.traceId, 128)) {
     throw new InboxInputError('TRACE_ID_INVALID');
   }
-  if (!PRIVACY_CLASSES.has(request.privacyClass)) {
+  if (!PRIVACY_CLASSES.has(candidate.privacyClass)) {
     throw new InboxInputError('PRIVACY_CLASS_INVALID');
   }
-  if (!validDateTime(request.retentionUntil)) {
+  if (!validDateTime(candidate.retentionUntil)) {
     throw new InboxInputError('RETENTION_UNTIL_INVALID');
   }
   let retentionEpochMs;
   try {
-    retentionEpochMs = request.retentionUntilEpochMs === undefined
-      ? shanghaiLocalToEpochMs(request.retentionUntil)
-      : assertEpochMsString(request.retentionUntilEpochMs);
+    retentionEpochMs = candidate.retentionUntilEpochMs === undefined
+      ? shanghaiLocalToEpochMs(candidate.retentionUntil)
+      : assertEpochMsString(candidate.retentionUntilEpochMs);
   } catch {
     throw new InboxInputError('RETENTION_UNTIL_EPOCH_INVALID');
   }
-  if (formatEpochMsToShanghaiLocal(retentionEpochMs) !== request.retentionUntil) {
+  if (formatEpochMsToShanghaiLocal(retentionEpochMs) !== candidate.retentionUntil) {
     throw new InboxInputError('RETENTION_UNTIL_EPOCH_MISMATCH');
   }
-  if (BigInt(retentionEpochMs) <= BigInt(request.message.received_epoch_ms)) {
+  if (BigInt(retentionEpochMs) <= BigInt(candidate.message.received_epoch_ms)) {
     throw new InboxInputError('RETENTION_UNTIL_NOT_AFTER_RECEIVED_AT');
   }
   if (
-    request.rawPayloadEncrypted !== undefined
+    candidate.rawPayloadEncrypted !== undefined
     && (
-      (!Buffer.isBuffer(request.rawPayloadEncrypted)
-        && !(request.rawPayloadEncrypted instanceof Uint8Array))
-      || request.rawPayloadEncrypted.byteLength === 0
+      (!Buffer.isBuffer(candidate.rawPayloadEncrypted)
+        && !(candidate.rawPayloadEncrypted instanceof Uint8Array))
+      || candidate.rawPayloadEncrypted.byteLength === 0
     )
   ) {
     throw new InboxInputError('ENCRYPTED_RAW_PAYLOAD_BYTES_REQUIRED');
   }
 }
 
-function deepFreeze(value) {
+function deepFreeze<T extends object>(value: T): T {
   for (const child of Object.values(value)) {
     if (child !== null && typeof child === 'object' && !Object.isFrozen(child)) {
       deepFreeze(child);
     }
   }
-  return Object.freeze(value);
+  return Object.freeze(value) as T;
 }
 
-function validatedRequestSnapshot(request) {
-  let snapshot;
+function validatedRequestSnapshot(request: unknown): InboxRequest {
+  let snapshot: InboxRequest;
   try {
-    snapshot = structuredClone(request);
+    snapshot = structuredClone(request) as InboxRequest;
   } catch {
     throw new InboxInputError('REQUEST_SNAPSHOT_INVALID');
   }
@@ -249,8 +350,8 @@ function validatedRequestSnapshot(request) {
   return Object.freeze(snapshot);
 }
 
-function textColumns(message) {
-  const textItems = message.content.filter((item) => item?.kind === 'text' && isRecord(item.text));
+function textColumns(message: InboxMessage): { rawText: string | null; cleanText: string | null } {
+  const textItems = message.content.filter((item): item is TextContent => item.kind === 'text');
   if (textItems.length === 0) {
     return { rawText: null, cleanText: null };
   }
@@ -260,7 +361,7 @@ function textColumns(message) {
   };
 }
 
-function snapshotPlainJsonValue(value, ancestors = new Set()) {
+function snapshotPlainJsonValue(value: unknown, ancestors: Set<object> = new Set()): PlainJson {
   if (value === null || typeof value === 'boolean') {
     return value;
   }
@@ -285,7 +386,7 @@ function snapshotPlainJsonValue(value, ancestors = new Set()) {
     if (prototype !== Array.prototype) {
       throw new InboxInputError('PROCESSING_RESULT_NOT_PLAIN_JSON');
     }
-    const snapshot = [];
+    const snapshot: PlainJson[] = [];
     ancestors.add(value);
     for (let index = 0; index < value.length; index += 1) {
       const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
@@ -324,7 +425,7 @@ function snapshotPlainJsonValue(value, ancestors = new Set()) {
     throw new InboxInputError('PROCESSING_RESULT_NOT_PLAIN_JSON');
   }
 
-  const snapshot = Object.create(null);
+  const snapshot: { [key: string]: PlainJson } = Object.create(null) as { [key: string]: PlainJson };
   ancestors.add(value);
   for (const key of Reflect.ownKeys(value)) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
@@ -347,7 +448,7 @@ function snapshotPlainJsonValue(value, ancestors = new Set()) {
   return snapshot;
 }
 
-function responseSnapshot(result) {
+function responseSnapshot(result: ProcessingResult): { serialized: string; snapshot: ProcessingResult } {
   if (!isRecord(result)) {
     throw new InboxInputError('PROCESSING_RESULT_OBJECT_REQUIRED');
   }
@@ -361,22 +462,22 @@ function responseSnapshot(result) {
   if (serialized === undefined) {
     throw new InboxInputError('PROCESSING_RESULT_NOT_JSON_SERIALIZABLE');
   }
-  const snapshot = JSON.parse(serialized);
+  const snapshot: unknown = JSON.parse(serialized);
   if (!isRecord(snapshot)) {
     throw new InboxInputError('PROCESSING_RESULT_OBJECT_REQUIRED');
   }
   return { serialized, snapshot };
 }
 
-function leadingSqlKeywords(sql, maximum = 5) {
-  const keywords = [];
+function leadingSqlKeywords(sql: string, maximum = 5): string[] {
+  const keywords: string[] = [];
   let offset = 0;
 
   while (keywords.length < maximum) {
     let skippedIgnorable;
     do {
       skippedIgnorable = false;
-      while (offset < sql.length && /\s/u.test(sql[offset])) {
+      while (offset < sql.length && /\s/u.test(sql[offset] ?? '')) {
         offset += 1;
         skippedIgnorable = true;
       }
@@ -424,8 +525,9 @@ function leadingSqlKeywords(sql, maximum = 5) {
   return keywords;
 }
 
-function isTransactionControlQuery(sql) {
+function isTransactionControlQuery(sql: string): boolean {
   const keywords = leadingSqlKeywords(sql);
+  const first = keywords[0];
   if (
     [
       'BEGIN',
@@ -437,7 +539,7 @@ function isTransactionControlQuery(sql) {
       'SET',
       'RESET',
       'DISCARD',
-    ].includes(keywords[0])
+    ].includes(first ?? '')
   ) {
     return true;
   }
@@ -450,7 +552,11 @@ function isTransactionControlQuery(sql) {
     || leadingPhrase.startsWith('PREPARE TRANSACTION');
 }
 
-function transactionQuery(client, queryText, values) {
+function transactionQuery<R extends PostgresQueryRow = Record<string, unknown>>(
+  client: PostgresPoolClient,
+  queryText: string,
+  values?: unknown[],
+): Promise<PostgresQueryResult<R>> {
   if (typeof queryText !== 'string' || queryText.trim().length === 0) {
     throw new InboxInputError('TRANSACTION_QUERY_INVALID');
   }
@@ -464,20 +570,26 @@ function transactionQuery(client, queryText, values) {
   if (isTransactionControlQuery(withoutTrailingTerminator)) {
     throw new InboxInputError('TRANSACTION_CONTROL_NOT_ALLOWED');
   }
-  return client.query(queryText, values);
+  return client.query<R>(queryText, values);
 }
 
-function revocableTransactionView(client) {
+function revocableTransactionView(client: PostgresPoolClient): {
+  transaction: PostgresTransaction;
+  revokeAndDrain(): Promise<void>;
+} {
   let active = true;
-  const queryOutcomes = [];
+  const queryOutcomes: Promise<{ ok: true } | { ok: false; error: unknown }>[] = [];
   return Object.freeze({
     transaction: Object.freeze({
-      query(queryConfig, values) {
+      async query<R extends PostgresQueryRow = Record<string, unknown>>(
+        queryConfig: string,
+        values?: unknown[],
+      ): Promise<PostgresQueryResult<R>> {
         if (!active) {
           return Promise.reject(new InboxInputError('TRANSACTION_VIEW_CLOSED'));
         }
         const queryPromise = Promise.resolve()
-          .then(() => transactionQuery(client, queryConfig, values));
+          .then(() => transactionQuery<R>(client, queryConfig, values));
         queryOutcomes.push(queryPromise.then(
           () => ({ ok: true }),
           (error) => ({ ok: false, error }),
@@ -495,7 +607,7 @@ function revocableTransactionView(client) {
   });
 }
 
-function publicError(code, retryable, reason) {
+function publicError(code: string, retryable: boolean, reason?: string): InboxFailure {
   return {
     ok: false,
     error: {
@@ -506,7 +618,7 @@ function publicError(code, retryable, reason) {
   };
 }
 
-async function rollbackAndShouldDestroyClient(client) {
+async function rollbackAndShouldDestroyClient(client: PostgresPoolClient): Promise<boolean> {
   try {
     await client.query('ROLLBACK');
     return false;
@@ -515,7 +627,7 @@ async function rollbackAndShouldDestroyClient(client) {
   }
 }
 
-export async function applyChannelMessageInboxMigration({ pool }) {
+export async function applyChannelMessageInboxMigration({ pool }: InboxMigrationOptions): Promise<{ status: 'LEGACY_MIGRATION_SUPERSEDED' } | undefined> {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
@@ -524,13 +636,13 @@ export async function applyChannelMessageInboxMigration({ pool }) {
   await pool.query(sql);
 }
 
-export function createChannelMessageInbox({ pool }) {
+export function createChannelMessageInbox({ pool }: InboxMigrationOptions): InboxService {
   if (!pool || typeof pool.connect !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
 
   return Object.freeze({
-    async accept(request, processFirst) {
+    async accept(request: unknown, processFirst: ProcessFirst): Promise<InboxResult> {
       let requestSnapshot;
       try {
         requestSnapshot = validatedRequestSnapshot(request);
@@ -544,7 +656,7 @@ export function createChannelMessageInbox({ pool }) {
         return publicError('CHANNEL_INBOX_INVALID_INPUT', false, 'PROCESS_FIRST_REQUIRED');
       }
 
-      let client;
+      let client: PostgresPoolClient;
       try {
         client = await pool.connect();
       } catch {
@@ -557,7 +669,7 @@ export function createChannelMessageInbox({ pool }) {
         await client.query('BEGIN');
         const { message } = requestSnapshot;
         const { rawText, cleanText } = textColumns(message);
-        const timeContract = await client.query(
+        const timeContract = await client.query<TimeContractRow>(
           `SELECT EXISTS (
              SELECT 1 FROM information_schema.columns
               WHERE table_schema='channel' AND table_name='message_inbox'
@@ -586,7 +698,7 @@ export function createChannelMessageInbox({ pool }) {
             requestSnapshot.retentionUntil,
         ];
         const inserted = timeContract.rows[0]?.enabled === true
-          ? await client.query(
+          ? await client.query<InsertedMessageRow>(
             `INSERT INTO channel.message_inbox (
                 schema_version, provider, msg_id, idempotency_key, req_id, bot_id,
                 chat_type, chat_id, sender_user_id, msg_type,
@@ -606,7 +718,7 @@ export function createChannelMessageInbox({ pool }) {
             [...commonValues, message.provider_create_epoch_ms, message.received_epoch_ms,
               requestSnapshot.retentionUntilEpochMs],
           )
-          : await client.query(
+          : await client.query<InsertedMessageRow>(
             `INSERT INTO channel.message_inbox (
                 schema_version, provider, msg_id, idempotency_key, req_id, bot_id,
                 chat_type, chat_id, sender_user_id, msg_type, create_time, received_at,
@@ -624,28 +736,33 @@ export function createChannelMessageInbox({ pool }) {
         );
 
         if (inserted.rowCount === 0) {
-          const existing = await client.query(
+          const existing = await client.query<ExistingMessageRow>(
             `SELECT id::text AS id, processing_status, response_snapshot
                FROM channel.message_inbox
               WHERE provider = $1 AND msg_id = $2`,
             [message.provider, message.msg_id],
           );
-          if (existing.rowCount !== 1 || existing.rows[0].processing_status !== 'COMPLETED') {
+          const existingRow = existing.rows[0];
+          if (existing.rowCount !== 1 || !existingRow || existingRow.processing_status !== 'COMPLETED') {
             throw new Error('INBOX_COMMITTED_RESULT_MISSING');
           }
           await client.query('COMMIT');
           return {
             ok: true,
             duplicate: true,
-            channelMessageId: existing.rows[0].id,
-            result: existing.rows[0].response_snapshot,
+            channelMessageId: existingRow.id,
+            result: existingRow.response_snapshot,
           };
         }
 
-        const channelMessageId = inserted.rows[0].id;
+        const insertedRow = inserted.rows[0];
+        if (!insertedRow) {
+          throw new Error('INBOX_INSERTED_RESULT_MISSING');
+        }
+        const channelMessageId = insertedRow.id;
         const transactionView = revocableTransactionView(client);
         failureKind = 'PROCESSING';
-        let processingResult;
+        let processingResult: ProcessingResult;
         try {
           processingResult = await processFirst({
             channelMessageId,
