@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
-  "source_tree": "42201d12279dc9c95b64912f13cc72284388c514",
+  "source_tree": "82966f0ff5ff91c8246390f3b0cc4e1ff857fba4",
   "current_batch": "T04-02",
   "current_execution_status": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
   "policy_files": "T00_MERGED_PR24",
@@ -57,7 +57,7 @@
     "T03-01-PREREQUISITE": "MERGED",
     "T03-01-PG-CALLBACK-FIX": "MERGED"
   },
-  "next_batch": "T04-02",
+  "next_batch": "T04-03",
   "next_batch_authorized_to_start": false,
   "required_before_next_batch": [
     "T04-02 exact-head CI and independent review, separately authorized merge; stop before T04-03."
@@ -82,9 +82,9 @@
     {
       "id": "CURRENT_STRICT_READINESS",
       "status": "CLOSED_BY_EXECUTION",
-      "reason": "Not executed on a full current source checkout. Frozen CI results are not substitutes.",
-      "resolution_record": "verification/T00-baseline.json",
-      "resolution": "Original CLI actually executed on PR and original main: exit1/YXX_VERIFICATION_REJECTED, same YXX_LOCAL_VALIDATION_SCOPE_INVALID guard. Recorded, not passed."
+      "reason": "Executed on the exact T04-02 implementation head; the original command returned exit1/YXX_VERIFICATION_REJECTED. This is the known baseline not-ready result, not a pass.",
+      "resolution_record": "receipts/T04-02.json",
+      "resolution": "Current exact-head local execution is recorded; readiness remains KNOWN_BASELINE_NOT_READY."
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
