@@ -35,7 +35,7 @@
       "Restore results discriminate success/failure; failure-only method cannot type as success."
     ]
   },
-  "ci": "NOT_RUN_NOT_PUBLISHED",
+  "ci": "BLOCKED_ACCOUNT_BILLING_OR_SPENDING_LIMIT",
   "strict_readiness": {
     "status": "KNOWN_BASELINE_NOT_READY",
     "command": "node scripts/validate-yxx-self-service.mjs --require-ready",
@@ -336,15 +336,28 @@
     "publication_ci_external_review": "NOT_RUN"
   },
   "unresolved_p1_p2": 0,
-  "external_review": "NOT_REQUESTED",
+  "external_review": "FINDING_FIXED_REVIEW_PENDING",
   "ci_head_sha": null,
   "publication": {
-    "status": "NOT_PUBLISHED",
-    "authoritative_pr_head": "NOT_AVAILABLE",
-    "history_preflight": "NOT_RUN_UNPUBLISHED_LOCAL_CANDIDATE",
-    "pr_body": "C:\\Users\\zqpet\\.codex\\artifacts\\wecom-t04-03-20260929-a5e7ed7\\wecom-t04-03-pr.md",
-    "prior_pr32_ci": "NOT_STARTED_BILLING_OR_SPENDING_LIMIT",
-    "prior_pr32_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/32"
+    "status": "PUBLISHED_PR_OPEN",
+    "pr": 33,
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/33",
+    "authoritative_pr_head": "29c6409a201b780d2771c8e3846e3eb7a3a274ad",
+    "history_preflight": "PASS",
+    "history_log": "C:/Users/zqpet/.codex/artifacts/wecom-t04-03-pr33-publication/wecom-t04-03-pr33-history.log",
+    "artifact_rebuilt_for_published_head": true,
+    "runtime_outputs_identical_to_tested_ancestor": 736,
+    "strict_readiness": "KNOWN_BASELINE_NOT_READY",
+    "review_request": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/33#issuecomment-5892747938",
+    "external_finding": {
+      "id": 4134948139,
+      "priority": "P2",
+      "summary": "Migration README and T04-02 batch status retained obsolete handoff.",
+      "resolution": "Synchronize T04-03 entry, links, 211 routes, 96 selected tests, stopping boundary and MERGED T04-02 status; no business code change.",
+      "status": "FIXED_AWAITING_REVIEW"
+    },
+    "ci_failed_checks": 9,
+    "ci_failure_reason": "All nine failure annotations say job not started due to billing/spending limit."
   },
   "type_escape_delta": {
     "production_any": 0,
@@ -518,10 +531,10 @@
   "artifact_directory": "C:\\Users\\zqpet\\.codex\\artifacts\\wecom-t04-03-20260929-a5e7ed7",
   "artifact_index_sha256": "502cca86c2ff5d9d10d4557e6daa0cabbf73c0c00caae38fcc573d432d871716",
   "remaining_delivery_items": {
-    "code_defects": "NONE_KNOWN_AFTER_LOCAL_TWO_AXIS_REVIEW",
-    "publication_identity": "PENDING_PUBLICATION_AUTHORIZATION",
-    "external_review": "PENDING_EXTERNAL_COMMENT_AUTHORIZATION",
-    "remote_ci": "NOT_RUN; prior PR jobs blocked by account billing/spending limit",
+    "code_defects": "NONE_KNOWN; handoff metadata finding fixed",
+    "publication_identity": "PASS_ON_29c6409; repeat on final published head",
+    "external_review": "FINDING_FIXED_REVIEW_PENDING",
+    "remote_ci": "BLOCKED_ACCOUNT_BILLING_OR_SPENDING_LIMIT",
     "merge_and_deployment": "NOT_AUTHORIZED_NOT_REQUESTED"
   }
 }

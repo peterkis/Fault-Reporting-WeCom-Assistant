@@ -631,7 +631,7 @@
       "depends_on": [
         "T04-01"
       ],
-      "status": "PLANNED"
+      "status": "MERGED"
     },
     {
       "id": "T04-03",
@@ -757,7 +757,8 @@
         "tests/yxx-ss-009-evidence-history.test.mjs",
         "tests/p1-011-encrypted-backup.test.mjs",
         "tests/p1-011-typescript-compatibility.test.mjs"
-      ]
+      ],
+      "status": "LOCAL_VALIDATED_NOT_MERGED"
     }
   ]
 }
