@@ -139,6 +139,7 @@ interface ClosureService {
     traceId: string;
     actionService: TicketActionService;
   }): Promise<unknown>;
+  runAutoClose(): Promise<{ closed_ticket_ids: string[] }>;
   runAutoClose(input: { actionService: TicketActionService; limit?: number }): Promise<{ closed_ticket_ids: string[] }>;
   runAutoCloseReminders(input?: { limit?: number }): Promise<{ reminded_ticket_ids: string[] }>;
 }
@@ -601,7 +602,7 @@ export function createTicketClosureService({
   async function runAutoClose({
     actionService,
     limit = 50,
-  }: { actionService: TicketActionService; limit?: number }): Promise<{ closed_ticket_ids: string[] }> {
+  }: { actionService?: TicketActionService; limit?: number } = {}): Promise<{ closed_ticket_ids: string[] }> {
     if (!actionService || typeof actionService.performInTransaction !== 'function') {
       throw new TypeError('A Ticket Action service is required.');
     }
