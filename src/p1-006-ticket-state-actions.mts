@@ -14,7 +14,7 @@ import type {
 } from './p1-005-pilot-ticket-core.mjs';
 import { assertLocalDateTime } from './platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
-import type { PostgresPool, PostgresPoolClient } from './platform/postgres-pool.mjs';
+import type { PostgresPool, PostgresPoolClient, PostgresTransaction } from './platform/postgres-pool.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/004_p1_006_ticket_state_actions.sql', import.meta.url);
 export type TicketAction =
@@ -185,14 +185,14 @@ export interface TicketActionFailure {
 
 export type TicketActionResult = TicketActionSuccess | TicketActionFailure;
 export type TicketActionAuthorizeInput = {
-  transaction: PostgresPoolClient;
+  transaction: PostgresTransaction;
   ticket: PublicPilotTicket;
   action: TicketAction;
   actor: TicketActor;
 };
 export type TicketActionAuthorizer = (input: TicketActionAuthorizeInput) => boolean | Promise<boolean>;
 export type TicketActionAfterHook = (input: {
-  transaction: PostgresPoolClient;
+  transaction: PostgresTransaction;
   ticket: PublicPilotTicket;
   event: PublicTicketEvent;
   action: TicketAction;
@@ -200,7 +200,7 @@ export type TicketActionAfterHook = (input: {
 }) => unknown | Promise<unknown>;
 
 export interface TicketActionService {
-  performInTransaction(input: TicketActionInput, transaction: PostgresPoolClient): Promise<TicketActionSuccess>;
+  performInTransaction(input: TicketActionInput, transaction: PostgresTransaction): Promise<TicketActionSuccess>;
   perform(input: TicketActionInput): Promise<TicketActionResult>;
 }
 
@@ -394,7 +394,7 @@ export async function appendTicketEvent({
   traceId,
   assignmentMetadata,
 }: {
-  transaction: PostgresPoolClient;
+  transaction: PostgresTransaction;
   ticket: Pick<PilotTicketRow, 'id' | 'status' | 'version'>;
   eventType: TicketEventType;
   oldStatus?: TicketStatus | null;
@@ -495,7 +495,7 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
     throw new TypeError('afterAction must be a function when supplied.');
   }
 
-  async function performInTransaction(input: TicketActionInput, transaction: PostgresPoolClient): Promise<TicketActionSuccess> {
+  async function performInTransaction(input: TicketActionInput, transaction: PostgresTransaction): Promise<TicketActionSuccess> {
     const request = validateActionInput(input);
     if (!transaction || typeof transaction.query !== 'function') {
       throw new TicketActionError('VALIDATION_FAILED');

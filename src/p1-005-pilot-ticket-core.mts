@@ -3,7 +3,7 @@ import type { LocalDateTime } from '../contracts/time_contracts.js';
 import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import { assertLocalDateTime } from './platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
-import type { PostgresPool, PostgresPoolClient } from './platform/postgres-pool.mjs';
+import type { PostgresPool, PostgresPoolClient, PostgresTransaction } from './platform/postgres-pool.mjs';
 
 const MIGRATION_URL = new URL('../database/migrations/003_p1_005_pilot_ticket_core.sql', import.meta.url);
 export type TicketRequestType =
@@ -209,7 +209,7 @@ export interface PublicIntakeEvent {
 
 export interface PilotTicketInput {
   intakeId: string;
-  transaction: PostgresPoolClient;
+  transaction: PostgresTransaction;
   occurredAt: LocalDateTime;
   traceId: string;
   title?: string | null;
@@ -235,7 +235,7 @@ export interface PilotTicketMessage {
 }
 
 export interface PilotTicketProcessorInput {
-  transaction: PostgresPoolClient;
+  transaction: PostgresTransaction;
   message: PilotTicketMessage;
   [key: string]: unknown;
 }
@@ -253,7 +253,7 @@ export interface PilotTicketProcessorResult extends PilotTicketProcessorIntakeRe
 
 export type ServiceIntakeProcessor = (input: PilotTicketProcessorInput) => Promise<PilotTicketProcessorIntakeResult>;
 export type TicketCreatedHook = (input: {
-  transaction: PostgresPoolClient;
+  transaction: PostgresTransaction;
   ticket: PublicPilotTicket;
   intake: PublicIntake;
   message: PilotTicketMessage;
@@ -358,7 +358,7 @@ async function appendIntakeTicketCreatedEvent({
   occurredAt,
   traceId,
 }: {
-  transaction: PostgresPoolClient;
+  transaction: PostgresTransaction;
   intake: ServiceIntakeRow;
   ticket: PilotTicketRow;
   occurredAt: LocalDateTime;
@@ -435,7 +435,7 @@ function validateCreateInput({
   priority,
 }: {
   intakeId: string;
-  transaction: PostgresPoolClient;
+  transaction: PostgresTransaction;
   occurredAt: unknown;
   traceId: string;
   title: string | null | undefined;

@@ -9,7 +9,7 @@ import {
   formatEpochMsToShanghaiLocal,
 } from './platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
-import type { PostgresPool, PostgresPoolClient } from './platform/postgres-pool.mjs';
+import type { PostgresPool, PostgresPoolClient, PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { PublicPilotTicket } from './p1-005-pilot-ticket-core.mjs';
 import type { PublicTicketEvent, TicketEventType } from './p1-006-ticket-state-actions.mjs';
 
@@ -64,7 +64,7 @@ export interface PublicDelivery {
 }
 export interface NotificationOutbox {
   enqueueTicketEvent(input: {
-    transaction: PostgresPoolClient;
+    transaction: PostgresTransaction;
     ticket: NotificationTicket;
     event: NotificationEvent;
     cardTasks?: NotificationCardTask[];
@@ -88,7 +88,7 @@ export interface NotificationDeliveryWorkerOptions {
   rateLimitWindowMs?: number;
 }
 export interface NotificationTargetInput {
-  transaction: PostgresPoolClient;
+  transaction: PostgresTransaction;
   ticket: NotificationTicket;
   event: NotificationEvent;
 }
@@ -302,7 +302,7 @@ export function createNotificationOutbox({
   }
   return Object.freeze({
     enqueueTicketEvent: async ({ transaction, ticket, event, cardTasks = [] }: {
-      transaction: PostgresPoolClient;
+      transaction: PostgresTransaction;
       ticket: NotificationTicket;
       event: NotificationEvent;
       cardTasks?: NotificationCardTask[];
