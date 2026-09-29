@@ -3,7 +3,7 @@
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
   "current_batch": "T04-03",
-  "current_execution_status": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
+  "current_execution_status": "LOCAL_VALIDATED_PUBLICATION_CI_PENDING",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
@@ -22,7 +22,7 @@
     "T03-01": "MERGED",
     "T04-01": "MERGED",
     "T04-02": "MERGED",
-    "T04-03": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
+    "T04-03": "LOCAL_VALIDATED_NOT_MERGED",
     "T04-04": "PLANNED",
     "T04-05": "PLANNED",
     "T05-01": "PLANNED",
@@ -63,10 +63,10 @@
   "required_before_next_batch": [
     "T04-03 exact-head validation, review and separately authorized merge. CI not executed is not PASS."
   ],
-  "migration_readiness": "T04_03_UNDER_VALIDATION",
+  "migration_readiness": "T04_03_LOCAL_VALIDATION_PASS_NOT_FULL_ACCEPTANCE",
   "production_readiness": "NOT_CLAIMED",
-  "types": "T04_03_STRICT_TYPECHECK_UNDER_VALIDATION",
-  "build": "T04_03_BUILD_AND_ARTIFACT_UNDER_VALIDATION",
+  "types": "T04_03_STRICT_TYPECHECK_AND_TYPE_TESTS_PASS",
+  "build": "T04_03_STAGED_NOT_ACTIVATED",
   "blocked_items": [
     {
       "id": "ENV_NODE24_PG18",
@@ -89,7 +89,7 @@
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
-  "completed_batches_note": "T04-02 merged as PR32 at cc1299ea3b30c92f5356258b31963f0c67e7e7ae; its recorded local tests and remote CI non-execution remain separate facts. T04-03 under validation.",
+  "completed_batches_note": "T00 through T04-02 merged. T04-03 local automated validation and local two-axis review passed on a5e7ed7; publication, remote CI, external review and merge remain pending.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
   "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",
@@ -98,7 +98,7 @@
     "merge": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023"
   },
   "current_followup_receipt": "receipts/T04-03.json",
-  "publication_result_source": "Exact published-head CI artifacts and PR review; no future PASS is certified by this file.",
+  "publication_result_source": "T04-03 local receipt binds a5e7ed7; no PR/CI/external approval exists for this candidate.",
   "callback_fix": {
     "pr": 28,
     "merge": "d2d462c8b98b6a379584f0dbc6d1786011aad573"
