@@ -1,15 +1,15 @@
 {
   "batch": "T04-02",
   "base": "aeee2a37e2aa63eecdd6d9e97ce167acb3a01e04",
-  "tested_head": "8eff1f954d75845dc4fd640ba9435a704a44c3e8",
-  "tested_tree": "82966f0ff5ff91c8246390f3b0cc4e1ff857fba4",
+  "tested_head": "acfc4fcd719c09ee22fa040ff6adb112eca58e9b",
+  "tested_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
   "branch": "codex/typescript-t04-02",
   "status": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
   "production_mappings": {
     "src/p1-003-channel-message-inbox.mjs": "src/p1-003-channel-message-inbox.mts",
     "src/p1-010-ticket-closure.mjs": "src/p1-010-ticket-closure.mts"
   },
-  "physical_lines": 1598,
+  "physical_lines": 1599,
   "direct_tests": 25,
   "transitive_impacted_tests": 83,
   "baseline_tests": 17,
@@ -26,12 +26,12 @@
   "type_tests": "PASS",
   "build": {
     "status": "STAGED_NOT_ACTIVATED",
-    "source": "8eff1f954d75845dc4fd640ba9435a704a44c3e8",
-    "input_hash": "640fe6e97ac09ee34252342a1d918caaba282c40b1901f8848ee2dc499c034a3",
+    "source": "acfc4fcd719c09ee22fa040ff6adb112eca58e9b",
+    "input_hash": "42c28370a744d939b33fe16465a794a1bbb81a6b1a9fad77cffc1692ca2c8b9d",
     "typed": 13,
     "unchecked_legacy": 500,
     "outputs": 734,
-    "manifest_sha256": "b653497f265c708f7f7441c9bb1744222c34486af1a9b25f931336ba784eb1fd",
+    "manifest_sha256": "c4f6f97604fe759d9213d4cc5409581161514b419f0777dd96fb1f7827b29902",
     "clean_builds_identical": true
   },
   "artifact": "ARTIFACT_VERIFIED_NOT_ACTIVATED",
@@ -54,21 +54,21 @@
   "automated_full_batch": {
     "status": "MIGRATION_AUTOMATED_CHECKS_PASS_NOT_REVIEW",
     "behavior": "PASS",
-    "report": "C:/Users/zqpet/AppData/Local/Temp/wecom-t04-02-final-chrome-bg-20260929185332",
-    "source_head": "8eff1f954d75845dc4fd640ba9435a704a44c3e8",
-    "source_tree": "82966f0ff5ff91c8246390f3b0cc4e1ff857fba4",
+    "report": "C:/Users/zqpet/AppData/Local/Temp/wecom-t04-02-final-fix-chrome-bg-20260929200607",
+    "source_head": "acfc4fcd719c09ee22fa040ff6adb112eca58e9b",
+    "source_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
     "source_dirty": false,
-    "manifest_sha256": "b653497f265c708f7f7441c9bb1744222c34486af1a9b25f931336ba784eb1fd",
+    "manifest_sha256": "c4f6f97604fe759d9213d4cc5409581161514b419f0777dd96fb1f7827b29902",
     "selected_files": 108,
     "not_run": 0,
-    "tests": 661,
-    "pass": 661,
+    "tests": 662,
+    "pass": 662,
     "fail": 0,
     "cancelled": 0,
     "skipped": 0,
     "todo": 0,
     "production_ready": false,
-    "runtime_delta_since_reference": "Only the T04-02 TypeScript module migrations, shared query-only transaction typing seam, type tests, migration metadata and workflow wiring changed; no SQL, Evidence, business contract or Feature Flag changed."
+    "runtime_delta_since_reference": "The T04-02 TypeScript module migrations, shared query-only transaction typing seam, migration metadata, workflow wiring and the auto-close omitted-input compatibility fix changed; no SQL, Evidence, business contract or Feature Flag changed."
   },
   "transient_failed_attempts": [
     {
@@ -104,6 +104,11 @@
     "command": "node scripts/validate-yxx-self-service.mjs --require-ready",
     "exit_code": 1,
     "error_code": "YXX_VERIFICATION_REJECTED"
+  },
+  "codex_review": {
+    "status": "COMPLETED_NO_NEW_FINDINGS",
+    "reviewed_head": "acfc4fcd719c09ee22fa040ff6adb112eca58e9b",
+    "review_comment": "The prior P2 finding was fixed and the second review completed without additional findings."
   },
   "review": "NOT_RUN",
   "ci": "NOT_RUN_AUTHORITATIVE_PUBLISHED_HEAD_NOT_SUPPLIED",
