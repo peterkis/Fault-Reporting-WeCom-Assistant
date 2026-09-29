@@ -1,9 +1,9 @@
 {
   "batch": "T04-01",
   "base": "3e00c00834a0a1659e72bf22f2c3db0298df3096",
-  "tested_head": "b43b37cd0950dff2d858a8839748a4bbb14d9ebf",
-  "branch": "codex/typescript-t04-01",
-  "status": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
+  "tested_head": "6190bc0541160a8b63ad16e6bb8b61320fca8ff3",
+  "branch": "codex/t04-01-review-followup",
+  "status": "REVIEW_REQUESTED",
   "production_mappings": {
     "src/p1-005-pilot-ticket-core.mjs": "src/p1-005-pilot-ticket-core.mts",
     "src/p1-006-ticket-state-actions.mjs": "src/p1-006-ticket-state-actions.mts",
@@ -28,12 +28,12 @@
   "type_tests": "PASS",
   "build": {
     "status": "PASS",
-    "source": "b43b37cd0950dff2d858a8839748a4bbb14d9ebf",
-    "input_hash": "02ad9af5457780c1c27fafcc3a881c261dcbba264629a1fddcaf3575aecf5dff",
+    "source": "6190bc0541160a8b63ad16e6bb8b61320fca8ff3",
+    "input_hash": "a1980610b50d713da8cf0a22a32742a4bb9568d3932ad8ce2a7993dcebd59f5d",
     "typed": 11,
     "unchecked_legacy": 502,
     "outputs": 732,
-    "manifest_sha256": "0212c358cc6cefae8db1066973ce512e5260c338f3de91d4da381e630bc36403",
+    "manifest_sha256": "8e01269eeb5f8fcac1304f8ab1312e7e0f7fc63209a218215b21590c1223a2d3",
     "clean_builds_identical": true
   },
   "artifact": "PASS",
@@ -42,8 +42,8 @@
     "behavior": "PASS",
     "report": "D:/Agent-Prompts/T04-01_Implementation_20260928/t04-01-batch-exact-6167a90-rerun",
     "source_head": "6167a908cd29ee27555059bdba33c8b38511f05c",
-    "carried_forward_to_head": "b43b37cd0950dff2d858a8839748a4bbb14d9ebf",
-    "runtime_delta_since_evidence": "Only erased TypeScript overload signatures, the mandatory worker pool type, progress metadata, and migration entrypoint documentation changed; no emitted runtime behavior changed.",
+    "carried_forward_to_head": "6190bc0541160a8b63ad16e6bb8b61320fca8ff3",
+    "runtime_delta_since_evidence": "Only erased TypeScript overload signatures, the mandatory worker pool type, progress metadata, migration entrypoint documentation, NotificationEvent event-type narrowing, and the restored minimal NotificationEvent shape changed; no emitted runtime behavior changed.",
     "source_dirty": false,
     "selected_files": 153,
     "not_run": 0,
@@ -75,7 +75,7 @@
     "exit_code": 1,
     "error_code": "YXX_VERIFICATION_REJECTED"
   },
-  "review": "CODEX_REVIEW_FINDINGS_FIXED_PENDING_RERUN",
+  "review": "CODEX_REVIEW_PENDING_FOLLOWUP",
   "ci": "PENDING_EXACT_PUBLISHED_HEAD_ACCOUNT_BILLING_BLOCKED",
   "database_change": false,
   "production_ready": false,

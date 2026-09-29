@@ -29,6 +29,7 @@ import {
   createNotificationOutbox,
   type NotificationChannel,
   type NotificationDeliveryWorkerOptions,
+  type NotificationEvent,
   type NotificationSender,
   type NotificationTarget,
 } from '../../src/p1-007-notification-outbox.mjs';
@@ -78,6 +79,18 @@ const assignment: AssignmentMetadata = {
 const actionService: TicketActionService = createTicketActionService({});
 const channel: NotificationChannel = 'WECOM_DIRECT';
 const target: NotificationTarget = { channel, targetKey: 'reporter-id' };
+const minimalNotificationEvent: NotificationEvent = {
+  event_id: 'event-id',
+  event_type: 'ticket.created',
+  aggregate_version: 1,
+  external_note: null,
+};
+declare const notificationEvent: NotificationEvent;
+const unsupportedNotificationEvent: NotificationEvent = {
+  ...notificationEvent,
+  // @ts-expect-error -- The default notification matrix cannot accept unsupported Ticket event types.
+  event_type: 'ticket.assignment_transferred',
+};
 declare const workerPool: PostgresPool;
 const outbox = createNotificationOutbox({
   targetsForEvent: async () => [target],
@@ -185,4 +198,4 @@ const invalidEpochOptions: NotificationDeliveryWorkerOptions = { pool: workerPoo
 void [status, ticketInput, ticketCore, processor, actionInput, assignment, actionService, outbox, worker,
   invalidPriority, invalidStatus, invalidAction, invalidActor, invalidActionInput,
   invalidOptionalNote, incompleteAssignment, invalidOptionalResolverTeam, invalidChannel, invalidTarget,
-  invalidEpochOptions];
+  invalidEpochOptions, minimalNotificationEvent, unsupportedNotificationEvent];

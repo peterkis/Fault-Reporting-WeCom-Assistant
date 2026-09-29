@@ -41,7 +41,9 @@ export interface NotificationCardTask {
   expires_at: string;
 }
 export type NotificationTicket = Pick<PublicPilotTicket, 'id' | 'ticket_no' | 'external_status' | 'intake_id' | 'resolver_team_id'>;
-export type NotificationEvent = Pick<PublicTicketEvent, 'event_id' | 'event_type' | 'aggregate_version' | 'external_note'>;
+export type NotificationEvent = Pick<PublicTicketEvent, 'event_id' | 'aggregate_version' | 'external_note'> & {
+  event_type: NotificationEventType;
+};
 export interface NotificationSenderInput {
   channel: NotificationChannel;
   targetKey: string;
