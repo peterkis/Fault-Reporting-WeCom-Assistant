@@ -93,7 +93,7 @@
     "database_cleanup": "Dedicated PostgreSQL stopped after validation; port 55432 reports no response; data directory and reports retained."
   },
   "runtime_environment": {
-    "node": "v24.x",
+    "node": "v24.18.0",
     "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
     "real_provider_or_external_network": false,
     "real_production_write": false,
