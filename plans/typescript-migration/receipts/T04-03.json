@@ -328,23 +328,25 @@
     "production_ready": false
   },
   "gates": {
-    "object_scope": "PASS_LOCAL_BASE_VERIFIED",
+    "object_scope": "PASS",
     "types": "PASS",
     "build": "PASS",
     "behavior": "PASS",
     "self_review": "PASS",
-    "publication_ci_external_review": "NOT_RUN"
+    "publication_ci_external_review": "BLOCKED_CI_ONLY",
+    "external_review": "COMPLETED_NO_NEW_MAJOR_ISSUES",
+    "published_history": "PASS"
   },
   "unresolved_p1_p2": 0,
-  "external_review": "FINDING_FIXED_REVIEW_PENDING",
+  "external_review": "COMPLETED_NO_NEW_MAJOR_ISSUES",
   "ci_head_sha": null,
   "publication": {
     "status": "PUBLISHED_PR_OPEN",
     "pr": 33,
     "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/33",
-    "authoritative_pr_head": "29c6409a201b780d2771c8e3846e3eb7a3a274ad",
+    "authoritative_pr_head": "ad60836a79f855efd0c9851e98edb892f1a3096b",
     "history_preflight": "PASS",
-    "history_log": "C:/Users/zqpet/.codex/artifacts/wecom-t04-03-pr33-publication/wecom-t04-03-pr33-history.log",
+    "history_log": "C:/Users/zqpet/.codex/artifacts/wecom-t04-03-pr33-publication/fixed-history.log",
     "artifact_rebuilt_for_published_head": true,
     "runtime_outputs_identical_to_tested_ancestor": 736,
     "strict_readiness": "KNOWN_BASELINE_NOT_READY",
@@ -354,10 +356,17 @@
       "priority": "P2",
       "summary": "Migration README and T04-02 batch status retained obsolete handoff.",
       "resolution": "Synchronize T04-03 entry, links, 211 routes, 96 selected tests, stopping boundary and MERGED T04-02 status; no business code change.",
-      "status": "FIXED_AWAITING_REVIEW"
+      "status": "FIXED_AND_THREAD_RESOLVED",
+      "fix_head": "ad60836a79f855efd0c9851e98edb892f1a3096b"
     },
     "ci_failed_checks": 9,
-    "ci_failure_reason": "All nine failure annotations say job not started due to billing/spending limit."
+    "ci_failure_reason": "All nine failure annotations say job not started due to billing/spending limit.",
+    "external_review": {
+      "reviewed_head": "ad60836a79f855efd0c9851e98edb892f1a3096b",
+      "status": "COMPLETED_NO_NEW_MAJOR_ISSUES",
+      "response": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/33#issuecomment-5892914863",
+      "formal_approval": "NOT_CLAIMED"
+    }
   },
   "type_escape_delta": {
     "production_any": 0,
@@ -531,9 +540,9 @@
   "artifact_directory": "C:\\Users\\zqpet\\.codex\\artifacts\\wecom-t04-03-20260929-a5e7ed7",
   "artifact_index_sha256": "502cca86c2ff5d9d10d4557e6daa0cabbf73c0c00caae38fcc573d432d871716",
   "remaining_delivery_items": {
-    "code_defects": "NONE_KNOWN; handoff metadata finding fixed",
-    "publication_identity": "PASS_ON_29c6409; repeat on final published head",
-    "external_review": "FINDING_FIXED_REVIEW_PENDING",
+    "code_defects": "NONE_KNOWN; external P2 handoff finding fixed and resolved",
+    "publication_identity": "PASS_ON_REVIEWED_PUBLISHED_HEAD",
+    "external_review": "COMPLETED_NO_NEW_MAJOR_ISSUES",
     "remote_ci": "BLOCKED_ACCOUNT_BILLING_OR_SPENDING_LIMIT",
     "merge_and_deployment": "NOT_AUTHORIZED_NOT_REQUESTED"
   }
