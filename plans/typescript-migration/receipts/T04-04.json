@@ -23,6 +23,7 @@
     "tests/p1-009-pilot-access-workbench.test.mjs": "Real HTTP and PG compatibility for body errors, limits and authenticated ownership.",
     "tests/helpers/p2-g2-runtime-harness.mjs": "Expose the existing incidentBackgroundMaintenance option with its true default unchanged; fixed-window tests select their sole scheduler.",
     "tests/p2-g2-cross-reporter.integration.test.mjs": "Disable background Incident maintenance in the two manual-worker window cases after a deterministic scheduling-race reproduction; keep every original assertion.",
+    "tests/p2-g2-send-guard.integration.test.mjs": "Give the multi-inventory Guard/ACK fixture a bounded 20-second send deadline within its unchanged 30-second lease; production default and independent core timeout tests remain unchanged.",
     "plans/typescript-migration": "Current module mapping, batch registration, handoff and receipt; preserve predecessor receipts.",
     ".github/workflows/types-migration.yml": "Execute T04-04 on isolated PG18/browser CI using the existing runner."
   },
@@ -69,6 +70,17 @@
       "acceptance": false,
       "reproduction": "correlation-scheduling-red.log",
       "fix_verification": "correlation-scheduling-green.log"
+    },
+    {
+      "log": "acceptance-batch.log",
+      "head": "75aa49fb3ef5890a60370f01539428c11a27fae3",
+      "status": "FAILED_EXISTING_MULTI_INVENTORY_GUARD_FIXTURE_DEADLINE",
+      "completed_files": 95,
+      "acceptance": false,
+      "reproduction": "send-guard-probe.log",
+      "classification": "COMMUNICATION_SEND_TIMEOUT followed by P2_G2_SEND_ABORTED; no Provider call.",
+      "baseline_run": "send-guard-base.log",
+      "one_variable_probe": "send-guard-time-budget.log"
     }
   ]
 }
