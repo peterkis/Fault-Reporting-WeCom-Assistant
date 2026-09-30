@@ -2,7 +2,7 @@
   "batch": "T04-04",
   "base": "c621845f66eb6d43cb69f00094fb18f2b19baefa",
   "branch": "codex/typescript-t04-04",
-  "recorded_at": "2026-09-30T19:59:10+08:00",
+  "local_snapshot_recorded_at": "2026-09-30T19:59:10+08:00",
   "publication": {
     "pull_request": 36,
     "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36",
