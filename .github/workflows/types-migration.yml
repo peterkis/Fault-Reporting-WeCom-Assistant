@@ -212,9 +212,7 @@ jobs:
           done
           cmp "$OUT/current-ss010-internal.txt" "$OUT/base-ss010-internal.txt"
           cmp "$OUT/current-ss010.txt" "$OUT/base-ss010.txt"
-          cmp "$OUT/current-arch006.txt" "$OUT/base-arch006.txt"
-          grep -q 'ARCH-006 validation failed with 2 error(s)' "$OUT/current-arch006.txt"
-          grep -q 'valid pinned local self-service successor scope' "$OUT/current-arch006.txt"
+          node .build/tools/arch006-baseline.mjs "$OUT"
           cmp "$OUT/current-strict-classification.txt" "$OUT/base-strict-classification.txt"
       - name: Exact source, environment and cleanup identity
         if: always()

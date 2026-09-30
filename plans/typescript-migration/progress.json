@@ -61,7 +61,7 @@
   "next_batch": "T04-04",
   "next_batch_authorized_to_start": false,
   "required_before_next_batch": [
-    "T04-03 exact-head validation, review and separately authorized merge. CI not executed is not PASS."
+    "T04-03 exact-head validation, review and separately authorized merge. Failed or pending CI is not PASS."
   ],
   "migration_readiness": "T04_03_BLOCKED_REMOTE_CI_ONLY_NOT_MERGE_READY",
   "production_readiness": "NOT_CLAIMED",
@@ -89,7 +89,7 @@
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
-  "completed_batches_note": "T00 through T04-02 merged. T04-03 local validation and local/external review complete; remote CI blocked and not merged.",
+  "completed_batches_note": "T00 through T04-02 merged. T04-03 implementation validation/review complete; remote PG18/browser batches executed, ARCH-006 comparison failed, CI repair awaits exact-head remote validation; not merged.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
   "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",
@@ -98,7 +98,8 @@
     "merge": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023"
   },
   "current_followup_receipt": "receipts/T04-03.json",
-  "publication_result_source": "PR33 publication identity verified; external handoff finding fixed at ad60836 and second review completed without major issues. Remote CI not started due to billing/spending limit; not PASS.",
+  "publication_result_source": "PR33 publication identity verified; external handoff finding fixed at ad60836 and second review completed without major issues. Run 36659704040 at 0f41b99a2b569b8865fc633397175f13e57c1bc3 executed PG18/browser batches but failed ARCH-006 non-readiness comparison; CI repair awaits a new exact-head run, not PASS.",
+  "current_ci_repair_record": "verification/T04-03-ci-repair-20260930.md",
   "callback_fix": {
     "pr": 28,
     "merge": "d2d462c8b98b6a379584f0dbc6d1786011aad573"
