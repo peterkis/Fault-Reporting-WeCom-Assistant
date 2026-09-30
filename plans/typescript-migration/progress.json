@@ -3,7 +3,7 @@
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
   "current_batch": "T04-04",
-  "current_execution_status": "IMPLEMENTED_VALIDATION_IN_PROGRESS",
+  "current_execution_status": "LOCAL_VALIDATED_PUBLICATION_PENDING",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
@@ -24,7 +24,7 @@
     "T04-01": "MERGED",
     "T04-02": "MERGED",
     "T04-03": "MERGED",
-    "T04-04": "IMPLEMENTED_VALIDATION_IN_PROGRESS",
+    "T04-04": "LOCAL_VALIDATED_PUBLICATION_PENDING",
     "T04-05": "PLANNED",
     "T05-01": "PLANNED",
     "T05-02": "PLANNED",
@@ -64,10 +64,10 @@
   "required_before_next_batch": [
     "T04-04 actual published-head validation, review and separately authorized merge."
   ],
-  "migration_readiness": "T04_04_VALIDATION_IN_PROGRESS",
+  "migration_readiness": "T04_04_LOCAL_AUTOMATED_AND_TWO_AXIS_REVIEW_PASS",
   "production_readiness": "NOT_CLAIMED",
-  "types": "T04_04_LOCAL_TYPECHECK_PASS_FINAL_COMMIT_PENDING",
-  "build": "T04_04_STAGED_NOT_ACTIVATED",
+  "types": "T04_04_STRICT_TYPECHECK_AND_NEGATIVES_PASS",
+  "build": "T04_04_DETERMINISTIC_STAGED_NOT_ACTIVATED",
   "blocked_items": [
     {
       "id": "ENV_NODE24_PG18",
@@ -90,7 +90,7 @@
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
-  "completed_batches_note": "T00 through T04-03 merged; T04-04 implementation and final validation in progress.",
+  "completed_batches_note": "T00 through T04-03 merged; T04-04 local batch and two-axis review pass, published-head CI and independent external review remain separate.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
   "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",
