@@ -21,6 +21,8 @@
     "tools/ts-migration/batches.test.mts": "Exercise registered T04-04 selection with all 131 existing entries.",
     "tests/types/p1-intake-access.mts": "Real public implementation positive and negative types at the agreed composition seams.",
     "tests/p1-009-pilot-access-workbench.test.mjs": "Real HTTP and PG compatibility for body errors, limits and authenticated ownership.",
+    "tests/helpers/p2-g2-runtime-harness.mjs": "Expose the existing incidentBackgroundMaintenance option with its true default unchanged; fixed-window tests select their sole scheduler.",
+    "tests/p2-g2-cross-reporter.integration.test.mjs": "Disable background Incident maintenance in the two manual-worker window cases after a deterministic scheduling-race reproduction; keep every original assertion.",
     "plans/typescript-migration": "Current module mapping, batch registration, handoff and receipt; preserve predecessor receipts.",
     ".github/workflows/types-migration.yml": "Execute T04-04 on isolated PG18/browser CI using the existing runner."
   },
@@ -58,6 +60,15 @@
       "status": "INTERRUPTED_FOR_LIFECYCLE_TYPE_FIX",
       "completed_files": 18,
       "acceptance": false
+    },
+    {
+      "log": "implementation-batch.log",
+      "head": "69bd49572c534eee2f350fdf9265d0078c2976c5",
+      "status": "FAILED_EXISTING_CORRELATION_TEST_SCHEDULING_RACE",
+      "completed_files": 69,
+      "acceptance": false,
+      "reproduction": "correlation-scheduling-red.log",
+      "fix_verification": "correlation-scheduling-green.log"
     }
   ]
 }

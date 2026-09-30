@@ -13,7 +13,7 @@ import { createPilotAccessService } from '../../src/p1-009-pilot-access-workbenc
 import { textHashP2016 } from '../../src/p2-016-domain-contracts.mjs';
 
 export const G2_RULE_FLAGS = Object.freeze({ RULE_FIRST_ORCHESTRATION_ENABLED: true, MANUAL_REVIEW_QUEUE_ENABLED: true });
-export async function withG2Runtime(run,{extraAgents=false,directoryPort,ticketNotificationAdditionalEvents=[],reporterCount=3,webSchema=false}={}) {
+export async function withG2Runtime(run,{extraAgents=false,directoryPort,ticketNotificationAdditionalEvents=[],reporterCount=3,webSchema=false,incidentBackgroundMaintenance=true}={}) {
   assert.ok(Number.isInteger(reporterCount)&&reporterCount>=3&&reporterCount<=20);
   const databaseUrl = process.env.PILOT_DATABASE_URL;
   assert.ok(databaseUrl, 'P2_G2_LOCAL_DATABASE_REQUIRED');
@@ -35,7 +35,7 @@ export async function withG2Runtime(run,{extraAgents=false,directoryPort,ticketN
       const listenPort = reservation.address().port; await new Promise(resolve => reservation.close(resolve));
       const origin = 'http://127.0.0.1:' + listenPort;
       const runtime = createP2012Runtime({ pool, principalId: admin.id, principalIds:extraAgents?principals.map(p=>p.id):null, publicOrigin: origin, listenPort,
-        ticketNotificationAdditionalEvents,
+        ticketNotificationAdditionalEvents,incidentBackgroundMaintenance,
         flags: { TICKET_LIFECYCLE_WORKBENCH_ENABLED: true, REPORTER_TIMELINE_ENABLED: true, WECOM_TEMPLATE_CARD_ENABLED: true },
         incidentFlags: { INCIDENT_CORRELATION_ENABLED: true, INCIDENT_PUBLIC_NOTICE_ENABLED: true, INCIDENT_PRIVATE_NOTICE_ENABLED: true },
         reporterHmacSecret: 'synthetic-g2-reporter-key-at-least-32-bytes', allowLocalHttp: true,
