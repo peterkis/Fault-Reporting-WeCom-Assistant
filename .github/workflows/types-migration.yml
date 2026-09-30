@@ -1,10 +1,12 @@
 name: TypeScript migration
 on:
   pull_request:
-  push:
-    branches: ['codex/typescript-t01-foundation', 'codex/typescript-t02-hosts', 'codex/typescript-t03-prerequisite', 'codex/typescript-t03-platform', 'codex/typescript-t04-01', 'codex/typescript-t04-02', 'codex/typescript-t04-03']
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   tooling:
     strategy:
@@ -26,6 +28,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
       - name: Prepare the YAML parser required by current and historical OpenAPI tests
         run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
       - run: npm ci --ignore-scripts --no-audit --no-fund
@@ -90,6 +94,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
       - name: Prepare the YAML parser required by current and historical OpenAPI tests
         run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
       - run: npm ci --ignore-scripts --no-audit --no-fund
