@@ -37,7 +37,8 @@
     "spec": "ONE_P2_FOUND",
     "fixes": [
       "HTTP action port retains unknown body fields and raw action until existing Action validation.",
-      "Intake transaction type excludes owning Pool; actual Inbox client remains query-only."
+      "Intake transaction type excludes owning Pool; actual Inbox client remains query-only.",
+      "Preserve IntakeTransaction through Lifecycle; Pool rejection and acquired Client acceptance are tested."
     ],
     "followup": "NOT_RUN"
   },
@@ -49,6 +50,13 @@
     {
       "log": "final-tooling.log",
       "status": "INTERRUPTED_FOR_REVIEW_FIX",
+      "acceptance": false
+    },
+    {
+      "log": "commit2-batch.log",
+      "head": "73bc8b7650e945ed004a68d5efac2e97a11d5489",
+      "status": "INTERRUPTED_FOR_LIFECYCLE_TYPE_FIX",
+      "completed_files": 18,
       "acceptance": false
     }
   ]

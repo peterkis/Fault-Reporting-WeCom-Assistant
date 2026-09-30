@@ -24,11 +24,14 @@ adaptWeComSdkFrame(frame, { receivedEpochMs: 1790733600000 });
 import { createServiceIntakeProcessor } from '../../src/p1-004-service-intake.mjs';
 import { createPilotTicketCore, createPilotTicketProcessor } from '../../src/p1-005-pilot-ticket-core.mjs';
 import type { PostgresTransaction } from '../../src/platform/postgres-pool.mjs';
+import type { PostgresPoolClient } from '../../src/platform/postgres-pool.mjs';
 import type { InboxMessage } from '../../src/p1-003-channel-message-inbox.mjs';
 declare const transaction: PostgresTransaction;
+declare const client: PostgresPoolClient;
 declare const message: InboxMessage;
 const intakeProcessor = createServiceIntakeProcessor({ existingIntakeSelector: async () => ({ id: null, explicitBoundary: true, boundaryReason: 'EXPLICIT_USER_NEW_TOPIC' }) });
 const intake = await intakeProcessor({ channelMessageId: '9007199254740993', message, transaction });
+intakeProcessor({ channelMessageId: '1', message, transaction: client });
 const aggregate: 'CREATED' | 'APPENDED' = intake.aggregation.action;
 void aggregate;
 // @ts-expect-error -- A durable channel message identifier is a string.
@@ -39,6 +42,8 @@ intakeProcessor({ channelMessageId: '1', message, transaction: pool });
 createServiceIntakeProcessor({ existingIntakeSelector: async () => ({ id: undefined }) });
 const ticketProcessor = createPilotTicketProcessor({ serviceIntakeProcessor: intakeProcessor, ticketCore: createPilotTicketCore({ pool }) });
 ticketProcessor({ channelMessageId: '1', message, transaction });
+// @ts-expect-error -- Ticket composition preserves the transaction capability required by Intake.
+ticketProcessor({ channelMessageId: '1', message, transaction: pool });
 // @ts-expect-error -- The composed processor preserves the Intake's required durable message id.
 ticketProcessor({ message, transaction });
 // @ts-expect-error -- The composed processor preserves the normalized message contract.
@@ -50,6 +55,8 @@ declare const closure: ReturnType<typeof createTicketClosureService>;
 const lifecycle = createTicketLifecycleProcessor({ serviceIntakeProcessor: intakeProcessor, ticketCore: createPilotTicketCore({ pool }), closure });
 createChannelMessageInbox({ pool }).accept({}, lifecycle);
 lifecycle({ channelMessageId: '1', message, transaction });
+// @ts-expect-error -- Lifecycle must preserve Intake's restriction against an owning Pool.
+lifecycle({ channelMessageId: '1', message, transaction: pool });
 // @ts-expect-error -- The lifecycle also preserves the normalized message required by Intake.
 lifecycle({ channelMessageId: '1', message: { idempotency_key: 'key', received_at: local, sender_user_id: 'synthetic' }, transaction });
 createPilotOperationalIntake({ pool, serviceIntakeProcessor: intakeProcessor, ticketCore: createPilotTicketCore({ pool }), closure, identityHashKey: 'synthetic', writeLogRecord() {}, coreChecks: { postgres: () => ({ ok: true }), intake: () => ({ ok: true }), outbox: () => ({ ok: true }) } });
