@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { after, before, beforeEach, test } from 'node:test';
 import { launchSystemBrowser, closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
 import {
@@ -226,8 +229,7 @@ test('SS-007 same-browser tabs keep form input and accepted request references i
     assert.deepEqual(new Set(tabDescriptions), new Set(['标签页一故障', '标签页二故障']));
     assert.equal(tabDescriptions.length, 2);
 
-    const screenshotDirectory = new URL('../tmp/ss007-ui/', import.meta.url);
-    await mkdir(screenshotDirectory, { recursive: true });
+    const screenshotDirectory = pathToFileURL(await mkdtemp(join(tmpdir(), 'ss007-ui-')) + sep);
     await browser.command('Page.bringToFront');
     await browser.evaluate("location.assign('/wecom/yixiaoxiu/')", { awaitPromise: false });
     await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
@@ -236,7 +238,7 @@ test('SS-007 same-browser tabs keep form input and accepted request references i
       assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'), false);
       const name = `${width}x${height}.png`;
       await writeFile(new URL(name, screenshotDirectory), await browser.screenshot(), 'base64');
-      t.diagnostic(`local screenshot: tmp/ss007-ui/${name}`);
+      t.diagnostic(`local screenshot: ${new URL(name, screenshotDirectory).href}`);
     }
     await browser.command('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   } finally { await tab?.close(); }

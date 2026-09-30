@@ -24,6 +24,7 @@
     "tests/helpers/p2-g2-runtime-harness.mjs": "Expose the existing incidentBackgroundMaintenance option with its true default unchanged; fixed-window tests select their sole scheduler.",
     "tests/p2-g2-cross-reporter.integration.test.mjs": "Disable background Incident maintenance in the two manual-worker window cases after a deterministic scheduling-race reproduction; keep every original assertion.",
     "tests/p2-g2-send-guard.integration.test.mjs": "Give the multi-inventory Guard/ACK fixture a bounded 20-second send deadline within its unchanged 30-second lease; production default and independent core timeout tests remain unchanged.",
+    "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs": "Retain responsive screenshots in a unique OS temporary evidence directory, outside the immutable compiled artifact; keep screenshot assertions and artifact rejection unchanged.",
     "plans/typescript-migration": "Current module mapping, batch registration, handoff and receipt; preserve predecessor receipts.",
     ".github/workflows/types-migration.yml": "Execute T04-04 on isolated PG18/browser CI using the existing runner."
   },
@@ -81,6 +82,23 @@
       "classification": "COMMUNICATION_SEND_TIMEOUT followed by P2_G2_SEND_ABORTED; no Provider call.",
       "baseline_run": "send-guard-base.log",
       "one_variable_probe": "send-guard-time-budget.log"
+    },
+    {
+      "log": "final-complement.log",
+      "head": "c3c3e90e81a75e19206e55ce19787afbc889de86",
+      "status": "ARTIFACT_REJECTED_AFTER_BROWSER_SCREENSHOTS",
+      "acceptance": false,
+      "browser_counts": { "tests": 7, "pass": 7, "fail": 0, "cancelled": 0, "skipped": 0, "todo": 0 },
+      "undeclared_outputs": ["tmp/ss007-ui/1440x900.png", "tmp/ss007-ui/390x844.png"],
+      "subsequent_entries_not_run": 8,
+      "batch_result": "T04-04 gate itself passed 131 files and 762/762; retained as its original c3c3e90 snapshot, not rebound."
+    },
+    {
+      "log": "browser-artifacts-fixed.log",
+      "status": "FAILED_TEST_PATH_NAMESPACE_SHADOW",
+      "acceptance": false,
+      "counts": { "tests": 7, "pass": 6, "fail": 1, "cancelled": 0, "skipped": 0, "todo": 0 },
+      "fix_verification": "browser-artifacts-green.log: 7/7 and unchanged artifact verifier passed."
     }
   ]
 }
