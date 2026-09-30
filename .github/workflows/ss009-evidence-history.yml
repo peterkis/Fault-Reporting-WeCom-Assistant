@@ -4,6 +4,10 @@ on:
     types: [opened, synchronize, reopened]
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   evidence-history:
     if: github.event.pull_request.head.repo.full_name == github.repository
@@ -35,6 +39,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
       - name: Verify the exact published object
         run: |
           set -euo pipefail
