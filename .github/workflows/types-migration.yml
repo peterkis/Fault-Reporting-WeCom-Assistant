@@ -67,7 +67,7 @@ jobs:
           retention-days: 14
   source-baseline:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     services:
       postgres:
         image: postgres:18
@@ -169,6 +169,16 @@ jobs:
           OUT="$RUNNER_TEMP/types-baseline"
           if ! npm run migration:gate -- --batch T04-03 --report-dir "$OUT/t04-03-batch" > "$OUT/t04-03-batch.txt" 2>&1; then
             tail -n 100 "$OUT/t04-03-batch.txt"
+            exit 1
+          fi
+      - name: Entire T04-04 dependency batch on real PG18 and browser hosts
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          if ! npm run migration:gate -- --batch T04-04 --report-dir "$OUT/t04-04-batch" > "$OUT/t04-04-batch.txt" 2>&1; then
+            tail -n 100 "$OUT/t04-04-batch.txt"
             exit 1
           fi
       - name: T02 artifact identity and source architecture

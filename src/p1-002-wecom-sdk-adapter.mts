@@ -4,6 +4,20 @@ import {
   formatEpochMsToShanghaiLocal,
 } from './platform/time-contract.mjs';
 
+import type { InboxMessage, MessageContent, TextContent, MediaContent } from './p1-003-channel-message-inbox.mjs';
+import type { PhysicalEpochMs, LocalDateTime } from '../contracts/time_contracts.js';
+
+export interface AdapterClockOptions { receivedAt?: Date | string | number | null; receivedEpochMs?: string }
+export type WeComAdapterResult = { ok: true; message: InboxMessage } | { ok: false; error: { code: 'WECOM_INVALID_FRAME' | 'WECOM_UNSUPPORTED_MESSAGE_TYPE'; retryable: false; reason: string } };
+type AdapterFailure = Extract<WeComAdapterResult, { ok: false }>;
+type MediaType = 'image' | 'file' | 'video';
+interface MediaReference { url: string; aeskey: string }
+type MixedItem = { msgtype: 'text'; text: { content: string } } | { msgtype: 'image'; image: MediaReference };
+type RawContent = { msgtype: 'text'; text: { content: string } } | { msgtype: 'mixed'; mixed: { msg_item: MixedItem[] } } | { msgtype: 'voice'; voice: { content: string } } | { msgtype: 'image'; image: MediaReference } | { msgtype: 'file'; file: MediaReference } | { msgtype: 'video'; video: MediaReference };
+type RawQuote = Exclude<RawContent, { msgtype: 'video' }>;
+type ValidBody = RawContent & { msgid: string; aibotid: string; chattype: 'single' | 'group'; chatid?: string; from: { userid: string }; create_time?: number; quote?: RawQuote };
+interface ValidFrame { headers: { req_id: string }; body: ValidBody }
+
 const NORMALIZED_MESSAGE_SCHEMA_VERSION = 1;
 const WECOM_PROVIDER = 'WECOM_AIBOT';
 const WECOM_ADAPTER_ERROR_CODES = Object.freeze({
@@ -14,7 +28,7 @@ const WECOM_ADAPTER_ERROR_CODES = Object.freeze({
 const SUPPORTED_MESSAGE_TYPES = Object.freeze(['text', 'image', 'mixed', 'voice', 'file', 'video']);
 const DOWNLOADABLE_MEDIA_TYPES = Object.freeze(['image', 'file', 'video']);
 
-function adapterError(code, reason) {
+function adapterError(code: AdapterFailure['error']['code'], reason: string): AdapterFailure {
   return {
     ok: false,
     error: {
@@ -25,55 +39,55 @@ function adapterError(code, reason) {
   };
 }
 
-function isNonEmptyString(value) {
+function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0;
 }
 
-function isRecord(value) {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function isStorageSafeString(value) {
+function isStorageSafeString(value: unknown): value is string {
   return typeof value === 'string' && value.isWellFormed() && !value.includes('\u0000');
 }
 
-function isBoundedString(value, maxLength) {
+function isBoundedString(value: unknown, maxLength: number): value is string {
   return isNonEmptyString(value) && isStorageSafeString(value) && value.length <= maxLength;
 }
 
-function isIdentifier(value, maxLength = 256) {
+function isIdentifier(value: unknown, maxLength = 256): value is string {
   return isBoundedString(value, maxLength)
     && value.trim() === value
     && !/[\u0000-\u001f\u007f]/u.test(value);
 }
 
-function invalidFrame(reason) {
+function invalidFrame(reason: string): AdapterFailure {
   return adapterError(WECOM_ADAPTER_ERROR_CODES.invalidFrame, reason);
 }
 
-function validMediaReference(value) {
+function validMediaReference(value: unknown): value is MediaReference {
   return isRecord(value)
     && isBoundedString(value.url, 2048)
     && isBoundedString(value.aeskey, 512);
 }
 
-function validProviderCreateTime(value) {
+function validProviderCreateTime(value: unknown): boolean {
   if (value === undefined) {
     return true;
   }
-  if (!Number.isSafeInteger(value) || value <= 0) {
+  if (!Number.isSafeInteger(value) || (value as number) <= 0) {
     return false;
   }
-  return Number.isFinite(new Date(value * 1000).getTime());
+  return Number.isFinite(new Date((value as number) * 1000).getTime());
 }
 
-function validateMixedContent(mixed) {
+function validateMixedContent(mixed: unknown): AdapterFailure | null {
   if (!isRecord(mixed) || !Array.isArray(mixed.msg_item) || mixed.msg_item.length < 1 || mixed.msg_item.length > 10) {
     return invalidFrame('MIXED_CONTENT_REQUIRED');
   }
 
   for (const item of mixed.msg_item) {
-    if (!isRecord(item) || !['text', 'image'].includes(item.msgtype)) {
+    if (!isRecord(item) || !(['text', 'image'] as readonly unknown[]).includes(item.msgtype)) {
       return invalidFrame('MIXED_ITEM_INVALID');
     }
     if (item.msgtype === 'text' && (!isRecord(item.text) || !validNormalizedText(item.text.content))) {
@@ -87,17 +101,17 @@ function validateMixedContent(mixed) {
   return null;
 }
 
-function validateQuote(quote) {
+function validateQuote(quote: unknown): AdapterFailure | null {
   if (quote === undefined) {
     return null;
   }
-  if (!isRecord(quote) || !['text', 'image', 'mixed', 'voice', 'file'].includes(quote.msgtype)) {
+  if (!isRecord(quote) || !(['text', 'image', 'mixed', 'voice', 'file'] as readonly unknown[]).includes(quote.msgtype)) {
     return invalidFrame('QUOTE_INVALID');
   }
   if (quote.msgtype === 'text' && (!isRecord(quote.text) || !validNormalizedText(quote.text.content))) {
     return invalidFrame('QUOTE_INVALID');
   }
-  if (['image', 'file'].includes(quote.msgtype) && !validMediaReference(quote[quote.msgtype])) {
+  if ((['image', 'file'] as readonly unknown[]).includes(quote.msgtype) && !validMediaReference(quote[quote.msgtype as string])) {
     return invalidFrame('QUOTE_INVALID');
   }
   if (quote.msgtype === 'voice' && (!isRecord(quote.voice) || !validNormalizedText(quote.voice.content))) {
@@ -109,7 +123,7 @@ function validateQuote(quote) {
   return null;
 }
 
-function validateFrame(frame) {
+function validateFrame(frame: unknown): AdapterFailure | null {
   if (!isRecord(frame)) {
     return invalidFrame('FRAME_OBJECT_REQUIRED');
   }
@@ -130,10 +144,10 @@ function validateFrame(frame) {
   if (!isIdentifier(body.aibotid)) {
     return invalidFrame('BOT_ID_REQUIRED');
   }
-  if (!SUPPORTED_MESSAGE_TYPES.includes(body.msgtype)) {
+  if (!(SUPPORTED_MESSAGE_TYPES as readonly unknown[]).includes(body.msgtype)) {
     return adapterError(WECOM_ADAPTER_ERROR_CODES.unsupportedMessageType, 'MESSAGE_TYPE_UNSUPPORTED');
   }
-  if (!['single', 'group'].includes(body.chattype)) {
+  if (!(['single', 'group'] as readonly unknown[]).includes(body.chattype)) {
     return invalidFrame('CHAT_TYPE_INVALID');
   }
   if (body.chattype === 'group' && !isIdentifier(body.chatid)) {
@@ -148,7 +162,7 @@ function validateFrame(frame) {
   if (body.msgtype === 'text' && (!isRecord(body.text) || !validNormalizedText(body.text.content))) {
     return invalidFrame('TEXT_CONTENT_REQUIRED');
   }
-  if (DOWNLOADABLE_MEDIA_TYPES.includes(body.msgtype) && !validMediaReference(body[body.msgtype])) {
+  if ((DOWNLOADABLE_MEDIA_TYPES as readonly unknown[]).includes(body.msgtype) && !validMediaReference(body[body.msgtype as string])) {
     return invalidFrame('MEDIA_REFERENCE_INVALID');
   }
   if (body.msgtype === 'voice' && (!isRecord(body.voice) || !validNormalizedText(body.voice.content))) {
@@ -163,7 +177,7 @@ function validateFrame(frame) {
   return validateQuote(body.quote);
 }
 
-function cleanText(value) {
+function cleanText(value: string): string {
   return value
     .normalize('NFKC')
     .replace(/\s+/gu, ' ')
@@ -171,19 +185,19 @@ function cleanText(value) {
     .toLowerCase();
 }
 
-function validNormalizedText(value) {
+function validNormalizedText(value: unknown): value is string {
   return isBoundedString(value, 20_000) && cleanText(value).length <= 20_000;
 }
 
-function normalizeReceivedClock({ receivedAt, receivedEpochMs }) {
+function normalizeReceivedClock({ receivedAt, receivedEpochMs }: AdapterClockOptions): { epoch_ms: PhysicalEpochMs; local_datetime: LocalDateTime } | null {
   try {
-    let epochMs;
+    let epochMs: PhysicalEpochMs;
     if (receivedEpochMs !== undefined) {
       epochMs = assertEpochMsString(receivedEpochMs);
     } else {
       const date = receivedAt instanceof Date ? receivedAt : new Date(receivedAt ?? Date.now());
       if (!Number.isFinite(date.getTime()) || date.getTime() < 0) return null;
-      epochMs = String(Math.trunc(date.getTime()));
+      epochMs = String(Math.trunc(date.getTime())) as PhysicalEpochMs;
     }
     return Object.freeze({
       epoch_ms: epochMs,
@@ -194,18 +208,18 @@ function normalizeReceivedClock({ receivedAt, receivedEpochMs }) {
   }
 }
 
-function normalizeCreateTime(value) {
+function normalizeCreateTime(value: number | undefined): { epoch_ms: PhysicalEpochMs | null; local_datetime: LocalDateTime | null } {
   if (value === undefined) {
     return Object.freeze({ epoch_ms: null, local_datetime: null });
   }
-  const epochMs = String(value * 1000);
+  const epochMs = String(value * 1000) as PhysicalEpochMs;
   return Object.freeze({
     epoch_ms: epochMs,
     local_datetime: formatEpochMsToShanghaiLocal(epochMs),
   });
 }
 
-function buildMediaDownloadRef(msgId, scope, mediaType, sourceIndex) {
+function buildMediaDownloadRef(msgId: string, scope: string, mediaType: MediaType, sourceIndex: number): string {
   const digest = createHash('sha256')
     .update([WECOM_PROVIDER, msgId, scope, mediaType, String(sourceIndex)].join('\0'))
     .digest('hex')
@@ -213,8 +227,8 @@ function buildMediaDownloadRef(msgId, scope, mediaType, sourceIndex) {
   return `wmr_${digest}`;
 }
 
-function normalizeTextItem(rawText, source) {
-  const item = {
+function normalizeTextItem(rawText: string, source?: 'VOICE_TRANSCRIPT'): TextContent {
+  const item: TextContent = {
     kind: 'text',
     text: {
       raw: rawText,
@@ -227,7 +241,7 @@ function normalizeTextItem(rawText, source) {
   return item;
 }
 
-function normalizeMediaItem(msgId, mediaType, sourceIndex, scope = 'body') {
+function normalizeMediaItem(msgId: string, mediaType: MediaType, sourceIndex: number, scope = 'body'): MediaContent {
   return {
     kind: 'media',
     media: {
@@ -238,7 +252,7 @@ function normalizeMediaItem(msgId, mediaType, sourceIndex, scope = 'body') {
   };
 }
 
-function normalizeContent(body) {
+function normalizeContent(body: ValidBody): MessageContent[] {
   if (body.msgtype === 'text') {
     return [normalizeTextItem(body.text.content)];
   }
@@ -258,7 +272,7 @@ function normalizeContent(body) {
   return [normalizeMediaItem(body.msgid, body.msgtype, 0)];
 }
 
-function normalizeQuote(quote, msgId) {
+function normalizeQuote(quote: RawQuote | undefined, msgId: string): InboxMessage['quote'] {
   if (!isRecord(quote)) {
     return null;
   }
@@ -296,16 +310,16 @@ function normalizeQuote(quote, msgId) {
   };
 }
 
-export function adaptWeComSdkFrame(frame, { receivedAt, receivedEpochMs } = {}) {
+export function adaptWeComSdkFrame(frame: unknown, { receivedAt, receivedEpochMs }: AdapterClockOptions = {}): WeComAdapterResult {
   const validationError = validateFrame(frame);
   if (validationError) {
     return validationError;
   }
-  const receivedClock = normalizeReceivedClock({ receivedAt, receivedEpochMs });
+  const receivedClock = normalizeReceivedClock({ receivedAt, receivedEpochMs } as AdapterClockOptions);
   if (receivedClock === null) {
     return invalidFrame('RECEIVED_AT_INVALID');
   }
-  const body = frame.body;
+  const body = (frame as ValidFrame).body;
   const providerClock = normalizeCreateTime(body.create_time);
 
   return {
@@ -315,10 +329,10 @@ export function adaptWeComSdkFrame(frame, { receivedAt, receivedEpochMs } = {}) 
       provider: WECOM_PROVIDER,
       idempotency_key: `${WECOM_PROVIDER}:${body.msgid}`,
       msg_id: body.msgid,
-      req_id: frame.headers.req_id,
+      req_id: (frame as ValidFrame).headers.req_id,
       bot_id: body.aibotid,
       chat_type: body.chattype,
-      chat_id: body.chattype === 'group' ? body.chatid : null,
+      chat_id: body.chattype === 'group' ? body.chatid as string : null,
       sender_user_id: body.from.userid,
       msg_type: body.msgtype,
       provider_create_epoch_ms: providerClock.epoch_ms,

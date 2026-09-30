@@ -1,0 +1,38 @@
+{
+  "batch": "T04-04",
+  "base": "c621845f66eb6d43cb69f00094fb18f2b19baefa",
+  "branch": "codex/typescript-t04-04",
+  "status": "IMPLEMENTED_VALIDATION_IN_PROGRESS",
+  "tested_head": null,
+  "database_change": false,
+  "production_ready": false,
+  "production_mappings": {
+    "src/p1-002-wecom-sdk-adapter.mjs": "src/p1-002-wecom-sdk-adapter.mts",
+    "src/p1-004-service-intake.mjs": "src/p1-004-service-intake.mts",
+    "src/p1-009-pilot-access-workbench.mjs": "src/p1-009-pilot-access-workbench.mts"
+  },
+  "support_changes": {
+    "src/p1-003-channel-message-inbox.mts": "Export existing message types for Adapter and Intake; no emitted runtime change.",
+    "src/p1-005-pilot-ticket-core.mts": "Propagate the real Intake input through processor composition; preserve minimal legacy callers and emitted runtime.",
+    "src/p1-010-ticket-closure.mts": "Use normalized incoming message and exact Intake input in the lifecycle chain; no emitted runtime change.",
+    "tsconfig.base.json": "ESNext.String supplies Node24 isWellFormed declarations without changing target or strict settings.",
+    "tools/ts-migration/arch006-baseline.mts": "Preserve original validator rejection and accept only the exact reviewed T04-04 source delta.",
+    "tools/ts-migration/tooling.test.mts": "Reject unreviewed runtime, SQL, Evidence paths and extra validator errors.",
+    "tools/ts-migration/batches.test.mts": "Exercise registered T04-04 selection with all 131 existing entries.",
+    "tests/types/p1-intake-access.mts": "Real public implementation positive and negative types at the agreed composition seams.",
+    "tests/p1-009-pilot-access-workbench.test.mjs": "Real HTTP and PG compatibility for body errors, limits and authenticated ownership.",
+    "plans/typescript-migration": "Current module mapping, batch registration, handoff and receipt; preserve predecessor receipts.",
+    ".github/workflows/types-migration.yml": "Execute T04-04 on isolated PG18/browser CI using the existing runner."
+  },
+  "direct_tests": 43,
+  "transitive_impacted_tests": 105,
+  "baseline_tests": 17,
+  "supplemental_tests": 12,
+  "selected_files": 131,
+  "behavior": "NOT_RUN_FINAL_COMMIT",
+  "review": "NOT_RUN",
+  "ci": "NOT_RUN",
+  "type_escape_exceptions": [],
+  "next_batch": "T04-05",
+  "next_batch_authorized_to_start": false
+}

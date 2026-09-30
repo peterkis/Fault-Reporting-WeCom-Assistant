@@ -267,3 +267,34 @@ integrationTest('the minimum local Pilot workbench exposes an injected authentic
     await closePilotWorkbenchServer(server);
   }
 });
+
+integrationTest('Pilot HTTP actions preserve authenticated ownership and reject malformed request bodies', async () => {
+  const { ticket } = await seedTicket();
+  const access = createPilotAccessService({ pool });
+  const handler = await access.upsertPrincipal({ wecomUserId: `handler-json-${randomUUID()}`, displayName: 'Synthetic handler', roles: ['HANDLER'], resolverTeamIds: ['PILOT_IT'] });
+  principalIds.add(handler.id);
+  const server = createPilotWorkbenchServer({ access, actions: createTicketActionService({ pool, authorize: access.authorizeAction }), authenticate: async () => ({ type: 'PILOT_USER', id: handler.id }) });
+  const address = await listenPilotWorkbenchServer(server);
+  const url = `http://127.0.0.1:${address.port}/api/pilot/tickets/${ticket.id}/actions/accept`;
+  const send = body => fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+  try {
+    for (const body of ['{', '"' + 'a'.repeat(32_768) + '"']) {
+      const response = await send(body);
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } });
+    }
+    for (const body of ['null', '1', '[]']) {
+      const response = await send(body);
+      assert.equal(response.status, 409);
+      assert.deepEqual(await response.json(), { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } });
+    }
+    const accepted = await send(JSON.stringify({ ticketId: randomUUID(), action: 'auto-close', actor: { type: 'SYSTEM', id: null }, expectedVersion: ticket.version, traceId: 'synthetic-http-owner' }));
+    assert.equal(accepted.status, 200);
+    const result = await accepted.json();
+    assert.equal(result.ticket.id, ticket.id);
+    assert.equal(result.ticket.status, 'ACCEPTED');
+    assert.equal(result.ticket.assignee_id, handler.id);
+  } finally {
+    await closePilotWorkbenchServer(server);
+  }
+});

@@ -15,9 +15,16 @@ export function assertArch006Baseline(reference: string, current: string, change
   assert.equal(current, expectedCurrent, 'ARCH006_CURRENT_REJECTION_DRIFT');
   // The extra aggregate diagnostic may only describe this batch's reviewed source delta.
   // Unrelated runtime, SQL, web or Evidence changes cannot share the same exception.
-  assert.deepEqual([...changedRuntimePaths].sort(), ['src/p1-005-pilot-ticket-core.mts',
-    'src/p1-010-ticket-closure.mts', 'src/p1-011-pilot-operations-baseline.mjs',
-    'src/p1-011-pilot-operations-baseline.mts'], 'ARCH006_T04_03_RUNTIME_DELTA_DRIFT');
+  const reviewedDeltas = [
+    ['src/p1-005-pilot-ticket-core.mts', 'src/p1-010-ticket-closure.mts',
+      'src/p1-011-pilot-operations-baseline.mjs', 'src/p1-011-pilot-operations-baseline.mts'],
+    ['src/p1-002-wecom-sdk-adapter.mjs', 'src/p1-002-wecom-sdk-adapter.mts',
+      'src/p1-003-channel-message-inbox.mts', 'src/p1-004-service-intake.mjs',
+      'src/p1-004-service-intake.mts', 'src/p1-005-pilot-ticket-core.mts',
+      'src/p1-009-pilot-access-workbench.mjs', 'src/p1-009-pilot-access-workbench.mts',
+      'src/p1-010-ticket-closure.mts'],
+  ];
+  assert.ok(reviewedDeltas.some(paths => JSON.stringify([...paths].sort()) === JSON.stringify([...changedRuntimePaths].sort())), 'ARCH006_REVIEWED_RUNTIME_DELTA_DRIFT');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

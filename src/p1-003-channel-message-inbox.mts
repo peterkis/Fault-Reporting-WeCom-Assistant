@@ -50,25 +50,25 @@ type MessageType = 'text' | 'image' | 'mixed' | 'voice' | 'file' | 'video';
 type QuoteMessageType = Exclude<MessageType, 'video'>;
 type ChatType = 'single' | 'group';
 
-interface TextContent {
+export interface TextContent {
   kind: 'text';
   text: { raw: string; clean: string };
   source?: 'VOICE_TRANSCRIPT';
 }
 
-interface MediaContent {
+export interface MediaContent {
   kind: 'media';
   media: { type: 'image' | 'file' | 'video'; source_index: number; download_ref: string };
 }
 
-type MessageContent = TextContent | MediaContent;
+export type MessageContent = TextContent | MediaContent;
 
 interface MessageQuote {
   msg_type: QuoteMessageType;
   content: MessageContent[];
 }
 
-interface InboxMessage {
+export interface InboxMessage {
   schema_version: 1;
   provider: 'WECOM_AIBOT';
   idempotency_key: string;

@@ -1,3 +1,4 @@
+import type { InboxMessage } from './p1-003-channel-message-inbox.mjs';
 import { readFile } from 'node:fs/promises';
 import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import {
@@ -102,7 +103,7 @@ interface SupplementMessage extends PilotTicketInputMessage {
 }
 interface ClosureProcessInput extends Omit<PilotTicketProcessorInput, 'message'> {
   transaction: PostgresTransaction;
-  message: SupplementMessage;
+  message: InboxMessage;
   channelMessageId: string;
 }
 interface ClosureLifecycle {
@@ -709,7 +710,7 @@ export function createTicketClosureService({
 }
 
 interface LifecycleProcessorOptions {
-  serviceIntakeProcessor?: ServiceIntakeProcessor;
+  serviceIntakeProcessor?: ServiceIntakeProcessor<ClosureProcessInput>;
   ticketCore?: PilotTicketCore;
   closure?: ClosureService;
 }
