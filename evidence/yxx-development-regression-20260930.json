@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "kind": "YXX_DEVELOPMENT_VERSION_REGRESSION",
+  "recorded_at": "2026-09-30T01:11:43.825Z",
+  "status": "FAIL",
+  "execution_status": "COMPLETE",
+  "latest_per_file_result": "PASS_AFTER_UNCHANGED_RECHECK",
+  "reason": "Initial execution had one browser cleanup assertion failure. One unchanged file recheck passed; the original failure and reproducibility limitation are retained. No unconditional overall PASS is claimed.",
+  "plan": "docs/runbooks/yxx-development-regression.md",
+  "target": {
+    "authoritative_source": "GitHub main API at authorization/start",
+    "frozen_at": "2026-09-30T00:41:19.9649624Z",
+    "head": "cc1299ea3b30c92f5356258b31963f0c67e7e7ae",
+    "tree": "c04432f8a17cc036439352478dac1b138be72c3f",
+    "source_dirty": false,
+    "pr33": "OPEN_EXCLUDED",
+    "candidate_fingerprint": "01ab0ba47320f82d1d0c7275ac70036844c480c1548b02503841c45e3257fbee",
+    "candidate_unchanged": true,
+    "runtime_candidate_fingerprint": "0cb90aa1ac8809003357efa124de9521773be0a54ac0c8d27e2764ecda2f3deb"
+  },
+  "delivery": {
+    "test_source_and_production_implementation": "UNCHANGED_FROM_FROZEN_MAIN",
+    "route_name": "yxx-dev-current",
+    "route_added_after_execution": true,
+    "route_exactly_matches_external_execution_selection": true,
+    "new_tests": 0,
+    "new_readiness_validators": 0,
+    "new_frameworks": 0,
+    "committed": false,
+    "pushed": false,
+    "merged": false
+  },
+  "scope": [
+    "Existing YXX self-service loop",
+    "035 workbench authentication with simulated OAuth",
+    "036 installation compatibility and disabled state",
+    "Existing simulated directory flows",
+    "Existing core optional-dependency degradation and evidence negative tests"
+  ],
+  "tests": {
+    "selected_files": 43,
+    "executed_unique_files": 43,
+    "not_run": [],
+    "first_execution_counts": {
+      "tests": 297,
+      "pass": 296,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "latest_per_file_counts": {
+      "tests": 297,
+      "pass": 297,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "initial": {
+      "path": "current-tests/summary.json",
+      "sha256": "8a12c61b3771d109dd50f0f12697b17b07339de1843069840f0469b2992e7ce1"
+    },
+    "continuation": {
+      "path": "continued-tests/summary.json",
+      "sha256": "be67e6942acfb4188e8b9eac0188c01f02b7228a9bec8e2d2ffeb3b6d4db4582"
+    },
+    "unchanged_recheck": {
+      "path": "browser-recheck/summary.json",
+      "sha256": "c3957b8d635a0adfb33bbf44293d63fa085c439f22fd384e1e82bb105cc0032b"
+    },
+    "selection": {
+      "path": "selection.json",
+      "sha256": "4f5f1df0aa512b441227e66adeb18cd4fc4e69e52790c48dbd9339d7fa5a0c7d"
+    },
+    "route_check": {
+      "path": "route-check.json",
+      "sha256": "190fe3f77aaacc1741bf4338d684bec50a9da7226f923edd42e4eaeb0a385298"
+    }
+  },
+  "unresolved_findings": [
+    {
+      "kind": "BROWSER_CLEANUP_REPRODUCIBILITY",
+      "file": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "line": 1044,
+      "test": "SS-007 pending recovery retries only GET, then requires an explicit bounded restart",
+      "error": "P2_006_BROWSER_PROCESS_NOT_STOPPED",
+      "first_result": "FAIL",
+      "unchanged_file_recheck": "48/48 PASS",
+      "disposition": "NOT_REPRODUCED_ON_ONE_RECHECK; no timeout, assertion, source or browser harness change; original failure remains unresolved as a reproducibility limitation",
+      "raw_failure": {
+        "path": "current-tests/029-yxx-ss-007-native-ui.browser.test.mjs.tap",
+        "sha256": "cbd844ff2f0f99f5f8556eed0be9c7bfde37c15f602d9c5278cd8cfd686047f7"
+      }
+    }
+  ],
+  "build": {
+    "gate": "PASS",
+    "manifest": {
+      "path": "build-manifest.json",
+      "sha256": "799d45a63c4a230657be2e99542850bfe99fc7ad918bed3a4ef002deb6aa2df4"
+    },
+    "artifact_proof": {
+      "path": "artifact-proof.json",
+      "sha256": "cb9b682243fbcf3d7721b437ba3b154e39770211c894a5f614613f680c8ab6ce"
+    },
+    "final_artifact": {
+      "path": "final-artifact.json",
+      "sha256": "4482f7ad3c4d9708129f956faf76e0a07de3c6cff4fbbad431c0b7c759aa14f5"
+    },
+    "source_binding": {
+      "path": "final-source-binding.json",
+      "sha256": "59ece2df0a0504c2ab33210af19b1d9e3f725403dddd38666b27b28a96b33020"
+    },
+    "node": "v24.18.0",
+    "typescript": "5.9.3",
+    "postgres": "pg_ctl (PostgreSQL) 18.4",
+    "chrome": "154.0.8037.58"
+  },
+  "schema": {
+    "source_migration_files": 22,
+    "source_inventory": {
+      "path": "schema-source.json",
+      "sha256": "f9ea8a54e5d2d8822794cfaa5190f26c922ee0c31b0a7a727199e0eb7ea97780"
+    },
+    "installation_scope": "Original per-test fixtures: YXX baseline plus 033/034; 035; 035 prerequisite plus 036. No claim of one all-22 combined database E2E.",
+    "sql_changes": false
+  },
+  "historical": {
+    "fixture_head": "41edd855e7bc55149facb6a4b2e0076776c22e66",
+    "identity": "PASS",
+    "original_strict": "PASS_HISTORICAL_ONLY",
+    "identity_record": {
+      "path": "historical-identity.json",
+      "sha256": "bb02b49faef86b09d33641e07bb6e62ac179955b300653b8d2a8832963577bfd"
+    },
+    "strict_record": {
+      "path": "historical-strict.json",
+      "sha256": "6102ffb40a544190f0006c9f55db5e9df2f870fed49a0d8a59a5cac34bdaff2f"
+    },
+    "current_original_entry": {
+      "exit_code": 1,
+      "public_error": "YXX_VERIFICATION_REJECTED",
+      "underlying_error": "YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+      "location": "src/yxx-self-service-validation-scope.mjs:30",
+      "result": {
+        "path": "current-historical-strict-result.json",
+        "sha256": "3881b1950f25467308749ffebb21751833124870a84e53535acae7e4512c5628"
+      },
+      "detail": {
+        "path": "current-historical-strict-detail.json",
+        "sha256": "90c517476e398ecfead539ac7dde4f65fc58cf0508f1a2d618a4ecac09b89175"
+      }
+    },
+    "historical_scope_and_evidence_modified": false
+  },
+  "environment": {
+    "record": {
+      "path": "environment.json",
+      "sha256": "deaab02f3b843ff87523e8ace2938f54f592a468aee3dfdf50cc98c66733aefd"
+    },
+    "isolation": "Owned loopback PG18; synthetic fixtures; simulated Providers; explicit Chrome",
+    "production_data_access": false,
+    "persistent_feature_flags_changed": false,
+    "real_messages_sent": false,
+    "initial_database_start": "Port 55434 bind failure retained in pg-server.log; new allocated port 55463 succeeded"
+  },
+  "artifact_housekeeping": {
+    "issue": "Existing SS007 acceptance screenshot files inside immutable runtime caused MIGRATION_UNDECLARED_OUTPUT during an intermediate check",
+    "before": {
+      "path": "strict-before-screenshot-cleanup.json",
+      "sha256": "da4e520b23a09b473f5986e4fbc6a956e3b002ff69dadbed21b5511050337be3"
+    },
+    "action": "After test receipt PASS, copy only the two known screenshots outside runtime, verify hashes, then remove their temporary originals. Guard remains unchanged.",
+    "record": {
+      "path": "screenshot-housekeeping.json",
+      "sha256": "e77fee45792a232b6500369fbe0e2b67bf7839fcd21e5ccabcc5b0a6405339d7"
+    },
+    "verification": {
+      "path": "artifact-after-screenshot-cleanup.json",
+      "sha256": "4482f7ad3c4d9708129f956faf76e0a07de3c6cff4fbbad431c0b7c759aa14f5"
+    },
+    "other_browser_screenshots": {
+      "path": "browser-screenshots.json",
+      "sha256": "55f02d014f0775a6751e1dd924205ca8936fc1f7b5ed2fe196c63e836f0be643"
+    }
+  },
+  "cleanup": {
+    "postgres": "OWNED_CLUSTER_STOPPED_NO_LISTENER",
+    "record": {
+      "path": "database-cleanup.json",
+      "sha256": "85f2ca4c24041d25a230a87d274d4596a1834182214c78826f8f3562e09a179e"
+    },
+    "browser": "RECHECK_PROCESSES_GONE; INITIAL_CLEANUP_FAILURE_NOT_OVERRIDDEN",
+    "browser_record": {
+      "path": "browser-final-observation.json",
+      "sha256": "a360ca9f637939f0f7342fb4c4d405934347fd8d69d4dad758d3a44ecd6872bc"
+    },
+    "possible_profile": "One profile directory correlated with the failed test window remains untouched because no ownership receipt identifies its process. See browser-final-observation.json.",
+    "preexisting_resources_touched": false
+  },
+  "boundaries": {
+    "base_service_ready": "NOT_CLAIMED",
+    "ai_enhancement_ready": "NOT_RUN",
+    "live_admission": "NOT_GRANTED",
+    "business_gate": "NOT_ADVANCED",
+    "production_approval": "NOT_GRANTED",
+    "T04_04": "NOT_STARTED",
+    "P2_G2_LIVE": "NOT_RUN",
+    "P2_008": "NOT_STARTED",
+    "P3": "NOT_STARTED",
+    "formal_2c4g_60min": "NOT_RUN"
+  },
+  "artifacts": {
+    "directory": "C:/Users/zqpet/.codex/artifacts/yxx-dev-regression-20260930-cc1299e",
+    "index": {
+      "path": "SHA256SUMS.json",
+      "sha256": "e454b532fa76d2a4f2ff9812715d41be53cc33f20779d9dd55c28cbe919b1d70"
+    },
+    "owner": "Existing project maintainers",
+    "retention": "At least until successor acceptance is complete and these artifacts are no longer referenced; missing/corrupted/inaccessible artifacts invalidate reuse."
+  },
+  "review": "SELF_REVIEW_ONLY; no new independent review or remote CI claimed"
+}
