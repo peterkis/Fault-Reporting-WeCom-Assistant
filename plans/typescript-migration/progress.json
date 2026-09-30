@@ -3,7 +3,7 @@
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
   "current_batch": "T04-04",
-  "current_execution_status": "LOCAL_VALIDATED_PUBLICATION_PENDING",
+  "current_execution_status": "PR_OPEN_LOCAL_VALIDATED_REVIEW_PENDING",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
@@ -24,7 +24,7 @@
     "T04-01": "MERGED",
     "T04-02": "MERGED",
     "T04-03": "MERGED",
-    "T04-04": "LOCAL_VALIDATED_PUBLICATION_PENDING",
+    "T04-04": "PR_OPEN_LOCAL_VALIDATED_REVIEW_PENDING",
     "T04-05": "PLANNED",
     "T05-01": "PLANNED",
     "T05-02": "PLANNED",
@@ -99,7 +99,8 @@
     "merge": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023"
   },
   "current_followup_receipt": "receipts/T04-04.json",
-  "publication_result_source": "PR33 merged at c621845f66eb6d43cb69f00094fb18f2b19baefa; migration CI for published head 43ba7286d9509dea68b3bc02661fb0e9312430a8 succeeded.",
+  "publication_result_source": "T04-04 is open as PR36. Actual current-head CI and independent external review are recorded on that PR. PR33 remains the verified merged predecessor.",
+  "current_pull_request": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36",
   "current_ci_repair_record": "verification/T04-03-ci-repair-20260930.md",
   "callback_fix": {
     "pr": 28,

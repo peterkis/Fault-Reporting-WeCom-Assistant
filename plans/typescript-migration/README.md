@@ -8,6 +8,8 @@ T00 至 T04-03 已合并。PR #33 的发布 head `43ba7286d9509dea68b3bc02661fb0
 
 原计划包的 prompts/T04-04.md 是本批执行输入。本批完成后停止；T04-05 未授权启动。不得自动合并、部署或复用历史现场批准激活新制品。
 
+本批已发布为 [PR #36](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36)，等待独立外审。当前发布 head 的 CI、身份预检和非就绪结果由 PR 收口评论记录；回执是其记录时的固定本地快照。
+
 ## 两类根目录与历史对象
 
 生产模块和测试子进程只从 `.build/runtime` 加载；源码检查仍读取真实 Git checkout。

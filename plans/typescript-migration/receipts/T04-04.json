@@ -2,6 +2,13 @@
   "batch": "T04-04",
   "base": "c621845f66eb6d43cb69f00094fb18f2b19baefa",
   "branch": "codex/typescript-t04-04",
+  "recorded_at": "2026-09-30T19:59:10+08:00",
+  "publication": {
+    "pull_request": 36,
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36",
+    "state": "OPEN",
+    "result_source": "The PR self-review comment binds its current authoritative head, actual CI and external review; this receipt preserves its fixed local tested ancestor."
+  },
   "status": "LOCAL_AUTOMATED_VALIDATION_AND_TWO_AXIS_REVIEW_PASS",
   "tested_head": "6a38ceb5e41fda6cb96d49789325150c8e688841",
   "database_change": false,
