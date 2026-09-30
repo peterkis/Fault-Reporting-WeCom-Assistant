@@ -7,8 +7,27 @@ import path from 'node:path';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFiles } from './common.mjs';
+import { assertArch006Baseline } from './arch006-baseline.mjs';
 
 const original = sourceRoot();
+test('ARCH-006 CI comparison preserves the observed T02 and T04-03 rejection diagnostics', () => {
+  // Exact outputs from source-baseline job 109713609844; neither is a readiness PASS.
+  const scope = '- valid pinned local self-service successor scope\n';
+  const evidence = '- historical Evidence is immutable; authorized current reports require exact snapshots and current READY proof\n';
+  const reference = 'ARCH-006 validation failed with 2 error(s):\n' + scope + evidence;
+  const current = 'ARCH-006 validation failed with 3 error(s):\n'
+    + '- no forbidden Runtime Migration web archive or secret path changed\n' + scope + evidence;
+  const paths = ['src/p1-005-pilot-ticket-core.mts', 'src/p1-010-ticket-closure.mts',
+    'src/p1-011-pilot-operations-baseline.mjs', 'src/p1-011-pilot-operations-baseline.mts'];
+  assertArch006Baseline(reference, current, paths);
+  assertArch006Baseline(reference, reference, []);
+  assert.throws(() => assertArch006Baseline(reference, current + '- unexpected violation\n', paths));
+  assert.throws(() => assertArch006Baseline(reference.replace(scope, ''), current, paths));
+  assert.throws(() => assertArch006Baseline(reference, current, [...paths, 'src/p1-unrelated.mts']));
+  assert.throws(() => assertArch006Baseline(reference, current, [...paths, 'evidence/rewritten.json']));
+  assert.throws(() => assertArch006Baseline(reference, current, []));
+  assert.throws(() => assertArch006Baseline(reference, 'ARCH-006 rule-first service loop validation passed (1 checks).\n', []));
+});
 function scratch(reference = false): string {
   const root = mkdtempSync(path.join(tmpdir(), 'types-migration-test-'));
   execFileSync('git', ['clone', '--quiet', '--no-hardlinks', original, root], { stdio: 'pipe', windowsHide: true });

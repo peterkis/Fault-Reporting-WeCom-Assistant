@@ -232,6 +232,8 @@ integrationTest('P1-011 composes the operational boundary around the real Inbox 
 
   const records = [];
   let logWriteMode = 'success';
+  let logAlertThrows = false;
+  const logAlerts = createPilotAlertRegistry();
   const runtime = createPilotOperationalIntake({
     pool,
     serviceIntakeProcessor: createServiceIntakeProcessor(),
@@ -253,12 +255,21 @@ integrationTest('P1-011 composes the operational boundary around the real Inbox 
       ai: async () => { throw new Error(`token=${secret}`); },
     },
     identityHashKey: 'p1-011-runtime-log-hash-key',
-    writeLogRecord: async (record) => {
-      await Promise.resolve();
-      if (logWriteMode === 'failure') {
-        throw new Error(`password=${secret}`);
-      }
-      records.push(record);
+    alerts: {
+      ...logAlerts,
+      raise(code, scope) {
+        if (logAlertThrows && code === 'PILOT_SECURITY_LOG_WRITE_FAILED') throw new Error('synthetic alert sink failure');
+        return logAlerts.raise(code, scope);
+      },
+    },
+    writeLogRecord: (record) => {
+      if (logWriteMode === 'sync-failure') throw new Error('synthetic synchronous log failure');
+      if (logWriteMode === 'thenable-failure') return { then(_resolve, reject) { reject(new Error('synthetic thenable failure')); } };
+      return (async () => {
+        await Promise.resolve();
+        if (logWriteMode === 'failure') throw new Error(`password=${secret}`);
+        records.push(record);
+      })();
     },
   });
   const accepted = await runtime.accept({
@@ -285,6 +296,17 @@ integrationTest('P1-011 composes the operational boundary around the real Inbox 
   assert.equal(records[0].event, 'pilot.intake.accepted');
   assert.equal(runtime.alerts.snapshot().some((alert) => alert.code === 'PILOT_OPTIONAL_DEPENDENCY_DEGRADED'), true);
   assert.equal(runtime.alerts.snapshot().some((alert) => alert.code === 'PILOT_SECURITY_LOG_WRITE_FAILED'), false);
+  for (const mode of ['sync-failure', 'thenable-failure', 'failure']) {
+    logWriteMode = mode;
+    logAlertThrows = mode === 'failure';
+    const replay = await runtime.accept({ message: adapted.message, traceId: `trace-${msgId}`, privacyClass: 'INTERNAL', ...retentionFor(adapted.message) });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(replay.ok, true);
+    assert.equal(replay.duplicate, true);
+    assert.equal(replay.result.ticket.id, accepted.result.ticket.id);
+  }
+  logAlertThrows = false;
+
 
   const logFailureMsgId = `p1-011-log-failure-${randomUUID()}`;
   const logFailureMessage = adaptWeComSdkFrame({
@@ -474,12 +496,24 @@ integrationTest('P1-011 preserves safe backup and restore checkpoints in an admi
       encryptionKeyId: 'pilot-backup-key-v1',
       retentionUntil: '2030-09-28 08:00:00',
     });
+    const repeatedCheckpoint = await operations.recordBackupCheckpoint({ transaction, backupId, checksumSha256: 'e'.repeat(64), sizeBytes: 10_000_000_000, encryptionKeyId: 'pilot-backup-key-v1', retentionUntil: '2030-09-28 08:00:00' });
+    assert.deepEqual(repeatedCheckpoint, checkpoint);
+    await assert.rejects(operations.recordBackupCheckpoint({ transaction, backupId, checksumSha256: 'f'.repeat(64), sizeBytes: 10_000_000_000, encryptionKeyId: 'pilot-backup-key-v1', retentionUntil: '2030-09-28 08:00:00' }), { code: 'P1_011_BACKUP_CHECKPOINT_CONFLICT' });
+    await assert.rejects(operations.recordBackupCheckpoint({ transaction, backupId: 'backup-invalid', checksumSha256: 'e'.repeat(64), sizeBytes: 1, encryptionKeyId: 'key', retentionUntil: '2030-08-29 08:00:00' }), /retentionUntil must be after/);
+    await assert.rejects(operations.recordRestoreDrill({ transaction, backupId: 'backup-absent', restoreId: 'restore-absent', verifiedObjectCount: 1 }), { code: 'P1_011_BACKUP_NOT_FOUND' });
+    await assert.rejects(operations.recordRestoreDrill({ transaction, backupId, restoreId: 'restore-inconsistent', verifiedObjectCount: 0 }), /Restore result is inconsistent/);
     const restore = await operations.recordRestoreDrill({
       transaction,
       backupId,
       restoreId: `restore-p1-011-${randomUUID()}`,
       verifiedObjectCount: 12,
     });
+    const repeatedRestore = await operations.recordRestoreDrill({ transaction, backupId, restoreId: restore.restore_id, verifiedObjectCount: 12 });
+    assert.deepEqual(repeatedRestore, restore);
+    const storedRestore = await transaction.query('SELECT verified_object_count FROM operations.restore_drill WHERE restore_id = $1', [restore.restore_id]);
+    assert.equal(typeof storedRestore.rows[0].verified_object_count, 'string');
+    assert.equal(typeof restore.verified_object_count, 'number');
+    await assert.rejects(operations.recordRestoreDrill({ transaction, backupId, restoreId: restore.restore_id, verifiedObjectCount: 13 }), { code: 'P1_011_RESTORE_DRILL_CONFLICT' });
     const failedRestore = await operations.recordRestoreDrillFailure({
       transaction,
       backupId,

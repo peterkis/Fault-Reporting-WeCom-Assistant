@@ -2,8 +2,8 @@
   "schema_version": 1,
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
-  "current_batch": "T04-02",
-  "current_execution_status": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
+  "current_batch": "T04-03",
+  "current_execution_status": "LOCAL_AND_EXTERNAL_REVIEW_COMPLETE_CI_BLOCKED",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
@@ -12,7 +12,8 @@
     "T03-01",
     "T03-01-PREREQUISITE",
     "T03-01-PG-CALLBACK-FIX",
-    "T04-01"
+    "T04-01",
+    "T04-02"
   ],
   "batches": {
     "T00": "MERGED",
@@ -20,8 +21,8 @@
     "T02": "MERGED",
     "T03-01": "MERGED",
     "T04-01": "MERGED",
-    "T04-02": "IMPLEMENTATION_UNDER_VALIDATION_NOT_MERGED",
-    "T04-03": "PLANNED",
+    "T04-02": "MERGED",
+    "T04-03": "LOCAL_VALIDATED_NOT_MERGED",
     "T04-04": "PLANNED",
     "T04-05": "PLANNED",
     "T05-01": "PLANNED",
@@ -57,15 +58,15 @@
     "T03-01-PREREQUISITE": "MERGED",
     "T03-01-PG-CALLBACK-FIX": "MERGED"
   },
-  "next_batch": "T04-03",
+  "next_batch": "T04-04",
   "next_batch_authorized_to_start": false,
   "required_before_next_batch": [
-    "T04-02 exact-head CI and independent review, separately authorized merge; stop before T04-03."
+    "T04-03 exact-head validation, review and separately authorized merge. Failed or pending CI is not PASS."
   ],
-  "migration_readiness": "T04_02_UNDER_VALIDATION",
+  "migration_readiness": "T04_03_BLOCKED_REMOTE_CI_ONLY_NOT_MERGE_READY",
   "production_readiness": "NOT_CLAIMED",
-  "types": "T04_02_STRICT_TYPECHECK_AND_TYPE_TESTS_UNDER_VALIDATION",
-  "build": "T04_02_BUILD_AND_ARTIFACT_UNDER_VALIDATION",
+  "types": "T04_03_STRICT_TYPECHECK_AND_TYPE_TESTS_PASS",
+  "build": "T04_03_STAGED_NOT_ACTIVATED",
   "blocked_items": [
     {
       "id": "ENV_NODE24_PG18",
@@ -88,7 +89,7 @@
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
-  "completed_batches_note": "T00 through T04-01 merged, including prerequisite PR27 and independent callback fix PR28; T04-02 is under validation.",
+  "completed_batches_note": "T00 through T04-02 merged. T04-03 implementation validation/review complete; remote PG18/browser batches executed, ARCH-006 comparison failed, CI repair awaits exact-head remote validation; not merged.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
   "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",
@@ -96,10 +97,18 @@
     "pr": 27,
     "merge": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023"
   },
-  "current_followup_receipt": "receipts/T04-02.json",
-  "publication_result_source": "Exact published-head CI artifacts and PR review; no future PASS is certified by this file.",
+  "current_followup_receipt": "receipts/T04-03.json",
+  "publication_result_source": "PR33 publication identity verified; external handoff finding fixed at ad60836 and second review completed without major issues. Run 36659704040 at 0f41b99a2b569b8865fc633397175f13e57c1bc3 executed PG18/browser batches but failed ARCH-006 non-readiness comparison; CI repair awaits a new exact-head run, not PASS.",
+  "current_ci_repair_record": "verification/T04-03-ci-repair-20260930.md",
   "callback_fix": {
     "pr": 28,
     "merge": "d2d462c8b98b6a379584f0dbc6d1786011aad573"
+  },
+  "t04_02_merge": {
+    "pr": 32,
+    "head": "1fbf9f7d924696a2ec9242b71e4a17db386bf2f9",
+    "merge": "cc1299ea3b30c92f5356258b31963f0c67e7e7ae",
+    "ci": "NOT_EXECUTED_BILLING_LIMIT",
+    "source": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/32"
   }
 }

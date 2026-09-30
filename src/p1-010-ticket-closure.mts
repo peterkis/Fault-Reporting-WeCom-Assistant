@@ -6,7 +6,7 @@ import {
 } from './p1-005-pilot-ticket-core.mjs';
 import type {
   PilotTicketCore,
-  PilotTicketMessage,
+  PilotTicketInputMessage,
   PilotTicketProcessorInput,
   PilotTicketProcessorResult,
   PublicIntake,
@@ -96,7 +96,7 @@ interface ClosureSideEffects {
   notification: { outbox_id: string; delivery_ids: string[] } | null;
   reason?: 'WEB_APP_ONLY';
 }
-interface SupplementMessage extends PilotTicketMessage {
+interface SupplementMessage extends PilotTicketInputMessage {
   sender_user_id: string;
   relation_type?: 'SUPPLEMENT' | 'CLARIFICATION' | string;
 }
