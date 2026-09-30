@@ -4,7 +4,7 @@
 
 T00 至 T04-03 已合并。PR #33 的发布 head `43ba7286d9509dea68b3bc02661fb0e9312430a8` 通过迁移 CI，merge 为 `c621845f66eb6d43cb69f00094fb18f2b19baefa`。旧 T04-03 回执保留原被测对象和当时执行状态。
 
-当前批次为 [T04-04](T04-04.md)，只迁移 SDK Adapter、Service Intake 与 Pilot 权限工作台三个模块，必要支持类型和接线见 [回执](receipts/T04-04.json)。干净实现提交的本批门禁为 131 文件、762/762，双轴本地审查剩余 0；完整注册表的两项基线非就绪失败保留。回执绑定真实被测祖先，发布 head 的 CI 和独立外审结果以 PR 收口记录为准。
+当前批次为 [T04-04](T04-04.md)，只迁移 SDK Adapter、Service Intake 与 Pilot 权限工作台三个模块，必要支持类型和接线见原 [回执](receipts/T04-04.json)。原 `6a38` 对象的 131 文件、762/762 和完整注册表两项基线失败保持历史记录。发布 `354eaa3` 后的 HTTP 端口参数双变 P2 已在 `e65e757` 修补：新门禁 131 文件、763/763，工具 56/56，双轴剩余 0，见独立 [修补回执](receipts/T04-04-http-port-review-fix.json)。两份回执分别绑定真实被测祖先，发布 head 的 CI 和独立外审结果以 PR 收口记录为准。
 
 原计划包的 prompts/T04-04.md 是本批执行输入。本批完成后停止；T04-05 未授权启动。不得自动合并、部署或复用历史现场批准激活新制品。
 
@@ -35,7 +35,7 @@ CLI 的 `--report-dir` 必须在仓库之外。旧 72 个 npm 测试别名保留
 ## 原基线的非就绪结果
 
 当前原 `--require-ready` 仍为 `YXX_VERIFICATION_REJECTED` / `YXX_LOCAL_VALIDATION_SCOPE_INVALID`。
-ARCH-006 原 validator 在 T02 合并基线返回两个 scope/READY 错误；本批还因原规则不识别已授权 P1 TypeScript 迁移而返回第三个 runtime-delta 错误。CI 保留原 validator 的 exit 1，分别精确核验两份完整诊断；第三项仅在本批九个精确源码路径（含三个旧 `.mjs` 删除）的精确源码差异下可分类为已知非就绪，其他路径或诊断仍失败。原始输出不改写、不计入 readiness PASS。
+ARCH-006 原 validator 在 T02 合并基线返回两个 scope/READY 错误；本批还因原规则不识别已授权 P1 TypeScript 迁移而返回第三个 runtime-delta 错误。CI 保留原 validator 的 exit 1，分别精确核验两份完整诊断；本批原九路径变体及 raw Action 修补后的精确十路径变体（唯一新增支持路径为 `src/p1-006-ticket-state-actions.mts`）可分类为已知非就绪，其他路径或诊断仍失败。原始输出不改写、不计入 readiness PASS。
 ARCH-005 对部分冻结 SQL 使用原 CRLF 检出字节。CI 在 checkout 前设置原检出策略，不修改 SQL 或冻结哈希。
 
 ## 历史记录与边界

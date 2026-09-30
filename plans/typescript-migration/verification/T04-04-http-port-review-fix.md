@@ -4,7 +4,7 @@
 
 ## 定位与修补
 
-在实际 `tsconfig.type-tests.json` 和锁定 TypeScript 5.9.3 中，数字版本实现的端口赋值负例产生 TS2578（预期错误未发生）。只在编译器内存中把端口改为函数属性，原负例即被拒绝，既有窄 `TicketActionService.perform` 接线也产生 TS2322；strict 配置和上下文 unknown 未失效。
+在实际 `tsconfig.type-tests.json` 和锁定 TypeScript 5.9.3 中，数字版本实现的端口赋值负例产生 TS2578（预期错误未发生）。只在编译器内存中把端口改为函数属性，原负例即被拒绝，既有窄 `TicketActionService.perform` 接线也产生 TS2322；strict 配置和上下文 unknown 未失效。原因与 [TypeScript 方法签名例外](https://www.typescriptlang.org/tsconfig/strictFunctionTypes.html) 一致。
 
 `PilotHttpActionPort.perform` 改为函数属性。真实 Action service 新增 `performRaw(input: unknown)`，与内部强类型 `perform` 共用同一函数；事务中的原 `validateActionInput`、SQL、授权、事件、afterAction、回滚和错误映射顺序保持。HTTP 实际接线使用 `{ perform: actions.performRaw }`。未增加 any、窄输入断言或声明桥。
 
@@ -16,7 +16,11 @@
 
 ## 验证与交付记录
 
-严格类型、负向 canary 和定向真实 Action／HTTP 测试正在验证；干净修补提交的批次、双轴审查和发布 head CI 将单独记录。原 [T04-04 回执](../receipts/T04-04.json) 的 tested_head、首次失败及历史执行记录保持。
+干净修补提交 `e65e7574521d9be07323bbe51872178fcd4ca152` 已完成本批 131 文件、763/763，fail／cancelled／skipped／todo／not_run 均为零。严格完整程序、负向 canary、两次确定性构建及制品校验通过；工具 56/56，V1.4 架构 407 项；标准轴及规格轴剩余均为 0。新测试在当前编译 Action／HTTP 模块上执行，逐文件 262 份 TAP／stderr 哈希已核对。
+
+类型擦除对照确认原校验、事务、错误函数、事件追加和事务内 SQL／授权实现不变，raw 包装体与原 perform 包装体相同，HTTP 运行语句不变。把函数属性仅在内存中恢复为方法签名时，八个错误接线负例全部产生未使用 expected-error；真实修补程序零诊断。独立 PG18 检查无残留测试库。
+
+新 [修补回执](../receipts/T04-04-http-port-review-fix.json) 绑定上述真实被测提交、tree、manifest 和日志摘要。原 [T04-04 回执](../receipts/T04-04.json) 的 tested_head、首次失败及历史执行记录保持。本次未重跑全部 211 注册入口，不把原运行归入修补对象。发布 head CI、历史身份、原严格非就绪及外审结论在 PR #36 另记；本地通过不代替外审或业务 readiness。
 
 独立修补日志目录：`C:/Users/zqpet/.codex/artifacts/wecom-t04-04-review-fix-20260930`。复审原 ZIP 未在本机找到，依据用户完整粘贴报告和实际发布对象复现；未声称已核验该 ZIP。
 

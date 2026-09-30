@@ -64,9 +64,9 @@
   "required_before_next_batch": [
     "T04-04 actual published-head validation, review and separately authorized merge."
   ],
-  "migration_readiness": "T04_04_LOCAL_AUTOMATED_AND_TWO_AXIS_REVIEW_PASS",
+  "migration_readiness": "T04_04_HTTP_PORT_FIX_LOCAL_AUTOMATED_AND_TWO_AXIS_REVIEW_PASS",
   "production_readiness": "NOT_CLAIMED",
-  "types": "T04_04_STRICT_TYPECHECK_AND_NEGATIVES_PASS",
+  "types": "T04_04_RAW_HTTP_ASSIGNABILITY_AND_STRONG_DOMAIN_NEGATIVES_PASS",
   "build": "T04_04_DETERMINISTIC_STAGED_NOT_ACTIVATED",
   "blocked_items": [
     {
@@ -98,7 +98,7 @@
     "pr": 27,
     "merge": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023"
   },
-  "current_followup_receipt": "receipts/T04-04.json",
+  "current_followup_receipt": "receipts/T04-04-http-port-review-fix.json",
   "publication_result_source": "T04-04 is open as PR36. Actual current-head CI and independent external review are recorded on that PR. PR33 remains the verified merged predecessor.",
   "current_pull_request": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36",
   "current_ci_repair_record": "verification/T04-03-ci-repair-20260930.md",
@@ -119,5 +119,14 @@
     "merge": "c621845f66eb6d43cb69f00094fb18f2b19baefa",
     "ci": "SUCCESS",
     "source": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/33"
+  },
+  "current_review_fix_record": "verification/T04-04-http-port-review-fix.md",
+  "current_review_fix": {
+    "reviewed_published_head": "354eaa3ac6b083e9a8917afd1db23dceae17340a",
+    "tested_head": "e65e7574521d9be07323bbe51872178fcd4ca152",
+    "status": "LOCAL_AUTOMATED_AND_TWO_AXIS_REVIEW_PASS",
+    "provided_p2_locally_fixed": 1,
+    "current_published_ci": "PENDING_AT_LOCAL_SNAPSHOT",
+    "external_review": "PENDING_ON_REPAIR_PUBLICATION"
   }
 }
