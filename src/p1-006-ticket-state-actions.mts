@@ -202,6 +202,7 @@ export type TicketActionAfterHook = (input: {
 export interface TicketActionService {
   performInTransaction(input: TicketActionInput, transaction: PostgresTransaction): Promise<TicketActionSuccess>;
   perform(input: TicketActionInput): Promise<TicketActionResult>;
+  performRaw: (input: unknown) => Promise<TicketActionResult>;
 }
 
 export interface TicketActionServiceOptions {
@@ -495,7 +496,7 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
     throw new TypeError('afterAction must be a function when supplied.');
   }
 
-  async function performInTransaction(input: TicketActionInput, transaction: PostgresTransaction): Promise<TicketActionSuccess> {
+  async function performInTransaction(input: unknown, transaction: PostgresTransaction): Promise<TicketActionSuccess> {
     const request = validateActionInput(input);
     if (!transaction || typeof transaction.query !== 'function') {
       throw new TicketActionError('VALIDATION_FAILED');
@@ -594,18 +595,21 @@ export function createTicketActionService({ pool, authorize = null, afterAction 
     return { ok: true, ticket, event, side_effects: sideEffects };
   }
 
+  async function performRaw(input: unknown): Promise<TicketActionResult> {
+    try {
+      return await withTransaction(pool, (transaction) => performInTransaction(input, transaction));
+    } catch (error) {
+      if (error instanceof TicketActionError) {
+        return publicActionError(error.code);
+      }
+      throw error;
+    }
+  }
+
   return Object.freeze({
     performInTransaction,
-    perform: async (input: TicketActionInput): Promise<TicketActionResult> => {
-      try {
-        return await withTransaction(pool, (transaction) => performInTransaction(input, transaction));
-      } catch (error) {
-        if (error instanceof TicketActionError) {
-          return publicActionError(error.code);
-        }
-        throw error;
-      }
-    },
+    perform: performRaw,
+    performRaw,
   });
 }
 

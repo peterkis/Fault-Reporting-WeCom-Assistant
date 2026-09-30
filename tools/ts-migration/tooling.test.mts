@@ -21,6 +21,18 @@ test('ARCH-006 T04-04 comparison allows only the reviewed migration delta', () =
   assert.throws(() => assertArch006Baseline(reference, current + '- unexpected violation\n', paths));
   assert.throws(() => assertArch006Baseline(reference, current, paths.slice(1)));
 });
+test('ARCH-006 raw Action entry repair allows its exact support delta and retains rejection', () => {
+  const scope = '- valid pinned local self-service successor scope\n';
+  const evidence = '- historical Evidence is immutable; authorized current reports require exact snapshots and current READY proof\n';
+  const reference = 'ARCH-006 validation failed with 2 error(s):\n' + scope + evidence;
+  const current = 'ARCH-006 validation failed with 3 error(s):\n- no forbidden Runtime Migration web archive or secret path changed\n' + scope + evidence;
+  const paths = ['src/p1-002-wecom-sdk-adapter.mjs', 'src/p1-002-wecom-sdk-adapter.mts', 'src/p1-003-channel-message-inbox.mts', 'src/p1-004-service-intake.mjs', 'src/p1-004-service-intake.mts', 'src/p1-005-pilot-ticket-core.mts', 'src/p1-006-ticket-state-actions.mts', 'src/p1-009-pilot-access-workbench.mjs', 'src/p1-009-pilot-access-workbench.mts', 'src/p1-010-ticket-closure.mts'];
+  assertArch006Baseline(reference, current, paths);
+  for (const extra of ['src/p1-unrelated.mts', 'database/migrations/037_unauthorized.sql', 'evidence/rewritten.json']) assert.throws(() => assertArch006Baseline(reference, current, [...paths, extra]));
+  assert.throws(() => assertArch006Baseline(reference, current + '- unexpected violation\n', paths));
+  assert.throws(() => assertArch006Baseline(reference, current, paths.slice(1)));
+});
+
 test('ARCH-006 CI comparison preserves the observed T02 and T04-03 rejection diagnostics', () => {
   // Exact outputs from source-baseline job 109713609844; neither is a readiness PASS.
   const scope = '- valid pinned local self-service successor scope\n';

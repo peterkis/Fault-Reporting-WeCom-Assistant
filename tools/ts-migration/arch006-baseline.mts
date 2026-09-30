@@ -23,6 +23,11 @@ export function assertArch006Baseline(reference: string, current: string, change
       'src/p1-004-service-intake.mts', 'src/p1-005-pilot-ticket-core.mts',
       'src/p1-009-pilot-access-workbench.mjs', 'src/p1-009-pilot-access-workbench.mts',
       'src/p1-010-ticket-closure.mts'],
+    ['src/p1-002-wecom-sdk-adapter.mjs', 'src/p1-002-wecom-sdk-adapter.mts',
+      'src/p1-003-channel-message-inbox.mts', 'src/p1-004-service-intake.mjs',
+      'src/p1-004-service-intake.mts', 'src/p1-005-pilot-ticket-core.mts',
+      'src/p1-006-ticket-state-actions.mts', 'src/p1-009-pilot-access-workbench.mjs',
+      'src/p1-009-pilot-access-workbench.mts', 'src/p1-010-ticket-closure.mts'],
   ];
   assert.ok(reviewedDeltas.some(paths => JSON.stringify([...paths].sort()) === JSON.stringify([...changedRuntimePaths].sort())), 'ARCH006_REVIEWED_RUNTIME_DELTA_DRIFT');
 }

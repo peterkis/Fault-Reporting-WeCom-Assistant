@@ -26,7 +26,7 @@ export interface PilotPrincipalInput { wecomUserId: string; displayName: string;
 export interface PilotAccessService { upsertPrincipal(input: PilotPrincipalInput): Promise<PilotPrincipal>; authorizeAction: TicketActionAuthorizer; resolveReporterActor(input: { wecomUserId: string }): Promise<{ type: 'REPORTER'; id: string } | null>; listWorkQueue(input: { actorId: string }): Promise<PilotQueueResult>; getTicketView(input: { ticketId: string; actorId: string }): Promise<PilotViewResult> }
 // Only URL and authenticated actor fields are known at the HTTP boundary.
 export interface PilotHttpActionInput { ticketId: string; action: string; actor: TicketActor; expectedVersion?: unknown; traceId?: unknown; note?: unknown; externalVisible?: unknown; reasonCode?: unknown; attachmentIds?: unknown }
-export interface PilotHttpActionPort { perform(input: PilotHttpActionInput): ReturnType<TicketActionService['perform']> }
+export interface PilotHttpActionPort { perform: (input: PilotHttpActionInput) => ReturnType<TicketActionService['perform']> }
 export interface PilotWorkbenchOptions { access?: Pick<PilotAccessService, 'listWorkQueue' | 'getTicketView'>; actions?: PilotHttpActionPort; authenticate?: (request: IncomingMessage) => TicketActor | null | undefined | Promise<TicketActor | null | undefined> }
 
 const MIGRATION_URL = new URL('../database/migrations/006_p1_009_pilot_access.sql', import.meta.url);

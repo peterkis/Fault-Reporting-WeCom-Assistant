@@ -63,8 +63,53 @@ createPilotOperationalIntake({ pool, serviceIntakeProcessor: intakeProcessor, ti
 
 import { createPilotAccessService, createPilotWorkbenchServer, listenPilotWorkbenchServer, closePilotWorkbenchServer } from '../../src/p1-009-pilot-access-workbench.mjs';
 import { createTicketActionService } from '../../src/p1-006-ticket-state-actions.mjs';
+import type { PilotHttpActionInput, PilotHttpActionPort } from '../../src/p1-009-pilot-access-workbench.mjs';
+import type { TicketAction, TicketActionResult } from '../../src/p1-006-ticket-state-actions.mjs';
+const numberVersionOnly = {
+  async perform(input: PilotHttpActionInput & { expectedVersion: number }): Promise<TicketActionResult> {
+    input.expectedVersion.toFixed(0);
+    return { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } };
+  },
+};
+// @ts-expect-error -- HTTP must reject an implementation that requires an already validated numeric version.
+const rejectsNumberVersionOnly: PilotHttpActionPort = numberVersionOnly;
+void rejectsNumberVersionOnly;
+const stringNoteOnly = {
+  async perform(input: PilotHttpActionInput & { note: string }): Promise<TicketActionResult> {
+    input.note.trim();
+    return { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } };
+  },
+};
+const knownActionOnly = {
+  async perform(input: PilotHttpActionInput & { action: TicketAction }): Promise<TicketActionResult> {
+    const action: TicketAction = input.action;
+    void action;
+    return { ok: false, error: { code: 'INVALID_STATE_TRANSITION', retryable: false } };
+  },
+};
+// @ts-expect-error -- A raw note may be absent, null, or non-text; a text-only implementation is unsafe.
+const rejectsStringNoteOnly: PilotHttpActionPort = stringNoteOnly;
+// @ts-expect-error -- Route text has not been validated as a Ticket Action.
+const rejectsKnownActionOnly: PilotHttpActionPort = knownActionOnly;
+// @ts-expect-error -- The HTTP factory must reject the same numeric-version implementation as the public port.
+createPilotWorkbenchServer({ actions: numberVersionOnly });
+// @ts-expect-error -- The HTTP factory must reject a text-only note implementation.
+createPilotWorkbenchServer({ actions: stringNoteOnly });
+// @ts-expect-error -- The HTTP factory must reject an implementation requiring a valid Action enum.
+createPilotWorkbenchServer({ actions: knownActionOnly });
+void [rejectsStringNoteOnly, rejectsKnownActionOnly];
 const access = createPilotAccessService({ pool });
 const actions = createTicketActionService({ pool, authorize: access.authorizeAction });
+// @ts-expect-error -- Internal domain commands retain their numeric expected-version contract.
+actions.perform({ ticketId: 'synthetic', action: 'accept', actor: { type: 'PILOT_USER', id: 'synthetic' }, expectedVersion: '1', traceId: 'synthetic' });
+// @ts-expect-error -- Internal domain commands cannot use arbitrary HTTP route text.
+actions.perform({ ticketId: 'synthetic', action: 'unrecognized', actor: { type: 'PILOT_USER', id: 'synthetic' }, expectedVersion: 1, traceId: 'synthetic' });
+// @ts-expect-error -- The typed domain entry is narrower than the raw HTTP boundary.
+const rejectsDomainEntry: PilotHttpActionPort = actions;
+// @ts-expect-error -- The HTTP factory requires explicit wiring to the raw service entry.
+createPilotWorkbenchServer({ actions });
+actions.performRaw(frame);
+void rejectsDomainEntry;
 const principal = await access.upsertPrincipal({ wecomUserId: 'synthetic', displayName: 'Synthetic', roles: ['HANDLER'], resolverTeamIds: ['PILOT_IT'] });
 const role: 'REPORTER' | 'HANDLER' | 'DISPATCHER' | 'ADMIN' | undefined = principal.roles[0];
 void role;
@@ -79,18 +124,21 @@ if (!view.ok) {
   view.ticket;
   void code;
 }
-const server = createPilotWorkbenchServer({ access, actions, authenticate: async () => ({ type: 'PILOT_USER', id: 'synthetic' }) });
+const rawActions: PilotHttpActionPort = { perform: actions.performRaw };
+const server = createPilotWorkbenchServer({ access, actions: rawActions, authenticate: async () => ({ type: 'PILOT_USER', id: 'synthetic' }) });
 await listenPilotWorkbenchServer(server, { host: '127.0.0.1', port: 0 });
 await closePilotWorkbenchServer(server);
 // @ts-expect-error -- The authenticator must provide an actor rather than a bare identifier.
-createPilotWorkbenchServer({ access, actions, authenticate: async () => 'synthetic' });
+createPilotWorkbenchServer({ access, actions: rawActions, authenticate: async () => 'synthetic' });
 createPilotWorkbenchServer({ access, authenticate: async () => ({ type: 'PILOT_USER', id: 'synthetic' }), actions: {
   async perform(input) {
     // @ts-expect-error -- HTTP request fields remain unknown until Action validation.
     const version: number = input.expectedVersion;
+    // @ts-expect-error -- Contextual notes are also unvalidated HTTP input.
+    const note: string = input.note;
     // @ts-expect-error -- HTTP route text is not yet a validated Ticket Action.
     const action: import('../../src/p1-006-ticket-state-actions.mjs').TicketAction = input.action;
-    void [version, action];
+    void [version, note, action];
     return { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } };
   },
 } });
