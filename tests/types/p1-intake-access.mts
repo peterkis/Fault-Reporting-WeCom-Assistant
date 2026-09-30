@@ -33,6 +33,8 @@ const aggregate: 'CREATED' | 'APPENDED' = intake.aggregation.action;
 void aggregate;
 // @ts-expect-error -- A durable channel message identifier is a string.
 intakeProcessor({ channelMessageId: 1, message, transaction });
+// @ts-expect-error -- An owning Pool can dispatch queries across connections; the Inbox provides a transaction client.
+intakeProcessor({ channelMessageId: '1', message, transaction: pool });
 // @ts-expect-error -- A selector has an explicit nullable identifier; undefined is not a boundary.
 createServiceIntakeProcessor({ existingIntakeSelector: async () => ({ id: undefined }) });
 const ticketProcessor = createPilotTicketProcessor({ serviceIntakeProcessor: intakeProcessor, ticketCore: createPilotTicketCore({ pool }) });
@@ -75,3 +77,13 @@ await listenPilotWorkbenchServer(server, { host: '127.0.0.1', port: 0 });
 await closePilotWorkbenchServer(server);
 // @ts-expect-error -- The authenticator must provide an actor rather than a bare identifier.
 createPilotWorkbenchServer({ access, actions, authenticate: async () => 'synthetic' });
+createPilotWorkbenchServer({ access, authenticate: async () => ({ type: 'PILOT_USER', id: 'synthetic' }), actions: {
+  async perform(input) {
+    // @ts-expect-error -- HTTP request fields remain unknown until Action validation.
+    const version: number = input.expectedVersion;
+    // @ts-expect-error -- HTTP route text is not yet a validated Ticket Action.
+    const action: import('../../src/p1-006-ticket-state-actions.mjs').TicketAction = input.action;
+    void [version, action];
+    return { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } };
+  },
+} });

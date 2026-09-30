@@ -30,9 +30,26 @@
   "supplemental_tests": 12,
   "selected_files": 131,
   "behavior": "NOT_RUN_FINAL_COMMIT",
-  "review": "NOT_RUN",
+  "review": {
+    "kind": "LOCAL_TWO_AXIS",
+    "reviewed_head": "e85747fd2b181103ccff2de8cf75f618e64ef46b",
+    "standards": "ONE_P2_FOUND",
+    "spec": "ONE_P2_FOUND",
+    "fixes": [
+      "HTTP action port retains unknown body fields and raw action until existing Action validation.",
+      "Intake transaction type excludes owning Pool; actual Inbox client remains query-only."
+    ],
+    "followup": "NOT_RUN"
+  },
   "ci": "NOT_RUN",
   "type_escape_exceptions": [],
   "next_batch": "T04-05",
-  "next_batch_authorized_to_start": false
+  "next_batch_authorized_to_start": false,
+  "interrupted_attempts": [
+    {
+      "log": "final-tooling.log",
+      "status": "INTERRUPTED_FOR_REVIEW_FIX",
+      "acceptance": false
+    }
+  ]
 }

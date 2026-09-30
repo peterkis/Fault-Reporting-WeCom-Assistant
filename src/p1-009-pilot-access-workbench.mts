@@ -9,7 +9,7 @@ import type { AddressInfo } from 'node:net';
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { LocalDateTime } from '../contracts/time_contracts.js';
 import type { PilotTicketRow, PublicPilotTicket } from './p1-005-pilot-ticket-core.mjs';
-import type { TicketActionAuthorizer, TicketActionService, TicketActionInput, TicketAction, TicketActor, TicketEventRow } from './p1-006-ticket-state-actions.mjs';
+import type { TicketActionAuthorizer, TicketActionService, TicketActor, TicketEventRow } from './p1-006-ticket-state-actions.mjs';
 
 export type PilotRole = 'REPORTER' | 'HANDLER' | 'DISPATCHER' | 'ADMIN';
 export interface PilotPrincipal { id: string; wecom_user_id: string; display_name: string; roles: PilotRole[]; resolver_team_ids: string[] }
@@ -24,7 +24,10 @@ export type PilotQueueResult = { ok: true; items: (PublicPilotTicket & { reporte
 export type PilotViewResult = { ok: true; ticket: PublicPilotTicket & { web_report?: PilotWebReport }; events: PilotAccessEvent[] } | AccessFailure;
 export interface PilotPrincipalInput { wecomUserId: string; displayName: string; roles: PilotRole[]; resolverTeamIds?: string[] }
 export interface PilotAccessService { upsertPrincipal(input: PilotPrincipalInput): Promise<PilotPrincipal>; authorizeAction: TicketActionAuthorizer; resolveReporterActor(input: { wecomUserId: string }): Promise<{ type: 'REPORTER'; id: string } | null>; listWorkQueue(input: { actorId: string }): Promise<PilotQueueResult>; getTicketView(input: { ticketId: string; actorId: string }): Promise<PilotViewResult> }
-export interface PilotWorkbenchOptions { access?: Pick<PilotAccessService, 'listWorkQueue' | 'getTicketView'>; actions?: Pick<TicketActionService, 'perform'>; authenticate?: (request: IncomingMessage) => TicketActor | null | undefined | Promise<TicketActor | null | undefined> }
+// Only URL and authenticated actor fields are known at the HTTP boundary.
+export interface PilotHttpActionInput { ticketId: string; action: string; actor: TicketActor; expectedVersion?: unknown; traceId?: unknown; note?: unknown; externalVisible?: unknown; reasonCode?: unknown; attachmentIds?: unknown }
+export interface PilotHttpActionPort { perform(input: PilotHttpActionInput): ReturnType<TicketActionService['perform']> }
+export interface PilotWorkbenchOptions { access?: Pick<PilotAccessService, 'listWorkQueue' | 'getTicketView'>; actions?: PilotHttpActionPort; authenticate?: (request: IncomingMessage) => TicketActor | null | undefined | Promise<TicketActor | null | undefined> }
 
 const MIGRATION_URL = new URL('../database/migrations/006_p1_009_pilot_access.sql', import.meta.url);
 const ROLES = new Set<PilotRole>(['REPORTER', 'HANDLER', 'DISPATCHER', 'ADMIN']);
@@ -454,9 +457,9 @@ export function createPilotWorkbenchServer({ access, actions, authenticate }: Pi
         }
         const body = await readJson(request);
         const result = await actions.perform({
-          ...body as Omit<TicketActionInput, 'ticketId' | 'action' | 'actor'>,
+          ...body as object,
           ticketId: actionMatch[1] as string,
-          action: actionMatch[2] as TicketAction,
+          action: actionMatch[2] as string,
           actor,
         });
         sendJson(response, result.ok ? 200 : result.error.code === 'FORBIDDEN' ? 403 : 409, result);

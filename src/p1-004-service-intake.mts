@@ -11,7 +11,9 @@ import type { IntakeStatus, TicketRequestType, ServiceIntakeRow, ServiceIntakeEv
 type PrivacyClass = 'PUBLIC' | 'INTERNAL' | 'SENSITIVE_INTERNAL' | 'PERSONAL' | 'PATIENT_SENSITIVE' | 'SECRET';
 interface SourceRow { trace_id: string; privacy_class: PrivacyClass; retention_until: string }
 interface IntakeRow extends Omit<ServiceIntakeRow, 'pilot_ticket_id'> { summary: string | null; privacy_class: PrivacyClass; retention_until: string; message_count: number }
-export interface ServiceIntakeInput { channelMessageId: string; message: InboxMessage; transaction: PostgresTransaction }
+// A query-only view of the Inbox's acquired client; an owning Pool is not a transaction.
+export type IntakeTransaction = PostgresTransaction & { readonly totalCount?: never };
+export interface ServiceIntakeInput { channelMessageId: string; message: InboxMessage; transaction: IntakeTransaction }
 export interface IntakeSelection { id: string | null; explicitBoundary?: boolean; boundaryReason?: string }
 export interface IntakeProcessorOptions { aggregationWindowMs?: number; existingIntakeSelector?: ((input: { transaction: PostgresTransaction; message: InboxMessage; cleanText: string }) => IntakeSelection | null | Promise<IntakeSelection | null>) | null }
 export interface IntakeProcessingResult { intake: PublicIntake; message: { channel_message_id: string; relation_type: 'PRIMARY' | 'SUPPLEMENT' | 'CLARIFICATION'; sequence_no: number }; aggregation: { action: 'CREATED' | 'APPENDED'; window_seconds: number; message_count: number }; events: PublicIntakeEvent[]; [key: string]: unknown }
