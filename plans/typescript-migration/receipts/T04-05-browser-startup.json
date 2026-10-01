@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "batch": "T04-05",
+  "status": "IN_PROGRESS",
+  "execution_status": "LOCAL_BROWSER_STARTUP_REPAIR_AND_TWO_AXIS_REVIEW_PASS_PUBLISHED_VALIDATION_PENDING",
+  "base": "87de2bc9e8835882cd390b024a04e2865cd367f9",
+  "head": "67b5a8fe692015637b3ad44e0e21097843be9ce7",
+  "tested_head": "67b5a8fe692015637b3ad44e0e21097843be9ce7",
+  "tested_tree": "10db20207c4b2e6bdab227f33527c7596b827209",
+  "dirty": false,
+  "previous_published_head": "0d05ed3e59595d8e8ab7715fd1c9e57a4e1819d1",
+  "previous_ci": {
+    "run": 36836469698,
+    "status": "FAILURE",
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/36836469698",
+    "verified_log_hashes": 1396,
+    "failed_test": "tests/yxx-ss-009-browser.integration.test.mjs",
+    "failed_batches": [
+      "T03-01",
+      "T04-02",
+      "T04-03"
+    ],
+    "not_run_retained": true
+  },
+  "finding": {
+    "scope": "Existing test helper only",
+    "cause": "TargetInfo advertises the requested URL before the first response commits; the Runtime document can still be about:blank and reject relative navigation.",
+    "fix": "Wait for the actual document origin/path (or explicitly permitted same-origin redirect) and readyState interactive/complete under the existing startup timeout and cancellation signal."
+  },
+  "regression": {
+    "real_browser": true,
+    "real_http": true,
+    "held_initial_response": true,
+    "red": {
+      "tests": 4,
+      "pass": 3,
+      "fail": 1
+    },
+    "green": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    "original_ss009_browser": "PASS_IN_UNINSTRUMENTED_FORMAL_BATCH",
+    "diagnostic_instrumentation_is_acceptance": false,
+    "timeout_expanded": false,
+    "existing_assertions_relaxed": false
+  },
+  "batch_validation": {
+    "head": "67b5a8fe692015637b3ad44e0e21097843be9ce7",
+    "tree": "10db20207c4b2e6bdab227f33527c7596b827209",
+    "selected": 50,
+    "counts": {
+      "tests": 340,
+      "pass": 340,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "verified_log_hashes": 100,
+    "manifest_sha256": "2542ac7c360b1e66de8b5d3bd168899ed63834b2e03e25c8922377e184d0efa9"
+  },
+  "tooling": {
+    "host": "win32",
+    "exit_code": 0,
+    "counts": {
+      "tests": 59,
+      "pass": 59,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  },
+  "runtime": {
+    "production_outputs_compared": 261,
+    "production_outputs_raw_equal_to": "0d05ed3e59595d8e8ab7715fd1c9e57a4e1819d1",
+    "all_outputs": 747,
+    "changed_outputs": [
+      "tests/helpers/p2-006-browser-harness.mjs",
+      "tests/p2-g2-browser-lifecycle.test.mjs"
+    ],
+    "base_ast_comparisons": [
+      {
+        "module": "p1-001-pilot-foundation",
+        "runtime_ast_equal_to_base": true
+      },
+      {
+        "module": "p1-003-channel-message-inbox",
+        "runtime_ast_equal_to_base": true
+      },
+      {
+        "module": "p1-007-notification-outbox",
+        "runtime_ast_equal_to_base": true
+      },
+      {
+        "module": "p1-008-first-acknowledgement",
+        "runtime_ast_equal_to_base": true
+      },
+      {
+        "module": "p1-011-encrypted-backup",
+        "runtime_ast_equal_to_base": true
+      },
+      {
+        "module": "p1-012-pilot-e2e",
+        "runtime_ast_equal_to_base": true
+      }
+    ]
+  },
+  "strict_readiness": {
+    "status": "KNOWN_BASELINE_NOT_READY",
+    "readiness_pass": false,
+    "previous_identity_verified_published_cli_exit": 1,
+    "public_error": "YXX_VERIFICATION_REJECTED",
+    "underlying_error": "YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+    "new_published_cli": "PENDING_AUTHORITATIVE_NEW_HEAD"
+  },
+  "full_registry": {
+    "rerun_on_this_fix": false,
+    "reference": "T04-05.json",
+    "tested_head": "60a02654fe48944381239f1b7c73e4f0cc71b761",
+    "files": 213,
+    "tests": 1344,
+    "pass": 1342,
+    "fail": 2,
+    "historical_snapshot_only": true
+  },
+  "review": {
+    "standards_findings": 0,
+    "spec_findings": 0,
+    "reviewed_head": "67b5a8fe692015637b3ad44e0e21097843be9ce7",
+    "external": "PENDING_CURRENT_PUBLISHED_HEAD_REQUEST_AFTER_CI"
+  },
+  "published_validation": {
+    "status": "PENDING",
+    "pull_request": 37,
+    "tested_ancestor_rebound": false
+  },
+  "database_change": false,
+  "cleanup": {
+    "status": "OWNED_RESOURCES_CLEAN",
+    "server_version": "18.4",
+    "remaining_databases": [],
+    "other_client_backends": 0,
+    "cluster_started_by_this_run": true,
+    "preexisting_resources_touched": false,
+    "scope": "OWNED_SYNTHETIC_CLUSTER_ONLY",
+    "listen_host": "127.0.0.1",
+    "listen_port": 55435,
+    "cluster_stopped": true,
+    "stopped_at": "2026-10-01T10:42:00.417Z",
+    "stop_log_sha256": "3589d2bd01f8295cc7c9ec3f5e07625fcd347ccb6f33f2d80edafe5f5217c1fb"
+  },
+  "artifact_status": "STAGED_NOT_ACTIVATED",
+  "frozen_evidence_modified": false,
+  "production_ready": false,
+  "rollback": "Keep feature flags closed and staged artifacts inactive; revert this test-helper fix with a forward commit if required.",
+  "stopline": {
+    "merge": false,
+    "deployment": false,
+    "real_provider": false,
+    "real_send": false,
+    "production_write": false,
+    "next_batch": "T05-01",
+    "next_batch_authorized": false
+  },
+  "archive": {
+    "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f",
+    "index_sha256": "9bce70052269f5c3a238d00f51e3df1cddafda1c930e0614721c85a8bdd62126",
+    "indexed_files": 2985
+  },
+  "reports": [
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-repair-gate.log",
+      "sha256": "e5e46401da970e7e79a16579a145de99d79c32b24575fecca65a4c757c7cbf73"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-repair-build-manifest.json",
+      "sha256": "2542ac7c360b1e66de8b5d3bd168899ed63834b2e03e25c8922377e184d0efa9"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-repair-tooling.log",
+      "sha256": "6653f85e3d30dcf8ff0a3ecdc0c0299415b86b6b9b42b6af9ea58e3cf3c8e10c"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-local-integrity.json",
+      "sha256": "62646befeb3d534c459e439cef537c5a6d34a91aedfe7cac5eb2ad548b48607a"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-readiness-red.log",
+      "sha256": "553c210ab468b0eeba1c852f35b0fbac18624f8674fe81ea63474a793b57d5fc"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-readiness-green.log",
+      "sha256": "696edd6a8073f137375f3eb1492091b04215e161bb42b81ac2481595653c838a"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-startup-probe.json",
+      "sha256": "3c1cd5442a9c3bd886cd11cba8da5fe34db4a6269f6f7bc94d5f4987d0e89544"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-startup-green.json",
+      "sha256": "dafd4d5ff295f7f717142894ae2e43fab5266af9a17364c1f5d3043567d3f0b0"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-startup-probe-correct-args.log",
+      "sha256": "3d3d30873b4f44ac60614907dfb19cb784ba03636901fa3c1d76eb317d785823"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-startup-green-probe.log",
+      "sha256": "b0c29d999d4fdea118c83f8cbe062bf574586c6fb63269415a90eb6c71dcfa80"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-repair-database-cleanup.json",
+      "sha256": "c8c88ae5f6f9a1b100e42e7fa8763da5dfc7a3397347eafb72aa2d288518d7e6"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-repair-postgres-stop.log",
+      "sha256": "3589d2bd01f8295cc7c9ec3f5e07625fcd347ccb6f33f2d80edafe5f5217c1fb"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-repair-standards-review.md",
+      "sha256": "7dddb6c236f811b90a4928888fe00494a9dab7b9d4b7866f3f0d8f296db86d1f"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/browser-repair-spec-review.md",
+      "sha256": "82a7057729db881daa76411d0e231745cc79bcd5c5033515edd9ce0c17b1e28c"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/ci-failed-final.json",
+      "sha256": "6ee3c0cd407baf1ae9cafd05baca47100e5cc60081ef5c869f2324db4c9a468a"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/ci-failed-complete.log",
+      "sha256": "9b460d09c0c583454069699636f106a146083f9e734abc786250fca82a2e5895"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/failed-ci-verification.json",
+      "sha256": "43afd03e2ad0dc1bf33c569e2b47ccab22f3981d7854c0dc35436d88fb89e726"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/browser-startup-67b5a8f/t03-diagnostic.log",
+      "sha256": "ce609f91e17ceb2f09987202b7b8c48372d034a101b4901d0721b2185187bb57"
+    }
+  ]
+}

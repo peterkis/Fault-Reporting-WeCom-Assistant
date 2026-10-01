@@ -4,7 +4,7 @@
 
 T00 至 T04-04 已合并。PR #36 发布 head `8eb71fb14dfda2c885d0edf53408fc38979aea23` 的迁移与 Evidence-history CI 成功，GitHub 确认 merge 为 `87de2bc9e8835882cd390b024a04e2865cd367f9`。原 T04-04 与 HTTP 修补回执保持其被测祖先及历史状态。
 
-当前批次为 [T04-05](T04-05.md)，迁移 Foundation、首确认、加密备份及 P1 E2E 四个模块。PR37 的 `3c02ad9` CI 已实际核验通过，随后独立审查发现公开受理接口的方法参数变异漏洞。已保留并接入原本地修补 `c17768c`，再修复 E2E `handleFrame` 的同根因入口。干净 `f747b59` 实际通过 48 文件、335/335 测试、严格类型/金丝雀、确定性构建、制品验证、59/59 工具测试及两轴独立审查；见 [当前回执](receipts/T04-05-inbound-variance.json) 和 [类型边界修补记录](verification/T04-05-inbound-variance.md)。原 [47 文件回执](receipts/T04-05.json) 与完整 213 文件结果继续绑定 `60a0265`：1342/1344，两个失败已在干净基线复现，严格 readiness 仍为 KNOWN_BASELINE_NOT_READY；[夹具修补回执](receipts/T04-05-ci-repair.json) 亦保持原被测祖先。[PR37](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/37) 的新源候选须取得新的发布 head CI 和外部复审，旧 CI 与额度拒绝不替代这些结果，本批不宣称完成。
+当前批次为 [T04-05](T04-05.md)，迁移 Foundation、首确认、加密备份及 P1 E2E 四个模块。公开受理接口和 E2E `handleFrame` 的参数变异修补已保留，见 [类型边界回执](receipts/T04-05-inbound-variance.json)。后继发布 `0d05ed3` 的完整 CI 在原 SS-009 浏览器用例暴露既有启动竞态：目标 URL 已发布时实际文档仍可能是 about:blank。测试夹具现等待真实文档就绪，保留原超时、取消和导航断言。干净 `67b5a8f` 实际通过 50 文件、340/340、严格类型/金丝雀、确定性构建、制品验证、59/59 工具测试及两轴独立审查；见 [当前回执](receipts/T04-05-browser-startup.json) 和 [浏览器修补记录](verification/T04-05-browser-startup.md)。261 个生产代码/脚本产物与上一候选逐字节相同，修补只改变两个测试产物。原 [47 文件回执](receipts/T04-05.json) 与完整 213 文件结果继续绑定 `60a0265`：1342/1344，两个失败已在干净基线复现，严格 readiness 仍为 KNOWN_BASELINE_NOT_READY；既有回执均不重绑。[PR37](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/37) 的新候选仍须取得新的发布 head CI 和外部复审，旧 CI 与额度拒绝不替代这些结果，本批不宣称完成。
 
 Foundation 的 `p1:preflight` / `p1:serve` 先验证制品，再运行 `.build/runtime` 内同名模块；缺失或过期制品失败，需单独构建。现有运行脚本保持 `.mjs` 导入，在运行树加载唯一实现。
 
