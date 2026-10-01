@@ -32,3 +32,8 @@ void decision;
 createPilotE2EHandler({ testGroupId: 'synthetic', testAccountUserIds: ['synthetic'], triggerToken: 'run', accept: async () => true, reply: async () => ({}) });
 // @ts-expect-error -- The only scenarios are the scoped text and image-degraded runs.
 createPilotE2EHandler({ testGroupId: 'synthetic', testAccountUserIds: ['synthetic'], triggerToken: 'run', scenario: 'UNSCOPED', accept: request => inbox.accept(request, processor), reply: async () => ({}) });
+
+const core = (request: Parameters<Parameters<typeof createPilotE2EHandler>[0]['accept']>[0]) => inbox.accept(request, processor);
+createPilotE2EHandler({ testGroupId: 'synthetic', testAccountUserIds: ['synthetic'], triggerToken: 'run', accept: core, reply: async () => ({}), deliver: async (_input: { deliveryId: string }) => null });
+// @ts-expect-error -- The normalized E2E delivery port must accept every string ID, not a single literal.
+createPilotE2EHandler({ testGroupId: 'synthetic', testAccountUserIds: ['synthetic'], triggerToken: 'run', accept: core, reply: async () => ({}), deliver: async (_input: { deliveryId: 'only-one-id' }) => null });

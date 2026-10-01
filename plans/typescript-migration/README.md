@@ -35,7 +35,7 @@ CLI 的 `--report-dir` 必须在仓库之外。旧 72 个 npm 测试别名保留
 ## 原基线的非就绪结果
 
 当前原 `--require-ready` 仍为 `YXX_VERIFICATION_REJECTED` / `YXX_LOCAL_VALIDATION_SCOPE_INVALID`。
-ARCH-006 原 validator 在 T02 合并基线返回两个 scope/READY 错误；本批还因原规则不识别已授权 P1 TypeScript 迁移而返回第三个 runtime-delta 错误。CI 保留原 validator 的 exit 1，分别精确核验两份完整诊断；历史九/十路径变体及本批四模块改名的精确八路径变体可分类为已知非就绪，其他路径或诊断仍失败。原始输出不改写、不计入 readiness PASS。
+ARCH-006 原 validator 在 T02 合并基线返回两个 scope/READY 错误；本批还因原规则不识别已授权 P1 TypeScript 迁移而返回第三个 runtime-delta 错误。CI 保留原 validator 的 exit 1，分别精确核验两份完整诊断；历史九/十路径变体及本批四模块改名的精确八/九路径变体（九路径唯一额外支持为 p1-007 的原始 Delivery ID 类型边界）可分类为已知非就绪，其他路径或诊断仍失败。原始输出不改写、不计入 readiness PASS。
 ARCH-005 对部分冻结 SQL 使用原 CRLF 检出字节。CI 在 checkout 前设置原检出策略，不修改 SQL 或冻结哈希。
 
 ## 历史记录与边界

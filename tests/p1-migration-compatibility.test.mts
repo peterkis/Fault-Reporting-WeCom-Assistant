@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable, Writable } from 'node:stream';
 import { test } from 'node:test';
+import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
+import { createNotificationDeliveryWorker } from '../src/p1-007-notification-outbox.mjs';
 import { PilotConfigError } from '../src/p1-001-pilot-foundation.mjs';
 import { createFirstAcknowledgementService } from '../src/p1-008-first-acknowledgement.mjs';
 import { createPilotE2EHandler, evaluatePilotGoNoGo } from '../src/p1-012-pilot-e2e.mjs';
@@ -54,4 +56,13 @@ test('backup input validation retains key, IV, absolute-path and consumer checks
   await assert.rejects(encrypt({ input, artifactPath, encryptionKey: Buffer.alloc(31), iv: Buffer.alloc(12) }), /32-byte Buffer/u);
   await assert.rejects(encrypt({ input, artifactPath, encryptionKey: key, iv: Buffer.alloc(11) }), /12-byte Buffer/u);
   await assert.rejects(Reflect.apply(decryptBackupStream, undefined, [{ artifactPath, encryptionKey: key, output: {} }]), /output must be a writable stream/u);
+});
+
+test('the actual Delivery worker rejects raw snapshot identifiers at its original guard', async () => {
+  const pool = createPostgresPool({ connectionString: 'postgresql://synthetic@127.0.0.1:1/synthetic', max: 1, connectionTimeoutMillis: 500 });
+  try {
+    const worker = createNotificationDeliveryWorker({ pool, sender: async () => ({ ok: true }) });
+    await assert.rejects(worker.deliver({ deliveryId: 123 }), { name: 'TypeError', message: 'Delivery id is required.' });
+    await assert.rejects(worker.getDelivery({ deliveryId: null }), { name: 'TypeError', message: 'Delivery id is required.' });
+  } finally { await pool.end(); }
 });

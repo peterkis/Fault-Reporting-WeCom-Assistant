@@ -17,6 +17,10 @@ export function assertArch006Baseline(reference: string, current: string, change
   // Unrelated runtime, SQL, web or Evidence changes cannot share the same exception.
   const reviewedDeltas = [
     ['src/p1-001-pilot-foundation.mjs', 'src/p1-001-pilot-foundation.mts',
+      'src/p1-007-notification-outbox.mts', 'src/p1-008-first-acknowledgement.mjs',
+      'src/p1-008-first-acknowledgement.mts', 'src/p1-011-encrypted-backup.mjs',
+      'src/p1-011-encrypted-backup.mts', 'src/p1-012-pilot-e2e.mjs', 'src/p1-012-pilot-e2e.mts'],
+    ['src/p1-001-pilot-foundation.mjs', 'src/p1-001-pilot-foundation.mts',
       'src/p1-008-first-acknowledgement.mjs', 'src/p1-008-first-acknowledgement.mts',
       'src/p1-011-encrypted-backup.mjs', 'src/p1-011-encrypted-backup.mts',
       'src/p1-012-pilot-e2e.mjs', 'src/p1-012-pilot-e2e.mts'],

@@ -5,15 +5,18 @@ type Inbox = ReturnType<typeof createChannelMessageInbox>;
 type InboxResult = Awaited<ReturnType<Inbox['accept']>>;
 type InboxSuccess = Extract<InboxResult, { ok: true }>;
 export interface FirstAcknowledgementOptions {
-  inbox: Pick<Inbox, 'accept'>;
+  inbox: { accept: (...args: Parameters<Inbox['accept']>) => ReturnType<Inbox['accept']> };
   processor: Parameters<Inbox['accept']>[1];
-  deliveryWorker: Pick<NotificationDeliveryWorker, 'deliver'> & Partial<Pick<NotificationDeliveryWorker, 'getDelivery'>>;
+  deliveryWorker: {
+    deliver: (...args: Parameters<NotificationDeliveryWorker['deliver']>) => ReturnType<NotificationDeliveryWorker['deliver']>;
+    getDelivery?: (...args: Parameters<NotificationDeliveryWorker['getDelivery']>) => ReturnType<NotificationDeliveryWorker['getDelivery']>;
+  };
   now?: () => Date;
 }
 interface TicketReplyFields { ticket_no: unknown; external_status: unknown }
 // A consumed view of the internal JSON snapshot, not a replacement Inbox domain contract.
-// Lifecycle delivery identifiers originate from the typed Outbox and survive replay unchanged.
-interface AcknowledgementSnapshot { ticket?: TicketReplyFields | null; lifecycle?: { delivery_ids?: string[] } | null }
+// Snapshot fields stay unknown until an existing consumer guard validates them.
+interface AcknowledgementSnapshot { ticket?: TicketReplyFields | null; lifecycle?: { delivery_ids?: unknown } | null }
 type TicketReply = TicketReplyFields & { template_code: 'TICKET_CREATED' };
 type PendingReply = TicketReplyFields & { template_code: 'TICKET_CREATED_DELIVERY_PENDING'; temporary: true };
 export type FirstAcknowledgementResult = Exclude<InboxResult, InboxSuccess> | (InboxSuccess & (
@@ -21,7 +24,7 @@ export type FirstAcknowledgementResult = Exclude<InboxResult, InboxSuccess> | (I
   | { acknowledgement: { state: 'PENDING'; reason: 'ACK_DELIVERY_NOT_ENQUEUED' }; reply: PendingReply; metrics: { first_ack_delivery_latency_ms: null } }
   | { acknowledgement: { state: 'SENT'; delivery_id: string }; reply: TicketReply; metrics: { first_ack_delivery_latency_ms: number } }
   | { acknowledgement: { state: 'ALREADY_DELIVERED'; delivery_id: string }; reply: null; metrics: { first_ack_delivery_latency_ms: number } }
-  | { acknowledgement: { state: 'PENDING'; delivery_id: string; error_code: string | null }; reply: PendingReply; metrics: { first_ack_delivery_latency_ms: number } }
+  | { acknowledgement: { state: 'PENDING'; delivery_id: unknown; error_code: string | null }; reply: PendingReply; metrics: { first_ack_delivery_latency_ms: number } }
 ));
 export interface FirstAcknowledgementService { accept(request: unknown): Promise<FirstAcknowledgementResult> }
 
@@ -89,7 +92,7 @@ export function createFirstAcknowledgementService({
           metrics: { first_ack_delivery_latency_ms: null },
         };
       }
-      const deliveryIds = (accepted.result as AcknowledgementSnapshot)?.lifecycle?.delivery_ids;
+      const deliveryIds: unknown = (accepted.result as AcknowledgementSnapshot)?.lifecycle?.delivery_ids;
       if (!Array.isArray(deliveryIds) || deliveryIds.length === 0) {
         return {
           ...accepted,
@@ -98,7 +101,7 @@ export function createFirstAcknowledgementService({
           metrics: { first_ack_delivery_latency_ms: null },
         };
       }
-      const delivery = await deliveryWorker.deliver({ deliveryId: deliveryIds[0] as string });
+      const delivery = await deliveryWorker.deliver({ deliveryId: (deliveryIds as readonly unknown[])[0] });
       const completedAt = validNow(now);
       if (delivery?.status === 'SENT') {
         return {
@@ -109,7 +112,7 @@ export function createFirstAcknowledgementService({
         };
       }
       const existing = delivery === null && typeof deliveryWorker.getDelivery === 'function'
-        ? await deliveryWorker.getDelivery({ deliveryId: deliveryIds[0] as string })
+        ? await deliveryWorker.getDelivery({ deliveryId: (deliveryIds as readonly unknown[])[0] })
         : delivery;
       if (existing?.status === 'SENT') {
         return {
@@ -123,7 +126,7 @@ export function createFirstAcknowledgementService({
         ...accepted,
         acknowledgement: {
           state: 'PENDING',
-          delivery_id: existing?.id ?? (deliveryIds[0] as string),
+          delivery_id: existing?.id ?? (deliveryIds as readonly unknown[])[0],
           error_code: existing?.last_error_code ?? null,
         },
         reply: ticketCreatedPendingReply(ticket),

@@ -71,8 +71,8 @@ export interface NotificationOutbox {
   }): Promise<{ outbox_id: string; delivery_ids: string[] }>;
 }
 export interface NotificationDeliveryWorker {
-  deliver(input: { deliveryId: string }): Promise<PublicDelivery | null>;
-  getDelivery(input: { deliveryId: string }): Promise<PublicDelivery | null>;
+  deliver: (input: { deliveryId: unknown }) => Promise<PublicDelivery | null>;
+  getDelivery: (input: { deliveryId: unknown }) => Promise<PublicDelivery | null>;
   runOnce(input?: { limit?: number }): Promise<{ processed: number; results: PublicDelivery[] }>;
 }
 export interface NotificationDeliveryWorkerOptions {
@@ -641,13 +641,13 @@ export function createNotificationDeliveryWorker({
     }
   }
 
-  async function deliver({ deliveryId }: { deliveryId: string }): Promise<PublicDelivery | null> {
+  async function deliver({ deliveryId }: { deliveryId: unknown }): Promise<PublicDelivery | null> {
     nonEmpty(deliveryId, 'Delivery id is required.', 64);
-    const claim = await claimOne(deliveryId);
+    const claim = await claimOne(deliveryId as string);
     return claim === null ? null : deliverClaimed(claim);
   }
 
-  async function getDelivery({ deliveryId }: { deliveryId: string }): Promise<PublicDelivery | null> {
+  async function getDelivery({ deliveryId }: { deliveryId: unknown }): Promise<PublicDelivery | null> {
     nonEmpty(deliveryId, 'Delivery id is required.', 64);
     if (!pool || typeof pool.query !== 'function') {
       throw new TypeError('A PostgreSQL pool is required.');

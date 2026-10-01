@@ -23,3 +23,26 @@ if (accepted.ok) {
 createFirstAcknowledgementService({ inbox, processor, deliveryWorker: { deliver: async () => ({ status: 1 }) } });
 // @ts-expect-error -- The clock returns Date values, never serialized timestamps.
 createFirstAcknowledgementService({ inbox, processor, deliveryWorker, now: () => '2026-10-01' });
+
+const restrictedInbox = { accept: async (_request: { onlyThisRequest: string }) => ({ ok: false as const, error: { code: 'SYNTHETIC', retryable: false } }) };
+// @ts-expect-error -- The raw request port must accept unknown, not one narrow request shape.
+createFirstAcknowledgementService({ inbox: restrictedInbox, processor, deliveryWorker });
+// @ts-expect-error -- First acknowledgement forwards unvalidated snapshot IDs to the existing worker guard.
+createFirstAcknowledgementService({ inbox, processor, deliveryWorker: { deliver: async (_input: { deliveryId: string }) => null } });
+// @ts-expect-error -- Optional replay lookup must also accept raw snapshot IDs.
+createFirstAcknowledgementService({ inbox, processor, deliveryWorker: { deliver: deliveryWorker.deliver, getDelivery: async (_input: { deliveryId: 'only-one-id' }) => null } });
+if (accepted.ok && accepted.acknowledgement.state === 'PENDING' && 'delivery_id' in accepted.acknowledgement) {
+  // @ts-expect-error -- A fallback from the generic persisted snapshot is not yet a validated string.
+  const unvalidatedId: string = accepted.acknowledgement.delivery_id;
+  if (typeof accepted.acknowledgement.delivery_id === 'string') accepted.acknowledgement.delivery_id.toUpperCase();
+  void unvalidatedId;
+}
+if (accepted.ok && (accepted.acknowledgement.state === 'SENT' || accepted.acknowledgement.state === 'ALREADY_DELIVERED')) {
+  const validatedId: string = accepted.acknowledgement.delivery_id;
+  void validatedId;
+}
+
+import type { NotificationDeliveryWorker } from '../../src/p1-007-notification-outbox.mjs';
+// @ts-expect-error -- Pre-labelling a narrower Worker must not bypass function-property variance.
+const narrowedWorker: NotificationDeliveryWorker = { deliver: async (_input: { deliveryId: 'only-one-id' }) => null, getDelivery: deliveryWorker.getDelivery, runOnce: deliveryWorker.runOnce };
+void narrowedWorker;

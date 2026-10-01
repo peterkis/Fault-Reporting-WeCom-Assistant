@@ -14,7 +14,7 @@ export interface PilotE2EOptions {
   testGroupId: string; testAccountUserIds: readonly string[]; triggerToken: string; scenario?: PilotE2EScenario;
   accept: (request: PilotE2ERequest) => AdmissionResult | Promise<AdmissionResult>;
   reply: (frame: unknown, body: PilotReplyBody) => unknown | Promise<unknown>;
-  deliver?: NotificationDeliveryWorker['deliver'] | null;
+  deliver?: ((input: { deliveryId: string }) => ReturnType<NotificationDeliveryWorker['deliver']>) | null;
   now?: () => Date; acceptanceTargetMs?: number; passiveReplyTargetMs?: number; retentionMs?: number;
 }
 // Optional property views retain raw fields as unknown and preserve the original guards.
