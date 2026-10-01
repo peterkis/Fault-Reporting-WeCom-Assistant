@@ -147,6 +147,13 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
       if(result.exceptionDetails)throw new Error(result.exceptionDetails.text??'P2_006_BROWSER_EVALUATION_FAILED');
       return result.result.value;
     }
+    const expectedDocument=new URL(url),documentPaths=new Set([expectedDocument.pathname,...redirectPaths]);
+    await waitFor(async()=>{
+      const documentState=await evaluate('({href:location.href,readyState:document.readyState})');
+      if(!documentState||typeof documentState.href!=='string'||!['interactive','complete'].includes(documentState.readyState))return false;
+      const documentUrl=new URL(documentState.href);
+      return documentUrl.origin===expectedDocument.origin&&documentPaths.has(documentUrl.pathname);
+    },{signal:startupSignal});
     async function pressTab(){
       for(const type of ['rawKeyDown','keyUp'])await command('Input.dispatchKeyEvent',{type,key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
     }

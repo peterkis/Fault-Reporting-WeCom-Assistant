@@ -990,7 +990,9 @@
         "tests/p1-012-live-e2e-script.test.mjs",
         "tests/p1-012-pilot-e2e-integration.test.mjs",
         "tests/p1-012-pilot-e2e.test.mjs",
-        "tests/p2-006-workbench.integration.test.mjs"
+        "tests/p2-006-workbench.integration.test.mjs",
+        "tests/p2-g2-browser-lifecycle.test.mjs",
+        "tests/yxx-ss-009-browser.integration.test.mjs"
       ],
       "baseline_tests": [
         "tests/p2-007-third-party-staff-directory.test.mjs",

@@ -44,3 +44,26 @@ test('real browser startup follows an immediate declared redirect and cancellati
     })],primaryError);
   }
 });
+
+test('real browser startup waits for its initial document before allowing relative navigation',{timeout:60000},async()=>{
+  let responseTimer;
+  const server=http.createServer((request,response)=>{
+    if(request.url==='/before'){
+      // Keep the initial HTTP response pending while DevTools advertises its URL.
+      responseTimer=setTimeout(()=>{response.writeHead(200,{'content-type':'text/html'});response.end('<p id="ready">initial document</p>');},3000);
+    }else{response.writeHead(200,{'content-type':'text/html'});response.end('<p id="next">next document</p>');}
+  });
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const origin='http://127.0.0.1:'+server.address().port;let browser,primaryError=null;
+  try{
+    browser=await launchSystemBrowser({url:origin+'/before',width:600,height:400});
+    assert.equal(await browser.evaluate('location.href'),origin+'/before');
+    await browser.evaluate("location.assign('/after')",{awaitPromise:false});
+    await browser.waitFor("location.pathname==='/after'&&document.querySelector('#next')!==null");
+  }catch(error){primaryError=error;}finally{
+    clearTimeout(responseTimer);
+    await closeBrowserTestResources([()=>browser?.close(),()=>new Promise((resolve,reject)=>{
+      server.closeAllConnections?.();server.close(error=>error?reject(error):resolve());
+    })],primaryError);
+  }
+});
