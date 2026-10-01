@@ -3,7 +3,7 @@
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
   "current_batch": "T04-05",
-  "current_execution_status": "IMPLEMENTATION_VALIDATION_IN_PROGRESS",
+  "current_execution_status": "LOCAL_AUTOMATED_AND_TWO_AXIS_REVIEW_PASS_PUBLICATION_PENDING",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
@@ -65,9 +65,9 @@
   "required_before_next_batch": [
     "T04-05 actual published-head validation, review and separately authorized merge."
   ],
-  "migration_readiness": "T04_05_IN_PROGRESS",
+  "migration_readiness": "T04_05_AWAITING_PUBLISHED_CI_AND_EXTERNAL_REVIEW",
   "production_readiness": "NOT_CLAIMED",
-  "types": "T04_05_PUBLIC_PORT_SIGNATURES_GREEN",
+  "types": "T04_05_STRICT_TYPES_AND_CANARY_PASS",
   "build": "T04_05_STAGED_NOT_ACTIVATED",
   "blocked_items": [
     {
@@ -91,7 +91,7 @@
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
-  "completed_batches_note": "T00 through T04-04 merged; T04-05 implementation and validation in progress.",
+  "completed_batches_note": "T00 through T04-04 merged; T04-05 local automated and two-axis review passed. Final published CI, external review and separately authorized merge remain pending.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
   "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",
@@ -99,8 +99,8 @@
     "pr": 27,
     "merge": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023"
   },
-  "current_followup_receipt": null,
-  "publication_result_source": "T04-04 PR36 merged at the GitHub-confirmed commit. T04-05 publication and review remain pending.",
+  "current_followup_receipt": "receipts/T04-05.json",
+  "publication_result_source": "The independent PR for codex/typescript-t04-05 records actual authoritative head, CI and external review separately. This receipt preserves the clean tested ancestor; successor documentation does not rebind it.",
   "current_pull_request": null,
   "current_ci_repair_record": "verification/T04-03-ci-repair-20260930.md",
   "callback_fix": {
@@ -121,14 +121,13 @@
     "ci": "SUCCESS",
     "source": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/33"
   },
-  "current_review_fix_record": "verification/T04-04-http-port-review-fix.md",
+  "current_review_fix_record": "verification/T04-05-self-review.md",
   "current_review_fix": {
-    "reviewed_published_head": "354eaa3ac6b083e9a8917afd1db23dceae17340a",
-    "tested_head": "e65e7574521d9be07323bbe51872178fcd4ca152",
+    "tested_head": "60a02654fe48944381239f1b7c73e4f0cc71b761",
     "status": "LOCAL_AUTOMATED_AND_TWO_AXIS_REVIEW_PASS",
-    "provided_p2_locally_fixed": 1,
+    "provided_p2_locally_fixed": 2,
     "current_published_ci": "PENDING_AT_LOCAL_SNAPSHOT",
-    "external_review": "PENDING_ON_REPAIR_PUBLICATION"
+    "external_review": "PENDING_ON_PUBLICATION"
   },
   "t04_04_merge": {
     "pr": 36,
