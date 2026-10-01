@@ -273,7 +273,8 @@ test('workbench facade commits human reply, internal note, takeover and idempote
     const nonAdmin = await principal(pool, 'commands-non-admin', ['HANDLER']);
     const authContext = auth(admin);
     const value = await session(pool, 'commands');
-    let workbenchNow = NOW;
+    const commandClockStart = new Date(Math.floor(Date.now() / 1000) * 1000);
+    let workbenchNow = commandClockStart;
     const { commands, query } = services(pool, { now: () => workbenchNow });
     const takeoverBody = { client_command_id: randomUUID(), expected_row_version: value.row_version, reason_code: 'WORKBENCH_TAKEOVER', target_principal_id: admin.id };
     const takeover = await commands.takeover({ authContext, sessionId: value.id, body: takeoverBody });
@@ -284,7 +285,7 @@ test('workbench facade commits human reply, internal note, takeover and idempote
     const replyBody = { client_command_id: randomUUID(), expected_row_version: detail.session.row_version, text: 'Synthetic human reply' };
     const reply = await commands.reply({ authContext, sessionId: value.id, body: replyBody });
     assert.equal(reply.command_status, 'COMMITTED', JSON.stringify(reply));
-    workbenchNow = new Date(NOW.getTime() + 5 * 60_000);
+    workbenchNow = new Date(commandClockStart.getTime() + 5 * 60_000);
     const delayedReplyReplay = await commands.reply({ authContext, sessionId: value.id, body: replyBody });
     assert.equal(delayedReplyReplay.replayed, true, JSON.stringify(delayedReplyReplay));
     detail = await query.getConversationDetail({ authContext, sessionId: value.id });
@@ -331,7 +332,8 @@ test('200 real HTTP reply commits and 12-way duplicate submit remain bounded wit
     await base(pool, isolated);
     const admin = await principal(pool, 'http-performance');
     const authContext = auth(admin);
-    const values = services(pool);
+    const httpClockStart = new Date(Math.floor(Date.now() / 1000) * 1000);
+    const values = services(pool, { now: () => httpClockStart });
     const fixtures = [];
     for (let index = 0; index < 201; index += 1) {
       const value = await session(pool, `http-reply-${index}`);

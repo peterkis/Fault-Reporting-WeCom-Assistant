@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { readFileSync, mkdtempSync, copyFileSync, rmSync, mkdirSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { readFileSync, mkdtempSync, copyFileSync, rmSync, mkdirSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
 const source = process.env.TS_MIGRATION_TEST_SOURCE_ROOT;
 assert.ok(source, 'The npm CLI seam requires the explicit source root.');
-const npmCli = path.join(path.dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
+const npmExecutable = execFileSync(process.platform === 'win32' ? 'where.exe' : 'which', ['npm'], { encoding: 'utf8', windowsHide: true }).trim().split(/\r?\n/u)[0];
+assert.ok(npmExecutable, 'The npm CLI seam requires the actual npm executable.');
+const npmCli = process.platform === 'win32' ? path.join(path.dirname(npmExecutable), 'node_modules/npm/bin/npm-cli.js') : realpathSync(npmExecutable);
 const env: NodeJS.ProcessEnv = {
   ...process.env,
   ARCHITECTURE_BASELINE: 'V1.2', APP_PHASE: 'P1', PILOT_ENV: 'test',
