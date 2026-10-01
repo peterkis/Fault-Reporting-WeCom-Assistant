@@ -1,0 +1,110 @@
+{
+  "batch_id": "T04-04",
+  "repair": "HTTP_RAW_ACTION_PORT_VARIANCE",
+  "base": "c621845f66eb6d43cb69f00094fb18f2b19baefa",
+  "reviewed_published_head": "354eaa3ac6b083e9a8917afd1db23dceae17340a",
+  "recorded_at": "2026-09-30T15:47:21.740Z",
+  "status": "LOCAL_AUTOMATED_AND_TWO_AXIS_REVIEW_PASS",
+  "tested_head": "e65e7574521d9be07323bbe51872178fcd4ca152",
+  "tested_tree": "4f2014625e47e7098ae6bca264e536f84adf5ddb",
+  "manifest_sha256": "b599bca9651ab33e710819603814d01fc8243695f4fbed749e457fe85844074e",
+  "batch": {
+    "files": 131,
+    "counts": {
+      "tests": 763,
+      "pass": 763,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "batch_report_sha256": "0673693297cfb9301777a6a13e476da47e33ecd9444f85bc1ae3e5387db37ff5",
+    "summary_sha256": "a0f1b529b38e3a6692a9e72603531e30f9367c4b3e63178b142088cb07dcb019",
+    "verified_tap_stderr_hashes": 262,
+    "loaded_http_implementations": [
+      "src/p1-006-ticket-state-actions.mjs",
+      "src/p1-009-pilot-access-workbench.mjs"
+    ]
+  },
+  "tooling": {
+    "counts": {
+      "tests": 56,
+      "pass": 56,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "log_sha256": "e2d20232c9ff43c0aefd74fef70f29daad67c5aa9db3529d49ac52b24d5fa14e"
+  },
+  "architecture": {
+    "checks": 407,
+    "log_sha256": "6feb86703b228d90d750a5fbc1697204ccbfc14507b50ebcf3fbf63cea710b62"
+  },
+  "controls": {
+    "wrong_wirings": 8,
+    "report_sha256": "45a5c4d7652035e04c62273df66ca7aeba3977cf1427725f6af1d18e454afd3b"
+  },
+  "review": {
+    "fixed_point": "354eaa3ac6b083e9a8917afd1db23dceae17340a",
+    "reviewed_head": "e65e7574521d9be07323bbe51872178fcd4ca152",
+    "standards_remaining": 0,
+    "spec_remaining": 0,
+    "standards_report_sha256": "3f7a85627b42e96d63ed04341b469802d48979e76045583ad73aa03b66b89701",
+    "spec_report_sha256": "95f4923a9ab7280721d52a0fac96d199d754764878048a6c4611e43e6451d222"
+  },
+  "registered_211_rerun": false,
+  "old_receipts_rebound": false,
+  "production_ready": false,
+  "finding": {
+    "priority": "P2",
+    "cause": "Method parameter bivariance accepted handlers requiring validated narrow fields.",
+    "status": "FIXED_LOCAL_TWO_AXIS_REVIEW_PASS",
+    "production_security_incident_claimed": false
+  },
+  "repair_contract": "HTTP perform is a function property; performRaw(unknown) runs the existing validated transaction; internal perform(TicketActionInput) stays typed.",
+  "behavior": "Existing validation, authorization, SQL, event, afterAction, rollback and HTTP error sequencing retained; performRaw is an explicit additional name for the same real transaction implementation.",
+  "database_change": false,
+  "dependency_change": false,
+  "feature_flag_change": false,
+  "security_privacy": "Synthetic isolated inputs only; authenticated route/actor precedence, team/reporter rights and internal-note visibility retained. No production configuration loaded.",
+  "resource_limits": "No new pool, singleton, Gateway or worker; existing 2C4G bounds unchanged. This is not a real 2C4G performance approval.",
+  "cleanup": {
+    "remaining_databases": [],
+    "server_version": "18.4",
+    "scope": "OWNED_SYNTHETIC_CLUSTER_ONLY",
+    "deleted_databases": 0
+  },
+  "evidence_directory": "C:/Users/zqpet/.codex/artifacts/wecom-t04-04-review-fix-20260930",
+  "actual_reproduction": {
+    "command": "node node_modules/typescript/bin/tsc --project tsconfig.type-tests.json --noEmit",
+    "red": "port-red.log: TS2578 unused expected-error at the numeric handler assignment",
+    "control": "variance-probe.log: method accepted; only function-property control rejected narrow and typed-domain wiring",
+    "green": "batch-final includes full strict project and negative canary; repair-controls.json confirms all eight wrong-wiring negatives are sensitive"
+  },
+  "focused_precommit": {
+    "tests": 7,
+    "pass": 7,
+    "formal_clean_head_acceptance": false,
+    "log": "focused-complete.log",
+    "formal_replacement": "The same Action and HTTP files pass in the clean 131-file batch."
+  },
+  "preserved_development_attempts": [
+    "focused.log: unsupported runner arguments; tests not run",
+    "focused-green.log: incorrect new forbidden-response expectation",
+    "focused-final.log: incorrect new unknown-action expectation",
+    "repair-controls.log: unnormalized CRLF/LF representation comparison",
+    "local-verification.log: diagnostic helper expected an absolute path while official records use exact relative paths"
+  ],
+  "previous_receipt": "T04-04.json remains unchanged with its original 6a38 tested ancestor and initial failures.",
+  "publication": {
+    "pull_request": 36,
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36",
+    "result_source": "Actual authoritative published head, current-head CI, original non-readiness and external review are recorded on the PR separately."
+  },
+  "current_published_head_ci": "PENDING_AT_LOCAL_SNAPSHOT",
+  "external_review": "PENDING_ON_REPAIR_PUBLICATION",
+  "business_readiness": "NOT_CLAIMED_OR_CHANGED",
+  "rollback": "Keep features closed; revert the repair commit if required. No business data rollback.",
+  "stop_line": "No merge, deployment, live Provider/send/production write or T04-05 start."
+}

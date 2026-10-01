@@ -267,3 +267,102 @@ integrationTest('the minimum local Pilot workbench exposes an injected authentic
     await closePilotWorkbenchServer(server);
   }
 });
+
+integrationTest('Pilot HTTP actions preserve authenticated ownership and reject malformed request bodies', async () => {
+  const { ticket } = await seedTicket();
+  const access = createPilotAccessService({ pool });
+  const handler = await access.upsertPrincipal({ wecomUserId: `handler-json-${randomUUID()}`, displayName: 'Synthetic handler', roles: ['HANDLER'], resolverTeamIds: ['PILOT_IT'] });
+  principalIds.add(handler.id);
+  const actions = createTicketActionService({ pool, authorize: access.authorizeAction });
+  const server = createPilotWorkbenchServer({ access, actions: { perform: actions.performRaw }, authenticate: async () => ({ type: 'PILOT_USER', id: handler.id }) });
+  const address = await listenPilotWorkbenchServer(server);
+  const url = `http://127.0.0.1:${address.port}/api/pilot/tickets/${ticket.id}/actions/accept`;
+  const send = body => fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+  try {
+    for (const body of ['{', '"' + 'a'.repeat(32_768) + '"']) {
+      const response = await send(body);
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } });
+    }
+    for (const body of ['null', '1', '[]']) {
+      const response = await send(body);
+      assert.equal(response.status, 409);
+      assert.deepEqual(await response.json(), { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } });
+    }
+    const accepted = await send(JSON.stringify({ ticketId: randomUUID(), action: 'auto-close', actor: { type: 'SYSTEM', id: null }, expectedVersion: ticket.version, traceId: 'synthetic-http-owner' }));
+    assert.equal(accepted.status, 200);
+    const result = await accepted.json();
+    assert.equal(result.ticket.id, ticket.id);
+    assert.equal(result.ticket.status, 'ACCEPTED');
+    assert.equal(result.ticket.assignee_id, handler.id);
+  } finally {
+    await closePilotWorkbenchServer(server);
+  }
+});
+
+integrationTest('Pilot raw HTTP Action validation preserves rejection, permissions, and atomic rollback', async () => {
+  const { ticket } = await seedTicket();
+  const access = createPilotAccessService({ pool });
+  const handler = await access.upsertPrincipal({ wecomUserId: `handler-raw-${randomUUID()}`, displayName: 'Synthetic handler', roles: ['HANDLER'], resolverTeamIds: ['PILOT_IT'] });
+  const outsider = await access.upsertPrincipal({ wecomUserId: `outsider-raw-${randomUUID()}`, displayName: 'Synthetic outsider', roles: ['HANDLER'] });
+  [handler, outsider].forEach(principal => principalIds.add(principal.id));
+  const actions = createTicketActionService({ pool, authorize: access.authorizeAction });
+  const rollbackActions = createTicketActionService({ pool, authorize: access.authorizeAction, afterAction: async () => { throw new Error('SYNTHETIC_AFTER_ACTION_FAILURE'); } });
+  let actorId = handler.id;
+  const server = createPilotWorkbenchServer({ access, actions: { perform: actions.performRaw }, authenticate: async () => ({ type: 'PILOT_USER', id: actorId }) });
+  const address = await listenPilotWorkbenchServer(server, { host: '127.0.0.1', port: 0 });
+  const initial = await access.getTicketView({ ticketId: ticket.id, actorId: handler.id });
+  assert.equal(initial.ok, true);
+  const input = { expectedVersion: ticket.version, traceId: 'synthetic-raw-http' };
+  const send = (action, body) => fetch(`http://127.0.0.1:${address.port}/api/pilot/tickets/${ticket.id}/actions/${action}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const assertUnchanged = async () => assert.deepEqual(await access.getTicketView({ ticketId: ticket.id, actorId: handler.id }), initial);
+  try {
+    for (const body of [
+      { ...input, expectedVersion: String(ticket.version) },
+      { ...input, expectedVersion: null },
+      { ...input, expectedVersion: 1.5 },
+      { ...input, note: 2 },
+      { ...input, note: {} },
+      { ...input, traceId: null },
+      { ...input, externalVisible: 'true' },
+      { ...input, reasonCode: 2 },
+      { ...input, attachmentIds: {} },
+    ]) {
+      const response = await send('accept', body);
+      assert.equal(response.status, 409);
+      assert.deepEqual(await response.json(), { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } });
+      await assertUnchanged();
+    }
+    const unknownAction = await send('unrecognized', input);
+    assert.equal(unknownAction.status, 409);
+    assert.deepEqual(await unknownAction.json(), { ok: false, error: { code: 'INVALID_STATE_TRANSITION', retryable: false } });
+    await assertUnchanged();
+    actorId = outsider.id;
+    const forbidden = await send('accept', input);
+    assert.equal(forbidden.status, 403);
+    assert.deepEqual(await forbidden.json(), { ok: false, error: { code: 'FORBIDDEN', retryable: false } });
+    await assertUnchanged();
+
+    const rawInput = { ...input, ticketId: ticket.id, action: 'accept', actor: { type: 'PILOT_USER', id: handler.id } };
+    assert.deepEqual(await actions.performRaw({ ...rawInput, action: 'unrecognized' }), { ok: false, error: { code: 'INVALID_STATE_TRANSITION', retryable: false } });
+    // Malformed version validation must still occur before a UUID SQL lookup.
+    assert.deepEqual(await actions.performRaw({ ...rawInput, ticketId: 'not-a-uuid', expectedVersion: '2' }), { ok: false, error: { code: 'VALIDATION_FAILED', retryable: false } });
+    // The owning transaction is opened before raw validation, as for the typed entry.
+    await assert.rejects(createTicketActionService().performRaw(null), /A PostgreSQL pool is required/u);
+    await assert.rejects(rollbackActions.performRaw(rawInput), /SYNTHETIC_AFTER_ACTION_FAILURE/u);
+    await assertUnchanged();
+
+    actorId = handler.id;
+    const accepted = await send('accept', { ...input, note: null });
+    assert.equal(accepted.status, 200);
+    const result = await accepted.json();
+    assert.equal(result.ticket.status, 'ACCEPTED');
+    assert.equal(result.ticket.version, ticket.version + 1);
+    assert.equal(result.ticket.assignee_id, handler.id);
+    const final = await access.getTicketView({ ticketId: ticket.id, actorId: handler.id });
+    assert.equal(final.ok, true);
+    assert.equal(final.events.length, initial.events.length + 1);
+  } finally {
+    await closePilotWorkbenchServer(server);
+  }
+});

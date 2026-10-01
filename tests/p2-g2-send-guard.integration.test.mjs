@@ -29,7 +29,9 @@ test('Gate guard checks actual PostgreSQL Delivery binding and preserves existin
     initializeG2SendBudget({ file: budgetFile, manifest });
     const guard = createG2SendGuard({ pool: f.pool, sender: f.sender, manifest, env, budgetFile });
     const checked = [];
-    const delivery = createCommunicationDeliveryWorker({ pool: f.pool, enabled: true, sender: { send: async request => {
+    // This callback runs several real candidate inventories before checking ACK replay.
+    // Keep a bounded fixture deadline inside the default lease; core integration owns timeout tests.
+    const delivery = createCommunicationDeliveryWorker({ pool: f.pool, enabled: true, sendTimeoutMs: 20_000, sender: { send: async request => {
       if (request.target_type === 'GROUP') {
         const r = await guard.send(request); assert.equal(r.error_code, 'P2_G2_SEND_GROUP_LABEL_REQUIRED');
         checked.push('UNLABELLED_GROUP'); return r;

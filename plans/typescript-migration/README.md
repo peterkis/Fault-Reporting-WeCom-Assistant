@@ -2,12 +2,13 @@
 
 ## 当前交接
 
-T00、T01、T02、T03-01 及其前置/PG callback 修补、T04-01 均已合并。T04-02 已通过 PR #32 合并，主线基线为 `cc1299ea3b30c92f5356258b31963f0c67e7e7ae`。
-当前批次为 [T04-03 P1 运维核心严格类型迁移](T04-03.md)，[PR #33](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/33) 已创建。被测实现 `a5e7ed73454805b07f1488a2fec60b4e281b07a0` 的本地 96 文件、581/581 测试、52/52 工具测试及两轴审查通过；远端 CI 已实际运行，PG18/浏览器批次通过，ARCH-006 已知非就绪对照失败。当前修补等待新 head 的 CI，不能声明整批 PASS 或 MERGE_READY。
+T00 至 T04-03 已合并。PR #33 的发布 head `43ba7286d9509dea68b3bc02661fb0e9312430a8` 通过迁移 CI，merge 为 `c621845f66eb6d43cb69f00094fb18f2b19baefa`。旧 T04-03 回执保留原被测对象和当时执行状态。
 
-先读根 AGENTS.md、CONTEXT.md、ADR-0026，再读 [当前迁移说明](T04-03.md)、[进度](progress.json) 和 [迁移回执](receipts/T04-03.json)。前序说明和回执只描述其绑定的历史批次，不覆盖当前结果。
-原计划包 `WeCom_TypeScript_Migration_Plan_v1_20260927.zip` 的 `prompts/00_DISPATCHER.md`、`prompts/T04-03.md` 是本批执行输入。T04-03 只迁移 `src/p1-011-pilot-operations-baseline.mjs` 到 `.mts`；支持类型与工具修补按回执登记，不重做 181 个迁移目标。
-本批完成后停止。T04-04 未授权启动；不得自动合并、部署或把历史现场批准用于新制品。
+当前批次为 [T04-04](T04-04.md)，只迁移 SDK Adapter、Service Intake 与 Pilot 权限工作台三个模块，必要支持类型和接线见原 [回执](receipts/T04-04.json)。原 `6a38` 对象的 131 文件、762/762 和完整注册表两项基线失败保持历史记录。发布 `354eaa3` 后的 HTTP 端口参数双变 P2 已在 `e65e757` 修补：新门禁 131 文件、763/763，工具 56/56，双轴剩余 0，见独立 [修补回执](receipts/T04-04-http-port-review-fix.json)。两份回执分别绑定真实被测祖先，发布 head 的 CI 和独立外审结果以 PR 收口记录为准。
+
+原计划包的 prompts/T04-04.md 是本批执行输入。本批完成后停止；T04-05 未授权启动。不得自动合并、部署或复用历史现场批准激活新制品。
+
+本批已发布为 [PR #36](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36)，等待独立外审。当前发布 head 的 CI、身份预检和非就绪结果由 PR 收口评论记录；回执是其记录时的固定本地快照。
 
 ## 两类根目录与历史对象
 
@@ -22,7 +23,7 @@ T00、T01、T02、T03-01 及其前置/PG callback 修补、T04-01 均已合并�
 npm ci --ignore-scripts --no-audit --no-fund
 npm run migration:gate
 node --test .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs
-npm run migration:gate -- --batch T04-03 --report-dir <repo-external-report-dir>
+npm run migration:gate -- --batch T04-04 --report-dir <repo-external-report-dir>
 node .build/tools/run-tests.mjs --selection t02-time
 ```
 
@@ -34,13 +35,13 @@ CLI 的 `--report-dir` 必须在仓库之外。旧 72 个 npm 测试别名保留
 ## 原基线的非就绪结果
 
 当前原 `--require-ready` 仍为 `YXX_VERIFICATION_REJECTED` / `YXX_LOCAL_VALIDATION_SCOPE_INVALID`。
-ARCH-006 原 validator 在 T02 合并基线返回两个 scope/READY 错误；本批还因原规则不识别已授权 P1 TypeScript 迁移而返回第三个 runtime-delta 错误。CI 保留原 validator 的 exit 1，分别精确核验两份完整诊断；第三项仅在本批三个模块（含旧 `.mjs` 删除）的精确源码差异下可分类为已知非就绪，其他路径或诊断仍失败。原始输出不改写、不计入 readiness PASS。
+ARCH-006 原 validator 在 T02 合并基线返回两个 scope/READY 错误；本批还因原规则不识别已授权 P1 TypeScript 迁移而返回第三个 runtime-delta 错误。CI 保留原 validator 的 exit 1，分别精确核验两份完整诊断；本批原九路径变体及 raw Action 修补后的精确十路径变体（唯一新增支持路径为 `src/p1-006-ticket-state-actions.mts`）可分类为已知非就绪，其他路径或诊断仍失败。原始输出不改写、不计入 readiness PASS。
 ARCH-005 对部分冻结 SQL 使用原 CRLF 检出字节。CI 在 checkout 前设置原检出策略，不修改 SQL 或冻结哈希。
 
 ## 历史记录与边界
 
 T00 的 baseline.json、baseline-tests.json、verification 和原回执继续描述它们原本绑定的提交。T01 回执亦不重写旧 tested_head。
-各批次最终结果以对应 PR 精确 head、实际 CI、自审及外部审查结果为准；当前 T04-03 的 [CI 对照修补记录](verification/T04-03-ci-repair-20260930.md) 不替代旧实现回执或新 head 的远端结果。
+各批次最终结果以对应 PR 精确 head、实际 CI、自审及外部审查结果为准；T04-03 的历史 [CI 对照修补记录](verification/T04-03-ci-repair-20260930.md) 不替代旧实现回执或新 head 的远端结果。
 当前业务状态、Evidence、SQL 和现场批准不变。影子构建不是生产激活；没有调用正式 Provider、生产写库或真实企业微信发送。
 
-批次登记见 [batches.json](batches.json)：T04-03 登记 9 个直接测试、69 个反向影响测试、17 个保留 baseline 和 12 个 supplemental；当前批次去重后执行 96 个文件。SOURCE_HOST 读取真实 checkout，运行实现由已验证制品加载。当前严格 CLI 需要先构建；缺失制品不能算已知非就绪。历史与当前基线兼容结果分开记录，旧回执不改写。
+批次登记见 [batches.json](batches.json)：T04-04 登记 43 个直接测试、105 个反向影响测试、17 个保留 baseline 和 12 个 supplemental，去重执行 131 个文件。SOURCE_HOST 读取真实 checkout，运行实现由已验证制品加载。缺失制品不能算已知非就绪；历史与当前结果分开记录。

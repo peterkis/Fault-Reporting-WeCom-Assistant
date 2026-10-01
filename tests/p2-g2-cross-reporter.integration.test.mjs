@@ -53,7 +53,7 @@ test('physical window excludes old/future facts and flag-off has no writes; rest
     assert.equal((await createIncidentCorrelationWorker({ pool: f.pool, enabled: true }).runOnce({ nowEpochMs: inclusive })).correlated, 0);
     assert.equal((await f.pool.query("SELECT count(*)::integer AS n FROM intake.deterministic_decision WHERE engine_version='p2-012-candidate-source/1'")).rows[0].n, 1);
     assert.equal(f.providerCalls.length, 0);
-  });
+  }, { incidentBackgroundMaintenance: false });
 });
 
 test('D12-049 different services and incompatible symptoms never borrow each other reporters', async () => {
@@ -76,5 +76,5 @@ test('latest future Decision invalidates the Intake rather than falling back to 
     const worker = createIncidentCorrelationWorker({ pool: f.pool, enabled: true });
     assert.equal((await worker.runOnce({ nowEpochMs: now })).correlated, 0);
     assert.equal((await worker.runOnce()).correlated, 1);
-  });
+  }, { incidentBackgroundMaintenance: false });
 });

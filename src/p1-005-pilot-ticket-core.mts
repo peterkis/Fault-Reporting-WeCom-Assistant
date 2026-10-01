@@ -255,7 +255,7 @@ export interface PilotTicketProcessorResult extends PilotTicketProcessorIntakeRe
   lifecycle: unknown;
 }
 
-export type ServiceIntakeProcessor = (input: PilotTicketProcessorInput) => Promise<PilotTicketProcessorIntakeResult>;
+export type ServiceIntakeProcessor<I extends PilotTicketProcessorInput = PilotTicketProcessorInput> = (input: I) => Promise<PilotTicketProcessorIntakeResult>;
 export type TicketCreatedHook = (input: {
   transaction: PostgresTransaction;
   ticket: PublicPilotTicket;
@@ -268,8 +268,8 @@ export interface PilotTicketCoreOptions {
   defaultResolverTeamId?: string;
 }
 
-export interface PilotTicketProcessorOptions {
-  serviceIntakeProcessor: ServiceIntakeProcessor;
+export interface PilotTicketProcessorOptions<I extends PilotTicketProcessorInput = PilotTicketProcessorInput> {
+  serviceIntakeProcessor: ServiceIntakeProcessor<I>;
   ticketCore: PilotTicketCore;
   onTicketCreated?: TicketCreatedHook | null;
 }
@@ -659,14 +659,14 @@ export function createPilotTicketCore({ pool, defaultResolverTeamId = 'PILOT_IT'
   });
 }
 
-export function createPilotTicketProcessor(
-  options: PilotTicketProcessorOptions,
-): (input: PilotTicketProcessorInput) => Promise<PilotTicketProcessorResult>;
-export function createPilotTicketProcessor({
+export function createPilotTicketProcessor<I extends PilotTicketProcessorInput = PilotTicketProcessorInput>(
+  options: PilotTicketProcessorOptions<I>,
+): (input: I) => Promise<PilotTicketProcessorResult>;
+export function createPilotTicketProcessor<I extends PilotTicketProcessorInput = PilotTicketProcessorInput>({
   serviceIntakeProcessor,
   ticketCore,
   onTicketCreated = null,
-}: Partial<PilotTicketProcessorOptions> = {}): (input: PilotTicketProcessorInput) => Promise<PilotTicketProcessorResult> {
+}: Partial<PilotTicketProcessorOptions<I>> = {}): (input: I) => Promise<PilotTicketProcessorResult> {
   if (typeof serviceIntakeProcessor !== 'function') {
     throw new TypeError('A Service Intake processor is required.');
   }
@@ -676,7 +676,7 @@ export function createPilotTicketProcessor({
   if (onTicketCreated !== null && typeof onTicketCreated !== 'function') {
     throw new TypeError('onTicketCreated must be a function when supplied.');
   }
-  return async function processPilotTicket(input: PilotTicketProcessorInput): Promise<PilotTicketProcessorResult> {
+  return async function processPilotTicket(input: I): Promise<PilotTicketProcessorResult> {
     if (!isRecord(input) || !isRecord(input.message) || !input.transaction) {
       throw new PilotTicketInputError('PILOT_TICKET_PROCESSOR_INPUT_INVALID');
     }

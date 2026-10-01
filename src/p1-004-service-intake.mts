@@ -3,6 +3,21 @@ import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
 import { assertLocalDateTime } from './platform/time-contract.mjs';
 import { postgresTimestampToLocalDateTime } from './platform/postgres-types.mjs';
 
+import type { LocalDateTime } from '../contracts/time_contracts.js';
+import type { InboxMessage, TextContent } from './p1-003-channel-message-inbox.mjs';
+import type { PostgresPool, PostgresTransaction, PostgresQueryResult } from './platform/postgres-pool.mjs';
+import type { IntakeStatus, TicketRequestType, ServiceIntakeRow, ServiceIntakeEventRow, PublicIntake, PublicIntakeEvent, IntakeEventType } from './p1-005-pilot-ticket-core.mjs';
+
+type PrivacyClass = 'PUBLIC' | 'INTERNAL' | 'SENSITIVE_INTERNAL' | 'PERSONAL' | 'PATIENT_SENSITIVE' | 'SECRET';
+interface SourceRow { trace_id: string; privacy_class: PrivacyClass; retention_until: string }
+interface IntakeRow extends Omit<ServiceIntakeRow, 'pilot_ticket_id'> { summary: string | null; privacy_class: PrivacyClass; retention_until: string; message_count: number }
+// A query-only view of the Inbox's acquired client; an owning Pool is not a transaction.
+export type IntakeTransaction = PostgresTransaction & { readonly totalCount?: never };
+export interface ServiceIntakeInput { channelMessageId: string; message: InboxMessage; transaction: IntakeTransaction }
+export interface IntakeSelection { id: string | null; explicitBoundary?: boolean; boundaryReason?: string }
+export interface IntakeProcessorOptions { aggregationWindowMs?: number; existingIntakeSelector?: ((input: { transaction: PostgresTransaction; message: InboxMessage; cleanText: string }) => IntakeSelection | null | Promise<IntakeSelection | null>) | null }
+export interface IntakeProcessingResult { intake: PublicIntake; message: { channel_message_id: string; relation_type: 'PRIMARY' | 'SUPPLEMENT' | 'CLARIFICATION'; sequence_no: number }; aggregation: { action: 'CREATED' | 'APPENDED'; window_seconds: number; message_count: number }; events: PublicIntakeEvent[]; [key: string]: unknown }
+
 const MIGRATION_URL = new URL('../database/migrations/002_p1_004_service_intake.sql', import.meta.url);
 
 const INCIDENT_PATTERN = /(?:报错|打不开|进不去|无法登录|登录失败|卡死|闪退|蓝屏|无响应|一直转圈|保存失败|提交失败|打印不了|读卡失败|断网|连不上|数据不对|查不到|接口异常|服务不可用|权限错误|login failed|error|unavailable|cannot|can't|unable)/iu;
@@ -19,7 +34,7 @@ const THANKS_PATTERN = /^(?:谢谢|感谢|多谢|辛苦了|thanks|thank you)[!�
 const CHATTER_PATTERN = /^(?:在吗|有人吗|你好|您好|hi|hello)[!！?？。.]*$/iu;
 const DEFAULT_AGGREGATION_WINDOW_MS = 90_000;
 const LEGACY_INBOX_SUMMARY_ERROR = 'P1_004_LEGACY_INBOX_SUMMARY_REMEDIATION_REQUIRED';
-const PRIVACY_RANK = new Map([
+const PRIVACY_RANK = new Map<PrivacyClass, number>([
   ['PUBLIC', 0],
   ['INTERNAL', 1],
   ['SENSITIVE_INTERNAL', 2],
@@ -28,13 +43,13 @@ const PRIVACY_RANK = new Map([
   ['SECRET', 5],
 ]);
 
-function isRecord(value) {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-export function mapServiceIntakeMigrationFailure(error) {
-  const legacySnapshotRemediationRequired = error?.code === '23514'
-    && error?.message === LEGACY_INBOX_SUMMARY_ERROR;
+export function mapServiceIntakeMigrationFailure(error: unknown): { code: 'P1_004_LEGACY_INBOX_SUMMARY_REMEDIATION_REQUIRED' | 'P1_004_MIGRATION_FAILED'; retryable: boolean } {
+  const legacySnapshotRemediationRequired = (error as { code?: unknown } | null | undefined)?.code === '23514'
+    && (error as { message?: unknown } | null | undefined)?.message === LEGACY_INBOX_SUMMARY_ERROR;
   return {
     code: legacySnapshotRemediationRequired
       ? LEGACY_INBOX_SUMMARY_ERROR
@@ -43,15 +58,15 @@ export function mapServiceIntakeMigrationFailure(error) {
   };
 }
 
-function cleanMessageText(message) {
+function cleanMessageText(message: InboxMessage): string {
   return message.content
-    .filter((item) => item?.kind === 'text' && isRecord(item.text))
+    .filter((item): item is TextContent => item?.kind === 'text' && isRecord(item.text))
     .map((item) => item.text.clean)
     .join('\n')
     .trim();
 }
 
-function hasAffirmedIncident(cleanText) {
+function hasAffirmedIncident(cleanText: string): boolean {
   return cleanText
     .split(INCIDENT_CLAUSE_SEPARATOR)
     .map((clause) => clause.trim())
@@ -60,7 +75,7 @@ function hasAffirmedIncident(cleanText) {
       && !INCIDENT_NEGATION_PATTERN.test(clause));
 }
 
-function classifyRequest(cleanText) {
+function classifyRequest(cleanText: string): TicketRequestType {
   if (cleanText.length === 0) {
     return 'UNKNOWN';
   }
@@ -88,7 +103,7 @@ function classifyRequest(cleanText) {
   return 'UNKNOWN';
 }
 
-function initialStatus(requestType, cleanText) {
+function initialStatus(requestType: TicketRequestType, cleanText: string): IntakeStatus {
   if (requestType === 'CHATTER' && THANKS_PATTERN.test(cleanText)) {
     return 'IGNORED';
   }
@@ -97,11 +112,11 @@ function initialStatus(requestType, cleanText) {
     : 'RECEIVED';
 }
 
-function iso(value) {
+function iso(value: unknown): LocalDateTime {
   return postgresTimestampToLocalDateTime(value);
 }
 
-function publicIntake(row) {
+function publicIntake(row: IntakeRow): PublicIntake {
   return {
     id: row.id,
     intake_no: row.intake_no,
@@ -122,17 +137,17 @@ function publicIntake(row) {
   };
 }
 
-function strongestPrivacy(left, right) {
-  return PRIVACY_RANK.get(left) >= PRIVACY_RANK.get(right) ? left : right;
+function strongestPrivacy(left: PrivacyClass, right: PrivacyClass): PrivacyClass {
+  return (PRIVACY_RANK.get(left) as number) >= (PRIVACY_RANK.get(right) as number) ? left : right;
 }
 
-function earliestTimestamp(left, right) {
+function earliestTimestamp(left: string, right: string): LocalDateTime {
   const first = assertLocalDateTime(left);
   const second = assertLocalDateTime(right);
   return first < second ? first : second;
 }
 
-function aggregationKey(message) {
+function aggregationKey(message: InboxMessage): string {
   return JSON.stringify([
     message.provider,
     message.bot_id,
@@ -149,8 +164,8 @@ async function insertEvent({
   occurredAt,
   traceId,
   payload,
-}) {
-  const inserted = await transaction.query(
+}: { transaction: PostgresTransaction; eventType: IntakeEventType; intake: IntakeRow; occurredAt: LocalDateTime; traceId: string; payload: unknown }): Promise<PublicIntakeEvent[]> {
+  const inserted = await transaction.query<ServiceIntakeEventRow>(
     `INSERT INTO intake.service_intake_event (
         event_type, intake_id, aggregate_version, event_ordinal,
         occurred_at, trace_id, payload
@@ -182,7 +197,7 @@ async function insertEvent({
   }));
 }
 
-export async function applyServiceIntakeMigration({ pool }) {
+export async function applyServiceIntakeMigration({ pool }: { pool: PostgresPool }): Promise<void | { status: 'LEGACY_MIGRATION_SUPERSEDED' }> {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }
@@ -194,13 +209,13 @@ export async function applyServiceIntakeMigration({ pool }) {
 export function createServiceIntakeProcessor({
   aggregationWindowMs = DEFAULT_AGGREGATION_WINDOW_MS,
   existingIntakeSelector = null,
-} = {}) {
+ }: IntakeProcessorOptions = {}) {
   if (!Number.isInteger(aggregationWindowMs) || aggregationWindowMs < 1) {
     throw new TypeError('aggregationWindowMs must be a positive integer.');
   }
   if (existingIntakeSelector !== null && typeof existingIntakeSelector !== 'function') throw new TypeError('An Intake selector must be a function.');
 
-  return async function processServiceIntake({ channelMessageId, message, transaction }) {
+  return async function processServiceIntake({ channelMessageId, message, transaction }: ServiceIntakeInput): Promise<IntakeProcessingResult> {
     if (
       typeof channelMessageId !== 'string'
       || !isRecord(message)
@@ -210,7 +225,7 @@ export function createServiceIntakeProcessor({
       throw new TypeError('A Channel Message and Inbox transaction are required.');
     }
 
-    const source = await transaction.query(
+    const source = await transaction.query<SourceRow>(
       `SELECT trace_id, privacy_class, retention_until
          FROM channel.message_inbox
         WHERE id = $1::bigint`,
@@ -227,21 +242,21 @@ export function createServiceIntakeProcessor({
       || OTHER_TICKET_PATTERN.test(cleanText);
     const summary = cleanText.length === 0 ? null : cleanText.slice(0, 500);
     const sourceChannel = message.chat_type === 'group' ? 'WECOM_GROUP' : 'WECOM_DIRECT';
-    const traceId = source.rows[0].trace_id;
+    const traceId = (source.rows[0] as SourceRow).trace_id;
 
     await transaction.query(
       'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
       [aggregationKey(message)],
     );
 
-    let existing = { rowCount: 0, rows: [] };
+    let existing: Pick<PostgresQueryResult<IntakeRow>, 'rowCount' | 'rows'> = { rowCount: 0, rows: [] };
     // Optional P2 association runs inside this same durable Inbox transaction.
     // null means use the P1 fragment window; {id:null} explicitly forbids reuse.
     const selection = !explicitAggregationBoundary && existingIntakeSelector
       ? await existingIntakeSelector({ transaction, message, cleanText }) : null;
     if (selection?.explicitBoundary === true) explicitAggregationBoundary = true;
     if (!explicitAggregationBoundary && selection?.id !== null) {
-      existing = await transaction.query(
+      existing = await transaction.query<IntakeRow>(
         `SELECT candidate.id::text, candidate.intake_no, candidate.source_channel,
                 candidate.reporter_wecom_userid, candidate.request_type, candidate.summary,
                 candidate.reported_campus_id, candidate.reported_department_id,
@@ -284,7 +299,7 @@ export function createServiceIntakeProcessor({
     }
 
     if (existing.rowCount === 1) {
-      const current = existing.rows[0];
+      const current = existing.rows[0] as IntakeRow;
       const relationType = current.status === 'WAITING_DESCRIPTION'
         ? 'CLARIFICATION'
         : 'SUPPLEMENT';
@@ -293,12 +308,12 @@ export function createServiceIntakeProcessor({
       const nextRequestType = clarified ? requestType : current.request_type;
       const nextStatus = clarified ? 'RECEIVED' : current.status;
       const nextSummary = clarified && summary !== null ? summary : current.summary;
-      const nextPrivacyClass = strongestPrivacy(current.privacy_class, source.rows[0].privacy_class);
+      const nextPrivacyClass = strongestPrivacy(current.privacy_class, (source.rows[0] as SourceRow).privacy_class);
       const nextRetentionUntil = earliestTimestamp(
         current.retention_until,
-        source.rows[0].retention_until,
+        (source.rows[0] as SourceRow).retention_until,
       );
-      const appended = await transaction.query(
+      const appended = await transaction.query<IntakeRow>(
         `UPDATE intake.service_intake
             SET message_count = message_count + 1,
                 last_message_at = GREATEST(last_message_at, $2::timestamp without time zone),
@@ -328,7 +343,7 @@ export function createServiceIntakeProcessor({
           nextRetentionUntil,
         ],
       );
-      const intake = appended.rows[0];
+      const intake = appended.rows[0] as IntakeRow;
       await transaction.query(
         `INSERT INTO intake.service_intake_message (
             intake_id, channel_message_id, relation_type, sequence_no, linked_at, trace_id
@@ -369,7 +384,7 @@ export function createServiceIntakeProcessor({
       };
     }
 
-    const created = await transaction.query(
+    const created = await transaction.query<IntakeRow>(
       `WITH generated_number AS (
           SELECT nextval('intake.service_intake_number_seq')::text AS sequence_value
        )
@@ -414,15 +429,15 @@ export function createServiceIntakeProcessor({
         message.chat_id,
         message.sender_user_id,
         explicitAggregationBoundary,
-        source.rows[0].privacy_class,
-        source.rows[0].retention_until,
+        (source.rows[0] as SourceRow).privacy_class,
+        (source.rows[0] as SourceRow).retention_until,
         requestType,
         summary,
         status,
         channelMessageId,
       ],
     );
-    const intake = created.rows[0];
+    const intake = created.rows[0] as IntakeRow;
 
     await transaction.query(
       `INSERT INTO intake.service_intake_message (

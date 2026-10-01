@@ -1,0 +1,345 @@
+{
+  "batch": "T04-04",
+  "base": "c621845f66eb6d43cb69f00094fb18f2b19baefa",
+  "branch": "codex/typescript-t04-04",
+  "local_snapshot_recorded_at": "2026-09-30T19:59:10+08:00",
+  "publication": {
+    "pull_request": 36,
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36",
+    "state": "OPEN",
+    "result_source": "The PR self-review comment binds its current authoritative head, actual CI and external review; this receipt preserves its fixed local tested ancestor."
+  },
+  "status": "LOCAL_AUTOMATED_VALIDATION_AND_TWO_AXIS_REVIEW_PASS",
+  "tested_head": "6a38ceb5e41fda6cb96d49789325150c8e688841",
+  "database_change": false,
+  "production_ready": false,
+  "feature_flags": "No changes; existing persistent Feature Flags remain false.",
+  "security_privacy": "Existing unknown input guards, authentication precedence, reporter/team access and internal-note visibility are unchanged; tests use synthetic isolated data and do not read production configuration.",
+  "resource_limits": "Existing 2C4G process, single active Gateway, concurrency and pool bounds are unchanged. No new runtime singleton or dependency; this test run is not a 2C4G performance acceptance.",
+  "database_cleanup": {
+    "status": "PASS",
+    "remaining_test_databases": 0,
+    "log": "delivery-database-cleanup-green.log"
+  },
+  "production_mappings": {
+    "src/p1-002-wecom-sdk-adapter.mjs": "src/p1-002-wecom-sdk-adapter.mts",
+    "src/p1-004-service-intake.mjs": "src/p1-004-service-intake.mts",
+    "src/p1-009-pilot-access-workbench.mjs": "src/p1-009-pilot-access-workbench.mts"
+  },
+  "support_changes": {
+    "src/p1-003-channel-message-inbox.mts": "Export existing message types for Adapter and Intake; no emitted runtime change.",
+    "src/p1-005-pilot-ticket-core.mts": "Propagate the real Intake input through processor composition; preserve minimal legacy callers and emitted runtime.",
+    "src/p1-010-ticket-closure.mts": "Use normalized incoming message and exact Intake input in the lifecycle chain; no emitted runtime change.",
+    "tsconfig.base.json": "ESNext.String supplies Node24 isWellFormed declarations without changing target or strict settings.",
+    "tools/ts-migration/arch006-baseline.mts": "Preserve original validator rejection and accept only the exact reviewed T04-04 source delta.",
+    "tools/ts-migration/tooling.test.mts": "Reject unreviewed runtime, SQL, Evidence paths and extra validator errors.",
+    "tools/ts-migration/batches.test.mts": "Exercise registered T04-04 selection with all 131 existing entries.",
+    "tests/types/p1-intake-access.mts": "Real public implementation positive and negative types at the agreed composition seams.",
+    "tests/p1-009-pilot-access-workbench.test.mjs": "Real HTTP and PG compatibility for body errors, limits and authenticated ownership.",
+    "tests/helpers/p2-g2-runtime-harness.mjs": "Expose the existing incidentBackgroundMaintenance option with its true default unchanged; fixed-window tests select their sole scheduler.",
+    "tests/p2-g2-cross-reporter.integration.test.mjs": "Disable background Incident maintenance in the two manual-worker window cases after a deterministic scheduling-race reproduction; keep every original assertion.",
+    "tests/p2-g2-send-guard.integration.test.mjs": "Give the multi-inventory Guard/ACK fixture a bounded 20-second send deadline within its unchanged 30-second lease; production default and independent core timeout tests remain unchanged.",
+    "tests/yxx-ss-007-native-ui-acceptance.browser.test.mjs": "Retain responsive screenshots in a unique OS temporary evidence directory, outside the immutable compiled artifact; keep screenshot assertions and artifact rejection unchanged.",
+    "plans/typescript-migration": "Current module mapping, batch registration, handoff and receipt; preserve predecessor receipts.",
+    ".github/workflows/types-migration.yml": "Execute T04-04 on isolated PG18/browser CI using the existing runner."
+  },
+  "direct_tests": 43,
+  "transitive_impacted_tests": 105,
+  "baseline_tests": 17,
+  "supplemental_tests": 12,
+  "selected_files": 131,
+  "behavior": "PASS",
+  "review": {
+    "kind": "LOCAL_TWO_AXIS",
+    "reviewed_head": "6a38ceb5e41fda6cb96d49789325150c8e688841",
+    "standards": "PASS_NO_REMAINING_FINDINGS",
+    "spec": "PASS_NO_REMAINING_FINDINGS",
+    "fixes": [
+      "HTTP action port retains unknown body fields and raw action until existing Action validation.",
+      "Intake transaction type excludes owning Pool; actual Inbox client remains query-only.",
+      "Preserve IntakeTransaction through Lifecycle; Pool rejection and acquired Client acceptance are tested."
+    ],
+    "followup": "PASS_AFTER_FIXES",
+    "unresolved_p1_p2": 0,
+    "logs": [
+      "review-standards.md",
+      "review-spec.md"
+    ]
+  },
+  "ci": "NOT_RUN_AT_RECEIPT_CREATION",
+  "type_escape_exceptions": [],
+  "next_batch": "T04-05",
+  "next_batch_authorized_to_start": false,
+  "interrupted_attempts": [
+    {
+      "log": "final-tooling.log",
+      "status": "INTERRUPTED_FOR_REVIEW_FIX",
+      "acceptance": false
+    },
+    {
+      "log": "commit2-batch.log",
+      "head": "73bc8b7650e945ed004a68d5efac2e97a11d5489",
+      "status": "INTERRUPTED_FOR_LIFECYCLE_TYPE_FIX",
+      "completed_files": 18,
+      "acceptance": false
+    },
+    {
+      "log": "implementation-batch.log",
+      "head": "69bd49572c534eee2f350fdf9265d0078c2976c5",
+      "status": "FAILED_EXISTING_CORRELATION_TEST_SCHEDULING_RACE",
+      "completed_files": 69,
+      "acceptance": false,
+      "reproduction": "correlation-scheduling-red.log",
+      "fix_verification": "correlation-scheduling-green.log"
+    },
+    {
+      "log": "acceptance-batch.log",
+      "head": "75aa49fb3ef5890a60370f01539428c11a27fae3",
+      "status": "FAILED_EXISTING_MULTI_INVENTORY_GUARD_FIXTURE_DEADLINE",
+      "completed_files": 95,
+      "acceptance": false,
+      "reproduction": "send-guard-probe.log",
+      "classification": "COMMUNICATION_SEND_TIMEOUT followed by P2_G2_SEND_ABORTED; no Provider call.",
+      "baseline_run": "send-guard-base.log",
+      "one_variable_probe": "send-guard-time-budget.log"
+    },
+    {
+      "log": "final-complement.log",
+      "head": "c3c3e90e81a75e19206e55ce19787afbc889de86",
+      "status": "ARTIFACT_REJECTED_AFTER_BROWSER_SCREENSHOTS",
+      "acceptance": false,
+      "browser_counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "undeclared_outputs": [
+        "tmp/ss007-ui/1440x900.png",
+        "tmp/ss007-ui/390x844.png"
+      ],
+      "subsequent_entries_not_run": 8,
+      "batch_result": "T04-04 gate itself passed 131 files and 762/762; retained as its original c3c3e90 snapshot, not rebound."
+    },
+    {
+      "log": "browser-artifacts-fixed.log",
+      "status": "FAILED_TEST_PATH_NAMESPACE_SHADOW",
+      "acceptance": false,
+      "counts": {
+        "tests": 7,
+        "pass": 6,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "fix_verification": "browser-artifacts-green.log: 7/7 and unchanged artifact verifier passed."
+    },
+    {
+      "log": "delivery-complement.log",
+      "head": "6a38ceb5e41fda6cb96d49789325150c8e688841",
+      "status": "FULL_REGISTERED_COMPLEMENT_RAW_FAILURES",
+      "acceptance": false,
+      "files_executed": 80,
+      "counts": {
+        "tests": 573,
+        "pass": 570,
+        "fail": 2,
+        "cancelled": 1,
+        "skipped": 0,
+        "todo": 0
+      },
+      "baseline_failures": [
+        "delivery-arch006-test-comparison.json",
+        "delivery-ss008-scope-comparison.json"
+      ],
+      "native_browser_retry": "native-ui-repeat.log: unchanged head and artifact, 48/48; initial timeout preserved and cause unconfirmed."
+    }
+  ],
+  "tested_tree": "98d108cc53585f9abb8c7fcddf975de03ad9df7f",
+  "source_dirty": false,
+  "build_manifest_sha256": "651f872a96e9a043717888eb595929531c05f8d33b46dd80d5b4c77e3d2c4f54",
+  "typecheck": "PASS",
+  "negative_types": "PASS_WITH_REAL_IMPLEMENTATION_NEGATIVES_AND_INDEPENDENT_CANARY",
+  "executed_files": 131,
+  "counts": {
+    "tests": 762,
+    "pass": 762,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "toolchain": {
+    "node": "v24.18.0",
+    "typescript": "5.9.3",
+    "postgres": "18.4",
+    "chrome": "154.0.8037.58",
+    "os": "Windows"
+  },
+  "log_directory": "C:\\Users\\zqpet\\.codex\\artifacts\\wecom-t04-04-20260930",
+  "registered_suite": {
+    "files": 211,
+    "counts": {
+      "tests": 1335,
+      "pass": 1332,
+      "fail": 2,
+      "cancelled": 1,
+      "skipped": 0,
+      "todo": 0
+    },
+    "status": "RAW_SUITE_HAS_FAILURES",
+    "complement_summary_sha256": "b9f38d48ed3334d3c5dbd415dbc63fe1df3b7198ecae308eafb1b4151667d9f0",
+    "failed_files": [
+      "tests/arch-006-rule-first-service-loop.test.mjs",
+      "tests/yxx-ss-007-native-ui.browser.test.mjs",
+      "tests/yxx-ss-008-validation-scope.test.mjs"
+    ]
+  },
+  "native_retry": {
+    "source_head": "6a38ceb5e41fda6cb96d49789325150c8e688841",
+    "manifest_sha256": "651f872a96e9a043717888eb595929531c05f8d33b46dd80d5b4c77e3d2c4f54",
+    "path": "tests/yxx-ss-007-native-ui.browser.test.mjs",
+    "original_counts": {
+      "tests": 48,
+      "pass": 47,
+      "fail": 0,
+      "cancelled": 1,
+      "skipped": 0,
+      "todo": 0
+    },
+    "counts": {
+      "tests": 48,
+      "pass": 48,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "summary_sha256": "23704c0106622d913a7d1a9f583b93b11cddc7a14f0310d94537a8005b303e91",
+    "source_changed": false,
+    "cause": "UNCONFIRMED_TIMEOUT",
+    "first_result_preserved": true
+  },
+  "registered_suite_after_same_head_retry": {
+    "counts": {
+      "tests": 1335,
+      "pass": 1333,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "status": "TWO_BASELINE_FAILURES_REMAIN",
+    "failed_files": [
+      "tests/arch-006-rule-first-service-loop.test.mjs",
+      "tests/yxx-ss-008-validation-scope.test.mjs"
+    ],
+    "readiness_pass": false
+  },
+  "baseline_comparisons": [
+    {
+      "file": "delivery-arch006-test-comparison.json",
+      "sha256": "3d0b465a695c314d10ea612468b8d54511766c99cc27eb2096649e9b12e0db78",
+      "base": "c621845f66eb6d43cb69f00094fb18f2b19baefa",
+      "current": "6a38ceb5e41fda6cb96d49789325150c8e688841",
+      "base_counts": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_counts": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "base_failed_titles": [
+        "ARCH-006 validator passes"
+      ],
+      "current_failed_titles": [
+        "ARCH-006 validator passes"
+      ],
+      "same_failed_titles": true,
+      "original_test_still_fails": true,
+      "readiness_pass": false
+    },
+    {
+      "file": "delivery-ss008-scope-comparison.json",
+      "sha256": "5dea665453f7d0b89a84d79ef5a04072bfbd3c67e7f1ea9a123d56962dd37235",
+      "base": "c621845f66eb6d43cb69f00094fb18f2b19baefa",
+      "current": "6a38ceb5e41fda6cb96d49789325150c8e688841",
+      "base_counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "current_counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "code": "YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+      "readiness_pass": false
+    }
+  ],
+  "acceptance_summary_sha256": "5820ea776be28d52ecb99766f931ce4c5d5e3bf051154a63450a2858b2c39469",
+  "strict_readiness": {
+    "status": "KNOWN_BASELINE_NOT_READY",
+    "command": "node scripts/validate-yxx-self-service.mjs --require-ready",
+    "exit_code": 1,
+    "error_code": "YXX_VERIFICATION_REJECTED",
+    "underlying_error": "YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+    "baseline_head": "c621845f66eb6d43cb69f00094fb18f2b19baefa",
+    "published_head_execution": "PENDING_GITHUB_AUTHORITY_AFTER_PUBLICATION",
+    "comparison": "Original strict CLI rejected the clean base and implementation. The corresponding SS-008 test also fails on both exact objects; later strict checks are not reached."
+  },
+  "architecture": {
+    "status": "PASS",
+    "checks": 407,
+    "log": "delivery-architecture.log"
+  },
+  "runtime_comparison": {
+    "status": "PASS",
+    "modules": 6,
+    "log": "delivery-runtime-comparison.log",
+    "comparison": "Type-erased AST equals authentic main base; SQL, guards, defaults, hashes and side-effect order unchanged."
+  },
+  "tooling": {
+    "status": "PASS",
+    "tested_head": "69bd49572c534eee2f350fdf9265d0078c2976c5",
+    "counts": {
+      "tests": 55,
+      "pass": 55,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "log": "implementation-tooling.log",
+    "applicability": "Tool source is unchanged in successors; current batch independently repeats types/canary, two builds and artifact rejection. Final published-head tooling and CI are pending."
+  },
+  "historical": {
+    "status": "PASS_HISTORICAL_ONLY",
+    "wrapper_head": "69bd49572c534eee2f350fdf9265d0078c2976c5",
+    "historical_ref": "8c332710dad9b6cf3f6796f3344c04d1c710ddf3",
+    "log": "implementation-historical.log",
+    "current_readiness": false
+  },
+  "rollback": "Separate revert PR of source, types and gate wiring; no database rollback or production activation.",
+  "external_review": "NOT_REQUESTED_AT_RECEIPT_CREATION",
+  "publication_result_source": "The final PR self-review comment records authoritative published head, actual CI runs and external review; this receipt preserves its real clean tested ancestor."
+}

@@ -10,6 +10,11 @@ import { batchSelection } from './batches.mjs';
 import { record, sourceRoot, workspaceFiles } from './common.mjs';
 
 const original = sourceRoot();
+test('T04-04 selection covers SDK, Intake, access, subprocesses and the retained baseline', () => {
+  const selected = batchSelection(original, 'T04-04');
+  assert.equal(selected.entries.length, 131);
+  for (const name of ['tests/p1-002-wecom-sdk-adapter.test.mjs', 'tests/p1-004-service-intake.test.mjs', 'tests/p1-009-pilot-access-workbench.test.mjs', 'tests/p1-003-channel-message-inbox.test.mjs', 'tests/p2-g2-process-assembly.integration.test.mjs', 'tests/yxx-ss-010-runtime.integration.test.mjs', 'tests/p2-007-third-party-staff-directory.integration.test.mjs']) assert.ok(selected.entries.some(e => e.path === name));
+});
 test('batch selection includes every T03 reverse dependency and the personnel baseline', () => {
   const selected = batchSelection(original, 'T03-01');
   assert.ok(selected.entries.length >= 166);
