@@ -110,6 +110,12 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
       try{await rm(resolvedProfile,{recursive:true,force:true,maxRetries:3,retryDelay:100});return true;}
       catch(error){if(!['EBUSY','EPERM','ENOTEMPTY'].includes(error?.code))throw error;return false;}
     },{timeoutMs:8000,intervalMs:100});
+    // Process exit and profile removal do not prove the asynchronous CDP close
+    // has completed. Keep cleanup observers honest, including on a timeout.
+    if(socket)await waitFor(()=>{
+      if(socket.readyState!==WebSocket.CLOSED)throw new Error('P2_006_BROWSER_SOCKET_NOT_CLOSED');
+      return true;
+    },{timeoutMs:10000});
   }
   function close(){closePromise??=dispose();return closePromise;}
   const startupSignal=signal?AbortSignal.any([signal,AbortSignal.timeout(30000)]):AbortSignal.timeout(30000);

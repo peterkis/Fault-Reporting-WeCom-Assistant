@@ -67,3 +67,30 @@ test('real browser startup waits for its initial document before allowing relati
     })],primaryError);
   }
 });
+
+test('real browser close waits for the owned DevTools socket to finish closing',{timeout:60000},async()=>{
+  const NativeWebSocket=globalThis.WebSocket;let closeTimer,nativeClosed=false;
+  // Retain the real Chrome/CDP transport; delay its CLOSED observation to expose
+  // the same asynchronous close window reported by the SS-009 cleanup observer.
+  class DelayedCloseWebSocket extends NativeWebSocket{
+    closeObserved=false;
+    constructor(...args){super(...args);this.addEventListener('close',()=>{
+      nativeClosed=true;closeTimer=setTimeout(()=>{this.closeObserved=true;},1000);
+    });}
+    get readyState(){const state=super.readyState;return state===NativeWebSocket.CLOSED&&!this.closeObserved?NativeWebSocket.CLOSING:state;}
+  }
+  const server=http.createServer((_,response)=>{response.writeHead(200,{'content-type':'text/html'});response.end('<p>owned close regression</p>');});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  let browser,primaryError=null;
+  try{
+    globalThis.WebSocket=DelayedCloseWebSocket;
+    browser=await launchSystemBrowser({url:'http://127.0.0.1:'+server.address().port+'/',width:600,height:400});
+    await browser.close();
+    assert.equal(nativeClosed,true);
+    assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});
+  }catch(error){primaryError=error;}finally{
+    await closeBrowserTestResources([()=>browser?.close(),()=>{
+      clearTimeout(closeTimer);globalThis.WebSocket=NativeWebSocket;
+    },()=>new Promise((resolve,reject)=>{server.closeAllConnections?.();server.close(error=>error?reject(error):resolve());})],primaryError);
+  }
+});
