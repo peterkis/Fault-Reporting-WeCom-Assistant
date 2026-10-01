@@ -48,3 +48,13 @@ const requestSpecificAcknowledgement = { accept: async (request: { onlyThisReque
 // @ts-expect-error -- A public acknowledgement view must not hide a narrower raw request handler before E2E wiring.
 const prelabelledAcknowledgement: ReturnType<typeof createFirstAcknowledgementService> = requestSpecificAcknowledgement;
 void prelabelledAcknowledgement;
+
+const rawFrameHandler: (frame: unknown) => ReturnType<typeof handler.handleFrame> = handler.handleFrame;
+void rawFrameHandler;
+const frameSpecificHandler = { handleFrame: async (frame: { onlyThisFrame: string }) => {
+  frame.onlyThisFrame.toUpperCase();
+  throw new Error('synthetic frame handler');
+} };
+// @ts-expect-error -- A public E2E handler view cannot hide a narrower raw frame callback before downstream wiring.
+const prelabelledFrameHandler: ReturnType<typeof createPilotE2EHandler> = frameSpecificHandler;
+void prelabelledFrameHandler;

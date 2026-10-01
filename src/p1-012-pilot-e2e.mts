@@ -30,7 +30,7 @@ export type PilotDeliveryObservation = 'SENT' | 'PENDING' | 'RETRY_SCHEDULED' | 
 export type PilotCoreObservation = { accepted: true; ticket_created: boolean; intake_status: PilotIntakeObservation; within_target: boolean } | { accepted: false; error_code: string; retryable: boolean; within_target: boolean };
 export interface PilotPassiveReplyObservation { operation: 'aibot_respond_msg_stream'; attempted: true; acknowledged: boolean; provider_errcode: number | null; outcome: 'ACKED' | 'UNKNOWN' | 'REJECTED'; error_code?: string; within_target: boolean }
 export type PilotE2EResult = Readonly<{ outcome: 'ignored'; reason: PilotScopeReason }> | Readonly<{ outcome: 'rejected'; error_code: string }> | Readonly<{ outcome: 'processed'; scenario: PilotE2EScenario; core: Readonly<PilotCoreObservation>; passive_reply: Readonly<PilotPassiveReplyObservation>; delivery: Readonly<{ attempted: false; status: 'NOT_APPLICABLE' } | { attempted: true; status: PilotDeliveryObservation }> }>;
-export interface PilotE2EHandler { handleFrame(frame: unknown): Promise<PilotE2EResult> }
+export interface PilotE2EHandler { handleFrame: (frame: unknown) => Promise<PilotE2EResult> }
 
 const GROUP_TEXT = 'GROUP_TEXT';
 const GROUP_IMAGE_DEGRADED = 'GROUP_IMAGE_DEGRADED';
