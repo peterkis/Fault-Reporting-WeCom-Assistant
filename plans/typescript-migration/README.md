@@ -4,7 +4,7 @@
 
 T00 至 T04-04 已合并。PR #36 发布 head `8eb71fb14dfda2c885d0edf53408fc38979aea23` 的迁移与 Evidence-history CI 成功，GitHub 确认 merge 为 `87de2bc9e8835882cd390b024a04e2865cd367f9`。原 T04-04 与 HTTP 修补回执保持其被测祖先及历史状态。
 
-当前批次为 [T04-05](T04-05.md)，迁移 Foundation、首确认、加密备份及 P1 E2E 四个模块。原计划包 prompts/T04-05.md 和本次已确认计划是输入。本批 47 个文件、329/329 测试、严格类型与金丝雀、确定性构建、制品篡改拒绝、407 项架构检查及本地两轴独立审查通过。完整 213 文件登记已运行，原始结果为 1342/1344，保留两个已在干净基线复现的失败；当前严格 readiness 仍为 KNOWN_BASELINE_NOT_READY。回执见 [receipts/T04-05.json](receipts/T04-05.json)。发布 head 的 CI 与外部复审以独立 PR 记录为准，本地回执不宣称本批已完成。
+当前批次为 [T04-05](T04-05.md)，迁移 Foundation、首确认、加密备份及 P1 E2E 四个模块。当前 CI 夹具修补在干净 `571fcd4` 上通过 48 文件、335/335 测试、严格类型/金丝雀、确定性构建、制品验证、58/58 工具测试及两轴独立审查；见 [修补回执](receipts/T04-05-ci-repair.json)。原 [47 文件回执](receipts/T04-05.json) 与完整 213 文件结果继续绑定 `60a0265`：1342/1344，两个失败已在干净基线复现，严格 readiness 仍为 KNOWN_BASELINE_NOT_READY。[PR37](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/37) 的首次 CI 失败已保留，新发布 head 的 CI 和外部复审待独立记录，本批不宣称完成。
 
 Foundation 的 `p1:preflight` / `p1:serve` 先验证制品，再运行 `.build/runtime` 内同名模块；缺失或过期制品失败，需单独构建。现有运行脚本保持 `.mjs` 导入，在运行树加载唯一实现。
 

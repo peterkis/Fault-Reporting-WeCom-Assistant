@@ -1,0 +1,17 @@
+# T04-05 CI fixture repair
+
+Base: `87de2bc9e8835882cd390b024a04e2865cd367f9`. Clean tested repair: `571fcd4b08e3f5f45f9ac81073301733aca30489`, tree `17a5e7749dfed0722ba13ad05132af14c2ff71c8`. This is a follow-up to the unchanged [initial receipt](../receipts/T04-05.json), whose actual tested ancestor remains `60a0265`.
+
+[PR37](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/37)'s [initial migration run](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/36813054264) failed on published `5fd01a`. Linux's Node/npm layout invalidated the new CLI fixture's path assumption. The existing Workbench fixtures' September clock plus 30-day retention also expired on October 1 against real database `created_at`. These were actual test-fixture failures; the failed run is retained.
+
+The clean merged base reproduced the Workbench failure: 6 tests, 4 pass and 2 fail, at the original retention constraint. Each repaired case captures one current whole-second clock, retaining the five-minute replay, real SQL constraint, identity, idempotency, internal-note, HTTP, concurrency, performance and resource-release assertions. Actual npm discovery reuses the existing where/which and realpath pattern. No production source, SQL, default flag, frozen Evidence or dependency changed.
+
+Focused green: CLI 3/3; Workbench 6/6. Formal clean repair gate: **48 files, 335/335 tests**, zero skipped/cancelled/todo/not-run; strict types, negative type canary and two deterministic clean builds passed. Tooling/hosts/batches: **58/58**. Artifact verification passed; 96 TAP/stderr hashes match the actual reports. The 279 production source/script outputs are byte-identical to the initial tested ancestor in the same worktree, and all five module runtime ASTs match the authentic base. Manifest SHA-256: `e34799213d2f6131624edefb7788ee5726555690952b6646fd139542120f1bc1`.
+
+The complete 213-file / 1344-test result remains the actual `60a0265` snapshot, with 1342 pass and two reproduced baseline failures. It was not rerun or rebound to this test-only repair. The affected repair gate is actual new evidence, and the next published CI must execute all configured batches. Original current strict readiness remains `KNOWN_BASELINE_NOT_READY`; neither the local gate nor historical evidence is a readiness pass.
+
+The earlier fresh published clone's raw output comparison is explicitly **not equal**: seven source maps differ only in embedded CRLF/LF source content and one unchanged legacy MJS differs only in raw line endings. Separate metadata and runtime AST comparisons explain those representations; no output, hash assertion or historical file was normalized to claim raw equality.
+
+Standards: 0 remaining findings. Spec: 0 remaining findings, pinned to the clean repair SHA above. Final published-head CI and external Codex review remain pending at this snapshot and are recorded on PR37. [Repair receipt](../receipts/T04-05-ci-repair.json). The owned loopback PostgreSQL 18.4 cluster has no remaining test databases or client backends and is stopped. Original failed attempts are retained, including the wrong-port reproduction, which is excluded from RED evidence.
+
+This record does not complete the batch, approve merge or business readiness, activate artifacts, deploy or authorize T05-01. Final publication records must use GitHub's authoritative full SHA and the unchanged history/strict commands.
