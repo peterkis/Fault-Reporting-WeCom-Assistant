@@ -181,6 +181,16 @@ jobs:
             tail -n 100 "$OUT/t04-04-batch.txt"
             exit 1
           fi
+      - name: Entire T04-05 and P1 stage closure on real PG18 hosts
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          if ! npm run migration:gate -- --batch T04-05 --report-dir "$OUT/t04-05-batch" > "$OUT/t04-05-batch.txt" 2>&1; then
+            tail -n 100 "$OUT/t04-05-batch.txt"
+            exit 1
+          fi
       - name: T02 artifact identity and source architecture
         if: ${{ !cancelled() }}
         shell: bash

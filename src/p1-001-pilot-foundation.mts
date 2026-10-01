@@ -1,5 +1,23 @@
 import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+
+export type PilotEnvironment = 'development' | 'test' | 'pilot';
+export type PilotEnvironmentInput = Readonly<Record<string, unknown>>;
+export interface PilotConfig {
+  readonly architectureBaseline: 'V1.2'; readonly phase: 'P1'; readonly environment: PilotEnvironment;
+  readonly ownerId: string; readonly testGroupId: string;
+  readonly listen: Readonly<{ host: string; port: number; publicEdgeApproved: boolean; securityBoundaryApproved: boolean }>;
+  readonly pilotDatabaseUrl: string;
+  readonly wecom: Readonly<{ botId: string; botSecret: string; wsUrl: string; sdkVersion: typeof SDK_VERSION }>;
+  readonly featureFlags: Readonly<{ aiTriageEnabled: false; ocrEnabled: false; hospitalTicketsEnabled: false }>;
+}
+export type PilotPreflightSummary = ReturnType<typeof buildSafePreflightSummary>;
+export interface PilotPreflightFailure { test_id: typeof TEST_ID; event: 'pilot_configuration_failed'; error_code: 'P1_CONFIG_INVALID' }
+export type PilotPreflightResult = { ok: true; config: PilotConfig; summary: PilotPreflightSummary } | { ok: false; errorCode: 'P1_CONFIG_INVALID' };
+export interface PilotPreflightOptions { env?: PilotEnvironmentInput; writeEvent?: (event: PilotPreflightSummary | PilotPreflightFailure) => unknown }
+export interface PilotListenOptions { host?: string; port?: number }
 
 export const TEST_ID = 'P1-001';
 export const SDK_VERSION = '1.0.6';
@@ -36,27 +54,28 @@ const ALLOWED_HOSPITAL_CONTROL_KEYS = new Set(['HOSPITAL_TICKETS_ENABLED']);
 const ALLOWED_AI_CONTROL_KEYS = new Set(['AI_TRIAGE_ENABLED', 'OCR_ENABLED']);
 
 export class PilotConfigError extends Error {
-  constructor(code) {
+  declare code: string;
+  constructor(code: string) {
     super(`P1_CONFIG_INVALID:${code}`);
     this.code = code;
   }
 }
 
-function fail(code) {
+function fail(code: string): never {
   throw new PilotConfigError(code);
 }
 
-function valueOf(env, key) {
+function valueOf(env: PilotEnvironmentInput, key: string): string {
   return String(env[key] ?? '').trim();
 }
 
-function requireFalse(env, key) {
+function requireFalse(env: PilotEnvironmentInput, key: string): void {
   if (valueOf(env, key).toLowerCase() !== 'false') {
     fail(`${key}_MUST_BE_FALSE`);
   }
 }
 
-function requireBoolean(env, key) {
+function requireBoolean(env: PilotEnvironmentInput, key: string): boolean {
   const value = valueOf(env, key).toLowerCase();
   if (!['true', 'false'].includes(value)) {
     fail(`${key}_MUST_BE_BOOLEAN`);
@@ -64,7 +83,7 @@ function requireBoolean(env, key) {
   return value === 'true';
 }
 
-function parsePort(value) {
+function parsePort(value: string): number {
   if (!/^\d+$/.test(value)) {
     fail('PILOT_LISTEN_PORT');
   }
@@ -75,7 +94,7 @@ function parsePort(value) {
   return port;
 }
 
-function parseRequiredUrl(value, key, allowedProtocols) {
+function parseRequiredUrl(value: string, key: string, allowedProtocols: readonly string[]): string {
   let parsed;
   try {
     parsed = new URL(value);
@@ -88,7 +107,7 @@ function parseRequiredUrl(value, key, allowedProtocols) {
   return parsed.toString();
 }
 
-export function assertPilotOnlyDependencies(env) {
+export function assertPilotOnlyDependencies(env: PilotEnvironmentInput): void {
   const forbiddenKeys = Object.keys(env)
     .filter((key) => valueOf(env, key))
     .filter((key) => {
@@ -107,7 +126,7 @@ export function assertPilotOnlyDependencies(env) {
   }
 }
 
-export function validatePilotConfig(env) {
+export function validatePilotConfig(env: PilotEnvironmentInput): PilotConfig {
   const missing = REQUIRED_CONFIG_KEYS.filter((key) => !valueOf(env, key));
   if (missing.length > 0) {
     fail(`MISSING_${missing.join('_')}`);
@@ -147,7 +166,7 @@ export function validatePilotConfig(env) {
   return Object.freeze({
     architectureBaseline: 'V1.2',
     phase: 'P1',
-    environment,
+    environment: environment as PilotEnvironment,
     ownerId: valueOf(env, 'PILOT_OWNER_ID'),
     testGroupId: valueOf(env, 'PILOT_TEST_GROUP_ID'),
     listen: Object.freeze({
@@ -171,7 +190,7 @@ export function validatePilotConfig(env) {
   });
 }
 
-export function buildSafePreflightSummary(config) {
+export function buildSafePreflightSummary(config: PilotConfig) {
   return Object.freeze({
     test_id: TEST_ID,
     event: 'pilot_configuration_valid',
@@ -188,7 +207,7 @@ export function buildSafePreflightSummary(config) {
   });
 }
 
-export function runPilotPreflight({ env = process.env, writeEvent = () => {} } = {}) {
+export function runPilotPreflight({ env = process.env, writeEvent = () => {} }: PilotPreflightOptions = {}): PilotPreflightResult {
   try {
     const config = validatePilotConfig(env);
     const summary = buildSafePreflightSummary(config);
@@ -200,7 +219,7 @@ export function runPilotPreflight({ env = process.env, writeEvent = () => {} } =
   }
 }
 
-export function parseCliArgs(argv) {
+export function parseCliArgs(argv: readonly string[]): { mode: 'check' | 'serve' } {
   if (argv.length === 0 || (argv.length === 1 && argv[0] === '--check')) {
     return { mode: 'check' };
   }
@@ -210,7 +229,7 @@ export function parseCliArgs(argv) {
   fail('UNSUPPORTED_ARGUMENTS');
 }
 
-export function createPilotFoundationServer() {
+export function createPilotFoundationServer(): Server {
   return createServer((request, response) => {
     const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
     response.setHeader('content-type', 'application/json; charset=utf-8');
@@ -227,21 +246,21 @@ export function createPilotFoundationServer() {
   });
 }
 
-export function listenPilotFoundation(server, { host = DEFAULT_LISTEN_HOST, port = DEFAULT_LISTEN_PORT } = {}) {
+export function listenPilotFoundation(server: Server, { host = DEFAULT_LISTEN_HOST, port = DEFAULT_LISTEN_PORT }: PilotListenOptions = {}): Promise<AddressInfo> {
   return new Promise((resolve, reject) => {
-    const onError = (error) => {
+    const onError = (error: Error) => {
       server.off('error', onError);
       reject(error);
     };
     server.once('error', onError);
     server.listen({ host, port }, () => {
       server.off('error', onError);
-      resolve(server.address());
+      resolve(server.address() as AddressInfo);
     });
   });
 }
 
-export function closePilotFoundation(server) {
+export function closePilotFoundation(server: Server): Promise<void> {
   return new Promise((resolve, reject) => {
     server.close((error) => {
       if (error) {
@@ -277,7 +296,7 @@ async function main() {
   console.log(JSON.stringify({ test_id: TEST_ID, event: 'pilot_foundation_listening', host: address.address, port: address.port }));
 
   let stopping = false;
-  const stop = async (signal) => {
+  const stop = async (signal: 'SIGINT' | 'SIGTERM') => {
     if (stopping) {
       return;
     }

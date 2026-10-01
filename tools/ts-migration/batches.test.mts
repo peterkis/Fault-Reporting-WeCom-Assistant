@@ -10,6 +10,10 @@ import { batchSelection } from './batches.mjs';
 import { record, sourceRoot, workspaceFiles } from './common.mjs';
 
 const original = sourceRoot();
+test('T04-05 closes the entire P1 stage and retains the personnel and boundary baselines', () => {
+  const selected = batchSelection(original, 'T04-05');
+  for (const name of ['tests/p1-001-pilot-foundation.test.mjs', 'tests/p1-008-first-acknowledgement.test.mjs', 'tests/p1-011-encrypted-backup.test.mjs', 'tests/p1-012-pilot-e2e-integration.test.mjs', 'tests/p1-012-live-e2e-script.test.mjs', 'tests/p1-009-pilot-access-workbench.test.mjs', 'tests/p1-foundation-cli.test.mts', 'tests/p1-migration-compatibility.test.mts', 'tests/p2-007-third-party-staff-directory.integration.test.mjs']) assert.ok(selected.entries.some(e => e.path === name));
+});
 test('T04-04 selection covers SDK, Intake, access, subprocesses and the retained baseline', () => {
   const selected = batchSelection(original, 'T04-04');
   assert.equal(selected.entries.length, 131);

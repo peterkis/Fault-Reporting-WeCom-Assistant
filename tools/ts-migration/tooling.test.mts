@@ -10,6 +10,19 @@ import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFile
 import { assertArch006Baseline } from './arch006-baseline.mjs';
 
 const original = sourceRoot();
+
+test('ARCH-006 T04-05 comparison retains rejection and requires the exact four-module rename delta', () => {
+  const scope = '- valid pinned local self-service successor scope\n';
+  const evidence = '- historical Evidence is immutable; authorized current reports require exact snapshots and current READY proof\n';
+  const reference = 'ARCH-006 validation failed with 2 error(s):\n' + scope + evidence;
+  const current = 'ARCH-006 validation failed with 3 error(s):\n- no forbidden Runtime Migration web archive or secret path changed\n' + scope + evidence;
+  const paths = ['src/p1-001-pilot-foundation.mjs', 'src/p1-001-pilot-foundation.mts', 'src/p1-008-first-acknowledgement.mjs', 'src/p1-008-first-acknowledgement.mts', 'src/p1-011-encrypted-backup.mjs', 'src/p1-011-encrypted-backup.mts', 'src/p1-012-pilot-e2e.mjs', 'src/p1-012-pilot-e2e.mts'];
+  assertArch006Baseline(reference, current, paths);
+  for (const extra of ['src/p1-unrelated.mts', 'database/migrations/037_unauthorized.sql', 'evidence/rewritten.json']) assert.throws(() => assertArch006Baseline(reference, current, [...paths, extra]));
+  assert.throws(() => assertArch006Baseline(reference, current, paths.slice(1)));
+  assert.throws(() => assertArch006Baseline(reference, current + '- extra failure\n', paths));
+});
+
 test('ARCH-006 T04-04 comparison allows only the reviewed migration delta', () => {
   const scope = '- valid pinned local self-service successor scope\n';
   const evidence = '- historical Evidence is immutable; authorized current reports require exact snapshots and current READY proof\n';
