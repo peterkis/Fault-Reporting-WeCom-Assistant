@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "batch": "T04-05",
+  "status": "IN_PROGRESS",
+  "execution_status": "LOCAL_INBOUND_VARIANCE_REPAIR_AND_TWO_AXIS_REVIEW_PASS_PUBLISHED_VALIDATION_PENDING",
+  "base": "87de2bc9e8835882cd390b024a04e2865cd367f9",
+  "head": "f747b5979786a3428870c4b3e3983c7fc1859d25",
+  "tested_head": "f747b5979786a3428870c4b3e3983c7fc1859d25",
+  "tested_tree": "51415532494f318d293b6a3c479f47d83a95f6be",
+  "dirty": false,
+  "previous_published_head": "3c02ad9c5c9f106700706d984371e821f957e9b9",
+  "imported_fix": {
+    "head": "c17768c6120291f8b0fdf70570a1b66afa5be9d4",
+    "tree": "f0beba6ce94d7d7e1259be3288335e9d9dbc679e",
+    "selected": 48,
+    "counts": {
+      "tests": 335,
+      "pass": 335,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "verified_log_hashes": 96,
+    "manifest_sha256": "dddfa1ce53dff1ff430bf2465f97f68abb343ccd9a4356e9fe2cf06d70b5c868"
+  },
+  "followup": {
+    "head": "f747b5979786a3428870c4b3e3983c7fc1859d25",
+    "finding": "Same-root public raw frame handler method variance",
+    "fix": "PilotE2EHandler.handleFrame uses a function property; labelled narrow-handler rejection and unknown callback acceptance are covered."
+  },
+  "public_raw_boundaries": [
+    "InboxService.accept",
+    "FirstAcknowledgementService.accept",
+    "PilotE2EHandler.handleFrame"
+  ],
+  "type_tests": {
+    "status": "PASS",
+    "compiler": "5.9.3",
+    "full_program_diagnostics": 0,
+    "individual_method_regression_controls": 3,
+    "red_error": "TS2578",
+    "escape_hatches_added": 0
+  },
+  "batch_validation": {
+    "head": "f747b5979786a3428870c4b3e3983c7fc1859d25",
+    "tree": "51415532494f318d293b6a3c479f47d83a95f6be",
+    "selected": 48,
+    "counts": {
+      "tests": 335,
+      "pass": 335,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "verified_log_hashes": 96,
+    "manifest_sha256": "560121af2f9270fcbe9bb491128b9c83e74108504d0e957f888afa12028a1728"
+  },
+  "tooling": {
+    "host": "win32",
+    "exit_code": 0,
+    "counts": {
+      "tests": 59,
+      "pass": 59,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  },
+  "runtime": {
+    "production_outputs_compared": 261,
+    "production_outputs_raw_equal_to": "3c02ad9c5c9f106700706d984371e821f957e9b9",
+    "all_outputs": 747,
+    "changed_source_maps": [
+      "src/p1-003-channel-message-inbox.mjs.map",
+      "src/p1-008-first-acknowledgement.mjs.map",
+      "src/p1-012-pilot-e2e.mjs.map"
+    ],
+    "base_ast_comparisons": [
+      {
+        "module": "p1-001-pilot-foundation",
+        "runtime_ast_equal_to_base": true
+      },
+      {
+        "module": "p1-003-channel-message-inbox",
+        "runtime_ast_equal_to_base": true
+      },
+      {
+        "module": "p1-007-notification-outbox",
+        "runtime_ast_equal_to_base": true
+      },
+      {
+        "module": "p1-008-first-acknowledgement",
+        "runtime_ast_equal_to_base": true
+      },
+      {
+        "module": "p1-011-encrypted-backup",
+        "runtime_ast_equal_to_base": true
+      },
+      {
+        "module": "p1-012-pilot-e2e",
+        "runtime_ast_equal_to_base": true
+      }
+    ]
+  },
+  "architecture": {
+    "checks": 407,
+    "exit_code": 0
+  },
+  "strict_readiness": {
+    "exit_code": 1,
+    "public_error": "YXX_VERIFICATION_REJECTED",
+    "underlying_error": "YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+    "status": "KNOWN_BASELINE_NOT_READY",
+    "readiness_pass": false
+  },
+  "arch006": {
+    "original_validator_exit": 1,
+    "complete_baseline_diagnostics_retained": true,
+    "exact_support_delta_paths": 10,
+    "classification_is_readiness_pass": false
+  },
+  "full_registry": {
+    "rerun_on_this_fix": false,
+    "reference": "T04-05.json",
+    "tested_head": "60a02654fe48944381239f1b7c73e4f0cc71b761",
+    "files": 213,
+    "tests": 1344,
+    "pass": 1342,
+    "fail": 2,
+    "claim": "Original historical snapshot only; the two reproduced baseline failures remain recorded."
+  },
+  "review": {
+    "standards_findings": 0,
+    "spec_findings": 0,
+    "reviewed_head": "f747b5979786a3428870c4b3e3983c7fc1859d25",
+    "external": "PENDING_CURRENT_PUBLISHED_HEAD_REQUEST_AFTER_CI",
+    "prior_head_external_response": "CODE_REVIEW_USAGE_LIMIT"
+  },
+  "published_validation": {
+    "status": "PENDING",
+    "pull_request": 37,
+    "source": "Authoritative GitHub PR head, actual current CI and external request are recorded separately; this tested ancestor is not rebound by documentation successors."
+  },
+  "database_change": false,
+  "cleanup": {
+    "status": "OWNED_RESOURCES_CLEAN",
+    "server_version": "18.4",
+    "remaining_databases": [],
+    "other_client_backends": 0,
+    "cluster_started_by_this_run": true,
+    "preexisting_resources_touched": false,
+    "scope": "OWNED_SYNTHETIC_CLUSTER_ONLY",
+    "listen_host": "127.0.0.1",
+    "listen_port": 55435,
+    "cluster_stopped": true,
+    "stopped_at": "2026-10-01T08:22:55.976Z",
+    "stop_log_sha256": "3589d2bd01f8295cc7c9ec3f5e07625fcd347ccb6f33f2d80edafe5f5217c1fb"
+  },
+  "artifact_status": "STAGED_NOT_ACTIVATED",
+  "frozen_evidence_modified": false,
+  "production_ready": false,
+  "rollback": "Keep feature flags closed and do not activate staged artifacts; a forward revert of the type-only fix restores the previous candidate if separately required.",
+  "stopline": {
+    "merge": false,
+    "deployment": false,
+    "real_provider": false,
+    "real_send": false,
+    "production_write": false,
+    "next_batch": "T05-01",
+    "next_batch_authorized": false
+  },
+  "archive": {
+    "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59",
+    "index_sha256": "e4d7dfdbaef6fcd411e552b7078c7775b9b761f19cf30293994b8c9390bb0f0b",
+    "indexed_files": 329
+  },
+  "reports": [
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/gate.log",
+      "sha256": "d6871bc9e4d776957f85e0c179c2f57a6dfc5577257ef30994e1d7d5a64203e2"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/tooling.log",
+      "sha256": "53ba5e5e190894f785863cb82fe1564bef1e2a1e469ee473e4b7a0952cf4da23"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/tested-build-manifest.json",
+      "sha256": "560121af2f9270fcbe9bb491128b9c83e74108504d0e957f888afa12028a1728"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/local-integrity.json",
+      "sha256": "cb48f385c026c35c15226542e52b8411f05ba0c8086c9213cb9c86b80890f73b"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/mutation-check-results.json",
+      "sha256": "be634ae01ccd2b46a5c9d0bcbe90db9aa721ec1da21e63bf2a58fb3bf85a2199"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/frame-variance-red.log",
+      "sha256": "bc844300d62369f8e0fb5008fedd39d5363d0a0ca6d9ea26576169fd82c3cd44"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/frame-variance-green.log",
+      "sha256": "efda3af48b0ad410074202a306e9b9468c999b2ee76f62607e280053952d11f4"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/local-diagnostics.json",
+      "sha256": "ad16c6d00bb32fc6620bea9c1e588fa46ad9fcb30e2e5ea7217e26c3c8e1099b"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/architecture.txt",
+      "sha256": "ac1058ab8ed14699e2fa28e83e269153aa710adcaebb1dc701ffa9e6969c1981"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/strict.txt",
+      "sha256": "a79943a56ae3496244750c6a200a69638878b913d5de063b476b936f050c1665"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/current-arch006.txt",
+      "sha256": "71687ca0da8a505a4a7d7aa25d4adfa1e4b97a887a8972e17fd532771f6bd206"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/base-arch006.txt",
+      "sha256": "312c9970e11df69faef38ea491073d1c758049f5f6ae80a0e5eaccfa677ebbb7"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/arch006-comparison.txt",
+      "sha256": "a323d92a43fe2a080241b70a6971bb6a22022b17c4094c8868f997cadaeb9fb5"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/database-cleanup.json",
+      "sha256": "340b5086099057fff2faa9ed2b7c2e26b9686b8062ac62d36f43da2f1a47da39"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/standards-review.md",
+      "sha256": "3a6714a23132e0fb6c9bfa694f05345a27bc5660c6f176adb60901c8144a53e3"
+    },
+    {
+      "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/inbound-variance-f747b59/spec-review.md",
+      "sha256": "bf51dab3e8e2752e099db2eb84182c4e6011adfb17a290c9331efc92b159ecce"
+    }
+  ]
+}

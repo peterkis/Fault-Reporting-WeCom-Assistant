@@ -3,7 +3,7 @@
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
   "current_batch": "T04-05",
-  "current_execution_status": "LOCAL_CI_REPAIR_AND_TWO_AXIS_REVIEW_PASS_PUBLISHED_CI_PENDING",
+  "current_execution_status": "LOCAL_INBOUND_VARIANCE_REPAIR_AND_TWO_AXIS_REVIEW_PASS_PUBLISHED_VALIDATION_PENDING",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
@@ -65,7 +65,7 @@
   "required_before_next_batch": [
     "T04-05 actual published-head validation, review and separately authorized merge."
   ],
-  "migration_readiness": "T04_05_AWAITING_PUBLISHED_CI_AND_EXTERNAL_REVIEW",
+  "migration_readiness": "T04_05_INBOUND_VARIANCE_REPAIR_AWAITING_PUBLISHED_CI_AND_EXTERNAL_REVIEW",
   "production_readiness": "NOT_CLAIMED",
   "types": "T04_05_STRICT_TYPES_AND_CANARY_PASS",
   "build": "T04_05_STAGED_NOT_ACTIVATED",
@@ -91,7 +91,7 @@
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
-  "completed_batches_note": "T00 through T04-04 merged; T04-05 initial CI failed and fixture repairs pass locally. Current published CI, external review and separately authorized merge remain pending.",
+  "completed_batches_note": "T00 through T04-04 merged. T04-05 previous published CI passed; independent review found public raw-input method variance. The imported and additional same-root type-only fix passes locally. New published-head validation and external review remain pending.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
   "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",
@@ -99,7 +99,7 @@
     "pr": 27,
     "merge": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023"
   },
-  "current_followup_receipt": "receipts/T04-05-ci-repair.json",
+  "current_followup_receipt": "receipts/T04-05-inbound-variance.json",
   "publication_result_source": "The independent PR for codex/typescript-t04-05 records actual authoritative head, CI and external review separately. This receipt preserves the clean tested ancestor; successor documentation does not rebind it.",
   "current_pull_request": 37,
   "current_ci_repair_record": "verification/T04-05-ci-repair.md",
@@ -136,5 +136,6 @@
     "merge": "87de2bc9e8835882cd390b024a04e2865cd367f9",
     "ci": "MIGRATION_AND_EVIDENCE_HISTORY_SUCCESS",
     "source": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36"
-  }
+  },
+  "current_inbound_variance_record": "verification/T04-05-inbound-variance.md"
 }

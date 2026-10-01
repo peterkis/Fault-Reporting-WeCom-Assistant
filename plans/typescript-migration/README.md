@@ -4,7 +4,7 @@
 
 T00 至 T04-04 已合并。PR #36 发布 head `8eb71fb14dfda2c885d0edf53408fc38979aea23` 的迁移与 Evidence-history CI 成功，GitHub 确认 merge 为 `87de2bc9e8835882cd390b024a04e2865cd367f9`。原 T04-04 与 HTTP 修补回执保持其被测祖先及历史状态。
 
-当前批次为 [T04-05](T04-05.md)，迁移 Foundation、首确认、加密备份及 P1 E2E 四个模块。当前 CI 夹具修补在干净 `571fcd4` 上通过 48 文件、335/335 测试、严格类型/金丝雀、确定性构建、制品验证、58/58 工具测试及两轴独立审查；见 [修补回执](receipts/T04-05-ci-repair.json)。原 [47 文件回执](receipts/T04-05.json) 与完整 213 文件结果继续绑定 `60a0265`：1342/1344，两个失败已在干净基线复现，严格 readiness 仍为 KNOWN_BASELINE_NOT_READY。[PR37](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/37) 的首次 CI 失败已保留，新发布 head 的 CI 和外部复审待独立记录，本批不宣称完成。
+当前批次为 [T04-05](T04-05.md)，迁移 Foundation、首确认、加密备份及 P1 E2E 四个模块。PR37 的 `3c02ad9` CI 已实际核验通过，随后独立审查发现公开受理接口的方法参数变异漏洞。已保留并接入原本地修补 `c17768c`，再修复 E2E `handleFrame` 的同根因入口。干净 `f747b59` 实际通过 48 文件、335/335 测试、严格类型/金丝雀、确定性构建、制品验证、59/59 工具测试及两轴独立审查；见 [当前回执](receipts/T04-05-inbound-variance.json) 和 [类型边界修补记录](verification/T04-05-inbound-variance.md)。原 [47 文件回执](receipts/T04-05.json) 与完整 213 文件结果继续绑定 `60a0265`：1342/1344，两个失败已在干净基线复现，严格 readiness 仍为 KNOWN_BASELINE_NOT_READY；[夹具修补回执](receipts/T04-05-ci-repair.json) 亦保持原被测祖先。[PR37](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/37) 的新源候选须取得新的发布 head CI 和外部复审，旧 CI 与额度拒绝不替代这些结果，本批不宣称完成。
 
 Foundation 的 `p1:preflight` / `p1:serve` 先验证制品，再运行 `.build/runtime` 内同名模块；缺失或过期制品失败，需单独构建。现有运行脚本保持 `.mjs` 导入，在运行树加载唯一实现。
 
@@ -35,7 +35,7 @@ CLI 的 `--report-dir` 必须在仓库之外。旧 72 个 npm 测试别名保留
 ## 原基线的非就绪结果
 
 当前原 `--require-ready` 仍为 `YXX_VERIFICATION_REJECTED` / `YXX_LOCAL_VALIDATION_SCOPE_INVALID`。
-ARCH-006 原 validator 在 T02 合并基线返回两个 scope/READY 错误；本批还因原规则不识别已授权 P1 TypeScript 迁移而返回第三个 runtime-delta 错误。CI 保留原 validator 的 exit 1，分别精确核验两份完整诊断；历史九/十路径变体及本批四模块改名的精确八/九路径变体（九路径唯一额外支持为 p1-007 的原始 Delivery ID 类型边界）可分类为已知非就绪，其他路径或诊断仍失败。原始输出不改写、不计入 readiness PASS。
+ARCH-006 原 validator 在 T02 合并基线返回两个 scope/READY 错误；本批还因原规则不识别已授权 P1 TypeScript 迁移而返回第三个 runtime-delta 错误。CI 保留原 validator 的 exit 1，分别精确核验两份完整诊断；历史九/十路径变体及本批四模块改名的精确八/九/十路径变体可分类为已知非就绪。本批九路径额外支持为 p1-007 的原始 Delivery ID 类型边界，十路径再包含 p1-003 的公开 Inbox 受理类型边界；其他路径或诊断仍失败。原始输出不改写、不计入 readiness PASS。
 ARCH-005 对部分冻结 SQL 使用原 CRLF 检出字节。CI 在 checkout 前设置原检出策略，不修改 SQL 或冻结哈希。
 
 ## 历史记录与边界
