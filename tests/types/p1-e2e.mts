@@ -37,3 +37,14 @@ const core = (request: Parameters<Parameters<typeof createPilotE2EHandler>[0]['a
 createPilotE2EHandler({ testGroupId: 'synthetic', testAccountUserIds: ['synthetic'], triggerToken: 'run', accept: core, reply: async () => ({}), deliver: async (_input: { deliveryId: string }) => null });
 // @ts-expect-error -- The normalized E2E delivery port must accept every string ID, not a single literal.
 createPilotE2EHandler({ testGroupId: 'synthetic', testAccountUserIds: ['synthetic'], triggerToken: 'run', accept: core, reply: async () => ({}), deliver: async (_input: { deliveryId: 'only-one-id' }) => null });
+
+import { createFirstAcknowledgementService } from '../../src/p1-008-first-acknowledgement.mjs';
+const actualFirstAcknowledgement = createFirstAcknowledgementService({ inbox, processor, deliveryWorker: worker });
+createPilotE2EHandler({ testGroupId: 'synthetic', testAccountUserIds: ['synthetic'], triggerToken: 'run', accept: actualFirstAcknowledgement.accept, reply: async () => ({}) });
+const requestSpecificAcknowledgement = { accept: async (request: { onlyThisRequest: string }) => {
+  request.onlyThisRequest.toUpperCase();
+  return { ok: false as const, error: { code: 'SYNTHETIC', retryable: false } };
+} };
+// @ts-expect-error -- A public acknowledgement view must not hide a narrower raw request handler before E2E wiring.
+const prelabelledAcknowledgement: ReturnType<typeof createFirstAcknowledgementService> = requestSpecificAcknowledgement;
+void prelabelledAcknowledgement;

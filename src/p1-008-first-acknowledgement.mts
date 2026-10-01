@@ -26,7 +26,7 @@ export type FirstAcknowledgementResult = Exclude<InboxResult, InboxSuccess> | (I
   | { acknowledgement: { state: 'ALREADY_DELIVERED'; delivery_id: string }; reply: null; metrics: { first_ack_delivery_latency_ms: number } }
   | { acknowledgement: { state: 'PENDING'; delivery_id: unknown; error_code: string | null }; reply: PendingReply; metrics: { first_ack_delivery_latency_ms: number } }
 ));
-export interface FirstAcknowledgementService { accept(request: unknown): Promise<FirstAcknowledgementResult> }
+export interface FirstAcknowledgementService { accept: (request: unknown) => Promise<FirstAcknowledgementResult> }
 
 function validNow(now: () => Date): Date {
   const value = now();

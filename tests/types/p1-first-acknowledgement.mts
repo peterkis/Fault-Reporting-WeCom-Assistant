@@ -46,3 +46,8 @@ import type { NotificationDeliveryWorker } from '../../src/p1-007-notification-o
 // @ts-expect-error -- Pre-labelling a narrower Worker must not bypass function-property variance.
 const narrowedWorker: NotificationDeliveryWorker = { deliver: async (_input: { deliveryId: 'only-one-id' }) => null, getDelivery: deliveryWorker.getDelivery, runOnce: deliveryWorker.runOnce };
 void narrowedWorker;
+
+// Preserve contravariance before the dependency reaches the local function-property view.
+// @ts-expect-error -- An existing Inbox service view cannot pre-label a request-specific implementation as raw-safe.
+const prelabelledInbox: ReturnType<typeof createChannelMessageInbox> = restrictedInbox;
+void prelabelledInbox;
