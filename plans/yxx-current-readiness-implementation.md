@@ -12,7 +12,7 @@ This progress document is not acceptance evidence.
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
-| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution/review/cleanup/historical/specialized/source/scenario components implemented; full strict consumer and publisher pending |
+| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; complete-proof strict consumer implemented with component regressions; immutable publication pending; actual whole-proof READY remains unverified until frozen acceptance |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
@@ -147,6 +147,26 @@ Runtime characterization: 1/1; registry/host regressions: 23/23; strict types pa
 External receipts are `stage04-combined-v1-tests`, `stage04-combined-v1-pg-cleanup.json`,
 `stage04-combined-tooling.log` and `stage04-combined-types.log`. This development run
 is not frozen acceptance; strict consumption of its receipt shape remains pending.
+
+Combined migration receipt consumption is now implemented. It requires exactly one
+receipt from the designated current migration test, exact 22-file scope, 14 observed
+legacy applications, eight raw SQL marker checksums, PostgreSQL 18, successful
+initial application and unchanged-marker replay, valid catalog and zero business
+rows. Scope and tested-runtime fingerprints must match. Twelve semantic/source
+mutations remain rejected even with recomputed TAP hashes. The tested runtime
+fingerprint reconstruction is shared with specialized proof verification.
+
+The strict consumer now requires all nine proof components, checks report time and
+`CURRENT_AUTOMATION_COMPLETE` with live/parent permission false, then verifies the
+actual current build before its success return. Success reports technical
+`READY_FOR_LIMITED_WRITE_LIVE`, `base_service_ready:true` and
+`ai_enhancement_ready:false`; it never grants live or parent Gate permission.
+This success branch is implemented but has not yet been proven with a real complete
+frozen packet. Current strict CLI still exits 1 with `CURRENT_EVIDENCE_REQUIRED`.
+Component/negative regressions pass 13/13 and strict types pass. Receipts:
+`slice34-red`, `slice34-green`, `stage04-migration-proof-tests`,
+`stage04-strict-composition-tests`, `stage04-strict-composition-types.log` and
+`stage04-strict-current-closed.log`. Immutable publication and stages 5-7 remain.
 
 Stage 4 execution core now checks the complete declared current set across disjoint
 run references, per-file success, source/actual execution hashes, archived build

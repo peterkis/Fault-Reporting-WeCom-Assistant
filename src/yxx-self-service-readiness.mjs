@@ -4,9 +4,10 @@ import path from 'node:path';
 import {g2CandidateInventory,G2_ROOT} from './p2-g2-candidate.mjs';
 import {evidenceHash} from './yxx-self-service-verification.mjs';
 import {validateLimitedManifest} from './yxx-limited-write-contract.mjs';
+import {assertG2EvidenceTime} from './p2-g2-evidence-time.mjs';
 import {readCurrentYxxScope} from './yxx-current-readiness-scope.mjs';
 import {verifyCurrentYxxEvidenceHistory} from './yxx-current-evidence-history.mjs';
-import {readCurrentYxxReport,verifyCurrentYxxReportBinding,verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,verifyCurrentYxxSourceAccounting,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact} from './yxx-current-evidence.mjs';
+import {readCurrentYxxReport,verifyCurrentYxxReportBinding,verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,verifyCurrentYxxSourceAccounting,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact,verifyCurrentYxxMigrationProof} from './yxx-current-evidence.mjs';
 
 export const SS010_REPORT='evidence/yxx-ss-010-report.json';
 export const SS010_TEMPLATE='config_examples/yxx-limited-write-authorization.example.json';
@@ -34,7 +35,7 @@ export function checkSS010({root=defaultSourceRoot,requireReady=false}={}){
   verifyCurrentYxxEvidenceHistory(root);
   const inventory=g2CandidateInventory(root);
   if(requireReady){
-    const {report}=readCurrentYxxReport(root);verifyCurrentYxxReportBinding(root,report);
+    const {reference,report}=readCurrentYxxReport(root);verifyCurrentYxxReportBinding(root,report);
     if(report.current_runs!==undefined)verifyCurrentYxxExecution(root,report);
     if(report.reviews!==undefined)verifyCurrentYxxReviews(root,report);
     if(report.cleanup!==undefined)verifyCurrentYxxCleanup(root,report);
@@ -42,9 +43,18 @@ export function checkSS010({root=defaultSourceRoot,requireReady=false}={}){
     if(report.specialized!==undefined)verifyCurrentYxxSpecializedProof(root,report);
     if(report.source_accounting!==undefined)verifyCurrentYxxSourceAccounting(root,report);
     if(report.scenarios!==undefined)verifyCurrentYxxScenarios(root,report,SS010_ACCEPTANCE);
-    if(['build','current_runs','reviews','cleanup','historical','specialized','source_accounting','scenarios'].every(field=>report[field]!==undefined))verifyCurrentYxxArtifact(root);
-    // Current combined migration proof and immutable publication are still pending.
-    throw Object.assign(new Error('CURRENT_EVIDENCE_INCOMPLETE'),{code:'CURRENT_EVIDENCE_INCOMPLETE',stage:'EVIDENCE'});
+    if(report.migration_scope!==undefined)verifyCurrentYxxMigrationProof(root,report);
+    if(!['build','current_runs','reviews','cleanup','historical','specialized','source_accounting','scenarios','migration_scope'].every(field=>report[field]!==undefined))
+      throw Object.assign(new Error('CURRENT_EVIDENCE_INCOMPLETE'),{code:'CURRENT_EVIDENCE_INCOMPLETE',stage:'EVIDENCE'});
+    try{
+      assertG2EvidenceTime(report);assert.equal(report.status,'CURRENT_AUTOMATION_COMPLETE');
+      assert.equal(report.live_authorized,false);assert.equal(report.parent_gate_advanced,false);
+    }catch{throw Object.assign(new Error('CURRENT_EVIDENCE_INVALID'),{code:'CURRENT_EVIDENCE_INVALID',stage:'EVIDENCE'});}
+    verifyCurrentYxxArtifact(root);
+    return {ok:true,status:'READY_FOR_LIMITED_WRITE_LIVE',contract:'ADR-0027',scope_base:scope.base_head,
+      tested_head:report.tested_head,tested_tree:report.tested_tree,candidate_fingerprint:inventory.fingerprint,
+      report_path:reference.path,report_sha256:reference.sha256,base_service_ready:true,ai_enhancement_ready:false,
+      database_connections:0,provider_calls:0,listener_started:false,live_authorized:false,parent_gate_advanced:false};
   }
   return {ok:true,status:'STRUCTURE_VALID_NOT_READY',contract:'ADR-0027',scope_base:scope.base_head,
     candidate_fingerprint:inventory.fingerprint,database_connections:0,provider_calls:0,listener_started:false,

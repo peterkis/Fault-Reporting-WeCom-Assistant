@@ -167,6 +167,59 @@ export function verifyCurrentYxxSourceAccounting(root:string,report:Record<strin
   }
 }
 
+function testedRuntimeFingerprint(root:string,report:Record<string,unknown>):string {
+  assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+  // H's manifest identifies H; receipts identify C. Substitute only C's archived
+  // manifest, leaving the actual current runtime files in the inventory unchanged.
+  const archived=artifact(root,report.run_id,report.build).bytes;
+  const manifest=Buffer.from(new TextDecoder('utf-8',{fatal:true}).decode(archived).replaceAll('\r\n','\n'));
+  const inventory=g2CandidateInventory(path.join(root,'.build/runtime'));
+  assert.equal(inventory.files.filter(file=>file.path==='build-manifest.json').length,1);
+  return hash(Buffer.from(JSON.stringify(inventory.files.map(file=>file.path==='build-manifest.json'
+    ?{...file,sha256:hash(manifest),bytes:manifest.length}:file))));
+}
+
+export function verifyCurrentYxxMigrationProof(root:string,report:Record<string,unknown>):void {
+  try{
+    assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+    const runId=report.run_id,proof=json(artifact(root,runId,report.migration_scope).bytes);
+    assert.equal(proof.schema_version,1);assert.equal(proof.kind,'CURRENT_MIGRATION_SCOPE');assertG2EvidenceTime(proof);
+    for(const field of ['tested_head','tested_tree','candidate_fingerprint']){assert.ok(typeof report[field]==='string');assert.equal(proof[field],report[field]);}
+    const scopeBytes=read(root,'plans/yxx-current-readiness-scope.json'),scope=json(scopeBytes);
+    assert.equal(report.scope_sha256,hash(Buffer.from(new TextDecoder('utf-8',{fatal:true}).decode(scopeBytes).replaceAll('\r\n','\n'))));
+    assert.ok(Array.isArray(scope.files));
+    const sql=scope.files.map(object).filter(item=>typeof item.path==='string'&&item.path.startsWith('database/migrations/')).map(item=>{
+      assert.ok(typeof item.path==='string'&&typeof item.sha256_utf8_lf==='string');return {path:item.path,sha256_utf8_lf:item.sha256_utf8_lf};
+    });
+    assert.equal(sql.length,22);
+    assert.ok(Array.isArray(report.current_runs));const candidates:Array<{tapPath:string;receipt:Record<string,unknown>}>=[];
+    for(const reference of report.current_runs){
+      const summary=artifact(root,runId,reference),run=json(summary.bytes);assert.ok(Array.isArray(run.files));
+      for(const value of run.files){
+        const file=object(value);if(file.path!=='tests/yxx-current-migrations.integration.test.mts')continue;
+        assert.equal(run.status,'SELECTED_TESTS_PASS');assert.equal(file.status,'PASS');assert.equal(file.exit_code,0);assert.equal(file.signal,null);
+        assert.equal(file.mode,'MIXED_EXPLICIT_ROOTS');assert.ok(typeof file.tap_path==='string');assert.match(file.tap_path,/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,240}$/u);
+        const tap=artifact(root,runId,{path:path.posix.dirname(summary.path)+'/'+file.tap_path,sha256:file.tap_sha256,bytes:file.tap_bytes});
+        const text=new TextDecoder('utf-8',{fatal:true}).decode(tap.bytes);tapCounts(text);
+        const matches=[...text.matchAll(/^# CURRENT_SCOPE_CATALOG (.+)\r?$/gmu)];assert.equal(matches.length,1);
+        const match=matches[0]?.[1];assert.ok(match);candidates.push({tapPath:tap.path,receipt:object(JSON.parse(match) as unknown)});
+      }
+    }
+    assert.equal(candidates.length,1);const candidate=candidates[0];assert.ok(candidate);
+    assert.deepEqual(proof.observation,{tap_path:candidate.tapPath,receipt_index:0});
+    const receipt=candidate.receipt;assertG2EvidenceTime(receipt);assert.equal(receipt.status,'PASS');
+    assert.equal(receipt.candidate_fingerprint,testedRuntimeFingerprint(root,report));assert.equal(receipt.scope_sha256,report.scope_sha256);
+    assert.equal(receipt.database_scope,'OWNED_ISOLATED_DATABASE');assert.equal(receipt.live_authorized,false);
+    assert.ok(typeof receipt.postgres_version_num==='number'&&Number.isInteger(receipt.postgres_version_num)&&receipt.postgres_version_num>=180000&&receipt.postgres_version_num<190000);
+    assert.deepEqual(receipt.migration_files,sql);assert.deepEqual(receipt.legacy_applied,sql.slice(0,14).map(item=>path.posix.basename(item.path).slice(0,3)));
+    assert.deepEqual(receipt.markers,sql.slice(14).map(item=>({migration_id:path.posix.basename(item.path,'.sql'),checksum_sha256:hash(read(root,'.build/runtime/'+item.path))})));
+    assert.deepEqual(receipt.initial,{baseline:'APPLIED',yxx:'APPLIED',workbench_auth:'APPLIED',directory:'APPLIED'});
+    assert.equal(receipt.replay,'ALL_NOOP_MARKERS_UNCHANGED');assert.equal(receipt.catalog_verified,true);assert.deepEqual(receipt.business_rows,{tickets:0,intakes:0});
+  }catch{
+    throw Object.assign(new Error('CURRENT_MIGRATION_PROOF_INVALID'),{code:'CURRENT_MIGRATION_PROOF_INVALID',stage:'MIGRATION_PROOF'});
+  }
+}
+
 /** Bind specialized observations to their executed host and original artifacts. */
 export function verifyCurrentYxxSpecializedProof(root:string,report:Record<string,unknown>):void {
   try{
@@ -174,14 +227,7 @@ export function verifyCurrentYxxSpecializedProof(root:string,report:Record<strin
     const runId=report.run_id,proof=json(artifact(root,runId,report.specialized).bytes);
     assert.equal(proof.schema_version,1);assert.equal(proof.kind,'CURRENT_SPECIALIZED_PROOF');assertG2EvidenceTime(proof);
     for(const field of ['tested_head','tested_tree','candidate_fingerprint']){assert.ok(typeof report[field]==='string');assert.equal(proof[field],report[field]);}
-    // H's build manifest has H's identity. Reconstruct C's runtime inventory using
-    // C's archived manifest and the verified unchanged runtime files, without writing either.
-    const archived=artifact(root,runId,report.build).bytes;
-    const manifest=Buffer.from(new TextDecoder('utf-8',{fatal:true}).decode(archived).replaceAll('\r\n','\n'));
-    const inventory=g2CandidateInventory(path.join(root,'.build/runtime'));
-    assert.equal(inventory.files.filter(file=>file.path==='build-manifest.json').length,1);
-    const runtimeFingerprint=hash(Buffer.from(JSON.stringify(inventory.files.map(file=>file.path==='build-manifest.json'
-      ?{...file,sha256:hash(manifest),bytes:manifest.length}:file))));
+    const runtimeFingerprint=testedRuntimeFingerprint(root,report);
     assert.ok(Array.isArray(report.current_runs)&&report.current_runs.length>0);
     const observed=new Map<string,{selector:Record<string,unknown>;receipt:Record<string,unknown>;channel:string}>();
     const selectorKey=(value:unknown):string=>{

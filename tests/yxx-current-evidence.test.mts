@@ -8,7 +8,7 @@ import path from 'node:path';
 import {testRoots} from './helpers/migration-roots.mjs';
 import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
 import {checkSS010,SS010_ACCEPTANCE} from '../src/yxx-self-service-readiness.mjs';
-import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,deriveCurrentYxxSourceAudit,verifyCurrentYxxSourceAccounting,deriveCurrentYxxScenarios,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact} from '../src/yxx-current-evidence.mjs';
+import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,deriveCurrentYxxSourceAudit,verifyCurrentYxxSourceAccounting,deriveCurrentYxxScenarios,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact,verifyCurrentYxxMigrationProof} from '../src/yxx-current-evidence.mjs';
 import {SS009_VALIDATORS} from '../src/yxx-self-service-verification.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 
@@ -45,6 +45,48 @@ function syntheticExecution(root:string){
   const report={run_id:'fixture',tested_head:manifest.source.head,tested_tree:manifest.source.tree,build,current_runs:[save(directory+'/summary.json',document)]};
   return {report,document,save,tap:path.join(root,tap.path),commit:()=>{report.current_runs[0]=save(directory+'/summary.json',document);}};
 }
+
+test('combined migration proof rejects incomplete SQL scope wrong markers and failed replay with matching hashes',()=>{
+  const root=mkdtempSync(path.join(tmpdir(),'yxx-migration-proof-'));
+  try{
+    // Synthetic parser fixture. The actual owned-PG characterization is separate.
+    const source=testRoots().sourceRoot,fixture=syntheticExecution(root),runtime=path.join(root,'.build/runtime');
+    const scopeText=readFileSync(path.join(source,'plans/yxx-current-readiness-scope.json'),'utf8');
+    fixture.save('plans/yxx-current-readiness-scope.json',scopeText);
+    const scope=JSON.parse(scopeText) as {files:Array<{path:string;sha256_utf8_lf:string}>};
+    const sql=scope.files.filter(item=>item.path.startsWith('database/migrations/')).map(item=>({path:item.path,sha256_utf8_lf:item.sha256_utf8_lf}));
+    for(const dir of ['src','scripts','web','contracts','config_examples','database/migrations'])mkdirSync(path.join(runtime,dir),{recursive:true});
+    for(const name of ['package.json','package-lock.json','.env.example'])fixture.save('.build/runtime/'+name,'{}');
+    for(const item of sql)fixture.save('.build/runtime/'+item.path,readFileSync(path.join(source,item.path),'utf8'));
+    const digest=(bytes:Buffer|string)=>createHash('sha256').update(bytes).digest('hex');
+    const report={...fixture.report,candidate_fingerprint:'c'.repeat(64),scope_sha256:digest(scopeText.replaceAll('\r\n','\n'))};
+    const receipt={...g2EvidenceTime(),status:'PASS',candidate_fingerprint:g2CandidateInventory(runtime).fingerprint,
+      scope_sha256:report.scope_sha256,database_scope:'OWNED_ISOLATED_DATABASE',postgres_version_num:180004,migration_files:sql,
+      legacy_applied:sql.slice(0,14).map(item=>path.posix.basename(item.path).slice(0,3)),
+      markers:sql.slice(14).map(item=>({migration_id:path.posix.basename(item.path,'.sql'),checksum_sha256:digest(readFileSync(path.join(runtime,item.path)))})),
+      initial:{baseline:'APPLIED',yxx:'APPLIED',workbench_auth:'APPLIED',directory:'APPLIED'},replay:'ALL_NOOP_MARKERS_UNCHANGED',catalog_verified:true,
+      business_rows:{tickets:0,intakes:0},live_authorized:false};
+    const file=fixture.document.files[0];assert.ok(file);file.path='tests/yxx-current-migrations.integration.test.mts';file.mode='MIXED_EXPLICIT_ROOTS';
+    const tapPath='evidence/yxx-current-fixture/current/one.tap',original=readFileSync(fixture.tap,'utf8');
+    const proof={schema_version:1,...g2EvidenceTime(),tested_head:report.tested_head,tested_tree:report.tested_tree,candidate_fingerprint:report.candidate_fingerprint,
+      kind:'CURRENT_MIGRATION_SCOPE',observation:{tap_path:tapPath,receipt_index:0}};
+    const verify=(value:object)=>{
+      const ref=fixture.save(tapPath,original+'# CURRENT_SCOPE_CATALOG '+JSON.stringify(value)+'\n');file.tap_sha256=ref.sha256;file.tap_bytes=ref.bytes;fixture.commit();
+      verifyCurrentYxxMigrationProof(root,{...report,migration_scope:fixture.save('evidence/yxx-current-fixture/migration-scope.json',proof)});
+    };
+    verify(receipt);assert.throws(()=>checkSS010({root,requireReady:true}));
+    for(const changed of [{...receipt,migration_files:sql.slice(1)},{...receipt,legacy_applied:receipt.legacy_applied.slice(1)},
+      {...receipt,markers:receipt.markers.map(item=>({...item,checksum_sha256:'0'.repeat(64)}))},{...receipt,replay:'NOT_RUN'},
+      {...receipt,initial:{...receipt.initial,directory:'NOT_RUN'}},{...receipt,catalog_verified:false},{...receipt,postgres_version_num:170000},
+      {...receipt,business_rows:{tickets:1,intakes:0}},{...receipt,candidate_fingerprint:report.candidate_fingerprint},{...receipt,scope_sha256:'0'.repeat(64)}])
+      assert.throws(()=>verify(changed),{code:'CURRENT_MIGRATION_PROOF_INVALID'});
+    verify(receipt);proof.observation.receipt_index=1;assert.throws(()=>verify(receipt),{code:'CURRENT_MIGRATION_PROOF_INVALID'});
+    proof.observation.receipt_index=0;file.path='tests/unrelated.test.mts';assert.throws(()=>verify(receipt),{code:'CURRENT_MIGRATION_PROOF_INVALID'});
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-migration-proof-'));
+    rmSync(root,{recursive:true,force:true});
+  }
+});
 
 test('current evidence artifact guard rejects changed runtime bytes and a missing build',()=>{
   const {sourceRoot,runtimeRoot}=testRoots(),target=path.join(runtimeRoot,'src/p1-003-channel-message-inbox.mjs'),original=readFileSync(target);
@@ -426,6 +468,10 @@ test('strict current readiness rejects a PASS summary without the complete curre
     const unsupportedScenarios=save('evidence/yxx-current-fixture/report.json',{...header,scenarios});
     save('plans/yxx-current-readiness.json',{schema_version:1,report:unsupportedScenarios});
     assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_SCENARIOS_INVALID'});
+    const migrationScope=save('evidence/yxx-current-fixture/migration-scope.json',{status:'PASS'});
+    const unsupportedMigrations=save('evidence/yxx-current-fixture/report.json',{...header,migration_scope:migrationScope});
+    save('plans/yxx-current-readiness.json',{schema_version:1,report:unsupportedMigrations});
+    assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_MIGRATION_PROOF_INVALID'});
   }finally{
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-execution-evidence-'));
     if(attached)execFileSync('git',['worktree','remove','--force',root],{cwd:source,windowsHide:true,stdio:'pipe'});
