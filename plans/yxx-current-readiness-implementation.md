@@ -13,7 +13,7 @@ This progress document is not acceptance evidence.
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | COMPLETE for development implementation; component/publication regressions pass; actual whole-packet strict READY remains unverified until stage 6 frozen acceptance |
-| 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
+| 5 | ARCH006/current CI separation and retained historical CI | IN_PROGRESS; ARCH006 structural separation verified, CI/sharding pending |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
 
@@ -357,3 +357,17 @@ SS009 strict PASS on its fixed history, all applicable negative tests rejecting,
 independently recoverable originals, final exact-head CI/review, and confirmed cleanup.
 Historical READY is not current READY. No live authorization, business deployment,
 production write, real provider send, T05 advancement or parent Gate progression.
+
+Stage 5 first slice: ARCH006 now calls the current ADR-0027 structural check,
+including exact scope and full protected-evidence history, without requiring a
+current evidence packet. It rejects all historical evidence modifications relative
+to origin/main; new receipts remain append-only. There is no missing-scope fallback
+to historical acceptance. The fixed historical checkout and validator are untouched.
+Existing public CLI regression reproduced both old failures, then passed 6/6.
+The extended routed regression passes 7/7, including missing current scope and an
+unauthorized historical evidence change through the compiled CLI. An initial
+negative-control attempt hit the source-host artifact guard first; its log is
+retained and is not counted as the ARCH006 protection result. Logs: stage05-arch-red,
+stage05-arch-green, stage05-arch-protection and stage05-arch-protection-green under
+the external task artifact directory. This is development validation only.
+Current strict readiness, frozen full acceptance and final CI remain unproven.

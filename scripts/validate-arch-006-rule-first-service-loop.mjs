@@ -5,9 +5,7 @@ if (!(pathMigration.basename(pathMigration.resolve(migrationRoot)) === 'runtime'
   const { installSourceHost } = await import('../.build/tools/source-host.mjs');
   installSourceHost(migrationRoot);
 }
-const {allowYxxReadinessReportRefresh} = await import('../src/p2-g2-yixiaoxiu-readiness.mjs');
-const {readYxxLocalValidationScope} = await import('../src/yxx-self-service-validation-scope.mjs');
-const {g2CandidateInventory,requirePreparedG2Candidate} = await import('../src/p2-g2-candidate.mjs');
+const {checkSS010} = await import('../src/yxx-self-service-readiness.mjs');
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -224,24 +222,19 @@ check(forbidden.length === 0, 'no forbidden Runtime Migration web archive or sec
 const historicalEvidence=execFileSync('git',['-c','safe.directory=D:/Projects/Fault-Reporting-WeCom-Assistant','-c','core.safecrlf=false',
   'diff','--name-status','--diff-filter=MDR','origin/main','--','evidence'],{cwd:root,encoding:'utf8'}).trim().split(/\r?\n/u).filter(Boolean)
   .map(line=>{const [status,file]=line.split('\t');return {status,path:file};});
-const yxxAuthorized=p2g2Authorized&&views.every(v=>v.yixiaoxiu_member_ticket_entry?.work_item==='P2-G2-YXX-TICKET-ENTRY'
-  &&['AUTHORIZED','READY_FOR_TARGETED_LIVE_VALIDATION'].includes(v.yixiaoxiu_member_ticket_entry.status)
-  &&v.yixiaoxiu_member_ticket_entry.live_authorized===false&&v.p2_g2_live_authorized===false
-  &&v.yixiaoxiu_member_ticket_entry.enabled_by_default===false&&v.yixiaoxiu_member_ticket_entry.identity_namespace_live_verified===false
-  &&v.yixiaoxiu_member_ticket_entry.authorization_evidence==='evidence/p2-g2-yxx-entry-start-authorization.md');
-const claimsReady=value=>value&&typeof value==='object'&&(value.p2_g2_status==='READY_FOR_LIVE_E2E'
-  ||value.implementation_authorization_status==='P2_G2_READY_FOR_LIVE_E2E'||Object.values(value).some(claimsReady));
-let localScope=null;try{localScope=readYxxLocalValidationScope(root);}catch{check(false,'valid pinned local self-service successor scope');}
-let preservedCurrentReports=allowYxxReadinessReportRefresh({changes:historicalEvidence,authorized:yxxAuthorized,
-  readBaseline:file=>execFileSync('git',['show','origin/main:'+file],{cwd:root}),readSnapshot:file=>fs.readFileSync(path.join(root,file)),
-  ready:!localScope&&stateFiles.some(file=>claimsReady(json(file))),verifyReady:()=>requirePreparedG2Candidate(g2CandidateInventory(root).fingerprint,root)});
-if(historicalEvidence.length&&preservedCurrentReports){
-  try{
-    const authorization='evidence/p2-g2-yxx-entry-start-authorization.md';
-    preservedCurrentReports=fs.readFileSync(path.join(root,authorization)).equals(execFileSync('git',['show','c1b33218521dc5dba3c07ce57452473c367e7ad6:'+authorization],{cwd:root}));
-  }catch{preservedCurrentReports=false;}
+// ADR-0027: architecture checks must run before the current evidence packet exists.
+// The final strict readiness gate separately verifies execution and review evidence.
+// Always require the current contract; removing its scope must not select legacy rules.
+const currentSourceRoot=path.basename(path.resolve(root))==='runtime'
+  &&path.basename(path.dirname(path.resolve(root)))==='.build'?path.resolve(root,'../..'):root;
+try{
+  const current=checkSS010({root:currentSourceRoot,requireReady:false});
+  check(current.status==='STRUCTURE_VALID_NOT_READY'&&current.live_authorized===false
+    &&current.parent_gate_advanced===false,'current ADR-0027 structure and protected history are valid');
+}catch{
+  check(false,'current ADR-0027 structure and protected history are valid');
 }
-check(preservedCurrentReports, 'historical Evidence is immutable; authorized current reports require exact snapshots and current READY proof');
+check(historicalEvidence.length===0,'historical Evidence is immutable; current receipts are append-only');
 
 if (errors.length) {
   console.error(`ARCH-006 validation failed with ${errors.length} error(s):`);
