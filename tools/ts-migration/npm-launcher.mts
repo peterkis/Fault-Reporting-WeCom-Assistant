@@ -12,13 +12,14 @@ export function runNpm(args: string[], options: SpawnSyncOptionsWithStringEncodi
   assert.ok(launcher, 'NPM_LAUNCHER_REQUIRED');
   if (process.platform === 'win32' && /\.(?:cmd|bat)$/iu.test(launcher)) {
     // Escape cmd parsing separately from Windows argv quoting, preserving literal values.
-    const meta = (value: string): string => value.replace(/[()%!^"<>&|]/gu, '^$&');
+    const meta = (value: string): string => value.replace(/[()\[\]%!^"`<>&|; ,*?]/gu, '^$&');
     const quote = (value: string): string => {
       assert.ok(!/[\r\n\0]/u.test(value), 'NPM_CMD_LITERAL_ARGUMENT_REQUIRED');
-      const escaped = value.replace(/(\\*)"/gu, '$1$1\\"').replace(/(\\*)$/gu, '$1$1');
-      return meta('"' + escaped + '"');
+      // Doubled quotes keep cmd's quote context balanced and encode a literal CRT quote.
+      const escaped = value.replace(/(\\*)"/gu, '$1$1""').replace(/(\\*)$/gu, '$1$1');
+      return meta(meta('"' + escaped + '"'));
     };
-    const command = '"' + meta(launcher).replace(/[ \t]/gu, '^$&') + ' ' + args.map(quote).join(' ') + '"';
+    const command = '"' + meta(launcher) + ' ' + args.map(quote).join(' ') + '"';
     return spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/v:off', '/s', '/c', command],
       { ...options, windowsHide: true, windowsVerbatimArguments: true });
   }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync, realpathSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -44,14 +44,29 @@ test('the Foundation npm seam accepts real wrappers and JavaScript symlinks', as
       const result = runNpm(['--silent', 'run', 'fixture', '--', ...values], { cwd: root, env, encoding: 'utf8', windowsHide: true, timeout: 30_000 });
       assert.equal(result.status, 17, result.stdout + result.stderr);
       assert.deepEqual(JSON.parse(result.stdout.trim()), values);
+      for (const values of [['quote"value', 'pipe|value'], ['quote"value', 'less<more>']]) {
+        const result = runNpm(['--silent', 'run', 'fixture', '--', ...values], { cwd: root, env, encoding: 'utf8', windowsHide: true, timeout: 30_000 });
+        assert.equal(result.status, 17, result.stdout + result.stderr);
+        assert.deepEqual(JSON.parse(result.stdout.trim()), values);
+      }
     });
     if (process.platform !== 'win32') await t.test('JavaScript symlink launcher', () => {
-      const target = realpathSync(found);
-      assert.match(target, /\.[cm]?js$/u);
+      const target = path.join(root, 'npm-forwarder.mjs');
+      writeFileSync(target, '#!/usr/bin/env node\nimport {spawnSync} from "node:child_process";\n'
+        + `const run=spawnSync(${JSON.stringify(found)},process.argv.slice(2),{stdio:'inherit'});\n`
+        + 'if(run.error)throw run.error;process.exitCode=run.status??1;\n', { mode: 0o755 });
       rmSync(wrapper); symlinkSync(target, wrapper);
       const result = run();
       assert.equal(result.status, 0, result.stdout + result.stderr);
       assert.match(result.stdout, /# pass 1/u);
+    });
+    if (process.platform !== 'win32' && process.env.TS_MIGRATION_NPM_WRAPPER_HOST !== '1') await t.test('a shell-wrapped host npm also passes the launcher regressions', () => {
+      const host = path.join(root, 'host-wrapper'); mkdirSync(host);
+      writeFileSync(path.join(host, 'npm'), `#!/bin/sh\nexec '${found.replaceAll("'", "'\\''")}' "$@"\n`, { mode: 0o755 });
+      const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap', '--test-name-pattern=^the Foundation npm seam', path.join(original, '.build/tools/batches.test.mjs')], {
+        cwd: original, env: { ...env, PATH: host + path.delimiter + inheritedPath, TS_MIGRATION_NPM_WRAPPER_HOST: '1' }, encoding: 'utf8', windowsHide: true, timeout: 60_000,
+      });
+      assert.equal(result.status, 0, result.stdout + result.stderr);
     });
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

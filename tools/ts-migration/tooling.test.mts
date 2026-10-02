@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { build } from './build.mjs';
@@ -228,8 +228,10 @@ test('ARCH-006 CLI rejects content changes within an already reviewed path', () 
     assert.match(rejected.stdout + rejected.stderr, /ARCH006_REVIEWED_RUNTIME_DELTA_DRIFT/u);
     execFileSync('git', ['checkout', '--quiet', '--detach', '1911d364e48530683032f8856c41678c80f69dc9'], { cwd: root, windowsHide: true });
     assert.equal(run().status, 0);
+    if (process.platform !== 'win32') chmodSync(file, 0o755);
     execFileSync('git', ['update-index', '--chmod=+x', 'src/p1-001-pilot-foundation.mts'], { cwd: root, windowsHide: true });
     execFileSync('git', ['-c', 'user.name=Migration test fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--quiet', '-m', 'Synthetic runtime mode regression'], { cwd: root, windowsHide: true });
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8', windowsHide: true }).trim(), '', 'the mode regression must be a clean committed object');
     assert.match(run().stderr, /ARCH006_REVIEWED_RUNTIME_DELTA_DRIFT/u);
     execFileSync('git', ['checkout', '--quiet', '--detach', '1911d364e48530683032f8856c41678c80f69dc9'], { cwd: root, windowsHide: true });
     for (const relative of ['database/migrations/999_synthetic.sql', 'evidence/synthetic-rewrite.json']) {
