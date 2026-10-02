@@ -12,7 +12,7 @@ This progress document is not acceptance evidence.
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
-| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution/review/cleanup/historical/specialized components implemented; scenario/source accounting, full strict consumer and publisher pending |
+| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution/review/cleanup/historical/specialized/source-accounting components implemented; scenario mapping, full strict consumer and publisher pending |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
@@ -81,6 +81,21 @@ and images reused by the parser fixtures are explicitly synthetic test inputs;
 they are not current execution evidence. Actual current full execution, scenario
 and source accounting, current artifact guarding at final strict success, immutable
 publication and final READY remain pending.
+
+Source accounting is recomputed from integrity-checked current per-file TAP, ordered
+by source path, with recomputed aggregate counts. It reuses the existing source
+audit for all 202 cases, the 122 normal-input denominator and actual manual-review
+observations. The report must exactly match the derived audit and preserve
+`original_semantics_all_passed:false` and the requirement for semantic review.
+It cannot claim current coverage solely from a historical PASS summary. Historical
+TAP replay in development tests is explicitly a parser fixture, never current
+acceptance. Scene-to-case mapping and historical scenario linkage still require
+their separate proof component before the full strict entry can return READY.
+Public-entry RED->GREEN and routed development tests pass 10/10, including freshly
+rehashed missing-source/manual-action negatives and raw corruption; strict type
+programs pass. Receipts are under `slice30-red`, `slice30-green`,
+`stage04-source-accounting-tests` and `stage04-source-accounting-types.log` in the
+external task artifact directory. These results do not claim current full acceptance.
 
 Stage 4 execution core now checks the complete declared current set across disjoint
 run references, per-file success, source/actual execution hashes, archived build

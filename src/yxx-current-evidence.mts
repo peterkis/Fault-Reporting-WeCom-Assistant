@@ -6,6 +6,7 @@ import path from 'node:path';
 import { g2CandidateInventory, isG2CandidatePath } from './p2-g2-candidate.mjs';
 import { assertG2EvidenceTime } from './p2-g2-evidence-time.mjs';
 import { SS009_VALIDATORS, verifyYxxReceipts } from './yxx-self-service-verification.mjs';
+import { createG2SourceAudit } from './p2-g2-source-audit.mjs';
 
 export const CURRENT_YXX_POINTER='plans/yxx-current-readiness.json';
 type Reference={path:string;sha256:string;bytes:number};
@@ -48,6 +49,47 @@ function artifact(root:string,runId:string,value:unknown):{path:string;bytes:Buf
   assert.match(ref.sha256,/^[a-f0-9]{64}$/u);assert.ok(Number.isSafeInteger(ref.bytes)&&ref.bytes>=0);
   const bytes=read(root,ref.path);assert.equal(bytes.length,ref.bytes);assert.equal(hash(bytes),ref.sha256);
   return {path:ref.path,bytes};
+}
+
+/** Derived audit input; originals remain separate, hashed, per-file artifacts. */
+export function deriveCurrentYxxSourceAudit(root:string,report:Record<string,unknown>):Record<string,unknown> {
+  assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+  assert.ok(typeof report.candidate_fingerprint==='string');assert.ok(Array.isArray(report.current_runs)&&report.current_runs.length>0);
+  const files:Array<{path:string;tap:string}>=[],counts={tests:0,pass:0,fail:0,cancelled:0,skipped:0,todo:0};
+  for(const reference of report.current_runs){
+    const summary=artifact(root,report.run_id,reference),run=json(summary.bytes);assert.ok(Array.isArray(run.files));
+    for(const value of run.files){
+      const file=object(value);assert.ok(typeof file.path==='string'&&typeof file.tap_path==='string');
+      assert.match(file.tap_path,/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,240}$/u);
+      const bytes=artifact(root,report.run_id,{path:path.posix.dirname(summary.path)+'/'+file.tap_path,sha256:file.tap_sha256,bytes:file.tap_bytes}).bytes;
+      const tap=new TextDecoder('utf-8',{fatal:true}).decode(bytes).replaceAll('\r\n','\n'),actual=tapCounts(tap);
+      assert.deepEqual(file.counts,actual);for(const key of countKeys)counts[key]+=actual[key];files.push({path:file.path,tap});
+    }
+  }
+  assert.ok(files.length>0);assert.equal(new Set(files.map(file=>file.path)).size,files.length);
+  files.sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);
+  // The old audit consumes one TAP stream. Append recomputed totals, never reuse
+  // one shard's trailing totals as the result of the complete current run.
+  const tap=files.map(file=>file.tap).join('\n')+'\n'+countKeys.map(key=>'# '+key+' '+counts[key]+'\n').join('');
+  return createG2SourceAudit({root,tap,run:{mode:'SYNTHETIC_AUTOMATION',suite:'full',exit_code:0,error:null,signal:null,
+    candidate_unchanged:true,candidate_fingerprint:report.candidate_fingerprint,stdout_sha256:hash(Buffer.from(tap)),counts}});
+}
+
+/** Preserve source semantic limitations while requiring current observations. */
+export function verifyCurrentYxxSourceAccounting(root:string,report:Record<string,unknown>):void {
+  try{
+    assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+    const proof=json(artifact(root,report.run_id,report.source_accounting).bytes);
+    assert.equal(proof.schema_version,1);assert.equal(proof.kind,'CURRENT_SOURCE_ACCOUNTING');assertG2EvidenceTime(proof);
+    for(const field of ['tested_head','tested_tree','candidate_fingerprint']){assert.ok(typeof report[field]==='string');assert.equal(proof[field],report[field]);}
+    assert.equal(proof.derivation,'SORTED_FILE_TAP_WITH_RECOMPUTED_TOTALS_V1');
+    const audit=deriveCurrentYxxSourceAudit(root,report);assert.deepEqual(proof.source_audit,audit);
+    assert.equal(audit.total_source_cases,202);assert.equal(audit.normal_input_cases,122);assert.equal(audit.mechanism_and_other_cases,80);
+    assert.equal(audit.observed_normal_pass_cases,122);assert.equal(audit.accounting_complete,true);assert.deepEqual(audit.execution_missing,[]);
+    assert.deepEqual(audit.manual_review_observation_missing,[]);assert.equal(audit.original_semantics_all_passed,false);assert.equal(audit.semantic_review_required,true);
+  }catch{
+    throw Object.assign(new Error('CURRENT_SOURCE_ACCOUNTING_INVALID'),{code:'CURRENT_SOURCE_ACCOUNTING_INVALID',stage:'SOURCE_ACCOUNTING'});
+  }
 }
 
 /** Bind specialized observations to their executed host and original artifacts. */

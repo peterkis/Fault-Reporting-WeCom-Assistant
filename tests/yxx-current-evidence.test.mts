@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {mkdirSync,mkdtempSync,readFileSync,rmSync,writeFileSync} from 'node:fs';
+import {cpSync,mkdirSync,mkdtempSync,readFileSync,rmSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {testRoots} from './helpers/migration-roots.mjs';
 import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
 import {checkSS010} from '../src/yxx-self-service-readiness.mjs';
-import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof} from '../src/yxx-current-evidence.mjs';
+import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,deriveCurrentYxxSourceAudit,verifyCurrentYxxSourceAccounting} from '../src/yxx-current-evidence.mjs';
 import {SS009_VALIDATORS} from '../src/yxx-self-service-verification.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 
@@ -45,6 +45,43 @@ function syntheticExecution(root:string){
   const report={run_id:'fixture',tested_head:manifest.source.head,tested_tree:manifest.source.tree,build,current_runs:[save(directory+'/summary.json',document)]};
   return {report,document,save,tap:path.join(root,tap.path),commit:()=>{report.current_runs[0]=save(directory+'/summary.json',document);}};
 }
+
+test('source accounting preserves semantic limits and rejects missing execution or manual review even with fresh hashes',()=>{
+  const root=mkdtempSync(path.join(tmpdir(),'yxx-source-accounting-'));
+  try{
+    // Replay historical bytes as a parser fixture, never as current execution proof.
+    const source=testRoots().sourceRoot,fixture=syntheticExecution(root),file=fixture.document.files[0];assert.ok(file);
+    cpSync(path.join(source,'tests/fixtures'),path.join(root,'tests/fixtures'),{recursive:true});
+    const original=readFileSync(path.join(source,'evidence/yxx-ss-009-r7-full.tap'),'utf8').replaceAll('\r\n','\n');
+    const counts={tests:1205,pass:1205,fail:0,cancelled:0,skipped:0,todo:0};
+    fixture.document.counts={...counts};file.counts={...counts};
+    const report={...fixture.report,candidate_fingerprint:'c'.repeat(64)};
+    const capture=(tap:string)=>{
+      const ref=fixture.save('evidence/yxx-current-fixture/current/one.tap',tap);file.tap_sha256=ref.sha256;file.tap_bytes=ref.bytes;fixture.commit();
+    };
+    capture(original);
+    const proof={schema_version:1,...g2EvidenceTime(),tested_head:report.tested_head,tested_tree:report.tested_tree,
+      candidate_fingerprint:report.candidate_fingerprint,kind:'CURRENT_SOURCE_ACCOUNTING',derivation:'SORTED_FILE_TAP_WITH_RECOMPUTED_TOTALS_V1',
+      source_audit:deriveCurrentYxxSourceAudit(root,report)};
+    const verify=()=>verifyCurrentYxxSourceAccounting(root,{...report,source_accounting:fixture.save('evidence/yxx-current-fixture/source-accounting.json',proof)});
+    verify();assert.equal(proof.source_audit.total_source_cases,202);assert.equal(proof.source_audit.observed_normal_pass_cases,122);
+    assert.equal(proof.source_audit.original_semantics_all_passed,false);assert.throws(()=>checkSS010({root,requireReady:true}));
+    proof.source_audit.original_semantics_all_passed=true;assert.throws(verify,{code:'CURRENT_SOURCE_ACCOUNTING_INVALID'});
+    proof.source_audit=deriveCurrentYxxSourceAudit(root,report);verify();
+    capture(original.replaceAll('C001','UNOBSERVED'));
+    proof.source_audit=deriveCurrentYxxSourceAudit(root,report);
+    assert.notEqual(proof.source_audit.observed_normal_pass_cases,122);assert.throws(verify,{code:'CURRENT_SOURCE_ACCOUNTING_INVALID'});
+    capture(original.replaceAll('MANUAL_REVIEW','NO_MANUAL_ACTION'));
+    proof.source_audit=deriveCurrentYxxSourceAudit(root,report);
+    assert.notDeepEqual(proof.source_audit.manual_review_observation_missing,[]);assert.throws(verify,{code:'CURRENT_SOURCE_ACCOUNTING_INVALID'});
+    capture(original);proof.source_audit=deriveCurrentYxxSourceAudit(root,report);verify();
+    // Raw corruption remains rejected before any parsed coverage can be trusted.
+    writeFileSync(fixture.tap,original+'changed');assert.throws(verify,{code:'CURRENT_SOURCE_ACCOUNTING_INVALID'});
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-source-accounting-'));
+    rmSync(root,{recursive:true,force:true});
+  }
+});
 
 test('specialized proof binds raw observations and screenshots to the archived runtime candidate',()=>{
   const root=mkdtempSync(path.join(tmpdir(),'yxx-specialized-proof-'));
@@ -331,6 +368,10 @@ test('strict current readiness rejects a PASS summary without the complete curre
     const unsupportedSpecialized=save('evidence/yxx-current-fixture/report.json',{...header,specialized});
     save('plans/yxx-current-readiness.json',{schema_version:1,report:unsupportedSpecialized});
     assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_SPECIALIZED_PROOF_INVALID'});
+    const sourceAccounting=save('evidence/yxx-current-fixture/source-accounting.json',{status:'PASS'});
+    const unsupportedAccounting=save('evidence/yxx-current-fixture/report.json',{...header,source_accounting:sourceAccounting});
+    save('plans/yxx-current-readiness.json',{schema_version:1,report:unsupportedAccounting});
+    assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_SOURCE_ACCOUNTING_INVALID'});
   }finally{
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-execution-evidence-'));
     if(attached)execFileSync('git',['worktree','remove','--force',root],{cwd:source,windowsHide:true,stdio:'pipe'});
