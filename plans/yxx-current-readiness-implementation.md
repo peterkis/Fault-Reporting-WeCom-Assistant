@@ -393,3 +393,18 @@ coverage rejects missing summaries, omitted work, duplicate shard identity, forg
 counts, corrupt raw TAP and a wrong build identity. Synthetic collection fixtures
 are parser/integrity regression inputs only, never acceptance evidence. Log:
 stage05-collection-green.log. Workflow integration remains pending.
+
+Stage 5 workflow integration: TypeScript CI now runs four disjoint current shards
+instead of six overlapping migration batches. Baseline/source comparison starts
+independently and retains one current shadow rather than two identical selections.
+The final current-complete job requires all tooling, current shards and baseline
+jobs to succeed, downloads this run's artifacts, then checks all 215 files and raw
+logs against the published head. The baseline job now requires actual current
+ARCH006 and strict SS010 success; original SS009 on current remains explicitly
+rejected. The pinned PR37 refusal classifier is retained in its named tooling
+regression, not applied to the new candidate. Fixed historical SS009 CI retains
+strict verification, r6 mutations and validators and now includes the original
+SS008 scope test; Windows long paths are enabled before checkout.
+Both workflow YAML documents and all 39 shell steps pass local syntax validation
+(stage05-ci-syntax.json). No remote CI run or wall-time improvement is claimed.
+Readiness-test evidence lifecycle assumptions still need correction before freeze.

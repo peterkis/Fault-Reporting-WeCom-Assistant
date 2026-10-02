@@ -49,7 +49,7 @@ jobs:
           OUT="$RUNNER_TEMP/types-review"
           mkdir -p "$OUT"
           npm run migration:gate 2>&1 | tee "$OUT/gate.txt"
-          node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs 2>&1 | tee "$OUT/tooling.txt"
+          node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs .build/tools/acceptance.test.mjs .build/tools/publication.test.mjs 2>&1 | tee "$OUT/tooling.txt"
           node .build/tools/observe-runtime.mjs "$RUNNER_TEMP/types-t02-reference" 2>&1 | tee "$OUT/observations.jsonl"
           node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
           node .build/tools/browser-smoke.mjs 2>&1 | tee "$OUT/real-browser.txt"
@@ -65,15 +65,15 @@ jobs:
           name: types-tooling-${{ matrix.os }}-${{ github.run_id }}
           path: ${{ runner.temp }}/types-review/
           retention-days: 14
-  batch-regression:
-    name: batch (${{ matrix.batch }})
+  current-regression:
+    name: current shard (${{ matrix.shard }}/4)
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 4
       matrix:
-        batch: [T03-01, T04-01, T04-02, T04-03, T04-04, T04-05]
+        shard: [1, 2, 3, 4]
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:18
@@ -85,7 +85,7 @@ jobs:
           --health-cmd "pg_isready -U postgres" --health-interval 5s
           --health-timeout 5s --health-retries 10
     env:
-      BATCH: ${{ matrix.batch }}
+      SHARD: ${{ matrix.shard }}
       EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
       TS_MIGRATION_TEST_DB_ISOLATED: '1'
       PILOT_DATABASE_URL: postgresql://postgres:migration_ci_only@127.0.0.1:5432/migration_ci
@@ -107,25 +107,25 @@ jobs:
       - name: Prepare the YAML parser required by current and historical OpenAPI tests
         run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Verify the actual published object before running its entire batch
+      - name: Verify the actual published object before running its current shard
         shell: bash
         run: |
           set -euo pipefail
-          OUT="$RUNNER_TEMP/types-batch-$BATCH"
+          OUT="$RUNNER_TEMP/current-shard-$SHARD"
           mkdir -p "$OUT"
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" > "$OUT/identity.txt" 2>&1
           npm run migration:build > "$OUT/bootstrap-build.txt" 2>&1
           node .build/runtime/scripts/migrate-current-baseline.mjs > "$OUT/database-baseline.txt" 2>&1
-          if ! npm run migration:gate -- --batch "$BATCH" --report-dir "$OUT/batch" > "$OUT/gate.txt" 2>&1; then
+          if ! node .build/tools/run-tests.mjs --current-full --shard "$SHARD/4" --report-dir "$OUT/tests" > "$OUT/gate.txt" 2>&1; then
             tail -n 100 "$OUT/gate.txt"
             exit 1
           fi
-      - name: Verify the owned database and exact artifact after the batch
+      - name: Verify the owned database and exact artifact after the shard
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          OUT="$RUNNER_TEMP/types-batch-$BATCH"
+          OUT="$RUNNER_TEMP/current-shard-$SHARD"
           mkdir -p "$OUT"
           git rev-parse HEAD > "$OUT/source-sha.txt"
           node --version > "$OUT/node-version.txt"
@@ -137,14 +137,12 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: types-batch-${{ matrix.batch }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/types-batch-${{ matrix.batch }}/
+          name: current-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/current-shard-${{ matrix.shard }}/
           retention-days: 14
   source-baseline:
-    needs: batch-regression
-    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:18
@@ -185,7 +183,7 @@ jobs:
           git -C "$BASE" checkout --detach 7eefaa99591bfaa2e787701efd315ff701c51f35
           git -C "$BASE" update-ref refs/remotes/origin/main 7eefaa99591bfaa2e787701efd315ff701c51f35
           npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
-      - name: Same 17-file baseline on SOURCE then two independent shadows
+      - name: Historical 17-file SOURCE comparison with one current shadow
         shell: bash
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -197,7 +195,6 @@ jobs:
           npm run migration:tools
           (cd "$RUNNER_TEMP/types-t02-reference" && npm run migration:tools && node .build/tools/run-tests.mjs --selection t02-baseline --reference-source --report-dir "$OUT/reference") 2>&1 | tee "$OUT/reference.txt"
           node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-1" 2>&1 | tee "$OUT/shadow-1.txt"
-          node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-2" 2>&1 | tee "$OUT/shadow-2.txt"
           node .build/tools/observe-runtime.mjs "$RUNNER_TEMP/types-t02-reference" 2>&1 | tee "$OUT/observations.jsonl"
       - name: Observe untouched T02 P2-005 cleanup (diagnostic only)
         if: ${{ !cancelled() }}
@@ -224,39 +221,22 @@ jobs:
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
           node .build/tools/run-tests.mjs --frozen p2016 --report-dir "$OUT/historical" 2>&1 | tee "$OUT/historical.txt"
-      - name: Compare unchanged known non-readiness against authentic merged T02
+      - name: Current structure and strict technical readiness
         if: ${{ !cancelled() }}
-        env:
-          EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
         shell: bash
         run: |
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
-          BASE="$RUNNER_TEMP/types-t02-reference"
-          printf '%s\n' "import net from 'node:net';import cp from 'node:child_process';import {syncBuiltinESMExports} from 'node:module';const fail=()=>{process.stderr.write('T02_FORBIDDEN_RUNTIME_IO');process.exit(97);};net.Socket.prototype.connect=fail;net.Server.prototype.listen=fail;cp.fork=fail;cp.spawn=fail;globalThis.fetch=fail;syncBuiltinESMExports();" > "$OUT/offline-guard.mjs"
-          npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
-          for LABEL in current base; do
-            CWD="$GITHUB_WORKSPACE"; if [ "$LABEL" = base ]; then CWD="$BASE"; fi
-            HOOK=(); if [ "$LABEL" = current ]; then HOOK=(--import "$GITHUB_WORKSPACE/.build/tools/source-hook.mjs"); fi
-            RC=0; (cd "$CWD" && node scripts/validate-yxx-self-service.mjs --require-ready) > "$OUT/$LABEL-strict.txt" 2>&1 || RC=$?
-            echo "$RC" > "$OUT/$LABEL-strict-exit.txt"; test "$RC" = 1
-            grep -q YXX_VERIFICATION_REJECTED "$OUT/$LABEL-strict.txt"
-            (cd "$CWD" && node "${HOOK[@]}" --input-type=module -e "import {validateYxxSelfService} from './src/yxx-self-service-verification.mjs'; try {validateYxxSelfService({root:process.cwd(),requireReady:true}); process.exitCode=1;} catch(e) {if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e; console.log(JSON.stringify({status:'KNOWN_BASELINE_NOT_READY',code:e.code}));}") > "$OUT/$LABEL-strict-classification.txt" 2>&1
-            RC=0; (cd "$CWD" && node --import "$OUT/offline-guard.mjs" scripts/yxx-self-service-readiness.mjs) > "$OUT/$LABEL-ss010.txt" 2>&1 || RC=$?
-            echo "$RC" > "$OUT/$LABEL-ss010-exit.txt"; test "$RC" = 1
-            grep -q 'SS010_NOT_READY' "$OUT/$LABEL-ss010.txt"
-            (cd "$CWD" && node "${HOOK[@]}" --import "$OUT/offline-guard.mjs" --input-type=module -e "import {checkSS010} from './src/yxx-self-service-readiness.mjs'; try{checkSS010({root:process.cwd()});process.exitCode=1;}catch(e){if(e.code!=='YXX_LOCAL_VALIDATION_SCOPE_INVALID')throw e;console.log(e.code);}") > "$OUT/$LABEL-ss010-internal.txt" 2>&1
-            RC=0; (cd "$CWD" && node scripts/validate-arch-006-rule-first-service-loop.mjs) > "$OUT/$LABEL-arch006.txt" 2>&1 || RC=$?
-            echo "$RC" > "$OUT/$LABEL-arch006-exit.txt"; test "$RC" = 1
-          done
-          cmp "$OUT/current-ss010-internal.txt" "$OUT/base-ss010-internal.txt"
-          cmp "$OUT/current-ss010.txt" "$OUT/base-ss010.txt"
-          node .build/tools/arch006-baseline.mjs "$OUT"
-          cmp "$OUT/current-strict-classification.txt" "$OUT/base-strict-classification.txt"
-      - name: Require every independent batch to succeed
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: test "${{ needs['batch-regression'].result }}" = success
+          printf '%s\n' "import net from 'node:net';import cp from 'node:child_process';import {syncBuiltinESMExports} from 'node:module';const fail=()=>{process.stderr.write('CURRENT_FORBIDDEN_RUNTIME_IO');process.exit(97);};net.Socket.prototype.connect=fail;net.Server.prototype.listen=fail;cp.fork=fail;cp.spawn=fail;globalThis.fetch=fail;syncBuiltinESMExports();" > "$OUT/offline-guard.mjs"
+          node scripts/validate-arch-006-rule-first-service-loop.mjs 2>&1 | tee "$OUT/current-arch006.txt"
+          node --import "$OUT/offline-guard.mjs" scripts/yxx-self-service-readiness.mjs --require-ready 2>&1 | tee "$OUT/current-readiness.json"
+          # The unchanged SS009 command is historical: retain its current rejection.
+          RC=0
+          node scripts/validate-yxx-self-service.mjs --require-ready > "$OUT/historical-command-on-current.txt" 2>&1 || RC=$?
+          echo "$RC" > "$OUT/historical-command-on-current-exit.txt"
+          test "$RC" = 1
+          grep -q YXX_VERIFICATION_REJECTED "$OUT/historical-command-on-current.txt"
+          # The pinned PR37 classifier remains exercised by its named tooling regression.
       - name: Exact source, environment and cleanup identity
         if: always()
         shell: bash
@@ -276,3 +256,50 @@ jobs:
           name: types-baseline-${{ github.run_id }}
           path: ${{ runner.temp }}/types-baseline/
           retention-days: 14
+
+  current-complete:
+    needs: [tooling, current-regression, source-baseline]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Require every current job to succeed
+        env:
+          TOOLING: ${{ needs.tooling.result }}
+          CURRENT: ${{ needs['current-regression'].result }}
+          BASELINE: ${{ needs['source-baseline'].result }}
+        run: test "$TOOLING" = success && test "$CURRENT" = success && test "$BASELINE" = success
+      - run: git config --global core.autocrlf true
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: current-shard-*
+          path: ${{ runner.temp }}/current-collection
+      - name: Verify exact-head shard coverage and original log integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/current-collection"
+          for N in 1 2 3 4; do mv "$OUT/current-shard-$N" "$OUT/shard-$N"; done
+          node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD"
+          npm run migration:tools
+          node .build/tools/verify-current-shards.mjs "$OUT" --shards 4 --expected-head "$EXPECTED_HEAD" | tee "$OUT/collection.json"
+          git diff --exit-code
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: current-collection-${{ github.run_id }}
+          path: ${{ runner.temp }}/current-collection/collection.json
+          retention-days: 30
