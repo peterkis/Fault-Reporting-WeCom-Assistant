@@ -15,9 +15,10 @@ test('current acceptance CLI accounts for all registered files and identifies hi
   assert.equal(result.status,0,result.stdout+result.stderr);
   const plan=record(JSON.parse(result.stdout) as unknown);
   const current=strings(plan.current_files),historical=strings(plan.historical_registered_files);
-  assert.equal(current.length,213);assert.deepEqual(historical,['tests/yxx-ss-008-validation-scope.test.mjs']);
-  assert.equal(new Set([...current,...historical]).size,214);
+  assert.equal(current.length,214);assert.deepEqual(historical,['tests/yxx-ss-008-validation-scope.test.mjs']);
+  assert.equal(new Set([...current,...historical]).size,215);
   assert.ok(current.includes('tests/yxx-current-readiness.test.mts'));
+  assert.ok(current.includes('tests/yxx-current-evidence.test.mts'));
   assert.ok(current.includes('tests/yxx-ss-009-evidence-history.test.mjs'));
   assert.equal(plan.historical_head,'41edd855e7bc55149facb6a4b2e0076776c22e66');
   assert.deepEqual(plan.historical_strict_command,['node','scripts/validate-yxx-self-service.mjs','--require-ready']);
@@ -40,7 +41,8 @@ test('acceptance planning rejects omitted files duplicate obligations and change
   try{
     git(['worktree','add','--detach',root,'HEAD']);attached=true;
     copyFileSync(path.join(source,ACCEPTANCE_PATH),path.join(root,ACCEPTANCE_PATH));
-    assert.equal(currentAcceptance(root).current_files.length,213);
+    for(const file of ['plans/typescript-migration/test-routing.json','tests/yxx-current-evidence.test.mts'])copyFileSync(path.join(source,file),path.join(root,file));
+    assert.equal(currentAcceptance(root).current_files.length,214);
     const doc=record(JSON.parse(readFileSync(path.join(root,ACCEPTANCE_PATH),'utf8')) as unknown),current=strings(doc.current_files);
     for(const changed of [{...doc,current_files:current.slice(1)},{...doc,current_files:[...current,current[0]]},
       {...doc,historical_head:'0'.repeat(40)},{...doc,historical_registered_files:[]}]){

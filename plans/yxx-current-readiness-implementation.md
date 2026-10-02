@@ -12,7 +12,7 @@ This progress document is not acceptance evidence.
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
-| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer integrity and candidate binding implemented; execution/review/cleanup proof consumer and publisher pending |
+| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution core implemented; historical/specialized/review/cleanup proof, full strict consumer and publisher pending |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
@@ -33,6 +33,30 @@ This progress document is not acceptance evidence.
   `yxx-current-readiness-20261002`; no historical report was rewritten.
 
 ## Execution and acceptance
+
+Stage 4 execution core now checks the complete declared current set across disjoint
+run references, per-file success, source/actual execution hashes, archived build
+identity and agreement with current build metadata, raw TAP/stderr/trace digests and
+sizes, parsed counts, loaded-file provenance, case names/nesting and TAP agreement.
+Partial PASS summaries, duplicate shards, omitted work, rehashed failing TAP and
+rehashed missing/wrong cases reject. The new `yxx-current-evidence` selection passes
+5/5 (including ten consistency mutations); acceptance-plan tests pass 3/3 and strict
+type programs pass. These parser fixtures are explicitly synthetic and cannot pass
+the actual readiness entry; they are not published acceptance evidence.
+
+The registry now has 215 entries: original 213 plus two current-readiness test files.
+The current contract requires 214 files, with one separate historical SS008 file.
+The two registered SOURCE_HOST review tests and their two direct implementation
+dependencies are now explicit build/candidate controls. A real CLI RED->GREEN
+proved their former build-binding omission; review documentation is not included.
+
+Before completing stage 4, wire the complete strict consumer (including the real
+current artifact verifier for direct API callers), historical/specialized receipts,
+review and cleanup proofs, and append-only publishing. Before final evidence/CI,
+adapt the two development assertions that currently expect the real checkout to
+have no current pointer: final publication must not make valid readiness break its
+own tests. Preserve isolated missing-evidence negatives. Freeze/run in a complete
+CRLF checkout so archived raw input/output hashes reproduce across CI hosts.
 
 Stage 4 development: `plans/yxx-current-readiness.json` is a separate pointer with
 `schema_version:1` and `report:{path,sha256,bytes}`. Its target is restricted to
@@ -57,7 +81,7 @@ Complete routed reader/binding regression passes 19/19 with no skips/cancellatio
 todos/not_run. It includes wrong tree, stale scope/acceptance hashes, older candidate
 and an explicitly synthetic same-tree non-ancestor rejection. All fixture worktrees
 were removed. The 214-second development file is close to its existing 240-second
-budget; add subsequent evidence-consumer cases in a separate registered file rather
+budget; subsequent evidence-consumer cases use a separate registered file rather
 than expanding that timeout or silently filtering acceptance cases.
 
 Stage 3 development: the migration runner reuses the compiled G2 case reporter.
@@ -71,7 +95,7 @@ schema-contract execution: 7/7 across two files, with bound traces. Strict progr
 and negative type canary pass. These are development checks, not the final full run.
 The explicit current/historical mapping is now in
 `plans/yxx-current-readiness-acceptance.json`, bound to both build and candidate.
-It accounts for all 214 registered files: 213 current, one fixed-historical SS008
+It now accounts for all 215 registered files: 214 current, one fixed-historical SS008
 scope obligation. The historical domain also retains the original SS009 evidence,
 history and governance regressions plus unchanged strict CLI. Current SS009
 negative/protection tests remain in the current domain; they were not reclassified.
@@ -83,7 +107,7 @@ identity. A public CLI RED->GREEN proves changing the acceptance contract invali
 the existing build. With the case reporter enabled, the MIXED_EXPLICIT_ROOTS readiness
 selection passes 15/15, case_count 15, no not_run files, executing its compiled MJS.
 Together with the earlier SOURCE_HOST/STAGED_RUNTIME 7/7 this exercises all current
-route modes. Strict types pass. The 213-file current full run and independent frozen
+route modes. Strict types pass. The current full run and independent frozen
 historical run have not yet been performed in this task.
 
 Development commands (full execution needs the separately owned test environment):
