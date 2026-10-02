@@ -97,6 +97,15 @@ programs pass. Receipts are under `slice30-red`, `slice30-green`,
 `stage04-source-accounting-tests` and `stage04-source-accounting-types.log` in the
 external task artifact directory. These results do not claim current full acceptance.
 
+Before consuming the legacy scenario mapping for current accounting, its exact
+`plans/yxx-ss-009-acceptance.json` path was added to current candidate controls and
+raw build inputs. A public CLI regression first demonstrated that editing this
+mapping left the existing build usable, then passed after the binding fix. The
+regression also checks that each verification-control edit changes the candidate
+fingerprint. The historical mapping itself and frozen historical implementation
+remain unchanged. Evidence: `slice31-red.log`, `slice31-green.log` and
+`stage04-scenario-control-types.log`; focused test 1/1 and strict types pass.
+
 Stage 4 execution core now checks the complete declared current set across disjoint
 run references, per-file success, source/actual execution hashes, archived build
 identity and agreement with current build metadata, raw TAP/stderr/trace digests and

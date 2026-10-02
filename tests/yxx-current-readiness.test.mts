@@ -224,10 +224,12 @@ test('current readiness CLI distinguishes a missing build from evidence or histo
 
 test('current readiness CLI rejects builds predating a scope or historical adjudication control change', () => {
   const roots = testRoots();
-  for (const relative of ['plans/yxx-current-readiness-scope.json', '.github/review/pr21-evidence-exceptions.json', '.github/review/yxx-current-evidence-adjudication.json', 'plans/yxx-current-readiness-acceptance.json', '.gitattributes', '.github/review/pr-evidence-delta.test.mjs', '.github/review/verify-published-history.test.mjs', '.github/review/pr-evidence-delta.mjs', '.github/review/verify-published-history.mjs']) {
+  for (const relative of ['plans/yxx-current-readiness-scope.json', '.github/review/pr21-evidence-exceptions.json', '.github/review/yxx-current-evidence-adjudication.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-ss-009-acceptance.json', '.gitattributes', '.github/review/pr-evidence-delta.test.mjs', '.github/review/verify-published-history.test.mjs', '.github/review/pr-evidence-delta.mjs', '.github/review/verify-published-history.mjs']) {
     const file = path.join(roots.sourceRoot, relative), original = readFileSync(file);
+    const fingerprint = g2CandidateInventory(roots.sourceRoot).fingerprint;
     try {
       writeFileSync(file, Buffer.concat([original, Buffer.from('\n')]));
+      assert.notEqual(g2CandidateInventory(roots.sourceRoot).fingerprint, fingerprint, relative);
       const result = spawnSync(process.execPath, [path.join(roots.runtimeRoot, 'scripts/yxx-self-service-readiness.mjs')], {
         cwd: roots.sourceRoot, encoding: 'utf8', windowsHide: true, timeout: 60_000,
       });
