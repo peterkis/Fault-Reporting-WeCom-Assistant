@@ -3,12 +3,23 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { g2CandidateInventory, isG2CandidatePath } from './p2-g2-candidate.mjs';
 import { assertG2EvidenceTime } from './p2-g2-evidence-time.mjs';
 import { SS009_VALIDATORS, verifyYxxReceipts, historicalYxxBindings } from './yxx-self-service-verification.mjs';
 import { createG2SourceAudit } from './p2-g2-source-audit.mjs';
 
 export const CURRENT_YXX_POINTER='plans/yxx-current-readiness.json';
+/** Reuse the pipeline's actual source/output guard, including H's Git identity. */
+export function verifyCurrentYxxArtifact(root:string):void {
+  try{
+    const module:unknown=createRequire(import.meta.url)(path.join(root,'.build/tools/verify-artifact.mjs'));
+    const verifier=object(module).verifyArtifact;assert.ok(typeof verifier==='function');
+    const digest:unknown=verifier(root);assert.ok(typeof digest==='string');assert.match(digest,/^[a-f0-9]{64}$/u);
+  }catch{
+    throw Object.assign(new Error('CURRENT_BUILD_INVALID'),{code:'CURRENT_BUILD_INVALID',stage:'BUILD'});
+  }
+}
 type Reference={path:string;sha256:string;bytes:number};
 const isObject=(value:unknown):value is Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const object=(value:unknown):Record<string,unknown>=>{

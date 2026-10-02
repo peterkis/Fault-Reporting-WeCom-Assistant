@@ -6,7 +6,7 @@ import {evidenceHash} from './yxx-self-service-verification.mjs';
 import {validateLimitedManifest} from './yxx-limited-write-contract.mjs';
 import {readCurrentYxxScope} from './yxx-current-readiness-scope.mjs';
 import {verifyCurrentYxxEvidenceHistory} from './yxx-current-evidence-history.mjs';
-import {readCurrentYxxReport,verifyCurrentYxxReportBinding,verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,verifyCurrentYxxSourceAccounting,verifyCurrentYxxScenarios} from './yxx-current-evidence.mjs';
+import {readCurrentYxxReport,verifyCurrentYxxReportBinding,verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,verifyCurrentYxxSourceAccounting,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact} from './yxx-current-evidence.mjs';
 
 export const SS010_REPORT='evidence/yxx-ss-010-report.json';
 export const SS010_TEMPLATE='config_examples/yxx-limited-write-authorization.example.json';
@@ -42,6 +42,8 @@ export function checkSS010({root=defaultSourceRoot,requireReady=false}={}){
     if(report.specialized!==undefined)verifyCurrentYxxSpecializedProof(root,report);
     if(report.source_accounting!==undefined)verifyCurrentYxxSourceAccounting(root,report);
     if(report.scenarios!==undefined)verifyCurrentYxxScenarios(root,report,SS010_ACCEPTANCE);
+    if(['build','current_runs','reviews','cleanup','historical','specialized','source_accounting','scenarios'].every(field=>report[field]!==undefined))verifyCurrentYxxArtifact(root);
+    // Current combined migration proof and immutable publication are still pending.
     throw Object.assign(new Error('CURRENT_EVIDENCE_INCOMPLETE'),{code:'CURRENT_EVIDENCE_INCOMPLETE',stage:'EVIDENCE'});
   }
   return {ok:true,status:'STRUCTURE_VALID_NOT_READY',contract:'ADR-0027',scope_base:scope.base_head,

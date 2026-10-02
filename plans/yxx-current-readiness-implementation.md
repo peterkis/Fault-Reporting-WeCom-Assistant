@@ -121,6 +121,18 @@ trace replay is a parser fixture only, not evidence of current candidate executi
 Receipts: `slice32-red`, `slice32-green`, `stage04-scenario-proof-tests` and
 `stage04-scenario-proof-types.log` in the external artifact directory.
 
+The evidence API now reuses the existing migration artifact verifier for actual
+current source identity and every runtime output byte. Once all implemented proof
+components are supplied, `checkSS010` invokes this guard as well as the CLI's existing
+check. A real compiled module mutation and absent build reject with
+`CURRENT_BUILD_INVALID`; the same unchanged build passes before and after restoration.
+Routed evidence tests pass 12/12. Strict readiness still deliberately returns
+`CURRENT_EVIDENCE_INCOMPLETE`: combined 22-SQL runtime proof and immutable publication
+remain pending. The existing old-chain and separate 035/036 tests do not prove the
+complete combination in one owned database. No existing migration, historical
+evidence or SQL file has been changed. Receipts: `slice33-red.log`, `slice33-green.log`,
+`stage04-artifact-guard-tests` and `stage04-artifact-guard-types.log`.
+
 Stage 4 execution core now checks the complete declared current set across disjoint
 run references, per-file success, source/actual execution hashes, archived build
 identity and agreement with current build metadata, raw TAP/stderr/trace digests and

@@ -8,7 +8,7 @@ import path from 'node:path';
 import {testRoots} from './helpers/migration-roots.mjs';
 import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
 import {checkSS010,SS010_ACCEPTANCE} from '../src/yxx-self-service-readiness.mjs';
-import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,deriveCurrentYxxSourceAudit,verifyCurrentYxxSourceAccounting,deriveCurrentYxxScenarios,verifyCurrentYxxScenarios} from '../src/yxx-current-evidence.mjs';
+import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,deriveCurrentYxxSourceAudit,verifyCurrentYxxSourceAccounting,deriveCurrentYxxScenarios,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact} from '../src/yxx-current-evidence.mjs';
 import {SS009_VALIDATORS} from '../src/yxx-self-service-verification.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 
@@ -45,6 +45,19 @@ function syntheticExecution(root:string){
   const report={run_id:'fixture',tested_head:manifest.source.head,tested_tree:manifest.source.tree,build,current_runs:[save(directory+'/summary.json',document)]};
   return {report,document,save,tap:path.join(root,tap.path),commit:()=>{report.current_runs[0]=save(directory+'/summary.json',document);}};
 }
+
+test('current evidence artifact guard rejects changed runtime bytes and a missing build',()=>{
+  const {sourceRoot,runtimeRoot}=testRoots(),target=path.join(runtimeRoot,'src/p1-003-channel-message-inbox.mjs'),original=readFileSync(target);
+  verifyCurrentYxxArtifact(sourceRoot);
+  try{
+    writeFileSync(target,Buffer.concat([original,Buffer.from('\n// synthetic artifact drift\n')]));
+    assert.throws(()=>verifyCurrentYxxArtifact(sourceRoot),{code:'CURRENT_BUILD_INVALID'});
+  }finally{writeFileSync(target,original);assert.ok(readFileSync(target).equals(original));}
+  verifyCurrentYxxArtifact(sourceRoot);
+  const root=mkdtempSync(path.join(tmpdir(),'yxx-no-artifact-'));
+  try{assert.throws(()=>verifyCurrentYxxArtifact(root),{code:'CURRENT_BUILD_INVALID'});}
+  finally{assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-no-artifact-'));rmSync(root,{recursive:true,force:true});}
+});
 
 test('scenario mapping requires unique executed cases and preserves execution line provenance and historical limits',()=>{
   const root=mkdtempSync(path.join(tmpdir(),'yxx-scenario-proof-'));
