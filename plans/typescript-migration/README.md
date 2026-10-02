@@ -49,3 +49,5 @@ T00 的 baseline.json、baseline-tests.json、verification 和原回执继续描
 当前业务状态、Evidence、SQL 和现场批准不变。影子构建不是生产激活；没有调用正式 Provider、生产写库或真实企业微信发送。
 
 批次登记见 [batches.json](batches.json)：T04-05 保留五个直接测试、七个反向影响测试、全部 P1 阶段入口及前批 baseline/supplemental。SOURCE_HOST 读取真实 checkout，运行实现由已验证制品加载。缺失制品不能算已知非就绪；历史与当前结果分开记录。
+
+独立 CI 数据库初始化补齐：首轮并行 head bd08081 在原 P1 通知/运维测试暴露空库缺少 ARCH-005 基线；后继 bb4ad85 在每个空的自有 PG18 服务先运行既有编译产物迁移，再执行原批次。真实空库通知 RED1/4 → GREEN4/4、运维6/6；无 SQL/产品源码/断言变化，747 输出不变。见 [初始化回执](receipts/T04-05-ci-isolation.json) 和 [补齐记录](verification/T04-05-browser-transport-ci.md#independent-database-bootstrap-follow-up)。新完整 CI 待确认。
