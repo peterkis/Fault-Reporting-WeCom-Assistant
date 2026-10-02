@@ -1,0 +1,16 @@
+{
+  "authorization": "User explicitly approved only this pre-existing transition in the 2026-10-02 current readiness task.",
+  "does_not_authorize_future_changes": true,
+  "changes": [
+    {
+      "commit": "627d5f72959b4b2a085d734c311712363f87a3f8",
+      "parent": "a58577d66733b3ec39f5d74af9ff44c70b79fe38",
+      "path": "evidence/g0-005-active-push-matrix.md",
+      "before": "b91ae75db2f49b3a2ff3240ff262e3d1c1a4db21",
+      "after": "9bbadb5e3e140d3f3097cf386dc3ba198d37fd8d",
+      "oldMode": "100644",
+      "newMode": "100644",
+      "status": "M"
+    }
+  ]
+}

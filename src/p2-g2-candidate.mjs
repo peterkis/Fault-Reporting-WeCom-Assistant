@@ -13,7 +13,7 @@ export const G2_CANDIDATE_ROOTS = Object.freeze(['src', 'scripts', 'web', 'contr
 export const G2_CANDIDATE_FILES = Object.freeze(['package.json', 'package-lock.json', '.env.example']);
 // Optional on legacy fixtures; every present build control is part of the current candidate.
 export const G2_CANDIDATE_CONTROL_ROOTS = Object.freeze(['tools/ts-migration', 'plans/typescript-migration', '.github/workflows']);
-export const G2_CANDIDATE_CONTROL_FILES = Object.freeze(['tsconfig.base.json', 'tsconfig.tools.json', 'tsconfig.migration.json', 'tsconfig.type-tests.json', 'build-manifest.json']);
+export const G2_CANDIDATE_CONTROL_FILES = Object.freeze(['tsconfig.base.json', 'tsconfig.tools.json', 'tsconfig.migration.json', 'tsconfig.type-tests.json', 'build-manifest.json', 'plans/yxx-current-readiness-scope.json', '.github/review/pr21-evidence-exceptions.json', '.github/review/yxx-current-evidence-adjudication.json']);
 export function isG2CandidatePath(file) {
   return !G2_EXCLUDED_LOCAL_FILES.includes(file) && (G2_CANDIDATE_FILES.includes(file)
     || G2_CANDIDATE_CONTROL_FILES.includes(file) || [...G2_CANDIDATE_ROOTS, ...G2_CANDIDATE_CONTROL_ROOTS].some(dir => file.startsWith(dir + '/')));

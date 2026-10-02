@@ -1,16 +1,31 @@
-import pathMigration from 'node:path';
-import { fileURLToPath as migrationFilePath } from 'node:url';
-const migrationRoot = migrationFilePath(new URL('../', import.meta.url));
-if (!(pathMigration.basename(pathMigration.resolve(migrationRoot)) === 'runtime' && pathMigration.basename(pathMigration.dirname(pathMigration.resolve(migrationRoot))) === '.build')) {
-  const { installSourceHost } = await import('../.build/tools/source-host.mjs');
-  installSourceHost(migrationRoot);
+import path from 'node:path';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+
+const entryRoot=fileURLToPath(new URL('../',import.meta.url));
+const stagedEntry=path.basename(path.resolve(entryRoot))==='runtime'
+  &&path.basename(path.dirname(path.resolve(entryRoot)))==='.build';
+const sourceRoot=stagedEntry?path.resolve(entryRoot,'../..'):entryRoot;
+
+export async function main(argv=process.argv.slice(2)){
+  if(argv.length===1&&argv[0]==='--help'){
+    console.log('Usage: node scripts/yxx-self-service-readiness.mjs [--require-ready]\nOffline current technical preparation. Historical SS009 uses its fixed checkout. READY never authorizes live work.');return;
+  }
+  if(argv.length>1||argv.some(arg=>arg!=='--require-ready'))throw Object.assign(new Error('SS010_ARGUMENT_INVALID'),{code:'SS010_ARGUMENT_INVALID'});
+  try{
+    const {verifyArtifact}=await import(pathToFileURL(path.join(sourceRoot,'.build/tools/verify-artifact.mjs')).href);
+    verifyArtifact(sourceRoot);
+    if(!stagedEntry){
+      const {installSourceHost}=await import(pathToFileURL(path.join(sourceRoot,'.build/tools/source-host.mjs')).href);
+      installSourceHost(sourceRoot);
+    }
+  }catch{throw Object.assign(new Error('CURRENT_BUILD_INVALID'),{code:'CURRENT_BUILD_INVALID'});}
+  const {checkSS010}=await import('../src/yxx-self-service-readiness.mjs');
+  const result=checkSS010({root:sourceRoot,requireReady:argv.includes('--require-ready')});
+  console.log(JSON.stringify(result));return result;
 }
-const {checkSS010} = await import('../src/yxx-self-service-readiness.mjs');
-const {reject} = await import('../src/yxx-limited-write-contract.mjs');
-import {pathToFileURL} from 'node:url';
-export function main(argv=process.argv.slice(2)){
-  if(argv.length===1&&argv[0]==='--help'){console.log('Usage: node scripts/yxx-self-service-readiness.mjs [--require-ready]\nOffline only. READY is technical preparation, never live authorization.');return;}
-  if(argv.length>1||argv.some(arg=>arg!=='--require-ready'))reject('ARGUMENT_INVALID');
-  const result=checkSS010({root:migrationRoot,requireReady:argv.includes('--require-ready')});console.log(JSON.stringify(result));return result;
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)try{await main();}catch(error){
+  const known={SS010_ARGUMENT_INVALID:['ARGUMENTS','ARGUMENT_INVALID'],CURRENT_BUILD_INVALID:['BUILD','CURRENT_BUILD_INVALID'],
+    CURRENT_SCOPE_INVALID:['SCOPE','CURRENT_SCOPE_INVALID'],CURRENT_EVIDENCE_REQUIRED:['EVIDENCE','CURRENT_EVIDENCE_REQUIRED']};
+  const [stage,reason_code]=Object.hasOwn(known,error?.code??'')?known[error.code]:['VALIDATION','VALIDATION_REJECTED'];
+  console.log(JSON.stringify({ok:false,error_code:'SS010_NOT_READY',stage,reason_code,live_authorized:false}));process.exitCode=1;
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)try{main();}catch{console.log(JSON.stringify({ok:false,error_code:'SS010_NOT_READY',live_authorized:false}));process.exitCode=1;}

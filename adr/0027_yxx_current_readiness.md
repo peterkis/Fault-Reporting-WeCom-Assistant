@@ -84,6 +84,18 @@ mock only external dependencies. Do not mock internal validators to manufacture 
 
 ## Existing live history and rollback
 
+On 2026-10-02 the user additionally approved exactly the existing transition
+`627d5f72959b4b2a085d734c311712363f87a3f8` / parent
+`a58577d66733b3ec39f5d74af9ff44c70b79fe38` for
+`evidence/g0-005-active-push-matrix.md`, blob
+`b91ae75db2f49b3a2ff3240ff262e3d1c1a4db21` ->
+`9bbadb5e3e140d3f3097cf386dc3ba198d37fd8d`, both mode `100644`, change `M`.
+It appended the 14-line HTTP template-card capability record before PR21.
+The precise record is `.github/review/yxx-current-evidence-adjudication.json`.
+This acknowledges an existing historical rule violation; it does not claim the
+append originally complied with immutability. The old five PR21 adjudications and
+all historical evidence remain unchanged. Later same-path transitions still reject.
+
 SS011's AC102 owner confirmation accepts partial close and AC101 write-off/read-only
 rollback. AC096 B independent clear-fault evidence and AC099 actual response-loss/
 stop-resume remain incomplete. This task neither resets those facts nor completes them.

@@ -178,5 +178,19 @@
   ],
   "live_authorized": false,
   "parent_gate_advanced": false,
-  "sql_changes_authorized": false
+  "sql_changes_authorized": false,
+  "default_files": [
+    {
+      "path": ".env.example",
+      "mode": "100644",
+      "blob": "e32ede57e8ad3f96b145918c9cffcf43ed51779f",
+      "sha256_utf8_lf": "b846ced1caf2dde3f28bf7f85782ed902d293a7b8f21914cb2650e30a5b79eba"
+    },
+    {
+      "path": "config_examples/yxx-limited-write-authorization.example.json",
+      "mode": "100644",
+      "blob": "4751902adc97cf0987f8a8b8ba3360538ada76c7",
+      "sha256_utf8_lf": "a9e41693e24833a89d9bf20e62b228328e7abed09738b32d5ff4d9f1bdf857eb"
+    }
+  ]
 }

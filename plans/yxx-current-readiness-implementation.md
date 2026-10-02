@@ -9,7 +9,7 @@ This progress document is not acceptance evidence.
 | Stage | Required deliverable | Status |
 | --- | --- | --- |
 | 0 | GitHub identity, clean isolated checkout, known rejection and 28 pinned SQL/state records | COMPLETE |
-| 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | CONTRACT_RECORDED; machine contracts follow in their TDD slices |
+| 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | IN_PROGRESS |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | NOT_STARTED |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | NOT_STARTED |
@@ -33,6 +33,31 @@ This progress document is not acceptance evidence.
   `yxx-current-readiness-20261002`; no historical report was rewritten.
 
 ## Execution and acceptance
+
+Development checkpoint (2026-10-02, not frozen acceptance): six public-interface
+RED->GREEN cycles cover argument diagnostics, current successor structure, missing
+current evidence, missing build, build binding to scope/adjudication inputs, and
+default AI-disabled configuration. Three additional regression cases cover SQL
+content/list plus forged manifest, protected phase/mode drift, and network/business
+process denial. Routed result: 9/9, no skips/cancellations/todos. Owned fixture
+worktrees were removed. New scope pins 22 SQL, six state files and two defaults.
+
+A seventh RED->GREEN cycle fixes the public readiness API's default source root
+when imported from the compiled runtime. The complete current selection now passes
+10/10, with no skips/cancellations/todos; strict type checking also passes.
+The existing SS010 contract selection passes 6/6 with an owned PostgreSQL 18.4
+cluster (compatibility-pg-v4). Its receipt confirms stop exit 0 and data removal.
+Earlier launcher attempts and a missing-build attempt remain separately recorded;
+they are not acceptance runs. No owned PostgreSQL process remains after this check.
+
+The user explicitly approved the one additional pre-PR21 G0 transition recorded in
+`.github/review/yxx-current-evidence-adjudication.json`. The original five-entry
+record is unchanged. A diagnostic use of the PR-specific checker across the entire
+r6->current graph also reported merge propagation edges; that is not a historical
+PASS or a new adjudication. Current history verification still needs its dedicated
+tests and implementation. The strict current report consumer is not implemented;
+strict mode deliberately fails `CURRENT_EVIDENCE_REQUIRED` meanwhile. No current
+READY, full acceptance, CI, independent review or release is claimed here.
 
 Follow vertical TDD cycles at the seams recorded in ADR-0027. Retain RED/GREEN
 outputs externally and record applicable checks per change. Never turn a missing

@@ -4,6 +4,7 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/yxx-current-readiness.test.mts","mode":"MIXED_EXPLICIT_ROOTS","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/p1-migration-compatibility.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/p1-foundation-cli.test.mts","mode":"MIXED_EXPLICIT_ROOTS","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/platform-postgres-callback.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -293,6 +294,7 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "yxx-current-readiness": ["tests/yxx-current-readiness.test.mts"],
     "t04-05-focused": ["tests/p1-001-pilot-foundation.test.mjs", "tests/p1-008-first-acknowledgement.test.mjs", "tests/p1-011-backup-restore-script.test.mjs", "tests/p1-011-encrypted-backup.test.mjs", "tests/p1-012-live-e2e-script.test.mjs", "tests/p1-012-pilot-e2e-integration.test.mjs", "tests/p1-012-pilot-e2e.test.mjs", "tests/p1-foundation-cli.test.mts"],
     "yxx-dev-current": [
       "tests/p1-011-pilot-operations-baseline.test.mjs",
