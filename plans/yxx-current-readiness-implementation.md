@@ -12,7 +12,7 @@ This progress document is not acceptance evidence.
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
-| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution/review/cleanup components implemented; historical/specialized proof, full strict consumer and publisher pending |
+| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution/review/cleanup/historical components implemented; specialized proof, full strict consumer and publisher pending |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
@@ -51,6 +51,20 @@ must be resolved. Cleanup requires raw TAP cleanup observations with zero owned
 residuals plus matching successful environment shutdown receipts for every run.
 PASS-only cleanup and whitespace/case aliases for the same reviewer reject.
 The public strict entry remains closed pending the complete evidence consumer.
+
+The historical component now verifies the catalog, original proof/log hashes and
+sizes, authoritative fixed PR identity, preflight, unchanged strict command,
+36 regression cases and TAP, all four r6 probe experiments and all eight original
+validator commands/results. It compares the historical fingerprint and tested
+ancestor with protected r7; these never substitute for the current fingerprint.
+Public-entry RED->GREEN covers a PASS-only historical summary. Synthetic consistency
+mutations cover wrong head, omitted validator, rehashed unsuccessful strict output,
+omitted probe experiment, omitted trace case and raw log tampering. Routed evidence
+tests pass 8/8 and strict type programs pass. The same compiled component separately
+accepts the actual `historical-ss009-proof-02` originals (external replay result
+`stage04-historical-replay-01/result.json`). An earlier routed attempt timed out at
+240 seconds; its failure record is retained. A targeted rerun passed 2/2 and the
+complete rerun passed 8/8 in about 35 seconds. No timeout threshold was relaxed.
 
 Stage 4 execution core now checks the complete declared current set across disjoint
 run references, per-file success, source/actual execution hashes, archived build

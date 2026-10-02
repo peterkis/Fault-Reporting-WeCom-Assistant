@@ -5,6 +5,7 @@ import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { g2CandidateInventory, isG2CandidatePath } from './p2-g2-candidate.mjs';
 import { assertG2EvidenceTime } from './p2-g2-evidence-time.mjs';
+import { SS009_VALIDATORS } from './yxx-self-service-verification.mjs';
 
 export const CURRENT_YXX_POINTER='plans/yxx-current-readiness.json';
 type Reference={path:string;sha256:string;bytes:number};
@@ -47,6 +48,103 @@ function artifact(root:string,runId:string,value:unknown):{path:string;bytes:Buf
   assert.match(ref.sha256,/^[a-f0-9]{64}$/u);assert.ok(Number.isSafeInteger(ref.bytes)&&ref.bytes>=0);
   const bytes=read(root,ref.path);assert.equal(bytes.length,ref.bytes);assert.equal(hash(bytes),ref.sha256);
   return {path:ref.path,bytes};
+}
+
+/** Original SS009 results belong only to the fixed historical checkout. */
+export function verifyCurrentYxxHistoricalProof(root:string,report:Record<string,unknown>):void {
+  try{
+    assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+    const runId=report.run_id,source=artifact(root,runId,report.historical),catalog=json(source.bytes);
+    const relative=(value:unknown)=>{
+      const ref=object(value);assert.ok(typeof ref.path==='string');assert.match(ref.path,/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,240}$/u);
+      return artifact(root,runId,{...ref,path:path.posix.dirname(source.path)+'/'+ref.path});
+    };
+    const contract=json(read(root,'plans/yxx-current-readiness-acceptance.json'));
+    const head='41edd855e7bc55149facb6a4b2e0076776c22e66',base='375d47b013017edb858206cc5f3475c9aed77dfd';
+    assert.equal(contract.historical_head,head);assert.equal(contract.historical_base,base);
+    const regressions=['tests/yxx-ss-008-validation-scope.test.mjs','tests/yxx-ss-009-evidence.test.mjs',
+      'tests/yxx-ss-009-evidence-history.test.mjs','tests/yxx-ss-009-governance.test.mjs'];
+    assert.deepEqual(contract.historical_regression_files,regressions);
+    const strictCommand=['node','scripts/validate-yxx-self-service.mjs','--require-ready'];
+    assert.deepEqual(contract.historical_strict_command,strictCommand);
+    assert.equal(catalog.kind,'HISTORICAL_SS009_CATALOG');const proof=json(relative(catalog.proof).bytes);
+    assert.equal(proof.kind,'HISTORICAL_SS009_PROOF');
+    for(const record of [catalog,proof]){
+      assert.equal(record.schema_version,1);assert.equal(record.head,head);assert.equal(record.base,base);
+      assert.equal(record.historical_only,true);assert.equal(record.production_ready,false);
+    }
+    assert.equal(proof.status,'PASS');assert.equal(proof.checkout_clean,true);
+    assert.ok(typeof proof.node_version==='string');assert.match(proof.node_version,/^v24\.\d+\.\d+$/u);
+    const metadata=json(relative(proof.github_metadata).bytes);
+    assert.equal(metadata.head,head);assert.equal(metadata.base,base);assert.equal(metadata.merged,true);assert.equal(metadata.state,'closed');
+    assert.equal(metadata.merge_commit,'c1af81a86951054f4898f043c43381a5842abbf2');
+    assert.ok(Array.isArray(proof.records));const records=proof.records.map(object);
+    const names=['preflight','strict','regression','r6-probe',...SS009_VALIDATORS.map((file:string)=>'validator-'+file.replace(/\.mjs$/u,''))];
+    assert.deepEqual(records.map(item=>item.name).sort(),names.sort());
+    const outputs=new Map<string,Buffer>(),commands=new Map<string,string[]>();
+    for(const record of records){
+      assert.ok(typeof record.name==='string');assert.equal(record.exit_code,0);assert.equal(record.signal,null);assert.equal(record.error_code,null);
+      commands.set(record.name,strings(record.command));outputs.set(record.name,relative(record.stdout).bytes);relative(record.stderr);
+    }
+    const output=(name:string):Buffer=>{const bytes=outputs.get(name);assert.ok(bytes);return bytes;};
+    assert.deepEqual(commands.get('preflight'),['node','.github/review/verify-published-history.mjs','--expected-head',head]);
+    const preflight=json(output('preflight')),r7=json(read(root,'evidence/yxx-ss-009-r7-report.json'));
+    assert.equal(preflight.status,'REVIEW_HISTORY_PREFLIGHT_PASS_NOT_READINESS');assert.equal(preflight.checkout_role,'PUBLISHED_PR_HEAD');
+    assert.equal(preflight.expected_head,head);assert.equal(preflight.checkout_head,head);
+    assert.equal(preflight.checkout_tree,'54969cbcd2785f62b562ac32aa431e16ee300bd8');
+    assert.deepEqual(preflight.checkout_parents,['0d1cfa2935f028ca5c0a97838615dad1ab453563']);
+    assert.equal(preflight.report_path,'evidence/yxx-ss-009-r7-report.json');
+    assert.equal(preflight.tested_head,r7.tested_head);assert.equal(preflight.tested_tree,r7.tested_tree);assert.equal(preflight.merge_base,r7.tested_head);
+    assert.equal(preflight.shallow,false);assert.equal(preflight.history_overlays,false);assert.equal(preflight.worktree_clean,true);
+    assert.deepEqual(commands.get('strict'),strictCommand);const strict=json(output('strict'));
+    assert.equal(strict.ok,true);assert.equal(strict.status,'SS009_LOCAL_VERIFICATION_COMPLETE');
+    assert.equal(strict.candidate_fingerprint,r7.candidate_fingerprint);assert.equal(strict.live_authorized,false);assert.equal(strict.parent_gate_advanced,false);
+    const regressionCommand=commands.get('regression');assert.ok(regressionCommand);
+    assert.deepEqual(regressionCommand.slice(0,6),['node','--test','--test-concurrency=1','--test-reporter=tap',
+      '--test-reporter-destination=stdout','--test-reporter=./scripts/p2-g2-case-reporter.mjs']);
+    assert.match(regressionCommand[6]??'',/^--test-reporter-destination=.+[\\/]regression\.cases\.jsonl$/u);
+    assert.deepEqual(regressionCommand.slice(7),regressions);
+    const tap=new TextDecoder('utf-8',{fatal:true}).decode(output('regression')).replaceAll('\r\n','\n'),counts=tapCounts(tap);
+    const trace=new TextDecoder('utf-8',{fatal:true}).decode(relative(catalog.case_trace).bytes).trim().split('\n').map(line=>object(JSON.parse(line) as unknown));
+    assert.equal(counts.tests,36);assert.equal(catalog.case_count,36);assert.equal(trace.length,36);
+    const seenFiles=new Set<string>();
+    const observed=trace.map(item=>{
+      assertG2EvidenceTime(item);assert.equal(item.time_basis,'REPORTER_OBSERVED_AT');assert.equal(item.event,'test:pass');
+      assert.equal(item.skip,false);assert.equal(item.todo,false);assert.equal(item.nesting,0);
+      assert.ok(typeof item.line==='number'&&Number.isSafeInteger(item.line)&&item.line>0);
+      assert.ok(typeof item.file==='string'&&regressions.includes(item.file));seenFiles.add(item.file);
+      assert.ok(typeof item.name==='string');return item.name;
+    });
+    assert.deepEqual([...seenFiles].sort(),[...regressions].sort());
+    assert.deepEqual(observed.sort(),[...tap.matchAll(/^ok \d+ - (.+)$/gmu)].map(match=>match[1]).sort());
+    assert.deepEqual(commands.get('r6-probe'),['node','.github/review/ss009-evidence-history-probe.mjs']);
+    const probe=json(output('r6-probe'));assert.equal(probe.status,'PUBLISHED_EVIDENCE_HISTORY_PROBE_PASS');
+    assert.equal(probe.historical_fixture,'a1a48f9839315d7683d9973a1d9febfd14aa39a8');
+    assert.equal(probe.current_candidate_fingerprint,r7.candidate_fingerprint);assert.equal(probe.protected_files,1090);
+    assert.equal(probe.candidate_unchanged,true);assert.equal(probe.owned_worktree_removed,true);
+    assert.ok(Array.isArray(probe.experiments));const experiments=probe.experiments.map(object);
+    assert.deepEqual(experiments.map(item=>item.case),['unchanged published r6 positive control',
+      'uncommitted rewrite of an unreferenced published r5 report','committed rewrite with a clean checkout',
+      'rewrite and restore cannot erase the audit violation']);
+    for(const [index,experiment] of experiments.entries()){
+      const legacy=object(experiment.legacy);assert.equal(legacy.exit_code,0);assert.equal(legacy.status,'SS009_LOCAL_VERIFICATION_COMPLETE');
+      if(index===0)assert.equal(experiment.fixed_history,'SS009_EVIDENCE_HISTORY_VALID');
+      else{
+        const fixed=object(experiment.fixed);assert.equal(fixed.status,'REJECTED');assert.equal(fixed.error_code,'SS009_PUBLISHED_EVIDENCE_CHANGED');
+        assert.equal(fixed.missing_or_changed_file,'evidence/yxx-ss-009-r5-review-fix-report.md');
+        assert.deepEqual(fixed.modes,['STRUCTURE','STRICT','PRETAMPER']);
+      }
+    }
+    for(const file of SS009_VALIDATORS){
+      const name='validator-'+file.replace(/\.mjs$/u,'');assert.deepEqual(commands.get(name),['node','scripts/'+file]);
+      const text=new TextDecoder('utf-8',{fatal:true}).decode(output(name));
+      if(file==='validate-v1-4-architecture.mjs')assert.match(text,/^V1\.4 architecture validation passed \(407 checks\)\.\s*$/u);
+      else if(file==='validate-arch-006-rule-first-service-loop.mjs')assert.match(text,/^ARCH-006 rule-first service loop validation passed \(\d+ checks\)\.\s*$/u);
+      else assert.equal(json(output(name)).ok,true);
+    }
+  }catch{
+    throw Object.assign(new Error('CURRENT_HISTORICAL_PROOF_INVALID'),{code:'CURRENT_HISTORICAL_PROOF_INVALID',stage:'HISTORICAL_PROOF'});
+  }
 }
 
 /** Two distinct review records, both bound to the tested candidate. */
