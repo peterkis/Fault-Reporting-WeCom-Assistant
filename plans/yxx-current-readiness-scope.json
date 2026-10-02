@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "work_item": "YXX_CURRENT_READINESS",
+  "contract": "ADR-0027",
+  "base_head": "562a96ffdd7148d729ab0eed9d215abe894f12c2",
+  "base_tree": "fc20b1021291aca44b45ba3be461423a61bcee48",
+  "historical_ss009_head": "41edd855e7bc55149facb6a4b2e0076776c22e66",
+  "content_encoding": "UTF8_LF",
+  "files": [
+    {
+      "path": "database/migrations/001_p1_003_channel_message_inbox.sql",
+      "mode": "100644",
+      "blob": "8ed8177cfcbd18d7a373d6379c67720870b084cb",
+      "sha256_utf8_lf": "4fe183af28d730c951d7582c9fb49733f4987f5891628c9f0b45418211912ab3"
+    },
+    {
+      "path": "database/migrations/002_p1_004_service_intake.sql",
+      "mode": "100644",
+      "blob": "730b9b2b043b4429703cefca1742c1182193878a",
+      "sha256_utf8_lf": "55bad50008a591db26df4ac8f387092ed972988e677a331d9eee05a4bd8b1631"
+    },
+    {
+      "path": "database/migrations/003_p1_005_pilot_ticket_core.sql",
+      "mode": "100644",
+      "blob": "f78099db993309fb5bc38d3d3139220a52db05be",
+      "sha256_utf8_lf": "197d912274b824e40e0cde284889b2739170d61b2ce4562da1932db98b71cd64"
+    },
+    {
+      "path": "database/migrations/004_p1_006_ticket_state_actions.sql",
+      "mode": "100644",
+      "blob": "ab5faa27c96ec0706ec757b529a14ca94ae167d0",
+      "sha256_utf8_lf": "96bca2d9b1de2cc564ef51ae2072980c5696c7f0e7673ceb05feec06f514f278"
+    },
+    {
+      "path": "database/migrations/005_p1_007_notification_outbox.sql",
+      "mode": "100644",
+      "blob": "99d8f8c6d03ada7aa5c8953648d243cb519388e7",
+      "sha256_utf8_lf": "6398e095716a4df36335daf2476e67b605d9ace3189cab2c84073b7e80127d95"
+    },
+    {
+      "path": "database/migrations/006_p1_009_pilot_access.sql",
+      "mode": "100644",
+      "blob": "136defa848922ec6df18273c94d4fa76a3dcc1a3",
+      "sha256_utf8_lf": "7a34251e2675e68e22b1361ae611c2ec48709cb672bc6372e0661c3d36e42982"
+    },
+    {
+      "path": "database/migrations/007_p1_010_ticket_closure.sql",
+      "mode": "100644",
+      "blob": "1e0ba8cffdac3313f5f4dcd41abc6d3a25ac1e22",
+      "sha256_utf8_lf": "f4dc80483eed225ca07298e59bfa56a859a3b816824d694b83f72c3bf0e287b8"
+    },
+    {
+      "path": "database/migrations/008_p1_010_review_hardening.sql",
+      "mode": "100644",
+      "blob": "40e52e92702f2608c55183db1e1d481cda3dcc41",
+      "sha256_utf8_lf": "b22992ea0cf957aff9bbecdc6fcc9c2e9fec141d6a015410bb6ea16d49a10050"
+    },
+    {
+      "path": "database/migrations/009_p1_011_pilot_operations_baseline.sql",
+      "mode": "100644",
+      "blob": "ca34091d9c9c8f9c1325e9bd5dd7491ceb10676d",
+      "sha256_utf8_lf": "12a920e6c43212299a76d6f1ab92eabe84488a8085a1c31371ec93da626b9764"
+    },
+    {
+      "path": "database/migrations/010_p2_001_conversation_contracts.sql",
+      "mode": "100644",
+      "blob": "ae9577720f5a64d3d0aa4909b2ef87d15ac97711",
+      "sha256_utf8_lf": "5255b81e917f2c8175b63b543ff40507fcb8389b95650f9170caf90c67537e88"
+    },
+    {
+      "path": "database/migrations/011_p2_002_timeline_projector.sql",
+      "mode": "100644",
+      "blob": "c30e314444ec6cd0cf60f024eafc801708f6b624",
+      "sha256_utf8_lf": "7e479f44d56f1924aec02b9029b7ef74b6eb4dc4ea756444005041062cf39cca"
+    },
+    {
+      "path": "database/migrations/012_p2_003_realtime_event_log.sql",
+      "mode": "100644",
+      "blob": "d362833dc9836796d6886c3fec05a4da2add5376",
+      "sha256_utf8_lf": "a179bd77d0053d4ba04b0827aeb50deb3a01d1afca1a411c6ad6641f0edd64f9"
+    },
+    {
+      "path": "database/migrations/020_p2_004_unified_communication.sql",
+      "mode": "100644",
+      "blob": "2a07adc5c8cbce9e116f5010eb55173b79b43c4c",
+      "sha256_utf8_lf": "3c263dc08be0af072969bf4ad93f091da7b4cd3b7078d8905febd0a67ca0414f"
+    },
+    {
+      "path": "database/migrations/021_p2_005_conversation_control.sql",
+      "mode": "100644",
+      "blob": "b19f1bec7a589067bbb0f4a64d492b323e0da3fc",
+      "sha256_utf8_lf": "fe6088bf85e56e0fb6c31aab76a5a13f9c40f8b1bc2cb6df075caf427cc8059f"
+    },
+    {
+      "path": "database/migrations/022_arch_005_asia_shanghai_time_contract.sql",
+      "mode": "100644",
+      "blob": "c717075aa31fb68a04b32010c352a1855b6aabef",
+      "sha256_utf8_lf": "dd31f84d9afdea32cf298680e57baeb6834a6930727daa9eb1f2df9331e16cba"
+    },
+    {
+      "path": "database/migrations/030_p2_015_rule_first_intake_orchestration.sql",
+      "mode": "100644",
+      "blob": "fa3bad363eb6877c676bae481264d14a607865d2",
+      "sha256_utf8_lf": "39efdae72c1e435481e0c92ac849be225ca04ea7cff7ad6711c3f86243b1ae92"
+    },
+    {
+      "path": "database/migrations/031_p2_016_ticket_lifecycle_workbench_notifications.sql",
+      "mode": "100644",
+      "blob": "11663d0e9169ce28650376d69197f3af1186e70a",
+      "sha256_utf8_lf": "04c7fe89f48d49da7feb9c900e9907561aa1c5f73fb1cc6928688bf8b7e41e7b"
+    },
+    {
+      "path": "database/migrations/032_p2_012_human_confirmed_incident.sql",
+      "mode": "100644",
+      "blob": "c050564da24518a3c063a91d91b02ee9e1a562e8",
+      "sha256_utf8_lf": "60526535adc556714512a85ac15f08fff5a66827742945b9555087405291ed98"
+    },
+    {
+      "path": "database/migrations/033_yxx_self_service_intake.sql",
+      "mode": "100644",
+      "blob": "d524a3023b277b585a1e21df28c66e26b8aa69ee",
+      "sha256_utf8_lf": "fbd8d151d04c31b3eb2bd8076c1eb16053b7e26c9fb9626830ab02ab4b7fbe91"
+    },
+    {
+      "path": "database/migrations/034_yxx_self_service_direct_chat_check.sql",
+      "mode": "100644",
+      "blob": "7fbdc38558bb028fdbb92f68c6da11b886d94549",
+      "sha256_utf8_lf": "fd79d68742a22f5b7db42582fd9cc7984f23697434ae7408fdd77d4d7f22a8c3"
+    },
+    {
+      "path": "database/migrations/035_p2_016_workbench_wecom_auth.sql",
+      "mode": "100644",
+      "blob": "e0c150860b5a002bce170888f2de148e8fd1b0ed",
+      "sha256_utf8_lf": "8fc702ceb10f511138856e8122f74d140699fcc1eef1c7efb11eab777e915012"
+    },
+    {
+      "path": "database/migrations/036_p2_007_third_party_staff_directory.sql",
+      "mode": "100644",
+      "blob": "84bf71e08b196a88c987a404aa440f478b919276",
+      "sha256_utf8_lf": "509abec70fc02ccaf6b70f7272d9273379b19f52194a85c5ac2c211a9b422d0e"
+    },
+    {
+      "path": "MANIFEST.json",
+      "mode": "100644",
+      "blob": "4ad97ec8a1e2527bdd3d6d7e26defcacf8762571",
+      "sha256_utf8_lf": "47087cf07bbac89f5b52396d88f286137423c6556952182e156aee42947b058e"
+    },
+    {
+      "path": "plans/current_phase.json",
+      "mode": "100644",
+      "blob": "6d07f874d30d0cd6541f64b1d6d9ce8ad80fda00",
+      "sha256_utf8_lf": "58caab7df338503c567d988b3a61295d0b878173660632168a5d13f21fc390fa"
+    },
+    {
+      "path": "plans/master_backlog.json",
+      "mode": "100644",
+      "blob": "cc286b30c7ef6484d0d09543b5f04049f02bfbd5",
+      "sha256_utf8_lf": "6aa79f27a9321f63938e6146106d796316df1ef08b4f6f30cc24e931f210cd54"
+    },
+    {
+      "path": "plans/parallel_workstreams.json",
+      "mode": "100644",
+      "blob": "13b490d6eb59ef2f8f94f7d22aa066f395e1e5dc",
+      "sha256_utf8_lf": "495adf6e5067f5510aeab7ba3517bace6a6d2103054a1e8dc61482ce15429876"
+    },
+    {
+      "path": "tasks/master_backlog.json",
+      "mode": "100644",
+      "blob": "54318cc593494343214c16e52913dfd286442ac7",
+      "sha256_utf8_lf": "02b4acdfceef340a109a1acf997a66c2e82ec7b5f85a26da7cee8c22e9653316"
+    },
+    {
+      "path": "project_summary.json",
+      "mode": "100644",
+      "blob": "827b9e97ddf8f0f63b87807c6fa1e39f95039d2b",
+      "sha256_utf8_lf": "c8188842bad9ecd4b498e66b8cb37457d9ce178845ead4d05325c292a05660f0"
+    }
+  ],
+  "live_authorized": false,
+  "parent_gate_advanced": false,
+  "sql_changes_authorized": false
+}
