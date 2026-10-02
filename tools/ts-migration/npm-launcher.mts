@@ -4,12 +4,20 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Execute the discovered launcher. Its directory is not an npm installation contract.
-export function runNpm(args: string[], options: SpawnSyncOptionsWithStringEncoding): SpawnSyncReturns<string> {
+export function findNpmLauncher(options: SpawnSyncOptionsWithStringEncoding): string {
   const found = execFileSync(process.platform === 'win32' ? 'where.exe' : 'which', ['npm'],
     { cwd: options.cwd, env: options.env, encoding: 'utf8', windowsHide: true }).trim().split(/\r?\n/u);
   const launcher = process.platform === 'win32'
     ? found.find(file => /\.(?:cmd|bat|exe|com|[cm]?js)$/iu.test(file)) : found[0];
   assert.ok(launcher, 'NPM_LAUNCHER_REQUIRED');
+  return launcher;
+}
+
+export function runNpm(args: string[], options: SpawnSyncOptionsWithStringEncoding): SpawnSyncReturns<string> {
+  return runNpmLauncher(findNpmLauncher(options), args, options);
+}
+
+export function runNpmLauncher(launcher: string, args: string[], options: SpawnSyncOptionsWithStringEncoding): SpawnSyncReturns<string> {
   if (process.platform === 'win32' && /\.(?:cmd|bat)$/iu.test(launcher)) {
     // Escape cmd parsing separately from Windows argv quoting, preserving literal values.
     const meta = (value: string): string => value.replace(/[()\[\]%!^"`<>&|; ,*?]/gu, '^$&');

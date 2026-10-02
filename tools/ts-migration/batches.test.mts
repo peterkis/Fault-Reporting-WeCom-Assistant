@@ -8,18 +8,16 @@ import { pathToFileURL } from 'node:url';
 import { testEnvironment } from './routing.mjs';
 import { batchSelection } from './batches.mjs';
 import { record, sourceRoot, workspaceFiles } from './common.mjs';
-import { runNpm } from './npm-launcher.mjs';
+import { findNpmLauncher, runNpm } from './npm-launcher.mjs';
 
 const original = sourceRoot();
 test('the Foundation npm seam accepts real wrappers and JavaScript symlinks', async t => {
   const root = mkdtempSync(path.join(tmpdir(), 'npm %SYNTHETIC_VARIABLE% wrapper '));
   try {
-    const found = execFileSync(process.platform === 'win32' ? 'where.exe' : 'which',
-      [process.platform === 'win32' ? 'npm.cmd' : 'npm'], { encoding: 'utf8', windowsHide: true }).trim().split(/\r?\n/u)[0];
-    assert.ok(found);
+    const found = findNpmLauncher({ encoding: 'utf8' });
     const wrapper = path.join(root, process.platform === 'win32' ? 'npm.cmd' : 'npm');
     writeFileSync(wrapper, process.platform === 'win32'
-      ? `@echo off\r\n"${found}" %*\r\n`
+      ? `@echo off\r\n${/\.[cm]?js$/iu.test(found) ? '"' + process.execPath.replaceAll('%', '%%') + '" ' : ''}"${found.replaceAll('%', '%%')}" %*\r\n`
       : `#!/bin/sh\nexec '${found.replaceAll("'", "'\\''")}' "$@"\n`, { mode: 0o755 });
     const env: NodeJS.ProcessEnv = { ...process.env, TS_MIGRATION_TEST_SOURCE_ROOT: original };
     env.SYNTHETIC_VARIABLE = 'EXPANSION_MUST_NOT_HAPPEN';
@@ -60,11 +58,22 @@ test('the Foundation npm seam accepts real wrappers and JavaScript symlinks', as
       assert.equal(result.status, 0, result.stdout + result.stderr);
       assert.match(result.stdout, /# pass 1/u);
     });
-    if (process.platform !== 'win32' && process.env.TS_MIGRATION_NPM_WRAPPER_HOST !== '1') await t.test('a shell-wrapped host npm also passes the launcher regressions', () => {
+    if (process.env.TS_MIGRATION_NPM_WRAPPER_HOST !== '1') await t.test('a wrapped host npm also passes the launcher regressions without an installation layout', () => {
       const host = path.join(root, 'host-wrapper'); mkdirSync(host);
-      writeFileSync(path.join(host, 'npm'), `#!/bin/sh\nexec '${found.replaceAll("'", "'\\''")}' "$@"\n`, { mode: 0o755 });
+      let hostPath = host + path.delimiter + inheritedPath;
+      if (process.platform === 'win32') {
+        copyFileSync(process.execPath, path.join(host, 'node.exe'));
+        writeFileSync(path.join(host, 'npm.cjs'), '(async()=>{\n'
+          + `const {runNpmLauncher}=await import(${JSON.stringify(pathToFileURL(path.join(original, '.build/tools/npm-launcher.mjs')).href)});\n`
+          + `const run=runNpmLauncher(${JSON.stringify(found)},process.argv.slice(2),{stdio:'inherit',encoding:'utf8',env:{...process.env,PATH:${JSON.stringify(inheritedPath)}}});\n`
+          + 'if(run.error)throw run.error;process.exitCode=run.status??1;\n})().catch(error=>{console.error(error);process.exitCode=1;});\n');
+        const git = execFileSync('where.exe', ['git'], { encoding: 'utf8', windowsHide: true }).trim().split(/\r?\n/u)[0];
+        assert.ok(git); assert.ok(process.env.SystemRoot);
+        hostPath = [host, path.dirname(git), path.join(process.env.SystemRoot, 'System32')].join(path.delimiter);
+        assert.notEqual(spawnSync('where.exe', ['npm.cmd'], { env: { ...env, PATH: hostPath }, encoding: 'utf8', windowsHide: true }).status, 0);
+      } else writeFileSync(path.join(host, 'npm'), `#!/bin/sh\nexec '${found.replaceAll("'", "'\\''")}' "$@"\n`, { mode: 0o755 });
       const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap', '--test-name-pattern=^the Foundation npm seam', path.join(original, '.build/tools/batches.test.mjs')], {
-        cwd: original, env: { ...env, PATH: host + path.delimiter + inheritedPath, TS_MIGRATION_NPM_WRAPPER_HOST: '1' }, encoding: 'utf8', windowsHide: true, timeout: 60_000,
+        cwd: original, env: { ...env, PATH: hostPath, PATHEXT: (env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD') + ';.CJS', TS_MIGRATION_NPM_WRAPPER_HOST: '1' }, encoding: 'utf8', windowsHide: true, timeout: 60_000,
       });
       assert.equal(result.status, 0, result.stdout + result.stderr);
     });
