@@ -7,8 +7,8 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {testRoots} from './helpers/migration-roots.mjs';
 import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
-import {checkSS010} from '../src/yxx-self-service-readiness.mjs';
-import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,deriveCurrentYxxSourceAudit,verifyCurrentYxxSourceAccounting} from '../src/yxx-current-evidence.mjs';
+import {checkSS010,SS010_ACCEPTANCE} from '../src/yxx-self-service-readiness.mjs';
+import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,deriveCurrentYxxSourceAudit,verifyCurrentYxxSourceAccounting,deriveCurrentYxxScenarios,verifyCurrentYxxScenarios} from '../src/yxx-current-evidence.mjs';
 import {SS009_VALIDATORS} from '../src/yxx-self-service-verification.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 
@@ -45,6 +45,43 @@ function syntheticExecution(root:string){
   const report={run_id:'fixture',tested_head:manifest.source.head,tested_tree:manifest.source.tree,build,current_runs:[save(directory+'/summary.json',document)]};
   return {report,document,save,tap:path.join(root,tap.path),commit:()=>{report.current_runs[0]=save(directory+'/summary.json',document);}};
 }
+
+test('scenario mapping requires unique executed cases and preserves execution line provenance and historical limits',()=>{
+  const root=mkdtempSync(path.join(tmpdir(),'yxx-scenario-proof-'));
+  try{
+    // Historical trace replay tests the mapping parser, not current acceptance.
+    const source=testRoots().sourceRoot,fixture=syntheticExecution(root),file=fixture.document.files[0];assert.ok(file);
+    cpSync(path.join(source,'tests'),path.join(root,'tests'),{recursive:true});
+    for(const dir of ['src','scripts','web','contracts','config_examples','database/migrations'])mkdirSync(path.join(root,dir),{recursive:true});
+    for(const name of ['package.json','package-lock.json','.env.example'])fixture.save(name,'{}');
+    for(const name of ['plans/yxx-ss-009-acceptance.json','evidence/p2-g2-yxx-entry-creation-v2-scenario-matrix.json','evidence/p2-g2-yxx-entry-creation-v2-g2-scenario-matrix.json'])
+      fixture.save(name,readFileSync(path.join(source,name),'utf8'));
+    fixture.report.build=fixture.save('evidence/yxx-current-fixture/build-manifest.json',readFileSync(path.join(source,'.build/runtime/build-manifest.json'),'utf8'));
+    const cases=readFileSync(path.join(source,'evidence/yxx-ss-010-full-cases.jsonl'),'utf8').trim().split('\n').map(line=>JSON.parse(line) as Record<string,unknown>);
+    const capture=()=>{const ref=fixture.save('evidence/yxx-current-fixture/current/one.cases.jsonl',cases.map(item=>JSON.stringify(item)).join('\n')+'\n');
+      file.case_count=cases.length;file.case_trace_sha256=ref.sha256;file.case_trace_bytes=ref.bytes;fixture.commit();};
+    capture();
+    const report={...fixture.report,candidate_fingerprint:'c'.repeat(64)};
+    const proof={schema_version:1,...g2EvidenceTime(),tested_head:report.tested_head,tested_tree:report.tested_tree,candidate_fingerprint:report.candidate_fingerprint,
+      kind:'CURRENT_SCENARIO_MAPPING',technical_only:true,live_authorized:false,historical_live_facts:'PRESERVED_NOT_REVALIDATED',
+      ...deriveCurrentYxxScenarios(root,report,SS010_ACCEPTANCE)};
+    const verify=()=>verifyCurrentYxxScenarios(root,{...report,scenarios:fixture.save('evidence/yxx-current-fixture/scenarios.json',proof)},SS010_ACCEPTANCE);
+    verify();assert.equal(proof.scenarios.length,94);assert.deepEqual(proof.historical_bindings.map(item=>item.count),[48,37]);
+    assert.ok(proof.scenarios.flatMap(item=>item.tests).every(item=>item.line_basis==='EXECUTED_FILE'&&item.executed_path.startsWith('.build/runtime/')));
+    assert.throws(()=>checkSS010({root,requireReady:true}));
+    const last=proof.scenarios.pop();assert.ok(last);assert.throws(verify,{code:'CURRENT_SCENARIOS_INVALID'});proof.scenarios.push(last);
+    proof.live_authorized=true;assert.throws(verify,{code:'CURRENT_SCENARIOS_INVALID'});proof.live_authorized=false;
+    const required=cases.find(item=>item.name==='SS010 AC091 artifact references reject path traversal missing and corrupted execution data');assert.ok(required);
+    cases.push({...required});capture();assert.throws(verify,{code:'CURRENT_SCENARIOS_INVALID'});cases.pop();capture();verify();
+    const originalName=required.name;required.name='missing required scenario';capture();assert.throws(verify,{code:'CURRENT_SCENARIOS_INVALID'});required.name=originalName;capture();verify();
+    const governance=cases.find(item=>item.name==='SS-009 governance preserves historical baseline user files parent gate and full collector coverage');assert.ok(governance);
+    const originalFile=governance.file;governance.file='tests/yxx-ss-009-evidence.test.mjs';capture();assert.throws(verify,{code:'CURRENT_SCENARIOS_INVALID'});
+    governance.file=originalFile;capture();verify();
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-scenario-proof-'));
+    rmSync(root,{recursive:true,force:true});
+  }
+});
 
 test('source accounting preserves semantic limits and rejects missing execution or manual review even with fresh hashes',()=>{
   const root=mkdtempSync(path.join(tmpdir(),'yxx-source-accounting-'));
@@ -372,6 +409,10 @@ test('strict current readiness rejects a PASS summary without the complete curre
     const unsupportedAccounting=save('evidence/yxx-current-fixture/report.json',{...header,source_accounting:sourceAccounting});
     save('plans/yxx-current-readiness.json',{schema_version:1,report:unsupportedAccounting});
     assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_SOURCE_ACCOUNTING_INVALID'});
+    const scenarios=save('evidence/yxx-current-fixture/scenarios.json',{status:'PASS'});
+    const unsupportedScenarios=save('evidence/yxx-current-fixture/report.json',{...header,scenarios});
+    save('plans/yxx-current-readiness.json',{schema_version:1,report:unsupportedScenarios});
+    assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_SCENARIOS_INVALID'});
   }finally{
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-execution-evidence-'));
     if(attached)execFileSync('git',['worktree','remove','--force',root],{cwd:source,windowsHide:true,stdio:'pipe'});

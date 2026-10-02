@@ -5,7 +5,7 @@ import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { g2CandidateInventory, isG2CandidatePath } from './p2-g2-candidate.mjs';
 import { assertG2EvidenceTime } from './p2-g2-evidence-time.mjs';
-import { SS009_VALIDATORS, verifyYxxReceipts } from './yxx-self-service-verification.mjs';
+import { SS009_VALIDATORS, verifyYxxReceipts, historicalYxxBindings } from './yxx-self-service-verification.mjs';
 import { createG2SourceAudit } from './p2-g2-source-audit.mjs';
 
 export const CURRENT_YXX_POINTER='plans/yxx-current-readiness.json';
@@ -49,6 +49,70 @@ function artifact(root:string,runId:string,value:unknown):{path:string;bytes:Buf
   assert.match(ref.sha256,/^[a-f0-9]{64}$/u);assert.ok(Number.isSafeInteger(ref.bytes)&&ref.bytes>=0);
   const bytes=read(root,ref.path);assert.equal(bytes.length,ref.bytes);assert.equal(hash(bytes),ref.sha256);
   return {path:ref.path,bytes};
+}
+
+type LimitedAcceptance=ReadonlyArray<{id:string;tests:ReadonlyArray<string>}>;
+/** Derive scenario bindings from executed-file traces without inventing source lines. */
+export function deriveCurrentYxxScenarios(root:string,report:Record<string,unknown>,limited:LimitedAcceptance){
+  assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+  const build=json(artifact(root,report.run_id,report.build).bytes);assert.ok(Array.isArray(build.outputs));
+  const outputs=build.outputs.map(object),inventory=g2CandidateInventory(root);
+  const sourceFor=(logical:string):string=>{
+    const output=outputs.find(item=>item.path===logical);assert.ok(output&&typeof output.source==='string');return output.source;
+  };
+  const cases:Array<{file:string;name:string;sha256:string;executed_path:string;executed_line:number;line_basis:'EXECUTED_FILE'}>=[];
+  assert.ok(Array.isArray(report.current_runs)&&report.current_runs.length>0);
+  for(const reference of report.current_runs){
+    const summary=artifact(root,report.run_id,reference),run=json(summary.bytes);assert.ok(Array.isArray(run.files));
+    for(const value of run.files){
+      const file=object(value);assert.ok(typeof file.case_trace_path==='string');assert.match(file.case_trace_path,/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,240}$/u);
+      assert.ok(['SOURCE_HOST','STAGED_RUNTIME','MIXED_EXPLICIT_ROOTS'].includes(String(file.mode)));
+      const trace:Buffer=artifact(root,report.run_id,{path:path.posix.dirname(summary.path)+'/'+file.case_trace_path,
+        sha256:file.case_trace_sha256,bytes:file.case_trace_bytes}).bytes;
+      const rows:Record<string,unknown>[]=new TextDecoder('utf-8',{fatal:true}).decode(trace).trim().split('\n').map(line=>object(JSON.parse(line) as unknown));
+      assert.equal(rows.length,file.case_count);
+      for(const row of rows){
+        assertG2EvidenceTime(row);assert.equal(row.event,'test:pass');assert.equal(row.skip,false);assert.equal(row.todo,false);
+        assert.equal(row.time_basis,'REPORTER_OBSERVED_AT');assert.ok(typeof row.file==='string'&&typeof row.name==='string');
+        assert.ok(!path.posix.isAbsolute(row.file)&&!row.file.includes('\\')&&!row.file.split('/').some(part=>!part||part==='..'||part==='.'));
+        assert.ok(typeof row.line==='number'&&Number.isSafeInteger(row.line)&&row.line>0);
+        const source=file.mode==='SOURCE_HOST'?row.file:sourceFor(row.file),entry=inventory.files.find(item=>item.path===source);assert.ok(entry);
+        cases.push({file:source,name:row.name,sha256:entry.sha256,executed_path:file.mode==='SOURCE_HOST'?row.file:'.build/runtime/'+row.file,
+          executed_line:row.line,line_basis:'EXECUTED_FILE'});
+      }
+    }
+  }
+  const planned=json(read(root,'plans/yxx-ss-009-acceptance.json'));assert.equal(planned.schema_version,1);assert.equal(planned.kind,'PLANNED_MAPPING_NOT_EXECUTION');
+  assert.ok(Array.isArray(planned.scenarios)&&planned.scenarios.length===102);
+  const plans=planned.scenarios.map(object);plans.forEach((item,index)=>assert.equal(item.id,'YXX-AC-'+String(index+1).padStart(3,'0')));
+  const match=(name:string,file?:string)=>{
+    const matches=cases.filter(item=>item.name===name&&(file===undefined||item.file===file));assert.equal(matches.length,1,name);
+    const found=matches[0];assert.ok(found);return found;
+  };
+  const scenarios=plans.slice(0,90).map(item=>{
+    assert.ok(Array.isArray(item.tests));assert.ok(item.tests.length>0||item.id==='YXX-AC-086'||item.id==='YXX-AC-090');
+    const tests=item.tests.map(value=>{const test=object(value);assert.ok(typeof test.file==='string'&&typeof test.name==='string');
+      const source=inventory.files.some(entry=>entry.path===test.file)?test.file:sourceFor(test.file);return match(test.name,source);});
+    return {id:String(item.id),status:'PASS',tests,...(item.evidence_kind===undefined?{}:{evidence_kind:item.evidence_kind})};
+  });
+  assert.deepEqual(limited.map(item=>item.id),['YXX-AC-091','YXX-AC-092','YXX-AC-093','YXX-AC-094']);
+  for(const item of limited){assert.ok(item.tests.length>0);scenarios.push({id:item.id,status:'PASS',tests:item.tests.map(name=>match(name))});}
+  const historical=historicalYxxBindings({root,inventory,cases:cases.map(item=>({...item,event:'test:pass',skip:false,todo:false}))});
+  return {scenarios,historical_bindings:historical};
+}
+
+export function verifyCurrentYxxScenarios(root:string,report:Record<string,unknown>,limited:LimitedAcceptance):void {
+  try{
+    assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+    const proof=json(artifact(root,report.run_id,report.scenarios).bytes);
+    assert.equal(proof.schema_version,1);assert.equal(proof.kind,'CURRENT_SCENARIO_MAPPING');assertG2EvidenceTime(proof);
+    for(const field of ['tested_head','tested_tree','candidate_fingerprint']){assert.ok(typeof report[field]==='string');assert.equal(proof[field],report[field]);}
+    assert.equal(proof.technical_only,true);assert.equal(proof.live_authorized,false);assert.equal(proof.historical_live_facts,'PRESERVED_NOT_REVALIDATED');
+    const expected=deriveCurrentYxxScenarios(root,report,limited);
+    assert.deepEqual(proof.scenarios,expected.scenarios);assert.deepEqual(proof.historical_bindings,expected.historical_bindings);
+  }catch{
+    throw Object.assign(new Error('CURRENT_SCENARIOS_INVALID'),{code:'CURRENT_SCENARIOS_INVALID',stage:'SCENARIOS'});
+  }
 }
 
 /** Derived audit input; originals remain separate, hashed, per-file artifacts. */

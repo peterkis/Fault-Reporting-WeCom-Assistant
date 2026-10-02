@@ -12,7 +12,7 @@ This progress document is not acceptance evidence.
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
-| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution/review/cleanup/historical/specialized/source-accounting components implemented; scenario mapping, full strict consumer and publisher pending |
+| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution/review/cleanup/historical/specialized/source/scenario components implemented; full strict consumer and publisher pending |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
@@ -105,6 +105,21 @@ regression also checks that each verification-control edit changes the candidate
 fingerprint. The historical mapping itself and frozen historical implementation
 remain unchanged. Evidence: `slice31-red.log`, `slice31-green.log` and
 `stage04-scenario-control-types.log`; focused test 1/1 and strict types pass.
+
+Current scenario mapping now derives AC001-090 from the controlled legacy mapping
+and AC091-094 from the existing SS010 acceptance contract. Every declared test must
+match exactly one successful raw trace record at its expected source path; bound
+records include source hash, actual executed path and executed-file line number.
+Compiled line numbers are explicitly not source lines. Existing member/G2 historical
+bindings (48/37 scenarios) are independently regenerated against current cases and
+source hashes. Their `live_result:NOT_RUN` describes this automated run only;
+the mapping explicitly preserves historical live facts without revalidating or
+resetting AC095-102. No live permission is inferred. Public-entry RED->GREEN and
+routed tests pass 11/11, including missing scenarios, duplicate/missing cases,
+wrong file bindings and false live authorization. Strict types pass. Historical
+trace replay is a parser fixture only, not evidence of current candidate execution.
+Receipts: `slice32-red`, `slice32-green`, `stage04-scenario-proof-tests` and
+`stage04-scenario-proof-types.log` in the external artifact directory.
 
 Stage 4 execution core now checks the complete declared current set across disjoint
 run references, per-file success, source/actual execution hashes, archived build
