@@ -7,6 +7,7 @@ import { hash, record, slash, sourceRoot, outputPath, codeFiles, strings, git } 
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { loadRoutes, select, testEnvironment, execution, type Selection } from './routing.mjs';
+import { currentAcceptance, currentSelection } from './current-acceptance.mjs';
 
 export type Counts = { tests: number; pass: number; fail: number; cancelled: number; skipped: number; todo: number };
 export function counts(tap: string): Counts {
@@ -145,21 +146,31 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   let kind: 'alias' | 'selection' = 'selection', name = 'canary', reference = false;
   let reportDir: string | undefined;
   let frozen: string | undefined;
+  let currentFull = false;
   const args = process.argv.slice(2);
+  if (args.length === 1 && args[0] === '--current-plan') {
+    console.log(JSON.stringify(currentAcceptance(root)));
+  } else {
   for (let i=0; i<args.length; i++) {
     const arg = args[i];
     if (arg === '--reference-source') reference = true;
+    else if (arg === '--current-full') {
+      if (currentFull) throw new Error('MIGRATION_CURRENT_ARGUMENTS');
+      currentFull = true;
+    }
     else if (arg === '--alias' || arg === '--selection' || arg === '--report-dir' || arg === '--frozen') {
       const value = args[++i]; if (!value || value.startsWith('--')) throw new Error('MIGRATION_ARGUMENT_VALUE_REQUIRED');
       if (arg === '--report-dir') reportDir = path.resolve(value); else if (arg === '--frozen') frozen = value; else { kind = arg === '--alias' ? 'alias' : 'selection'; name = value; }
     } else throw new Error('MIGRATION_UNKNOWN_RUNNER_ARGUMENT');
   }
+  if (currentFull && args.some(arg => ['--alias','--selection','--reference-source','--frozen'].includes(arg))) throw new Error('MIGRATION_CURRENT_ARGUMENTS');
   if (frozen) {
     runFrozen(root, frozen, reportDir ?? mkdtempSync(path.join(tmpdir(), 'ts-migration-history-')));
   } else {
-  const selected = select(loadRoutes(root), kind, name);
+  const selected = currentFull ? currentSelection(root) : select(loadRoutes(root), kind, name);
   testEnvironment(root, selected.entries); // Fail missing isolation before doing build work.
   build(root);
   runSelection(root, selected, { reference, ...(reportDir ? { reportDir } : {}) });
   }
+}
 }

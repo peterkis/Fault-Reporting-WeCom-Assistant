@@ -11,7 +11,7 @@ This progress document is not acceptance evidence.
 | 0 | GitHub identity, clean isolated checkout, known rejection and 28 pinned SQL/state records | COMPLETE |
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
-| 3 | Routed compiled execution, cases, per-file provenance and historical obligations | IN_PROGRESS; per-case reporter and immutable run directories implemented, historical/current coverage contract pending |
+| 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | NOT_STARTED |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
@@ -43,8 +43,38 @@ These changes have independent public-runner RED->GREEN evidence (slice10-12).
 Complete migration host regression: 20/20. Actual compiled canary plus SOURCE_HOST
 schema-contract execution: 7/7 across two files, with bound traces. Strict programs
 and negative type canary pass. These are development checks, not the final full run.
-The complete current/historical obligation mapping and final evidence consumer are
-still pending; these runner receipts alone cannot establish current readiness.
+The explicit current/historical mapping is now in
+`plans/yxx-current-readiness-acceptance.json`, bound to both build and candidate.
+It accounts for all 214 registered files: 213 current, one fixed-historical SS008
+scope obligation. The historical domain also retains the original SS009 evidence,
+history and governance regressions plus unchanged strict CLI. Current SS009
+negative/protection tests remain in the current domain; they were not reclassified.
+Current scope positives and negatives are in `tests/yxx-current-readiness.test.mts`.
+The final evidence consumer is still pending; runner receipts alone do not prove READY.
+
+Coverage-contract tests pass 3/3, including omissions, duplicates and wrong historical
+identity. A public CLI RED->GREEN proves changing the acceptance contract invalidates
+the existing build. With the case reporter enabled, the MIXED_EXPLICIT_ROOTS readiness
+selection passes 15/15, case_count 15, no not_run files, executing its compiled MJS.
+Together with the earlier SOURCE_HOST/STAGED_RUNTIME 7/7 this exercises all current
+route modes. Strict types pass. The 213-file current full run and independent frozen
+historical run have not yet been performed in this task.
+
+Development commands (full execution needs the separately owned test environment):
+
+```text
+npm run migration:tools
+node .build/tools/run-tests.mjs --current-plan
+node .build/tools/run-tests.mjs --current-full --report-dir <new-external-directory>
+```
+
+The first runner command emits a plan, not results. The second executes the exact
+current set through existing routes and rejects missing isolation before build/run.
+Historical commands run independently in the complete, identity-verified CRLF
+checkout named by the contract; preserve its original source-host implementation.
+Its strict and regression logs must identify that head and must never contribute
+to the current-file executed count. Retain the existing r6 mutation probe and
+architecture checks when producing final historical evidence.
 
 Development checkpoint (2026-10-02, not frozen acceptance): six public-interface
 RED->GREEN cycles cover argument diagnostics, current successor structure, missing

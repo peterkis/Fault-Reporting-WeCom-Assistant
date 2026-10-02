@@ -100,7 +100,7 @@ export function inputs(root: string): FileDigest[] {
   const files = workspaceFiles(root).filter(p => /^(src|scripts|tests|contracts|database\/migrations|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter))\//u.test(p)
     || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example'].includes(p)
     || p.startsWith('plans/typescript-migration/') || p.startsWith('.github/workflows/')
-    || ['plans/yxx-current-readiness-scope.json', '.github/review/pr21-evidence-exceptions.json',
+    || ['plans/yxx-current-readiness-scope.json', 'plans/yxx-current-readiness-acceptance.json', '.github/review/pr21-evidence-exceptions.json',
       '.github/review/yxx-current-evidence-adjudication.json'].includes(p));
   return files.map(p => ({ path: p, sha256: hash(readFileSync(safeFile(root, p))) }));
 }

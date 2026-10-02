@@ -153,7 +153,7 @@ test('current readiness CLI distinguishes a missing build from evidence or histo
 
 test('current readiness CLI rejects builds predating a scope or historical adjudication control change', () => {
   const roots = testRoots();
-  for (const relative of ['plans/yxx-current-readiness-scope.json', '.github/review/pr21-evidence-exceptions.json', '.github/review/yxx-current-evidence-adjudication.json']) {
+  for (const relative of ['plans/yxx-current-readiness-scope.json', '.github/review/pr21-evidence-exceptions.json', '.github/review/yxx-current-evidence-adjudication.json', 'plans/yxx-current-readiness-acceptance.json']) {
     const file = path.join(roots.sourceRoot, relative), original = readFileSync(file);
     try {
       writeFileSync(file, Buffer.concat([original, Buffer.from('\n')]));
