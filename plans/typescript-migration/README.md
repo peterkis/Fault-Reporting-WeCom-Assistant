@@ -8,6 +8,8 @@ T00 至 T04-04 已合并。PR #36 发布 head `8eb71fb14dfda2c885d0edf53408fc389
 
 后继文档 head `f8e209e` 的 CI 36876787453 实际失败于 T04-02 的 SS-009 浏览器清理检查（业务断言已通过，CDP socket 尚未 CLOSED）。测试辅助函数修补 `ef99c7e` 增加有界关闭完成等待，原实现回归 RED，修补后生命周期 5/5、本地 50 文件 / 341 测试及 Windows tooling 59/59 通过；261 个生产输出字节不变。见 [关闭修补记录](verification/T04-05-browser-close.md) 和 [新回执](receipts/T04-05-browser-close.json)。新发布 head 的完整 CI 待运行，既有 CI/复审及原测试执行身份不重绑。
 
+当前发布 f9cd40d 的 CI 36891280424 再次失败于两个浏览器清理入口。完整传输修补 dca2180 使用已有锁定版本的测试专用 ws 连接，关闭握手停滞时终止自有 TCP 并确认 CLOSED；真实 Chrome/CDP 回归 RED 后 GREEN 6/6，本地扩展批次 52/52 文件、391/391 及 tooling 59/59 通过。六个完整批次改为独立 PG18 环境、最多三个并行，原 baseline/strict/historical/cleanup/双平台检查均保留；未削减覆盖。历史健康 CI 为 93m18s，预计并行后约 40 分钟（新 CI 实测待确认）。见 [传输与 CI 记录](verification/T04-05-browser-transport-ci.md) 和 [新回执](receipts/T04-05-browser-transport-ci.json)。
+
 Foundation 的 `p1:preflight` / `p1:serve` 先验证制品，再运行 `.build/runtime` 内同名模块；缺失或过期制品失败，需单独构建。现有运行脚本保持 `.mjs` 导入，在运行树加载唯一实现。
 
 本批完成后停止，T05-01 不自动启动。无数据库变更，制品保持 STAGED_NOT_ACTIVATED。

@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "batch": "T04-05",
+  "status": "IN_PROGRESS",
+  "execution_status": "LOCAL_TRANSPORT_REPAIR_PASS_PARALLEL_CI_PENDING",
+  "base": "87de2bc9e8835882cd390b024a04e2865cd367f9",
+  "head": "dca21800e18bae1102c2ad9a7e075069b8599870",
+  "tree": "6ffe9f89f17db6afce166046bf9e598693a5343b",
+  "previous_ci": {
+    "head": "f9cd40d674e31eadfa368e20bc1b0478dab6753e",
+    "run": 36891280424,
+    "status": "FAILURE",
+    "failed_files": [
+      "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+      "tests/yxx-ss-007-native-ui.browser.test.mjs"
+    ],
+    "failed_batches": [
+      {
+        "batch": "T03-01",
+        "selected": 181,
+        "executed": 138,
+        "tests": 945,
+        "pass": 944,
+        "fail": 1,
+        "not_run": 43
+      },
+      {
+        "batch": "T04-01",
+        "selected": 153,
+        "executed": 140,
+        "tests": 855,
+        "pass": 854,
+        "fail": 1,
+        "not_run": 13
+      }
+    ],
+    "symptom": "P2_006_BROWSER_SOCKET_NOT_CLOSED during cleanup after business assertions",
+    "verified_log_hashes": 1326,
+    "other_four_batches": "PASS",
+    "source_job_seconds": 4648,
+    "serial_batch_seconds": 4442,
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/36891280424"
+  },
+  "repair": {
+    "cause": "The native WebSocket close handshake can remain CLOSING after Chrome exits; waiting alone does not terminate its owned TCP transport.",
+    "fix": "Use pinned test-only ws transport; attempt normal close, terminate the owned transport if it is still open, then verify actual CLOSED. Independently attempt owned process, socket and profile cleanup; propagate failures.",
+    "dependency": "Direct devDependency ws 8.21.3 already present in the previous lock; no resolved package entry or production dependency change.",
+    "regression": "Real Chrome/HTTP/CDP through a loopback relay that forwards shutdown but stalls the close handshake; require actual page, RED socket 1, GREEN socket 0 and independently closed relay peer.",
+    "red": {
+      "pass": 0,
+      "fail": 1,
+      "remaining_sockets": 1,
+      "accepted_log": "stalled-close-red-correct-relay.tap"
+    },
+    "green": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "accepted_log": "browser-lifecycle-green-final.tap"
+    },
+    "existing_assertions_relaxed": false,
+    "startup_or_command_timeout_expanded": false,
+    "initial_diagnostic_probes": "Initial incorrectly encoded relay and subclass-based observation probes are preserved as failed diagnostics, not accepted RED/GREEN."
+  },
+  "local_validation": {
+    "selected": 52,
+    "executed": 52,
+    "counts": {
+      "tests": 391,
+      "pass": 391,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "not_run": 0,
+    "verified_log_hashes": 104,
+    "original_failed_files_included": true,
+    "original_ss009_uninstrumented": "PASS",
+    "tooling": {
+      "host": "win32",
+      "tests": 59,
+      "pass": 59,
+      "fail": 0
+    },
+    "execution_source": "f9cd40d674e31eadfa368e20bc1b0478dab6753e",
+    "execution_dirty": true,
+    "execution_manifest_sha256": "3fdcaf2d69917bf2c0edcc0c6be5080d92404db3f33a262f25db2b76342c6b7e",
+    "clean_source_input_hash": "9953c29d179fb8d98009b1732a22876db62476740b8a49453e1f5998448fb629",
+    "clean_build_manifest_sha256": "172daeff160b0f55dbaa59db6b563e7f38bf3b4031f4206054483ba76fad6e0d",
+    "clean_inputs_and_all_747_outputs_equal_tested_patch": true,
+    "tests_rebound": false,
+    "artifact_verification": "PASS",
+    "production_raw_equal_outputs": 261,
+    "changed_outputs": [
+      "package-lock.json",
+      "package.json",
+      "tests/helpers/p2-006-browser-harness.mjs",
+      "tests/p2-g2-browser-lifecycle.test.mjs"
+    ]
+  },
+  "ci_optimization": {
+    "six_batches": [
+      "T03-01",
+      "T04-01",
+      "T04-02",
+      "T04-03",
+      "T04-04",
+      "T04-05"
+    ],
+    "max_parallel": 3,
+    "fail_fast": false,
+    "separate_runner_and_pg18_per_batch": true,
+    "per_file_execution_still_serial": true,
+    "batch_coverage_removed": false,
+    "t04_05_added_existing_failed_files": 2,
+    "unique_selected_files": 188,
+    "total_selected_executions": 721,
+    "source_baseline_job_retained": true,
+    "strict_historical_shadow_artifact_cleanup_and_both_tooling_hosts_retained": true,
+    "aggregate_guard_probe": {
+      "success": 0,
+      "failure": 1,
+      "cancelled": 1,
+      "skipped": 1
+    },
+    "healthy_reference": {
+      "run": 36851491429,
+      "source_job_seconds": 5598,
+      "six_serial_batches_seconds": 5389
+    },
+    "estimated_wall_minutes_without_queue": 40,
+    "estimate_is_not_measured_new_ci": true,
+    "runner_minutes_reduction_claimed": false,
+    "further_deduplication_deferred": "531 duplicate file executions existed before this repair; removing them changes per-batch acceptance evidence and was not done."
+  },
+  "review": {
+    "source_head": "dca21800e18bae1102c2ad9a7e075069b8599870",
+    "standards_findings": 0,
+    "spec_findings": 0,
+    "reviewed_six_file_hashes_equal": true
+  },
+  "cleanup": {
+    "owned_cluster_port": 55435,
+    "remaining_databases": 0,
+    "other_client_backends": 0,
+    "cluster_stopped": true,
+    "preexisting_resources_touched": false
+  },
+  "archive": {
+    "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/socket-transport-dca2180",
+    "indexed_files": 2396,
+    "index_sha256": "fb533dbd34880d0064d3733584f82610f955ab78794e1ba52de42eacadfdb55a"
+  },
+  "published_validation": "PENDING_NEW_AUTHORITATIVE_HEAD_CI",
+  "strict_readiness": "KNOWN_BASELINE_NOT_READY",
+  "previous_p2": "CLOSED_ON_8f929b7_INDEPENDENT_REREVIEW",
+  "old_receipts_rebound": false,
+  "database_change": false,
+  "frozen_evidence_modified": false,
+  "artifact_status": "STAGED_NOT_ACTIVATED",
+  "production_ready": false,
+  "rollback": "Forward-revert the helper/workflow repair if needed; keep artifacts inactive and flags closed.",
+  "stopline": {
+    "merge": false,
+    "deployment": false,
+    "real_provider": false,
+    "real_send": false,
+    "production_write": false,
+    "T05_01_authorized": false
+  }
+}

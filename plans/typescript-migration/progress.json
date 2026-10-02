@@ -3,7 +3,7 @@
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
   "current_batch": "T04-05",
-  "current_execution_status": "LOCAL_SOCKET_CLOSE_REPAIR_PASS_PUBLISHED_CI_PENDING",
+  "current_execution_status": "LOCAL_TRANSPORT_REPAIR_PASS_PARALLEL_CI_PENDING",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
@@ -65,7 +65,7 @@
   "required_before_next_batch": [
     "T04-05 actual published-head validation, review and separately authorized merge."
   ],
-  "migration_readiness": "T04_05_TEST_HELPER_REPAIR_NEW_PUBLISHED_CI_AND_SEPARATE_MERGE_PENDING",
+  "migration_readiness": "T04_05_TRANSPORT_REPAIR_NEW_PARALLEL_CI_AND_SEPARATE_MERGE_PENDING",
   "production_readiness": "NOT_CLAIMED",
   "types": "T04_05_STRICT_TYPES_AND_CANARY_PASS",
   "build": "T04_05_STAGED_NOT_ACTIVATED",
@@ -91,7 +91,7 @@
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
-  "completed_batches_note": "T00 through T04-04 merged. Prior 8f929b7 CI and independent P2 closure remain historical facts. Documentation successor f8e209e failed CI36876787453 in the SS009 browser cleanup observer. Test-only source repair ef99c7e passes local50/341 and tooling59; new published-head CI is pending. The earlier extra local timeout remains FAIL with verified cleanup. T04-05 is unmerged and T05-01 unauthorized.",
+  "completed_batches_note": "T00 through T04-04 merged. The previous 8f929b7 CI and independent P2 closure remain historical facts. Published f9cd40d failed CI36891280424 in two stalled browser close-handshake cleanup paths; source dca2180 passes local52/391, tooling59 and both review axes. The same six full CI batches now use independent PG18 runners with max-parallel3 and a result guard; actual new publication CI is pending. Old receipts and the earlier extra local timeout are preserved. T04-05 remains unmerged and T05-01 unauthorized.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
   "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",
@@ -99,7 +99,7 @@
     "pr": 27,
     "merge": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023"
   },
-  "current_followup_receipt": "receipts/T04-05-browser-close.json",
+  "current_followup_receipt": "receipts/T04-05-browser-transport-ci.json",
   "publication_result_source": "The independent PR for codex/typescript-t04-05 records actual authoritative head, CI and external review separately. This receipt preserves the clean tested ancestor; successor documentation does not rebind it.",
   "current_pull_request": 37,
   "current_ci_repair_record": "verification/T04-05-ci-repair.md",
@@ -150,6 +150,7 @@
     "temporary_postgresql_cleanup": "VERIFIED",
     "github_approve_claimed": false,
     "codex_bot": "BLOCKED_CODE_REVIEW_USAGE_LIMIT",
-    "successor_ci": "f8e209e_FAILURE_REPAIRED_LOCALLY_NEW_CI_PENDING"
-  }
+    "successor_ci": "f9cd40d_FAILURE_TRANSPORT_REPAIR_LOCAL_PASS_NEW_PARALLEL_CI_PENDING"
+  },
+  "current_browser_transport_ci_record": "verification/T04-05-browser-transport-ci.md"
 }
