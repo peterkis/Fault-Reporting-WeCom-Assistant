@@ -8,3 +8,5 @@
 /tests/fixtures/p2-012/incident-scenarios.v1.jsonl -text
 # The candidate inventory treats PowerShell scripts as byte-preserved inputs.
 /scripts/*.ps1 -text
+# Current readiness originals are raw-byte evidence, including CRLF diagnostics.
+/evidence/yxx-current-*/** -text -whitespace

@@ -12,7 +12,7 @@ This progress document is not acceptance evidence.
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
-| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | NOT_STARTED |
+| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer integrity and candidate binding implemented; execution/review/cleanup proof consumer and publisher pending |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
@@ -33,6 +33,32 @@ This progress document is not acceptance evidence.
   `yxx-current-readiness-20261002`; no historical report was rewritten.
 
 ## Execution and acceptance
+
+Stage 4 development: `plans/yxx-current-readiness.json` is a separate pointer with
+`schema_version:1` and `report:{path,sha256,bytes}`. Its target is restricted to
+`evidence/yxx-current-<run_id>/report.json`. References use raw bytes (no newline
+normalization); paths, symlinks, size and digest are checked before JSON parsing.
+The new evidence namespace has `-text` attributes, preserving raw diagnostics in
+Windows/Linux Git checkouts. `.gitattributes` is itself bound by build and candidate.
+
+The report header binds `schema_version:1`, `contract:ADR-0027`, `run_id`,
+`tested_head`, `tested_tree`, `candidate_fingerprint`, `scope_sha256` and
+`acceptance_sha256`. Actual Git ancestry, exact candidate path set, working bytes,
+index blobs and modes must match the tested commit. A same-tree synthetic orphan
+is not an ancestor. These checks alone are insufficient: strict readiness still
+returns `CURRENT_EVIDENCE_INCOMPLETE` after valid metadata until the full proof
+consumer is implemented. No current pointer/report has been published in this task.
+
+RED->GREEN slices 16-19 cover malformed pointers, wrong candidates, Git newline
+conversion and stale builds after attributes change. Candidate compatibility passes
+4/4 with an owned PostgreSQL 18.4 cluster; stop exit 0 and directory removal are
+confirmed in `stage04-candidate-pg-cleanup.json`. Strict type programs pass.
+Complete routed reader/binding regression passes 19/19 with no skips/cancellations/
+todos/not_run. It includes wrong tree, stale scope/acceptance hashes, older candidate
+and an explicitly synthetic same-tree non-ancestor rejection. All fixture worktrees
+were removed. The 214-second development file is close to its existing 240-second
+budget; add subsequent evidence-consumer cases in a separate registered file rather
+than expanding that timeout or silently filtering acceptance cases.
 
 Stage 3 development: the migration runner reuses the compiled G2 case reporter.
 Each file receipt records actual execution path/cwd, source and executed byte hashes,

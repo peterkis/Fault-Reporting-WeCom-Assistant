@@ -26,7 +26,8 @@ export async function main(argv=process.argv.slice(2)){
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)try{await main();}catch(error){
   const known={SS010_ARGUMENT_INVALID:['ARGUMENTS','ARGUMENT_INVALID'],CURRENT_BUILD_INVALID:['BUILD','CURRENT_BUILD_INVALID'],
     CURRENT_SCOPE_INVALID:['SCOPE','CURRENT_SCOPE_INVALID'],CURRENT_EVIDENCE_HISTORY_INVALID:['HISTORY','CURRENT_EVIDENCE_HISTORY_INVALID'],
-    CURRENT_EVIDENCE_REQUIRED:['EVIDENCE','CURRENT_EVIDENCE_REQUIRED']};
+    CURRENT_EVIDENCE_REQUIRED:['EVIDENCE','CURRENT_EVIDENCE_REQUIRED'],CURRENT_EVIDENCE_INVALID:['EVIDENCE','CURRENT_EVIDENCE_INVALID'],
+    CURRENT_EVIDENCE_INCOMPLETE:['EVIDENCE','CURRENT_EVIDENCE_INCOMPLETE'],CURRENT_CANDIDATE_MISMATCH:['CANDIDATE','CURRENT_CANDIDATE_MISMATCH']};
   const [stage,reason_code]=Object.hasOwn(known,error?.code??'')?known[error.code]:['VALIDATION','VALIDATION_REJECTED'];
   console.log(JSON.stringify({ok:false,error_code:'SS010_NOT_READY',stage,reason_code,live_authorized:false}));process.exitCode=1;
 }
