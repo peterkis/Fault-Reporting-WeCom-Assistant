@@ -1,56 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { cleanGenerated, controlledBuildRoot, program, sourceRoot, workspaceFiles } from './common.mjs';
-import { assertArch006Baseline } from './arch006-baseline.mjs';
 
 const original = sourceRoot();
-test('ARCH-006 T04-04 comparison allows only the reviewed migration delta', () => {
-  const scope = '- valid pinned local self-service successor scope\n';
-  const evidence = '- historical Evidence is immutable; authorized current reports require exact snapshots and current READY proof\n';
-  const reference = 'ARCH-006 validation failed with 2 error(s):\n' + scope + evidence;
-  const current = 'ARCH-006 validation failed with 3 error(s):\n- no forbidden Runtime Migration web archive or secret path changed\n' + scope + evidence;
-  const paths = ['src/p1-002-wecom-sdk-adapter.mjs', 'src/p1-002-wecom-sdk-adapter.mts', 'src/p1-003-channel-message-inbox.mts', 'src/p1-004-service-intake.mjs', 'src/p1-004-service-intake.mts', 'src/p1-005-pilot-ticket-core.mts', 'src/p1-009-pilot-access-workbench.mjs', 'src/p1-009-pilot-access-workbench.mts', 'src/p1-010-ticket-closure.mts'];
-  assertArch006Baseline(reference, current, paths);
-  for (const extra of ['src/p1-unrelated.mts', 'database/migrations/037_unauthorized.sql', 'evidence/rewritten.json']) assert.throws(() => assertArch006Baseline(reference, current, [...paths, extra]));
-  assert.throws(() => assertArch006Baseline(reference, current + '- unexpected violation\n', paths));
-  assert.throws(() => assertArch006Baseline(reference, current, paths.slice(1)));
-});
-test('ARCH-006 raw Action entry repair allows its exact support delta and retains rejection', () => {
-  const scope = '- valid pinned local self-service successor scope\n';
-  const evidence = '- historical Evidence is immutable; authorized current reports require exact snapshots and current READY proof\n';
-  const reference = 'ARCH-006 validation failed with 2 error(s):\n' + scope + evidence;
-  const current = 'ARCH-006 validation failed with 3 error(s):\n- no forbidden Runtime Migration web archive or secret path changed\n' + scope + evidence;
-  const paths = ['src/p1-002-wecom-sdk-adapter.mjs', 'src/p1-002-wecom-sdk-adapter.mts', 'src/p1-003-channel-message-inbox.mts', 'src/p1-004-service-intake.mjs', 'src/p1-004-service-intake.mts', 'src/p1-005-pilot-ticket-core.mts', 'src/p1-006-ticket-state-actions.mts', 'src/p1-009-pilot-access-workbench.mjs', 'src/p1-009-pilot-access-workbench.mts', 'src/p1-010-ticket-closure.mts'];
-  assertArch006Baseline(reference, current, paths);
-  for (const extra of ['src/p1-unrelated.mts', 'database/migrations/037_unauthorized.sql', 'evidence/rewritten.json']) assert.throws(() => assertArch006Baseline(reference, current, [...paths, extra]));
-  assert.throws(() => assertArch006Baseline(reference, current + '- unexpected violation\n', paths));
-  assert.throws(() => assertArch006Baseline(reference, current, paths.slice(1)));
-});
 
-test('ARCH-006 CI comparison preserves the observed T02 and T04-03 rejection diagnostics', () => {
-  // Exact outputs from source-baseline job 109713609844; neither is a readiness PASS.
-  const scope = '- valid pinned local self-service successor scope\n';
-  const evidence = '- historical Evidence is immutable; authorized current reports require exact snapshots and current READY proof\n';
-  const reference = 'ARCH-006 validation failed with 2 error(s):\n' + scope + evidence;
-  const current = 'ARCH-006 validation failed with 3 error(s):\n'
-    + '- no forbidden Runtime Migration web archive or secret path changed\n' + scope + evidence;
-  const paths = ['src/p1-005-pilot-ticket-core.mts', 'src/p1-010-ticket-closure.mts',
-    'src/p1-011-pilot-operations-baseline.mjs', 'src/p1-011-pilot-operations-baseline.mts'];
-  assertArch006Baseline(reference, current, paths);
-  assertArch006Baseline(reference, reference, []);
-  assert.throws(() => assertArch006Baseline(reference, current + '- unexpected violation\n', paths));
-  assert.throws(() => assertArch006Baseline(reference.replace(scope, ''), current, paths));
-  assert.throws(() => assertArch006Baseline(reference, current, [...paths, 'src/p1-unrelated.mts']));
-  assert.throws(() => assertArch006Baseline(reference, current, [...paths, 'evidence/rewritten.json']));
-  assert.throws(() => assertArch006Baseline(reference, current, []));
-  assert.throws(() => assertArch006Baseline(reference, 'ARCH-006 rule-first service loop validation passed (1 checks).\n', []));
-});
 function scratch(reference = false): string {
   const root = mkdtempSync(path.join(tmpdir(), 'types-migration-test-'));
   execFileSync('git', ['clone', '--quiet', '--no-hardlinks', original, root], { stdio: 'pipe', windowsHide: true });
@@ -221,5 +180,67 @@ test('T01 build and negative checks run on an owned full clone, never on user so
         }
       } finally { rmSync(dir, { recursive: true, force: true }); }
     });
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('ARCH-006 CLI rejects content changes within an already reviewed path', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'arch006-content-regression-'));
+  try {
+    execFileSync('git', ['clone', '--quiet', '--no-hardlinks', original, root], { windowsHide: true, stdio: 'pipe' });
+    execFileSync('git', ['checkout', '--quiet', '--detach', '1911d364e48530683032f8856c41678c80f69dc9'], { cwd: root, windowsHide: true });
+    const base = '87de2bc9e8835882cd390b024a04e2865cd367f9';
+    execFileSync('git', ['update-ref', 'refs/remotes/origin/main', base], { cwd: root, windowsHide: true });
+    const report = mkdtempSync(path.join(tmpdir(), 'arch006-logs-'));
+    const scope = '- valid pinned local self-service successor scope\n';
+    const evidence = '- historical Evidence is immutable; authorized current reports require exact snapshots and current READY proof\n';
+    writeFileSync(path.join(report, 'base-arch006.txt'), 'ARCH-006 validation failed with 2 error(s):\n' + scope + evidence);
+    writeFileSync(path.join(report, 'current-arch006.txt'), 'ARCH-006 validation failed with 3 error(s):\n- no forbidden Runtime Migration web archive or secret path changed\n' + scope + evidence);
+    const run = (expectedBase: string | undefined = base) => spawnSync(process.execPath, [path.join(original, '.build/tools/arch006-baseline.mjs'), report], {
+      cwd: root, env: { ...process.env, EXPECTED_BASE: expectedBase }, encoding: 'utf8', windowsHide: true,
+    });
+    const accepted = run();
+    assert.equal(accepted.status, 0, accepted.stdout + accepted.stderr);
+    assert.match(accepted.stdout, /ARCH006_KNOWN_BASELINE_NOT_READY/u);
+    assert.notEqual(run('1911d364e48530683032f8856c41678c80f69dc9').status, 0, 'a different PR base requires its own review');
+    assert.notEqual(run('').status, 0, 'the PR-event base is mandatory');
+    const currentLog = path.join(report, 'current-arch006.txt');
+    const originalLog = readFileSync(currentLog, 'utf8');
+    writeFileSync(currentLog, originalLog + '- unexpected failure\n');
+    assert.match(run().stderr, /ARCH006_CURRENT_REJECTION_DRIFT/u);
+    writeFileSync(currentLog, 'ARCH-006 rule-first service loop validation passed (1 checks).\n');
+    assert.notEqual(run().status, 0, 'a readiness PASS cannot be classified as known non-readiness');
+    writeFileSync(currentLog, originalLog);
+    writeFileSync(path.join(root, 'README.md'), readFileSync(path.join(root, 'README.md'), 'utf8') + '\nSynthetic documentation successor.\n');
+    execFileSync('git', ['add', 'README.md'], { cwd: root, windowsHide: true });
+    execFileSync('git', ['-c', 'user.name=Migration test fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--quiet', '-m', 'Synthetic documentation successor'], { cwd: root, windowsHide: true });
+    assert.equal(run().status, 0, 'documentation-only successors retain the reviewed runtime content');
+    execFileSync('git', ['update-ref', 'refs/remotes/origin/main', 'HEAD'], { cwd: root, windowsHide: true });
+    assert.equal(run().status, 0, 'a moving origin/main must not change the PR-event comparison');
+    writeFileSync(path.join(report, 'current-arch006.txt'), readFileSync(path.join(report, 'base-arch006.txt')));
+    assert.equal(run().status, 0, 'the original two-error rejection can also be retained');
+    const file = path.join(root, 'src/p1-001-pilot-foundation.mts');
+    writeFileSync(file, readFileSync(file, 'utf8') + "\nthrow new Error('SYNTHETIC_RUNTIME_REGRESSION');\n");
+    assert.notEqual(run().status, 0, 'uncommitted runtime content cannot borrow the clean HEAD fingerprint');
+    execFileSync('git', ['add', 'src/p1-001-pilot-foundation.mts'], { cwd: root, windowsHide: true });
+    execFileSync('git', ['-c', 'user.name=Migration test fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--quiet', '-m', 'Synthetic same-path runtime regression'], { cwd: root, windowsHide: true });
+    const rejected = run();
+    assert.notEqual(rejected.status, 0, 'a same-path production mutation must not share the reviewed exception');
+    assert.match(rejected.stdout + rejected.stderr, /ARCH006_REVIEWED_RUNTIME_DELTA_DRIFT/u);
+    execFileSync('git', ['checkout', '--quiet', '--detach', '1911d364e48530683032f8856c41678c80f69dc9'], { cwd: root, windowsHide: true });
+    assert.equal(run().status, 0);
+    if (process.platform !== 'win32') chmodSync(file, 0o755);
+    execFileSync('git', ['update-index', '--chmod=+x', 'src/p1-001-pilot-foundation.mts'], { cwd: root, windowsHide: true });
+    execFileSync('git', ['-c', 'user.name=Migration test fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--quiet', '-m', 'Synthetic runtime mode regression'], { cwd: root, windowsHide: true });
+    assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8', windowsHide: true }).trim(), '', 'the mode regression must be a clean committed object');
+    assert.match(run().stderr, /ARCH006_REVIEWED_RUNTIME_DELTA_DRIFT/u);
+    execFileSync('git', ['checkout', '--quiet', '--detach', '1911d364e48530683032f8856c41678c80f69dc9'], { cwd: root, windowsHide: true });
+    for (const relative of ['database/migrations/999_synthetic.sql', 'evidence/synthetic-rewrite.json']) {
+      writeFileSync(path.join(root, relative), 'synthetic only\n');
+      execFileSync('git', ['add', relative], { cwd: root, windowsHide: true });
+      execFileSync('git', ['-c', 'user.name=Migration test fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--quiet', '-m', 'Synthetic out-of-scope regression'], { cwd: root, windowsHide: true });
+      assert.match(run().stderr, /ARCH006_REVIEWED_RUNTIME_DELTA_DRIFT/u);
+      execFileSync('git', ['checkout', '--quiet', '--detach', '1911d364e48530683032f8856c41678c80f69dc9'], { cwd: root, windowsHide: true });
+    }
+    rmSync(report, { recursive: true, force: true });
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

@@ -5,40 +5,44 @@ import { isAbsolute } from 'node:path';
 import { Writable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
+export interface EncryptBackupOptions { input: NodeJS.ReadableStream; artifactPath: string; encryptionKey: Buffer; iv: Buffer }
+export interface DecryptBackupOptions { artifactPath: string; encryptionKey: Buffer; output: NodeJS.WritableStream }
+export interface EncryptedBackupMetadata { readonly encrypted_size_bytes: number }
+
 const MAGIC = Buffer.from('P1B1');
 const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
 const HEADER_LENGTH = MAGIC.length + IV_LENGTH;
 
-function validKey(value) {
+function validKey(value: Buffer | undefined): Buffer {
   if (!Buffer.isBuffer(value) || value.length !== 32) {
     throw new TypeError('encryptionKey must be a 32-byte Buffer.');
   }
   return value;
 }
 
-function validPath(value, name) {
+function validPath(value: string | undefined, name: string): string {
   if (typeof value !== 'string' || !isAbsolute(value)) {
     throw new TypeError(`${name} must be an absolute path.`);
   }
   return value;
 }
 
-function readable(value) {
+function readable(value: NodeJS.ReadableStream | undefined): NodeJS.ReadableStream {
   if (!value || typeof value.pipe !== 'function') {
     throw new TypeError('input must be a readable stream.');
   }
   return value;
 }
 
-function writable(value) {
+function writable(value: NodeJS.WritableStream | undefined): NodeJS.WritableStream {
   if (!value || typeof value.write !== 'function') {
     throw new TypeError('output must be a writable stream.');
   }
   return value;
 }
 
-function discardPlaintext() {
+function discardPlaintext(): Writable {
   return new Writable({
     write(_chunk, _encoding, callback) {
       callback();
@@ -51,7 +55,8 @@ function discardPlaintext() {
  * contains a fixed magic prefix, IV, ciphertext, and authentication tag; no
  * plaintext dump is ever written to disk by this boundary.
  */
-export async function encryptBackupStream({ input, artifactPath, encryptionKey, iv } = {}) {
+export function encryptBackupStream(options: EncryptBackupOptions): Promise<EncryptedBackupMetadata>;
+export async function encryptBackupStream({ input, artifactPath, encryptionKey, iv }: Partial<EncryptBackupOptions> = {}): Promise<EncryptedBackupMetadata> {
   const source = readable(input);
   const targetPath = validPath(artifactPath, 'artifactPath');
   const key = validKey(encryptionKey);
@@ -71,7 +76,8 @@ export async function encryptBackupStream({ input, artifactPath, encryptionKey, 
  * A first discard-only pass authenticates the GCM tag, so a malformed artifact
  * cannot expose provisional plaintext to the consumer.
  */
-export async function decryptBackupStream({ artifactPath, encryptionKey, output } = {}) {
+export function decryptBackupStream(options: DecryptBackupOptions): Promise<void>;
+export async function decryptBackupStream({ artifactPath, encryptionKey, output }: Partial<DecryptBackupOptions> = {}): Promise<void> {
   const sourcePath = validPath(artifactPath, 'artifactPath');
   const key = validKey(encryptionKey);
   const destination = writable(output);

@@ -116,7 +116,7 @@ interface InboxFailure {
 }
 type InboxResult = InboxSuccess | InboxFailure;
 interface InboxService {
-  accept(request: unknown, processFirst: ProcessFirst): Promise<InboxResult>;
+  accept: (request: unknown, processFirst: ProcessFirst) => Promise<InboxResult>;
 }
 interface InboxMigrationOptions { pool: PostgresPool }
 interface TimeContractRow { enabled: boolean }

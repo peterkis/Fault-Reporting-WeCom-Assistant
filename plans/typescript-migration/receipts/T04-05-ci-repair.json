@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "batch": "T04-05",
+  "status": "IN_PROGRESS",
+  "execution_status": "LOCAL_CI_REPAIR_CHECKS_AND_TWO_AXIS_REVIEW_PASS_PUBLICATION_PENDING",
+  "base_sha": "87de2bc9e8835882cd390b024a04e2865cd367f9",
+  "tested_head": "571fcd4b08e3f5f45f9ac81073301733aca30489",
+  "tested_tree": "17a5e7749dfed0722ba13ad05132af14c2ff71c8",
+  "source_dirty": false,
+  "initial_receipt": "T04-05.json",
+  "initial_tested_head": "60a02654fe48944381239f1b7c73e4f0cc71b761",
+  "pull_request": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/37",
+  "initial_ci": {
+    "head": "5fd01ace162cde9afd237b401a93ae96892dd023",
+    "run": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/36813054264",
+    "status": "FAILURE",
+    "causes": [
+      "New CLI fixture assumed adjacent Node/npm directories on Linux.",
+      "Two existing Workbench synthetic fixed-date fixtures expired against real database created_at."
+    ]
+  },
+  "repair": {
+    "files": [
+      "tests/p1-foundation-cli.test.mts",
+      "tests/p2-006-workbench.integration.test.mjs",
+      "plans/typescript-migration/batches.json"
+    ],
+    "production_source_delta_from_initial_tested_head": [],
+    "sql_delta": [],
+    "approach": "Existing actual npm where/which-realpath discovery; one current whole-second clock per Workbench case; register affected case without relaxing any assertion."
+  },
+  "red_green": {
+    "base_workbench_red": {
+      "counts": {
+        "tests": 6,
+        "pass": 4,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "summary": {
+        "path": "base-workbench-clock-red-correct-port/summary.json",
+        "sha256": "745f1cfb1c15a9a04be692fc606c3a596af90c8392f67cd6e6e1682818f177bc"
+      }
+    },
+    "focused_cli_green": {
+      "tests": 3,
+      "pass": 3
+    },
+    "focused_workbench_green": {
+      "tests": 6,
+      "pass": 6
+    },
+    "formal_clean_batch": {
+      "selected_files": 48,
+      "counts": {
+        "tests": 335,
+        "pass": 335,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "not_run": [],
+      "summary": {
+        "path": "ci-repair-batch/tests/summary.json",
+        "sha256": "11057de81bb53d9ff3ae543adc3f8f280f05e0747fbab0cb305b07ba7771746d"
+      },
+      "batch": {
+        "path": "ci-repair-batch/batch.json",
+        "sha256": "119f7509ceee179afb4f83968a8b44ecdbdfdb19adb8dd1837dcf311b445e2ca"
+      },
+      "log": {
+        "path": "ci-repair-gate.log",
+        "sha256": "337c069c4632971824e36f8373b0b9330d443e63e3ac73e1e15faaa25d77af61"
+      }
+    }
+  },
+  "types": "STRICT_AND_NEGATIVE_CANARY_PASS_IN_FORMAL_GATE",
+  "build": "TWO_CLEAN_DETERMINISTIC_BUILDS_STAGED_NOT_ACTIVATED",
+  "build_manifest_sha256": "e34799213d2f6131624edefb7788ee5726555690952b6646fd139542120f1bc1",
+  "tooling": {
+    "tests": 58,
+    "pass": 58,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "log": {
+      "path": "ci-repair-tooling.tap",
+      "sha256": "bf9f0cfe84c5cd9c08874a1520796ea9dc528016009bae07b6cdabec42c0e8de"
+    }
+  },
+  "artifact_verification": {
+    "path": "ci-repair-artifact.log",
+    "sha256": "b394821abbf2cdcc0c8801639bf9df07ea315df1dc218442e8f04b6b55dd8e2e"
+  },
+  "integrity": {
+    "log_hashes_verified": 96,
+    "result": {
+      "path": "ci-repair-result-integrity.json",
+      "sha256": "906b660f6bc0b0d463e8bde608c02e5cf25a3cd2a9b534b428fb9430eec03f31"
+    },
+    "production_outputs_raw_equal_to_initial_tested_head": 279,
+    "runtime_ast_modules_equal_to_base": 5,
+    "comparison": {
+      "path": "ci-repair-runtime-ast-comparison.log",
+      "sha256": "dc63b2c4d5c04c45811ffeaea3db72978a67fb9fe7c1474050c2e662cc4a95f3"
+    }
+  },
+  "complete_registry": {
+    "rerun_on_repair_head": false,
+    "reference": "T04-05.json",
+    "tested_head": "60a02654fe48944381239f1b7c73e4f0cc71b761",
+    "files": 213,
+    "tests": 1344,
+    "pass": 1342,
+    "fail": 2,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "reason": "Only two test fixtures changed; full registry already executed once. Actual affected 48-file repair gate replaces repair acceptance, and published CI must run all configured batches."
+  },
+  "checkout_representation": {
+    "raw_equal_claim": false,
+    "reference": {
+      "path": "published-checkout-representation.json",
+      "sha256": "53a5efce8ea7b19f36c48c0ce18462ea1d6a85f5992e07ffcda21f259e77bed0"
+    },
+    "explanation": "Fresh published clone at 5fd01a differs only in seven map sourcesContent line endings and one unchanged legacy MJS raw line ending. Same-worktree production byte equality and five runtime AST comparisons are separate actual checks."
+  },
+  "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
+  "strict_readiness_pass": false,
+  "business_readiness": "NOT_CLAIMED",
+  "review": {
+    "head": "571fcd4b08e3f5f45f9ac81073301733aca30489",
+    "standards": "PASS_NO_REMAINING_FINDINGS",
+    "spec": "PASS_NO_REMAINING_FINDINGS",
+    "remaining_findings": 0,
+    "reports": [
+      {
+        "path": "ci-repair-standards.md",
+        "sha256": "baa206c9c9d35624e651f326c5b93e5ada176068a9d0af89a98769b8bbae6645"
+      },
+      {
+        "path": "ci-repair-spec.md",
+        "sha256": "58318af912ed48042a3454a7296609e39b02ca1a471e2fbdcea029a7e823f0fb"
+      }
+    ],
+    "external": "PENDING_AT_LOCAL_SNAPSHOT"
+  },
+  "published_head_ci": "PENDING_AFTER_REPAIR_PUBLICATION",
+  "database_change": false,
+  "feature_flag_change": false,
+  "frozen_evidence_change": false,
+  "dependency_change": false,
+  "cleanup": {
+    "path": "ci-repair-database-cleanup.json",
+    "sha256": "39ebbc0f111fc631136305bc6123b25da3faa21113422fa69e749d3af7b38739"
+  },
+  "artifact_directory": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/ci-repair-571fcd4",
+  "artifact_index": {
+    "path": "artifact-index.json",
+    "sha256": "649b16933ce806667fad5796d371e6c23dfa44113e530c3d4eb4558d59e04831"
+  },
+  "preserved_attempts": [
+    "Initial CI failure remains unchanged.",
+    "First base reproduction connected to the inactive 55435 endpoint and failed with ECONNREFUSED; it is not valid RED evidence. Correct-port clean base reproduction supplies the recorded 4-pass/2-fail RED."
+  ],
+  "rollback": "Separate revert PR; no SQL rollback or activation occurred.",
+  "publication_record_source": "PR37 must bind final authoritative GitHub head, current CI and external review. Documentation successors do not rebind this tested ancestor.",
+  "next_batch": "T05-01",
+  "next_batch_authorized_to_start": false,
+  "stop_line": "No merge, deployment, live sends/production writes or T05-01."
+}

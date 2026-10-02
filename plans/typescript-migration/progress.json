@@ -2,8 +2,8 @@
   "schema_version": 1,
   "source_baseline": "9cb71da1370781670faedbc5a24668720e8df0be",
   "source_tree": "148272fbd53fb12198954b876ca8f668b26dd5fe",
-  "current_batch": "T04-04",
-  "current_execution_status": "PR_OPEN_LOCAL_VALIDATED_REVIEW_PENDING",
+  "current_batch": "T04-05",
+  "current_execution_status": "ISOLATED_DATABASE_BASELINE_REPAIR_PASS_PUBLISHED_CI_PENDING",
   "policy_files": "T00_MERGED_PR24",
   "completed_batches": [
     "T00",
@@ -14,7 +14,8 @@
     "T03-01-PG-CALLBACK-FIX",
     "T04-01",
     "T04-02",
-    "T04-03"
+    "T04-03",
+    "T04-04"
   ],
   "batches": {
     "T00": "MERGED",
@@ -24,8 +25,8 @@
     "T04-01": "MERGED",
     "T04-02": "MERGED",
     "T04-03": "MERGED",
-    "T04-04": "PR_OPEN_LOCAL_VALIDATED_REVIEW_PENDING",
-    "T04-05": "PLANNED",
+    "T04-04": "MERGED",
+    "T04-05": "IN_PROGRESS",
     "T05-01": "PLANNED",
     "T05-02": "PLANNED",
     "T05-03": "PLANNED",
@@ -59,15 +60,15 @@
     "T03-01-PREREQUISITE": "MERGED",
     "T03-01-PG-CALLBACK-FIX": "MERGED"
   },
-  "next_batch": "T04-05",
+  "next_batch": "T05-01",
   "next_batch_authorized_to_start": false,
   "required_before_next_batch": [
-    "T04-04 actual published-head validation, review and separately authorized merge."
+    "T04-05 actual published-head validation, review and separately authorized merge."
   ],
-  "migration_readiness": "T04_04_HTTP_PORT_FIX_LOCAL_AUTOMATED_AND_TWO_AXIS_REVIEW_PASS",
+  "migration_readiness": "T04_05_TRANSPORT_AND_ISOLATED_BASELINE_REPAIR_NEW_CI_PENDING",
   "production_readiness": "NOT_CLAIMED",
-  "types": "T04_04_RAW_HTTP_ASSIGNABILITY_AND_STRONG_DOMAIN_NEGATIVES_PASS",
-  "build": "T04_04_DETERMINISTIC_STAGED_NOT_ACTIVATED",
+  "types": "T04_05_STRICT_TYPES_AND_CANARY_PASS",
+  "build": "T04_05_STAGED_NOT_ACTIVATED",
   "blocked_items": [
     {
       "id": "ENV_NODE24_PG18",
@@ -90,7 +91,7 @@
     }
   ],
   "ci_record_location": "Current PR run URLs and final self-review comment bind exact published head; this file is not self-certifying evidence.",
-  "completed_batches_note": "T00 through T04-03 merged; T04-04 local batch and two-axis review pass, published-head CI and independent external review remain separate.",
+  "completed_batches_note": "T00 through T04-04 merged. The previous 8f929b7 CI and independent P2 closure remain historical facts. Published f9cd40d failed CI36891280424 in two stalled browser close-handshake cleanup paths; source dca2180 passes local52/391, tooling59 and both review axes. The same six full CI batches now use independent PG18 runners with max-parallel3 and a result guard; actual new publication CI is pending. Old receipts and the earlier extra local timeout are preserved. T04-05 remains unmerged and T05-01 unauthorized. The first parallel publication bd08081 exposed missing empty-database baseline initialization; workflow-only source bb4ad85 restores the existing staged migration before each batch. Original outbox fresh-database RED1/4 becomes GREEN4/4 and original operations6/6 pass. New full publication CI remains pending.",
   "current_strict_readiness": "KNOWN_BASELINE_NOT_READY",
   "t00_required_execution_gaps": [],
   "t00_merge": "162ffe7651c97329ace63532bd1f9739cf03550a",
@@ -98,10 +99,10 @@
     "pr": 27,
     "merge": "16312fd6cc9149f89f6cad866da5e3cf7b3ba023"
   },
-  "current_followup_receipt": "receipts/T04-04-http-port-review-fix.json",
-  "publication_result_source": "T04-04 is open as PR36. Actual current-head CI and independent external review are recorded on that PR. PR33 remains the verified merged predecessor.",
-  "current_pull_request": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36",
-  "current_ci_repair_record": "verification/T04-03-ci-repair-20260930.md",
+  "current_followup_receipt": "receipts/T04-05-ci-isolation.json",
+  "publication_result_source": "The independent PR for codex/typescript-t04-05 records actual authoritative head, CI and external review separately. This receipt preserves the clean tested ancestor; successor documentation does not rebind it.",
+  "current_pull_request": 37,
+  "current_ci_repair_record": "verification/T04-05-ci-repair.md",
   "callback_fix": {
     "pr": 28,
     "merge": "d2d462c8b98b6a379584f0dbc6d1786011aad573"
@@ -120,13 +121,38 @@
     "ci": "SUCCESS",
     "source": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/33"
   },
-  "current_review_fix_record": "verification/T04-04-http-port-review-fix.md",
+  "current_review_fix_record": "verification/T04-05-ci-repair.md",
   "current_review_fix": {
-    "reviewed_published_head": "354eaa3ac6b083e9a8917afd1db23dceae17340a",
-    "tested_head": "e65e7574521d9be07323bbe51872178fcd4ca152",
-    "status": "LOCAL_AUTOMATED_AND_TWO_AXIS_REVIEW_PASS",
-    "provided_p2_locally_fixed": 1,
-    "current_published_ci": "PENDING_AT_LOCAL_SNAPSHOT",
-    "external_review": "PENDING_ON_REPAIR_PUBLICATION"
-  }
+    "tested_head": "571fcd4b08e3f5f45f9ac81073301733aca30489",
+    "status": "LOCAL_CI_REPAIR_AND_TWO_AXIS_REVIEW_PASS",
+    "initial_tested_head": "60a02654fe48944381239f1b7c73e4f0cc71b761",
+    "initial_ci": "FAILURE_REPAIRED_LOCALLY",
+    "current_published_ci": "PENDING_AFTER_REPAIR_PUBLICATION",
+    "external_review": "PENDING_AFTER_REPAIR_PUBLICATION"
+  },
+  "t04_04_merge": {
+    "pr": 36,
+    "head": "8eb71fb14dfda2c885d0edf53408fc38979aea23",
+    "merge": "87de2bc9e8835882cd390b024a04e2865cd367f9",
+    "ci": "MIGRATION_AND_EVIDENCE_HISTORY_SUCCESS",
+    "source": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/36"
+  },
+  "current_inbound_variance_record": "verification/T04-05-inbound-variance.md",
+  "current_browser_startup_record": "verification/T04-05-browser-startup.md",
+  "current_rereview_record": "verification/T04-05-rereview.md",
+  "current_browser_close_record": "verification/T04-05-browser-close.md",
+  "current_published_source_review": {
+    "head": "8f929b73084690c46190d6cf4968b2801894b2ae",
+    "ci": "SUCCESS",
+    "independent_rereview": "NO_CONFIRMED_REMAINING_P1_P2",
+    "prior_p2": "CLOSED",
+    "additional_local_batch": "FAIL_NOT_FULL_GREEN",
+    "temporary_postgresql_cleanup": "VERIFIED",
+    "github_approve_claimed": false,
+    "codex_bot": "BLOCKED_CODE_REVIEW_USAGE_LIMIT",
+    "successor_ci": "f9cd40d_FAILURE_TRANSPORT_REPAIR_LOCAL_PASS_NEW_PARALLEL_CI_PENDING"
+  },
+  "current_browser_transport_ci_record": "verification/T04-05-browser-transport-ci.md",
+  "current_ci_isolation_source": "bb4ad85c6f2e1a6cb1da5777f4ab861b209bdeb3",
+  "current_review_p2_tooling_record": "verification/T04-05-review-p2-tooling.md"
 }

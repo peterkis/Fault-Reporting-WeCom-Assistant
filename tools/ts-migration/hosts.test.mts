@@ -28,7 +28,7 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
  const root=scratch();
  try{
   const routes=loadRoutes(root), raw=readFileSync(path.join(root,'plans/typescript-migration/test-routing.json'),'utf8');
-  await t.test('all legacy entries and aliases remain represented',()=>{assert.equal(routes.entries.length,211);assert.equal(Object.keys(routes.aliases).length,72);assert.equal(select(routes,'selection','t02-baseline').entries.length,17);});
+  await t.test('all legacy entries and aliases remain represented',()=>{assert.equal(routes.entries.length,213);assert.equal(Object.keys(routes.aliases).length,72);assert.equal(select(routes,'selection','t02-baseline').entries.length,17);});
   await t.test('wildcards expand deterministically and empty matches fail',()=>{
     const selected=select(routes,'alias','test:p2:007');assert.equal(selected.entries.length,7);
     const one=expandPatterns(['tests/p2-007-*.test.mjs'],routes.entries);assert.deepEqual(one,expandPatterns(['tests/p2-007-*.test.mjs'],[...routes.entries].reverse()));

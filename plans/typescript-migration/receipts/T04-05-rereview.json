@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "batch": "T04-05",
+  "status": "IN_PROGRESS",
+  "execution_status": "INDEPENDENT_REREVIEW_AND_TERMINAL_RECEIPTS_RECORDED_NOT_MERGED",
+  "base": "87de2bc9e8835882cd390b024a04e2865cd367f9",
+  "reviewed_published_head": "8f929b73084690c46190d6cf4968b2801894b2ae",
+  "reviewed_tree": "6f71bb270d84b837adb843286ca9622d805adc89",
+  "source_tested_ancestor": "67b5a8fe692015637b3ad44e0e21097843be9ce7",
+  "source_receipt": "T04-05-browser-startup.json",
+  "prior_receipts_rebound": false,
+  "independent_rereview": {
+    "source": "USER_SUPPLIED_REMOTE_REREVIEW_WITH_EXISTING_INDEPENDENT_REPORTS",
+    "prior_p2": "CLOSED",
+    "confirmed_remaining_p1_p2": 0,
+    "compiler": "5.9.3",
+    "full_strict_program_diagnostics": 0,
+    "narrow_implementation_rejections": 3,
+    "method_regression_controls": 3,
+    "github_approve_claimed": false,
+    "review_program_rerun_by_this_followup": false
+  },
+  "production_comparison": {
+    "modules_runtime_ast_equal_to_real_base": 6,
+    "production_outputs_raw_equal_to_prior_candidate": 261,
+    "all_outputs": 747
+  },
+  "published_ci": {
+    "head": "8f929b73084690c46190d6cf4968b2801894b2ae",
+    "url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/actions/runs/36851491429",
+    "status": "SUCCESS",
+    "manifest_sha256": "dc00e39c4275305ca0db6b83e84d57b45efed39689c210c272af7426c5025ec3",
+    "batches": [
+      {
+        "batch": "T03-01",
+        "selected": 181,
+        "executed": 181,
+        "counts": {
+          "tests": 1204,
+          "pass": 1204,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "batch": "T04-01",
+        "selected": 153,
+        "executed": 153,
+        "counts": {
+          "tests": 921,
+          "pass": 921,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "batch": "T04-02",
+        "selected": 108,
+        "executed": 108,
+        "counts": {
+          "tests": 664,
+          "pass": 664,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "batch": "T04-03",
+        "selected": 96,
+        "executed": 96,
+        "counts": {
+          "tests": 581,
+          "pass": 581,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "batch": "T04-04",
+        "selected": 131,
+        "executed": 131,
+        "counts": {
+          "tests": 763,
+          "pass": 763,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      {
+        "batch": "T04-05",
+        "selected": 50,
+        "executed": 50,
+        "counts": {
+          "tests": 340,
+          "pass": 340,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    ],
+    "verified_tap_stderr_hashes": 1438,
+    "windows_tooling": {
+      "tests": 59,
+      "pass": 59
+    },
+    "ubuntu_tooling": {
+      "tests": 59,
+      "pass": 59
+    },
+    "sets_overlap_not_summed_as_unique_coverage": true
+  },
+  "additional_local_run": {
+    "status": "FAIL",
+    "selected": 50,
+    "records": 47,
+    "pass_files": 46,
+    "timeout_files": 1,
+    "completed_tap_counts": {
+      "tests": 300,
+      "pass": 300,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "not_run": [
+      "tests/yxx-ss-002-contract.test.mjs",
+      "tests/yxx-ss-009-browser.integration.test.mjs",
+      "tests/yxx-ss-009-evidence-history.test.mjs"
+    ],
+    "timeout": {
+      "path": "tests/v1-4-architecture-baseline.test.mjs",
+      "timeout_ms": 240000,
+      "error": "spawnSync C:\\Program Files\\nodejs\\node.exe ETIMEDOUT"
+    },
+    "verified_tap_stderr_hashes": 94,
+    "full_batch_pass": false,
+    "timeout_root_cause": "NOT_CONFIRMED",
+    "timeout_is_confirmed_product_defect": false
+  },
+  "temporary_postgresql": {
+    "stop_exit": 0,
+    "batch_exit": 1,
+    "data_directory_removed": true,
+    "data_directory_absent_verified": true,
+    "shutdown_log_verified": true,
+    "port": 52353,
+    "listeners_verified": 0,
+    "additional_cleanup_performed": false
+  },
+  "strict_readiness": {
+    "status": "KNOWN_BASELINE_NOT_READY",
+    "original_cli_exit": 1,
+    "public_error": "YXX_VERIFICATION_REJECTED",
+    "underlying_error": "YXX_LOCAL_VALIDATION_SCOPE_INVALID",
+    "readiness_pass": false
+  },
+  "full_registry": {
+    "rerun_on_rereview": false,
+    "original_tested_head": "60a02654fe48944381239f1b7c73e4f0cc71b761",
+    "files": 213,
+    "tests": 1344,
+    "pass": 1342,
+    "fail": 2,
+    "historical_snapshot_only": true
+  },
+  "codex_bot": {
+    "head": "8f929b73084690c46190d6cf4968b2801894b2ae",
+    "status": "BLOCKED_CODE_REVIEW_USAGE_LIMIT",
+    "actual_code_review_performed": false,
+    "reply_url": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/37#issuecomment-5931481053"
+  },
+  "documentation_successor": {
+    "runtime_source_changed": false,
+    "test_source_changed": false,
+    "tested_head_rebound": false,
+    "published_ci_status": "RECORDED_SEPARATELY_FOR_ACTUAL_SUCCESSOR_HEAD",
+    "robot_review_repeated": false
+  },
+  "database_change": false,
+  "frozen_evidence_modified": false,
+  "production_ready": false,
+  "artifact_status": "STAGED_NOT_ACTIVATED",
+  "stopline": {
+    "merge_authorized": false,
+    "merge_performed": false,
+    "deployment": false,
+    "activation": false,
+    "real_provider": false,
+    "real_send": false,
+    "production_write": false,
+    "next_batch": "T05-01",
+    "next_batch_authorized": false
+  },
+  "archive": {
+    "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/rereview-terminal-8f929b7-20261001",
+    "index_sha256": "029cd34d456eab59d584a6dafea2e668357c74b5ae0a65cf4396a1ffdbc750fb",
+    "terminal_verification_sha256": "8b7359610ce38812a6ed90cb1797da0e7bb476716f3f9603ba253ce4554edcb4"
+  }
+}

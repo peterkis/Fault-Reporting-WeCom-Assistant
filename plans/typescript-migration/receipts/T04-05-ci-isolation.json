@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "batch": "T04-05",
+  "status": "IN_PROGRESS",
+  "execution_status": "ISOLATED_DATABASE_BASELINE_REPAIR_PASS_PUBLISHED_CI_PENDING",
+  "source_head": "bb4ad85c6f2e1a6cb1da5777f4ab861b209bdeb3",
+  "source_tree": "f84dae162de874c1ea9ee6f16451f07a46bf654d",
+  "transport_source_head": "dca21800e18bae1102c2ad9a7e075069b8599870",
+  "previous_publication_head": "bd0808188975b06a0b1c1578f0f691bb461365bc",
+  "previous_run": 36946401189,
+  "previous_run_observation": "Two completed matrix jobs failed; remaining jobs were still running before superseding publication. Do not count the interrupted run as complete.",
+  "observed_failures": [
+    {
+      "batch": "T04-01",
+      "selected": 153,
+      "executed": 4,
+      "counts": {
+        "tests": 13,
+        "pass": 10,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "not_run": 149,
+      "failures": [
+        {
+          "path": "tests/p1-007-notification-outbox.test.mjs",
+          "status": "FAIL",
+          "error": "MIGRATION_TEST_NOT_PASS: tests/p1-007-notification-outbox.test.mjs",
+          "exit_code": 1,
+          "signal": null,
+          "counts": {
+            "tests": 4,
+            "pass": 1,
+            "fail": 3,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        }
+      ]
+    },
+    {
+      "batch": "T04-03",
+      "selected": 96,
+      "executed": 4,
+      "counts": {
+        "tests": 13,
+        "pass": 12,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "not_run": 92,
+      "failures": [
+        {
+          "path": "tests/p1-011-pilot-operations-baseline.test.mjs",
+          "status": "FAIL",
+          "error": "MIGRATION_TEST_NOT_PASS: tests/p1-011-pilot-operations-baseline.test.mjs",
+          "exit_code": 1,
+          "signal": null,
+          "counts": {
+            "tests": 6,
+            "pass": 5,
+            "fail": 1,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0
+          }
+        }
+      ]
+    }
+  ],
+  "cause": "Separate empty batch databases omitted the current ARCH-005 baseline previously supplied by earlier source/shadow steps. Old P1 tests create legacy migrations but expect epoch columns and canonical time types.",
+  "fix": "After published-history identity, compile and invoke the existing staged migrate-current-baseline CLI on each empty synthetic PG18 service before its unchanged batch gate.",
+  "local_probe": {
+    "isolated_database": "ts_ci_bootstrap_20261002",
+    "owned_cluster_port": 55435,
+    "original_outbox_red": {
+      "tests": 4,
+      "pass": 1,
+      "fail": 3,
+      "error": "42703: missing next_attempt_epoch_ms"
+    },
+    "partial_legacy_schema_must_not_be_adopted": "ARCH_005_LEGACY_MIGRATION_GAP",
+    "recreated_owned_empty_database_before_baseline": true,
+    "existing_baseline_migration": "APPLIED",
+    "original_outbox_green": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    "original_operations_green": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    "test_source_modified": false,
+    "production_source_or_sql_modified": false
+  },
+  "owned_database_cleanup": {
+    "database": "ts_ci_bootstrap_20261002",
+    "removed": true,
+    "preexisting_databases_touched": false
+  },
+  "cluster_cleanup": {
+    "cluster_stopped": true,
+    "probe_exit": 0,
+    "stop_exit": 0
+  },
+  "all_747_runtime_output_hashes_equal_to_previous_publication": true,
+  "only_changed_source_input": ".github/workflows/types-migration.yml",
+  "artifact_verification": "PASS",
+  "review": {
+    "source_head": "bb4ad85c6f2e1a6cb1da5777f4ab861b209bdeb3",
+    "standards_findings": 0,
+    "spec_findings": 0
+  },
+  "archive": {
+    "path": "C:/Users/zqpet/.codex/artifacts/wecom-t04-05-20261001/isolated-db-bootstrap-bb4ad85",
+    "indexed_files": 66,
+    "index_sha256": "70cdd8ab34563b2ae15e868097626656d0932391680a09620f067f4abe713f13"
+  },
+  "previous_receipts_rebound": false,
+  "production_source_or_sql_modified": false,
+  "batch_coverage_removed": false,
+  "strict_readiness": "KNOWN_BASELINE_NOT_READY",
+  "publication_validation": "PENDING_NEW_AUTHORITATIVE_HEAD_CI",
+  "production_ready": false,
+  "merge": false,
+  "deployment": false,
+  "T05_01_authorized": false
+}
