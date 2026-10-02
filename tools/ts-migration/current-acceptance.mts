@@ -27,9 +27,25 @@ export function currentAcceptance(root:string): {
     current_files:current,historical_registered_files:historical,historical_head:doc.historical_head,
     historical_base:doc.historical_base,historical_strict_command:historicalStrict,historical_regression_files:regressions,live_authorized:false};
 }
-export function currentSelection(root:string):Selection {
+export function currentSelection(root:string,shardId?:string):Selection {
   const plan=currentAcceptance(root),routes=loadRoutes(root);
-  return {label:'yxx-current-full',flags:[],entries:plan.current_files.map(file=>{
+  let files=plan.current_files;
+  if(shardId!==undefined){
+    if(!/^[1-9][0-9]*\/[1-9][0-9]*$/u.test(shardId))throw new Error('MIGRATION_CURRENT_SHARD_INVALID');
+    const shard=currentShardPlan(root,shardId.split('/')[1]??'').shards.find(item=>item.id===shardId);
+    if(!shard)throw new Error('MIGRATION_CURRENT_SHARD_INVALID');
+    files=shard.files;
+  }
+  return {label:shardId===undefined?'yxx-current-full':`yxx-current-shard-${shardId}`,flags:[],entries:files.map(file=>{
     const entry=routes.entries.find(entry=>entry.path===file);assert.ok(entry);return entry;
   })};
+}
+
+export function currentShardPlan(root:string,countText:string):ReturnType<typeof currentAcceptance>&{shards:{id:string;files:string[]}[]} {
+  if(!/^(?:[1-9]|1[0-6])$/u.test(countText))throw new Error('MIGRATION_CURRENT_SHARD_INVALID');
+  const count=Number(countText),plan=currentAcceptance(root);
+  if(count>plan.current_files.length)throw new Error('MIGRATION_CURRENT_SHARD_INVALID');
+  const shards=Array.from({length:count},(_,index)=>({id:`${index+1}/${count}`,
+    files:plan.current_files.filter((_,position)=>position%count===index)}));
+  return {...plan,shards};
 }

@@ -371,3 +371,15 @@ retained and is not counted as the ARCH006 protection result. Logs: stage05-arch
 stage05-arch-green, stage05-arch-protection and stage05-arch-protection-green under
 the external task artifact directory. This is development validation only.
 Current strict readiness, frozen full acceptance and final CI remain unproven.
+
+Stage 5 shard execution slice: the public runner now supports `--current-plan
+--shards 4` and `--current-full --shard 1/4` (one-based identity, maximum 16 shards).
+The deterministic partition covers all 215 current files exactly once; four shards
+contain 53 or 54 files. Historical scope stays outside that set. Each invocation
+retains normal build, route, raw TAP/trace, artifact and isolated-database checks.
+No per-file timeouts or capacity durations were reduced. Existing strict evidence
+verification rejects duplicate or missing files across current_runs; shard labels
+alone never prove completeness. Planning/execution tooling regression: 5/5, with
+both missing-capability RED logs retained. Receipts: stage05-shard-red,
+stage05-shard-execution-red and stage05-shard-acceptance-final.log. Full shard runs
+and CI wall-time measurement remain pending; no time-saving result is claimed yet.

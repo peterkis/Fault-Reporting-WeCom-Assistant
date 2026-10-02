@@ -5,7 +5,7 @@ import { copyFileSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from '
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { record, sourceRoot, strings } from './common.mjs';
-import { ACCEPTANCE_PATH, currentAcceptance } from './current-acceptance.mjs';
+import { ACCEPTANCE_PATH, currentAcceptance, currentSelection } from './current-acceptance.mjs';
 
 test('current acceptance CLI accounts for all registered files and identifies historical scope separately', () => {
   const root=sourceRoot();
@@ -53,5 +53,52 @@ test('acceptance planning rejects omitted files duplicate obligations and change
   }finally{
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('current-acceptance-'));
     if(attached)git(['worktree','remove','--force',root]);else rmSync(root,{recursive:true,force:true});
+  }
+});
+
+test('current shard plan partitions all 215 obligations exactly once and preserves historical separation',()=>{
+  const root=sourceRoot();
+  const run=(args:string[])=>spawnSync(process.execPath,[path.join(root,'.build/tools/run-tests.mjs'),...args],{
+    cwd:root,encoding:'utf8',windowsHide:true,timeout:30_000,
+  });
+  const result=run(['--current-plan','--shards','4']);
+  assert.equal(result.status,0,result.stdout+result.stderr);
+  const plan=record(JSON.parse(result.stdout) as unknown);
+  assert.ok(Array.isArray(plan.shards));assert.equal(plan.shards.length,4);
+  const files=plan.shards.flatMap((value:unknown,index:number)=>{
+    const shard=record(value);assert.equal(shard.id,`${index+1}/4`);
+    const selection=currentSelection(root,`${index+1}/4`);
+    assert.equal(selection.label,`yxx-current-shard-${index+1}/4`);
+    assert.deepEqual(selection.entries.map(entry=>entry.path),shard.files);
+    const selected=strings(shard.files);assert.ok(selected.length>=53&&selected.length<=54);
+    return selected;
+  });
+  assert.equal(files.length,215);assert.equal(new Set(files).size,215);
+  assert.deepEqual([...files].sort(),currentAcceptance(root).current_files);
+  assert.ok(!files.includes('tests/yxx-ss-008-validation-scope.test.mjs'));
+  assert.equal(run(['--current-plan','--shards','4']).stdout,result.stdout);
+  for(const count of ['0','-1','17','1.5','04','NaN']){
+    const invalid=run(['--current-plan','--shards',count]);
+    assert.equal(invalid.status,1);assert.match(invalid.stderr,/MIGRATION_CURRENT_SHARD_INVALID/u);
+  }
+});
+
+test('current shard execution validates its identity and isolation before building',()=>{
+  const root=sourceRoot();
+  const run=(args:string[])=>spawnSync(process.execPath,[path.join(root,'.build/tools/run-tests.mjs'),...args],{
+    cwd:root,encoding:'utf8',windowsHide:true,timeout:30_000,
+    env:{...process.env,PILOT_DATABASE_URL:'',TS_MIGRATION_TEST_DB_ISOLATED:'0'},
+  });
+  for(const id of ['1/4','2/4','3/4','4/4']){
+    const result=run(['--current-full','--shard',id]);
+    assert.equal(result.status,1);assert.match(result.stderr,/MIGRATION_ISOLATED_DATABASE_REQUIRED/u);
+  }
+  for(const id of ['0/4','5/4','01/4','1/0','1/17','1.5/4','1']){
+    const result=run(['--current-full','--shard',id]);
+    assert.equal(result.status,1);assert.match(result.stderr,/MIGRATION_CURRENT_SHARD_INVALID/u);
+  }
+  for(const args of [['--shard','1/4'],['--current-full','--shard','1/4','--shard','2/4'],
+    ['--current-full','--shard','1/4','--selection','canary']]){
+    const result=run(args);assert.equal(result.status,1);assert.match(result.stderr,/MIGRATION_CURRENT_ARGUMENTS/u);
   }
 });

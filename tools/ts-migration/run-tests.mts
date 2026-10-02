@@ -7,7 +7,7 @@ import { hash, record, slash, sourceRoot, outputPath, codeFiles, strings, git } 
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { loadRoutes, select, testEnvironment, execution, type Selection } from './routing.mjs';
-import { currentAcceptance, currentSelection } from './current-acceptance.mjs';
+import { currentAcceptance, currentSelection, currentShardPlan } from './current-acceptance.mjs';
 
 export type Counts = { tests: number; pass: number; fail: number; cancelled: number; skipped: number; todo: number };
 export function counts(tap: string): Counts {
@@ -147,9 +147,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   let reportDir: string | undefined;
   let frozen: string | undefined;
   let currentFull = false;
+  let shardId: string | undefined;
   const args = process.argv.slice(2);
-  if (args.length === 1 && args[0] === '--current-plan') {
-    console.log(JSON.stringify(currentAcceptance(root)));
+  if (args[0] === '--current-plan') {
+    if(args.length===1)console.log(JSON.stringify(currentAcceptance(root)));
+    else if(args.length===3&&args[1]==='--shards')console.log(JSON.stringify(currentShardPlan(root,args[2]??'')));
+    else throw new Error('MIGRATION_CURRENT_ARGUMENTS');
   } else {
   for (let i=0; i<args.length; i++) {
     const arg = args[i];
@@ -158,16 +161,22 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       if (currentFull) throw new Error('MIGRATION_CURRENT_ARGUMENTS');
       currentFull = true;
     }
+    else if (arg === '--shard') {
+      if(shardId!==undefined)throw new Error('MIGRATION_CURRENT_ARGUMENTS');
+      shardId=args[++i];
+      if(!shardId||shardId.startsWith('--'))throw new Error('MIGRATION_CURRENT_SHARD_INVALID');
+    }
     else if (arg === '--alias' || arg === '--selection' || arg === '--report-dir' || arg === '--frozen') {
       const value = args[++i]; if (!value || value.startsWith('--')) throw new Error('MIGRATION_ARGUMENT_VALUE_REQUIRED');
       if (arg === '--report-dir') reportDir = path.resolve(value); else if (arg === '--frozen') frozen = value; else { kind = arg === '--alias' ? 'alias' : 'selection'; name = value; }
     } else throw new Error('MIGRATION_UNKNOWN_RUNNER_ARGUMENT');
   }
+  if(shardId!==undefined&&!currentFull)throw new Error('MIGRATION_CURRENT_ARGUMENTS');
   if (currentFull && args.some(arg => ['--alias','--selection','--reference-source','--frozen'].includes(arg))) throw new Error('MIGRATION_CURRENT_ARGUMENTS');
   if (frozen) {
     runFrozen(root, frozen, reportDir ?? mkdtempSync(path.join(tmpdir(), 'ts-migration-history-')));
   } else {
-  const selected = currentFull ? currentSelection(root) : select(loadRoutes(root), kind, name);
+  const selected = currentFull ? currentSelection(root,shardId) : select(loadRoutes(root), kind, name);
   testEnvironment(root, selected.entries); // Fail missing isolation before doing build work.
   build(root);
   runSelection(root, selected, { reference, ...(reportDir ? { reportDir } : {}) });
