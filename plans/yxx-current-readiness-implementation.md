@@ -10,7 +10,7 @@ This progress document is not acceptance evidence.
 | --- | --- | --- |
 | 0 | GitHub identity, clean isolated checkout, known rejection and 28 pinned SQL/state records | COMPLETE |
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
-| 2 | Classified failure, current scope, historical protection and structural validation | IN_PROGRESS |
+| 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | NOT_STARTED |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | NOT_STARTED |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
@@ -54,8 +54,21 @@ The user explicitly approved the one additional pre-PR21 G0 transition recorded 
 `.github/review/yxx-current-evidence-adjudication.json`. The original five-entry
 record is unchanged. A diagnostic use of the PR-specific checker across the entire
 r6->current graph also reported merge propagation edges; that is not a historical
-PASS or a new adjudication. Current history verification still needs its dedicated
-tests and implementation. The strict current report consumer is not implemented;
+PASS or a new adjudication. Current history verification now checks the full graph
+from the original r6 anchor, every modifying parent edge, exact six dispositions,
+and index/working-tree bytes and modes. Merge propagation accepts only forward
+approved transitions present in a supplying parent; other changes remain rejected.
+The original SS009 validator and original PR21 checker remain unchanged.
+
+Two further public-interface RED->GREEN cycles reproduce and reject later G0
+working-tree changes and committed rewrite-restore. Regression cases cover hidden
+side-branch rewrites, new append-only receipts, deletion, mode drift and expansion
+of the approved record. Routed result: 15/15; migration host regressions: 18/18;
+strict tools/runtime/type-test programs and negative type canary pass. Temporary
+fixture worktrees were removed. Receipts: stage02-history-15, stage02-hosts-green.log
+and stage02-history-types.log in the external task artifact directory.
+
+The strict current report consumer is not implemented;
 strict mode deliberately fails `CURRENT_EVIDENCE_REQUIRED` meanwhile. No current
 READY, full acceptance, CI, independent review or release is claimed here.
 

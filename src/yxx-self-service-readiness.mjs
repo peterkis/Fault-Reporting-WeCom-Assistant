@@ -5,6 +5,7 @@ import {g2CandidateInventory,G2_ROOT} from './p2-g2-candidate.mjs';
 import {evidenceHash} from './yxx-self-service-verification.mjs';
 import {validateLimitedManifest} from './yxx-limited-write-contract.mjs';
 import {readCurrentYxxScope} from './yxx-current-readiness-scope.mjs';
+import {verifyCurrentYxxEvidenceHistory} from './yxx-current-evidence-history.mjs';
 
 export const SS010_REPORT='evidence/yxx-ss-010-report.json';
 export const SS010_TEMPLATE='config_examples/yxx-limited-write-authorization.example.json';
@@ -28,7 +29,9 @@ const defaultSourceRoot=path.basename(path.resolve(G2_ROOT))==='runtime'
   ?path.resolve(G2_ROOT,'../..'):G2_ROOT;
 export function checkSS010({root=defaultSourceRoot,requireReady=false}={}){
   validateLimitedManifest(JSON.parse(readFileSync(path.join(root,SS010_TEMPLATE),'utf8')),{template:true});
-  const scope=readCurrentYxxScope(root),inventory=g2CandidateInventory(root);
+  const scope=readCurrentYxxScope(root);
+  verifyCurrentYxxEvidenceHistory(root);
+  const inventory=g2CandidateInventory(root);
   if(requireReady)throw Object.assign(new Error('CURRENT_EVIDENCE_REQUIRED'),{code:'CURRENT_EVIDENCE_REQUIRED',stage:'EVIDENCE'});
   return {ok:true,status:'STRUCTURE_VALID_NOT_READY',contract:'ADR-0027',scope_base:scope.base_head,
     candidate_fingerprint:inventory.fingerprint,database_connections:0,provider_calls:0,listener_started:false,
