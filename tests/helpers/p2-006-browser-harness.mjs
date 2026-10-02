@@ -4,6 +4,7 @@ import { existsSync, statSync, accessSync, constants } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, relative, isAbsolute } from 'node:path';
+import WebSocket from 'ws';
 
 export const systemBrowserCandidates = Object.freeze([
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
@@ -61,7 +62,7 @@ export async function closeBrowserTestResources(closers,primaryError=null){
   if(errors.length>1)throw new AggregateError(errors,'P2_006_BROWSER_TEST_AND_CLEANUP_FAILED');
 }
 
-export async function launchSystemBrowser({url,width,height,cookies=[],redirectPaths=[],signal,certificateSpki=null}){
+export async function launchSystemBrowser({url,width,height,cookies=[],redirectPaths=[],signal,certificateSpki=null,socketFactory=address=>new WebSocket(address)}){
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
   const executable=findSystemBrowser(),profile=await mkdtemp(join(tmpdir(),'p2-006-browser-'));
@@ -97,25 +98,27 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
         const timer=setTimeout(finish,2000);child.once('exit',finish);
       });
     }
-    // Let Browser.close finish flushing its owned profile before forcing a process exit.
-    await waitForExit();
-    if(child.exitCode===null&&child.signalCode===null){
-      child.kill('SIGKILL');
+    await closeBrowserTestResources([async()=>{
+      // Let Browser.close flush its profile before forcing the owned process exit.
       await waitForExit();
-    }
-    if(child.exitCode===null&&child.signalCode===null&&!launchError)throw new Error('P2_006_BROWSER_PROCESS_NOT_STOPPED');
-    const resolvedProfile=resolve(profile),owned=relative(resolve(tmpdir()),resolvedProfile);
-    assert.ok(!isAbsolute(owned)&&/^p2-006-browser-[a-zA-Z0-9]+$/u.test(owned));
-    await waitFor(async()=>{
-      try{await rm(resolvedProfile,{recursive:true,force:true,maxRetries:3,retryDelay:100});return true;}
-      catch(error){if(!['EBUSY','EPERM','ENOTEMPTY'].includes(error?.code))throw error;return false;}
-    },{timeoutMs:8000,intervalMs:100});
-    // Process exit and profile removal do not prove the asynchronous CDP close
-    // has completed. Keep cleanup observers honest, including on a timeout.
-    if(socket)await waitFor(()=>{
-      if(socket.readyState!==WebSocket.CLOSED)throw new Error('P2_006_BROWSER_SOCKET_NOT_CLOSED');
-      return true;
-    },{timeoutMs:10000});
+      if(child.exitCode===null&&child.signalCode===null){child.kill('SIGKILL');await waitForExit();}
+      if(child.exitCode===null&&child.signalCode===null&&!launchError)throw new Error('P2_006_BROWSER_PROCESS_NOT_STOPPED');
+    },async()=>{
+      // A lost closing handshake can leave the transport in CLOSING after Chrome
+      // exits. Destroy this owned socket, then verify its actual closed state.
+      if(socket&&socket.readyState!==WebSocket.CLOSED)socket.terminate();
+      if(socket)await waitFor(()=>{
+        if(socket.readyState!==WebSocket.CLOSED)throw new Error('P2_006_BROWSER_SOCKET_NOT_CLOSED');
+        return true;
+      },{timeoutMs:10000});
+    },async()=>{
+      const resolvedProfile=resolve(profile),owned=relative(resolve(tmpdir()),resolvedProfile);
+      assert.ok(!isAbsolute(owned)&&/^p2-006-browser-[a-zA-Z0-9]+$/u.test(owned));
+      await waitFor(async()=>{
+        try{await rm(resolvedProfile,{recursive:true,force:true,maxRetries:3,retryDelay:100});return true;}
+        catch(error){if(!['EBUSY','EPERM','ENOTEMPTY'].includes(error?.code))throw error;return false;}
+      },{timeoutMs:8000,intervalMs:100});
+    }]);
   }
   function close(){closePromise??=dispose();return closePromise;}
   const startupSignal=signal?AbortSignal.any([signal,AbortSignal.timeout(30000)]):AbortSignal.timeout(30000);
@@ -129,7 +132,7 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
       const response=await fetch(`http://127.0.0.1:${active}/json/list`,{signal:startupSignal});
       return selectBrowserTarget(await response.json(),{url,redirectPaths});
     },{signal:startupSignal});
-    socket=new WebSocket(target.webSocketDebuggerUrl);
+    socket=socketFactory(target.webSocketDebuggerUrl);
     socket.addEventListener('close',rejectPending);socket.addEventListener('error',rejectPending);
     await new Promise((resolveOpen,reject)=>{
       const done=fn=>event=>{socket.removeEventListener('open',opened);socket.removeEventListener('error',errored);startupSignal.removeEventListener('abort',aborted);fn(event);};

@@ -992,6 +992,8 @@
         "tests/p1-012-pilot-e2e.test.mjs",
         "tests/p2-006-workbench.integration.test.mjs",
         "tests/p2-g2-browser-lifecycle.test.mjs",
+        "tests/p2-g2-subscription-http-browser.integration.test.mjs",
+        "tests/yxx-ss-007-native-ui.browser.test.mjs",
         "tests/yxx-ss-009-browser.integration.test.mjs"
       ],
       "baseline_tests": [

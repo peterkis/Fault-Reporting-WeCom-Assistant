@@ -65,7 +65,82 @@ jobs:
           name: types-tooling-${{ matrix.os }}-${{ github.run_id }}
           path: ${{ runner.temp }}/types-review/
           retention-days: 14
+  batch-regression:
+    name: batch (${{ matrix.batch }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        batch: [T03-01, T04-01, T04-02, T04-03, T04-04, T04-05]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: migration_ci_only
+          POSTGRES_DB: migration_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      BATCH: ${{ matrix.batch }}
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      TS_MIGRATION_TEST_DB_ISOLATED: '1'
+      PILOT_DATABASE_URL: postgresql://postgres:migration_ci_only@127.0.0.1:5432/migration_ci
+    steps:
+      - name: Preserve the recorded current-source SQL checkout representation
+        run: git config --global core.autocrlf true
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Retain checkout line endings for hermetic Git preflight
+        run: git config --local core.autocrlf true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Prepare the YAML parser required by current and historical OpenAPI tests
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify the actual published object before running its entire batch
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-batch-$BATCH"
+          mkdir -p "$OUT"
+          node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" > "$OUT/identity.txt" 2>&1
+          if ! npm run migration:gate -- --batch "$BATCH" --report-dir "$OUT/batch" > "$OUT/gate.txt" 2>&1; then
+            tail -n 100 "$OUT/gate.txt"
+            exit 1
+          fi
+      - name: Verify the owned database and exact artifact after the batch
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-batch-$BATCH"
+          mkdir -p "$OUT"
+          git rev-parse HEAD > "$OUT/source-sha.txt"
+          node --version > "$OUT/node-version.txt"
+          node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.PILOT_DATABASE_URL});try{const r=await p.query(\"SELECT datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1','migration_ci')\");console.log(JSON.stringify({remaining_databases:r.rows}));if(r.rowCount)process.exitCode=1;console.log((await p.query('SHOW server_version')).rows);}finally{await p.end();}" 2>&1 | tee "$OUT/database-cleanup.txt"
+          npm run migration:verify-artifact > "$OUT/artifact.txt" 2>&1
+          cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: types-batch-${{ matrix.batch }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/types-batch-${{ matrix.batch }}/
+          retention-days: 14
   source-baseline:
+    needs: batch-regression
+    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     services:
@@ -131,66 +206,6 @@ jobs:
           (cd "$RUNNER_TEMP/types-t02-reference" && node --test --test-reporter=tap --test-concurrency=1 tests/p2-005-conversation-control.integration.test.mjs) > "$OUT/t02-cleanup-observation.txt" 2>&1 || RC=$?
           echo "$RC" > "$OUT/t02-cleanup-observation-exit.txt"
           echo "REFERENCE_OBSERVATION_ONLY exit=$RC; not current acceptance"
-      - name: Entire T03 dependency batch on real PG18 and browser hosts
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          if ! npm run migration:gate -- --batch T03-01 --report-dir "$OUT/t03-batch" > "$OUT/t03-batch.txt" 2>&1; then
-            tail -n 100 "$OUT/t03-batch.txt"
-            exit 1
-          fi
-      - name: Entire T04-01 dependency batch on real PG18 and browser hosts
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          if ! npm run migration:gate -- --batch T04-01 --report-dir "$OUT/t04-01-batch" > "$OUT/t04-01-batch.txt" 2>&1; then
-            tail -n 100 "$OUT/t04-01-batch.txt"
-            exit 1
-          fi
-      - name: Entire T04-02 dependency batch on real PG18 and browser hosts
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          if ! npm run migration:gate -- --batch T04-02 --report-dir "$OUT/t04-02-batch" > "$OUT/t04-02-batch.txt" 2>&1; then
-            tail -n 100 "$OUT/t04-02-batch.txt"
-            exit 1
-          fi
-      - name: Entire T04-03 dependency batch on real PG18 and browser hosts
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          if ! npm run migration:gate -- --batch T04-03 --report-dir "$OUT/t04-03-batch" > "$OUT/t04-03-batch.txt" 2>&1; then
-            tail -n 100 "$OUT/t04-03-batch.txt"
-            exit 1
-          fi
-      - name: Entire T04-04 dependency batch on real PG18 and browser hosts
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          if ! npm run migration:gate -- --batch T04-04 --report-dir "$OUT/t04-04-batch" > "$OUT/t04-04-batch.txt" 2>&1; then
-            tail -n 100 "$OUT/t04-04-batch.txt"
-            exit 1
-          fi
-      - name: Entire T04-05 and P1 stage closure on real PG18 hosts
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          if ! npm run migration:gate -- --batch T04-05 --report-dir "$OUT/t04-05-batch" > "$OUT/t04-05-batch.txt" 2>&1; then
-            tail -n 100 "$OUT/t04-05-batch.txt"
-            exit 1
-          fi
       - name: T02 artifact identity and source architecture
         if: ${{ !cancelled() }}
         shell: bash
@@ -234,6 +249,10 @@ jobs:
           cmp "$OUT/current-ss010.txt" "$OUT/base-ss010.txt"
           node .build/tools/arch006-baseline.mjs "$OUT"
           cmp "$OUT/current-strict-classification.txt" "$OUT/base-strict-classification.txt"
+      - name: Require every independent batch to succeed
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: test "${{ needs['batch-regression'].result }}" = success
       - name: Exact source, environment and cleanup identity
         if: always()
         shell: bash
