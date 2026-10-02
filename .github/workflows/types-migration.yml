@@ -226,6 +226,8 @@ jobs:
           node .build/tools/run-tests.mjs --frozen p2016 --report-dir "$OUT/historical" 2>&1 | tee "$OUT/historical.txt"
       - name: Compare unchanged known non-readiness against authentic merged T02
         if: ${{ !cancelled() }}
+        env:
+          EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
         shell: bash
         run: |
           set -euo pipefail

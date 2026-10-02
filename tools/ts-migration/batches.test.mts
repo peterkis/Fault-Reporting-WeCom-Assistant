@@ -8,8 +8,54 @@ import { pathToFileURL } from 'node:url';
 import { testEnvironment } from './routing.mjs';
 import { batchSelection } from './batches.mjs';
 import { record, sourceRoot, workspaceFiles } from './common.mjs';
+import { runNpm } from './npm-launcher.mjs';
 
 const original = sourceRoot();
+test('the Foundation npm seam accepts real wrappers and JavaScript symlinks', async t => {
+  const root = mkdtempSync(path.join(tmpdir(), 'npm %SYNTHETIC_VARIABLE% wrapper '));
+  try {
+    const found = execFileSync(process.platform === 'win32' ? 'where.exe' : 'which',
+      [process.platform === 'win32' ? 'npm.cmd' : 'npm'], { encoding: 'utf8', windowsHide: true }).trim().split(/\r?\n/u)[0];
+    assert.ok(found);
+    const wrapper = path.join(root, process.platform === 'win32' ? 'npm.cmd' : 'npm');
+    writeFileSync(wrapper, process.platform === 'win32'
+      ? `@echo off\r\n"${found}" %*\r\n`
+      : `#!/bin/sh\nexec '${found.replaceAll("'", "'\\''")}' "$@"\n`, { mode: 0o755 });
+    const env: NodeJS.ProcessEnv = { ...process.env, TS_MIGRATION_TEST_SOURCE_ROOT: original };
+    env.SYNTHETIC_VARIABLE = 'EXPANSION_MUST_NOT_HAPPEN';
+    delete env.NODE_TEST_CONTEXT;
+    const inheritedPath = Object.entries(env).find(([key]) => key.toLowerCase() === 'path')?.[1] ?? '';
+    for (const key of Object.keys(env)) if (key.toLowerCase() === 'path') delete env[key];
+    env.PATH = root + path.delimiter + inheritedPath;
+    const run = () => spawnSync(process.execPath, ['--test', '--test-reporter=tap', '--test-name-pattern=^the original preflight npm',
+      path.join(original, '.build/runtime/tests/p1-foundation-cli.test.mjs')], {
+      cwd: original, env, encoding: 'utf8', windowsHide: true, timeout: 30_000,
+    });
+    await t.test(process.platform === 'win32' ? 'cmd wrapper' : 'shell wrapper', () => {
+      const result = run();
+      assert.equal(result.status, 0, result.stdout + result.stderr);
+      assert.match(result.stdout, /# pass 1/u);
+    });
+    await t.test('real npm preserves literal arguments and the script exit code', () => {
+      writeFileSync(path.join(root, 'package.json'), JSON.stringify({ private: true, scripts: { fixture: 'node argv.mjs' } }));
+      writeFileSync(path.join(root, 'argv.mjs'), 'console.log(JSON.stringify(process.argv.slice(2)));process.exitCode=17;\n');
+      const values = ['space value', 'x&y', 'caret^value', 'a!b', '%SYNTHETIC_VARIABLE%'];
+      env.SYNTHETIC_VARIABLE = 'EXPANSION_MUST_NOT_HAPPEN';
+      const result = runNpm(['--silent', 'run', 'fixture', '--', ...values], { cwd: root, env, encoding: 'utf8', windowsHide: true, timeout: 30_000 });
+      assert.equal(result.status, 17, result.stdout + result.stderr);
+      assert.deepEqual(JSON.parse(result.stdout.trim()), values);
+    });
+    if (process.platform !== 'win32') await t.test('JavaScript symlink launcher', () => {
+      const target = realpathSync(found);
+      assert.match(target, /\.[cm]?js$/u);
+      rmSync(wrapper); symlinkSync(target, wrapper);
+      const result = run();
+      assert.equal(result.status, 0, result.stdout + result.stderr);
+      assert.match(result.stdout, /# pass 1/u);
+    });
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test('T04-05 closes the entire P1 stage and retains the personnel and boundary baselines', () => {
   const selected = batchSelection(original, 'T04-05');
   for (const name of ['tests/p1-001-pilot-foundation.test.mjs', 'tests/p1-008-first-acknowledgement.test.mjs', 'tests/p1-011-encrypted-backup.test.mjs', 'tests/p1-012-pilot-e2e-integration.test.mjs', 'tests/p1-012-live-e2e-script.test.mjs', 'tests/p1-009-pilot-access-workbench.test.mjs', 'tests/p1-foundation-cli.test.mts', 'tests/p1-migration-compatibility.test.mts', 'tests/p2-007-third-party-staff-directory.integration.test.mjs']) assert.ok(selected.entries.some(e => e.path === name));
@@ -48,13 +94,10 @@ test('batch CLI runs non-canary tests and reports failure without certifying rev
     setBatch({ ...fixture, impacted_tests: ['tests/absent.test.mjs'] }); assert.throws(() => batchSelection(root, 'T03-01'), /UNKNOWN_TEST/u);
   });
   setBatch(fixture);
-  const npmPath = execFileSync(process.platform === 'win32' ? 'where.exe' : 'which', ['npm'], { encoding: 'utf8', windowsHide: true }).trim().split(/\r?\n/u)[0];
-  assert.ok(npmPath);
-  const npmCli = process.platform === 'win32' ? path.join(path.dirname(npmPath), 'node_modules/npm/bin/npm-cli.js') : realpathSync(npmPath);
   for (const scenario of ['pass', 'fail', 'skip'] as const) await t.test(scenario, () => {
     writeFileSync(path.join(root, file), `import {test} from 'node:test'; import assert from 'node:assert/strict'; test('real batch probe', {skip:${scenario === 'skip'}},()=>assert.equal(1,${scenario === 'fail' ? 2 : 1}));\n`);
     const report = mkdtempSync(path.join(tmpdir(), 'migration batch report '));
-    const run = spawnSync(process.execPath, [npmCli, 'run', 'migration:gate', '--', '--batch', 'T03-01', '--report-dir', report], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
+    const run = runNpm(['run', 'migration:gate', '--', '--batch', 'T03-01', '--report-dir', report], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
     assert.equal(run.status, scenario === 'pass' ? 0 : 1, run.stderr);
     const summary = record(JSON.parse(readFileSync(path.join(report, 'tests/summary.json'), 'utf8')) as unknown);
     assert.deepEqual(summary.selected_files, [file]); assert.deepEqual(summary.not_run, []);
@@ -64,10 +107,10 @@ test('batch CLI runs non-canary tests and reports failure without certifying rev
     if (scenario !== 'pass') assert.doesNotMatch(run.stdout, /MIGRATION_AUTOMATED_CHECKS_PASS/u);
   });
   await t.test('npm wrapper rejects unknown batches and preserves the no-argument gate', () => {
-    const rejected = spawnSync(process.execPath, [npmCli, 'run', 'migration:gate', '--', '--batch', 'UNKNOWN'], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
+    const rejected = runNpm(['run', 'migration:gate', '--', '--batch', 'UNKNOWN'], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
     assert.notEqual(rejected.status, 0);
     assert.match(rejected.stderr, /MIGRATION_UNKNOWN_BATCH/u);
-    const normal = spawnSync(process.execPath, [npmCli, 'run', 'migration:gate'], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
+    const normal = runNpm(['run', 'migration:gate'], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 180_000 });
     assert.equal(normal.status, 0, normal.stdout + normal.stderr);
     assert.match(normal.stdout, /MIGRATION_GATE_PASS/u);
   });

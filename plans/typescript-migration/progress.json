@@ -153,5 +153,6 @@
     "successor_ci": "f9cd40d_FAILURE_TRANSPORT_REPAIR_LOCAL_PASS_NEW_PARALLEL_CI_PENDING"
   },
   "current_browser_transport_ci_record": "verification/T04-05-browser-transport-ci.md",
-  "current_ci_isolation_source": "bb4ad85c6f2e1a6cb1da5777f4ab861b209bdeb3"
+  "current_ci_isolation_source": "bb4ad85c6f2e1a6cb1da5777f4ab861b209bdeb3",
+  "current_review_p2_tooling_record": "verification/T04-05-review-p2-tooling.md"
 }
