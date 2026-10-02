@@ -13,8 +13,8 @@ This progress document is not acceptance evidence.
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | COMPLETE for development implementation; component/publication regressions pass; actual whole-packet strict READY remains unverified until stage 6 frozen acceptance |
-| 5 | ARCH006/current CI separation and retained historical CI | IN_PROGRESS; ARCH006 structural separation verified, CI/sharding pending |
-| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
+| 5 | ARCH006/current CI separation and retained historical CI | COMPLETE for development implementation; final exact-head CI and wall-time measurement remain stages 6-7 |
+| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | IN_PROGRESS; candidate freeze and complete execution follow this commit |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
 
 ## Baseline observations (2026-10-02)
@@ -408,3 +408,20 @@ SS008 scope test; Windows long paths are enabled before checkout.
 Both workflow YAML documents and all 39 shell steps pass local syntax validation
 (stage05-ci-syntax.json). No remote CI run or wall-time improvement is claimed.
 Readiness-test evidence lifecycle assumptions still need correction before freeze.
+
+Stage 5 lifecycle closure: the actual-checkout readiness tests now work both before
+and after evidence publication. Missing/malformed evidence stays a rejecting
+isolated-fixture test; the real CLI must match the strict API's current decision.
+The prior real missing-evidence assumption was reproduced RED with a temporary
+invalid pointer, which was removed. A complete 240-second routed attempt timed out
+and remains FAIL, not acceptance evidence. Its processes exited; one clean owned
+fixture worktree was subsequently removed. The CLI/offline checks moved to a
+separate MTS test entry, preserving all 19 cases and the 240-second per-file limit.
+The two routed files pass 13/13 (196.5 seconds) and 6/6 (87.6 seconds). Registry and
+host regressions pass 26/26. Logs: stage05-lifecycle-red, stage05-lifecycle-tests
+(failed), stage05-lifecycle-split-tests and stage05-lifecycle-registry.log.
+Current acceptance is now 216 files plus one separately historical registered
+file (217 entries total), with four disjoint current shards of 54 files. The stale
+current ARCH006 known-failure annotation was removed; the pinned PR37 classifier
+and its independent historical regression remain unchanged. Final strict READY,
+current full execution, independent review and remote CI are still unproven.

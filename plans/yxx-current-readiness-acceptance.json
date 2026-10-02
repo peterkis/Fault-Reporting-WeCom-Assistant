@@ -193,6 +193,7 @@
     "tests/v1-4-architecture-baseline.test.mjs",
     "tests/yxx-current-evidence.test.mts",
     "tests/yxx-current-migrations.integration.test.mts",
+    "tests/yxx-current-readiness-cli.test.mts",
     "tests/yxx-current-readiness.test.mts",
     "tests/yxx-ss-001-homepage-oauth.test.mjs",
     "tests/yxx-ss-002-contract.test.mjs",
