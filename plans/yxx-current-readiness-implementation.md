@@ -127,11 +127,26 @@ components are supplied, `checkSS010` invokes this guard as well as the CLI's ex
 check. A real compiled module mutation and absent build reject with
 `CURRENT_BUILD_INVALID`; the same unchanged build passes before and after restoration.
 Routed evidence tests pass 12/12. Strict readiness still deliberately returns
-`CURRENT_EVIDENCE_INCOMPLETE`: combined 22-SQL runtime proof and immutable publication
+`CURRENT_EVIDENCE_INCOMPLETE`: binding of combined 22-SQL runtime proof and immutable publication
 remain pending. The existing old-chain and separate 035/036 tests do not prove the
 complete combination in one owned database. No existing migration, historical
 evidence or SQL file has been changed. Receipts: `slice33-red.log`, `slice33-green.log`,
 `stage04-artifact-guard-tests` and `stage04-artifact-guard-types.log`.
+
+The combined 22-SQL development characterization now passes in one owned PostgreSQL
+18.4 database, through the existing baseline/YXX, workbench-auth and staff-directory
+entry points. It observes all 14 legacy applications, checks all eight subsequent
+marker IDs and raw SQL checksums, validates YXX/directory catalogs, then repeats the
+entry points and requires NOOP with unchanged markers. Ticket/intake counts remain
+zero. The raw TAP contains `CURRENT_SCOPE_CATALOG` with the scope hash, executed
+runtime fingerprint, 22 normalized SQL digests and measured outcomes, followed by
+the existing measured database/pool cleanup receipt. The outer cluster was stopped
+(exit 0) and its owned data directory removed. This adds no SQL or migrator changes.
+The new typed test is mandatory in the current full set and has a DB-required route.
+Runtime characterization: 1/1; registry/host regressions: 23/23; strict types pass.
+External receipts are `stage04-combined-v1-tests`, `stage04-combined-v1-pg-cleanup.json`,
+`stage04-combined-tooling.log` and `stage04-combined-types.log`. This development run
+is not frozen acceptance; strict consumption of its receipt shape remains pending.
 
 Stage 4 execution core now checks the complete declared current set across disjoint
 run references, per-file success, source/actual execution hashes, archived build
@@ -143,8 +158,8 @@ rehashed missing/wrong cases reject. The new `yxx-current-evidence` selection pa
 type programs pass. These parser fixtures are explicitly synthetic and cannot pass
 the actual readiness entry; they are not published acceptance evidence.
 
-The registry now has 215 entries: original 213 plus two current-readiness test files.
-The current contract requires 214 files, with one separate historical SS008 file.
+The registry now has 216 entries: original 213 plus three current-readiness test files.
+The current contract requires 215 files, with one separate historical SS008 file.
 The two registered SOURCE_HOST review tests and their two direct implementation
 dependencies are now explicit build/candidate controls. A real CLI RED->GREEN
 proved their former build-binding omission; review documentation is not included.
@@ -194,7 +209,7 @@ schema-contract execution: 7/7 across two files, with bound traces. Strict progr
 and negative type canary pass. These are development checks, not the final full run.
 The explicit current/historical mapping is now in
 `plans/yxx-current-readiness-acceptance.json`, bound to both build and candidate.
-It now accounts for all 215 registered files: 214 current, one fixed-historical SS008
+It now accounts for all 216 registered files: 215 current, one fixed-historical SS008
 scope obligation. The historical domain also retains the original SS009 evidence,
 history and governance regressions plus unchanged strict CLI. Current SS009
 negative/protection tests remain in the current domain; they were not reclassified.
