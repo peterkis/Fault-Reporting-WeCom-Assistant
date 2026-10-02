@@ -11,7 +11,7 @@ This progress document is not acceptance evidence.
 | 0 | GitHub identity, clean isolated checkout, known rejection and 28 pinned SQL/state records | COMPLETE |
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
-| 3 | Routed compiled execution, cases, per-file provenance and historical obligations | NOT_STARTED |
+| 3 | Routed compiled execution, cases, per-file provenance and historical obligations | IN_PROGRESS; per-case reporter and immutable run directories implemented, historical/current coverage contract pending |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | NOT_STARTED |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
@@ -33,6 +33,18 @@ This progress document is not acceptance evidence.
   `yxx-current-readiness-20261002`; no historical report was rewritten.
 
 ## Execution and acceptance
+
+Stage 3 development: the migration runner reuses the compiled G2 case reporter.
+Each file receipt records actual execution path/cwd, source and executed byte hashes,
+TAP/stderr/JSONL paths, sizes and hashes, and explicitly executed-file line numbers.
+Case files must match observed loaded files in the checkout; a mismatched trace
+fails despite passing TAP. Nonempty run directories reject before writing.
+These changes have independent public-runner RED->GREEN evidence (slice10-12).
+Complete migration host regression: 20/20. Actual compiled canary plus SOURCE_HOST
+schema-contract execution: 7/7 across two files, with bound traces. Strict programs
+and negative type canary pass. These are development checks, not the final full run.
+The complete current/historical obligation mapping and final evidence consumer are
+still pending; these runner receipts alone cannot establish current readiness.
 
 Development checkpoint (2026-10-02, not frozen acceptance): six public-interface
 RED->GREEN cycles cover argument diagnostics, current successor structure, missing
