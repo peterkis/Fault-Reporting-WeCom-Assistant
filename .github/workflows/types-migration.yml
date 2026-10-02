@@ -114,6 +114,8 @@ jobs:
           OUT="$RUNNER_TEMP/types-batch-$BATCH"
           mkdir -p "$OUT"
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" > "$OUT/identity.txt" 2>&1
+          npm run migration:build > "$OUT/bootstrap-build.txt" 2>&1
+          node .build/runtime/scripts/migrate-current-baseline.mjs > "$OUT/database-baseline.txt" 2>&1
           if ! npm run migration:gate -- --batch "$BATCH" --report-dir "$OUT/batch" > "$OUT/gate.txt" 2>&1; then
             tail -n 100 "$OUT/gate.txt"
             exit 1
