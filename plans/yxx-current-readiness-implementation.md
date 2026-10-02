@@ -12,7 +12,7 @@ This progress document is not acceptance evidence.
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
-| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; complete-proof strict consumer implemented with component regressions; immutable publication pending; actual whole-proof READY remains unverified until frozen acceptance |
+| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | COMPLETE for development implementation; component/publication regressions pass; actual whole-packet strict READY remains unverified until stage 6 frozen acceptance |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
@@ -167,6 +167,45 @@ Component/negative regressions pass 13/13 and strict types pass. Receipts:
 `slice34-red`, `slice34-green`, `stage04-migration-proof-tests`,
 `stage04-strict-composition-tests`, `stage04-strict-composition-types.log` and
 `stage04-strict-current-closed.log`. Immutable publication and stages 5-7 remain.
+
+Append-only publication is implemented in `tools/ts-migration/publish-current-evidence.mts`.
+Its input is an external prepared directory with `packet.json` and the exact listed
+payload files. The packet manifest is `{schema_version:1,kind:"CURRENT_EVIDENCE_PACKET",
+run_id,files:[{path,bytes,sha256}]}`; paths are relative to that directory. It must
+include `report.json`, whose nine proof components reference files beneath
+`evidence/yxx-current-<run_id>/`. Every input file is checked before staging. Raw bytes
+are copied exclusively into a new namespace and checked again. Limits are 64 MiB per
+file, 256 MiB total and 4096 payload files. The input manifest itself is not payload.
+Existing evidence directories are never overwritten or deleted; failed partial
+staging remains unreferenced for inspection. Text/Binary bytes, including CRLF and
+empty stderr, are preserved. Input/output links, escaped paths, Windows reserved
+names, case collisions, unlisted files, bad hashes and foreign report references reject.
+Canonical paths prevent a directory alias disguising an in-repository packet.
+
+The pointer is written last. First publication uses exclusive creation. Replacement
+requires `--expected-pointer-sha256` matching the current pointer's actual bytes;
+publication is serialized with an exclusive owned lock and replacement uses an
+atomic same-directory rename. Other locks and earlier reports are preserved.
+This command only returns `EVIDENCE_STAGED_NOT_READINESS`, never READY. Packet
+integrity is not semantic acceptance: rebuild, run the full strict consumer, then
+commit the evidence-only successor, rebuild again and verify the final published head.
+Do not manufacture PASS data to prepare a packet; derive it from the frozen raw
+execution, independent reviews, measured cleanup and the controlled derivation APIs.
+
+```text
+npm run migration:tools
+node .build/tools/publish-current-evidence.mjs --packet <absolute-prepared-directory>
+# For an explicitly selected replacement, append --expected-pointer-sha256 <current-raw-pointer-sha256>.
+npm run migration:build
+node scripts/yxx-self-service-readiness.mjs --require-ready
+```
+
+Publication public-CLI regressions pass 8/8, including exact-prior-hash replacement
+and protection of another publisher's lock; strict types pass. RED->GREEN records
+are `slice35-*`, `slice36-*` and `slice37-*`; final receipts are
+`stage04-publication-complete-tests.log` and `stage04-publication-complete-types.log`.
+All publication tests use owned synthetic repositories and cannot establish current
+readiness. No actual current pointer or final evidence packet has been published.
 
 Stage 4 execution core now checks the complete declared current set across disjoint
 run references, per-file success, source/actual execution hashes, archived build
