@@ -8,7 +8,7 @@ import path from 'node:path';
 import {testRoots} from './helpers/migration-roots.mjs';
 import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
 import {checkSS010} from '../src/yxx-self-service-readiness.mjs';
-import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof} from '../src/yxx-current-evidence.mjs';
+import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof} from '../src/yxx-current-evidence.mjs';
 import {SS009_VALIDATORS} from '../src/yxx-self-service-verification.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 
@@ -45,6 +45,59 @@ function syntheticExecution(root:string){
   const report={run_id:'fixture',tested_head:manifest.source.head,tested_tree:manifest.source.tree,build,current_runs:[save(directory+'/summary.json',document)]};
   return {report,document,save,tap:path.join(root,tap.path),commit:()=>{report.current_runs[0]=save(directory+'/summary.json',document);}};
 }
+
+test('specialized proof binds raw observations and screenshots to the archived runtime candidate',()=>{
+  const root=mkdtempSync(path.join(tmpdir(),'yxx-specialized-proof-'));
+  try{
+    // Historical records/images are parser fixtures only, never current run evidence.
+    const source=testRoots().sourceRoot,fixture=syntheticExecution(root),runtime=path.join(root,'.build/runtime');
+    for(const dir of ['src','scripts','web','contracts','config_examples','database/migrations'])mkdirSync(path.join(runtime,dir),{recursive:true});
+    for(const file of ['package.json','package-lock.json','.env.example'])fixture.save('.build/runtime/'+file,'{}');
+    const fingerprint=g2CandidateInventory(runtime).fingerprint;
+    const identity={tested_head:fixture.report.tested_head,tested_tree:fixture.report.tested_tree,candidate_fingerprint:'c'.repeat(64)};
+    const historical=(kind:string)=>JSON.parse(readFileSync(path.join(source,'evidence/yxx-ss-009-r7-'+kind+'.json'),'utf8')) as {records:Record<string,unknown>[];receipts:Record<string,unknown>[]};
+    let receipts:Record<string,unknown>[]=['fault','capacity','catalog','browser'].flatMap(kind=>historical(kind).records)
+      .concat(historical('cleanup').receipts.filter(item=>item.kind==='cleanup')).map(item=>({...item,candidate_fingerprint:fingerprint}));
+    const browser=receipts.find(item=>item.kind==='browser');assert.ok(browser);
+    const limited={...browser,kind:undefined,real_postgres:true};
+    const file=fixture.document.files[0];assert.ok(file);
+    const observations:Array<{tap_path:string;channel:string;receipt_index:number}>=[];
+    const images:Array<{observation:{tap_path:string;channel:string;receipt_index:number};width:number;height:number;artifact:{path:string;sha256:string;bytes:number}}>=[];
+    const proof={schema_version:1,...g2EvidenceTime(),...identity,kind:'CURRENT_SPECIALIZED_PROOF',observations,images};
+    const originalTap=readFileSync(fixture.tap,'utf8'),tapPath='evidence/yxx-current-fixture/current/one.tap';
+    const capture=()=>{
+      const ref=fixture.save(tapPath,originalTap+receipts.map(item=>'# SS009_RECEIPT '+JSON.stringify(item)+'\n').join('')+'# SS010_BROWSER '+JSON.stringify(limited)+'\n');
+      file.tap_sha256=ref.sha256;file.tap_bytes=ref.bytes;fixture.commit();
+      observations.splice(0,observations.length,...receipts.map((_,index)=>({tap_path:tapPath,channel:'SS009_RECEIPT',receipt_index:index})),
+        {tap_path:tapPath,channel:'SS010_BROWSER',receipt_index:0});
+    };
+    capture();
+    for(const channel of ['SS009_RECEIPT','SS010_BROWSER'])for(const [width,height] of [[390,844],[1440,900]]){
+      assert.ok(width&&height);const bytes=readFileSync(path.join(source,'evidence/yxx-ss-009-r7-ui-'+width+'.png'));
+      const target='evidence/yxx-current-fixture/'+channel+'-'+width+'.png';writeFileSync(path.join(root,target),bytes);
+      images.push({observation:{tap_path:tapPath,channel,receipt_index:channel==='SS009_RECEIPT'?receipts.indexOf(browser):0},width,height,
+        artifact:{path:target,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')}});
+    }
+    const verify=()=>verifyCurrentYxxSpecializedProof(root,{...fixture.report,...identity,specialized:fixture.save('evidence/yxx-current-fixture/specialized.json',proof)});
+    verify();assert.throws(()=>checkSS010({root,requireReady:true}));
+    // Publishing evidence changes H's manifest identity, not C's already tested runtime.
+    const currentManifest=JSON.parse(readFileSync(path.join(runtime,'build-manifest.json'),'utf8')) as {source:{head:string;tree:string}};
+    currentManifest.source.head='d'.repeat(40);currentManifest.source.tree='e'.repeat(40);fixture.save('.build/runtime/build-manifest.json',currentManifest);
+    assert.notEqual(g2CandidateInventory(runtime).fingerprint,fingerprint);verify();
+    const originalCode=readFileSync(path.join(runtime,'tests/synthetic.test.mjs'),'utf8');fixture.save('.build/runtime/tests/synthetic.test.mjs',originalCode+'// drift\n');
+    assert.throws(verify,{code:'CURRENT_SPECIALIZED_PROOF_INVALID'});fixture.save('.build/runtime/tests/synthetic.test.mjs',originalCode);verify();
+    browser.candidate_fingerprint=identity.candidate_fingerprint;capture();assert.throws(verify,{code:'CURRENT_SPECIALIZED_PROOF_INVALID'});
+    browser.candidate_fingerprint=fingerprint;capture();verify();
+    const first=observations.shift();assert.ok(first);assert.throws(verify,{code:'CURRENT_SPECIALIZED_PROOF_INVALID'});observations.unshift(first);
+    const saved=receipts;receipts=receipts.filter(item=>item.kind!=='capacity');capture();assert.throws(verify,{code:'CURRENT_SPECIALIZED_PROOF_INVALID'});
+    receipts=saved;capture();verify();
+    limited.real_postgres=false;capture();assert.throws(verify,{code:'CURRENT_SPECIALIZED_PROOF_INVALID'});limited.real_postgres=true;capture();verify();
+    const image=images[0];assert.ok(image);writeFileSync(path.join(root,image.artifact.path),'corrupt');assert.throws(verify,{code:'CURRENT_SPECIALIZED_PROOF_INVALID'});
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-specialized-proof-'));
+    rmSync(root,{recursive:true,force:true});
+  }
+});
 
 test('historical proof verifies originals and rejects rehashed wrong identity omitted checks and false successes',()=>{
   const root=mkdtempSync(path.join(tmpdir(),'yxx-history-proof-'));
@@ -274,6 +327,10 @@ test('strict current readiness rejects a PASS summary without the complete curre
     const unsupportedHistory=save('evidence/yxx-current-fixture/report.json',{...header,historical});
     save('plans/yxx-current-readiness.json',{schema_version:1,report:unsupportedHistory});
     assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_HISTORICAL_PROOF_INVALID'});
+    const specialized=save('evidence/yxx-current-fixture/specialized.json',{status:'PASS'});
+    const unsupportedSpecialized=save('evidence/yxx-current-fixture/report.json',{...header,specialized});
+    save('plans/yxx-current-readiness.json',{schema_version:1,report:unsupportedSpecialized});
+    assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_SPECIALIZED_PROOF_INVALID'});
   }finally{
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-execution-evidence-'));
     if(attached)execFileSync('git',['worktree','remove','--force',root],{cwd:source,windowsHide:true,stdio:'pipe'});

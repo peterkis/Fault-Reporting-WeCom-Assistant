@@ -5,7 +5,7 @@ import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { g2CandidateInventory, isG2CandidatePath } from './p2-g2-candidate.mjs';
 import { assertG2EvidenceTime } from './p2-g2-evidence-time.mjs';
-import { SS009_VALIDATORS } from './yxx-self-service-verification.mjs';
+import { SS009_VALIDATORS, verifyYxxReceipts } from './yxx-self-service-verification.mjs';
 
 export const CURRENT_YXX_POINTER='plans/yxx-current-readiness.json';
 type Reference={path:string;sha256:string;bytes:number};
@@ -48,6 +48,76 @@ function artifact(root:string,runId:string,value:unknown):{path:string;bytes:Buf
   assert.match(ref.sha256,/^[a-f0-9]{64}$/u);assert.ok(Number.isSafeInteger(ref.bytes)&&ref.bytes>=0);
   const bytes=read(root,ref.path);assert.equal(bytes.length,ref.bytes);assert.equal(hash(bytes),ref.sha256);
   return {path:ref.path,bytes};
+}
+
+/** Bind specialized observations to their executed host and original artifacts. */
+export function verifyCurrentYxxSpecializedProof(root:string,report:Record<string,unknown>):void {
+  try{
+    assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+    const runId=report.run_id,proof=json(artifact(root,runId,report.specialized).bytes);
+    assert.equal(proof.schema_version,1);assert.equal(proof.kind,'CURRENT_SPECIALIZED_PROOF');assertG2EvidenceTime(proof);
+    for(const field of ['tested_head','tested_tree','candidate_fingerprint']){assert.ok(typeof report[field]==='string');assert.equal(proof[field],report[field]);}
+    // H's build manifest has H's identity. Reconstruct C's runtime inventory using
+    // C's archived manifest and the verified unchanged runtime files, without writing either.
+    const archived=artifact(root,runId,report.build).bytes;
+    const manifest=Buffer.from(new TextDecoder('utf-8',{fatal:true}).decode(archived).replaceAll('\r\n','\n'));
+    const inventory=g2CandidateInventory(path.join(root,'.build/runtime'));
+    assert.equal(inventory.files.filter(file=>file.path==='build-manifest.json').length,1);
+    const runtimeFingerprint=hash(Buffer.from(JSON.stringify(inventory.files.map(file=>file.path==='build-manifest.json'
+      ?{...file,sha256:hash(manifest),bytes:manifest.length}:file))));
+    assert.ok(Array.isArray(report.current_runs)&&report.current_runs.length>0);
+    const observed=new Map<string,{selector:Record<string,unknown>;receipt:Record<string,unknown>;channel:string}>();
+    const selectorKey=(value:unknown):string=>{
+      const item=object(value);assert.deepEqual(Object.keys(item).sort(),['channel','receipt_index','tap_path']);
+      assert.ok(typeof item.tap_path==='string');assert.ok(item.channel==='SS009_RECEIPT'||item.channel==='SS010_BROWSER');
+      assert.ok(typeof item.receipt_index==='number'&&Number.isSafeInteger(item.receipt_index)&&item.receipt_index>=0);
+      return JSON.stringify([item.tap_path,item.channel,item.receipt_index]);
+    };
+    for(const reference of report.current_runs){
+      const summary=artifact(root,runId,reference),run=json(summary.bytes);assert.ok(Array.isArray(run.files));
+      for(const value of run.files){
+        const file=object(value);assert.ok(typeof file.tap_path==='string');assert.match(file.tap_path,/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,240}$/u);
+        assert.ok(['SOURCE_HOST','STAGED_RUNTIME','MIXED_EXPLICIT_ROOTS'].includes(String(file.mode)));
+        const tap=artifact(root,runId,{path:path.posix.dirname(summary.path)+'/'+file.tap_path,sha256:file.tap_sha256,bytes:file.tap_bytes});
+        const text=new TextDecoder('utf-8',{fatal:true}).decode(tap.bytes);
+        for(const channel of ['SS009_RECEIPT','SS010_BROWSER']){
+          for(const [index,match] of [...text.matchAll(new RegExp('^# '+channel+' (.+)\\r?$','gmu'))].entries()){
+            assert.ok(match[1]);const receipt=object(JSON.parse(match[1]) as unknown);assertG2EvidenceTime(receipt);
+            assert.equal(receipt.candidate_fingerprint,file.mode==='SOURCE_HOST'?report.candidate_fingerprint:runtimeFingerprint);
+            if(channel==='SS009_RECEIPT'){assert.equal(receipt.status,'PASS');assert.ok(['fault','capacity','catalog','browser','cleanup'].includes(String(receipt.kind)));}
+            const selector={tap_path:tap.path,channel,receipt_index:index},key=selectorKey(selector);assert.equal(observed.has(key),false);
+            observed.set(key,{selector,receipt,channel});
+          }
+        }
+      }
+    }
+    assert.ok(Array.isArray(proof.observations));assert.deepEqual(proof.observations.map(selectorKey).sort(),[...observed.keys()].sort());
+    const all=[...observed.values()],legacy=all.filter(item=>item.channel==='SS009_RECEIPT').map(item=>item.receipt);
+    for(const kind of ['fault','capacity','catalog'])verifyYxxReceipts(kind,legacy.filter(item=>item.kind===kind));
+    assert.ok(legacy.filter(item=>item.kind==='cleanup').length>=10);
+    const browsers=all.filter(item=>item.channel==='SS010_BROWSER'||item.receipt.kind==='browser');
+    assert.equal(browsers.filter(item=>item.channel==='SS009_RECEIPT').length,1);assert.equal(browsers.filter(item=>item.channel==='SS010_BROWSER').length,1);
+    assert.ok(Array.isArray(proof.images));const images=proof.images.map(object),expectedImages:string[]=[];
+    for(const browser of browsers){
+      const receipt=browser.receipt;assert.equal(receipt.real_browser,true);assert.equal(receipt.external_network_calls,0);
+      if(browser.channel==='SS009_RECEIPT'){assert.equal(receipt.real_pg,true);assert.equal(receipt.tickets,2);assert.equal(receipt.simulated_provider_calls,1);}
+      else assert.equal(receipt.real_postgres,true);
+      assert.ok(Array.isArray(receipt.screenshots));const screenshots=receipt.screenshots.map(object);
+      assert.deepEqual(screenshots.map(item=>[item.width,item.height]),[[390,844],[1440,900]]);
+      for(const screenshot of screenshots){
+        const key=selectorKey(browser.selector),matches=images.filter(item=>selectorKey(item.observation)===key&&item.width===screenshot.width&&item.height===screenshot.height);
+        assert.equal(matches.length,1);const match=matches[0];assert.ok(match);
+        const image=artifact(root,runId,match.artifact);assert.equal(hash(image.bytes),screenshot.sha256);
+        assert.ok(image.bytes.length>24);assert.equal(image.bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+        assert.equal(image.bytes.readUInt32BE(8),13);assert.equal(image.bytes.subarray(12,16).toString('ascii'),'IHDR');
+        assert.equal(image.bytes.readUInt32BE(16),screenshot.width);assert.equal(image.bytes.readUInt32BE(20),screenshot.height);
+        expectedImages.push(image.path);
+      }
+    }
+    assert.equal(images.length,4);assert.equal(new Set(expectedImages).size,4);
+  }catch{
+    throw Object.assign(new Error('CURRENT_SPECIALIZED_PROOF_INVALID'),{code:'CURRENT_SPECIALIZED_PROOF_INVALID',stage:'SPECIALIZED_PROOF'});
+  }
 }
 
 /** Original SS009 results belong only to the fixed historical checkout. */

@@ -12,7 +12,7 @@ This progress document is not acceptance evidence.
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
-| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution/review/cleanup/historical components implemented; specialized proof, full strict consumer and publisher pending |
+| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution/review/cleanup/historical/specialized components implemented; scenario/source accounting, full strict consumer and publisher pending |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
@@ -65,6 +65,22 @@ accepts the actual `historical-ss009-proof-02` originals (external replay result
 `stage04-historical-replay-01/result.json`). An earlier routed attempt timed out at
 240 seconds; its failure record is retained. A targeted rerun passed 2/2 and the
 complete rerun passed 8/8 in about 35 seconds. No timeout threshold was relaxed.
+
+Specialized proof now binds all original SS009/SS010 TAP observations to the
+executed host fingerprint. Runtime identity uses the tested candidate's archived
+build manifest plus unchanged runtime files, so evidence-only publication does not
+misbind C's receipts to H's new build metadata. Existing fault/capacity/catalog
+semantics are reused. Both real browser/PostgreSQL receipt sets, zero external
+network calls, four original screenshots and their digests/PNG dimensions are
+required. Observations may not be omitted, duplicated or replaced by a PASS summary.
+The public strict entry passed RED->GREEN for unsupported specialized summaries.
+Routed development tests pass 9/9, including runtime drift, wrong host fingerprint,
+missing capacity/observations, missing real PostgreSQL and damaged screenshot
+rejections, plus evidence-only manifest successor compatibility. Historical receipts
+and images reused by the parser fixtures are explicitly synthetic test inputs;
+they are not current execution evidence. Actual current full execution, scenario
+and source accounting, current artifact guarding at final strict success, immutable
+publication and final READY remain pending.
 
 Stage 4 execution core now checks the complete declared current set across disjoint
 run references, per-file success, source/actual execution hashes, archived build
