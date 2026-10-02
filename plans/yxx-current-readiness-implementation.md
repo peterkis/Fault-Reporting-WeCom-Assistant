@@ -383,3 +383,13 @@ alone never prove completeness. Planning/execution tooling regression: 5/5, with
 both missing-capability RED logs retained. Receipts: stage05-shard-red,
 stage05-shard-execution-red and stage05-shard-acceptance-final.log. Full shard runs
 and CI wall-time measurement remain pending; no time-saving result is claimed yet.
+
+Stage 5 CI collection slice: `verify-current-shards.mts` checks downloaded shard
+summaries against the current planned sets, exact expected Git head/tree, clean
+and identical build manifests, all raw TAP/stderr/case-trace byte hashes, TAP
+counts and the complete 215-file union. Its output explicitly sets readiness=false;
+this collector is not the acceptance packet verifier. Public CLI RED->GREEN fixture
+coverage rejects missing summaries, omitted work, duplicate shard identity, forged
+counts, corrupt raw TAP and a wrong build identity. Synthetic collection fixtures
+are parser/integrity regression inputs only, never acceptance evidence. Log:
+stage05-collection-green.log. Workflow integration remains pending.

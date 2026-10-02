@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { spawnSync, execFileSync } from 'node:child_process';
-import { copyFileSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { record, sourceRoot, strings } from './common.mjs';
+import { record, sourceRoot, strings, hash, git } from './common.mjs';
 import { ACCEPTANCE_PATH, currentAcceptance, currentSelection } from './current-acceptance.mjs';
 
 test('current acceptance CLI accounts for all registered files and identifies historical scope separately', () => {
@@ -100,5 +100,48 @@ test('current shard execution validates its identity and isolation before buildi
   for(const args of [['--shard','1/4'],['--current-full','--shard','1/4','--shard','2/4'],
     ['--current-full','--shard','1/4','--selection','canary']]){
     const result=run(args);assert.equal(result.status,1);assert.match(result.stderr,/MIGRATION_CURRENT_ARGUMENTS/u);
+  }
+});
+
+test('CI shard collection validates all files and original logs and rejects incomplete or corrupt collections',()=>{
+  const root=sourceRoot(),directory=mkdtempSync(path.join(tmpdir(),'current-shard-collection-'));
+  try{
+    const head=git(root,['rev-parse','HEAD']),tree=git(root,['rev-parse','HEAD^{tree}']);
+    const manifest=Buffer.from(JSON.stringify({source:{head,tree,dirty:false},synthetic_collection_fixture:true}));
+    const counts={tests:1,pass:1,fail:0,cancelled:0,skipped:0,todo:0};
+    const summaries:{file:string;text:string}[]=[];
+    for(let index=1;index<=4;index++){
+      const folder=path.join(directory,`shard-${index}`),tests=path.join(folder,'tests');mkdirSync(tests,{recursive:true});
+      writeFileSync(path.join(folder,'build-manifest.json'),manifest);
+      const selection=currentSelection(root,`${index}/4`);
+      const files=selection.entries.map((entry,number)=>{
+        const refs:Record<string,unknown>={};
+        for(const [kind,bytes] of [['tap',Buffer.from('TAP version 13\n1..1\nok 1 - synthetic collection fixture\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n')],['stderr',Buffer.alloc(0)],['case_trace',Buffer.from('{"synthetic_collection_fixture":true}\n')]] as const){
+          const name=`${number}.${kind}`;writeFileSync(path.join(tests,name),bytes);
+          Object.assign(refs,{[kind+'_path']:name,[kind+'_sha256']:hash(bytes),[kind+'_bytes']:bytes.length});
+        }
+        return {path:entry.path,status:'PASS',exit_code:0,signal:null,counts,...refs};
+      });
+      const file=path.join(tests,'summary.json'),text=JSON.stringify({selection:selection.label,status:'SELECTED_TESTS_PASS',
+        representation:'EXPLICIT_ROUTED_HOSTS',manifest_sha256:hash(manifest),production_ready:false,
+        selected_files:selection.entries.map(entry=>entry.path),files,not_run:[],counts:{...counts,tests:files.length,pass:files.length}});
+      writeFileSync(file,text);summaries.push({file,text});
+    }
+    const run=()=>spawnSync(process.execPath,[path.join(root,'.build/tools/verify-current-shards.mjs'),directory,'--shards','4','--expected-head',head],{cwd:root,encoding:'utf8',windowsHide:true,timeout:30_000});
+    const positive=run();assert.equal(positive.status,0,positive.stdout+positive.stderr);
+    const result=record(JSON.parse(positive.stdout) as unknown);assert.equal(result.files,215);assert.equal(result.readiness,false);
+    const first=summaries[0];assert.ok(first);const original=record(JSON.parse(first.text) as unknown);
+    for(const mutation of [{...original,not_run:['tests/missing.test.mjs']},{...original,selected_files:[]},
+      {...original,selection:'yxx-current-shard-2/4'},{...original,counts:{...counts,tests:999}}]){
+      writeFileSync(first.file,JSON.stringify(mutation));assert.equal(run().status,1);writeFileSync(first.file,first.text);
+    }
+    const tap=path.join(directory,'shard-1/tests/0.tap'),bytes=readFileSync(tap);writeFileSync(tap,'corrupted');
+    assert.equal(run().status,1);writeFileSync(tap,bytes);
+    const build=path.join(directory,'shard-1/build-manifest.json');writeFileSync(build,JSON.stringify({source:{head:'0'.repeat(40),tree,dirty:false}}));
+    assert.equal(run().status,1);writeFileSync(build,manifest);
+    rmSync(path.join(directory,'shard-4/tests/summary.json'));assert.equal(run().status,1);
+  }finally{
+    assert.equal(path.dirname(directory),path.resolve(tmpdir()));assert.ok(path.basename(directory).startsWith('current-shard-collection-'));
+    rmSync(directory,{recursive:true,force:true});
   }
 });
