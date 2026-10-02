@@ -1,0 +1,30 @@
+{
+  "dataset": "synthetic-cases.jsonl",
+  "sha256": "b9fd492b07362ca98c6c2a304e2905a103f8858b61c982f93d06170c48a0d44e",
+  "count": 132,
+  "author": "assistant-authored synthetic diagnostic cases; not independent human gold labels",
+  "frozen_before_predictions": true,
+  "model_or_rule_tuning": false,
+  "common_topic_classes": [
+    "HIS",
+    "EMR",
+    "PACS",
+    "LIS",
+    "INSURANCE",
+    "QUEUE",
+    "PRINTER",
+    "PC",
+    "NETWORK"
+  ],
+  "common_unambiguous_groups": [
+    "literal",
+    "colloquial",
+    "supplement"
+  ],
+  "limitations": [
+    "Small purposive stress set, not a random production sample",
+    "HIS coarse mapping loses service granularity",
+    "Multiple independent topics must abstain for this single-topic diagnostic",
+    "No real patient/staff data; no external inference calls"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "repository_head_at_inspection": "38b6af4ab22a6a9a5bd3f5fe7752d691c56c7f38",
+  "repository_head_after_experiment": "38b6af4ab22a6a9a5bd3f5fe7752d691c56c7f38",
+  "source_hash_checks": {
+    "src/p2-007-rule-engine.mjs": true,
+    "src/p2-007-alias-resolver.mjs": true,
+    "src/p2-007-fault-taxonomy.mjs": true,
+    "src/p2-015-decision-router.mjs": true,
+    "config_examples/p2-007-deterministic-rules.example.json": true,
+    "config_examples/p2-007-alias-dictionary.example.json": true,
+    "config_examples/p2-007-service-catalog.example.json": true,
+    "old:src\\outpatient_classifier\\data_pipeline.py": true,
+    "old:src\\outpatient_classifier\\models.py": true,
+    "old:src\\outpatient_classifier\\preprocess.py": true,
+    "old:src\\outpatient_classifier\\service.py": true,
+    "old:src\\outpatient_classifier\\taxonomy.py": true,
+    "old:src\\outpatient_classifier\\training.py": true,
+    "old:src\\outpatient_classifier\\__init__.py": true,
+    "old:models\\training_manifest.json": true,
+    "old:models\\tfidf_head.joblib": true,
+    "old:models\\bge_head.joblib": true,
+    "old:model_assets\\bge-small-zh-v1.5\\model_int8.onnx": true,
+    "jev_unique_case_ids": true,
+    "jev_same_model": true,
+    "jev_probabilities_finite_in_range": true
+  },
+  "catalog_service_count": 55,
+  "dictionary_service_alias_count": 291,
+  "dictionary_symptom_alias_count": 154,
+  "rule_count": 90,
+  "initial_existing_user_changes": [
+    "CONTEXT.md",
+    "design.md"
+  ],
+  "other_concurrent_changes_observed": [
+    "docs/domain-modeling/domain-design.md",
+    "adr/0024_staff_completion_and_takeover.md"
+  ],
+  "scope": "Research artifacts only; no source edits, DB, feature flags, deployment, ticket writes, external messages, git commits or push"
+}

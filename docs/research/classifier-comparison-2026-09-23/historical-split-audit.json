@@ -1,0 +1,40 @@
+{
+  "train": 762,
+  "test": 186,
+  "train_labels": 23,
+  "test_labels": 20,
+  "group_overlap_count": 0,
+  "test_records_with_group_in_train": 0,
+  "identical_text_overlap_count": 7,
+  "test_records_identical_text_in_train": 10,
+  "label_support": {
+    "hardware.call_device": 1,
+    "hardware.other": 4,
+    "hardware.pc_display": 30,
+    "hardware.printer": 69,
+    "information_consultation": 1,
+    "network": 60,
+    "service_request": 2,
+    "software.consumables": 14,
+    "software.emr_empi": 27,
+    "software.his_clinical": 68,
+    "software.his_outpatient": 261,
+    "software.integrated_workstation": 22,
+    "software.lis_transfusion": 39,
+    "software.medical_insurance": 15,
+    "software.mobile_nursing": 2,
+    "software.nursing": 3,
+    "software.os_office": 3,
+    "software.other": 6,
+    "software.other_clinical": 14,
+    "software.pacs_ris": 59,
+    "software.public_platform": 10,
+    "software.queue_calling": 49,
+    "software.self_service": 3
+  },
+  "test_sources": {
+    "chat_message": 179,
+    "knowledge_base": 7
+  },
+  "empty_train": 0
+}

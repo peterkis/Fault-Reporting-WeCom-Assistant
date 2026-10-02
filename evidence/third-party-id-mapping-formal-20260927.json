@@ -1,0 +1,65 @@
+{
+  "schema_version": "third-party-id-mapping-verification-v1",
+  "run_id": "54ed6bfd-8fe8-42c1-a34e-1fd3f9875bda",
+  "environment": "formal",
+  "recorded_at": "2026-09-27T01:53:19.389Z",
+  "candidate": {
+    "git_sha": "a077e1f53fda09a371313ba0c3be56a60adbb39d",
+    "node_version": "v24.19.0"
+  },
+  "scope": {
+    "subject": "USER_A",
+    "current_yxx_oauth": "NOT_RUN",
+    "historical_yxx_evidence": "PASS_HISTORICAL_EVIDENCE",
+    "raw_values_recorded": false
+  },
+  "official_conversion": {
+    "endpoint": "/batch/userid_to_openuserid",
+    "http_status": 200,
+    "errcode": 0,
+    "returned_count": 1,
+    "invalid_count": 0,
+    "userid_match": true,
+    "open_userid_present": true,
+    "status": "PASS"
+  },
+  "provider_directory": {
+    "endpoint": "/token/getOrganizationTree",
+    "http_status": 200,
+    "result": "TRUE",
+    "tree_user_count": 4290,
+    "exact_wecom_id_match_count": 0,
+    "status": "UNVERIFIED",
+    "reason": "NO_EXACT_PROVIDER_WECOM_ID_MATCH"
+  },
+  "detail_matrix": {
+    "status": "NOT_RUN",
+    "reason": "NO_UNIQUE_PROVIDER_DIRECTORY_MATCH",
+    "inputs": [
+      "tuishiben_id",
+      "user_id",
+      "wecom_id",
+      "official_open_userid",
+      "bot_raw_userid",
+      "historical_yxx_oauth_userid"
+    ]
+  },
+  "safety": {
+    "raw_ids_persisted": false,
+    "raw_personal_values_persisted": false,
+    "raw_tokens_persisted": false,
+    "database_touched": false,
+    "app_runtime_started": false,
+    "automatic_retry": false,
+    "diagnostic_auth_query_parameters_persisted": false
+  },
+  "gate": {
+    "status": "UNVERIFIED",
+    "not_claimed": [
+      "CURRENT_YXX_OAUTH_MATCH",
+      "BOT_PROVIDER_SAME_NAMESPACE",
+      "THIRD_PARTY_DETAIL_MATCH",
+      "PERSON_DATA_PERSISTENCE_APPROVAL"
+    ]
+  }
+}

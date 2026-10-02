@@ -1,0 +1,89 @@
+// Read-only calls to the real pure rule engine and decision router; no DB/runtime.
+import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
+import os from 'node:os';
+import { createRuleEngine } from '../../../src/p2-007-rule-engine.mjs';
+import { routeP2007Decision } from '../../../src/p2-015-decision-router.mjs';
+
+const dir = new URL('./', import.meta.url);
+const raw = readFileSync(new URL('synthetic-cases.jsonl', dir));
+const cases = raw.toString('utf8').trim().split('\n').map(line => JSON.parse(line));
+const start = performance.now();
+const engine = createRuleEngine();
+const loadMs = performance.now() - start;
+
+function topic(code) {
+  if (!code) return 'UNKNOWN';
+  if (code === 'CLINICAL.EMR_DOCUMENTATION') return 'EMR';
+  if (code.startsWith('CLINICAL.') || code.startsWith('FIN.') || code.startsWith('PHARM.')) return 'HIS';
+  if (code === 'ACCESS.QUEUE_CALLING' || code === 'ENDPOINT.QUEUE_DISPLAY') return 'QUEUE';
+  if (code.startsWith('ACCESS.')) return 'HIS';
+  if (code.startsWith('DIAG.LAB_')) return 'LIS';
+  if (code.startsWith('DIAG.IMAGING_')) return 'PACS';
+  if (code.startsWith('INSURANCE.')) return 'INSURANCE';
+  if (code.startsWith('NETWORK.')) return 'NETWORK';
+  if (code === 'PRINT.PRINTER_DEVICE') return 'PRINTER';
+  if (code === 'ENDPOINT.OPERATING_SYSTEM') return 'OFFICE';
+  if (code.startsWith('ENDPOINT.')) return 'PC';
+  if (code.startsWith('IDENTITY.')) return 'IDENTITY';
+  if (code === 'ROUTE.LOGISTICS_FACILITY') return 'LOGISTICS';
+  return `UNMAPPED:${code}`;
+}
+
+function predict(c, messages = c.messages) {
+  // Matches the text aggregation performed by sourceText/loadWindow.
+  const text = messages.join('\n');
+  const out = engine.evaluate({ text, source_ref: `synthetic:${c.id}`, observed_at: '2026-09-23 12:00:00' });
+  const route = routeP2007Decision({ rule_output: out, context: {
+    service_intake_id: `synthetic-${c.id}`, journey_ref: `journey-${c.id}`,
+    source_refs: messages.map((_, i) => `${c.id}:m${i + 1}`),
+    message_sequence_window: { start: 1, end: messages.length, count: messages.length },
+    safe_normalized_text: text, conflicts: [], reliable_follow_up: false,
+  } });
+  return {
+    topic: topic(out.selected_service_code), native_label: out.selected_service_code,
+    candidates: out.service_candidates, symptoms: out.symptom_codes, domain_intent: out.domain_intent,
+    confidence: out.confidence, result_state: out.result_state, human_review: out.requires_human_review,
+    route: route.result_code, reason: route.reason_code, ticket_recommended: route.ticket_creation_recommended,
+    action_types: route.safe_action_suggestions.map(a => a.action_type),
+    matched_rules: out.matched_rules.map(r => r.rule_id),
+  };
+}
+
+for (const c of cases) predict(c);
+const timings = [], perGroup = {}, predictions = [];
+for (let repeat = 0; repeat < 5; repeat++) {
+  for (const c of cases) {
+    const before = performance.now();
+    const result = predict(c);
+    const elapsed = performance.now() - before;
+    timings.push(elapsed);
+    (perGroup[c.group] ??= []).push(elapsed);
+    if (repeat === 0) predictions.push({ id: c.id, ...result,
+      revisions: c.messages.length > 1 ? c.messages.map((_, i) => predict(c, c.messages.slice(0, i + 1))) : undefined });
+  }
+}
+function stats(values) {
+  const sorted = values.toSorted((a, b) => a - b);
+  return { n: sorted.length, p50_ms: sorted[Math.ceil(sorted.length * 0.5) - 1],
+    p95_ms: sorted[Math.ceil(sorted.length * 0.95) - 1], max_ms: sorted.at(-1) };
+}
+const sourceFiles = ['src/p2-007-rule-engine.mjs', 'src/p2-007-alias-resolver.mjs', 'src/p2-007-fault-taxonomy.mjs',
+  'src/p2-015-decision-router.mjs', 'config_examples/p2-007-deterministic-rules.example.json',
+  'config_examples/p2-007-alias-dictionary.example.json', 'config_examples/p2-007-service-catalog.example.json'];
+const hashes = Object.fromEntries(sourceFiles.map(p => [p, createHash('sha256').update(readFileSync(new URL(`../../../${p}`, dir))).digest('hex')]));
+const result = {
+  adapter: 'real createRuleEngine + routeP2007Decision, same-intake text joined with newline; no persistence or action execution',
+  dataset_sha256: createHash('sha256').update(raw).digest('hex'), source_hashes: hashes,
+  environment: { node: process.version, platform: process.platform, cpu: os.cpus()[0].model,
+    logical_cpus: os.cpus().length, total_memory_gib: os.totalmem() / 2 ** 30 },
+  rule_set_version: engine.rule_set_version, load_ms: loadMs, warm_latency: stats(timings),
+  group_latency: Object.fromEntries(Object.entries(perGroup).map(([k, v]) => [k, stats(v)])),
+  peak_rss_mib: process.resourceUsage().maxRSS / 1024,
+  latency_scope: 'pure rule evaluation, provenance/hash building and route selection; 132 cases x5, one request at a time, one full warm pass; excludes DB, queues, network and UI',
+  predictions,
+};
+writeFileSync(new URL('rules-results.json', dir), `${JSON.stringify(result, null, 2)}\n`);
+console.log(JSON.stringify({ output: fileURLToPath(new URL('rules-results.json', dir)), warm_latency: result.warm_latency, peak_rss_mib: result.peak_rss_mib }));
