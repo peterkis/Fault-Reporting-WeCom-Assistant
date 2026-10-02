@@ -1,0 +1,177 @@
+{
+  "purpose": "Public-source verification for model-research.md; no customer text, inference request, credential, downloaded weights, or full copyrighted article is included.",
+  "retrievalMethod": "Firecrawl live scrape, maxAge=0",
+  "retrievalCompletedUtc": "2026-09-23T06:48:24Z",
+  "sources": [
+    {
+      "id": "source-0",
+      "url": "https://typesafe.ai/blog/introducing-system-one-models-and-jev",
+      "canonicalUrl": "https://typesafe.ai/blog/introducing-system-one-models-and-jev",
+      "title": "Introducing System One Models & Jev - TypeSafe AI Blog",
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd03-4f8e-752c-bc1b-6240115bbb66",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-2",
+      "url": "https://docs.typesafe.ai/",
+      "canonicalUrl": "https://docs.typesafe.ai/introduction",
+      "title": "Introduction - TypeSafe AI",
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd03-9ec7-77e8-9ddb-aaadc0765e8b",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-3",
+      "url": "https://evals.typesafe.ai/",
+      "canonicalUrl": "https://evals.typesafe.ai/",
+      "title": "Workflow evals",
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd03-a11b-73bc-af09-eeea2fa851eb",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-6",
+      "url": "https://docs.typesafe.ai/confidence",
+      "canonicalUrl": "https://docs.typesafe.ai/confidence",
+      "title": "Confidence - TypeSafe AI",
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd03-ebb6-7419-ae7d-0ad10feb6c3d",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-7",
+      "url": "https://docs.typesafe.ai/models.md",
+      "canonicalUrl": "https://docs.typesafe.ai/models.md",
+      "title": null,
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd04-219e-74bd-9704-0db5cac82a74",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-8",
+      "url": "https://docs.typesafe.ai/model-jaggedness/jev-1.13.md",
+      "canonicalUrl": "https://docs.typesafe.ai/model-jaggedness/jev-1.13.md",
+      "title": null,
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd04-23b0-703d-b5f6-83bf10466017",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-9",
+      "url": "https://docs.typesafe.ai/api.md",
+      "canonicalUrl": "https://docs.typesafe.ai/api.md",
+      "title": null,
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd04-23fc-774c-913f-15e8de4fbf0d",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-11",
+      "url": "https://typesafe.ai/legal/data-processing",
+      "canonicalUrl": "https://typesafe.ai/legal/data-processing",
+      "title": "Data processing addendum - TypeSafe AI",
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd04-c48d-7789-ae2c-38d2a4012be5",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-12",
+      "url": "https://typesafe.ai/legal/mca",
+      "canonicalUrl": "https://typesafe.ai/legal/mca",
+      "title": "Master customer agreement - TypeSafe AI",
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd04-c51b-771b-919f-3e60ddf116db",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-13",
+      "url": "https://openrouter.ai/blog/tutorials/jev-vs-llm-when-to-use-each/",
+      "canonicalUrl": "https://openrouter.ai/blog/tutorials/jev-vs-llm-when-to-use-each/",
+      "title": "Jev vs LLM: What Jev Is and When to Use It (Benchmarks) — OpenRouter Blog",
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd04-c458-75d9-9351-4ac9801c1c74",
+      "sourceKind": "measurement-publisher"
+    },
+    {
+      "id": "source-14",
+      "url": "https://docs.litellm.ai/docs/auto_router/benchmarks",
+      "canonicalUrl": "https://docs.litellm.ai/docs/auto_router/benchmarks",
+      "title": "Public Benchmarks | liteLLM",
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd04-c4a5-7139-bf37-fb4b85cd9a0b",
+      "sourceKind": "measurement-publisher"
+    },
+    {
+      "id": "source-15",
+      "url": "https://huggingface.co/BAAI/bge-small-zh-v1.5",
+      "canonicalUrl": "https://huggingface.co/BAAI/bge-small-zh-v1.5",
+      "title": "BAAI/bge-small-zh-v1.5 · Hugging Face",
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd05-25e6-765a-990a-bbaafd0c383c",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-16",
+      "url": "https://docs.typesafe.ai/introduction/machine-learning-primer.md",
+      "canonicalUrl": "https://docs.typesafe.ai/introduction/machine-learning-primer.md",
+      "title": null,
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd05-25fa-73ee-814c-0a9388569cd6",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-17",
+      "url": "https://huggingface.co/BAAI/bge-small-zh-v1.5/raw/main/config.json",
+      "canonicalUrl": "https://huggingface.co/BAAI/bge-small-zh-v1.5/raw/main/config.json",
+      "title": null,
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd05-8074-7428-baef-040e70a4da84",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-18",
+      "url": "https://huggingface.co/BAAI/bge-small-zh-v1.5/raw/main/1_Pooling/config.json",
+      "canonicalUrl": "https://huggingface.co/BAAI/bge-small-zh-v1.5/raw/main/1_Pooling/config.json",
+      "title": null,
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd05-80d4-723d-906e-a8a45b4be0df",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "source-19",
+      "url": "https://huggingface.co/BAAI/bge-small-zh-v1.5/raw/main/sentence_bert_config.json",
+      "canonicalUrl": "https://huggingface.co/BAAI/bge-small-zh-v1.5/raw/main/sentence_bert_config.json",
+      "title": null,
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd05-80b2-702c-a964-ff1bbd55b15d",
+      "sourceKind": "first-party"
+    },
+    {
+      "id": "legal-index",
+      "url": "https://docs.typesafe.ai/legal.md",
+      "canonicalUrl": "https://docs.typesafe.ai/legal.md",
+      "title": "TypeSafe Legal",
+      "retrievedDate": "2026-09-23",
+      "statusCode": 200,
+      "scrapeId": "01a0cd04-8671-73f5-a025-ce7708aea76b",
+      "sourceKind": "first-party"
+    }
+  ]
+}

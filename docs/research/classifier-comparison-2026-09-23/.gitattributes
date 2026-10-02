@@ -1,0 +1,2 @@
+# Frozen research inputs, responses and archived source retain their original bytes.
+* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

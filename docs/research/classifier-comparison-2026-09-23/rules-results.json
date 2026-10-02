@@ -1,0 +1,4219 @@
+{
+  "adapter": "real createRuleEngine + routeP2007Decision, same-intake text joined with newline; no persistence or action execution",
+  "dataset_sha256": "b9fd492b07362ca98c6c2a304e2905a103f8858b61c982f93d06170c48a0d44e",
+  "source_hashes": {
+    "src/p2-007-rule-engine.mjs": "f153b54f0052b0a8ec1f450bb9619f0bd040913375bd57cd2f56496ebb94d3c1",
+    "src/p2-007-alias-resolver.mjs": "9e717a4ae319ad610993df6de8b1ac18e4c57d761a3c83c43f969a4569afa7c6",
+    "src/p2-007-fault-taxonomy.mjs": "bdd785e95416a06a692f4211f8815619354149e431a38476b85e3ac3de2fd73e",
+    "src/p2-015-decision-router.mjs": "6381fc4c5e7ee645734aa1bb26a2676ccb15da5ca985318261c74cfd71c2d1e0",
+    "config_examples/p2-007-deterministic-rules.example.json": "a21860fb341570e85e3d8cefc5562690e5ca8ae86984ad664b0c843d660731dd",
+    "config_examples/p2-007-alias-dictionary.example.json": "8cb4366d085d5ac4d0e635e3d0501ef1ea011576b762db51aad32831624b1b79",
+    "config_examples/p2-007-service-catalog.example.json": "6193456fce98fc72dfcab4e3e08368242f12cbc26f71a00baf48bd0e267e5efb"
+  },
+  "environment": {
+    "node": "v24.18.0",
+    "platform": "win32",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-1260P",
+    "logical_cpus": 16,
+    "total_memory_gib": 15.715263366699219
+  },
+  "rule_set_version": "0.1.4-g2",
+  "load_ms": 41.0364,
+  "warm_latency": {
+    "n": 660,
+    "p50_ms": 0.5532999999999788,
+    "p95_ms": 1.1662000000000035,
+    "max_ms": 2.6171000000000504
+  },
+  "group_latency": {
+    "literal": {
+      "n": 180,
+      "p50_ms": 0.5861999999999625,
+      "p95_ms": 1.2812000000000126,
+      "max_ms": 2.6171000000000504
+    },
+    "colloquial": {
+      "n": 180,
+      "p50_ms": 0.46889999999996235,
+      "p95_ms": 0.8625000000000114,
+      "max_ms": 1.681699999999978
+    },
+    "insufficient": {
+      "n": 60,
+      "p50_ms": 0.4108999999999696,
+      "p95_ms": 0.7391999999999825,
+      "max_ms": 1.1662000000000035
+    },
+    "multiple_topics": {
+      "n": 60,
+      "p50_ms": 0.6862000000000421,
+      "p95_ms": 0.9600000000000364,
+      "max_ms": 1.7685999999999922
+    },
+    "supplement": {
+      "n": 60,
+      "p50_ms": 0.6779999999999973,
+      "p95_ms": 1.3065000000000282,
+      "max_ms": 1.7652000000000498
+    },
+    "catalog_extension": {
+      "n": 60,
+      "p50_ms": 0.51400000000001,
+      "p95_ms": 1.0997999999999593,
+      "max_ms": 2.246900000000096
+    },
+    "route_controls": {
+      "n": 60,
+      "p50_ms": 0.5819999999999936,
+      "p95_ms": 1.3600000000000136,
+      "max_ms": 2.3613000000000284
+    }
+  },
+  "peak_rss_mib": 77.00390625,
+  "latency_scope": "pure rule evaluation, provenance/hash building and route selection; 132 cases x5, one request at a time, one full warm pass; excludes DB, queues, network and UI",
+  "predictions": [
+    {
+      "id": "S001",
+      "topic": "HIS",
+      "native_label": "CLINICAL.OUTPATIENT_WORKSTATION",
+      "candidates": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "PERFORMANCE.HANG_SPINNING"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-001",
+        "INT-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S002",
+      "topic": "HIS",
+      "native_label": "CLINICAL.INPATIENT_WORKSTATION",
+      "candidates": [
+        "CLINICAL.INPATIENT_WORKSTATION"
+      ],
+      "symptoms": [
+        "AUTH.LOGIN_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S003",
+      "topic": "HIS",
+      "native_label": "CLINICAL.OUTPATIENT_WORKSTATION",
+      "candidates": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "symptoms": [
+        "TRANSACTION.SAVE_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-011",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S004",
+      "topic": "HIS",
+      "native_label": "CLINICAL.OUTPATIENT_WORKSTATION",
+      "candidates": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "symptoms": [
+        "PERFORMANCE.SLOW"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NORM-004",
+        "INT-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S005",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S006",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S007",
+      "topic": "HIS",
+      "native_label": "CLINICAL.PRESCRIPTION_ENTRY",
+      "candidates": [
+        "CLINICAL.PRESCRIPTION_ENTRY"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S008",
+      "topic": "HIS",
+      "native_label": "ACCESS.REGISTRATION",
+      "candidates": [
+        "ACCESS.REGISTRATION"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S009",
+      "topic": "EMR",
+      "native_label": "CLINICAL.EMR_DOCUMENTATION",
+      "candidates": [
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "symptoms": [
+        "TRANSACTION.SAVE_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-011",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S010",
+      "topic": "EMR",
+      "native_label": "CLINICAL.EMR_DOCUMENTATION",
+      "candidates": [
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S011",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S012",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "PERFORMANCE.HANG_SPINNING",
+        "PERFORMANCE.SLOW"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S013",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S014",
+      "topic": "EMR",
+      "native_label": "CLINICAL.EMR_DOCUMENTATION",
+      "candidates": [
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "STATE-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S015",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S016",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S017",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_VIEWER",
+      "candidates": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "TRANSACTION.TIMEOUT"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S018",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_VIEWER",
+      "candidates": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S019",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_VIEWER",
+      "candidates": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S020",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_REPORT",
+      "candidates": [
+        "DIAG.IMAGING_REPORT"
+      ],
+      "symptoms": [
+        "PERFORMANCE.HANG_SPINNING"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NORM-006",
+        "SYM-001",
+        "INT-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S021",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_VIEWER",
+      "candidates": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S022",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_VIEWER",
+      "candidates": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S023",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S024",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [
+        "CLINICAL.INPATIENT_WORKSTATION",
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "symptoms": [
+        "DATA.MISSING"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NORM-004",
+        "SYM-002",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S025",
+      "topic": "LIS",
+      "native_label": "DIAG.LAB_RESULT_VIEW",
+      "candidates": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "symptoms": [
+        "AUTH.LOGIN_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S026",
+      "topic": "LIS",
+      "native_label": "DIAG.LAB_RESULT_VIEW",
+      "candidates": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "symptoms": [
+        "UI.BLANK"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S027",
+      "topic": "LIS",
+      "native_label": "DIAG.LAB_RESULT_VIEW",
+      "candidates": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NORM-006",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S028",
+      "topic": "LIS",
+      "native_label": "DIAG.LAB_RESULT_VIEW",
+      "candidates": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "symptoms": [
+        "PRINT.NO_OUTPUT"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S029",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [
+        "DIAG.IMAGING_REPORT",
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "symptoms": [],
+      "domain_intent": "HOW_TO_QUESTION",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "BUSINESS_CONSULTATION",
+      "reason": "BUSINESS_POLICY_NOT_GUESSED",
+      "ticket_recommended": false,
+      "action_types": [
+        "ROUTE_BUSINESS_CONSULTATION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NORM-006",
+        "INT-004",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S030",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S031",
+      "topic": "HIS",
+      "native_label": "CLINICAL.LAB_ORDER_ENTRY",
+      "candidates": [
+        "CLINICAL.LAB_ORDER_ENTRY",
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S032",
+      "topic": "LIS",
+      "native_label": "DIAG.LAB_RESULT_VIEW",
+      "candidates": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S033",
+      "topic": "INSURANCE",
+      "native_label": "INSURANCE.ELIGIBILITY_AUDIT",
+      "candidates": [
+        "INSURANCE.ELIGIBILITY_AUDIT"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NORM-007",
+        "SYM-012",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S034",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "TRANSACTION.TIMEOUT"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S035",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S036",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "AUTH.LOGIN_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S037",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S038",
+      "topic": "INSURANCE",
+      "native_label": "INSURANCE.ELIGIBILITY_AUDIT",
+      "candidates": [
+        "INSURANCE.ELIGIBILITY_AUDIT"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NORM-007",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S039",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S040",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "PERFORMANCE.SLOW"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S041",
+      "topic": "QUEUE",
+      "native_label": "ACCESS.QUEUE_CALLING",
+      "candidates": [
+        "ACCESS.QUEUE_CALLING"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S042",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S043",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "UI.BLANK"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S044",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "AUTH.LOGIN_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S045",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S046",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S047",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S048",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "PERFORMANCE.SLOW"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S049",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "PERFORMANCE.SLOW",
+        "PRINT.JAM"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ROUTE-001",
+        "ASK-002",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S050",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "CONSUMABLE.EMPTY"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ROUTE-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S051",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S052",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "PRINT.JAM"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ROUTE-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S053",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S054",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S055",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S056",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S057",
+      "topic": "PC",
+      "native_label": "ENDPOINT.COMPUTER",
+      "candidates": [
+        "ENDPOINT.COMPUTER"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S058",
+      "topic": "PC",
+      "native_label": "ENDPOINT.DISPLAY",
+      "candidates": [
+        "ENDPOINT.DISPLAY"
+      ],
+      "symptoms": [
+        "STABILITY.BLACK_SCREEN"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S059",
+      "topic": "PC",
+      "native_label": "ENDPOINT.INPUT_DEVICE",
+      "candidates": [
+        "ENDPOINT.INPUT_DEVICE"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S060",
+      "topic": "PC",
+      "native_label": "ENDPOINT.INPUT_DEVICE",
+      "candidates": [
+        "ENDPOINT.INPUT_DEVICE"
+      ],
+      "symptoms": [
+        "HARDWARE.INPUT_FAILURE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S061",
+      "topic": "PC",
+      "native_label": "ENDPOINT.COMPUTER",
+      "candidates": [
+        "ENDPOINT.COMPUTER"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S062",
+      "topic": "PC",
+      "native_label": "ENDPOINT.DISPLAY",
+      "candidates": [
+        "ENDPOINT.DISPLAY"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S063",
+      "topic": "PC",
+      "native_label": "ENDPOINT.INPUT_DEVICE",
+      "candidates": [
+        "ENDPOINT.INPUT_DEVICE"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S064",
+      "topic": "PC",
+      "native_label": "ENDPOINT.INPUT_DEVICE",
+      "candidates": [
+        "ENDPOINT.INPUT_DEVICE"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S065",
+      "topic": "NETWORK",
+      "native_label": "NETWORK.ENDPOINT_ACCESS",
+      "candidates": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "NETWORK.DISCONNECTED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "INCIDENT_REVIEW_CANDIDATE",
+      "reason": "DETERMINISTIC_INCIDENT_CANDIDATE",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET",
+        "ENQUEUE_INCIDENT_REVIEW"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "INC-002",
+        "ASK-002"
+      ]
+    },
+    {
+      "id": "S066",
+      "topic": "NETWORK",
+      "native_label": "NETWORK.ENDPOINT_ACCESS",
+      "candidates": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "symptoms": [
+        "NETWORK.DISCONNECTED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-005",
+        "INT-001",
+        "INT-007",
+        "STATE-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S067",
+      "topic": "NETWORK",
+      "native_label": "NETWORK.BUILDING_DISTRIBUTION",
+      "candidates": [
+        "NETWORK.BUILDING_DISTRIBUTION"
+      ],
+      "symptoms": [
+        "NETWORK.DISCONNECTED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S068",
+      "topic": "PC",
+      "native_label": "ENDPOINT.COMPUTER",
+      "candidates": [
+        "ENDPOINT.COMPUTER",
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S069",
+      "topic": "PC",
+      "native_label": "ENDPOINT.COMPUTER",
+      "candidates": [
+        "ENDPOINT.COMPUTER"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S070",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "STATE-002",
+        "STATE-003",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S071",
+      "topic": "PC",
+      "native_label": "ENDPOINT.COMPUTER",
+      "candidates": [
+        "ENDPOINT.COMPUTER"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SCOPE-005",
+        "ASK-002"
+      ]
+    },
+    {
+      "id": "S072",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S073",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S074",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S075",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "PERFORMANCE.HANG_SPINNING",
+        "PERFORMANCE.SLOW"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "STATE-002",
+        "ASK-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S076",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "STATE-002",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S077",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S078",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S079",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S080",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S081",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S082",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "STATE-002",
+        "STATE-003",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S083",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S084",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NEG-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S085",
+      "topic": "HIS",
+      "native_label": "CLINICAL.OUTPATIENT_WORKSTATION",
+      "candidates": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "PERFORMANCE.SLOW",
+        "PRINT.JAM"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ROUTE-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S086",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_VIEWER",
+      "candidates": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "symptoms": [
+        "AUTH.LOGIN_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S087",
+      "topic": "PC",
+      "native_label": "ENDPOINT.DISPLAY",
+      "candidates": [
+        "ENDPOINT.DISPLAY"
+      ],
+      "symptoms": [
+        "STABILITY.BLACK_SCREEN"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S088",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "NETWORK.DISCONNECTED",
+        "PERFORMANCE.SLOW",
+        "PRINT.JAM"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-005",
+        "INT-001",
+        "ROUTE-001",
+        "ASK-002",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S089",
+      "topic": "EMR",
+      "native_label": "CLINICAL.EMR_DOCUMENTATION",
+      "candidates": [
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "symptoms": [
+        "TRANSACTION.SAVE_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-011",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S090",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_VIEWER",
+      "candidates": [
+        "CLINICAL.OUTPATIENT_WORKSTATION",
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "symptoms": [],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S091",
+      "topic": "LIS",
+      "native_label": "DIAG.LAB_RESULT_VIEW",
+      "candidates": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NORM-006",
+        "NORM-007",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S092",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "CONSUMABLE.EMPTY"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ROUTE-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S093",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "TRANSACTION.SAVE_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-011",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S094",
+      "topic": "QUEUE",
+      "native_label": "ACCESS.QUEUE_CALLING",
+      "candidates": [
+        "ACCESS.QUEUE_CALLING"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "PERFORMANCE.HANG_SPINNING",
+        "PERFORMANCE.SLOW"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-002",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S095",
+      "topic": "HIS",
+      "native_label": "CLINICAL.INPATIENT_WORKSTATION",
+      "candidates": [
+        "CLINICAL.INPATIENT_WORKSTATION"
+      ],
+      "symptoms": [
+        "TRANSACTION.SUBMIT_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-003",
+        "INT-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S096",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "NETWORK.DISCONNECTED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S097",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "PERFORMANCE.SLOW",
+        "PRINT.JAM"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ROUTE-001",
+        "ASK-002",
+        "ASK-004",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": null,
+          "candidates": [],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.65,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-001",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "PRINTER",
+          "native_label": "PRINT.PRINTER_DEVICE",
+          "candidates": [
+            "PRINT.PRINTER_DEVICE"
+          ],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE",
+            "PERFORMANCE.SLOW",
+            "PRINT.JAM"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ROUTE-001",
+            "ASK-002",
+            "ASK-004",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S098",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_VIEWER",
+      "candidates": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": null,
+          "candidates": [],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.65,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-001",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "PACS",
+          "native_label": "DIAG.IMAGING_VIEWER",
+          "candidates": [
+            "DIAG.IMAGING_VIEWER"
+          ],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S099",
+      "topic": "LIS",
+      "native_label": "DIAG.LAB_RESULT_VIEW",
+      "candidates": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "symptoms": [
+        "AUTH.LOGIN_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": null,
+          "candidates": [],
+          "symptoms": [
+            "AUTH.LOGIN_FAILED"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.65,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-001",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "LIS",
+          "native_label": "DIAG.LAB_RESULT_VIEW",
+          "candidates": [
+            "DIAG.LAB_RESULT_VIEW"
+          ],
+          "symptoms": [
+            "AUTH.LOGIN_FAILED"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S100",
+      "topic": "HIS",
+      "native_label": "CLINICAL.OUTPATIENT_WORKSTATION",
+      "candidates": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "symptoms": [
+        "PERFORMANCE.HANG_SPINNING",
+        "PERFORMANCE.SLOW"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-004",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": null,
+          "candidates": [],
+          "symptoms": [
+            "PERFORMANCE.HANG_SPINNING",
+            "PERFORMANCE.SLOW"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.65,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-001",
+            "ASK-004",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "HIS",
+          "native_label": "CLINICAL.OUTPATIENT_WORKSTATION",
+          "candidates": [
+            "CLINICAL.OUTPATIENT_WORKSTATION"
+          ],
+          "symptoms": [
+            "PERFORMANCE.HANG_SPINNING",
+            "PERFORMANCE.SLOW"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-004",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S101",
+      "topic": "NETWORK",
+      "native_label": "NETWORK.ENDPOINT_ACCESS",
+      "candidates": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "symptoms": [
+        "NETWORK.DISCONNECTED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-005",
+        "INT-001",
+        "ASK-002",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": null,
+          "candidates": [],
+          "symptoms": [],
+          "domain_intent": "UNKNOWN",
+          "confidence": 0,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "NEEDS_DESCRIPTION",
+          "reason": "ONE_DESCRIPTION_REQUIRED",
+          "ticket_recommended": false,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "REQUEST_ONE_DESCRIPTION"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "ASK-001",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "NETWORK",
+          "native_label": "NETWORK.ENDPOINT_ACCESS",
+          "candidates": [
+            "NETWORK.ENDPOINT_ACCESS"
+          ],
+          "symptoms": [
+            "NETWORK.DISCONNECTED"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "SYM-005",
+            "INT-001",
+            "ASK-002",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S102",
+      "topic": "PC",
+      "native_label": "ENDPOINT.INPUT_DEVICE",
+      "candidates": [
+        "ENDPOINT.INPUT_DEVICE"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "HARDWARE.INPUT_FAILURE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": null,
+          "candidates": [],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.65,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-001",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "PC",
+          "native_label": "ENDPOINT.INPUT_DEVICE",
+          "candidates": [
+            "ENDPOINT.INPUT_DEVICE"
+          ],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE",
+            "HARDWARE.INPUT_FAILURE"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S103",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_VIEWER",
+      "candidates": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "PRINTER",
+          "native_label": "PRINT.PRINTER_DEVICE",
+          "candidates": [
+            "PRINT.PRINTER_DEVICE"
+          ],
+          "symptoms": [],
+          "domain_intent": "UNKNOWN",
+          "confidence": 0.65,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "NEEDS_DESCRIPTION",
+          "reason": "ONE_DESCRIPTION_REQUIRED",
+          "ticket_recommended": false,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "REQUEST_ONE_DESCRIPTION"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "ASK-002",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "PACS",
+          "native_label": "DIAG.IMAGING_VIEWER",
+          "candidates": [
+            "DIAG.IMAGING_VIEWER"
+          ],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S104",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "PERFORMANCE.SLOW",
+        "PRINT.JAM"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "NEG-002",
+        "ROUTE-001",
+        "ASK-002",
+        "ASK-004",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "PACS",
+          "native_label": "DIAG.IMAGING_VIEWER",
+          "candidates": [
+            "DIAG.IMAGING_VIEWER"
+          ],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "PRINTER",
+          "native_label": "PRINT.PRINTER_DEVICE",
+          "candidates": [
+            "PRINT.PRINTER_DEVICE"
+          ],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE",
+            "PERFORMANCE.SLOW",
+            "PRINT.JAM"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "NEG-002",
+            "ROUTE-001",
+            "ASK-002",
+            "ASK-004",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S105",
+      "topic": "NETWORK",
+      "native_label": "NETWORK.ENDPOINT_ACCESS",
+      "candidates": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "NETWORK.DISCONNECTED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-005",
+        "INT-001",
+        "NEG-001",
+        "ASK-002",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "HIS",
+          "native_label": "CLINICAL.OUTPATIENT_WORKSTATION",
+          "candidates": [
+            "CLINICAL.OUTPATIENT_WORKSTATION"
+          ],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "NETWORK",
+          "native_label": "NETWORK.ENDPOINT_ACCESS",
+          "candidates": [
+            "NETWORK.ENDPOINT_ACCESS"
+          ],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE",
+            "NETWORK.DISCONNECTED"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "SYM-005",
+            "INT-001",
+            "NEG-001",
+            "ASK-002",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S106",
+      "topic": "HIS",
+      "native_label": "CLINICAL.OUTPATIENT_WORKSTATION",
+      "candidates": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "symptoms": [
+        "TRANSACTION.SAVE_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-011",
+        "INT-001",
+        "NEG-001",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "NETWORK",
+          "native_label": "NETWORK.ENDPOINT_ACCESS",
+          "candidates": [
+            "NETWORK.ENDPOINT_ACCESS"
+          ],
+          "symptoms": [],
+          "domain_intent": "UNKNOWN",
+          "confidence": 0.65,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "NEEDS_DESCRIPTION",
+          "reason": "ONE_DESCRIPTION_REQUIRED",
+          "ticket_recommended": false,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "REQUEST_ONE_DESCRIPTION"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "ASK-002",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "HIS",
+          "native_label": "CLINICAL.OUTPATIENT_WORKSTATION",
+          "candidates": [
+            "CLINICAL.OUTPATIENT_WORKSTATION"
+          ],
+          "symptoms": [
+            "TRANSACTION.SAVE_FAILED"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "SYM-011",
+            "INT-001",
+            "NEG-001",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S107",
+      "topic": "EMR",
+      "native_label": "CLINICAL.EMR_DOCUMENTATION",
+      "candidates": [
+        "CLINICAL.EMR_DOCUMENTATION"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE",
+        "TRANSACTION.SAVE_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NORM-006",
+        "SYM-011",
+        "INT-001",
+        "NEG-002",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "LIS",
+          "native_label": "DIAG.LAB_RESULT_VIEW",
+          "candidates": [
+            "DIAG.LAB_RESULT_VIEW"
+          ],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "NORM-006",
+            "INT-001",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "EMR",
+          "native_label": "CLINICAL.EMR_DOCUMENTATION",
+          "candidates": [
+            "CLINICAL.EMR_DOCUMENTATION"
+          ],
+          "symptoms": [
+            "AVAILABILITY.UNAVAILABLE",
+            "TRANSACTION.SAVE_FAILED"
+          ],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.9,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "NORM-006",
+            "SYM-011",
+            "INT-001",
+            "NEG-002",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S108",
+      "topic": "INSURANCE",
+      "native_label": "INSURANCE.ELIGIBILITY_AUDIT",
+      "candidates": [
+        "INSURANCE.ELIGIBILITY_AUDIT"
+      ],
+      "symptoms": [],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "NORM-007",
+        "INT-001",
+        "ASK-005"
+      ],
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": null,
+          "candidates": [],
+          "symptoms": [],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "INT-001",
+            "ASK-001",
+            "ASK-005"
+          ]
+        },
+        {
+          "topic": "INSURANCE",
+          "native_label": "INSURANCE.ELIGIBILITY_AUDIT",
+          "candidates": [
+            "INSURANCE.ELIGIBILITY_AUDIT"
+          ],
+          "symptoms": [],
+          "domain_intent": "INCIDENT_REPORT",
+          "confidence": 0.65,
+          "result_state": "PARTIAL",
+          "human_review": false,
+          "route": "TICKET_ELIGIBLE",
+          "reason": "EXPLICIT_TECHNICAL_FAULT",
+          "ticket_recommended": true,
+          "action_types": [
+            "APPLY_INTAKE_CLASSIFICATION",
+            "CREATE_MINIMAL_TICKET"
+          ],
+          "matched_rules": [
+            "NORM-001",
+            "NORM-007",
+            "INT-001",
+            "ASK-005"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S109",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "TRANSACTION.SUBMIT_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-003",
+        "INT-001",
+        "ASK-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S110",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "STABILITY.FLASH_EXIT"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S111",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "TRANSACTION.SAVE_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-011",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S112",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S113",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "AUTH.LOGIN_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S114",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "PERFORMANCE.SLOW"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S115",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S116",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S117",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "PERFORMANCE.HANG_SPINNING",
+        "PERFORMANCE.SLOW"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S118",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [
+        "TRANSACTION.SAVE_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "SYM-011",
+        "INT-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S119",
+      "topic": "IDENTITY",
+      "native_label": "IDENTITY.DIGITAL_SIGNATURE",
+      "candidates": [
+        "IDENTITY.DIGITAL_SIGNATURE"
+      ],
+      "symptoms": [
+        "AUTH.SIGNATURE_FAILED"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S120",
+      "topic": "LOGISTICS",
+      "native_label": "ROUTE.LOGISTICS_FACILITY",
+      "candidates": [
+        "ROUTE.LOGISTICS_FACILITY"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "NON_IT_REQUEST",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ROUTE-006",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S121",
+      "topic": "PACS",
+      "native_label": "DIAG.IMAGING_VIEWER",
+      "candidates": [
+        "DIAG.IMAGING_VIEWER"
+      ],
+      "symptoms": [
+        "AVAILABILITY.UNAVAILABLE"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S122",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "PERFORMANCE.SLOW",
+        "PRINT.JAM"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ROUTE-001",
+        "ASK-002",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S123",
+      "topic": "HIS",
+      "native_label": "CLINICAL.OUTPATIENT_WORKSTATION",
+      "candidates": [
+        "CLINICAL.OUTPATIENT_WORKSTATION"
+      ],
+      "symptoms": [
+        "PERFORMANCE.SLOW"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S124",
+      "topic": "NETWORK",
+      "native_label": "NETWORK.ENDPOINT_ACCESS",
+      "candidates": [
+        "NETWORK.ENDPOINT_ACCESS"
+      ],
+      "symptoms": [],
+      "domain_intent": "RECOVERY_UPDATE",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "ACKNOWLEDGEMENT",
+      "reason": "RECOVERY_WITHOUT_AUTHORIZED_TICKET",
+      "ticket_recommended": false,
+      "action_types": [
+        "SEND_FIXED_ACKNOWLEDGEMENT"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-007",
+        "STATE-001",
+        "ASK-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S125",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "PERFORMANCE.SLOW",
+        "PRINT.JAM"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ROUTE-001",
+        "ASK-002",
+        "ASK-004",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S126",
+      "topic": "IDENTITY",
+      "native_label": "IDENTITY.PASSWORD_RESET",
+      "candidates": [
+        "IDENTITY.PASSWORD_RESET"
+      ],
+      "symptoms": [],
+      "domain_intent": "SERVICE_REQUEST",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "SERVICE_REQUEST",
+      "reason": "DETERMINISTIC_SERVICE_REQUEST",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "ROUTE_SERVICE_REQUEST",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-002",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S127",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "HOW_TO_QUESTION",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "BUSINESS_CONSULTATION",
+      "reason": "BUSINESS_POLICY_NOT_GUESSED",
+      "ticket_recommended": false,
+      "action_types": [
+        "ROUTE_BUSINESS_CONSULTATION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-004",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S128",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "STATUS_QUERY",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "STATUS_QUERY",
+      "reason": "AUTHORIZED_STATUS_QUERY_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "QUERY_AUTHORIZED_STATUS"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-005",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S129",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "RECOVERY_UPDATE",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "ACKNOWLEDGEMENT",
+      "reason": "RECOVERY_WITHOUT_AUTHORIZED_TICKET",
+      "ticket_recommended": false,
+      "action_types": [
+        "SEND_FIXED_ACKNOWLEDGEMENT"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-007",
+        "STATE-001",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S130",
+      "topic": "UNKNOWN",
+      "native_label": null,
+      "candidates": [],
+      "symptoms": [],
+      "domain_intent": "HOW_TO_QUESTION",
+      "confidence": 0,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "OUT_OF_SCOPE",
+      "reason": "DETERMINISTIC_NON_IT_SCOPE",
+      "ticket_recommended": false,
+      "action_types": [
+        "SEND_FIXED_SCOPE_NOTICE"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-004",
+        "ASK-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S131",
+      "topic": "LIS",
+      "native_label": "DIAG.LAB_RESULT_VIEW",
+      "candidates": [
+        "DIAG.LAB_RESULT_VIEW"
+      ],
+      "symptoms": [],
+      "domain_intent": "UNKNOWN",
+      "confidence": 0.65,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "NEEDS_DESCRIPTION",
+      "reason": "ONE_DESCRIPTION_REQUIRED",
+      "ticket_recommended": false,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "REQUEST_ONE_DESCRIPTION"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "ASK-005"
+      ]
+    },
+    {
+      "id": "S132",
+      "topic": "PRINTER",
+      "native_label": "PRINT.PRINTER_DEVICE",
+      "candidates": [
+        "PRINT.PRINTER_DEVICE"
+      ],
+      "symptoms": [
+        "PERFORMANCE.SLOW",
+        "PRINT.JAM"
+      ],
+      "domain_intent": "INCIDENT_REPORT",
+      "confidence": 0.9,
+      "result_state": "PARTIAL",
+      "human_review": false,
+      "route": "TICKET_ELIGIBLE",
+      "reason": "EXPLICIT_TECHNICAL_FAULT",
+      "ticket_recommended": true,
+      "action_types": [
+        "APPLY_INTAKE_CLASSIFICATION",
+        "CREATE_MINIMAL_TICKET"
+      ],
+      "matched_rules": [
+        "NORM-001",
+        "INT-001",
+        "ROUTE-001",
+        "ASK-002",
+        "ASK-004",
+        "ASK-005"
+      ]
+    }
+  ]
+}

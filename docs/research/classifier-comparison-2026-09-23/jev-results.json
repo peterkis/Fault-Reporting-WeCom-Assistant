@@ -1,0 +1,7684 @@
+{
+  "model_requested": "jev-1.13.0",
+  "dataset_sha256": "b9fd492b07362ca98c6c2a304e2905a103f8858b61c982f93d06170c48a0d44e",
+  "prompt_sha256": "09224a8b7d8ce0e2b135fda6376e27e89d07aea79b005a7f47d283e9c98fb6e9",
+  "started_at": "2026-09-23T07:00:22.942Z",
+  "endpoint": "https://api.typesafe.ai/v1/systemone",
+  "mode": "three independent typed questions per request, one request per final snapshot",
+  "timing_scope": "Windows client HTTP wall time, sequential native fetch with connection reuse; includes network and three questions; not server-only latency",
+  "policy": "User authorized synthetic-only testing; no real chats; no DB/runtime integration; no automatic retry",
+  "node": "v24.18.0",
+  "predictions": [
+    {
+      "id": "S001",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 0.98,
+      "margin": 0.97,
+      "choice_confidence": 0.98,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "QUEUE": 0.01,
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "UNKNOWN": 0.01,
+        "HIS": 0.98,
+        "IDENTITY": 0,
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "NETWORK": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "INSURANCE": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "LIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.22
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1713,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 2006.6363000000001,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S001:m1"
+      ]
+    },
+    {
+      "id": "S002",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 0.98,
+      "margin": 0.96,
+      "choice_confidence": 0.97,
+      "probabilities": {
+        "LIS": 0,
+        "NURSING": 0,
+        "PRINTER": 0,
+        "UNKNOWN": 0,
+        "EMR": 0,
+        "NETWORK": 0.02,
+        "LOGISTICS": 0,
+        "QUEUE": 0,
+        "INSURANCE": 0,
+        "PC": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "OFFICE": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 0.98,
+        "CONSUMABLES": 0,
+        "OTHER_CLINICAL": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "CURRENT_FAULT": 1,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.26
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1713,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 2680.3718999999996,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S002:m1"
+      ]
+    },
+    {
+      "id": "S003",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "NETWORK": 0,
+        "NURSING": 0,
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "PUBLIC_PLATFORM": 0,
+        "LIS": 0,
+        "OFFICE": 0,
+        "EMR": 0,
+        "UNKNOWN": 0,
+        "INSURANCE": 0,
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "SELF_SERVICE": 0,
+        "HIS": 1,
+        "PACS": 0,
+        "IDENTITY": 0,
+        "QUEUE": 0,
+        "OTHER_CLINICAL": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0.01,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.98
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.33
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1710,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 611.5554999999999,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S003:m1"
+      ]
+    },
+    {
+      "id": "S004",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "OFFICE": 0,
+        "LOGISTICS": 0,
+        "NETWORK": 0,
+        "HIS": 1,
+        "MOBILE_NURSING": 0,
+        "INSURANCE": 0,
+        "CONSUMABLES": 0,
+        "PRINTER": 0,
+        "PACS": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "EMR": 0,
+        "OTHER_CLINICAL": 0,
+        "UNKNOWN": 0,
+        "SELF_SERVICE": 0,
+        "PC": 0,
+        "LIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.23
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1717,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 577.732,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S004:m1"
+      ]
+    },
+    {
+      "id": "S005",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 0.93,
+      "margin": 0.8700000000000001,
+      "choice_confidence": 0.92,
+      "probabilities": {
+        "NETWORK": 0,
+        "UNKNOWN": 0.06,
+        "LIS": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "PC": 0,
+        "PRINTER": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0.01,
+        "HIS": 0.93,
+        "NURSING": 0,
+        "LOGISTICS": 0,
+        "SELF_SERVICE": 0,
+        "MOBILE_NURSING": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0.01,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "CURRENT_FAULT": 0.98,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.25
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1717,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 655.9995999999996,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S005:m1"
+      ]
+    },
+    {
+      "id": "S006",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "UNKNOWN": 0,
+        "OFFICE": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "INSURANCE": 0,
+        "NURSING": 0.01,
+        "PC": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "QUEUE": 0,
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "HIS": 0.99,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "NETWORK": 0,
+        "CONSUMABLES": 0,
+        "PUBLIC_PLATFORM": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "CURRENT_FAULT": 0.98,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.36
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1715,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 559.0861999999997,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S006:m1"
+      ]
+    },
+    {
+      "id": "S007",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "UNKNOWN": 0,
+        "LIS": 0,
+        "LOGISTICS": 0,
+        "CONSUMABLES": 0,
+        "INSURANCE": 0,
+        "OTHER_HARDWARE": 0,
+        "PRINTER": 0,
+        "NETWORK": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "SELF_SERVICE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 1,
+        "PC": 0,
+        "IDENTITY": 0,
+        "QUEUE": 0,
+        "PACS": 0,
+        "NURSING": 0,
+        "OFFICE": 0,
+        "EMR": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "CURRENT_FAULT": 0.99,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0.01
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.25
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1714,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 523.8136999999997,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S007:m1"
+      ]
+    },
+    {
+      "id": "S008",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "SELF_SERVICE": 0,
+        "QUEUE": 0,
+        "OFFICE": 0,
+        "LIS": 0,
+        "PACS": 0,
+        "PRINTER": 0,
+        "NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 1,
+        "PC": 0,
+        "EMR": 0,
+        "CONSUMABLES": 0,
+        "IDENTITY": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "LOGISTICS": 0,
+        "NETWORK": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.3
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1716,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 547.4655000000002,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S008:m1"
+      ]
+    },
+    {
+      "id": "S009",
+      "topic": "EMR",
+      "raw_topic": "EMR",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "EMR": 1,
+        "OFFICE": 0,
+        "PACS": 0,
+        "UNKNOWN": 0,
+        "INSURANCE": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "QUEUE": 0,
+        "PRINTER": 0,
+        "CONSUMABLES": 0,
+        "NETWORK": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "LOGISTICS": 0,
+        "HIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "CURRENT_FAULT": 1,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.41
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1716,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 574.2956999999997,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S009:m1"
+      ]
+    },
+    {
+      "id": "S010",
+      "topic": "EMR",
+      "raw_topic": "EMR",
+      "chosen_probability": 0.92,
+      "margin": 0.87,
+      "choice_confidence": 0.91,
+      "probabilities": {
+        "HIS": 0.03,
+        "LIS": 0,
+        "PRINTER": 0,
+        "CONSUMABLES": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_CLINICAL": 0,
+        "EMR": 0.92,
+        "NETWORK": 0,
+        "MOBILE_NURSING": 0,
+        "QUEUE": 0,
+        "IDENTITY": 0,
+        "UNKNOWN": 0.05,
+        "NURSING": 0,
+        "OFFICE": 0,
+        "OTHER_HARDWARE": 0,
+        "PC": 0,
+        "INSURANCE": 0,
+        "PACS": 0,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 0.99,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.28
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 551.3671999999997,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S010:m1"
+      ]
+    },
+    {
+      "id": "S011",
+      "topic": "EMR",
+      "raw_topic": "EMR",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "SELF_SERVICE": 0,
+        "UNKNOWN": 0,
+        "PACS": 0,
+        "HIS": 0,
+        "OTHER_CLINICAL": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "CONSUMABLES": 0,
+        "QUEUE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "LOGISTICS": 0,
+        "PRINTER": 0,
+        "EMR": 1,
+        "MOBILE_NURSING": 0,
+        "INSURANCE": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "NETWORK": 0,
+        "LIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 1,
+          "SERVICE_REQUEST": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.33
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1709,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 558.7793000000001,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S011:m1"
+      ]
+    },
+    {
+      "id": "S012",
+      "topic": "EMR",
+      "raw_topic": "EMR",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "LIS": 0,
+        "NURSING": 0,
+        "NETWORK": 0,
+        "UNKNOWN": 0,
+        "PRINTER": 0,
+        "EMR": 1,
+        "LOGISTICS": 0,
+        "QUEUE": 0,
+        "INSURANCE": 0,
+        "PC": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "OFFICE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "MOBILE_NURSING": 0,
+        "HIS": 0,
+        "CONSUMABLES": 0,
+        "OTHER_CLINICAL": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "CURRENT_FAULT": 0.98,
+          "RECOVERY_OR_ACK": 0.01,
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "STATUS_QUERY": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.27
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1708,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 603.4491999999991,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S012:m1"
+      ]
+    },
+    {
+      "id": "S013",
+      "topic": "EMR",
+      "raw_topic": "EMR",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "MOBILE_NURSING": 0,
+        "PACS": 0,
+        "OTHER_CLINICAL": 0,
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "UNKNOWN": 0,
+        "SELF_SERVICE": 0,
+        "QUEUE": 0,
+        "NURSING": 0,
+        "LOGISTICS": 0,
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "EMR": 1,
+        "INSURANCE": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "OTHER_HARDWARE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.36
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 558.4298999999992,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S013:m1"
+      ]
+    },
+    {
+      "id": "S014",
+      "topic": "EMR",
+      "raw_topic": "EMR",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "OTHER_CLINICAL": 0,
+        "EMR": 1,
+        "INSURANCE": 0,
+        "PC": 0,
+        "PUBLIC_PLATFORM": 0,
+        "CONSUMABLES": 0,
+        "MOBILE_NURSING": 0,
+        "QUEUE": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "LOGISTICS": 0,
+        "IDENTITY": 0,
+        "PRINTER": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0,
+        "LIS": 0,
+        "OTHER_HARDWARE": 0,
+        "PACS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "CURRENT_FAULT": 0.99,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.38
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1714,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 626.6849000000002,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S014:m1"
+      ]
+    },
+    {
+      "id": "S015",
+      "topic": "EMR",
+      "raw_topic": "EMR",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "OTHER_HARDWARE": 0,
+        "HIS": 0,
+        "OFFICE": 0,
+        "QUEUE": 0,
+        "NETWORK": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "PC": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "UNKNOWN": 0,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 1,
+        "INSURANCE": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.97,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0.02
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.27
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 606.5170999999991,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S015:m1"
+      ]
+    },
+    {
+      "id": "S016",
+      "topic": "EMR",
+      "raw_topic": "EMR",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PC": 0,
+        "PRINTER": 0,
+        "QUEUE": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "IDENTITY": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "EMR": 1,
+        "LOGISTICS": 0,
+        "MOBILE_NURSING": 0,
+        "SELF_SERVICE": 0,
+        "CONSUMABLES": 0,
+        "OTHER_HARDWARE": 0,
+        "PACS": 0,
+        "NURSING": 0,
+        "UNKNOWN": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_CLINICAL": 0,
+        "LIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "CURRENT_FAULT": 0.99,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.36
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 621.7207000000017,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S016:m1"
+      ]
+    },
+    {
+      "id": "S017",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "HIS": 0,
+        "UNKNOWN": 0,
+        "PUBLIC_PLATFORM": 0,
+        "INSURANCE": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 0,
+        "NETWORK": 0,
+        "QUEUE": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "CONSUMABLES": 0,
+        "IDENTITY": 0,
+        "LIS": 0,
+        "PACS": 1,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.26
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 556.4179000000004,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S017:m1"
+      ]
+    },
+    {
+      "id": "S018",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "OTHER_HARDWARE": 0,
+        "HIS": 0,
+        "OFFICE": 0,
+        "PC": 0,
+        "NETWORK": 0,
+        "PACS": 1,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "PRINTER": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "UNKNOWN": 0,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "INSURANCE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.96,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.96,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0.03,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.32
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 603.9198000000015,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S018:m1"
+      ]
+    },
+    {
+      "id": "S019",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "LIS": 0,
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "PC": 0,
+        "PACS": 1,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "LOGISTICS": 0,
+        "SELF_SERVICE": 0,
+        "MOBILE_NURSING": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0.01,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "CURRENT_FAULT": 0.98,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.38
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 595.5308999999997,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S019:m1"
+      ]
+    },
+    {
+      "id": "S020",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "LIS": 0,
+        "NETWORK": 0,
+        "NURSING": 0,
+        "HIS": 0,
+        "PC": 0,
+        "IDENTITY": 0,
+        "SELF_SERVICE": 0,
+        "CONSUMABLES": 0,
+        "PACS": 1,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0,
+        "QUEUE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 0.99,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.26
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1709,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 537.9583000000002,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S020:m1"
+      ]
+    },
+    {
+      "id": "S021",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.98,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "LIS": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0.99,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0.01,
+        "QUEUE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.31
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1717,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 528.2289999999994,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S021:m1"
+      ]
+    },
+    {
+      "id": "S022",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "UNKNOWN": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PRINTER": 0,
+        "LIS": 0,
+        "PC": 0,
+        "LOGISTICS": 0,
+        "PACS": 1,
+        "SELF_SERVICE": 0,
+        "CONSUMABLES": 0,
+        "OFFICE": 0,
+        "NURSING": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "INSURANCE": 0,
+        "IDENTITY": 0,
+        "OTHER_CLINICAL": 0,
+        "EMR": 0,
+        "QUEUE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.98,
+          "RECOVERY_OR_ACK": 0.01,
+          "STATUS_QUERY": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.42
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1713,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 535.7878000000001,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S022:m1"
+      ]
+    },
+    {
+      "id": "S023",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "LOGISTICS": 0,
+        "OTHER_CLINICAL": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "EMR": 0,
+        "NETWORK": 0,
+        "PRINTER": 0,
+        "MOBILE_NURSING": 0,
+        "INSURANCE": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "LIS": 0,
+        "UNKNOWN": 0.01,
+        "HIS": 0,
+        "PACS": 0.99,
+        "PUBLIC_PLATFORM": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.67,
+        "probabilities": {
+          "STATUS_QUERY": 0.01,
+          "NON_IT": 0.2,
+          "INSUFFICIENT_OR_UNCLEAR": 0.06,
+          "CURRENT_FAULT": 0.73,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.19
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 596.6921000000002,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S023:m1"
+      ]
+    },
+    {
+      "id": "S024",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "EMR": 0,
+        "SELF_SERVICE": 0,
+        "PC": 0,
+        "NETWORK": 0,
+        "QUEUE": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "CONSUMABLES": 0,
+        "IDENTITY": 0,
+        "LIS": 0,
+        "PACS": 1,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 1,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.37
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1713,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 594.6334999999999,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S024:m1"
+      ]
+    },
+    {
+      "id": "S025",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "OFFICE": 0,
+        "NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "NETWORK": 0,
+        "UNKNOWN": 0,
+        "PUBLIC_PLATFORM": 0,
+        "LIS": 0.99,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "IDENTITY": 0.01,
+        "PC": 0,
+        "PRINTER": 0,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "CONSUMABLES": 0,
+        "HIS": 0,
+        "EMR": 0,
+        "INSURANCE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0.98,
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.37
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1705,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 518.4372999999996,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S025:m1"
+      ]
+    },
+    {
+      "id": "S026",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "INSURANCE": 0,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "LIS": 1,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_CLINICAL": 0,
+        "IDENTITY": 0,
+        "HIS": 0,
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "MOBILE_NURSING": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 0,
+        "CONSUMABLES": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "PC": 0,
+        "PACS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.98,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0.01
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.34
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1709,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 591.2910000000011,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S026:m1"
+      ]
+    },
+    {
+      "id": "S027",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 0.98,
+      "margin": 0.97,
+      "choice_confidence": 0.98,
+      "probabilities": {
+        "PC": 0,
+        "UNKNOWN": 0.01,
+        "PRINTER": 0,
+        "OTHER_HARDWARE": 0,
+        "IDENTITY": 0,
+        "MOBILE_NURSING": 0,
+        "NETWORK": 0,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "QUEUE": 0,
+        "OTHER_CLINICAL": 0,
+        "LIS": 0.98,
+        "INSURANCE": 0,
+        "PACS": 0.01,
+        "HIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "EMR": 0,
+        "CONSUMABLES": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "CURRENT_FAULT": 0.99,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.36
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 583.0537000000004,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S027:m1"
+      ]
+    },
+    {
+      "id": "S028",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 0.9,
+      "margin": 0.8,
+      "choice_confidence": 0.88,
+      "probabilities": {
+        "PC": 0,
+        "NETWORK": 0,
+        "NURSING": 0,
+        "IDENTITY": 0,
+        "QUEUE": 0,
+        "OFFICE": 0,
+        "EMR": 0,
+        "UNKNOWN": 0,
+        "INSURANCE": 0,
+        "LIS": 0.9,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PACS": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0.1,
+        "LOGISTICS": 0,
+        "OTHER_HARDWARE": 0,
+        "CONSUMABLES": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 1,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.36
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 540.8812999999973,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S028:m1"
+      ]
+    },
+    {
+      "id": "S029",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "INSURANCE": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "PACS": 0,
+        "LOGISTICS": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "EMR": 0,
+        "MOBILE_NURSING": 0,
+        "CONSUMABLES": 0,
+        "QUEUE": 0,
+        "UNKNOWN": 0,
+        "OFFICE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "PC": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 1
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.27
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1719,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 582.688100000003,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S029:m1"
+      ]
+    },
+    {
+      "id": "S030",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "LIS": 1,
+        "NETWORK": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0,
+        "QUEUE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.41
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1714,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 528.9307999999983,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S030:m1"
+      ]
+    },
+    {
+      "id": "S031",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PC": 0,
+        "UNKNOWN": 0,
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "NETWORK": 0,
+        "OTHER_HARDWARE": 0,
+        "MOBILE_NURSING": 0,
+        "NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 1,
+        "INSURANCE": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "PUBLIC_PLATFORM": 0,
+        "EMR": 0,
+        "HIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "CURRENT_FAULT": 0.99,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.32
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1713,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 574.4525999999969,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S031:m1"
+      ]
+    },
+    {
+      "id": "S032",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "SELF_SERVICE": 0,
+        "LOGISTICS": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "LIS": 1,
+        "PC": 0,
+        "QUEUE": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "INSURANCE": 0,
+        "OTHER_HARDWARE": 0,
+        "MOBILE_NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "PRINTER": 0,
+        "UNKNOWN": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 0.99,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.38
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1714,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 544.2319000000025,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S032:m1"
+      ]
+    },
+    {
+      "id": "S033",
+      "topic": "INSURANCE",
+      "raw_topic": "INSURANCE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "LIS": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "INSURANCE": 1,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0,
+        "QUEUE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0.99
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.56
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 520.0949999999975,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S033:m1"
+      ]
+    },
+    {
+      "id": "S034",
+      "topic": "INSURANCE",
+      "raw_topic": "INSURANCE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "NURSING": 0,
+        "LIS": 0,
+        "UNKNOWN": 0,
+        "PUBLIC_PLATFORM": 0,
+        "LOGISTICS": 0,
+        "HIS": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "NETWORK": 0,
+        "QUEUE": 0,
+        "EMR": 0,
+        "MOBILE_NURSING": 0,
+        "SELF_SERVICE": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "PACS": 0,
+        "INSURANCE": 1
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "CURRENT_FAULT": 0.98
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.36
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 591.3042000000023,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S034:m1"
+      ]
+    },
+    {
+      "id": "S035",
+      "topic": "INSURANCE",
+      "raw_topic": "INSURANCE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "UNKNOWN": 0,
+        "LIS": 0,
+        "LOGISTICS": 0,
+        "CONSUMABLES": 0,
+        "INSURANCE": 1,
+        "OTHER_HARDWARE": 0,
+        "PRINTER": 0,
+        "NETWORK": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "SELF_SERVICE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OFFICE": 0,
+        "PC": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "PACS": 0,
+        "HIS": 0,
+        "IDENTITY": 0,
+        "EMR": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.96,
+        "probabilities": {
+          "CURRENT_FAULT": 0.97,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.03,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.47
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 753.682499999999,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S035:m1"
+      ]
+    },
+    {
+      "id": "S036",
+      "topic": "INSURANCE",
+      "raw_topic": "INSURANCE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "CONSUMABLES": 0,
+        "NURSING": 0,
+        "INSURANCE": 1,
+        "OTHER_CLINICAL": 0,
+        "OFFICE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "LIS": 0,
+        "QUEUE": 0,
+        "PC": 0,
+        "EMR": 0,
+        "PRINTER": 0,
+        "PACS": 0,
+        "SELF_SERVICE": 0,
+        "NETWORK": 0,
+        "IDENTITY": 0,
+        "LOGISTICS": 0,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "UNKNOWN": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 0.99
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.26
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 582.9386000000013,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S036:m1"
+      ]
+    },
+    {
+      "id": "S037",
+      "topic": "INSURANCE",
+      "raw_topic": "INSURANCE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "QUEUE": 0,
+        "NETWORK": 0,
+        "NURSING": 0,
+        "OFFICE": 0,
+        "HIS": 0,
+        "EMR": 0,
+        "LOGISTICS": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "PC": 0,
+        "OTHER_HARDWARE": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "IDENTITY": 0,
+        "PUBLIC_PLATFORM": 0,
+        "UNKNOWN": 0,
+        "INSURANCE": 1,
+        "PACS": 0,
+        "MOBILE_NURSING": 0,
+        "CONSUMABLES": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.33
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1713,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 579.6487000000016,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S037:m1"
+      ]
+    },
+    {
+      "id": "S038",
+      "topic": "INSURANCE",
+      "raw_topic": "INSURANCE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "HIS": 0,
+        "SELF_SERVICE": 0,
+        "INSURANCE": 1,
+        "QUEUE": 0,
+        "UNKNOWN": 0,
+        "OFFICE": 0,
+        "PACS": 0,
+        "OTHER_HARDWARE": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "NURSING": 0,
+        "PRINTER": 0,
+        "PUBLIC_PLATFORM": 0,
+        "LOGISTICS": 0,
+        "PC": 0,
+        "EMR": 0,
+        "OTHER_CLINICAL": 0,
+        "NETWORK": 0,
+        "IDENTITY": 0,
+        "MOBILE_NURSING": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "NON_IT": 0,
+          "CURRENT_FAULT": 0.99,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.4
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 578.9376000000011,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S038:m1"
+      ]
+    },
+    {
+      "id": "S039",
+      "topic": "INSURANCE",
+      "raw_topic": "INSURANCE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "EMR": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "HIS": 0,
+        "PACS": 0,
+        "UNKNOWN": 0,
+        "LIS": 0,
+        "OFFICE": 0,
+        "INSURANCE": 1,
+        "NETWORK": 0,
+        "PUBLIC_PLATFORM": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "MOBILE_NURSING": 0,
+        "CONSUMABLES": 0,
+        "LOGISTICS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "PRINTER": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 0.99,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.28
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 616.6576999999997,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S039:m1"
+      ]
+    },
+    {
+      "id": "S040",
+      "topic": "INSURANCE",
+      "raw_topic": "INSURANCE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PC": 0,
+        "MOBILE_NURSING": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "HIS": 0,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "UNKNOWN": 0,
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "INSURANCE": 1,
+        "PRINTER": 0,
+        "NETWORK": 0,
+        "OTHER_CLINICAL": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.87,
+        "probabilities": {
+          "QUESTION": 0,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0.01,
+          "CURRENT_FAULT": 0.89,
+          "STATUS_QUERY": 0.03,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.07
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.37
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 562.679500000002,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S040:m1"
+      ]
+    },
+    {
+      "id": "S041",
+      "topic": "QUEUE",
+      "raw_topic": "QUEUE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "INSURANCE": 0,
+        "OTHER_CLINICAL": 0,
+        "HIS": 0,
+        "LIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OFFICE": 0,
+        "IDENTITY": 0,
+        "UNKNOWN": 0,
+        "MOBILE_NURSING": 0,
+        "NETWORK": 0,
+        "OTHER_HARDWARE": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "CONSUMABLES": 0,
+        "QUEUE": 1,
+        "PC": 0,
+        "PACS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.25
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 495.18849999999657,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S041:m1"
+      ]
+    },
+    {
+      "id": "S042",
+      "topic": "QUEUE",
+      "raw_topic": "QUEUE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "OFFICE": 0,
+        "NETWORK": 0,
+        "NURSING": 0,
+        "QUEUE": 1,
+        "EMR": 0,
+        "HIS": 0,
+        "LOGISTICS": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "PC": 0,
+        "OTHER_HARDWARE": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "PACS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "UNKNOWN": 0,
+        "INSURANCE": 0,
+        "IDENTITY": 0,
+        "MOBILE_NURSING": 0,
+        "CONSUMABLES": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0.01,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 0.98
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.28
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 533.6712999999982,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S042:m1"
+      ]
+    },
+    {
+      "id": "S043",
+      "topic": "QUEUE",
+      "raw_topic": "QUEUE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PC": 0,
+        "UNKNOWN": 0,
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "NETWORK": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "QUEUE": 1,
+        "OTHER_CLINICAL": 0,
+        "LIS": 0,
+        "INSURANCE": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "PUBLIC_PLATFORM": 0,
+        "EMR": 0,
+        "HIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0.01,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "CURRENT_FAULT": 0.98,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.28
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 508.52850000000035,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S043:m1"
+      ]
+    },
+    {
+      "id": "S044",
+      "topic": "QUEUE",
+      "raw_topic": "QUEUE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "OTHER_CLINICAL": 0,
+        "PUBLIC_PLATFORM": 0,
+        "NURSING": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "EMR": 0,
+        "PACS": 0,
+        "NETWORK": 0,
+        "PC": 0,
+        "CONSUMABLES": 0,
+        "OTHER_HARDWARE": 0,
+        "QUEUE": 1,
+        "SELF_SERVICE": 0,
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "MOBILE_NURSING": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0,
+        "HIS": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0.02,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "CURRENT_FAULT": 0.97,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.3
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1709,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 726.4314000000013,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S044:m1"
+      ]
+    },
+    {
+      "id": "S045",
+      "topic": "QUEUE",
+      "raw_topic": "QUEUE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "SELF_SERVICE": 0,
+        "LOGISTICS": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "LIS": 0,
+        "PC": 0,
+        "QUEUE": 1,
+        "HIS": 0,
+        "NETWORK": 0,
+        "INSURANCE": 0,
+        "OTHER_HARDWARE": 0,
+        "MOBILE_NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "PRINTER": 0,
+        "UNKNOWN": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "CURRENT_FAULT": 0.99
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.31
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1715,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 649.1440999999977,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S045:m1"
+      ]
+    },
+    {
+      "id": "S046",
+      "topic": "QUEUE",
+      "raw_topic": "QUEUE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "MOBILE_NURSING": 0,
+        "PACS": 0,
+        "OTHER_CLINICAL": 0,
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "QUEUE": 1,
+        "UNKNOWN": 0,
+        "LOGISTICS": 0,
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "EMR": 0,
+        "INSURANCE": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "OTHER_HARDWARE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.94,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0.04,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 0.96
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.29
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1713,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 578.928899999999,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S046:m1"
+      ]
+    },
+    {
+      "id": "S047",
+      "topic": "QUEUE",
+      "raw_topic": "QUEUE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "LIS": 0,
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "PC": 0,
+        "PACS": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "IDENTITY": 0,
+        "INSURANCE": 0,
+        "CONSUMABLES": 0,
+        "OFFICE": 0,
+        "QUEUE": 1,
+        "OTHER_HARDWARE": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "LOGISTICS": 0,
+        "SELF_SERVICE": 0,
+        "MOBILE_NURSING": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.96,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.03,
+          "CURRENT_FAULT": 0.97,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.43
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 590.1821999999993,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S047:m1"
+      ]
+    },
+    {
+      "id": "S048",
+      "topic": "QUEUE",
+      "raw_topic": "QUEUE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "NETWORK": 0,
+        "PACS": 0,
+        "LIS": 0,
+        "OTHER_CLINICAL": 0,
+        "NURSING": 0,
+        "OFFICE": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "INSURANCE": 0,
+        "CONSUMABLES": 0,
+        "SELF_SERVICE": 0,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "UNKNOWN": 0,
+        "QUEUE": 1,
+        "PRINTER": 0,
+        "PC": 0,
+        "EMR": 0,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.29
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1713,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 587.0264000000025,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S048:m1"
+      ]
+    },
+    {
+      "id": "S049",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PACS": 0,
+        "HIS": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PRINTER": 1,
+        "SELF_SERVICE": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "PC": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "OFFICE": 0,
+        "QUEUE": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "OTHER_HARDWARE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.92,
+        "probabilities": {
+          "CURRENT_FAULT": 0.93,
+          "NON_IT": 0.07,
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.12
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 581.3323999999993,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S049:m1"
+      ]
+    },
+    {
+      "id": "S050",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "LIS": 0,
+        "NETWORK": 0,
+        "NURSING": 0,
+        "HIS": 0,
+        "PC": 0,
+        "IDENTITY": 0,
+        "SELF_SERVICE": 0,
+        "CONSUMABLES": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 1,
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0,
+        "QUEUE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.61,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "NON_IT": 0.3,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0.02,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0.67
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.11
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1708,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 548.5819999999985,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S050:m1"
+      ]
+    },
+    {
+      "id": "S051",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "SELF_SERVICE": 0,
+        "IDENTITY": 0,
+        "PC": 0,
+        "PUBLIC_PLATFORM": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "LIS": 0,
+        "OFFICE": 0,
+        "NETWORK": 0,
+        "CONSUMABLES": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "LOGISTICS": 0,
+        "UNKNOWN": 0,
+        "MOBILE_NURSING": 0,
+        "HIS": 0,
+        "PRINTER": 1,
+        "INSURANCE": 0,
+        "OTHER_HARDWARE": 0,
+        "PACS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0.99
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.17
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 554.9146000000001,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S051:m1"
+      ]
+    },
+    {
+      "id": "S052",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PC": 0,
+        "MOBILE_NURSING": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "NETWORK": 0,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "IDENTITY": 0,
+        "UNKNOWN": 0,
+        "OFFICE": 0,
+        "INSURANCE": 0,
+        "PRINTER": 1,
+        "HIS": 0,
+        "OTHER_CLINICAL": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "QUESTION": 0,
+          "NON_IT": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 0.99,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.21
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 553.5926,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S052:m1"
+      ]
+    },
+    {
+      "id": "S053",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 0.93,
+      "margin": 0.8600000000000001,
+      "choice_confidence": 0.91,
+      "probabilities": {
+        "OTHER_CLINICAL": 0,
+        "NURSING": 0,
+        "EMR": 0,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PC": 0,
+        "PRINTER": 0.93,
+        "IDENTITY": 0,
+        "MOBILE_NURSING": 0,
+        "HIS": 0,
+        "OTHER_HARDWARE": 0,
+        "NETWORK": 0,
+        "QUEUE": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "SELF_SERVICE": 0.07,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "UNKNOWN": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.86,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "SERVICE_REQUEST": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0.1,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0.89,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.2
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 534.4088000000011,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S053:m1"
+      ]
+    },
+    {
+      "id": "S054",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "LIS": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "IDENTITY": 0,
+        "SELF_SERVICE": 0,
+        "CONSUMABLES": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 1,
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0,
+        "QUEUE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "NON_IT": 0.01,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.99
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.14
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1715,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 611.6440999999977,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S054:m1"
+      ]
+    },
+    {
+      "id": "S055",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "LIS": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 1,
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0,
+        "QUEUE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "SERVICE_REQUEST": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 0.99
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.21
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1714,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 684.1047000000035,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S055:m1"
+      ]
+    },
+    {
+      "id": "S056",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "OFFICE": 0,
+        "HIS": 0,
+        "PC": 0,
+        "NETWORK": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_HARDWARE": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "INSURANCE": 0,
+        "QUEUE": 0,
+        "MOBILE_NURSING": 0,
+        "IDENTITY": 0,
+        "OTHER_CLINICAL": 0,
+        "EMR": 0,
+        "PACS": 0,
+        "PRINTER": 1,
+        "UNKNOWN": 0,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.18
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 668.1484999999957,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S056:m1"
+      ]
+    },
+    {
+      "id": "S057",
+      "topic": "PC",
+      "raw_topic": "PC",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_CLINICAL": 0,
+        "NURSING": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "EMR": 0,
+        "PACS": 0,
+        "NETWORK": 0,
+        "PC": 1,
+        "CONSUMABLES": 0,
+        "OTHER_HARDWARE": 0,
+        "QUEUE": 0,
+        "SELF_SERVICE": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "UNKNOWN": 0,
+        "HIS": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0.01,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "CURRENT_FAULT": 0.99,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.17
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 594.2675000000017,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S057:m1"
+      ]
+    },
+    {
+      "id": "S058",
+      "topic": "PC",
+      "raw_topic": "PC",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "MOBILE_NURSING": 0,
+        "PACS": 0,
+        "OTHER_CLINICAL": 0,
+        "CONSUMABLES": 0,
+        "PC": 1,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "QUEUE": 0,
+        "UNKNOWN": 0,
+        "LOGISTICS": 0,
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "EMR": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "INSURANCE": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "OTHER_HARDWARE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "RECOVERY_OR_ACK": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.19
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1710,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 612.3862000000008,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S058:m1"
+      ]
+    },
+    {
+      "id": "S059",
+      "topic": "PC",
+      "raw_topic": "PC",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "NETWORK": 0,
+        "NURSING": 0,
+        "CONSUMABLES": 0,
+        "PC": 1,
+        "PUBLIC_PLATFORM": 0,
+        "LIS": 0,
+        "OFFICE": 0,
+        "EMR": 0,
+        "PRINTER": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "PACS": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "SELF_SERVICE": 0,
+        "HIS": 0,
+        "LOGISTICS": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.99
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.3
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1705,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 577.1365000000005,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S059:m1"
+      ]
+    },
+    {
+      "id": "S060",
+      "topic": "PC",
+      "raw_topic": "PC",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "UNKNOWN": 0,
+        "NURSING": 0,
+        "INSURANCE": 0,
+        "OTHER_CLINICAL": 0,
+        "OFFICE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "LIS": 0,
+        "QUEUE": 0,
+        "PC": 1,
+        "SELF_SERVICE": 0,
+        "PRINTER": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "IDENTITY": 0,
+        "NETWORK": 0,
+        "LOGISTICS": 0,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "CONSUMABLES": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0.02,
+          "CURRENT_FAULT": 0.98
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.24
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 639.9399000000049,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S060:m1"
+      ]
+    },
+    {
+      "id": "S061",
+      "topic": "PC",
+      "raw_topic": "PC",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "HIS": 0,
+        "UNKNOWN": 0,
+        "OFFICE": 0,
+        "EMR": 0,
+        "PC": 1,
+        "SELF_SERVICE": 0,
+        "IDENTITY": 0,
+        "OTHER_CLINICAL": 0,
+        "PUBLIC_PLATFORM": 0,
+        "INSURANCE": 0,
+        "LIS": 0,
+        "QUEUE": 0,
+        "NURSING": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "OTHER_HARDWARE": 0,
+        "LOGISTICS": 0,
+        "MOBILE_NURSING": 0,
+        "NETWORK": 0,
+        "PRINTER": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.19
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1717,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 606.043500000007,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S061:m1"
+      ]
+    },
+    {
+      "id": "S062",
+      "topic": "PC",
+      "raw_topic": "PC",
+      "chosen_probability": 0.98,
+      "margin": 0.96,
+      "choice_confidence": 0.97,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "NETWORK": 0,
+        "PACS": 0,
+        "LIS": 0,
+        "OTHER_CLINICAL": 0,
+        "NURSING": 0,
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "OTHER_HARDWARE": 0,
+        "INSURANCE": 0,
+        "CONSUMABLES": 0,
+        "SELF_SERVICE": 0,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "UNKNOWN": 0.02,
+        "QUEUE": 0,
+        "PRINTER": 0,
+        "PC": 0.98,
+        "EMR": 0,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0.01,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0.99,
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.32
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1714,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 623.550900000002,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S062:m1"
+      ]
+    },
+    {
+      "id": "S063",
+      "topic": "PC",
+      "raw_topic": "PC",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "UNKNOWN": 0,
+        "EMR": 0,
+        "PACS": 0,
+        "OFFICE": 0,
+        "INSURANCE": 0,
+        "NURSING": 0,
+        "PC": 1,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "NETWORK": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "HIS": 0,
+        "IDENTITY": 0,
+        "PUBLIC_PLATFORM": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "CURRENT_FAULT": 0.99,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.2
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 589.9383000000016,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S063:m1"
+      ]
+    },
+    {
+      "id": "S064",
+      "topic": "PC",
+      "raw_topic": "PC",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.98,
+      "probabilities": {
+        "IDENTITY": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "LOGISTICS": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "PC": 0.99,
+        "LIS": 0,
+        "QUEUE": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "INSURANCE": 0,
+        "OTHER_HARDWARE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "UNKNOWN": 0.01,
+        "PRINTER": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 0.99,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.32
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 680.3219000000026,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S064:m1"
+      ]
+    },
+    {
+      "id": "S065",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "LIS": 0,
+        "NETWORK": 1,
+        "HIS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0,
+        "QUEUE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.24
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 650.7215999999971,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S065:m1"
+      ]
+    },
+    {
+      "id": "S066",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "OFFICE": 0,
+        "HIS": 0,
+        "PC": 0,
+        "NETWORK": 1,
+        "SELF_SERVICE": 0,
+        "OTHER_HARDWARE": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "INSURANCE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "MOBILE_NURSING": 0,
+        "IDENTITY": 0,
+        "EMR": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "PRINTER": 0,
+        "UNKNOWN": 0,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 1,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.25
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1708,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 630.5810999999958,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S066:m1"
+      ]
+    },
+    {
+      "id": "S067",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "CONSUMABLES": 0,
+        "NURSING": 0,
+        "INSURANCE": 0,
+        "OTHER_CLINICAL": 0,
+        "OFFICE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "LIS": 0,
+        "QUEUE": 0,
+        "PC": 0,
+        "SELF_SERVICE": 0,
+        "PRINTER": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "NETWORK": 1,
+        "IDENTITY": 0,
+        "LOGISTICS": 0,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "UNKNOWN": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0.99,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.24
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 646.1751999999979,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S067:m1"
+      ]
+    },
+    {
+      "id": "S068",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "UNKNOWN": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PC": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "SELF_SERVICE": 0,
+        "CONSUMABLES": 0,
+        "PACS": 0,
+        "NETWORK": 1,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "INSURANCE": 0,
+        "IDENTITY": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "EMR": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.18
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 720.7728999999963,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S068:m1"
+      ]
+    },
+    {
+      "id": "S069",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "SELF_SERVICE": 0,
+        "LOGISTICS": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "LIS": 0,
+        "QUEUE": 0,
+        "HIS": 0,
+        "NETWORK": 1,
+        "INSURANCE": 0,
+        "OTHER_HARDWARE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "PRINTER": 0,
+        "UNKNOWN": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "CURRENT_FAULT": 1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.22
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1718,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 680.5120999999999,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S069:m1"
+      ]
+    },
+    {
+      "id": "S070",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "OFFICE": 0,
+        "LOGISTICS": 0,
+        "NETWORK": 1,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "INSURANCE": 0,
+        "CONSUMABLES": 0,
+        "PRINTER": 0,
+        "PACS": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "UNKNOWN": 0,
+        "OTHER_CLINICAL": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 0,
+        "PC": 0,
+        "LIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.27
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1714,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 621.294799999996,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S070:m1"
+      ]
+    },
+    {
+      "id": "S071",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "OTHER_HARDWARE": 0,
+        "HIS": 0,
+        "OFFICE": 0,
+        "QUEUE": 0,
+        "NETWORK": 1,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "PC": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "UNKNOWN": 0,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "INSURANCE": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.25
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 1302.2215999999971,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S071:m1"
+      ]
+    },
+    {
+      "id": "S072",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "OFFICE": 0,
+        "HIS": 0,
+        "PC": 0,
+        "NETWORK": 1,
+        "SELF_SERVICE": 0,
+        "OTHER_HARDWARE": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "INSURANCE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "MOBILE_NURSING": 0,
+        "IDENTITY": 0,
+        "OTHER_CLINICAL": 0,
+        "EMR": 0,
+        "PACS": 0,
+        "PRINTER": 0,
+        "UNKNOWN": 0,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 1,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.26
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 886.9879999999976,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S072:m1"
+      ]
+    },
+    {
+      "id": "S073",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "LOGISTICS": 0,
+        "OTHER_CLINICAL": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PC": 0,
+        "PRINTER": 0,
+        "IDENTITY": 0,
+        "MOBILE_NURSING": 0,
+        "HIS": 0,
+        "OTHER_HARDWARE": 0,
+        "NETWORK": 0,
+        "QUEUE": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "UNKNOWN": 1
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "INSUFFICIENT_OR_UNCLEAR",
+        "confidence": 0.64,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0.7,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.3,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.84
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1708,
+        "output_tokens": 293
+      },
+      "elapsed_ms": 1138.911300000007,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S073:m1"
+      ]
+    },
+    {
+      "id": "S074",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.54,
+      "margin": 0.09000000000000002,
+      "choice_confidence": 0.51,
+      "probabilities": {
+        "UNKNOWN": 0.54,
+        "QUEUE": 0,
+        "INSURANCE": 0,
+        "EMR": 0,
+        "PC": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "HIS": 0.01,
+        "NURSING": 0,
+        "PACS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "IDENTITY": 0.45,
+        "NETWORK": 0,
+        "CONSUMABLES": 0,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 0.97,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.03,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.46
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1703,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 722.2808000000005,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S074:m1"
+      ]
+    },
+    {
+      "id": "S075",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "NURSING": 0,
+        "OFFICE": 0,
+        "OTHER_HARDWARE": 0,
+        "UNKNOWN": 1,
+        "NETWORK": 0,
+        "PUBLIC_PLATFORM": 0,
+        "LIS": 0,
+        "PACS": 0,
+        "SELF_SERVICE": 0,
+        "PC": 0,
+        "IDENTITY": 0,
+        "PRINTER": 0,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "CONSUMABLES": 0,
+        "HIS": 0,
+        "EMR": 0,
+        "INSURANCE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.88,
+        "probabilities": {
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0.9,
+          "INSUFFICIENT_OR_UNCLEAR": 0.1,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.63
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1704,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 696.5872999999992,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S075:m1"
+      ]
+    },
+    {
+      "id": "S076",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "OFFICE": 0,
+        "LOGISTICS": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "PRINTER": 0,
+        "INSURANCE": 0,
+        "CONSUMABLES": 0,
+        "MOBILE_NURSING": 0,
+        "PACS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "QUEUE": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "NURSING": 0,
+        "EMR": 0,
+        "OTHER_CLINICAL": 0,
+        "SELF_SERVICE": 0,
+        "UNKNOWN": 1,
+        "PC": 0,
+        "LIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "INSUFFICIENT_OR_UNCLEAR",
+        "confidence": 0.95,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0.96,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 0.04,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.73
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 293
+      },
+      "elapsed_ms": 736.5757000000012,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S076:m1"
+      ]
+    },
+    {
+      "id": "S077",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "SELF_SERVICE": 0,
+        "PRINTER": 0,
+        "OFFICE": 0,
+        "LIS": 0,
+        "PACS": 0,
+        "MOBILE_NURSING": 0,
+        "NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "NETWORK": 0,
+        "QUEUE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 0,
+        "OTHER_HARDWARE": 0,
+        "EMR": 0,
+        "CONSUMABLES": 0,
+        "IDENTITY": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 1,
+        "LOGISTICS": 0,
+        "PC": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "INSUFFICIENT_OR_UNCLEAR",
+        "confidence": 1,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 1,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.81
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1703,
+        "output_tokens": 293
+      },
+      "elapsed_ms": 833.0744999999952,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S077:m1"
+      ]
+    },
+    {
+      "id": "S078",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "EMR": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "QUEUE": 0,
+        "HIS": 0,
+        "OTHER_CLINICAL": 0,
+        "UNKNOWN": 1,
+        "LIS": 0,
+        "OFFICE": 0,
+        "INSURANCE": 0,
+        "NETWORK": 0,
+        "PUBLIC_PLATFORM": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "MOBILE_NURSING": 0,
+        "CONSUMABLES": 0,
+        "LOGISTICS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "PRINTER": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.68,
+        "probabilities": {
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "CURRENT_FAULT": 0.72,
+          "INSUFFICIENT_OR_UNCLEAR": 0.27,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.62
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 884.763300000006,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S078:m1"
+      ]
+    },
+    {
+      "id": "S079",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.98,
+      "probabilities": {
+        "QUEUE": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "OFFICE": 0,
+        "PRINTER": 0,
+        "NURSING": 0,
+        "CONSUMABLES": 0,
+        "UNKNOWN": 0.99,
+        "SELF_SERVICE": 0,
+        "PC": 0.01,
+        "HIS": 0,
+        "IDENTITY": 0,
+        "LOGISTICS": 0,
+        "LIS": 0,
+        "EMR": 0,
+        "INSURANCE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "MOBILE_NURSING": 0,
+        "NETWORK": 0,
+        "OTHER_HARDWARE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.45,
+        "probabilities": {
+          "NON_IT": 0,
+          "CURRENT_FAULT": 0.54,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0.05,
+          "INSUFFICIENT_OR_UNCLEAR": 0.41,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.71
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1705,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 1451.8411999999953,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S079:m1"
+      ]
+    },
+    {
+      "id": "S080",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "EMR": 0,
+        "QUEUE": 0,
+        "PC": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "LOGISTICS": 0,
+        "LIS": 0,
+        "OFFICE": 0,
+        "PRINTER": 0,
+        "PACS": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 1,
+        "NETWORK": 0,
+        "SELF_SERVICE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "INSUFFICIENT_OR_UNCLEAR",
+        "confidence": 0.54,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "NON_IT": 0.38,
+          "CURRENT_FAULT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.62,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.42
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1704,
+        "output_tokens": 293
+      },
+      "elapsed_ms": 1084.802499999998,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S080:m1"
+      ]
+    },
+    {
+      "id": "S081",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "LOGISTICS": 0,
+        "OTHER_CLINICAL": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "EMR": 0,
+        "NETWORK": 0,
+        "PRINTER": 0,
+        "MOBILE_NURSING": 0,
+        "INSURANCE": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "LIS": 0,
+        "UNKNOWN": 1,
+        "HIS": 0,
+        "PACS": 0,
+        "PUBLIC_PLATFORM": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.8,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 0.82,
+          "INSUFFICIENT_OR_UNCLEAR": 0.17,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.74
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1705,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 1067.2367999999988,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S081:m1"
+      ]
+    },
+    {
+      "id": "S082",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "HIS": 0,
+        "OTHER_HARDWARE": 0,
+        "NETWORK": 0,
+        "UNKNOWN": 0.99,
+        "CONSUMABLES": 0,
+        "PRINTER": 0,
+        "OFFICE": 0,
+        "QUEUE": 0,
+        "INSURANCE": 0,
+        "PACS": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_CLINICAL": 0,
+        "IDENTITY": 0,
+        "EMR": 0,
+        "LOGISTICS": 0,
+        "NURSING": 0,
+        "LIS": 0,
+        "MOBILE_NURSING": 0,
+        "PC": 0.01,
+        "PUBLIC_PLATFORM": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.73,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0.23,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.77,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.76
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 787.6401999999944,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S082:m1"
+      ]
+    },
+    {
+      "id": "S083",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "UNKNOWN": 1,
+        "PUBLIC_PLATFORM": 0,
+        "LOGISTICS": 0,
+        "HIS": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "NETWORK": 0,
+        "QUEUE": 0,
+        "EMR": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "MOBILE_NURSING": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "PACS": 0,
+        "INSURANCE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "RECOVERY_OR_ACK",
+        "confidence": 0.76,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.16,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0.01,
+          "NON_IT": 0.03,
+          "RECOVERY_OR_ACK": 0.8,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.31
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 797.9686999999976,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S083:m1"
+      ]
+    },
+    {
+      "id": "S084",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "CONSUMABLES": 0,
+        "OTHER_CLINICAL": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "UNKNOWN": 1,
+        "PUBLIC_PLATFORM": 0,
+        "LOGISTICS": 0,
+        "HIS": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "NETWORK": 0,
+        "QUEUE": 0,
+        "EMR": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "SELF_SERVICE": 0,
+        "MOBILE_NURSING": 0,
+        "OFFICE": 0,
+        "PACS": 0,
+        "INSURANCE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "INSUFFICIENT_OR_UNCLEAR",
+        "confidence": 0.56,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.64,
+          "QUESTION": 0.01,
+          "CURRENT_FAULT": 0.25,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0.1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.77
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1715,
+        "output_tokens": 293
+      },
+      "elapsed_ms": 834.9458999999988,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S084:m1"
+      ]
+    },
+    {
+      "id": "S085",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.98,
+      "margin": 0.97,
+      "choice_confidence": 0.97,
+      "probabilities": {
+        "OFFICE": 0,
+        "HIS": 0.01,
+        "LIS": 0,
+        "NETWORK": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_HARDWARE": 0,
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "INSURANCE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "MOBILE_NURSING": 0,
+        "IDENTITY": 0,
+        "OTHER_CLINICAL": 0,
+        "EMR": 0,
+        "PACS": 0,
+        "PRINTER": 0.01,
+        "UNKNOWN": 0.98,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.78
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1715,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 1156.6247000000003,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S085:m1"
+      ]
+    },
+    {
+      "id": "S086",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "OFFICE": 0,
+        "LOGISTICS": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "INSURANCE": 0,
+        "CONSUMABLES": 0,
+        "PRINTER": 0,
+        "PACS": 0.01,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "UNKNOWN": 0.99,
+        "OTHER_CLINICAL": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 0,
+        "PC": 0,
+        "LIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.76
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1709,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 919.4994000000006,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S086:m1"
+      ]
+    },
+    {
+      "id": "S087",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.92,
+      "margin": 0.8500000000000001,
+      "choice_confidence": 0.92,
+      "probabilities": {
+        "NETWORK": 0,
+        "NURSING": 0,
+        "CONSUMABLES": 0,
+        "PC": 0.01,
+        "PUBLIC_PLATFORM": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "EMR": 0,
+        "UNKNOWN": 0.92,
+        "INSURANCE": 0.07,
+        "OFFICE": 0,
+        "LOGISTICS": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "SELF_SERVICE": 0,
+        "HIS": 0,
+        "PACS": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.84
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1716,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 912.517200000002,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S087:m1"
+      ]
+    },
+    {
+      "id": "S088",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "OFFICE": 0,
+        "HIS": 0,
+        "LIS": 0,
+        "NETWORK": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_HARDWARE": 0,
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "INSURANCE": 0,
+        "QUEUE": 0,
+        "MOBILE_NURSING": 0,
+        "IDENTITY": 0,
+        "EMR": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "PRINTER": 0,
+        "UNKNOWN": 1,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 1,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.6
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1710,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 897.0305999999982,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S088:m1"
+      ]
+    },
+    {
+      "id": "S089",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.98,
+      "margin": 0.96,
+      "choice_confidence": 0.97,
+      "probabilities": {
+        "INSURANCE": 0,
+        "PRINTER": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PACS": 0,
+        "OTHER_CLINICAL": 0,
+        "EMR": 0.02,
+        "SELF_SERVICE": 0,
+        "NURSING": 0,
+        "LOGISTICS": 0,
+        "PC": 0,
+        "OFFICE": 0,
+        "NETWORK": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "MOBILE_NURSING": 0,
+        "HIS": 0,
+        "CONSUMABLES": 0,
+        "QUEUE": 0,
+        "LIS": 0,
+        "UNKNOWN": 0.98
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 1,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.86
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1715,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 864.1247000000003,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S089:m1"
+      ]
+    },
+    {
+      "id": "S090",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "PC": 0,
+        "MOBILE_NURSING": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "HIS": 0.01,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "UNKNOWN": 0.99,
+        "IDENTITY": 0,
+        "NETWORK": 0,
+        "PRINTER": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "OTHER_CLINICAL": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "QUESTION": 0,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0,
+          "CURRENT_FAULT": 1,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.82
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1709,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 914.6791000000012,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S090:m1"
+      ]
+    },
+    {
+      "id": "S091",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 0.84,
+      "margin": 0.7,
+      "choice_confidence": 0.82,
+      "probabilities": {
+        "QUEUE": 0,
+        "NETWORK": 0,
+        "NURSING": 0,
+        "OFFICE": 0,
+        "EMR": 0,
+        "HIS": 0,
+        "LOGISTICS": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0.84,
+        "OTHER_HARDWARE": 0,
+        "PC": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "IDENTITY": 0,
+        "PUBLIC_PLATFORM": 0,
+        "UNKNOWN": 0.14,
+        "INSURANCE": 0.02,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "MOBILE_NURSING": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 0.99
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.61
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1715,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 1054.7978000000003,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S091:m1"
+      ]
+    },
+    {
+      "id": "S092",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "UNKNOWN": 0.99,
+        "PUBLIC_PLATFORM": 0,
+        "PRINTER": 0,
+        "LIS": 0,
+        "PC": 0.01,
+        "LOGISTICS": 0,
+        "PACS": 0,
+        "SELF_SERVICE": 0,
+        "CONSUMABLES": 0,
+        "OFFICE": 0,
+        "NETWORK": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "INSURANCE": 0,
+        "IDENTITY": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "EMR": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0,
+          "NON_IT": 0.02,
+          "SERVICE_REQUEST": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0,
+          "CURRENT_FAULT": 0.98
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.55
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 1259.1754,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S092:m1"
+      ]
+    },
+    {
+      "id": "S093",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.96,
+      "margin": 0.9299999999999999,
+      "choice_confidence": 0.95,
+      "probabilities": {
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "PRINTER": 0,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "LIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_CLINICAL": 0,
+        "UNKNOWN": 0.96,
+        "MOBILE_NURSING": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "IDENTITY": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 0.01,
+        "CONSUMABLES": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "PC": 0,
+        "PACS": 0.03
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1,
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.81
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1715,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 787.9384999999966,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S093:m1"
+      ]
+    },
+    {
+      "id": "S094",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.98,
+      "margin": 0.97,
+      "choice_confidence": 0.98,
+      "probabilities": {
+        "SELF_SERVICE": 0,
+        "QUEUE": 0.01,
+        "OFFICE": 0,
+        "PRINTER": 0,
+        "PACS": 0,
+        "OTHER_HARDWARE": 0,
+        "NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "PC": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 0,
+        "LIS": 0.01,
+        "EMR": 0,
+        "CONSUMABLES": 0,
+        "IDENTITY": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 0.98,
+        "LOGISTICS": 0,
+        "NETWORK": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.76
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1714,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 782.9964999999938,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S094:m1"
+      ]
+    },
+    {
+      "id": "S095",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.86,
+      "margin": 0.74,
+      "choice_confidence": 0.85,
+      "probabilities": {
+        "PC": 0.02,
+        "UNKNOWN": 0.86,
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "OFFICE": 0,
+        "OTHER_HARDWARE": 0,
+        "NETWORK": 0,
+        "IDENTITY": 0,
+        "MOBILE_NURSING": 0,
+        "NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PACS": 0,
+        "HIS": 0.12,
+        "CONSUMABLES": 0,
+        "EMR": 0,
+        "INSURANCE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "CURRENT_FAULT": 1,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.86
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1718,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 1004.1442999999999,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S095:m1"
+      ]
+    },
+    {
+      "id": "S096",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.97,
+      "margin": 0.94,
+      "choice_confidence": 0.97,
+      "probabilities": {
+        "OTHER_CLINICAL": 0,
+        "PUBLIC_PLATFORM": 0,
+        "NURSING": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "EMR": 0,
+        "PACS": 0,
+        "PC": 0,
+        "CONSUMABLES": 0,
+        "NETWORK": 0.03,
+        "OTHER_HARDWARE": 0,
+        "QUEUE": 0,
+        "SELF_SERVICE": 0,
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "MOBILE_NURSING": 0,
+        "OFFICE": 0,
+        "UNKNOWN": 0.97,
+        "HIS": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "CURRENT_FAULT": 1,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.73
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1715,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 973.8117000000057,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S096:m1"
+      ]
+    },
+    {
+      "id": "S097",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "QUEUE": 0,
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "LOGISTICS": 0,
+        "HIS": 0,
+        "IDENTITY": 0,
+        "PRINTER": 1,
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "INSURANCE": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "LIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.94,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 0.95,
+          "NON_IT": 0.05,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.17
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1741,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 954.5719000000099,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S097:m1",
+        "S097:m2"
+      ]
+    },
+    {
+      "id": "S098",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "IDENTITY": 0,
+        "SELF_SERVICE": 0,
+        "INSURANCE": 0,
+        "QUEUE": 0,
+        "UNKNOWN": 0,
+        "OFFICE": 0,
+        "PACS": 1,
+        "OTHER_HARDWARE": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "NURSING": 0,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PRINTER": 0,
+        "PC": 0,
+        "EMR": 0,
+        "OTHER_CLINICAL": 0,
+        "NETWORK": 0,
+        "MOBILE_NURSING": 0,
+        "HIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 1,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.26
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1742,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 846.5271000000066,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S098:m1",
+        "S098:m2"
+      ]
+    },
+    {
+      "id": "S099",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "HIS": 0,
+        "LOGISTICS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 0,
+        "QUEUE": 0,
+        "NETWORK": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "LIS": 1,
+        "PACS": 0,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "PUBLIC_PLATFORM": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.94,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0.95,
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.05
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.44
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1739,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 944.0023999999976,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S099:m1",
+        "S099:m2"
+      ]
+    },
+    {
+      "id": "S100",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "INSURANCE": 0,
+        "PC": 0,
+        "MOBILE_NURSING": 0,
+        "IDENTITY": 0,
+        "HIS": 1,
+        "PUBLIC_PLATFORM": 0,
+        "OFFICE": 0,
+        "QUEUE": 0,
+        "NURSING": 0,
+        "EMR": 0,
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "LIS": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "SELF_SERVICE": 0,
+        "CONSUMABLES": 0,
+        "PACS": 0,
+        "OTHER_HARDWARE": 0,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "CURRENT_FAULT": 1,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.32
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1739,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 901.9939999999915,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S100:m1",
+        "S100:m2"
+      ]
+    },
+    {
+      "id": "S101",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "LOGISTICS": 0,
+        "OTHER_CLINICAL": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PC": 0,
+        "PRINTER": 0,
+        "IDENTITY": 0,
+        "MOBILE_NURSING": 0,
+        "HIS": 0,
+        "QUEUE": 0,
+        "NETWORK": 1,
+        "OTHER_HARDWARE": 0,
+        "INSURANCE": 0,
+        "PACS": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "UNKNOWN": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "CURRENT_FAULT": 1,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.25
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1741,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 900.7847000000038,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S101:m1",
+        "S101:m2"
+      ]
+    },
+    {
+      "id": "S102",
+      "topic": "PC",
+      "raw_topic": "PC",
+      "chosen_probability": 0.97,
+      "margin": 0.94,
+      "choice_confidence": 0.96,
+      "probabilities": {
+        "PC": 0.97,
+        "PRINTER": 0,
+        "UNKNOWN": 0.03,
+        "LOGISTICS": 0,
+        "IDENTITY": 0,
+        "MOBILE_NURSING": 0,
+        "NETWORK": 0,
+        "OFFICE": 0,
+        "OTHER_HARDWARE": 0,
+        "NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "HIS": 0,
+        "EMR": 0,
+        "INSURANCE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "CURRENT_FAULT": 0.99,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.55
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1737,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 791.6937999999936,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S102:m1",
+        "S102:m2"
+      ]
+    },
+    {
+      "id": "S103",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PACS": 1,
+        "IDENTITY": 0,
+        "HIS": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PRINTER": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "PC": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "OFFICE": 0,
+        "NETWORK": 0,
+        "QUEUE": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "OTHER_HARDWARE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "CURRENT_FAULT": 1,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.31
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1739,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 715.4702000000107,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S103:m1",
+        "S103:m2"
+      ]
+    },
+    {
+      "id": "S104",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PC": 0,
+        "MOBILE_NURSING": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "NETWORK": 0,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "UNKNOWN": 0,
+        "OFFICE": 0,
+        "IDENTITY": 0,
+        "INSURANCE": 0,
+        "PRINTER": 1,
+        "HIS": 0,
+        "OTHER_CLINICAL": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.92,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0.06,
+          "CURRENT_FAULT": 0.94,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.28
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1741,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 835.3386000000028,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S104:m1",
+        "S104:m2"
+      ]
+    },
+    {
+      "id": "S105",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PACS": 0,
+        "IDENTITY": 0,
+        "HIS": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PRINTER": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "PC": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "OFFICE": 0,
+        "NETWORK": 1,
+        "QUEUE": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "OTHER_HARDWARE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "CURRENT_FAULT": 1,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.34
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1741,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 795.7222000000038,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S105:m1",
+        "S105:m2"
+      ]
+    },
+    {
+      "id": "S106",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "QUEUE": 0,
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "LOGISTICS": 0,
+        "HIS": 1,
+        "IDENTITY": 0,
+        "PRINTER": 0,
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "INSURANCE": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "LIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1,
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.32
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1742,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 713.0767999999953,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S106:m1",
+        "S106:m2"
+      ]
+    },
+    {
+      "id": "S107",
+      "topic": "EMR",
+      "raw_topic": "EMR",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "OTHER_CLINICAL": 0,
+        "LOGISTICS": 0,
+        "EMR": 1,
+        "NURSING": 0,
+        "PRINTER": 0,
+        "PC": 0,
+        "PUBLIC_PLATFORM": 0,
+        "IDENTITY": 0,
+        "MOBILE_NURSING": 0,
+        "HIS": 0,
+        "OTHER_HARDWARE": 0,
+        "NETWORK": 0,
+        "QUEUE": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "UNKNOWN": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 1,
+        "probabilities": {
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "CURRENT_FAULT": 1,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.54
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1746,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 1115.8499999999913,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S107:m1",
+        "S107:m2"
+      ]
+    },
+    {
+      "id": "S108",
+      "topic": "INSURANCE",
+      "raw_topic": "INSURANCE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "QUEUE": 0,
+        "INSURANCE": 1,
+        "CONSUMABLES": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "OTHER_HARDWARE": 0,
+        "NURSING": 0,
+        "PRINTER": 0,
+        "HIS": 0,
+        "IDENTITY": 0,
+        "LIS": 0,
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "OTHER_CLINICAL": 0,
+        "PC": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.39
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1740,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 766.8374999999942,
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S108:m1",
+        "S108:m2"
+      ]
+    },
+    {
+      "id": "S109",
+      "topic": "CONSUMABLES",
+      "raw_topic": "CONSUMABLES",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "INSURANCE": 0,
+        "EMR": 0,
+        "PC": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "IDENTITY": 0,
+        "QUEUE": 0,
+        "CONSUMABLES": 1,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 0.98,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.39
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 291
+      },
+      "elapsed_ms": 723.5486000000092,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S109:m1"
+      ]
+    },
+    {
+      "id": "S110",
+      "topic": "MOBILE_NURSING",
+      "raw_topic": "MOBILE_NURSING",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "OTHER_CLINICAL": 0,
+        "LOGISTICS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "EMR": 0,
+        "NETWORK": 0,
+        "PRINTER": 0,
+        "MOBILE_NURSING": 1,
+        "SELF_SERVICE": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "LIS": 0,
+        "UNKNOWN": 0,
+        "HIS": 0,
+        "PACS": 0,
+        "PUBLIC_PLATFORM": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "CURRENT_FAULT": 1,
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.26
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1710,
+        "output_tokens": 293
+      },
+      "elapsed_ms": 732.1566000000021,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S110:m1"
+      ]
+    },
+    {
+      "id": "S111",
+      "topic": "NURSING",
+      "raw_topic": "NURSING",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PACS": 0,
+        "HIS": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PRINTER": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "PC": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "OFFICE": 0,
+        "QUEUE": 0,
+        "EMR": 0,
+        "NURSING": 1,
+        "OTHER_HARDWARE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "CURRENT_FAULT": 0.99,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.3
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 816.1748999999982,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S111:m1"
+      ]
+    },
+    {
+      "id": "S112",
+      "topic": "PUBLIC_PLATFORM",
+      "raw_topic": "PUBLIC_PLATFORM",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "LIS": 0,
+        "UNKNOWN": 0,
+        "NETWORK": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "PC": 0,
+        "PRINTER": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "QUEUE": 0,
+        "EMR": 0,
+        "OTHER_HARDWARE": 0,
+        "PUBLIC_PLATFORM": 1,
+        "HIS": 0,
+        "LOGISTICS": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "MOBILE_NURSING": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "CURRENT_FAULT": 0.99,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0.01,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.26
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1709,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 830.7608999999939,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S112:m1"
+      ]
+    },
+    {
+      "id": "S113",
+      "topic": "PUBLIC_PLATFORM",
+      "raw_topic": "PUBLIC_PLATFORM",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "UNKNOWN": 0,
+        "EMR": 0,
+        "PACS": 0,
+        "OFFICE": 0,
+        "INSURANCE": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "QUEUE": 0,
+        "OTHER_HARDWARE": 0,
+        "PRINTER": 0,
+        "SELF_SERVICE": 0,
+        "NETWORK": 0,
+        "LOGISTICS": 0,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "HIS": 0,
+        "PUBLIC_PLATFORM": 1,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "CURRENT_FAULT": 0.99,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "SERVICE_REQUEST": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "QUESTION": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.27
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 709.997000000003,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S113:m1"
+      ]
+    },
+    {
+      "id": "S114",
+      "topic": "SELF_SERVICE",
+      "raw_topic": "SELF_SERVICE",
+      "chosen_probability": 0.98,
+      "margin": 0.96,
+      "choice_confidence": 0.98,
+      "probabilities": {
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "SELF_SERVICE": 0.98,
+        "LOGISTICS": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "LIS": 0,
+        "QUEUE": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "INSURANCE": 0,
+        "OTHER_HARDWARE": 0.02,
+        "MOBILE_NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "UNKNOWN": 0,
+        "PRINTER": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "CURRENT_FAULT": 0.99
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.53
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1707,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 783.0481,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S114:m1"
+      ]
+    },
+    {
+      "id": "S115",
+      "topic": "OTHER_HARDWARE",
+      "raw_topic": "OTHER_HARDWARE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "SELF_SERVICE": 0,
+        "INSURANCE": 0,
+        "QUEUE": 0,
+        "UNKNOWN": 0,
+        "OFFICE": 0,
+        "PACS": 0,
+        "OTHER_HARDWARE": 1,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "NURSING": 0,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PRINTER": 0,
+        "PC": 0,
+        "EMR": 0,
+        "OTHER_CLINICAL": 0,
+        "NETWORK": 0,
+        "IDENTITY": 0,
+        "HIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.97,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.98,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.02,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.48
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 291
+      },
+      "elapsed_ms": 704.0639000000083,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S115:m1"
+      ]
+    },
+    {
+      "id": "S116",
+      "topic": "OTHER_HARDWARE",
+      "raw_topic": "OTHER_HARDWARE",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "SELF_SERVICE": 0,
+        "INSURANCE": 0,
+        "QUEUE": 0,
+        "UNKNOWN": 0.01,
+        "OFFICE": 0,
+        "PACS": 0,
+        "OTHER_HARDWARE": 0.99,
+        "LIS": 0,
+        "CONSUMABLES": 0,
+        "NURSING": 0,
+        "PRINTER": 0,
+        "PUBLIC_PLATFORM": 0,
+        "LOGISTICS": 0,
+        "PC": 0,
+        "EMR": 0,
+        "OTHER_CLINICAL": 0,
+        "HIS": 0,
+        "IDENTITY": 0,
+        "NETWORK": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.99,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.25
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 291
+      },
+      "elapsed_ms": 795.6022999999986,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S116:m1"
+      ]
+    },
+    {
+      "id": "S117",
+      "topic": "OFFICE",
+      "raw_topic": "OFFICE",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PC": 0,
+        "NETWORK": 0,
+        "NURSING": 0,
+        "IDENTITY": 0,
+        "OFFICE": 1,
+        "QUEUE": 0,
+        "EMR": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "LIS": 0,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PACS": 0,
+        "SELF_SERVICE": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "LOGISTICS": 0,
+        "OTHER_HARDWARE": 0,
+        "CONSUMABLES": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0.01,
+          "QUESTION": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.99,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.18
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1708,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 770.829700000002,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S117:m1"
+      ]
+    },
+    {
+      "id": "S118",
+      "topic": "OTHER_CLINICAL",
+      "raw_topic": "OTHER_CLINICAL",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "SELF_SERVICE": 0,
+        "UNKNOWN": 0,
+        "PACS": 0,
+        "HIS": 0,
+        "OTHER_CLINICAL": 1,
+        "NURSING": 0,
+        "PC": 0,
+        "QUEUE": 0,
+        "CONSUMABLES": 0,
+        "PUBLIC_PLATFORM": 0,
+        "LOGISTICS": 0,
+        "PRINTER": 0,
+        "EMR": 0,
+        "MOBILE_NURSING": 0,
+        "IDENTITY": 0,
+        "INSURANCE": 0,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "NETWORK": 0,
+        "LIS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "CURRENT_FAULT": 0.99,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.38
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1709,
+        "output_tokens": 291
+      },
+      "elapsed_ms": 762.6591000000044,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S118:m1"
+      ]
+    },
+    {
+      "id": "S119",
+      "topic": "IDENTITY",
+      "raw_topic": "IDENTITY",
+      "chosen_probability": 0.95,
+      "margin": 0.9299999999999999,
+      "choice_confidence": 0.95,
+      "probabilities": {
+        "NETWORK": 0,
+        "LIS": 0,
+        "MOBILE_NURSING": 0,
+        "QUEUE": 0,
+        "OTHER_CLINICAL": 0,
+        "PC": 0,
+        "EMR": 0.02,
+        "SELF_SERVICE": 0,
+        "LOGISTICS": 0,
+        "INSURANCE": 0,
+        "HIS": 0.01,
+        "IDENTITY": 0.95,
+        "PRINTER": 0,
+        "NURSING": 0,
+        "PACS": 0,
+        "OFFICE": 0.01,
+        "UNKNOWN": 0.01,
+        "CONSUMABLES": 0,
+        "OTHER_HARDWARE": 0,
+        "PUBLIC_PLATFORM": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.99,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 1,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.35
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1712,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 738.4060999999929,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S119:m1"
+      ]
+    },
+    {
+      "id": "S120",
+      "topic": "LOGISTICS",
+      "raw_topic": "LOGISTICS",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "MOBILE_NURSING": 0,
+        "LIS": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "IDENTITY": 0,
+        "CONSUMABLES": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "EMR": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_HARDWARE": 0,
+        "PRINTER": 0,
+        "OTHER_CLINICAL": 0,
+        "INSURANCE": 0,
+        "LOGISTICS": 0.99,
+        "OFFICE": 0,
+        "UNKNOWN": 0.01,
+        "QUEUE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.52,
+        "probabilities": {
+          "QUESTION": 0,
+          "NON_IT": 0.4,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 0,
+          "SERVICE_REQUEST": 0.01,
+          "STATUS_QUERY": 0,
+          "CURRENT_FAULT": 0.59
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.19
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1709,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 720.4566999999952,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S120:m1"
+      ]
+    },
+    {
+      "id": "S121",
+      "topic": "PACS",
+      "raw_topic": "PACS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "SELF_SERVICE": 0,
+        "PRINTER": 0,
+        "OFFICE": 0,
+        "PC": 0,
+        "MOBILE_NURSING": 0,
+        "PACS": 1,
+        "NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "LIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "EMR": 0,
+        "CONSUMABLES": 0,
+        "IDENTITY": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "LOGISTICS": 0,
+        "OTHER_HARDWARE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "QUESTION",
+        "confidence": 0.93,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0.05,
+          "STATUS_QUERY": 0,
+          "QUESTION": 0.95
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.19
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 287
+      },
+      "elapsed_ms": 737.9334999999992,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S121:m1"
+      ]
+    },
+    {
+      "id": "S122",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 0.86,
+      "margin": 0.72,
+      "choice_confidence": 0.84,
+      "probabilities": {
+        "IDENTITY": 0,
+        "SELF_SERVICE": 0,
+        "OFFICE": 0,
+        "LOGISTICS": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "PC": 0,
+        "LIS": 0,
+        "QUEUE": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "INSURANCE": 0,
+        "OTHER_HARDWARE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "PACS": 0,
+        "CONSUMABLES": 0,
+        "PRINTER": 0.86,
+        "UNKNOWN": 0.14
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "RECOVERY_OR_ACK",
+        "confidence": 1,
+        "probabilities": {
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "RECOVERY_OR_ACK": 1,
+          "CURRENT_FAULT": 0,
+          "QUESTION": 0,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.1
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1715,
+        "output_tokens": 291
+      },
+      "elapsed_ms": 718.667300000001,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S122:m1"
+      ]
+    },
+    {
+      "id": "S123",
+      "topic": "HIS",
+      "raw_topic": "HIS",
+      "chosen_probability": 0.8200000000000001,
+      "margin": 0.6400000000000001,
+      "choice_confidence": 0.8,
+      "probabilities": {
+        "OFFICE": 0,
+        "IDENTITY": 0,
+        "OTHER_HARDWARE": 0,
+        "PACS": 0,
+        "LOGISTICS": 0,
+        "NETWORK": 0,
+        "HIS": 0.8200000000000001,
+        "NURSING": 0,
+        "EMR": 0,
+        "MOBILE_NURSING": 0,
+        "CONSUMABLES": 0,
+        "QUEUE": 0,
+        "UNKNOWN": 0.18,
+        "PUBLIC_PLATFORM": 0,
+        "INSURANCE": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "LIS": 0,
+        "SELF_SERVICE": 0,
+        "PC": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "QUESTION",
+        "confidence": 0.96,
+        "probabilities": {
+          "QUESTION": 0.97,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "NON_IT": 0,
+          "RECOVERY_OR_ACK": 0.03,
+          "STATUS_QUERY": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.1
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1716,
+        "output_tokens": 287
+      },
+      "elapsed_ms": 832.2289000000019,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S123:m1"
+      ]
+    },
+    {
+      "id": "S124",
+      "topic": "NETWORK",
+      "raw_topic": "NETWORK",
+      "chosen_probability": 0.97,
+      "margin": 0.94,
+      "choice_confidence": 0.97,
+      "probabilities": {
+        "NETWORK": 0.97,
+        "NURSING": 0,
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "PUBLIC_PLATFORM": 0,
+        "LIS": 0,
+        "UNKNOWN": 0.03,
+        "EMR": 0,
+        "PRINTER": 0,
+        "INSURANCE": 0,
+        "OFFICE": 0,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_HARDWARE": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "LOGISTICS": 0,
+        "OTHER_CLINICAL": 0,
+        "QUEUE": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "RECOVERY_OR_ACK",
+        "confidence": 1,
+        "probabilities": {
+          "QUESTION": 0,
+          "RECOVERY_OR_ACK": 1,
+          "NON_IT": 0,
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.09
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 738.6665999999968,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S124:m1"
+      ]
+    },
+    {
+      "id": "S125",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 0.97,
+      "margin": 0.94,
+      "choice_confidence": 0.97,
+      "probabilities": {
+        "OFFICE": 0,
+        "HIS": 0,
+        "PC": 0,
+        "NETWORK": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_HARDWARE": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "INSURANCE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "MOBILE_NURSING": 0,
+        "IDENTITY": 0,
+        "OTHER_CLINICAL": 0,
+        "EMR": 0,
+        "PACS": 0,
+        "PRINTER": 0.97,
+        "UNKNOWN": 0.03,
+        "LOGISTICS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "RECOVERY_OR_ACK",
+        "confidence": 1,
+        "probabilities": {
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 1,
+          "CURRENT_FAULT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.11
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1714,
+        "output_tokens": 291
+      },
+      "elapsed_ms": 783.193299999999,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S125:m1"
+      ]
+    },
+    {
+      "id": "S126",
+      "topic": "IDENTITY",
+      "raw_topic": "IDENTITY",
+      "chosen_probability": 0.99,
+      "margin": 0.98,
+      "choice_confidence": 0.99,
+      "probabilities": {
+        "UNKNOWN": 0.01,
+        "LIS": 0,
+        "INSURANCE": 0,
+        "CONSUMABLES": 0,
+        "LOGISTICS": 0,
+        "OTHER_HARDWARE": 0,
+        "PRINTER": 0,
+        "NETWORK": 0,
+        "MOBILE_NURSING": 0,
+        "OTHER_CLINICAL": 0,
+        "SELF_SERVICE": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OFFICE": 0,
+        "PC": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "PACS": 0,
+        "IDENTITY": 0.99,
+        "HIS": 0,
+        "EMR": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "SERVICE_REQUEST",
+        "confidence": 0.99,
+        "probabilities": {
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0,
+          "STATUS_QUERY": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "SERVICE_REQUEST": 0.99,
+          "RECOVERY_OR_ACK": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.36
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 717.565300000002,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S126:m1"
+      ]
+    },
+    {
+      "id": "S127",
+      "topic": "IDENTITY",
+      "raw_topic": "IDENTITY",
+      "chosen_probability": 0.93,
+      "margin": 0.8600000000000001,
+      "choice_confidence": 0.93,
+      "probabilities": {
+        "OTHER_HARDWARE": 0,
+        "HIS": 0,
+        "OFFICE": 0,
+        "QUEUE": 0,
+        "NETWORK": 0,
+        "PACS": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "PC": 0,
+        "CONSUMABLES": 0,
+        "LIS": 0,
+        "UNKNOWN": 0.07,
+        "MOBILE_NURSING": 0,
+        "LOGISTICS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "INSURANCE": 0,
+        "EMR": 0,
+        "IDENTITY": 0.93
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "QUESTION",
+        "confidence": 0.66,
+        "probabilities": {
+          "SERVICE_REQUEST": 0.27,
+          "CURRENT_FAULT": 0,
+          "QUESTION": 0.71,
+          "INSUFFICIENT_OR_UNCLEAR": 0.02,
+          "STATUS_QUERY": 0,
+          "RECOVERY_OR_ACK": 0,
+          "NON_IT": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.59
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1708,
+        "output_tokens": 288
+      },
+      "elapsed_ms": 775.0842999999877,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S127:m1"
+      ]
+    },
+    {
+      "id": "S128",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PUBLIC_PLATFORM": 0,
+        "MOBILE_NURSING": 0,
+        "PACS": 0,
+        "OTHER_CLINICAL": 0,
+        "CONSUMABLES": 0,
+        "PC": 0,
+        "NURSING": 0,
+        "SELF_SERVICE": 0,
+        "QUEUE": 0,
+        "UNKNOWN": 1,
+        "LOGISTICS": 0,
+        "IDENTITY": 0,
+        "OFFICE": 0,
+        "EMR": 0,
+        "INSURANCE": 0,
+        "HIS": 0,
+        "NETWORK": 0,
+        "LIS": 0,
+        "PRINTER": 0,
+        "OTHER_HARDWARE": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "STATUS_QUERY",
+        "confidence": 0.99,
+        "probabilities": {
+          "SERVICE_REQUEST": 0,
+          "NON_IT": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "QUESTION": 0,
+          "CURRENT_FAULT": 0,
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0.99
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.42
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1711,
+        "output_tokens": 287
+      },
+      "elapsed_ms": 797.409599999999,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S128:m1"
+      ]
+    },
+    {
+      "id": "S129",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "LIS": 0,
+        "EMR": 0,
+        "NETWORK": 0,
+        "UNKNOWN": 1,
+        "NURSING": 0,
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "QUEUE": 0,
+        "INSURANCE": 0,
+        "OTHER_CLINICAL": 0,
+        "SELF_SERVICE": 0,
+        "PACS": 0,
+        "OFFICE": 0,
+        "MOBILE_NURSING": 0,
+        "PC": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 0,
+        "CONSUMABLES": 0,
+        "OTHER_HARDWARE": 0,
+        "IDENTITY": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "RECOVERY_OR_ACK",
+        "confidence": 1,
+        "probabilities": {
+          "CURRENT_FAULT": 0,
+          "RECOVERY_OR_ACK": 1,
+          "NON_IT": 0,
+          "QUESTION": 0,
+          "SERVICE_REQUEST": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0,
+          "STATUS_QUERY": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.13
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1705,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 724.8071000000054,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S129:m1"
+      ]
+    },
+    {
+      "id": "S130",
+      "topic": "UNKNOWN",
+      "raw_topic": "UNKNOWN",
+      "chosen_probability": 0.96,
+      "margin": 0.9199999999999999,
+      "choice_confidence": 0.95,
+      "probabilities": {
+        "INSURANCE": 0,
+        "LOGISTICS": 0.04,
+        "PRINTER": 0,
+        "OTHER_HARDWARE": 0,
+        "OFFICE": 0,
+        "LIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "OTHER_CLINICAL": 0,
+        "MOBILE_NURSING": 0,
+        "UNKNOWN": 0.96,
+        "IDENTITY": 0,
+        "NETWORK": 0,
+        "HIS": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 0,
+        "CONSUMABLES": 0,
+        "NURSING": 0,
+        "QUEUE": 0,
+        "PC": 0,
+        "PACS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "NON_IT",
+        "confidence": 0.96,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0,
+          "CURRENT_FAULT": 0,
+          "QUESTION": 0.03,
+          "NON_IT": 0.97,
+          "INSUFFICIENT_OR_UNCLEAR": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.11
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1706,
+        "output_tokens": 287
+      },
+      "elapsed_ms": 676.5861000000004,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S130:m1"
+      ]
+    },
+    {
+      "id": "S131",
+      "topic": "LIS",
+      "raw_topic": "LIS",
+      "chosen_probability": 1,
+      "margin": 1,
+      "choice_confidence": 1,
+      "probabilities": {
+        "PC": 0,
+        "NETWORK": 0,
+        "NURSING": 0,
+        "IDENTITY": 0,
+        "QUEUE": 0,
+        "OFFICE": 0,
+        "EMR": 0,
+        "INSURANCE": 0,
+        "UNKNOWN": 0,
+        "LIS": 1,
+        "HIS": 0,
+        "MOBILE_NURSING": 0,
+        "PUBLIC_PLATFORM": 0,
+        "PACS": 0,
+        "SELF_SERVICE": 0,
+        "OTHER_CLINICAL": 0,
+        "PRINTER": 0,
+        "LOGISTICS": 0,
+        "OTHER_HARDWARE": 0,
+        "CONSUMABLES": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.98,
+        "probabilities": {
+          "QUESTION": 0,
+          "STATUS_QUERY": 0,
+          "INSUFFICIENT_OR_UNCLEAR": 0.01,
+          "RECOVERY_OR_ACK": 0.01,
+          "CURRENT_FAULT": 0.98,
+          "NON_IT": 0,
+          "SERVICE_REQUEST": 0
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.93
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1720,
+        "output_tokens": 289
+      },
+      "elapsed_ms": 708.6071999999986,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S131:m1"
+      ]
+    },
+    {
+      "id": "S132",
+      "topic": "PRINTER",
+      "raw_topic": "PRINTER",
+      "chosen_probability": 0.98,
+      "margin": 0.96,
+      "choice_confidence": 0.98,
+      "probabilities": {
+        "INSURANCE": 0,
+        "LOGISTICS": 0,
+        "PRINTER": 0.98,
+        "OTHER_CLINICAL": 0,
+        "OFFICE": 0,
+        "LIS": 0,
+        "PUBLIC_PLATFORM": 0,
+        "HIS": 0,
+        "UNKNOWN": 0.02,
+        "IDENTITY": 0,
+        "MOBILE_NURSING": 0,
+        "NETWORK": 0,
+        "OTHER_HARDWARE": 0,
+        "SELF_SERVICE": 0,
+        "EMR": 0,
+        "NURSING": 0,
+        "CONSUMABLES": 0,
+        "QUEUE": 0,
+        "PC": 0,
+        "PACS": 0
+      },
+      "request_nature": {
+        "type": "choice",
+        "choice": "CURRENT_FAULT",
+        "confidence": 0.72,
+        "probabilities": {
+          "RECOVERY_OR_ACK": 0.11,
+          "STATUS_QUERY": 0,
+          "SERVICE_REQUEST": 0.05,
+          "CURRENT_FAULT": 0.76,
+          "QUESTION": 0.03,
+          "NON_IT": 0.01,
+          "INSUFFICIENT_OR_UNCLEAR": 0.04
+        }
+      },
+      "needs_review": {
+        "type": "noul",
+        "noul": 0.74
+      },
+      "model": "jev-1.13.0",
+      "usage": {
+        "input_tokens": 1723,
+        "output_tokens": 290
+      },
+      "elapsed_ms": 719.7360000000044,
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S132:m1"
+      ]
+    }
+  ],
+  "failures": [],
+  "finished_at": "2026-09-23T07:02:16.854Z",
+  "status": "COMPLETED"
+}

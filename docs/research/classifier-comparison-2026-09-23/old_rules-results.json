@@ -1,0 +1,4129 @@
+{
+  "mode": "old_rules",
+  "classifier_root": "C:\\Users\\zqpet\\Downloads\\outpatient-intake-classifier",
+  "dataset_sha256": "b9fd492b07362ca98c6c2a304e2905a103f8858b61c982f93d06170c48a0d44e",
+  "source_hashes": {
+    "src\\outpatient_classifier\\data_pipeline.py": "cc6c51a344c86241c66b9221ad46f6cf697bb91f84075a184a2593f7b85b9585",
+    "src\\outpatient_classifier\\models.py": "181742cbf160822b0a5dbfceb9c3e46d9a750b89200439467588cd142e9456e6",
+    "src\\outpatient_classifier\\preprocess.py": "7f318b1b943288224c6c416bf34acaed60d617573e02e84ef35a8dbd69dc7bfb",
+    "src\\outpatient_classifier\\service.py": "135c265d90e4877c8557bf97e95edffa4b90671ef70219aca76b4e0422260a31",
+    "src\\outpatient_classifier\\taxonomy.py": "92835b7d2fd9d0ba93daf5ac45a60058ecf89f3be6ff81f4e416c4c6369357bb",
+    "src\\outpatient_classifier\\training.py": "93fbd9d5a24334cd77b498ba185f5eafd1027cc4cc36ad7944ebacfd326f24ec",
+    "src\\outpatient_classifier\\__init__.py": "eafe159faa3892c00c7ad62f3b30908f23333a674471de5a03a82e95d7aa5dca",
+    "models\\training_manifest.json": "b47f4ca76958b566c1f3b903d14ed372229e86b27a5a345f8854c6b5e0897224",
+    "models\\tfidf_head.joblib": "ffa7c2204c0085985db1d9eb3c4cb4dd48e22d79e349212a0f1afc20ee561d9d",
+    "models\\bge_head.joblib": "14748a3ae39169148981121bd049e8baf8e55545b4389b7ef6fa14f553874790",
+    "model_assets\\bge-small-zh-v1.5\\model_int8.onnx": "b9837c19ce154ff0726d398ee77abbc03a7faf0476c6f93016c84e531be7ebb5"
+  },
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "numpy": "2.5.3",
+      "scipy": "1.18.1",
+      "scikit-learn": "1.8.0",
+      "onnxruntime": "1.22.0",
+      "tokenizers": "0.21.4",
+      "joblib": "1.6.0",
+      "psutil": "7.2.2"
+    },
+    "blas_threads": 1,
+    "onnx_intra_threads": 2,
+    "onnx_inter_threads": 1
+  },
+  "load_ms_excluding_module_import": 0.13770000077784061,
+  "warm_latency": {
+    "n": 660,
+    "p50_ms": 0.051799986977130175,
+    "p95_ms": 0.07320003351196647,
+    "max_ms": 1.2512999819591641
+  },
+  "group_latency": {
+    "literal": {
+      "n": 180,
+      "p50_ms": 0.04900002386420965,
+      "p95_ms": 0.059500045608729124,
+      "max_ms": 1.2512999819591641
+    },
+    "colloquial": {
+      "n": 180,
+      "p50_ms": 0.05240004975348711,
+      "p95_ms": 0.06130000110715628,
+      "max_ms": 0.0735999783501029
+    },
+    "insufficient": {
+      "n": 60,
+      "p50_ms": 0.04469999112188816,
+      "p95_ms": 0.0589000410400331,
+      "max_ms": 0.06060005398467183
+    },
+    "multiple_topics": {
+      "n": 60,
+      "p50_ms": 0.05670002428814769,
+      "p95_ms": 0.07650000043213367,
+      "max_ms": 0.2502999850548804
+    },
+    "supplement": {
+      "n": 60,
+      "p50_ms": 0.0703000114299357,
+      "p95_ms": 0.09490002412348986,
+      "max_ms": 0.2797000342980027
+    },
+    "catalog_extension": {
+      "n": 60,
+      "p50_ms": 0.05029997555539012,
+      "p95_ms": 0.10870001278817654,
+      "max_ms": 0.17590000061318278
+    },
+    "route_controls": {
+      "n": 60,
+      "p50_ms": 0.0521000474691391,
+      "p95_ms": 0.06559997564181685,
+      "max_ms": 0.08450000314041972
+    }
+  },
+  "peak_rss_mib": 117.15625,
+  "current_rss_mib": 117.15625,
+  "latency_scope": "Unchanged predict_snapshot including normalization/rules/model when configured; 132 cases x5, sequential, one full warm pass; excludes IPC/DB/queue/UI",
+  "decision_sources": {
+    "rule": 87,
+    "none": 45
+  },
+  "diagnostics": {
+    "rule_hit_model_call": {
+      "decision_source": "rule",
+      "model_prediction_method_calls": 1,
+      "actual_model_available": false
+    }
+  },
+  "predictions": [
+    {
+      "id": "S001",
+      "topic": "HIS",
+      "native_label": "software.his_outpatient",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "slow_or_hang",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.965,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.his_outpatient",
+          "score": 0.965,
+          "reason": "显式门诊挂号收费/诊间业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S001:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S002",
+      "topic": "HIS",
+      "native_label": "software.his_clinical",
+      "request_type": "fault_report",
+      "symptoms": [
+        "cannot_login",
+        "permission_or_account"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.94,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.his_clinical",
+          "score": 0.94,
+          "reason": "显式HIS临床/住院业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S002:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S003",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.integrated_workstation",
+          "score": 0.995,
+          "reason": "显式一体化工作站术语"
+        },
+        {
+          "code": "software.his_outpatient",
+          "score": 0.965,
+          "reason": "显式门诊挂号收费/诊间业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S003:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S004",
+      "topic": "HIS",
+      "native_label": "software.his_outpatient",
+      "request_type": "fault_report",
+      "symptoms": [
+        "slow_or_hang"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.965,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.his_outpatient",
+          "score": 0.965,
+          "reason": "显式门诊挂号收费/诊间业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S004:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S005",
+      "topic": "HIS",
+      "native_label": "software.his_outpatient",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.965,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.his_outpatient",
+          "score": 0.965,
+          "reason": "显式门诊挂号收费/诊间业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S005:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S006",
+      "topic": "HIS",
+      "native_label": "software.his_clinical",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.94,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.his_clinical",
+          "score": 0.94,
+          "reason": "显式HIS临床/住院业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S006:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S007",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S007:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S008",
+      "topic": "HIS",
+      "native_label": "software.his_outpatient",
+      "request_type": "information_consultation",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.965,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.his_outpatient",
+          "score": 0.965,
+          "reason": "显式门诊挂号收费/诊间业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S008:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S009",
+      "topic": "EMR",
+      "native_label": "software.emr_empi",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.975,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.emr_empi",
+          "score": 0.975,
+          "reason": "显式电子病历/EMPI术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S009:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S010",
+      "topic": "EMR",
+      "native_label": "software.emr_empi",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.975,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.emr_empi",
+          "score": 0.975,
+          "reason": "显式电子病历/EMPI术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S010:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S011",
+      "topic": "EMR",
+      "native_label": "software.emr_empi",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.975,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.emr_empi",
+          "score": 0.975,
+          "reason": "显式电子病历/EMPI术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S011:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S012",
+      "topic": "EMR",
+      "native_label": "software.emr_empi",
+      "request_type": "fault_report",
+      "symptoms": [
+        "slow_or_hang"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.975,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.emr_empi",
+          "score": 0.975,
+          "reason": "显式电子病历/EMPI术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S012:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S013",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S013:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S014",
+      "topic": "EMR",
+      "native_label": "software.emr_empi",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.975,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.emr_empi",
+          "score": 0.975,
+          "reason": "显式电子病历/EMPI术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S014:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S015",
+      "topic": "EMR",
+      "native_label": "software.emr_empi",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.975,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.emr_empi",
+          "score": 0.975,
+          "reason": "显式电子病历/EMPI术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S015:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S016",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S016:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S017",
+      "topic": "PACS",
+      "native_label": "software.pacs_ris",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S017:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S018",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        },
+        {
+          "code": "software.os_office",
+          "score": 0.985,
+          "reason": "显式操作系统/办公软件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S018:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S019",
+      "topic": "PACS",
+      "native_label": "software.pacs_ris",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S019:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S020",
+      "topic": "PACS",
+      "native_label": "software.pacs_ris",
+      "request_type": "fault_report",
+      "symptoms": [
+        "slow_or_hang"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S020:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S021",
+      "topic": "PACS",
+      "native_label": "software.pacs_ris",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S021:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S022",
+      "topic": "PACS",
+      "native_label": "software.pacs_ris",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S022:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S023",
+      "topic": "PACS",
+      "native_label": "software.pacs_ris",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S023:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S024",
+      "topic": "PACS",
+      "native_label": "software.pacs_ris",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S024:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S025",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "cannot_login",
+        "permission_or_account"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S025:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S026",
+      "topic": "LIS",
+      "native_label": "software.lis_transfusion",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.lis_transfusion",
+          "score": 0.995,
+          "reason": "显式LIS/检验/输血术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S026:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S027",
+      "topic": "LIS",
+      "native_label": "software.lis_transfusion",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.lis_transfusion",
+          "score": 0.995,
+          "reason": "显式LIS/检验/输血术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S027:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S028",
+      "topic": "LIS",
+      "native_label": "software.lis_transfusion",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.lis_transfusion",
+          "score": 0.995,
+          "reason": "显式LIS/检验/输血术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S028:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S029",
+      "topic": "LIS",
+      "native_label": "software.lis_transfusion",
+      "request_type": "fault_report",
+      "symptoms": [
+        "business_rule_or_operation"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.lis_transfusion",
+          "score": 0.995,
+          "reason": "显式LIS/检验/输血术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S029:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S030",
+      "topic": "LIS",
+      "native_label": "software.lis_transfusion",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.lis_transfusion",
+          "score": 0.995,
+          "reason": "显式LIS/检验/输血术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S030:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S031",
+      "topic": "LIS",
+      "native_label": "software.lis_transfusion",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.lis_transfusion",
+          "score": 0.995,
+          "reason": "显式LIS/检验/输血术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S031:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S032",
+      "topic": "LIS",
+      "native_label": "software.lis_transfusion",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.lis_transfusion",
+          "score": 0.995,
+          "reason": "显式LIS/检验/输血术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S032:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S033",
+      "topic": "INSURANCE",
+      "native_label": "software.medical_insurance",
+      "request_type": "fault_report",
+      "symptoms": [
+        "business_rule_or_operation"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.medical_insurance",
+          "score": 0.995,
+          "reason": "显式医保/两定术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S033:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S034",
+      "topic": "INSURANCE",
+      "native_label": "software.medical_insurance",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.medical_insurance",
+          "score": 0.995,
+          "reason": "显式医保/两定术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S034:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S035",
+      "topic": "INSURANCE",
+      "native_label": "software.medical_insurance",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.medical_insurance",
+          "score": 0.995,
+          "reason": "显式医保/两定术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S035:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S036",
+      "topic": "INSURANCE",
+      "native_label": "software.medical_insurance",
+      "request_type": "fault_report",
+      "symptoms": [
+        "cannot_login",
+        "permission_or_account"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.medical_insurance",
+          "score": 0.995,
+          "reason": "显式医保/两定术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S036:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S037",
+      "topic": "INSURANCE",
+      "native_label": "software.medical_insurance",
+      "request_type": "fault_report",
+      "symptoms": [
+        "slow_or_hang"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.medical_insurance",
+          "score": 0.995,
+          "reason": "显式医保/两定术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S037:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S038",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [
+        "business_rule_or_operation"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S038:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S039",
+      "topic": "INSURANCE",
+      "native_label": "software.medical_insurance",
+      "request_type": "unknown",
+      "symptoms": [
+        "cannot_login",
+        "system_unavailable"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.medical_insurance",
+          "score": 0.995,
+          "reason": "显式医保/两定术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S039:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S040",
+      "topic": "INSURANCE",
+      "native_label": "software.medical_insurance",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.medical_insurance",
+          "score": 0.995,
+          "reason": "显式医保/两定术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S040:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S041",
+      "topic": "QUEUE",
+      "native_label": "software.queue_calling",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.985,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.queue_calling",
+          "score": 0.985,
+          "reason": "显式排队叫号术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S041:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S042",
+      "topic": "QUEUE",
+      "native_label": "software.queue_calling",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.985,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.queue_calling",
+          "score": 0.985,
+          "reason": "显式排队叫号术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S042:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S043",
+      "topic": "QUEUE",
+      "native_label": "software.queue_calling",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.985,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.queue_calling",
+          "score": 0.985,
+          "reason": "显式排队叫号术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S043:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S044",
+      "topic": "QUEUE",
+      "native_label": "software.queue_calling",
+      "request_type": "fault_report",
+      "symptoms": [
+        "cannot_login",
+        "permission_or_account"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.985,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.queue_calling",
+          "score": 0.985,
+          "reason": "显式排队叫号术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S044:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S045",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S045:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S046",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S046:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S047",
+      "topic": "QUEUE",
+      "native_label": "software.queue_calling",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.985,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.queue_calling",
+          "score": 0.985,
+          "reason": "显式排队叫号术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S047:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S048",
+      "topic": "QUEUE",
+      "native_label": "software.queue_calling",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.985,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.queue_calling",
+          "score": 0.985,
+          "reason": "显式排队叫号术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S048:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S049",
+      "topic": "PRINTER",
+      "native_label": "hardware.printer",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S049:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S050",
+      "topic": "PRINTER",
+      "native_label": "hardware.printer",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S050:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S051",
+      "topic": "PRINTER",
+      "native_label": "hardware.printer",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S051:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S052",
+      "topic": "PRINTER",
+      "native_label": "hardware.printer",
+      "request_type": "unknown",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S052:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S053",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S053:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S054",
+      "topic": "PRINTER",
+      "native_label": "hardware.printer",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S054:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S055",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.92,
+          "reason": "出现打印故障但未指明软件系统"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S055:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S056",
+      "topic": "PRINTER",
+      "native_label": "hardware.printer",
+      "request_type": "unknown",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S056:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S057",
+      "topic": "PC",
+      "native_label": "hardware.pc_display",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S057:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S058",
+      "topic": "PC",
+      "native_label": "hardware.pc_display",
+      "request_type": "fault_report",
+      "symptoms": [
+        "screen_or_display"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S058:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S059",
+      "topic": "PC",
+      "native_label": "hardware.pc_display",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S059:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S060",
+      "topic": "PC",
+      "native_label": "hardware.pc_display",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S060:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S061",
+      "topic": "PC",
+      "native_label": "hardware.pc_display",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.96,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.pc_display",
+          "score": 0.96,
+          "reason": "电脑出现明确终端故障现象"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S061:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S062",
+      "topic": "PC",
+      "native_label": "hardware.pc_display",
+      "request_type": "fault_report",
+      "symptoms": [
+        "slow_or_hang",
+        "screen_or_display"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S062:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S063",
+      "topic": "PC",
+      "native_label": "hardware.pc_display",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S063:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S064",
+      "topic": "PC",
+      "native_label": "hardware.pc_display",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S064:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S065",
+      "topic": "NETWORK",
+      "native_label": "network",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure",
+        "network_disconnected"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S065:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S066",
+      "topic": "NETWORK",
+      "native_label": "network",
+      "request_type": "follow_up",
+      "symptoms": [
+        "network_disconnected"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S066:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S067",
+      "topic": "NETWORK",
+      "native_label": "network",
+      "request_type": "fault_report",
+      "symptoms": [
+        "network_disconnected"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S067:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S068",
+      "topic": "NETWORK",
+      "native_label": "network",
+      "request_type": "unknown",
+      "symptoms": [
+        "network_disconnected"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S068:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S069",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "information_consultation",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "information_consultation",
+          "score": 0.82,
+          "reason": "只识别出咨询性表达"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S069:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S070",
+      "topic": "NETWORK",
+      "native_label": "network",
+      "request_type": "unknown",
+      "symptoms": [
+        "network_disconnected"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S070:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S071",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S071:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S072",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [
+        "cannot_login",
+        "system_unavailable"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S072:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S073",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S073:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S074",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "cannot_login",
+        "permission_or_account"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S074:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S075",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "slow_or_hang"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S075:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S076",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S076:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S077",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S078",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S078:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S079",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S079:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S080",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S080:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S081",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S081:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S082",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "follow_up",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S082:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S083",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.92,
+          "reason": "出现打印故障但未指明软件系统"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S083:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S084",
+      "topic": "NETWORK",
+      "native_label": "network",
+      "request_type": "unknown",
+      "symptoms": [
+        "network_disconnected"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S084:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S085",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        },
+        {
+          "code": "software.his_outpatient",
+          "score": 0.965,
+          "reason": "显式门诊挂号收费/诊间业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S085:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S086",
+      "topic": "PACS",
+      "native_label": "software.pacs_ris",
+      "request_type": "fault_report",
+      "symptoms": [
+        "cannot_login",
+        "permission_or_account"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S086:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S087",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "screen_or_display"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.medical_insurance",
+          "score": 0.995,
+          "reason": "显式医保/两定术语"
+        },
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S087:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S088",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure",
+        "network_disconnected"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        },
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S088:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S089",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.queue_calling",
+          "score": 0.985,
+          "reason": "显式排队叫号术语"
+        },
+        {
+          "code": "software.emr_empi",
+          "score": 0.975,
+          "reason": "显式电子病历/EMPI术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S089:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S090",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        },
+        {
+          "code": "software.his_outpatient",
+          "score": 0.965,
+          "reason": "显式门诊挂号收费/诊间业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S090:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S091",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "business_rule_or_operation"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.lis_transfusion",
+          "score": 0.995,
+          "reason": "显式LIS/检验/输血术语"
+        },
+        {
+          "code": "software.medical_insurance",
+          "score": 0.995,
+          "reason": "显式医保/两定术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S091:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S092",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        },
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S092:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S093",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        },
+        {
+          "code": "software.emr_empi",
+          "score": 0.975,
+          "reason": "显式电子病历/EMPI术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S093:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S094",
+      "topic": "QUEUE",
+      "native_label": "software.queue_calling",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "slow_or_hang",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.985,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.queue_calling",
+          "score": 0.985,
+          "reason": "显式排队叫号术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S094:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S095",
+      "topic": "PC",
+      "native_label": "hardware.pc_display",
+      "request_type": "fault_report",
+      "symptoms": [
+        "screen_or_display"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        },
+        {
+          "code": "software.his_clinical",
+          "score": 0.94,
+          "reason": "显式HIS临床/住院业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S095:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S096",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure",
+        "network_disconnected"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        },
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S096:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S097",
+      "topic": "PRINTER",
+      "native_label": "hardware.printer",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S097:m1",
+        "S097:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": "unknown",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable"
+          ],
+          "decision_source": "none",
+          "confidence": 0.0,
+          "review_required": true,
+          "correction_applied": false,
+          "rule_candidates": [],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S097:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "PRINTER",
+          "native_label": "hardware.printer",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable",
+            "print_failure"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.99,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "hardware.printer",
+              "score": 0.99,
+              "reason": "显式打印机/耗材硬件术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S097:m1",
+            "S097:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S098",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        },
+        {
+          "code": "software.os_office",
+          "score": 0.985,
+          "reason": "显式操作系统/办公软件术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S098:m1",
+        "S098:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": "unknown",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable",
+            "print_failure"
+          ],
+          "decision_source": "none",
+          "confidence": 0.0,
+          "review_required": true,
+          "correction_applied": false,
+          "rule_candidates": [],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S098:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "UNKNOWN",
+          "native_label": "unknown",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable",
+            "print_failure"
+          ],
+          "decision_source": "none",
+          "confidence": 0.0,
+          "review_required": true,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "software.pacs_ris",
+              "score": 0.995,
+              "reason": "显式PACS/RIS/影像术语"
+            },
+            {
+              "code": "software.os_office",
+              "score": 0.985,
+              "reason": "显式操作系统/办公软件术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S098:m1",
+            "S098:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S099",
+      "topic": "LIS",
+      "native_label": "software.lis_transfusion",
+      "request_type": "fault_report",
+      "symptoms": [
+        "cannot_login",
+        "permission_or_account"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.lis_transfusion",
+          "score": 0.995,
+          "reason": "显式LIS/检验/输血术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S099:m1",
+        "S099:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": "unknown",
+          "request_type": "fault_report",
+          "symptoms": [
+            "cannot_login",
+            "permission_or_account"
+          ],
+          "decision_source": "none",
+          "confidence": 0.0,
+          "review_required": true,
+          "correction_applied": false,
+          "rule_candidates": [],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S099:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "LIS",
+          "native_label": "software.lis_transfusion",
+          "request_type": "fault_report",
+          "symptoms": [
+            "cannot_login",
+            "permission_or_account"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.995,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "software.lis_transfusion",
+              "score": 0.995,
+              "reason": "显式LIS/检验/输血术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S099:m1",
+            "S099:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S100",
+      "topic": "HIS",
+      "native_label": "software.his_outpatient",
+      "request_type": "fault_report",
+      "symptoms": [
+        "slow_or_hang"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.965,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.his_outpatient",
+          "score": 0.965,
+          "reason": "显式门诊挂号收费/诊间业务术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S100:m1",
+        "S100:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": "unknown",
+          "request_type": "fault_report",
+          "symptoms": [
+            "slow_or_hang"
+          ],
+          "decision_source": "none",
+          "confidence": 0.0,
+          "review_required": true,
+          "correction_applied": false,
+          "rule_candidates": [],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S100:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "HIS",
+          "native_label": "software.his_outpatient",
+          "request_type": "fault_report",
+          "symptoms": [
+            "slow_or_hang"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.965,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "software.his_outpatient",
+              "score": 0.965,
+              "reason": "显式门诊挂号收费/诊间业务术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S100:m1",
+            "S100:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S101",
+      "topic": "NETWORK",
+      "native_label": "network",
+      "request_type": "fault_report",
+      "symptoms": [
+        "network_disconnected"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S101:m1",
+        "S101:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": "unknown",
+          "request_type": "fault_report",
+          "symptoms": [],
+          "decision_source": "none",
+          "confidence": 0.0,
+          "review_required": true,
+          "correction_applied": false,
+          "rule_candidates": [],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S101:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "NETWORK",
+          "native_label": "network",
+          "request_type": "fault_report",
+          "symptoms": [
+            "network_disconnected"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.995,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "network",
+              "score": 0.995,
+              "reason": "显式网络连接术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S101:m1",
+            "S101:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S102",
+      "topic": "PC",
+      "native_label": "hardware.pc_display",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.pc_display",
+          "score": 0.98,
+          "reason": "显式电脑/显示设备硬件术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S102:m1",
+        "S102:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "UNKNOWN",
+          "native_label": "unknown",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable"
+          ],
+          "decision_source": "none",
+          "confidence": 0.0,
+          "review_required": true,
+          "correction_applied": false,
+          "rule_candidates": [],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S102:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "PC",
+          "native_label": "hardware.pc_display",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.98,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "hardware.pc_display",
+              "score": 0.98,
+              "reason": "显式电脑/显示设备硬件术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S102:m1",
+            "S102:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S103",
+      "topic": "PACS",
+      "native_label": "software.pacs_ris",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": true,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S103:m1",
+        "S103:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "PRINTER",
+          "native_label": "hardware.printer",
+          "request_type": "unknown",
+          "symptoms": [
+            "print_failure"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.99,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "hardware.printer",
+              "score": 0.99,
+              "reason": "显式打印机/耗材硬件术语"
+            }
+          ],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S103:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "PACS",
+          "native_label": "software.pacs_ris",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable",
+            "print_failure"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.995,
+          "review_required": false,
+          "correction_applied": true,
+          "rule_candidates": [
+            {
+              "code": "software.pacs_ris",
+              "score": 0.995,
+              "reason": "显式PACS/RIS/影像术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S103:m1",
+            "S103:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S104",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        },
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S104:m1",
+        "S104:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "PACS",
+          "native_label": "software.pacs_ris",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable",
+            "print_failure"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.995,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "software.pacs_ris",
+              "score": 0.995,
+              "reason": "显式PACS/RIS/影像术语"
+            }
+          ],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S104:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "UNKNOWN",
+          "native_label": "unknown",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable",
+            "print_failure"
+          ],
+          "decision_source": "none",
+          "confidence": 0.0,
+          "review_required": true,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "software.pacs_ris",
+              "score": 0.995,
+              "reason": "显式PACS/RIS/影像术语"
+            },
+            {
+              "code": "hardware.printer",
+              "score": 0.99,
+              "reason": "显式打印机/耗材硬件术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S104:m1",
+            "S104:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S105",
+      "topic": "NETWORK",
+      "native_label": "network",
+      "request_type": "unknown",
+      "symptoms": [
+        "cannot_login",
+        "system_unavailable",
+        "network_disconnected"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": true,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S105:m1",
+        "S105:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "HIS",
+          "native_label": "software.his_outpatient",
+          "request_type": "unknown",
+          "symptoms": [
+            "cannot_login",
+            "system_unavailable"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.965,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "software.his_outpatient",
+              "score": 0.965,
+              "reason": "显式门诊挂号收费/诊间业务术语"
+            }
+          ],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S105:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "NETWORK",
+          "native_label": "network",
+          "request_type": "unknown",
+          "symptoms": [
+            "cannot_login",
+            "system_unavailable",
+            "network_disconnected"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.995,
+          "review_required": false,
+          "correction_applied": true,
+          "rule_candidates": [
+            {
+              "code": "network",
+              "score": 0.995,
+              "reason": "显式网络连接术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S105:m1",
+            "S105:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S106",
+      "topic": "HIS",
+      "native_label": "software.his_outpatient",
+      "request_type": "fault_report",
+      "symptoms": [
+        "network_disconnected"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.965,
+      "review_required": false,
+      "correction_applied": true,
+      "rule_candidates": [
+        {
+          "code": "software.his_outpatient",
+          "score": 0.965,
+          "reason": "显式门诊挂号收费/诊间业务术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S106:m1",
+        "S106:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "NETWORK",
+          "native_label": "network",
+          "request_type": "unknown",
+          "symptoms": [
+            "network_disconnected"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.995,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "network",
+              "score": 0.995,
+              "reason": "显式网络连接术语"
+            }
+          ],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S106:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "HIS",
+          "native_label": "software.his_outpatient",
+          "request_type": "fault_report",
+          "symptoms": [
+            "network_disconnected"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.965,
+          "review_required": false,
+          "correction_applied": true,
+          "rule_candidates": [
+            {
+              "code": "software.his_outpatient",
+              "score": 0.965,
+              "reason": "显式门诊挂号收费/诊间业务术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S106:m1",
+            "S106:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S107",
+      "topic": "EMR",
+      "native_label": "software.emr_empi",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.975,
+      "review_required": false,
+      "correction_applied": true,
+      "rule_candidates": [
+        {
+          "code": "software.emr_empi",
+          "score": 0.975,
+          "reason": "显式电子病历/EMPI术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S107:m1",
+        "S107:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "LIS",
+          "native_label": "software.lis_transfusion",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable",
+            "print_failure"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.995,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "software.lis_transfusion",
+              "score": 0.995,
+              "reason": "显式LIS/检验/输血术语"
+            }
+          ],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S107:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "EMR",
+          "native_label": "software.emr_empi",
+          "request_type": "fault_report",
+          "symptoms": [
+            "system_unavailable",
+            "print_failure"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.975,
+          "review_required": false,
+          "correction_applied": true,
+          "rule_candidates": [
+            {
+              "code": "software.emr_empi",
+              "score": 0.975,
+              "reason": "显式电子病历/EMPI术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S107:m1",
+            "S107:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S108",
+      "topic": "INSURANCE",
+      "native_label": "software.medical_insurance",
+      "request_type": "fault_report",
+      "symptoms": [
+        "business_rule_or_operation"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": true,
+      "rule_candidates": [
+        {
+          "code": "software.medical_insurance",
+          "score": 0.995,
+          "reason": "显式医保/两定术语"
+        }
+      ],
+      "input_revision": 2,
+      "evidence_message_ids": [
+        "S108:m1",
+        "S108:m2"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": [
+        {
+          "topic": "QUEUE",
+          "native_label": "software.queue_calling",
+          "request_type": "unknown",
+          "symptoms": [],
+          "decision_source": "rule",
+          "confidence": 0.985,
+          "review_required": false,
+          "correction_applied": false,
+          "rule_candidates": [
+            {
+              "code": "software.queue_calling",
+              "score": 0.985,
+              "reason": "显式排队叫号术语"
+            }
+          ],
+          "input_revision": 1,
+          "evidence_message_ids": [
+            "S108:m1"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        },
+        {
+          "topic": "INSURANCE",
+          "native_label": "software.medical_insurance",
+          "request_type": "fault_report",
+          "symptoms": [
+            "business_rule_or_operation"
+          ],
+          "decision_source": "rule",
+          "confidence": 0.995,
+          "review_required": false,
+          "correction_applied": true,
+          "rule_candidates": [
+            {
+              "code": "software.medical_insurance",
+              "score": 0.995,
+              "reason": "显式医保/两定术语"
+            }
+          ],
+          "input_revision": 2,
+          "evidence_message_ids": [
+            "S108:m1",
+            "S108:m2"
+          ],
+          "model_prediction": null,
+          "raw_model_topic": null
+        }
+      ]
+    },
+    {
+      "id": "S109",
+      "topic": "CONSUMABLES",
+      "native_label": "software.consumables",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.consumables",
+          "score": 0.995,
+          "reason": "显式耗材/供应链术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S109:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S110",
+      "topic": "MOBILE_NURSING",
+      "native_label": "software.mobile_nursing",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.mobile_nursing",
+          "score": 0.995,
+          "reason": "显式移动护理/PDA术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S110:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S111",
+      "topic": "NURSING",
+      "native_label": "software.nursing",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.nursing",
+          "score": 0.995,
+          "reason": "显式护理管理术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S111:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S112",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "information_consultation",
+          "score": 0.82,
+          "reason": "只识别出咨询性表达"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S112:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S113",
+      "topic": "PUBLIC_PLATFORM",
+      "native_label": "software.public_platform",
+      "request_type": "fault_report",
+      "symptoms": [
+        "cannot_login",
+        "permission_or_account"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.public_platform",
+          "score": 0.99,
+          "reason": "显式公共平台术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S113:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S114",
+      "topic": "SELF_SERVICE",
+      "native_label": "software.self_service",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.self_service",
+          "score": 0.99,
+          "reason": "显式自助设备业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S114:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S115",
+      "topic": "OTHER_HARDWARE",
+      "native_label": "hardware.other",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.other",
+          "score": 0.98,
+          "reason": "显式其他信息硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S115:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S116",
+      "topic": "OTHER_HARDWARE",
+      "native_label": "hardware.other",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.98,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.other",
+          "score": 0.98,
+          "reason": "显式其他信息硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S116:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S117",
+      "topic": "OFFICE",
+      "native_label": "software.os_office",
+      "request_type": "fault_report",
+      "symptoms": [
+        "slow_or_hang"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.985,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.os_office",
+          "score": 0.985,
+          "reason": "显式操作系统/办公软件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S117:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S118",
+      "topic": "OTHER_CLINICAL",
+      "native_label": "software.other_clinical",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "rule",
+      "confidence": 0.985,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.other_clinical",
+          "score": 0.985,
+          "reason": "显式其他临床系统术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S118:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S119",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S119:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S120",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "fault_report",
+      "symptoms": [
+        "cannot_login",
+        "system_unavailable"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S120:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S121",
+      "topic": "PACS",
+      "native_label": "software.pacs_ris",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.pacs_ris",
+          "score": 0.995,
+          "reason": "显式PACS/RIS/影像术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S121:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S122",
+      "topic": "PRINTER",
+      "native_label": "hardware.printer",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S122:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S123",
+      "topic": "HIS",
+      "native_label": "software.his_outpatient",
+      "request_type": "fault_report",
+      "symptoms": [
+        "system_unavailable",
+        "slow_or_hang",
+        "business_rule_or_operation"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.965,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "software.his_outpatient",
+          "score": 0.965,
+          "reason": "显式门诊挂号收费/诊间业务术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S123:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S124",
+      "topic": "NETWORK",
+      "native_label": "network",
+      "request_type": "follow_up",
+      "symptoms": [
+        "network_disconnected"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.995,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "network",
+          "score": 0.995,
+          "reason": "显式网络连接术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S124:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S125",
+      "topic": "PRINTER",
+      "native_label": "hardware.printer",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S125:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S126",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "service_request",
+      "symptoms": [
+        "cannot_login",
+        "permission_or_account",
+        "installation_or_config"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "service_request",
+          "score": 0.84,
+          "reason": "只识别出安装/申请/权限/配置类服务动作"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S126:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S127",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "information_consultation",
+      "symptoms": [
+        "cannot_login",
+        "permission_or_account"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "information_consultation",
+          "score": 0.82,
+          "reason": "只识别出咨询性表达"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S127:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S128",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S128:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S129",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "follow_up",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S129:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S130",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "information_consultation",
+      "symptoms": [
+        "business_rule_or_operation"
+      ],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "information_consultation",
+          "score": 0.82,
+          "reason": "只识别出咨询性表达"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S130:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S131",
+      "topic": "UNKNOWN",
+      "native_label": "unknown",
+      "request_type": "unknown",
+      "symptoms": [],
+      "decision_source": "none",
+      "confidence": 0.0,
+      "review_required": true,
+      "correction_applied": false,
+      "rule_candidates": [],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S131:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    },
+    {
+      "id": "S132",
+      "topic": "PRINTER",
+      "native_label": "hardware.printer",
+      "request_type": "fault_report",
+      "symptoms": [
+        "print_failure"
+      ],
+      "decision_source": "rule",
+      "confidence": 0.99,
+      "review_required": false,
+      "correction_applied": false,
+      "rule_candidates": [
+        {
+          "code": "hardware.printer",
+          "score": 0.99,
+          "reason": "显式打印机/耗材硬件术语"
+        }
+      ],
+      "input_revision": 1,
+      "evidence_message_ids": [
+        "S132:m1"
+      ],
+      "model_prediction": null,
+      "raw_model_topic": null,
+      "revisions": null
+    }
+  ]
+}

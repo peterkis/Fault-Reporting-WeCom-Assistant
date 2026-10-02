@@ -1,0 +1,103 @@
+{
+  "schema_version": "third-party-staff-info-sync-verification-v1",
+  "run_id": "37d22ed8-a1db-45f1-8a27-ee4fcb5b10dc",
+  "environment": "test",
+  "base_url": "https://rd-testapi.mobimedical.cn/8024",
+  "protocol": "application/x-www-form-urlencoded",
+  "started_at": "2026-09-26T14:03:35.954Z",
+  "candidate": {
+    "git_sha": "a077e1f53fda09a371313ba0c3be56a60adbb39d",
+    "node_version": "v24.19.0",
+    "docx_sha256": "6ac357c28b8ecabea6490c8ddcf6e12b930e9bda12fcf9090dded7c4d7ae023c"
+  },
+  "configuration": {
+    "key_configured": true,
+    "env_key_matches_docx_reference": true,
+    "raw_key_recorded": false
+  },
+  "requests": [
+    {
+      "label": "missing_key",
+      "path": "/token/getToken",
+      "http_status": 200,
+      "elapsed_ms": 695,
+      "content_type": "application/json",
+      "result": "FALSE",
+      "provider_error_code": -1,
+      "outcome": "EXPECTED_REJECTION"
+    },
+    {
+      "label": "get_token_form_valid_key",
+      "path": "/token/getToken",
+      "http_status": 200,
+      "elapsed_ms": 295,
+      "content_type": "application/json",
+      "result": "FALSE",
+      "provider_error_code": -1,
+      "outcome": "BLOCKED"
+    },
+    {
+      "label": "invalid_token_tree",
+      "path": "/token/getOrganizationTree",
+      "http_status": 200,
+      "elapsed_ms": 205,
+      "content_type": "application/json",
+      "result": "FALSE",
+      "provider_error_code": -1,
+      "outcome": "EXPECTED_REJECTION"
+    },
+    {
+      "label": "get_token_json_diagnostic",
+      "path": "/token/getToken",
+      "http_status": 200,
+      "elapsed_ms": 269,
+      "content_type": "application/json",
+      "result": "FALSE",
+      "provider_error_code": -1,
+      "outcome": "BLOCKED"
+    }
+  ],
+  "token": {
+    "acquired": false
+  },
+  "organization_tree": {
+    "status": "NOT_RUN",
+    "reason": "TOKEN_NOT_ACQUIRED"
+  },
+  "user_details": {
+    "status": "NOT_RUN",
+    "sample_cap": 20,
+    "selected_count": 0
+  },
+  "negative_cases": {
+    "missing_key": "PASS",
+    "invalid_token": "PASS",
+    "unknown_uid": "NOT_RUN"
+  },
+  "repeatability": {
+    "status": "NOT_RUN"
+  },
+  "formal_environment": {
+    "status": "NOT_RUN",
+    "reason": "TEST_GATE_BLOCKED"
+  },
+  "protocol_differences": [
+    "JSON_COMPATIBILITY_DIAGNOSTIC_ALSO_REJECTED",
+    "NO_RAW_PROVIDER_MESSAGE_RECORDED"
+  ],
+  "safety": {
+    "raw_responses_persisted": false,
+    "raw_personal_values_persisted": false,
+    "token_persisted": false,
+    "database_touched": false,
+    "app_runtime_started": false,
+    "automatic_retry": false
+  },
+  "gate": {
+    "status": "BLOCKED",
+    "reasons": [
+      "PROVIDER_TOKEN_REJECTED",
+      "PROVIDER_ERRCODE_-1"
+    ]
+  }
+}
