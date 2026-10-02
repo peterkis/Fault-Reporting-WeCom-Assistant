@@ -49,6 +49,88 @@ function artifact(root:string,runId:string,value:unknown):{path:string;bytes:Buf
   return {path:ref.path,bytes};
 }
 
+/** Two distinct review records, both bound to the tested candidate. */
+export function verifyCurrentYxxReviews(root:string,report:Record<string,unknown>):void {
+  try{
+    assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+    assert.ok(Array.isArray(report.reviews)&&report.reviews.length===2);
+    const axes:string[]=[],reviewers:string[]=[];
+    for(const reference of report.reviews){
+      const review=json(artifact(root,report.run_id,reference).bytes);
+      assert.equal(review.schema_version,1);assertG2EvidenceTime(review);
+      assert.ok(review.axis==='SPEC'||review.axis==='STANDARDS');axes.push(review.axis);
+      assert.ok(typeof review.reviewer==='string'&&review.reviewer.trim().length>0);
+      assert.equal(review.reviewer,review.reviewer.trim());reviewers.push(review.reviewer.toLowerCase());
+      assert.equal(review.independent,true);assert.equal(review.verdict,'PASS');assert.equal(review.unresolved_findings,0);
+      assert.equal(review.historical_limitations_reviewed,true);
+      for(const key of ['tested_head','tested_tree','candidate_fingerprint']){
+        assert.ok(typeof report[key]==='string');assert.equal(review[key],report[key]);
+      }
+      assert.ok(Array.isArray(review.findings));
+      for(const finding of review.findings)assert.equal(object(finding).resolved,true);
+    }
+    assert.deepEqual(axes.sort(),['SPEC','STANDARDS']);assert.equal(new Set(reviewers).size,2);
+  }catch{
+    throw Object.assign(new Error('CURRENT_REVIEW_INVALID'),{code:'CURRENT_REVIEW_INVALID',stage:'REVIEW'});
+  }
+}
+
+/** Cleanup observations must come from the executed TAP, plus measured host cleanup. */
+export function verifyCurrentYxxCleanup(root:string,report:Record<string,unknown>):void {
+  try{
+    assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+    const cleanup=json(artifact(root,report.run_id,report.cleanup).bytes);
+    assert.equal(cleanup.schema_version,1);assert.equal(cleanup.kind,'CURRENT_OWNED_RESOURCE_CLEANUP');
+    assertG2EvidenceTime(cleanup);
+    for(const key of ['tested_head','tested_tree','candidate_fingerprint']){
+      assert.ok(typeof report[key]==='string');assert.equal(cleanup[key],report[key]);
+    }
+    assert.ok(Array.isArray(report.current_runs)&&report.current_runs.length>0);
+    const observed=new Map<string,Record<string,unknown>>(),summaryHashes:string[]=[];
+    for(const reference of report.current_runs){
+      const summary=artifact(root,report.run_id,reference),run=json(summary.bytes);summaryHashes.push(hash(summary.bytes));
+      assert.equal(run.status,'SELECTED_TESTS_PASS');assert.ok(Array.isArray(run.files));
+      for(const value of run.files){
+        const file=object(value);assert.ok(typeof file.tap_path==='string');assert.match(file.tap_path,/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,240}$/u);
+        const tap=artifact(root,report.run_id,{path:path.posix.dirname(summary.path)+'/'+file.tap_path,sha256:file.tap_sha256,bytes:file.tap_bytes});
+        const receipts=[...new TextDecoder('utf-8',{fatal:true}).decode(tap.bytes).matchAll(/^# SS009_RECEIPT (.+)\r?$/gmu)];
+        for(const [index,match] of receipts.entries()){
+          assert.ok(match[1]);const receipt=object(JSON.parse(match[1]) as unknown);
+          if(receipt.kind==='cleanup')observed.set(tap.path+':'+index,receipt);
+        }
+      }
+    }
+    assert.equal(new Set(summaryHashes).size,summaryHashes.length);assert.ok(observed.size>0);
+    assert.ok(Array.isArray(cleanup.observations));
+    const selected=cleanup.observations.map(value=>{
+      const item=object(value);assert.deepEqual(Object.keys(item).sort(),['receipt_index','tap_path']);
+      assert.ok(typeof item.tap_path==='string'&&typeof item.receipt_index==='number'&&Number.isSafeInteger(item.receipt_index)&&item.receipt_index>=0);
+      return item.tap_path+':'+item.receipt_index;
+    });
+    assert.deepEqual(selected.sort(),[...observed.keys()].sort());
+    const resources=new Set<string>();
+    for(const receipt of observed.values()){
+      assertG2EvidenceTime(receipt);assert.equal(receipt.scope,'OWNED_RUN_RESOURCES_ONLY');assert.equal(receipt.preexisting_resources_touched,false);
+      assert.ok(Array.isArray(receipt.resources)&&receipt.resources.length>0);
+      for(const value of receipt.resources){const item=object(value);assert.ok(typeof item.resource==='string');assert.equal(item.remaining,0);resources.add(item.resource);}
+    }
+    for(const required of ['owned_database','owned_database_backends','owned_child','app_pool','worker_process','browser_process','browser_profile','browser_command_timers'])assert.ok(resources.has(required));
+    assert.ok(Array.isArray(cleanup.environments));const cleaned:string[]=[];
+    for(const reference of cleanup.environments){
+      const environment=json(artifact(root,report.run_id,reference).bytes);assertG2EvidenceTime(environment);
+      assert.equal(environment.schema_version,1);assert.equal(environment.kind,'OWNED_TEST_ENVIRONMENT');assert.equal(environment.status,'CLEANUP_CONFIRMED');
+      for(const key of ['tested_head','tested_tree','candidate_fingerprint'])assert.equal(environment[key],report[key]);
+      assert.ok(typeof environment.execution_summary_sha256==='string');cleaned.push(environment.execution_summary_sha256);
+      assert.equal(environment.owned_residuals,0);assert.equal(environment.preexisting_resources_touched,false);
+      assert.equal(environment.test_exit_code,0);assert.equal(environment.postgres_stop_exit_code,0);
+      assert.equal(environment.postgres_stopped,true);assert.equal(environment.postgres_data_removed,true);
+    }
+    assert.deepEqual(cleaned.sort(),summaryHashes.sort());
+  }catch{
+    throw Object.assign(new Error('CURRENT_CLEANUP_INVALID'),{code:'CURRENT_CLEANUP_INVALID',stage:'CLEANUP'});
+  }
+}
+
 /** Complete current file coverage; historical files never count toward this set. */
 export function verifyCurrentYxxExecution(root:string,report:Record<string,unknown>):void {
   try{

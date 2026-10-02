@@ -12,7 +12,7 @@ This progress document is not acceptance evidence.
 | 1 | Historical/current contract, scope/evidence rules, public TDD seams and stop lines | COMPLETE; evidence wire format follows its public-interface TDD slices |
 | 2 | Classified failure, current scope, historical protection and structural validation | COMPLETE; development validation only, final frozen acceptance remains stage 6 |
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
-| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution core implemented; historical/specialized/review/cleanup proof, full strict consumer and publisher pending |
+| 4 | Current evidence verifier, append-only publication, pointer and mutation tests | IN_PROGRESS; pointer/candidate/current execution/review/cleanup components implemented; historical/specialized proof, full strict consumer and publisher pending |
 | 5 | ARCH006/current CI separation and retained historical CI | NOT_STARTED |
 | 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | NOT_STARTED |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
@@ -33,6 +33,24 @@ This progress document is not acceptance evidence.
   `yxx-current-readiness-20261002`; no historical report was rewritten.
 
 ## Execution and acceptance
+
+Historical SS009 proof was independently completed on the GitHub-confirmed PR19
+head `41edd855e7bc55149facb6a4b2e0076776c22e66` with base
+`375d47b013017edb858206cc5f3475c9aed77dfd`. Identity preflight, unchanged strict
+CLI, four original regression files (36/36), original r6 mutation probe and all
+eight historical validators pass. V1.4 reports 407 checks. The isolated checkout
+remains clean. The initial regression attempt failed one case due to Windows Git
+path length; both attempts remain recorded. Only checkout-local `core.longpaths`
+was enabled before the successful rerun; historical source and evidence were not
+modified. External `historical-ss009-proof-02/catalog.json` binds the raw proof and
+case trace. This is fixed historical proof, not current candidate acceptance.
+
+Current review and cleanup components require two distinct normalized reviewer
+identities, separate SPEC/STANDARDS axes and exact candidate binding; all findings
+must be resolved. Cleanup requires raw TAP cleanup observations with zero owned
+residuals plus matching successful environment shutdown receipts for every run.
+PASS-only cleanup and whitespace/case aliases for the same reviewer reject.
+The public strict entry remains closed pending the complete evidence consumer.
 
 Stage 4 execution core now checks the complete declared current set across disjoint
 run references, per-file success, source/actual execution hashes, archived build
@@ -107,8 +125,9 @@ identity. A public CLI RED->GREEN proves changing the acceptance contract invali
 the existing build. With the case reporter enabled, the MIXED_EXPLICIT_ROOTS readiness
 selection passes 15/15, case_count 15, no not_run files, executing its compiled MJS.
 Together with the earlier SOURCE_HOST/STAGED_RUNTIME 7/7 this exercises all current
-route modes. Strict types pass. The current full run and independent frozen
-historical run have not yet been performed in this task.
+route modes. Strict types pass. The current full run has not yet been performed.
+The separate fixed historical proof is recorded above and does not contribute to
+current execution counts.
 
 Development commands (full execution needs the separately owned test environment):
 
