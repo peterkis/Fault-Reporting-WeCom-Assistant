@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: X031 three real independent reports generate one review candidate from persisted facts
+ok 1 - X031 three real independent reports generate one review candidate from persisted facts
+  ---
+  duration_ms: 3587.7839
+  type: 'test'
+  ...
+# Subtest: D12-047/048 trusted reporter identity deduplicates group/direct and incoming replay below three reporters
+ok 2 - D12-047/048 trusted reporter identity deduplicates group/direct and incoming replay below three reporters
+  ---
+  duration_ms: 3220.8693
+  type: 'test'
+  ...
+# Subtest: physical window excludes old/future facts and flag-off has no writes; restart replays snapshot
+ok 3 - physical window excludes old/future facts and flag-off has no writes; restart replays snapshot
+  ---
+  duration_ms: 3126.6965
+  type: 'test'
+  ...
+# Subtest: D12-049 different services and incompatible symptoms never borrow each other reporters
+ok 4 - D12-049 different services and incompatible symptoms never borrow each other reporters
+  ---
+  duration_ms: 6559.5564
+  type: 'test'
+  ...
+# Subtest: latest future Decision invalidates the Intake rather than falling back to an old in-window fault
+ok 5 - latest future Decision invalidates the Intake rather than falling back to an old in-window fault
+  ---
+  duration_ms: 4048.4411
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21124.2448

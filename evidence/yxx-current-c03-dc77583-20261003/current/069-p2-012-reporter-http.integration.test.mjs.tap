@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: P2-012 Reporter HTTP preserves bound grants, refresh ETag, safe milestones and unlink visibility
+ok 1 - P2-012 Reporter HTTP preserves bound grants, refresh ETag, safe milestones and unlink visibility
+  ---
+  duration_ms: 2295.8332
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2757.6267

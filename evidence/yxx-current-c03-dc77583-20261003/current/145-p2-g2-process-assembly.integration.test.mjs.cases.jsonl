@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 10:42:10","event_epoch_ms":"1790995330073","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK","file":"tests/p2-g2-process-assembly.integration.test.mjs","line":28,"nesting":0,"skip":false,"todo":false}

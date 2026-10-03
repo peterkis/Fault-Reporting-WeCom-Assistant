@@ -1,0 +1,49 @@
+{
+  "path": "tests/p2-007/p2-007-domain-core.test.mjs",
+  "runtime_path": "tests/p2-007/p2-007-domain-core.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-007/p2-007-domain-core.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "21ef24e643a9cf15a8ec5d62698161726f4a97de76e9b2451d752aa206819595",
+  "executed_sha256": "21ef24e643a9cf15a8ec5d62698161726f4a97de76e9b2451d752aa206819595",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "060-p2-007-domain-core.test.mjs.tap",
+  "tap_sha256": "b2567f8b6479e70d2baec4ef67b52a3405d3d8190e6e19bb4adbdaf13dc56694",
+  "tap_bytes": 2777,
+  "stderr_path": "060-p2-007-domain-core.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "060-p2-007-domain-core.test.mjs.cases.jsonl",
+  "case_trace_sha256": "6bca6b5981c05f1ee21889ce6ec70f5e2241177d0b7a67410ec35db2467559d5",
+  "case_trace_bytes": 3726,
+  "counts": {
+    "tests": 12,
+    "pass": 12,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-007-alias-resolver.mjs",
+    ".build/runtime/src/p2-007-clarification-planner.mjs",
+    ".build/runtime/src/p2-007-conflict-resolver.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-007-fact-provenance.mjs",
+    ".build/runtime/src/p2-007-fault-taxonomy.mjs",
+    ".build/runtime/src/p2-007-incident-candidate.mjs",
+    ".build/runtime/src/p2-007-notification-recommendation.mjs",
+    ".build/runtime/src/p2-007-service-catalog.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-007/p2-007-domain-core.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 12
+}

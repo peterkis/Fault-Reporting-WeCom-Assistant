@@ -1,0 +1,27 @@
+TAP version 13
+# Subtest: P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK
+not ok 1 - P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK
+  ---
+  duration_ms: 47512.3701
+  type: 'test'
+  location: 'C:\\Users\\zqpet\\.codex\\artifacts\\yxx-current-readiness-20261002\\stage06-c03\\checkout\\.build\\runtime\\tests\\p2-g2-process-assembly.integration.test.mjs:28:1'
+  failureType: 'testCodeFailure'
+  error: 'P2_G2_SYNTHETIC_WAIT_TIMEOUT'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    until (file:///C:/Users/zqpet/.codex/artifacts/yxx-current-readiness-20261002/stage06-c03/checkout/.build/runtime/tests/p2-g2-process-assembly.integration.test.mjs:26:9)
+    async run (file:///C:/Users/zqpet/.codex/artifacts/yxx-current-readiness-20261002/stage06-c03/checkout/.build/runtime/tests/p2-g2-process-assembly.integration.test.mjs:105:7)
+    async withP2015IsolatedDatabase (file:///C:/Users/zqpet/.codex/artifacts/yxx-current-readiness-20261002/stage06-c03/checkout/.build/runtime/tests/helpers/p2-015-postgres-harness.mjs:33:14)
+    async TestContext.<anonymous> (file:///C:/Users/zqpet/.codex/artifacts/yxx-current-readiness-20261002/stage06-c03/checkout/.build/runtime/tests/p2-g2-process-assembly.integration.test.mjs:30:9)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 57614.2843

@@ -1,0 +1,140 @@
+INDEPENDENT SPEC REVIEW
+Reviewed local frozen C3 SHA: dc775835a3b792d2f3f36dcbbfe6ade5a73033a1
+Reviewed tree: 92bfd88178872f1ee13d0741a8c7e540c028f38d
+Approved baseline: 562a96ffdd7148d729ab0eed9d215abe894f12c2
+Verdict: PASS
+Unresolved findings: 0
+
+Review authority and scope
+This is a read-only SPEC-axis review of the locally frozen candidate identified by
+the task. It does not treat local HEAD as a published GitHub object. The checkout
+HEAD and tree match the C3 candidate record, the baseline is an ancestor, the
+repository is not shallow, no replace/graft overlay was found, and the checkout and
+index were clean. The baseline...C3 range contains 25 commits and 961 changed paths:
+32 non-evidence paths and 929 evidence additions. No pre-existing evidence or SQL
+path is modified, deleted, or renamed in that range.
+
+I read AGENTS.md, ADR-0027, .github/review/README.md, the current scope and
+acceptance contracts, the full readiness progress record, and the complete
+implementation increment. I inspected the scope/history/report/execution verifiers,
+strict and structural CLIs, candidate/build binding, runner/publication/shard tools,
+CI workflows, migration and mutation tests, the final reconnect-fixture change, the
+C1 packet and C2 catalog/attestation, the retained C2 failure/cleanup records, and
+the external C3 packet assembler. No source, index, build, branch, database, browser,
+or test process was changed or run by this review.
+
+Contract trace
+1. ADR-0027 current/historical separation remains intact. The current contract pins
+   the approved base, exact 22-SQL inventory, six protected state files and default-
+   closed capability files. Current scope and acceptance inputs remain candidate
+   controls. The fixed PR19 SS009 head, original strict command, r6 mutations and
+   validators remain historical-only and are not counted as current execution.
+2. History remains fail-closed. The implementation checks full ancestry and every
+   relevant parent edge, exact six named adjudications, rewrite/restore and hidden
+   side-branch changes, plus committed/index/working bytes and modes. The original
+   SS009 validator is not weakened or rebound to C3.
+3. Source/build/runtime binding remains complete. The strict report consumer binds
+   tested head/tree, exact candidate inventory, scope/acceptance digests, archived C
+   build inputs and outputs, current H build outputs, actual execution roots and
+   loaded files, raw TAP/stderr/case traces, per-file counts and TAP/case agreement.
+   STRUCTURE_VALID_NOT_READY remains separate from strict technical readiness.
+4. The acceptance contract still requires exactly 216 current files and one fixed
+   historical registered file. Current shards are disjoint and collectively exact;
+   collection returns readiness=false. Missing/duplicate files, failing TAP,
+   skipped/cancelled/todo/not-run work, corrupt originals, wrong head/tree/build or
+   route/source fallback remain rejecting.
+5. Strict success remains technical-only. READY_FOR_LIMITED_WRITE_LIVE returns
+   live_authorized=false, parent_gate_advanced=false, database_connections=0,
+   provider_calls=0 and listener_started=false. The change grants no production DB,
+   OAuth, provider send, deployment, P2-008, T05, or parent Gate progression.
+
+C2 follow-up and durable catalog
+The current-complete workflow repair adds repository-local core.autocrlf=true
+immediately before the hermetic published-history preflight. This addresses the
+recorded global-config isolation failure without relaxing clean-checkout, identity,
+ancestry, raw-byte, or strict readiness checks.
+
+The C2 committed artifact catalog contains 927 unique entries and exactly matches
+the 927 files present in the f1057dd C1 packet. I independently recomputed every
+listed file's byte length and SHA-256: zero mismatches. Its own bytes and digest
+match the attestation (240562 bytes,
+6a68fe154410229f62eabd84b0da10789c7cc497c7b4e5c02d7aed0a60035fb5),
+and the only later changes in that evidence namespace are the added catalog and
+attestation. This confirms the old 927 originals were not rewritten. It does not
+make the C1 execution applicable to C3.
+
+C3 reconnect-fixture change
+C3 changes only plans/yxx-current-readiness-implementation.md and the existing
+tests/p1-012-live-e2e-script.test.mjs. No production source, timeout, database code,
+runtime validator, or readiness guard changes between C2 and C3.
+
+The fake WSS client is an allowed simulated external dependency. Its second callback
+now waits on a test-owned promise and schedules emission with setImmediate only after
+the injected appendEvidenceRecord has completed the durable
+p1_012_post_reconnect_message_ready write. appendEvidenceRecord is the function's
+public evidence-I/O port; the test implementation still performs a real appendFile
+and adds a 25 ms slow-I/O delay. It does not replace or bypass an internal validator,
+set the production postReconnectMessageReady flag, manufacture a handler result, or
+weaken the fail-closed path. The next event-loop turn lets the real production
+continuation set its guard before the external callback arrives.
+
+The first pre-reconnect message still arrives while the production guard is false
+and is ignored. All target assertions remain unchanged: exactly one handled frame,
+the post-reconnect message id, complete ordered audit chain, true reauthentication
+fact, and absence of both raw message ids from evidence. Static comparison shows the
+same 33 test names and the same 13 assertions in the target test before and after C3.
+The production timeout remains 10000 ms.
+
+The retained negative control changes only the sender back to the old fixed 10 ms
+callback while preserving the 25 ms evidence delay and all other C3 logic. Its raw
+log reaches the existing P1_012_LIVE_TIMEOUT and fails 0/1. The fixed public case
+passes 1/1 and the complete file passes 33/33 with zero fail/cancelled/skipped/todo.
+These focused external logs show that the repair discriminates the race and preserves
+the security rejection; they are not a substitute for C3 full acceptance.
+
+The progress record is truthful: the C2 full attempt is retained as
+SELECTED_TESTS_FAIL with 32 executed files, 233 pass, one fail and 184 not-run files.
+Its cleanup record separately confirms owned PG stop exit 0, data removal, zero
+residuals and no pre-existing resource changes. The record explicitly requires a new
+complete 216-file C3 run and does not reuse C1 or the failed C2 run as acceptance.
+
+External C3 packet assembler
+stage06-c03/assemble-packet.mjs was inspected as external orchestration and was not
+executed by this review. It pins the full C3 SHA, requires published=false, clean
+checkout identity, matching build head/tree/fingerprint, SELECTED_TESTS_PASS for all
+216 files, no not-run work, all tests passed, and confirmed owned-resource cleanup
+before it can assemble a packet.
+
+After all existing semantic public verifiers pass, the script saves report.json and
+then snapshots every file already in its unique files map into a sorted
+artifact-catalog.json. Each entry has path, bytes, encoding and SHA-256, including
+report.json. The catalog deliberately excludes only itself and the later attestation,
+avoiding a circular hash. artifact-catalog-attestation.json carries the same C3
+head/tree/fingerprint header and binds the report and catalog byte references. Both
+records state readiness=false and live_authorized=false.
+
+The script then validates every original byte against the catalog, copies the updated
+files map, and writes packet.json from that same updated map. Therefore the packet
+contains both new catalog records in addition to every original. Safe relative-path
+checks, unique map keys, fresh directories, write flag wx and COPYFILE_EXCL preserve
+append-only behavior. The old report schema and strict verifier are unchanged; the
+catalog is additional durable provenance and cannot manufacture strict readiness.
+This design closes the earlier missing durable complete-catalog P2 once an actual C3
+assembly completes and the resulting bytes are independently checked. The source
+review does not claim that assembly or full acceptance has already completed.
+
+Spec findings
+(a) Missing or partial requirements: none in the reviewed implementation. Complete
+    C3 216-file execution, packet generation/publication, strict readiness, final
+    exact-head CI/review and merge are later execution obligations and remain pending.
+(b) Scope creep: none confirmed. No live authority, production behavior, SQL/state
+    scope, timeout, historical acceptance, or Gate status was expanded.
+(c) Incorrect implementation: none confirmed. The C3 change repairs only the
+    nondeterministic external-client fixture timing through the real audit I/O seam.
+
+Limitations
+This PASS is an implementation SPEC verdict for the exact local C3 SHA. It does not
+certify an in-progress or future full run, generated C3 packet, strict READY result,
+remote CI, published-head identity, merge authority, live authorization, deployment,
+or production operation. C1's 216/1380 result, C2's failed partial run and the focused
+reconnect logs are retained evidence with their original identities only.

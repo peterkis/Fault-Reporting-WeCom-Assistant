@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: read-only reconciliation preserves actual Delivery/attempt ledger without identity, content or invented ACK
+ok 1 - read-only reconciliation preserves actual Delivery/attempt ledger without identity, content or invented ACK
+  ---
+  duration_ms: 2178.1042
+  type: 'test'
+  ...
+# Subtest: approved group Reporter plus actual Direct Leg remains within reconciliation scope when absent from explicit person hashes
+ok 2 - approved group Reporter plus actual Direct Leg remains within reconciliation scope when absent from explicit person hashes
+  ---
+  duration_ms: 2291.8911
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4899.1092

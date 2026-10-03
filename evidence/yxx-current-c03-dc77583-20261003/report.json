@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "contract": "ADR-0027",
+  "run_id": "c03-dc77583-20261003",
+  "event_time": "2026-10-03 11:06:36",
+  "event_epoch_ms": "1790996796832",
+  "tested_head": "dc775835a3b792d2f3f36dcbbfe6ade5a73033a1",
+  "tested_tree": "92bfd88178872f1ee13d0741a8c7e540c028f38d",
+  "candidate_fingerprint": "d8dab8daba67b3f94e19deea9a1b7c0c014b84fe76fa7f425349488bccdbeb5a",
+  "scope_sha256": "0266c900bea7ef28b2300f058ad044afa26dde5c17db872b0b2a0e2efe4e003b",
+  "acceptance_sha256": "c97eccf7ed9618e6ae586fb73773573a1380e0feeb53dca0900005844fc44155",
+  "status": "CURRENT_AUTOMATION_COMPLETE",
+  "live_authorized": false,
+  "parent_gate_advanced": false,
+  "historical_live_facts": "PRESERVED_NOT_REVALIDATED",
+  "build": {
+    "path": "evidence/yxx-current-c03-dc77583-20261003/build-manifest.json",
+    "bytes": 342673,
+    "sha256": "f4958c0e9df1cfd8a55dc0f88acfe3f096015b0d4f51a9cb68068f71088fb91b"
+  },
+  "current_runs": [
+    {
+      "path": "evidence/yxx-current-c03-dc77583-20261003/current/summary.json",
+      "bytes": 1552623,
+      "sha256": "cb5740a8b2975058135491f12e202a80dc528e870b7066aef73095af76bd31bc"
+    }
+  ],
+  "historical": {
+    "path": "evidence/yxx-current-c03-dc77583-20261003/historical/catalog.json",
+    "bytes": 717,
+    "sha256": "f6cab170d0f06e7f6a5ea8dbf31c76eb7b5dedfb2b385dfed82d6b0277954066"
+  },
+  "specialized": {
+    "path": "evidence/yxx-current-c03-dc77583-20261003/specialized.json",
+    "bytes": 8387,
+    "sha256": "f3fb797e836372d22527b1627a7dedf2724cdbf6c61e1a7f7341f7768e717e82"
+  },
+  "migration_scope": {
+    "path": "evidence/yxx-current-c03-dc77583-20261003/migration-scope.json",
+    "bytes": 524,
+    "sha256": "92c92d71ac416c5e1635d55646fdf296a0663653702221b77d021690b46bd1b9"
+  },
+  "cleanup": {
+    "path": "evidence/yxx-current-c03-dc77583-20261003/cleanup.json",
+    "bytes": 3785,
+    "sha256": "a80a20f4f4c1459f7d9a5bbf8872757301477d689e6dc6f94e7c39283ed6a286"
+  },
+  "reviews": [
+    {
+      "path": "evidence/yxx-current-c03-dc77583-20261003/reviews/spec.json",
+      "bytes": 844,
+      "sha256": "36c387b467fb7de16ffdf8daf5eaebcd65c4d0acca2efe089e180dca36be3e24"
+    },
+    {
+      "path": "evidence/yxx-current-c03-dc77583-20261003/reviews/standards.json",
+      "bytes": 859,
+      "sha256": "fc3f3b1f90615db4c936ffd88a31ccad91cb6dac584063e2cca62b776537f1c6"
+    }
+  ],
+  "source_accounting": {
+    "path": "evidence/yxx-current-c03-dc77583-20261003/source-accounting.json",
+    "bytes": 213519,
+    "sha256": "8114ffcd3f4248f80a75fadcecc9ad23dc0c1bdab808fa7169f3ccf70ceb8ca3"
+  },
+  "scenarios": {
+    "path": "evidence/yxx-current-c03-dc77583-20261003/scenarios.json",
+    "bytes": 135236,
+    "sha256": "398ccda76c8d640f39874e6a9b469a1256d54523c5a621c6584a056ba1009cb6"
+  },
+  "assembly_checks": {
+    "path": "evidence/yxx-current-c03-dc77583-20261003/assembly-checks.json",
+    "bytes": 985,
+    "sha256": "fbd080bcf8bb27775303c24e2557ca130d71d0c17db91e9b356c4f647e6de55b"
+  }
+}

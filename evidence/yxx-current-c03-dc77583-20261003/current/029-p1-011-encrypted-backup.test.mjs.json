@@ -1,0 +1,40 @@
+{
+  "path": "tests/p1-011-encrypted-backup.test.mjs",
+  "runtime_path": "tests/p1-011-encrypted-backup.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-011-encrypted-backup.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "b7a7abd6b889e77960dfebba01d8b258e72bcdc920d2f8d640c2702fe699dbe8",
+  "executed_sha256": "b7a7abd6b889e77960dfebba01d8b258e72bcdc920d2f8d640c2702fe699dbe8",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "029-p1-011-encrypted-backup.test.mjs.tap",
+  "tap_sha256": "777c9c8cc90d935f8f971fa9357103b8540fd3ccab5d9f8866ad4d3eb0b7b2a9",
+  "tap_bytes": 609,
+  "stderr_path": "029-p1-011-encrypted-backup.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "029-p1-011-encrypted-backup.test.mjs.cases.jsonl",
+  "case_trace_sha256": "80666c8b77f5ff1bbe85584ac44e1a4710d69c9f18d5f23d0a100c9711bbab81",
+  "case_trace_bytes": 640,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-011-encrypted-backup.mjs",
+    ".build/runtime/tests/p1-011-encrypted-backup.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

@@ -1,0 +1,62 @@
+TAP version 13
+# Subtest: P2-G2 ten-route prerequisite: committed decisions have an executable next step
+    # Subtest: fault-control
+    ok 1 - fault-control
+      ---
+      duration_ms: 293.3749
+      type: 'test'
+      ...
+    # {"case_id":"fault-control","persist_before_route":{"messages":1,"intakes":1,"decisions":0},"actions":[{"result_code":"TICKET_ELIGIBLE","requires_manual_review":false,"has_linked_ticket":true,"profile_resolution_status":"DEFERRED","action_type":"APPLY_INTAKE_CLASSIFICATION","execution_policy":"AUTO_SAFE_DB_ONLY","state":"EXECUTED","result_ref_type":"INTAKE","error_code":null,"retryable":null,"pending_reviews":0},{"result_code":"TICKET_ELIGIBLE","requires_manual_review":false,"has_linked_ticket":true,"profile_resolution_status":"DEFERRED","action_type":"CREATE_MINIMAL_TICKET","execution_policy":"AUTO_SAFE_DB_ONLY","state":"EXECUTED","result_ref_type":"TICKET","error_code":null,"retryable":null,"pending_reviews":0}],"http_manual_review_visible":false,"restart_batch_processed":0,"tickets":1,"sessions":1,"test_type":"LOCAL_REAL_POSTGRES_HTTP_NORMAL_INGRESS","gateway_enabled":false,"sender_enabled":false}
+    # Subtest: review-control
+    ok 2 - review-control
+      ---
+      duration_ms: 176.6326
+      type: 'test'
+      ...
+    # {"case_id":"review-control","persist_before_route":{"messages":1,"intakes":1,"decisions":0},"actions":[{"result_code":"MANUAL_REVIEW_REQUIRED","requires_manual_review":true,"has_linked_ticket":true,"profile_resolution_status":"DEFERRED","action_type":"APPLY_INTAKE_CLASSIFICATION","execution_policy":"AUTO_SAFE_DB_ONLY","state":"EXECUTED","result_ref_type":"INTAKE","error_code":null,"retryable":null,"pending_reviews":1},{"result_code":"MANUAL_REVIEW_REQUIRED","requires_manual_review":true,"has_linked_ticket":true,"profile_resolution_status":"DEFERRED","action_type":"CREATE_MINIMAL_TICKET","execution_policy":"AUTO_SAFE_DB_ONLY","state":"EXECUTED","result_ref_type":"TICKET","error_code":null,"retryable":null,"pending_reviews":1},{"result_code":"MANUAL_REVIEW_REQUIRED","requires_manual_review":true,"has_linked_ticket":true,"profile_resolution_status":"DEFERRED","action_type":"APPLY_INTAKE_CLASSIFICATION","execution_policy":"AUTO_SAFE_DB_ONLY","state":"REPLAYED","result_ref_type":"INTAKE","error_code":null,"retryable":null,"pending_reviews":1},{"result_code":"MANUAL_REVIEW_REQUIRED","requires_manual_review":true,"has_linked_ticket":true,"profile_resolution_status":"DEFERRED","action_type":"ENQUEUE_MANUAL_REVIEW","execution_policy":"AUTO_SAFE_DB_ONLY","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW","error_code":null,"retryable":null,"pending_reviews":1}],"http_manual_review_visible":true,"restart_batch_processed":0,"tickets":1,"sessions":1,"test_type":"LOCAL_REAL_POSTGRES_HTTP_NORMAL_INGRESS","gateway_enabled":false,"sender_enabled":false}
+    # Subtest: status-query
+    ok 3 - status-query
+      ---
+      duration_ms: 380.2588
+      type: 'test'
+      ...
+    # {"case_id":"status-query","persist_before_route":{"messages":1,"intakes":1,"decisions":0},"actions":[{"result_code":"STATUS_QUERY","requires_manual_review":false,"has_linked_ticket":false,"profile_resolution_status":"DEFERRED","action_type":"QUERY_AUTHORIZED_STATUS","execution_policy":"HUMAN_CONFIRM_REQUIRED","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW","error_code":null,"retryable":null,"pending_reviews":1}],"http_manual_review_visible":true,"restart_batch_processed":0,"tickets":0,"sessions":1,"test_type":"LOCAL_REAL_POSTGRES_HTTP_NORMAL_INGRESS","gateway_enabled":false,"sender_enabled":false}
+    # {"case_id":"status-query","human_resolution":"REQUEST_DESCRIPTION","concurrent_commands":12,"effective_commits":1,"original_decision_preserved":true}
+    # Subtest: business-consultation
+    ok 4 - business-consultation
+      ---
+      duration_ms: 402.2293
+      type: 'test'
+      ...
+    # {"case_id":"business-consultation","persist_before_route":{"messages":1,"intakes":1,"decisions":0},"actions":[{"result_code":"BUSINESS_CONSULTATION","requires_manual_review":false,"has_linked_ticket":false,"profile_resolution_status":"DEFERRED","action_type":"ROUTE_BUSINESS_CONSULTATION","execution_policy":"HUMAN_CONFIRM_REQUIRED","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW","error_code":null,"retryable":null,"pending_reviews":1}],"http_manual_review_visible":true,"restart_batch_processed":0,"tickets":0,"sessions":1,"test_type":"LOCAL_REAL_POSTGRES_HTTP_NORMAL_INGRESS","gateway_enabled":false,"sender_enabled":false}
+    # {"case_id":"business-consultation","human_resolution":"CLASSIFY_BUSINESS_CONSULTATION","concurrent_commands":12,"effective_commits":1,"original_decision_preserved":true}
+    # Subtest: status-review-database-failure-and-recovery
+    ok 5 - status-review-database-failure-and-recovery
+      ---
+      duration_ms: 477.9897
+      type: 'test'
+      ...
+    # {"case_id":"status","real_postgres_fault":"22012","durable_inbound_preserved":true,"partial_rule_facts":0,"concurrent_recovery_requests":12,"reviews_after_recovery":1}
+    # Subtest: policy-review-database-failure-and-recovery
+    ok 6 - policy-review-database-failure-and-recovery
+      ---
+      duration_ms: 370.5371
+      type: 'test'
+      ...
+    # {"case_id":"policy","real_postgres_fault":"22012","durable_inbound_preserved":true,"partial_rule_facts":0,"concurrent_recovery_requests":12,"reviews_after_recovery":1}
+    1..6
+ok 1 - P2-G2 ten-route prerequisite: committed decisions have an executable next step
+  ---
+  duration_ms: 4588.6883
+  type: 'test'
+  ...
+# {"cleanup":{"database_count":0,"backend_count":0},"cleanup_passed":true}
+1..1
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5108.8717

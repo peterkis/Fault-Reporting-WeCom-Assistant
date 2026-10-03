@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: untyped callers retain omitted-option errors and the configuration Error shape
+ok 1 - untyped callers retain omitted-option errors and the configuration Error shape
+  ---
+  duration_ms: 2.7042
+  type: 'test'
+  ...
+# Subtest: Go/No-Go rejects malformed evidence and truthy values cannot satisfy a Gate
+ok 2 - Go/No-Go rejects malformed evidence and truthy values cannot satisfy a Gate
+  ---
+  duration_ms: 0.3269
+  type: 'test'
+  ...
+# Subtest: backup consumers receive no plaintext for wrong keys, malformed headers or truncation
+ok 3 - backup consumers receive no plaintext for wrong keys, malformed headers or truncation
+  ---
+  duration_ms: 21.0201
+  type: 'test'
+  ...
+# Subtest: backup input validation retains key, IV, absolute-path and consumer checks
+ok 4 - backup input validation retains key, IV, absolute-path and consumer checks
+  ---
+  duration_ms: 0.4607
+  type: 'test'
+  ...
+# Subtest: the actual Delivery worker rejects raw snapshot identifiers at its original guard
+ok 5 - the actual Delivery worker rejects raw snapshot identifiers at its original guard
+  ---
+  duration_ms: 0.9846
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 279.4652

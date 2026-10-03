@@ -1,0 +1,10 @@
+{
+  "kind": "READONLY_DIAGNOSTIC_CLIENT_CLEANUP",
+  "diagnostic_only": true,
+  "status": "CLEANUP_CONFIRMED",
+  "clients_closed": true,
+  "cleanup_errors": [],
+  "source_changed": false,
+  "acceptance": false,
+  "event_epoch_ms": "1790995337696"
+}

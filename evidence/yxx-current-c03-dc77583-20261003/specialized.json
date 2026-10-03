@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 11:06:38",
+  "event_epoch_ms": "1790996798357",
+  "tested_head": "dc775835a3b792d2f3f36dcbbfe6ade5a73033a1",
+  "tested_tree": "92bfd88178872f1ee13d0741a8c7e540c028f38d",
+  "candidate_fingerprint": "d8dab8daba67b3f94e19deea9a1b7c0c014b84fe76fa7f425349488bccdbeb5a",
+  "kind": "CURRENT_SPECIALIZED_PROOF",
+  "observations": [
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/191-yxx-current-migrations.integration.test.mts.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/205-yxx-ss-009-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/205-yxx-ss-009-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/206-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/206-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/206-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/206-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/207-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/207-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/207-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/207-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/208-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/208-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/208-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/208-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/208-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 4
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/208-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 5
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/212-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/212-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/212-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/213-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/213-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/213-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/213-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/214-yxx-ss-010-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/214-yxx-ss-010-browser.integration.test.mjs.tap",
+      "channel": "SS010_BROWSER",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/216-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/216-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/216-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/216-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/216-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 4
+    }
+  ],
+  "images": [
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/205-yxx-ss-009-browser.integration.test.mjs.tap",
+        "channel": "SS009_RECEIPT",
+        "receipt_index": 0
+      },
+      "width": 390,
+      "height": 844,
+      "artifact": {
+        "path": "evidence/yxx-current-c03-dc77583-20261003/images/ss009_receipt-390x844.png",
+        "bytes": 33452,
+        "sha256": "addb105e97245d86897ba57ec8b3a9331f0b555bb1e437047d07e09ff862d23e"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/205-yxx-ss-009-browser.integration.test.mjs.tap",
+        "channel": "SS009_RECEIPT",
+        "receipt_index": 0
+      },
+      "width": 1440,
+      "height": 900,
+      "artifact": {
+        "path": "evidence/yxx-current-c03-dc77583-20261003/images/ss009_receipt-1440x900.png",
+        "bytes": 42956,
+        "sha256": "8c18784bf869040442838b6ef140f406dd626296590fae8353ca32a13a97c71d"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/214-yxx-ss-010-browser.integration.test.mjs.tap",
+        "channel": "SS010_BROWSER",
+        "receipt_index": 0
+      },
+      "width": 390,
+      "height": 844,
+      "artifact": {
+        "path": "evidence/yxx-current-c03-dc77583-20261003/images/ss010_browser-390x844.png",
+        "bytes": 32516,
+        "sha256": "2f7513257e3824918479885204a18033bce303da83d6cdd6437c100c5d35c8ac"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/214-yxx-ss-010-browser.integration.test.mjs.tap",
+        "channel": "SS010_BROWSER",
+        "receipt_index": 0
+      },
+      "width": 1440,
+      "height": 900,
+      "artifact": {
+        "path": "evidence/yxx-current-c03-dc77583-20261003/images/ss010_browser-1440x900.png",
+        "bytes": 42122,
+        "sha256": "9ce2350a1b4906f236b9324f7d5a15dba9909175e49b1d40ea8b572da4ecb79a"
+      }
+    }
+  ]
+}

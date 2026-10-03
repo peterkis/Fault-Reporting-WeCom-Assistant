@@ -14,7 +14,7 @@ This progress document is not acceptance evidence.
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | COMPLETE for development implementation; component/publication regressions pass; actual whole-packet strict READY remains unverified until stage 6 frozen acceptance |
 | 5 | ARCH006/current CI separation and retained historical CI | COMPLETE for development implementation; final exact-head CI and wall-time measurement remain stages 6-7 |
-| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | IN_PROGRESS; C1 completed, C2 full attempt failed at reconnect fixture; C3 frozen acceptance required |
+| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | COMPLETE; C3 dc77583 full-02: 216 files / 1380 tests PASS, both reviews PASS, cleanup confirmed |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | IN_PROGRESS; immutable packet staged and strict READY verified; final H CI/review/merge pending |
 
 ## Baseline observations (2026-10-02)
@@ -471,3 +471,24 @@ coverage. In a separate compiler/artifact-checked checkout, restoring only the o
 External logs: stage06-c02/reconnect-red*, reconnect-green*, reconnect-file-green.
 C3 must receive complete 216-file acceptance and fresh two-axis review; neither
 C1's successful run nor the partial C2 result proves C3 readiness.
+
+C3 final frozen acceptance (2026-10-03): dc775835a3b792d2f3f36dcbbfe6ade5a73033a1
+/ tree 92bfd88178872f1ee13d0741a8c7e540c028f38d. First full attempt executed
+145 files with 926 PASS / 1 FAIL, then stopped; its 20-second delivery wait timeout
+remains a failed run, not acceptance. Two separately marked diagnostic variants
+passed 1/1; no production defect was reproduced. Read-only review found no 20-second
+notification SLA or confirmed sender-readiness defect. Production and timeout
+settings were unchanged. A new owned environment ran the exact clean C3 again:
+full-02 passed all 216 files / 1380 cases, with zero failures, cancellations,
+skips, todos and not-run files. The formerly timed-out assembly case passed.
+A supplementary read-only observer preserved delivery states and confirmed all
+its clients closed; it neither changed candidate inputs nor established acceptance.
+Full-02 PG stop and data-directory deletion succeeded, with zero owned residuals.
+Fresh C3 SPEC/STANDARDS reviews both PASS / zero unresolved findings. The new
+937-file append-only packet includes eight separately named diagnostics and a
+complete original-artifact catalog/attestation. All eight public evidence component
+checks pass. After pointer CAS staging and actual-root rebuild, the current strict
+CLI returns READY_FOR_LIMITED_WRITE_LIVE bound to C3, with zero database/provider/
+listener activity, live_authorized=false and parent_gate_advanced=false.
+Final publication-head build/strict/CI/review/merge remain pending at this snapshot;
+terminal receipts will be external to avoid a self-referential commit hash.

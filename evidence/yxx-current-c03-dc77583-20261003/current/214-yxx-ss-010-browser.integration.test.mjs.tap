@@ -1,0 +1,18 @@
+TAP version 13
+# Subtest: SS010 AC093 real browser limited roles complete supplement review and safe member feedback
+ok 1 - SS010 AC093 real browser limited roles complete supplement review and safe member feedback
+  ---
+  duration_ms: 17467.4456
+  type: 'test'
+  ...
+# SS010_BROWSER {"event_time":"2026-10-03 11:04:45","event_epoch_ms":"1790996685934","candidate_fingerprint":"4de1768b61b8465ab20628e36a7f4e968146e8536edede2fa38c6c5fb6951fd6","screenshots":[{"file":"C:\\\\Users\\\\zqpet\\\\AppData\\\\Local\\\\Temp\\\\ss010-ui-7244614b-a274-43cf-8ec0-e4357ecc09d7\\\\80de5337-bdcb-4e02-b7d3-d291e1733dee.png","width":390,"height":844,"sha256":"2f7513257e3824918479885204a18033bce303da83d6cdd6437c100c5d35c8ac"},{"file":"C:\\\\Users\\\\zqpet\\\\AppData\\\\Local\\\\Temp\\\\ss010-ui-7244614b-a274-43cf-8ec0-e4357ecc09d7\\\\522265be-ca57-4316-a5eb-fcdced589b76.png","width":1440,"height":900,"sha256":"9ce2350a1b4906f236b9324f7d5a15dba9909175e49b1d40ea8b572da4ecb79a"}],"real_browser":true,"real_postgres":true,"external_network_calls":0}
+# SS009_RECEIPT {"event_time":"2026-10-03 11:04:46","event_epoch_ms":"1790996686686","kind":"cleanup","status":"PASS","candidate_fingerprint":"4de1768b61b8465ab20628e36a7f4e968146e8536edede2fa38c6c5fb6951fd6","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"ss010_browser_process","remaining":0},{"resource":"ss010_tls_listener","remaining":0},{"resource":"ss010_roles","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17803.8902

@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: original Ticket notification source group
+ok 1 - original Ticket notification source group
+  ---
+  duration_ms: 3278.7881
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X037","surface":"NORMAL_FRAME_REAL_TICKET_EVENT_OUTBOX","private_ack_adjudication":"SUPPRESSED_WITHOUT_DIRECT_LEG","replay_delivery_delta":0,"provider_calls":0}
+# Subtest: original Ticket notification source single
+ok 2 - original Ticket notification source single
+  ---
+  duration_ms: 3381.5664
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X038","surface":"NORMAL_FRAME_REAL_TICKET_EVENT_OUTBOX","private_ack_adjudication":"CREATED","replay_delivery_delta":0,"provider_calls":0}
+# Subtest: original Incident notification sources use actual confirmation, version four event and replay
+ok 3 - original Incident notification sources use actual confirmation, version four event and replay
+  ---
+  duration_ms: 4625.6021
+  type: 'test'
+  ...
+# {"source_case_ids":["P2-007-X039","P2-007-X040"],"surface":"NORMAL_REPORTS_AUTHENTICATED_INCIDENT_COMMANDS_OUTBOX","confirmation_version":1,"source_confirmation_version_3_adjudication":"NEW_INCIDENT_STARTS_AT_ONE","update_version":4,"source_generic_updated_adjudication":"ACTUAL_INCIDENT_INVESTIGATING_EVENT","no_direct_subscription_private_suppression":true,"replay_delivery_delta":0,"provider_calls":0}
+# Subtest: original UNKNOWN source requires reconciliation after a real Outbox attempt
+ok 4 - original UNKNOWN source requires reconciliation after a real Outbox attempt
+  ---
+  duration_ms: 3544.0837
+  type: 'test'
+  ...
+# {"source_case_ids":["P2-007-X042","D12-041"],"surface":"NORMAL_FRAME_REAL_OUTBOX_MOCK_PROVIDER_UNKNOWN","synthetic_provider_attempts":1,"automatic_retry_count":0,"explicit_reconciliation":true,"live_provider_calls":0}
+# Subtest: D12-063 four actual Direct-qualified subscriptions produce version-idempotent Incident notices
+ok 5 - D12-063 four actual Direct-qualified subscriptions produce version-idempotent Incident notices
+  ---
+  duration_ms: 4443.7998
+  type: 'test'
+  ...
+# {"source_case_id":"D12-063","surface":"NORMAL_GROUP_AND_DIRECT_REPORTS_HUMAN_CONFIRMATION","source_version_2_adjudication":"CONFIRMATION_EVENT_VERSION_ONE","group_notices":1,"private_notices":4,"replay_notice_delta":0,"provider_calls":0}
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19846.7809

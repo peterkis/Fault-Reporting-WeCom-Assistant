@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: numeric SDK receipts survive restart, preserve errors and exclude SDK payload and identity
+ok 1 - numeric SDK receipts survive restart, preserve errors and exclude SDK payload and identity
+  ---
+  duration_ms: 26.5925
+  type: 'test'
+  ...
+# Subtest: missing Delivery context refuses an SDK call before sending
+ok 2 - missing Delivery context refuses an SDK call before sending
+  ---
+  duration_ms: 0.1868
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 190.3992

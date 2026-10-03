@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: 真实 HTTP 授权往返使用安全 Cookie 和清洁成功 URL，不向浏览器泄露成员身份
+ok 1 - 真实 HTTP 授权往返使用安全 Cookie 和清洁成功 URL，不向浏览器泄露成员身份
+  ---
+  duration_ms: 173.4208
+  type: 'test'
+  ...
+# Subtest: HTTP 关闭态拒绝所有认证路径且不调用提供商
+ok 2 - HTTP 关闭态拒绝所有认证路径且不调用提供商
+  ---
+  duration_ms: 29.6961
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 423.5092

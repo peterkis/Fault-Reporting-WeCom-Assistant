@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: P1-011 writes only a redacted, structured operational log record
+ok 1 - P1-011 writes only a redacted, structured operational log record
+  ---
+  duration_ms: 69.9768
+  type: 'test'
+  ...
+# Subtest: P1-011 keeps a persisted core intake available when optional dependencies fail
+ok 2 - P1-011 keeps a persisted core intake available when optional dependencies fail
+  ---
+  duration_ms: 3.5642
+  type: 'test'
+  ...
+# Subtest: P1-011 composes the operational boundary around the real Inbox to Pilot Ticket lifecycle
+ok 3 - P1-011 composes the operational boundary around the real Inbox to Pilot Ticket lifecycle
+  ---
+  duration_ms: 163.1718
+  type: 'test'
+  ...
+# Subtest: P1-011 alerts with stable codes without carrying the rejected sensitive values
+ok 4 - P1-011 alerts with stable codes without carrying the rejected sensitive values
+  ---
+  duration_ms: 0.8554
+  type: 'test'
+  ...
+# Subtest: P1-011 serves the Pilot workbench under a same-origin CSP without inline code
+ok 5 - P1-011 serves the Pilot workbench under a same-origin CSP without inline code
+  ---
+  duration_ms: 47.4073
+  type: 'test'
+  ...
+# Subtest: P1-011 preserves safe backup and restore checkpoints in an admin-only immutable audit trail
+ok 6 - P1-011 preserves safe backup and restore checkpoints in an admin-only immutable audit trail
+  ---
+  duration_ms: 67.2879
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 835.8318

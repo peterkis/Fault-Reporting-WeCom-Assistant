@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 11:06:38",
+  "event_epoch_ms": "1790996798358",
+  "tested_head": "dc775835a3b792d2f3f36dcbbfe6ade5a73033a1",
+  "tested_tree": "92bfd88178872f1ee13d0741a8c7e540c028f38d",
+  "candidate_fingerprint": "d8dab8daba67b3f94e19deea9a1b7c0c014b84fe76fa7f425349488bccdbeb5a",
+  "kind": "CURRENT_MIGRATION_SCOPE",
+  "observation": {
+    "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/191-yxx-current-migrations.integration.test.mts.tap",
+    "receipt_index": 0
+  }
+}

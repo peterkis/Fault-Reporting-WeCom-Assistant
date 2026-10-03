@@ -1,0 +1,94 @@
+TAP version 13
+# Cloning into 'C:\\Users\\zqpet\\AppData\\Local\\Temp\\fault-reporting-p2-016-historical-7GSO4A'...
+# Updating files:  57% (1813/3138)
+# Updating files:  58% (1821/3138)
+# Updating files:  59% (1852/3138)
+# Updating files:  60% (1883/3138)
+# Updating files:  61% (1915/3138)
+# Updating files:  62% (1946/3138)
+# Updating files:  63% (1977/3138)
+# Updating files:  64% (2009/3138)
+# Updating files:  65% (2040/3138)
+# Updating files:  66% (2072/3138)
+# Updating files:  67% (2103/3138)
+# Updating files:  68% (2134/3138)
+# Updating files:  69% (2166/3138)
+# Updating files:  70% (2197/3138)
+# Updating files:  71% (2228/3138)
+# Updating files:  72% (2260/3138)
+# Updating files:  73% (2291/3138)
+# Updating files:  74% (2323/3138)
+# Updating files:  75% (2354/3138)
+# Updating files:  76% (2385/3138)
+# Updating files:  77% (2417/3138)
+# Updating files:  78% (2448/3138)
+# Updating files:  79% (2480/3138)
+# Updating files:  80% (2511/3138)
+# Updating files:  81% (2542/3138)
+# Updating files:  82% (2574/3138)
+# Updating files:  83% (2605/3138)
+# Updating files:  84% (2636/3138)
+# Updating files:  85% (2668/3138)
+# Updating files:  86% (2699/3138)
+# Updating files:  87% (2731/3138)
+# Updating files:  88% (2762/3138)
+# Updating files:  89% (2793/3138)
+# Updating files:  90% (2825/3138)
+# Updating files:  91% (2856/3138)
+# Updating files:  92% (2887/3138)
+# Updating files:  93% (2919/3138)
+# Updating files:  94% (2950/3138)
+# Updating files:  95% (2982/3138)
+# Updating files:  96% (3013/3138)
+# Updating files:  97% (3044/3138)
+# Updating files:  98% (3076/3138)
+# Updating files:  99% (3107/3138)
+# Updating files:  99% (3111/3138)
+# Updating files: 100% (3138/3138)
+# Updating files: 100% (3138/3138), done.
+# HEAD is now at 8c33271 Merge pull request \#6 from peterkis/phase2/p2-012-human-confirmed-incident
+# Subtest: P2-016 architecture guards preserve authorization, immutable baselines and closed contracts
+ok 1 - P2-016 architecture guards preserve authorization, immutable baselines and closed contracts
+  ---
+  duration_ms: 19942.0834
+  type: 'test'
+  ...
+# Subtest: P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work
+ok 2 - P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work
+  ---
+  duration_ms: 185.5436
+  type: 'test'
+  ...
+# Subtest: P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials
+ok 3 - P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials
+  ---
+  duration_ms: 21.3754
+  type: 'test'
+  ...
+# Subtest: JSON contract rejects extra keys, noncanonical types and offset time
+ok 4 - JSON contract rejects extra keys, noncanonical types and offset time
+  ---
+  duration_ms: 8.5751
+  type: 'test'
+  ...
+# Subtest: P2-016 closeout freezes every business input and the exact file set
+ok 5 - P2-016 closeout freezes every business input and the exact file set
+  ---
+  duration_ms: 0.4322
+  type: 'test'
+  ...
+# Subtest: P2-016 completion requires owner approval, precise candidates, live duration and zero-skip final regression
+ok 6 - P2-016 completion requires owner approval, precise candidates, live duration and zero-skip final regression
+  ---
+  duration_ms: 0.6693
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24678.8411

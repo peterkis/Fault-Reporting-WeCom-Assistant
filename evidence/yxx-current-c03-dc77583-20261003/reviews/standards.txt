@@ -1,0 +1,127 @@
+INDEPENDENT STANDARDS REVIEW
+Candidate: dc775835a3b792d2f3f36dcbbfe6ade5a73033a1
+Candidate tree: 92bfd88178872f1ee13d0741a8c7e540c028f38d
+Baseline: 562a96ffdd7148d729ab0eed9d215abe894f12c2
+Verdict: PASS
+Unresolved findings: 0
+Confirmed P1/P2 findings: none.
+
+Method and authority
+Read-only Standards-axis review of baseline...candidate, all 25 commits, the complete
+961-path diff, and the final C3 commit. The checkout HEAD and tree matched the full
+candidate identity; merge-base matched the full baseline SHA; history was complete,
+with no shallow repository, replace refs, grafts, index changes, or worktree changes.
+The supplied candidate record identifies this object as LOCAL_FROZEN_CANDIDATE and
+published=false, so this review does not relabel local HEAD as a published GitHub
+object. Rules reviewed: AGENTS.md, README.md, docs/architecture_baseline_status.md,
+ADR-0026, ADR-0027, .github/review/README.md, and the repository Standards smell
+baseline. No test, database, browser, build, readiness CLI, source, index, or branch
+was executed or changed. Only this external review report was written.
+
+Coverage
+- 32 non-evidence paths: controls and ADR/plan contracts; both workflow changes;
+  current scope, history, report and execution verifiers; MJS integration seams;
+  all new MTS tests; migration runner, publication and shard tooling and tests; and
+  the final reconnect-fixture repair.
+- 929 evidence additions: the preserved 927-file C1 packet plus the C2 catalog and
+  companion attestation. No pre-existing evidence path was modified, deleted, or
+  renamed between baseline and C3.
+- Historical protection from the fixed SS009 object, the five exact PR21
+  adjudications, and the separately authorized pre-PR21 G0 transition was inspected
+  without converting historical execution into current-source execution.
+
+Documented-standard conclusions
+1. ADR-0026 and AGENTS TypeScript rules remain satisfied. New implementation is
+   strict MTS; runtime-relative imports remain MJS; no new production JS module,
+   same-name source duplicate, source fallback, any, ts-ignore, ts-nocheck, double
+   assertion, or undocumented type escape was found. C3 changes one existing MJS
+   test and the progress record only; no production code changes.
+2. ADR-0027 current readiness remains fail-closed. The accepted baseline, 22 SQL
+   files, protected state, current/historical obligation split, candidate inventory,
+   actual execution paths, raw artifacts, cleanup, specialized proof, reviews, and
+   historical proof remain separately bound. STRUCTURE_VALID_NOT_READY and strict
+   READY remain distinct; returned READY remains technical-only with
+   live_authorized=false and no parent Gate advance.
+3. Historical evidence protection is preserved. The original SS009 validator,
+   tested ancestry, fixed checkout, strict command, and mutation proof are not
+   rewritten. All 929 evidence changes in the reviewed range are additions.
+4. CI keeps exact-head identity, clean manifests, four disjoint current shards,
+   original-log integrity, zero fail/skip/cancel/todo/not-run, and readiness=false
+   at collection. C2 records repository-local core.autocrlf=true immediately before
+   the hermetic preflight, addressing the known global-config isolation failure
+   without weakening identity, ancestry, raw-byte, or clean-worktree checks.
+5. The C2 artifact catalog contains 927 unique paths. Independent recomputation
+   matched every listed byte length and SHA-256. The evidence directory contains
+   exactly those originals plus artifact-catalog.json and its attestation. The
+   attested catalog (240562 bytes, SHA-256
+   6a68fe154410229f62eabd84b0da10789c7cc497c7b4e5c02d7aed0a60035fb5)
+   and report (2958 bytes, SHA-256
+   2e1ee663a85937dfd4e8576127d99775f50ce2ff5b5293c398c696819edd7781)
+   match the committed files. This validates preservation and catalog integrity;
+   it does not promote C1 evidence to C3 acceptance.
+
+C3 reconnect-fixture assessment
+The final commit changes only plans/yxx-current-readiness-implementation.md and
+tests/p1-012-live-e2e-script.test.mjs (30 insertions, 4 deletions total). The fake
+client now waits on a test-owned promise that resolves only after the injected
+appendEvidenceRecord has delayed the post-reconnect readiness record by 25 ms and
+successfully appended it. Emission is scheduled with setImmediate, allowing the
+production continuation to set postReconnectMessageReady before the callback.
+The production guard, handler, timeout (10000 ms), event order assertions, secrecy
+assertions, and runtime code are unchanged.
+
+This is an external-I/O test seam, not a mocked internal readiness validator. An
+append rejection does not signal the sender; the production path converts the write
+failure into its existing fail-closed terminal result. The test still asserts exactly
+one handled frame, the post-reconnect message id, ordered durable audit events,
+reauthenticated_before_callback=true, and absence of raw message ids in evidence.
+
+The retained negative-control checkout differs from the C3 test by exactly one line:
+it restores setTimeout(emitMessage, 10) while keeping the 25 ms delayed append and all
+other C3 test logic. Its public target fails 0/1 after the original 10000 ms timeout
+with P1_012_LIVE_TIMEOUT. The C3 sender passes the same target 1/1, and the complete
+test file passes 33/33 with zero fail/cancel/skip/todo. Both builds report verified,
+not activated artifacts. These external stage06-c02/reconnect-* observations prove
+the fixture repair is discriminating; they are not substituted for C3 full acceptance.
+
+External C3 packet-assembly review
+stage06-c03/assemble-packet.mjs is external orchestration, not candidate source, and
+was inspected without execution. It pins dc775835a3b792d2f3f36dcbbfe6ade5a73033a1,
+requires published=false, matches checkout HEAD, requires a clean checkout, binds the
+build head/tree and candidate fingerprint, and refuses incomplete/failed/skipped full
+results before assembling any packet claim.
+
+The append-only catalog sequence satisfies the minimum closure for the prior P2
+finding. The script saves report.json only after all semantic public verifiers pass.
+It then snapshots every file already present in the unique files map into a sorted
+artifact-catalog.json with path, byte length, encoding, and SHA-256. That non-circular
+set includes report.json and excludes only the catalog and attestation that do not yet
+exist. The companion artifact-catalog-attestation.json carries the same C3 tested
+head/tree/fingerprint header and binds both the report reference and catalog reference,
+including their bytes and hashes. Both records explicitly keep readiness=false and
+live_authorized=false.
+
+After adding those two records, the packet copy iterates the updated files map and
+packet.json serializes that same updated map, so both new entries are included in the
+deliverable packet. Existing originals are re-read and rechecked against their catalog
+bytes and hashes. Safe relative paths, unique map keys, fresh view/packet directories,
+writeFileSync flag wx, and COPYFILE_EXCL prevent overwrite or path escape. The script
+does not mutate report schema, public validators, the source checkout, or old evidence.
+Generated C3 outputs do not yet exist and therefore were not claimed as verified here;
+this conclusion is about the reviewed assembly logic and minimum append-only design.
+
+Smell baseline
+No actionable smell with demonstrated correctness or maintenance risk was found.
+The promise name and ordering comments state the test contract directly. The small
+test-only subclass preserves the existing fake-client shape and avoids production
+coupling or a speculative abstraction.
+
+Limitations
+Per instruction this review did not run tests, database, browser, build, current
+readiness, or GitHub checks. C3 candidate metadata records 845 controlled files and
+fingerprint d8dab8daba67b3f94e19deea9a1b7c0c014b84fe76fa7f425349488bccdbeb5a.
+C3 is a new candidate because the routed test and controlled progress input changed.
+C1's 216-file/1380-pass packet, C2's partial failed run, and the focused reconnect
+logs do not establish C3 READY. Complete C3 216-file acceptance, strict readiness,
+owned-resource cleanup, exact-head CI, and their separately required evidence remain
+outside this Standards verdict. No external message was sent.
