@@ -107,11 +107,12 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
     assert.doesNotMatch(scripts,/--reference-source|T02_REMAINING_ORIGINAL|classify-t02-expiry\.mjs|observe-runtime\.mjs|types-t02-reference/u);
   }
   const complete=record(jobs['current-complete']);assert.ok(strings(complete.needs).includes('source-baseline'));
+  assert.equal(complete.if,'${{ always() }}','the aggregate must run even when the workflow is cancelled');
   assert.ok(Array.isArray(complete.steps));assert.match(String(record(complete.steps[0]).run),/test "\$BASELINE" = success/u);
   const bash=process.platform==='win32'?path.resolve(execFileSync('git',['--exec-path'],{encoding:'utf8',windowsHide:true}).trim(),'../../../bin/bash.exe'):'bash';
-  for(const failure of ['failure','cancelled','skipped','']) {
+  for(const gate of ['TOOLING','CURRENT','BASELINE']) for(const failure of ['failure','cancelled','skipped','']) {
     const result:SpawnSyncReturns<string>=spawnSync(bash,['-c',String(record(complete.steps[0]).run)],{encoding:'utf8',windowsHide:true,
-      env:{...process.env,TOOLING:'success',CURRENT:'success',BASELINE:failure}});
+      env:{...process.env,TOOLING:'success',CURRENT:'success',BASELINE:'success',[gate]:failure}});
     assert.equal(result.status,1,result.stderr);
   }
   const passed=spawnSync(bash,['-c',String(record(complete.steps[0]).run)],{encoding:'utf8',windowsHide:true,

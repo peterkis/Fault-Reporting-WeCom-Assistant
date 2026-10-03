@@ -256,7 +256,7 @@ jobs:
 
   current-complete:
     needs: [tooling, current-regression, source-baseline]
-    if: ${{ always() && !cancelled() }}
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
