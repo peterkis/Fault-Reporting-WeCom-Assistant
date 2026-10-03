@@ -520,3 +520,16 @@ plus 1 independently historical entry, with four disjoint 55/54/54/54 shards.
 Final C4 freeze, complete owned-environment run, new independent original reviews,
 append-only evidence, final publication-head CI/review and merge remain pending.
 Earlier green runs do not prove the changed candidate READY.
+
+C4 full-01 stopped at file 62: the real incident capacity test failed its unchanged
+5000-event assertion; remaining files were NOT_RUN. Owned PG cleanup was confirmed.
+A separately marked diagnostic reproduced 4200 events and 50 notification bindings.
+The shared integration fixture's fixed retention deadline (2026-10-03 12:00:00)
+had expired during acceptance. Production correctly refused expired direct legs.
+The fixture now uses one database physical-clock snapshot and a 30-day retention
+period; bulk capacity fixture timestamps use the same snapshot with ordered past
+message times. Production guards, capacity minima and timeouts remain unchanged.
+The real capacity command test then passed with 5200 events, 550 bindings/sends,
+32 SSE clients and confirmed zero-residual cleanup. This modified-runtime diagnostic
+is RED/GREEN development evidence only; its inherited C4 metadata is not a new
+candidate acceptance. Fresh frozen candidate, complete run and reviews are required.
