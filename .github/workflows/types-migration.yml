@@ -49,7 +49,7 @@ jobs:
           OUT="$RUNNER_TEMP/types-review"
           mkdir -p "$OUT"
           npm run migration:gate 2>&1 | tee "$OUT/gate.txt"
-          node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs .build/tools/acceptance.test.mjs .build/tools/publication.test.mjs 2>&1 | tee "$OUT/tooling.txt"
+          node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs .build/tools/acceptance.test.mjs .build/tools/publication.test.mjs .build/tools/t02-expiry.test.mjs 2>&1 | tee "$OUT/tooling.txt"
           node .build/tools/observe-runtime.mjs "$RUNNER_TEMP/types-t02-reference" 2>&1 | tee "$OUT/observations.jsonl"
           node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
           node .build/tools/browser-smoke.mjs 2>&1 | tee "$OUT/real-browser.txt"
@@ -183,7 +183,7 @@ jobs:
           git -C "$BASE" checkout --detach 7eefaa99591bfaa2e787701efd315ff701c51f35
           git -C "$BASE" update-ref refs/remotes/origin/main 7eefaa99591bfaa2e787701efd315ff701c51f35
           npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
-      - name: Historical 17-file SOURCE comparison with one current shadow
+      - name: Published identity and current tooling
         shell: bash
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -193,7 +193,61 @@ jobs:
           mkdir -p "$OUT"
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" 2>&1 | tee "$OUT/identity.txt"
           npm run migration:tools
-          (cd "$RUNNER_TEMP/types-t02-reference" && npm run migration:tools && node .build/tools/run-tests.mjs --selection t02-baseline --reference-source --report-dir "$OUT/reference") 2>&1 | tee "$OUT/reference.txt"
+      - name: Frozen T02 SOURCE result and limited expiry classification
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          mkdir -p "$OUT"
+          RC=0
+          (cd "$RUNNER_TEMP/types-t02-reference" && npm run migration:tools && node .build/tools/run-tests.mjs --selection t02-baseline --reference-source --report-dir "$OUT/reference") 2>&1 | tee "$OUT/reference.txt" || RC=$?
+          echo "$RC" > "$OUT/reference-exit.txt"
+          docker logs "$POSTGRES_CONTAINER" > "$OUT/reference-postgres.log" 2>&1
+          if [ "$RC" != 0 ]; then
+            node .build/tools/classify-t02-expiry.mjs "$RUNNER_TEMP/types-t02-reference" "$OUT/reference" "$OUT/reference-postgres.log" "$RC" | tee "$OUT/reference-classification.json"
+          fi
+      - name: Execute remaining original T02 checks without changing the original failure
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export T02_REFERENCE="$RUNNER_TEMP/types-t02-reference"
+          export T02_REPORTS="$RUNNER_TEMP/types-baseline"
+          node --input-type=module > "$T02_REPORTS/remaining.txt" 2>&1 <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          import path from 'node:path';
+          import {pathToFileURL} from 'node:url';
+          const root=process.env.T02_REFERENCE,out=process.env.T02_REPORTS;
+          const {runSelection}=await import(pathToFileURL(path.join(root,'.build/tools/run-tests.mjs')));
+          const {loadRoutes,select}=await import(pathToFileURL(path.join(root,'.build/tools/routing.mjs')));
+          const selection=select(loadRoutes(root),'selection','t02-baseline');
+          const original=JSON.parse(readFileSync(path.join(out,'reference/summary.json'),'utf8'));
+          assert.deepEqual(original.selected_files,selection.entries.map(entry=>entry.path));
+          assert.deepEqual(original.not_run,selection.entries.filter(entry=>!original.files.some(file=>file.path===entry.path)).map(entry=>entry.path));
+          const records=[];
+          for(const [i,entry] of selection.entries.entries()) {
+            if(!original.not_run.includes(entry.path))continue;
+            const reportDir=path.join(out,'remaining',String(i+1).padStart(3,'0'));let exit=0;
+            try {runSelection(root,{...selection,label:'T02_REMAINING_ORIGINAL_'+(i+1),entries:[entry]},{reference:true,reportDir});}
+            catch {exit=1;}
+            const bytes=readFileSync(path.join(reportDir,'summary.json'));
+            records.push({path:entry.path,exit_code:exit,summary_sha256:createHash('sha256').update(bytes).digest('hex')});
+          }
+          writeFileSync(path.join(out,'remaining-receipt.json'),JSON.stringify({historical_only:true,original_summary_unchanged:true,records},null,2));
+          if(records.some(record=>record.exit_code!==0))process.exitCode=1;
+          NODE
+      - name: Independently build and execute the current 17-file shadow
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          npm run migration:tools
           node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-1" 2>&1 | tee "$OUT/shadow-1.txt"
           node .build/tools/observe-runtime.mjs "$RUNNER_TEMP/types-t02-reference" 2>&1 | tee "$OUT/observations.jsonl"
       - name: Observe untouched T02 P2-005 cleanup (diagnostic only)
@@ -205,7 +259,7 @@ jobs:
           (cd "$RUNNER_TEMP/types-t02-reference" && node --test --test-reporter=tap --test-concurrency=1 tests/p2-005-conversation-control.integration.test.mjs) > "$OUT/t02-cleanup-observation.txt" 2>&1 || RC=$?
           echo "$RC" > "$OUT/t02-cleanup-observation-exit.txt"
           echo "REFERENCE_OBSERVATION_ONLY exit=$RC; not current acceptance"
-      - name: T02 artifact identity and source architecture
+      - name: Current artifact identity
         if: ${{ !cancelled() }}
         shell: bash
         run: |
@@ -213,7 +267,21 @@ jobs:
           OUT="$RUNNER_TEMP/types-baseline"
           node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
           cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
+          # Architecture is an independent hard gate below.
+      - name: Current source architecture
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
           npm run validate:architecture:v1.4 2>&1 | tee "$OUT/architecture.txt"
+      - name: Current ARCH006 structure
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
+          node scripts/validate-arch-006-rule-first-service-loop.mjs 2>&1 | tee "$OUT/current-arch006.txt"
       - name: T02 frozen P2-016 checkout
         if: ${{ !cancelled() }}
         shell: bash
@@ -221,15 +289,20 @@ jobs:
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
           node .build/tools/run-tests.mjs --frozen p2016 --report-dir "$OUT/historical" 2>&1 | tee "$OUT/historical.txt"
-      - name: Current structure and strict technical readiness
+      - name: Current strict technical readiness
         if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
           OUT="$RUNNER_TEMP/types-baseline"
           printf '%s\n' "import net from 'node:net';import cp from 'node:child_process';import {syncBuiltinESMExports} from 'node:module';const fail=()=>{process.stderr.write('CURRENT_FORBIDDEN_RUNTIME_IO');process.exit(97);};net.Socket.prototype.connect=fail;net.Server.prototype.listen=fail;cp.fork=fail;cp.spawn=fail;globalThis.fetch=fail;syncBuiltinESMExports();" > "$OUT/offline-guard.mjs"
-          node scripts/validate-arch-006-rule-first-service-loop.mjs 2>&1 | tee "$OUT/current-arch006.txt"
           node --import "$OUT/offline-guard.mjs" scripts/yxx-self-service-readiness.mjs --require-ready 2>&1 | tee "$OUT/current-readiness.json"
+      - name: Preserve the original SS009 rejection on current source
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/types-baseline"
           # The unchanged SS009 command is historical: retain its current rejection.
           RC=0
           node scripts/validate-yxx-self-service.mjs --require-ready > "$OUT/historical-command-on-current.txt" 2>&1 || RC=$?

@@ -101,6 +101,28 @@ mock only external dependencies. Do not mock internal validators to manufacture 
 
 ## Existing live history and rollback
 
+### Authorized frozen T02 expiry observation (2026-10-03)
+
+The user independently authorized a limited historical failure classification:
+only clean, complete T02 `7eefaa99591bfaa2e787701efd315ff701c51f35`, fixture
+`tests/helpers/p2-015-postgres-harness.mjs` blob
+`f57161d3bf145451ee4e850d9af150ae6f290a57` / mode `100644`, and the two known
+orchestration integration scenarios whose fixed `2026-10-03 12:00:00` retention
+deadline expired. Classification must bind the exact object, scenario, original
+TAP/stderr and database constraint/detail proving expiry; `25P02` alone is insufficient.
+Original FAIL and not-run records stay unchanged and are never counted as current
+acceptance. Remaining historical checks run separately; any other failure, missing
+proof or changed historical object remains fatal. No general T02 exemption exists.
+
+Historical execution and current shadow/build are independent CI steps. Current
+build, artifact, regression, architecture, strict readiness, exact coverage and
+cleanup still execute and remain hard gates, including when historical classification
+rejects. The overall job and collector still require all applicable checks; no job-wide
+`continue-on-error` or removal of current duties is authorized. CI/control changes
+require a new frozen candidate and original acceptance evidence under decision 11;
+C7's tested identity and originals must not be rebound. This authorization does not
+expand the `627d5f7` adjudication or grant merge, live writes, sending or deployment.
+
 On 2026-10-02 the user additionally approved exactly the existing transition
 `627d5f72959b4b2a085d734c311712363f87a3f8` / parent
 `a58577d66733b3ec39f5d74af9ff44c70b79fe38` for

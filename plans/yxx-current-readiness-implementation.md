@@ -14,8 +14,8 @@ This progress document is not acceptance evidence.
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | COMPLETE for development implementation; component/publication regressions pass; actual whole-packet strict READY remains unverified until stage 6 frozen acceptance |
 | 5 | ARCH006/current CI separation and retained historical CI | COMPLETE for development implementation; final exact-head CI and wall-time measurement remain stages 6-7 |
-| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | COMPLETE; C7 5e8a226 full-01: 217 files / 1381 tests PASS, both reviews PASS, cleanup confirmed; prior C3 is historical only |
-| 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | IN_PROGRESS; C7 immutable packet published and strict READY verified; H f152e4a CI failed in the expired historical T02 reference; final CI/review/merge remain pending |
+| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | IN_PROGRESS after authorized CI/control changes; C7 5e8a226 full-01 remains its original 217-file / 1381-test historical acceptance; a new frozen candidate and full evidence are due |
+| 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | IN_PROGRESS; published f2e083c CI 37106318219 completed FAILED; its bot review found no major issues and all three known P2 threads are resolved; revised CI/current evidence and final CI/review/merge remain pending |
 
 ## Baseline observations (2026-10-02)
 
@@ -574,3 +574,33 @@ communication_message_retention_check and then transaction-aborted errors.
 The combined step consequently never ran the current shadow/build, and subsequent
 current checks failed for missing build-manifest.json. This is not current CI green;
 historical-boundary treatment, final exact-head CI/review and merge remain pending.
+
+Limited T02 expiry authorization and implementation (2026-10-03): the user approved
+exact classification of the two known 12:00 expiry failures at unchanged T02
+7eefaa99591bfaa2e787701efd315ff701c51f35, not generic historical exceptions.
+The classifier verifies the clean full object/tree/helper blob, original file
+records/TAP/stderr, exact scenarios/counts and same-backend PostgreSQL primary
+constraint/detail/expiry evidence. It retains original FAIL and not-run records.
+Public CLI RED/GREEN and rejection regressions pass; the actual downloaded H4
+originals also classify as HISTORICAL_REFERENCE_NOT_CURRENT_ACCEPTANCE.
+
+The CI change separates current shadow/build, artifact, V1.4, ARCH006, strict
+readiness and original SS009 rejection from historical failure. Each remains a
+hard step, independently runs when not cancelled, and the collector still requires
+the source-baseline job. Remaining original historical files execute independently;
+their failures remain fatal. No job-wide continue-on-error is added.
+
+Actually executing the original six not-run files found three more failures:
+the worker capacity case hits the distinct 13:00 fixture retention deadline;
+workbench HTTP has a projection failure and the three-process test times out.
+The three other files pass. In a separate explicitly dirty diagnostic checkout,
+changing only fixture retention date literals to an unexpired date makes all six
+pass 23/23. This modified-fixture diagnosis is not historical or current acceptance.
+Original results and both owned-PG zero-residual cleanup receipts remain external.
+Additional classification of those three named cases is not yet authorized.
+
+The current 17-file shadow independently passed 96/96 in owned PG18 with confirmed
+cleanup. This working-tree diagnostic is not the new frozen full acceptance.
+Current strict readiness correctly rejects the changed controls with
+CURRENT_CANDIDATE_MISMATCH. C7 originals and tested identity remain unchanged;
+new scope resolution, candidate freeze/full acceptance and final publication are due.
