@@ -99,6 +99,7 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
   };
   assert.equal(merge.if,"${{ github.event_name == 'pull_request' }}");
   assert.equal(merge['runs-on'],'ubuntu-latest');assert.equal(merge.strategy,undefined);
+  assert.doesNotMatch(JSON.stringify(record(merge.env)),/\$\{\{\s*runner\./u,'runner context belongs to steps, not job env');
   const mergeScript=runs(merge);
   assert.equal([...mergeScript.matchAll(/npm run migration:build/gu)].length,1);
   assert.match(mergeScript,/node \.build\/tools\/gate\.mjs types/u);
@@ -130,7 +131,9 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
     assert.match(runs(complete),/verify-current-shards\.mjs.*--shards 4/u);
   }
   const mergeSteps=merge.steps;assert.ok(Array.isArray(mergeSteps));
-  const selected=String(record(mergeSteps.find(step=>String(record(step).run??'').includes('runSelection'))).run);
+  const selectionStep=record(mergeSteps.find(step=>String(record(step).run??'').includes('runSelection')));
+  assert.equal(record(selectionStep.env).MIGRATION_REPORT_DIR,'${{ runner.temp }}/types-merge/tests');
+  const selected=String(selectionStep.run);
   const failed=selected.replace('node .build/runtime/scripts/migrate-current-baseline.mjs',':')
     .replace(/(?<=<<'NODE'\n)[\s\S]+(?=\nNODE\n)/u,"throw Error('SELECTED_TESTS_FAIL');");
   assert.notEqual(spawnSync(bash,['-c',failed],{cwd:root,encoding:'utf8',windowsHide:true}).status,0);

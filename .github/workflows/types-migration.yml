@@ -33,7 +33,6 @@ jobs:
       PILOT_DATABASE_URL: postgresql://postgres:migration_ci_only@127.0.0.1:5432/migration_ci
       EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
       EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
-      MIGRATION_REPORT_DIR: ${{ runner.temp }}/types-merge/tests
     steps:
     - run: git config --global core.autocrlf true
     - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -71,6 +70,8 @@ jobs:
         npm run migration:build
         node .build/tools/gate.mjs types
     - name: Run the selected compiled business and architecture entries
+      env:
+        MIGRATION_REPORT_DIR: ${{ runner.temp }}/types-merge/tests
       shell: bash
       run: |
         set -euo pipefail
