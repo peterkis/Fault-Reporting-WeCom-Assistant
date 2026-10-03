@@ -293,6 +293,8 @@ jobs:
           set -euo pipefail
           OUT="$RUNNER_TEMP/current-collection"
           for N in 1 2 3 4; do mv "$OUT/current-shard-$N" "$OUT/shard-$N"; done
+          # The preflight deliberately ignores global Git configuration.
+          git config core.autocrlf true
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD"
           npm run migration:tools
           node .build/tools/verify-current-shards.mjs "$OUT" --shards 4 --expected-head "$EXPECTED_HEAD" | tee "$OUT/collection.json"

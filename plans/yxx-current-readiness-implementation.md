@@ -14,7 +14,7 @@ This progress document is not acceptance evidence.
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | COMPLETE for development implementation; component/publication regressions pass; actual whole-packet strict READY remains unverified until stage 6 frozen acceptance |
 | 5 | ARCH006/current CI separation and retained historical CI | COMPLETE for development implementation; final exact-head CI and wall-time measurement remain stages 6-7 |
-| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | COMPLETE; C 9b25f57, 216 files / 1380 tests PASS, both reviews PASS, cleanup confirmed |
+| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | IN_PROGRESS; C1 216/1380 completed, successor C2 needed after current-complete Git configuration repair |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | IN_PROGRESS; immutable packet staged and strict READY verified; final H CI/review/merge pending |
 
 ## Baseline observations (2026-10-02)
@@ -441,3 +441,19 @@ provider or listener activity and live_authorized=false. The original historical
 SS009 command on current remains rejected; its fixed historical proof passes.
 Final evidence-bearing H rebuild, remote CI, exact-head review and merge are
 pending and are recorded externally to avoid self-referential evidence hashes.
+
+Final H review/CI follow-up: all four current shards passed 216 files and
+1380/1380 cases; downloaded originals independently passed the collection CLI.
+The required current-complete job failed before collection: its global-only
+core.autocrlf setting is intentionally ignored by the isolated historical
+preflight. Same-head rerun reproduced the failure; a full clean clone reproduced
+RED exit 2 REVIEW_WORKTREE_DIRTY and checkout-local core.autocrlf=true produced
+GREEN exit 0 without altering source. The job now sets that local configuration.
+Because CI is a controlled input, C2 must be frozen and accepted completely;
+C1 evidence is preserved and must not prove the changed candidate READY.
+The independent Standards follow-up narrowed its finding to a missing durable
+complete artifact catalog. A 927-entry catalog and companion attestation are
+appended; every original byte remains unchanged. Local workstation paths are
+a non-blocking hygiene recommendation, with no secret/patient/internal-network
+disclosure confirmed. Per-file JSON records are originals, and summary.files
+is a derived aggregate. Successor publication includes the complete catalog.
