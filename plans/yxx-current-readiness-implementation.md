@@ -604,3 +604,11 @@ cleanup. This working-tree diagnostic is not the new frozen full acceptance.
 Current strict readiness correctly rejects the changed controls with
 CURRENT_CANDIDATE_MISMATCH. C7 originals and tested identity remain unchanged;
 new scope resolution, candidate freeze/full acceptance and final publication are due.
+
+Final closure policy supersedes that pending case-by-case decision: see ADR-0027,
+"Fixed T02 comparison retired from current admission". Fixed T02 SOURCE replay,
+remaining-file replay and its indirect CI observation calls no longer gate PR38;
+their original results remain historical. Current checks and applicable historical
+proofs stay mandatory. The revised scheduling increment is frozen once for current
+full acceptance and append-only publication. Final H/CI/merge facts are recorded in
+the PR, without another documentation successor solely to bind a CI SHA.

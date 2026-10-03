@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync, type SpawnSyncReturns } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -85,7 +85,7 @@ test('only the two proven frozen T02 expiry failures become historical observati
   }
 });
 
-test('historical classification cannot suppress independent current CI hard gates',()=>{
+test('retired T02 replay cannot suppress independent current CI hard gates',()=>{
   const root=sourceRoot();
   const parsed=spawnSync('python',['-c',
     "import json,yaml; print(json.dumps(yaml.safe_load(open('.github/workflows/types-migration.yml',encoding='utf-8'))['jobs']))"],
@@ -101,9 +101,20 @@ test('historical classification cannot suppress independent current CI hard gate
   assert.ok(current.some(step=>String(step.run).includes('validate:architecture:v1.4')));
   assert.ok(current.some(step=>String(step.run).includes('validate-arch-006-rule-first-service-loop.mjs')));
   assert.ok(current.some(step=>String(step.run).includes('yxx-self-service-readiness.mjs --require-ready')));
-  const historical=steps.find(step=>String(step.name).startsWith('Frozen T02 SOURCE'));assert.ok(historical);
-  assert.ok(!String(historical.run).includes('shadow-1'));
-  assert.ok(!historical['continue-on-error']);assert.match(String(historical.run),/classify-t02-expiry/u);
+  for(const value of Object.values(jobs)) {
+    const job=record(value);assert.ok(Array.isArray(job.steps));
+    const scripts=job.steps.map(step=>String(record(step).run ?? '')).join('\n');
+    assert.doesNotMatch(scripts,/--reference-source|T02_REMAINING_ORIGINAL|classify-t02-expiry\.mjs|observe-runtime\.mjs|types-t02-reference/u);
+  }
   const complete=record(jobs['current-complete']);assert.ok(strings(complete.needs).includes('source-baseline'));
   assert.ok(Array.isArray(complete.steps));assert.match(String(record(complete.steps[0]).run),/test "\$BASELINE" = success/u);
+  const bash=process.platform==='win32'?path.resolve(execFileSync('git',['--exec-path'],{encoding:'utf8',windowsHide:true}).trim(),'../../../bin/bash.exe'):'bash';
+  for(const failure of ['failure','cancelled','skipped','']) {
+    const result:SpawnSyncReturns<string>=spawnSync(bash,['-c',String(record(complete.steps[0]).run)],{encoding:'utf8',windowsHide:true,
+      env:{...process.env,TOOLING:'success',CURRENT:'success',BASELINE:failure}});
+    assert.equal(result.status,1,result.stderr);
+  }
+  const passed=spawnSync(bash,['-c',String(record(complete.steps[0]).run)],{encoding:'utf8',windowsHide:true,
+    env:{...process.env,TOOLING:'success',CURRENT:'success',BASELINE:'success'}});
+  assert.equal(passed.status,0,passed.stderr);
 });

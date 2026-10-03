@@ -101,27 +101,37 @@ mock only external dependencies. Do not mock internal validators to manufacture 
 
 ## Existing live history and rollback
 
-### Authorized frozen T02 expiry observation (2026-10-03)
+### Fixed T02 comparison retired from current admission (2026-10-03)
 
-The user independently authorized a limited historical failure classification:
-only clean, complete T02 `7eefaa99591bfaa2e787701efd315ff701c51f35`, fixture
-`tests/helpers/p2-015-postgres-harness.mjs` blob
-`f57161d3bf145451ee4e850d9af150ae6f290a57` / mode `100644`, and the two known
-orchestration integration scenarios whose fixed `2026-10-03 12:00:00` retention
-deadline expired. Classification must bind the exact object, scenario, original
-TAP/stderr and database constraint/detail proving expiry; `25P02` alone is insufficient.
-Original FAIL and not-run records stay unchanged and are never counted as current
-acceptance. Remaining historical checks run separately; any other failure, missing
-proof or changed historical object remains fatal. No general T02 exemption exists.
+The user's revised closure instruction supersedes the earlier two-case T02 expiry
+classification boundary. Only the SOURCE comparison replay at fixed T02
+`7eefaa99591bfaa2e787701efd315ff701c51f35` and its remaining-file follow-up have
+ended their PR38 admission duties. The historical migration comparison is retired
+from current admission. Original FAIL, NOT_RUN, diagnosis and cleanup records stay
+unchanged and are never represented as PASS or counted as current execution.
+Original commands and the existing classifier remain available for manual diagnosis;
+classification is not a prerequisite for retirement. No new case exemptions, replay
+platform, workflow or classifier matrix is needed. Fixed-T02 runtime observations
+are likewise removed from the CI admission call chain, avoiding indirect gating.
 
-Historical execution and current shadow/build are independent CI steps. Current
-build, artifact, regression, architecture, strict readiness, exact coverage and
-cleanup still execute and remain hard gates, including when historical classification
-rejects. The overall job and collector still require all applicable checks; no job-wide
-`continue-on-error` or removal of current duties is authorized. CI/control changes
-require a new frozen candidate and original acceptance evidence under decision 11;
-C7's tested identity and originals must not be rebound. This authorization does not
-expand the `627d5f7` adjudication or grant merge, live writes, sending or deployment.
+This does not retire historical object-source or evidence-integrity checks, the
+fixed SS009 proof, still-applicable fixed P2-016 proof, or any test on current source
+or compiled artifacts. Production permission, transaction, delivery and retention
+constraints remain applicable. Current type/tool checks, clean build/artifact,
+registry-derived four disjoint shards and complete union, architecture, strict
+readiness and resource cleanup remain hard gates. The source-baseline job retains
+its current responsibilities and the collector still requires its success; no
+job-wide continue-on-error or acceptance of missing/skipped results is allowed.
+
+Freeze one final candidate after these scheduling changes. Reuse the existing
+acceptance and publication programs/model; retain C7's original identity and generate
+new evidence for changed controlled inputs under decision 11. Final H must have real
+successful current required CI and necessary review, no unresolved blockers or merge
+conflicts. The user authorizes publication and a history-preserving merge commit
+under those conditions without repeat confirmation or administrator override.
+Final H/CI facts go in the PR description/comment, avoiding documentation successors
+created solely to embed CI SHA. No T05, new business stage, production database,
+sending, deployment, AI enablement or parent Gate advancement is authorized.
 
 On 2026-10-02 the user additionally approved exactly the existing transition
 `627d5f72959b4b2a085d734c311712363f87a3f8` / parent

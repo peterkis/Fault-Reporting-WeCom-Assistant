@@ -33,15 +33,6 @@ jobs:
       - name: Prepare the YAML parser required by current and historical OpenAPI tests
         run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Authentic merged T02 reference (never current TypeScript source)
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE="$RUNNER_TEMP/types-t02-reference"
-          git clone --no-local --config core.autocrlf=true . "$BASE"
-          git -C "$BASE" checkout --detach 7eefaa99591bfaa2e787701efd315ff701c51f35
-          git -C "$BASE" update-ref refs/remotes/origin/main 7eefaa99591bfaa2e787701efd315ff701c51f35
-          npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
       - name: Strict tools, real compiler canary and host rejection tests
         shell: bash
         run: |
@@ -49,8 +40,8 @@ jobs:
           OUT="$RUNNER_TEMP/types-review"
           mkdir -p "$OUT"
           npm run migration:gate 2>&1 | tee "$OUT/gate.txt"
-          node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs .build/tools/acceptance.test.mjs .build/tools/publication.test.mjs .build/tools/t02-expiry.test.mjs 2>&1 | tee "$OUT/tooling.txt"
-          node .build/tools/observe-runtime.mjs "$RUNNER_TEMP/types-t02-reference" 2>&1 | tee "$OUT/observations.jsonl"
+          node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs .build/tools/acceptance.test.mjs .build/tools/publication.test.mjs 2>&1 | tee "$OUT/tooling.txt"
+          node --test --test-reporter=tap --test-name-pattern "retired T02 replay" .build/tools/t02-expiry.test.mjs 2>&1 | tee "$OUT/current-scheduling.txt"
           node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
           node .build/tools/browser-smoke.mjs 2>&1 | tee "$OUT/real-browser.txt"
           node .build/tools/run-tests.mjs --selection t02-source --report-dir "$OUT/source" 2>&1 | tee "$OUT/source.txt"
@@ -174,15 +165,6 @@ jobs:
       - name: Prepare the YAML parser required by current and historical OpenAPI tests
         run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Authentic merged T02 reference (never current TypeScript source)
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE="$RUNNER_TEMP/types-t02-reference"
-          git clone --no-local --config core.autocrlf=true . "$BASE"
-          git -C "$BASE" checkout --detach 7eefaa99591bfaa2e787701efd315ff701c51f35
-          git -C "$BASE" update-ref refs/remotes/origin/main 7eefaa99591bfaa2e787701efd315ff701c51f35
-          npm ci --prefix "$BASE" --ignore-scripts --no-audit --no-fund
       - name: Published identity and current tooling
         shell: bash
         env:
@@ -193,55 +175,7 @@ jobs:
           mkdir -p "$OUT"
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" 2>&1 | tee "$OUT/identity.txt"
           npm run migration:tools
-      - name: Frozen T02 SOURCE result and limited expiry classification
-        if: ${{ !cancelled() }}
-        shell: bash
-        env:
-          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          mkdir -p "$OUT"
-          RC=0
-          (cd "$RUNNER_TEMP/types-t02-reference" && npm run migration:tools && node .build/tools/run-tests.mjs --selection t02-baseline --reference-source --report-dir "$OUT/reference") 2>&1 | tee "$OUT/reference.txt" || RC=$?
-          echo "$RC" > "$OUT/reference-exit.txt"
-          docker logs "$POSTGRES_CONTAINER" > "$OUT/reference-postgres.log" 2>&1
-          if [ "$RC" != 0 ]; then
-            node .build/tools/classify-t02-expiry.mjs "$RUNNER_TEMP/types-t02-reference" "$OUT/reference" "$OUT/reference-postgres.log" "$RC" | tee "$OUT/reference-classification.json"
-          fi
-      - name: Execute remaining original T02 checks without changing the original failure
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          export T02_REFERENCE="$RUNNER_TEMP/types-t02-reference"
-          export T02_REPORTS="$RUNNER_TEMP/types-baseline"
-          node --input-type=module > "$T02_REPORTS/remaining.txt" 2>&1 <<'NODE'
-          import assert from 'node:assert/strict';
-          import {readFileSync,writeFileSync} from 'node:fs';
-          import {createHash} from 'node:crypto';
-          import path from 'node:path';
-          import {pathToFileURL} from 'node:url';
-          const root=process.env.T02_REFERENCE,out=process.env.T02_REPORTS;
-          const {runSelection}=await import(pathToFileURL(path.join(root,'.build/tools/run-tests.mjs')));
-          const {loadRoutes,select}=await import(pathToFileURL(path.join(root,'.build/tools/routing.mjs')));
-          const selection=select(loadRoutes(root),'selection','t02-baseline');
-          const original=JSON.parse(readFileSync(path.join(out,'reference/summary.json'),'utf8'));
-          assert.deepEqual(original.selected_files,selection.entries.map(entry=>entry.path));
-          assert.deepEqual(original.not_run,selection.entries.filter(entry=>!original.files.some(file=>file.path===entry.path)).map(entry=>entry.path));
-          const records=[];
-          for(const [i,entry] of selection.entries.entries()) {
-            if(!original.not_run.includes(entry.path))continue;
-            const reportDir=path.join(out,'remaining',String(i+1).padStart(3,'0'));let exit=0;
-            try {runSelection(root,{...selection,label:'T02_REMAINING_ORIGINAL_'+(i+1),entries:[entry]},{reference:true,reportDir});}
-            catch {exit=1;}
-            const bytes=readFileSync(path.join(reportDir,'summary.json'));
-            records.push({path:entry.path,exit_code:exit,summary_sha256:createHash('sha256').update(bytes).digest('hex')});
-          }
-          writeFileSync(path.join(out,'remaining-receipt.json'),JSON.stringify({historical_only:true,original_summary_unchanged:true,records},null,2));
-          if(records.some(record=>record.exit_code!==0))process.exitCode=1;
-          NODE
-      - name: Independently build and execute the current 17-file shadow
+      - name: Independently build and execute the current targeted regression
         if: ${{ !cancelled() }}
         shell: bash
         run: |
@@ -249,16 +183,6 @@ jobs:
           OUT="$RUNNER_TEMP/types-baseline"
           npm run migration:tools
           node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-1" 2>&1 | tee "$OUT/shadow-1.txt"
-          node .build/tools/observe-runtime.mjs "$RUNNER_TEMP/types-t02-reference" 2>&1 | tee "$OUT/observations.jsonl"
-      - name: Observe untouched T02 P2-005 cleanup (diagnostic only)
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          OUT="$RUNNER_TEMP/types-baseline"
-          RC=0
-          (cd "$RUNNER_TEMP/types-t02-reference" && node --test --test-reporter=tap --test-concurrency=1 tests/p2-005-conversation-control.integration.test.mjs) > "$OUT/t02-cleanup-observation.txt" 2>&1 || RC=$?
-          echo "$RC" > "$OUT/t02-cleanup-observation-exit.txt"
-          echo "REFERENCE_OBSERVATION_ONLY exit=$RC; not current acceptance"
       - name: Current artifact identity
         if: ${{ !cancelled() }}
         shell: bash
