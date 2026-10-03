@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: worker defaults are bounded and disabled flags claim nothing
+ok 1 - worker defaults are bounded and disabled flags claim nothing
+  ---
+  duration_ms: 2.4505
+  type: 'test'
+  ...
+# Subtest: worker rejects batches above maximum without querying storage
+ok 2 - worker rejects batches above maximum without querying storage
+  ---
+  duration_ms: 0.7059
+  type: 'test'
+  ...
+# Subtest: worker reserves one bounded slot for the Web owner when Bot backlog is full
+ok 3 - worker reserves one bounded slot for the Web owner when Bot backlog is full
+  ---
+  duration_ms: 0.5155
+  type: 'test'
+  ...
+# Subtest: worker falls back to the full Bot batch when the Web owner has no due work
+ok 4 - worker falls back to the full Bot batch when the Web owner has no due work
+  ---
+  duration_ms: 0.5477
+  type: 'test'
+  ...
+# Subtest: worker still advances Bot work while Web remains continuously due
+ok 5 - worker still advances Bot work while Web remains continuously due
+  ---
+  duration_ms: 0.4226
+  type: 'test'
+  ...
+# Subtest: worker counts a failed Web claim against the bounded Bot capacity
+ok 6 - worker counts a failed Web claim against the bounded Bot capacity
+  ---
+  duration_ms: 0.2512
+  type: 'test'
+  ...
+# Subtest: worker keeps the Bot batch running when the Web processor throws
+ok 7 - worker keeps the Bot batch running when the Web processor throws
+  ---
+  duration_ms: 0.4094
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 140.264

@@ -1,0 +1,19 @@
+TAP version 13
+# (node:1536) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:1536) DeprecationWarning: mock.module(): options.namedExports is deprecated. Use options.exports instead.
+# Subtest: both deployed launchers forward enabled directory options only to the owning roles
+ok 1 - both deployed launchers forward enabled directory options only to the owning roles
+  ---
+  duration_ms: 4.7945
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 257.1708

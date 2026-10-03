@@ -1,0 +1,73 @@
+TAP version 13
+# Subtest: migration 020 is exact, reentrant, CLI-scoped, check-only, and preserves 005/010/011/012 catalogs
+ok 1 - migration 020 is exact, reentrant, CLI-scoped, check-only, and preserves 005/010/011/012 catalogs
+  ---
+  duration_ms: 1013.7672
+  type: 'test'
+  ...
+# {"first_apply":true,"repeated_apply":true,"check_rollback":true,"frozen_catalog_relations":10}
+# Subtest: migration 020 fails closed for missing columns, weakened checks, wrong unique, index method and predicate
+ok 2 - migration 020 fails closed for missing columns, weakened checks, wrong unique, index method and predicate
+  ---
+  duration_ms: 3008.9191
+  type: 'test'
+  ...
+# {"drift_mutations":["missingcol","weakcheck","wrongunique","indexmethod","indexpred"],"stable_error":"P2_004_SCHEMA_DRIFT_REMEDIATION_REQUIRED"}
+# Subtest: Communication service commits atomically, isolates idempotency scopes, and never mutates Session
+ok 3 - Communication service commits atomically, isolates idempotency scopes, and never mutates Session
+  ---
+  duration_ms: 1998.2302
+  type: 'test'
+  ...
+# {"browser_double_click_concurrency":12,"committed_fact_sets":1,"human_ai_same_body_isolated":true,"internal_note_outbox_count":0}
+# Subtest: Delivery Worker enforces claim CAS, ACK, retry, dead letter, timeout unknown and lease recovery
+ok 4 - Delivery Worker enforces claim CAS, ACK, retry, dead letter, timeout unknown and lease recovery
+  ---
+  duration_ms: 2517.2581
+  type: 'test'
+  ...
+# {"concurrent_workers":12,"single_claim":true,"gateway_reconnect":true,"timeout_unknown":true,"leased_recovered":true,"sending_not_resent":true}
+# Subtest: multi-target delivery is isolated, target rate limit is durable, and reconciliation is explicit
+ok 5 - multi-target delivery is isolated, target rate limit is durable, and reconciliation is explicit
+  ---
+  duration_ms: 2531.7258
+  type: 'test'
+  ...
+# {"multi_target_count":2,"isolated_outcomes":["SENT","DEAD_LETTER"],"target_rate_limit":true,"reconciliation_resolutions":["CONFIRMED_SENT","CONFIRMED_NOT_SENT_REQUEUE","CANCEL"]}
+# Subtest: real Worker kill/restart reclaims LEASED but never blindly resends SENDING
+ok 6 - real Worker kill/restart reclaims LEASED but never blindly resends SENDING
+  ---
+  duration_ms: 2871.2645
+  type: 'test'
+  ...
+# {"leased_child_exit":{"code":null,"signal":"SIGKILL"},"leased_restart_sent":true,"sending_child_exit":{"code":null,"signal":"SIGKILL"},"sending_restart_reconciled":true,"blind_resend_count":0}
+# Subtest: P1 compatibility is read-only until it delegates to the existing P1 worker
+ok 7 - P1 compatibility is read-only until it delegates to the existing P1 worker
+  ---
+  duration_ms: 2730.7346
+  type: 'test'
+  ...
+# {"p1_read_snapshot_unchanged":true,"p1_delivery_delegated":true,"communication_rows_created":0}
+# Subtest: 500 deliveries remain bounded at batch 20 and interruption resumes without resource growth
+ok 8 - 500 deliveries remain bounded at batch 20 and interruption resumes without resource growth
+  ---
+  duration_ms: 6597.432
+  type: 'test'
+  ...
+# {"deliveries":500,"batch_size":20,"interrupted_after":100,"resumed_to":500,"heap_samples":[15525704,18354200,18666176,21485216,18923952,21704176,19960880,23800160,26727800,28743176],"heap_growth_bytes":13217472,"soak_claimed":false}
+# Subtest: P2-004 integration leaves no owned database or backend residual
+ok 9 - P2-004 integration leaves no owned database or backend residual
+  ---
+  duration_ms: 39.7861
+  type: 'test'
+  ...
+# {"database_count":0,"backend_count":0,"active_database_count":0,"worker_child_count":0,"worker_count":0,"timer_count":0,"child_process_count":0}
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23551.9654

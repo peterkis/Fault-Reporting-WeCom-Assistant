@@ -1,0 +1,1 @@
+{"ok":true,"gate":"P2-G2","checks":16,"errors":[],"candidate_fingerprint":"00388c36beb41ad0c6b1f6f96bc38172f657fa26f80124e8a3385603b2101749","readiness_checked":false,"validation_scope":"LOCAL_IMPLEMENTATION_AND_VALIDATION","parent_readiness":"HISTORICAL_CREATION_V2_NOT_CURRENT_WEB_READINESS","live_validation":"NOT_RUN","database_writes":false,"provider_calls":0}

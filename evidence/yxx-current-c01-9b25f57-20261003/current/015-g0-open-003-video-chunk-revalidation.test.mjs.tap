@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: the documented 512 KiB plan covers 3,920,958 bytes in eight ordered chunks
+ok 1 - the documented 512 KiB plan covers 3,920,958 bytes in eight ordered chunks
+  ---
+  duration_ms: 1.648
+  type: 'test'
+  ...
+# Subtest: test-only padding creates an exact target-sized MP4 without retaining an original filename
+ok 2 - test-only padding creates an exact target-sized MP4 without retaining an original filename
+  ---
+  duration_ms: 0.6838
+  type: 'test'
+  ...
+# Subtest: layered upload sends init, every serial chunk, and finish with fresh request IDs
+ok 3 - layered upload sends init, every serial chunk, and finish with fresh request IDs
+  ---
+  duration_ms: 37.8448
+  type: 'test'
+  ...
+# Subtest: a rejected chunk prevents finish and returns an explicit stage result
+ok 4 - a rejected chunk prevents finish and returns an explicit stage result
+  ---
+  duration_ms: 3.0493
+  type: 'test'
+  ...
+# Subtest: the probe downloads in memory, completes the layer sequence, then issues one callback-bound reply
+ok 5 - the probe downloads in memory, completes the layer sequence, then issues one callback-bound reply
+  ---
+  duration_ms: 4.6632
+  type: 'test'
+  ...
+# Subtest: arguments remain restricted to the G0 evidence directory and 10 MiB provider limit
+ok 6 - arguments remain restricted to the G0 evidence directory and 10 MiB provider limit
+  ---
+  duration_ms: 0.266
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 269.0713

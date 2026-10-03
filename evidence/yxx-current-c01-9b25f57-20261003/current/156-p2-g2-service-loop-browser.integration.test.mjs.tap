@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership
+ok 1 - G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership
+  ---
+  duration_ms: 9312.9496
+  type: 'test'
+  ...
+# {"scenario_ids":["G2-T01","G2-I01","G2-I02","G2-I03"],"source_case_ids":["D12-050","D12-052"],"seeded_business_facts":false,"surface":"NORMAL_FRAME_POSTGRES_ACTUAL_BROWSER","normal_reports":3,"candidates":1,"human_confirmed_incidents":1,"individual_recoveries":1,"ticket_state_actions":12,"provider_calls":0}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9840.2309

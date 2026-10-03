@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: current readiness CLI rejects unknown arguments with a safe actionable reason
+ok 1 - current readiness CLI rejects unknown arguments with a safe actionable reason
+  ---
+  duration_ms: 132.5044
+  type: 'test'
+  ...
+# Subtest: current readiness CLI validates the accepted successor structure without claiming readiness
+ok 2 - current readiness CLI validates the accepted successor structure without claiming readiness
+  ---
+  duration_ms: 14506.3351
+  type: 'test'
+  ...
+# Subtest: current readiness CLI reports the current evidence decision before and after publication
+ok 3 - current readiness CLI reports the current evidence decision before and after publication
+  ---
+  duration_ms: 24651.0976
+  type: 'test'
+  ...
+# Subtest: current readiness CLI distinguishes a missing build from evidence or historical rejection
+ok 4 - current readiness CLI distinguishes a missing build from evidence or historical rejection
+  ---
+  duration_ms: 134.4921
+  type: 'test'
+  ...
+# Subtest: current readiness CLI rejects builds predating a scope or historical adjudication control change
+ok 5 - current readiness CLI rejects builds predating a scope or historical adjudication control change
+  ---
+  duration_ms: 20440.0745
+  type: 'test'
+  ...
+# Subtest: current readiness structural checking remains offline and never starts business processes
+ok 6 - current readiness structural checking remains offline and never starts business processes
+  ---
+  duration_ms: 15740.0774
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 75896.5176

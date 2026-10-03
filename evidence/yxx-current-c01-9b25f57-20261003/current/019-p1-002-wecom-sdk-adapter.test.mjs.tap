@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: text Frame becomes an SDK-independent normalized message
+ok 1 - text Frame becomes an SDK-independent normalized message
+  ---
+  duration_ms: 4.1978
+  type: 'test'
+  ...
+# Subtest: image Frame exposes only an opaque media download reference
+ok 2 - image Frame exposes only an opaque media download reference
+  ---
+  duration_ms: 0.7727
+  type: 'test'
+  ...
+# Subtest: mixed Frame preserves text and image ordering in one normalized message
+ok 3 - mixed Frame preserves text and image ordering in one normalized message
+  ---
+  duration_ms: 0.4542
+  type: 'test'
+  ...
+# Subtest: replayed Frame keeps one durable idempotency key without Adapter-side dropping
+ok 4 - replayed Frame keeps one durable idempotency key without Adapter-side dropping
+  ---
+  duration_ms: 0.2565
+  type: 'test'
+  ...
+# Subtest: illegal Frame returns a stable, non-retryable and secret-free error
+ok 5 - illegal Frame returns a stable, non-retryable and secret-free error
+  ---
+  duration_ms: 0.1861
+  type: 'test'
+  ...
+# Subtest: invalid Adapter receive time returns a stable error instead of throwing
+ok 6 - invalid Adapter receive time returns a stable error instead of throwing
+  ---
+  duration_ms: 0.1874
+  type: 'test'
+  ...
+# Subtest: text that exceeds the contract only after normalization fails closed
+ok 7 - text that exceeds the contract only after normalization fails closed
+  ---
+  duration_ms: 1.0985
+  type: 'test'
+  ...
+# Subtest: text incompatible with the Phase 1 PostgreSQL boundary fails closed
+ok 8 - text incompatible with the Phase 1 PostgreSQL boundary fails closed
+  ---
+  duration_ms: 0.18
+  type: 'test'
+  ...
+# Subtest: non-message callback bodies are classified as unsupported before message-only fields
+ok 9 - non-message callback bodies are classified as unsupported before message-only fields
+  ---
+  duration_ms: 0.1389
+  type: 'test'
+  ...
+# Subtest: Frame envelope, identity and content validation use stable reasons
+ok 10 - Frame envelope, identity and content validation use stable reasons
+  ---
+  duration_ms: 0.8662
+  type: 'test'
+  ...
+# Subtest: Normalized Message JSON Schema matches the Adapter interface and excludes SDK secrets
+ok 11 - Normalized Message JSON Schema matches the Adapter interface and excludes SDK secrets
+  ---
+  duration_ms: 2.8539
+  type: 'test'
+  ...
+# Subtest: quoted text from the recorded Gate 0 shape is preserved without raw SDK fields
+ok 12 - quoted text from the recorded Gate 0 shape is preserved without raw SDK fields
+  ---
+  duration_ms: 0.3551
+  type: 'test'
+  ...
+# Subtest: Gate 0 verified file, voice and video Frames use the same normalized seam
+ok 13 - Gate 0 verified file, voice and video Frames use the same normalized seam
+  ---
+  duration_ms: 0.4376
+  type: 'test'
+  ...
+# Subtest: quoted media keeps an independent opaque reference
+ok 14 - quoted media keeps an independent opaque reference
+  ---
+  duration_ms: 0.2521
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 169.4954

@@ -1,0 +1,262 @@
+TAP version 13
+# Subtest: Realtime Event and Fallback Schemas parse as draft 2020-12 closed contracts
+ok 1 - Realtime Event and Fallback Schemas parse as draft 2020-12 closed contracts
+  ---
+  duration_ms: 7.6687
+  type: 'test'
+  ...
+# Subtest: Realtime vocabularies freeze all event, source, aggregate, scope and visibility values
+ok 2 - Realtime vocabularies freeze all event, source, aggregate, scope and visibility values
+  ---
+  duration_ms: 1.7965
+  type: 'test'
+  ...
+# Subtest: TypeScript declarations mirror every frozen Schema and runtime vocabulary
+ok 3 - TypeScript declarations mirror every frozen Schema and runtime vocabulary
+  ---
+  duration_ms: 1.5899
+  type: 'test'
+  ...
+# Subtest: authorized replay SQL clips scope and visibility before LIMIT and payload materialization
+ok 4 - authorized replay SQL clips scope and visibility before LIMIT and payload materialization
+  ---
+  duration_ms: 48.8556
+  type: 'test'
+  ...
+# Subtest: Fallback Schema freezes the six safe fields, four reasons and two strategies
+ok 5 - Fallback Schema freezes the six safe fields, four reasons and two strategies
+  ---
+  duration_ms: 1.2097
+  type: 'test'
+  ...
+# Subtest: normalization rejects invalid event, source, aggregate and scope vocabularies
+ok 6 - normalization rejects invalid event, source, aggregate and scope vocabularies
+  ---
+  duration_ms: 1.0759
+  type: 'test'
+  ...
+# Subtest: SESSION and THREAD require a UUID scope while SYSTEM requires null
+ok 7 - SESSION and THREAD require a UUID scope while SYSTEM requires null
+  ---
+  duration_ms: 1.12
+  type: 'test'
+  ...
+# Subtest: normalization rejects invalid timestamps and requires expires_at after occurred_at
+ok 8 - normalization rejects invalid timestamps and requires expires_at after occurred_at
+  ---
+  duration_ms: 0.4764
+  type: 'test'
+  ...
+# Subtest: aggregate versions use nullable canonical PostgreSQL BIGINT strings
+ok 9 - aggregate versions use nullable canonical PostgreSQL BIGINT strings
+  ---
+  duration_ms: 0.4949
+  type: 'test'
+  ...
+# Subtest: Last-Event-ID accepts zero and the BIGINT maximum without Number conversion
+ok 10 - Last-Event-ID accepts zero and the BIGINT maximum without Number conversion
+  ---
+  duration_ms: 0.1615
+  type: 'test'
+  ...
+# Subtest: Last-Event-ID rejects negative, decimal, scientific, signed, spaced and overflow forms
+ok 11 - Last-Event-ID rejects negative, decimal, scientific, signed, spaced and overflow forms
+  ---
+  duration_ms: 0.1731
+  type: 'test'
+  ...
+# Subtest: payload accepts only bounded plain finite JSON data
+ok 12 - payload accepts only bounded plain finite JSON data
+  ---
+  duration_ms: 0.3993
+  type: 'test'
+  ...
+# Subtest: payload enforces depth, node, object, array, string and canonical-byte limits
+ok 13 - payload enforces depth, node, object, array, string and canonical-byte limits
+  ---
+  duration_ms: 2.9306
+  type: 'test'
+  ...
+# Subtest: payload rejects Proxy and accessor paths without invoking hostile code
+ok 14 - payload rejects Proxy and accessor paths without invoking hostile code
+  ---
+  duration_ms: 0.3929
+  type: 'test'
+  ...
+# Subtest: payload rejects toJSON, symbols and prototype-pollution keys
+ok 15 - payload rejects toJSON, symbols and prototype-pollution keys
+  ---
+  duration_ms: 0.4693
+  type: 'test'
+  ...
+# Subtest: payload rejects message content and sensitive identifier property names
+ok 16 - payload rejects message content and sensitive identifier property names
+  ---
+  duration_ms: 0.724
+  type: 'test'
+  ...
+# Subtest: event key is stable, opaque and changes with its frozen identity tuple
+ok 17 - event key is stable, opaque and changes with its frozen identity tuple
+  ---
+  duration_ms: 1.5789
+  type: 'test'
+  ...
+# Subtest: event hash is canonical across payload key order and changes on semantic mutation
+ok 18 - event hash is canonical across payload key order and changes on semantic mutation
+  ---
+  duration_ms: 0.7351
+  type: 'test'
+  ...
+# Subtest: event hash excludes expires_at, event_id and created_at
+ok 19 - event hash excludes expires_at, event_id and created_at
+  ---
+  duration_ms: 0.7828
+  type: 'test'
+  ...
+# Subtest: Conversation Item mapper exposes only the seven safe projection fields plus occurred_at
+ok 20 - Conversation Item mapper exposes only the seven safe projection fields plus occurred_at
+  ---
+  duration_ms: 0.4038
+  type: 'test'
+  ...
+# Subtest: Session fixture mapper freezes created and updated event variants with safe payloads
+ok 21 - Session fixture mapper freezes created and updated event variants with safe payloads
+  ---
+  duration_ms: 0.3726
+  type: 'test'
+  ...
+# Subtest: Timeline rebuilt fixture mapper exposes only count and canonical hash metadata
+ok 22 - Timeline rebuilt fixture mapper exposes only count and canonical hash metadata
+  ---
+  duration_ms: 0.2873
+  type: 'test'
+  ...
+# Subtest: public event view contains exactly nine safe fields and no publisher, source, hash or scope IDs
+ok 23 - public event view contains exactly nine safe fields and no publisher, source, hash or scope IDs
+  ---
+  duration_ms: 0.3298
+  type: 'test'
+  ...
+# Subtest: SSE event encoding uses id/type/single-line JSON and supports every frozen event type
+ok 24 - SSE event encoding uses id/type/single-line JSON and supports every frozen event type
+  ---
+  duration_ms: 2.0831
+  type: 'test'
+  ...
+# Subtest: SSE encoding rejects CR/LF event injection and never emits raw payload newlines
+ok 25 - SSE encoding rejects CR/LF event injection and never emits raw payload newlines
+  ---
+  duration_ms: 0.3122
+  type: 'test'
+  ...
+# Subtest: heartbeat is a comment frame and consumes no event id
+ok 26 - heartbeat is a comment frame and consumes no event id
+  ---
+  duration_ms: 0.1166
+  type: 'test'
+  ...
+# Subtest: authorization defaults to deny-all and rejects absent or malformed contexts
+ok 27 - authorization defaults to deny-all and rejects absent or malformed contexts
+  ---
+  duration_ms: 0.5232
+  type: 'test'
+  ...
+# Subtest: authorization normalizes bounded UUID sets without wildcard access
+ok 28 - authorization normalizes bounded UUID sets without wildcard access
+  ---
+  duration_ms: 0.1876
+  type: 'test'
+  ...
+# Subtest: restricted-admin defense-in-depth closes a malicious replay without delivering it
+ok 29 - restricted-admin defense-in-depth closes a malicious replay without delivering it
+  ---
+  duration_ms: 2.3903
+  type: 'test'
+  ...
+# Subtest: controlled principal disconnect closes only the selected SSE client
+ok 30 - controlled principal disconnect closes only the selected SSE client
+  ---
+  duration_ms: 3.3981
+  type: 'test'
+  ...
+# Subtest: disabled handler returns safe polling fallback with zero database calls and no timers
+ok 31 - disabled handler returns safe polling fallback with zero database calls and no timers
+  ---
+  duration_ms: 0.5665
+  type: 'test'
+  ...
+# Subtest: disabled event store fails before acquiring a database connection
+ok 32 - disabled event store fails before acquiring a database connection
+  ---
+  duration_ms: 0.4036
+  type: 'test'
+  ...
+# Subtest: disconnect during authentication never acquires replay, Hub, or timer resources
+ok 33 - disconnect during authentication never acquires replay, Hub, or timer resources
+  ---
+  duration_ms: 0.2677
+  type: 'test'
+  ...
+# Subtest: disconnect during authorization never acquires replay, Hub, or timer resources
+ok 34 - disconnect during authorization never acquires replay, Hub, or timer resources
+  ---
+  duration_ms: 0.4651
+  type: 'test'
+  ...
+# Subtest: Wakeup Hub admits 32 clients, rejects the 33rd, and releases capacity
+ok 35 - Wakeup Hub admits 32 clients, rejects the 33rd, and releases capacity
+  ---
+  duration_ms: 0.2137
+  type: 'test'
+  ...
+# Subtest: replay batch configuration accepts 200 and rejects 201
+ok 36 - replay batch configuration accepts 200 and rejects 201
+  ---
+  duration_ms: 0.1373
+  type: 'test'
+  ...
+# Subtest: list replay rejects limits above 200 before querying storage
+ok 37 - list replay rejects limits above 200 before querying storage
+  ---
+  duration_ms: 0.4519
+  type: 'test'
+  ...
+# Subtest: backpressure waits for drain and releases only the affected stream
+ok 38 - backpressure waits for drain and releases only the affected stream
+  ---
+  duration_ms: 1.1292
+  type: 'test'
+  ...
+# Subtest: drain timeout disconnects only the slow client with bounded metrics
+ok 39 - drain timeout disconnects only the slow client with bounded metrics
+  ---
+  duration_ms: 1.8364
+  type: 'test'
+  ...
+# Subtest: retention gap after SSE headers closes the stream and reconnect returns 410 fallback
+ok 40 - retention gap after SSE headers closes the stream and reconnect returns 410 fallback
+  ---
+  duration_ms: 0.6935
+  type: 'test'
+  ...
+# Subtest: polling fallback normalizes canonical IDs and rejects unsafe forms
+ok 41 - polling fallback normalizes canonical IDs and rejects unsafe forms
+  ---
+  duration_ms: 0.1186
+  type: 'test'
+  ...
+# Subtest: public HTTP errors expose only stable codes and never raw authentication failures
+ok 42 - public HTTP errors expose only stable codes and never raw authentication failures
+  ---
+  duration_ms: 0.2231
+  type: 'test'
+  ...
+1..42
+# tests 42
+# suites 0
+# pass 42
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 219.4485

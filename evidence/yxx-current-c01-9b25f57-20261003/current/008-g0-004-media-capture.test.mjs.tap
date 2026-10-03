@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: media capture records only desensitized frame, download, and filename metadata
+ok 1 - media capture records only desensitized frame, download, and filename metadata
+  ---
+  duration_ms: 2.2773
+  type: 'test'
+  ...
+# Subtest: media capture arguments restrict scenarios, evidence output, and aes key modes
+ok 2 - media capture arguments restrict scenarios, evidence output, and aes key modes
+  ---
+  duration_ms: 1.1673
+  type: 'test'
+  ...
+# Subtest: voice capture retains only safe transcript metadata and does not download media
+ok 3 - voice capture retains only safe transcript metadata and does not download media
+  ---
+  duration_ms: 0.3197
+  type: 'test'
+  ...
+# Subtest: video capture reuses encrypted download evidence without exposing media references
+ok 4 - video capture reuses encrypted download evidence without exposing media references
+  ---
+  duration_ms: 0.3822
+  type: 'test'
+  ...
+# Subtest: download evidence maps decrypt failures and local deadline without leaking error details
+ok 5 - download evidence maps decrypt failures and local deadline without leaking error details
+  ---
+  duration_ms: 5.652
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 229.9925

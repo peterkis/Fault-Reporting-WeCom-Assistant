@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 08:00:40","event_epoch_ms":"1790985640628","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"Reporter browser retries incomplete ETag render after transient timeline failure for milestone addition and removal","file":"tests/p2-012-reporter-refresh-browser.test.mjs","line":7,"nesting":0,"skip":false,"todo":false}

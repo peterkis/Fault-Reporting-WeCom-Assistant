@@ -1,0 +1,26 @@
+INDEPENDENT STANDARDS REVIEW
+Candidate: 9b25f574cb956f6afbd275f1d0278efa653720e4 (frozen LOCAL C, not GitHub-published)
+Baseline: 562a96ffdd7148d729ab0eed9d215abe894f12c2
+Reviewer: current_c01_standards
+Verdict: PASS
+Unresolved findings: 0
+Confirmed P1/P2 findings: none.
+
+Method and authority
+Read-only review of baseline...C diff, baseline..C log (22 commits), and all 30 changed files. Checkout HEAD matched C and git status --porcelain was empty when inspected. Captured full diff and log beside this report. Rules examined: AGENTS.md, README.md, docs/architecture_baseline_status.md, ADR-0026, ADR-0027 and .github/review/README.md. Existing phase, privacy, live authorization and historical acceptance boundaries override generic smell heuristics. No source, index, branch, runtime artifact or database changes were made by this reviewer.
+
+Coverage
+Controls/docs: .gitattributes; .github/review/yxx-current-evidence-adjudication.json; both changed workflows; ADR-0027; TypeScript migration README/test-routing; current acceptance, scope and implementation plan.
+Application integration: scripts/validate-arch-006-rule-first-service-loop.mjs; scripts/yxx-self-service-readiness.mjs; src/p2-g2-candidate.mjs; src/yxx-self-service-readiness.mjs.
+New runtime verification: src/yxx-current-evidence.mts (all 620 lines); src/yxx-current-evidence-history.mts; src/yxx-current-readiness-scope.mts.
+Tests: tests/arch-006-rule-first-service-loop.test.mjs and all four new yxx-current test files.
+Tooling: common.mts; current-acceptance.mts; publish-current-evidence.mts; run-tests.mts; verify-current-shards.mts; acceptance.test.mts; hosts.test.mts; publication.test.mts.
+
+Conclusions against documented rules
+ADR-0026 sections 2-7 and AGENTS section 11: new implementations are strict MTS with runtime .mjs imports; existing MJS edits integrate the new current contract. No new production JS module, duplicate source implementation, unsafe strictness escape or source fallback was found. Tool-enforced syntax/type criteria are left to their existing checks rather than duplicated as findings.
+ADR-0027 sections 3-6, 9 and 11: SQL/state/default scope is explicitly pinned; source, actual staged runtime and historical roots remain distinct; executed-file line numbers are honestly labeled; candidate and build binding retain real ancestry and exact hashes. The archived C manifest substitution is limited to receipt fingerprint reconstruction while the actual H build is independently guarded.
+ADR-0027 sections 7-12: registered current/historical obligations are separate, shards are disjoint, originals have byte/hash references, publication is exclusive with bounded inputs and guarded pointer replacement, and publication output says EVIDENCE_STAGED_NOT_READINESS. ARCH006 structure does not require the packet it helps produce; final CI separately consumes strict readiness. Historical original validators and evidence are not rewritten. No live authorization, provider call, deployment, SQL change, parent Gate or default flag advancement is added.
+Smell heuristics: no actionable smell with a demonstrated correctness/maintenance risk was identified. Repeated assertions and component-specific proof checks were not treated as hard violations or used to demand broad restructuring.
+
+Limitations
+This is a STANDARDS source review, not a current acceptance receipt, SPEC verdict, authoritative GitHub published-history preflight, final H review or CI result. Full C acceptance is being executed separately; no complete real packet existed for this review and this report does not assert READY. Historical proof execution and raw artifact authenticity are not independently rerun here. No tests/resources were started to avoid interference with concurrent acceptance. These limitations do not change the zero unresolved source-standard findings verdict.

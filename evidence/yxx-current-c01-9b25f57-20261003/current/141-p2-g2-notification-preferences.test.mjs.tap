@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: default private progress policy sends accepted and final closed only
+ok 1 - default private progress policy sends accepted and final closed only
+  ---
+  duration_ms: 2.0505
+  type: 'test'
+  ...
+# Subtest: previous lifecycle events remain explicitly configurable
+ok 2 - previous lifecycle events remain explicitly configurable
+  ---
+  duration_ms: 0.3804
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 201.81

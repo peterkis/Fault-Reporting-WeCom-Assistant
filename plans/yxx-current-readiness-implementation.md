@@ -14,8 +14,8 @@ This progress document is not acceptance evidence.
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | COMPLETE for development implementation; component/publication regressions pass; actual whole-packet strict READY remains unverified until stage 6 frozen acceptance |
 | 5 | ARCH006/current CI separation and retained historical CI | COMPLETE for development implementation; final exact-head CI and wall-time measurement remain stages 6-7 |
-| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | IN_PROGRESS; candidate freeze and complete execution follow this commit |
-| 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | NOT_STARTED |
+| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | COMPLETE; C 9b25f57, 216 files / 1380 tests PASS, both reviews PASS, cleanup confirmed |
+| 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | IN_PROGRESS; immutable packet staged and strict READY verified; final H CI/review/merge pending |
 
 ## Baseline observations (2026-10-02)
 
@@ -425,3 +425,19 @@ file (217 entries total), with four disjoint current shards of 54 files. The sta
 current ARCH006 known-failure annotation was removed; the pinned PR37 classifier
 and its independent historical regression remain unchanged. Final strict READY,
 current full execution, independent review and remote CI are still unproven.
+
+Stage 6 frozen acceptance (2026-10-03): candidate C
+`9b25f574cb956f6afbd275f1d0278efa653720e4` / tree
+`b68d33d0e8a723610b14b4a90befe91cfeb706fb` completed all 216 current
+files and 1380/1380 tests, zero fail/cancelled/skipped/todo/not_run. The owned
+PG18 environment stopped successfully and its data directory was removed; raw
+cleanup confirms zero residuals and no preexisting resource changes. Independent
+SPEC and STANDARDS reviewers each returned PASS with zero unresolved findings.
+The 927-file append-only packet retains raw TAP/stderr/traces, historical proof,
+specialized screenshots, scenario/source accounting and review/cleanup receipts.
+All eight packet components passed; after staging and rebuilding, the public
+current strict CLI returned READY_FOR_LIMITED_WRITE_LIVE with zero database,
+provider or listener activity and live_authorized=false. The original historical
+SS009 command on current remains rejected; its fixed historical proof passes.
+Final evidence-bearing H rebuild, remote CI, exact-head review and merge are
+pending and are recorded externally to avoid self-referential evidence hashes.

@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 08:14:47","event_epoch_ms":"1790986487770","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"G2-T03 two isolated agent browsers transfer Ticket responsibility while Conversation owner remains independent","file":"tests/p2-g2-responsibility-browser.integration.test.mjs","line":7,"nesting":0,"skip":false,"todo":false}

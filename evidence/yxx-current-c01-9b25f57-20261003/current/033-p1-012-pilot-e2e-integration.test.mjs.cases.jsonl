@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 07:56:06","event_epoch_ms":"1790985366080","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P1-012 exercises the real Pilot core under duplicate, image, burst, Outbox failure, and AI-off conditions","file":"tests/p1-012-pilot-e2e-integration.test.mjs","line":104,"nesting":0,"skip":false,"todo":false}

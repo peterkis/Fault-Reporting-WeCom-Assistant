@@ -1,0 +1,31 @@
+TAP version 13
+# Subtest: P2-G1 system browser duplicate submit fence sends one human reply and preserves safe rendering
+ok 1 - P2-G1 system browser duplicate submit fence sends one human reply and preserves safe rendering
+  ---
+  duration_ms: 1632.3738
+  type: 'test'
+  ...
+# {"browser":"C:\\\\Program Files (x86)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe","viewport":{"width":390,"height":844},"replay_events":100,"realtime_list_calls":3,"duplicate_submit_calls":1,"polling_fallback":true,"xss_executed":false,"horizontal_overflow":false}
+# Subtest: P2-G1 system browser preserves native SSE reconnect and sends Last-Event-ID
+ok 2 - P2-G1 system browser preserves native SSE reconnect and sends Last-Event-ID
+  ---
+  duration_ms: 6040.9024
+  type: 'test'
+  ...
+# {"sse_connections":2,"last_event_id_used":true,"polling_stopped_after_reconnect":true}
+# Subtest: P2-G1 live browser sessions navigate to the actual Workbench route with isolated cookies
+ok 3 - P2-G1 live browser sessions navigate to the actual Workbench route with isolated cookies
+  ---
+  duration_ms: 2762.5867
+  type: 'test'
+  ...
+# {"browser_sessions":2,"workbench_route_requests":2,"isolated_cookie_headers":true,"root_not_requested":true,"safe_telemetry":true}
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12171.7062

@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: duplicate aliases, duplicate rules and rule config drift fail closed
+ok 1 - duplicate aliases, duplicate rules and rule config drift fail closed
+  ---
+  duration_ms: 41.6375
+  type: 'test'
+  ...
+# Subtest: at least 50 deterministic service cases return the same semantic result
+ok 2 - at least 50 deterministic service cases return the same semantic result
+  ---
+  duration_ms: 106.2598
+  type: 'test'
+  ...
+# Subtest: the same input produces the same output hash for 100 executions
+ok 3 - the same input produces the same output hash for 100 executions
+  ---
+  duration_ms: 91.3653
+  type: 'test'
+  ...
+# Subtest: rule engine extracts service, taxonomy and explainable provenance without effects
+ok 4 - rule engine extracts service, taxonomy and explainable provenance without effects
+  ---
+  duration_ms: 35.2132
+  type: 'test'
+  ...
+# Subtest: generic system failure asks only which system before lower-value questions
+ok 5 - generic system failure asks only which system before lower-value questions
+  ---
+  duration_ms: 30.282
+  type: 'test'
+  ...
+# Subtest: rule config drives incident signals but cannot create an Incident or mutate Ticket
+ok 6 - rule config drives incident signals but cannot create an Incident or mutate Ticket
+  ---
+  duration_ms: 32.1811
+  type: 'test'
+  ...
+# Subtest: correction, scope, recovery and workaround rules remain advisory
+ok 7 - correction, scope, recovery and workaround rules remain advisory
+  ---
+  duration_ms: 34.0077
+  type: 'test'
+  ...
+# Subtest: all generated result times are injected LocalDateTime and no Date is accepted
+ok 8 - all generated result times are injected LocalDateTime and no Date is accepted
+  ---
+  duration_ms: 32.5124
+  type: 'test'
+  ...
+# Subtest: bounded batch handles 2,000 synthetic turns without queues or external seams
+ok 9 - bounded batch handles 2,000 synthetic turns without queues or external seams
+  ---
+  duration_ms: 1051.7513
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1608.7949

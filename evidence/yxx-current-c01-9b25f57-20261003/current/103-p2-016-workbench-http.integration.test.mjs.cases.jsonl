@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 08:05:23","event_epoch_ms":"1790985923831","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P2-016 actual HTTP assembly: fail-closed flags, auth, CSRF, Ticket actions and durable SSE","file":"tests/p2-016-workbench-http.integration.test.mjs","line":14,"nesting":0,"skip":false,"todo":false}
