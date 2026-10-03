@@ -12,13 +12,13 @@ import { createPilotAccessService } from '../src/p1-009-pilot-access-workbench.m
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
 import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
-import { shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
 test('P2-016 existing rule worker creates Ticket notifications, safe group/direct guidance and SYSTEM-only timeout closure',async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016orch',run:async({pool,databaseUrl})=>{
     await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});
     const notifications=createP2016TicketNotificationProjector({additionalEventTypes:['ticket.created'],enabled:true}),realtime=createP2016RealtimeProjector({pool,enabled:true});
+    const workerEpoch=String(BigInt((await pool.query('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0].epoch)+10800000n);
     const worker=createP2016OrchestrationWorker({pool,notifications,realtime,identityHmacKey:'synthetic-only-identity-hmac-key',
-      now:()=>shanghaiLocalToEpochMs('2026-09-03 15:00:00')});
+      now:()=>workerEpoch});
     const report=await seedPersistedIntake({pool,text:'处方提交不了'});
     await seedPersistedIntake({pool,text:'系统不行'});await seedPersistedIntake({pool,text:'重置密码',chatType:'single'});
     assert.equal((await worker.processDueBatch()).disabled,true);

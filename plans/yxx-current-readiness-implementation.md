@@ -540,3 +540,12 @@ a September Worker clock while seeded inputs now correctly use the database cloc
 the three-hour advance therefore never expired the current candidate. The fixture
 now starts from the database physical clock plus one minute and advances exactly
 three hours for the same negative. DIRECT_ORGANIC/refusal assertions are preserved.
+
+C6 full-01 stopped at file 93 (662 PASS / 1 FAIL; remaining files NOT_RUN), with
+confirmed owned-environment cleanup. The orchestration fixture also used the old
+September Worker clock, producing an unintended extra guided notification. Its
+clock now uses the database snapshot plus the original three-hour offset. The
+existing notification count and timeout-closure assertions remain unchanged.
+A separately marked sequential diagnostic of related P2-016 integration and
+SS005/SS009 regression files passed 47/47, with confirmed zero-residual cleanup;
+it is not frozen-candidate acceptance. Full acceptance and fresh review remain due.
