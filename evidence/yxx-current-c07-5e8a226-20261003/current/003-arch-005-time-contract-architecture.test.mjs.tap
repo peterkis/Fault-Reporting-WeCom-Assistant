@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: ARCH-005 architecture validator freezes migrations and reports all hard static counts at zero
+ok 1 - ARCH-005 architecture validator freezes migrations and reports all hard static counts at zero
+  ---
+  duration_ms: 337.9665
+  type: 'test'
+  ...
+# Subtest: P2-007 and its authorized P2-015 successor keep the frozen ARCH-005 contract
+ok 2 - P2-007 and its authorized P2-015 successor keep the frozen ARCH-005 contract
+  ---
+  duration_ms: 7.8956
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4888.8922

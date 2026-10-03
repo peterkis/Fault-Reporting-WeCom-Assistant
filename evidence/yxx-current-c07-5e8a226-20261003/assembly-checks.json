@@ -1,0 +1,44 @@
+{
+  "event_time": "2026-10-03 14:45:18",
+  "event_epoch_ms": "1791009918770",
+  "checks": [
+    {
+      "verifier": "verifyCurrentYxxExecution",
+      "status": "PASS"
+    },
+    {
+      "verifier": "verifyCurrentYxxReviews",
+      "status": "PASS"
+    },
+    {
+      "verifier": "verifyCurrentYxxCleanup",
+      "status": "PASS"
+    },
+    {
+      "verifier": "verifyCurrentYxxHistoricalProof",
+      "status": "PASS"
+    },
+    {
+      "verifier": "verifyCurrentYxxSpecializedProof",
+      "status": "PASS"
+    },
+    {
+      "verifier": "verifyCurrentYxxSourceAccounting",
+      "status": "PASS"
+    },
+    {
+      "verifier": "verifyCurrentYxxScenarios",
+      "status": "PASS"
+    },
+    {
+      "verifier": "verifyCurrentYxxMigrationProof",
+      "status": "PASS"
+    }
+  ],
+  "readiness": false,
+  "pending": [
+    "Actual-source scope/history/candidate binding",
+    "Rebuild and strict readiness before evidence commit",
+    "Final evidence-bearing H rebuild/CI/review"
+  ]
+}

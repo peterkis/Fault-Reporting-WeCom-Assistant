@@ -1,8 +1,18 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "report": {
-    "path": "evidence/yxx-current-c03-dc77583-20261003/report.json",
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/report.json",
     "bytes": 2958,
-    "sha256": "41d9a4a41f0fc83e9dd70c6046445d2a10f1694d33fa5594c0a97a3e3ceb3c16"
+    "sha256": "641b5efe8da0d1aec0ae2d273b210a419e5da517a5ec6bd1a439996b7a29f3ed"
+  },
+  "artifact_catalog": {
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/artifact-catalog.json",
+    "bytes": 241594,
+    "sha256": "90854257ec4e49be1a1b1f46238b1f48f46ed56bf541856fdcea2aa24e15fec3"
+  },
+  "artifact_catalog_attestation": {
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/artifact-catalog-attestation.json",
+    "bytes": 1044,
+    "sha256": "6dc92c4bb9e5b7dc48967f386f70beba8ba6f308fdac6896a538e79a90952430"
   }
 }

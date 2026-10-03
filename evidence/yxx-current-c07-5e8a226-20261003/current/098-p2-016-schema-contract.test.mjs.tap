@@ -1,0 +1,84 @@
+TAP version 13
+# Cloning into 'C:\\Users\\zqpet\\AppData\\Local\\Temp\\fault-reporting-p2-016-historical-O7ZDqk'...
+# Updating files:  66% (2717/4077)
+# Updating files:  67% (2732/4077)
+# Updating files:  68% (2773/4077)
+# Updating files:  69% (2814/4077)
+# Updating files:  70% (2854/4077)
+# Updating files:  71% (2895/4077)
+# Updating files:  72% (2936/4077)
+# Updating files:  73% (2977/4077)
+# Updating files:  74% (3017/4077)
+# Updating files:  75% (3058/4077)
+# Updating files:  76% (3099/4077)
+# Updating files:  77% (3140/4077)
+# Updating files:  78% (3181/4077)
+# Updating files:  79% (3221/4077)
+# Updating files:  80% (3262/4077)
+# Updating files:  81% (3303/4077)
+# Updating files:  82% (3344/4077)
+# Updating files:  83% (3384/4077)
+# Updating files:  84% (3425/4077)
+# Updating files:  85% (3466/4077)
+# Updating files:  86% (3507/4077)
+# Updating files:  87% (3547/4077)
+# Updating files:  88% (3588/4077)
+# Updating files:  89% (3629/4077)
+# Updating files:  90% (3670/4077)
+# Updating files:  91% (3711/4077)
+# Updating files:  92% (3751/4077)
+# Updating files:  93% (3792/4077)
+# Updating files:  94% (3833/4077)
+# Updating files:  95% (3874/4077)
+# Updating files:  96% (3914/4077)
+# Updating files:  97% (3955/4077)
+# Updating files:  98% (3996/4077)
+# Updating files:  99% (4037/4077)
+# Updating files: 100% (4077/4077)
+# Updating files: 100% (4077/4077), done.
+# HEAD is now at 8c33271 Merge pull request \#6 from peterkis/phase2/p2-012-human-confirmed-incident
+# Subtest: P2-016 architecture guards preserve authorization, immutable baselines and closed contracts
+ok 1 - P2-016 architecture guards preserve authorization, immutable baselines and closed contracts
+  ---
+  duration_ms: 34276.6578
+  type: 'test'
+  ...
+# Subtest: P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work
+ok 2 - P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work
+  ---
+  duration_ms: 215.7846
+  type: 'test'
+  ...
+# Subtest: P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials
+ok 3 - P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials
+  ---
+  duration_ms: 24.6758
+  type: 'test'
+  ...
+# Subtest: JSON contract rejects extra keys, noncanonical types and offset time
+ok 4 - JSON contract rejects extra keys, noncanonical types and offset time
+  ---
+  duration_ms: 6.9396
+  type: 'test'
+  ...
+# Subtest: P2-016 closeout freezes every business input and the exact file set
+ok 5 - P2-016 closeout freezes every business input and the exact file set
+  ---
+  duration_ms: 0.5001
+  type: 'test'
+  ...
+# Subtest: P2-016 completion requires owner approval, precise candidates, live duration and zero-skip final regression
+ok 6 - P2-016 completion requires owner approval, precise candidates, live duration and zero-skip final regression
+  ---
+  duration_ms: 0.7655
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 40174.9646

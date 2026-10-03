@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: browser target selection accepts only explicit same-origin redirect paths and rejects ambiguous pages
+ok 1 - browser target selection accepts only explicit same-origin redirect paths and rejects ambiguous pages
+  ---
+  duration_ms: 15.5387
+  type: 'test'
+  ...
+# Subtest: real browser cleanup reclaims a CDP transport whose peer never finishes the closing handshake
+ok 2 - real browser cleanup reclaims a CDP transport whose peer never finishes the closing handshake
+  ---
+  duration_ms: 2180.8547
+  type: 'test'
+  ...
+# Subtest: browser cleanup errors cannot skip a second browser or leave the HTTP listener, and preserve the original assertion
+ok 3 - browser cleanup errors cannot skip a second browser or leave the HTTP listener, and preserve the original assertion
+  ---
+  duration_ms: 7.1658
+  type: 'test'
+  ...
+# Subtest: real browser startup follows an immediate declared redirect and cancellation cleans an unreturned owned profile
+ok 4 - real browser startup follows an immediate declared redirect and cancellation cleans an unreturned owned profile
+  ---
+  duration_ms: 4361.052
+  type: 'test'
+  ...
+# Subtest: real browser startup waits for its initial document before allowing relative navigation
+ok 5 - real browser startup waits for its initial document before allowing relative navigation
+  ---
+  duration_ms: 5316.9639
+  type: 'test'
+  ...
+# Subtest: real browser close waits for the owned DevTools socket to finish closing
+ok 6 - real browser close waits for the owned DevTools socket to finish closing
+  ---
+  duration_ms: 2597.1233
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14883.9998

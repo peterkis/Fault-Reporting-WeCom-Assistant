@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "kind": "CURRENT_INDEPENDENT_REVIEW_RECORD",
+  "event_time": "2026-10-03 13:50:21",
+  "event_epoch_ms": "1791006621661",
+  "tested_head": "5e8a226f5bc5599a567dc5eba620527f47b48ea7",
+  "tested_tree": "b78bfb4db04315547a245b0e34458523fbbaf361",
+  "candidate_fingerprint": "f6f33ae1c0ce17ae218d0311dab196cb8e49b0536611d619d3db914aa774b644",
+  "axis": "SPEC",
+  "reviewer": "c07_spec",
+  "independent": true,
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [],
+  "review_text": "Independently reviewed the fixed 562a96ff...5e8a226 diff and base..head commits against AGENTS, README, review policy, ADR-0022/0026/0027 and the current implementation/acceptance contracts. No missing, unauthorized or incorrectly implemented requirement was identified. ADR-0027 decision 8 is implemented by distinct fatal-UTF8 original reviewer JSON records, candidate/reviewer/axis/decision matching summaries, and mandatory schema-2 acyclic report/catalog/attestation binding with exact namespace union, bounded traversal and encoding checks. Decisions 1,3,4 preserve fixed PR19 strict acceptance, the 22 baseline SQL paths and six protected state files, and permit only the six exact historical adjudicated transitions, including validated forward merge propagation. Decisions 5,6,7 retain separate source/runtime/historical roots, actual loaded-file and TAP/case identities, disjoint full obligations, and failure on source fallback, omitted work or tampering. Offline current readiness invokes no database, provider or listener path. The new retention fixtures derive timestamps from database physical time with 30-day retention and ordered past capacity messages. Guided expiry uses a current baseline plus one minute then an exact three-hour advance; orchestration retains its original three-hour offset. Existing refusal, notification-count, timeout-closure and capacity assertions remain intact; production guards and timeout limits are unchanged. This is static Spec review only: I did not run tests, PostgreSQL, readiness or publishing CLIs. C07 full acceptance and final publication validation remain separate requirements; this PASS does not establish READY, live authorization or Gate advancement. SS011 AC096/AC099 remain incomplete and AC102 partial close/AC101 rollback facts are preserved."
+}

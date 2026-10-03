@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: X035 explicit critical endpoint fault accepted from UNKNOWN Intake reaches a real human queue without a public Incident
+ok 1 - X035 explicit critical endpoint fault accepted from UNKNOWN Intake reaches a real human queue without a public Incident
+  ---
+  duration_ms: 2888.6586
+  type: 'test'
+  ...
+# {"case_id":"P2-007-X035","declared_channel":"DIRECT_FOR_SOURCE_WITHOUT_CHANNEL","persist_before_route":true,"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0},"observation":{"result_code":"MANUAL_REVIEW_REQUIRED","reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"70c62d96095ef46e0ae3e5d02867417c8e2b68f9f47ba84e2fb7d0d547ce512c","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"973e01e3205b578ff6b431ed276b04b6f1cf9e36204cce38ad137c1a5b21562b","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"973e01e3205b578ff6b431ed276b04b6f1cf9e36204cce38ad137c1a5b21562b","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-208","source_kind":"REPORTER_EXPLICIT","source_hash":"973e01e3205b578ff6b431ed276b04b6f1cf9e36204cce38ad137c1a5b21562b","status":"ACTIVE"}]},"manual_review_handled":true,"provider_calls":0,"seeded_business_facts":false}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3425.9956

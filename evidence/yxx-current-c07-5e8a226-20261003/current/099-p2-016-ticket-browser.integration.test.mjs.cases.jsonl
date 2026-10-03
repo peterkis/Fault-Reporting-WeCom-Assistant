@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 14:04:19","event_epoch_ms":"1791007459862","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"Real DB internal browser traverses every user lifecycle action, transfer and atomic takeover/accept","file":"tests/p2-016-ticket-browser.integration.test.mjs","line":11,"nesting":0,"skip":false,"todo":false}

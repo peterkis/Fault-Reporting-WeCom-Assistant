@@ -1,0 +1,42 @@
+{
+  "path": "tests/p2-015-worker.test.mjs",
+  "runtime_path": "tests/p2-015-worker.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-015-worker.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "85cc2a1ba547f5aa0a47775d22830352c8ad78979cd2ff913087f1b33f765977",
+  "executed_sha256": "85cc2a1ba547f5aa0a47775d22830352c8ad78979cd2ff913087f1b33f765977",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "083-p2-015-worker.test.mjs.tap",
+  "tap_sha256": "a92b9a8a4bcad219cddf306999c3ee28cf6206f0f3fa8c713890ac1b2025e3ac",
+  "tap_bytes": 1527,
+  "stderr_path": "083-p2-015-worker.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "083-p2-015-worker.test.mjs.cases.jsonl",
+  "case_trace_sha256": "b84db91cbe47ff51cd3a253d2a6f4481ecdf44c0e06c83a8da84519a957b8503",
+  "case_trace_bytes": 2017,
+  "counts": {
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-015-domain-contracts.mjs",
+    ".build/runtime/src/p2-015-worker.mjs",
+    ".build/runtime/tests/p2-015-worker.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 7
+}

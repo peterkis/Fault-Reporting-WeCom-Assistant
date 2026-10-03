@@ -1,0 +1,45 @@
+{
+  "path": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+  "runtime_path": "tests/yxx-ss-001-homepage-oauth.test.mjs",
+  "executed_path": ".build/runtime/tests/yxx-ss-001-homepage-oauth.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "bef88b203de3e1fc2047ddf728b4880922877cd7fbab83b358dfa0d60ac3941c",
+  "executed_sha256": "bef88b203de3e1fc2047ddf728b4880922877cd7fbab83b358dfa0d60ac3941c",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "195-yxx-ss-001-homepage-oauth.test.mjs.tap",
+  "tap_sha256": "59ca638e7a5e82afc324688dede430f6de8ec9f41a17d51bbaa9b37035d6b808",
+  "tap_bytes": 1345,
+  "stderr_path": "195-yxx-ss-001-homepage-oauth.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "195-yxx-ss-001-homepage-oauth.test.mjs.cases.jsonl",
+  "case_trace_sha256": "23699ad559138f12b743d0b55c6238569fbae69883ae14c267c023e444a1f569",
+  "case_trace_bytes": 1610,
+  "counts": {
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-006-workbench-http.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-006-workbench-static.mjs",
+    ".build/runtime/src/p2-g2-wecom-oauth-http.mjs",
+    ".build/runtime/src/p2-g2-wecom-web-oauth.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/yxx-ss-001-homepage-oauth.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 5
+}

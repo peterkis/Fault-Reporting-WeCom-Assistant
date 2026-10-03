@@ -1,0 +1,48 @@
+{
+  "path": "tests/v1-4-architecture-baseline.test.mjs",
+  "runtime_path": "tests/v1-4-architecture-baseline.test.mjs",
+  "executed_path": "tests/v1-4-architecture-baseline.test.mjs",
+  "execution_cwd": ".",
+  "source_sha256": "5a5e1801322225be27d4c819294631935af265e4f44aea647795a02fa2ff3698",
+  "executed_sha256": "5a5e1801322225be27d4c819294631935af265e4f44aea647795a02fa2ff3698",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "SOURCE_HOST",
+  "node_flags": [
+    "--import",
+    "file:///C:/Users/zqpet/.codex/artifacts/yxx-current-readiness-20261002/stage06-c07/checkout/.build/tools/source-hook.mjs",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "189-v1-4-architecture-baseline.test.mjs.tap",
+  "tap_sha256": "5267a1a5375a86409ce25733314ff7bcf5f398519f72a0837fadf622b9be91c8",
+  "tap_bytes": 3575,
+  "stderr_path": "189-v1-4-architecture-baseline.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "189-v1-4-architecture-baseline.test.mjs.cases.jsonl",
+  "case_trace_sha256": "064a40a0bae9feb65791eec9c06bc0b7b7fcdd69088fcb1bf1ba0b3a91ccabae",
+  "case_trace_bytes": 5348,
+  "counts": {
+    "tests": 18,
+    "pass": 18,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/tools/bootstrap.mjs",
+    ".build/tools/common.mjs",
+    ".build/tools/source-hook.mjs",
+    ".build/tools/source-host.mjs",
+    ".build/tools/verify-artifact.mjs",
+    "node_modules/typescript/lib/typescript.js",
+    "scripts/validate-v1-4-architecture.mjs",
+    "tests/v1-4-architecture-baseline.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 18
+}

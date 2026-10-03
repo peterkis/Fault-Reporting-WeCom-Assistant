@@ -1,0 +1,268 @@
+TAP version 13
+# Subtest: P2-G2 independent per-scenario receipt and human streams fit the bounded evaluator without resealing combined chains
+ok 1 - P2-G2 independent per-scenario receipt and human streams fit the bounded evaluator without resealing combined chains
+  ---
+  duration_ms: 73.7815
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: readiness recorded after observation
+ok 2 - P2-G2 evaluator fails closed for review counterexample: readiness recorded after observation
+  ---
+  duration_ms: 62.7526
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: owner approval before cleanup
+ok 3 - P2-G2 evaluator fails closed for review counterexample: owner approval before cleanup
+  ---
+  duration_ms: 53.7027
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: an entire hour of unavailable worker declared as gateway fault
+ok 4 - P2-G2 evaluator fails closed for review counterexample: an entire hour of unavailable worker declared as gateway fault
+  ---
+  duration_ms: 63.8159
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: undeclared worker restarts
+ok 5 - P2-G2 evaluator fails closed for review counterexample: undeclared worker restarts
+  ---
+  duration_ms: 63.7814
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: route before inbound persistence
+ok 6 - P2-G2 evaluator fails closed for review counterexample: route before inbound persistence
+  ---
+  duration_ms: 53.3822
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: missing finite sample gap
+ok 7 - P2-G2 evaluator fails closed for review counterexample: missing finite sample gap
+  ---
+  duration_ms: 55.7491
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: no verified start approval source
+ok 8 - P2-G2 evaluator fails closed for review counterexample: no verified start approval source
+  ---
+  duration_ms: 53.8425
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: one hour idle after business activity
+ok 9 - P2-G2 evaluator fails closed for review counterexample: one hour idle after business activity
+  ---
+  duration_ms: 59.8172
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: no post-cleanup full regression
+ok 10 - P2-G2 evaluator fails closed for review counterexample: no post-cleanup full regression
+  ---
+  duration_ms: 63.8292
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: split G2-END content from timestamp
+ok 11 - P2-G2 evaluator fails closed for review counterexample: split G2-END content from timestamp
+  ---
+  duration_ms: 55.2058
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: split G2-CLEANUP content from timestamp
+ok 12 - P2-G2 evaluator fails closed for review counterexample: split G2-CLEANUP content from timestamp
+  ---
+  duration_ms: 58.1111
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator fails closed for review counterexample: DIRECT_ORGANIC outside observation
+ok 13 - P2-G2 evaluator fails closed for review counterexample: DIRECT_ORGANIC outside observation
+  ---
+  duration_ms: 48.5106
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects invalid binding with stable typed errors before reading evidence
+ok 14 - P2-G2 evaluator rejects invalid binding with stable typed errors before reading evidence
+  ---
+  duration_ms: 20.1294
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator accepts a complete in-memory fixture only with independently verified sources
+ok 15 - P2-G2 evaluator accepts a complete in-memory fixture only with independently verified sources
+  ---
+  duration_ms: 100.493
+  type: 'test'
+  ...
+# Subtest: P2-G2 has no latency percentile before a client observation, and requires a real measurement by the end
+ok 16 - P2-G2 has no latency percentile before a client observation, and requires a real measurement by the end
+  ---
+  duration_ms: 112.1926
+  type: 'test'
+  ...
+# Subtest: P2-G2 approved Gateway fault requires recovery and excludes both adjacent intervals from the steady hour
+ok 17 - P2-G2 approved Gateway fault requires recovery and excludes both adjacent intervals from the steady hour
+  ---
+  duration_ms: 99.2084
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects only historical 577 regression
+ok 18 - P2-G2 evaluator rejects only historical 577 regression
+  ---
+  duration_ms: 7.7215
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects past P2-012 evidence
+ok 19 - P2-G2 evaluator rejects past P2-012 evidence
+  ---
+  duration_ms: 52.4528
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects 59 minutes
+ok 20 - P2-G2 evaluator rejects 59 minutes
+  ---
+  duration_ms: 50.4541
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects sleep
+ok 21 - P2-G2 evaluator rejects sleep
+  ---
+  duration_ms: 48.644
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects missing metric
+ok 22 - P2-G2 evaluator rejects missing metric
+  ---
+  duration_ms: 49.413
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects missing 2C4G proof
+ok 23 - P2-G2 evaluator rejects missing 2C4G proof
+  ---
+  duration_ms: 47.9663
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects missing DIRECT_ORGANIC
+ok 24 - P2-G2 evaluator rejects missing DIRECT_ORGANIC
+  ---
+  duration_ms: 51.6318
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects missing human review
+ok 25 - P2-G2 evaluator rejects missing human review
+  ---
+  duration_ms: 56.4202
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects missing confirmed incident
+ok 26 - P2-G2 evaluator rejects missing confirmed incident
+  ---
+  duration_ms: 54.964
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects only synthetic human review
+ok 27 - P2-G2 evaluator rejects only synthetic human review
+  ---
+  duration_ms: 50.2349
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects only synthetic incident confirmation
+ok 28 - P2-G2 evaluator rejects only synthetic incident confirmation
+  ---
+  duration_ms: 44.7913
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects seeded normal chain
+ok 29 - P2-G2 evaluator rejects seeded normal chain
+  ---
+  duration_ms: 49.7019
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects missing numeric ACK
+ok 30 - P2-G2 evaluator rejects missing numeric ACK
+  ---
+  duration_ms: 52.9258
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects UNKNOWN unresolved
+ok 31 - P2-G2 evaluator rejects UNKNOWN unresolved
+  ---
+  duration_ms: 50.3325
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects changed candidate
+ok 32 - P2-G2 evaluator rejects changed candidate
+  ---
+  duration_ms: 57.6628
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects NOOP
+ok 33 - P2-G2 evaluator rejects NOOP
+  ---
+  duration_ms: 53.9798
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects NOT_RUN
+ok 34 - P2-G2 evaluator rejects NOT_RUN
+  ---
+  duration_ms: 51.452
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects unexpected dead letter
+ok 35 - P2-G2 evaluator rejects unexpected dead letter
+  ---
+  duration_ms: 49.1069
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects no owner approval
+ok 36 - P2-G2 evaluator rejects no owner approval
+  ---
+  duration_ms: 49.3341
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects source not verified
+ok 37 - P2-G2 evaluator rejects source not verified
+  ---
+  duration_ms: 54.3939
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects source Promise not awaited
+ok 38 - P2-G2 evaluator rejects source Promise not awaited
+  ---
+  duration_ms: 52.5883
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects switched observer clock
+ok 39 - P2-G2 evaluator rejects switched observer clock
+  ---
+  duration_ms: 55.5176
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects sampling gap
+ok 40 - P2-G2 evaluator rejects sampling gap
+  ---
+  duration_ms: 55.7836
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects roles disappeared
+ok 41 - P2-G2 evaluator rejects roles disappeared
+  ---
+  duration_ms: 54.4262
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects model was called
+ok 42 - P2-G2 evaluator rejects model was called
+  ---
+  duration_ms: 52.0191
+  type: 'test'
+  ...
+# Subtest: P2-G2 evaluator rejects gold missed fault
+ok 43 - P2-G2 evaluator rejects gold missed fault
+  ---
+  duration_ms: 53.2306
+  type: 'test'
+  ...
+1..43
+# tests 43
+# suites 0
+# pass 43
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2748.2231

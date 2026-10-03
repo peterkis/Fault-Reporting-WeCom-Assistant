@@ -1,0 +1,23 @@
+TAP version 13
+# Subtest: group active session continues after 120 seconds but respects Reporter, explicit new fault and idle boundaries
+ok 1 - group active session continues after 120 seconds but respects Reporter, explicit new fault and idle boundaries
+  ---
+  duration_ms: 4491.5016
+  type: 'test'
+  ...
+# Subtest: G2 business profile one completes group clarification, admission and human conversation without any Direct Leg
+ok 2 - G2 business profile one completes group clarification, admission and human conversation without any Direct Leg
+  ---
+  duration_ms: 4205.8432
+  type: 'test'
+  ...
+# {"business_profile":"GROUP_ONLY","surface":"NORMAL_GROUP_FRAMES_AUTHENTICATED_HTTP_REAL_OUTBOX","ticket_count":1,"human_group_replies":2,"direct_legs":0,"private_deliveries":0,"grants":0,"provider_calls":0}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9451.9254

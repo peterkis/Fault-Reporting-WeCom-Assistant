@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: live CLI exposes only the six explicit modes and requires three process fuses for sending
+ok 1 - live CLI exposes only the six explicit modes and requires three process fuses for sending
+  ---
+  duration_ms: 2.3938
+  type: 'test'
+  ...
+# Subtest: gateway process can commit inbound before the App process projects it
+ok 2 - gateway process can commit inbound before the App process projects it
+  ---
+  duration_ms: 1.6464
+  type: 'test'
+  ...
+# Subtest: process resource interface exposes bounded role metrics without a PID or environment
+ok 3 - process resource interface exposes bounded role metrics without a PID or environment
+  ---
+  duration_ms: 1.0202
+  type: 'test'
+  ...
+# Subtest: gateway permits one active WSClient, gates readiness on authentication, reconnects and shuts down cleanly
+ok 4 - gateway permits one active WSClient, gates readiness on authentication, reconnects and shuts down cleanly
+  ---
+  duration_ms: 4.2865
+  type: 'test'
+  ...
+# Subtest: sender enforces persistent target hash allowlist and maps ACK, explicit rejection, unknown and gateway-unavailable safely
+ok 5 - sender enforces persistent target hash allowlist and maps ACK, explicit rejection, unknown and gateway-unavailable safely
+  ---
+  duration_ms: 2.3719
+  type: 'test'
+  ...
+# Subtest: test authentication is server-configured, active non-reporter only, short-lived and emits strict HttpOnly cookie metadata
+ok 6 - test authentication is server-configured, active non-reporter only, short-lived and emits strict HttpOnly cookie metadata
+  ---
+  duration_ms: 1.8493
+  type: 'test'
+  ...
+# Subtest: test authentication isolates two configured principals with independent short-lived cookies and CSRF values
+ok 7 - test authentication isolates two configured principals with independent short-lived cookies and CSRF values
+  ---
+  duration_ms: 0.976
+  type: 'test'
+  ...
+# Subtest: live harness requires two distinct configured principals and creates a safe unique run id
+ok 8 - live harness requires two distinct configured principals and creates a safe unique run id
+  ---
+  duration_ms: 0.4308
+  type: 'test'
+  ...
+# Subtest: disabled coordinator performs no database work and batch/stream inventory are bounded
+ok 9 - disabled coordinator performs no database work and batch/stream inventory are bounded
+  ---
+  duration_ms: 0.445
+  type: 'test'
+  ...
+# Subtest: temporary database failure is isolated behind stable projection errors without raw details or false success
+ok 10 - temporary database failure is isolated behind stable projection errors without raw details or false success
+  ---
+  duration_ms: 0.7626
+  type: 'test'
+  ...
+# Subtest: P2-002 transaction hook is optional and P2-G1 browser source has an in-flight duplicate-submit fence
+ok 11 - P2-002 transaction hook is optional and P2-G1 browser source has an in-flight duplicate-submit fence
+  ---
+  duration_ms: 3.2032
+  type: 'test'
+  ...
+# Subtest: live script has no broad --live mode and no default live-send npm command
+ok 12 - live script has no broad --live mode and no default live-send npm command
+  ---
+  duration_ms: 4.4599
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 407.32

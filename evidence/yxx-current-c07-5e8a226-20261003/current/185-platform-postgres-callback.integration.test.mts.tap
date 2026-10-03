@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: callback-acquired PostgreSQL client rejects Date before SQL and retains valid query/release behavior
+ok 1 - callback-acquired PostgreSQL client rejects Date before SQL and retains valid query/release behavior
+  ---
+  duration_ms: 66.2694
+  type: 'test'
+  ...
+# Subtest: callback adapter preserves receivers, arguments, query return and single wrapping for an injected Pool class
+ok 2 - callback adapter preserves receivers, arguments, query return and single wrapping for an injected Pool class
+  ---
+  duration_ms: 1.5791
+  type: 'test'
+  ...
+# Subtest: connection error callback keeps its receiver, argument count, identity and return form
+ok 3 - connection error callback keeps its receiver, argument count, identity and return form
+  ---
+  duration_ms: 0.3927
+  type: 'test'
+  ...
+# Subtest: Promise acquisition continues to guard Date and preserves transaction client capability
+ok 4 - Promise acquisition continues to guard Date and preserves transaction client capability
+  ---
+  duration_ms: 52.1207
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 381.5946

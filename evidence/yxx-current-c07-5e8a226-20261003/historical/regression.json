@@ -1,0 +1,29 @@
+{
+  "name": "regression",
+  "command": [
+    "node",
+    "--test",
+    "--test-concurrency=1",
+    "--test-reporter=tap",
+    "--test-reporter-destination=stdout",
+    "--test-reporter=./scripts/p2-g2-case-reporter.mjs",
+    "--test-reporter-destination=C:\\Users\\zqpet\\.codex\\artifacts\\yxx-current-readiness-20261002\\historical-ss009-proof-02\\regression.cases.jsonl",
+    "tests/yxx-ss-008-validation-scope.test.mjs",
+    "tests/yxx-ss-009-evidence.test.mjs",
+    "tests/yxx-ss-009-evidence-history.test.mjs",
+    "tests/yxx-ss-009-governance.test.mjs"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error_code": null,
+  "stdout": {
+    "path": "regression.stdout",
+    "bytes": 8495,
+    "sha256": "fbe3f1be804fa63c838259b8f2107b50c7fdbc54167b617f253907cc2fec672b"
+  },
+  "stderr": {
+    "path": "regression.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}
