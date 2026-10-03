@@ -1,0 +1,137 @@
+TAP version 13
+# Subtest: P2-012 both parsed OpenAPI documents declare canonical subscription destinations and service failures
+ok 1 - P2-012 both parsed OpenAPI documents declare canonical subscription destinations and service failures
+  ---
+  duration_ms: 641.5505
+  type: 'test'
+  ...
+# Cloning into 'C:\\Users\\zqpet\\AppData\\Local\\Temp\\fault-reporting-p2-016-historical-6yh3qb'...
+# Updating files:  44% (2636/5955)
+# Updating files:  45% (2680/5955)
+# Updating files:  46% (2740/5955)
+# Updating files:  47% (2799/5955)
+# Updating files:  48% (2859/5955)
+# Updating files:  49% (2918/5955)
+# Updating files:  50% (2978/5955)
+# Updating files:  51% (3038/5955)
+# Updating files:  52% (3097/5955)
+# Updating files:  53% (3157/5955)
+# Updating files:  54% (3216/5955)
+# Updating files:  55% (3276/5955)
+# Updating files:  56% (3335/5955)
+# Updating files:  57% (3395/5955)
+# Updating files:  58% (3454/5955)
+# Updating files:  59% (3514/5955)
+# Updating files:  60% (3573/5955)
+# Updating files:  61% (3633/5955)
+# Updating files:  62% (3693/5955)
+# Updating files:  63% (3752/5955)
+# Updating files:  64% (3812/5955)
+# Updating files:  65% (3871/5955)
+# Updating files:  66% (3931/5955)
+# Updating files:  67% (3990/5955)
+# Updating files:  68% (4050/5955)
+# Updating files:  69% (4109/5955)
+# Updating files:  70% (4169/5955)
+# Updating files:  71% (4229/5955)
+# Updating files:  72% (4288/5955)
+# Updating files:  73% (4348/5955)
+# Updating files:  74% (4407/5955)
+# Updating files:  75% (4467/5955)
+# Updating files:  76% (4526/5955)
+# Updating files:  77% (4586/5955)
+# Updating files:  78% (4645/5955)
+# Updating files:  79% (4705/5955)
+# Updating files:  80% (4764/5955)
+# Updating files:  81% (4824/5955)
+# Updating files:  82% (4884/5955)
+# Updating files:  83% (4943/5955)
+# Updating files:  84% (5003/5955)
+# Updating files:  84% (5026/5955)
+# Updating files:  85% (5062/5955)
+# Updating files:  86% (5122/5955)
+# Updating files:  87% (5181/5955)
+# Updating files:  88% (5241/5955)
+# Updating files:  89% (5300/5955)
+# Updating files:  90% (5360/5955)
+# Updating files:  91% (5420/5955)
+# Updating files:  92% (5479/5955)
+# Updating files:  93% (5539/5955)
+# Updating files:  94% (5598/5955)
+# Updating files:  95% (5658/5955)
+# Updating files:  96% (5717/5955)
+# Updating files:  97% (5777/5955)
+# Updating files:  98% (5836/5955)
+# Updating files:  99% (5896/5955)
+# Updating files: 100% (5955/5955)
+# Updating files: 100% (5955/5955), done.
+# HEAD is now at 8c33271 Merge pull request \#6 from peterkis/phase2/p2-012-human-confirmed-incident
+# Subtest: P2-012 static authorization, frozen predecessors, scope, schemas and synthetic fixture gate
+ok 2 - P2-012 static authorization, frozen predecessors, scope, schemas and synthetic fixture gate
+  ---
+  duration_ms: 16986.896
+  type: 'test'
+  ...
+# Subtest: P2-012 live runner fails before network/listener unless all five independent fuses and verified evidence exist
+ok 3 - P2-012 live runner fails before network/listener unless all five independent fuses and verified evidence exist
+  ---
+  duration_ms: 1.4268
+  type: 'test'
+  ...
+# Subtest: P2-012 readiness cannot be fabricated from partial regression, skips, changed inputs or live claims
+ok 4 - P2-012 readiness cannot be fabricated from partial regression, skips, changed inputs or live claims
+  ---
+  duration_ms: 0.4342
+  type: 'test'
+  ...
+# Subtest: P2-012 DONE requires the approved live candidate, client confirmation, clean Incident deliveries and complete regressions
+ok 5 - P2-012 DONE requires the approved live candidate, client confirmation, clean Incident deliveries and complete regressions
+  ---
+  duration_ms: 0.4531
+  type: 'test'
+  ...
+# Subtest: P2-012 frozen candidate permits only the explicit closeout governance set
+ok 6 - P2-012 frozen candidate permits only the explicit closeout governance set
+  ---
+  duration_ms: 0.4188
+  type: 'test'
+  ...
+# Subtest: P2-012 review hardening preserves exact paths and requires independent current regression evidence
+ok 7 - P2-012 review hardening preserves exact paths and requires independent current regression evidence
+  ---
+  duration_ms: 0.4393
+  type: 'test'
+  ...
+# Subtest: P2-012 v2 HTTP OpenAPI hardening has an independent closed allowlist and complete regression gate
+ok 8 - P2-012 v2 HTTP OpenAPI hardening has an independent closed allowlist and complete regression gate
+  ---
+  duration_ms: 0.649
+  type: 'test'
+  ...
+# Subtest: P2-012 subscription review preserves its baseline, scope and independent regression
+ok 9 - P2-012 subscription review preserves its baseline, scope and independent regression
+  ---
+  duration_ms: 0.4925
+  type: 'test'
+  ...
+# Subtest: P2-012 paused destination review is bounded and preserves previous full regression evidence
+ok 10 - P2-012 paused destination review is bounded and preserves previous full regression evidence
+  ---
+  duration_ms: 0.4572
+  type: 'test'
+  ...
+# Subtest: P2-012 reporter refresh review is bounded and preserves previous full regression evidence
+ok 11 - P2-012 reporter refresh review is bounded and preserves previous full regression evidence
+  ---
+  duration_ms: 0.3419
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20517.8234

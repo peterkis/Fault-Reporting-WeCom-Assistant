@@ -1,0 +1,40 @@
+{
+  "path": "tests/g0-002-sdk-lifecycle.test.mjs",
+  "runtime_path": "tests/g0-002-sdk-lifecycle.test.mjs",
+  "executed_path": ".build/runtime/tests/g0-002-sdk-lifecycle.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "c97ee1f9d282b276a8dadedee06f82a66adce77ef52542f707449fabadcc7a0e",
+  "executed_sha256": "c97ee1f9d282b276a8dadedee06f82a66adce77ef52542f707449fabadcc7a0e",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "002-g0-002-sdk-lifecycle.test.mjs.tap",
+  "tap_sha256": "5fd53db0b1440f931987ce22c475bcd27fde03d06818acf07220d5e9583508b8",
+  "tap_bytes": 958,
+  "stderr_path": "002-g0-002-sdk-lifecycle.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "002-g0-002-sdk-lifecycle.test.mjs.cases.jsonl",
+  "case_trace_sha256": "f784cbb924732fb63045dddb9b11cb203981b5a75e6b933f98888ea69a6b4c1a",
+  "case_trace_bytes": 1199,
+  "counts": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/g0-002-sdk-lifecycle.mjs",
+    ".build/runtime/tests/g0-002-sdk-lifecycle.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 4
+}

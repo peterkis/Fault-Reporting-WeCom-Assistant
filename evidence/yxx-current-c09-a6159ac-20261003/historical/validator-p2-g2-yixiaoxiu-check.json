@@ -1,0 +1,20 @@
+{
+  "name": "validator-p2-g2-yixiaoxiu-check",
+  "command": [
+    "node",
+    "scripts/p2-g2-yixiaoxiu-check.mjs"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error_code": null,
+  "stdout": {
+    "path": "validator-p2-g2-yixiaoxiu-check.stdout",
+    "bytes": 300,
+    "sha256": "957ff4ee59d0ff0d7fe738c319f435916942544c2d9c1bb2b02eff94278b783a"
+  },
+  "stderr": {
+    "path": "validator-p2-g2-yixiaoxiu-check.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

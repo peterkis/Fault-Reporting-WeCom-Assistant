@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 18:43:46","event_epoch_ms":"1791024226310","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"current readiness selects append-only reports and rejects invalid pointers without historical fallback","file":"tests/p2-g2-current-evidence.test.mjs","line":6,"nesting":0,"skip":false,"todo":false}

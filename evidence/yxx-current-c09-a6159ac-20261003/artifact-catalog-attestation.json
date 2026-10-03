@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 19:31:40",
+  "event_epoch_ms": "1791027100215",
+  "tested_head": "a6159ac5773d22e423846843b82aa4c8c27a0b0e",
+  "tested_tree": "6a5231f500bff58b045c2e00f0f6ddc2e86283b9",
+  "candidate_fingerprint": "2ea4ae593bce7041cd7413d74d37bf25eb9fcea3435e1268df1110bba1a55c8f",
+  "kind": "CURRENT_ARTIFACT_CATALOG_ATTESTATION",
+  "report": {
+    "path": "evidence/yxx-current-c09-a6159ac-20261003/report.json",
+    "bytes": 3586,
+    "sha256": "52cdba74b7e1a7fe739a200fcd38c4cff52b4a548481aa2063c0262639c3ab3a",
+    "encoding": "utf-8"
+  },
+  "catalog": {
+    "path": "evidence/yxx-current-c09-a6159ac-20261003/artifact-catalog.json",
+    "bytes": 250817,
+    "sha256": "f2606da0d9e942a5b33ef857cb929f8c25018df0b78c35acb884072fce937151"
+  },
+  "original_files": 941,
+  "original_records_stored_once": true,
+  "summary_files_role": "DERIVED_AGGREGATE_OF_PER_FILE_ORIGINALS",
+  "readiness": false,
+  "live_authorized": false,
+  "pending": "Actual-root strict verification and final exact-head CI/review"
+}

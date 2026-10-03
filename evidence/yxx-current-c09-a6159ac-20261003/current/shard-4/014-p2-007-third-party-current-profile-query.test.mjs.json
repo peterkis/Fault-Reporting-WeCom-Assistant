@@ -1,0 +1,49 @@
+{
+  "path": "tests/p2-007-third-party-current-profile-query.test.mjs",
+  "runtime_path": "tests/p2-007-third-party-current-profile-query.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-007-third-party-current-profile-query.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "995897528edc387e5a211619f7c9994a2bba1f0c07eff54ccfb33a4270ab6db9",
+  "executed_sha256": "995897528edc387e5a211619f7c9994a2bba1f0c07eff54ccfb33a4270ab6db9",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "014-p2-007-third-party-current-profile-query.test.mjs.tap",
+  "tap_sha256": "4937b41d5a0631ad797ccdba250249c92472c9d3a126fa88626197428fbd251d",
+  "tap_bytes": 822,
+  "stderr_path": "014-p2-007-third-party-current-profile-query.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "014-p2-007-third-party-current-profile-query.test.mjs.cases.jsonl",
+  "case_trace_sha256": "36b470bd3c2968d4c53112f9d7ef829dd90887c5314fefc110721ee5898deda7",
+  "case_trace_bytes": 995,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/p1-006-ticket-state-actions.mjs",
+    ".build/runtime/src/p2-006-workbench-authorization.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-016-domain-contracts.mjs",
+    ".build/runtime/src/p2-016-ticket-query.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-007-third-party-current-profile-query.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

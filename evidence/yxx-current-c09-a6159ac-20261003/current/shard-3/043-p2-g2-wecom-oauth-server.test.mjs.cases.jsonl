@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 19:10:25","event_epoch_ms":"1791025825376","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"独立认证启动模式只提供认证路由，固定 Host，无业务 API，关闭后撤销会话","file":"tests/p2-g2-wecom-oauth-server.test.mjs","line":8,"nesting":0,"skip":false,"todo":false}

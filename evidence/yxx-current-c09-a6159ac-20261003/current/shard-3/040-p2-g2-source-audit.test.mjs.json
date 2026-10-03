@@ -1,0 +1,50 @@
+{
+  "path": "tests/p2-g2-source-audit.test.mjs",
+  "runtime_path": "tests/p2-g2-source-audit.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-source-audit.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "eb7f975a85730688b8e2b962b64e5b576893de3c320858400a5007c748713b9e",
+  "executed_sha256": "eb7f975a85730688b8e2b962b64e5b576893de3c320858400a5007c748713b9e",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "040-p2-g2-source-audit.test.mjs.tap",
+  "tap_sha256": "335b9a54dc899041731242bab851986c1caf086f800139206e5fb2fd5253cee6",
+  "tap_bytes": 1130,
+  "stderr_path": "040-p2-g2-source-audit.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "040-p2-g2-source-audit.test.mjs.cases.jsonl",
+  "case_trace_sha256": "8be0f35c2fe496618962df340ff73067f9fee4b4a7f5a1e80243035d3139afd5",
+  "case_trace_bytes": 1275,
+  "counts": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-016-domain-contracts.mjs",
+    ".build/runtime/src/p2-016-ticket-notification-policy.mjs",
+    ".build/runtime/src/p2-g2-evidence-time.mjs",
+    ".build/runtime/src/p2-g2-source-audit.mjs",
+    ".build/runtime/src/p2-g2-validation-config.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-g2-source-audit.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 4
+}

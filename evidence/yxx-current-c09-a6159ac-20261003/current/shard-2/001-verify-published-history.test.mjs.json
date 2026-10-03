@@ -1,0 +1,47 @@
+{
+  "path": ".github/review/verify-published-history.test.mjs",
+  "runtime_path": ".github/review/verify-published-history.test.mjs",
+  "executed_path": ".github/review/verify-published-history.test.mjs",
+  "execution_cwd": ".",
+  "source_sha256": "89ef2dc2119297f9ff830343ad01c7ed11fa0f20c18691d956b0d12a9c4a8466",
+  "executed_sha256": "89ef2dc2119297f9ff830343ad01c7ed11fa0f20c18691d956b0d12a9c4a8466",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "SOURCE_HOST",
+  "node_flags": [
+    "--import",
+    "file:///C:/Users/zqpet/.codex/artifacts/yxx-current-readiness-20261002/stage07-c09/checkout/.build/tools/source-hook.mjs",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "001-verify-published-history.test.mjs.tap",
+  "tap_sha256": "b8f5b449594797f54c975b315d07ea750e7bba32e0106b6a901998864aed3aff",
+  "tap_bytes": 4409,
+  "stderr_path": "001-verify-published-history.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "001-verify-published-history.test.mjs.cases.jsonl",
+  "case_trace_sha256": "2e607676976805b16434a7e8400aa317f45c3d89daa0a3d4c66f134c19df8b1f",
+  "case_trace_bytes": 6687,
+  "counts": {
+    "tests": 22,
+    "pass": 22,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/tools/bootstrap.mjs",
+    ".build/tools/common.mjs",
+    ".build/tools/source-hook.mjs",
+    ".build/tools/source-host.mjs",
+    ".build/tools/verify-artifact.mjs",
+    ".github/review/verify-published-history.mjs",
+    ".github/review/verify-published-history.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 22
+}

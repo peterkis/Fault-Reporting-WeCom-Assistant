@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 19:31:36",
+  "event_epoch_ms": "1791027096936",
+  "tested_head": "a6159ac5773d22e423846843b82aa4c8c27a0b0e",
+  "tested_tree": "6a5231f500bff58b045c2e00f0f6ddc2e86283b9",
+  "candidate_fingerprint": "2ea4ae593bce7041cd7413d74d37bf25eb9fcea3435e1268df1110bba1a55c8f",
+  "kind": "CURRENT_SPECIALIZED_PROOF",
+  "observations": [
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 4
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 5
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 4
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+      "channel": "SS010_BROWSER",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-4/048-yxx-current-migrations.integration.test.mts.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    }
+  ],
+  "images": [
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+        "channel": "SS009_RECEIPT",
+        "receipt_index": 0
+      },
+      "width": 390,
+      "height": 844,
+      "artifact": {
+        "path": "evidence/yxx-current-c09-a6159ac-20261003/images/ss009_receipt-390x844.png",
+        "bytes": 33507,
+        "sha256": "3acb666090bcdee650357ab3a9d9d71733669dabee1db7d54349221c29e94fd0"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+        "channel": "SS009_RECEIPT",
+        "receipt_index": 0
+      },
+      "width": 1440,
+      "height": 900,
+      "artifact": {
+        "path": "evidence/yxx-current-c09-a6159ac-20261003/images/ss009_receipt-1440x900.png",
+        "bytes": 43030,
+        "sha256": "ac835c01a5091b49a3674f972833ebcc7f45b71c54a629a21e9fb1e3be3b99d2"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+        "channel": "SS010_BROWSER",
+        "receipt_index": 0
+      },
+      "width": 390,
+      "height": 844,
+      "artifact": {
+        "path": "evidence/yxx-current-c09-a6159ac-20261003/images/ss010_browser-390x844.png",
+        "bytes": 32665,
+        "sha256": "1fd72afc46fb13f5b7c3121022bd5302fb27634927dcb4423775e2b4e145f8cf"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+        "channel": "SS010_BROWSER",
+        "receipt_index": 0
+      },
+      "width": 1440,
+      "height": 900,
+      "artifact": {
+        "path": "evidence/yxx-current-c09-a6159ac-20261003/images/ss010_browser-1440x900.png",
+        "bytes": 42249,
+        "sha256": "30408825a8badb51bdc4f32d00bbb195aa89b3dbcaca771a29bdd1f64366cb0f"
+      }
+    }
+  ]
+}

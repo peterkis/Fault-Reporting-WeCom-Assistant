@@ -1,0 +1,42 @@
+{
+  "path": "tests/platform-postgres-time.integration.test.mjs",
+  "runtime_path": "tests/platform-postgres-time.integration.test.mjs",
+  "executed_path": ".build/runtime/tests/platform-postgres-time.integration.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "69cec3773d808f312ae0b295f8b3f56213cf48a8faaaadbb8d1491cae3ab6579",
+  "executed_sha256": "69cec3773d808f312ae0b295f8b3f56213cf48a8faaaadbb8d1491cae3ab6579",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "047-platform-postgres-time.integration.test.mjs.tap",
+  "tap_sha256": "4b8862e4f669c6d681f9a3ec189f2ea6446f8a0f2454ed38304efc2db4d7b15f",
+  "tap_bytes": 576,
+  "stderr_path": "047-platform-postgres-time.integration.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "047-platform-postgres-time.integration.test.mjs.cases.jsonl",
+  "case_trace_sha256": "90f213ca448ff8ff8db1435b1ade6147e44382dfb686d317a24e95d5b206f233",
+  "case_trace_bytes": 645,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/platform-postgres-time.integration.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

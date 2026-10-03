@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: existing group-only receipt replays without duplicate artifacts even when the optional private authorizer is absent
+ok 1 - existing group-only receipt replays without duplicate artifacts even when the optional private authorizer is absent
+  ---
+  duration_ms: 2933.936
+  type: 'test'
+  ...
+# Subtest: default notification frequency through complete authenticated lifecycle single/0
+ok 2 - default notification frequency through complete authenticated lifecycle single/0
+  ---
+  duration_ms: 4029.7694
+  type: 'test'
+  ...
+# Subtest: default notification frequency through complete authenticated lifecycle group/0
+ok 3 - default notification frequency through complete authenticated lifecycle group/0
+  ---
+  duration_ms: 3931.0788
+  type: 'test'
+  ...
+# Subtest: default notification frequency through complete authenticated lifecycle group/45009
+ok 4 - default notification frequency through complete authenticated lifecycle group/45009
+  ---
+  duration_ms: 3871.9576
+  type: 'test'
+  ...
+# Subtest: default notification frequency through complete authenticated lifecycle group/93000
+ok 5 - default notification frequency through complete authenticated lifecycle group/93000
+  ---
+  duration_ms: 4418.3927
+  type: 'test'
+  ...
+# Subtest: default notification frequency through complete authenticated lifecycle group/null
+ok 6 - default notification frequency through complete authenticated lifecycle group/null
+  ---
+  duration_ms: 4024.5127
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23908.8239

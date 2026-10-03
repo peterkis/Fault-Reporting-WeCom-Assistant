@@ -1,0 +1,49 @@
+{
+  "path": "tests/p2-g2-webhook-configuration.test.mjs",
+  "runtime_path": "tests/p2-g2-webhook-configuration.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-webhook-configuration.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "52c3387b3fe89bbc95fcb5f5cd9f04e58924f30148f44929a35ab42d28c03bc2",
+  "executed_sha256": "52c3387b3fe89bbc95fcb5f5cd9f04e58924f30148f44929a35ab42d28c03bc2",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "042-p2-g2-webhook-configuration.test.mjs.tap",
+  "tap_sha256": "33b00b502646ef8219ce50d9ca2db56f7c8a2505a0f42642a3123370d00228f9",
+  "tap_bytes": 570,
+  "stderr_path": "042-p2-g2-webhook-configuration.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "042-p2-g2-webhook-configuration.test.mjs.cases.jsonl",
+  "case_trace_sha256": "8c03d463acebcf9a777eb773d89817c7535b2991988e64e896a972a435e06f05",
+  "case_trace_bytes": 630,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-016-domain-contracts.mjs",
+    ".build/runtime/src/p2-016-ticket-notification-policy.mjs",
+    ".build/runtime/src/p2-g2-validation-config.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/helpers/p2-g2-configuration-fixture.mjs",
+    ".build/runtime/tests/p2-g2-webhook-configuration.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

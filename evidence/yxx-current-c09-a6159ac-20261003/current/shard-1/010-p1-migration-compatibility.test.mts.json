@@ -1,0 +1,49 @@
+{
+  "path": "tests/p1-migration-compatibility.test.mts",
+  "runtime_path": "tests/p1-migration-compatibility.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-migration-compatibility.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "d6a5207d8bfafcec9fa7e13ceb120935c965a358204451d27b5f25459394fce9",
+  "executed_sha256": "c9c91efc3622db5624daf7de2a5244463da0740cdf481cff5cc3c536f8e35331",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "010-p1-migration-compatibility.test.mts.tap",
+  "tap_sha256": "fe54bb6ddd6e7b79eed8aa59e778a22cba967bb3beacad60ab4388c0d1b7d94b",
+  "tap_bytes": 1249,
+  "stderr_path": "010-p1-migration-compatibility.test.mts.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "010-p1-migration-compatibility.test.mts.cases.jsonl",
+  "case_trace_sha256": "69658a49d996a089bd2babbe94a88c23361750f0c602ef4c8a223485e747c840",
+  "case_trace_bytes": 1568,
+  "counts": {
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-001-pilot-foundation.mjs",
+    ".build/runtime/src/p1-002-wecom-sdk-adapter.mjs",
+    ".build/runtime/src/p1-007-notification-outbox.mjs",
+    ".build/runtime/src/p1-008-first-acknowledgement.mjs",
+    ".build/runtime/src/p1-011-encrypted-backup.mjs",
+    ".build/runtime/src/p1-012-pilot-e2e.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p1-migration-compatibility.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 5
+}

@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: SS-009 requires local validation scope before accepting protected parent phase state
+ok 1 - SS-009 requires local validation scope before accepting protected parent phase state
+  ---
+  duration_ms: 5104.0504
+  type: 'test'
+  ...
+# Subtest: SS-009 strict completion requires finalized status and PASS while preTamper remains intermediate
+ok 2 - SS-009 strict completion requires finalized status and PASS while preTamper remains intermediate
+  ---
+  duration_ms: 0.4344
+  type: 'test'
+  ...
+# Subtest: SS-009 evidence rejects a forged PASS summary without the matching successful TAP
+ok 3 - SS-009 evidence rejects a forged PASS summary without the matching successful TAP
+  ---
+  duration_ms: 0.3982
+  type: 'test'
+  ...
+# Subtest: SS-009 complete trace matches TAP multiplicity nesting escaped names and collected files
+ok 4 - SS-009 complete trace matches TAP multiplicity nesting escaped names and collected files
+  ---
+  duration_ms: 25.7502
+  type: 'test'
+  ...
+# Subtest: SS-009 trace covers every collected file regardless of shared names or event order
+ok 5 - SS-009 trace covers every collected file regardless of shared names or event order
+  ---
+  duration_ms: 0.5194
+  type: 'test'
+  ...
+# Subtest: SS-009 trace rejects a whole omitted file after adjusting all trace and TAP counts
+ok 6 - SS-009 trace rejects a whole omitted file after adjusting all trace and TAP counts
+  ---
+  duration_ms: 0.2368
+  type: 'test'
+  ...
+# Subtest: SS-009 trace rejects reassigned file provenance even when names nesting and counts match
+ok 7 - SS-009 trace rejects reassigned file provenance even when names nesting and counts match
+  ---
+  duration_ms: 0.3568
+  type: 'test'
+  ...
+# Subtest: SS-009 trace rejects set-preserving file relabeling against the independent execution manifest
+ok 8 - SS-009 trace rejects set-preserving file relabeling against the independent execution manifest
+  ---
+  duration_ms: 0.4696
+  type: 'test'
+  ...
+# Subtest: SS-009 trace reports all unobserved files and skipped events cannot establish coverage
+ok 9 - SS-009 trace reports all unobserved files and skipped events cannot establish coverage
+  ---
+  duration_ms: 0.5021
+  type: 'test'
+  ...
+# Subtest: SS-009 published regression summary equals all raw counts files and unchanged flag
+ok 10 - SS-009 published regression summary equals all raw counts files and unchanged flag
+  ---
+  duration_ms: 2.1028
+  type: 'test'
+  ...
+# Subtest: SS-009 every structured test event has paired reporter observation time
+ok 11 - SS-009 every structured test event has paired reporter observation time
+  ---
+  duration_ms: 0.4719
+  type: 'test'
+  ...
+# Subtest: SS-009 sampler and cleanup errors never skip later owned resource shutdown
+ok 12 - SS-009 sampler and cleanup errors never skip later owned resource shutdown
+  ---
+  duration_ms: 0.4257
+  type: 'test'
+  ...
+# Subtest: SS-009 dedicated proof summaries cannot replace process capacity or catalog observations
+ok 13 - SS-009 dedicated proof summaries cannot replace process capacity or catalog observations
+  ---
+  duration_ms: 2.5039
+  type: 'test'
+  ...
+# Subtest: SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time
+ok 14 - SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time
+  ---
+  duration_ms: 49.3149
+  type: 'test'
+  ...
+# Subtest: SS-009 evidence references reject wrong hashes traversal and linked files
+ok 15 - SS-009 evidence references reject wrong hashes traversal and linked files
+  ---
+  duration_ms: 3.8486
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8032.1602

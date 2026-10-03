@@ -1,0 +1,41 @@
+{
+  "path": "tests/migration-canary.test.mts",
+  "runtime_path": "tests/migration-canary.test.mjs",
+  "executed_path": ".build/runtime/tests/migration-canary.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "7c645af6cea70f306372511bd75fb862e4aee8d4e0ef8ba7ba38c2016f3c1e8f",
+  "executed_sha256": "cee744632ca9c0401b7c8a4cf485fdcecb835398e683eb5e147a5087b0804e2b",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "005-migration-canary.test.mts.tap",
+  "tap_sha256": "83fb42bdac5a517a2c0acce1213403daabb15dfe58576ea4fadf13a23bc6ced9",
+  "tap_bytes": 336,
+  "stderr_path": "005-migration-canary.test.mts.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "005-migration-canary.test.mts.cases.jsonl",
+  "case_trace_sha256": "9b5d5b4dc8fcb70299ee087e3911c46aa14cd473f2f49372dceeb3bd9d1be610",
+  "case_trace_bytes": 299,
+  "counts": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/migration-canary.mjs",
+    ".build/runtime/tests/fixtures/ts-migration/caller.mjs",
+    ".build/runtime/tests/migration-canary.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 1
+}

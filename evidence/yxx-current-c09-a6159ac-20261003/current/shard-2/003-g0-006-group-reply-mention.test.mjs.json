@@ -1,0 +1,41 @@
+{
+  "path": "tests/g0-006-group-reply-mention.test.mjs",
+  "runtime_path": "tests/g0-006-group-reply-mention.test.mjs",
+  "executed_path": ".build/runtime/tests/g0-006-group-reply-mention.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "6033b784cf4fca9d25c6e67bf8473f46c4fa1a40460f1d5be8f02e4c0c6565ad",
+  "executed_sha256": "6033b784cf4fca9d25c6e67bf8473f46c4fa1a40460f1d5be8f02e4c0c6565ad",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "003-g0-006-group-reply-mention.test.mjs.tap",
+  "tap_sha256": "b5969069734ad81890809eb1ec99b93634241ef40bfeb39e1a1ccf710d6555fc",
+  "tap_bytes": 1748,
+  "stderr_path": "003-g0-006-group-reply-mention.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "003-g0-006-group-reply-mention.test.mjs.cases.jsonl",
+  "case_trace_sha256": "c7d8e7f03d83eaae48f7669854ebdc77b22a6a3ccf764c3c12a1a18e6ddbed82",
+  "case_trace_bytes": 2222,
+  "counts": {
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/g0-002-sdk-lifecycle.mjs",
+    ".build/runtime/src/g0-006-group-reply-mention.mjs",
+    ".build/runtime/tests/g0-006-group-reply-mention.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 7
+}

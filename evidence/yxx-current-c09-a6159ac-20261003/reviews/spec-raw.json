@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "kind": "CURRENT_INDEPENDENT_REVIEW_RECORD",
+  "event_time": "2026-10-03 18:45:51",
+  "event_epoch_ms": "1791024351889",
+  "tested_head": "a6159ac5773d22e423846843b82aa4c8c27a0b0e",
+  "tested_tree": "6a5231f500bff58b045c2e00f0f6ddc2e86283b9",
+  "candidate_fingerprint": "2ea4ae593bce7041cd7413d74d37bf25eb9fcea3435e1268df1110bba1a55c8f",
+  "axis": "SPEC",
+  "reviewer": "c09_spec",
+  "independent": true,
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "findings": [],
+  "historical_limitations_reviewed": true,
+  "review_text": "SPEC PASS: no missing, partial, out-of-scope or incorrectly implemented requirement found in the H8-to-local-C9 delta. ADR-0027 says \"Current type/tool checks, clean build/artifact, registry-derived four disjoint shards and complete union, architecture, strict readiness and resource cleanup remain hard gates\" and forbids \"acceptance of missing/skipped results\". The current-complete job now uses always(), allowing its first step to reject every dependency result other than success after cancellation. The existing scheduling regression locks that condition and checks failure/cancelled/skipped/empty independently for TOOLING, CURRENT and BASELINE, plus the all-success case. Only necessary scheduling and affected existing-test changes are present; other gates are unchanged, with no new framework, business behavior or T05.\n\nI inspected the original C9 scheduling-red.tap (the old cancellation condition fails the new assertion) and scheduling-green.tap. I independently ran only the named existing scheduling test in the managed worktree: 1/1 PASS, zero fail/cancelled/skipped/todo, exit 0. Git inspection confirmed a clean, full local checkout at C9 a6159ac5773d22e423846843b82aa4c8c27a0b0e, tree 6a5231f500bff58b045c2e00f0f6ddc2e86283b9, with H8 as merge-base. The fingerprint is bound to the supplied C9 freeze metadata. C9 is UNPUBLISHED; the supplied authoritative PR head remains H8 fe843d31836e2f1df46c41f5cdecc6b4e211f8e9, not inferred from local HEAD.\n\nHistorical limitations were reviewed; this delta does not modify protected evidence or convert historical FAIL/NOT_RUN into PASS. This is implementation review only. Full C9 acceptance, a fresh append-only packet, current strict readiness, applicable published-history verification, final H CI/review and merge blockers remain pending the parent task."
+}

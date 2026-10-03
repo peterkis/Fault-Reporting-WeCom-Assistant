@@ -1,0 +1,50 @@
+{
+  "path": "tests/p1-008-first-acknowledgement.test.mjs",
+  "runtime_path": "tests/p1-008-first-acknowledgement.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-008-first-acknowledgement.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "f9bc63e9728bc580e9983ffbc6f8f83a3e98be96f9bcf3bb2540d6fa9805347d",
+  "executed_sha256": "f9bc63e9728bc580e9983ffbc6f8f83a3e98be96f9bcf3bb2540d6fa9805347d",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "007-p1-008-first-acknowledgement.test.mjs.tap",
+  "tap_sha256": "75983ec265495effe2f28caa2981417dfa23dcfce5507fc6e0223c3ee04438f8",
+  "tap_bytes": 684,
+  "stderr_path": "007-p1-008-first-acknowledgement.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "007-p1-008-first-acknowledgement.test.mjs.cases.jsonl",
+  "case_trace_sha256": "5a273e5cdf3ae1735c6a6cce876a19788a1cc50e655a1b106566c977a018444c",
+  "case_trace_bytes": 689,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-002-wecom-sdk-adapter.mjs",
+    ".build/runtime/src/p1-003-channel-message-inbox.mjs",
+    ".build/runtime/src/p1-004-service-intake.mjs",
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/p1-006-ticket-state-actions.mjs",
+    ".build/runtime/src/p1-007-notification-outbox.mjs",
+    ".build/runtime/src/p1-008-first-acknowledgement.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p1-008-first-acknowledgement.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

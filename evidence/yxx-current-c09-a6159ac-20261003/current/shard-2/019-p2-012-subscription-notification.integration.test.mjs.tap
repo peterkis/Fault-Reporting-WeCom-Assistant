@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: P2-012 cross-channel same reporter, pending activation, pause, unlink and reporter-safe history
+ok 1 - P2-012 cross-channel same reporter, pending activation, pause, unlink and reporter-safe history
+  ---
+  duration_ms: 2618.8752
+  type: 'test'
+  ...
+# Subtest: P2-012 fixed notices reuse sender, restart persistence, explicit UNKNOWN reconciliation and no blind resend
+ok 2 - P2-012 fixed notices reuse sender, restart persistence, explicit UNKNOWN reconciliation and no blind resend
+  ---
+  duration_ms: 2808.8567
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5784.9873

@@ -1,0 +1,41 @@
+{
+  "path": "tests/g0-005-active-push.test.mjs",
+  "runtime_path": "tests/g0-005-active-push.test.mjs",
+  "executed_path": ".build/runtime/tests/g0-005-active-push.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "bd1534e002d0c8973cb72eaa85e099a4ddc307c24dc60b917a20894e1a3f4390",
+  "executed_sha256": "bd1534e002d0c8973cb72eaa85e099a4ddc307c24dc60b917a20894e1a3f4390",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "003-g0-005-active-push.test.mjs.tap",
+  "tap_sha256": "effd6230889e59b07586b7280d5808399162acb9f9400dfa09372d91b99d9f07",
+  "tap_bytes": 1123,
+  "stderr_path": "003-g0-005-active-push.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "003-g0-005-active-push.test.mjs.cases.jsonl",
+  "case_trace_sha256": "e23efa37242e0a99615c781bf9dd3e8e2d15ed585fd4299c1c7c89f727fd62e6",
+  "case_trace_bytes": 1274,
+  "counts": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/g0-002-sdk-lifecycle.mjs",
+    ".build/runtime/src/g0-005-active-push.mjs",
+    ".build/runtime/tests/g0-005-active-push.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 4
+}

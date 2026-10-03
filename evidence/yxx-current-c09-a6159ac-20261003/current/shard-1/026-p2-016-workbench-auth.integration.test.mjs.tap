@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: busy callback preserves the second login intent and permits retry without consuming its code
+ok 1 - busy callback preserves the second login intent and permits retry without consuming its code
+  ---
+  duration_ms: 4735.0226
+  type: 'test'
+  ...
+# Subtest: audit pseudonyms are stable for one key and change when the audit key changes
+ok 2 - audit pseudonyms are stable for one key and change when the audit key changes
+  ---
+  duration_ms: 3005.3887
+  type: 'test'
+  ...
+# Subtest: anonymous login burst is limited before database writes and recovers after the window
+ok 3 - anonymous login burst is limited before database writes and recovers after the window
+  ---
+  duration_ms: 2355.4229
+  type: 'test'
+  ...
+# Subtest: maintenance removes expired technical records in bounded batches and retains live sessions and recent audit
+ok 4 - maintenance removes expired technical records in bounded batches and retains live sessions and recent audit
+  ---
+  duration_ms: 2300.3795
+  type: 'test'
+  ...
+# Subtest: 035 workbench auth migration is isolated, atomic, reentrant and schema-complete
+ok 5 - 035 workbench auth migration is isolated, atomic, reentrant and schema-complete
+  ---
+  duration_ms: 2633.7013
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15403.6864
