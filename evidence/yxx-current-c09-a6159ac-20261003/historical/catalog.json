@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "kind": "HISTORICAL_SS009_CATALOG",
+  "head": "41edd855e7bc55149facb6a4b2e0076776c22e66",
+  "base": "375d47b013017edb858206cc5f3475c9aed77dfd",
+  "historical_only": true,
+  "production_ready": false,
+  "proof": {
+    "path": "proof.json",
+    "bytes": 8428,
+    "sha256": "a5b36e533eec4c041b81ef551df3ead745602c40ee46196487360e4a2cd2d1ab"
+  },
+  "case_trace": {
+    "path": "regression.cases.jsonl",
+    "bytes": 11267,
+    "sha256": "e81597ea0caa0479ef4937112d1e65b8bbc64b84dd5d98946a3c9c74ef004636"
+  },
+  "case_count": 36,
+  "environment": {
+    "platform": "win32",
+    "node_version": "v24.18.0",
+    "core_autocrlf": "true",
+    "core_longpaths": "true"
+  }
+}

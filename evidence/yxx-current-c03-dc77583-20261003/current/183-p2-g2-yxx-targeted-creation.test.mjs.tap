@@ -1,0 +1,27 @@
+TAP version 13
+# {"event":"YXX_CREATION_INBOUND","ok":false,"code":"YXX_CREATION_SCOPE_DENIED","event_time":"2026-10-03 10:46:16","event_epoch_ms":"1790995576880"}
+# {"event":"YXX_CREATION_INBOUND","ok":false,"code":"YXX_CREATION_SCOPE_DENIED","event_time":"2026-10-03 10:46:16","event_epoch_ms":"1790995576886"}
+# {"event":"YXX_CREATION_INBOUND","ok":false,"code":"YXX_CREATION_SCOPE_DENIED","event_time":"2026-10-03 10:46:16","event_epoch_ms":"1790995576886"}
+# {"event":"YXX_CREATION_INBOUND","ok":false,"code":"YXX_CREATION_SCOPE_DENIED","event_time":"2026-10-03 10:46:16","event_epoch_ms":"1790995576886"}
+# {"event":"YXX_CREATION_STOPPED","reason":"INPUT_CONCURRENCY_LIMIT","completed_cases":[],"real_sends":0,"event_time":"2026-10-03 10:46:16","event_epoch_ms":"1790995576886"}
+# Subtest: targeted creation config fixes four A/B cases and rejects broader scope
+ok 1 - targeted creation config fixes four A/B cases and rejects broader scope
+  ---
+  duration_ms: 2.0341
+  type: 'test'
+  ...
+# Subtest: targeted launcher stops at fifth concurrent frame without queuing further input
+ok 2 - targeted launcher stops at fifth concurrent frame without queuing further input
+  ---
+  duration_ms: 1373.5781
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1738.6882

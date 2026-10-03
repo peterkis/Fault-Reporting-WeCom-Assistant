@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "report": {
+    "path": "evidence/yxx-current-c09-a6159ac-20261003/report.json",
+    "bytes": 3586,
+    "sha256": "52cdba74b7e1a7fe739a200fcd38c4cff52b4a548481aa2063c0262639c3ab3a"
+  },
+  "artifact_catalog": {
+    "path": "evidence/yxx-current-c09-a6159ac-20261003/artifact-catalog.json",
+    "bytes": 250817,
+    "sha256": "f2606da0d9e942a5b33ef857cb929f8c25018df0b78c35acb884072fce937151"
+  },
+  "artifact_catalog_attestation": {
+    "path": "evidence/yxx-current-c09-a6159ac-20261003/artifact-catalog-attestation.json",
+    "bytes": 1044,
+    "sha256": "513a50ce8a3a9482ef6f707bef93c80d7544e2ae2bf99d4ea9a74d6ad9e8ca83"
+  }
+}

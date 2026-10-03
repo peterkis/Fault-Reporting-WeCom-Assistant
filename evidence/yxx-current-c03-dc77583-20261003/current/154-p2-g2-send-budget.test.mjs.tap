@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: send reservations survive restart and count rejected attempts against all limits
+ok 1 - send reservations survive restart and count rejected attempts against all limits
+  ---
+  duration_ms: 34.5711
+  type: 'test'
+  ...
+# Subtest: ACK, UNKNOWN and crash between reservation and result never authorize resend
+ok 2 - ACK, UNKNOWN and crash between reservation and result never authorize resend
+  ---
+  duration_ms: 25.956
+  type: 'test'
+  ...
+# Subtest: changed delivery binding, manifest and corrupt journal fail closed
+ok 3 - changed delivery binding, manifest and corrupt journal fail closed
+  ---
+  duration_ms: 10.4481
+  type: 'test'
+  ...
+# Subtest: existing journal cannot be reinitialized and stale lock prevents a second sender
+ok 4 - existing journal cannot be reinitialized and stale lock prevents a second sender
+  ---
+  duration_ms: 5.107
+  type: 'test'
+  ...
+# Subtest: mutating caller manifest after opening cannot increase the frozen budget
+ok 5 - mutating caller manifest after opening cannot increase the frozen budget
+  ---
+  duration_ms: 7.1501
+  type: 'test'
+  ...
+# Subtest: only hashed scope and internal identifiers enter budget journal; duplicate finalization rejected
+ok 6 - only hashed scope and internal identifiers enter budget journal; duplicate finalization rejected
+  ---
+  duration_ms: 12.9854
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 319.6288

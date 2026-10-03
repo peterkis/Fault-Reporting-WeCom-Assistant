@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: migration 021 is scoped, reentrant, check-rolls-back, and drift fails closed
+ok 1 - migration 021 is scoped, reentrant, check-rolls-back, and drift fails closed
+  ---
+  duration_ms: 5086.3517
+  type: 'test'
+  ...
+# {"first_apply":true,"repeated_apply":true,"check_rollback":true,"new_tables":4}
+# Subtest: takeover is serialized/idempotent; handoff request-accept-release and request-cancel are audited atomically
+ok 2 - takeover is serialized/idempotent; handoff request-accept-release and request-cancel are audited atomically
+  ---
+  duration_ms: 2692.9587
+  type: 'test'
+  ...
+# {"concurrent_winners":1,"idempotent_parallel":12,"handoff":["REQUESTED","ACCEPTED","RELEASED"],"cancel":"CANCELLED"}
+# Subtest: admin force transfer works; non-admin, inactive target, wrong-team handler, ended and stale commands fail closed
+ok 3 - admin force transfer works; non-admin, inactive target, wrong-team handler, ended and stale commands fail closed
+  ---
+  duration_ms: 2742.4938
+  type: 'test'
+  ...
+# {"admin_force_transfer":true,"handler_force":false,"inactive":false,"wrong_team":false}
+# Subtest: generation race blocks stale AI before Communication and realtime failure rolls back control facts
+ok 4 - generation race blocks stale AI before Communication and realtime failure rolls back control facts
+  ---
+  duration_ms: 2528.4013
+  type: 'test'
+  ...
+# {"generation_start":1,"stale":true,"append_communication_calls":0,"message_delta":0,"outbox_delta":0,"delivery_delta":0,"realtime_failure_rollback":true}
+# Subtest: 32 principals keep independent monotonic cursors; visibility COUNT is correct and Session versions do not move
+ok 5 - 32 principals keep independent monotonic cursors; visibility COUNT is correct and Session versions do not move
+  ---
+  duration_ms: 2959.4779
+  type: 'test'
+  ...
+# {"principals":32,"monotonic":true,"session_version_unchanged":true,"workbench_unread":1,"restricted_unread":2}
+# Subtest: 2C4G bounded capacity covers 500 assignment/handoff facts and 2,000 cursor updates without residual resources
+ok 6 - 2C4G bounded capacity covers 500 assignment/handoff facts and 2,000 cursor updates without residual resources
+  ---
+  duration_ms: 4444.9026
+  type: 'test'
+  ...
+# {"assignments":500,"handoffs":500,"cursor_updates":2000,"max_list_limit":200,"heap_samples":5,"heap_monotonic_unbounded":false,"pool_max":4,"soak_24h":false}
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20749.2887

@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: all P2 conversation feature flags default to false
+ok 1 - all P2 conversation feature flags default to false
+  ---
+  duration_ms: 2.035
+  type: 'test'
+  ...
+# Subtest: Thread identity separates single, group, and multiple bots without exposing raw ids in its key
+ok 2 - Thread identity separates single, group, and multiple bots without exposing raw ids in its key
+  ---
+  duration_ms: 0.9753
+  type: 'test'
+  ...
+# Subtest: Thread identity rejects malformed channel scope with a stable error
+ok 3 - Thread identity rejects malformed channel scope with a stable error
+  ---
+  duration_ms: 0.5099
+  type: 'test'
+  ...
+# Subtest: group Session scope isolates participants and Intakes
+ok 4 - group Session scope isolates participants and Intakes
+  ---
+  duration_ms: 0.5144
+  type: 'test'
+  ...
+# Subtest: Session boundary rules cover ended, explicit, different Intake, idle equality, and continuation
+ok 5 - Session boundary rules cover ended, explicit, different Intake, idle equality, and continuation
+  ---
+  duration_ms: 0.7242
+  type: 'test'
+  ...
+# Subtest: only auditable boundary reasons are accepted from callers
+ok 6 - only auditable boundary reasons are accepted from callers
+  ---
+  duration_ms: 1.0154
+  type: 'test'
+  ...
+# Subtest: Session lifecycle is OPEN/WAITING_USER with ENDED terminal
+ok 7 - Session lifecycle is OPEN/WAITING_USER with ENDED terminal
+  ---
+  duration_ms: 0.2256
+  type: 'test'
+  ...
+# Subtest: control modes fail closed, default HUMAN, and reserve AUTO for P2-010/P2-G4
+ok 8 - control modes fail closed, default HUMAN, and reserve AUTO for P2-010/P2-G4
+  ---
+  duration_ms: 0.2766
+  type: 'test'
+  ...
+# Subtest: generation and row versions advance only for unique invalidating changes
+ok 9 - generation and row versions advance only for unique invalidating changes
+  ---
+  duration_ms: 0.1955
+  type: 'test'
+  ...
+# Subtest: disabled guard does not invoke storage or external seams and raw failures stay hidden
+ok 10 - disabled guard does not invoke storage or external seams and raw failures stay hidden
+  ---
+  duration_ms: 0.5737
+  type: 'test'
+  ...
+# Subtest: database failures map to stable public errors
+ok 11 - database failures map to stable public errors
+  ---
+  duration_ms: 0.1143
+  type: 'test'
+  ...
+# Subtest: P2-001 migration is limited to Thread and Session and reserves later tasks
+ok 12 - P2-001 migration is limited to Thread and Session and reserves later tasks
+  ---
+  duration_ms: 5.5803
+  type: 'test'
+  ...
+# Subtest: JSON Schemas, public OpenAPI view, and TypeScript declarations freeze safe vocabulary
+ok 13 - JSON Schemas, public OpenAPI view, and TypeScript declarations freeze safe vocabulary
+  ---
+  duration_ms: 3.3413
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 217.6834

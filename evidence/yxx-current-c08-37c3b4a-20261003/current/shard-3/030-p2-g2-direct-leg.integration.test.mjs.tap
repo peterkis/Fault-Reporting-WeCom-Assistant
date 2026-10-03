@@ -1,0 +1,41 @@
+TAP version 13
+# Subtest: P2-G2 group clarification does not create private artifacts before a real Direct Leg
+ok 1 - P2-G2 group clarification does not create private artifacts before a real Direct Leg
+  ---
+  duration_ms: 2878.1713
+  type: 'test'
+  ...
+# {"group_only_person_artifacts":0,"group_provider_calls":1,"first_direct_inbound_accepted":true,"direct_provider_calls":1}
+# Subtest: P2-G2 App manual-review clarification uses the same Direct Leg generation guard
+ok 2 - P2-G2 App manual-review clarification uses the same Direct Leg generation guard
+  ---
+  duration_ms: 2623.5675
+  type: 'test'
+  ...
+# Subtest: P2-G2 retained CLOSED Direct Leg permits a new group clarification
+ok 3 - P2-G2 retained CLOSED Direct Leg permits a new group clarification
+  ---
+  duration_ms: 2754.8211
+  type: 'test'
+  ...
+# Subtest: P2-G2 destination query database error rolls rule facts back instead of meaning no eligible destination
+ok 4 - P2-G2 destination query database error rolls rule facts back instead of meaning no eligible destination
+  ---
+  duration_ms: 2730.1539
+  type: 'test'
+  ...
+# Subtest: P2-G2 establishing Direct Leg never backfills old Ticket cards; new events can notify
+ok 5 - P2-G2 establishing Direct Leg never backfills old Ticket cards; new events can notify
+  ---
+  duration_ms: 2784.0066
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14313.8581

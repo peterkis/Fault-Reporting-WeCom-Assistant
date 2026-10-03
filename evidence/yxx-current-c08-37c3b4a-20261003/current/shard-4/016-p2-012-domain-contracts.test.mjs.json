@@ -1,0 +1,44 @@
+{
+  "path": "tests/p2-012-domain-contracts.test.mjs",
+  "runtime_path": "tests/p2-012-domain-contracts.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-012-domain-contracts.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "bf45d0ce22f3840027eb569f974bd89b287ac14df7e7c1e2bfef75e5ef6d13f6",
+  "executed_sha256": "bf45d0ce22f3840027eb569f974bd89b287ac14df7e7c1e2bfef75e5ef6d13f6",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--expose-gc",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "016-p2-012-domain-contracts.test.mjs.tap",
+  "tap_sha256": "229b8980fdef371bf97a20f69a303b73c982ac8246201b788be6cc8ed8e44e73",
+  "tap_bytes": 653,
+  "stderr_path": "016-p2-012-domain-contracts.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "016-p2-012-domain-contracts.test.mjs.cases.jsonl",
+  "case_trace_sha256": "119b6704540ec08e227ca2968b6012296707fb8d226a7787e8f95bafb768eed0",
+  "case_trace_bytes": 661,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-012-domain-contracts.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-012-domain-contracts.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

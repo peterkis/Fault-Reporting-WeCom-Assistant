@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 18:11:29",
+  "event_epoch_ms": "1791022289930",
+  "tested_head": "37c3b4a3e2f8944b7c33d628bb13028f64231016",
+  "tested_tree": "f11766bf12078a1eadd55655290551a8d78c3373",
+  "candidate_fingerprint": "6d6172b6a0da810a2544944723ae23db21e7c543b58c259f96230affec19b183",
+  "kind": "CURRENT_ARTIFACT_CATALOG_ATTESTATION",
+  "report": {
+    "path": "evidence/yxx-current-c08-37c3b4a-20261003/report.json",
+    "bytes": 3586,
+    "sha256": "e756da4386a90083077edd3951e769dce1370b26f461c006d165a1eccd640342",
+    "encoding": "utf-8"
+  },
+  "catalog": {
+    "path": "evidence/yxx-current-c08-37c3b4a-20261003/artifact-catalog.json",
+    "bytes": 250817,
+    "sha256": "f83571455df9fc8e00896842139cb4e026641dfd8520f22f3c96f52427535ef8"
+  },
+  "original_files": 941,
+  "original_records_stored_once": true,
+  "summary_files_role": "DERIVED_AGGREGATE_OF_PER_FILE_ORIGINALS",
+  "readiness": false,
+  "live_authorized": false,
+  "pending": "Actual-root strict verification and final exact-head CI/review"
+}

@@ -1,0 +1,44 @@
+TAP version 13
+# Subtest: D12-019/021/022/026 directory snapshot and occurrence evidence remain independent and HTTP excludes internal profile
+ok 1 - D12-019/021/022/026 directory snapshot and occurrence evidence remain independent and HTTP excludes internal profile
+  ---
+  duration_ms: 2790.4678
+  type: 'test'
+  ...
+# {"source_case_ids":["D12-019","D12-021","D12-022","D12-026"],"surface":"NORMAL_FRAME_WITH_DIRECTORY_SIMULATOR","person_registry_implemented":false,"occurrence_location_surface":"PERSISTED_REPORT_TEXT_NOT_DIRECTORY_AUTHORITY","delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":0,"outboxes":0,"deliveries":0,"incidents":0},"observation":{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"0883e019767e6beea55ee1bba6f231f356bb7ad095dd0a4610708b4776d8cc0e","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"13111fb52ec09111a8b794dbff316d6aaa8f282c7e6132de7976b7d20d91821b","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"13111fb52ec09111a8b794dbff316d6aaa8f282c7e6132de7976b7d20d91821b","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-123","source_kind":"REPORTER_EXPLICIT","source_hash":"13111fb52ec09111a8b794dbff316d6aaa8f282c7e6132de7976b7d20d91821b","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"13111fb52ec09111a8b794dbff316d6aaa8f282c7e6132de7976b7d20d91821b","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-111","source_kind":"REPORTER_EXPLICIT","source_hash":"13111fb52ec09111a8b794dbff316d6aaa8f282c7e6132de7976b7d20d91821b","status":"ACTIVE"}]},"provider_calls":0}
+# Subtest: D12-020 actually unresolved directory does not prevent persisted Intake and minimal Ticket
+ok 2 - D12-020 actually unresolved directory does not prevent persisted Intake and minimal Ticket
+  ---
+  duration_ms: 2819.9506
+  type: 'test'
+  ...
+# {"source_case_id":"D12-020","surface":"NORMAL_FRAME_WITH_UNRESOLVED_DIRECTORY","observation":{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"2bd7e0966c361021f3f3753f5f0c0089175ec4d85b5242929d01e7e4fbeb0a31","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"7dcc5c9bd78caf0d5b620808e8ed27f063de6327544f776d07e77909bbb442ea","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-111","source_kind":"REPORTER_EXPLICIT","source_hash":"7dcc5c9bd78caf0d5b620808e8ed27f063de6327544f776d07e77909bbb442ea","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"7dcc5c9bd78caf0d5b620808e8ed27f063de6327544f776d07e77909bbb442ea","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"7dcc5c9bd78caf0d5b620808e8ed27f063de6327544f776d07e77909bbb442ea","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-123","source_kind":"REPORTER_EXPLICIT","source_hash":"7dcc5c9bd78caf0d5b620808e8ed27f063de6327544f776d07e77909bbb442ea","status":"ACTIVE"}]},"provider_calls":0}
+# Subtest: D12-024 inactive directory account retains fault Ticket and enqueues actual identity review
+ok 3 - D12-024 inactive directory account retains fault Ticket and enqueues actual identity review
+  ---
+  duration_ms: 2853.543
+  type: 'test'
+  ...
+# {"source_case_id":"D12-024","surface":"NORMAL_FRAME_WITH_INACTIVE_DIRECTORY","counts":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0},"observed":{"result_code":"MANUAL_REVIEW_REQUIRED","reason_code":"DIRECTORY_ACCOUNT_INACTIVE","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"bb85eea91fd22fad84f9dd5b274880465490da79fa998931c2dd6df5fdb2750b","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"7dcc5c9bd78caf0d5b620808e8ed27f063de6327544f776d07e77909bbb442ea","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"7dcc5c9bd78caf0d5b620808e8ed27f063de6327544f776d07e77909bbb442ea","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"7dcc5c9bd78caf0d5b620808e8ed27f063de6327544f776d07e77909bbb442ea","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-111","source_kind":"REPORTER_EXPLICIT","source_hash":"7dcc5c9bd78caf0d5b620808e8ed27f063de6327544f776d07e77909bbb442ea","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-123","source_kind":"REPORTER_EXPLICIT","source_hash":"7dcc5c9bd78caf0d5b620808e8ed27f063de6327544f776d07e77909bbb442ea","status":"ACTIVE"}]},"provider_calls":0}
+# Subtest: D12-025 directory refresh never overwrites previous Journey report-time snapshot
+ok 4 - D12-025 directory refresh never overwrites previous Journey report-time snapshot
+  ---
+  duration_ms: 2718.7497
+  type: 'test'
+  ...
+# {"source_case_id":"D12-025","surface":"NORMAL_FRAME_WITH_DIRECTORY_REVISION","old_snapshot_unchanged":true,"new_journey_has_new_snapshot":true,"shared_current_person_profile_implemented":false,"provider_calls":0}
+# Subtest: D12-024 later inactive directory assertion stays auditable without replacing report snapshot
+ok 5 - D12-024 later inactive directory assertion stays auditable without replacing report snapshot
+  ---
+  duration_ms: 2748.5115
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14463.6571

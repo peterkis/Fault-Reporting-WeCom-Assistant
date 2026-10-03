@@ -1,0 +1,11 @@
+{
+  "tested_tree": "b78bfb4db04315547a245b0e34458523fbbaf361",
+  "kind": "LOCAL_FROZEN_CANDIDATE",
+  "current_files": 217,
+  "published": false,
+  "typescript_version": "5.9.3",
+  "tested_head": "5e8a226f5bc5599a567dc5eba620527f47b48ea7",
+  "approved_base": "562a96ffdd7148d729ab0eed9d215abe894f12c2",
+  "node_version": "24.18.0",
+  "postgres_version": "18.4"
+}

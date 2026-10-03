@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: reply arguments only accept registered scenarios and evidence output paths
+ok 1 - reply arguments only accept registered scenarios and evidence output paths
+  ---
+  duration_ms: 1.4956
+  type: 'test'
+  ...
+# Subtest: welcome, Markdown, stream, and media builders use the documented reply forms
+ok 2 - welcome, Markdown, stream, and media builders use the documented reply forms
+  ---
+  duration_ms: 3.3994
+  type: 'test'
+  ...
+# Subtest: welcome replies accept an enter_chat event even when its chattype is omitted
+ok 3 - welcome replies accept an enter_chat event even when its chattype is omitted
+  ---
+  duration_ms: 2.2049
+  type: 'test'
+  ...
+# Subtest: stream refresh reuses one callback and stream id, then omits the body for matching feedback
+ok 4 - stream refresh reuses one callback and stream id, then omits the body for matching feedback
+  ---
+  duration_ms: 5.4904
+  type: 'test'
+  ...
+# Subtest: Markdown reply is callback-bound and never serializes trigger text or identifiers
+ok 5 - Markdown reply is callback-bound and never serializes trigger text or identifiers
+  ---
+  duration_ms: 0.5159
+  type: 'test'
+  ...
+# Subtest: file, image, and voice upload then reply through the callback-bound media interface
+ok 6 - file, image, and voice upload then reply through the callback-bound media interface
+  ---
+  duration_ms: 1.3124
+  type: 'test'
+  ...
+# Subtest: video echo downloads only in memory, reuploads with a safe filename, and replies with title and description
+ok 7 - video echo downloads only in memory, reuploads with a safe filename, and replies with title and description
+  ---
+  duration_ms: 0.9378
+  type: 'test'
+  ...
+# Subtest: provider rejection has a stable classification without recording provider error text
+ok 8 - provider rejection has a stable classification without recording provider error text
+  ---
+  duration_ms: 0.4563
+  type: 'test'
+  ...
+# Subtest: feedback empty-reply rejection is a completed negative capability result
+ok 9 - feedback empty-reply rejection is a completed negative capability result
+  ---
+  duration_ms: 1.4021
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 247.1976

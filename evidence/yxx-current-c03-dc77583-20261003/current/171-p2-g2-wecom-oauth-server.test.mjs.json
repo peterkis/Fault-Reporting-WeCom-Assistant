@@ -1,0 +1,42 @@
+{
+  "path": "tests/p2-g2-wecom-oauth-server.test.mjs",
+  "runtime_path": "tests/p2-g2-wecom-oauth-server.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-wecom-oauth-server.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "74f768f5a1a2f3038837afa615ba1e68a466785d6fea58321a1d10887a129994",
+  "executed_sha256": "74f768f5a1a2f3038837afa615ba1e68a466785d6fea58321a1d10887a129994",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "171-p2-g2-wecom-oauth-server.test.mjs.tap",
+  "tap_sha256": "48e56700e4d5176c942cb8cb7e3b909624068d1d6aaef8f6c0f301e67ca2a487",
+  "tap_bytes": 384,
+  "stderr_path": "171-p2-g2-wecom-oauth-server.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "171-p2-g2-wecom-oauth-server.test.mjs.cases.jsonl",
+  "case_trace_sha256": "62e6595f538ca5df030c411c1ddac01f29709979ad6294a212d75851beff28ea",
+  "case_trace_bytes": 331,
+  "counts": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-g2-wecom-oauth-http.mjs",
+    ".build/runtime/src/p2-g2-wecom-oauth-server.mjs",
+    ".build/runtime/src/p2-g2-wecom-web-oauth.mjs",
+    ".build/runtime/tests/p2-g2-wecom-oauth-server.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 1
+}

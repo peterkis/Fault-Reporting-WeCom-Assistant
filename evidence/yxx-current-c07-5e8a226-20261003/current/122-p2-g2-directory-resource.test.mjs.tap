@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: 目录失败响应被取消，结束后中止共享请求信号
+ok 1 - 目录失败响应被取消，结束后中止共享请求信号
+  ---
+  duration_ms: 33.0532
+  type: 'test'
+  ...
+# Subtest: 目录端口成功、失败和超时都清理信号，未结束的提供者保持隔离
+ok 2 - 目录端口成功、失败和超时都清理信号，未结束的提供者保持隔离
+  ---
+  duration_ms: 28.1838
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 289.484

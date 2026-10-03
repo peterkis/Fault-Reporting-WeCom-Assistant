@@ -1,0 +1,21 @@
+{
+  "name": "strict",
+  "command": [
+    "node",
+    "scripts/validate-yxx-self-service.mjs",
+    "--require-ready"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error_code": null,
+  "stdout": {
+    "path": "strict.stdout",
+    "bytes": 201,
+    "sha256": "6102ffb40a544190f0006c9f55db5e9df2f870fed49a0d8a59a5cac34bdaff2f"
+  },
+  "stderr": {
+    "path": "strict.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

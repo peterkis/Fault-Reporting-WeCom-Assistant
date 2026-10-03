@@ -1,0 +1,44 @@
+{
+  "path": "tests/p2-003-realtime-event-log.test.mjs",
+  "runtime_path": "tests/p2-003-realtime-event-log.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-003-realtime-event-log.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "8160f59fe57ebf05cc950d8779e1d16b04384f3f2bd35f0a72a17d3791ae6ff3",
+  "executed_sha256": "8160f59fe57ebf05cc950d8779e1d16b04384f3f2bd35f0a72a17d3791ae6ff3",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "MIXED_EXPLICIT_ROOTS",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "043-p2-003-realtime-event-log.test.mjs.tap",
+  "tap_sha256": "c26122ab0fa68aaa877e421ee0fddc1858104e04ab58a5747e270f5ffb8ed9e7",
+  "tap_bytes": 9233,
+  "stderr_path": "043-p2-003-realtime-event-log.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "043-p2-003-realtime-event-log.test.mjs.cases.jsonl",
+  "case_trace_sha256": "959c83931374acd6f38ef33103d2aff40dfd7e8aafa9257c1eacb5e8fdb40560",
+  "case_trace_bytes": 12969,
+  "counts": {
+    "tests": 42,
+    "pass": 42,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-003-realtime-event-log.mjs",
+    ".build/runtime/src/p2-003-realtime-sse.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/helpers/migration-roots.mjs",
+    ".build/runtime/tests/p2-003-realtime-event-log.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 42
+}

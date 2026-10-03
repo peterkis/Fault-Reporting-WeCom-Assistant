@@ -1,0 +1,43 @@
+{
+  "path": "tests/g0-006a-reply-capability.test.mjs",
+  "runtime_path": "tests/g0-006a-reply-capability.test.mjs",
+  "executed_path": ".build/runtime/tests/g0-006a-reply-capability.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "e05c2caee923cba60638e1ddab3d8a7101064b2c9254785988acdf19aa0fb9b4",
+  "executed_sha256": "e05c2caee923cba60638e1ddab3d8a7101064b2c9254785988acdf19aa0fb9b4",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "003-g0-006a-reply-capability.test.mjs.tap",
+  "tap_sha256": "bfbb6eabd02fd63990de681f008550b31e378ce7c270b81a4a328193420c83c6",
+  "tap_bytes": 2225,
+  "stderr_path": "003-g0-006a-reply-capability.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "003-g0-006a-reply-capability.test.mjs.cases.jsonl",
+  "case_trace_sha256": "a12c4881deec04a9ee3225532bde4e10326cc0eb984a0f3495c9f406abcf2c97",
+  "case_trace_bytes": 2850,
+  "counts": {
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/g0-002-sdk-lifecycle.mjs",
+    ".build/runtime/src/g0-004-media-capture.mjs",
+    ".build/runtime/src/g0-006a-reply-capability.mjs",
+    ".build/runtime/src/g0-webhook-message-capability.mjs",
+    ".build/runtime/tests/g0-006a-reply-capability.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 9
+}

@@ -1,0 +1,106 @@
+TAP version 13
+# Cloning into 'C:\\Users\\zqpet\\AppData\\Local\\Temp\\fault-reporting-p2-016-historical-VZ1fX4'...
+# Updating files:  45% (2716/5955)
+# Updating files:  46% (2740/5955)
+# Updating files:  47% (2799/5955)
+# Updating files:  48% (2859/5955)
+# Updating files:  49% (2918/5955)
+# Updating files:  50% (2978/5955)
+# Updating files:  51% (3038/5955)
+# Updating files:  52% (3097/5955)
+# Updating files:  53% (3157/5955)
+# Updating files:  54% (3216/5955)
+# Updating files:  55% (3276/5955)
+# Updating files:  56% (3335/5955)
+# Updating files:  57% (3395/5955)
+# Updating files:  58% (3454/5955)
+# Updating files:  59% (3514/5955)
+# Updating files:  60% (3573/5955)
+# Updating files:  61% (3633/5955)
+# Updating files:  62% (3693/5955)
+# Updating files:  63% (3752/5955)
+# Updating files:  64% (3812/5955)
+# Updating files:  65% (3871/5955)
+# Updating files:  66% (3931/5955)
+# Updating files:  67% (3990/5955)
+# Updating files:  68% (4050/5955)
+# Updating files:  69% (4109/5955)
+# Updating files:  70% (4169/5955)
+# Updating files:  71% (4229/5955)
+# Updating files:  72% (4288/5955)
+# Updating files:  73% (4348/5955)
+# Updating files:  74% (4407/5955)
+# Updating files:  75% (4467/5955)
+# Updating files:  76% (4526/5955)
+# Updating files:  77% (4586/5955)
+# Updating files:  78% (4645/5955)
+# Updating files:  79% (4705/5955)
+# Updating files:  80% (4764/5955)
+# Updating files:  81% (4824/5955)
+# Updating files:  82% (4884/5955)
+# Updating files:  83% (4943/5955)
+# Updating files:  84% (5003/5955)
+# Updating files:  85% (5062/5955)
+# Updating files:  85% (5095/5955)
+# Updating files:  86% (5122/5955)
+# Updating files:  87% (5181/5955)
+# Updating files:  88% (5241/5955)
+# Updating files:  89% (5300/5955)
+# Updating files:  90% (5360/5955)
+# Updating files:  91% (5420/5955)
+# Updating files:  92% (5479/5955)
+# Updating files:  93% (5539/5955)
+# Updating files:  94% (5598/5955)
+# Updating files:  95% (5658/5955)
+# Updating files:  96% (5717/5955)
+# Updating files:  97% (5777/5955)
+# Updating files:  98% (5836/5955)
+# Updating files:  99% (5896/5955)
+# Updating files: 100% (5955/5955)
+# Updating files: 100% (5955/5955), done.
+# HEAD is now at 8c33271 Merge pull request \#6 from peterkis/phase2/p2-012-human-confirmed-incident
+# Subtest: P2-016 architecture guards preserve authorization, immutable baselines and closed contracts
+ok 1 - P2-016 architecture guards preserve authorization, immutable baselines and closed contracts
+  ---
+  duration_ms: 66958.9438
+  type: 'test'
+  ...
+# Subtest: P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work
+ok 2 - P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work
+  ---
+  duration_ms: 157.4059
+  type: 'test'
+  ...
+# Subtest: P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials
+ok 3 - P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials
+  ---
+  duration_ms: 15.8402
+  type: 'test'
+  ...
+# Subtest: JSON contract rejects extra keys, noncanonical types and offset time
+ok 4 - JSON contract rejects extra keys, noncanonical types and offset time
+  ---
+  duration_ms: 5.9131
+  type: 'test'
+  ...
+# Subtest: P2-016 closeout freezes every business input and the exact file set
+ok 5 - P2-016 closeout freezes every business input and the exact file set
+  ---
+  duration_ms: 0.3659
+  type: 'test'
+  ...
+# Subtest: P2-016 completion requires owner approval, precise candidates, live duration and zero-skip final regression
+ok 6 - P2-016 completion requires owner approval, precise candidates, live duration and zero-skip final regression
+  ---
+  duration_ms: 0.5492
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 70590.3625

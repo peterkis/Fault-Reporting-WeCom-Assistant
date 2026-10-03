@@ -1,0 +1,48 @@
+{
+  "path": ".github/review/pr-evidence-delta.test.mjs",
+  "runtime_path": ".github/review/pr-evidence-delta.test.mjs",
+  "executed_path": ".github/review/pr-evidence-delta.test.mjs",
+  "execution_cwd": ".",
+  "source_sha256": "fb05393098769ab91f3649ede738169167076179f2fc9d08c6b4ec2d6ba96dac",
+  "executed_sha256": "fb05393098769ab91f3649ede738169167076179f2fc9d08c6b4ec2d6ba96dac",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "SOURCE_HOST",
+  "node_flags": [
+    "--import",
+    "file:///C:/Users/zqpet/.codex/artifacts/yxx-current-readiness-20261002/stage06-c03/checkout/.build/tools/source-hook.mjs",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "001-pr-evidence-delta.test.mjs.tap",
+  "tap_sha256": "a6e8fea17e2e535d573bd7a04087137929da7e07a35196e639f44daa7490a647",
+  "tap_bytes": 776,
+  "stderr_path": "001-pr-evidence-delta.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "001-pr-evidence-delta.test.mjs.cases.jsonl",
+  "case_trace_sha256": "aff977222ed6d94beaee70e304a78807bf26527db0976d05967590cc58ac31e8",
+  "case_trace_bytes": 924,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/tools/bootstrap.mjs",
+    ".build/tools/common.mjs",
+    ".build/tools/source-hook.mjs",
+    ".build/tools/source-host.mjs",
+    ".build/tools/verify-artifact.mjs",
+    ".github/review/pr-evidence-delta.mjs",
+    ".github/review/pr-evidence-delta.test.mjs",
+    "node_modules/typescript/lib/typescript.js"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

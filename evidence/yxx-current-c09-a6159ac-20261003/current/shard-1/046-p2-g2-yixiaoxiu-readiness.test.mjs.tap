@@ -1,0 +1,65 @@
+TAP version 13
+# Subtest: member readiness refresh permits only authorized modifications with exact preserved baseline bytes
+ok 1 - member readiness refresh permits only authorized modifications with exact preserved baseline bytes
+  ---
+  duration_ms: 2.216
+  type: 'test'
+  ...
+# Subtest: member readiness refuses old976, missing48, bypass gaps, missing baseline and false live claims
+    # Subtest: PR8 current member readiness rejects missing or noncanonical evidence time pairs
+    ok 1 - PR8 current member readiness rejects missing or noncanonical evidence time pairs
+      ---
+      duration_ms: 35.6115
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses unrelated passing names
+    ok 2 - member readiness refuses unrelated passing names
+      ---
+      duration_ms: 22.1878
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses a different TAP receipt
+    ok 3 - member readiness refuses a different TAP receipt
+      ---
+      duration_ms: 8.8264
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses different regression file hashes
+    ok 4 - member readiness refuses different regression file hashes
+      ---
+      duration_ms: 7.4015
+      type: 'test'
+      ...
+    # Subtest: member readiness refuses unrelated scenario files
+    ok 5 - member readiness refuses unrelated scenario files
+      ---
+      duration_ms: 17.3899
+      type: 'test'
+      ...
+    1..5
+ok 2 - member readiness refuses old976, missing48, bypass gaps, missing baseline and false live claims
+  ---
+  duration_ms: 311.7031
+  type: 'test'
+  ...
+# Subtest: YXX-33 complete G2 live configuration requires member policy and binds the server identity proof configuration
+ok 3 - YXX-33 complete G2 live configuration requires member policy and binds the server identity proof configuration
+  ---
+  duration_ms: 4.8372
+  type: 'test'
+  ...
+# Subtest: member App HTTP allowlist admits only fixed OAuth endpoints with bounded GET parameters through a local fake transport
+ok 4 - member App HTTP allowlist admits only fixed OAuth endpoints with bounded GET parameters through a local fake transport
+  ---
+  duration_ms: 6.5292
+  type: 'test'
+  ...
+1..4
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 773.6073

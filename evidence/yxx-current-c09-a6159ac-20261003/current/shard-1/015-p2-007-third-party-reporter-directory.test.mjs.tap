@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: current directory hit returns a report snapshot without external detail call or avatar persistence
+ok 1 - current directory hit returns a report snapshot without external detail call or avatar persistence
+  ---
+  duration_ms: 2.6826
+  type: 'test'
+  ...
+# Subtest: cache miss resolves detail once, validates the current member, and saves a binding
+ok 2 - cache miss resolves detail once, validates the current member, and saves a binding
+  ---
+  duration_ms: 0.7308
+  type: 'test'
+  ...
+# Subtest: detail identity mismatch defers and never creates a binding
+ok 3 - detail identity mismatch defers and never creates a binding
+  ---
+  duration_ms: 1.1651
+  type: 'test'
+  ...
+# Subtest: disabled provider remains deferred without touching the store
+ok 4 - disabled provider remains deferred without touching the store
+  ---
+  duration_ms: 0.2656
+  type: 'test'
+  ...
+# Subtest: default report clock uses Shanghai local time at 2026-09-27T00:00:00.000Z
+ok 5 - default report clock uses Shanghai local time at 2026-09-27T00:00:00.000Z
+  ---
+  duration_ms: 0.8406
+  type: 'test'
+  ...
+# Subtest: default report clock uses Shanghai local time at 2026-09-27T23:59:59.123Z
+ok 6 - default report clock uses Shanghai local time at 2026-09-27T23:59:59.123Z
+  ---
+  duration_ms: 0.3082
+  type: 'test'
+  ...
+# Subtest: one member in 5000 departments has a complete bounded report hash
+ok 7 - one member in 5000 departments has a complete bounded report hash
+  ---
+  duration_ms: 33.1489
+  type: 'test'
+  ...
+# Subtest: directory port copies and freezes the complete 5000-membership result
+ok 8 - directory port copies and freezes the complete 5000-membership result
+  ---
+  duration_ms: 16.8156
+  type: 'test'
+  ...
+# Subtest: report intake resolves all 5000 memberships on cache hit
+ok 9 - report intake resolves all 5000 memberships on cache hit
+  ---
+  duration_ms: 40.6478
+  type: 'test'
+  ...
+# Subtest: report intake resolves all 5000 memberships on detail lookup
+ok 10 - report intake resolves all 5000 memberships on detail lookup
+  ---
+  duration_ms: 40.0111
+  type: 'test'
+  ...
+# Subtest: orchestrator preparation retains a complete resolved profile without a generic envelope overflow
+ok 11 - orchestrator preparation retains a complete resolved profile without a generic envelope overflow
+  ---
+  duration_ms: 16.9999
+  type: 'test'
+  ...
+# Subtest: public and authorized restricted journey projections tolerate the stored maximum profile
+ok 12 - public and authorized restricted journey projections tolerate the stored maximum profile
+  ---
+  duration_ms: 42.8095
+  type: 'test'
+  ...
+# Subtest: report hashing preserves old canonical bytes and shared JSON guards
+ok 13 - report hashing preserves old canonical bytes and shared JSON guards
+  ---
+  duration_ms: 26.7964
+  type: 'test'
+  ...
+# Subtest: 5001 memberships are rejected rather than silently truncated or resolved
+ok 14 - 5001 memberships are rejected rather than silently truncated or resolved
+  ---
+  duration_ms: 3.2371
+  type: 'test'
+  ...
+# Subtest: profile-specific allowance does not enlarge other envelope fields or legacy provider limits
+ok 15 - profile-specific allowance does not enlarge other envelope fields or legacy provider limits
+  ---
+  duration_ms: 30.3001
+  type: 'test'
+  ...
+# Subtest: profile envelope guards reject accessors, proxies, symbols and polluted keys without executing them
+ok 16 - profile envelope guards reject accessors, proxies, symbols and polluted keys without executing them
+  ---
+  duration_ms: 0.565
+  type: 'test'
+  ...
+# Subtest: maximum membership fields remain supported, and overlong or structured fields are rejected
+ok 17 - maximum membership fields remain supported, and overlong or structured fields are rejected
+  ---
+  duration_ms: 58.5046
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 536.5025

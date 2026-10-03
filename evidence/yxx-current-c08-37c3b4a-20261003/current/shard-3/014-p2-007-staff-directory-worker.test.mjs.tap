@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: directory maintenance runs in the existing worker even when rule orchestration is disabled
+ok 1 - directory maintenance runs in the existing worker even when rule orchestration is disabled
+  ---
+  duration_ms: 2.9139
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 135.8412

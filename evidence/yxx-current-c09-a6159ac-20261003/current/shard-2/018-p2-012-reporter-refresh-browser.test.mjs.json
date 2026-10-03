@@ -1,0 +1,41 @@
+{
+  "path": "tests/p2-012-reporter-refresh-browser.test.mjs",
+  "runtime_path": "tests/p2-012-reporter-refresh-browser.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-012-reporter-refresh-browser.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "bcc11433c9fccab2b3ef4c80750371bfec23ac06e6a753409e95b76e1fd17372",
+  "executed_sha256": "bcc11433c9fccab2b3ef4c80750371bfec23ac06e6a753409e95b76e1fd17372",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--expose-gc",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "018-p2-012-reporter-refresh-browser.test.mjs.tap",
+  "tap_sha256": "12485e52289f7419391cc71ef2eff11b97e4363a72e1538645c7e42a8335318f",
+  "tap_bytes": 420,
+  "stderr_path": "018-p2-012-reporter-refresh-browser.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "018-p2-012-reporter-refresh-browser.test.mjs.cases.jsonl",
+  "case_trace_sha256": "12257ed6330d7df444c762688955cf29a65420ac6379a31b0c89f256615a5c2d",
+  "case_trace_bytes": 354,
+  "counts": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/tests/helpers/p2-006-browser-harness.mjs",
+    ".build/runtime/tests/p2-012-reporter-refresh-browser.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 1
+}

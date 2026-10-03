@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 08:11:33","event_epoch_ms":"1790986293945","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"manual evidence consumes exact human assertion and preserved fragment; ACK, altered claim and changed fragment are rejected","file":"tests/p2-g2-manual-evidence.test.mjs","line":11,"nesting":0,"skip":false,"todo":false}

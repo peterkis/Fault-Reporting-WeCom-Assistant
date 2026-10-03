@@ -1,0 +1,43 @@
+{
+  "path": "tests/p2-002-timeline-projector.test.mjs",
+  "runtime_path": "tests/p2-002-timeline-projector.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-002-timeline-projector.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "8a6f3102a0647a5f9249692446804636afa372b465a8f2c52f3c1e192f833129",
+  "executed_sha256": "8a6f3102a0647a5f9249692446804636afa372b465a8f2c52f3c1e192f833129",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "011-p2-002-timeline-projector.test.mjs.tap",
+  "tap_sha256": "a7b7d984fa23cfb77f180a76d62a8eb3efff31e44debc463ecd13013d62ebbfd",
+  "tap_bytes": 8470,
+  "stderr_path": "011-p2-002-timeline-projector.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "011-p2-002-timeline-projector.test.mjs.cases.jsonl",
+  "case_trace_sha256": "da9c64f44db3641846fc68556db51e5455560bd3e0e87c8551b231c17ec8a4ff",
+  "case_trace_bytes": 11988,
+  "counts": {
+    "tests": 39,
+    "pass": 39,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-002-timeline-projector.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-002-timeline-projector.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 39
+}

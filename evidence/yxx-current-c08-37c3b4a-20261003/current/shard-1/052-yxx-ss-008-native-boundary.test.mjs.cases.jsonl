@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 17:36:05","event_epoch_ms":"1791020165097","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"SS-008 submit and supplement suppress an old member receipt after a committed identity change","file":"tests/yxx-ss-008-native-boundary.test.mjs","line":6,"nesting":0,"skip":false,"todo":false}

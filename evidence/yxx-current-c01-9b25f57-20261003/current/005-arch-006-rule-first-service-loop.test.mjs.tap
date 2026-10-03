@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: ARCH-006 validator passes
+ok 1 - ARCH-006 validator passes
+  ---
+  duration_ms: 9140.1522
+  type: 'test'
+  ...
+# Subtest: ARCH-006 current structure rejects missing scope and changed historical evidence
+ok 2 - ARCH-006 current structure rejects missing scope and changed historical evidence
+  ---
+  duration_ms: 6588.2348
+  type: 'test'
+  ...
+# Subtest: machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles
+ok 3 - machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles
+  ---
+  duration_ms: 1.9261
+  type: 'test'
+  ...
+# Subtest: ten safe deterministic results are first-class and Manual Review is valid
+ok 4 - ten safe deterministic results are first-class and Manual Review is valid
+  ---
+  duration_ms: 0.778
+  type: 'test'
+  ...
+# Subtest: Ticket lifecycle reuses authoritative actions and reliable notification boundary
+ok 5 - Ticket lifecycle reuses authoritative actions and reliable notification boundary
+  ---
+  duration_ms: 1.5436
+  type: 'test'
+  ...
+# Subtest: Incident remains human-confirmed and AI-independent
+ok 6 - Incident remains human-confirmed and AI-independent
+  ---
+  duration_ms: 0.7774
+  type: 'test'
+  ...
+# Subtest: AI-off readiness and feature flags are closed by default
+ok 7 - AI-off readiness and feature flags are closed by default
+  ---
+  duration_ms: 1.0629
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17917.8984

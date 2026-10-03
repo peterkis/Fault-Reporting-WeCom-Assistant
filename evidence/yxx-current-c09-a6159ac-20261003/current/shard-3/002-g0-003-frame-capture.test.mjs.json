@@ -1,0 +1,41 @@
+{
+  "path": "tests/g0-003-frame-capture.test.mjs",
+  "runtime_path": "tests/g0-003-frame-capture.test.mjs",
+  "executed_path": ".build/runtime/tests/g0-003-frame-capture.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "48fa512661da0a8aa1f669c5ca79bf890775e246620006cd4627899c413935d3",
+  "executed_sha256": "48fa512661da0a8aa1f669c5ca79bf890775e246620006cd4627899c413935d3",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "002-g0-003-frame-capture.test.mjs.tap",
+  "tap_sha256": "7b6a79120fea77a6f0d02e246f69cf25de1afa32434cb565623d7fca25686d99",
+  "tap_bytes": 525,
+  "stderr_path": "002-g0-003-frame-capture.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "002-g0-003-frame-capture.test.mjs.cases.jsonl",
+  "case_trace_sha256": "e033f68e2291ada6e6287c01bb3d3bc588d3d67bd934770e0c285e457d51096a",
+  "case_trace_bytes": 593,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/g0-002-sdk-lifecycle.mjs",
+    ".build/runtime/src/g0-003-frame-capture.mjs",
+    ".build/runtime/tests/g0-003-frame-capture.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

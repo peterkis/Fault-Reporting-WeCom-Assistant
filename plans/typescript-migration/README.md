@@ -1,6 +1,12 @@
 # TypeScript 增量迁移执行入口
 
-## 当前交接
+## 当前交接（2026-10-02）
+
+PR #37 已合并：发布 head `5ea7982bad2dc8d2236f36b25ce5a9c7427199bf`，merge `78fc466af50c6d4c27850998267510fb1592157b`。独立复审与当前 head CI 已用于本次授权合并；各轮回执仍保留原测试身份，不重绑。随后历史研究归档合并为 `562a96ffdd7148d729ab0eed9d215abe894f12c2`。T04-05 合并收口；T05-01 不自动启动。
+
+当前严格 readiness 恢复作为 [独立任务](../yxx-current-readiness-implementation.md) 执行，按 [ADR-0027](../../adr/0027_yxx_current_readiness.md) 区分当前限定 Web 技术准备与历史 SS009 验收。在取得新候选完整证据之前，保持 NOT_READY。下文是合并前各轮实际记录，不表示 PR #37 仍处于 OPEN。
+
+## T04-05 合并前的历史交接记录
 
 T00 至 T04-04 已合并。PR #36 发布 head `8eb71fb14dfda2c885d0edf53408fc38979aea23` 的迁移与 Evidence-history CI 成功，GitHub 确认 merge 为 `87de2bc9e8835882cd390b024a04e2865cd367f9`。原 T04-04 与 HTTP 修补回执保持其被测祖先及历史状态。
 

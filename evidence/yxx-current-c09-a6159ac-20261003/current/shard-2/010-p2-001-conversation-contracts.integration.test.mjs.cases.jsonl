@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 18:51:25","event_epoch_ms":"1791024685888","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P2-001 PostgreSQL contract is idempotent, isolated, and fail closed","file":"tests/p2-001-conversation-contracts.integration.test.mjs","line":86,"nesting":0,"skip":false,"todo":false}

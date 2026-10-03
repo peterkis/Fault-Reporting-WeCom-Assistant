@@ -1,0 +1,18 @@
+TAP version 13
+# Subtest: SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket
+ok 1 - SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket
+  ---
+  duration_ms: 22697.235
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-03 14:36:38","event_epoch_ms":"1791009398388","kind":"browser","status":"PASS","candidate_fingerprint":"d9204d324444b2bc8c861f8c8d21298ea2ec31e11965f86d3e5ed89058493044","screenshots":[{"file":"C:\\\\Users\\\\zqpet\\\\AppData\\\\Local\\\\Temp\\\\ss009-ui-a47f3601-e416-45b8-ae03-686969212d9b\\\\1d9c04f4-bb53-4d4d-bed1-5b837703e1be.png","width":390,"height":844,"sha256":"d95bbc454e17e0531e105c977a92be165da12833fd3456fa4cc7f22f31d45050"},{"file":"C:\\\\Users\\\\zqpet\\\\AppData\\\\Local\\\\Temp\\\\ss009-ui-a47f3601-e416-45b8-ae03-686969212d9b\\\\c5d5f3b2-9e89-4249-ae8a-43bfd01c6c32.png","width":1440,"height":900,"sha256":"3a8a7a6dcf9d138afd800ff75e4b6d6464677f58ac0b3da45e52775842267407"}],"real_pg":true,"real_browser":true,"tickets":2,"external_network_calls":0,"simulated_provider_calls":1}
+# SS009_RECEIPT {"event_time":"2026-10-03 14:36:40","event_epoch_ms":"1791009400099","kind":"cleanup","status":"PASS","candidate_fingerprint":"d9204d324444b2bc8c861f8c8d21298ea2ec31e11965f86d3e5ed89058493044","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"tls_proxy_listeners","remaining":0},{"resource":"tls_proxy_sockets","remaining":0},{"resource":"tls_directory","remaining":0},{"resource":"member_listener","remaining":0},{"resource":"staff_listener","remaining":0},{"resource":"browser_process","remaining":0},{"resource":"browser_profile","remaining":0},{"resource":"browser_command_timers","remaining":0},{"resource":"browser_socket","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23284.9524

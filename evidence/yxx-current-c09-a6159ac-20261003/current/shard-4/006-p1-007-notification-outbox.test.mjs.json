@@ -1,0 +1,49 @@
+{
+  "path": "tests/p1-007-notification-outbox.test.mjs",
+  "runtime_path": "tests/p1-007-notification-outbox.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-007-notification-outbox.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "88e6042dafd9d512d9c2f4de17059f8db11baf78187c3d8f4b12cd82d6a83c1a",
+  "executed_sha256": "88e6042dafd9d512d9c2f4de17059f8db11baf78187c3d8f4b12cd82d6a83c1a",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "006-p1-007-notification-outbox.test.mjs.tap",
+  "tap_sha256": "743af7d7d1eaa2ff6c76fd58f3d0ba66b4e644fceadc1e68eb6fc7c8399cb8d7",
+  "tap_bytes": 1175,
+  "stderr_path": "006-p1-007-notification-outbox.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "006-p1-007-notification-outbox.test.mjs.cases.jsonl",
+  "case_trace_sha256": "194b044b1c7d30972ba494e31a52a0095dcc6fd7132de8eb77a7e9a21ea94343",
+  "case_trace_bytes": 1332,
+  "counts": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-002-wecom-sdk-adapter.mjs",
+    ".build/runtime/src/p1-003-channel-message-inbox.mjs",
+    ".build/runtime/src/p1-004-service-intake.mjs",
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/p1-006-ticket-state-actions.mjs",
+    ".build/runtime/src/p1-007-notification-outbox.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p1-007-notification-outbox.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 4
+}

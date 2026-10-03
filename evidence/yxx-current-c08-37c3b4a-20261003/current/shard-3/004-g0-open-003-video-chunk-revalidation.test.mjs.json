@@ -1,0 +1,42 @@
+{
+  "path": "tests/g0-open-003-video-chunk-revalidation.test.mjs",
+  "runtime_path": "tests/g0-open-003-video-chunk-revalidation.test.mjs",
+  "executed_path": ".build/runtime/tests/g0-open-003-video-chunk-revalidation.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "3b86e2f0d8f45272687eb748a9b04ae5b800831b990afa719bb6acef5f125241",
+  "executed_sha256": "3b86e2f0d8f45272687eb748a9b04ae5b800831b990afa719bb6acef5f125241",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "004-g0-open-003-video-chunk-revalidation.test.mjs.tap",
+  "tap_sha256": "3cc295bd4eac82592c344d90ce24138381e1552e06c7f2b95427c2793a283be2",
+  "tap_bytes": 1515,
+  "stderr_path": "004-g0-open-003-video-chunk-revalidation.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "004-g0-open-003-video-chunk-revalidation.test.mjs.cases.jsonl",
+  "case_trace_sha256": "2cf77e12f468a8d198aaf075eb5aa100c44898032c2686e6a629ff027944d710",
+  "case_trace_bytes": 1967,
+  "counts": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/g0-002-sdk-lifecycle.mjs",
+    ".build/runtime/src/g0-004-media-capture.mjs",
+    ".build/runtime/src/g0-open-003-video-chunk-revalidation.mjs",
+    ".build/runtime/tests/g0-open-003-video-chunk-revalidation.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 6
+}

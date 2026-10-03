@@ -1,0 +1,150 @@
+TAP version 13
+# Subtest: YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery
+ok 1 - YXX-13 YXX-25 YXX-44 fresh legacy prepare survives old binding expiry and expired or restarted continuations show safe recovery
+  ---
+  duration_ms: 2630.6355
+  type: 'test'
+  ...
+# Subtest: YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects
+ok 2 - YXX-02 YXX-03 YXX-04 YXX-46 YXX-47 actual OAuth HTTP and PostgreSQL enforce reporter ownership without business side effects
+  ---
+  duration_ms: 2697.0702
+  type: 'test'
+  ...
+# Subtest: YXX member HTTP ownership, cookie bypass, retention, conditional responses and stable input matrix
+    # Subtest: YXX-03 member detail equals the complete legacy safe projection field for field
+    ok 1 - YXX-03 member detail equals the complete legacy safe projection field for field
+      ---
+      duration_ms: 29.9925
+      type: 'test'
+      ...
+    # Subtest: YXX-06 YXX-08 different Bot and malformed or unknown refs cannot broaden ownership
+    ok 2 - YXX-06 YXX-08 different Bot and malformed or unknown refs cannot broaden ownership
+      ---
+      duration_ms: 19.5367
+      type: 'test'
+      ...
+    # Subtest: YXX-30 YXX-31 YXX-32 old Reporter Cookie, anonymous exchange and bootstrap confer no member permission
+    ok 3 - YXX-30 YXX-31 YXX-32 old Reporter Cookie, anonymous exchange and bootstrap confer no member permission
+      ---
+      duration_ms: 13.9973
+      type: 'test'
+      ...
+    # Subtest: YXX-34 exact Origin, Host, CORS and POST boundaries reject contamination
+    ok 4 - YXX-34 exact Origin, Host, CORS and POST boundaries reject contamination
+      ---
+      duration_ms: 14.5258
+      type: 'test'
+      ...
+    # Subtest: YXX-17 YXX-18 callback pollution and arbitrary return query do not consume the valid intent
+    ok 5 - YXX-17 YXX-18 callback pollution and arbitrary return query do not consume the valid intent
+      ---
+      duration_ms: 6.6855
+      type: 'test'
+      ...
+    # Subtest: YXX-39 same-second pagination uses ordinals and rejects a cursor from another ref
+    ok 6 - YXX-39 same-second pagination uses ordinals and rejects a cursor from another ref
+      ---
+      duration_ms: 59.306
+      type: 'test'
+      ...
+    # Subtest: YXX-11 closed retained Ticket stays readable and member query does not reopen it
+    ok 7 - YXX-11 closed retained Ticket stays readable and member query does not reopen it
+      ---
+      duration_ms: 106.3614
+      type: 'test'
+      ...
+    # Subtest: YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification
+    ok 8 - YXX-12 YXX-46 YXX-47 repeated canonical page and timeline reads add no business facts or send qualification
+      ---
+      duration_ms: 58.4716
+      type: 'test'
+      ...
+    # Subtest: YXX-10 Intake retention expiry removes eligibility using the actual persisted deadline
+    ok 9 - YXX-10 Intake retention expiry removes eligibility using the actual persisted deadline
+      ---
+      duration_ms: 26.1571
+      type: 'test'
+      ...
+    # Subtest: YXX-09 YXX-37 revoked ref denies a formerly matching ETag before 304
+    ok 10 - YXX-09 YXX-37 revoked ref denies a formerly matching ETag before 304
+      ---
+      duration_ms: 15.0119
+      type: 'test'
+      ...
+    # Subtest: YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code
+    ok 11 - YXX-13 YXX-14 YXX-37 separate devices and expired authentication require a fresh OAuth code
+      ---
+      duration_ms: 41.4516
+      type: 'test'
+      ...
+    # Subtest: YXX-32 both logout aliases revoke member sessions and stop old-cookie fallback
+    ok 12 - YXX-32 both logout aliases revoke member sessions and stop old-cookie fallback
+      ---
+      duration_ms: 10.7936
+      type: 'test'
+      ...
+    1..12
+ok 3 - YXX member HTTP ownership, cookie bypass, retention, conditional responses and stable input matrix
+  ---
+  duration_ms: 3662.8701
+  type: 'test'
+  ...
+# Subtest: YXX-07 live namespace unknown stays denied after successful synthetic member authentication
+ok 4 - YXX-07 live namespace unknown stays denied after successful synthetic member authentication
+  ---
+  duration_ms: 2587.4449
+  type: 'test'
+  ...
+# Subtest: YXX-22 YXX-37 OAuth logout during real authorized SQL read prevents any late detail or 304 response
+ok 5 - YXX-22 YXX-37 OAuth logout during real authorized SQL read prevents any late detail or 304 response
+  ---
+  duration_ms: 2591.5136
+  type: 'test'
+  ...
+# Subtest: YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read
+ok 6 - YXX-22 YXX-23 callback identity replacement with stale Cookie snapshots invalidates the earlier in-flight SQL read
+  ---
+  duration_ms: 2629.7866
+  type: 'test'
+  ...
+# Subtest: YXX legacy Grant adapter verifies signatures and ownership without consuming or resurrecting grants
+    # Subtest: YXX-25 YXX-29 anonymous old entry scanning prepares only context and requires real OAuth flow
+    ok 1 - YXX-25 YXX-29 anonymous old entry scanning prepares only context and requires real OAuth flow
+      ---
+      duration_ms: 10.0651
+      type: 'test'
+      ...
+    # Subtest: YXX-26 wrong member possession cannot consume or lock the original grant
+    ok 2 - YXX-26 wrong member possession cannot consume or lock the original grant
+      ---
+      duration_ms: 7.6336
+      type: 'test'
+      ...
+    # Subtest: YXX-27 consumed and expired signed grants locate only under fresh member ownership
+    ok 3 - YXX-27 consumed and expired signed grants locate only under fresh member ownership
+      ---
+      duration_ms: 1129.0283
+      type: 'test'
+      ...
+    # Subtest: YXX-28 revoked, forged and rotated-key grants reject without using a parsed UUID as proof
+    ok 4 - YXX-28 revoked, forged and rotated-key grants reject without using a parsed UUID as proof
+      ---
+      duration_ms: 12.7516
+      type: 'test'
+      ...
+    1..4
+ok 7 - YXX legacy Grant adapter verifies signatures and ownership without consuming or resurrecting grants
+  ---
+  duration_ms: 3924.1517
+  type: 'test'
+  ...
+1..7
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21083.9668

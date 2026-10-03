@@ -1,0 +1,59 @@
+TAP version 13
+# Subtest: P2-016 migration is atomic, check-only, exact, reentrant and drift-failing
+    # Subtest: rejects table drift
+    ok 1 - rejects table drift
+      ---
+      duration_ms: 42.97
+      type: 'test'
+      ...
+    # Subtest: rejects column drift
+    ok 2 - rejects column drift
+      ---
+      duration_ms: 24.995
+      type: 'test'
+      ...
+    # Subtest: rejects type drift
+    ok 3 - rejects type drift
+      ---
+      duration_ms: 40.4333
+      type: 'test'
+      ...
+    # Subtest: rejects default drift
+    ok 4 - rejects default drift
+      ---
+      duration_ms: 24.671
+      type: 'test'
+      ...
+    # Subtest: rejects constraint drift
+    ok 5 - rejects constraint drift
+      ---
+      duration_ms: 23.1329
+      type: 'test'
+      ...
+    # Subtest: rejects index drift
+    ok 6 - rejects index drift
+      ---
+      duration_ms: 23.594
+      type: 'test'
+      ...
+    # Subtest: rejects foreign_key drift
+    ok 7 - rejects foreign_key drift
+      ---
+      duration_ms: 24.6051
+      type: 'test'
+      ...
+    1..7
+ok 1 - P2-016 migration is atomic, check-only, exact, reentrant and drift-failing
+  ---
+  duration_ms: 2879.213
+  type: 'test'
+  ...
+1..1
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3127.9612

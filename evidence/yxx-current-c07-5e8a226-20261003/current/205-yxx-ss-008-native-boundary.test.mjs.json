@@ -1,0 +1,42 @@
+{
+  "path": "tests/yxx-ss-008-native-boundary.test.mjs",
+  "runtime_path": "tests/yxx-ss-008-native-boundary.test.mjs",
+  "executed_path": ".build/runtime/tests/yxx-ss-008-native-boundary.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "e311ea268af978f6e6c2d4b5ec609199bba16382f70c690409a87b4095088fe3",
+  "executed_sha256": "e311ea268af978f6e6c2d4b5ec609199bba16382f70c690409a87b4095088fe3",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "205-yxx-ss-008-native-boundary.test.mjs.tap",
+  "tap_sha256": "17714779804be4e6f17843b7723ce73bafadbde040028e84a44469c591887459",
+  "tap_bytes": 372,
+  "stderr_path": "205-yxx-ss-008-native-boundary.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "205-yxx-ss-008-native-boundary.test.mjs.cases.jsonl",
+  "case_trace_sha256": "559bfccd6f728774d22ccd73daaae8f83e8725af318b6f838d500862976cb2f9",
+  "case_trace_bytes": 327,
+  "counts": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-g2-wecom-oauth-http.mjs",
+    ".build/runtime/src/p2-g2-wecom-web-oauth.mjs",
+    ".build/runtime/src/yxx-self-service-native-http.mjs",
+    ".build/runtime/tests/yxx-ss-008-native-boundary.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 1
+}

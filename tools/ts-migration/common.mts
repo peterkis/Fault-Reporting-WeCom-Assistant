@@ -98,8 +98,12 @@ export function mappings(root: string): { source: string; path: string; kind: Ou
 }
 export function inputs(root: string): FileDigest[] {
   const files = workspaceFiles(root).filter(p => /^(src|scripts|tests|contracts|database\/migrations|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter))\//u.test(p)
-    || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example'].includes(p)
-    || p.startsWith('plans/typescript-migration/') || p.startsWith('.github/workflows/'));
+    || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example','.gitattributes'].includes(p)
+    || p.startsWith('plans/typescript-migration/') || p.startsWith('.github/workflows/')
+    || ['plans/yxx-current-readiness-scope.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-ss-009-acceptance.json', '.github/review/pr21-evidence-exceptions.json',
+      '.github/review/yxx-current-evidence-adjudication.json', '.github/review/pr-evidence-delta.test.mjs',
+      '.github/review/verify-published-history.test.mjs', '.github/review/pr-evidence-delta.mjs',
+      '.github/review/verify-published-history.mjs'].includes(p));
   return files.map(p => ({ path: p, sha256: hash(readFileSync(safeFile(root, p))) }));
 }
 export function identity(root: string): SourceIdentity {

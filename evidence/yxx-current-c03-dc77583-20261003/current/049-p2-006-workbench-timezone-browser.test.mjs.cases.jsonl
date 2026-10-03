@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 10:22:26","event_epoch_ms":"1790994146757","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"system browser renders the same Workbench LocalDateTime under UTC, Tokyo, and New York","file":"tests/p2-006-workbench-timezone-browser.test.mjs","line":8,"nesting":0,"skip":false,"todo":false}

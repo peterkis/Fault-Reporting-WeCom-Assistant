@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: explicit new-fault label opens a separate Direct intake while ordinary supplemental wording stays in the prior issue
+ok 1 - explicit new-fault label opens a separate Direct intake while ordinary supplemental wording stays in the prior issue
+  ---
+  duration_ms: 6042.5202
+  type: 'test'
+  ...
+# Subtest: explicit new-fault Direct report does not consume an unrelated pending group guidance Journey
+ok 2 - explicit new-fault Direct report does not consume an unrelated pending group guidance Journey
+  ---
+  duration_ms: 3590.5205
+  type: 'test'
+  ...
+# Subtest: P2-G2 D12-030 active Direct session survives the P1 90-second fragment window
+ok 3 - P2-G2 D12-030 active Direct session survives the P1 90-second fragment window
+  ---
+  duration_ms: 4279.6195
+  type: 'test'
+  ...
+# Subtest: P2-G2 D12-031 explicit additional fault creates its own Journey and Ticket
+ok 4 - P2-G2 D12-031 explicit additional fault creates its own Journey and Ticket
+  ---
+  duration_ms: 4280.8888
+  type: 'test'
+  ...
+# Subtest: P2-G2 existing explicit new-report boundary remains available
+ok 5 - P2-G2 existing explicit new-report boundary remains available
+  ---
+  duration_ms: 3899.7919
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes another Reporter
+ok 6 - P2-G2 Direct Session never resumes another Reporter
+  ---
+  duration_ms: 3422.7071
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes another Bot
+ok 7 - P2-G2 Direct Session never resumes another Bot
+  ---
+  duration_ms: 4947.9972
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes ended Session within fragment window
+ok 8 - P2-G2 Direct Session never resumes ended Session within fragment window
+  ---
+  duration_ms: 2879.4884
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes ended Journey within fragment window
+ok 9 - P2-G2 Direct Session never resumes ended Journey within fragment window
+  ---
+  duration_ms: 2845.0343
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes closed Direct Leg within fragment window
+ok 10 - P2-G2 Direct Session never resumes closed Direct Leg within fragment window
+  ---
+  duration_ms: 3632.8536
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes mismatched persisted Reporter binding
+ok 11 - P2-G2 Direct Session never resumes mismatched persisted Reporter binding
+  ---
+  duration_ms: 4804.9305
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes exact configured idle limit
+ok 12 - P2-G2 Direct Session never resumes exact configured idle limit
+  ---
+  duration_ms: 4319.4758
+  type: 'test'
+  ...
+# Subtest: P2-G2 Direct Session never resumes expired Intake retention
+ok 13 - P2-G2 Direct Session never resumes expired Intake retention
+  ---
+  duration_ms: 3563.1024
+  type: 'test'
+  ...
+# Subtest: D12-008 P2-G2 Direct Session never resumes expired Journey retention
+ok 14 - D12-008 P2-G2 Direct Session never resumes expired Journey retention
+  ---
+  duration_ms: 4059.5225
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外补充：打印机也打印不了
+ok 15 - P2-G2 additive supplement or negation does not create another report: 另外补充：打印机也打印不了
+  ---
+  duration_ms: 3543.6755
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外门诊系统也没有问题
+ok 16 - P2-G2 additive supplement or negation does not create another report: 另外门诊系统也没有问题
+  ---
+  duration_ms: 3030.003
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外说明：打印机也打印不了
+ok 17 - P2-G2 additive supplement or negation does not create another report: 另外说明：打印机也打印不了
+  ---
+  duration_ms: 3456.0119
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外并不是门诊系统也登录不了。
+ok 18 - P2-G2 additive supplement or negation does not create another report: 另外并不是门诊系统也登录不了。
+  ---
+  duration_ms: 3634.1261
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外，如果门诊系统也登录不了怎么办？
+ok 19 - P2-G2 additive supplement or negation does not create another report: 另外，如果门诊系统也登录不了怎么办？
+  ---
+  duration_ms: 2999.8283
+  type: 'test'
+  ...
+# Subtest: P2-G2 additive supplement or negation does not create another report: 另外 补充打印机也打印不了
+ok 20 - P2-G2 additive supplement or negation does not create another report: 另外 补充打印机也打印不了
+  ---
+  duration_ms: 3335.6992
+  type: 'test'
+  ...
+# Subtest: P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=false; millisecond idle boundary=false
+ok 21 - P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=false; millisecond idle boundary=false
+  ---
+  duration_ms: 3012.9756
+  type: 'test'
+  ...
+# Subtest: P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=true; millisecond idle boundary=false
+ok 22 - P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=true; millisecond idle boundary=false
+  ---
+  duration_ms: 3109.3881
+  type: 'test'
+  ...
+# Subtest: P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=false; millisecond idle boundary=true
+ok 23 - P2-G2 supplement follows an already committed new issue while Session projection is delayed; previous ended=false; millisecond idle boundary=true
+  ---
+  duration_ms: 2984.9178
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 86332.8495

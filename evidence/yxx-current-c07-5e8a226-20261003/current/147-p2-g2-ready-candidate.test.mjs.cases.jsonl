@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 14:16:55","event_epoch_ms":"1791008215804","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"prepared-candidate gate rejects missing, changed and incomplete regression evidence","file":"tests/p2-g2-ready-candidate.test.mjs","line":13,"nesting":0,"skip":false,"todo":false}

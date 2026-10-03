@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createPostgresPool } from '../../src/platform/postgres-pool.mjs';
+import { formatEpochMsToShanghaiLocal } from '../../src/platform/time-contract.mjs';
 
 const RUN = randomUUID().replaceAll('-', '_').slice(0, 12);
 const databases = new Set();
@@ -68,7 +69,10 @@ export async function applyThrough022(pool) {
 }
 
 export async function seedPersistedIntake({ pool, text, chatType = 'group', requestType = 'UNKNOWN', status = 'WAITING_TRIAGE', tag = randomUUID().slice(0, 8) }) {
-  const receivedAt = '2026-09-03 12:00:00'; const retentionUntil = '2026-10-03 12:00:00';
+  // Live integration fixtures must remain eligible under the real retention guard.
+  const epoch = BigInt((await pool.query('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0].epoch);
+  const receivedAt = formatEpochMsToShanghaiLocal(String(epoch));
+  const retentionUntil = formatEpochMsToShanghaiLocal(String(epoch + 2592000000n));
   const message = await pool.query(
     `INSERT INTO channel.message_inbox(schema_version,provider,msg_id,idempotency_key,req_id,bot_id,
       chat_type,chat_id,sender_user_id,msg_type,received_at,raw_text,clean_text,normalized_message,
@@ -99,6 +103,7 @@ export async function seedPersistedIntake({ pool, text, chatType = 'group', requ
 }
 
 export async function seedCapacityDataset({ pool, tag = randomUUID().slice(0, 8) }) {
+  const epoch = (await pool.query('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0].epoch;
   await pool.query(
     `INSERT INTO channel.message_inbox(schema_version,provider,msg_id,idempotency_key,req_id,bot_id,
       chat_type,chat_id,sender_user_id,msg_type,received_at,raw_text,clean_text,normalized_message,
@@ -108,14 +113,14 @@ export async function seedCapacityDataset({ pool, tag = randomUUID().slice(0, 8)
       CASE WHEN i BETWEEN 301 AND 400 THEN 'single' ELSE 'group' END,
       CASE WHEN i BETWEEN 301 AND 400 THEN NULL ELSE format('group-cap-%s',i) END,
       format('user-cap-%s',i),'text',
-      '2026-09-03 13:00:00'::timestamp without time zone + ((i*4+t)||' seconds')::interval,
+      platform.local_from_epoch_ms($2::bigint) - interval '2004 seconds' + ((i*4+t)||' seconds')::interval,
       CASE WHEN i<=100 THEN '需人工判断' WHEN i<=400 THEN '处方提交不了' ELSE '系统不行' END,
       CASE WHEN i<=100 THEN '需人工判断' WHEN i<=400 THEN '处方提交不了' ELSE '系统不行' END,
       jsonb_build_object('msgtype','text','bot_mentioned',NOT (i BETWEEN 301 AND 400)),
       'COMPLETED','{}'::jsonb,'INTERNAL','trace-cap-'||i||'-'||t,
-      '2026-10-03 13:00:00'::timestamp without time zone,
-      '2026-09-03 13:00:00'::timestamp without time zone + ((i*4+t)||' seconds')::interval
-     FROM generate_series(1,500) i CROSS JOIN generate_series(1,4) t`, [tag],
+      platform.local_from_epoch_ms($2::bigint + 2592000000),
+      platform.local_from_epoch_ms($2::bigint) - interval '2004 seconds' + ((i*4+t)||' seconds')::interval
+     FROM generate_series(1,500) i CROSS JOIN generate_series(1,4) t`, [tag, epoch],
   );
   await pool.query(
     `INSERT INTO intake.service_intake(intake_no,source_channel,source_provider,source_bot_id,
@@ -125,11 +130,11 @@ export async function seedCapacityDataset({ pool, tag = randomUUID().slice(0, 8)
       CASE WHEN i BETWEEN 301 AND 400 THEN 'WECOM_DIRECT' ELSE 'WECOM_GROUP' END,
       'WECOM_AIBOT','bot-test',CASE WHEN i BETWEEN 301 AND 400 THEN 'single' ELSE 'group' END,
       CASE WHEN i BETWEEN 301 AND 400 THEN NULL ELSE format('group-cap-%s',i) END,
-      format('user-cap-%s',i),'INTERNAL','2026-10-03 13:00:00'::timestamp without time zone,
+      format('user-cap-%s',i),'INTERNAL',platform.local_from_epoch_ms($2::bigint + 2592000000),
       'UNKNOWN',format('CAP:%s:%s',$1::text,i),'WAITING_TRIAGE',message.id,4,
-      '2026-09-03 13:00:00'::timestamp without time zone + ((i*4+4)||' seconds')::interval,1
+      platform.local_from_epoch_ms($2::bigint) - interval '2004 seconds' + ((i*4+4)||' seconds')::interval,1
      FROM generate_series(1,500) i JOIN channel.message_inbox message
-       ON message.msg_id=format('cap-%s-%s-1',$1::text,i)`, [tag],
+       ON message.msg_id=format('cap-%s-%s-1',$1::text,i)`, [tag, epoch],
   );
   await pool.query(
     `INSERT INTO intake.service_intake_message(intake_id,channel_message_id,relation_type,sequence_no,linked_at,trace_id)

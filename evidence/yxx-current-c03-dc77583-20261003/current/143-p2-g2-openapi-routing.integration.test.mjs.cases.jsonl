@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 10:41:22","event_epoch_ms":"1790995282921","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P2-G2 parsed OpenAPI server and Incident paths resolve to the actual authenticated HTTP route","file":"tests/p2-g2-openapi-routing.integration.test.mjs","line":15,"nesting":0,"skip":false,"todo":false}

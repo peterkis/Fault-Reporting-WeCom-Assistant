@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
+import { testRoots } from './helpers/migration-roots.mjs';
 
 const root = process.cwd();
 const text = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -11,6 +12,25 @@ const json = (file) => JSON.parse(text(file));
 test('ARCH-006 validator passes', () => {
   const result = spawnSync(process.execPath, ['scripts/validate-arch-006-rule-first-service-loop.mjs'], { cwd: root, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
+test('ARCH-006 current structure rejects missing scope and changed historical evidence', () => {
+  const { sourceRoot, runtimeRoot } = testRoots();
+  for (const relative of ['plans/yxx-current-readiness-scope.json', 'evidence/g0-005-active-push-matrix.md']) {
+    const file = path.join(sourceRoot, relative), original = fs.readFileSync(file);
+    try {
+      if (relative.endsWith('.json')) fs.unlinkSync(file);
+      else fs.appendFileSync(file, '\nSynthetic unauthorized change\n');
+      const result = spawnSync(process.execPath, [path.join(runtimeRoot, 'scripts/validate-arch-006-rule-first-service-loop.mjs')], {
+        cwd: root, encoding: 'utf8', windowsHide: true, timeout: 90_000,
+      });
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.match(result.stderr, /current ADR-0027 structure and protected history are valid/u);
+    } finally {
+      fs.writeFileSync(file, original);
+      assert.ok(fs.readFileSync(file).equals(original));
+    }
+  }
 });
 
 test('machine state preserves ARCH-006 facts and separately authorized P2-015/P2-016 successor lifecycles', () => {

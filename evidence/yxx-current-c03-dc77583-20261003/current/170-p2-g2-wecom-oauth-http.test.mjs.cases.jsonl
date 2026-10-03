@@ -1,0 +1,2 @@
+{"event_time":"2026-10-03 10:44:33","event_epoch_ms":"1790995473574","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"真实 HTTP 授权往返使用安全 Cookie 和清洁成功 URL，不向浏览器泄露成员身份","file":"tests/p2-g2-wecom-oauth-http.test.mjs","line":8,"nesting":0,"skip":false,"todo":false}
+{"event_time":"2026-10-03 10:44:33","event_epoch_ms":"1790995473601","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"HTTP 关闭态拒绝所有认证路径且不调用提供商","file":"tests/p2-g2-wecom-oauth-http.test.mjs","line":36,"nesting":0,"skip":false,"todo":false}

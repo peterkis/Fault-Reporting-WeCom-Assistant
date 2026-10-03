@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: creates one Service Intake, primary message relation and received audit event
+ok 1 - creates one Service Intake, primary message relation and received audit event
+  ---
+  duration_ms: 404.2883
+  type: 'test'
+  ...
+# Subtest: aggregates multiple supplements into one Intake without creating a Ticket
+ok 2 - aggregates multiple supplements into one Intake without creating a Ticket
+  ---
+  duration_ms: 34.7583
+  type: 'test'
+  ...
+# Subtest: explicit new-report intent starts a new Intake inside the 90-second window
+ok 3 - explicit new-report intent starts a new Intake inside the 90-second window
+  ---
+  duration_ms: 15.4686
+  type: 'test'
+  ...
+# Subtest: an explicit reference to another ticket closes the current aggregation window
+ok 4 - an explicit reference to another ticket closes the current aggregation window
+  ---
+  duration_ms: 23.5426
+  type: 'test'
+  ...
+# Subtest: pure image creates a waiting Intake and emits a clarification audit event
+ok 5 - pure image creates a waiting Intake and emits a clarification audit event
+  ---
+  duration_ms: 10.3564
+  type: 'test'
+  ...
+# Subtest: a description clarifies the waiting image Intake instead of creating another Intake
+ok 6 - a description clarifies the waiting image Intake instead of creating another Intake
+  ---
+  duration_ms: 19.4992
+  type: 'test'
+  ...
+# Subtest: concurrent distinct messages in one context aggregate into exactly one Intake
+ok 7 - concurrent distinct messages in one context aggregate into exactly one Intake
+  ---
+  duration_ms: 191.2464
+  type: 'test'
+  ...
+# Subtest: reversed lock acquisition still aggregates bounded timestamp inversion and preserves valid update time
+ok 8 - reversed lock acquisition still aggregates bounded timestamp inversion and preserves valid update time
+  ---
+  duration_ms: 24.2735
+  type: 'test'
+  ...
+# Subtest: reversed lock acquisition never crosses an explicit new-context boundary
+ok 9 - reversed lock acquisition never crosses an explicit new-context boundary
+  ---
+  duration_ms: 76.8348
+  type: 'test'
+  ...
+# Subtest: classifies the documented request types without AI and honors incident negation
+ok 10 - classifies the documented request types without AI and honors incident negation
+  ---
+  duration_ms: 110.1249
+  type: 'test'
+  ...
+# Subtest: standalone thanks is CHATTER without an unnecessary clarification request
+ok 11 - standalone thanks is CHATTER without an unnecessary clarification request
+  ---
+  duration_ms: 9.4859
+  type: 'test'
+  ...
+# Subtest: aggregate privacy is strongest, retention is earliest, and Inbox snapshots contain no report summary
+ok 12 - aggregate privacy is strongest, retention is earliest, and Inbox snapshots contain no report summary
+  ---
+  duration_ms: 17.2044
+  type: 'test'
+  ...
+# Subtest: includes exactly 90 seconds and starts a new Intake after the window
+ok 13 - includes exactly 90 seconds and starts a new Intake after the window
+  ---
+  duration_ms: 30.5777
+  type: 'test'
+  ...
+# Subtest: different senders and conversations stay separate while direct chat maps to WECOM_DIRECT
+ok 14 - different senders and conversations stay separate while direct chat maps to WECOM_DIRECT
+  ---
+  duration_ms: 24.4873
+  type: 'test'
+  ...
+# Subtest: Channel Message replay returns the original Intake result without duplicate relations or events
+ok 15 - Channel Message replay returns the original Intake result without duplicate relations or events
+  ---
+  duration_ms: 14.8124
+  type: 'test'
+  ...
+# Subtest: downstream failure rolls back Channel Message, Intake, relations and events before a clean retry
+ok 16 - downstream failure rolls back Channel Message, Intake, relations and events before a clean retry
+  ---
+  duration_ms: 15.5127
+  type: 'test'
+  ...
+# Subtest: migration fails closed on legacy Inbox summaries and upgrades pre-redacted aggregates
+ok 17 - migration fails closed on legacy Inbox summaries and upgrades pre-redacted aggregates
+  ---
+  duration_ms: 130.0533
+  type: 'test'
+  ...
+# Subtest: migration runner exposes only the exact legacy-remediation failure as non-retryable
+ok 18 - migration runner exposes only the exact legacy-remediation failure as non-retryable
+  ---
+  duration_ms: 0.3657
+  type: 'test'
+  ...
+# Subtest: migration is limited to Service Intake, message relations and Intake audit events
+ok 19 - migration is limited to Service Intake, message relations and Intake audit events
+  ---
+  duration_ms: 137.4836
+  type: 'test'
+  ...
+# Subtest: Service Intake JSON Schema freezes the domain boundary and P1-004 version semantics
+ok 20 - Service Intake JSON Schema freezes the domain boundary and P1-004 version semantics
+  ---
+  duration_ms: 1.2298
+  type: 'test'
+  ...
+# Subtest: Service Intake migration is re-entrant
+ok 21 - Service Intake migration is re-entrant
+  ---
+  duration_ms: 4.1053
+  type: 'test'
+  ...
+# Subtest: invalid aggregation windows fail before a processor can access a transaction
+ok 22 - invalid aggregation windows fail before a processor can access a transaction
+  ---
+  duration_ms: 0.3941
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1570.5438

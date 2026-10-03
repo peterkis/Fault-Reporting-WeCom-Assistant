@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: P2-G2 persistent spinning in a known software service is an evidenced fault without a root-cause claim
+ok 1 - P2-G2 persistent spinning in a known software service is an evidenced fault without a root-cause claim
+  ---
+  duration_ms: 18.9875
+  type: 'test'
+  ...
+# Subtest: P2-G2 spinning repair does not convert thanks, rotation, forwarding or explicit recovery into this symptom
+ok 2 - P2-G2 spinning repair does not convert thanks, rotation, forwarding or explicit recovery into this symptom
+  ---
+  duration_ms: 4.7859
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 299.7232

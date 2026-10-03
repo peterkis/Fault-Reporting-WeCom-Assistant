@@ -1,0 +1,50 @@
+{
+  "path": "tests/p1-011-backup-restore-script.test.mjs",
+  "runtime_path": "tests/p1-011-backup-restore-script.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-011-backup-restore-script.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "20bd158ad85f1a4cae39ef234fb196119ea18f50fd96a193e67dd519b0e0e910",
+  "executed_sha256": "20bd158ad85f1a4cae39ef234fb196119ea18f50fd96a193e67dd519b0e0e910",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "007-p1-011-backup-restore-script.test.mjs.tap",
+  "tap_sha256": "539b82a40b41f4e559c13209086577b26c51f5ba61c02c78886b150856d60b1f",
+  "tap_bytes": 855,
+  "stderr_path": "007-p1-011-backup-restore-script.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "007-p1-011-backup-restore-script.test.mjs.cases.jsonl",
+  "case_trace_sha256": "af62617fd0fd4a60a56bc2e47a7746fd17be46ce3563cd0327f58e2e3f31a48b",
+  "case_trace_bytes": 974,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/scripts/p1-011-backup-restore.mjs",
+    ".build/runtime/src/p1-003-channel-message-inbox.mjs",
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/p1-006-ticket-state-actions.mjs",
+    ".build/runtime/src/p1-010-ticket-closure.mjs",
+    ".build/runtime/src/p1-011-encrypted-backup.mjs",
+    ".build/runtime/src/p1-011-pilot-operations-baseline.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p1-011-backup-restore-script.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: SS-008 FULL readiness requires both Web migrations only when the extension is mounted
+ok 1 - SS-008 FULL readiness requires both Web migrations only when the extension is mounted
+  ---
+  duration_ms: 6273.0654
+  type: 'test'
+  ...
+# Subtest: SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads
+ok 2 - SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket workbench -> member; write shutdown retains reads
+  ---
+  duration_ms: 9050.3907
+  type: 'test'
+  ...
+# Subtest: SS-008 OAUTH_ONLY never touches a supplied DB; READONLY rejects Web writes with erroneous flags
+ok 3 - SS-008 OAUTH_ONLY never touches a supplied DB; READONLY rejects Web writes with erroneous flags
+  ---
+  duration_ms: 19.5262
+  type: 'test'
+  ...
+# Subtest: SS-008 delegated proof and realtime ticket scope remain closed and bounded
+ok 4 - SS-008 delegated proof and realtime ticket scope remain closed and bounded
+  ---
+  duration_ms: 2.5866
+  type: 'test'
+  ...
+# Subtest: SS-008 four actual sources coexist on 033/034 with independent lineage and Web APP_ONLY
+ok 5 - SS-008 four actual sources coexist on 033/034 with independent lineage and Web APP_ONLY
+  ---
+  duration_ms: 8416.4225
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25249.5618

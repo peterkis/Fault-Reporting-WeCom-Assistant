@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 11:06:42",
+  "event_epoch_ms": "1790996802546",
+  "tested_head": "dc775835a3b792d2f3f36dcbbfe6ade5a73033a1",
+  "tested_tree": "92bfd88178872f1ee13d0741a8c7e540c028f38d",
+  "candidate_fingerprint": "d8dab8daba67b3f94e19deea9a1b7c0c014b84fe76fa7f425349488bccdbeb5a",
+  "kind": "CURRENT_ARTIFACT_CATALOG_ATTESTATION",
+  "report": {
+    "path": "evidence/yxx-current-c03-dc77583-20261003/report.json",
+    "bytes": 2958,
+    "sha256": "41d9a4a41f0fc83e9dd70c6046445d2a10f1694d33fa5594c0a97a3e3ceb3c16",
+    "encoding": "utf-8"
+  },
+  "catalog": {
+    "path": "evidence/yxx-current-c03-dc77583-20261003/artifact-catalog.json",
+    "bytes": 242550,
+    "sha256": "f1001665bfeb17e68a07e324f271f04fb34c561acd2f1bac956d16c518d0a7a4"
+  },
+  "original_files": 935,
+  "original_records_stored_once": true,
+  "summary_files_role": "DERIVED_AGGREGATE_OF_PER_FILE_ORIGINALS",
+  "readiness": false,
+  "live_authorized": false,
+  "pending": "Actual-root strict verification and final exact-head CI/review"
+}

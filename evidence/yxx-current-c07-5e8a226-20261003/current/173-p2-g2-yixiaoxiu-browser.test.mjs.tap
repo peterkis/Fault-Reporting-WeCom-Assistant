@@ -1,0 +1,42 @@
+TAP version 13
+# YXX_SCREENSHOT {"event_time":"2026-10-03 14:20:10","event_epoch_ms":"1791008410891","width":1440,"path":"C:\\\\Users\\\\zqpet\\\\AppData\\\\Local\\\\Temp\\\\yxx-browser-screenshots-9f52e71e-9e96-491b-a7a9-78749786166d\\\\1440.png","sha256":"183958dddb3891f461d01cf7b3e72929a4d23685b4776c186f8f8d908b14e595"}
+# Subtest: YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900
+ok 1 - YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 1440x900
+  ---
+  duration_ms: 6943.0927
+  type: 'test'
+  ...
+# YXX_SCREENSHOT {"event_time":"2026-10-03 14:20:17","event_epoch_ms":"1791008417923","width":390,"path":"C:\\\\Users\\\\zqpet\\\\AppData\\\\Local\\\\Temp\\\\yxx-browser-screenshots-9f52e71e-9e96-491b-a7a9-78749786166d\\\\390.png","sha256":"29cbf95fa2adb5ffc0214132a86f23ef02cbaaabe997224285586d5036680fa7"}
+# Subtest: YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844
+ok 2 - YXX-02 YXX-19 YXX-35 YXX-40 YXX-41 real Edge HTTPS member entry 390x844
+  ---
+  duration_ms: 6967.9803
+  type: 'test'
+  ...
+# Subtest: YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag
+ok 3 - YXX-13 YXX-25 YXX-36 old fragment reaches canonical member page and failed Timeline retries without accepting ETag
+  ---
+  duration_ms: 6319.1437
+  type: 'test'
+  ...
+# Subtest: YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge
+ok 4 - YXX-15 simultaneous first-tab logins retain separate refs and same-context cookies in real Edge
+  ---
+  duration_ms: 6202.0759
+  type: 'test'
+  ...
+# Subtest: YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data
+ok 5 - YXX-22 YXX-23 YXX-24 late detail, logout, identity switch and browser history clear old data
+  ---
+  duration_ms: 7454.9605
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 34383.5138

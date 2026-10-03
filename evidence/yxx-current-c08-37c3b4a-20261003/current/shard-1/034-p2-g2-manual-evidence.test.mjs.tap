@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: manual evidence consumes exact human assertion and preserved fragment; ACK, altered claim and changed fragment are rejected
+ok 1 - manual evidence consumes exact human assertion and preserved fragment; ACK, altered claim and changed fragment are rejected
+  ---
+  duration_ms: 37.062
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 420.5711

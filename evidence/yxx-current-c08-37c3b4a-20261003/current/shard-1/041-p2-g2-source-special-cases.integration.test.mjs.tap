@@ -1,0 +1,43 @@
+TAP version 13
+# Subtest: C029 actual image without OCR asks for description, with no fabricated text or Ticket
+ok 1 - C029 actual image without OCR asks for description, with no fabricated text or Ticket
+  ---
+  duration_ms: 2742.7651
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-C029","surface":"NORMAL_IMAGE_WITHOUT_OCR","observation":{"result_code":"NEEDS_DESCRIPTION","reason_code":"ONE_DESCRIPTION_REQUIRED","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"REQUEST_ONE_DESCRIPTION","state":"EXECUTED","result_ref_type":"COMMUNICATION"}],"safe_result_sha256":"457a8142369356042d526e3e7062938a2e1b9493140dea124055abe18782ff14","provenance":[]}}
+# Subtest: C044 source has two trusted people, not three; each fault retains its own Ticket
+ok 2 - C044 source has two trusted people, not three; each fault retains its own Ticket
+  ---
+  duration_ms: 2875.0986
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-C044","surface":"NORMAL_TWO_REPORTER_CONTEXT","observations":[{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"7c5740e6ca3ba1201e62ac72577fd13a87eeed1bb1cf0dd8e87cc5c8e8b81c48","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"6cf936a9b80203e861fb508540e7ca5961bfb596d3b16445b97befdd3c18780d","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-031","source_kind":"REPORTER_EXPLICIT","source_hash":"6cf936a9b80203e861fb508540e7ca5961bfb596d3b16445b97befdd3c18780d","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-276","source_kind":"REPORTER_EXPLICIT","source_hash":"6cf936a9b80203e861fb508540e7ca5961bfb596d3b16445b97befdd3c18780d","status":"ACTIVE"}]},{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"7af5ca30fc983de070ba2735d4cf29b09da5f5c30f3fa2006ac7bf3b6607a702","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-002","source_kind":"REPORTER_EXPLICIT","source_hash":"9d4b480ee12124ac8aee35508a3ed6f077c80087d42f6a1e898a69ee047822ed","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"9d4b480ee12124ac8aee35508a3ed6f077c80087d42f6a1e898a69ee047822ed","status":"ACTIVE"}]},{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"68d2dd863f0b5bbc5426c805d97b6582ac451dff356774967b51c8b01f7b352b","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-002","source_kind":"REPORTER_EXPLICIT","source_hash":"f84e643b37c9b87dcc5924679a6c8e0600f0ed4920ec2a1f6f2a3733f7ab82e1","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"f84e643b37c9b87dcc5924679a6c8e0600f0ed4920ec2a1f6f2a3733f7ab82e1","status":"ACTIVE"}]}],"distinct_reporters":2,"tickets":2,"candidates":0}
+# Subtest: C054 real prior Ticket survives an authorized internal recovery note and Reporter still-failing reply
+ok 3 - C054 real prior Ticket survives an authorized internal recovery note and Reporter still-failing reply
+  ---
+  duration_ms: 2865.5738
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-C054","surface":"NORMAL_REPLY_WITH_AUTHENTICATED_INTERNAL_NOTE_PREREQUISITE","current_message_persisted":true,"current_decision_covers_reply":true,"existing_ticket_action_verified":true,"observation":{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"dd94043e07659a7de909b16c65043d5460511539e454ba8c8687a94867ad6c71","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-053","source_kind":"REPORTER_EXPLICIT","source_hash":"011ccf080f266e0a94bbc6f59d6ee7f43e0c1ad1fa5e5db20ca28bac6669eaeb","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"011ccf080f266e0a94bbc6f59d6ee7f43e0c1ad1fa5e5db20ca28bac6669eaeb","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"011ccf080f266e0a94bbc6f59d6ee7f43e0c1ad1fa5e5db20ca28bac6669eaeb","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-276","source_kind":"REPORTER_EXPLICIT","source_hash":"011ccf080f266e0a94bbc6f59d6ee7f43e0c1ad1fa5e5db20ca28bac6669eaeb","status":"ACTIVE"}]}}
+# Subtest: C034 role-qualified conflicting service facts remain separate; no scope or Ticket is invented by the pure mechanism
+ok 4 - C034 role-qualified conflicting service facts remain separate; no scope or Ticket is invented by the pure mechanism
+  ---
+  duration_ms: 48.0809
+  type: 'test'
+  ...
+# Subtest: C090 build-time corpus privacy executes provenance and identifier rejection, not a fake runtime Review
+ok 5 - C090 build-time corpus privacy executes provenance and identifier rejection, not a fake runtime Review
+  ---
+  duration_ms: 14.2916
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9073.6066

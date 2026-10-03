@@ -1,0 +1,43 @@
+{
+  "path": "tests/p2-001-conversation-contracts.test.mjs",
+  "runtime_path": "tests/p2-001-conversation-contracts.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-001-conversation-contracts.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "9f2a8585a3c4cff5ec7161c9827ad93f73e6e7099c9c275051b24b5b12a2503e",
+  "executed_sha256": "9f2a8585a3c4cff5ec7161c9827ad93f73e6e7099c9c275051b24b5b12a2503e",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "010-p2-001-conversation-contracts.test.mjs.tap",
+  "tap_sha256": "eecd04adaf6d240cc1ac5284aabd269405f493d7a6404120bdf275a225717aab",
+  "tap_bytes": 2840,
+  "stderr_path": "010-p2-001-conversation-contracts.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "010-p2-001-conversation-contracts.test.mjs.cases.jsonl",
+  "case_trace_sha256": "7c1467f8323c0d0794e236a16d4e72f25c77e1db53fab18d824c62ca3a54c0a1",
+  "case_trace_bytes": 4013,
+  "counts": {
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-001-conversation-contracts.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-001-conversation-contracts.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 13
+}

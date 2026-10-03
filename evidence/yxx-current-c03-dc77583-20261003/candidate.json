@@ -1,0 +1,10 @@
+{
+  "observed_at": "2026-10-03T01:21:21.8110438+00:00",
+  "tested_head": "dc775835a3b792d2f3f36dcbbfe6ade5a73033a1",
+  "core_autocrlf": "true",
+  "scope_base": "562a96ffdd7148d729ab0eed9d215abe894f12c2",
+  "published": false,
+  "kind": "LOCAL_FROZEN_CANDIDATE",
+  "tested_tree": "92bfd88178872f1ee13d0741a8c7e540c028f38d",
+  "core_longpaths": "true"
+}

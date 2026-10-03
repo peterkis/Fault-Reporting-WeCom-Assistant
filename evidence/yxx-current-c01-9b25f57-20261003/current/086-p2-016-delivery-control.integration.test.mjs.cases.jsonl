@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 08:03:09","event_epoch_ms":"1790985789988","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"Ticket delivery operator commands authorize before receipt, persist idempotence and never blindly retry UNKNOWN","file":"tests/p2-016-delivery-control.integration.test.mjs","line":15,"nesting":0,"skip":false,"todo":false}

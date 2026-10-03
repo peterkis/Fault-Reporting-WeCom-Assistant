@@ -1,0 +1,46 @@
+{
+  "path": "tests/p1-012-wecom-burst-ui-script.test.mjs",
+  "runtime_path": "tests/p1-012-wecom-burst-ui-script.test.mjs",
+  "executed_path": "tests/p1-012-wecom-burst-ui-script.test.mjs",
+  "execution_cwd": ".",
+  "source_sha256": "047f8aa729270a409638c123928a507843ae78c2f05992be608b55acbccc6644",
+  "executed_sha256": "047f8aa729270a409638c123928a507843ae78c2f05992be608b55acbccc6644",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "SOURCE_HOST",
+  "node_flags": [
+    "--import",
+    "file:///C:/Users/zqpet/.codex/artifacts/yxx-current-readiness-20261002/stage07-c09/checkout/.build/tools/source-hook.mjs",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "009-p1-012-wecom-burst-ui-script.test.mjs.tap",
+  "tap_sha256": "095f7e1770b2155edade4ac329937301932a48ac546498f5916bf6d076369e81",
+  "tap_bytes": 865,
+  "stderr_path": "009-p1-012-wecom-burst-ui-script.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "009-p1-012-wecom-burst-ui-script.test.mjs.cases.jsonl",
+  "case_trace_sha256": "5264e689a3f30b8f67c652626340366f8ce72e5804092d0837460f79e4cd4876",
+  "case_trace_bytes": 978,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/tools/bootstrap.mjs",
+    ".build/tools/common.mjs",
+    ".build/tools/source-hook.mjs",
+    ".build/tools/source-host.mjs",
+    ".build/tools/verify-artifact.mjs",
+    "tests/p1-012-wecom-burst-ui-script.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

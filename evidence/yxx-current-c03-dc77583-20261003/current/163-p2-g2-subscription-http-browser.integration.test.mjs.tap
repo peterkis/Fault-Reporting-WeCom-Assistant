@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation
+ok 1 - G2-I05/I06/I07 synthetic retention fault: HTTP expiry, wrong Reporter and stale RESUME reject; ENDED relink renders PENDING without activation
+  ---
+  duration_ms: 4759.6074
+  type: 'test'
+  ...
+# {"scenario_ids":["G2-I05","G2-I06","G2-I07"],"surface":"SYNTHETIC_RETENTION_REAL_HTTP_DB_BROWSER","wrong_reporter_and_stale_resume_rejected":true,"expired_destination_excluded":true,"relink_pending_without_activation":true,"notification_delta":0}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5278.9496

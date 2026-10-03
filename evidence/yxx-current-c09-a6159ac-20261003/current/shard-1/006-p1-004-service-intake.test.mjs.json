@@ -1,0 +1,52 @@
+{
+  "path": "tests/p1-004-service-intake.test.mjs",
+  "runtime_path": "tests/p1-004-service-intake.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-004-service-intake.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "0d2bd54de5dfb51d7fddc5f514ad87af11ac814f3e27fbee42d9cf31fa1b9503",
+  "executed_sha256": "0d2bd54de5dfb51d7fddc5f514ad87af11ac814f3e27fbee42d9cf31fa1b9503",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "MIXED_EXPLICIT_ROOTS",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "006-p1-004-service-intake.test.mjs.tap",
+  "tap_sha256": "eba0940339f269e922c0b27505dc67814be57d0837a066027c62553c1f4e84a0",
+  "tap_bytes": 5179,
+  "stderr_path": "006-p1-004-service-intake.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "006-p1-004-service-intake.test.mjs.cases.jsonl",
+  "case_trace_sha256": "c576d86706ccbe9e095e0ecb713f853665b6ce55cf8cc780d1a96b12379b5405",
+  "case_trace_bytes": 6839,
+  "counts": {
+    "tests": 22,
+    "pass": 22,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/scripts/migrate-current-baseline.mjs",
+    ".build/runtime/scripts/p2-012-migrate.mjs",
+    ".build/runtime/scripts/p2-015-migrate.mjs",
+    ".build/runtime/scripts/p2-016-migrate.mjs",
+    ".build/runtime/scripts/yxx-self-service-migrate.mjs",
+    ".build/runtime/src/p1-002-wecom-sdk-adapter.mjs",
+    ".build/runtime/src/p1-003-channel-message-inbox.mjs",
+    ".build/runtime/src/p1-004-service-intake.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/helpers/migration-roots.mjs",
+    ".build/runtime/tests/p1-004-service-intake.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 22
+}

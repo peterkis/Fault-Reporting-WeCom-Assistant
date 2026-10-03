@@ -1,0 +1,40 @@
+{
+  "path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+  "runtime_path": "tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-yixiaoxiu-oauth.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "dea6e7797f2c1db98d249fc4318ed000ad46126e4acab2f4532df4ccf07165e0",
+  "executed_sha256": "dea6e7797f2c1db98d249fc4318ed000ad46126e4acab2f4532df4ccf07165e0",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "179-p2-g2-yixiaoxiu-oauth.test.mjs.tap",
+  "tap_sha256": "12e83a9f50164111a83c96171c5bc633a843a905ac915452fa522d67126f4714",
+  "tap_bytes": 1771,
+  "stderr_path": "179-p2-g2-yixiaoxiu-oauth.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "179-p2-g2-yixiaoxiu-oauth.test.mjs.cases.jsonl",
+  "case_trace_sha256": "b12400d944e2e45dd6c95d6c2ded93421f1a1d39987a96482734d0dd8c45323e",
+  "case_trace_bytes": 1997,
+  "counts": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-g2-wecom-web-oauth.mjs",
+    ".build/runtime/tests/p2-g2-yixiaoxiu-oauth.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 6
+}

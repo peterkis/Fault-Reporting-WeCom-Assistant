@@ -1,0 +1,47 @@
+{
+  "path": "tests/p2-g2-spinning-recognition.test.mjs",
+  "runtime_path": "tests/p2-g2-spinning-recognition.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-spinning-recognition.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "9de617488f0d9ba2b97743ac81b0edd4708cc40406cbb86fdcffff41226ea988",
+  "executed_sha256": "9de617488f0d9ba2b97743ac81b0edd4708cc40406cbb86fdcffff41226ea988",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "162-p2-g2-spinning-recognition.test.mjs.tap",
+  "tap_sha256": "88182a55a7aaa9c0b57a9111af194e2cd0704e79a0a36be1b4a35a0948de1bac",
+  "tap_bytes": 672,
+  "stderr_path": "162-p2-g2-spinning-recognition.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "162-p2-g2-spinning-recognition.test.mjs.cases.jsonl",
+  "case_trace_sha256": "7d75bb0ddbe675d460e99209f1bf57117faee8bb27badf378de6ae864b3cf907",
+  "case_trace_bytes": 677,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-007-alias-resolver.mjs",
+    ".build/runtime/src/p2-007-clarification-planner.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-007-fact-provenance.mjs",
+    ".build/runtime/src/p2-007-fault-taxonomy.mjs",
+    ".build/runtime/src/p2-007-rule-engine.mjs",
+    ".build/runtime/src/p2-007-service-catalog.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-g2-spinning-recognition.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

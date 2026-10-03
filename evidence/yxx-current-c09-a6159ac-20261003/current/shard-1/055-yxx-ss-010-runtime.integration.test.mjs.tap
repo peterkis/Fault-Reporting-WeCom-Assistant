@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets
+ok 1 - SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets
+  ---
+  duration_ms: 7193.1085
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-03 18:49:49","event_epoch_ms":"1791024589925","kind":"cleanup","status":"PASS","candidate_fingerprint":"760336b3ec2076f32717613945b11c19dcc7e6d06512608f96934c71ed1e76a7","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC092 preflight rejects occupied port drift and resumed foreign scope without processing pending
+ok 2 - SS010 AC092 preflight rejects occupied port drift and resumed foreign scope without processing pending
+  ---
+  duration_ms: 5186.0094
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-03 18:49:55","event_epoch_ms":"1791024595183","kind":"cleanup","status":"PASS","candidate_fingerprint":"760336b3ec2076f32717613945b11c19dcc7e6d06512608f96934c71ed1e76a7","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC092 concurrent global and supplement limits count committed commands and never charge replays
+ok 3 - SS010 AC092 concurrent global and supplement limits count committed commands and never charge replays
+  ---
+  duration_ms: 3539.6206
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-03 18:49:58","event_epoch_ms":"1791024598673","kind":"cleanup","status":"PASS","candidate_fingerprint":"760336b3ec2076f32717613945b11c19dcc7e6d06512608f96934c71ed1e76a7","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope
+ok 4 - SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope
+  ---
+  duration_ms: 3579.9904
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-03 18:50:02","event_epoch_ms":"1791024602202","kind":"cleanup","status":"PASS","candidate_fingerprint":"760336b3ec2076f32717613945b11c19dcc7e6d06512608f96934c71ed1e76a7","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC094 lost controller IPC stops roles without starting a Gateway or deleting facts
+ok 5 - SS010 AC094 lost controller IPC stops roles without starting a Gateway or deleting facts
+  ---
+  duration_ms: 4895.5266
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-03 18:50:07","event_epoch_ms":"1791024607236","kind":"cleanup","status":"PASS","candidate_fingerprint":"760336b3ec2076f32717613945b11c19dcc7e6d06512608f96934c71ed1e76a7","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25034.9311

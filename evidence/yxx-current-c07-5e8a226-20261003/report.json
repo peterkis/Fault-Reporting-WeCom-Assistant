@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "contract": "ADR-0027",
+  "run_id": "c07-5e8a226-20261003",
+  "event_time": "2026-10-03 14:45:11",
+  "event_epoch_ms": "1791009911213",
+  "tested_head": "5e8a226f5bc5599a567dc5eba620527f47b48ea7",
+  "tested_tree": "b78bfb4db04315547a245b0e34458523fbbaf361",
+  "candidate_fingerprint": "f6f33ae1c0ce17ae218d0311dab196cb8e49b0536611d619d3db914aa774b644",
+  "scope_sha256": "0266c900bea7ef28b2300f058ad044afa26dde5c17db872b0b2a0e2efe4e003b",
+  "acceptance_sha256": "ebc5523ff4576a699793328b5dc90ad9babfa0f25e500a0b2da9a2b00ad46290",
+  "status": "CURRENT_AUTOMATION_COMPLETE",
+  "live_authorized": false,
+  "parent_gate_advanced": false,
+  "historical_live_facts": "PRESERVED_NOT_REVALIDATED",
+  "build": {
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/build-manifest.json",
+    "bytes": 344049,
+    "sha256": "ea3d27e30fc43294a5adade4ecde9154448735506fb0e00ed3aa36f8fe36a016"
+  },
+  "current_runs": [
+    {
+      "path": "evidence/yxx-current-c07-5e8a226-20261003/current/summary.json",
+      "bytes": 1557534,
+      "sha256": "1e6a53dec93f5d67d0fc57aa00a20041bbe2ea113f226d6ca06ff5a794b16132"
+    }
+  ],
+  "historical": {
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/historical/catalog.json",
+    "bytes": 717,
+    "sha256": "f6cab170d0f06e7f6a5ea8dbf31c76eb7b5dedfb2b385dfed82d6b0277954066"
+  },
+  "specialized": {
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/specialized.json",
+    "bytes": 8387,
+    "sha256": "c736dda69040049c888013ad342ecc47e39452866bcac7967dea286787690fd8"
+  },
+  "migration_scope": {
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/migration-scope.json",
+    "bytes": 524,
+    "sha256": "68bd847dfddce3deaacb931d54cd181f863ec4f5272cf71f89cc5203e714d193"
+  },
+  "cleanup": {
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/cleanup.json",
+    "bytes": 3785,
+    "sha256": "a065acbb499827c999b29b9f6379cbc0d3ba126d184d8fdfaa0e901524662e21"
+  },
+  "reviews": [
+    {
+      "path": "evidence/yxx-current-c07-5e8a226-20261003/reviews/spec.json",
+      "bytes": 849,
+      "sha256": "bf1901b9fccea08cd655bdd4f35f22ac849f7507fda3553aa7abf8c9849b8f48"
+    },
+    {
+      "path": "evidence/yxx-current-c07-5e8a226-20261003/reviews/standards.json",
+      "bytes": 864,
+      "sha256": "9ae3ad45e54cb9d8a1a99ac1cc6f91341829cd7679c0bf220131130abd71a9b8"
+    }
+  ],
+  "source_accounting": {
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/source-accounting.json",
+    "bytes": 213519,
+    "sha256": "bfda8d8e5e04c4e3a4e6887cc6e3d37a8f90d29d1a91fcda3f78d4086cb2f2a4"
+  },
+  "scenarios": {
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/scenarios.json",
+    "bytes": 135236,
+    "sha256": "c86601d7c84df29e258c7093771b533f722b1ebf145c20785d9286018593c4f1"
+  },
+  "assembly_checks": {
+    "path": "evidence/yxx-current-c07-5e8a226-20261003/assembly-checks.json",
+    "bytes": 985,
+    "sha256": "09d2bf729ddb52bae092fb36741272a17735e27181aeb7a89b0343f9863a1435"
+  }
+}

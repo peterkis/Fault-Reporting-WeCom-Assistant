@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 09:03:49",
+  "event_epoch_ms": "1790989429687",
+  "tested_head": "9b25f574cb956f6afbd275f1d0278efa653720e4",
+  "tested_tree": "b68d33d0e8a723610b14b4a90befe91cfeb706fb",
+  "reviewed_publication_head": "f1057dd8055103c3b61c51c2a432a0ef3c8b8a83",
+  "report": {
+    "path": "evidence/yxx-current-c01-9b25f57-20261003/report.json",
+    "bytes": 2958,
+    "encoding": "utf-8",
+    "sha256": "2e1ee663a85937dfd4e8576127d99775f50ce2ff5b5293c398c696819edd7781"
+  },
+  "kind": "CURRENT_ARTIFACT_CATALOG_ATTESTATION",
+  "catalog": {
+    "path": "evidence/yxx-current-c01-9b25f57-20261003/artifact-catalog.json",
+    "bytes": 240562,
+    "encoding": "utf-8",
+    "sha256": "6a68fe154410229f62eabd84b0da10789c7cc497c7b4e5c02d7aed0a60035fb5"
+  },
+  "original_files": 927,
+  "original_files_changed": false,
+  "original_records_stored_once": true,
+  "summary_files_role": "DERIVED_AGGREGATE_OF_PER_FILE_ORIGINALS",
+  "controlled_candidate_changed": false,
+  "readiness": false,
+  "live_authorized": false,
+  "pending": "Successor exact-head build, strict readiness, CI and independent review"
+}

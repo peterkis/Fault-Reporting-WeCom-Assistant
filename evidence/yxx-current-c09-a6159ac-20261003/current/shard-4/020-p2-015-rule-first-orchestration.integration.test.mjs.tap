@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: migration 030 supports fresh baseline, check rollback, apply, no-op and five drift failures
+ok 1 - migration 030 supports fresh baseline, check rollback, apply, no-op and five drift failures
+  ---
+  duration_ms: 4707.7796
+  type: 'test'
+  ...
+# Subtest: orchestrator persists three entries, keeps threads separate and replays Ticket/Communication safely
+ok 2 - orchestrator persists three entries, keeps threads separate and replays Ticket/Communication safely
+  ---
+  duration_ms: 2726.3863
+  type: 'test'
+  ...
+# Subtest: rule failure reaches review; authorized keyset query and concurrent human resolution append one override
+ok 3 - rule failure reaches review; authorized keyset query and concurrent human resolution append one override
+  ---
+  duration_ms: 2598.6375
+  type: 'test'
+  ...
+# Subtest: continuation refs are hashed, reporter/bot bound, expiring, revocable and single-use
+ok 4 - continuation refs are hashed, reporter/bot bound, expiring, revocable and single-use
+  ---
+  duration_ms: 2571.7844
+  type: 'test'
+  ...
+# Subtest: frozen migrations and P2-007 modules outside the authorized G2 rule-engine increment remain unchanged
+ok 5 - frozen migrations and P2-007 modules outside the authorized G2 rule-engine increment remain unchanged
+  ---
+  duration_ms: 53.5259
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13046.5433

@@ -3,7 +3,6 @@ import { test } from 'node:test';
 import { createP2016OrchestrationWorker } from '../src/p2-016-orchestration-adapters.mjs';
 import { createP2016TicketNotificationProjector } from '../src/p2-016-ticket-notification-projector.mjs';
 import { createP2016RealtimeProjector } from '../src/p2-016-realtime-projector.mjs';
-import { shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
 import { seedPersistedIntake } from './helpers/p2-015-postgres-harness.mjs';
 import { withP2016IsolatedDatabase,applyThrough030 } from './helpers/p2-016-postgres-harness.mjs';
 import { migrateP2016 } from '../scripts/p2-016-migrate.mjs';
@@ -48,13 +47,13 @@ test('P2-016 real-format group wakeup and direct description remain one Journey 
 test('P2-016 group-to-direct unique binding preserves Journey; ambiguous, consumed and expired candidates never guess',async()=>{
   for(const count of [1,2,3,4])await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'p2016guided',run:async({pool,databaseUrl})=>{
     await applyThrough030({pool,databaseUrl});await migrateP2016({databaseUrl});
-    let clock=shanghaiLocalToEpochMs('2026-09-03 12:01:00');const worker=createP2016OrchestrationWorker({pool,identityHmacKey:'synthetic-guided-identity-key',
+    let clock=String(BigInt((await pool.query('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0].epoch)+60000n);const worker=createP2016OrchestrationWorker({pool,identityHmacKey:'synthetic-guided-identity-key',
       now:()=>clock,notifications:createP2016TicketNotificationProjector({enabled:true}),realtime:createP2016RealtimeProjector({pool,enabled:true})});
     const groups=count===2?2:1;
     for(let i=0;i<groups;i++)await seedPersistedIntake({pool,text:'系统不行'});
     assert.equal((await worker.processDueBatch({feature_flags:flags})).processed,groups);
     if(count===3){await seedPersistedIntake({pool,text:'系统不行',chatType:'single'});assert.equal((await worker.processDueBatch({feature_flags:flags})).processed,1);}
-    if(count===4)clock=shanghaiLocalToEpochMs('2026-09-03 15:01:00');
+    if(count===4)clock=String(BigInt(clock)+10800000n);
     const direct=await seedPersistedIntake({pool,text:'处方提交不了',chatType:'single'});
     const result=await worker.processDueBatch({feature_flags:flags});assert.equal(result.processed,1);
     const binding=(await pool.query('SELECT j.id::text,j.origin_intake_id::text,j.status,l.leg_type FROM intake.channel_leg l JOIN intake.contact_journey j ON j.id=l.journey_id WHERE l.source_intake_id=$1::uuid',[direct.intakeId])).rows[0];

@@ -1,0 +1,10 @@
+{
+  "kind": "LOCAL_FROZEN_CANDIDATE",
+  "core_longpaths": "true",
+  "tested_head": "9b25f574cb956f6afbd275f1d0278efa653720e4",
+  "observed_at": "2026-10-02T23:48:45.0030694Z",
+  "tested_tree": "b68d33d0e8a723610b14b4a90befe91cfeb706fb",
+  "published": false,
+  "core_autocrlf": "true",
+  "scope_base": "562a96ffdd7148d729ab0eed9d215abe894f12c2"
+}

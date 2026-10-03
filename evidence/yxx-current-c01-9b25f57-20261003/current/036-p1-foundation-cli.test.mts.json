@@ -1,0 +1,47 @@
+{
+  "path": "tests/p1-foundation-cli.test.mts",
+  "runtime_path": "tests/p1-foundation-cli.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-foundation-cli.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "306402d324cbb33871e7fce5ac81e6c1c142bc8f8c1520ef2180ea210f7befdc",
+  "executed_sha256": "502fb4243f36f49c8eaffc48888bc540aa0acd4d3d7276cc8ab8bf32b3787a2c",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "MIXED_EXPLICIT_ROOTS",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "036-p1-foundation-cli.test.mts.tap",
+  "tap_sha256": "76228417f4be5aa6ef7aca01feed37257df5a0badb8fcaf2f1248a8e83059e06",
+  "tap_bytes": 838,
+  "stderr_path": "036-p1-foundation-cli.test.mts.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "036-p1-foundation-cli.test.mts.cases.jsonl",
+  "case_trace_sha256": "b71d93be0a1e413e81cd5f6dde9b035c51f976b249648c41c25bd452d53c61b3",
+  "case_trace_bytes": 931,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-001-pilot-foundation.mjs",
+    ".build/runtime/tests/p1-foundation-cli.test.mjs",
+    ".build/tools/bootstrap.mjs",
+    ".build/tools/common.mjs",
+    ".build/tools/npm-launcher.mjs",
+    ".build/tools/verify-artifact.mjs",
+    "node_modules/typescript/lib/typescript.js"
+  ],
+  "observed_subprocess_entries": [
+    ".build/runtime/src/p1-001-pilot-foundation.mjs"
+  ],
+  "case_count": 3
+}

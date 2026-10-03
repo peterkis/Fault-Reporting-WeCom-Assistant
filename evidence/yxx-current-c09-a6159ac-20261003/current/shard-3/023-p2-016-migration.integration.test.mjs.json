@@ -1,0 +1,47 @@
+{
+  "path": "tests/p2-016-migration.integration.test.mjs",
+  "runtime_path": "tests/p2-016-migration.integration.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-016-migration.integration.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "78aa6030f616a4ef09119b267ac7d3fbdcb384cc97165cc4ed5acb5a28711ee6",
+  "executed_sha256": "78aa6030f616a4ef09119b267ac7d3fbdcb384cc97165cc4ed5acb5a28711ee6",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--expose-gc",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "023-p2-016-migration.integration.test.mjs.tap",
+  "tap_sha256": "c595f67d5f5dbce27d7926bbd5c3e79dbe790bc09770215731e8193cb9bbc250",
+  "tap_bytes": 1291,
+  "stderr_path": "023-p2-016-migration.integration.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "023-p2-016-migration.integration.test.mjs.cases.jsonl",
+  "case_trace_sha256": "29e3ed2c725b124b1394f113b3d4550da84c74e2d2e326ef0e19bbc9cf161015",
+  "case_trace_bytes": 2116,
+  "counts": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/scripts/p2-015-migrate.mjs",
+    ".build/runtime/scripts/p2-016-migrate.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/helpers/p2-015-postgres-harness.mjs",
+    ".build/runtime/tests/helpers/p2-016-postgres-harness.mjs",
+    ".build/runtime/tests/p2-016-migration.integration.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 8
+}

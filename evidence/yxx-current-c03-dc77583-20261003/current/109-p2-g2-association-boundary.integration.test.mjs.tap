@@ -1,0 +1,55 @@
+TAP version 13
+# Subtest: G2-J01 continuation wrong Bot/Reporter, expired, revoked and reused token reject against real normal-ingress prerequisites
+ok 1 - G2-J01 continuation wrong Bot/Reporter, expired, revoked and reused token reject against real normal-ingress prerequisites
+  ---
+  duration_ms: 3083.4481
+  type: 'test'
+  ...
+# {"scenario_id":"G2-J01","source_case_ids":["D12-009","D12-010","D12-011","D12-012"],"surface":"PERSISTED_TOKEN_SERVICE_WITH_NORMAL_INGRESS_PREREQUISITES","existing_direct_leg":true,"token_is_not_authorization":true,"token_callback_integration_claimed":false,"raw_token_output":false,"provider_calls":0}
+# Subtest: G2-J01 ambiguous association preserves current report admission: 处方提交不了
+ok 2 - G2-J01 ambiguous association preserves current report admission: 处方提交不了
+  ---
+  duration_ms: 3346.1453
+  type: 'test'
+  ...
+# {"scenario_id":"G2-J01","source_case_ids":[],"surface":"NORMAL_FRAME_AMBIGUOUS_JOURNEYS","current_fault_ticket_count":1,"observed":{"result_code":"MANUAL_REVIEW_REQUIRED","reason_code":"MULTIPLE_GUIDED_JOURNEYS","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"ece1b2e783f69a22edef4104596d74b29898754dc628ced2d5f18137926f3bb9","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-053","source_kind":"REPORTER_EXPLICIT","source_hash":"28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-075","source_kind":"REPORTER_EXPLICIT","source_hash":"28c72baeb6d0828ec186fd6cb3b131fa946d9039bec4db7355abc31258728cb7","status":"ACTIVE"}]},"provider_calls":0}
+# Subtest: G2-J01 ambiguous association preserves current report admission: 我有两个待补充问题，不知道这条属于哪一个。
+ok 3 - G2-J01 ambiguous association preserves current report admission: 我有两个待补充问题，不知道这条属于哪一个。
+  ---
+  duration_ms: 3461.7859
+  type: 'test'
+  ...
+# {"scenario_id":"G2-J01","source_case_ids":["P2-007-X006","D12-013","D12-015"],"surface":"NORMAL_FRAME_AMBIGUOUS_JOURNEYS","current_fault_ticket_count":0,"observed":{"result_code":"MANUAL_REVIEW_REQUIRED","reason_code":"MULTIPLE_GUIDED_JOURNEYS","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"05e78962484633ea1c3dd5b841a84c57c57c91e54e4972edce6e183114740eb6","provenance":[]},"provider_calls":0}
+# Subtest: G2-E07/J01 independent inactive/association evidence survives RULE_EXCEPTION
+ok 4 - G2-E07/J01 independent inactive/association evidence survives RULE_EXCEPTION
+  ---
+  duration_ms: 3007.1506
+  type: 'test'
+  ...
+# Subtest: G2-E07/J01 independent inactive/association evidence survives WINDOW_LIMIT
+ok 5 - G2-E07/J01 independent inactive/association evidence survives WINDOW_LIMIT
+  ---
+  duration_ms: 3318.5051
+  type: 'test'
+  ...
+# Subtest: G2-E07/J01 independent inactive/association evidence survives NORMAL_HIGH_RISK
+ok 6 - G2-E07/J01 independent inactive/association evidence survives NORMAL_HIGH_RISK
+  ---
+  duration_ms: 3103.889
+  type: 'test'
+  ...
+# Subtest: G2-J01 review enqueue database fault rolls back current Ticket/Decision/actions while preserving Inbox
+ok 7 - G2-J01 review enqueue database fault rolls back current Ticket/Decision/actions while preserving Inbox
+  ---
+  duration_ms: 3169.4417
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23106.5284

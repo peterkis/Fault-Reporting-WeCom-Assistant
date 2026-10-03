@@ -1,0 +1,43 @@
+{
+  "path": "tests/platform-boundary-contracts.test.mts",
+  "runtime_path": "tests/platform-boundary-contracts.test.mjs",
+  "executed_path": ".build/runtime/tests/platform-boundary-contracts.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "33465fce75fde9a3ed0cfeb774e6198d5d685d985c4e4f99adfee4574497bda7",
+  "executed_sha256": "00212b3c8002f0b6a4b6ea6939fd30b54e444073859bc8fefd518d6a820265e6",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "046-platform-boundary-contracts.test.mts.tap",
+  "tap_sha256": "41bda039d5bbefb03a266e229833799f9ab5a3f1f0c32f54a642a41aef60ee68",
+  "tap_bytes": 1612,
+  "stderr_path": "046-platform-boundary-contracts.test.mts.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "046-platform-boundary-contracts.test.mts.cases.jsonl",
+  "case_trace_sha256": "24b277dfdaf4af3868f5be442c54fd4b47ca44276dc8de0397d98b31d458da88",
+  "case_trace_bytes": 1956,
+  "counts": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/platform-boundary-contracts.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 6
+}

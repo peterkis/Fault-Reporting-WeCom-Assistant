@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: G2-T03 two isolated agent browsers transfer Ticket responsibility while Conversation owner remains independent
+ok 1 - G2-T03 two isolated agent browsers transfer Ticket responsibility while Conversation owner remains independent
+  ---
+  duration_ms: 9313.2162
+  type: 'test'
+  ...
+# {"scenario_id":"G2-T03","surface":"TWO_ISOLATED_REAL_BROWSERS_WITH_NORMAL_INGRESS","browser_principals":2,"conversation_takeover_setup":"AUTHORIZED_HTTP","ticket_accept_and_transfer":"ACTUAL_UI","conversation_owner_unchanged":true,"provider_calls":0}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9909.3178

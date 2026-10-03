@@ -1,0 +1,43 @@
+TAP version 13
+# Subtest: D12-043 actual independent reports use trusted primary memberships without inventing locations
+ok 1 - D12-043 actual independent reports use trusted primary memberships without inventing locations
+  ---
+  duration_ms: 2880.6944
+  type: 'test'
+  ...
+# {"source_case_ids":["D12-043","D12-051"],"surface":"NORMAL_INGRESS_WITH_TRUSTED_DIRECTORY","scope_adjudication":"DEPARTMENT","source_300s_replaced_by_frozen_120s":true,"trusted_locations":0,"internal_alert_surface":"AUTHORIZED_CANDIDATE_WORKBENCH_QUEUE","candidate_external_notifications":0}
+# Subtest: D12-044 actual independent reports use trusted primary memberships without inventing locations
+ok 2 - D12-044 actual independent reports use trusted primary memberships without inventing locations
+  ---
+  duration_ms: 2975.1575
+  type: 'test'
+  ...
+# {"source_case_ids":["D12-044","D12-051"],"surface":"NORMAL_INGRESS_WITH_TRUSTED_DIRECTORY","scope_adjudication":"CAMPUS","source_300s_replaced_by_frozen_120s":true,"trusted_locations":0,"internal_alert_surface":"AUTHORIZED_CANDIDATE_WORKBENCH_QUEUE","candidate_external_notifications":0}
+# Subtest: D12-045 actual independent reports use trusted primary memberships without inventing locations
+ok 3 - D12-045 actual independent reports use trusted primary memberships without inventing locations
+  ---
+  duration_ms: 3832.9364
+  type: 'test'
+  ...
+# {"source_case_ids":["D12-045","D12-051"],"surface":"NORMAL_INGRESS_WITH_TRUSTED_DIRECTORY","scope_adjudication":"CAMPUS","source_300s_replaced_by_frozen_120s":true,"trusted_locations":0,"internal_alert_surface":"AUTHORIZED_CANDIDATE_WORKBENCH_QUEUE","candidate_external_notifications":0}
+# Subtest: one Reporter with conflicting report-time primary departments never inflates campus scope
+ok 4 - one Reporter with conflicting report-time primary departments never inflates campus scope
+  ---
+  duration_ms: 3684.7409
+  type: 'test'
+  ...
+# Subtest: missing, ambiguous and untrusted primary metadata remain unknown instead of using first membership
+ok 5 - missing, ambiguous and untrusted primary metadata remain unknown instead of using first membership
+  ---
+  duration_ms: 2760.4097
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16630.9359

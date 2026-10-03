@@ -7,6 +7,7 @@ import { hash, record, slash, sourceRoot, outputPath, codeFiles, strings, git } 
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { loadRoutes, select, testEnvironment, execution, type Selection } from './routing.mjs';
+import { currentAcceptance, currentSelection, currentShardPlan } from './current-acceptance.mjs';
 
 export type Counts = { tests: number; pass: number; fail: number; cancelled: number; skipped: number; todo: number };
 export function counts(tap: string): Counts {
@@ -38,6 +39,7 @@ export function runSelection(root: string, selection: Selection, options: { refe
   const log = options.reportDir ?? mkdtempSync(path.join(tmpdir(), 'ts-migration-results-'));
   if (path.relative(root, path.resolve(log)) === '' || !path.relative(root, path.resolve(log)).startsWith('..') && !path.isAbsolute(path.relative(root, path.resolve(log)))) throw new Error('MIGRATION_REPORT_MUST_BE_OUTSIDE_SOURCE');
   mkdirSync(log, { recursive: true });
+  if (readdirSync(log).length) throw new Error('MIGRATION_REPORT_ALREADY_EXISTS');
   const files: Record<string, unknown>[] = [];
   const routes = loadRoutes(root);
   let completed = false;
@@ -56,11 +58,18 @@ export function runSelection(root: string, selection: Selection, options: { refe
     const nodeFlags = [...new Set([...selection.flags, ...entry.node_flags])];
     if (!nodeFlags.some(f => f.startsWith('--test-concurrency='))) nodeFlags.push('--test-concurrency=1');
     const sourceHook = !options.reference && entry.mode === 'SOURCE_HOST' ? ['--import', pathToFileURL(path.join(root, '.build/tools/source-hook.mjs')).href] : [];
-    const args = [...sourceHook, ...nodeFlags, '--test', '--test-reporter=tap', target.file];
     // Preserve the serial browser recovery and two 360-second capacity case budgets.
     const timeoutMs = ['tests/yxx-ss-007-native-ui.browser.test.mjs', 'tests/yxx-ss-009-capacity.integration.test.mjs'].includes(entry.path) ? 900_000 : 240_000;
     const prefix = String(index + 1).padStart(3, '0') + '-' + path.basename(entry.path);
-    const fileResult: Record<string, unknown> = { path: entry.path, runtime_path: outputPath(entry.path), mode: target.mode, node_flags: [...sourceHook, ...nodeFlags], status: 'RUNNING', timeout_ms: timeoutMs };
+    const casePath = prefix + '.cases.jsonl';
+    const reporterRoot = options.reference ? root : path.join(root, '.build/runtime');
+    const args = [...sourceHook, ...nodeFlags, '--test', '--test-reporter=tap', '--test-reporter-destination=stdout',
+      '--test-reporter=' + pathToFileURL(path.join(reporterRoot, 'scripts/p2-g2-case-reporter.mjs')).href,
+      '--test-reporter-destination=' + path.resolve(log, casePath), target.file];
+    const fileResult: Record<string, unknown> = { path: entry.path, runtime_path: outputPath(entry.path),
+      executed_path: slash(path.relative(root, target.file)), execution_cwd: slash(path.relative(root, target.cwd)) || '.',
+      source_sha256: hash(readFileSync(path.join(root, entry.path))), executed_sha256: hash(readFileSync(target.file)),
+      case_line_basis: 'EXECUTED_FILE', mode: target.mode, node_flags: [...sourceHook, ...nodeFlags], status: 'RUNNING', timeout_ms: timeoutMs };
     files.push(fileResult);
     try {
       const result = spawnSync(process.execPath, args, { cwd: target.cwd, env: { ...env, NODE_V8_COVERAGE: coverage }, encoding: 'utf8', windowsHide: true, timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024 });
@@ -72,8 +81,13 @@ export function runSelection(root: string, selection: Selection, options: { refe
       const text = redact(result.stdout ?? ''), stderr = redact(result.stderr ?? '');
       writeFileSync(path.join(log, prefix + '.tap'), text); writeFileSync(path.join(log, prefix + '.stderr'), stderr);
       process.stdout.write(text); process.stderr.write(stderr);
-      Object.assign(fileResult, { exit_code: result.status, signal: result.signal, tap_sha256: hash(text), stderr_sha256: hash(stderr) });
+      Object.assign(fileResult, { exit_code: result.status, signal: result.signal,
+        tap_path: prefix + '.tap', tap_sha256: hash(text), tap_bytes: Buffer.byteLength(text),
+        stderr_path: prefix + '.stderr', stderr_sha256: hash(stderr), stderr_bytes: Buffer.byteLength(stderr) });
       if (result.error) throw result.error;
+      const trace = redact(readFileSync(path.join(log, casePath), 'utf8'));
+      writeFileSync(path.join(log, casePath), trace);
+      Object.assign(fileResult, { case_trace_path: casePath, case_trace_sha256: hash(trace), case_trace_bytes: Buffer.byteLength(trace) });
       const c = counts(text), loaded = loadedFiles(coverage);
       fileResult.counts = c;
       for (const key of Object.keys(total) as (keyof Counts)[]) total[key] += c[key];
@@ -86,6 +100,17 @@ export function runSelection(root: string, selection: Selection, options: { refe
       if (requiredChildren.some(p => !projectLoaded.includes(p))) throw new Error('MIGRATION_SUBPROCESS_NOT_OBSERVED: ' + entry.path);
       fileResult.observed_subprocess_entries = requiredChildren;
       if (result.status !== 0 || c.fail || c.cancelled || c.skipped || c.todo || !c.tests || c.tests !== c.pass) throw new Error('MIGRATION_TEST_NOT_PASS: ' + entry.path);
+      try {
+        const cases = trace.trim().split('\n').map(line => record(JSON.parse(line) as unknown));
+        if (!cases.length || cases.some(item => {
+          if (item.event !== 'test:pass' || typeof item.name !== 'string' || !item.name || item.skip !== false || item.todo !== false
+            || typeof item.file !== 'string' || path.isAbsolute(item.file) || item.file.includes('\\')
+            || typeof item.line !== 'number' || !Number.isInteger(item.line) || item.line < 1) return true;
+          const actual = path.resolve(target.cwd, item.file), relative = path.relative(root, actual);
+          return relative.startsWith('..') || path.isAbsolute(relative) || !loaded.some(file => path.relative(file, actual) === '');
+        })) throw new Error('INVALID_CASE');
+        fileResult.case_count = cases.length;
+      } catch { throw new Error('MIGRATION_CASE_TRACE_INVALID: ' + entry.path); }
       fileResult.status = 'PASS';
     } catch (error) {
       fileResult.status = 'FAIL'; fileResult.error = error instanceof Error ? error.message : 'MIGRATION_UNKNOWN_FAILURE'; throw error;
@@ -121,21 +146,40 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   let kind: 'alias' | 'selection' = 'selection', name = 'canary', reference = false;
   let reportDir: string | undefined;
   let frozen: string | undefined;
+  let currentFull = false;
+  let shardId: string | undefined;
   const args = process.argv.slice(2);
+  if (args[0] === '--current-plan') {
+    if(args.length===1)console.log(JSON.stringify(currentAcceptance(root)));
+    else if(args.length===3&&args[1]==='--shards')console.log(JSON.stringify(currentShardPlan(root,args[2]??'')));
+    else throw new Error('MIGRATION_CURRENT_ARGUMENTS');
+  } else {
   for (let i=0; i<args.length; i++) {
     const arg = args[i];
     if (arg === '--reference-source') reference = true;
+    else if (arg === '--current-full') {
+      if (currentFull) throw new Error('MIGRATION_CURRENT_ARGUMENTS');
+      currentFull = true;
+    }
+    else if (arg === '--shard') {
+      if(shardId!==undefined)throw new Error('MIGRATION_CURRENT_ARGUMENTS');
+      shardId=args[++i];
+      if(!shardId||shardId.startsWith('--'))throw new Error('MIGRATION_CURRENT_SHARD_INVALID');
+    }
     else if (arg === '--alias' || arg === '--selection' || arg === '--report-dir' || arg === '--frozen') {
       const value = args[++i]; if (!value || value.startsWith('--')) throw new Error('MIGRATION_ARGUMENT_VALUE_REQUIRED');
       if (arg === '--report-dir') reportDir = path.resolve(value); else if (arg === '--frozen') frozen = value; else { kind = arg === '--alias' ? 'alias' : 'selection'; name = value; }
     } else throw new Error('MIGRATION_UNKNOWN_RUNNER_ARGUMENT');
   }
+  if(shardId!==undefined&&!currentFull)throw new Error('MIGRATION_CURRENT_ARGUMENTS');
+  if (currentFull && args.some(arg => ['--alias','--selection','--reference-source','--frozen'].includes(arg))) throw new Error('MIGRATION_CURRENT_ARGUMENTS');
   if (frozen) {
     runFrozen(root, frozen, reportDir ?? mkdtempSync(path.join(tmpdir(), 'ts-migration-history-')));
   } else {
-  const selected = select(loadRoutes(root), kind, name);
+  const selected = currentFull ? currentSelection(root,shardId) : select(loadRoutes(root), kind, name);
   testEnvironment(root, selected.entries); // Fail missing isolation before doing build work.
   build(root);
   runSelection(root, selected, { reference, ...(reportDir ? { reportDir } : {}) });
   }
+}
 }

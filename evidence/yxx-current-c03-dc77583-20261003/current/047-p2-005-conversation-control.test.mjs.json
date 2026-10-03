@@ -1,0 +1,43 @@
+{
+  "path": "tests/p2-005-conversation-control.test.mjs",
+  "runtime_path": "tests/p2-005-conversation-control.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-005-conversation-control.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "c7a39500b58143800beacda1e756dd74b09da387748ec35559d7a21df7f3c383",
+  "executed_sha256": "c7a39500b58143800beacda1e756dd74b09da387748ec35559d7a21df7f3c383",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "047-p2-005-conversation-control.test.mjs.tap",
+  "tap_sha256": "09254c2c244642fba8a5459b687beaf8453f20393b186f584ebe00544c65842a",
+  "tap_bytes": 2613,
+  "stderr_path": "047-p2-005-conversation-control.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "047-p2-005-conversation-control.test.mjs.cases.jsonl",
+  "case_trace_sha256": "c42df8e7538152f6c8f49ef6dc2b1a233c636b81fd152bfdfe9a228d29790e7b",
+  "case_trace_bytes": 3463,
+  "counts": {
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-005-conversation-control-projections.mjs",
+    ".build/runtime/src/p2-005-conversation-control.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-005-conversation-control.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 11
+}

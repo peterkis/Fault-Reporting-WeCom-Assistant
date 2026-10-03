@@ -39,6 +39,7 @@ test('P2-012 real command capacity 500 candidates, 200 incidents, 2000 reports, 
     const counts=(await pool.query(`SELECT (SELECT count(*)::int FROM incident.candidate_review) AS candidates,(SELECT count(*)::int FROM incident.incident) AS incidents,
       (SELECT count(*)::int FROM incident.incident_report) AS reports,(SELECT count(*)::int FROM incident.reporter_subscription) AS subscriptions,
       (SELECT count(*)::int FROM incident.incident_event) AS events,(SELECT count(*)::int FROM communication.incident_notification_binding) AS bindings`)).rows[0];
+    t.diagnostic(JSON.stringify({capacity_counts:counts}));
     assert.equal(counts.candidates,500);assert.equal(counts.incidents,200);assert.equal(counts.reports,2000);assert.equal(counts.subscriptions,1000);assert.ok(counts.events>=5000);assert.ok(counts.bindings>=500);
     const query=createP2012IncidentQuery({pool,enabled:true});
     for(const [kind,total]of [['candidate',500],['incident',200]]){let after=null;const ids=new Set();do{const p=await query.list({authContext,kind,after});assert.ok(p.items.length<=30);for(const r of p.items){assert.equal(ids.has(r.id),false);ids.add(r.id);}after=p.next_cursor;}while(after);assert.equal(ids.size,total);}

@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: current readiness public API resolves its source root when called from compiled runtime
+ok 1 - current readiness public API resolves its source root when called from compiled runtime
+  ---
+  duration_ms: 10338.5779
+  type: 'test'
+  ...
+# Subtest: current strict readiness distinguishes a malformed current pointer from absent evidence
+ok 2 - current strict readiness distinguishes a malformed current pointer from absent evidence
+  ---
+  duration_ms: 25205.5384
+  type: 'test'
+  ...
+# Subtest: current report reading preserves raw bytes and rejects corrupted missing and escaped references
+ok 3 - current report reading preserves raw bytes and rejects corrupted missing and escaped references
+  ---
+  duration_ms: 19.3236
+  type: 'test'
+  ...
+# Subtest: current raw evidence survives Git checkout without newline conversion
+ok 4 - current raw evidence survives Git checkout without newline conversion
+  ---
+  duration_ms: 8632.5215
+  type: 'test'
+  ...
+# Subtest: current strict readiness rejects a report bound to another candidate
+ok 5 - current strict readiness rejects a report bound to another candidate
+  ---
+  duration_ms: 32370.5127
+  type: 'test'
+  ...
+# Subtest: current scope rejects enabling AI in the checked default configuration
+ok 6 - current scope rejects enabling AI in the checked default configuration
+  ---
+  duration_ms: 15432.7468
+  type: 'test'
+  ...
+# Subtest: current scope keeps SQL content and inventory pinned even when a local manifest is edited
+ok 7 - current scope keeps SQL content and inventory pinned even when a local manifest is edited
+  ---
+  duration_ms: 14781.07
+  type: 'test'
+  ...
+# Subtest: current scope rejects protected stage changes and SQL file mode changes
+ok 8 - current scope rejects protected stage changes and SQL file mode changes
+  ---
+  duration_ms: 16877.7449
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 123966.506

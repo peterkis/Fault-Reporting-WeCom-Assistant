@@ -1,0 +1,42 @@
+{
+  "path": "tests/p2-015-manual-review.test.mjs",
+  "runtime_path": "tests/p2-015-manual-review.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-015-manual-review.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "d05ab6768eed9b033da9ad7f721b96bd5580ab49abae9e7cf80ff02b1cf49783",
+  "executed_sha256": "d05ab6768eed9b033da9ad7f721b96bd5580ab49abae9e7cf80ff02b1cf49783",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "020-p2-015-manual-review.test.mjs.tap",
+  "tap_sha256": "1ae1cb774e2bb311d458ce0d23cc9d974754659e2863545ec94a9979f9e3a201",
+  "tap_bytes": 335,
+  "stderr_path": "020-p2-015-manual-review.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "020-p2-015-manual-review.test.mjs.cases.jsonl",
+  "case_trace_sha256": "8a7e8852ca650b6a1a75f4c8165a864fedfb98799f9e40dda44645d01901a4d9",
+  "case_trace_bytes": 303,
+  "counts": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-015-domain-contracts.mjs",
+    ".build/runtime/src/p2-015-manual-review.mjs",
+    ".build/runtime/tests/p2-015-manual-review.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 1
+}

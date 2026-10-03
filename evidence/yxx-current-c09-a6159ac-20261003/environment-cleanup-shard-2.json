@@ -1,0 +1,19 @@
+{
+  "started": true,
+  "tested_head": "a6159ac5773d22e423846843b82aa4c8c27a0b0e",
+  "test_exit_code": 0,
+  "preexisting_resources_touched": false,
+  "owned_residuals": 0,
+  "event_time": "2026-10-03 19:06:18",
+  "postgres_stop_exit_code": 0,
+  "schema_version": 1,
+  "launcher_error": null,
+  "event_epoch_ms": "1791025578157",
+  "kind": "OWNED_TEST_ENVIRONMENT",
+  "postgres_stopped": true,
+  "status": "CLEANUP_CONFIRMED",
+  "candidate_fingerprint": "2ea4ae593bce7041cd7413d74d37bf25eb9fcea3435e1268df1110bba1a55c8f",
+  "execution_summary_sha256": "eea23f1602e66e8adb86368a6a32a0c401b7f8be276771f20926f9038fbedc28",
+  "postgres_data_removed": true,
+  "tested_tree": "6a5231f500bff58b045c2e00f0f6ddc2e86283b9"
+}

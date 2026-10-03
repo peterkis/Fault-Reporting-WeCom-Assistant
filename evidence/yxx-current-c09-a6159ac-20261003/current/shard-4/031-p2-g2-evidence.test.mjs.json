@@ -1,0 +1,49 @@
+{
+  "path": "tests/p2-g2-evidence.test.mjs",
+  "runtime_path": "tests/p2-g2-evidence.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-evidence.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "011aeff0f5c70f04ea4d7784d2347c1ddc9c5f0f6ee458a9c1929b61500dfdc6",
+  "executed_sha256": "011aeff0f5c70f04ea4d7784d2347c1ddc9c5f0f6ee458a9c1929b61500dfdc6",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "031-p2-g2-evidence.test.mjs.tap",
+  "tap_sha256": "f4f0af0a29ab57152ff03e5b628579a418d11b9ecf5b61601f88048fa5377f2c",
+  "tap_bytes": 827,
+  "stderr_path": "031-p2-g2-evidence.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "031-p2-g2-evidence.test.mjs.cases.jsonl",
+  "case_trace_sha256": "903bac912d89d601de10c06f4abb90f23caf5d7217afdc5ab8a5096b73eb6351",
+  "case_trace_bytes": 920,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-016-domain-contracts.mjs",
+    ".build/runtime/src/p2-016-ticket-notification-policy.mjs",
+    ".build/runtime/src/p2-g2-evidence.mjs",
+    ".build/runtime/src/p2-g2-validation-config.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-g2-evidence.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

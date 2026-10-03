@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: group fault exposes trusted contact only through authorized internal ticket endpoint
+ok 1 - group fault exposes trusted contact only through authorized internal ticket endpoint
+  ---
+  duration_ms: 5201.4575
+  type: 'test'
+  ...
+# Subtest: unavailable profile leaves admitted fault accessible with explicit missing contact
+ok 2 - unavailable profile leaves admitted fault accessible with explicit missing contact
+  ---
+  duration_ms: 5713.1808
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11512.7008

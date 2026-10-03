@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 11:06:38",
+  "event_epoch_ms": "1790996798359",
+  "tested_head": "dc775835a3b792d2f3f36dcbbfe6ade5a73033a1",
+  "tested_tree": "92bfd88178872f1ee13d0741a8c7e540c028f38d",
+  "candidate_fingerprint": "d8dab8daba67b3f94e19deea9a1b7c0c014b84fe76fa7f425349488bccdbeb5a",
+  "kind": "CURRENT_OWNED_RESOURCE_CLEANUP",
+  "observations": [
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/191-yxx-current-migrations.integration.test.mts.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/205-yxx-ss-009-browser.integration.test.mjs.tap",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/206-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/206-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/207-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/207-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/207-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/208-yxx-ss-009-crash.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/208-yxx-ss-009-crash.integration.test.mjs.tap",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/208-yxx-ss-009-crash.integration.test.mjs.tap",
+      "receipt_index": 4
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/212-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/212-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/213-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/213-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/214-yxx-ss-010-browser.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/216-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/216-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/216-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/216-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c03-dc77583-20261003/current/216-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "receipt_index": 4
+    }
+  ],
+  "environments": [
+    {
+      "path": "evidence/yxx-current-c03-dc77583-20261003/environment-cleanup.json",
+      "bytes": 732,
+      "sha256": "fc86f4b4aca0c9712c15538c5962071b612a799b841ee58f121eb7381b0ee700"
+    }
+  ]
+}

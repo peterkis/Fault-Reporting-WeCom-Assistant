@@ -13,7 +13,7 @@ export const G2_CANDIDATE_ROOTS = Object.freeze(['src', 'scripts', 'web', 'contr
 export const G2_CANDIDATE_FILES = Object.freeze(['package.json', 'package-lock.json', '.env.example']);
 // Optional on legacy fixtures; every present build control is part of the current candidate.
 export const G2_CANDIDATE_CONTROL_ROOTS = Object.freeze(['tools/ts-migration', 'plans/typescript-migration', '.github/workflows']);
-export const G2_CANDIDATE_CONTROL_FILES = Object.freeze(['tsconfig.base.json', 'tsconfig.tools.json', 'tsconfig.migration.json', 'tsconfig.type-tests.json', 'build-manifest.json']);
+export const G2_CANDIDATE_CONTROL_FILES = Object.freeze(['.gitattributes', 'tsconfig.base.json', 'tsconfig.tools.json', 'tsconfig.migration.json', 'tsconfig.type-tests.json', 'build-manifest.json', 'plans/yxx-current-readiness-scope.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-ss-009-acceptance.json', '.github/review/pr21-evidence-exceptions.json', '.github/review/yxx-current-evidence-adjudication.json', '.github/review/pr-evidence-delta.test.mjs', '.github/review/verify-published-history.test.mjs', '.github/review/pr-evidence-delta.mjs', '.github/review/verify-published-history.mjs']);
 export function isG2CandidatePath(file) {
   return !G2_EXCLUDED_LOCAL_FILES.includes(file) && (G2_CANDIDATE_FILES.includes(file)
     || G2_CANDIDATE_CONTROL_FILES.includes(file) || [...G2_CANDIDATE_ROOTS, ...G2_CANDIDATE_CONTROL_ROOTS].some(dir => file.startsWith(dir + '/')));
@@ -32,7 +32,7 @@ export function g2CandidateInventory(root = G2_ROOT) {
       return;
     }
     if (!stat.isFile() || stat.size > 16 * 1024 * 1024 || files.length >= 2048) failG2('CANDIDATE_INVENTORY_LIMIT');
-    const binary = !/\.(mjs|cjs|js|mts|cts|ts|tsx|json|jsonl|yaml|yml|sql|css|html|md|txt|sh|py)$/u.test(relative) && relative !== '.env.example';
+    const binary = !/\.(mjs|cjs|js|mts|cts|ts|tsx|json|jsonl|yaml|yml|sql|css|html|md|txt|sh|py)$/u.test(relative) && !['.env.example','.gitattributes'].includes(relative);
     const raw = readFileSync(absolute);
     const content = binary ? raw : Buffer.from(new TextDecoder('utf-8', { fatal: true }).decode(raw).replaceAll('\r\n', '\n'));
     files.push({ path: relative, sha256: g2Hash(content), bytes: content.length, encoding: binary ? 'BINARY' : 'UTF8_LF' });

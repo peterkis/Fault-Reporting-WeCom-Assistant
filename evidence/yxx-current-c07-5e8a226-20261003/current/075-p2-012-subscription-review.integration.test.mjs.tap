@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation
+ok 1 - P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation
+  ---
+  duration_ms: 2969.8604
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3341.9728

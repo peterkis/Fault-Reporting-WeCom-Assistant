@@ -1,0 +1,40 @@
+{
+  "path": "tests/p1-001-pilot-foundation.test.mjs",
+  "runtime_path": "tests/p1-001-pilot-foundation.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-001-pilot-foundation.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "c5098c68a17a42b44752951a6c61155da27412818b21f43444c7b02a2b2dcdf4",
+  "executed_sha256": "c5098c68a17a42b44752951a6c61155da27412818b21f43444c7b02a2b2dcdf4",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "018-p1-001-pilot-foundation.test.mjs.tap",
+  "tap_sha256": "cfad21910203b1cfc50d5aa51efafa7550e7d4091aa5531d184c33ce033706f2",
+  "tap_bytes": 1014,
+  "stderr_path": "018-p1-001-pilot-foundation.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "018-p1-001-pilot-foundation.test.mjs.cases.jsonl",
+  "case_trace_sha256": "e64de13756ec3d2093e37093822512fa6fa5f6bde920496645f624fae21aa88c",
+  "case_trace_bytes": 1238,
+  "counts": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-001-pilot-foundation.mjs",
+    ".build/runtime/tests/p1-001-pilot-foundation.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 4
+}

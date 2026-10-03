@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: 036 directory migration is checkable, atomic, reentrant and catalog-complete
+ok 1 - 036 directory migration is checkable, atomic, reentrant and catalog-complete
+  ---
+  duration_ms: 2235.7561
+  type: 'test'
+  ...
+# Subtest: current directory replacement keeps bindings usable and exposes only current membership
+ok 2 - current directory replacement keeps bindings usable and exposes only current membership
+  ---
+  duration_ms: 2236.9455
+  type: 'test'
+  ...
+# Subtest: failed publication rolls back; reused IDs and removed members cannot inherit profiles or active bindings
+ok 3 - failed publication rolls back; reused IDs and removed members cannot inherit profiles or active bindings
+  ---
+  duration_ms: 2262.3456
+  type: 'test'
+  ...
+# Subtest: detail enrichment and publication share the source lock and preserve committed enrichment
+ok 4 - detail enrichment and publication share the source lock and preserve committed enrichment
+  ---
+  duration_ms: 2343.8187
+  type: 'test'
+  ...
+# Subtest: formal-size synthetic HTTP tree hashes, publishes and remains readable after a rejected refresh
+ok 5 - formal-size synthetic HTTP tree hashes, publishes and remains readable after a rejected refresh
+  ---
+  duration_ms: 2617.2975
+  type: 'test'
+  ...
+# Subtest: one member in 5000 departments resolves, persists, replays and reads through the real intake chain
+ok 6 - one member in 5000 departments resolves, persists, replays and reads through the real intake chain
+  ---
+  duration_ms: 3773.886
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15764.2224

@@ -1,0 +1,1 @@
+{"test_id":"ARCH-005","event":"arch_005_architecture_validation","ok":true,"errors":[],"frozen_migration_count":14,"contract_date_time_format_count":0,"api_offset_timestamp_leak_count":0,"direct_pg_factory_bypass_count":0,"browser_timezone_display_mismatch_count":0,"event_ordering_violation_count":0}

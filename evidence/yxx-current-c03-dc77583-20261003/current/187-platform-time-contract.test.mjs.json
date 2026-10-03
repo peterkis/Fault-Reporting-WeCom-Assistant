@@ -1,0 +1,40 @@
+{
+  "path": "tests/platform-time-contract.test.mjs",
+  "runtime_path": "tests/platform-time-contract.test.mjs",
+  "executed_path": ".build/runtime/tests/platform-time-contract.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "e99a19a60a95f61186089ea54b4542c83003c1502f78a36f8457f5af252c53ca",
+  "executed_sha256": "e99a19a60a95f61186089ea54b4542c83003c1502f78a36f8457f5af252c53ca",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "187-platform-time-contract.test.mjs.tap",
+  "tap_sha256": "8c8a6c7b6afc801dd103333aeb797114ba96cd55a265f35bae73983dd0b85cc7",
+  "tap_bytes": 1119,
+  "stderr_path": "187-platform-time-contract.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "187-platform-time-contract.test.mjs.cases.jsonl",
+  "case_trace_sha256": "d24f88ca153acd3e8ee4912f25af28cbb2ff4b04f9330e2b49eb2dd15ab7d4d3",
+  "case_trace_bytes": 1286,
+  "counts": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/platform-time-contract.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 4
+}

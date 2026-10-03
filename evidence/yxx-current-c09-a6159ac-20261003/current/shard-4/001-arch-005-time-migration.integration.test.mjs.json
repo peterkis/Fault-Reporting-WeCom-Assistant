@@ -1,0 +1,47 @@
+{
+  "path": "tests/arch-005-time-migration.integration.test.mjs",
+  "runtime_path": "tests/arch-005-time-migration.integration.test.mjs",
+  "executed_path": ".build/runtime/tests/arch-005-time-migration.integration.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "f6c666512e72afa281e73a2a46f63ad2127c59976777163a97a64deb5ac12720",
+  "executed_sha256": "f6c666512e72afa281e73a2a46f63ad2127c59976777163a97a64deb5ac12720",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "001-arch-005-time-migration.integration.test.mjs.tap",
+  "tap_sha256": "915a0108156079c363b6bb07d8d04b4c57e54d6580e81e267b29905e20e59e1d",
+  "tap_bytes": 596,
+  "stderr_path": "001-arch-005-time-migration.integration.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "001-arch-005-time-migration.integration.test.mjs.cases.jsonl",
+  "case_trace_sha256": "594483a0f8e2e5b327e72022fbcaafef613f2b05d27722585d4e89591af4c34d",
+  "case_trace_bytes": 655,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/scripts/migrate-current-baseline.mjs",
+    ".build/runtime/scripts/p2-012-migrate.mjs",
+    ".build/runtime/scripts/p2-015-migrate.mjs",
+    ".build/runtime/scripts/p2-016-migrate.mjs",
+    ".build/runtime/scripts/yxx-self-service-migrate.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/arch-005-time-migration.integration.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: SS-003 migration and store contracts are source-complete
+ok 1 - SS-003 migration and store contracts are source-complete
+  ---
+  duration_ms: 7.8781
+  type: 'test'
+  ...
+# Subtest: SS-003 fresh applied migration, idempotent Web acceptance and source constraints
+ok 2 - SS-003 fresh applied migration, idempotent Web acceptance and source constraints
+  ---
+  duration_ms: 3236.1291
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3478.3581

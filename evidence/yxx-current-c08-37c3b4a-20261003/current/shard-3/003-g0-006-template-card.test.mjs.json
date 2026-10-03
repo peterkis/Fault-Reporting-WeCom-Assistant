@@ -1,0 +1,41 @@
+{
+  "path": "tests/g0-006-template-card.test.mjs",
+  "runtime_path": "tests/g0-006-template-card.test.mjs",
+  "executed_path": ".build/runtime/tests/g0-006-template-card.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "80c8c1931eaf76100d0f81217144c7edb2c7ad2b2a7c2832dff029cb349ad9ff",
+  "executed_sha256": "80c8c1931eaf76100d0f81217144c7edb2c7ad2b2a7c2832dff029cb349ad9ff",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "003-g0-006-template-card.test.mjs.tap",
+  "tap_sha256": "47db02ac5c2dcf617424b6c1fffb50866c031464af59d978e599fe33be501a2f",
+  "tap_bytes": 1653,
+  "stderr_path": "003-g0-006-template-card.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "003-g0-006-template-card.test.mjs.cases.jsonl",
+  "case_trace_sha256": "c81ce1500cd018a5578890c41d938bb6ccd0a43c3d46fe98fb5e8597e7dcc385",
+  "case_trace_bytes": 1938,
+  "counts": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/g0-002-sdk-lifecycle.mjs",
+    ".build/runtime/src/g0-006-template-card.mjs",
+    ".build/runtime/tests/g0-006-template-card.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 6
+}

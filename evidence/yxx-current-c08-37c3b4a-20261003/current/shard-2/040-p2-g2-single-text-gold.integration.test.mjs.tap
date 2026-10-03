@@ -1,0 +1,571 @@
+TAP version 13
+# Subtest: P2-G2 original single-Reporter texts reach their independently adjudicated safe route via real Inbox and Worker
+    # Subtest: P2-007-C001
+    ok 1 - P2-007-C001
+      ---
+      duration_ms: 246.8921
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C001","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"c393ac6991c6a876e23ae994d1c8fe33c2cef194a7160aa4f6a7bd8f75166690","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"efe2c07fb52fc8c7e98942621ae52ccb6f42047b0f48ae8ba134c7adf4123f9c","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-276","source_kind":"REPORTER_EXPLICIT","source_hash":"efe2c07fb52fc8c7e98942621ae52ccb6f42047b0f48ae8ba134c7adf4123f9c","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"efe2c07fb52fc8c7e98942621ae52ccb6f42047b0f48ae8ba134c7adf4123f9c","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C002
+    ok 2 - P2-007-C002
+      ---
+      duration_ms: 105.9791
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C002","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"5884fe457781b5eb14f0ce51754463f447cf68a673ffa9881e49447bf455b85b","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"42971aa29783a570cb6a23e3e140748b40dab0743014adf185f71ce781fce179","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-002","source_kind":"REPORTER_EXPLICIT","source_hash":"42971aa29783a570cb6a23e3e140748b40dab0743014adf185f71ce781fce179","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C003
+    ok 3 - P2-007-C003
+      ---
+      duration_ms: 88.7301
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C003","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"37184b7747369fbf602f65cbcbc5b041f2940ea50033f532f2b2bad346f489dc","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"74b4dff774809ab044b4378840e8b06d4e40f817932f3677b174b46872094748","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-023","source_kind":"REPORTER_EXPLICIT","source_hash":"74b4dff774809ab044b4378840e8b06d4e40f817932f3677b174b46872094748","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"74b4dff774809ab044b4378840e8b06d4e40f817932f3677b174b46872094748","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C004
+    ok 4 - P2-007-C004
+      ---
+      duration_ms: 96.5914
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C004","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"18db9d7bb5f6ffc638e6ddb77f5cfa802059c42cbf632cf7a7d6db9e92adfddf","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"215ddbc3ebaa2a8742daa249ae196e6372a0b99745d5c819a8d931ffe039ca6a","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-004","source_kind":"REPORTER_EXPLICIT","source_hash":"215ddbc3ebaa2a8742daa249ae196e6372a0b99745d5c819a8d931ffe039ca6a","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-026","source_kind":"REPORTER_EXPLICIT","source_hash":"215ddbc3ebaa2a8742daa249ae196e6372a0b99745d5c819a8d931ffe039ca6a","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"215ddbc3ebaa2a8742daa249ae196e6372a0b99745d5c819a8d931ffe039ca6a","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C005
+    ok 5 - P2-007-C005
+      ---
+      duration_ms: 84.4016
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C005","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"576145e3a64296e25e9528dd3f85e488aeb869cb4519857845f8a0dc2de3117d","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"5e3df04603252196ce1df6c21aa5cedc98719bf9ae1b1e9019cb3d8690f177fd","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-011","source_kind":"REPORTER_EXPLICIT","source_hash":"5e3df04603252196ce1df6c21aa5cedc98719bf9ae1b1e9019cb3d8690f177fd","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"5e3df04603252196ce1df6c21aa5cedc98719bf9ae1b1e9019cb3d8690f177fd","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-274","source_kind":"REPORTER_EXPLICIT","source_hash":"5e3df04603252196ce1df6c21aa5cedc98719bf9ae1b1e9019cb3d8690f177fd","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C006
+    ok 6 - P2-007-C006
+      ---
+      duration_ms: 83.6957
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C006","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"72caf7c9e4ac201daabb151a31dfd52d5b7b8d22102e832092782242dbf0fdc7","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-054","source_kind":"REPORTER_EXPLICIT","source_hash":"ede8c4a51843508c8fbbb3c18c43b8cbfa6de0efad7d8a71f933365be6ca3893","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"ede8c4a51843508c8fbbb3c18c43b8cbfa6de0efad7d8a71f933365be6ca3893","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"ede8c4a51843508c8fbbb3c18c43b8cbfa6de0efad7d8a71f933365be6ca3893","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-075","source_kind":"REPORTER_EXPLICIT","source_hash":"ede8c4a51843508c8fbbb3c18c43b8cbfa6de0efad7d8a71f933365be6ca3893","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C007
+    ok 7 - P2-007-C007
+      ---
+      duration_ms: 84.9847
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C007","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"484ba1322c21bf8289cd3c213b552baec437170a4e27b7f403600cc896a5fb74","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"42b013067e454bf88b0e479b9709523ef52216de17f17913a789c100ee2b4174","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"42b013067e454bf88b0e479b9709523ef52216de17f17913a789c100ee2b4174","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-103","source_kind":"REPORTER_EXPLICIT","source_hash":"42b013067e454bf88b0e479b9709523ef52216de17f17913a789c100ee2b4174","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"42b013067e454bf88b0e479b9709523ef52216de17f17913a789c100ee2b4174","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C008
+    ok 8 - P2-007-C008
+      ---
+      duration_ms: 77.4549
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C008","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"43e91ce27d32299f515e39498478664e1e484de55ad236baab9611ca09592969","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"3faaa3dc4dd6aa25173e8e0456743b4f01f8346bec87f1799901c94e1bdf9926","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-063","source_kind":"REPORTER_EXPLICIT","source_hash":"3faaa3dc4dd6aa25173e8e0456743b4f01f8346bec87f1799901c94e1bdf9926","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"3faaa3dc4dd6aa25173e8e0456743b4f01f8346bec87f1799901c94e1bdf9926","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-024","source_kind":"REPORTER_EXPLICIT","source_hash":"3faaa3dc4dd6aa25173e8e0456743b4f01f8346bec87f1799901c94e1bdf9926","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C009
+    ok 9 - P2-007-C009
+      ---
+      duration_ms: 83.5654
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C009","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"f3217411eafb66785acee1f3461d2edc8f535149956add7491d08f6bb2b61e97","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"a2cb382c845f1b98c8b5804d0d9e1f4883b44ebf5ce9394d177f41a954b49ef3","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-086","source_kind":"REPORTER_EXPLICIT","source_hash":"a2cb382c845f1b98c8b5804d0d9e1f4883b44ebf5ce9394d177f41a954b49ef3","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"a2cb382c845f1b98c8b5804d0d9e1f4883b44ebf5ce9394d177f41a954b49ef3","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"a2cb382c845f1b98c8b5804d0d9e1f4883b44ebf5ce9394d177f41a954b49ef3","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C010
+    ok 10 - P2-007-C010
+      ---
+      duration_ms: 87.411
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C010","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"69fdb614172cd29fed44ef67955ea4b26f601d244c93bb0ec05be3aed450e579","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"a1bcf8498af6b8f6631660bfcb534f7840b943adf0700859f42ccc2d6e9930d0","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-240","source_kind":"REPORTER_EXPLICIT","source_hash":"a1bcf8498af6b8f6631660bfcb534f7840b943adf0700859f42ccc2d6e9930d0","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"a1bcf8498af6b8f6631660bfcb534f7840b943adf0700859f42ccc2d6e9930d0","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"a1bcf8498af6b8f6631660bfcb534f7840b943adf0700859f42ccc2d6e9930d0","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C011
+    ok 11 - P2-007-C011
+      ---
+      duration_ms: 199.1911
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C011","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"a5997e747e0ec8a24c2b1b4df7e597253486e52bd6272ce4055463ad87e56d87","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"1a5256bf14b20069c7cd89ba501dbc9693f0e0e3b9e39ae4e6b4d23ebb260ede","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-066","source_kind":"REPORTER_EXPLICIT","source_hash":"1a5256bf14b20069c7cd89ba501dbc9693f0e0e3b9e39ae4e6b4d23ebb260ede","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"1a5256bf14b20069c7cd89ba501dbc9693f0e0e3b9e39ae4e6b4d23ebb260ede","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-150","source_kind":"REPORTER_EXPLICIT","source_hash":"1a5256bf14b20069c7cd89ba501dbc9693f0e0e3b9e39ae4e6b4d23ebb260ede","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C012
+    ok 12 - P2-007-C012
+      ---
+      duration_ms: 106.7754
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C012","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"7b0cbdb9cc43afb7e6fb327b0f45d4c32819243e9a557a5d9744b809d5da4ba5","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"0b030980d59a0777e9c6dd49debac432ff6ba1b4be1090307303cd60989ce1fc","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-056","source_kind":"REPORTER_EXPLICIT","source_hash":"0b030980d59a0777e9c6dd49debac432ff6ba1b4be1090307303cd60989ce1fc","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-006","source_kind":"DETERMINISTIC_RULE","source_hash":"0b030980d59a0777e9c6dd49debac432ff6ba1b4be1090307303cd60989ce1fc","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"0b030980d59a0777e9c6dd49debac432ff6ba1b4be1090307303cd60989ce1fc","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C013
+    ok 13 - P2-007-C013
+      ---
+      duration_ms: 81.3399
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C013","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"712eb4d5e19fc0936283d1ce17e108f10f897548787b77af872abb4399dfdb0e","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"a3a5c7cb9d2aed260047d45d3f30dd71e903dd7cbc8e4619425e7052bb6cb945","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-188","source_kind":"REPORTER_EXPLICIT","source_hash":"a3a5c7cb9d2aed260047d45d3f30dd71e903dd7cbc8e4619425e7052bb6cb945","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"a3a5c7cb9d2aed260047d45d3f30dd71e903dd7cbc8e4619425e7052bb6cb945","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C014
+    ok 14 - P2-007-C014
+      ---
+      duration_ms: 90.8348
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C014","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"93d98786c8e46f8f209221652b233710de345d18ae40aa94df9f595b1ae26537","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"1c37ade20ed108fa7f2542d259bc55cd5ffb44ba619fd2767240dcf9e00c421e","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-171","source_kind":"REPORTER_EXPLICIT","source_hash":"1c37ade20ed108fa7f2542d259bc55cd5ffb44ba619fd2767240dcf9e00c421e","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-002","source_kind":"DETERMINISTIC_RULE","source_hash":"1c37ade20ed108fa7f2542d259bc55cd5ffb44ba619fd2767240dcf9e00c421e","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C015
+    ok 15 - P2-007-C015
+      ---
+      duration_ms: 78.3562
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C015","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"5644ae9fce3d96e2f86a370384be2ad8e3912bcaab2625f51b04d0d9bc9c9080","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"43e53a71e5fc398da5599acf0c510f51de713e0aa46f3f25715baf3811bcfac9","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-160","source_kind":"REPORTER_EXPLICIT","source_hash":"43e53a71e5fc398da5599acf0c510f51de713e0aa46f3f25715baf3811bcfac9","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-002","source_kind":"DETERMINISTIC_RULE","source_hash":"43e53a71e5fc398da5599acf0c510f51de713e0aa46f3f25715baf3811bcfac9","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"43e53a71e5fc398da5599acf0c510f51de713e0aa46f3f25715baf3811bcfac9","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C016
+    ok 16 - P2-007-C016
+      ---
+      duration_ms: 84.6722
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C016","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"387ada02141a791146a8b4c1ed058043d4677e49a9692e7365d19e5134f3f63a","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-002","source_kind":"DETERMINISTIC_RULE","source_hash":"405870e9879833e7a8cbbb626af4c3d83574507bfd7fdf755739bf9727cb65f6","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-134","source_kind":"REPORTER_EXPLICIT","source_hash":"405870e9879833e7a8cbbb626af4c3d83574507bfd7fdf755739bf9727cb65f6","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"405870e9879833e7a8cbbb626af4c3d83574507bfd7fdf755739bf9727cb65f6","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-073","source_kind":"REPORTER_EXPLICIT","source_hash":"405870e9879833e7a8cbbb626af4c3d83574507bfd7fdf755739bf9727cb65f6","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C017
+    ok 17 - P2-007-C017
+      ---
+      duration_ms: 90.5562
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C017","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"afac202f843e626067c98db6396bd7e5705314fa2098f615ba55faf9a94a6586","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-002","source_kind":"DETERMINISTIC_RULE","source_hash":"c52cee71b6fecef229b1ec7012e71baa79001002fc7139206d17f01588621350","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"c52cee71b6fecef229b1ec7012e71baa79001002fc7139206d17f01588621350","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-128","source_kind":"REPORTER_EXPLICIT","source_hash":"c52cee71b6fecef229b1ec7012e71baa79001002fc7139206d17f01588621350","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"c52cee71b6fecef229b1ec7012e71baa79001002fc7139206d17f01588621350","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C018
+    ok 18 - P2-007-C018
+      ---
+      duration_ms: 85.0162
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C018","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"6ef8b1f7c2b2d6c6487e7a72e3d66a5c09af5323277390d37e4e9cf770cf6bc1","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"68f0cf8e337c474553c04750c1c8a7f2ad1c499a308d595d1ec2637c36b764d0","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"68f0cf8e337c474553c04750c1c8a7f2ad1c499a308d595d1ec2637c36b764d0","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-123","source_kind":"REPORTER_EXPLICIT","source_hash":"68f0cf8e337c474553c04750c1c8a7f2ad1c499a308d595d1ec2637c36b764d0","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"68f0cf8e337c474553c04750c1c8a7f2ad1c499a308d595d1ec2637c36b764d0","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-111","source_kind":"REPORTER_EXPLICIT","source_hash":"68f0cf8e337c474553c04750c1c8a7f2ad1c499a308d595d1ec2637c36b764d0","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C019
+    ok 19 - P2-007-C019
+      ---
+      duration_ms: 81.1216
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C019","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"94b2b6fb49bd55e4ebde37757d636737cb32aeef19b2846a57307789b1894151","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-156","source_kind":"REPORTER_EXPLICIT","source_hash":"9f69caabad05a549a2c90ed957ab254b1a7b6c6bfa6951e2b0794c6456d14089","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-004","source_kind":"DETERMINISTIC_RULE","source_hash":"9f69caabad05a549a2c90ed957ab254b1a7b6c6bfa6951e2b0794c6456d14089","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"9f69caabad05a549a2c90ed957ab254b1a7b6c6bfa6951e2b0794c6456d14089","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C020
+    ok 20 - P2-007-C020
+      ---
+      duration_ms: 142.924
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C020","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"ec8acc12266b70eed9f075ab19ba74ec89f00dacb016ae8cf9e97e480e40e6b7","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"0908a435ca79cdce8a09584442065711d9e737e7498a42844ee4845dc7cdd926","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-177","source_kind":"REPORTER_EXPLICIT","source_hash":"0908a435ca79cdce8a09584442065711d9e737e7498a42844ee4845dc7cdd926","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-038","source_kind":"REPORTER_EXPLICIT","source_hash":"0908a435ca79cdce8a09584442065711d9e737e7498a42844ee4845dc7cdd926","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C035
+    ok 21 - P2-007-C035
+      ---
+      duration_ms: 80.0232
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C035","expected":["NEEDS_DESCRIPTION","MANUAL_REVIEW_REQUIRED"],"result_code":"NEEDS_DESCRIPTION","tickets":0,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"ONE_DESCRIPTION_REQUIRED","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"REQUEST_ONE_DESCRIPTION","state":"EXECUTED","result_ref_type":"COMMUNICATION"}],"safe_result_sha256":"121f4829419bdcceeb91db833a879b8ea135f553756b9016759e7c632f78fef1","provenance":[],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C037
+    ok 22 - P2-007-C037
+      ---
+      duration_ms: 91.137
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C037","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"2361848b7d41049932424c57391516caa1df9943507c954d27f917266247f78b","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-276","source_kind":"REPORTER_EXPLICIT","source_hash":"06e4de1a15ed627091f119a6cf4c610bf126cccf1bcd3f1f49eb972937cb6c20","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"06e4de1a15ed627091f119a6cf4c610bf126cccf1bcd3f1f49eb972937cb6c20","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"06e4de1a15ed627091f119a6cf4c610bf126cccf1bcd3f1f49eb972937cb6c20","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C038
+    ok 23 - P2-007-C038
+      ---
+      duration_ms: 91.9853
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C038","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"fd2995c0bce136de42197fbe4b02aa58d8e1bd1c4a2e71715de5c50e3c32498b","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"0dd669ea9a691079392b82c35b661bacee01f8ee5283095022fe42ee991b1624","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-101","source_kind":"REPORTER_EXPLICIT","source_hash":"0dd669ea9a691079392b82c35b661bacee01f8ee5283095022fe42ee991b1624","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-003","source_kind":"DETERMINISTIC_RULE","source_hash":"0dd669ea9a691079392b82c35b661bacee01f8ee5283095022fe42ee991b1624","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C039
+    ok 24 - P2-007-C039
+      ---
+      duration_ms: 97.2709
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C039","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"e2bb4482b4058dcde1da1e49fd9f3a0ae3dce5919f9582a5eb9e628fa97761fe","provenance":[{"field_path":"classification.scope","rule_id":"SCOPE-003","source_kind":"DETERMINISTIC_RULE","source_hash":"a185d0e53ff1bf525f59c3ab43667ec5b1fa2a4156f39bc0a0836b4bb1e213fe","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"a185d0e53ff1bf525f59c3ab43667ec5b1fa2a4156f39bc0a0836b4bb1e213fe","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-002","source_kind":"DETERMINISTIC_RULE","source_hash":"a185d0e53ff1bf525f59c3ab43667ec5b1fa2a4156f39bc0a0836b4bb1e213fe","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C040
+    ok 25 - P2-007-C040
+      ---
+      duration_ms: 99.6299
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C040","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"5d9f783cdebc98ae182c394f0e4e62b5b611d2b9043cca8dbafd4db29efeb254","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"f555b82fa6d3deaf666adb83ed8e9875fe9d2b0b4010c0a672b099019e6688fc","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-075","source_kind":"REPORTER_EXPLICIT","source_hash":"f555b82fa6d3deaf666adb83ed8e9875fe9d2b0b4010c0a672b099019e6688fc","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-003","source_kind":"DETERMINISTIC_RULE","source_hash":"f555b82fa6d3deaf666adb83ed8e9875fe9d2b0b4010c0a672b099019e6688fc","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"f555b82fa6d3deaf666adb83ed8e9875fe9d2b0b4010c0a672b099019e6688fc","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C041
+    ok 26 - P2-007-C041
+      ---
+      duration_ms: 186.7765
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C041","expected":["TICKET_ELIGIBLE","INCIDENT_REVIEW_CANDIDATE"],"result_code":"INCIDENT_REVIEW_CANDIDATE","tickets":1,"reviews":1,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"DETERMINISTIC_INCIDENT_CANDIDATE","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_INCIDENT_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"524d73e4d3b37cb05f7396d880d4f02ef77342dd901c290307bc211b902646ec","provenance":[{"field_path":"classification.scope","rule_id":null,"source_kind":"DETERMINISTIC_RULE","source_hash":"34654c49b58e5cd6641440db7e929271d008c0cb1e8f2badf8f1cf32c10706e4","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"34654c49b58e5cd6641440db7e929271d008c0cb1e8f2badf8f1cf32c10706e4","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"34654c49b58e5cd6641440db7e929271d008c0cb1e8f2badf8f1cf32c10706e4","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C041","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C042
+    ok 27 - P2-007-C042
+      ---
+      duration_ms: 339.3262
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C042","expected":["TICKET_ELIGIBLE","INCIDENT_REVIEW_CANDIDATE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"473c61ce0f538c5fa02e5379d64e78d573d8f244541dfe6571b2916103a86db1","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-017","source_kind":"REPORTER_EXPLICIT","source_hash":"bb227e6b4041d2120c862457e17c36c2f20d7d6a57b90a3924fa21f3e8eab509","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"bb227e6b4041d2120c862457e17c36c2f20d7d6a57b90a3924fa21f3e8eab509","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-005","source_kind":"DETERMINISTIC_RULE","source_hash":"bb227e6b4041d2120c862457e17c36c2f20d7d6a57b90a3924fa21f3e8eab509","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"bb227e6b4041d2120c862457e17c36c2f20d7d6a57b90a3924fa21f3e8eab509","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C043
+    ok 28 - P2-007-C043
+      ---
+      duration_ms: 199.2854
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C043","expected":["TICKET_ELIGIBLE","INCIDENT_REVIEW_CANDIDATE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"f4043b0bb86c36619d13f88274ae591a41d1942c4a55ff0bb8228ea57c75a221","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-004","source_kind":"REPORTER_EXPLICIT","source_hash":"95dc37d2c57befcd61cbb85bb205cedebc4beff231ae168ef8a1caae4df7853d","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"95dc37d2c57befcd61cbb85bb205cedebc4beff231ae168ef8a1caae4df7853d","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-026","source_kind":"REPORTER_EXPLICIT","source_hash":"95dc37d2c57befcd61cbb85bb205cedebc4beff231ae168ef8a1caae4df7853d","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"95dc37d2c57befcd61cbb85bb205cedebc4beff231ae168ef8a1caae4df7853d","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C045
+    ok 29 - P2-007-C045
+      ---
+      duration_ms: 132.3523
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C045","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"fd0c12cadecca8b0ddd97b35d41bd6157aaac2b85caebc2534186d1dfd708493","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"1182eeb10c481f1b330cc835cb4efeb01199f58ed3eee83abf8a7706d4cef1d7","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"1182eeb10c481f1b330cc835cb4efeb01199f58ed3eee83abf8a7706d4cef1d7","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-107","source_kind":"REPORTER_EXPLICIT","source_hash":"1182eeb10c481f1b330cc835cb4efeb01199f58ed3eee83abf8a7706d4cef1d7","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C046
+    ok 30 - P2-007-C046
+      ---
+      duration_ms: 104.6302
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C046","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"dfaa1de253f706b9c6f03a84f5371c9b5bd60915dc7a13353fb3df6f6e465c2f","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"fad327d2b687ee6c85c1b2bf6c56bd4ecbbeac51c61bdc443e1b61b03a6e9af8","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-111","source_kind":"REPORTER_EXPLICIT","source_hash":"fad327d2b687ee6c85c1b2bf6c56bd4ecbbeac51c61bdc443e1b61b03a6e9af8","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-123","source_kind":"REPORTER_EXPLICIT","source_hash":"fad327d2b687ee6c85c1b2bf6c56bd4ecbbeac51c61bdc443e1b61b03a6e9af8","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"fad327d2b687ee6c85c1b2bf6c56bd4ecbbeac51c61bdc443e1b61b03a6e9af8","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"fad327d2b687ee6c85c1b2bf6c56bd4ecbbeac51c61bdc443e1b61b03a6e9af8","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C047
+    ok 31 - P2-007-C047
+      ---
+      duration_ms: 89.3882
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C047","expected":["NEEDS_DESCRIPTION","MANUAL_REVIEW_REQUIRED"],"result_code":"NEEDS_DESCRIPTION","tickets":0,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"ONE_DESCRIPTION_REQUIRED","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"REQUEST_ONE_DESCRIPTION","state":"EXECUTED","result_ref_type":"COMMUNICATION"}],"safe_result_sha256":"6f601c8cf5021325cebf9cf9fa3cb045a77c89eeecf4d20f6a90c4ad57b8b210","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-177","source_kind":"REPORTER_EXPLICIT","source_hash":"3b59916c28f32d709a7cd5a0c878552b1fe667973c36a9f22945aa12fbb90845","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C049
+    ok 32 - P2-007-C049
+      ---
+      duration_ms: 110.1656
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C049","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"dc4fe1df984430fb089c50b3095f2731514ffe4ad2ddc04dcc1eae2fda1ae9a7","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"f9ac98834115e2a9f5f7e979cc8bac09c4311e79e03901e9a36fb3fc1f99c648","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-801","source_kind":"REPORTER_EXPLICIT","source_hash":"f9ac98834115e2a9f5f7e979cc8bac09c4311e79e03901e9a36fb3fc1f99c648","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"f9ac98834115e2a9f5f7e979cc8bac09c4311e79e03901e9a36fb3fc1f99c648","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-026","source_kind":"REPORTER_EXPLICIT","source_hash":"f9ac98834115e2a9f5f7e979cc8bac09c4311e79e03901e9a36fb3fc1f99c648","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-075","source_kind":"REPORTER_EXPLICIT","source_hash":"f9ac98834115e2a9f5f7e979cc8bac09c4311e79e03901e9a36fb3fc1f99c648","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C050
+    ok 33 - P2-007-C050
+      ---
+      duration_ms: 109.6033
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C050","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"7b0f7f8d8f23fd53f5ec2e47a5b78bc1afaf1fd3e8269ae1b921bfdd7dc189fc","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-240","source_kind":"REPORTER_EXPLICIT","source_hash":"f1fb1a5041958bc0eb69d60892b360be498e65790b29ef4d66a4a0b96858af67","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"f1fb1a5041958bc0eb69d60892b360be498e65790b29ef4d66a4a0b96858af67","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"f1fb1a5041958bc0eb69d60892b360be498e65790b29ef4d66a4a0b96858af67","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"f1fb1a5041958bc0eb69d60892b360be498e65790b29ef4d66a4a0b96858af67","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C051
+    ok 34 - P2-007-C051
+      ---
+      duration_ms: 91.5745
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C051","expected":["ACKNOWLEDGEMENT","MANUAL_REVIEW_REQUIRED"],"result_code":"ACKNOWLEDGEMENT","tickets":0,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"RECOVERY_WITHOUT_AUTHORIZED_TICKET","actual_actions":[{"action_type":"SEND_FIXED_ACKNOWLEDGEMENT","state":"EXECUTED","result_ref_type":"COMMUNICATION"}],"safe_result_sha256":"79cd5e84a27b21e395764b11b6c1331960159bd1d3f4630093af335a3a1c1182","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-007","source_kind":"DETERMINISTIC_RULE","source_hash":"a98d955992ccf1fdb9850c96b9d09c41181b82cdefe4fa0ecf1906ca16262cfe","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C052
+    ok 35 - P2-007-C052
+      ---
+      duration_ms: 145.0353
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C052","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"0ad22d5d75118ca11f2993d7e1c00b696feb5ad53d52d8f07188174e2f3cfb29","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"bfaa5e7ba88f0ee057dec4c8d1602630dfa2dd42e94ce16a701787eed6a394d5","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-002","source_kind":"DETERMINISTIC_RULE","source_hash":"bfaa5e7ba88f0ee057dec4c8d1602630dfa2dd42e94ce16a701787eed6a394d5","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C053
+    ok 36 - P2-007-C053
+      ---
+      duration_ms: 82.0396
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C053","expected":["NEEDS_DESCRIPTION","MANUAL_REVIEW_REQUIRED"],"result_code":"NEEDS_DESCRIPTION","tickets":0,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"ONE_DESCRIPTION_REQUIRED","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"REQUEST_ONE_DESCRIPTION","state":"EXECUTED","result_ref_type":"COMMUNICATION"}],"safe_result_sha256":"598202eb4704587e48b7aea8d06193dd789e36bd2330adf3bdd6f2cea9bf2469","provenance":[],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C055
+    ok 37 - P2-007-C055
+      ---
+      duration_ms: 119.1131
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C055","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"21f1fe32dd61d7e5d280567f2c6c19cf283ae57b3f10c4f20ef47d6454fcad75","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-075","source_kind":"REPORTER_EXPLICIT","source_hash":"47678163bfe66d2a71cf627e86263b3e06eea4df08b8134336a172daaae67397","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"47678163bfe66d2a71cf627e86263b3e06eea4df08b8134336a172daaae67397","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-004","source_kind":"DETERMINISTIC_RULE","source_hash":"47678163bfe66d2a71cf627e86263b3e06eea4df08b8134336a172daaae67397","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C056
+    ok 38 - P2-007-C056
+      ---
+      duration_ms: 107.7009
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C056","expected":["TICKET_ELIGIBLE","INCIDENT_REVIEW_CANDIDATE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"d4ec5f017f0847f89d0cdd0a9d2fcd4cda2cb9fc08de1bc1237576a4144c6810","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-156","source_kind":"REPORTER_EXPLICIT","source_hash":"d9983b1391d6785742001d7e4e873bcb3d164e7ebbfe16bd8cbd42ccca93f120","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-004","source_kind":"DETERMINISTIC_RULE","source_hash":"d9983b1391d6785742001d7e4e873bcb3d164e7ebbfe16bd8cbd42ccca93f120","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"d9983b1391d6785742001d7e4e873bcb3d164e7ebbfe16bd8cbd42ccca93f120","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C057
+    ok 39 - P2-007-C057
+      ---
+      duration_ms: 103.1864
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C057","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"ddb36c303d13a7e63e9f5a3120141b094de3dd71aec41c0f27e1ed35d0beeb10","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"b9c438330f11aeb2f458cb67e363257d6ae08f18c5d34e987b4eb9102904bc4e","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"b9c438330f11aeb2f458cb67e363257d6ae08f18c5d34e987b4eb9102904bc4e","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-001","source_kind":"REPORTER_EXPLICIT","source_hash":"b9c438330f11aeb2f458cb67e363257d6ae08f18c5d34e987b4eb9102904bc4e","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C058
+    ok 40 - P2-007-C058
+      ---
+      duration_ms: 95.8206
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C058","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"3b4094b1c2abead0747b5895274ae18b8f737892cd2bef354fd1384abaff3fce","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"ccd435a6c77cfa4d2e8ffab1b707b6e45a4ff843efa6c9d624567af4054016c4","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-075","source_kind":"REPORTER_EXPLICIT","source_hash":"ccd435a6c77cfa4d2e8ffab1b707b6e45a4ff843efa6c9d624567af4054016c4","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"ccd435a6c77cfa4d2e8ffab1b707b6e45a4ff843efa6c9d624567af4054016c4","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-053","source_kind":"REPORTER_EXPLICIT","source_hash":"ccd435a6c77cfa4d2e8ffab1b707b6e45a4ff843efa6c9d624567af4054016c4","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C059
+    ok 41 - P2-007-C059
+      ---
+      duration_ms: 99.1635
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C059","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"9c99517fadb34e7b693af9f7ad1d825c928b49b81dffd53da0e8874aa75352c1","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-134","source_kind":"REPORTER_EXPLICIT","source_hash":"bd2a503d547513e1c217a68976a74e8bd0381e1d260f31c7c0aeb4165f7d8c21","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"bd2a503d547513e1c217a68976a74e8bd0381e1d260f31c7c0aeb4165f7d8c21","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-002","source_kind":"DETERMINISTIC_RULE","source_hash":"bd2a503d547513e1c217a68976a74e8bd0381e1d260f31c7c0aeb4165f7d8c21","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C060
+    ok 42 - P2-007-C060
+      ---
+      duration_ms: 101.0422
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C060","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"872056ef3e4120d137e53d3d32bb817f7cdced6c8ffad9d8e58dd6a8372da7c7","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-244","source_kind":"REPORTER_EXPLICIT","source_hash":"7fe6cd4f9e28c4dd029ec97af1e25d1533ef87b9d941ee5e03a11d3117b92999","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"7fe6cd4f9e28c4dd029ec97af1e25d1533ef87b9d941ee5e03a11d3117b92999","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-007","source_kind":"DETERMINISTIC_RULE","source_hash":"7fe6cd4f9e28c4dd029ec97af1e25d1533ef87b9d941ee5e03a11d3117b92999","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"7fe6cd4f9e28c4dd029ec97af1e25d1533ef87b9d941ee5e03a11d3117b92999","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C061
+    ok 43 - P2-007-C061
+      ---
+      duration_ms: 102.9585
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C061","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"341d9bec85f4d549af5cbbef4fc85b275df3eee4ab3323543b4561fbeca44196","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-152","source_kind":"REPORTER_EXPLICIT","source_hash":"2b0a2cc876a606d0b8cdcd60f496e67fef62a99296f6f01fb226fecb8f9b01d1","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-123","source_kind":"REPORTER_EXPLICIT","source_hash":"2b0a2cc876a606d0b8cdcd60f496e67fef62a99296f6f01fb226fecb8f9b01d1","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"2b0a2cc876a606d0b8cdcd60f496e67fef62a99296f6f01fb226fecb8f9b01d1","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"2b0a2cc876a606d0b8cdcd60f496e67fef62a99296f6f01fb226fecb8f9b01d1","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C062
+    ok 44 - P2-007-C062
+      ---
+      duration_ms: 78.7008
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C062","expected":["OUT_OF_SCOPE"],"result_code":"OUT_OF_SCOPE","tickets":0,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"DETERMINISTIC_NON_IT_SCOPE","actual_actions":[{"action_type":"SEND_FIXED_SCOPE_NOTICE","state":"EXECUTED","result_ref_type":"COMMUNICATION"}],"safe_result_sha256":"fcec52b6d362d876d170894b92428fb6b18d01b6586b9bf1bff113c1aaa90a4f","provenance":[{"field_path":"classification.domain_intent","rule_id":null,"source_kind":"DETERMINISTIC_RULE","source_hash":"d74cd5d9e1aa4958acebfa95ec035ffb1ed563b6378614593bc7b416d77a4124","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-193","source_kind":"REPORTER_EXPLICIT","source_hash":"d74cd5d9e1aa4958acebfa95ec035ffb1ed563b6378614593bc7b416d77a4124","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C063
+    ok 45 - P2-007-C063
+      ---
+      duration_ms: 1123.723
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C063","expected":["OUT_OF_SCOPE"],"result_code":"OUT_OF_SCOPE","tickets":0,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"DETERMINISTIC_NON_IT_SCOPE","actual_actions":[{"action_type":"SEND_FIXED_SCOPE_NOTICE","state":"EXECUTED","result_ref_type":"COMMUNICATION"}],"safe_result_sha256":"66930b4f7ca15c61324a8414facaea3faba160cfa1a5fa1fdaf58be51eb5c07d","provenance":[{"field_path":"service.selected_service_code","rule_id":"ALIAS-031","source_kind":"REPORTER_EXPLICIT","source_hash":"00f6de4865a9848e1c550c7eecc71eab9c39576b08234a9f5a7e2ca4c7f6b229","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":null,"source_kind":"DETERMINISTIC_RULE","source_hash":"00f6de4865a9848e1c550c7eecc71eab9c39576b08234a9f5a7e2ca4c7f6b229","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C064
+    ok 46 - P2-007-C064
+      ---
+      duration_ms: 79.2014
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C064","expected":["OUT_OF_SCOPE"],"result_code":"OUT_OF_SCOPE","tickets":0,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"DETERMINISTIC_NON_IT_SCOPE","actual_actions":[{"action_type":"SEND_FIXED_SCOPE_NOTICE","state":"EXECUTED","result_ref_type":"COMMUNICATION"}],"safe_result_sha256":"a991ca05b816aac99354ee41982e60f302142094847cf7441d8da64e97fa8ec7","provenance":[{"field_path":"classification.domain_intent","rule_id":null,"source_kind":"DETERMINISTIC_RULE","source_hash":"6c1abf0a4dacfab9dcf4dbee7da48108f3ec33440a3aa0f499dbeea410574906","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-038","source_kind":"REPORTER_EXPLICIT","source_hash":"6c1abf0a4dacfab9dcf4dbee7da48108f3ec33440a3aa0f499dbeea410574906","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C065
+    ok 47 - P2-007-C065
+      ---
+      duration_ms: 162.4883
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C065","expected":["BUSINESS_CONSULTATION","MANUAL_REVIEW_REQUIRED"],"result_code":"BUSINESS_CONSULTATION","tickets":0,"reviews":1,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"BUSINESS_POLICY_NOT_GUESSED","actual_actions":[{"action_type":"ROUTE_BUSINESS_CONSULTATION","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"91c632ef727e253fed8033de2f5f3ee7a911d230290e12f95710d1328dc5896f","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-004","source_kind":"DETERMINISTIC_RULE","source_hash":"6c3e43838ebae3e4f4c7ff167ba240024bb0792d71a3fb164615f800e9d3a7e6","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0}}
+    # {"case_id":"P2-007-C065","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C066
+    ok 48 - P2-007-C066
+      ---
+      duration_ms: 369.8603
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C066","expected":["BUSINESS_CONSULTATION","MANUAL_REVIEW_REQUIRED"],"result_code":"BUSINESS_CONSULTATION","tickets":0,"reviews":1,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"BUSINESS_POLICY_NOT_GUESSED","actual_actions":[{"action_type":"ROUTE_BUSINESS_CONSULTATION","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"8ecdbb0fa755eff34aeca8a90f966b49f143850dcd8b6f61eb8712257b4c15d8","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-009","source_kind":"DETERMINISTIC_RULE","source_hash":"a955e7633c74cbef3d9181204a8a1b660f9f5eda5a119dcc86e698388441d6e4","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0}}
+    # {"case_id":"P2-007-C066","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C067
+    ok 49 - P2-007-C067
+      ---
+      duration_ms: 237.9843
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C067","expected":["TICKET_ELIGIBLE","INCIDENT_REVIEW_CANDIDATE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"b8e611653071fa8a56e90c8bdb398166dfaf7d5b1cf6d45fe405395dddd728e9","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-003","source_kind":"DETERMINISTIC_RULE","source_hash":"54e4ad9d672ca7b77d2df9444a9dd2d67c21cc51d32a877a306103727b6fb305","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"54e4ad9d672ca7b77d2df9444a9dd2d67c21cc51d32a877a306103727b6fb305","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"54e4ad9d672ca7b77d2df9444a9dd2d67c21cc51d32a877a306103727b6fb305","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-135","source_kind":"REPORTER_EXPLICIT","source_hash":"54e4ad9d672ca7b77d2df9444a9dd2d67c21cc51d32a877a306103727b6fb305","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C068
+    ok 50 - P2-007-C068
+      ---
+      duration_ms: 248.7741
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C068","expected":["BUSINESS_CONSULTATION","MANUAL_REVIEW_REQUIRED"],"result_code":"BUSINESS_CONSULTATION","tickets":0,"reviews":1,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"BUSINESS_POLICY_NOT_GUESSED","actual_actions":[{"action_type":"ROUTE_BUSINESS_CONSULTATION","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"ae464481ad6364dbd8329a1a56b6d665aea0ad2efac9060d4c140d2acfc30e58","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-004","source_kind":"DETERMINISTIC_RULE","source_hash":"34545a7924a5e261d6c4418070ee0ea8d31721b6243fa21cd39c33f6ab6d5dc1","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"34545a7924a5e261d6c4418070ee0ea8d31721b6243fa21cd39c33f6ab6d5dc1","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0}}
+    # {"case_id":"P2-007-C068","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C069
+    ok 51 - P2-007-C069
+      ---
+      duration_ms: 295.5485
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C069","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":3,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"a5d7c0cdfdd89f6e2d38f73e1e946ad9f94297cc94ae419546bd7fa9c4843b58","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"81f9da1aa6610425f6cebf3bab7bd6259b443934d5f8325f4c9bec7e874b6d9b","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"81f9da1aa6610425f6cebf3bab7bd6259b443934d5f8325f4c9bec7e874b6d9b","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-075","source_kind":"REPORTER_EXPLICIT","source_hash":"81f9da1aa6610425f6cebf3bab7bd6259b443934d5f8325f4c9bec7e874b6d9b","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-053","source_kind":"REPORTER_EXPLICIT","source_hash":"81f9da1aa6610425f6cebf3bab7bd6259b443934d5f8325f4c9bec7e874b6d9b","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C069","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C070
+    ok 52 - P2-007-C070
+      ---
+      duration_ms: 332.823
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C070","expected":["BUSINESS_CONSULTATION","MANUAL_REVIEW_REQUIRED"],"result_code":"BUSINESS_CONSULTATION","tickets":0,"reviews":1,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"BUSINESS_POLICY_NOT_GUESSED","actual_actions":[{"action_type":"ROUTE_BUSINESS_CONSULTATION","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"7e451b507e8d02b09d0f8e625f83a81e8205c56d39a360c12672f89d6651bf64","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-004","source_kind":"DETERMINISTIC_RULE","source_hash":"3124bdd71821eef631ce9a56d099fc51f0736cf129c8c80895d564287581cee2","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-093","source_kind":"REPORTER_EXPLICIT","source_hash":"3124bdd71821eef631ce9a56d099fc51f0736cf129c8c80895d564287581cee2","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0}}
+    # {"case_id":"P2-007-C070","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C071
+    ok 53 - P2-007-C071
+      ---
+      duration_ms: 353.8753
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C071","expected":["BUSINESS_CONSULTATION","MANUAL_REVIEW_REQUIRED"],"result_code":"BUSINESS_CONSULTATION","tickets":0,"reviews":1,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"BUSINESS_POLICY_NOT_GUESSED","actual_actions":[{"action_type":"ROUTE_BUSINESS_CONSULTATION","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"8ae253e43161c53cddf2483cc0cb97a43197fb09d200eacee8c591bf86ea8a87","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-004","source_kind":"DETERMINISTIC_RULE","source_hash":"1e9807c4ff12a6dfc76660ca83dd40a24cb0d60235a349c2ef2c5f0cb2b8d61b","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"1e9807c4ff12a6dfc76660ca83dd40a24cb0d60235a349c2ef2c5f0cb2b8d61b","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-117","source_kind":"REPORTER_EXPLICIT","source_hash":"1e9807c4ff12a6dfc76660ca83dd40a24cb0d60235a349c2ef2c5f0cb2b8d61b","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0}}
+    # {"case_id":"P2-007-C071","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C072
+    ok 54 - P2-007-C072
+      ---
+      duration_ms: 262.4577
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C072","expected":["BUSINESS_CONSULTATION","MANUAL_REVIEW_REQUIRED"],"result_code":"BUSINESS_CONSULTATION","tickets":0,"reviews":1,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"BUSINESS_POLICY_NOT_GUESSED","actual_actions":[{"action_type":"ROUTE_BUSINESS_CONSULTATION","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"c9121b651e8bd42434a0370ce4579285fac717d2cbd94d25889fec71c9c58ed5","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"c4649a0d28b48d89f79224dc831b1f41f78c813b0d9468e91ff55d4660922a0a","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-004","source_kind":"DETERMINISTIC_RULE","source_hash":"c4649a0d28b48d89f79224dc831b1f41f78c813b0d9468e91ff55d4660922a0a","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-033","source_kind":"REPORTER_EXPLICIT","source_hash":"c4649a0d28b48d89f79224dc831b1f41f78c813b0d9468e91ff55d4660922a0a","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0}}
+    # {"case_id":"P2-007-C072","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C073
+    ok 55 - P2-007-C073
+      ---
+      duration_ms: 366.3224
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C073","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":3,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"bad6521067f426d451d22610fde1862b8fa8462431b15821d6a760e451fd7eb7","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"3f40735ac8915f39536ee79b3eb7d22e17f244563eafba5ae5dcf37baa5f030c","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-053","source_kind":"REPORTER_EXPLICIT","source_hash":"3f40735ac8915f39536ee79b3eb7d22e17f244563eafba5ae5dcf37baa5f030c","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-157","source_kind":"REPORTER_EXPLICIT","source_hash":"3f40735ac8915f39536ee79b3eb7d22e17f244563eafba5ae5dcf37baa5f030c","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"3f40735ac8915f39536ee79b3eb7d22e17f244563eafba5ae5dcf37baa5f030c","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C073","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C074
+    ok 56 - P2-007-C074
+      ---
+      duration_ms: 343.3759
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C074","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"959f39fc1a7b535ca5bf18eb542ecfef6bd65eee39b906ea947505869644d115","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"dc019a5ec49ec8168ad7e685dbbb599a2e966ca53049cc7c06b4d2a9988212a1","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"dc019a5ec49ec8168ad7e685dbbb599a2e966ca53049cc7c06b4d2a9988212a1","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C074","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C075
+    ok 57 - P2-007-C075
+      ---
+      duration_ms: 311.8517
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C075","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"c86db6f137af39f9fb4421f0096a987518f7a4807f7854e44dba43ab1e41dd76","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-011","source_kind":"DETERMINISTIC_RULE","source_hash":"4fe059c9f7b16e3fedef48b4046f42826ac4f29f37dfa95549628c9944f3b586","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"4fe059c9f7b16e3fedef48b4046f42826ac4f29f37dfa95549628c9944f3b586","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"4fe059c9f7b16e3fedef48b4046f42826ac4f29f37dfa95549628c9944f3b586","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C075","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C076
+    ok 58 - P2-007-C076
+      ---
+      duration_ms: 394.075
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C076","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":3,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"4eaddd5ae7734a9e80706e8e3fdb28973660a3b2fd714e5dc7f3a825454c78e1","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"68756f9d903bc890cb715b654f9318ac1876840a16b98b316edc681607386d91","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-053","source_kind":"REPORTER_EXPLICIT","source_hash":"68756f9d903bc890cb715b654f9318ac1876840a16b98b316edc681607386d91","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-075","source_kind":"REPORTER_EXPLICIT","source_hash":"68756f9d903bc890cb715b654f9318ac1876840a16b98b316edc681607386d91","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"68756f9d903bc890cb715b654f9318ac1876840a16b98b316edc681607386d91","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C076","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C077
+    ok 59 - P2-007-C077
+      ---
+      duration_ms: 434.7766
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C077","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":3,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"c90c957b9400bd56616f7089294482b36c6ecd568881e4f1d3e2572bc2881644","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"9fdb92832a4562a9319c615104b013c260f6406e3a94346c1e30890d08d2af5f","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-010","source_kind":"DETERMINISTIC_RULE","source_hash":"9fdb92832a4562a9319c615104b013c260f6406e3a94346c1e30890d08d2af5f","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-160","source_kind":"REPORTER_EXPLICIT","source_hash":"9fdb92832a4562a9319c615104b013c260f6406e3a94346c1e30890d08d2af5f","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C077","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C078
+    ok 60 - P2-007-C078
+      ---
+      duration_ms: 299.6303
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C078","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":3,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"2bd30490b6c878a55d2d531751de29d59f0d06c48bdcee57612aa31bc444f6cc","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-009","source_kind":"DETERMINISTIC_RULE","source_hash":"1e13a5a1f97f9fbb334e70f74871f6838d0f1d7957139dd242ef28614e3571d4","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"1e13a5a1f97f9fbb334e70f74871f6838d0f1d7957139dd242ef28614e3571d4","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C078","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C079
+    ok 61 - P2-007-C079
+      ---
+      duration_ms: 366.0264
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C079","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":3,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"696c8636e4825982fac8acd1f9fd6dcc287f11e805449aec848171fa5534dbbf","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-009","source_kind":"DETERMINISTIC_RULE","source_hash":"2f1710ddb4fbd4d17e0616c68c061d39d7e7ef4024820e0890d835a00c9d985b","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-134","source_kind":"REPORTER_EXPLICIT","source_hash":"2f1710ddb4fbd4d17e0616c68c061d39d7e7ef4024820e0890d835a00c9d985b","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"2f1710ddb4fbd4d17e0616c68c061d39d7e7ef4024820e0890d835a00c9d985b","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C079","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C080
+    ok 62 - P2-007-C080
+      ---
+      duration_ms: 368.0422
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C080","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":3,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"c45ee4adff739dc7ad31055fa7c0e04769456cedb6de5de03e5b7059d0e4da04","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-002","source_kind":"DETERMINISTIC_RULE","source_hash":"ff00f80b9f67cf1ee1ff31b7be043c34e330ef84b6384616828054d0a3bb3d6d","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-075","source_kind":"REPORTER_EXPLICIT","source_hash":"ff00f80b9f67cf1ee1ff31b7be043c34e330ef84b6384616828054d0a3bb3d6d","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYM-004","source_kind":"DETERMINISTIC_RULE","source_hash":"ff00f80b9f67cf1ee1ff31b7be043c34e330ef84b6384616828054d0a3bb3d6d","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"ff00f80b9f67cf1ee1ff31b7be043c34e330ef84b6384616828054d0a3bb3d6d","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"ff00f80b9f67cf1ee1ff31b7be043c34e330ef84b6384616828054d0a3bb3d6d","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C080","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C081
+    ok 63 - P2-007-C081
+      ---
+      duration_ms: 241.0086
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C081","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"3a836db73863b832d19ff95fc96376874f187f75f4ec87dfb9130208cdddca1b","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-002","source_kind":"DETERMINISTIC_RULE","source_hash":"eca9a49e81202a609f76f45118fe239ddcc5c59ea9af400e6685dcac5a6a700c","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"eca9a49e81202a609f76f45118fe239ddcc5c59ea9af400e6685dcac5a6a700c","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-075","source_kind":"REPORTER_EXPLICIT","source_hash":"eca9a49e81202a609f76f45118fe239ddcc5c59ea9af400e6685dcac5a6a700c","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C082
+    ok 64 - P2-007-C082
+      ---
+      duration_ms: 240.1953
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C082","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":3,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"a4e689030a4d1ff7f335f8d31bde16dbafb29a998a0b0461591e162dd7aa68af","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-060","source_kind":"REPORTER_EXPLICIT","source_hash":"3315f0bfa4d34a7961348ab863147fe64e2181e916d10891c12027af42c9ac8b","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-167","source_kind":"REPORTER_EXPLICIT","source_hash":"3315f0bfa4d34a7961348ab863147fe64e2181e916d10891c12027af42c9ac8b","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-133","source_kind":"REPORTER_EXPLICIT","source_hash":"3315f0bfa4d34a7961348ab863147fe64e2181e916d10891c12027af42c9ac8b","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"3315f0bfa4d34a7961348ab863147fe64e2181e916d10891c12027af42c9ac8b","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"3315f0bfa4d34a7961348ab863147fe64e2181e916d10891c12027af42c9ac8b","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C082","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C083
+    ok 65 - P2-007-C083
+      ---
+      duration_ms: 443.5646
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C083","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":3,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"caa1e5cfea7390bc43512bca24b456857b44ecf4317a2b5b979ebf3261859375","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-002","source_kind":"DETERMINISTIC_RULE","source_hash":"daf086e30bc6723ac48daf362e9824d993074c82e8af5d302a55d49b6f292110","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"daf086e30bc6723ac48daf362e9824d993074c82e8af5d302a55d49b6f292110","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C083","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C084
+    ok 66 - P2-007-C084
+      ---
+      duration_ms: 176.9059
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C084","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"b6157419b0a4936f130d69a740ba0ebbcd2e0e1d430b40b93bc8cea5183bef50","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-005","source_kind":"DETERMINISTIC_RULE","source_hash":"4c63cdc2c3933fdf523a9eb82dc70419afa61e2be8b0f03e97ede04e5a261e77","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"4c63cdc2c3933fdf523a9eb82dc70419afa61e2be8b0f03e97ede04e5a261e77","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-146","source_kind":"REPORTER_EXPLICIT","source_hash":"4c63cdc2c3933fdf523a9eb82dc70419afa61e2be8b0f03e97ede04e5a261e77","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C085
+    ok 67 - P2-007-C085
+      ---
+      duration_ms: 259.9381
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C085","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":1,"reviews":1,"executed_actions":3,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"FAULT_REQUIRES_SAFE_REVIEW","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"101e4c48ae69d6a6b8a6d1c2f3ee2071fe75a9c02111ab7f01e342b9e62fb3eb","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"2bf4fad5ba7e3ad122504c01e3c4f80aed02645801299d851139a6a288addd7a","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-004","source_kind":"REPORTER_EXPLICIT","source_hash":"2bf4fad5ba7e3ad122504c01e3c4f80aed02645801299d851139a6a288addd7a","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"2bf4fad5ba7e3ad122504c01e3c4f80aed02645801299d851139a6a288addd7a","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":1,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # {"case_id":"P2-007-C085","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C086
+    ok 68 - P2-007-C086
+      ---
+      duration_ms: 242.3421
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C086","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"6dbb236f8b49a6984986a3fb92013912e5e10765a13654c98edf59698a4f4bb8","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"4253c3b1aab28f65e51128cb1aabcda63c81a34e7a24a945aab6813e8b6beb92","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-004","source_kind":"REPORTER_EXPLICIT","source_hash":"4253c3b1aab28f65e51128cb1aabcda63c81a34e7a24a945aab6813e8b6beb92","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"4253c3b1aab28f65e51128cb1aabcda63c81a34e7a24a945aab6813e8b6beb92","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-276","source_kind":"REPORTER_EXPLICIT","source_hash":"4253c3b1aab28f65e51128cb1aabcda63c81a34e7a24a945aab6813e8b6beb92","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C088
+    ok 69 - P2-007-C088
+      ---
+      duration_ms: 87.9221
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C088","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"REPLAYED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"d224a360062e554c8cbb6f429063302adcf946e01e9fca9edce6b4df95266120","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-001","source_kind":"REPORTER_EXPLICIT","source_hash":"96612aa10bec4680d4a86955d3a018e03b9f5226f6c573738b9c9c61e3e57697","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"96612aa10bec4680d4a86955d3a018e03b9f5226f6c573738b9c9c61e3e57697","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-276","source_kind":"REPORTER_EXPLICIT","source_hash":"96612aa10bec4680d4a86955d3a018e03b9f5226f6c573738b9c9c61e3e57697","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C089
+    ok 70 - P2-007-C089
+      ---
+      duration_ms: 273.5342
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C089","expected":["BUSINESS_CONSULTATION","MANUAL_REVIEW_REQUIRED"],"result_code":"BUSINESS_CONSULTATION","tickets":0,"reviews":1,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"BUSINESS_POLICY_NOT_GUESSED","actual_actions":[{"action_type":"ROUTE_BUSINESS_CONSULTATION","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"a188f1a44c07ef23b7f09e85dc17528488f7d78b9b450a85b6b866eb3c2b31d2","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-004","source_kind":"DETERMINISTIC_RULE","source_hash":"9706084f3632a4a26a5b36273b258cd77d1c849af007ff27a9f76803ac3ea348","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0}}
+    # {"case_id":"P2-007-C089","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C091
+    ok 71 - P2-007-C091
+      ---
+      duration_ms: 298.6356
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C091","expected":["STATUS_QUERY","MANUAL_REVIEW_REQUIRED"],"result_code":"STATUS_QUERY","tickets":0,"reviews":1,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"AUTHORIZED_STATUS_QUERY_REQUIRED","actual_actions":[{"action_type":"QUERY_AUTHORIZED_STATUS","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"c21eeb489c669a2099a9646a71080cda27a539c984c19beb468be7c5177ef76b","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-005","source_kind":"DETERMINISTIC_RULE","source_hash":"39d919d88af5b64062a1113f3bd4fbe5eaa6edd2282ddc0a08ffc36b4d321b51","status":"ACTIVE"},{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"39d919d88af5b64062a1113f3bd4fbe5eaa6edd2282ddc0a08ffc36b4d321b51","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-123","source_kind":"REPORTER_EXPLICIT","source_hash":"39d919d88af5b64062a1113f3bd4fbe5eaa6edd2282ddc0a08ffc36b4d321b51","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0}}
+    # {"case_id":"P2-007-C091","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C092
+    ok 72 - P2-007-C092
+      ---
+      duration_ms: 381.4951
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C092","expected":["MANUAL_REVIEW_REQUIRED"],"result_code":"MANUAL_REVIEW_REQUIRED","tickets":0,"reviews":1,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"HUMAN_FOLLOW_UP_REQUIRED","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"ENQUEUE_MANUAL_REVIEW","state":"EXECUTED","result_ref_type":"MANUAL_REVIEW"}],"safe_result_sha256":"ccd59d6ccaa64b79243fb45303150b23bd8f8d62920ec695a0b466b80b3dc535","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-006","source_kind":"DETERMINISTIC_RULE","source_hash":"2c72fec3df054d02aaccae6682238e903bd048c514054ff37be40309220292a5","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":1,"messages":0,"outboxes":0,"deliveries":0,"incidents":0}}
+    # {"case_id":"P2-007-C092","review_handled_via_http":true,"resolution":"REQUEST_DESCRIPTION","original_decision_preserved":true}
+    # Subtest: P2-007-C093
+    ok 73 - P2-007-C093
+      ---
+      duration_ms: 228.2065
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C093","expected":["ACKNOWLEDGEMENT","MANUAL_REVIEW_REQUIRED"],"result_code":"ACKNOWLEDGEMENT","tickets":0,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"RECOVERY_WITHOUT_AUTHORIZED_TICKET","actual_actions":[{"action_type":"SEND_FIXED_ACKNOWLEDGEMENT","state":"EXECUTED","result_ref_type":"COMMUNICATION"}],"safe_result_sha256":"353d97fa2b9b7667bb01bb72e7e07c53bb8c26c4b6f19ff9704ff38d3ad6b0b2","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-007","source_kind":"DETERMINISTIC_RULE","source_hash":"9115015bd7c70fdede8205538a7af1e67b7c6a9c71c33ca6e39379841bbd7d22","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C094
+    ok 74 - P2-007-C094
+      ---
+      duration_ms: 128.0519
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C094","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"ae6cf41e5a5167a209fac0835435f2f21a20ceba41d50077d13b741ab79b1200","provenance":[{"field_path":"fault.symptom_codes","rule_id":"SYM-008","source_kind":"DETERMINISTIC_RULE","source_hash":"50a38e134f43d451b407a2b7a5ae26fbb469fa675517e49c5e386504bfdcc9a6","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-273","source_kind":"REPORTER_EXPLICIT","source_hash":"50a38e134f43d451b407a2b7a5ae26fbb469fa675517e49c5e386504bfdcc9a6","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"50a38e134f43d451b407a2b7a5ae26fbb469fa675517e49c5e386504bfdcc9a6","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C095
+    ok 75 - P2-007-C095
+      ---
+      duration_ms: 86.6629
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C095","expected":["TICKET_ELIGIBLE"],"result_code":"TICKET_ELIGIBLE","tickets":1,"reviews":0,"executed_actions":2,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"EXPLICIT_TECHNICAL_FAULT","actual_actions":[{"action_type":"APPLY_INTAKE_CLASSIFICATION","state":"EXECUTED","result_ref_type":"INTAKE"},{"action_type":"CREATE_MINIMAL_TICKET","state":"EXECUTED","result_ref_type":"TICKET"}],"safe_result_sha256":"a51cb3e79631e075a601b47524058481a35b1df41e5f6a42640e4f7da1a9ce6a","provenance":[{"field_path":"classification.transaction_stage","rule_id":"NORM-001","source_kind":"DETERMINISTIC_RULE","source_hash":"bac5b5f2941efb10a57012f2ddd3f19da9736344e75c97a04f8c2cc77547c2f0","status":"ACTIVE"},{"field_path":"service.selected_service_code","rule_id":"ALIAS-177","source_kind":"REPORTER_EXPLICIT","source_hash":"bac5b5f2941efb10a57012f2ddd3f19da9736344e75c97a04f8c2cc77547c2f0","status":"ACTIVE"},{"field_path":"fault.symptom_codes","rule_id":"SYMPTOM-053","source_kind":"REPORTER_EXPLICIT","source_hash":"bac5b5f2941efb10a57012f2ddd3f19da9736344e75c97a04f8c2cc77547c2f0","status":"ACTIVE"},{"field_path":"classification.domain_intent","rule_id":"INT-001","source_kind":"DETERMINISTIC_RULE","source_hash":"bac5b5f2941efb10a57012f2ddd3f19da9736344e75c97a04f8c2cc77547c2f0","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":1,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    # Subtest: P2-007-C096
+    ok 76 - P2-007-C096
+      ---
+      duration_ms: 76.9342
+      type: 'test'
+      ...
+    # {"case_id":"P2-007-C096","expected":["ACKNOWLEDGEMENT","MANUAL_REVIEW_REQUIRED"],"result_code":"ACKNOWLEDGEMENT","tickets":0,"reviews":0,"executed_actions":1,"persist_before_route":true,"seeded_business_facts":false,"provider_calls":0,"reason_code":"ACK_WITHOUT_NEW_FAULT","actual_actions":[{"action_type":"SEND_FIXED_ACKNOWLEDGEMENT","state":"EXECUTED","result_ref_type":"COMMUNICATION"}],"safe_result_sha256":"62fca63a3570bcd4e5eb11816eab658bb0e5d3d7b43d2d6ba7542c5f886e6558","provenance":[{"field_path":"classification.domain_intent","rule_id":"INT-008","source_kind":"DETERMINISTIC_RULE","source_hash":"d6e91864fe59a0cb8a41c4965bffb56a28b91977be1bf0ab06b3a19a22ecb35e","status":"ACTIVE"}],"delta":{"inbox":1,"intakes":1,"tickets":0,"reviews":0,"messages":1,"outboxes":1,"deliveries":1,"incidents":0}}
+    1..76
+ok 1 - P2-G2 original single-Reporter texts reach their independently adjudicated safe route via real Inbox and Worker
+  ---
+  duration_ms: 16911.0699
+  type: 'test'
+  ...
+1..1
+# tests 77
+# suites 0
+# pass 77
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17467.0471

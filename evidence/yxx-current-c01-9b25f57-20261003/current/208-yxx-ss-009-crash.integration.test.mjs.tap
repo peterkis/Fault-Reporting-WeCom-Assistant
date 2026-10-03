@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: SS-009 failed and stalled child startup releases every owned process
+ok 1 - SS-009 failed and stalled child startup releases every owned process
+  ---
+  duration_ms: 778.8425
+  type: 'test'
+  ...
+# Subtest: SS-009 real process kills recover all acceptance and processing commit boundaries
+ok 2 - SS-009 real process kills recover all acceptance and processing commit boundaries
+  ---
+  duration_ms: 11223.0851
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-03 08:37:12","event_epoch_ms":"1790987832108","kind":"cleanup","status":"PASS","candidate_fingerprint":"a94b115b02b6c0bc6bb1c3c3e0fed8922852937485344d129f7e6591345b1a79","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# SS009_RECEIPT {"event_time":"2026-10-03 08:37:13","event_epoch_ms":"1790987833096","kind":"fault","status":"PASS","candidate_fingerprint":"a94b115b02b6c0bc6bb1c3c3e0fed8922852937485344d129f7e6591345b1a79","real_kills":5,"cases":[{"action":"accept","barrier":"before-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"accept","barrier":"after-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"before-process","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"before-commit","receipt_count":1,"ticket_count":1,"recovered":true},{"action":"process","barrier":"after-commit","receipt_count":1,"ticket_count":1,"recovered":true}]}
+# Subtest: SS-009 committed supplement survives a real kill without a second Ticket or duplicate event
+ok 3 - SS-009 committed supplement survives a real kill without a second Ticket or duplicate event
+  ---
+  duration_ms: 8831.1239
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-03 08:37:22","event_epoch_ms":"1790987842240","kind":"cleanup","status":"PASS","candidate_fingerprint":"a94b115b02b6c0bc6bb1c3c3e0fed8922852937485344d129f7e6591345b1a79","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# SS009_RECEIPT {"event_time":"2026-10-03 08:37:22","event_epoch_ms":"1790987842980","kind":"fault","status":"PASS","candidate_fingerprint":"a94b115b02b6c0bc6bb1c3c3e0fed8922852937485344d129f7e6591345b1a79","supplement_real_kill":true,"supplement_replayed":true,"tickets":1,"supplement_events":1}
+# Subtest: SS-009 a terminated owned PostgreSQL backend preserves accepted input across a fresh processor
+ok 4 - SS-009 a terminated owned PostgreSQL backend preserves accepted input across a fresh processor
+  ---
+  duration_ms: 9584.6163
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-03 08:37:30","event_epoch_ms":"1790987850624","kind":"cleanup","status":"PASS","candidate_fingerprint":"a94b115b02b6c0bc6bb1c3c3e0fed8922852937485344d129f7e6591345b1a79","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"owned_child","remaining":0},{"resource":"owned_child","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# SS009_RECEIPT {"event_time":"2026-10-03 08:37:31","event_epoch_ms":"1790987851985","kind":"fault","status":"PASS","candidate_fingerprint":"a94b115b02b6c0bc6bb1c3c3e0fed8922852937485344d129f7e6591345b1a79","owned_backend_terminated":true,"recovery_verified":true,"shared_database_service_stopped":false}
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30838.8512

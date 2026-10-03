@@ -5,11 +5,54 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync,
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { loadRoutes, select, expandPatterns, testEnvironment, execution, type Entry } from './routing.mjs';
-import { sourceRoot, workspaceFiles, record, program } from './common.mjs';
+import { sourceRoot, workspaceFiles, record, program, hash } from './common.mjs';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { counts, runSelection } from './run-tests.mjs';
 const original = sourceRoot();
+test('routed reporter rejects a case trace naming a different execution file',()=>{
+  const root=scratch(), log=mkdtempSync(path.join(tmpdir(),'current-case-invalid-'));
+  try{
+    const file=path.join(root,'scripts/p2-g2-case-reporter.mjs');
+    writeFileSync(file,readFileSync(file,'utf8').replace("path.relative(process.cwd(),d.file).replaceAll('\\\\','/')", "'tests/not-the-executed-file.mjs'"));
+    build(root);
+    assert.throws(()=>runSelection(root,select(loadRoutes(root),'selection','canary'),{reportDir:log}),/MIGRATION_CASE_TRACE_INVALID/u);
+    const summary=record(JSON.parse(readFileSync(path.join(log,'summary.json'),'utf8')) as unknown);
+    assert.equal(summary.status,'SELECTED_TESTS_FAIL');
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('t02-host-test-'));
+    assert.equal(path.dirname(log),path.resolve(tmpdir()));assert.ok(path.basename(log).startsWith('current-case-invalid-'));
+    rmSync(root,{recursive:true,force:true});rmSync(log,{recursive:true,force:true});
+  }
+});
+test('routed reporter binds each case to the actual compiled entry and original logs',()=>{
+  const root=scratch(), log=mkdtempSync(path.join(tmpdir(),'current-case-report-'));
+  try{
+    build(root);
+    runSelection(root,select(loadRoutes(root),'selection','canary'),{reportDir:log});
+    const summary=record(JSON.parse(readFileSync(path.join(log,'summary.json'),'utf8')) as unknown);
+    assert.ok(Array.isArray(summary.files));const file=record(summary.files[0]);
+    assert.equal(file.executed_path,'.build/runtime/tests/migration-canary.test.mjs');
+    assert.equal(file.source_sha256,hash(readFileSync(path.join(root,'tests/migration-canary.test.mts'))));
+    assert.equal(file.executed_sha256,hash(readFileSync(path.join(root,'.build/runtime/tests/migration-canary.test.mjs'))));
+    assert.equal(file.case_trace_path,'001-migration-canary.test.mts.cases.jsonl');
+    const trace=readFileSync(path.join(log,String(file.case_trace_path)));
+    assert.equal(file.case_trace_sha256,hash(trace));assert.equal(file.case_trace_bytes,trace.length);
+    const cases=trace.toString('utf8').trim().split('\n').map(line=>record(JSON.parse(line) as unknown));
+    assert.equal(cases.length,1);assert.equal(cases[0]?.event,'test:pass');
+    assert.equal(cases[0]?.file,'tests/migration-canary.test.mjs');
+    assert.equal(file.case_line_basis,'EXECUTED_FILE');
+    assert.equal(file.tap_path,'001-migration-canary.test.mts.tap');
+    assert.equal(file.stderr_path,'001-migration-canary.test.mts.stderr');
+    const before=readFileSync(path.join(log,'summary.json'));
+    assert.throws(()=>runSelection(root,select(loadRoutes(root),'selection','canary'),{reportDir:log}),/MIGRATION_REPORT_ALREADY_EXISTS/u);
+    assert.deepEqual(readFileSync(path.join(log,'summary.json')),before);
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('t02-host-test-'));
+    assert.equal(path.dirname(log),path.resolve(tmpdir()));assert.ok(path.basename(log).startsWith('current-case-report-'));
+    rmSync(root,{recursive:true,force:true});rmSync(log,{recursive:true,force:true});
+  }
+});
 function scratch(reference = false): string {
   const root=mkdtempSync(path.join(tmpdir(),'t02-host-test-'));
   execFileSync('git',['clone','--quiet','--no-hardlinks',original,root],{windowsHide:true,stdio:'pipe'});
@@ -28,7 +71,11 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
  const root=scratch();
  try{
   const routes=loadRoutes(root), raw=readFileSync(path.join(root,'plans/typescript-migration/test-routing.json'),'utf8');
-  await t.test('all legacy entries and aliases remain represented',()=>{assert.equal(routes.entries.length,213);assert.equal(Object.keys(routes.aliases).length,72);assert.equal(select(routes,'selection','t02-baseline').entries.length,17);});
+  await t.test('all legacy entries and aliases remain represented',()=>{
+    assert.equal(routes.entries.filter(entry=>!['tests/yxx-current-readiness-cli.test.mts','tests/yxx-current-readiness.test.mts','tests/yxx-current-history.test.mts','tests/yxx-current-evidence.test.mts','tests/yxx-current-migrations.integration.test.mts'].includes(entry.path)).length,213);
+    assert.equal(select(routes,'selection','yxx-current-readiness').entries[0]?.path,'tests/yxx-current-readiness.test.mts');
+    assert.equal(Object.keys(routes.aliases).length,72);assert.equal(select(routes,'selection','t02-baseline').entries.length,17);
+  });
   await t.test('wildcards expand deterministically and empty matches fail',()=>{
     const selected=select(routes,'alias','test:p2:007');assert.equal(selected.entries.length,7);
     const one=expandPatterns(['tests/p2-007-*.test.mjs'],routes.entries);assert.deepEqual(one,expandPatterns(['tests/p2-007-*.test.mjs'],[...routes.entries].reverse()));

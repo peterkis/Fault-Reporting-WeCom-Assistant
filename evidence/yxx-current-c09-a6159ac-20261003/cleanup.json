@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 19:31:36",
+  "event_epoch_ms": "1791027096940",
+  "tested_head": "a6159ac5773d22e423846843b82aa4c8c27a0b0e",
+  "tested_tree": "6a5231f500bff58b045c2e00f0f6ddc2e86283b9",
+  "candidate_fingerprint": "2ea4ae593bce7041cd7413d74d37bf25eb9fcea3435e1268df1110bba1a55c8f",
+  "kind": "CURRENT_OWNED_RESOURCE_CLEANUP",
+  "observations": [
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "receipt_index": 4
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "receipt_index": 4
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-4/048-yxx-current-migrations.integration.test.mts.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c09-a6159ac-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "receipt_index": 3
+    }
+  ],
+  "environments": [
+    {
+      "path": "evidence/yxx-current-c09-a6159ac-20261003/environment-cleanup-shard-1.json",
+      "bytes": 732,
+      "sha256": "036a155b96098ba4ef3dafa171f17a7cc21a6bd194b8775fe01cc388e86d36d0"
+    },
+    {
+      "path": "evidence/yxx-current-c09-a6159ac-20261003/environment-cleanup-shard-2.json",
+      "bytes": 732,
+      "sha256": "9a47168246253d5861abc7170d72cb8171b14f960c86f48e3cbe6ac3c9be64ac"
+    },
+    {
+      "path": "evidence/yxx-current-c09-a6159ac-20261003/environment-cleanup-shard-3.json",
+      "bytes": 732,
+      "sha256": "1f3d1f7168f3572098052371ceca240e7eb280811f634002f8f64196065630e6"
+    },
+    {
+      "path": "evidence/yxx-current-c09-a6159ac-20261003/environment-cleanup-shard-4.json",
+      "bytes": 732,
+      "sha256": "3e77e57cf45747623ac0cc509f2e4e1a195c386a19ba2993141d99a471771562"
+    }
+  ]
+}

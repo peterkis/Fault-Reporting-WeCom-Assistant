@@ -1,0 +1,42 @@
+{
+  "path": "tests/p1-012-pilot-e2e.test.mjs",
+  "runtime_path": "tests/p1-012-pilot-e2e.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-012-pilot-e2e.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "0dfc792d769eb97b05093c20d7b07e1484740990b0093afd2462b495d89dcb67",
+  "executed_sha256": "0dfc792d769eb97b05093c20d7b07e1484740990b0093afd2462b495d89dcb67",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "034-p1-012-pilot-e2e.test.mjs.tap",
+  "tap_sha256": "bcb82d421ed866eb2e73a035435c7a7c9bfe01c89da10c2fc8b6fe031deef195",
+  "tap_bytes": 2203,
+  "stderr_path": "034-p1-012-pilot-e2e.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "034-p1-012-pilot-e2e.test.mjs.cases.jsonl",
+  "case_trace_sha256": "6237932cbdb69e7ec58f91ce6d852c3371c72d84b7261cfa552b40465c2ae220",
+  "case_trace_bytes": 2766,
+  "counts": {
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-002-wecom-sdk-adapter.mjs",
+    ".build/runtime/src/p1-012-pilot-e2e.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p1-012-pilot-e2e.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 9
+}

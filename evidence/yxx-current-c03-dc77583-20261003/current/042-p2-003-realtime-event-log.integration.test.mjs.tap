@@ -1,0 +1,86 @@
+TAP version 13
+# Subtest: P2-003 cleanup waits for owned client disconnect before terminating residual backends
+ok 1 - P2-003 cleanup waits for owned client disconnect before terminating residual backends
+  ---
+  duration_ms: 703.2677
+  type: 'test'
+  ...
+# Subtest: P2-003 migration 012 is exact, reentrant, CLI-scoped, and check-only rolls back
+ok 2 - P2-003 migration 012 is exact, reentrant, CLI-scoped, and check-only rolls back
+  ---
+  duration_ms: 1946.9083
+  type: 'test'
+  ...
+# {"migration_process_runs":4,"migration_files_executed":1,"relations_added":2,"prior_catalog_unchanged":true,"precheck_rolled_back":true,"postcheck_rolled_back":true,"temp_database_cleanup":true}
+# Subtest: P2-003 migration fails closed for missing column, weak check, wrong unique and index drift
+ok 3 - P2-003 migration fails closed for missing column, weak check, wrong unique and index drift
+  ---
+  duration_ms: 5214.9629
+  type: 'test'
+  ...
+# {"drift_scenarios":5,"temp_database_cleanup":true}
+# Subtest: P2-003 append, concurrency, caller transaction, durable replay and authorization are exact
+ok 4 - P2-003 append, concurrency, caller transaction, durable replay and authorization are exact
+  ---
+  duration_ms: 5574.5268
+  type: 'test'
+  ...
+# {"same_event_concurrency":12,"different_event_concurrency":12,"pool_maximum":4,"natural_identity_hole":true,"ack_loss_replayed":true,"replay_batch_count":3,"replay_batch_maximum":50,"authorization_variants":4,"retained_event_count":124,"temp_database_cleanup":true}
+# Subtest: P2-003 retention check/apply preserves prefix and floor semantics with CLI authorization
+ok 5 - P2-003 retention check/apply preserves prefix and floor semantics with CLI authorization
+  ---
+  duration_ms: 10939.707
+  type: 'test'
+  ...
+# {"check_zero_write":true,"unauthorized_apply_zero_write":true,"deleted_prefix_count":2,"floor_event_id":"2","expired_after_live_retained":true,"retry_idempotent":true,"replay_gap_http_fallback":true,"cursor_ahead_http_409":true,"authorized_cli_apply":true}
+# Subtest: P2-003 retention delete/floor is atomic and every cleanup batch is at most 200
+ok 6 - P2-003 retention delete/floor is atomic and every cleanup batch is at most 200
+  ---
+  duration_ms: 5351.9096
+  type: 'test'
+  ...
+# {"first_batch_deleted":200,"second_batch_deleted":1,"floor_delete_atomic_rollback":true}
+# Subtest: P2-003 localhost SSE admits 32 clients, rejects 33, heartbeats, delivers and releases resources
+ok 7 - P2-003 localhost SSE admits 32 clients, rejects 33, heartbeats, delivers and releases resources
+  ---
+  duration_ms: 4329.8194
+  type: 'test'
+  ...
+# {"peak_client_count":32,"event_count":100,"each_client_received":100,"capacity_rejections":1,"maximum_writable_length":16695,"slow_client_disconnects":0,"heap_samples_bytes":[10392416,12315784,13325600,11858864,13086056,26017608,13554832],"first_heap_bytes":10392416,"last_heap_bytes":13554832,"heap_sample_mean_bytes":14364451,"first_to_last_heap_trend_bytes":3162416,"peak_heap_delta_bytes":15625192,"database_query_batches":105,"resource_release_polls":2,"temp_database_cleanup":true}
+# Subtest: P2-003 child kill/restart replays Last-Event-ID and missed wakeup recovers from PostgreSQL
+ok 8 - P2-003 child kill/restart replays Last-Event-ID and missed wakeup recovers from PostgreSQL
+  ---
+  duration_ms: 8598.7963
+  type: 'test'
+  ...
+# {"killed_server_exit":{"code":null,"signal":"SIGKILL","killed":true},"killed_server_backend_close_polls":1,"first_event_id":"1","post_restart_event_id":"2","recovery_poll_event_id":"3","app_restart_postgresql_replay":true,"missed_wakeup_recovered":true,"server_a_port":54749,"server_b_port":54753,"temp_database_cleanup":true}
+# Subtest: P2-003 real paused slow client is isolated while normal delivery and append continue
+ok 9 - P2-003 real paused slow client is isolated while normal delivery and append continue
+  ---
+  duration_ms: 20824.6959
+  type: 'test'
+  ...
+# {"slow_disconnect_count":1,"bulk_payload_padding_bytes":2048,"normal_client_received":5001,"persisted_event_count":5001,"slow_disconnect_polls":87,"active_slow_write_window_polls":3,"normal_joined_during_slow_drain_polls":1,"normal_client_remained_connected":true,"append_during_slow_write_window":true,"business_transaction_during_slow_write_window":true,"temp_database_cleanup":true}
+# Subtest: P2-003 streams 5,000 events in bounded batches and bounded heap without retaining frames
+ok 10 - P2-003 streams 5,000 events in bounded batches and bounded heap without retaining frames
+  ---
+  duration_ms: 3403.56
+  type: 'test'
+  ...
+# {"event_count":5000,"replay_query_batch_count":100,"replay_batch_size":50,"captured_frame_count":0,"maximum_parser_buffer_bytes":370,"maximum_writable_length":16588,"heap_samples_bytes":[10385512,14676416,12645144,15597072,19575904,18737176],"first_to_last_heap_trend_bytes":8351664,"peak_heap_delta_bytes":9190392,"temp_database_cleanup":true}
+# Subtest: P2-003 suite leaves no owned database, schema, child, backend, socket, port or timer residual
+ok 11 - P2-003 suite leaves no owned database, schema, child, backend, socket, port or timer residual
+  ---
+  duration_ms: 38.6458
+  type: 'test'
+  ...
+# {"active_test_clients":0,"active_fallback_requests":0,"active_test_http_sockets":0,"active_test_wait_timers":0,"active_cli_children":0,"active_server_children":0,"owned_port_count":6,"closed_port_count":6,"port_close_polls":[1,1,1,1,1,1],"owned_database_count":0,"owned_schema_count":0,"owned_backend_count":0,"active_database_count":0,"emergency_client_cleanup_count":0,"emergency_fallback_cleanup_count":0,"emergency_http_socket_cleanup_count":0}
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 67260.2133

@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: combined migration proof rejects incomplete SQL scope wrong markers and failed replay with matching hashes
+ok 1 - combined migration proof rejects incomplete SQL scope wrong markers and failed replay with matching hashes
+  ---
+  duration_ms: 447.198
+  type: 'test'
+  ...
+# Subtest: current evidence artifact guard rejects changed runtime bytes and a missing build
+ok 2 - current evidence artifact guard rejects changed runtime bytes and a missing build
+  ---
+  duration_ms: 4627.1867
+  type: 'test'
+  ...
+# Subtest: scenario mapping requires unique executed cases and preserves execution line provenance and historical limits
+ok 3 - scenario mapping requires unique executed cases and preserves execution line provenance and historical limits
+  ---
+  duration_ms: 2285.7521
+  type: 'test'
+  ...
+# Subtest: source accounting preserves semantic limits and rejects missing execution or manual review even with fresh hashes
+ok 4 - source accounting preserves semantic limits and rejects missing execution or manual review even with fresh hashes
+  ---
+  duration_ms: 809.3424
+  type: 'test'
+  ...
+# Subtest: specialized proof binds raw observations and screenshots to the archived runtime candidate
+ok 5 - specialized proof binds raw observations and screenshots to the archived runtime candidate
+  ---
+  duration_ms: 372.9277
+  type: 'test'
+  ...
+# Subtest: historical proof verifies originals and rejects rehashed wrong identity omitted checks and false successes
+ok 6 - historical proof verifies originals and rejects rehashed wrong identity omitted checks and false successes
+  ---
+  duration_ms: 203.3377
+  type: 'test'
+  ...
+# Subtest: review evidence requires distinct axes reviewers and exact candidate binding
+ok 7 - review evidence requires distinct axes reviewers and exact candidate binding
+  ---
+  duration_ms: 44.3256
+  type: 'test'
+  ...
+# Subtest: cleanup proof requires measured zero residuals and matching successful environment cleanup
+ok 8 - cleanup proof requires measured zero residuals and matching successful environment cleanup
+  ---
+  duration_ms: 64.8129
+  type: 'test'
+  ...
+# Subtest: execution proof binds executed bytes to the archived build and matching source input
+ok 9 - execution proof binds executed bytes to the archived build and matching source input
+  ---
+  duration_ms: 23.8844
+  type: 'test'
+  ...
+# Subtest: execution proof rejects a missing case even when the replacement trace hash matches
+ok 10 - execution proof rejects a missing case even when the replacement trace hash matches
+  ---
+  duration_ms: 32.1345
+  type: 'test'
+  ...
+# Subtest: execution proof rejects consistent hashes with failing counts omitted work or misbound cases
+ok 11 - execution proof rejects consistent hashes with failing counts omitted work or misbound cases
+  ---
+  duration_ms: 251.0169
+  type: 'test'
+  ...
+# Subtest: execution proof checks original TAP bytes instead of trusting PASS counts
+ok 12 - execution proof checks original TAP bytes instead of trusting PASS counts
+  ---
+  duration_ms: 24.5965
+  type: 'test'
+  ...
+# Subtest: strict current readiness rejects a PASS summary without the complete current execution set
+ok 13 - strict current readiness rejects a PASS summary without the complete current execution set
+  ---
+  duration_ms: 76949.5599
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 86471.8013

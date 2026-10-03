@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: YXX-42 100 authenticated sessions and 32 simultaneous PostgreSQL HTTP reads stay bounded and preserve catalog
+ok 1 - YXX-42 100 authenticated sessions and 32 simultaneous PostgreSQL HTTP reads stay bounded and preserve catalog
+  ---
+  duration_ms: 4304.0899
+  type: 'test'
+  ...
+# YXX_RESOURCE {"authenticated_sessions":100,"concurrent_reads":32,"overload_status":503,"pool_peak_connections":4,"pending_pool_after":0,"elapsed_ms":521,"rss_before_bytes":100720640,"rss_after_bytes":109830144,"catalog_unchanged":true,"business_tables_unchanged":true,"formal_observation":false,"real_provider_calls":0}
+# Subtest: YXX-45 OAUTH_ONLY is zero DB and MEMBER_TICKET_READONLY exposes no business write or staff API
+ok 2 - YXX-45 OAUTH_ONLY is zero DB and MEMBER_TICKET_READONLY exposes no business write or staff API
+  ---
+  duration_ms: 3254.6683
+  type: 'test'
+  ...
+# Subtest: YXX-33 YXX-45 FULL_SERVICE_LOOP composes the same member policy and keeps member Cookie outside staff authority
+ok 3 - YXX-33 YXX-45 FULL_SERVICE_LOOP composes the same member policy and keeps member Cookie outside staff authority
+  ---
+  duration_ms: 3910.5505
+  type: 'test'
+  ...
+# Subtest: YXX-44 actual App process stop and restart loses ephemeral authentication then restores the canonical ref
+ok 4 - YXX-44 actual App process stop and restart loses ephemeral authentication then restores the canonical ref
+  ---
+  duration_ms: 5141.7314
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17244.3635

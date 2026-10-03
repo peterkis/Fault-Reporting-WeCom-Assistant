@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source
+ok 1 - PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source
+  ---
+  duration_ms: 3808.1623
+  type: 'test'
+  ...
+# {"forced_worker_stream_then_app_stream":true,"sql_errors":[],"results":["fulfilled","fulfilled"]}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4411.1823

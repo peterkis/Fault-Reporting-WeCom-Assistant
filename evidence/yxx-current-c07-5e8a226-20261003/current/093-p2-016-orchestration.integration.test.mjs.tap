@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: P2-016 existing rule worker creates Ticket notifications, safe group/direct guidance and SYSTEM-only timeout closure
+ok 1 - P2-016 existing rule worker creates Ticket notifications, safe group/direct guidance and SYSTEM-only timeout closure
+  ---
+  duration_ms: 3065.0639
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3408.6554

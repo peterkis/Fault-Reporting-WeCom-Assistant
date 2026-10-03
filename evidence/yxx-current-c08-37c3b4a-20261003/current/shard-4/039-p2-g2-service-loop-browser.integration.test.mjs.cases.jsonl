@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 16:57:48","event_epoch_ms":"1791017868700","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"G2-T01/I01/I02/I03 actual browser controls complete a normal-source service loop without shared Ticket ownership","file":"tests/p2-g2-service-loop-browser.integration.test.mjs","line":6,"nesting":0,"skip":false,"todo":false}

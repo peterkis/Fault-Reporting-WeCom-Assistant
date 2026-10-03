@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: G2-E07 the actual high-risk inbound Review is visible and resolved in the browser while its original Decision and Ticket survive
+ok 1 - G2-E07 the actual high-risk inbound Review is visible and resolved in the browser while its original Decision and Ticket survive
+  ---
+  duration_ms: 6494.314
+  type: 'test'
+  ...
+# {"scenario_id":"G2-E07","actual_source_review_resolved_via_browser":true,"original_decision_preserved":true,"ticket_delta":0,"seeded_business_facts":false}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7346.745

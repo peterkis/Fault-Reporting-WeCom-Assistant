@@ -1,0 +1,20 @@
+{
+  "name": "validator-validate-p2-016-ticket-lifecycle-workbench",
+  "command": [
+    "node",
+    "scripts/validate-p2-016-ticket-lifecycle-workbench.mjs"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error_code": null,
+  "stdout": {
+    "path": "validator-validate-p2-016-ticket-lifecycle-workbench.stdout",
+    "bytes": 445,
+    "sha256": "5cf7acc40ffd089577cd626f3d8636efcbcb2517303fbc0ffe48922561b89f09"
+  },
+  "stderr": {
+    "path": "validator-validate-p2-016-ticket-lifecycle-workbench.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

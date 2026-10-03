@@ -1,0 +1,48 @@
+{
+  "path": "tests/arch-005-time-contract-architecture.test.mjs",
+  "runtime_path": "tests/arch-005-time-contract-architecture.test.mjs",
+  "executed_path": "tests/arch-005-time-contract-architecture.test.mjs",
+  "execution_cwd": ".",
+  "source_sha256": "3835a42bb97e9fe7c1b85c398c466ae32f0fbf8fffd0fba2ae76d0d2db19b7bd",
+  "executed_sha256": "3835a42bb97e9fe7c1b85c398c466ae32f0fbf8fffd0fba2ae76d0d2db19b7bd",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "SOURCE_HOST",
+  "node_flags": [
+    "--import",
+    "file:///C:/Users/zqpet/.codex/artifacts/yxx-current-readiness-20261002/stage06-c07/checkout/.build/tools/source-hook.mjs",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "003-arch-005-time-contract-architecture.test.mjs.tap",
+  "tap_sha256": "bb235a2ab3ab8bf21e3e40166243af5de18cd8e4c12407b492dd11a42c11e177",
+  "tap_bytes": 596,
+  "stderr_path": "003-arch-005-time-contract-architecture.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "003-arch-005-time-contract-architecture.test.mjs.cases.jsonl",
+  "case_trace_sha256": "7ef22bf5d0e4d2311b86796af20499a79bf27d0502093a74b252394ace660d01",
+  "case_trace_bytes": 656,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/tools/bootstrap.mjs",
+    ".build/tools/common.mjs",
+    ".build/tools/source-hook.mjs",
+    ".build/tools/source-host.mjs",
+    ".build/tools/verify-artifact.mjs",
+    "node_modules/typescript/lib/typescript.js",
+    "scripts/validate-arch-005-time-contract.mjs",
+    "tests/arch-005-time-contract-architecture.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}
