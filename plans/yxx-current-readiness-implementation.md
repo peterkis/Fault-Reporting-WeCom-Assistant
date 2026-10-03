@@ -533,3 +533,10 @@ The real capacity command test then passed with 5200 events, 550 bindings/sends,
 32 SSE clients and confirmed zero-residual cleanup. This modified-runtime diagnostic
 is RED/GREEN development evidence only; its inherited C4 metadata is not a new
 candidate acceptance. Fresh frozen candidate, complete run and reviews are required.
+
+C5 full-01 stopped at file 87 (634 PASS / 1 FAIL; remaining files NOT_RUN), with
+confirmed owned-environment cleanup. Its guided-Journey expiry negative retained
+a September Worker clock while seeded inputs now correctly use the database clock;
+the three-hour advance therefore never expired the current candidate. The fixture
+now starts from the database physical clock plus one minute and advances exactly
+three hours for the same negative. DIRECT_ORGANIC/refusal assertions are preserved.
