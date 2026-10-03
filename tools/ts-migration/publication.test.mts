@@ -21,6 +21,13 @@ function fixture(run:(value:{root:string;packet:string;files:Array<{path:string;
     save('report.json',Buffer.from(JSON.stringify({schema_version:1,contract:'ADR-0027',run_id:'fixture',status:'CURRENT_AUTOMATION_COMPLETE',
       synthetic_parser_fixture:true,live_authorized:false,parent_gate_advanced:false,build:reference,current_runs:[reference],reviews:[reference,reference],
       cleanup:reference,historical:reference,specialized:reference,source_accounting:reference,scenarios:reference,migration_scope:reference})+'\r\n'));
+    const originalFiles=files.map(file=>({...file,path:'evidence/yxx-current-fixture/'+file.path,
+      encoding:file.path.endsWith('.bin')?'binary':'utf-8'})).sort((a,b)=>a.path<b.path?-1:1);
+    const reportReference=originalFiles.find(file=>file.path.endsWith('/report.json'));assert.ok(reportReference);
+    const catalog=save('artifact-catalog.json',Buffer.from(JSON.stringify({schema_version:1,kind:'CURRENT_ORIGINAL_ARTIFACT_CATALOG',
+      report:reportReference,files:originalFiles})));
+    save('artifact-catalog-attestation.json',Buffer.from(JSON.stringify({schema_version:1,kind:'CURRENT_ARTIFACT_CATALOG_ATTESTATION',
+      report:reportReference,catalog:{...catalog,path:'evidence/yxx-current-fixture/'+catalog.path},original_files:originalFiles.length})));
     writeFileSync(path.join(packet,'packet.json'),JSON.stringify({schema_version:1,kind:'CURRENT_EVIDENCE_PACKET',run_id:'fixture',files}));
     const entry=fileURLToPath(new URL('./publish-current-evidence.mjs',import.meta.url));
     const invoke=(packetOverride=packet,expectedPointer?:string)=>spawnSync(process.execPath,[entry,'--packet',packetOverride,
@@ -32,6 +39,17 @@ function fixture(run:(value:{root:string;packet:string;files:Array<{path:string;
   }
 }
 
+test('publication CLI rejects a packet without its complete artifact catalog and attestation',()=>fixture(({root,packet,files,invoke})=>{
+  for(const name of ['artifact-catalog.json','artifact-catalog-attestation.json']){
+    const target=path.join(packet,name);if(existsSync(target))rmSync(target);
+  }
+  writeFileSync(path.join(packet,'packet.json'),JSON.stringify({schema_version:1,kind:'CURRENT_EVIDENCE_PACKET',run_id:'fixture',
+    files:files.filter(file=>!['artifact-catalog.json','artifact-catalog-attestation.json'].includes(file.path))}));
+  const result=invoke();assert.equal(result.status,1);
+  assert.equal(record(JSON.parse(String(result.stdout)) as unknown).error_code,'CURRENT_EVIDENCE_PACKET_INVALID');
+  assert.equal(existsSync(path.join(root,'evidence/yxx-current-fixture')),false);
+}));
+
 test('publication CLI preserves original bytes and never overwrites an existing report or pointer',()=>fixture(({root,packet,files,invoke})=>{
   const first=invoke();assert.equal(first.status,0,String(first.stdout)+String(first.stderr));
   const result=record(JSON.parse(String(first.stdout)) as unknown);assert.equal(result.status,'EVIDENCE_STAGED_NOT_READINESS');assert.equal(result.production_ready,false);
@@ -39,7 +57,10 @@ test('publication CLI preserves original bytes and never overwrites an existing 
   for(const file of files)assert.ok(readFileSync(path.join(root,'evidence/yxx-current-fixture',file.path)).equals(readFileSync(path.join(packet,file.path))));
   const pointerFile=path.join(root,'plans/yxx-current-readiness.json'),pointer=readFileSync(pointerFile);
   const report=files.find(file=>file.path==='report.json');assert.ok(report);
-  assert.deepEqual(JSON.parse(pointer.toString('utf8')) as unknown,{schema_version:1,report:{...report,path:'evidence/yxx-current-fixture/report.json'}});
+  const catalog=files.find(file=>file.path==='artifact-catalog.json'),attestation=files.find(file=>file.path==='artifact-catalog-attestation.json');assert.ok(catalog&&attestation);
+  assert.deepEqual(JSON.parse(pointer.toString('utf8')) as unknown,{schema_version:2,report:{...report,path:'evidence/yxx-current-fixture/report.json'},
+    artifact_catalog:{...catalog,path:'evidence/yxx-current-fixture/'+catalog.path},
+    artifact_catalog_attestation:{...attestation,path:'evidence/yxx-current-fixture/'+attestation.path}});
   const second=invoke();assert.equal(second.status,1);assert.equal(record(JSON.parse(String(second.stdout)) as unknown).error_code,'CURRENT_EVIDENCE_PUBLICATION_EXISTS');
   assert.ok(readFileSync(pointerFile).equals(pointer));
   for(const file of files)assert.ok(readFileSync(path.join(root,'evidence/yxx-current-fixture',file.path)).equals(readFileSync(path.join(packet,file.path))));

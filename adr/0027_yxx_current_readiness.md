@@ -53,6 +53,23 @@ The current CLI hides the cause behind `SS010_NOT_READY`; the historical CLI ret
    original records once and reference their size/encoding/SHA256. Check paths,
    symlinks, bounds, parsed content, candidate identity and set completeness, not
    only checksums. No PASS-only fallback or sole reliance on expiring Actions logs.
+   Each reviewer writes an original JSON record (`schema_version: 1`,
+   `kind: CURRENT_INDEPENDENT_REVIEW_RECORD`) containing its evidence time,
+   axis/reviewer, tested head/tree/fingerprint, independent flag, verdict,
+   unresolved count, historical-limitations confirmation, findings and nonempty
+   `review_text`. Summaries must reference distinct originals and match those
+   fields exactly. Check original bytes/size/SHA and fatal UTF-8 before parsing.
+   This binds the records; independence and semantic quality still require the
+   actual separate review process and final independent review.
+   The schema-2 current pointer is the acyclic binding root for exact report,
+   artifact catalog and attestation references. The catalog includes every original
+   namespace file (including report) and excludes only itself and attestation;
+   attestation binds report and catalog. Strict readiness requires the exact
+   namespace union, original sizes/SHA/encodings and matching identities. A schema-1
+   pointer remains readable for historical diagnostics but cannot prove READY.
+   Current namespace originals are fatal UTF-8 text except PNG screenshot bytes,
+   which must have the PNG signature and `binary` encoding. No arbitrary binary
+   declaration may bypass text decoding. Bound the namespace traversal and bytes.
 9. A separate current pointer may select an append-only report. Historical SS010
    and SS011 reports stay unchanged. Scope and acceptance inputs participate in
    candidate binding; evidence/pointer publication has an explicit non-circular role.

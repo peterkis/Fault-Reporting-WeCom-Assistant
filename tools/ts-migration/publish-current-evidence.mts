@@ -63,6 +63,8 @@ export function publishCurrentEvidence(root:string,packetRoot:string,expectedPoi
     assert.deepEqual(inventory(packetRoot).filter(file=>file!=='packet.json').sort(),files.map(item=>item.path).sort());
     for(const item of files){const data=bytes(packetRoot,item.path);assert.equal(data.length,item.bytes);assert.equal(hash(data),item.sha256);}
     const reportFile=files.find(item=>item.path==='report.json');assert.ok(reportFile);
+    const catalogFile=files.find(item=>item.path==='artifact-catalog.json');assert.ok(catalogFile);
+    const attestationFile=files.find(item=>item.path==='artifact-catalog-attestation.json');assert.ok(attestationFile);
     const report=record(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes(packetRoot,'report.json'))) as unknown);
     assert.equal(report.schema_version,1);assert.equal(report.contract,'ADR-0027');assert.equal(report.run_id,packet.run_id);
     assert.equal(report.status,'CURRENT_AUTOMATION_COMPLETE');assert.equal(report.live_authorized,false);assert.equal(report.parent_gate_advanced,false);
@@ -85,7 +87,9 @@ export function publishCurrentEvidence(root:string,packetRoot:string,expectedPoi
     const reportReference={...reportFile,path:prefix+'/report.json'};
     // New pointers are exclusive. Replacements require the exact previous bytes,
     // are serialized with other publishers, and use an atomic same-directory rename.
-    const pointerBytes=JSON.stringify({schema_version:1,report:reportReference},null,2)+'\n';
+    const pointerBytes=JSON.stringify({schema_version:2,report:reportReference,
+      artifact_catalog:{...catalogFile,path:prefix+'/'+catalogFile.path},
+      artifact_catalog_attestation:{...attestationFile,path:prefix+'/'+attestationFile.path}},null,2)+'\n';
     if(previousPointer){
       if(!bytes(root,'plans/yxx-current-readiness.json',64*1024).equals(previousPointer))throw failure('CURRENT_EVIDENCE_POINTER_CONFLICT');
       pointerTemporary=path.join(root,'plans/.yxx-current-pointer-'+randomUUID()+'.tmp');

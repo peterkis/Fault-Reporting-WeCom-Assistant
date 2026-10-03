@@ -7,7 +7,7 @@ import {validateLimitedManifest} from './yxx-limited-write-contract.mjs';
 import {assertG2EvidenceTime} from './p2-g2-evidence-time.mjs';
 import {readCurrentYxxScope} from './yxx-current-readiness-scope.mjs';
 import {verifyCurrentYxxEvidenceHistory} from './yxx-current-evidence-history.mjs';
-import {readCurrentYxxReport,verifyCurrentYxxReportBinding,verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,verifyCurrentYxxSourceAccounting,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact,verifyCurrentYxxMigrationProof} from './yxx-current-evidence.mjs';
+import {readCurrentYxxReport,verifyCurrentYxxReportBinding,verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,verifyCurrentYxxSourceAccounting,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact,verifyCurrentYxxMigrationProof,verifyCurrentYxxCatalog} from './yxx-current-evidence.mjs';
 
 export const SS010_REPORT='evidence/yxx-ss-010-report.json';
 export const SS010_TEMPLATE='config_examples/yxx-limited-write-authorization.example.json';
@@ -35,7 +35,8 @@ export function checkSS010({root=defaultSourceRoot,requireReady=false}={}){
   verifyCurrentYxxEvidenceHistory(root);
   const inventory=g2CandidateInventory(root);
   if(requireReady){
-    const {reference,report}=readCurrentYxxReport(root);verifyCurrentYxxReportBinding(root,report);
+    const {reference,report,pointer}=readCurrentYxxReport(root);verifyCurrentYxxReportBinding(root,report);
+    if(pointer.schema_version===2)verifyCurrentYxxCatalog(root,report,pointer);
     if(report.current_runs!==undefined)verifyCurrentYxxExecution(root,report);
     if(report.reviews!==undefined)verifyCurrentYxxReviews(root,report);
     if(report.cleanup!==undefined)verifyCurrentYxxCleanup(root,report);
@@ -50,6 +51,7 @@ export function checkSS010({root=defaultSourceRoot,requireReady=false}={}){
       assertG2EvidenceTime(report);assert.equal(report.status,'CURRENT_AUTOMATION_COMPLETE');
       assert.equal(report.live_authorized,false);assert.equal(report.parent_gate_advanced,false);
     }catch{throw Object.assign(new Error('CURRENT_EVIDENCE_INVALID'),{code:'CURRENT_EVIDENCE_INVALID',stage:'EVIDENCE'});}
+    if(pointer.schema_version!==2)verifyCurrentYxxCatalog(root,report,pointer);
     verifyCurrentYxxArtifact(root);
     return {ok:true,status:'READY_FOR_LIMITED_WRITE_LIVE',contract:'ADR-0027',scope_base:scope.base_head,
       tested_head:report.tested_head,tested_tree:report.tested_tree,candidate_fingerprint:inventory.fingerprint,

@@ -492,3 +492,31 @@ CLI returns READY_FOR_LIMITED_WRITE_LIVE bound to C3, with zero database/provide
 listener activity, live_authorized=false and parent_gate_advanced=false.
 Final publication-head build/strict/CI/review/merge remain pending at this snapshot;
 terminal receipts will be external to avoid a self-referential commit hash.
+
+H3 remote-review correction (2026-10-03): exact published H3
+0f8f1d1fd7037a05c03416c95ca89a03e176be7f passed all applicable CI, including
+current-complete, in 796 seconds; downloaded shards independently verified
+216/1380. This does not close remote P2 findings. The raw_review thread remained
+unresolved and the requested @codex review found a second catalog-contract P2.
+Both independent final PASS reports were retracted and preserved externally;
+corrected SPEC and STANDARDS reports each record one unresolved P2. Merge stopped.
+
+C4 implementation follow-up: public-seam REDs reproduced missing original reviews,
+rehashed wrong candidates/reviewers, publication without catalog/attestation and
+rehashed incomplete catalog. Originals now require reviewer-written structured
+records with matching identities and decisions; integrity checks never replace
+actual independent semantic review. The schema-2 current pointer is the acyclic
+binding root for report, catalog and attestation. Strict readiness requires the
+exact namespace union, original bytes/SHA/fatal UTF-8 or PNG encoding, identity,
+attestation and bounded traversal. Existing C1/C3 evidence remains unchanged.
+
+Development checks passed: 27 evidence/readiness cases, 9 publication cases and
+76 full tooling cases. The readiness file took about 245 seconds, exceeding its
+unchanged 240-second runner budget. Its 13 test bodies were moved verbatim into
+8 readiness and 5 history cases with one shared MTS fixture. The actual routed
+selection passed all 19 cases (8/5/6) in about 149/87/64 seconds per file; no assertion
+or timeout was removed. Registry/current acceptance now contains 217 current files
+plus 1 independently historical entry, with four disjoint 55/54/54/54 shards.
+Final C4 freeze, complete owned-environment run, new independent original reviews,
+append-only evidence, final publication-head CI/review and merge remain pending.
+Earlier green runs do not prove the changed candidate READY.

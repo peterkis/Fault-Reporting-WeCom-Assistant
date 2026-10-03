@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {cpSync,mkdirSync,mkdtempSync,readFileSync,rmSync,writeFileSync} from 'node:fs';
+import {cpSync,mkdirSync,mkdtempSync,readFileSync,rmSync,symlinkSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {testRoots} from './helpers/migration-roots.mjs';
@@ -10,6 +10,7 @@ import {g2CandidateInventory} from '../src/p2-g2-candidate.mjs';
 import {checkSS010,SS010_ACCEPTANCE} from '../src/yxx-self-service-readiness.mjs';
 import {verifyCurrentYxxExecution,verifyCurrentYxxReviews,verifyCurrentYxxCleanup,verifyCurrentYxxHistoricalProof,verifyCurrentYxxSpecializedProof,deriveCurrentYxxSourceAudit,verifyCurrentYxxSourceAccounting,deriveCurrentYxxScenarios,verifyCurrentYxxScenarios,verifyCurrentYxxArtifact,verifyCurrentYxxMigrationProof} from '../src/yxx-current-evidence.mjs';
 import {SS009_VALIDATORS} from '../src/yxx-self-service-verification.mjs';
+import {verifyCurrentYxxCatalog} from '../src/yxx-current-evidence.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
 
 function syntheticExecution(root:string){
@@ -45,6 +46,69 @@ function syntheticExecution(root:string){
   const report={run_id:'fixture',tested_head:manifest.source.head,tested_tree:manifest.source.tree,build,current_runs:[save(directory+'/summary.json',document)]};
   return {report,document,save,tap:path.join(root,tap.path),commit:()=>{report.current_runs[0]=save(directory+'/summary.json',document);}};
 }
+
+test('complete artifact catalog binds all original files without a report hash cycle',()=>{
+  const root=mkdtempSync(path.join(tmpdir(),'yxx-catalog-proof-'));
+  try{
+    const fixture=syntheticExecution(root),prefix='evidence/yxx-current-fixture';
+    const identity={tested_head:'a'.repeat(40),tested_tree:'b'.repeat(40),candidate_fingerprint:'c'.repeat(64)};
+    const report={schema_version:1,run_id:'fixture',...identity};
+    const reportReference=fixture.save(prefix+'/report.json',report);
+    const catalog={schema_version:1,...g2EvidenceTime(),...identity,kind:'CURRENT_ORIGINAL_ARTIFACT_CATALOG',
+      report:{...reportReference,encoding:'utf-8'},files:[
+        'build-manifest.json','current/one.cases.jsonl','current/one.stderr','current/one.tap','current/summary.json','report.json',
+      ].map(file=>{const target=prefix+'/'+file,bytes=readFileSync(path.join(root,target));
+        return {path:target,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),encoding:'utf-8'};})};
+    const pointer:Record<string,unknown>={schema_version:2,report:reportReference};
+    const seal=()=>{
+      const catalogReference=fixture.save(prefix+'/artifact-catalog.json',catalog);
+      pointer.artifact_catalog=catalogReference;
+      pointer.artifact_catalog_attestation=fixture.save(prefix+'/artifact-catalog-attestation.json',{
+        schema_version:1,...g2EvidenceTime(),...identity,kind:'CURRENT_ARTIFACT_CATALOG_ATTESTATION',
+        report:catalog.report,catalog:catalogReference,original_files:catalog.files.length,
+        original_records_stored_once:true,summary_files_role:'DERIVED_AGGREGATE_OF_PER_FILE_ORIGINALS',readiness:false,live_authorized:false});
+    };
+    seal();verifyCurrentYxxCatalog(root,report,pointer);
+    assert.throws(()=>verifyCurrentYxxCatalog(root,report,{schema_version:1,report:reportReference}),{code:'CURRENT_ARTIFACT_CATALOG_INVALID'});
+    const originals=catalog.files.slice();catalog.files.pop();seal();
+    assert.throws(()=>verifyCurrentYxxCatalog(root,report,pointer),{code:'CURRENT_ARTIFACT_CATALOG_INVALID'});
+    for(const changed of [originals.slice(1),[...originals,originals[0]],originals.slice().reverse(),
+      originals.map((item,index)=>index===0?{...item,sha256:'0'.repeat(64)}:item),
+      originals.map((item,index)=>index===0?{...item,bytes:item.bytes+1}:item),
+      originals.map((item,index)=>index===0?{...item,encoding:'binary'}:item)]){
+      // Catalog/attestation hashes and counts are refreshed: the content must reject.
+      assert.ok(changed.every(item=>item!==undefined));catalog.files=changed.filter(item=>item!==undefined);seal();
+      assert.throws(()=>verifyCurrentYxxCatalog(root,report,pointer),{code:'CURRENT_ARTIFACT_CATALOG_INVALID'});
+    }
+    catalog.files=originals;seal();verifyCurrentYxxCatalog(root,report,pointer);
+    fixture.save(prefix+'/extra-original.txt','unlisted original');
+    assert.throws(()=>verifyCurrentYxxCatalog(root,report,pointer),{code:'CURRENT_ARTIFACT_CATALOG_INVALID'});
+    rmSync(path.join(root,prefix,'extra-original.txt'));
+    for(const changed of [{...pointer,artifact_catalog:undefined},
+      {...pointer,artifact_catalog:pointer.artifact_catalog_attestation},
+      {...pointer,artifact_catalog_attestation:pointer.artifact_catalog}]){
+      assert.throws(()=>verifyCurrentYxxCatalog(root,report,changed),{code:'CURRENT_ARTIFACT_CATALOG_INVALID'});
+    }
+    catalog.tested_head='d'.repeat(40);seal();
+    assert.throws(()=>verifyCurrentYxxCatalog(root,report,pointer),{code:'CURRENT_ARTIFACT_CATALOG_INVALID'});
+    catalog.tested_head=identity.tested_head;seal();
+    const attestation=JSON.parse(readFileSync(path.join(root,prefix,'artifact-catalog-attestation.json'),'utf8')) as Record<string,unknown>;
+    pointer.artifact_catalog_attestation=fixture.save(prefix+'/artifact-catalog-attestation.json',{...attestation,original_files:999});
+    assert.throws(()=>verifyCurrentYxxCatalog(root,report,pointer),{code:'CURRENT_ARTIFACT_CATALOG_INVALID'});
+    seal();
+    // Even a rehashed UTF-8 declaration must reject non-UTF-8 bytes.
+    const textPath=prefix+'/current/one.stderr',invalidUtf8=Buffer.from([0xff,0xfe]);writeFileSync(path.join(root,textPath),invalidUtf8);
+    catalog.files=originals.map(item=>item.path===textPath?{...item,bytes:invalidUtf8.length,
+      sha256:createHash('sha256').update(invalidUtf8).digest('hex')}:item);seal();
+    assert.throws(()=>verifyCurrentYxxCatalog(root,report,pointer),{code:'CURRENT_ARTIFACT_CATALOG_INVALID'});
+    writeFileSync(path.join(root,textPath),Buffer.alloc(0));catalog.files=originals;seal();
+    symlinkSync(root,path.join(root,prefix,'linked-originals'),process.platform==='win32'?'junction':'dir');
+    assert.throws(()=>verifyCurrentYxxCatalog(root,report,pointer),{code:'CURRENT_ARTIFACT_CATALOG_INVALID'});
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-catalog-proof-'));
+    rmSync(root,{recursive:true,force:true});
+  }
+});
 
 test('combined migration proof rejects incomplete SQL scope wrong markers and failed replay with matching hashes',()=>{
   const root=mkdtempSync(path.join(tmpdir(),'yxx-migration-proof-'));
@@ -293,12 +357,44 @@ test('review evidence requires distinct axes reviewers and exact candidate bindi
   const root=mkdtempSync(path.join(tmpdir(),'yxx-review-proof-'));
   try{
     const fixture=syntheticExecution(root),identity={tested_head:'a'.repeat(40),tested_tree:'b'.repeat(40),candidate_fingerprint:'c'.repeat(64)};
+    const raw=(axis:string,reviewer:string)=>({schema_version:1,kind:'CURRENT_INDEPENDENT_REVIEW_RECORD',...g2EvidenceTime(),...identity,axis,reviewer,
+      independent:true,verdict:'PASS',unresolved_findings:0,historical_limitations_reviewed:true,findings:[],
+      review_text:'Synthetic parser review, not an actual independent acceptance review.'});
     const review=(axis:string,reviewer:string)=>({schema_version:1,...g2EvidenceTime(),...identity,axis,reviewer,independent:true,
-      verdict:'PASS',unresolved_findings:0,historical_limitations_reviewed:true,findings:[]});
+      verdict:'PASS',unresolved_findings:0,historical_limitations_reviewed:true,findings:[],
+      raw_review:fixture.save('evidence/yxx-current-fixture/'+axis.toLowerCase()+'-raw.json',raw(axis,reviewer))});
     const spec=review('SPEC','synthetic-spec'),standards=review('STANDARDS','synthetic-standards');
     const verify=(second:object)=>verifyCurrentYxxReviews(root,{run_id:'fixture',...identity,reviews:[
       fixture.save('evidence/yxx-current-fixture/review-spec.json',spec),fixture.save('evidence/yxx-current-fixture/review-standards.json',second)]});
     verify(standards);
+    // A PASS summary cannot replace the original independent review record.
+    assert.throws(()=>verify({...standards,raw_review:undefined}),{code:'CURRENT_REVIEW_INVALID'});
+    const wrongCandidate=fixture.save('evidence/yxx-current-fixture/wrong-candidate-raw.json',
+      {...raw('STANDARDS','synthetic-standards'),tested_head:'d'.repeat(40)});
+    assert.throws(()=>verify({...standards,raw_review:wrongCandidate}),{code:'CURRENT_REVIEW_INVALID'});
+    const wrongReviewer=fixture.save('evidence/yxx-current-fixture/wrong-reviewer-raw.json',
+      {...raw('STANDARDS','synthetic-standards'),reviewer:'different-reviewer'});
+    assert.throws(()=>verify({...standards,raw_review:wrongReviewer}),{code:'CURRENT_REVIEW_INVALID'});
+    for(const reference of [{...standards.raw_review,sha256:'0'.repeat(64)},
+      {...standards.raw_review,bytes:standards.raw_review.bytes+1},
+      {...standards.raw_review,path:'evidence/yxx-current-fixture/missing-raw.json'},spec.raw_review,
+      fixture.save('evidence/yxx-current-fixture/malformed-raw.json','not a review record')]){
+      assert.throws(()=>verify({...standards,raw_review:reference}),{code:'CURRENT_REVIEW_INVALID'});
+    }
+    for(const [index,changed] of [{tested_tree:'d'.repeat(40)},{candidate_fingerprint:'d'.repeat(64)},
+      {axis:'SPEC'},{verdict:'FAIL'},{unresolved_findings:1},{independent:false},
+      {historical_limitations_reviewed:false},{findings:[{resolved:false}]},{review_text:' '},
+      {kind:'SUMMARY'},{schema_version:2}].entries()){
+      const reference=fixture.save('evidence/yxx-current-fixture/changed-raw-'+index+'.json',
+        {...raw('STANDARDS','synthetic-standards'),...changed});
+      assert.throws(()=>verify({...standards,raw_review:reference}),{code:'CURRENT_REVIEW_INVALID'});
+    }
+    // A correct checksum does not turn non-UTF-8 bytes into a valid original.
+    const invalidUtf8=Buffer.from([0xff,0xfe]);
+    const invalidPath='evidence/yxx-current-fixture/invalid-utf8-raw.json';
+    writeFileSync(path.join(root,invalidPath),invalidUtf8);
+    assert.throws(()=>verify({...standards,raw_review:{path:invalidPath,bytes:invalidUtf8.length,
+      sha256:createHash('sha256').update(invalidUtf8).digest('hex')}}),{code:'CURRENT_REVIEW_INVALID'});
     for(const changed of [{...standards,reviewer:spec.reviewer},{...standards,reviewer:spec.reviewer+' '},
       {...standards,reviewer:spec.reviewer.toUpperCase()},{...standards,axis:'SPEC'},
       {...standards,tested_head:'d'.repeat(40)},{...standards,independent:false},{...standards,verdict:'NOT_RUN'},
@@ -472,6 +568,12 @@ test('strict current readiness rejects a PASS summary without the complete curre
     const unsupportedMigrations=save('evidence/yxx-current-fixture/report.json',{...header,migration_scope:migrationScope});
     save('plans/yxx-current-readiness.json',{schema_version:1,report:unsupportedMigrations});
     assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_MIGRATION_PROOF_INVALID'});
+    const artifactCatalog=save('evidence/yxx-current-fixture/artifact-catalog.json',{status:'PASS'});
+    const artifactCatalogAttestation=save('evidence/yxx-current-fixture/artifact-catalog-attestation.json',{status:'PASS'});
+    const unsupportedCatalog=save('evidence/yxx-current-fixture/report.json',header);
+    save('plans/yxx-current-readiness.json',{schema_version:2,report:unsupportedCatalog,
+      artifact_catalog:artifactCatalog,artifact_catalog_attestation:artifactCatalogAttestation});
+    assert.throws(()=>checkSS010({root,requireReady:true}),{code:'CURRENT_ARTIFACT_CATALOG_INVALID'});
   }finally{
     assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('yxx-execution-evidence-'));
     if(attached)execFileSync('git',['worktree','remove','--force',root],{cwd:source,windowsHide:true,stdio:'pipe'});

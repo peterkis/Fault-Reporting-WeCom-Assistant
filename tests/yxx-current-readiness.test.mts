@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { testRoots } from './helpers/migration-roots.mjs';
 import { CURRENT_YXX_SCOPE, readCurrentYxxScope } from '../src/yxx-current-readiness-scope.mjs';
 import { checkSS010 } from '../src/yxx-self-service-readiness.mjs';
-import { verifyCurrentYxxEvidenceHistory } from '../src/yxx-current-evidence-history.mjs';
+import { withScopeCheckout } from './helpers/yxx-current-scope-checkout.mjs';
 import { CURRENT_YXX_POINTER, readCurrentYxxReport, verifyCurrentYxxReportBinding } from '../src/yxx-current-evidence.mjs';
 import { g2CandidateInventory } from '../src/p2-g2-candidate.mjs';
 
@@ -87,83 +87,11 @@ test('current strict readiness rejects a report bound to another candidate', () 
   });
 });
 
-test('current readiness rejects a later working-tree rewrite of the adjudicated G0 path', () => {
-  withScopeCheckout(root => {
-    assert.equal(checkSS010({ root }).status, 'STRUCTURE_VALID_NOT_READY');
-    const file = path.join(root, 'evidence/g0-005-active-push-matrix.md');
-    writeFileSync(file, readFileSync(file, 'utf8') + '\nUNAPPROVED_LATER_CHANGE\n');
-    assert.throws(() => checkSS010({ root }), { code: 'CURRENT_EVIDENCE_HISTORY_INVALID' });
-  });
-});
 
-test('current readiness rejects committed evidence rewrite followed by restoration', () => {
-  withScopeCheckout(root => {
-    const git = (args: string[]): void => { execFileSync('git', args, { cwd: root, windowsHide: true, stdio: 'pipe' }); };
-    const relative = 'evidence/g0-005-active-push-matrix.md', file = path.join(root, relative), original = readFileSync(file);
-    const commit = (): void => {
-      git(['add', '--', relative]);
-      git(['-c', 'user.name=Readiness Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-m', 'synthetic evidence change']);
-    };
-    writeFileSync(file, Buffer.concat([original, Buffer.from('\nUNAPPROVED_COMMITTED_CHANGE\n')])); commit();
-    writeFileSync(file, original); commit();
-    assert.throws(() => checkSS010({ root }), { code: 'CURRENT_EVIDENCE_HISTORY_INVALID' });
-  });
-});
 
-test('current evidence history checks a rewritten side branch even when an ours merge hides its contents', () => {
-  withScopeCheckout(root => {
-    const git = (args: string[]): string => execFileSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, stdio: 'pipe' }).trim();
-    const base = git(['rev-parse', 'HEAD']);
-    const identity = ['-c', 'user.name=Readiness Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false'];
-    const relative = 'evidence/g0-005-active-push-matrix.md';
-    writeFileSync(path.join(root, relative), readFileSync(path.join(root, relative), 'utf8') + '\nHIDDEN_SIDE_REWRITE\n');
-    git(['add', '--', relative]); git([...identity, 'commit', '-m', 'synthetic side rewrite']);
-    const side = git(['rev-parse', 'HEAD']);
-    git(['checkout', '--detach', base]);
-    git([...identity, 'commit', '--allow-empty', '-m', 'synthetic main side']);
-    git([...identity, 'merge', '--no-ff', '-s', 'ours', side, '-m', 'synthetic hidden side merge']);
-    assert.throws(() => verifyCurrentYxxEvidenceHistory(root), { code: 'CURRENT_EVIDENCE_HISTORY_INVALID' });
-  });
-});
 
-test('current evidence history accepts a new immutable receipt and rejects its deletion or indexed mode change', () => {
-  withScopeCheckout(root => {
-    const git = (args: string[]): void => { execFileSync('git', args, { cwd: root, windowsHide: true, stdio: 'pipe' }); };
-    const relative = 'evidence/yxx-current-synthetic-receipt.json', file = path.join(root, relative);
-    writeFileSync(file, '{"fixture":true}\n'); git(['add', '--', relative]);
-    git(['-c', 'user.name=Readiness Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-m', 'synthetic new receipt']);
-    verifyCurrentYxxEvidenceHistory(root);
-    git(['update-index', '--chmod=+x', relative]);
-    assert.throws(() => verifyCurrentYxxEvidenceHistory(root), { code: 'CURRENT_EVIDENCE_HISTORY_INVALID' });
-    git(['update-index', '--chmod=-x', relative]); rmSync(file);
-    assert.throws(() => verifyCurrentYxxEvidenceHistory(root), { code: 'CURRENT_EVIDENCE_HISTORY_INVALID' });
-  });
-});
 
-test('current evidence history rejects expanding the precise adjudication record', () => {
-  withScopeCheckout(root => {
-    const file = path.join(root, '.github/review/yxx-current-evidence-adjudication.json');
-    writeFileSync(file, readFileSync(file, 'utf8').replace('"does_not_authorize_future_changes": true', '"does_not_authorize_future_changes": false'));
-    assert.throws(() => verifyCurrentYxxEvidenceHistory(root), { code: 'CURRENT_EVIDENCE_HISTORY_INVALID' });
-  });
-});
 
-function withScopeCheckout(run: (root: string) => void): void {
-  const source = testRoots().sourceRoot;
-  const temporary = mkdtempSync(path.join(tmpdir(), 'yxx-current-scope-'));
-  const git = (args: string[]): void => { execFileSync('git', args, { cwd: source, windowsHide: true, stdio: 'pipe' }); };
-  let attached = false;
-  try {
-    git(['worktree', 'add', '--detach', temporary, 'HEAD']); attached = true;
-    copyFileSync(path.join(source, CURRENT_YXX_SCOPE), path.join(temporary, CURRENT_YXX_SCOPE));
-    run(temporary);
-  } finally {
-    assert.equal(path.dirname(temporary), path.resolve(tmpdir()));
-    assert.ok(path.basename(temporary).startsWith('yxx-current-scope-'));
-    if (attached) git(['worktree', 'remove', '--force', temporary]);
-    else rmSync(temporary, { recursive: true, force: true });
-  }
-}
 
 test('current scope rejects enabling AI in the checked default configuration', () => {
   withScopeCheckout(root => {

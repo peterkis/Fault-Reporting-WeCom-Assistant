@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { existsSync, lstatSync, readFileSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { g2CandidateInventory, isG2CandidatePath } from './p2-g2-candidate.mjs';
@@ -10,6 +10,65 @@ import { SS009_VALIDATORS, verifyYxxReceipts, historicalYxxBindings } from './yx
 import { createG2SourceAudit } from './p2-g2-source-audit.mjs';
 
 export const CURRENT_YXX_POINTER='plans/yxx-current-readiness.json';
+/** Complete namespace provenance is a separate public verification obligation. */
+export function verifyCurrentYxxCatalog(root:string,report:Record<string,unknown>,pointer:Record<string,unknown>):void {
+  try{
+    assert.equal(pointer.schema_version,2);
+    assert.deepEqual(Object.keys(pointer).sort(),['artifact_catalog','artifact_catalog_attestation','report','schema_version']);
+    assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
+    const prefix='evidence/yxx-current-'+report.run_id;
+    const reportOriginal=artifact(root,report.run_id,pointer.report);
+    const catalogOriginal=artifact(root,report.run_id,pointer.artifact_catalog);
+    const attestationOriginal=artifact(root,report.run_id,pointer.artifact_catalog_attestation);
+    assert.equal(reportOriginal.path,prefix+'/report.json');assert.deepEqual(json(reportOriginal.bytes),report);
+    assert.equal(catalogOriginal.path,prefix+'/artifact-catalog.json');
+    assert.equal(attestationOriginal.path,prefix+'/artifact-catalog-attestation.json');
+    const catalog=json(catalogOriginal.bytes),attestation=json(attestationOriginal.bytes);
+    assert.equal(catalog.schema_version,1);assert.equal(catalog.kind,'CURRENT_ORIGINAL_ARTIFACT_CATALOG');assertG2EvidenceTime(catalog);
+    assert.equal(attestation.schema_version,1);assert.equal(attestation.kind,'CURRENT_ARTIFACT_CATALOG_ATTESTATION');assertG2EvidenceTime(attestation);
+    for(const field of ['tested_head','tested_tree','candidate_fingerprint']){
+      assert.ok(typeof report[field]==='string');assert.equal(catalog[field],report[field]);assert.equal(attestation[field],report[field]);
+    }
+    const reportReference={...object(pointer.report),encoding:'utf-8'};
+    assert.deepEqual(catalog.report,reportReference);assert.deepEqual(attestation.report,reportReference);
+    assert.deepEqual(attestation.catalog,pointer.artifact_catalog);
+    assert.equal(attestation.original_records_stored_once,true);
+    assert.equal(attestation.summary_files_role,'DERIVED_AGGREGATE_OF_PER_FILE_ORIGINALS');
+    assert.equal(attestation.readiness,false);assert.equal(attestation.live_authorized,false);
+    assert.ok(Array.isArray(catalog.files)&&catalog.files.length>0&&catalog.files.length<=4094);
+    const originals=catalog.files.map(object),originalPaths:string[]=[];
+    let totalBytes=catalogOriginal.bytes.length+attestationOriginal.bytes.length;
+    for(const item of originals){
+      assert.deepEqual(Object.keys(item).sort(),['bytes','encoding','path','sha256']);
+      const original=artifact(root,report.run_id,{path:item.path,bytes:item.bytes,sha256:item.sha256});
+      assert.notEqual(original.path,catalogOriginal.path);assert.notEqual(original.path,attestationOriginal.path);
+      assert.notEqual(original.path,prefix+'/packet.json');originalPaths.push(original.path);
+      totalBytes+=original.bytes.length;assert.ok(totalBytes<=256*1024*1024);
+      let encoding='utf-8';
+      if(original.path.endsWith('.png')){
+        assert.ok(original.bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])));encoding='binary';
+      }else new TextDecoder('utf-8',{fatal:true}).decode(original.bytes);
+      assert.equal(item.encoding,encoding);
+    }
+    assert.deepEqual(originalPaths,[...originalPaths].sort());
+    assert.equal(new Set(originalPaths.map(file=>file.toLowerCase())).size,originalPaths.length);
+    assert.ok(originalPaths.includes(reportOriginal.path));assert.equal(attestation.original_files,originalPaths.length);
+    const actualPaths:string[]=[];let visited=0;
+    const walk=(relative:string):void=>{
+      assert.ok(relative.length<=1024&&relative.split('/').length<=32);
+      assert.ok(++visited<=8192);
+      const stat=lstatSync(path.join(root,relative));assert.equal(stat.isSymbolicLink(),false);
+      if(stat.isDirectory()){
+        for(const name of readdirSync(path.join(root,relative)))walk(relative+'/'+name);
+      }else{assert.ok(stat.isFile());actualPaths.push(relative);assert.ok(actualPaths.length<=4096);}
+    };
+    walk(prefix);
+    assert.equal(new Set(actualPaths.map(file=>file.toLowerCase())).size,actualPaths.length);
+    assert.deepEqual(actualPaths.sort(),[...originalPaths,catalogOriginal.path,attestationOriginal.path].sort());
+  }catch{
+    throw Object.assign(new Error('CURRENT_ARTIFACT_CATALOG_INVALID'),{code:'CURRENT_ARTIFACT_CATALOG_INVALID',stage:'ARTIFACT_CATALOG'});
+  }
+}
 /** Reuse the pipeline's actual source/output guard, including H's Git identity. */
 export function verifyCurrentYxxArtifact(root:string):void {
   try{
@@ -385,9 +444,14 @@ export function verifyCurrentYxxReviews(root:string,report:Record<string,unknown
   try{
     assert.ok(typeof report.run_id==='string');assert.match(report.run_id,/^[a-z0-9][a-z0-9-]{0,63}$/u);
     assert.ok(Array.isArray(report.reviews)&&report.reviews.length===2);
-    const axes:string[]=[],reviewers:string[]=[];
+    const axes:string[]=[],reviewers:string[]=[],originals:string[]=[];
     for(const reference of report.reviews){
       const review=json(artifact(root,report.run_id,reference).bytes);
+      const original=artifact(root,report.run_id,review.raw_review),rawReview=json(original.bytes);
+      originals.push(original.path);
+      assert.equal(rawReview.schema_version,1);assert.equal(rawReview.kind,'CURRENT_INDEPENDENT_REVIEW_RECORD');
+      assertG2EvidenceTime(rawReview);
+      assert.ok(typeof rawReview.review_text==='string'&&rawReview.review_text.trim().length>0);
       assert.equal(review.schema_version,1);assertG2EvidenceTime(review);
       assert.ok(review.axis==='SPEC'||review.axis==='STANDARDS');axes.push(review.axis);
       assert.ok(typeof review.reviewer==='string'&&review.reviewer.trim().length>0);
@@ -396,11 +460,16 @@ export function verifyCurrentYxxReviews(root:string,report:Record<string,unknown
       assert.equal(review.historical_limitations_reviewed,true);
       for(const key of ['tested_head','tested_tree','candidate_fingerprint']){
         assert.ok(typeof report[key]==='string');assert.equal(review[key],report[key]);
+        assert.equal(rawReview[key],review[key]);
       }
       assert.ok(Array.isArray(review.findings));
       for(const finding of review.findings)assert.equal(object(finding).resolved,true);
+      for(const key of ['axis','reviewer','independent','verdict','unresolved_findings','historical_limitations_reviewed','findings']){
+        assert.deepEqual(rawReview[key],review[key]);
+      }
     }
     assert.deepEqual(axes.sort(),['SPEC','STANDARDS']);assert.equal(new Set(reviewers).size,2);
+    assert.equal(new Set(originals).size,2);
   }catch{
     throw Object.assign(new Error('CURRENT_REVIEW_INVALID'),{code:'CURRENT_REVIEW_INVALID',stage:'REVIEW'});
   }
@@ -561,11 +630,13 @@ export function verifyCurrentYxxExecution(root:string,report:Record<string,unkno
 }
 
 /** Reads integrity-bound current evidence; this alone never proves readiness. */
-export function readCurrentYxxReport(root:string):{reference:Reference;report:Record<string,unknown>} {
+export function readCurrentYxxReport(root:string):{reference:Reference;report:Record<string,unknown>;pointer:Record<string,unknown>} {
   if(!existsSync(path.join(root,CURRENT_YXX_POINTER)))throw Object.assign(new Error('CURRENT_EVIDENCE_REQUIRED'),{code:'CURRENT_EVIDENCE_REQUIRED',stage:'EVIDENCE'});
   try{
     const pointer=json(read(root,CURRENT_YXX_POINTER));
-    assert.deepEqual(Object.keys(pointer).sort(),['report','schema_version']);assert.equal(pointer.schema_version,1);
+    assert.ok(pointer.schema_version===1||pointer.schema_version===2);
+    assert.deepEqual(Object.keys(pointer).sort(),pointer.schema_version===1?['report','schema_version']:
+      ['artifact_catalog','artifact_catalog_attestation','report','schema_version']);
     const ref=object(pointer.report);
     assert.deepEqual(Object.keys(ref).sort(),['bytes','path','sha256']);
     assert.equal(typeof ref.path,'string');assert.equal(typeof ref.sha256,'string');assert.equal(typeof ref.bytes,'number');
@@ -573,7 +644,7 @@ export function readCurrentYxxReport(root:string):{reference:Reference;report:Re
     assert.match(ref.path,/^evidence\/yxx-current-[a-z0-9][a-z0-9-]{0,63}\/report\.json$/u);
     assert.match(ref.sha256,/^[a-f0-9]{64}$/u);assert.ok(Number.isSafeInteger(ref.bytes)&&ref.bytes>0);
     const bytes=read(root,ref.path);assert.equal(bytes.length,ref.bytes);assert.equal(hash(bytes),ref.sha256);
-    return {reference:{path:ref.path,sha256:ref.sha256,bytes:ref.bytes},report:json(bytes)};
+    return {reference:{path:ref.path,sha256:ref.sha256,bytes:ref.bytes},report:json(bytes),pointer};
   }catch{
     throw Object.assign(new Error('CURRENT_EVIDENCE_INVALID'),{code:'CURRENT_EVIDENCE_INVALID',stage:'EVIDENCE'});
   }
