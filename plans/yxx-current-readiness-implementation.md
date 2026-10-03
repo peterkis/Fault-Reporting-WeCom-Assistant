@@ -14,8 +14,8 @@ This progress document is not acceptance evidence.
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | COMPLETE for development implementation; component/publication regressions pass; actual whole-packet strict READY remains unverified until stage 6 frozen acceptance |
 | 5 | ARCH006/current CI separation and retained historical CI | COMPLETE for development implementation; final exact-head CI and wall-time measurement remain stages 6-7 |
-| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | COMPLETE; C3 dc77583 full-02: 216 files / 1380 tests PASS, both reviews PASS, cleanup confirmed |
-| 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | IN_PROGRESS; immutable packet staged and strict READY verified; final H CI/review/merge pending |
+| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | COMPLETE; C7 5e8a226 full-01: 217 files / 1381 tests PASS, both reviews PASS, cleanup confirmed; prior C3 is historical only |
+| 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | IN_PROGRESS; C7 immutable packet published and strict READY verified; H f152e4a CI failed in the expired historical T02 reference; final CI/review/merge remain pending |
 
 ## Baseline observations (2026-10-02)
 
@@ -549,3 +549,28 @@ existing notification count and timeout-closure assertions remain unchanged.
 A separately marked sequential diagnostic of related P2-016 integration and
 SS005/SS009 regression files passed 47/47, with confirmed zero-residual cleanup;
 it is not frozen-candidate acceptance. Full acceptance and fresh review remain due.
+
+C7 frozen acceptance (2026-10-03): 5e8a226f5bc5599a567dc5eba620527f47b48ea7,
+tree b78bfb4db04315547a245b0e34458523fbbaf361, fingerprint
+f6f33ae1c0ce17ae218d0311dab196cb8e49b0536611d619d3db914aa774b644.
+Full-01 passed all 217 files / 1381 tests with zero fail, cancelled, skipped, todo
+and not-run. Fresh SPEC and STANDARDS originals both PASS with zero unresolved
+findings. Owned PG stopped, its data directory was deleted and zero residuals were
+confirmed. These C7 results replace C3 as the current stage-6 completion basis;
+the C3 success and C4/C5/C6 failures remain separate historical records.
+
+The append-only 933-file C7 packet is evidence/yxx-current-c07-5e8a226-20261003.
+All nine public evidence verifiers passed. The actual managed root and clean
+published H f152e4aee0d1940db9db1be832a9269d8080ca41 both rebuilt and returned
+READY_FOR_LIMITED_WRITE_LIVE bound to C7 with zero database/provider/listener IO,
+live_authorized=false and parent_gate_advanced=false. Original SS009 strict on
+current H retains its historical YXX_VERIFICATION_REJECTED result.
+
+H CI run 37104627691 is FAILED: all four current shard jobs and both tooling jobs
+returned SUCCESS, but source-baseline first ran the untouched T02 reference
+7eefaa99591bfaa2e787701efd315ff701c51f35. Its fixed fixture retention deadline,
+2026-10-03 12:00:00, had expired; two original cases hit
+communication_message_retention_check and then transaction-aborted errors.
+The combined step consequently never ran the current shadow/build, and subsequent
+current checks failed for missing build-manifest.json. This is not current CI green;
+historical-boundary treatment, final exact-head CI/review and merge remain pending.
