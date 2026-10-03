@@ -298,6 +298,7 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "v3-p00": ["tests/p2-006-workbench.test.mjs", "tests/p2-006-workbench.integration.test.mjs", "tests/migration-canary.test.mts", "tests/yxx-current-readiness.test.mts", "tests/yxx-current-readiness-cli.test.mts", "tests/arch-006-rule-first-service-loop.test.mjs", "tests/v1-4-architecture-baseline.test.mjs"],
     "yxx-current-evidence": ["tests/yxx-current-evidence.test.mts"],
     "yxx-current-migrations": ["tests/yxx-current-migrations.integration.test.mts"],
     "yxx-current-readiness": ["tests/yxx-current-readiness.test.mts","tests/yxx-current-history.test.mts","tests/yxx-current-readiness-cli.test.mts"],

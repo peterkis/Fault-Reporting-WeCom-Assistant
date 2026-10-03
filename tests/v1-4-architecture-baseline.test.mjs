@@ -4,10 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { runInNewContext } from 'node:vm';
+import { sourceFile } from './helpers/migration-roots.mjs';
 
 const root = process.cwd();
 const json = (relativePath) => JSON.parse(fs.readFileSync(path.join(root, relativePath), 'utf8'));
 const text = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
+const migrationTargets = new Set(Object.values(json('plans/typescript-migration/scope.json').migration_batches).flat());
+function sourceExists(relativePath) {
+  return fs.existsSync(relativePath.startsWith('src/') && migrationTargets.has(relativePath)
+    ? sourceFile(relativePath) : path.join(root, relativePath));
+}
 
 const profiles = Object.freeze({
   P2_006_IN_PROGRESS: Object.freeze({
@@ -365,7 +371,7 @@ test('P2-004 completion artifacts preserve P1 notification and Ticket ownership'
     'src/p2-004-communication-projections.mjs',
     'src/p2-004-communication-sender-port.mjs',
     'evidence/p2-004-communication-outbox-delivery-report.md',
-  ]) assert.equal(fs.existsSync(path.join(root, relativePath)), true, relativePath);
+  ]) assert.equal(sourceExists(relativePath), true, relativePath);
   const migration = text('database/migrations/020_p2_004_unified_communication.sql');
   assert.equal((migration.match(/CREATE TABLE IF NOT EXISTS\s+communication\./giu) ?? []).length, 4);
   assert.doesNotMatch(migration, /\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|TRUNCATE)\s+(?:TABLE\s+)?notification\./iu);
@@ -386,7 +392,7 @@ test('P2-005 completion artifacts preserve frozen Session and identity ownership
     'src/p2-005-conversation-control.mjs',
     'src/p2-005-conversation-control-projections.mjs',
     'evidence/p2-005-assignment-handoff-generation-fence-report.md',
-  ]) assert.equal(fs.existsSync(path.join(root, relativePath)), true, relativePath);
+  ]) assert.equal(sourceExists(relativePath), true, relativePath);
   const migration = text('database/migrations/021_p2_005_conversation_control.sql');
   assert.equal((migration.match(/CREATE TABLE IF NOT EXISTS\s+conversation\./giu) ?? []).length, 4);
   assert.doesNotMatch(migration, /ALTER TABLE\s+conversation\.session/iu);
@@ -409,7 +415,7 @@ test('P2-006 completion has a runnable workbench and no migration 022', () => {
     'tests/p2-006-workbench.test.mjs',
     'tests/p2-006-workbench.integration.test.mjs',
     'tests/p2-006-workbench-browser.test.mjs',
-  ]) assert.equal(fs.existsSync(path.join(root, relativePath)), true, relativePath);
+  ]) assert.equal(sourceExists(relativePath), true, relativePath);
   assert.equal(fs.existsSync(path.join(root, 'database/migrations/022_p2_006_realtime_workbench.sql')), false);
 });
 
@@ -428,7 +434,7 @@ test('P2-001 and P2-002 frozen artifacts remain present', () => {
     'evidence/p2-001-conversation-contracts-report.md',
     'evidence/p2-002-timeline-projector-report.md',
   ]) {
-    assert.equal(fs.existsSync(path.join(root, relativePath)), true, relativePath + ' should exist');
+    assert.equal(sourceExists(relativePath), true, relativePath + ' should exist');
   }
 });
 

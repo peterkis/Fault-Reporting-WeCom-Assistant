@@ -1,68 +1,123 @@
 name: TypeScript migration
-on:
-  pull_request:
+'on':
+  pull_request: null
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        required: true
+        options:
+        - full
+        - certify
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.mode || 'pr' }}
   cancel-in-progress: true
-
 jobs:
-  tooling:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+  typescript-merge-check:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: migration_ci_only
+          POSTGRES_DB: migration_ci
+        ports:
+        - 5432:5432
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TS_MIGRATION_TEST_DB_ISOLATED: '1'
+      PILOT_DATABASE_URL: postgresql://postgres:migration_ci_only@127.0.0.1:5432/migration_ci
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
+      MIGRATION_REPORT_DIR: ${{ runner.temp }}/types-merge/tests
     steps:
-      - name: Preserve the recorded current-source SQL checkout representation
-        run: git config --global core.autocrlf true
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Retain checkout line endings for hermetic Git preflight
-        run: git config --local core.autocrlf true
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Prepare the YAML parser required by current and historical OpenAPI tests
-        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Strict tools, real compiler canary and host rejection tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-review"
-          mkdir -p "$OUT"
-          npm run migration:gate 2>&1 | tee "$OUT/gate.txt"
-          node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs .build/tools/acceptance.test.mjs .build/tools/publication.test.mjs 2>&1 | tee "$OUT/tooling.txt"
-          node --test --test-reporter=tap --test-name-pattern "retired T02 replay" .build/tools/t02-expiry.test.mjs 2>&1 | tee "$OUT/current-scheduling.txt"
-          node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
-          node .build/tools/browser-smoke.mjs 2>&1 | tee "$OUT/real-browser.txt"
-          node .build/tools/run-tests.mjs --selection t02-source --report-dir "$OUT/source" 2>&1 | tee "$OUT/source.txt"
-          node .build/tools/run-tests.mjs --selection t02-time --report-dir "$OUT/time" 2>&1 | tee "$OUT/time.txt"
-          npm run migration:verify-artifact 2>&1 | tee "$OUT/artifact.txt"
-          cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
-          git rev-parse HEAD > "$OUT/source-sha.txt"
-          git diff --exit-code
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: types-tooling-${{ matrix.os }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/types-review/
-          retention-days: 14
+    - run: git config --global core.autocrlf true
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - run: git config --local core.autocrlf true
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '24'
+        cache: npm
+        cache-dependency-path: package-lock.json
+    - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+    - run: npm ci --ignore-scripts --no-audit --no-fund
+    - name: Read the active nonempty selection and actual tool impact
+      id: changes
+      shell: bash
+      run: |
+        set -euo pipefail
+        node --input-type=module <<'NODE'
+        import {readFileSync,appendFileSync} from 'node:fs';
+        import {execFileSync} from 'node:child_process';
+        const rows=[...readFileSync('plans/typescript-migration/README.md','utf8').matchAll(/^ACTIVE_SELECTION: (v3-p[0-9]{2}|v3-d01)\r?$/gm)];
+        if(rows.length!==1)throw Error('ACTIVE_SELECTION_MUST_BE_UNIQUE');
+        appendFileSync(process.env.GITHUB_ENV,`MIGRATION_SELECTION=${rows[0][1]}\n`);
+        const changed=execFileSync('git',['diff','--name-only',process.env.EXPECTED_BASE,process.env.EXPECTED_HEAD],{encoding:'utf8'}).split(/\r?\n/);
+        const tools=changed.some(p=>/^(tools\/ts-migration\/|tsconfig.*\.json$|plans\/typescript-migration\/(scope|test-routing)\.json$|\.github\/workflows\/(types-migration|ss009-evidence-history|p2-staff-directory)\.yml$)/.test(p));
+        appendFileSync(process.env.GITHUB_OUTPUT,`tools=${tools}\n`);
+        NODE
+    - name: One build and strict type gates
+      shell: bash
+      run: |
+        set -euo pipefail
+        npm run migration:build
+        node .build/tools/gate.mjs types
+    - name: Run the selected compiled business and architecture entries
+      shell: bash
+      run: |
+        set -euo pipefail
+        node .build/runtime/scripts/migrate-current-baseline.mjs
+        node --input-type=module <<'NODE'
+        import {runSelection} from './.build/tools/run-tests.mjs';
+        import {loadRoutes,select} from './.build/tools/routing.mjs';
+        runSelection(process.cwd(),select(loadRoutes(process.cwd()),'selection',process.env.MIGRATION_SELECTION),{reportDir:process.env.MIGRATION_REPORT_DIR});
+        NODE
+    - name: Directly affected tool and scheduling regression
+      if: ${{ steps.changes.outputs.tools == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs
+        node --test --test-reporter=tap --test-name-pattern "retired T02 replay" .build/tools/t02-expiry.test.mjs
+    - name: Verify the owned database and exact artifact
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/types-merge"
+        mkdir -p "$OUT"
+        git rev-parse HEAD > "$OUT/source-sha.txt"
+        node --version > "$OUT/node-version.txt"
+        node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.PILOT_DATABASE_URL});try{const r=await p.query(\"SELECT datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1','migration_ci')\");console.log(JSON.stringify({remaining_databases:r.rows}));if(r.rowCount)process.exitCode=1;console.log((await p.query('SHOW server_version')).rows);}finally{await p.end();}" 2>&1 | tee "$OUT/database-cleanup.txt"
+        node .build/tools/verify-artifact.mjs > "$OUT/artifact.txt" 2>&1
+        cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
+        git diff --exit-code
+        test -z "$(git status --porcelain)"
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: ${{ always() }}
+      with:
+        name: types-merge-${{ github.run_id }}
+        path: ${{ runner.temp }}/types-merge/
+        retention-days: 14
   current-regression:
     name: current shard (${{ matrix.shard }}/4)
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        shard: [1, 2, 3, 4]
+        shard:
+        - 1
+        - 2
+        - 3
+        - 4
     runs-on: ubuntu-latest
     timeout-minutes: 60
     services:
@@ -71,67 +126,119 @@ jobs:
         env:
           POSTGRES_PASSWORD: migration_ci_only
           POSTGRES_DB: migration_ci
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres" --health-interval 5s
-          --health-timeout 5s --health-retries 10
+        ports:
+        - 5432:5432
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       SHARD: ${{ matrix.shard }}
       EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
       TS_MIGRATION_TEST_DB_ISOLATED: '1'
       PILOT_DATABASE_URL: postgresql://postgres:migration_ci_only@127.0.0.1:5432/migration_ci
     steps:
-      - name: Preserve the recorded current-source SQL checkout representation
-        run: git config --global core.autocrlf true
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Retain checkout line endings for hermetic Git preflight
-        run: git config --local core.autocrlf true
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Prepare the YAML parser required by current and historical OpenAPI tests
-        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Verify the actual published object before running its current shard
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/current-shard-$SHARD"
-          mkdir -p "$OUT"
-          node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" > "$OUT/identity.txt" 2>&1
-          npm run migration:build > "$OUT/bootstrap-build.txt" 2>&1
-          node .build/runtime/scripts/migrate-current-baseline.mjs > "$OUT/database-baseline.txt" 2>&1
-          if ! node .build/tools/run-tests.mjs --current-full --shard "$SHARD/4" --report-dir "$OUT/tests" > "$OUT/gate.txt" 2>&1; then
-            tail -n 100 "$OUT/gate.txt"
-            exit 1
-          fi
-      - name: Verify the owned database and exact artifact after the shard
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/current-shard-$SHARD"
-          mkdir -p "$OUT"
-          git rev-parse HEAD > "$OUT/source-sha.txt"
-          node --version > "$OUT/node-version.txt"
-          node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.PILOT_DATABASE_URL});try{const r=await p.query(\"SELECT datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1','migration_ci')\");console.log(JSON.stringify({remaining_databases:r.rows}));if(r.rowCount)process.exitCode=1;console.log((await p.query('SHOW server_version')).rows);}finally{await p.end();}" 2>&1 | tee "$OUT/database-cleanup.txt"
-          npm run migration:verify-artifact > "$OUT/artifact.txt" 2>&1
-          cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
-          git diff --exit-code
-          test -z "$(git status --porcelain)"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: current-shard-${{ matrix.shard }}
-          path: ${{ runner.temp }}/current-shard-${{ matrix.shard }}/
-          retention-days: 14
-  source-baseline:
+    - name: Preserve the recorded current-source SQL checkout representation
+      run: git config --global core.autocrlf true
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Retain checkout line endings for hermetic Git preflight
+      run: git config --local core.autocrlf true
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '24'
+        cache: npm
+        cache-dependency-path: package-lock.json
+    - name: Prepare the YAML parser required by current and historical OpenAPI tests
+      run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+    - run: npm ci --ignore-scripts --no-audit --no-fund
+    - name: Verify the actual published object before running its current shard
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/current-shard-$SHARD"
+        mkdir -p "$OUT"
+        node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" > "$OUT/identity.txt" 2>&1
+        npm run migration:build > "$OUT/bootstrap-build.txt" 2>&1
+        node .build/runtime/scripts/migrate-current-baseline.mjs > "$OUT/database-baseline.txt" 2>&1
+        if ! SHARD_ID="$SHARD/4" MIGRATION_REPORT_DIR="$OUT/tests" node --input-type=module -e "import {runSelection} from './.build/tools/run-tests.mjs';import {currentSelection} from './.build/tools/current-acceptance.mjs';runSelection(process.cwd(),currentSelection(process.cwd(),process.env.SHARD_ID),{reportDir:process.env.MIGRATION_REPORT_DIR});" > "$OUT/gate.txt" 2>&1; then
+          tail -n 100 "$OUT/gate.txt"
+          exit 1
+        fi
+    - name: Verify the owned database and exact artifact after the shard
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/current-shard-$SHARD"
+        mkdir -p "$OUT"
+        git rev-parse HEAD > "$OUT/source-sha.txt"
+        node --version > "$OUT/node-version.txt"
+        node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.PILOT_DATABASE_URL});try{const r=await p.query(\"SELECT datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1','migration_ci')\");console.log(JSON.stringify({remaining_databases:r.rows}));if(r.rowCount)process.exitCode=1;console.log((await p.query('SHOW server_version')).rows);}finally{await p.end();}" 2>&1 | tee "$OUT/database-cleanup.txt"
+        npm run migration:verify-artifact > "$OUT/artifact.txt" 2>&1
+        cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
+        git diff --exit-code
+        test -z "$(git status --porcelain)"
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: always()
+      with:
+        name: current-shard-${{ matrix.shard }}
+        path: ${{ runner.temp }}/current-shard-${{ matrix.shard }}/
+        retention-days: 14
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+  structure-tooling:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - ubuntu-latest
+        - windows-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+    - name: Preserve the recorded current-source SQL checkout representation
+      run: git config --global core.autocrlf true
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Retain checkout line endings for hermetic Git preflight
+      run: git config --local core.autocrlf true
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '24'
+        cache: npm
+        cache-dependency-path: package-lock.json
+    - name: Prepare the YAML parser required by current and historical OpenAPI tests
+      run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+    - run: npm ci --ignore-scripts --no-audit --no-fund
+    - name: Strict tools, real compiler canary and host rejection tests
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/types-review"
+        mkdir -p "$OUT"
+        npm run migration:build 2>&1 | tee "$OUT/build.txt"
+        node .build/tools/gate.mjs types 2>&1 | tee "$OUT/types.txt"
+        node --test --test-reporter=tap .build/tools/tooling.test.mjs .build/tools/hosts.test.mjs .build/tools/batches.test.mjs .build/tools/acceptance.test.mjs .build/tools/publication.test.mjs 2>&1 | tee "$OUT/tooling.txt"
+        node --test --test-reporter=tap --test-name-pattern "retired T02 replay" .build/tools/t02-expiry.test.mjs 2>&1 | tee "$OUT/current-scheduling.txt"
+        node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
+        node .build/tools/browser-smoke.mjs 2>&1 | tee "$OUT/real-browser.txt"
+        npm run migration:verify-artifact 2>&1 | tee "$OUT/artifact.txt"
+        cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
+        git rev-parse HEAD > "$OUT/source-sha.txt"
+        git diff --exit-code
+        node .build/runtime/scripts/yxx-self-service-readiness.mjs
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: always()
+      with:
+        name: types-tooling-${{ matrix.os }}-${{ github.run_id }}
+        path: ${{ runner.temp }}/types-review/
+        retention-days: 14
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+  strict-readiness:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'certify' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     services:
@@ -140,165 +247,176 @@ jobs:
         env:
           POSTGRES_PASSWORD: migration_ci_only
           POSTGRES_DB: migration_ci
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres" --health-interval 5s
-          --health-timeout 5s --health-retries 10
+        ports:
+        - 5432:5432
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       TS_MIGRATION_TEST_DB_ISOLATED: '1'
       PILOT_DATABASE_URL: postgresql://postgres:migration_ci_only@127.0.0.1:5432/migration_ci
     steps:
-      - name: Preserve the recorded current-source SQL checkout representation
-        run: git config --global core.autocrlf true
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Retain checkout line endings for hermetic Git preflight
-        run: git config --local core.autocrlf true
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Prepare the YAML parser required by current and historical OpenAPI tests
-        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Published identity and current tooling
-        shell: bash
-        env:
-          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          mkdir -p "$OUT"
-          node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" 2>&1 | tee "$OUT/identity.txt"
-          npm run migration:tools
-      - name: Independently build and execute the current targeted regression
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          npm run migration:tools
-          node .build/tools/run-tests.mjs --selection t02-baseline --report-dir "$OUT/shadow-1" 2>&1 | tee "$OUT/shadow-1.txt"
-      - name: Current artifact identity
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          node .build/tools/check-g2.mjs 2>&1 | tee "$OUT/g2-identity.jsonl"
-          cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
-          # Architecture is an independent hard gate below.
-      - name: Current source architecture
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          npm run validate:architecture:v1.4 2>&1 | tee "$OUT/architecture.txt"
-      - name: Current ARCH006 structure
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          node scripts/validate-arch-006-rule-first-service-loop.mjs 2>&1 | tee "$OUT/current-arch006.txt"
-      - name: T02 frozen P2-016 checkout
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          node .build/tools/run-tests.mjs --frozen p2016 --report-dir "$OUT/historical" 2>&1 | tee "$OUT/historical.txt"
-      - name: Current strict technical readiness
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          printf '%s\n' "import net from 'node:net';import cp from 'node:child_process';import {syncBuiltinESMExports} from 'node:module';const fail=()=>{process.stderr.write('CURRENT_FORBIDDEN_RUNTIME_IO');process.exit(97);};net.Socket.prototype.connect=fail;net.Server.prototype.listen=fail;cp.fork=fail;cp.spawn=fail;globalThis.fetch=fail;syncBuiltinESMExports();" > "$OUT/offline-guard.mjs"
-          node --import "$OUT/offline-guard.mjs" scripts/yxx-self-service-readiness.mjs --require-ready 2>&1 | tee "$OUT/current-readiness.json"
-      - name: Preserve the original SS009 rejection on current source
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          # The unchanged SS009 command is historical: retain its current rejection.
-          RC=0
-          node scripts/validate-yxx-self-service.mjs --require-ready > "$OUT/historical-command-on-current.txt" 2>&1 || RC=$?
-          echo "$RC" > "$OUT/historical-command-on-current-exit.txt"
-          test "$RC" = 1
-          grep -q YXX_VERIFICATION_REJECTED "$OUT/historical-command-on-current.txt"
-          # The pinned PR37 classifier remains exercised by its named tooling regression.
-      - name: Exact source, environment and cleanup identity
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/types-baseline"
-          mkdir -p "$OUT"
-          git rev-parse HEAD > "$OUT/source-sha.txt"
-          git archive --format=tar HEAD | gzip > "$OUT/source.tar.gz"
-          git bundle create "$OUT/source.bundle" HEAD
-          node --version > "$OUT/node-version.txt"
-          node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.PILOT_DATABASE_URL});try{const r=await p.query(\"SELECT datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1','migration_ci')\");console.log(JSON.stringify({remaining_databases:r.rows}));if(r.rowCount)process.exitCode=1;console.log((await p.query('SHOW server_version')).rows);}finally{await p.end();}" 2>&1 | tee "$OUT/database-cleanup.txt"
-          git diff --exit-code
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: types-baseline-${{ github.run_id }}
-          path: ${{ runner.temp }}/types-baseline/
-          retention-days: 14
-
-  current-complete:
-    needs: [tooling, current-regression, source-baseline]
-    if: ${{ always() }}
+    - run: git config --global core.autocrlf true
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - run: git config --local core.autocrlf true
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '24'
+        cache: npm
+        cache-dependency-path: package-lock.json
+    - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+    - run: npm ci --ignore-scripts --no-audit --no-fund
+    - run: mkdir -p "$RUNNER_TEMP/types-baseline"
+      shell: bash
+    - name: Build the pinned certification candidate
+      shell: bash
+      run: |
+        set -euo pipefail
+        npm run migration:build
+    - name: T02 frozen P2-016 checkout
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/types-baseline"
+        node .build/tools/run-tests.mjs --frozen p2016 --report-dir "$OUT/historical" 2>&1 | tee "$OUT/historical.txt"
+    - name: Current strict technical readiness
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/types-baseline"
+        printf '%s\n' "import net from 'node:net';import cp from 'node:child_process';import {syncBuiltinESMExports} from 'node:module';const fail=()=>{process.stderr.write('CURRENT_FORBIDDEN_RUNTIME_IO');process.exit(97);};net.Socket.prototype.connect=fail;net.Server.prototype.listen=fail;cp.fork=fail;cp.spawn=fail;globalThis.fetch=fail;syncBuiltinESMExports();" > "$OUT/offline-guard.mjs"
+        node --import "$OUT/offline-guard.mjs" scripts/yxx-self-service-readiness.mjs --require-ready 2>&1 | tee "$OUT/current-readiness.json"
+    - name: Preserve the original SS009 rejection on current source
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/types-baseline"
+        # The unchanged SS009 command is historical: retain its current rejection.
+        RC=0
+        node scripts/validate-yxx-self-service.mjs --require-ready > "$OUT/historical-command-on-current.txt" 2>&1 || RC=$?
+        echo "$RC" > "$OUT/historical-command-on-current-exit.txt"
+        test "$RC" = 1
+        grep -q YXX_VERIFICATION_REJECTED "$OUT/historical-command-on-current.txt"
+        # The pinned PR37 classifier remains exercised by its named tooling regression.
+    - name: Verify the owned database and exact artifact
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/types-merge"
+        mkdir -p "$OUT"
+        git rev-parse HEAD > "$OUT/source-sha.txt"
+        node --version > "$OUT/node-version.txt"
+        node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.PILOT_DATABASE_URL});try{const r=await p.query(\"SELECT datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1','migration_ci')\");console.log(JSON.stringify({remaining_databases:r.rows}));if(r.rowCount)process.exitCode=1;console.log((await p.query('SHOW server_version')).rows);}finally{await p.end();}" 2>&1 | tee "$OUT/database-cleanup.txt"
+        node .build/tools/verify-artifact.mjs > "$OUT/artifact.txt" 2>&1
+        cp .build/artifact-proof.json .build/runtime/build-manifest.json "$OUT/"
+        git diff --exit-code
+        test -z "$(git status --porcelain)"
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: ${{ always() }}
+      with:
+        name: current-strict-${{ github.run_id }}
+        path: ${{ runner.temp }}/types-baseline/
+        retention-days: 14
+  full-complete:
+    needs:
+    - structure-tooling
+    - current-regression
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.mode == 'full' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Require every current job to succeed
-        env:
-          TOOLING: ${{ needs.tooling.result }}
-          CURRENT: ${{ needs['current-regression'].result }}
-          BASELINE: ${{ needs['source-baseline'].result }}
-        run: test "$TOOLING" = success && test "$CURRENT" = success && test "$BASELINE" = success
-      - run: git config --global core.autocrlf true
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: current-shard-*
-          path: ${{ runner.temp }}/current-collection
-      - name: Verify exact-head shard coverage and original log integrity
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/current-collection"
-          for N in 1 2 3 4; do mv "$OUT/current-shard-$N" "$OUT/shard-$N"; done
-          # The preflight deliberately ignores global Git configuration.
-          git config core.autocrlf true
-          node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD"
-          npm run migration:tools
-          node .build/tools/verify-current-shards.mjs "$OUT" --shards 4 --expected-head "$EXPECTED_HEAD" | tee "$OUT/collection.json"
-          git diff --exit-code
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        if: always()
-        with:
-          name: current-collection-${{ github.run_id }}
-          path: ${{ runner.temp }}/current-collection/collection.json
-          retention-days: 30
+    - name: Require every full job to succeed
+      env:
+        TOOLING: ${{ needs['structure-tooling'].result }}
+        CURRENT: ${{ needs['current-regression'].result }}
+      run: test "$TOOLING" = success && test "$CURRENT" = success
+    - run: git config --global core.autocrlf true
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '24'
+        cache: npm
+        cache-dependency-path: package-lock.json
+    - run: npm ci --ignore-scripts --no-audit --no-fund
+    - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      with:
+        pattern: current-shard-*
+        path: ${{ runner.temp }}/current-collection
+    - name: Verify exact-head shard coverage and original log integrity
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/current-collection"
+        for N in 1 2 3 4; do mv "$OUT/current-shard-$N" "$OUT/shard-$N"; done
+        # The preflight deliberately ignores global Git configuration.
+        git config core.autocrlf true
+        node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD"
+        npm run migration:tools
+        node .build/tools/verify-current-shards.mjs "$OUT" --shards 4 --expected-head "$EXPECTED_HEAD" | tee "$OUT/collection.json"
+        git diff --exit-code
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: always()
+      with:
+        name: full-collection-${{ github.run_id }}
+        path: ${{ runner.temp }}/current-collection/collection.json
+        retention-days: 30
+  certify-complete:
+    needs:
+    - structure-tooling
+    - current-regression
+    - strict-readiness
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.mode == 'certify' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+    - name: Require every certify job to succeed
+      env:
+        TOOLING: ${{ needs['structure-tooling'].result }}
+        CURRENT: ${{ needs['current-regression'].result }}
+        STRICT: ${{ needs['strict-readiness'].result }}
+      run: test "$TOOLING" = success && test "$CURRENT" = success && test "$STRICT" = success
+    - run: git config --global core.autocrlf true
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '24'
+        cache: npm
+        cache-dependency-path: package-lock.json
+    - run: npm ci --ignore-scripts --no-audit --no-fund
+    - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      with:
+        pattern: current-shard-*
+        path: ${{ runner.temp }}/current-collection
+    - name: Verify exact-head shard coverage and original log integrity
+      shell: bash
+      run: |
+        set -euo pipefail
+        OUT="$RUNNER_TEMP/current-collection"
+        for N in 1 2 3 4; do mv "$OUT/current-shard-$N" "$OUT/shard-$N"; done
+        # The preflight deliberately ignores global Git configuration.
+        git config core.autocrlf true
+        node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD"
+        npm run migration:tools
+        node .build/tools/verify-current-shards.mjs "$OUT" --shards 4 --expected-head "$EXPECTED_HEAD" | tee "$OUT/collection.json"
+        git diff --exit-code
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      if: always()
+      with:
+        name: certify-collection-${{ github.run_id }}
+        path: ${{ runner.temp }}/current-collection/collection.json
+        retention-days: 30

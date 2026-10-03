@@ -1,5 +1,13 @@
 # Published-history review preflight
 
+## 当前开发与认证入口（v3，2026-10-03）
+
+普通 PR 的历史保护只有 `.github/workflows/ss009-evidence-history.yml` 中单一 Linux job：完整 checkout → published-history preflight → `pr-evidence-delta.test.mjs` → `pr-evidence-delta.mjs`。它不安装项目依赖，不执行当前业务回归或固定历史回放；TypeScript merge-check 不重复执行这三项。
+
+完整 current 回归是 TypeScript workflow 的手动 full。当前严格认证与固定历史证明分别为两个 workflow 的手动 certify；R01 记录各自 SUCCESS URL，不使用 workflow_call 或跨 workflow 汇总。证据先按原流程准备和追加发布，再独立消费严格 ready；P00 不生成新认证包。详见 [活动迁移入口](../../plans/typescript-migration/README.md)。
+
+下文严格 SS009 命令、固定对象与各轮结果继续用于对应历史复现/发布认证，不能当成普通迁移 PR 必跑任务。身份、祖先、不可重写证据以及失败/取消/缺失不算成功的约束继续有效。
+
 ## 2026-09-22 successor CI scope correction
 
 PR #21's Ubuntu and Windows evidence-history jobs reproduced

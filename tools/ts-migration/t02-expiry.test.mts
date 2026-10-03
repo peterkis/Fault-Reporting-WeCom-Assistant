@@ -88,34 +88,65 @@ test('only the two proven frozen T02 expiry failures become historical observati
 test('retired T02 replay cannot suppress independent current CI hard gates',()=>{
   const root=sourceRoot();
   const parsed=spawnSync('python',['-c',
-    "import json,yaml; print(json.dumps(yaml.safe_load(open('.github/workflows/types-migration.yml',encoding='utf-8'))['jobs']))"],
+    "import json,yaml; from pathlib import Path; print(json.dumps({n:yaml.load(Path('.github/workflows/'+n+'.yml').read_text(encoding='utf-8'),Loader=yaml.BaseLoader) for n in ['types-migration','ss009-evidence-history','p2-staff-directory']}))"],
     {cwd:root,encoding:'utf8',windowsHide:true,timeout:10_000});
   assert.equal(parsed.status,0,parsed.stderr);
-  const jobs=record(JSON.parse(parsed.stdout) as unknown),baseline=record(jobs['source-baseline']);
-  assert.ok(!baseline['continue-on-error']);assert.ok(Array.isArray(baseline.steps));
-  const steps=baseline.steps.map(record);
-  const current=steps.filter(step=>typeof step.name==='string' && /^(?:Independently build|Current artifact|Current source architecture|Current ARCH006|Current strict technical)/u.test(step.name));
-  assert.equal(current.length,5);
-  for(const step of current){assert.equal(step.if,'${{ !cancelled() }}');assert.ok(!step['continue-on-error']);assert.match(String(step.run),/set -euo pipefail/u);}
-  assert.ok(current.some(step=>String(step.run).includes('--selection t02-baseline --report-dir')));
-  assert.ok(current.some(step=>String(step.run).includes('validate:architecture:v1.4')));
-  assert.ok(current.some(step=>String(step.run).includes('validate-arch-006-rule-first-service-loop.mjs')));
-  assert.ok(current.some(step=>String(step.run).includes('yxx-self-service-readiness.mjs --require-ready')));
+  const workflows=record(JSON.parse(parsed.stdout) as unknown), types=record(workflows['types-migration']);
+  const jobs=record(types.jobs), merge=record(jobs['typescript-merge-check']);
+  const runs=(job:Record<string,unknown>):string=>{
+    assert.ok(Array.isArray(job.steps));
+    return job.steps.map(step=>String(record(step).run??'')).join('\n');
+  };
+  assert.equal(merge.if,"${{ github.event_name == 'pull_request' }}");
+  assert.equal(merge['runs-on'],'ubuntu-latest');assert.equal(merge.strategy,undefined);
+  const mergeScript=runs(merge);
+  assert.equal([...mergeScript.matchAll(/npm run migration:build/gu)].length,1);
+  assert.match(mergeScript,/node \.build\/tools\/gate\.mjs types/u);
+  assert.match(mergeScript,/ACTIVE_SELECTION_MUST_BE_UNIQUE/u);
+  assert.match(mergeScript,/runSelection\(process\.cwd\(\),select\(loadRoutes/u);
+  assert.doesNotMatch(mergeScript,/verify-published-history|pr-evidence-delta|--require-ready|--current-full|--batch|migration:typecheck/u);
   for(const value of Object.values(jobs)) {
-    const job=record(value);assert.ok(Array.isArray(job.steps));
-    const scripts=job.steps.map(step=>String(record(step).run ?? '')).join('\n');
-    assert.doesNotMatch(scripts,/--reference-source|T02_REMAINING_ORIGINAL|classify-t02-expiry\.mjs|observe-runtime\.mjs|types-t02-reference/u);
+    const job=record(value);assert.ok(!job['continue-on-error']);
+    assert.ok(Array.isArray(job.steps));
+    for(const step of job.steps) assert.ok(!record(step)['continue-on-error']);
+    assert.doesNotMatch(runs(job),/--reference-source|T02_REMAINING_ORIGINAL|classify-t02-expiry\.mjs|observe-runtime\.mjs|types-t02-reference/u);
   }
-  const complete=record(jobs['current-complete']);assert.ok(strings(complete.needs).includes('source-baseline'));
-  assert.equal(complete.if,'${{ always() }}','the aggregate must run even when the workflow is cancelled');
-  assert.ok(Array.isArray(complete.steps));assert.match(String(record(complete.steps[0]).run),/test "\$BASELINE" = success/u);
+  for(const name of ['current-regression','structure-tooling'])assert.equal(record(jobs[name]).if,"${{ github.event_name == 'workflow_dispatch' }}");
+  assert.equal(record(jobs['strict-readiness']).if,"${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'certify' }}");
+  assert.match(runs(record(jobs['strict-readiness'])),/yxx-self-service-readiness\.mjs --require-ready/u);
+  assert.match(runs(record(jobs['strict-readiness'])),/--frozen p2016/u);
   const bash=process.platform==='win32'?path.resolve(execFileSync('git',['--exec-path'],{encoding:'utf8',windowsHide:true}).trim(),'../../../bin/bash.exe'):'bash';
-  for(const gate of ['TOOLING','CURRENT','BASELINE']) for(const failure of ['failure','cancelled','skipped','']) {
-    const result:SpawnSyncReturns<string>=spawnSync(bash,['-c',String(record(complete.steps[0]).run)],{encoding:'utf8',windowsHide:true,
-      env:{...process.env,TOOLING:'success',CURRENT:'success',BASELINE:'success',[gate]:failure}});
-    assert.equal(result.status,1,result.stderr);
+  for(const mode of ['full','certify']) {
+    const complete=record(jobs[mode+'-complete']);
+    assert.deepEqual(strings(complete.needs),mode==='full'?['structure-tooling','current-regression']:['structure-tooling','current-regression','strict-readiness']);
+    assert.equal(complete.if,"${{ always() && github.event_name == 'workflow_dispatch' && inputs.mode == '"+mode+"' }}");
+    assert.ok(Array.isArray(complete.steps));const gate=record(complete.steps[0]);
+    const passed:NodeJS.ProcessEnv={...process.env,TOOLING:'success',CURRENT:'success',STRICT:'success'};
+    assert.equal(spawnSync(bash,['-c',String(gate.run)],{env:passed,windowsHide:true}).status,0);
+    for(const name of Object.keys(record(gate.env)))for(const failure of ['failure','cancelled','skipped','']) {
+      const result:SpawnSyncReturns<string>=spawnSync(bash,['-c',String(gate.run)],{encoding:'utf8',windowsHide:true,env:{...passed,[name]:failure}});
+      assert.notEqual(result.status,0,name+' '+failure);
+    }
+    assert.match(runs(complete),/verify-current-shards\.mjs.*--shards 4/u);
   }
-  const passed=spawnSync(bash,['-c',String(record(complete.steps[0]).run)],{encoding:'utf8',windowsHide:true,
-    env:{...process.env,TOOLING:'success',CURRENT:'success',BASELINE:'success'}});
-  assert.equal(passed.status,0,passed.stderr);
+  const mergeSteps=merge.steps;assert.ok(Array.isArray(mergeSteps));
+  const selected=String(record(mergeSteps.find(step=>String(record(step).run??'').includes('runSelection'))).run);
+  const failed=selected.replace('node .build/runtime/scripts/migrate-current-baseline.mjs',':')
+    .replace(/(?<=<<'NODE'\n)[\s\S]+(?=\nNODE\n)/u,"throw Error('SELECTED_TESTS_FAIL');");
+  assert.notEqual(spawnSync(bash,['-c',failed],{cwd:root,encoding:'utf8',windowsHide:true}).status,0);
+  const history=record(workflows['ss009-evidence-history']), historyJobs=record(history.jobs), light=record(historyJobs['evidence-history']);
+  assert.equal(light.if,"${{ github.event_name == 'pull_request' }}");assert.equal(light['runs-on'],'ubuntu-latest');assert.equal(light.strategy,undefined);
+  const historyScript=runs(light);
+  for(const name of ['verify-published-history.mjs','pr-evidence-delta.test.mjs','pr-evidence-delta.mjs'])assert.ok(historyScript.includes(name));
+  assert.doesNotMatch(historyScript,/npm |pip |PyYAML|migration:|t03-current-ci|ss009-frozen|--require-ready|r6|SS009_VALIDATORS/u);
+  const historical=record(historyJobs['historical-certify']);
+  assert.equal(historical.if,"${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'certify' }}");
+  assert.match(runs(historical),/validate-yxx-self-service\.mjs --require-ready/u);
+  assert.match(runs(historical),/ss009-evidence-history-probe\.mjs/u);
+  assert.match(runs(historical),/SS009_VALIDATORS/u);
+  for(const workflow of [types,history])assert.equal(record(workflow.on).workflow_call,undefined);
+  const directory=record(record(record(workflows['p2-staff-directory']).on).pull_request);
+  const paths=strings(directory.paths);
+  for(const broad of ['src/**/*.mts','scripts/**/*.mts','tools/ts-migration/**','plans/typescript-migration/**'])assert.ok(!paths.includes(broad));
+  assert.ok(paths.includes('src/p2-007-*.mts'));assert.ok(paths.includes('src/platform/**'));
 });
