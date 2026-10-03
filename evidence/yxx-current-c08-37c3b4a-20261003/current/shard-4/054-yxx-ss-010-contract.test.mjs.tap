@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: SS010 AC092 offline defaults and unapproved template never start runtime capabilities
+ok 1 - SS010 AC092 offline defaults and unapproved template never start runtime capabilities
+  ---
+  duration_ms: 563.0989
+  type: 'test'
+  ...
+# Subtest: SS010 AC092 closed permissions identity window and conservative budget reject unsafe manifests
+ok 2 - SS010 AC092 closed permissions identity window and conservative budget reject unsafe manifests
+  ---
+  duration_ms: 4.8641
+  type: 'test'
+  ...
+# Subtest: SS010 AC094 unknown duplicate and run arguments fail without implicit authorization
+ok 3 - SS010 AC094 unknown duplicate and run arguments fail without implicit authorization
+  ---
+  duration_ms: 781.2683
+  type: 'test'
+  ...
+# Subtest: SS010 AC092 owner approval cannot be reused for changed window actors database or quotas
+ok 4 - SS010 AC092 owner approval cannot be reused for changed window actors database or quotas
+  ---
+  duration_ms: 1.9082
+  type: 'test'
+  ...
+# Subtest: SS010 AC091 artifact references reject path traversal missing and corrupted execution data
+ok 5 - SS010 AC091 artifact references reject path traversal missing and corrupted execution data
+  ---
+  duration_ms: 279.0555
+  type: 'test'
+  ...
+# Subtest: SS010 AC094 unresponsive owned child is hard-stopped with a bounded wait
+ok 6 - SS010 AC094 unresponsive owned child is hard-stopped with a bounded wait
+  ---
+  duration_ms: 143.4156
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2182.4333

@@ -1,0 +1,50 @@
+{
+  "path": "tests/p2-g2-provider-receipts.test.mjs",
+  "runtime_path": "tests/p2-g2-provider-receipts.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-provider-receipts.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "8a7c6dcad602e5514ba9e0ce0e52067cafe900664dd3be0a8048f37824048552",
+  "executed_sha256": "8a7c6dcad602e5514ba9e0ce0e52067cafe900664dd3be0a8048f37824048552",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "037-p2-g2-provider-receipts.test.mjs.tap",
+  "tap_sha256": "2b6fa12465016f2bafcec36615655cfa932089867ee3f9f30fccd46f98618891",
+  "tap_bytes": 554,
+  "stderr_path": "037-p2-g2-provider-receipts.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "037-p2-g2-provider-receipts.test.mjs.cases.jsonl",
+  "case_trace_sha256": "6287b118b4056517caeb49292d6eedf9b99d70fcf4a707d30408cdc08fdf74ff",
+  "case_trace_bytes": 612,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-016-domain-contracts.mjs",
+    ".build/runtime/src/p2-016-ticket-notification-policy.mjs",
+    ".build/runtime/src/p2-g2-provider-receipts.mjs",
+    ".build/runtime/src/p2-g2-validation-config.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/helpers/p2-g2-configuration-fixture.mjs",
+    ".build/runtime/tests/p2-g2-provider-receipts.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

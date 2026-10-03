@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: published evidence child preserves tested ancestry; result never claims readiness
+ok 1 - published evidence child preserves tested ancestry; result never claims readiness
+  ---
+  duration_ms: 1837.2072
+  type: 'test'
+  ...
+# Subtest: additional documentation commits need no report rebind
+ok 2 - additional documentation commits need no report rebind
+  ---
+  duration_ms: 1814.8161
+  type: 'test'
+  ...
+# Subtest: same-tree reparented review snapshot is an identity error, not a published-history finding
+ok 3 - same-tree reparented review snapshot is an identity error, not a published-history finding
+  ---
+  duration_ms: 1510.3502
+  type: 'test'
+  ...
+# Subtest: genuinely published squash still fails; no same-tree exception is allowed
+ok 4 - genuinely published squash still fails; no same-tree exception is allowed
+  ---
+  duration_ms: 1958.9294
+  type: 'test'
+  ...
+# Subtest: explicit exact merge preview requires the ordered base/head parents
+ok 5 - explicit exact merge preview requires the ordered base/head parents
+  ---
+  duration_ms: 1544.0992
+  type: 'test'
+  ...
+# Subtest: an unannounced merge is not silently substituted for the requested head
+ok 6 - an unannounced merge is not silently substituted for the requested head
+  ---
+  duration_ms: 1049.554
+  type: 'test'
+  ...
+# Subtest: a single-parent snapshot cannot masquerade as the advertised merge preview
+ok 7 - a single-parent snapshot cannot masquerade as the advertised merge preview
+  ---
+  duration_ms: 1085.1241
+  type: 'test'
+  ...
+# Subtest: reversed merge parents are rejected
+ok 8 - reversed merge parents are rejected
+  ---
+  duration_ms: 1196.6036
+  type: 'test'
+  ...
+# Subtest: a real shallow clone is an incomplete review environment
+ok 9 - a real shallow clone is an incomplete review environment
+  ---
+  duration_ms: 1506.34
+  type: 'test'
+  ...
+# Subtest: replace refs cannot override the tested graph
+ok 10 - replace refs cannot override the tested graph
+  ---
+  duration_ms: 2213.121
+  type: 'test'
+  ...
+# Subtest: legacy grafts cannot override the tested graph
+ok 11 - legacy grafts cannot override the tested graph
+  ---
+  duration_ms: 2299.0363
+  type: 'test'
+  ...
+# Subtest: tracked candidate edits block exact-commit verification
+ok 12 - tracked candidate edits block exact-commit verification
+  ---
+  duration_ms: 2416.996
+  type: 'test'
+  ...
+# Subtest: untracked files block exact-commit verification
+ok 13 - untracked files block exact-commit verification
+  ---
+  duration_ms: 3233.5148
+  type: 'test'
+  ...
+# Subtest: wrong tested_tree is a real evidence failure on the verified head
+ok 14 - wrong tested_tree is a real evidence failure on the verified head
+  ---
+  duration_ms: 2736.0138
+  type: 'test'
+  ...
+# Subtest: an unavailable tested object never yields PASS
+ok 15 - an unavailable tested object never yields PASS
+  ---
+  duration_ms: 3301.8831
+  type: 'test'
+  ...
+# Subtest: expected SHA is mandatory; branch names and abbreviated hashes are forbidden
+ok 16 - expected SHA is mandatory; branch names and abbreviated hashes are forbidden
+  ---
+  duration_ms: 1731.3863
+  type: 'test'
+  ...
+# Subtest: current report is discovered from the plan, not hard-coded to r5
+ok 17 - current report is discovered from the plan, not hard-coded to r5
+  ---
+  duration_ms: 3390.4537
+  type: 'test'
+  ...
+# Subtest: duplicate or unsafe report pointers are rejected
+ok 18 - duplicate or unsafe report pointers are rejected
+  ---
+  duration_ms: 3597.819
+  type: 'test'
+  ...
+# Subtest: preflight is read-only and does not modify the report or index
+ok 19 - preflight is read-only and does not modify the report or index
+  ---
+  duration_ms: 3167.3447
+  type: 'test'
+  ...
+# Subtest: CLI succeeds only for the explicit head and emits NOT_RUN readiness
+ok 20 - CLI succeeds only for the explicit head and emits NOT_RUN readiness
+  ---
+  duration_ms: 3078.0589
+  type: 'test'
+  ...
+# Subtest: CLI blocks omitted or duplicate arguments with nonzero exit
+ok 21 - CLI blocks omitted or duplicate arguments with nonzero exit
+  ---
+  duration_ms: 1681.1399
+  type: 'test'
+  ...
+# Subtest: inherited GIT_DIR cannot redirect the CLI to a different repository
+ok 22 - inherited GIT_DIR cannot redirect the CLI to a different repository
+  ---
+  duration_ms: 2943.1624
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 54591.199

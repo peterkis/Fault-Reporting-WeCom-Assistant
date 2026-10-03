@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 17:55:29","event_epoch_ms":"1791021329235","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P2-012 expired direct destinations cannot activate subscriptions and pending reopen never claims activation","file":"tests/p2-012-subscription-review.integration.test.mjs","line":9,"nesting":0,"skip":false,"todo":false}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 16:49:54",
+  "event_epoch_ms": "1791017394976",
+  "tested_head": "37c3b4a3e2f8944b7c33d628bb13028f64231016",
+  "tested_tree": "f11766bf12078a1eadd55655290551a8d78c3373",
+  "candidate_fingerprint": "6d6172b6a0da810a2544944723ae23db21e7c543b58c259f96230affec19b183",
+  "axis": "STANDARDS",
+  "reviewer": "c08_standards",
+  "independent": true,
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [],
+  "raw_review": {
+    "path": "evidence/yxx-current-c08-37c3b4a-20261003/reviews/standards-raw.json",
+    "bytes": 2379,
+    "sha256": "a58317303fb50258ccde413c9098993571d53ac138b738db0befe55974cb1947"
+  },
+  "limitations": "Independent implementation review of local frozen C. Full execution, final strict readiness and final H/CI are checked separately."
+}

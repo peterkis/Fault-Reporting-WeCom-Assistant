@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: prepared-candidate gate rejects missing, changed and incomplete regression evidence
+ok 1 - prepared-candidate gate rejects missing, changed and incomplete regression evidence
+  ---
+  duration_ms: 363.6394
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 592.1584

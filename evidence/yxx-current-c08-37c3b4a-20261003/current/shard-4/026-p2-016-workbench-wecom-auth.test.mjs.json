@@ -1,0 +1,53 @@
+{
+  "path": "tests/p2-016-workbench-wecom-auth.test.mjs",
+  "runtime_path": "tests/p2-016-workbench-wecom-auth.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-016-workbench-wecom-auth.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "1adc64455200d8068e0415ad0af5f22994dd4c24c6280633aebb33ac87d9d6d1",
+  "executed_sha256": "1adc64455200d8068e0415ad0af5f22994dd4c24c6280633aebb33ac87d9d6d1",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--expose-gc",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "026-p2-016-workbench-wecom-auth.test.mjs.tap",
+  "tap_sha256": "82b2183e70ba2e0441d1d90ee8c1e8922cba560d6a6ac2e81991459c90f37b76",
+  "tap_bytes": 837,
+  "stderr_path": "026-p2-016-workbench-wecom-auth.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "026-p2-016-workbench-wecom-auth.test.mjs.cases.jsonl",
+  "case_trace_sha256": "62172c4592f3105fcf4ab08a2a2ec4c80c2f610b2cbeba0db1949f2090406d01",
+  "case_trace_bytes": 965,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/scripts/p2-016-workbench-auth-migrate.mjs",
+    ".build/runtime/src/p2-006-workbench-delivery-control.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-016-domain-contracts.mjs",
+    ".build/runtime/src/p2-016-workbench-wecom-auth.mjs",
+    ".build/runtime/src/p2-g2-wecom-app-token.mjs",
+    ".build/runtime/src/p2-g2-wecom-oauth-provider.mjs",
+    ".build/runtime/src/p2-g2-wecom-web-oauth.mjs",
+    ".build/runtime/src/p2-g2-yixiaoxiu-contract.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-016-workbench-wecom-auth.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

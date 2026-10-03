@@ -1,0 +1,41 @@
+{
+  "path": "tests/p1-002-wecom-sdk-adapter.test.mjs",
+  "runtime_path": "tests/p1-002-wecom-sdk-adapter.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-002-wecom-sdk-adapter.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "9e0d1ad9259e5512699c941104d8f9fd4c0425a80ec5b246556245d45e44b22a",
+  "executed_sha256": "9e0d1ad9259e5512699c941104d8f9fd4c0425a80ec5b246556245d45e44b22a",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "005-p1-002-wecom-sdk-adapter.test.mjs.tap",
+  "tap_sha256": "f6f420c3787b1c69dbf4bea0cb9c790796c875efe431752ee9b55f84abd01f9d",
+  "tap_bytes": 3037,
+  "stderr_path": "005-p1-002-wecom-sdk-adapter.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "005-p1-002-wecom-sdk-adapter.test.mjs.cases.jsonl",
+  "case_trace_sha256": "579ec10eb7a5c6e51fa58538169de7687bd955e62e876f9b05e51ac75cadde0a",
+  "case_trace_bytes": 4246,
+  "counts": {
+    "tests": 14,
+    "pass": 14,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-002-wecom-sdk-adapter.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p1-002-wecom-sdk-adapter.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 14
+}

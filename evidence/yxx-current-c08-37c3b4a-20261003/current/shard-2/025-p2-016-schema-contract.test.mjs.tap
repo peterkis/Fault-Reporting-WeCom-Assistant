@@ -1,0 +1,130 @@
+TAP version 13
+# Cloning into 'C:\\Users\\zqpet\\AppData\\Local\\Temp\\fault-reporting-p2-016-historical-uVjQvd'...
+# Updating files:  24% (1210/5012)
+# Updating files:  25% (1253/5012)
+# Updating files:  26% (1304/5012)
+# Updating files:  27% (1354/5012)
+# Updating files:  28% (1404/5012)
+# Updating files:  29% (1454/5012)
+# Updating files:  30% (1504/5012)
+# Updating files:  31% (1554/5012)
+# Updating files:  32% (1604/5012)
+# Updating files:  33% (1654/5012)
+# Updating files:  34% (1705/5012)
+# Updating files:  35% (1755/5012)
+# Updating files:  36% (1805/5012)
+# Updating files:  37% (1855/5012)
+# Updating files:  38% (1905/5012)
+# Updating files:  39% (1955/5012)
+# Updating files:  40% (2005/5012)
+# Updating files:  41% (2055/5012)
+# Updating files:  42% (2106/5012)
+# Updating files:  43% (2156/5012)
+# Updating files:  44% (2206/5012)
+# Updating files:  45% (2256/5012)
+# Updating files:  46% (2306/5012)
+# Updating files:  47% (2356/5012)
+# Updating files:  48% (2406/5012)
+# Updating files:  48% (2411/5012)
+# Updating files:  49% (2456/5012)
+# Updating files:  50% (2506/5012)
+# Updating files:  51% (2557/5012)
+# Updating files:  52% (2607/5012)
+# Updating files:  53% (2657/5012)
+# Updating files:  54% (2707/5012)
+# Updating files:  55% (2757/5012)
+# Updating files:  56% (2807/5012)
+# Updating files:  57% (2857/5012)
+# Updating files:  58% (2907/5012)
+# Updating files:  59% (2958/5012)
+# Updating files:  60% (3008/5012)
+# Updating files:  61% (3058/5012)
+# Updating files:  62% (3108/5012)
+# Updating files:  63% (3158/5012)
+# Updating files:  64% (3208/5012)
+# Updating files:  65% (3258/5012)
+# Updating files:  66% (3308/5012)
+# Updating files:  67% (3359/5012)
+# Updating files:  67% (3364/5012)
+# Updating files:  68% (3409/5012)
+# Updating files:  69% (3459/5012)
+# Updating files:  70% (3509/5012)
+# Updating files:  71% (3559/5012)
+# Updating files:  72% (3609/5012)
+# Updating files:  73% (3659/5012)
+# Updating files:  74% (3709/5012)
+# Updating files:  75% (3759/5012)
+# Updating files:  76% (3810/5012)
+# Updating files:  77% (3860/5012)
+# Updating files:  78% (3910/5012)
+# Updating files:  79% (3960/5012)
+# Updating files:  79% (3984/5012)
+# Updating files:  80% (4010/5012)
+# Updating files:  81% (4060/5012)
+# Updating files:  82% (4110/5012)
+# Updating files:  83% (4160/5012)
+# Updating files:  84% (4211/5012)
+# Updating files:  85% (4261/5012)
+# Updating files:  86% (4311/5012)
+# Updating files:  87% (4361/5012)
+# Updating files:  88% (4411/5012)
+# Updating files:  89% (4461/5012)
+# Updating files:  90% (4511/5012)
+# Updating files:  91% (4561/5012)
+# Updating files:  92% (4612/5012)
+# Updating files:  93% (4662/5012)
+# Updating files:  94% (4712/5012)
+# Updating files:  94% (4740/5012)
+# Updating files:  95% (4762/5012)
+# Updating files:  96% (4812/5012)
+# Updating files:  97% (4862/5012)
+# Updating files:  98% (4912/5012)
+# Updating files:  99% (4962/5012)
+# Updating files: 100% (5012/5012)
+# Updating files: 100% (5012/5012), done.
+# HEAD is now at 8c33271 Merge pull request \#6 from peterkis/phase2/p2-012-human-confirmed-incident
+# Subtest: P2-016 architecture guards preserve authorization, immutable baselines and closed contracts
+ok 1 - P2-016 architecture guards preserve authorization, immutable baselines and closed contracts
+  ---
+  duration_ms: 49324.2366
+  type: 'test'
+  ...
+# Subtest: P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work
+ok 2 - P2-016 default validator still requires readiness Evidence; deferred source checks cannot authorize live work
+  ---
+  duration_ms: 226.2142
+  type: 'test'
+  ...
+# Subtest: P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials
+ok 3 - P2-016 schemas and declarations exist; Reporter outputs cannot contain internal identity or credentials
+  ---
+  duration_ms: 24.6154
+  type: 'test'
+  ...
+# Subtest: JSON contract rejects extra keys, noncanonical types and offset time
+ok 4 - JSON contract rejects extra keys, noncanonical types and offset time
+  ---
+  duration_ms: 8.6684
+  type: 'test'
+  ...
+# Subtest: P2-016 closeout freezes every business input and the exact file set
+ok 5 - P2-016 closeout freezes every business input and the exact file set
+  ---
+  duration_ms: 0.4868
+  type: 'test'
+  ...
+# Subtest: P2-016 completion requires owner approval, precise candidates, live duration and zero-skip final regression
+ok 6 - P2-016 completion requires owner approval, precise candidates, live duration and zero-skip final regression
+  ---
+  duration_ms: 0.7592
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 53147.4504

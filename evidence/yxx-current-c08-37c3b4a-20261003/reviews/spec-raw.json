@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "kind": "CURRENT_INDEPENDENT_REVIEW_RECORD",
+  "event_time": "2026-10-03 16:51:06",
+  "event_epoch_ms": "1791017466887",
+  "tested_head": "37c3b4a3e2f8944b7c33d628bb13028f64231016",
+  "tested_tree": "f11766bf12078a1eadd55655290551a8d78c3373",
+  "candidate_fingerprint": "6d6172b6a0da810a2544944723ae23db21e7c543b58c259f96230affec19b183",
+  "axis": "SPEC",
+  "reviewer": "c08_spec",
+  "independent": true,
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [],
+  "review_text": "Independent implementation SPEC review of frozen local C8 against the supplied superseding closure instruction, AGENTS/README, ADR-0022/0026/0027 and review-history guidance. HEAD, tree and recomputed candidate fingerprint match the assigned object; it is unpublished and is not treated as a published PR snapshot. Reviewed the final a1f4db7..C8 increment and relevant baseline diff.\n\nThe workflow removes fixed-T02 SOURCE/remainder replays and indirect runtime observations without broad exemptions. Current source-baseline regression, artifact identity, architecture, ARCH006 structure, strict readiness and cleanup remain mandatory; current-complete requires tooling, all current shards and source-baseline success. Fixed SS009 and applicable P2-016 proof remain separate hard checks. The existing scheduling regression passed 1/1 with zero skips on Node 24.18.0; failure/cancelled/skipped/missing baseline results are rejected.\n\nChecked exact SQL/state/default-false scope, registry-derived routes and the complete 217-current/1-historical partition. Four current shards contain 55/54/54/54 files with a disjoint complete union. Reviewed source/history integrity and the sixth exact 627d5f7 adjudication, execution/build/case provenance, source accounting/scenario mapping, specialized observations/screenshots, original independent-review binding, catalog completeness, measured cleanup and append-only publication paths (src/yxx-current-evidence.mts:14,241,283,346,443,479,535,654). The historical validator and existing protected evidence are preserved. No new business stage, SQL or production permission was introduced.\n\nStructural CLI returns STRUCTURE_VALID_NOT_READY. Strict CLI rejects the unchanged C7 packet for C8 with CURRENT_CANDIDATE_MISMATCH; this correctly preserves C7 identity. No confirmed blocking specification defect was found. This PASS assesses implementation only. New C8 full acceptance/evidence append and final published-head CI/review remain pending and are not certified by this record."
+}

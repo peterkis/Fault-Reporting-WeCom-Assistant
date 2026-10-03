@@ -1,0 +1,48 @@
+{
+  "path": "tests/p1-006-ticket-state-actions.test.mjs",
+  "runtime_path": "tests/p1-006-ticket-state-actions.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-006-ticket-state-actions.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "fecc04d6d33f7929c24240bce8f22abc4335b8fab7541ecef2fe60af1b679b8a",
+  "executed_sha256": "fecc04d6d33f7929c24240bce8f22abc4335b8fab7541ecef2fe60af1b679b8a",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "006-p1-006-ticket-state-actions.test.mjs.tap",
+  "tap_sha256": "012695ee371844fdc12486bd00dab79996ec76711c691158c4ebd2cbbea4ed7b",
+  "tap_bytes": 785,
+  "stderr_path": "006-p1-006-ticket-state-actions.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "006-p1-006-ticket-state-actions.test.mjs.cases.jsonl",
+  "case_trace_sha256": "4dbede65f576a155eaa16b6a985568febc9cd590a9b7a314e35fc2dc726cd9ae",
+  "case_trace_bytes": 940,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-002-wecom-sdk-adapter.mjs",
+    ".build/runtime/src/p1-003-channel-message-inbox.mjs",
+    ".build/runtime/src/p1-004-service-intake.mjs",
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/p1-006-ticket-state-actions.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p1-006-ticket-state-actions.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

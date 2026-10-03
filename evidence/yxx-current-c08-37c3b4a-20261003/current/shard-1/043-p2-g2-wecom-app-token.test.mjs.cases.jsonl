@@ -1,0 +1,1 @@
+{"event_time":"2026-10-03 17:34:07","event_epoch_ms":"1791020047774","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"应用令牌按应用缓存，并发合并，按 expires_in 提前刷新且不泄露 secret","file":"tests/p2-g2-wecom-app-token.test.mjs","line":5,"nesting":0,"skip":false,"todo":false}

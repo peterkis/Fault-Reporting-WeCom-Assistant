@@ -1,0 +1,40 @@
+{
+  "path": "tests/g0-webhook-message-capability.test.mjs",
+  "runtime_path": "tests/g0-webhook-message-capability.test.mjs",
+  "executed_path": ".build/runtime/tests/g0-webhook-message-capability.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "5dc42c25ca6997680246714286b61c2f4eea9f2c42b2bded2764a75769bafe44",
+  "executed_sha256": "5dc42c25ca6997680246714286b61c2f4eea9f2c42b2bded2764a75769bafe44",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "004-g0-webhook-message-capability.test.mjs.tap",
+  "tap_sha256": "c2ab416e35a334adc70c0176b1712034b0936c571cb38343f2aec8ad96672de4",
+  "tap_bytes": 986,
+  "stderr_path": "004-g0-webhook-message-capability.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "004-g0-webhook-message-capability.test.mjs.cases.jsonl",
+  "case_trace_sha256": "de641bcfa4e64be6720f4b0af5f45af1cb819fe2f2b1960bba2d30ebd5b9af28",
+  "case_trace_bytes": 1248,
+  "counts": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/g0-webhook-message-capability.mjs",
+    ".build/runtime/tests/g0-webhook-message-capability.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 4
+}

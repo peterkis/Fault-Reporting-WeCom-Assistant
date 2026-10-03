@@ -1,0 +1,270 @@
+{
+  "schema_version": 1,
+  "kind": "HISTORICAL_SS009_PROOF",
+  "head": "41edd855e7bc55149facb6a4b2e0076776c22e66",
+  "base": "375d47b013017edb858206cc5f3475c9aed77dfd",
+  "github_metadata": {
+    "path": "github-pr19.json",
+    "bytes": 191,
+    "sha256": "d4a7abdc623f7833bb592587d1566fe731c3080753853a8357c2086b4505f297"
+  },
+  "status": "PASS",
+  "checkout_clean": true,
+  "node_version": "v24.18.0",
+  "historical_only": true,
+  "production_ready": false,
+  "records": [
+    {
+      "name": "preflight",
+      "command": [
+        "node",
+        ".github/review/verify-published-history.mjs",
+        "--expected-head",
+        "41edd855e7bc55149facb6a4b2e0076776c22e66"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "preflight.stdout",
+        "bytes": 815,
+        "sha256": "bb02b49faef86b09d33641e07bb6e62ac179955b300653b8d2a8832963577bfd"
+      },
+      "stderr": {
+        "path": "preflight.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "strict",
+      "command": [
+        "node",
+        "scripts/validate-yxx-self-service.mjs",
+        "--require-ready"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "strict.stdout",
+        "bytes": 201,
+        "sha256": "6102ffb40a544190f0006c9f55db5e9df2f870fed49a0d8a59a5cac34bdaff2f"
+      },
+      "stderr": {
+        "path": "strict.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "regression",
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "--test-reporter=./scripts/p2-g2-case-reporter.mjs",
+        "--test-reporter-destination=C:\\Users\\zqpet\\.codex\\artifacts\\yxx-current-readiness-20261002\\historical-ss009-proof-02\\regression.cases.jsonl",
+        "tests/yxx-ss-008-validation-scope.test.mjs",
+        "tests/yxx-ss-009-evidence.test.mjs",
+        "tests/yxx-ss-009-evidence-history.test.mjs",
+        "tests/yxx-ss-009-governance.test.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "regression.stdout",
+        "bytes": 8495,
+        "sha256": "fbe3f1be804fa63c838259b8f2107b50c7fdbc54167b617f253907cc2fec672b"
+      },
+      "stderr": {
+        "path": "regression.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "r6-probe",
+      "command": [
+        "node",
+        ".github/review/ss009-evidence-history-probe.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "r6-probe.stdout",
+        "bytes": 2532,
+        "sha256": "a1837dea5fe0c20643522a4e481b2773ebf5ac2d2fb208414bfe8bdc10f80262"
+      },
+      "stderr": {
+        "path": "r6-probe.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "validator-validate-v1-4-architecture",
+      "command": [
+        "node",
+        "scripts/validate-v1-4-architecture.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "validator-validate-v1-4-architecture.stdout",
+        "bytes": 50,
+        "sha256": "ac1058ab8ed14699e2fa28e83e269153aa710adcaebb1dc701ffa9e6969c1981"
+      },
+      "stderr": {
+        "path": "validator-validate-v1-4-architecture.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "validator-validate-arch-005-time-contract",
+      "command": [
+        "node",
+        "scripts/validate-arch-005-time-contract.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "validator-validate-arch-005-time-contract.stdout",
+        "bytes": 302,
+        "sha256": "8a0bc90d5771e6f715c91ca4fda95d739d768a0bf495114493e478a2b009e0c1"
+      },
+      "stderr": {
+        "path": "validator-validate-arch-005-time-contract.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "validator-validate-arch-006-rule-first-service-loop",
+      "command": [
+        "node",
+        "scripts/validate-arch-006-rule-first-service-loop.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "validator-validate-arch-006-rule-first-service-loop.stdout",
+        "bytes": 65,
+        "sha256": "359a30988433ed102b00956b6e7a0a776c5cb045837783b3d22883e26b045a37"
+      },
+      "stderr": {
+        "path": "validator-validate-arch-006-rule-first-service-loop.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "validator-validate-p2-015-rule-first-intake",
+      "command": [
+        "node",
+        "scripts/validate-p2-015-rule-first-intake.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "validator-validate-p2-015-rule-first-intake.stdout",
+        "bytes": 644,
+        "sha256": "7639d0da3bbbf7bb7672767ea8f1030473d6b86080bac9b20ffdd5cb7701cd11"
+      },
+      "stderr": {
+        "path": "validator-validate-p2-015-rule-first-intake.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "validator-validate-p2-016-ticket-lifecycle-workbench",
+      "command": [
+        "node",
+        "scripts/validate-p2-016-ticket-lifecycle-workbench.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "validator-validate-p2-016-ticket-lifecycle-workbench.stdout",
+        "bytes": 445,
+        "sha256": "5cf7acc40ffd089577cd626f3d8636efcbcb2517303fbc0ffe48922561b89f09"
+      },
+      "stderr": {
+        "path": "validator-validate-p2-016-ticket-lifecycle-workbench.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "validator-validate-p2-012-human-confirmed-incident",
+      "command": [
+        "node",
+        "scripts/validate-p2-012-human-confirmed-incident.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "validator-validate-p2-012-human-confirmed-incident.stdout",
+        "bytes": 784,
+        "sha256": "d4d8ec3ae4a2f3d2c8881d99af45cb440c6f6eb90eb0f5ad69ce13b1bd4af284"
+      },
+      "stderr": {
+        "path": "validator-validate-p2-012-human-confirmed-incident.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "validator-validate-p2-g2-service-loop",
+      "command": [
+        "node",
+        "scripts/validate-p2-g2-service-loop.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "validator-validate-p2-g2-service-loop.stdout",
+        "bytes": 366,
+        "sha256": "c660aaca2d48f99c0daf8ccbd118a3a0dec41d76baca172946bdaaed2709269b"
+      },
+      "stderr": {
+        "path": "validator-validate-p2-g2-service-loop.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "validator-p2-g2-yixiaoxiu-check",
+      "command": [
+        "node",
+        "scripts/p2-g2-yixiaoxiu-check.mjs"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "stdout": {
+        "path": "validator-p2-g2-yixiaoxiu-check.stdout",
+        "bytes": 300,
+        "sha256": "957ff4ee59d0ff0d7fe738c319f435916942544c2d9c1bb2b02eff94278b783a"
+      },
+      "stderr": {
+        "path": "validator-p2-g2-yixiaoxiu-check.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ]
+}

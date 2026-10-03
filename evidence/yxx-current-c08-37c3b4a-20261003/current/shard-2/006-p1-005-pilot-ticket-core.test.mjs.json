@@ -1,0 +1,47 @@
+{
+  "path": "tests/p1-005-pilot-ticket-core.test.mjs",
+  "runtime_path": "tests/p1-005-pilot-ticket-core.test.mjs",
+  "executed_path": ".build/runtime/tests/p1-005-pilot-ticket-core.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "b9ed6823c1a2f11272b3cfedfae4f3705a53f62dcc06126d3e64dc19d509e394",
+  "executed_sha256": "b9ed6823c1a2f11272b3cfedfae4f3705a53f62dcc06126d3e64dc19d509e394",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "006-p1-005-pilot-ticket-core.test.mjs.tap",
+  "tap_sha256": "8937afaae39d0e03b1ef1a76717c8a081ca5e8b3cb23578ac4db44927b2417c4",
+  "tap_bytes": 1040,
+  "stderr_path": "006-p1-005-pilot-ticket-core.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "006-p1-005-pilot-ticket-core.test.mjs.cases.jsonl",
+  "case_trace_sha256": "25af90c74964fa86bb469a8d9bc2c3e95c47cb80dbe84df1e16154138cbf0b1b",
+  "case_trace_bytes": 1257,
+  "counts": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-002-wecom-sdk-adapter.mjs",
+    ".build/runtime/src/p1-003-channel-message-inbox.mjs",
+    ".build/runtime/src/p1-004-service-intake.mjs",
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-pool.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p1-005-pilot-ticket-core.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 4
+}

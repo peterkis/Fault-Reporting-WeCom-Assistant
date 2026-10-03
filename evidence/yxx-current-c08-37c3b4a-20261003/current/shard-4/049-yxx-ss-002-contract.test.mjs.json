@@ -1,0 +1,40 @@
+{
+  "path": "tests/yxx-ss-002-contract.test.mjs",
+  "runtime_path": "tests/yxx-ss-002-contract.test.mjs",
+  "executed_path": ".build/runtime/tests/yxx-ss-002-contract.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "d9ec05c361f5e1abc6354e79ed9fe3dfb14f10f4fa044e1b9ba93fda0a1f9b86",
+  "executed_sha256": "d9ec05c361f5e1abc6354e79ed9fe3dfb14f10f4fa044e1b9ba93fda0a1f9b86",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "MIXED_EXPLICIT_ROOTS",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "049-yxx-ss-002-contract.test.mjs.tap",
+  "tap_sha256": "1226b6532d67e033e77e6b78c1e499009357aca1dd4bbdf39f8248148e25b73c",
+  "tap_bytes": 754,
+  "stderr_path": "049-yxx-ss-002-contract.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "049-yxx-ss-002-contract.test.mjs.cases.jsonl",
+  "case_trace_sha256": "601ed4862bf50fea4aa23ad20b36f5ec0f7dccdbca317b96e65ab17a4bdd55fb",
+  "case_trace_bytes": 898,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/tests/helpers/migration-roots.mjs",
+    ".build/runtime/tests/yxx-ss-002-contract.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

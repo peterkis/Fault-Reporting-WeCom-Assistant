@@ -1,0 +1,47 @@
+{
+  "path": "tests/p2-004-communication-core.test.mjs",
+  "runtime_path": "tests/p2-004-communication-core.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-004-communication-core.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "cc30d3fb99f8b351f29be5dbd14ea1e6892ce8752a67a2b7946f04066b645b40",
+  "executed_sha256": "cc30d3fb99f8b351f29be5dbd14ea1e6892ce8752a67a2b7946f04066b645b40",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "012-p2-004-communication-core.test.mjs.tap",
+  "tap_sha256": "9e5927b599707f187938e7e3a167ac64ef04fee83c1b26666449c58d3c500b9f",
+  "tap_bytes": 3651,
+  "stderr_path": "012-p2-004-communication-core.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "012-p2-004-communication-core.test.mjs.cases.jsonl",
+  "case_trace_sha256": "4013fd606caeeb43f4e3afaf6862d20700f336bf902a1ae18b0879eb067c9192",
+  "case_trace_bytes": 5166,
+  "counts": {
+    "tests": 17,
+    "pass": 17,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-007-notification-outbox.mjs",
+    ".build/runtime/src/p2-004-communication-core.mjs",
+    ".build/runtime/src/p2-004-communication-delivery-worker.mjs",
+    ".build/runtime/src/p2-004-communication-projections.mjs",
+    ".build/runtime/src/p2-004-communication-sender-port.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-004-communication-core.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 17
+}

@@ -1,0 +1,20 @@
+{
+  "name": "validator-validate-p2-012-human-confirmed-incident",
+  "command": [
+    "node",
+    "scripts/validate-p2-012-human-confirmed-incident.mjs"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error_code": null,
+  "stdout": {
+    "path": "validator-validate-p2-012-human-confirmed-incident.stdout",
+    "bytes": 784,
+    "sha256": "d4d8ec3ae4a2f3d2c8881d99af45cb440c6f6eb90eb0f5ad69ce13b1bd4af284"
+  },
+  "stderr": {
+    "path": "validator-validate-p2-012-human-confirmed-incident.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

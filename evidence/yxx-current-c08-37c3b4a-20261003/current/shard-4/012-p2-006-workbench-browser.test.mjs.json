@@ -1,0 +1,44 @@
+{
+  "path": "tests/p2-006-workbench-browser.test.mjs",
+  "runtime_path": "tests/p2-006-workbench-browser.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-006-workbench-browser.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "537363411a4dcf8c2cdbbe830b2b2e12173b5eec521a5c2677def73d0cb69182",
+  "executed_sha256": "537363411a4dcf8c2cdbbe830b2b2e12173b5eec521a5c2677def73d0cb69182",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "012-p2-006-workbench-browser.test.mjs.tap",
+  "tap_sha256": "05e6dd211b9ac90dca557aee5465aad98bfe7a31aa94edeba8dc1ce1bf7a3519",
+  "tap_bytes": 1643,
+  "stderr_path": "012-p2-006-workbench-browser.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "012-p2-006-workbench-browser.test.mjs.cases.jsonl",
+  "case_trace_sha256": "884e46d788cc34ec9b80365e8ac700165bad588cfb43dacaaf4d51189fea815d",
+  "case_trace_bytes": 941,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-006-workbench-http.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-006-workbench-static.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/helpers/p2-006-browser-harness.mjs",
+    ".build/runtime/tests/p2-006-workbench-browser.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

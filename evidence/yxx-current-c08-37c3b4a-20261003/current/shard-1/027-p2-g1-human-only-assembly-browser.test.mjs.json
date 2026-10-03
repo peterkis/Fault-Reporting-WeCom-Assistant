@@ -1,0 +1,45 @@
+{
+  "path": "tests/p2-g1-human-only-assembly-browser.test.mjs",
+  "runtime_path": "tests/p2-g1-human-only-assembly-browser.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g1-human-only-assembly-browser.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "88e40b67f91013873752e61f76e79a43e6209ae37b1883e474ec3fc65532bb39",
+  "executed_sha256": "88e40b67f91013873752e61f76e79a43e6209ae37b1883e474ec3fc65532bb39",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "027-p2-g1-human-only-assembly-browser.test.mjs.tap",
+  "tap_sha256": "045b62ea0dbe3b497ac27aea329babaa10abcba8b6ee86dfac54f5829067cf05",
+  "tap_bytes": 1344,
+  "stderr_path": "027-p2-g1-human-only-assembly-browser.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "027-p2-g1-human-only-assembly-browser.test.mjs.cases.jsonl",
+  "case_trace_sha256": "44da8a6b2195a62a0312101d64aa6b62a325953ca17dd4ed050a41d3d1b5b495",
+  "case_trace_bytes": 984,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-006-workbench-http.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-006-workbench-static.mjs",
+    ".build/runtime/src/p2-g1-browser-sessions.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/helpers/p2-006-browser-harness.mjs",
+    ".build/runtime/tests/p2-g1-human-only-assembly-browser.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

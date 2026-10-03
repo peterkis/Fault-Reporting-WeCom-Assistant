@@ -1,0 +1,40 @@
+{
+  "path": "tests/yxx-ss-009-evidence-history.test.mjs",
+  "runtime_path": "tests/yxx-ss-009-evidence-history.test.mjs",
+  "executed_path": ".build/runtime/tests/yxx-ss-009-evidence-history.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "52945b2793d0d5e271c96e2c23ef4e22c0b212d0182329330659f5ed37f8487f",
+  "executed_sha256": "52945b2793d0d5e271c96e2c23ef4e22c0b212d0182329330659f5ed37f8487f",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "053-yxx-ss-009-evidence-history.test.mjs.tap",
+  "tap_sha256": "13a4431ce1afca3fbc928447d5be2d4ebac98f8f2b24d8dd90e71904903f5cfc",
+  "tap_bytes": 4108,
+  "stderr_path": "053-yxx-ss-009-evidence-history.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "053-yxx-ss-009-evidence-history.test.mjs.cases.jsonl",
+  "case_trace_sha256": "ae0c43431ab5e18074cdb59fee9dfaf2f582a9792993a3dc247ec1fea2b8031f",
+  "case_trace_bytes": 5589,
+  "counts": {
+    "tests": 18,
+    "pass": 18,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/yxx-self-service-evidence-history.mjs",
+    ".build/runtime/tests/yxx-ss-009-evidence-history.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 18
+}

@@ -1,0 +1,40 @@
+{
+  "path": "tests/p2-g2-current-evidence.test.mjs",
+  "runtime_path": "tests/p2-g2-current-evidence.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-current-evidence.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "0b448f6b58e8dbef53a1e5b496f46ad7eccff2d3667c69d8700fea838830f2d3",
+  "executed_sha256": "0b448f6b58e8dbef53a1e5b496f46ad7eccff2d3667c69d8700fea838830f2d3",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "030-p2-g2-current-evidence.test.mjs.tap",
+  "tap_sha256": "e08f7d1cae3a757931f549d87160ff9fd5484022d86b937ea9cb14f99f6c00e6",
+  "tap_bytes": 391,
+  "stderr_path": "030-p2-g2-current-evidence.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "030-p2-g2-current-evidence.test.mjs.cases.jsonl",
+  "case_trace_sha256": "cc78c4a38129129cde20ac0f36895f2fd1462da7925fe83d88d163f17ea5fc1d",
+  "case_trace_bytes": 332,
+  "counts": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-g2-current-evidence.mjs",
+    ".build/runtime/tests/p2-g2-current-evidence.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 1
+}

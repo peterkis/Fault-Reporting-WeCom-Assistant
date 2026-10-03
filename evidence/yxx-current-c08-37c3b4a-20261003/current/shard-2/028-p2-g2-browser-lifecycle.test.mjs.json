@@ -1,0 +1,40 @@
+{
+  "path": "tests/p2-g2-browser-lifecycle.test.mjs",
+  "runtime_path": "tests/p2-g2-browser-lifecycle.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-browser-lifecycle.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "b0eb154bf85c659c0bcac53ea63281aaeac8b9838cbd5fd70cf0f67c13641c98",
+  "executed_sha256": "b0eb154bf85c659c0bcac53ea63281aaeac8b9838cbd5fd70cf0f67c13641c98",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "028-p2-g2-browser-lifecycle.test.mjs.tap",
+  "tap_sha256": "95b8404a849d5c7e3b4d3b1b0a00353e5d4043e59c713017a8a627f22369647e",
+  "tap_bytes": 1704,
+  "stderr_path": "028-p2-g2-browser-lifecycle.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "028-p2-g2-browser-lifecycle.test.mjs.cases.jsonl",
+  "case_trace_sha256": "9ca4009aa50fb784bc81fac628cfe0a5f48e8ba9756e959707f608a043836565",
+  "case_trace_bytes": 1971,
+  "counts": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/tests/helpers/p2-006-browser-harness.mjs",
+    ".build/runtime/tests/p2-g2-browser-lifecycle.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 6
+}

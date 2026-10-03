@@ -1,0 +1,19 @@
+TAP version 13
+# Subtest: P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK
+ok 1 - P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser, minimal environment and a synthetic SDK
+  ---
+  duration_ms: 52254.6987
+  type: 'test'
+  ...
+# {"scenario_id":"G2-F01","surface":"ACTUAL_GATEWAY_DISCONNECT_WORKER_RECOVERY_BROWSER_AND_POSTGRES_MOCK_SDK","persisted_ticket_action_committed_while_disconnected":true,"ui_pending_then_sent":true,"additional_sdk_calls":1,"accepted_notification_bindings":1}
+# {"group_closure_surface":"REAL_THREE_PROCESS_HTTP_OUTBOX_MOCK_WEBHOOK","provider_receipt":{"binding":"b2f0e3203bcc88fe7b84fc1b63ff7b9df1c9e352f1bc80a8e5d3cf58ce5b10ff","previous":null,"record":{"event":"p2_016_group_closure_webhook_result","operation":"send_msg","transport":"WECOM_GROUP_WEBHOOK","delivery_ref_hash":"7d4de7e18d09752540c0f9fab0189a79b94e21b57942c7660c16549cb4b2a391","outbox_id":"01a1011c-2cc5-73e7-9263-cd1a4106981c","attempt_no":1,"provider_errcode":0,"internal_error_code":null,"outcome":"ACKED","retry_class":"NONE","physical_epoch_ms":"1791019990476"},"hash":"a6ff868b1000c0678892c865081bed2cfb70414499561eb4ddaa7fb9adfac2ed"},"receipt_sha256":"7b323074086daa0d832f98d948a9952f3721671879a3a2b403f7aa4931820504"}
+# {"scenario_id":"G2-N01","surface":"ACTUAL_THREE_ROLE_GUARD_AND_PROVIDER_RECEIPT","fixed_guidance_sent":true,"ticket_notification_sent":true,"human_reply_sent":1,"incident_direct_notices_sent":3,"normal_incident_reporters":3}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 60827.2224

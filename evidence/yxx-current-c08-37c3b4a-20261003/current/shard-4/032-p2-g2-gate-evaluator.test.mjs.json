@@ -1,0 +1,51 @@
+{
+  "path": "tests/p2-g2-gate-evaluator.test.mjs",
+  "runtime_path": "tests/p2-g2-gate-evaluator.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-gate-evaluator.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "5c4f39d523f87676f703205531277dedc2f6568b7c6a0ab79b8ab61fc2e331b6",
+  "executed_sha256": "5c4f39d523f87676f703205531277dedc2f6568b7c6a0ab79b8ab61fc2e331b6",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "032-p2-g2-gate-evaluator.test.mjs.tap",
+  "tap_sha256": "a05ea96d7c9464856dac8cd04f70d78976cd91c8fc671582cf8d205e2e90dbbc",
+  "tap_bytes": 8563,
+  "stderr_path": "032-p2-g2-gate-evaluator.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "case_trace_path": "032-p2-g2-gate-evaluator.test.mjs.cases.jsonl",
+  "case_trace_sha256": "4c276e3b5c8fa3e8d4110fc0a0d61efe1338653862a20cfd1d9d41e8eecd0537",
+  "case_trace_bytes": 12589,
+  "counts": {
+    "tests": 43,
+    "pass": 43,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p1-005-pilot-ticket-core.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-016-domain-contracts.mjs",
+    ".build/runtime/src/p2-016-ticket-notification-policy.mjs",
+    ".build/runtime/src/p2-g2-evidence.mjs",
+    ".build/runtime/src/p2-g2-gate-evaluator.mjs",
+    ".build/runtime/src/p2-g2-validation-config.mjs",
+    ".build/runtime/src/platform/legacy-migration-guard.mjs",
+    ".build/runtime/src/platform/postgres-types.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/helpers/p2-g2-configuration-fixture.mjs",
+    ".build/runtime/tests/p2-g2-gate-evaluator.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 43
+}

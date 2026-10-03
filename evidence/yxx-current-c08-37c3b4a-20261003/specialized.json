@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-03 18:11:26",
+  "event_epoch_ms": "1791022286634",
+  "tested_head": "37c3b4a3e2f8944b7c33d628bb13028f64231016",
+  "tested_tree": "f11766bf12078a1eadd55655290551a8d78c3373",
+  "candidate_fingerprint": "6d6172b6a0da810a2544944723ae23db21e7c543b58c259f96230affec19b183",
+  "kind": "CURRENT_SPECIALIZED_PROOF",
+  "observations": [
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 4
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 5
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 4
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+      "channel": "SS010_BROWSER",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-4/048-yxx-current-migrations.integration.test.mts.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    }
+  ],
+  "images": [
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+        "channel": "SS009_RECEIPT",
+        "receipt_index": 0
+      },
+      "width": 390,
+      "height": 844,
+      "artifact": {
+        "path": "evidence/yxx-current-c08-37c3b4a-20261003/images/ss009_receipt-390x844.png",
+        "bytes": 33570,
+        "sha256": "f22c52df76cfb0eff13f502d8f0a6d07c19546d81276a58e4b2977b0d9a9ea13"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+        "channel": "SS009_RECEIPT",
+        "receipt_index": 0
+      },
+      "width": 1440,
+      "height": 900,
+      "artifact": {
+        "path": "evidence/yxx-current-c08-37c3b4a-20261003/images/ss009_receipt-1440x900.png",
+        "bytes": 43149,
+        "sha256": "ddb9e82c1939666dd5a063180824c931cfcc523a01876522c652692863e3ba7c"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+        "channel": "SS010_BROWSER",
+        "receipt_index": 0
+      },
+      "width": 390,
+      "height": 844,
+      "artifact": {
+        "path": "evidence/yxx-current-c08-37c3b4a-20261003/images/ss010_browser-390x844.png",
+        "bytes": 32643,
+        "sha256": "64b45e79edac8e73c95e7e1a750c2f38541ecd5531b390dc093c46d82323c458"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-c08-37c3b4a-20261003/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+        "channel": "SS010_BROWSER",
+        "receipt_index": 0
+      },
+      "width": 1440,
+      "height": 900,
+      "artifact": {
+        "path": "evidence/yxx-current-c08-37c3b4a-20261003/images/ss010_browser-1440x900.png",
+        "bytes": 42247,
+        "sha256": "43bd272ad49933c8b5dcc5aab946ae8cf10f95ba4ac74d3b4242c1b505a48cbb"
+      }
+    }
+  ]
+}
