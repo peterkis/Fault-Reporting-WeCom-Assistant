@@ -1,8 +1,38 @@
+import type { LocalDateTime } from '../contracts/time_contracts.js';
+import type { PostgresTransaction } from './platform/postgres-pool.mjs';
+import type { WorkbenchAuthorizationAdapter, WorkbenchPrincipal } from './p2-006-workbench-authorization.mjs';
+
+export type WorkbenchListState = 'open' | 'waiting_human' | 'mine' | 'unassigned' | 'waiting_user' | 'failed_delivery' | 'ended';
+export interface WorkbenchAuthContext {
+  principal_id: string;
+  auth_method?: string;
+  expires_at?: string;
+  expires_epoch_ms?: string;
+  csrf_token?: string;
+}
+interface AuthInput { authContext?: WorkbenchAuthContext }
+export interface WorkbenchListInput extends AuthInput { state?: WorkbenchListState; cursor?: string | null; limit?: string | number | null }
+export interface WorkbenchDetailInput { authContext: WorkbenchAuthContext; sessionId: string }
+export interface WorkbenchItemsInput extends AuthInput { sessionId?: string; before_sequence?: string | number | bigint; after_sequence?: string | number | bigint; limit?: string | number | null }
+type QueryAuthorizer = Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal' | 'safePrincipal' | 'actionsFor' | 'sessionAccessPredicate' | 'authorizeSession' | 'isAdmin' | 'listEligiblePrincipals'>;
+export interface WorkbenchQueryOptions { pool?: PostgresTransaction; enabled?: boolean; authorize?: QueryAuthorizer; nowEpochMs?: (() => unknown) | null; now?: () => Date; featureStatus?: Readonly<Record<string, boolean>> | null }
+interface ItemRow { id: string; sequence_no: string | number; item_type: string; sender_kind: string; visibility: string; text: string | null; safe_content: unknown; occurred_at: unknown }
+interface WorkbenchBaseRow {
+  session_id: string; thread_id: string; status: string; control_mode: string; generation_version: string; row_version: string;
+  last_activity_at: string; last_activity_epoch_ms: unknown; chat_type: string; unread_count: number;
+  assignment_status: string | null; assigned_principal_id: string | null; assignment_version: string | null; assigned_at: unknown; assigned_display_name: string | null;
+  handoff_id: string | null; handoff_status: string | null; handoff_reason_code: string | null; handoff_row_version: string | null; handoff_requested_at: unknown;
+  ticket_id: string | null; ticket_no: string | null; ticket_title: string | null; ticket_status: string | null; ticket_priority: string | null; ticket_version: string | null;
+  delivery_id: string | null; delivery_status: string | null; delivery_provider: string | null; delivery_attempt_count: number | null; delivery_last_error_code: string | null; delivery_side_effect_state: string | null; delivery_sent_at: unknown;
+}
+type WorkbenchRow = WorkbenchBaseRow & ({ last_item_id: null; last_item_sequence: null; last_item_type: null; last_item_sender_kind: null; last_item_visibility: null; last_item_text: null; last_item_safe_content: unknown; last_item_occurred_at: unknown } | { last_item_id: string; last_item_sequence: string; last_item_type: string; last_item_sender_kind: string; last_item_visibility: string; last_item_text: string | null; last_item_safe_content: unknown; last_item_occurred_at: unknown });
+interface DeliveryRow { delivery_id: string; status: string; channel: string; attempt_count: number; last_error_code: string | null; side_effect_state: string; sent_at: unknown }
+
 import { assertEpochMsString, assertLocalDateTime } from './platform/time-contract.mjs';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const CURSOR_PATTERN = /^[A-Za-z0-9_-]{16,1024}$/u;
-const FILTERS = new Set(['open', 'waiting_human', 'mine', 'unassigned', 'waiting_user', 'failed_delivery', 'ended']);
+const FILTERS = new Set<WorkbenchListState>(['open', 'waiting_human', 'mine', 'unassigned', 'waiting_user', 'failed_delivery', 'ended']);
 const AUDIENCES = new Set(['WORKBENCH', 'RESTRICTED_ADMIN']);
 
 export const WORKBENCH_ERROR_CODES = Object.freeze({
@@ -24,7 +54,9 @@ export const WORKBENCH_ERROR_CODES = Object.freeze({
 });
 
 export class WorkbenchError extends Error {
-  constructor(code, status = 400) {
+  declare code: string;
+  declare status: number;
+  constructor(code: string, status = 400) {
     super(code);
     this.name = 'WorkbenchError';
     this.code = code;
@@ -32,25 +64,25 @@ export class WorkbenchError extends Error {
   }
 }
 
-function fail(code = WORKBENCH_ERROR_CODES.requestInvalid, status = 400) { throw new WorkbenchError(code, status); }
-function uuid(value) { if (typeof value !== 'string' || !UUID_PATTERN.test(value)) fail(); return value.toLowerCase(); }
-function integer(value, fallback, maximum) {
+function fail(code: string = WORKBENCH_ERROR_CODES.requestInvalid, status = 400): never { throw new WorkbenchError(code, status); }
+function uuid(value: unknown): string { if (typeof value !== 'string' || !UUID_PATTERN.test(value)) fail(); return value.toLowerCase(); }
+function integer(value: string | number | null | undefined, fallback: number, maximum: number): number {
   const parsed = value === undefined || value === null || value === '' ? fallback : Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > maximum) fail(WORKBENCH_ERROR_CODES.pageLimitInvalid);
   return parsed;
 }
-function bigintString(value, { allowZero = true } = {}) {
+function bigintString(value: unknown, { allowZero = true }: { allowZero?: boolean } = {}): string {
   if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'bigint') fail();
   const text = String(value);
   if (!/^(0|[1-9][0-9]{0,18})$/u.test(text) || (!allowZero && text === '0')) fail();
   return text;
 }
-function localDateTime(value) {
+function localDateTime(value: unknown): LocalDateTime {
   try { return assertLocalDateTime(value); }
   catch { fail(WORKBENCH_ERROR_CODES.storageFailed, 500); }
 }
 
-function elapsedSeconds(nowEpochMs, anchorEpochMs) {
+function elapsedSeconds(nowEpochMs: unknown, anchorEpochMs: unknown): number {
   const now = BigInt(assertEpochMsString(nowEpochMs));
   const anchor = BigInt(assertEpochMsString(anchorEpochMs));
   if (now <= anchor) return 0;
@@ -58,16 +90,16 @@ function elapsedSeconds(nowEpochMs, anchorEpochMs) {
   return Number(seconds > BigInt(Number.MAX_SAFE_INTEGER) ? BigInt(Number.MAX_SAFE_INTEGER) : seconds);
 }
 
-export function encodeConversationCursor({ last_activity_at, session_id }) {
+export function encodeConversationCursor({ last_activity_at, session_id }: { last_activity_at: string; session_id: string }) {
   const payload = JSON.stringify({ v: 1, t: localDateTime(last_activity_at), s: uuid(session_id) });
   return Buffer.from(payload, 'utf8').toString('base64url');
 }
 
-export function decodeConversationCursor(value) {
+export function decodeConversationCursor(value: unknown) {
   if (typeof value !== 'string' || !CURSOR_PATTERN.test(value)) fail(WORKBENCH_ERROR_CODES.cursorInvalid);
   try {
-    const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
-    if (!parsed || parsed.v !== 1 || Object.keys(parsed).sort().join(',') !== 's,t,v') fail(WORKBENCH_ERROR_CODES.cursorInvalid);
+    const parsed: unknown = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
+    if (!parsed || typeof parsed !== 'object' || !('v' in parsed) || parsed.v !== 1 || !('t' in parsed) || !('s' in parsed) || Object.keys(parsed).sort().join(',') !== 's,t,v') fail(WORKBENCH_ERROR_CODES.cursorInvalid);
     return Object.freeze({ last_activity_at: localDateTime(parsed.t), session_id: uuid(parsed.s) });
   } catch (error) {
     if (error instanceof WorkbenchError) throw error;
@@ -75,7 +107,7 @@ export function decodeConversationCursor(value) {
   }
 }
 
-function publicItem(row) {
+function publicItem(row: ItemRow) {
   return Object.freeze({
     item_id: row.id,
     sequence_no: String(row.sequence_no),
@@ -88,7 +120,7 @@ function publicItem(row) {
   });
 }
 
-function assignmentView(row, principalId) {
+function assignmentView(row: WorkbenchRow, principalId: string) {
   return Object.freeze({
     status: row.assignment_status ?? 'UNASSIGNED',
     version: Number(row.assignment_version ?? 0),
@@ -98,7 +130,7 @@ function assignmentView(row, principalId) {
   });
 }
 
-function handoffView(row) {
+function handoffView(row: WorkbenchRow) {
   return row.handoff_id ? Object.freeze({
     handoff_id: row.handoff_id,
     status: row.handoff_status,
@@ -108,7 +140,7 @@ function handoffView(row) {
   }) : null;
 }
 
-function ticketView(row) {
+function ticketView(row: WorkbenchRow) {
   return row.ticket_id ? Object.freeze({
     ticket_id: row.ticket_id,
     ticket_no: row.ticket_no,
@@ -119,7 +151,7 @@ function ticketView(row) {
   }) : null;
 }
 
-function deliveryView(row) {
+function deliveryView(row: WorkbenchRow) {
   return row.delivery_id ? Object.freeze({
     delivery_id: row.delivery_id,
     status: row.delivery_status,
@@ -131,7 +163,7 @@ function deliveryView(row) {
   }) : null;
 }
 
-function capabilities(authorize, principal, row) {
+function capabilities(authorize: QueryAuthorizer, principal: WorkbenchPrincipal, row: WorkbenchRow) {
   return authorize.actionsFor(principal, {
     assignedToMe: row.assigned_principal_id === principal.principal_id,
     canTakeover: row.assignment_status !== 'ASSIGNED',
@@ -185,7 +217,7 @@ function baseSelect() {
             ) AS h ON TRUE`;
 }
 
-function listStateSql(state, index, principalIdIndex) {
+function listStateSql(state: WorkbenchListState, index: number, principalIdIndex: number) {
   switch (state) {
     case 'waiting_human': return { sql: `(h.status = 'REQUESTED' OR (s.control_mode = 'HUMAN' AND COALESCE(a.assignment_status,'UNASSIGNED') = 'UNASSIGNED'))`, values: [] };
     case 'mine': return { sql: `a.assignment_status = 'ASSIGNED' AND a.assigned_principal_id = $${principalIdIndex}::uuid`, values: [] };
@@ -205,11 +237,13 @@ export function createConversationWorkbenchQueryService({
   nowEpochMs = null,
   now = () => new Date(),
   featureStatus = null,
-} = {}) {
+}: WorkbenchQueryOptions = {}) {
   if (!pool || typeof pool.query !== 'function' || typeof enabled !== 'boolean' || !authorize
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function') || typeof now !== 'function') {
     throw new TypeError('Workbench query service configuration is invalid.');
   }
+  const database = pool;
+  const authorization = authorize;
   function currentEpochMs() {
     if (nowEpochMs !== null) return assertEpochMsString(nowEpochMs());
     const value = now();
@@ -217,22 +251,22 @@ export function createConversationWorkbenchQueryService({
     return String(value.getTime());
   }
   function guard() { if (!enabled) fail(WORKBENCH_ERROR_CODES.disabled, 503); }
-  async function principalFrom(authContext) {
-    const principal = await authorize.resolvePrincipal(authContext);
+  async function principalFrom(authContext: WorkbenchAuthContext | undefined) {
+    const principal = await authorization.resolvePrincipal(authContext);
     if (principal === null) fail(WORKBENCH_ERROR_CODES.forbidden, 403);
     return principal;
   }
 
-  async function getBootstrap({ authContext }) {
+  async function getBootstrap({ authContext }: { authContext: WorkbenchAuthContext }) {
     guard();
     const principal = await principalFrom(authContext);
     return Object.freeze({
       authenticated: true,
-      principal: authorize.safePrincipal(principal),
+      principal: authorization.safePrincipal(principal),
       expires_at: authContext.expires_at,
       expires_epoch_ms: authContext.expires_epoch_ms,
       csrf_token: authContext.auth_method === 'COOKIE' ? authContext.csrf_token : undefined,
-      capabilities: authorize.actionsFor(principal),
+      capabilities: authorization.actionsFor(principal),
       feature_status: Object.freeze(featureStatus ?? { workbench_enabled: true, realtime_sse_enabled: false, ai_enabled: false, incident_enabled: false, attachments_enabled: false }),
       polling_interval_ms: 5000,
       sse_endpoint: '/api/realtime/events?scope=workbench',
@@ -240,13 +274,13 @@ export function createConversationWorkbenchQueryService({
     });
   }
 
-  async function listConversations({ authContext, state = 'open', cursor = null, limit } = {}) {
+  async function listConversations({ authContext, state = 'open', cursor = null, limit }: WorkbenchListInput = {}) {
     guard();
     if (!FILTERS.has(state)) fail();
     const principal = await principalFrom(authContext);
     const pageSize = integer(limit, 30, 100);
-    const values = [principal.principal_id];
-    const predicate = authorize.sessionAccessPredicate(principal, { start: 2, ticketAlias: 'tk' });
+    const values: unknown[] = [principal.principal_id];
+    const predicate = authorization.sessionAccessPredicate(principal, { start: 2, ticketAlias: 'tk' });
     values.push(...predicate.values);
     const clauses = [predicate.sql];
     const stateClause = listStateSql(state, values.length + 1, 1);
@@ -259,7 +293,7 @@ export function createConversationWorkbenchQueryService({
     values.push(pageSize + 1);
     let result;
     try {
-      result = await pool.query(`${baseSelect()} WHERE ${clauses.join(' AND ')} ORDER BY s.last_activity_at DESC, s.id DESC LIMIT $${values.length}`, values);
+      result = await database.query<WorkbenchRow>(`${baseSelect()} WHERE ${clauses.join(' AND ')} ORDER BY s.last_activity_at DESC, s.id DESC LIMIT $${values.length}`, values);
     } catch { fail(WORKBENCH_ERROR_CODES.storageFailed, 500); }
     const hasMore = result.rows.length > pageSize;
     const rows = result.rows.slice(0, pageSize);
@@ -277,25 +311,27 @@ export function createConversationWorkbenchQueryService({
       assignment: assignmentView(row, principal.principal_id),
       handoff: handoffView(row), ticket: ticketView(row), latest_delivery: deliveryView(row),
       waiting_duration_seconds: elapsedSeconds(currentEpochMs(), row.last_activity_epoch_ms),
-      capabilities: capabilities(authorize, principal, row),
+      capabilities: capabilities(authorization, principal, row),
     }));
-    return Object.freeze({ items: Object.freeze(items), next_cursor: hasMore && rows.length > 0
-      ? encodeConversationCursor({ last_activity_at: rows.at(-1).last_activity_at, session_id: rows.at(-1).session_id }) : null });
+    const lastRow = rows.at(-1);
+    return Object.freeze({ items: Object.freeze(items), next_cursor: hasMore && lastRow
+      ? encodeConversationCursor({ last_activity_at: lastRow.last_activity_at, session_id: lastRow.session_id }) : null });
   }
 
-  async function detailContext(authContext, sessionId) {
+  async function detailContext(authContext: WorkbenchAuthContext | undefined, sessionId: unknown) {
     const principal = await principalFrom(authContext);
     const id = uuid(sessionId);
-    if (!await authorize.authorizeSession({ principal, sessionId: id, action: 'VIEW' })) fail(WORKBENCH_ERROR_CODES.notFound, 404);
-    const result = await pool.query(`${baseSelect()} WHERE s.id = $2::uuid`, [principal.principal_id, id]);
-    if (result.rowCount !== 1) fail(WORKBENCH_ERROR_CODES.notFound, 404);
-    return { principal, row: result.rows[0], sessionId: id };
+    if (!await authorization.authorizeSession({ principal, sessionId: id, action: 'VIEW' })) fail(WORKBENCH_ERROR_CODES.notFound, 404);
+    const result = await database.query<WorkbenchRow>(`${baseSelect()} WHERE s.id = $2::uuid`, [principal.principal_id, id]);
+    const row = result.rows[0];
+    if (result.rowCount !== 1 || !row) fail(WORKBENCH_ERROR_CODES.notFound, 404);
+    return { principal, row, sessionId: id };
   }
 
-  async function getConversationDetail({ authContext, sessionId }) {
+  async function getConversationDetail({ authContext, sessionId }: WorkbenchDetailInput) {
     guard();
     const { principal, row } = await detailContext(authContext, sessionId);
-    const cursor = await pool.query('SELECT last_read_sequence::text,row_version::text FROM conversation.read_cursor WHERE principal_id=$1::uuid AND session_id=$2::uuid', [principal.principal_id, row.session_id]);
+    const cursor = await database.query<{ last_read_sequence: string; row_version: string }>('SELECT last_read_sequence::text,row_version::text FROM conversation.read_cursor WHERE principal_id=$1::uuid AND session_id=$2::uuid', [principal.principal_id, row.session_id]);
     return Object.freeze({
       session: Object.freeze({ session_id: row.session_id, status: row.status, control_mode: row.control_mode,
         generation_version: Number(row.generation_version), row_version: Number(row.row_version), last_activity_at: localDateTime(row.last_activity_at) }),
@@ -303,25 +339,25 @@ export function createConversationWorkbenchQueryService({
       read_cursor: Object.freeze({ last_read_sequence: String(cursor.rows[0]?.last_read_sequence ?? '0'), row_version: Number(cursor.rows[0]?.row_version ?? 0) }),
       unread_count: row.unread_count, ticket: ticketView(row), incident: Object.freeze({ available: false, reason: 'INCIDENT_NOT_IMPLEMENTED' }),
       attachments: Object.freeze({ available: false, reason: 'ATTACHMENT_NOT_IMPLEMENTED' }),
-      delivery_summary: deliveryView(row), capabilities: capabilities(authorize, principal, row), etag: `"${row.row_version}"`,
+      delivery_summary: deliveryView(row), capabilities: capabilities(authorization, principal, row), etag: `"${row.row_version}"`,
     });
   }
 
-  async function listConversationItems({ authContext, sessionId, before_sequence, after_sequence, limit } = {}) {
+  async function listConversationItems({ authContext, sessionId, before_sequence, after_sequence, limit }: WorkbenchItemsInput = {}) {
     guard();
     const { principal, sessionId: id } = await detailContext(authContext, sessionId);
     if (before_sequence !== undefined && after_sequence !== undefined) fail();
     const pageSize = integer(limit, 50, 200);
-    const audience = authorize.isAdmin(principal) ? 'RESTRICTED_ADMIN' : 'WORKBENCH';
+    const audience = authorization.isAdmin(principal) ? 'RESTRICTED_ADMIN' : 'WORKBENCH';
     if (!AUDIENCES.has(audience)) fail();
     const visibility = audience === 'RESTRICTED_ADMIN' ? ['EXTERNAL', 'INTERNAL', 'RESTRICTED'] : ['EXTERNAL', 'INTERNAL'];
-    const values = [id, visibility];
+    const values: unknown[] = [id, visibility];
     let boundary = '';
     let direction = 'DESC';
     if (before_sequence !== undefined) { values.push(bigintString(before_sequence)); boundary = `AND sequence_no < $3::bigint`; }
     if (after_sequence !== undefined) { values.push(bigintString(after_sequence)); boundary = `AND sequence_no > $3::bigint`; direction = 'ASC'; }
     values.push(pageSize + 1);
-    const result = await pool.query(
+    const result = await database.query<ItemRow>(
       `SELECT id::text, sequence_no::text, item_type, sender_kind, visibility, text, safe_content, occurred_at
          FROM conversation.item
         WHERE session_id=$1::uuid AND visibility=ANY($2::text[]) ${boundary}
@@ -332,26 +368,27 @@ export function createConversationWorkbenchQueryService({
     let rows = result.rows.slice(0, pageSize);
     if (direction === 'DESC') rows = rows.reverse();
     const items = rows.map(publicItem);
+    const firstItem = items[0], lastItem = items.at(-1);
     return Object.freeze({
       session_id: id, items: Object.freeze(items),
-      before_sequence: items.length ? items[0].sequence_no : null,
-      after_sequence: items.length ? items.at(-1).sequence_no : null,
+      before_sequence: firstItem ? firstItem.sequence_no : null,
+      after_sequence: lastItem ? lastItem.sequence_no : null,
       has_more: hasMore,
     });
   }
 
-  async function listEligiblePrincipals(input) {
+  async function listEligiblePrincipals(input: WorkbenchDetailInput) {
     guard();
     const { principal, sessionId } = await detailContext(input.authContext, input.sessionId);
-    const items = await authorize.listEligiblePrincipals({ principal, sessionId });
+    const items = await authorization.listEligiblePrincipals({ principal, sessionId });
     if (items === null) fail(WORKBENCH_ERROR_CODES.notFound, 404);
     return Object.freeze({ items });
   }
 
-  async function listConversationDeliveries(input) {
+  async function listConversationDeliveries(input: WorkbenchDetailInput) {
     guard();
     const { sessionId } = await detailContext(input.authContext, input.sessionId);
-    const result = await pool.query(
+    const result = await database.query<DeliveryRow>(
       `SELECT d.id::text AS delivery_id,d.status,d.provider AS channel,d.attempt_count,d.last_error_code,d.side_effect_state,d.sent_at
          FROM communication.message m JOIN communication.outbox o ON o.message_id=m.id JOIN communication.delivery d ON d.outbox_id=o.id
         WHERE m.session_id=$1::uuid ORDER BY d.updated_at DESC,d.id DESC LIMIT 100`, [sessionId]);
