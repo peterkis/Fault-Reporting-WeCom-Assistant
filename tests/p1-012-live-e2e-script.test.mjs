@@ -61,9 +61,10 @@ class FakeReconnectClient extends EventEmitter {
 }
 
 class FakeReconnectGroupTextClient extends EventEmitter {
-  constructor(options) {
+  constructor(options, postReconnectReady) {
     super();
     this.options = options;
+    this.postReconnectReady = postReconnectReady;
     this.connectCount = 0;
   }
 
@@ -84,7 +85,7 @@ class FakeReconnectGroupTextClient extends EventEmitter {
         },
       });
       if (connectCount === 1) queueMicrotask(emitMessage);
-      else setTimeout(emitMessage, 10);
+      else void this.postReconnectReady.then(() => setImmediate(emitMessage));
     });
   }
 
@@ -2356,6 +2357,8 @@ test('P1-012 forces reauthentication before accepting one scoped group-text call
   const directory = await mkdtemp(join(tmpdir(), 'p1-012-reconnect-group-text-'));
   const outputPath = join(directory, 'evidence.jsonl');
   const handledFrames = [];
+  let signalPostReconnectReady;
+  const postReconnectReady = new Promise(resolve => { signalPostReconnectReady = resolve; });
   try {
     const result = await runP1_012LiveE2E({
       env: liveEnvironment({ P1_012_LIVE_TEST_APPROVED: 'true' }),
@@ -2365,9 +2368,18 @@ test('P1-012 forces reauthentication before accepting one scoped group-text call
         '--trigger-token=p1-012-reconnect-text-token',
         '--timeout-ms=10000',
       ]),
-      Client: FakeReconnectGroupTextClient,
+      Client: class extends FakeReconnectGroupTextClient {
+        constructor(options) { super(options, postReconnectReady); }
+      },
       PoolClass: FakePool,
       outputPath,
+      async appendEvidenceRecord(file, record) {
+        // Slow evidence I/O must not race the simulated callback's readiness.
+        if (record.event === 'p1_012_post_reconnect_message_ready') await new Promise(resolve => setTimeout(resolve, 25));
+        await appendFile(file, JSON.stringify(record) + '\n');
+        // The simulated operator sends after the actual readiness audit completes.
+        if (record.event === 'p1_012_post_reconnect_message_ready') signalPostReconnectReady();
+      },
       createHandler: ({ options }) => {
         assert.equal(options.scenario, 'GROUP_TEXT');
         return {

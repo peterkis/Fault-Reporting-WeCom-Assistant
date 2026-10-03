@@ -14,7 +14,7 @@ This progress document is not acceptance evidence.
 | 3 | Routed compiled execution, cases, per-file provenance and historical obligations | COMPLETE; development routing/provenance validation, full acceptance remains stage 6 |
 | 4 | Current evidence verifier, append-only publication, pointer and mutation tests | COMPLETE for development implementation; component/publication regressions pass; actual whole-packet strict READY remains unverified until stage 6 frozen acceptance |
 | 5 | ARCH006/current CI separation and retained historical CI | COMPLETE for development implementation; final exact-head CI and wall-time measurement remain stages 6-7 |
-| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | IN_PROGRESS; C1 216/1380 completed, successor C2 needed after current-complete Git configuration repair |
+| 6 | Frozen candidate, full applicable execution, two-axis review and owned-resource cleanup | IN_PROGRESS; C1 completed, C2 full attempt failed at reconnect fixture; C3 frozen acceptance required |
 | 7 | Append evidence, publish PR, verify final head CI/review, authorized history-preserving merge | IN_PROGRESS; immutable packet staged and strict READY verified; final H CI/review/merge pending |
 
 ## Baseline observations (2026-10-02)
@@ -457,3 +457,17 @@ appended; every original byte remains unchanged. Local workstation paths are
 a non-blocking hygiene recommendation, with no secret/patient/internal-network
 disclosure confirmed. Per-file JSON records are originals, and summary.files
 is a derived aggregate. Successor publication includes the complete catalog.
+
+C2 full attempt: 32 executed files / 233 pass and 1 fail (remaining files
+NOT_RUN), retained as SELECTED_TESTS_FAIL. The owned PG stop and data-directory
+removal both succeeded; zero residuals. Existing P1 reconnect fixture sent its
+post-authentication callback after a fixed 10ms, before the asynchronous readiness
+audit could complete under load. The existing production readiness guard correctly
+ignored that premature callback. The fixture now waits for actual append completion
+and emits on the next event-loop turn; a 25ms audit delay is retained as regression
+coverage. In a separate compiler/artifact-checked checkout, restoring only the old
+10ms sender reproduces LIVE_TIMEOUT (exit1), while the fixed public test passes
+1/1 and the complete file passes 33/33. Production behavior and timeouts unchanged.
+External logs: stage06-c02/reconnect-red*, reconnect-green*, reconnect-file-green.
+C3 must receive complete 216-file acceptance and fresh two-axis review; neither
+C1's successful run nor the partial C2 result proves C3 readiness.
