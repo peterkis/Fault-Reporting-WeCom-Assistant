@@ -1,6 +1,7 @@
 
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
-import type { CommunicationDeliveryStatus, CommunicationMessageType, CommunicationSenderRequest, CommunicationSenderResult, ProviderSideEffectState } from '../contracts/communication_contracts.js';
+import type { CommunicationDeliveryStatus, CommunicationMessageType, CommunicationSenderRequest, ProviderSideEffectState } from '../contracts/communication_contracts.js';
+import type { CommunicationSenderResult } from './p2-004-communication-sender-port.mjs';
 export interface DeliveryViewRow { id: string; outbox_id: string; status: CommunicationDeliveryStatus; provider: string; attempt_count: number; last_error_code: string | null; side_effect_state: ProviderSideEffectState; sent_at: unknown; sent_epoch_ms?: unknown }
 interface ClaimRow { id: string; outbox_id: string; provider: string; channel_account_id: string; target_type: 'PERSON' | 'GROUP'; target_id: string; target_hash: string; idempotency_key: string; attempt_count: number; message_type: CommunicationMessageType; content: Record<string, unknown> }
 type ClaimedDelivery = Readonly<ClaimRow & { lease_token: string; lease_expires_epoch_ms: string }>;

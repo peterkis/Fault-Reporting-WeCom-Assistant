@@ -1,3 +1,4 @@
+import { createCommunicationDeliveryWorker } from '../../src/p2-004-communication-delivery-worker.mjs';
 import { createCommunicationService, normalizeCommunicationCommand } from '../../src/p2-004-communication-core.mjs';
 import type { CommunicationCommand } from '../../src/p2-004-communication-core.mjs';
 import { createCommunicationSenderPort, validateCommunicationSenderResult } from '../../src/p2-004-communication-sender-port.mjs';
@@ -27,6 +28,12 @@ const command: CommunicationCommand = { client_command_id: 'synthetic', privacy_
 communication.commitExternalMessage({ command, actor: { principal_id: 'synthetic' } });
 normalizeCommunicationCommand(externalReceipt);
 const sender = createCommunicationSenderPort(async () => externalReceipt);
+createCommunicationDeliveryWorker({ pool, sender });
+createCommunicationDeliveryWorker({ pool, sender: { send: async () => ({ outcome: 'ACKNOWLEDGED', provider_message_id: 'synthetic', error_code: null, retryable: false }) } });
+// @ts-expect-error -- Worker senders cannot acknowledge a delivery while reporting an error.
+createCommunicationDeliveryWorker({ pool, sender: { send: async () => ({ outcome: 'ACKNOWLEDGED', provider_message_id: null, error_code: 'FAILED', retryable: false }) } });
+// @ts-expect-error -- Unknown provider outcomes cannot carry a confirmed provider message ID.
+createCommunicationDeliveryWorker({ pool, sender: { send: async () => ({ outcome: 'UNKNOWN', provider_message_id: 'synthetic', error_code: null, retryable: false }) } });
 const receipt = validateCommunicationSenderResult(externalReceipt);
 if (receipt.outcome === 'ACKNOWLEDGED') { const error: null = receipt.error_code; void error; }
 const takeover: ControlCommandFor<'TAKEOVER'> = { command_type: 'TAKEOVER', session_id: 'synthetic', client_command_id: 'synthetic', idempotency_scope: 'WORKBENCH', expected_row_version: 1, reason_code: 'SYNTHETIC', target_principal_id: 'synthetic' };
