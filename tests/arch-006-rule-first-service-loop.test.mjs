@@ -19,11 +19,11 @@ test('ARCH-006 logical source migration allows the approved inventory and reject
   // Model the first conversion before its completed mapping exists.
   delete scope.current_module_map[logical];
   assert.equal(scope.current_module_map[logical], undefined, 'approval comes from the full inventory, before completion mapping');
-  function inspect(changes, files, before = 'export const allowed = false;', after = 'export const allowed: boolean = false;') {
+  function inspect(changes, files, before = 'export const allowed = false;', after = 'export const allowed: boolean = false;', alreadyTyped = false) {
     const errors = [], inventory = Object.values(scope.migration_batches).flat();
     const context = { root, path, ts, errors, json: () => scope, read: () => after,
       fs: { existsSync: file => files.has(path.relative(root, file).replaceAll('\\', '/')), readFileSync: () => after },
-      execFileSync: (_git, args) => args.includes('ls-tree') ? inventory.join('\n')
+      execFileSync: (_git, args) => args.includes('ls-tree') ? inventory.map(file => alreadyTyped ? file.replace(/\.mjs$/u, '.mts') : file).join('\n')
         : args.includes('diff') ? changes.join('\0') : args.includes('show') ? before : '',
       check: (accepted, reason) => { if (!accepted) errors.push(reason); },
       p2016Authorized: true, p2g2Authorized: true,
@@ -42,6 +42,10 @@ test('ARCH-006 logical source migration allows the approved inventory and reject
   const typeOnly = inspect([protectedPath, protectedTyped], new Set([protectedTyped]));
   assert.deepEqual(typeOnly.errors, []);
   assert.deepEqual(Array.from(typeOnly.result.languageMigrations), [protectedPath]);
+  const typedSuccessor = inspect([protectedTyped], new Set([protectedTyped]),
+    'export const allowed: boolean = false;', 'export const allowed: false = false;', true);
+  assert.deepEqual(typedSuccessor.errors, [], 'unchanged runtime from a registered typed predecessor remains a type-only change');
+  assert.deepEqual(Array.from(typedSuccessor.result.languageMigrations), [protectedPath]);
   for (const [before, after] of [
     ['export const allowed = false;', 'export const allowed: boolean = true;'],
     ["export const sql = 'SELECT 1';", "export const sql: string = 'DELETE FROM ticket';"],
@@ -51,6 +55,9 @@ test('ARCH-006 logical source migration allows the approved inventory and reject
     const changed = inspect([protectedPath, protectedTyped], new Set([protectedTyped]), before, after);
     assert.deepEqual(Array.from(changed.result.languageMigrations), [], 'runtime edits cannot use a suffix migration exemption');
     assert.match(changed.errors.join('\n'), /no forbidden Runtime/u);
+    const typedChanged = inspect([protectedTyped], new Set([protectedTyped]), before, after, true);
+    assert.deepEqual(Array.from(typedChanged.result.languageMigrations), [], 'typed predecessors cannot exempt executable changes');
+    assert.match(typedChanged.errors.join('\n'), /no forbidden Runtime/u);
   }
   const authorized = 'src/p2-006-workbench-authorization.mjs', authorizedTyped = authorized.replace(/\.mjs$/u, '.mts');
   const runtimeRepair = inspect([authorized, authorizedTyped], new Set([authorizedTyped]), 'export const allowed = false;', 'export const allowed: boolean = true;');

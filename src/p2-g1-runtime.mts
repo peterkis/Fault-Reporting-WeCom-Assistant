@@ -12,7 +12,7 @@ export interface G1RuntimeExtension {
   readiness?: (base: Awaited<ReturnType<ReturnType<typeof createP2G1Observability>['readiness']>>) => { ok: boolean } | Promise<{ ok: boolean }>;
   staticHandler?: WorkbenchHttpOptions['staticHandler']; authenticatedHandler?: WorkbenchHttpOptions['authenticatedHandler']; unauthenticatedHandler?: WorkbenchHttpOptions['unauthenticatedHandler'];
 }
-export interface G1RuntimeOptions {
+interface G1RuntimeOptionsInput {
   pool?: PostgresPool; operationalIntake?: OperationalIntake; principalId?: string; principalIds?: readonly string[] | null;
   publicOrigin?: string; listenPort?: number; botId?: string; secret?: string; wsUrl?: string;
   allowedTargetHashes?: readonly string[] | ReadonlySet<string>; gatewayEnabled?: boolean; senderEnabled?: boolean;
@@ -25,6 +25,7 @@ export interface G1RuntimeOptions {
   externalSendEnabled?: boolean; clientFactory?: NonNullable<Parameters<typeof createP2G1WeComGateway>[0]>['clientFactory'];
   projectionIntervalMs?: number; communicationIntervalMs?: number; closePoolOnStop?: boolean;
 }
+export type G1RuntimeOptions = { [K in keyof G1RuntimeOptionsInput]: G1RuntimeOptionsInput[K] | undefined };
 import { createCommunicationService } from './p2-004-communication-core.mjs';
 import { createCommunicationDeliveryWorker, createCommunicationDeliveryOperatorPort, createCommunicationReconciliationPort } from './p2-004-communication-delivery-worker.mjs';
 import { appendRealtimeEvent } from './p2-003-realtime-event-log.mjs';

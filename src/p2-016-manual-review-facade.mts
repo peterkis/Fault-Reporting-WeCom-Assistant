@@ -14,9 +14,9 @@ interface ReviewBody { [key: string]: unknown; client_command_id: unknown; expec
 interface DetailInput { authContext: unknown; reviewId: unknown; transaction?: PostgresTransaction }
 interface SourceRow { source_provider: string; source_bot_id: string; reporter_wecom_userid: string; source_chat_type: 'single' | 'group'; source_chat_id: string; summary: unknown; retention_until: string; retention_until_epoch_ms: string; session_id: string | null; row_version: number }
 interface WebReportRow { source_provider: string; initial_content: unknown; supplement_items: unknown }
-export interface ManualReviewCurrentResult { ok: true; review_id: unknown; status: ReviewStatus; resolution_decision_id: string; action_count: number }
+export interface ManualReviewCurrentResult { ok: true; review_id: unknown; status: Exclude<ReviewStatus, 'PENDING'>; resolution_decision_id: string; action_count: number }
 export type ManualReviewLedgerResult = LedgerResult<ManualReviewCurrentResult>;
-export interface ManualReviewFacadeOptions { pool: PostgresPool; enabled?: boolean; query?: P2016TicketQuery; notificationProjector?: OrchestrationWorkerOptions['notifications'] | null; realtimeProjector?: OrchestrationWorkerOptions['realtime'] | null; communicationAppend?: typeof appendCommunication; now?: () => string; personDestinationAuthorizer?: PersonDestinationAuthorizer | null }
+export interface ManualReviewFacadeOptions { pool: PostgresPool; enabled?: boolean; query?: P2016TicketQuery; notificationProjector?: OrchestrationWorkerOptions['notifications'] | null; realtimeProjector?: OrchestrationWorkerOptions['realtime'] | null; communicationAppend?: typeof appendCommunication | undefined; now?: () => string; personDestinationAuthorizer?: PersonDestinationAuthorizer | null }
 type CommunicationObservation = NonNullable<CommunicationResult> & { error?: { code: string } };
 import { createManualReviewStore } from './p2-015-manual-review.mjs';
 import { createDecisionStore } from './p2-015-decision-store.mjs';
@@ -87,7 +87,7 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
     catch(error){if((error as { code?: unknown }).code==='P2_015_AUTHORIZATION_DENIED')failP2016('NOT_FOUND',404);throw error;}
   }
   return Object.freeze({
-    async listManualReviews({authContext,priority=null,cursor=null,limit,status='PENDING'}: { authContext: unknown; priority?: ReviewPriority | null; cursor?: string | null; limit?: number; status?: string }) {
+    async listManualReviews({authContext,priority=null,cursor=null,limit,status='PENDING'}: { authContext: unknown; priority?: string | null; cursor?: string | null; limit?: unknown; status?: string }) {
       guardP2016(enabled);if(status!=='PENDING')failP2016();
       if(priority!==null&&!['LOW','NORMAL','HIGH','URGENT'].includes(priority))failP2016();
       const principal=await query.principal(authContext),store=storeFor(principal);
@@ -98,11 +98,11 @@ export function createP2016ManualReviewFacade({pool,enabled=false,query=createP2
         if(!Number.isInteger(page.priority_rank)||page.priority_rank<1||page.priority_rank>4)failP2016('CURSOR_INVALID');
         uuidP2016(page.id);localP2016(page.created_at);
       }
-      const result=await store.list({transaction:pool,principal,priority,cursor:decoded?.page??null,limit:limitP2016(limit)});
+      const result=await store.list({transaction:pool,principal,priority:priority as ReviewPriority | null,cursor:decoded?.page??null,limit:limitP2016(limit)});
       return publicP2016({items:result.items,next_cursor:result.next_cursor?cursorP2016({priority,page:result.next_cursor}):null});
     },
     async getManualReviewDetail(input: DetailInput) {const {review}=await detail(input);const report=await webReportForIntake(pool,review.service_intake_id);return publicP2016({...review,...(report?{web_report:report}:{}),allowed_resolutions:Object.keys(ACTIONS),unsupported_resolutions:['LINK_EXISTING_JOURNEY']});},
-    async journey({authContext,journeyId,part=null}: { authContext: unknown; journeyId: unknown; part?: 'legs' | 'decisions' | null }) {
+    async journey({authContext,journeyId,part=null}: { authContext: unknown; journeyId: unknown; part?: string | null }) {
       const principal=await query.principal(authContext),predicate=ticketPredicateP2016(principal,2);
       const q=await pool.query<JourneyProjectionRow>(`SELECT j.* FROM intake.contact_journey j LEFT JOIN pilot_ticket.ticket t ON t.id=j.linked_ticket_id
         WHERE j.id=$1::uuid AND ${predicate.sql}`,[uuidP2016(journeyId),...predicate.values]);

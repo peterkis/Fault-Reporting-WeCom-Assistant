@@ -10,7 +10,7 @@ export interface ReviewEnqueue { decision_id: string; journey_id: string; servic
 export interface ReviewRow extends ReviewEnqueue { id: string; review_key: string; priority: ReviewPriority; status: ReviewStatus; row_version: string; created_at: string; safe_result?: unknown }
 type ResolutionRow = ReviewRow & Omit<DecisionRow, 'id' | 'status' | 'safe_result'> & { safe_result: DecisionRow['safe_result']; resolution_command_id: string | null; resolution_command_hash: string | null };
 export interface ReviewCommand { review_id: string; resolution_code: ReviewResolutionCode; resolution_reason_code: string; expected_row_version: string; client_command_id: string; resolved_at: string }
-export type ReviewResolution = { review_id: string; status: ReviewStatus; replayed: true } | { id: string; status: 'RESOLVED' | 'CANCELLED'; row_version: string; resolution_decision_id: string; replayed: false };
+export type ReviewResolution = { review_id: string; status: Exclude<ReviewStatus, 'PENDING'>; replayed: true } | { id: string; status: 'RESOLVED' | 'CANCELLED'; row_version: string; resolution_decision_id: string; replayed: false };
 export type ManualReviewStore = ReturnType<typeof createManualReviewStore>;
 import {
   P2_015_ERROR_CODES,

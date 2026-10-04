@@ -1,5 +1,6 @@
 import type { ReporterProfileSnapshot } from './p2-015-reporter-profile.mjs';
 import type { DecisionRow } from './p2-015-decision-store.mjs';
+export type DecisionProjectionRow = Pick<DecisionRow, 'id' | 'journey_id' | 'decision_ordinal' | 'result_code' | 'reason_code' | 'safe_result' | 'requires_manual_review' | 'ticket_creation_recommended' | 'incident_review_candidate' | 'status' | 'observed_at'>;
 export interface JourneyProjectionRow { id: string; origin_intake_id: string; linked_ticket_id: string | null; entry_mode: string; origin_channel: string; current_channel: string; profile_resolution_status: string; status: string; row_version: string; reported_at: string; last_activity_at: string; ended_at?: string | null | undefined; profile_snapshot?: ReporterProfileSnapshot | undefined }
 import { freezePublic, snapshotP2015Json } from './p2-015-domain-contracts.mjs';
 
@@ -18,7 +19,7 @@ export function projectContactJourney(row: JourneyProjectionRow, { restricted = 
   return restricted ? freezeReporterProfileEnvelope(result) : freezePublic(result);
 }
 
-export function projectDecision(row: DecisionRow) {
+export function projectDecision(row: DecisionProjectionRow) {
   const value = snapshotP2015Json(row);
   // Directory version/time assertions are restricted to the authorized review detail.
   if (value.safe_result?.identity_review) delete value.safe_result.identity_review.directory_assertion;

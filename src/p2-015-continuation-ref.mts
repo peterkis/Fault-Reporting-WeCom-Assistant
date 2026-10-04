@@ -1,6 +1,10 @@
 import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
 export type ContinuationPurpose = 'GROUP_TO_DIRECT_GUIDANCE' | 'USER_SELECTION' | 'EXPLICIT_CONTINUATION';
 export interface ContinuationRow { id: string; journey_id: string; origin_leg_id: string; target_leg_id: string | null; purpose: ContinuationPurpose; state: 'ISSUED' | 'BOUND' | 'CONSUMED' | 'REVOKED' | 'EXPIRED'; row_version: string; issued_at: string; issued_epoch_ms: string; expires_at: string; expires_epoch_ms: string; reporter_binding_hash: string; bot_binding_hash: string }
+export type ContinuationIssueRow = Omit<ContinuationRow, 'reporter_binding_hash' | 'bot_binding_hash'>;
+type ContinuationReadRow = Pick<ContinuationRow, 'id' | 'journey_id' | 'state' | 'purpose' | 'reporter_binding_hash' | 'bot_binding_hash' | 'expires_epoch_ms' | 'target_leg_id' | 'row_version'>;
+export type ContinuationConsumedRow = Pick<ContinuationRow, 'id' | 'journey_id' | 'target_leg_id' | 'row_version'> & { state: 'CONSUMED'; consumed_at: string; consumed_epoch_ms: string };
+export type ContinuationRevokedRow = Pick<ContinuationRow, 'id' | 'row_version'> & { state: 'REVOKED' };
 export interface ContinuationIssue { journey_id: string; origin_leg_id: string; purpose: ContinuationPurpose; reporter_binding_hash: string; bot_binding_hash: string; issue_idempotency_key: string; issued_at: string; issued_epoch_ms: string; ttl_minutes?: number }
 export interface ContinuationConsume { token: string; purpose: ContinuationPurpose; reporter_binding_hash: string; bot_binding_hash: string; target_leg_id: string; consumed_at: string; consumed_epoch_ms: string }
 import { createHash } from 'node:crypto';
@@ -25,19 +29,19 @@ export function createContinuationRefService({ tokenGenerator = defaultTokenGene
       if (!PURPOSES.has(value.purpose)) failP2015(P2_015_ERROR_CODES.inputInvalid);
       const ttlMinutes = value.ttl_minutes ?? P2_015_LIMITS.continuationTtlMinutes;
       if (!Number.isInteger(ttlMinutes) || ttlMinutes < 1 || ttlMinutes > P2_015_LIMITS.continuationTtlMinutes) failP2015(P2_015_ERROR_CODES.limitExceeded);
-      const existing = await transaction.query<ContinuationRow>(
+      const existing = await transaction.query<ContinuationIssueRow>(
         `SELECT id::text, journey_id::text, origin_leg_id::text, target_leg_id::text,
                 purpose, state, row_version::text, issued_at, issued_epoch_ms::text,
                 expires_at, expires_epoch_ms::text
            FROM intake.continuation_ref WHERE issue_idempotency_key=$1 FOR UPDATE`,
         [value.issue_idempotency_key],
       );
-      if (existing.rowCount === 1) return freezePublic({ ...existing.rows[0], token: null, replayed: true });
+      if (existing.rowCount === 1) return freezePublic({ ...existing.rows[0] as ContinuationIssueRow, token: null, replayed: true as const });
       const token = tokenGenerator();
       if (typeof token !== 'string' || token.length < 32 || token.length > 256) failP2015(P2_015_ERROR_CODES.inputInvalid);
       const tokenHash = hashToken(token);
       const expiresEpochMs = String(BigInt(value.issued_epoch_ms) + BigInt(ttlMinutes * 60_000));
-      const inserted = await transaction.query<ContinuationRow>(
+      const inserted = await transaction.query<ContinuationIssueRow>(
         `INSERT INTO intake.continuation_ref (
            journey_id, origin_leg_id, token_hash, purpose, reporter_binding_hash,
            bot_binding_hash, state, issue_idempotency_key, issued_at, issued_epoch_ms,
@@ -51,20 +55,20 @@ export function createContinuationRefService({ tokenGenerator = defaultTokenGene
           value.reporter_binding_hash, value.bot_binding_hash, value.issue_idempotency_key,
           value.issued_at, value.issued_epoch_ms, expiresEpochMs],
       );
-      return freezePublic({ ...inserted.rows[0], token, replayed: false });
+      return freezePublic({ ...inserted.rows[0] as ContinuationIssueRow, token, replayed: false as const });
     },
 
     async consume({ transaction, input }: { transaction: PostgresTransaction; input: ContinuationConsume }) {
       if (!transaction?.query) failP2015(P2_015_ERROR_CODES.storageFailed);
       const value = snapshotP2015Json(input);
       if (typeof value.token !== 'string' || !PURPOSES.has(value.purpose)) failP2015(P2_015_ERROR_CODES.inputInvalid);
-      const found = await transaction.query<ContinuationRow>(
+      const found = await transaction.query<ContinuationReadRow>(
         `SELECT id::text, journey_id::text, state, purpose, reporter_binding_hash,
                 bot_binding_hash, expires_epoch_ms::text, target_leg_id::text, row_version::text
            FROM intake.continuation_ref WHERE token_hash=$1 FOR UPDATE`, [hashToken(value.token)],
       );
       if (found.rowCount !== 1) failP2015(P2_015_ERROR_CODES.continuationInvalid);
-      const row = (found.rows[0] as ContinuationRow);
+      const row = (found.rows[0] as ContinuationReadRow);
       if (row.purpose !== value.purpose || row.reporter_binding_hash !== value.reporter_binding_hash
         || row.bot_binding_hash !== value.bot_binding_hash) failP2015(P2_015_ERROR_CODES.continuationBindingMismatch);
       if (['CONSUMED', 'REVOKED', 'EXPIRED'].includes(row.state)) {
@@ -74,25 +78,25 @@ export function createContinuationRefService({ tokenGenerator = defaultTokenGene
         await transaction.query<ContinuationRow>(`UPDATE intake.continuation_ref SET state='EXPIRED',row_version=row_version+1,updated_at=$2::timestamp without time zone WHERE id=$1::uuid`, [row.id, value.consumed_at]);
         failP2015(P2_015_ERROR_CODES.continuationExpired);
       }
-      const updated = await transaction.query<ContinuationRow>(
+      const updated = await transaction.query<ContinuationConsumedRow>(
         `UPDATE intake.continuation_ref SET state='CONSUMED',target_leg_id=$2::uuid,
            consumed_at=$3::timestamp without time zone,consumed_epoch_ms=$4::bigint,
            row_version=row_version+1,updated_at=$3::timestamp without time zone
          WHERE id=$1::uuid RETURNING id::text,journey_id::text,target_leg_id::text,state,row_version::text,consumed_at,consumed_epoch_ms::text`,
         [row.id, value.target_leg_id, value.consumed_at, value.consumed_epoch_ms],
       );
-      return freezePublic({ ...updated.rows[0], replayed: false });
+      return freezePublic({ ...updated.rows[0] as ContinuationConsumedRow, replayed: false as const });
     },
 
     async revoke({ transaction, id, revoked_at: revokedAt, revoked_epoch_ms: revokedEpochMs }: { transaction: PostgresTransaction; id: string; revoked_at: string; revoked_epoch_ms: string }) {
-      const updated = await transaction.query<ContinuationRow>(
+      const updated = await transaction.query<ContinuationRevokedRow>(
         `UPDATE intake.continuation_ref SET state='REVOKED',revoked_at=$2::timestamp without time zone,
            revoked_epoch_ms=$3::bigint,row_version=row_version+1,updated_at=$2::timestamp without time zone
          WHERE id=$1::uuid AND state IN ('ISSUED','BOUND') RETURNING id::text,state,row_version::text`,
         [id, revokedAt, revokedEpochMs],
       );
       if (updated.rowCount !== 1) failP2015(P2_015_ERROR_CODES.continuationInvalid);
-      return freezePublic(updated.rows[0]);
+      return freezePublic(updated.rows[0] as ContinuationRevokedRow);
     },
   });
 }

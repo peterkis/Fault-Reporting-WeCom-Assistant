@@ -2,7 +2,7 @@ import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool
 import type { ReviewPrincipal, ReviewAuthorizer, ManualReviewStore } from './p2-015-manual-review.mjs';
 import type { RuleFirstOrchestrator } from './p2-015-rule-first-orchestrator.mjs';
 import type { P2015Worker } from './p2-015-worker.mjs';
-import type { JourneyProjectionRow } from './p2-015-projections.mjs';
+import type { JourneyProjectionRow, DecisionProjectionRow } from './p2-015-projections.mjs';
 import type { DecisionRow } from './p2-015-decision-store.mjs';
 interface QueryOptions { pool: PostgresPool; authorizer: ReviewAuthorizer; manualReviewStore: ManualReviewStore; orchestrator: Pick<RuleFirstOrchestrator, 'processPersistedIntake'>; worker?: Pick<P2015Worker, 'processDueBatch'> }
 import { P2_015_ERROR_CODES, failP2015, freezePublic, snapshotP2015Json } from './p2-015-domain-contracts.mjs';
@@ -41,7 +41,7 @@ export function createP2015QueryService({ pool, authorizer, manualReviewStore, o
     },
     async listJourneyDecisions({ principal, journey_id: journeyId }: { principal: ReviewPrincipal; journey_id: string }) {
       await withAuthorizedJourney(principal, journeyId, 'LIST_JOURNEY_DECISIONS');
-      const result = await pool.query<DecisionRow>(`SELECT id::text,journey_id::text,decision_ordinal,result_code,reason_code,
+      const result = await pool.query<DecisionProjectionRow>(`SELECT id::text,journey_id::text,decision_ordinal,result_code,reason_code,
         safe_result,requires_manual_review,ticket_creation_recommended,incident_review_candidate,status,observed_at
         FROM intake.deterministic_decision WHERE journey_id=$1::uuid ORDER BY decision_ordinal`, [journeyId]);
       return freezePublic(result.rows.map(projectDecision));

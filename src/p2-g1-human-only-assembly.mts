@@ -1,7 +1,7 @@
 import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { createP2G1InboundProjectionCoordinator } from './p2-g1-inbound-projection-coordinator.mjs';
 import type { createP2G1Observability } from './p2-g1-observability.mjs';
-export type OperationalIntake = ReturnType<typeof createPilotOperationalIntake>;
+export type OperationalIntake = Pick<ReturnType<typeof createPilotOperationalIntake>, 'accept'>;
 type Coordinator = ReturnType<typeof createP2G1InboundProjectionCoordinator>;
 interface AssemblyOptions { operationalIntake?: OperationalIntake; coordinator?: Coordinator | null; projectAfterCommit?: boolean; observability?: Pick<ReturnType<typeof createP2G1Observability>, 'recordP1Commit' | 'recordProjection'> | null; privacyClass?: 'INTERNAL' | 'PATIENT_SENSITIVE'; retentionMs?: number; now?: () => Date }
 import { adaptWeComSdkFrame } from './p1-002-wecom-sdk-adapter.mjs';

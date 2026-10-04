@@ -234,11 +234,14 @@ try {
     const typedExists = fs.existsSync(path.join(root, typed));
     check(!(originalExists && typedExists), 'MIGRATION_DUAL_SOURCE:' + logical);
     if (physical.endsWith('.mts')) check(migrationTargets.has(logical), 'ARCH006_MIGRATION_OUTSIDE_SCOPE:' + physical);
-    // Only an unchanged emitted runtime receives the suffix-migration exemption.
-    // Runtime edits and later changes still use the original authorization rules.
+    // Registered sources may already be typed in main. In either representation,
+    // only byte-equal output from the same locked compiler is a type-only change.
+    // Executable edits still use the original authorization rules.
+    const baselineSource = baselinePaths.has(logical) && !baselinePaths.has(typed) ? logical
+      : baselinePaths.has(typed) && !baselinePaths.has(logical) ? typed : null;
     if (migrationTargets.has(logical) && !originalExists && typedExists
-      && baselinePaths.has(logical) && !baselinePaths.has(typed)) {
-      const before = execFileSync('git', ['show', 'origin/main:' + logical], { cwd: root, encoding: 'utf8' });
+      && baselineSource !== null) {
+      const before = execFileSync('git', ['show', 'origin/main:' + baselineSource], { cwd: root, encoding: 'utf8' });
       if (erasedMigrationRuntime(before) === erasedMigrationRuntime(read(typed))) languageMigrations.add(logical);
     }
     return logical;

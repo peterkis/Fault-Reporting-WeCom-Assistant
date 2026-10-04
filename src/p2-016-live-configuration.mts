@@ -1,3 +1,6 @@
+export interface P2016LiveConfiguration { databaseUrl: string; identityHashKey: string; principalIds: string[]; listenPort: number; testAuthTtlMs: number; reporterOrigin: string; reporterHmacSecret: string; allowedHosts: string[]; inboundScope: { bot_id: string; person_hashes: string[]; group_hashes: string[] }; allowedTargetHashes: readonly string[]; botId: string; secret: string; wsUrl: string }
+// Only this separate summary is public; secrets remain in the private process configuration.
+export interface P2016LiveCheckSummary { task: 'P2-016'; check_only: true; ok: boolean; approvals: Record<string, boolean>; network_started: false; listener_started: false; provider_calls: 0 }
 import { reporterCardLinkP2016 } from './p2-016-template-card-builder.mjs';
 import { createP2016InboundScope } from './p2-016-inbound-scope.mjs';
 
@@ -5,9 +8,9 @@ export const P2016_LIVE_FUSES=Object.freeze(['P2_016_LIVE_TEST_APPROVED','P2_016
 export const P2016_TEST_FLAGS=Object.freeze({TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true,WECOM_TEMPLATE_CARD_ENABLED:true});
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/u;
 const fail=()=>{throw new Error('P2_016_LIVE_CONFIGURATION_INVALID');};
-const list=(env,key)=>typeof env[key]==='string'?env[key].split(',').map(x=>x.trim()).filter(Boolean):[];
+const list=(env: NodeJS.ProcessEnv,key: string)=>typeof env[key]==='string'?(env[key] as string).split(',').map(x=>x.trim()).filter(Boolean):[];
 // Returned configuration is private process memory. Only the separate check summary may be logged.
-export function readP2016LiveConfiguration(env,{requireApproval=true}={}){
+export function readP2016LiveConfiguration(env: NodeJS.ProcessEnv,{requireApproval=true}={}): P2016LiveConfiguration{
   if(requireApproval&&P2016_LIVE_FUSES.some(k=>env[k]!=='true'))throw new Error('P2_016_LIVE_APPROVAL_REQUIRED');
   // Even an unrelated enabled integration/AI flag fails closed; the test harness explicitly injects its narrow flags.
   if(Object.entries(env).some(([k,v])=>k.endsWith('_ENABLED')&&v!=='false'))throw new Error('P2_016_BASE_FLAGS_MUST_REMAIN_FALSE');
@@ -23,8 +26,8 @@ export function readP2016LiveConfiguration(env,{requireApproval=true}={}){
     ||typeof env.WECOM_BOT_SECRET!=='string'||!env.WECOM_BOT_SECRET
     ||typeof env.WECOM_WS_URL!=='string'||!env.WECOM_WS_URL.startsWith('wss://')
     ||typeof env.P2_016_REPORTER_HMAC_SECRET!=='string'||Buffer.byteLength(env.P2_016_REPORTER_HMAC_SECRET)<32)fail();
-  reporterCardLinkP2016({origin:env.P2_016_REPORTER_ORIGIN,allowedHosts,token:'A'.repeat(64)});
+  reporterCardLinkP2016({origin:env.P2_016_REPORTER_ORIGIN as string,allowedHosts,token:'A'.repeat(64)});
   return {databaseUrl:env.PILOT_DATABASE_URL,identityHashKey:env.PILOT_LOG_IDENTITY_HASH_KEY,principalIds,listenPort,testAuthTtlMs:65*60000,
     reporterOrigin:env.P2_016_REPORTER_ORIGIN,reporterHmacSecret:env.P2_016_REPORTER_HMAC_SECRET,allowedHosts,inboundScope,
-    allowedTargetHashes:scope.allowed_target_hashes,botId:env.WECOM_BOT_ID,secret:env.WECOM_BOT_SECRET,wsUrl:env.WECOM_WS_URL};
+    allowedTargetHashes:scope.allowed_target_hashes,botId:env.WECOM_BOT_ID,secret:env.WECOM_BOT_SECRET,wsUrl:env.WECOM_WS_URL} as P2016LiveConfiguration;
 }

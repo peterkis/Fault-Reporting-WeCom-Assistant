@@ -7,6 +7,7 @@ export interface ActionRow extends SafeActionSuggestion { id: string; decision_i
 export type DecisionRecord = ReturnType<typeof publicDecision>;
 type DecisionInputBase = Omit<DecisionRow, 'id' | 'decision_ordinal' | 'decision_key' | 'status' | 'source_kind' | 'primary_web_submission_id' | 'basis_input_revision' | 'conversation_session_id' | 'linked_ticket_id'> & { conversation_session_id?: string | null; linked_ticket_id?: string | null; safe_action_suggestions?: SafeActionSuggestion[] };
 export type DecisionInput = DecisionInputBase & ({ source_kind?: 'BOT'; primary_web_submission_id?: null; basis_input_revision?: null } | { source_kind: 'WEB'; primary_web_submission_id: string; basis_input_revision: number });
+export type MarkActionRow = Pick<ActionRow, 'id' | 'state' | 'row_version'> & { result_ref_type: string | null; result_ref_id: string | null; error_code: string | null; retryable: boolean | null };
 export interface MarkActionInput { transaction: PostgresTransaction; action_id: string; state: ActionRow['state']; command_id: string; command_hash: string; result_ref_type?: string | null; result_ref_id?: string | null; error_code?: string | null; retryable?: boolean | null; executed_at: string }
 export type DecisionStore = ReturnType<typeof createDecisionStore>;
 import {
@@ -177,7 +178,7 @@ export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false
       command_hash: commandHash, result_ref_type: resultRefType = null,
       result_ref_id: resultRefId = null, error_code: errorCode = null,
       retryable = null, executed_at: executedAt }: MarkActionInput) {
-      const result = await transaction.query<ActionRow>(
+      const result = await transaction.query<MarkActionRow>(
         `UPDATE intake.safe_action_suggestion SET state=$2,execution_command_id=$3::uuid,
            execution_command_hash=$4,result_ref_type=$5,result_ref_id=$6,error_code=$7,retryable=$8,
            executed_at=$9::timestamp without time zone,row_version=row_version+1,
@@ -186,7 +187,7 @@ export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false
         [actionId, state, commandId, commandHash, resultRefType, resultRefId, errorCode, retryable, executedAt],
       );
       if (result.rowCount !== 1) failP2015(P2_015_ERROR_CODES.storageFailed);
-      return freezePublic(result.rows[0]);
+      return freezePublic(result.rows[0] as MarkActionRow);
     },
   });
 }

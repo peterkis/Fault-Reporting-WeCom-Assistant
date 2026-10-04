@@ -1,7 +1,10 @@
+import type { P2016LiveConfiguration } from './p2-016-live-configuration.mjs';
+import type { G1ClusterConfiguration } from './p2-g1-process-cluster.mjs';
+export interface P2016LiveClusterConfiguration extends Omit<G1ClusterConfiguration, 'gatewayEnabled' | 'senderEnabled'> { reporterOrigin: string; reporterHmacSecret: string; allowedHosts: readonly string[]; inboundScope: Pick<P2016LiveConfiguration['inboundScope'], 'person_hashes' | 'group_hashes'> }
 import { createP2G1ProcessCluster } from './p2-g1-process-cluster.mjs';
 
 // Gate ownership stays with the live CLI. Tests use this same topology with both network switches false.
-export function createP2016LiveCluster(configuration,{gatewayEnabled=false,senderEnabled=false}={}){
+export function createP2016LiveCluster(configuration: P2016LiveClusterConfiguration,{gatewayEnabled=false,senderEnabled=false}={}){
   return createP2G1ProcessCluster({...configuration,gatewayEnabled,senderEnabled,
     roleScriptUrl:new URL('../scripts/p2-016-process-role.mjs',import.meta.url),
     roleEnvironment:role=>({

@@ -11,8 +11,8 @@ export type G1RoleCommand =
   | G1ProviderResponse
   | { type: 'gateway-disconnect' | 'gateway-reconnect'; request_id: string }
   | { type: 'stop' };
-interface AppOptions { runtimeFactory?: typeof createP2G1Runtime; authenticationFactory?: ((input: { pool: PostgresPool; publicOrigin: string }) => G1AuthenticationPort | Promise<G1AuthenticationPort>) | null; publicOrigin?: string | null; externalSendEnabled?: boolean }
-interface GatewayOptions { intakeFactory?: typeof createP2G1PilotOperationalIntake; gatewayFactory?: typeof createP2G1WeComGateway; senderFactory?: (input: NonNullable<Parameters<typeof createP2G1WeComCommunicationSender>[0]> & { pool: PostgresPool }) => ReturnType<typeof createP2G1WeComCommunicationSender> }
+interface AppOptions { runtimeFactory?: (input: G1RuntimeOptions & { pool: PostgresPool; publicOrigin: string; allowedTargetHashes: readonly string[] }) => Pick<ReturnType<typeof createP2G1Runtime>, 'start' | 'stop' | 'disconnectRealtimePrincipal'>; authenticationFactory?: ((input: { pool: PostgresPool; publicOrigin: string }) => G1AuthenticationPort | Promise<G1AuthenticationPort>) | null; publicOrigin?: string | null | undefined; externalSendEnabled?: boolean }
+interface GatewayOptions { intakeFactory?: (input: { pool: PostgresPool; identityHashKey?: string }) => Pick<ReturnType<typeof createP2G1PilotOperationalIntake>, 'accept'>; gatewayFactory?: typeof createP2G1WeComGateway; senderFactory?: (input: NonNullable<Parameters<typeof createP2G1WeComCommunicationSender>[0]> & { pool: PostgresPool; allowedTargetHashes: readonly string[]; gateway: ReturnType<typeof createP2G1WeComGateway> }) => ReturnType<typeof createP2G1WeComCommunicationSender> }
 interface WorkerOptions { extensionFactory?: ((input: { pool: PostgresPool }) => { runOnce(): unknown | Promise<unknown> }) | null; reportCycleHealth?: boolean; beforeReady?: ((input: { pool: PostgresPool }) => unknown | Promise<unknown>) | null }
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
@@ -87,7 +87,7 @@ export async function runApp({runtimeFactory=createP2G1Runtime,authenticationFac
   const peer = { gatewayAuthenticated: !truth('P2_G1_REQUIRE_GATEWAY'), workerReady: false };
   const resolvedOrigin=publicOrigin??`http://127.0.0.1:${Number(required('P2_G1_LISTEN_PORT', /^[0-9]{4,5}$/u))}`;
   let authentication: G1AuthenticationPort | null = null;
-  let runtime: ReturnType<typeof createP2G1Runtime>;
+  let runtime: Pick<ReturnType<typeof createP2G1Runtime>, 'start' | 'stop' | 'disconnectRealtimePrincipal'>;
   try {
     authentication=authenticationFactory?await authenticationFactory({pool,publicOrigin:resolvedOrigin}):null;
     runtime = runtimeFactory({
