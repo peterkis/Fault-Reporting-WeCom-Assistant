@@ -1,3 +1,4 @@
+import { sourceFile } from './helpers/migration-roots.mjs';
 import { validateHistoricalP2016 } from '../scripts/validate-p2-016-historical.mjs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -35,7 +36,7 @@ test('P2-012 both parsed OpenAPI documents declare canonical subscription destin
       assert.deepEqual(item.post.responses[409],{description:'Version, state or command conflict'});
     }
   }
-  const ui=await readFile('web/p2-workbench/incidents.js','utf8'),query=await readFile('src/p2-012-incident-query.mjs','utf8');
+  const ui=await readFile('web/p2-workbench/incidents.js','utf8'),query=await readFile(sourceFile('src/p2-012-incident-query.mjs'),'utf8');
   assert.ok(ui.includes("root+'/subscriptions/'+s.id+'/direct-destinations?limit=100'"));
   assert.ok(query.includes('subscriptions\\/([a-f0-9-]{36})\\/direct-destinations'));
 });

@@ -1,10 +1,18 @@
 # TypeScript 增量迁移执行入口
 
-ACTIVE_SELECTION: v3-p05
+ACTIVE_SELECTION: v3-p06
 
-## v3 当前入口（2026-10-04）
+## v3 当前入口（2026-10-05）
 
 P00 / PR #39 已于 2026-10-04 使用 merge commit 合并；实际合并与 P01 起始基线为 `614c4a7591ce349269063815bbbf0eca69824664`，保留发布 head `4f6fc5b411ec81c26ea7fcbff9e16e66dcee4009` 的历史。P01 / PR #40 已合并，合并提交为 `f25aeeea31523b7445f0f1e2795767c8c05f1f6d`，保留发布 head `9a1ee62f18a6bf3038930559060ee6c329985f4f`。P02 从该最新 main 接续，按事件日志（A）→时间线（B）→SSE（C）→G1 装配（D）完成 14 个模块的严格类型实现。P02 / PR #41 已合并，合并提交 `841e48493875473b87eaac09afb6e58038d85d49`，发布 head `5de7184c20d4baa78c61af45e5e376c115e0a62f`。P03 从包含此合并的最新 main 接续，按领域合同 → 目录和人员资料 → 规则与旅程迁移原 21 个目标；P03 / PR #42 已合并，合并提交 `e6bdbc991b8c67aa4ee1022b3788aa665254fc43`，发布、审查和 CI head 为 `08267a9501691b6b3851b3de0a6832706e8d2c97`，既有测试不改称 merge commit 的新运行。P04 / PR #43 已合并，merge commit 为 `0975399bad4634f99a9721fa15dc1f492f2a5c97`，发布、审查和 CI head 保持 `cf6ae92a506c35df216455de8d4e065115f42d82` 的原身份。P04 从 P03 合并 main 接续，按查询授权与命令事务 → 通知、投影和 HTTP 两个内部切片完成原 18 个目标。实际检查与当前 head CI 记录在本轮 PR 正文。开发检查不代表发布认证。
+
+P05 / PR #44 已使用 merge commit `97c7b885bf99041807d4c9ab8a6f010cbd3a2436` 合并；发布、测试、审查与 CI head 保持 `f1f9be4c10e4839fa152c88d5c6be16ad162f133`，旧结果不改称在 merge commit 重新执行。P06 从该最新 main 接续，按候选/关联/查询（A）→命令/通知/投影/HTTP（B）→装配/现场边界/进程（C）迁移原 P06 13 项及 P05 移交的 `src/p2-015-incident-correlation.mjs`，共 14 项。原始目标累计 122/181（约 67.4%）只表示源码覆盖。
+
+`v3-p06` 最终 selection 只有修订指令的 8 个现有入口：Domain、Incident Integration、Subscription Notification、Reporter HTTP、Process Assembly、Cross Reporter、Dynamic Reporter Scope、Schema/Live Guards。既有 host、flags、PG、PyYAML 和 subprocess 属性保持；最终候选一次构建后运行严格 types、selection、制品及自有资源清理，实际结果保存在 PR 正文和仓库外日志。源码路径检查只复用 `sourceFile`；历史 P2-012 validator、allowlist、Evidence 和冻结 checkout 不变。
+
+Candidate 必须由现有人工 `CONFIRM_INCIDENT` 命令确认；关联不创建 Incident。P2-012 保留独立 receipt、授权先于 replay、SAVEPOINT、全局 Realtime→Command 锁顺序以及字符串 row version，不并入 P2-016 ledger。通知模板、Direct Leg、动态 Reporter 授权、范围投影及五个独立现场 fuse 保持。Decision Store 只为已有候选 payload 同步泛型类型，BOT/WEB 身份规则不变。无数据库、OpenAPI、前端、历史 Evidence、业务 Gate 或默认 Feature Flag 变化。
+
+本轮允许三个内部提交、HTTPS 推送及创建一个 P06 PR、最终 Codex 审查和核对该 head 适用 CI；P06 尚未合并，制品为 STAGED_NOT_ACTIVATED。full/certify、发布 readiness、真实发送与部署均未运行；不进入 P07，不读取真实目录或医院数据。关闭仍使用现有默认关闭开关；代码撤销使用后继修补或独立 revert PR，保留历史及用户工作。
 
 PR #38 已合并至 `f72e77337aff5d3e5fd053409d5965fbe47deeb6`。P00 将工作台查询/授权迁入严格 MTS，并同步 CI 与逻辑源码路径兼容；下文 T00～T04-05 和 PR37 记录为历史交接，不再驱动日常批次认证。
 
@@ -28,7 +36,7 @@ P05 直接类型同步补齐了现有 ARCH-006 检查对已迁移 `.mts` 前驱�
 
 历史 P00 selection 保留原七个入口。P01 selection 使用阶段六个核心种子，加控制/工作台/G1 适配单元及 ARCH-006、V1.4 baseline，共十一个直接相关入口；呈现和重试顺序保持原运行时表达式，不触发额外浏览器或 P2-016 扩展。ARCH-005 仅在实际触及时间契约时扩展。工具回归由现有工具入口执行，不加入业务注册表。类型正反例使用现有 type gate 与有理由的 expect-error。
 
-P00～P04 已合并，本次 P05 无数据库变更，制品为 STAGED_NOT_ACTIVATED，不更新原 readiness pointer 或大型 Evidence 包。P05 使用已有合成行为与任务自有 loopback PG18；保持决策哈希、事务/锁、失败策略、续接身份边界、默认关闭和停止顺序。P04 ledger replay 消费者字段继续为 unknown；后续 OAuth/YXX/Incident 在组合处使用当前消费的最小结构类型，不提前迁移。fork/roleScriptUrl 继续使用编译后的 .mjs。允许本次 P05 范围内提交、HTTPS 推送并创建 PR、审查和核对该 head CI；不自动合并、不进入 P06、不运行 full/certify、不部署或操作真实业务。交接记录写在 PR 正文，包含 head、业务行为、实际命令/结果、日志位置与未运行项。撤销使用后继修补或独立 revert PR，保留历史与用户工作。
+P00～P04 已合并，历史 P05 无数据库变更，制品为 STAGED_NOT_ACTIVATED，不更新原 readiness pointer 或大型 Evidence 包。P05 使用已有合成行为与任务自有 loopback PG18；保持决策哈希、事务/锁、失败策略、续接身份边界、默认关闭和停止顺序。P04 ledger replay 消费者字段继续为 unknown；后续 OAuth/YXX/Incident 在组合处使用当前消费的最小结构类型，不提前迁移。fork/roleScriptUrl 继续使用编译后的 .mjs。允许本次 P05 范围内提交、HTTPS 推送并创建 PR、审查和核对该 head CI；原 P05 完成后不自动合并、不进入 P06、不运行 full/certify、不部署或操作真实业务。交接记录写在 PR 正文，包含 head、业务行为、实际命令/结果、日志位置与未运行项。撤销使用后继修补或独立 revert PR，保留历史与用户工作。
 
 ## 历史入口（下文）
 

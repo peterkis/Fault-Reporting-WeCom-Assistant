@@ -1,8 +1,9 @@
+import type { P2012LiveConfiguration } from './p2-012-live-configuration.mjs';
 import { P2012_LIVE_FUSES } from './p2-012-live-configuration.mjs';
 import { createP2G1ProcessCluster } from './p2-g1-process-cluster.mjs';
 
 // Gate ownership stays with the live CLI. Tests use this same topology with both network switches false.
-export function createP2012LiveCluster(configuration,{gatewayEnabled=false,senderEnabled=false}={}){
+export function createP2012LiveCluster(configuration: Omit<P2012LiveConfiguration, 'reporterScopeMode'> & { reporterScopeMode?: P2012LiveConfiguration['reporterScopeMode'] },{gatewayEnabled=false,senderEnabled=false}={}){
   return createP2G1ProcessCluster({...configuration,gatewayEnabled,senderEnabled,
     roleScriptUrl:new URL('../scripts/p2-012-process-role.mjs',import.meta.url),
     roleEnvironment:role=>({
