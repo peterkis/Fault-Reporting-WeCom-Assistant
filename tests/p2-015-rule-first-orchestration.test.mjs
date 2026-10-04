@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { testRoots } from './helpers/migration-roots.mjs';
 import { createRuleEngine } from '../src/p2-007-rule-engine.mjs';
 import { P2_015_RESULT_CODES, normalizeP2015FeatureFlags, safeHash, snapshotP2015Json } from '../src/p2-015-domain-contracts.mjs';
 import { routeP2007Decision, routeRuleFailure } from '../src/p2-015-decision-router.mjs';
@@ -84,4 +87,36 @@ test('gold manifest references all 96 + 42 + 64 frozen cases with ten routes', (
   assert.equal(new Set(lines.map((item) => `${item.source_fixture}:${item.source_case_id}`)).size, 202);
   assert.deepEqual([...new Set(lines.map((item) => item.expected_result_code))].sort(), [...P2_015_RESULT_CODES].sort());
   assert.equal(lines.every((item) => item.prohibited_effects.includes('CALL_LLM_PROVIDER') && !JSON.stringify(item).match(/(?:https?:\/\/|10\.\d+\.\d+\.\d+)/u)), true);
+});
+
+test('public P2-015 validator accepts a committed type migration and rejects runtime or frozen SQL edits', () => {
+  const { sourceRoot, runtimeRoot } = testRoots();
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'p2015-freeze-cli-'));
+  const git = (...args) => execFileSync('git', ['-c', 'user.name=Synthetic validation fixture', '-c', 'user.email=fixture@example.invalid', ...args],
+    { cwd: fixture, encoding: 'utf8', windowsHide: true });
+  const validator = path.join(runtimeRoot, 'scripts/validate-p2-015-rule-first-intake.mjs');
+  const run = () => spawnSync(process.execPath, [validator], { cwd: fixture, encoding: 'utf8', windowsHide: true, timeout: 15_000 });
+  try {
+    const files = execFileSync('git', ['ls-files', '-z'], { cwd: sourceRoot, encoding: 'utf8', windowsHide: true }).split('\0').filter(file =>
+      /^(?:contracts\/|src\/p2-015-|scripts\/p2-015-|tests\/p2-015-|tests\/helpers\/p2-015-|tests\/fixtures\/p2-015\/|docs\/(?:55_|56_|57_)|evidence\/p2-015-(?:start-authorization|rule-first-intake-orchestration-report)\.md$|database\/migrations\/(?:001_|030_)|plans\/typescript-migration\/scope\.json$|\.env\.example$)/u.test(file));
+    for (const file of files) {
+      const target = path.join(fixture, file); fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(path.join(sourceRoot, file), target);
+    }
+    const logical = 'src/p2-007-domain-utils.mjs', typed = logical.replace(/\.mjs$/u, '.mts');
+    fs.writeFileSync(path.join(fixture, logical), 'export const enabled = false;\n');
+    git('init', '--quiet'); git('add', '.'); git('commit', '--quiet', '-m', 'Synthetic unchanged baseline');
+    git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+    fs.unlinkSync(path.join(fixture, logical)); fs.writeFileSync(path.join(fixture, typed), 'export const enabled: boolean = false;\n');
+    git('add', '-A'); git('commit', '--quiet', '-m', 'Synthetic type migration');
+    let result = run(); assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(JSON.parse(result.stdout).ok, true);
+    fs.writeFileSync(path.join(fixture, typed), 'export const enabled: boolean = true;\n');
+    git('add', typed); git('commit', '--quiet', '-m', 'Synthetic runtime change');
+    result = run(); assert.equal(result.status, 1); assert.match(result.stderr, /P2-007 runtime are unchanged/u);
+    fs.writeFileSync(path.join(fixture, typed), 'export const enabled: boolean = false;\n');
+    const sql = files.find(file => file.startsWith('database/migrations/001_')); assert.ok(sql);
+    fs.appendFileSync(path.join(fixture, sql), '\n-- synthetic protected SQL edit\n');
+    git('add', '-A'); git('commit', '--quiet', '-m', 'Synthetic protected SQL change');
+    result = run(); assert.equal(result.status, 1); assert.match(result.stderr, /migrations 001-022/u);
+  } finally { fs.rmSync(fixture, { recursive: true, force: true }); }
 });
