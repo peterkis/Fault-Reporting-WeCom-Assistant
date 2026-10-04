@@ -1,21 +1,27 @@
+import type { PostgresPool } from './platform/postgres-pool.mjs';
+import type { CandidateSourceDecision } from './p2-012-candidate-source-adapter.mjs';
+export type IncidentCorrelationResult = { correlated: number; correlation_overflow: false } | { correlated: 0; correlation_overflow: true };
+type FaultFamily = { service_family: string; symptom_family: string };
+interface FaultObservation { fact_id?: unknown; source_ref?: unknown; status?: unknown; assertion?: unknown; source_kind?: unknown; field_path?: unknown }
+interface CorrelationRow extends Omit<CandidateSourceDecision, 'safe_result'> { safe_result: { known_fields: { selected_service_code?: unknown; symptom_codes?: unknown; domain_intent?: unknown }; conflicts?: unknown[]; fact_provenance?: FaultObservation[]; clinical_safety_risk?: unknown }; reporter_identity_hash: string; source_bot_id: string; profile_resolution_status: unknown; profile_snapshot: { source?: unknown; version?: unknown; memberships?: { role?: unknown; department_ref?: unknown }[] } | null; fault_at: string }
 import { generateIncidentCandidate } from './p2-007-incident-candidate.mjs';
 import { createP2012CandidateSourceAdapter } from './p2-012-candidate-source-adapter.mjs';
 import { transaction, hash } from './p2-012-domain-contracts.mjs';
 import { P2_015_ENGINE_VERSION } from './p2-015-decision-router.mjs';
 
 const WINDOW_MS = 120000n;
-const code = value => typeof value === 'string' && /^[A-Z][A-Z0-9_.]{0,63}$/u.test(value) ? value.replaceAll('.', '_') : null;
-function faultFamily(known) {
+const code = (value: unknown) => typeof value === 'string' && /^[A-Z][A-Z0-9_.]{0,63}$/u.test(value) ? value.replaceAll('.', '_') : null;
+function faultFamily(known: CorrelationRow['safe_result']['known_fields']): FaultFamily | null {
   const service = code(known?.selected_service_code);
   const symptoms = known?.symptom_codes;
   if (!service || service === 'UNKNOWN' || !Array.isArray(symptoms) || !symptoms.length) return null;
-  const families = new Set(symptoms.map(s => ['AVAILABILITY.UNAVAILABLE', 'STABILITY.CRASH', 'UI.BLANK'].includes(s)
+  const families = new Set(symptoms.map(s => ['AVAILABILITY.UNAVAILABLE', 'STABILITY.CRASH', 'UI.BLANK'].includes(s as string)
     ? 'SERVICE_UNAVAILABLE' : code(s)));
   if (families.size !== 1 || families.has(null) || families.has('UNKNOWN')) return null;
-  return { service_family: service, symptom_family: [...families][0] };
+  return { service_family: service, symptom_family: ([...families][0] as string) };
 }
 
-function primaryDepartment(row){
+function primaryDepartment(row: CorrelationRow){
   const profile=row.profile_snapshot;
   if(row.profile_resolution_status!=='RESOLVED'||profile?.source!=='WECOM_DIRECTORY'
     ||typeof profile.version!=='string'||!profile.version||profile.version.length>256||!Array.isArray(profile.memberships))return null;
@@ -27,16 +33,16 @@ function primaryDepartment(row){
 // Only immutable directory snapshots supply department authority. No monitoring,
 // raw-text department inference or caller-supplied counts enter this reader.
 // Latest original Decision is selected before eligibility; derived/overridden results never feed back.
-export function createIncidentCorrelationWorker({ pool, enabled = false }) {
+export function createIncidentCorrelationWorker({ pool, enabled = false }: { pool: PostgresPool; enabled?: boolean }) {
   const recorder = createP2012CandidateSourceAdapter({ pool, enabled });
-  return Object.freeze({ async runOnce({ nowEpochMs = null } = {}) {
+  return Object.freeze({ async runOnce({ nowEpochMs = null }: { nowEpochMs?: string | null } = {}): Promise<IncidentCorrelationResult> {
     if (!enabled) return { correlated: 0, correlation_overflow: false };
     return transaction(pool, async tx => {
       await tx.query("SELECT pg_advisory_xact_lock(hashtextextended('p2-015-incident-correlation/1',0))");
-      const clock = nowEpochMs ?? (await tx.query('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0].epoch;
+      const clock = nowEpochMs ?? ((await tx.query<{ epoch: string }>('SELECT platform.physical_epoch_ms()::text AS epoch')).rows[0] as { epoch: string; }).epoch;
       if (!/^\d{1,16}$/u.test(String(clock))) throw new Error('INVALID_CORRELATION_CLOCK');
       const now = BigInt(clock);
-      const result = await tx.query(`SELECT d.*,j.reporter_identity_hash,i.source_bot_id,j.profile_snapshot,j.profile_resolution_status,
+      const result = await tx.query<CorrelationRow>(`SELECT d.*,j.reporter_identity_hash,i.source_bot_id,j.profile_snapshot,j.profile_resolution_status,
           anchor.received_epoch_ms::text AS fault_epoch_ms,anchor.received_at AS fault_at
         FROM intake.service_intake i
         JOIN intake.channel_leg l ON l.source_intake_id=i.id
@@ -83,39 +89,39 @@ export function createIncidentCorrelationWorker({ pool, enabled = false }) {
           AND anchor.received_epoch_ms BETWEEN $3::bigint AND $2::bigint
         ORDER BY anchor.received_epoch_ms,d.id LIMIT 101`, [P2_015_ENGINE_VERSION, String(now), String(now - WINDOW_MS)]);
       if (result.rows.length > 100) return { correlated: 0, correlation_overflow: true };
-      const groups = new Map();
+      const groups = new Map<string, { family: FaultFamily; rows: { row: CorrelationRow; facts: (FaultObservation & { fact_id: string })[] }[] }>();
       for (const row of result.rows) {
         const safe = row.safe_result, family = faultFamily(safe.known_fields);
         if (!family || safe.known_fields.domain_intent !== 'INCIDENT_REPORT' || safe.conflicts?.length) continue;
-        const facts = (safe.fact_provenance ?? []).filter(f => /^fact_[A-Za-z0-9_-]{8,96}$/u.test(f.fact_id ?? '')
+        const facts = (safe.fact_provenance ?? []).filter((f): f is FaultObservation & { fact_id: string } => /^fact_[A-Za-z0-9_-]{8,96}$/u.test((f.fact_id ?? '') as string)
           && f.source_ref === 'intake:' + row.service_intake_id && f.status === 'ACTIVE' && f.assertion === 'AFFIRMED'
-          && ['REPORTER_EXPLICIT','REPORTER_CORRECTION','DETERMINISTIC_RULE'].includes(f.source_kind));
+          && ['REPORTER_EXPLICIT','REPORTER_CORRECTION','DETERMINISTIC_RULE'].includes(f.source_kind as string));
         if (!facts.some(f => f.field_path === 'fault.symptom_codes')) continue;
         const key = hash({ bot: row.source_bot_id, service: safe.known_fields.selected_service_code,
           catalog: row.catalog_version, rules: row.rule_set_version, ...family });
         if (!groups.has(key)) groups.set(key, { family, rows: [] });
-        groups.get(key).rows.push({ row, facts });
+        (groups.get(key) as { family: FaultFamily; rows: { row: CorrelationRow; facts: (FaultObservation & { fact_id: string; })[]; }[]; }).rows.push({ row, facts });
       }
       let correlated = 0;
       for (const { family, rows } of [...groups.values()].slice(0, 20)) {
-        const departments=new Map();
+        const departments=new Map<string, Set<string | null>>();
         for(const {row} of rows){
-          if(!departments.has(row.reporter_identity_hash))departments.set(row.reporter_identity_hash,new Set());
-          departments.get(row.reporter_identity_hash).add(primaryDepartment(row));
+          if(!departments.has(row.reporter_identity_hash))departments.set(row.reporter_identity_hash,new Set<string | null>());
+          (departments.get(row.reporter_identity_hash) as Set<string | null>).add(primaryDepartment(row));
         }
         const severities = ['UNKNOWN', 'LOW', 'MODERATE', 'MEDIUM', 'HIGH', 'CRITICAL', 'CRITICAL_REVIEW_REQUIRED'];
         const clinicalSeverity = rows.map(({ row }) => row.safe_result.clinical_safety_risk)
-          .filter(s => severities.includes(s)).sort((a,b) => severities.indexOf(b)-severities.indexOf(a))[0] ?? 'UNKNOWN';
+          .filter((s): s is string => severities.includes(s as string)).sort((a,b) => severities.indexOf(b)-severities.indexOf(a))[0] ?? 'UNKNOWN';
         const candidate = generateIncidentCandidate({ ...family, clinical_severity_candidate: clinicalSeverity,
           reports: rows.map(({ row, facts }) => ({
           reporter_ref: row.reporter_identity_hash, observed_at: row.fault_at,
-          ...(departments.get(row.reporter_identity_hash).size===1&&primaryDepartment(row)
-            ?{department_ref:primaryDepartment(row)}:{}),
+          ...((departments.get(row.reporter_identity_hash) as Set<string | null>).size===1&&primaryDepartment(row)
+            ?{department_ref:primaryDepartment(row) as string}:{}),
           evidence_fact_ids: facts.map(f => f.fact_id), ...family,
         })) });
         if (!candidate.is_candidate) continue;
         const ids = rows.map(({ row }) => row.id).sort();
-        const recorded = await recorder.record({ sourceDecisionId: ids[0], candidate,
+        const recorded = await recorder.record({ sourceDecisionId: (ids[0] as string), candidate,
           reportDecisionIds: ids, transaction: tx });
         if (!recorded.replayed) correlated++;
       }
