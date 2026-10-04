@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse, Server, OutgoingHttpHeaders } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import type { createConversationWorkbenchQueryService, WorkbenchAuthContext, WorkbenchListState } from './p2-006-workbench-query.mjs';
+import type { createConversationWorkbenchQueryService, WorkbenchAuthContext, WorkbenchListState, WorkbenchListInput, WorkbenchItemsInput } from './p2-006-workbench-query.mjs';
 import type { createConversationWorkbenchCommandFacade } from './p2-006-workbench-command-facade.mjs';
 import type { DeliveryResolution } from './p2-006-workbench-delivery-control.mjs';
 export interface WorkbenchHttpAuthContext extends WorkbenchAuthContext { auth_method: 'COOKIE' | 'BEARER'; expires_epoch_ms: string; public_origin?: string }
@@ -177,7 +177,7 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
         const allowed = new Set(['state', 'cursor', 'limit']);
         if ([...url.searchParams.keys()].some((key) => !allowed.has(key))) throw new WorkbenchError(WORKBENCH_ERROR_CODES.requestInvalid, 400);
         json(response, 200, await (queryService as QueryService).listConversations({ authContext, state: url.searchParams.get('state') as WorkbenchListState | null ?? 'open',
-          cursor: url.searchParams.get('cursor'), limit: url.searchParams.get('limit') ?? undefined })); return;
+          cursor: url.searchParams.get('cursor'), limit: url.searchParams.get('limit') ?? undefined } as WorkbenchListInput)); return;
       }
       const sessionMatch = url.pathname.match(/^\/api\/conversations\/([0-9a-f-]+)(?:\/(items|eligible-principals|deliveries))?$/iu);
       if (request.method === 'GET' && sessionMatch) {
@@ -185,7 +185,7 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
         if (!child) { const detail = await (queryService as QueryService).getConversationDetail({ authContext, sessionId }); json(response, 200, detail, { etag: detail.etag }); return; }
         if (child === 'items') { json(response, 200, await (queryService as QueryService).listConversationItems({ authContext, sessionId,
           before_sequence: url.searchParams.get('before_sequence') ?? undefined, after_sequence: url.searchParams.get('after_sequence') ?? undefined,
-          limit: url.searchParams.get('limit') ?? undefined })); return; }
+          limit: url.searchParams.get('limit') ?? undefined } as WorkbenchItemsInput)); return; }
         if (child === 'eligible-principals') { json(response, 200, await (queryService as QueryService).listEligiblePrincipals({ authContext, sessionId })); return; }
         if (child === 'deliveries') { json(response, 200, await (queryService as QueryService).listConversationDeliveries({ authContext, sessionId })); return; }
       }

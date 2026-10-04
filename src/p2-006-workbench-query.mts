@@ -11,9 +11,9 @@ export interface WorkbenchAuthContext {
   csrf_token?: string;
 }
 interface AuthInput { authContext?: WorkbenchAuthContext }
-export interface WorkbenchListInput extends AuthInput { state?: WorkbenchListState; cursor?: string | null; limit?: string | number | null | undefined }
+export interface WorkbenchListInput extends AuthInput { state?: WorkbenchListState; cursor?: string | null; limit?: string | number | null }
 export interface WorkbenchDetailInput { authContext: WorkbenchAuthContext; sessionId: string }
-export interface WorkbenchItemsInput extends AuthInput { sessionId?: string; before_sequence?: string | number | bigint | undefined; after_sequence?: string | number | bigint | undefined; limit?: string | number | null | undefined }
+export interface WorkbenchItemsInput extends AuthInput { sessionId?: string; before_sequence?: string | number | bigint; after_sequence?: string | number | bigint; limit?: string | number | null }
 type QueryAuthorizer = Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal' | 'safePrincipal' | 'actionsFor' | 'sessionAccessPredicate' | 'authorizeSession' | 'isAdmin' | 'listEligiblePrincipals'>;
 export interface WorkbenchQueryOptions { pool?: PostgresTransaction; enabled?: boolean; authorize?: QueryAuthorizer; nowEpochMs?: (() => unknown) | null; now?: () => Date; featureStatus?: Readonly<Record<string, boolean>> | null }
 interface ItemRow { id: string; sequence_no: string | number; item_type: string; sender_kind: string; visibility: string; text: string | null; safe_content: unknown; occurred_at: unknown }
