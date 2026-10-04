@@ -45,6 +45,10 @@ declare const externalRules: unknown;
 const customRule = createRuleEngine({ ruleSet: externalRules }).evaluate({ text: '', source_ref: 'synthetic', observed_at: '2026-10-04 20:00:00' });
 // @ts-expect-error -- An unknown custom rule action cannot guarantee a known result-state literal.
 const invalidState: RuleResult['result_state'] = customRule.result_state;
+// @ts-expect-error -- Unknown custom rule configuration does not validate the explanation's scalar type.
+const invalidExplanation: string | undefined = customRule.matched_rules[0]?.explanation;
+// @ts-expect-error -- Raw corroboration epoch values may be regex-coercible rather than canonical strings.
+const invalidAnchorEpoch: string = rawRule.corroboration_anchor.root_received_epoch_ms;
 const rawConflict = resolveFactConflicts(externalInput);
 // @ts-expect-error -- A plain JSON facts array does not prove full provenance fields.
 const invalidFact: string = rawConflict.facts[0].fact_id;
@@ -61,3 +65,4 @@ if (conflict.resolution_status === 'DEFERRED_TO_HUMAN') {
   void needsHuman; void selected;
 }
 void invalidDirectory; void invalidScope; void invalidState; void invalidFact;
+void invalidExplanation; void invalidAnchorEpoch;

@@ -28,7 +28,10 @@ export interface RuleResult { schema_version: string; catalog_version: string; r
 // Existing runtime guards validate the required strings, not optional input fields
 // or every field in an unknown custom action. Preserve those values as unknown.
 type RawDerivedRuleFields = 'scope' | 'clinical_impact' | 'transaction_stage' | 'selected_service_code' | 'domain_intent' | 'owner_suggestion' | 'symptom_codes' | 'cause_candidates' | 'privacy_flags' | 'incident_reason_codes' | 'result_state' | 'attempt_result' | 'forbidden_effects' | 'missing_fields' | 'clarification' | 'facts';
-export type BoundaryRuleResult = Omit<RuleResult, RawDerivedRuleFields> & { [K in RawDerivedRuleFields]: unknown };
+export type BoundaryRuleResult = Omit<RuleResult, RawDerivedRuleFields | 'matched_rules' | 'corroboration_anchor'> & { [K in RawDerivedRuleFields]: unknown } & {
+  matched_rules: (Omit<RuleResult['matched_rules'][number], 'explanation'> & { explanation: unknown })[];
+  corroboration_anchor?: unknown;
+};
 interface RuleEngineMetadata { rule_set_id: string; rule_set_version: string; rule_set_hash: string }
 export interface RuleEngine extends RuleEngineMetadata { evaluate(input: RuleEvaluationInput): RuleResult; evaluate(input: unknown): BoundaryRuleResult }
 export interface BoundaryRuleEngine extends RuleEngineMetadata { evaluate(input: unknown): BoundaryRuleResult }
