@@ -1,9 +1,20 @@
+import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
+export interface LedgerCommand { client_command_id: string; action: string; ticket_id?: string | null; review_id?: string | null; session_id?: string | null; expected_version?: number | null; expected_session_row_version?: number | string | null }
+export interface LedgerContext { principal: { principal_id: string } }
+export interface LedgerSuccess { ok: true; ticket_version?: number; ticket_event_id?: string; control_event_id?: string | null }
+export interface LedgerFailure { ok: false; error: { code: string; retryable: boolean }; replayed: boolean }
+// A committed DB snapshot follows the ledger write contract, but its consumer-specific payload is unknown.
+export type StoredLedgerSuccess = LedgerSuccess & Record<string, unknown>;
+export type LedgerResult<R extends LedgerSuccess> = (R & { replayed: false }) | (StoredLedgerSuccess & { replayed: true }) | LedgerFailure;
+export interface LedgerExecution<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand = LedgerCommand> { command: D; authorize: (transaction: PostgresTransaction) => Promise<C>; run: (transaction: PostgresTransaction, context: C) => Promise<R> }
+interface ReceiptRow { id: string; command_hash: string; state: string; result_snapshot: StoredLedgerSuccess; error_code: string; retryable: boolean }
+
 import { failP2016,hashP2016,publicP2016,transactionP2016,P2016_ERROR_CODES } from './p2-016-domain-contracts.mjs';
 import { WorkbenchError } from './p2-006-workbench-query.mjs';
 
-export function createP2016CommandLedger({pool}) {
+export function createP2016CommandLedger({pool}: { pool: Pick<PostgresPool, 'connect'> }) {
   return Object.freeze({
-    async execute({command,authorize,run}) {
+    async execute<C extends LedgerContext, R extends LedgerSuccess, D extends LedgerCommand>({command,authorize,run}: LedgerExecution<C, R, D>): Promise<LedgerResult<R>> {
       return transactionP2016(pool,async tx=>{
         // Authorization precedes every receipt lookup, including a replay.
         const context=await authorize(tx);
@@ -15,9 +26,9 @@ export function createP2016CommandLedger({pool}) {
           ON CONFLICT(command_scope,client_command_id) DO NOTHING`,
         [scope,command.client_command_id,hash,command.action,command.ticket_id??null,command.review_id??null,
           command.session_id??null,context.principal.principal_id,command.expected_version??null,command.expected_session_row_version??null]);
-        const selected=await tx.query(`SELECT id::text,command_hash,state,result_snapshot,error_code,retryable
+        const selected=await tx.query<ReceiptRow>(`SELECT id::text,command_hash,state,result_snapshot,error_code,retryable
           FROM pilot_ticket.ticket_command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid FOR UPDATE`,[scope,command.client_command_id]);
-        const receipt=selected.rows[0];
+        const receipt=(selected.rows[0] as (typeof selected.rows)[number]);
         if(receipt.command_hash!==hash)failP2016('COMMAND_CONFLICT',409);
         if(receipt.state==='COMMITTED')return publicP2016({...receipt.result_snapshot,replayed:true});
         if(receipt.state==='FAILED')return publicP2016({ok:false,error:{code:receipt.error_code,retryable:receipt.retryable},replayed:true});
@@ -33,9 +44,9 @@ export function createP2016CommandLedger({pool}) {
           return publicP2016({...result,replayed:false});
         } catch(error) {
           await tx.query('ROLLBACK TO SAVEPOINT p2016_business');
-          const known=(error instanceof WorkbenchError&&P2016_ERROR_CODES.includes(error.code)) || ['TICKET_VERSION_CONFLICT','INVALID_STATE_TRANSITION','FORBIDDEN'].includes(error?.code);
-          const code=['P2_015_COMMAND_CONFLICT','P2_015_VERSION_CONFLICT'].includes(error?.code)
-            ? 'P2_016_VERSION_CONFLICT' : known?error.code:'P2_016_ACTION_FAILED';
+          const known=(error instanceof WorkbenchError&&P2016_ERROR_CODES.includes(error.code)) || ['TICKET_VERSION_CONFLICT','INVALID_STATE_TRANSITION','FORBIDDEN'].includes((error as { code?: string } | null | undefined)?.code as string);
+          const code=['P2_015_COMMAND_CONFLICT','P2_015_VERSION_CONFLICT'].includes((error as { code?: string } | null | undefined)?.code as string)
+            ? 'P2_016_VERSION_CONFLICT' : known?(error as { code: string }).code:'P2_016_ACTION_FAILED';
           await tx.query(`UPDATE pilot_ticket.ticket_command_receipt SET state='FAILED',error_code=$2,retryable=false,
             updated_at=platform.local_now(),completed_at=platform.local_now() WHERE id=$1::uuid`,[receipt.id,code]);
           return publicP2016({ok:false,error:{code,retryable:false},replayed:false});
