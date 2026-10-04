@@ -1,3 +1,25 @@
+
+import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
+import type { CommunicationDeliveryStatus, CommunicationMessageType, CommunicationSenderRequest, ProviderSideEffectState } from '../contracts/communication_contracts.js';
+import type { CommunicationSenderResult } from './p2-004-communication-sender-port.mjs';
+export interface DeliveryViewRow { id: string; outbox_id: string; status: CommunicationDeliveryStatus; provider: string; attempt_count: number; last_error_code: string | null; side_effect_state: ProviderSideEffectState; sent_at: unknown; sent_epoch_ms?: unknown }
+interface ClaimRow { id: string; outbox_id: string; provider: string; channel_account_id: string; target_type: 'PERSON' | 'GROUP'; target_id: string; target_hash: string; idempotency_key: string; attempt_count: number; message_type: CommunicationMessageType; content: Record<string, unknown> }
+type ClaimedDelivery = Readonly<ClaimRow & { lease_token: string; lease_expires_epoch_ms: string }>;
+type StartedDelivery = Readonly<ClaimedDelivery & { attempt_no: number; started_at: string; started_epoch_ms: string }>;
+type RecoveryRow = { id: string; outbox_id: string; attempt_count: number };
+type AttemptRow = { attempt_count: number };
+type IdRow = { id: string };
+type Failure = ReturnType<typeof publicError>;
+export type CommunicationDeliveryView = ReturnType<typeof deliveryView>;
+type TxExecutor = <T>(operation: (transaction: PostgresTransaction) => Promise<T>) => Promise<T>;
+type ClockOptions = { pool?: PostgresPool; now?: () => Date; nowEpochMs?: (() => unknown) | null };
+export interface CommunicationWorkerOptions extends ClockOptions {
+  sender?: { send(request: CommunicationSenderRequest): Promise<CommunicationSenderResult> }; enabled?: boolean; batchSize?: number; leaseMs?: number; sendTimeoutMs?: number; retryBaseMs?: number; maxAttempts?: number; maxDeliveriesPerTargetWindow?: number; rateLimitWindowMs?: number;
+}
+export interface ReconciliationInput { deliveryId: string; expectedStatus: 'RECONCILIATION_REQUIRED'; resolution: 'CONFIRMED_SENT' | 'CONFIRMED_NOT_SENT_REQUEUE' | 'CANCEL'; reasonCode: string; authorized?: boolean; transaction?: PostgresTransaction | null }
+export interface DeliveryRetryInput { deliveryId: string; authorized?: boolean; reasonCode?: string; transaction?: PostgresTransaction | null }
+type ErrorObservation = { code?: unknown } | null | undefined;
+
 import { randomUUID } from 'node:crypto';
 
 import { COMMUNICATION_ERROR_CODES } from './p2-004-communication-core.mjs';
@@ -11,15 +33,15 @@ import {
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const RESOLUTIONS = new Set(['CONFIRMED_SENT', 'CONFIRMED_NOT_SENT_REQUEUE', 'CANCEL']);
 
-function publicError(code, retryable = false) {
-  return Object.freeze({ ok: false, error: Object.freeze({ code, retryable }) });
+function publicError(code: string, retryable = false) {
+  return Object.freeze({ ok: false as const, error: Object.freeze({ code, retryable }) });
 }
 
-function safeCode(value, fallback) {
+function safeCode(value: unknown, fallback: string) {
   return typeof value === 'string' && /^[A-Z0-9_]{1,128}$/u.test(value) ? value : fallback;
 }
 
-function validClock(nowEpochMs, legacyNow) {
+function validClock(nowEpochMs: (() => unknown) | null, legacyNow: () => Date) {
   let epochMs;
   if (typeof nowEpochMs === 'function') {
     epochMs = assertEpochMsString(nowEpochMs());
@@ -33,7 +55,7 @@ function validClock(nowEpochMs, legacyNow) {
   return Object.freeze({ epoch_ms: epochMs, local_datetime: formatEpochMsToShanghaiLocal(epochMs) });
 }
 
-function deliveryView(row) {
+function deliveryView(row: DeliveryViewRow) {
   return Object.freeze({
     source_kind: 'COMMUNICATION',
     delivery_id: row.id,
@@ -49,7 +71,7 @@ function deliveryView(row) {
   });
 }
 
-async function withTransaction(pool, operation) {
+async function withTransaction<T>(pool: PostgresPool | undefined, operation: (transaction: PostgresTransaction) => Promise<T>): Promise<T> {
   if (!pool || typeof pool.connect !== 'function') throw new TypeError('A PostgreSQL pool is required.');
   const client = await pool.connect();
   let destroy = false;
@@ -66,7 +88,7 @@ async function withTransaction(pool, operation) {
   }
 }
 
-function validatePositiveIntegers(values) {
+function validatePositiveIntegers(values: Record<string, number>) {
   for (const [name, value] of Object.entries(values)) {
     if (!Number.isInteger(value) || value < 1) throw new TypeError(`${name} must be a positive integer.`);
   }
@@ -85,7 +107,7 @@ export function createCommunicationDeliveryWorker({
   maxAttempts = 5,
   maxDeliveriesPerTargetWindow = 20,
   rateLimitWindowMs = 60_000,
-} = {}) {
+}: CommunicationWorkerOptions = {}) {
   if (typeof enabled !== 'boolean' || !sender || typeof sender.send !== 'function'
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function') || typeof now !== 'function') throw new TypeError('Communication worker configuration is invalid.');
   validatePositiveIntegers({ batchSize, leaseMs, sendTimeoutMs, retryBaseMs, maxAttempts, maxDeliveriesPerTargetWindow, rateLimitWindowMs });
@@ -95,7 +117,7 @@ export function createCommunicationDeliveryWorker({
     if (!enabled) return Object.freeze({ recovered: 0, delivery_ids: Object.freeze([]) });
     const recoveredAt = validClock(nowEpochMs, now);
     return withTransaction(pool, async (transaction) => {
-      const selected = await transaction.query(
+      const selected = await transaction.query<RecoveryRow>(
         `SELECT id::text, outbox_id::text, attempt_count
            FROM communication.delivery
           WHERE status = 'SENDING' AND lease_expires_epoch_ms <= $1::bigint
@@ -126,7 +148,7 @@ export function createCommunicationDeliveryWorker({
     });
   }
 
-  async function claimOne(deliveryId = null) {
+  async function claimOne(deliveryId: string | null = null) {
     const claimedAt = validClock(nowEpochMs, now);
     const leaseToken = randomUUID();
     const leaseExpiresEpochMs = addEpochMilliseconds(claimedAt.epoch_ms, leaseMs);
@@ -136,7 +158,7 @@ export function createCommunicationDeliveryWorker({
       const parameters = deliveryId === null
         ? [claimedAt.epoch_ms, rateLimitStartEpochMs, maxDeliveriesPerTargetWindow]
         : [claimedAt.epoch_ms, rateLimitStartEpochMs, maxDeliveriesPerTargetWindow, deliveryId];
-      const selected = await transaction.query(
+      const selected = await transaction.query<ClaimRow>(
         `SELECT delivery.id::text, delivery.outbox_id::text, delivery.provider,
                 delivery.channel_account_id, delivery.target_type, delivery.target_id,
                 delivery.target_hash, delivery.idempotency_key, delivery.attempt_count,
@@ -158,8 +180,8 @@ export function createCommunicationDeliveryWorker({
         deliveryId === null ? [...parameters, null] : parameters,
       );
       if (selected.rowCount !== 1) return null;
-      const claim = selected.rows[0];
-      const updated = await transaction.query(
+      const claim = selected.rows[0] as ClaimRow;
+      const updated = await transaction.query<IdRow>(
         `UPDATE communication.delivery
             SET status = 'LEASED', lease_token = $2::uuid, lease_expires_epoch_ms = $3::bigint,
                 send_started_at = NULL, send_started_epoch_ms = NULL,
@@ -173,10 +195,10 @@ export function createCommunicationDeliveryWorker({
     });
   }
 
-  async function startClaim(claim) {
+  async function startClaim(claim: ClaimedDelivery) {
     const startedAt = validClock(nowEpochMs, now);
     return withTransaction(pool, async (transaction) => {
-      const updated = await transaction.query(
+      const updated = await transaction.query<AttemptRow>(
         `UPDATE communication.delivery
             SET status = 'SENDING', attempt_count = attempt_count + 1,
                 send_started_epoch_ms = $3::bigint, updated_at = $4::timestamp without time zone
@@ -186,7 +208,7 @@ export function createCommunicationDeliveryWorker({
         [claim.id, claim.lease_token, startedAt.epoch_ms, startedAt.local_datetime],
       );
       if (updated.rowCount !== 1) return null;
-      const attemptNo = Number(updated.rows[0].attempt_count);
+      const attemptNo = Number((updated.rows[0] as AttemptRow).attempt_count);
       await transaction.query(
         `INSERT INTO communication.delivery_attempt (
            delivery_id, attempt_no, outcome, side_effect_state, lease_token, request_id,
@@ -200,10 +222,10 @@ export function createCommunicationDeliveryWorker({
     });
   }
 
-  async function finalize(started, result) {
+  async function finalize(started: StartedDelivery, result: CommunicationSenderResult) {
     const completedAt = validClock(nowEpochMs, now);
     return withTransaction(pool, async (transaction) => {
-      const locked = await transaction.query(
+      const locked = await transaction.query<DeliveryViewRow>(
         `SELECT id::text, outbox_id::text, status, attempt_count, side_effect_state,
                 last_error_code, sent_at, sent_epoch_ms::text
            FROM communication.delivery
@@ -211,7 +233,7 @@ export function createCommunicationDeliveryWorker({
           FOR UPDATE`,
         [started.id, started.lease_token],
       );
-      if (locked.rowCount !== 1 || Number(locked.rows[0].attempt_count) !== started.attempt_no) return null;
+      if (locked.rowCount !== 1 || Number((locked.rows[0] as DeliveryViewRow).attempt_count) !== started.attempt_no) return null;
       let status;
       let sideEffectState;
       let attemptOutcome;
@@ -241,7 +263,7 @@ export function createCommunicationDeliveryWorker({
           retryBaseMs * (2 ** Math.max(0, started.attempt_no - 1)),
         );
       }
-      const updated = await transaction.query(
+      const updated = await transaction.query<DeliveryViewRow>(
           `UPDATE communication.delivery
             SET status = $3, side_effect_state = $4, next_attempt_epoch_ms = $5::bigint,
                 lease_token = NULL, lease_expires_at = NULL, lease_expires_epoch_ms = NULL,
@@ -264,23 +286,23 @@ export function createCommunicationDeliveryWorker({
         [started.id, started.attempt_no, attemptOutcome, sideEffectState, errorCode,
           providerMessageId, completedAt.local_datetime, completedAt.epoch_ms],
       );
-      return deliveryView(updated.rows[0]);
+      return deliveryView(updated.rows[0] as DeliveryViewRow);
     });
   }
 
-  async function sendOutsideTransaction(started) {
+  async function sendOutsideTransaction(started: StartedDelivery) {
     const controller = new AbortController();
-    let timer;
-    const timeoutResult = new Promise((resolve) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeoutResult = new Promise<CommunicationSenderResult>((resolve) => {
       timer = setTimeout(() => {
         controller.abort();
         resolve({ outcome: 'UNKNOWN', provider_message_id: null, error_code: COMMUNICATION_ERROR_CODES.sendTimeout, retryable: false });
       }, sendTimeoutMs);
     });
-    let result;
+    let result: CommunicationSenderResult;
     try {
       result = await Promise.race([
-        Promise.resolve(sender.send({
+        Promise.resolve((sender as NonNullable<CommunicationWorkerOptions['sender']>).send({
           provider: started.provider,
           channel_account_id: started.channel_account_id,
           target_type: started.target_type,
@@ -293,7 +315,7 @@ export function createCommunicationDeliveryWorker({
         timeoutResult,
       ]);
     } catch (error) {
-      result = error?.code === 'GATEWAY_UNAVAILABLE_BEFORE_SEND'
+      result = (error as ErrorObservation)?.code === 'GATEWAY_UNAVAILABLE_BEFORE_SEND'
         ? { outcome: 'REJECTED_NOT_APPLIED', provider_message_id: null, error_code: 'GATEWAY_UNAVAILABLE', retryable: true }
         : { outcome: 'UNKNOWN', provider_message_id: null, error_code: COMMUNICATION_ERROR_CODES.reconciliationRequired, retryable: false };
     } finally {
@@ -305,12 +327,12 @@ export function createCommunicationDeliveryWorker({
     return finalize(started, result);
   }
 
-  async function deliverClaim(claim) {
+  async function deliverClaim(claim: ClaimedDelivery) {
     const started = await startClaim(claim);
     return started === null ? null : sendOutsideTransaction(started);
   }
 
-  async function deliver({ deliveryId }) {
+  async function deliver({ deliveryId }: { deliveryId: string }) {
     if (!enabled) return publicError(COMMUNICATION_ERROR_CODES.disabled);
     if (typeof deliveryId !== 'string' || !UUID_PATTERN.test(deliveryId)) return publicError(COMMUNICATION_ERROR_CODES.deliveryNotFound);
     await recoverExpiredSending();
@@ -318,18 +340,18 @@ export function createCommunicationDeliveryWorker({
     return claim === null ? null : deliverClaim(claim);
   }
 
-  async function getDelivery({ deliveryId }) {
+  async function getDelivery({ deliveryId }: { deliveryId: string }) {
     if (!enabled) return publicError(COMMUNICATION_ERROR_CODES.disabled);
     if (typeof deliveryId !== 'string' || !UUID_PATTERN.test(deliveryId)) return publicError(COMMUNICATION_ERROR_CODES.deliveryNotFound);
-    const result = await pool.query(
+    const result = await (pool as PostgresPool).query<DeliveryViewRow>(
       `SELECT id::text, outbox_id::text, status, provider, attempt_count,
               last_error_code, side_effect_state, sent_at, sent_epoch_ms::text
          FROM communication.delivery WHERE id = $1::uuid`, [deliveryId],
     );
-    return result.rowCount === 1 ? deliveryView(result.rows[0]) : null;
+    return result.rowCount === 1 ? deliveryView(result.rows[0] as DeliveryViewRow) : null;
   }
 
-  async function runOnce({ limit = batchSize } = {}) {
+  async function runOnce({ limit = batchSize }: { limit?: number } = {}) {
     if (!enabled) return Object.freeze({ processed: 0, results: Object.freeze([]), disabled: true });
     if (!Number.isInteger(limit) || limit < 1 || limit > batchSize) throw new TypeError('Worker limit exceeds bounded batch size.');
     await recoverExpiredSending(limit);
@@ -346,11 +368,11 @@ export function createCommunicationDeliveryWorker({
   return Object.freeze({ runOnce, deliver, getDelivery, recoverExpiredSending });
 }
 
-export function createCommunicationReconciliationPort({ pool, now = () => new Date(), nowEpochMs = null } = {}) {
+export function createCommunicationReconciliationPort({ pool, now = () => new Date(), nowEpochMs = null }: ClockOptions = {}) {
   if (!pool || typeof pool.connect !== 'function' || typeof now !== 'function'
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function')) throw new TypeError('Reconciliation port configuration is invalid.');
   return Object.freeze({
-    async reconcileUnknownDelivery({ deliveryId, expectedStatus, resolution, reasonCode, authorized = false, transaction = null }) {
+    async reconcileUnknownDelivery({ deliveryId, expectedStatus, resolution, reasonCode, authorized = false, transaction = null }: ReconciliationInput) {
       if (authorized !== true) return publicError(COMMUNICATION_ERROR_CODES.reconciliationUnauthorized);
       if (expectedStatus !== 'RECONCILIATION_REQUIRED' || !RESOLUTIONS.has(resolution)
         || typeof deliveryId !== 'string' || !UUID_PATTERN.test(deliveryId)
@@ -358,23 +380,23 @@ export function createCommunicationReconciliationPort({ pool, now = () => new Da
         return publicError(COMMUNICATION_ERROR_CODES.commandInvalid);
       }
       const reconciledAt = validClock(nowEpochMs, now);
-      const execute=transaction===null?operation=>withTransaction(pool,operation):operation=>operation(transaction);
+      const execute: TxExecutor=transaction===null?operation=>withTransaction(pool,operation):operation=>operation(transaction as PostgresTransaction);
       return execute(async (transaction) => {
-        const selected = await transaction.query(
+        const selected = await transaction.query<DeliveryViewRow>(
           `SELECT id::text, outbox_id::text, status, provider, attempt_count,
                   last_error_code, side_effect_state, sent_at, sent_epoch_ms::text
              FROM communication.delivery WHERE id = $1::uuid FOR UPDATE`,
           [deliveryId],
         );
         if (selected.rowCount !== 1) return publicError(COMMUNICATION_ERROR_CODES.deliveryNotFound);
-        if (selected.rows[0].status !== expectedStatus) return publicError(COMMUNICATION_ERROR_CODES.leaseConflict);
-        const attemptNo = Number(selected.rows[0].attempt_count) + 1;
+        if ((selected.rows[0] as DeliveryViewRow).status !== expectedStatus) return publicError(COMMUNICATION_ERROR_CODES.leaseConflict);
+        const attemptNo = Number((selected.rows[0] as DeliveryViewRow).attempt_count) + 1;
         const target = resolution === 'CONFIRMED_SENT'
           ? { status: 'SENT', side: 'ACKNOWLEDGED', outcome: 'SENT', sentEpochMs: reconciledAt.epoch_ms, sendStarted: 'KEEP' }
           : resolution === 'CONFIRMED_NOT_SENT_REQUEUE'
             ? { status: 'PENDING', side: 'NOT_ATTEMPTED', outcome: 'RETRY_SCHEDULED', sentEpochMs: null, sendStarted: null }
             : { status: 'CANCELLED', side: 'UNKNOWN', outcome: 'CANCELLED', sentEpochMs: null, sendStarted: 'KEEP' };
-        const updated = await transaction.query(
+        const updated = await transaction.query<DeliveryViewRow>(
           `UPDATE communication.delivery
               SET status = $2, side_effect_state = $3, attempt_count = $4,
                    next_attempt_epoch_ms = $5::bigint, lease_token = NULL,
@@ -398,37 +420,37 @@ export function createCommunicationReconciliationPort({ pool, now = () => new Da
           [deliveryId, attemptNo, target.outcome, target.side, reasonCode,
             reconciledAt.local_datetime, reconciledAt.epoch_ms],
         );
-        return deliveryView(updated.rows[0]);
+        return deliveryView(updated.rows[0] as DeliveryViewRow);
       });
     },
   });
 }
 
-export function createCommunicationDeliveryOperatorPort({ pool, now = () => new Date(), nowEpochMs = null } = {}) {
+export function createCommunicationDeliveryOperatorPort({ pool, now = () => new Date(), nowEpochMs = null }: ClockOptions = {}) {
   if (!pool || typeof pool.connect !== 'function' || typeof now !== 'function'
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function')) throw new TypeError('Delivery operator port configuration is invalid.');
   return Object.freeze({
-    async scheduleRetry({ deliveryId, authorized = false, reasonCode = 'OPERATOR_RETRY', transaction = null }) {
+    async scheduleRetry({ deliveryId, authorized = false, reasonCode = 'OPERATOR_RETRY', transaction = null }: DeliveryRetryInput) {
       if (authorized !== true) return publicError(COMMUNICATION_ERROR_CODES.senderUnauthorized);
       if (typeof deliveryId !== 'string' || !UUID_PATTERN.test(deliveryId)
         || typeof reasonCode !== 'string' || !/^[A-Z0-9_]{1,128}$/u.test(reasonCode)) {
         return publicError(COMMUNICATION_ERROR_CODES.commandInvalid);
       }
       const occurredAt = validClock(nowEpochMs, now);
-      const execute=transaction===null?operation=>withTransaction(pool,operation):operation=>operation(transaction);
+      const execute: TxExecutor=transaction===null?operation=>withTransaction(pool,operation):operation=>operation(transaction as PostgresTransaction);
       return execute(async (transaction) => {
-        const selected = await transaction.query(
+        const selected = await transaction.query<DeliveryViewRow>(
           `SELECT id::text,outbox_id::text,status,provider,attempt_count,last_error_code,side_effect_state,sent_at,sent_epoch_ms::text
              FROM communication.delivery WHERE id=$1::uuid FOR UPDATE`, [deliveryId]);
         if (selected.rowCount !== 1) return publicError(COMMUNICATION_ERROR_CODES.deliveryNotFound);
-        const row = selected.rows[0];
+        const row = selected.rows[0] as DeliveryViewRow;
         if (row.status === 'PENDING') return deliveryView(row);
         if (row.status === 'RECONCILIATION_REQUIRED') return publicError(COMMUNICATION_ERROR_CODES.reconciliationRequired);
         if (row.status !== 'DEAD_LETTER' || row.side_effect_state !== 'NOT_ATTEMPTED') {
           return publicError(COMMUNICATION_ERROR_CODES.leaseConflict);
         }
         const attemptNo = Number(row.attempt_count) + 1;
-        const updated = await transaction.query(
+        const updated = await transaction.query<DeliveryViewRow>(
           `UPDATE communication.delivery
               SET status='PENDING',side_effect_state='NOT_ATTEMPTED',attempt_count=$2,
                   next_attempt_epoch_ms=$3::bigint,lease_token=NULL,lease_expires_at=NULL,lease_expires_epoch_ms=NULL,
@@ -444,7 +466,7 @@ export function createCommunicationDeliveryOperatorPort({ pool, now = () => new 
            VALUES ($1::uuid,$2,'RETRY_SCHEDULED','NOT_ATTEMPTED',$3,$4::timestamp without time zone,$5::bigint,$4::timestamp without time zone,$5::bigint)`,
           [deliveryId, attemptNo, reasonCode, occurredAt.local_datetime, occurredAt.epoch_ms],
         );
-        return deliveryView(updated.rows[0]);
+        return deliveryView(updated.rows[0] as DeliveryViewRow);
       });
     },
   });

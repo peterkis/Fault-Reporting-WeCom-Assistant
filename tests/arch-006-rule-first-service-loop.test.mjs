@@ -16,6 +16,8 @@ test('ARCH-006 logical source migration allows the approved inventory and reject
   const gate = source.slice(source.indexOf('function erasedMigrationRuntime('), source.indexOf('const historicalEvidence='));
   const scope = json('plans/typescript-migration/scope.json');
   const logical = 'src/p2-001-conversation-contracts.mjs', typed = logical.replace(/\.mjs$/u, '.mts');
+  // Model the first conversion before its completed mapping exists.
+  delete scope.current_module_map[logical];
   assert.equal(scope.current_module_map[logical], undefined, 'approval comes from the full inventory, before completion mapping');
   function inspect(changes, files, before = 'export const allowed = false;', after = 'export const allowed: boolean = false;') {
     const errors = [], inventory = Object.values(scope.migration_batches).flat();
