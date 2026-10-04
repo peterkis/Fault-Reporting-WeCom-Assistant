@@ -1,12 +1,22 @@
+import type { IncomingMessage } from 'node:http';
+import type { WorkbenchHttpOptions } from './p2-006-workbench-http.mjs';
+import type { P2016TicketQuery } from './p2-016-ticket-query.mjs';
+import type { createP2016TicketCommandFacade } from './p2-016-ticket-command-facade.mjs';
+import type { createP2016DeliveryControl } from './p2-016-delivery-control.mjs';
+import type { LedgerResult, LedgerSuccess } from './p2-016-ticket-command-ledger.mjs';
+type HttpContext = Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
+interface ReviewPort { listManualReviews: (input: { authContext: unknown; status: string; priority: string | null; cursor: string | null; limit: string | null }) => Promise<unknown>; getManualReviewDetail: (input: { authContext: unknown; reviewId: string }) => Promise<unknown>; journey: (input: { authContext: unknown; journeyId: string; part: string | null }) => Promise<unknown>; resolveManualReview: (input: { authContext: unknown; reviewId: string; body: unknown }) => Promise<LedgerResult<LedgerSuccess>> }
+interface HttpOptions { query: P2016TicketQuery; tickets: ReturnType<typeof createP2016TicketCommandFacade>; reviews: ReviewPort; deliveryControl: ReturnType<typeof createP2016DeliveryControl>; enabled?: boolean }
+
 import { failP2016,guardP2016,exactP2016 } from './p2-016-domain-contracts.mjs';
-function checkVersion(request,value) {
+function checkVersion(request: IncomingMessage,value: unknown) {
   const raw=request.headers['if-match'],text=typeof raw==='string'?raw.replace(/^W\//u,'').replace(/^"|"$/gu,''):'';
   if(!/^[1-9][0-9]{0,18}$/u.test(text)||text!==String(value))failP2016('VERSION_CONFLICT',409);
 }
-function queryKeys(url,allowed) {if([...url.searchParams.keys()].some(k=>!allowed.includes(k)))failP2016();}
-function status(result) {return result.ok===false?/FORBIDDEN|PERMITTED/u.test(result.error.code)?403:/FAILED|UNAVAILABLE/u.test(result.error.code)?503:409:200;}
-export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled=false}) {
-  return async({request,response,url,authContext,readJson,validateWriteRequest,json})=>{
+function queryKeys(url: URL,allowed: readonly string[]) {if([...url.searchParams.keys()].some(k=>!allowed.includes(k)))failP2016();}
+function status(result: LedgerResult<LedgerSuccess>) {return result.ok===false?/FORBIDDEN|PERMITTED/u.test(result.error.code)?403:/FAILED|UNAVAILABLE/u.test(result.error.code)?503:409:200;}
+export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled=false}: HttpOptions) {
+  return async({request,response,url,authContext,readJson,validateWriteRequest,json}: HttpContext)=>{
     const matched=/^\/api\/(tickets(?:\/|$)|manual-reviews(?:\/|$)|contact-journeys(?:\/|$)|lifecycle\/bootstrap$)/u.test(url.pathname)
       ||/^\/api\/conversations\/[^/]+\/takeover-and-accept-ticket$/u.test(url.pathname);
     if(!matched)return false;guardP2016(enabled);
@@ -19,22 +29,22 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
       const ticket=/^\/api\/tickets\/([0-9a-f-]{36})(?:\/(events|responsibility|deliveries|eligible-principals|reporter-contact))?$/iu.exec(url.pathname);
       if(ticket){
         queryKeys(url,ticket[2]==='events'?['cursor','limit']:[]);
-        const input={authContext,ticketId:ticket[1]},part=ticket[2]==='eligible-principals'?'eligiblePrincipals':ticket[2]==='reporter-contact'?'reporterContact':ticket[2]??'detail';
-        const result=await query[part](part==='events'?{...input,cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')}:input);
-        json(response,200,result,part==='detail'?{etag:'"'+result.version+'"'}:{});return true;
+        const input={authContext,ticketId:ticket[1] as string},part=ticket[2]==='eligible-principals'?'eligiblePrincipals':ticket[2]==='reporter-contact'?'reporterContact':ticket[2]??'detail';
+        const result=await query[part as 'events' | 'responsibility' | 'deliveries' | 'eligiblePrincipals' | 'reporterContact' | 'detail'](part==='events'?{...input,cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')}:input);
+        json(response,200,result,part==='detail'?{etag:'"'+(result as { version: number }).version+'"'}:{});return true;
       }
       const review=/^\/api\/manual-reviews\/([0-9a-f-]{36})$/iu.exec(url.pathname);
-      if(review){queryKeys(url,[]);json(response,200,await reviews.getManualReviewDetail({authContext,reviewId:review[1]}));return true;}
+      if(review){queryKeys(url,[]);json(response,200,await reviews.getManualReviewDetail({authContext,reviewId:review[1] as string}));return true;}
       const journey=/^\/api\/contact-journeys\/([0-9a-f-]{36})(?:\/(legs|decisions))?$/iu.exec(url.pathname);
-      if(journey){queryKeys(url,[]);json(response,200,await reviews.journey({authContext,journeyId:journey[1],part:journey[2]??null}));return true;}
+      if(journey){queryKeys(url,[]);json(response,200,await reviews.journey({authContext,journeyId:journey[1] as string,part:journey[2]??null}));return true;}
     }
     if(request.method==='POST'){
       queryKeys(url,[]);
       const body=await readJson(request);validateWriteRequest(request,authContext,body,{sessionMutation:false});
       const delivery=/^\/api\/tickets\/([0-9a-f-]{36})\/deliveries\/([0-9a-f-]{36})\/(retry|reconcile)$/iu.exec(url.pathname);
-      if(delivery){const result=await deliveryControl.perform({authContext,ticketId:delivery[1],deliveryId:delivery[2],action:delivery[3],body});json(response,status(result),result);return true;}
+      if(delivery){const result=await deliveryControl.perform({authContext,ticketId:delivery[1] as string,deliveryId:delivery[2] as string,action:delivery[3] as string,body});json(response,status(result),result);return true;}
       const review=/^\/api\/manual-reviews\/([0-9a-f-]{36})\/resolve$/iu.exec(url.pathname);
-      if(review){checkVersion(request,body.expected_row_version);const result=await reviews.resolveManualReview({authContext,reviewId:review[1],body});json(response,status(result),result);return true;}
+      if(review){checkVersion(request,body.expected_row_version);const result=await reviews.resolveManualReview({authContext,reviewId:review[1] as string,body});json(response,status(result),result);return true;}
       const combined=/^\/api\/conversations\/([0-9a-f-]{36})\/takeover-and-accept-ticket$/iu.exec(url.pathname);
       if(combined){
         checkVersion(request,body.expected_session_row_version);

@@ -1,3 +1,13 @@
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { PostgresTransaction } from './platform/postgres-pool.mjs';
+type AuthRequest = Pick<IncomingMessage, 'headers' | 'method'>;
+interface AuthHttpInput { request: AuthRequest; response: ServerResponse; url: URL }
+type TokenProvider = ((input?: { signal?: AbortSignal }) => Promise<string>) & { invalidate?: (token: string) => void };
+interface AuthOptions { pool: PostgresTransaction; publicOrigin: string; corpId: string; agentId: string; appSecret?: string; identityHashKey: string; accessTokenProvider?: TokenProvider | null; fetchImpl?: typeof fetch; now?: () => number; absoluteTtlMs?: number; idleTtlMs?: number; maxAllowlist?: number; loginRequestsPerMinute?: number }
+interface AuthSessionRow { session_id: string; principal_id: string; csrf_token_hash: string; last_seen_epoch_ms: string; expires_epoch_ms: string; expires_at: string; is_active: boolean; can_work: boolean }
+interface MappingResponse { errcode?: unknown; open_userid_list?: { userid?: unknown; open_userid?: unknown }[]; invalid_userid_list?: unknown }
+interface AuditInput { sessionId?: string | null; principalId?: string | null; identityHash?: string | null; eventType: string; reasonCode: string; providerErrcode?: number | null }
+
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { createWeComAppTokenProvider } from './p2-g2-wecom-app-token.mjs';
 import { createWeComOAuthCodeResolver } from './p2-g2-wecom-oauth-provider.mjs';
@@ -20,33 +30,33 @@ const MAX_ALLOWLIST = 32;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const PAGE_PATHS = new Set([ROOT, `${ROOT}/`, `${ROOT}/lifecycle`, `${ROOT}/incidents`]);
 
-const hash = value => createHash('sha256').update(value, 'utf8').digest('hex');
+const hash: (value: string) => string = value => createHash('sha256').update(value, 'utf8').digest('hex');
 const random = () => randomBytes(32).toString('base64url');
-const nowMs = now => String(Math.trunc(now()));
+const nowMs: (now: () => number) => string = now => String(Math.trunc(now()));
 
-function secureEqual(left, right) {
+function secureEqual(left: unknown, right: unknown) {
   if (typeof left !== 'string' || typeof right !== 'string') return false;
   const a = Buffer.from(left, 'utf8'); const b = Buffer.from(right, 'utf8');
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-function fail(code, status = 400) { throw new WorkbenchError(code, status); }
+function fail(code: string, status = 400): never { throw new WorkbenchError(code, status); }
 
-function readCookie(request, name) {
+function readCookie(request: AuthRequest, name: string) {
   const values = (request?.headers?.cookie ?? '').split(';').map(part => part.trim())
     .filter(part => part.startsWith(`${name}=`)).map(part => part.slice(name.length + 1));
   return values.length === 1 ? values[0] : null;
 }
 
-function cookie(name, value, maxAge, { httpOnly = true } = {}) {
+function cookie(name: string, value: string, maxAge: number, { httpOnly = true } = {}) {
   return `${name}=${value}; Path=/; ${httpOnly ? 'HttpOnly; ' : ''}Secure; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
-function clearCookie(name, options) { return cookie(name, '', 0, options); }
+function clearCookie(name: string, options?: { httpOnly?: boolean }) { return cookie(name, '', 0, options); }
 
-function validPath(value) { return PAGE_PATHS.has(value); }
+function validPath(value: string) { return PAGE_PATHS.has(value); }
 
-function requireConfig({ pool, publicOrigin, corpId, agentId, absoluteTtlMs, idleTtlMs }) {
+function requireConfig({ pool, publicOrigin, corpId, agentId, absoluteTtlMs, idleTtlMs }: Pick<AuthOptions, 'pool' | 'publicOrigin' | 'corpId' | 'agentId'> & { absoluteTtlMs: number; idleTtlMs: number }) {
   if (!pool || typeof pool.query !== 'function' || typeof publicOrigin !== 'string'
     || !/^https:\/\/[^/?#]+$/u.test(publicOrigin) || typeof corpId !== 'string' || !corpId
     || typeof agentId !== 'string' || !/^\d{1,20}$/u.test(agentId)
@@ -56,18 +66,18 @@ function requireConfig({ pool, publicOrigin, corpId, agentId, absoluteTtlMs, idl
   }
 }
 
-function endpoint(path, token) {
+function endpoint(path: string, token: string) {
   const url = new URL(`https://qyapi.weixin.qq.com/cgi-bin/${path}`);
   url.searchParams.set('access_token', token);
   return url;
 }
 
-async function fetchJson(fetchImpl, url, init = {}, timeoutMs = 5_000) {
+async function fetchJson(fetchImpl: typeof fetch, url: URL, init: RequestInit = {}, timeoutMs = 5_000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetchImpl(url, { ...init, signal: controller.signal });
-    return await readWeComResponse(response, controller.signal);
+    return await readWeComResponse(response, controller.signal) as MappingResponse;
   } finally {
     clearTimeout(timer);
     controller.abort();
@@ -88,22 +98,22 @@ export function createWeComWorkbenchAuthentication({
   idleTtlMs = DEFAULT_IDLE_TTL_MS,
   maxAllowlist = MAX_ALLOWLIST,
   loginRequestsPerMinute = 30,
-} = {}) {
+}: AuthOptions = {} as AuthOptions) {
   requireConfig({ pool, publicOrigin, corpId, agentId, absoluteTtlMs, idleTtlMs });
   if (!Number.isSafeInteger(loginRequestsPerMinute) || loginRequestsPerMinute<1 || loginRequestsPerMinute>60
     || typeof identityHashKey !== 'string' || Buffer.byteLength(identityHashKey)<16
     || typeof fetchImpl !== 'function' || !Number.isSafeInteger(maxAllowlist) || maxAllowlist < 1 || maxAllowlist > 256) {
     throw new TypeError('WORKBENCH_AUTH_CONFIGURATION_INVALID');
   }
-  const tokenProvider = accessTokenProvider ?? createWeComAppTokenProvider({ corpId, appSecret, fetchImpl });
+  const tokenProvider: TokenProvider = accessTokenProvider ?? (createWeComAppTokenProvider as (options: { corpId: string; appSecret: string | undefined; fetchImpl: typeof fetch }) => TokenProvider)({ corpId, appSecret, fetchImpl });
   if (typeof tokenProvider !== 'function') throw new TypeError('WORKBENCH_AUTH_TOKEN_PROVIDER_REQUIRED');
-  const resolveCode = createWeComOAuthCodeResolver({ accessTokenProvider: tokenProvider, fetchImpl });
+  const resolveCode = (createWeComOAuthCodeResolver as (options: { accessTokenProvider: TokenProvider; fetchImpl: typeof fetch }) => ((code: string) => Promise<{ userid: string }>) & { isBusy: () => boolean })({ accessTokenProvider: tokenProvider, fetchImpl });
   let closed = false;
   let initialized = false;
-  let mappingDigest = null;
+  let mappingDigest: string | null = null;
   let callbackBusy = false;
-  let maintenanceTimer=null;
-  let maintenanceTask=null;
+  let maintenanceTimer: ReturnType<typeof setInterval> | null=null;
+  let maintenanceTask: Promise<{ intents: number | null; events: number | null; sessions: number | null }> | null=null;
   function runMaintenance() {
     ensureReady();
     if(maintenanceTask)return maintenanceTask;
@@ -121,16 +131,16 @@ export function createWeComWorkbenchAuthentication({
     })().finally(()=>{maintenanceTask=null;});
     return maintenanceTask;
   }
-  const budgets=new Map();
-  function admit(kind) {
+  const budgets=new Map<string, { start: number; count: number }>();
+  function admit(kind: string) {
     const epoch=Number(now());let budget=budgets.get(kind);
     if(!budget || epoch-budget.start>=60000){budget={start:epoch,count:0};budgets.set(kind,budget);}
     if(budget.count>=loginRequestsPerMinute)fail(WORKBENCH_ERROR_CODES.authRateLimited,429);
     budget.count++;
   }
-  const principalByUserId = new Map();
+  const principalByUserId = new Map<string, string>();
 
-  async function audit({ sessionId = null, principalId = null, identityHash = null, eventType, reasonCode, providerErrcode = null }) {
+  async function audit({ sessionId = null, principalId = null, identityHash = null, eventType, reasonCode, providerErrcode = null }: AuditInput) {
     await pool.query(`INSERT INTO pilot_ticket.workbench_auth_event
       (session_id,principal_id,identity_hash,event_type,reason_code,provider_errcode)
       VALUES ($1::uuid,$2::uuid,$3,$4,$5,$6)`,
@@ -144,14 +154,14 @@ export function createWeComWorkbenchAuthentication({
     principalByUserId.clear();
     const schema = await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='035_p2_016_workbench_wecom_auth'");
     if (schema.rowCount !== 1) throw new Error('WORKBENCH_AUTH_SCHEMA_NOT_READY');
-    const result = await pool.query(`SELECT DISTINCT p.id::text AS principal_id,p.wecom_user_id
+    const result = await pool.query<{ principal_id: string; wecom_user_id: string }>(`SELECT DISTINCT p.id::text AS principal_id,p.wecom_user_id
       FROM pilot_ticket.pilot_principal p
       JOIN pilot_ticket.pilot_principal_role r ON r.principal_id=p.id
       WHERE p.is_active AND r.role=ANY($1::text[])
       ORDER BY p.id::text`, [STAFF_ROLES]);
     if (!result.rowCount || result.rowCount > maxAllowlist) throw new Error('WORKBENCH_AUTH_ALLOWLIST_INVALID');
     const rows = result.rows;
-    const next = new Map();
+    const next = new Map<string, string>();
     const token = await tokenProvider();
     for (let offset = 0; offset < rows.length; offset += 32) {
       const chunk = rows.slice(offset, offset + 32);
@@ -168,8 +178,8 @@ export function createWeComWorkbenchAuthentication({
       for (const mapped of body.open_userid_list) {
         const raw = byRaw.get(String(mapped?.userid ?? '').toLowerCase());
         const open = mapped?.open_userid;
-        if (!raw || !validYxxUserId(open) || next.has(open)) throw new Error('WORKBENCH_AUTH_IDENTITY_MAPPING_AMBIGUOUS');
-        next.set(open, raw.principal_id);
+        if (!raw || !validYxxUserId(open) || next.has(open as string)) throw new Error('WORKBENCH_AUTH_IDENTITY_MAPPING_AMBIGUOUS');
+        next.set(open as string, raw.principal_id);
       }
     }
     principalByUserId.clear();
@@ -189,7 +199,7 @@ export function createWeComWorkbenchAuthentication({
     if (closed || !initialized || !mappingDigest) fail(WORKBENCH_ERROR_CODES.authNotReady, 503);
   }
 
-  async function begin({ request, response, returnPath = ROOT } = {}) {
+  async function begin({ request, response, returnPath = ROOT }: Omit<AuthHttpInput, 'url'> & { returnPath?: string } = {} as AuthHttpInput) {
     ensureReady();
     if (!validPath(returnPath)) fail(WORKBENCH_ERROR_CODES.authStateInvalid, 400);
     admit('start');
@@ -211,7 +221,7 @@ export function createWeComWorkbenchAuthentication({
     response.end();
   }
 
-  async function complete({ request, response, url } = {}) {
+  async function complete({ request, response, url }: AuthHttpInput = {} as AuthHttpInput) {
     ensureReady();
     const keys = [...url.searchParams.keys()];
     if (keys.some(key => !['code', 'state'].includes(key)) || url.searchParams.getAll('code').length !== 1
@@ -222,7 +232,7 @@ export function createWeComWorkbenchAuthentication({
     if (typeof code !== 'string' || !code || typeof state !== 'string' || !state || !browserBinding) {
       fail(WORKBENCH_ERROR_CODES.authStateInvalid, 400);
     }
-    const consumed = await pool.query(`UPDATE pilot_ticket.workbench_login_intent
+    const consumed = await pool.query<{ return_path: string }>(`UPDATE pilot_ticket.workbench_login_intent
       SET consumed_epoch_ms=$3,consumed_at=platform.local_from_epoch_ms($3)
       WHERE state_hash=$1 AND browser_binding_hash=$2 AND consumed_epoch_ms IS NULL AND expires_epoch_ms>$3
       RETURNING return_path`, [hash(state), hash(browserBinding), Number(now())]);
@@ -249,25 +259,25 @@ export function createWeComWorkbenchAuthentication({
     const csrfToken = random();
     const issued = Number(now());
     const expires = issued + absoluteTtlMs;
-    const session = await pool.query(`INSERT INTO pilot_ticket.workbench_auth_session
+    const session = await pool.query<{ session_id: string }>(`INSERT INTO pilot_ticket.workbench_auth_session
       (session_token_hash,csrf_token_hash,principal_id,identity_hash,created_at,created_epoch_ms,last_seen_at,last_seen_epoch_ms,expires_epoch_ms,expires_at)
       VALUES ($1,$2,$3::uuid,$4,platform.local_from_epoch_ms($5),$5,platform.local_from_epoch_ms($5),$5,$6,platform.local_from_epoch_ms($6)) RETURNING session_id::text`,
     [hash(sessionToken), hash(csrfToken), principalId, identityHash, issued, expires]);
-    await audit({ sessionId: session.rows[0].session_id, principalId, identityHash,
+    await audit({ sessionId: (session.rows[0] as (typeof session.rows)[number]).session_id, principalId, identityHash,
       eventType: 'LOGIN_SUCCEEDED', reasonCode: 'OAUTH_LOGIN' });
-    response.writeHead(303, { location: consumed.rows[0].return_path, 'cache-control': 'no-store', 'set-cookie': [
+    response.writeHead(303, { location: (consumed.rows[0] as (typeof consumed.rows)[number]).return_path, 'cache-control': 'no-store', 'set-cookie': [
       clearCookie(INTENT_COOKIE), cookie(SESSION_COOKIE, sessionToken, Math.floor(absoluteTtlMs / 1000)),
       cookie(CSRF_COOKIE, csrfToken, Math.floor(absoluteTtlMs / 1000), { httpOnly: false }),
     ] });
     response.end();
   }
 
-  async function authenticate(request) {
+  async function authenticate(request: AuthRequest) {
     ensureReady();
     const sessionToken = readCookie(request, SESSION_COOKIE);
     if (!sessionToken) return null;
     const currentEpoch = Number(nowMs(now));
-    const result = await pool.query(`SELECT s.session_id::text,s.principal_id::text,s.csrf_token_hash,
+    const result = await pool.query<AuthSessionRow>(`SELECT s.session_id::text,s.principal_id::text,s.csrf_token_hash,
         s.last_seen_epoch_ms::text,s.expires_epoch_ms::text,s.expires_at,p.is_active,
         COALESCE(bool_or(r.role=ANY($2::text[])),false) AS can_work
       FROM pilot_ticket.workbench_auth_session s
@@ -277,7 +287,7 @@ export function createWeComWorkbenchAuthentication({
       GROUP BY s.session_id,s.principal_id,s.csrf_token_hash,s.last_seen_epoch_ms,s.expires_epoch_ms,s.expires_at,p.is_active`,
     [hash(sessionToken), STAFF_ROLES]);
     if (result.rowCount !== 1) return null;
-    const row = result.rows[0];
+    const row = (result.rows[0] as (typeof result.rows)[number]);
     const expires = Number(row.expires_epoch_ms);
     const lastSeen = Number(row.last_seen_epoch_ms);
     if (!row.is_active || row.can_work !== true) {
@@ -312,25 +322,25 @@ export function createWeComWorkbenchAuthentication({
       public_origin: publicOrigin, session_id: row.session_id });
   }
 
-  async function logout({ request, response } = {}) {
+  async function logout({ request, response }: Omit<AuthHttpInput, 'url'> = {} as AuthHttpInput) {
     if (request.headers.origin !== publicOrigin || request.headers['sec-fetch-site'] === 'cross-site') {
       fail(WORKBENCH_ERROR_CODES.originInvalid, 403);
     }
     const sessionToken = readCookie(request, SESSION_COOKIE);
     if (sessionToken) {
-      const current = await pool.query(`SELECT session_id::text,principal_id::text,csrf_token_hash FROM pilot_ticket.workbench_auth_session
+      const current = await pool.query<Pick<AuthSessionRow, 'session_id' | 'principal_id' | 'csrf_token_hash'>>(`SELECT session_id::text,principal_id::text,csrf_token_hash FROM pilot_ticket.workbench_auth_session
         WHERE session_token_hash=$1 AND state='ACTIVE'`, [hash(sessionToken)]);
       if (current.rowCount === 1) {
         const csrfCookie = readCookie(request, CSRF_COOKIE);
         if (!secureEqual(request.headers['x-csrf-token'], csrfCookie)
-          || !secureEqual(hash(csrfCookie ?? ''), current.rows[0].csrf_token_hash)) {
+          || !secureEqual(hash(csrfCookie ?? ''), (current.rows[0] as (typeof current.rows)[number]).csrf_token_hash)) {
           fail(WORKBENCH_ERROR_CODES.csrfInvalid, 403);
         }
         const currentEpoch = Number(nowMs(now));
         await pool.query(`UPDATE pilot_ticket.workbench_auth_session
           SET state='REVOKED',revoked_epoch_ms=$2,revoked_at=platform.local_from_epoch_ms($2)
-          WHERE session_id=$1::uuid AND state='ACTIVE'`, [current.rows[0].session_id, currentEpoch]);
-        await audit({ sessionId: current.rows[0].session_id, principalId: current.rows[0].principal_id,
+          WHERE session_id=$1::uuid AND state='ACTIVE'`, [(current.rows[0] as (typeof current.rows)[number]).session_id, currentEpoch]);
+        await audit({ sessionId: (current.rows[0] as (typeof current.rows)[number]).session_id, principalId: (current.rows[0] as (typeof current.rows)[number]).principal_id,
           eventType: 'LOGOUT', reasonCode: 'USER_LOGOUT' });
       }
     }
@@ -340,7 +350,7 @@ export function createWeComWorkbenchAuthentication({
     response.end(JSON.stringify({ logged_out: true }));
   }
 
-  async function handler({ request, response, url }) {
+  async function handler({ request, response, url }: AuthHttpInput) {
     if (url.pathname === LOGIN_PATH && request.method === 'GET' && !url.search) { await begin({ request, response }); return true; }
     if (url.pathname === CALLBACK_PATH && request.method === 'GET') {
       admit('callback');
@@ -365,6 +375,6 @@ export function createWeComWorkbenchAuthentication({
     authenticate,
     runMaintenance,
     unauthenticatedHandler: handler,
-    close: async () => { closed = true; clearInterval(maintenanceTimer); principalByUserId.clear(); await maintenanceTask?.catch(()=>{}); },
+    close: async () => { closed = true; clearInterval(maintenanceTimer as ReturnType<typeof setInterval>); principalByUserId.clear(); await maintenanceTask?.catch(()=>{}); },
   });
 }

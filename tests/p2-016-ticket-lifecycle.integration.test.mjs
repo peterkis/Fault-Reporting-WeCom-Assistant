@@ -50,6 +50,7 @@ test('P2-016 Ticket lifecycle, command persistence, authorization and independen
     const parallel=await Promise.all(Array.from({length:12},()=>f.facade.perform({authContext,command:once})));
     assert.equal(parallel.filter(r=>!r.replayed).length,1);
     assert.ok(parallel.every(r=>r.ok&&r.ticket_version===2));
+    await assert.rejects(f.facade.perform({authContext:{principal_id:f.outsider.id},command:once}),{code:'P2_016_NOT_FOUND'});
     await assert.rejects(f.facade.perform({authContext,command:{...once,reason_code:'DIFFERENT'}}),{code:'P2_016_COMMAND_CONFLICT'});
     assert.equal((await pool.query('SELECT count(*)::integer AS n FROM pilot_ticket.ticket_event WHERE ticket_id=$1::uuid',[ticket.id])).rows[0].n,1);
     for(const action of ['start','request-information','resume','wait-vendor','resume','resolve','confirm','reopen','start','resolve','confirm']){
@@ -60,8 +61,14 @@ test('P2-016 Ticket lifecycle, command persistence, authorization and independen
     const events=await f.query.events({authContext,ticketId:ticket.id});
     assert.deepEqual(events.items.map(e=>e.event_ordinal),Array.from({length:12},(_,i)=>i+1));
     ticket=await f.query.detail({authContext,ticketId:ticket.id});assert.equal(ticket.status,'CLOSED');
-    const invalid=await f.facade.perform({authContext,command:command(ticket,'accept')});
+    const invalidCommand=command(ticket,'accept');
+    const invalid=await f.facade.perform({authContext,command:invalidCommand});
     assert.equal(invalid.error.code,'INVALID_STATE_TRANSITION');
+    assert.equal(invalid.replayed,false);
+    const failedReplay=await f.facade.perform({authContext,command:invalidCommand});
+    assert.deepEqual(failedReplay,{...invalid,replayed:true});
+    assert.equal((await f.query.detail({authContext,ticketId:ticket.id})).version,ticket.version);
+    assert.equal((await f.query.events({authContext,ticketId:ticket.id})).items.length,events.items.length);
     await assert.rejects(f.query.detail({authContext:{principal_id:f.outsider.id},ticketId:ticket.id}),{code:'P2_016_NOT_FOUND'});
     const listed=await f.query.list({authContext,state:'closed',limit:1});assert.equal(listed.items[0].id,ticket.id);
     assert.equal((await f.query.list({authContext,state:'mine',limit:1})).items.length,1);

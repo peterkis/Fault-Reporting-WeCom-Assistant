@@ -1,10 +1,10 @@
 
-import type { WSClientOptions, SendMarkdownMsgBody } from '@wecom/aibot-node-sdk';
+import type { WSClientOptions, SendMsgBody } from '@wecom/aibot-node-sdk';
 export interface SafeSdkLogger { debug(message: unknown): void; info(): void; warn(): void; error(): void }
 export interface WeComGatewayClient {
   on(event: 'authenticated' | 'disconnected', listener: () => void): unknown;
   on(event: 'message.text' | 'error', listener: (value: unknown) => void): unknown;
-  connect(): unknown; disconnect(): unknown; sendMessage(target: string, body: SendMarkdownMsgBody): Promise<unknown>;
+  connect(): unknown; disconnect(): unknown; sendMessage(target: string, body: SendMsgBody): Promise<unknown>;
 }
 type ClientOptions = Pick<WSClientOptions, 'botId' | 'secret' | 'wsUrl' | 'maxReconnectAttempts' | 'maxAuthFailureAttempts'> & { logger: SafeSdkLogger };
 interface GatewayMetrics { auth_success_total: number; auth_failure_total: number; reconnect_total: number; inbound_frame_total: number; inbound_failure_total: number; last_error_code: string | null; last_state_change_at: string | null }
