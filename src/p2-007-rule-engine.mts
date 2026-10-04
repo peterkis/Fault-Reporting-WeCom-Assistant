@@ -1,3 +1,43 @@
+import type { FactProvenance } from './p2-007-fact-provenance.mjs';
+import type { Clarification } from './p2-007-clarification-planner.mjs';
+import type { ServiceCatalog, CatalogService } from './p2-007-service-catalog.mjs';
+import type { AliasDictionary, AliasResult } from './p2-007-alias-resolver.mjs';
+export type RuleResultState = 'COMPLETE' | 'PARTIAL' | 'NEEDS_DESCRIPTION';
+export type RuleAction =
+ | { action: 'SET_SELECTED_SERVICE'; value: string | null }
+ | { action: 'SELECT_SERVICE'; service_code: string }
+ | { action: 'SET_DOMAIN_INTENT' | 'SET_DOMAIN_INTENT_IF_NO_NEW_FAULT' | 'ADD_INTENT_SIGNAL' | 'SET_RECOVERY_SIGNAL' | 'SET_SCOPE' | 'SET_SCOPE_AT_LEAST' | 'NEGATE_SCOPE' | 'SET_CLINICAL_IMPACT_AT_LEAST' | 'ADD_PRIVACY_FLAG' | 'MARK_WORKAROUND_RESULT' | 'ADD_REQUIRED_CONFIRMATION'; value: string }
+ | { action: 'SET_RESULT_STATE'; value: RuleResultState }
+ | { action: 'ADD_SYMPTOM'; symptom_code: string }
+ | { action: 'ADD_CAUSE_CANDIDATE'; cause_code: string; status: string }
+ | { action: 'NEGATE_CAUSE_CANDIDATE'; cause_code: string }
+ | { action: 'ROUTE_SUGGESTION'; owner: string }
+ | { action: 'MARK_INCIDENT_CANDIDATE'; reason: string }
+ | { action: 'ASK' | 'ASK_SECURELY' | 'ASK_ONCE_PER_INCIDENT' | 'SUPPRESS_QUESTION'; question_code: string }
+ | { action: 'REQUIRE_FIELD'; field: string }
+ | { action: 'FORBID_EFFECT'; effect: string }
+ | { action: 'SET_REQUIRES_POLICY_REVIEW'; value: boolean }
+ | { action: 'INHERIT_FACTS' | 'START_NEW_ANALYSIS_WINDOW' | 'MERGE_TURN' | 'CREATE_CONFLICT' | 'REQUIRE_HUMAN_REVIEW' | 'MARK_TEXT_SEGMENT' | 'EMIT_CORROBORATION' | 'NORMALIZE_TEXT' | 'PARSE_ASSET_HINT' | 'ADD_SERVICE_CANDIDATE' | 'DISAMBIGUATE_BY_CONTEXT' | 'EMIT_NEGATED_FACT' | 'SUPERSEDE_PRIOR_FACT'; [key: string]: unknown };
+export interface RuleCondition { all?: RuleCondition[]; any?: RuleCondition[]; field?: string; eq?: unknown; lte?: number; gte?: number; missing?: boolean; exists?: boolean; contains?: unknown; contains_any?: unknown[]; in?: unknown[]; full_match_any?: string[]; regex?: string; full_match_regex?: string; token_only_or_generic?: string }
+interface DeterministicRule { rule_id: string; version: string; priority: number; when: RuleCondition; actions: RuleAction[]; explanation_template_zh?: string }
+export interface RuleSet { schema_version: string; execution_mode: string; rule_set_id: string; rule_set_version: string; rules: DeterministicRule[] }
+export interface CorroborationAnchor { [key: string]: unknown; source_decision_id: string; source_result_hash: string; source_reporter_hash: string; source_fact_ids: string[]; service_code: string; symptom_codes: string[]; catalog_version: string; rule_set_version: string; root_received_epoch_ms: string; reply_received_epoch_ms: string; reply_message_ref: string; reply_reporter_hash: string; source_privacy_class: string; safety_policy_version: string }
+export interface RuleEvaluationInput { [key: string]: unknown; text: string; source_ref: string; observed_at: string; normalized_context?: string; context?: Record<string, unknown> & { corroboration_anchor?: CorroborationAnchor; anchor_age_ms?: number; anchor_compatible?: boolean }; turn?: Record<string, unknown>; source_kind?: string; reporter_directory?: Record<string, unknown>; extracted?: Record<string, unknown> & { occurrence_location?: string }; impact?: Record<string, unknown>; privacy_detector?: Record<string, unknown>; execution_context?: string; asset_hint?: string | null; occurrence_location?: string | null; scope?: string; clinical_impact?: string; transaction_stage?: string; recovery_signal?: string | null; emotion_signal?: boolean; clinical_or_scope_evidence?: boolean }
+interface RuleState extends Omit<RuleEvaluationInput, 'context'> { context: NonNullable<RuleEvaluationInput['context']>; original_text: string; normalized_text: string; normalized_context: string; selected_service_code: string | null; symptom_codes: string[]; symptom_facts: { count: number }; domain_intent: string; scope: string; clinical_impact: string; transaction_stage: string; owner_suggestion: string | null; cause_candidates: { cause_code: string; status: string }[]; incident_reasons: string[]; question_codes: string[]; suppressed_question_codes: string[]; privacy_flags: string[]; intent_signals: string[]; required_fields: string[]; required_confirmations: string[]; forbidden_effects: string[]; action_log: string[]; result_state: RuleResultState | null; analysis_window: string; attempt_result: string | null; conflict: boolean; requires_human_review: boolean; requires_policy_review: boolean; corroboration_anchor?: CorroborationAnchor; catalog_version: string; rule_set_version: string; observed_at: string; source_ref: string }
+export interface RuleResult { schema_version: string; catalog_version: string; rule_set_version: string; evaluated_at: string; original_text: string; normalized_text: string; matched_rules: { rule_id: string; version: string; priority: number; explanation: string | undefined }[]; facts: FactProvenance[]; selected_service_code: string | null; service_candidates: string[]; symptom_codes: string[]; fault_types: string[]; domain_intent: string; p1_request_type: 'INCIDENT' | 'UNKNOWN'; transaction_stage: string; scope: string; clinical_impact: string; owner_suggestion: string | null; cause_candidates: { cause_code: string; status: string }[]; privacy_flags: string[]; missing_fields: string[]; confidence: number; clarification_needed: boolean; clarification: Clarification | null; incident_candidate: boolean; incident_reason_codes: string[]; requires_human_review: boolean; result_state: RuleResultState; analysis_window: string; attempt_result: string | null; forbidden_effects: string[]; side_effects: never[]; corroboration_anchor?: CorroborationAnchor; result_hash: string }
+// Existing runtime guards validate the required strings, not optional input fields
+// or every field in an unknown custom action. Preserve those values as unknown.
+type RawDerivedRuleFields = 'scope' | 'clinical_impact' | 'transaction_stage' | 'selected_service_code' | 'domain_intent' | 'owner_suggestion' | 'symptom_codes' | 'cause_candidates' | 'privacy_flags' | 'incident_reason_codes' | 'result_state' | 'attempt_result' | 'forbidden_effects' | 'missing_fields' | 'clarification' | 'facts';
+export type BoundaryRuleResult = Omit<RuleResult, RawDerivedRuleFields | 'matched_rules' | 'corroboration_anchor'> & { [K in RawDerivedRuleFields]: unknown } & {
+  matched_rules: (Omit<RuleResult['matched_rules'][number], 'explanation'> & { explanation: unknown })[];
+  corroboration_anchor?: unknown;
+};
+interface RuleEngineMetadata { rule_set_id: string; rule_set_version: string; rule_set_hash: string }
+export interface RuleEngine extends RuleEngineMetadata { evaluate(input: RuleEvaluationInput): RuleResult; evaluate(input: unknown): BoundaryRuleResult }
+export interface BoundaryRuleEngine extends RuleEngineMetadata { evaluate(input: unknown): BoundaryRuleResult }
+export interface RuleEngineOptions { ruleSet?: RuleSet; catalog?: ServiceCatalog; aliasDictionary?: AliasDictionary }
+export interface BoundaryRuleEngineOptions { ruleSet?: unknown; catalog?: ServiceCatalog; aliasDictionary?: unknown }
+
 import { fileURLToPath } from 'node:url';
 
 import { createAliasResolver } from './p2-007-alias-resolver.mjs';
@@ -28,14 +68,14 @@ const SCOPE_ORDER = Object.freeze([
 ]);
 const IMPACT_ORDER = Object.freeze(['UNKNOWN', 'LOW', 'MODERATE', 'HIGH', 'CRITICAL_REVIEW_REQUIRED']);
 
-function validateRuleSet(input) {
+function validateRuleSet(input: unknown): RuleSet {
   const ruleSet = assertPlainJson(input, {
     errorCode: P2_007_ERROR_CODES.configInvalid,
     maxDepth: 20,
     maxNodes: 100_000,
     maxArrayLength: 20_000,
     maxStringLength: 100_000,
-  });
+  }) as RuleSet;
   if (
     ruleSet.schema_version !== '1.0.0'
     || ruleSet.execution_mode !== 'PURE_FUNCTION_NO_SIDE_EFFECT'
@@ -59,50 +99,50 @@ function validateRuleSet(input) {
     for (const action of rule.actions) if (typeof action?.action !== 'string') failP2007(P2_007_ERROR_CODES.configInvalid);
     for (const condition of flattenConditions(rule.when)) {
       if (condition.regex !== undefined || condition.full_match_regex !== undefined) {
-        try { new RegExp(condition.regex ?? condition.full_match_regex, 'u'); } catch { failP2007(P2_007_ERROR_CODES.configInvalid); }
+        try { new RegExp(condition.regex ?? condition.full_match_regex as string, 'u'); } catch { failP2007(P2_007_ERROR_CODES.configInvalid); }
       }
     }
   }
   return deepFreeze(ruleSet);
 }
 
-function flattenConditions(condition) {
+function flattenConditions(condition: RuleCondition): RuleCondition[] {
   if (Array.isArray(condition?.all)) return condition.all.flatMap(flattenConditions);
   if (Array.isArray(condition?.any)) return condition.any.flatMap(flattenConditions);
   return [condition];
 }
 
-function pathValue(root, path) {
+function pathValue(root: unknown, path: unknown): unknown {
   if (typeof path !== 'string') return undefined;
   let current = root;
   for (const part of path.split('.')) {
     if (!current || typeof current !== 'object' || !Object.hasOwn(current, part)) return undefined;
-    current = current[part];
+    current = (current as Record<string, unknown>)[part];
   }
   return current;
 }
 
-function contains(container, needle) {
+function contains(container: unknown, needle: unknown) {
   if (Array.isArray(container)) return container.includes(needle);
   return typeof container === 'string' && container.includes(String(needle));
 }
 
-function conditionMatches(condition, state) {
+function conditionMatches(condition: RuleCondition, state: RuleState): boolean {
   if (Array.isArray(condition.all)) return condition.all.every((item) => conditionMatches(item, state));
   if (Array.isArray(condition.any)) return condition.any.some((item) => conditionMatches(item, state));
   const value = pathValue(state, condition.field);
   if (Object.hasOwn(condition, 'eq') && value !== condition.eq) return false;
-  if (Object.hasOwn(condition, 'lte') && !(typeof value === 'number' && value <= condition.lte)) return false;
+  if (Object.hasOwn(condition, 'lte') && !(typeof value === 'number' && value <= (condition.lte as number))) return false;
   if (Object.hasOwn(condition, 'gte')) {
     const comparable = Array.isArray(value) ? value.length : value;
-    if (!(typeof comparable === 'number' && comparable >= condition.gte)) return false;
+    if (!(typeof comparable === 'number' && comparable >= (condition.gte as number))) return false;
   }
   if (Object.hasOwn(condition, 'missing') && condition.missing !== (value === undefined || value === null || value === 'UNKNOWN')) return false;
   if (Object.hasOwn(condition, 'exists') && condition.exists !== (value !== undefined && value !== null)) return false;
   if (Object.hasOwn(condition, 'contains') && !contains(value, condition.contains)) return false;
   if (Array.isArray(condition.contains_any) && !condition.contains_any.some((item) => contains(value, item))) return false;
-  if (Array.isArray(condition.in) && !condition.in.includes(value)) return false;
-  if (Array.isArray(condition.full_match_any) && !condition.full_match_any.map(normalizeHospitalText).includes(value)) return false;
+  if (Array.isArray(condition.in) && !condition.in.includes(value as string)) return false;
+  if (Array.isArray(condition.full_match_any) && !condition.full_match_any.map(normalizeHospitalText).includes(value as string)) return false;
   if (condition.regex !== undefined && !(typeof value === 'string' && new RegExp(condition.regex, 'u').test(value))) return false;
   if (condition.full_match_regex !== undefined && !(typeof value === 'string' && new RegExp(condition.full_match_regex, 'u').test(value))) return false;
   if (condition.token_only_or_generic !== undefined) {
@@ -112,14 +152,14 @@ function conditionMatches(condition, state) {
   return true;
 }
 
-function raiseAtLeast(current, requested, order) {
+function raiseAtLeast(current: string, requested: string, order: readonly string[]): string {
   const currentIndex = Math.max(0, order.indexOf(current));
   const requestedIndex = Math.max(0, order.indexOf(requested));
-  return order[Math.max(currentIndex, requestedIndex)];
+  return order[Math.max(currentIndex, requestedIndex)] as string;
 }
 
-function inferTransactionStage(text, service) {
-  const mappings = [
+function inferTransactionStage(text: string, service: CatalogService | null): string {
+  const mappings: [string[], string][] = [
     [['登录', '登不', 'login'], 'LOGIN'],
     [['保存', '写病历'], 'SAVE_RECORD'],
     [['最后', '提交', '开药'], 'FINAL_SUBMIT'],
@@ -130,16 +170,16 @@ function inferTransactionStage(text, service) {
     [['叫号', '呼叫'], 'QUEUE_CALL'],
   ];
   for (const [terms, stage] of mappings) if (terms.some((term) => text.includes(term))) return stage;
-  return service?.transaction_stages?.length === 1 ? service.transaction_stages[0] : 'UNKNOWN';
+  return service?.transaction_stages?.length === 1 ? service.transaction_stages[0] as string : 'UNKNOWN';
 }
 
 // The added symptom rules consume current assertions, not a negated example or a
 // condition in a how-to question. Keep the original window for provenance and
 // existing rules; a later explicit recovery clears earlier assertions here,
 // while an observed failure after that recovery starts a new current assertion.
-function currentAssertionText(alias) {
-  let current = [], ambiguousRecovery = false;
-  const subjects = clause => new Set(alias.matches.filter(m => m.canonical && clause.includes(m.normalized_alias)).map(m => m.canonical));
+function currentAssertionText(alias: AliasResult) {
+  let current: string[] = [], ambiguousRecovery = false;
+  const subjects: (clause: string) => Set<string | null | undefined> = clause => new Set(alias.matches.filter(m => m.canonical && clause.includes(m.normalized_alias)).map(m => m.canonical));
   for (let clause of alias.normalized_text.split(/[，,。.!！？?；;\n]|但是|但|而是|并且|且|后(?:又|再次|再度)/u).map(s => s.trim()).filter(Boolean)) {
     if (/(?:如果|假如|假设|一旦)|(?:错误|失败|断网|转圈)时.{0,12}(?:应该|怎么|如何|找谁|怎么办)/u.test(clause)) continue;
     const recovered = /(?:恢复(?:正常)?了|恢复正常|现在没有问题了)/u.test(clause)
@@ -165,12 +205,12 @@ function currentAssertionText(alias) {
   return { text: current.join('。'), ambiguousRecovery };
 }
 
-function applyAction(action, state) {
+function applyAction(action: RuleAction, state: RuleState): void {
   state.action_log.push(action.action);
   switch (action.action) {
     case 'INHERIT_FACTS': {
       const a=state.context.corroboration_anchor,age=state.context.anchor_age_ms;
-      if(!a||!Number.isSafeInteger(age)||age<0||age>600000||!state.context.anchor_compatible)break;
+      if(!a||!Number.isSafeInteger(age)||(age as number)<0||(age as number)>600000||!state.context.anchor_compatible)break;
       if(!/^[-a-f0-9]{36}$/u.test(a.source_decision_id??'')||!/^[a-f0-9]{64}$/u.test(a.source_result_hash??'')
         ||!Array.isArray(a.symptom_codes)||!a.symptom_codes.length)break;
       state.selected_service_code=a.service_code;state.symptom_codes=[...a.symptom_codes];
@@ -209,7 +249,7 @@ function applyAction(action, state) {
   }
 }
 
-function fieldPresent(field, state) {
+function fieldPresent(field: string, state: RuleState) {
   if (field === 'symptom_codes') return state.symptom_codes.length > 0;
   if (field === 'scope' || field === 'patient_scope') return state.scope !== 'UNKNOWN';
   if (field === 'transaction_stage') return state.transaction_stage !== 'UNKNOWN';
@@ -217,7 +257,7 @@ function fieldPresent(field, state) {
   return pathValue(state, field) !== undefined && pathValue(state, field) !== null;
 }
 
-function factInput(state, overrides) {
+function factInput(state: RuleState, overrides: Record<string, unknown>) {
   return {
     source_ref: state.source_ref,
     source_text: state.original_text,
@@ -228,7 +268,9 @@ function factInput(state, overrides) {
   };
 }
 
-export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
+export function createRuleEngine(options?: RuleEngineOptions): RuleEngine;
+export function createRuleEngine(options?: BoundaryRuleEngineOptions): BoundaryRuleEngine;
+export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: BoundaryRuleEngineOptions = {}) {
   const serviceCatalog = catalog ?? loadServiceCatalog();
   const safeRuleSet = validateRuleSet(ruleSet === undefined ? readJsonConfig(DEFAULT_DETERMINISTIC_RULES_PATH) : ruleSet);
   const aliasResolver = createAliasResolver({ dictionary: aliasDictionary, catalog: serviceCatalog });
@@ -240,8 +282,8 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
     rule_set_id: safeRuleSet.rule_set_id,
     rule_set_version: safeRuleSet.rule_set_version,
     rule_set_hash: sha256Canonical(safeRuleSet),
-    evaluate(input) {
-      const safe = assertPlainJson(input, { maxNodes: 50_000, maxArrayLength: 5_000, maxStringLength: 20_000 });
+    evaluate(input: unknown) {
+      const safe = assertPlainJson(input, { maxNodes: 50_000, maxArrayLength: 5_000, maxStringLength: 20_000 }) as RuleEvaluationInput;
       if (typeof safe.text !== 'string' || typeof safe.source_ref !== 'string' || typeof safe.observed_at !== 'string') {
         failP2007(P2_007_ERROR_CODES.inputInvalid);
       }
@@ -259,15 +301,15 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
           ||!Array.isArray(anchor.symptom_codes)||!anchor.symptom_codes.length||anchor.symptom_codes.some(s=>!knownSymptoms.has(s)||s.startsWith('DATA.'))
           ||!Array.isArray(anchor.source_fact_ids)||anchor.source_fact_ids.length<1||anchor.source_fact_ids.length>1000
           ||anchor.source_fact_ids.some(id=>!/^fact_[A-Za-z0-9_-]{8,96}$/u.test(id))
-          ||['source_result_hash','source_reporter_hash','reply_reporter_hash'].some(k=>!/^[a-f0-9]{64}$/u.test(anchor[k]))
+          ||['source_result_hash','source_reporter_hash','reply_reporter_hash'].some(k=>!/^[a-f0-9]{64}$/u.test(anchor[k] as string))
           ||anchor.source_reporter_hash===anchor.reply_reporter_hash||!/^channel:\d+$/u.test(anchor.reply_message_ref)
           ||!['PUBLIC','INTERNAL','SENSITIVE_INTERNAL','PERSONAL','PATIENT_SENSITIVE'].includes(anchor.source_privacy_class)
-          ||['root_received_epoch_ms','reply_received_epoch_ms'].some(k=>!/^\d{1,16}$/u.test(anchor[k])))failP2007(P2_007_ERROR_CODES.inputInvalid);
+          ||['root_received_epoch_ms','reply_received_epoch_ms'].some(k=>!/^\d{1,16}$/u.test(anchor[k] as string)))failP2007(P2_007_ERROR_CODES.inputInvalid);
         const age=BigInt(anchor.reply_received_epoch_ms)-BigInt(anchor.root_received_epoch_ms);
-        if(age<0n||age>600000n||Number(age)!==safe.context.anchor_age_ms)failP2007(P2_007_ERROR_CODES.inputInvalid);
+        if(age<0n||age>600000n||Number(age)!==(safe.context as NonNullable<RuleEvaluationInput['context']>).anchor_age_ms)failP2007(P2_007_ERROR_CODES.inputInvalid);
       }
       const assertions = currentAssertionText(alias);
-      const state = {
+      const state: RuleState = {
         ...safe,
         input: { exists: true },
         original_text: safe.text,
@@ -318,7 +360,7 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
         source_ref: safe.source_ref,
       };
 
-      const matchedRules = [];
+      const matchedRules: { rule_id: string; version: string; priority: number; explanation: string | undefined }[] = [];
       for (const rule of orderedRules) {
         if (!conditionMatches(rule.when, state)) continue;
         matchedRules.push({
@@ -373,7 +415,7 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
           })));
         }
       }
-      const ruleFactValues = [
+      const ruleFactValues: [string, string][] = [
         ['classification.domain_intent', state.domain_intent],
         ['classification.scope', state.scope],
         ['classification.transaction_stage', state.transaction_stage],
@@ -408,7 +450,7 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
         symptom_codes: state.symptom_codes,
         fault_types: uniqueSorted(state.symptom_codes.map(faultTypeForSymptom)),
         domain_intent: state.domain_intent,
-        p1_request_type: state.domain_intent === 'INCIDENT_REPORT' ? 'INCIDENT' : 'UNKNOWN',
+        p1_request_type: state.domain_intent === 'INCIDENT_REPORT' ? 'INCIDENT' as const : 'UNKNOWN' as const,
         transaction_stage: state.transaction_stage,
         scope: state.scope,
         clinical_impact: state.clinical_impact,
@@ -434,6 +476,8 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary } = {}) {
   });
 }
 
-export function evaluateDeterministicRules(input, options) {
+export function evaluateDeterministicRules(input: RuleEvaluationInput, options?: RuleEngineOptions): RuleResult;
+export function evaluateDeterministicRules(input: unknown, options?: BoundaryRuleEngineOptions): BoundaryRuleResult;
+export function evaluateDeterministicRules(input: unknown, options?: BoundaryRuleEngineOptions) {
   return createRuleEngine(options).evaluate(input);
 }

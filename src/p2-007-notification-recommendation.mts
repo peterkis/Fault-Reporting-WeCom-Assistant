@@ -1,3 +1,4 @@
+export type NotificationRecommendation = ReturnType<typeof generateNotificationRecommendation>;
 import {
   P2_007_ERROR_CODES,
   assertPlainJson,
@@ -17,7 +18,7 @@ const PROFILES = Object.freeze({
   INCIDENT_RESOLVED: ['INCIDENT_RESOLUTION', 'INCIDENT_SUBSCRIBERS', 'WECOM_DIRECT', 'WECOM_GROUP', 'PUBLIC_SAFE'],
   DELIVERY_UNKNOWN: ['DELIVERY_RECONCILIATION', 'ASSIGNED_AGENTS', 'WORKBENCH_INTERNAL', 'NONE', 'INTERNAL'],
   INTERNAL_NOTE_CREATED: ['NO_EXTERNAL_NOTIFICATION', 'NONE', 'NONE', 'NONE', 'INTERNAL'],
-});
+} as const);
 
 const TYPE_TO_TRIGGER = Object.freeze({
   DIRECT_GUIDANCE_REQUIRED: 'PRIVATE_GUIDANCE_REQUIRED',
@@ -26,14 +27,14 @@ const TYPE_TO_TRIGGER = Object.freeze({
   INCIDENT_INTERNAL_ALERT: 'INCIDENT_CANDIDATE_DETECTED',
 });
 
-export function generateNotificationRecommendation(input) {
-  const safe = assertPlainJson(input);
-  const trigger = TYPE_TO_TRIGGER[safe.type] ?? safe.trigger;
-  const profile = PROFILES[trigger];
+export function generateNotificationRecommendation(input: unknown) {
+  const safe = assertPlainJson(input) as { type?: string; trigger?: string; idempotency_scope?: string; journey_ref?: string; candidate_ref?: string; source_ref?: string; provenance_fact_ids?: string[] };
+  const trigger = (TYPE_TO_TRIGGER as Record<string, string>)[safe.type as string] ?? safe.trigger;
+  const profile = (PROFILES as Record<string, readonly [string, string, string, string, string]>)[trigger as string];
   if (!profile) failP2007(P2_007_ERROR_CODES.inputInvalid);
   const [purpose, audience, preferredChannel, fallbackChannel, contentClass] = profile;
   const scopeRef = safe.idempotency_scope ?? [
-    'p2-007', trigger.toLowerCase(), safe.journey_ref ?? safe.candidate_ref ?? safe.source_ref ?? 'unknown', 'v1',
+    'p2-007', (trigger as string).toLowerCase(), safe.journey_ref ?? safe.candidate_ref ?? safe.source_ref ?? 'unknown', 'v1',
   ].join(':');
   if (typeof scopeRef !== 'string' || scopeRef.length > 256) failP2007(P2_007_ERROR_CODES.inputInvalid);
   const factIds = uniqueSorted(Array.isArray(safe.provenance_fact_ids) ? safe.provenance_fact_ids : []);
@@ -54,7 +55,7 @@ export function generateNotificationRecommendation(input) {
     preserve_origin_journey: true,
     send_authorized: false,
     provenance_fact_ids: factIds,
-  });
+  } as const);
 }
 
 export const recommendNotification = generateNotificationRecommendation;

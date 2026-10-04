@@ -10,6 +10,29 @@ import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { counts, runSelection } from './run-tests.mjs';
 const original = sourceRoot();
+test('G2 synthetic wrapper executes runtime tests and keeps source receipts', () => {
+  verifyArtifact(original);
+  const probe = `
+    import assert from 'node:assert/strict';import {mock} from 'node:test';import * as fs from 'node:fs';
+    import * as cp from 'node:child_process';import {EventEmitter} from 'node:events';import path from 'node:path';import {pathToFileURL} from 'node:url';
+    const root=process.cwd(),runtime=path.join(root,'.build/runtime'),writes=[],url=p=>pathToFileURL(path.join(runtime,p)).href;
+    const file='tests/p2-g2-directory-boundary.test.mjs',fingerprint='a'.repeat(64);
+    mock.module(url('src/p2-g2-candidate.mjs'),{namedExports:{G2_ROOT:root,g2CandidateInventory:()=>({fingerprint,files:[{path:file,sha256:fingerprint}]})}});
+    mock.module('node:fs',{namedExports:{...Object.fromEntries(Object.entries(fs).filter(([k])=>k!=='default')),
+      readdirSync:p=>{assert.equal(p,path.join(root,'tests'));return [path.basename(file)];},
+      mkdirSync:p=>{assert.equal(path.dirname(p),path.join(root,'tmp'));},
+      writeFileSync:(p,value)=>{assert.ok(p.startsWith(path.join(root,'tmp')+path.sep));writes.push([p,value]);},
+      readFileSync:p=>p===path.join(root,'synthetic.env')?'PILOT_DATABASE_URL=postgres://synthetic@127.0.0.1/owned\\n':String(p).endsWith('file-coverage.json')?JSON.stringify({files:[]}):''}});
+    mock.module('node:child_process',{namedExports:{...Object.fromEntries(Object.entries(cp).filter(([k])=>k!=='default')),
+      spawn:(command,args,options)=>{assert.equal(options.cwd,runtime);assert.equal(options.env.TS_MIGRATION_TEST_SOURCE_ROOT,root);assert.equal(options.env.TS_MIGRATION_TEST_RUNTIME_ROOT,runtime);
+        assert.ok(args.includes(file));for(const arg of args.filter(a=>a.startsWith('--test-reporter-destination=')&&a!=='--test-reporter-destination=stdout'))assert.ok(arg.slice(arg.indexOf('=')+1).startsWith(path.join(root,'tmp')+path.sep));
+        const child=new EventEmitter();child.stdout=new EventEmitter();child.stderr=new EventEmitter();queueMicrotask(()=>{child.stdout.emit('data',Buffer.from('# tests 1\\n# pass 1\\n# fail 0\\n# skipped 0\\n# cancelled 0\\n# todo 0\\n'));child.emit('close',0,null);});return child;}}});
+    const {runG2Tests}=await import(url('scripts/p2-g2-synthetic-e2e.mjs'));const result=await runG2Tests({envFile:'synthetic.env'});
+    assert.equal(result.ok,true);assert.equal(writes.length,3);console.log('G2_RUNTIME_TESTS_CANONICAL_RECEIPTS_PASS_NO_REAL_IO');`;
+  const result=spawnSync(process.execPath,['--experimental-test-module-mocks','--input-type=module','-e',probe],
+    {cwd:original,env:testEnvironment(original,[]),encoding:'utf8',windowsHide:true,timeout:15_000});
+  assert.equal(result.error,undefined);assert.equal(result.status,0,result.stdout+result.stderr);
+});
 test('P2 staged live checks read canonical source evidence before database gates', () => {
   verifyArtifact(original);
   for (const task of ['016', '012']) {

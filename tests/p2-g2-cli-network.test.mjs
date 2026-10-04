@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
 import { G2_ROOT, g2CandidateInventory } from '../src/p2-g2-candidate.mjs';
@@ -10,6 +10,7 @@ import { minimalG2Environment } from '../src/p2-g2-validation-config.mjs';
 import { installG2NetworkBoundary, probeG2NetworkBoundary } from '../src/p2-g2-network-boundary.mjs';
 import { loadG2PrivateEnvironment } from '../scripts/p2-g2-check.mjs';
 import { testRoots } from './helpers/migration-roots.mjs';
+import { g2SourceBinding } from '../src/p2-g2-evidence-files.mjs';
 
 const { sourceRoot, runtimeRoot } = testRoots();
 const runtimeScript = file => path.join(runtimeRoot, 'scripts', file);
@@ -54,4 +55,33 @@ test('missing fresh live approval is rejected before any database connection eve
     const report=JSON.parse(result.stdout);assert.equal(result.status,1);assert.equal(report.error_code,'P2_G2_LIVE_APPROVAL_REQUIRED');
     assert.equal(report.database_connection_started,false);assert.equal(report.database_writes,false);assert.equal(report.provider_calls,0);assert.equal(report.listener_started,false);
   }finally{const relative=path.relative(path.join(G2_ROOT,'tmp'),path.resolve(directory));assert.ok(relative&&!relative.startsWith('..')&&!path.isAbsolute(relative));rmSync(directory,{recursive:true,force:true});}
+});
+
+test('staged G2 observation, reconciliation and evaluation use canonical source evidence paths',()=>{
+  mkdirSync(path.join(sourceRoot,'tmp'),{recursive:true});
+  const directory=mkdtempSync(path.join(sourceRoot,'tmp','p2-g2-cli-source-root-'));
+  const prefix=path.relative(sourceRoot,directory).replaceAll('\\','/');
+  try{
+    const {manifest}=configurationFixture();manifest.candidate_fingerprint=g2CandidateInventory().fingerprint;
+    const binding=g2SourceBinding(manifest),manifestFile=path.join(directory,'manifest.json');
+    writeFileSync(manifestFile,JSON.stringify(manifest));
+    writeFileSync(path.join(directory,'state.json'),JSON.stringify({...binding,status:'CREATED',process_count:0}));
+    writeFileSync(path.join(directory,'startup-source.json'),JSON.stringify(binding));
+    writeFileSync(path.join(directory,'resource-evidence.jsonl'),'');
+    const run=(file,...args)=>spawnSync(process.execPath,[runtimeScript(file),'--manifest='+manifestFile,...args],
+      {cwd:runtimeRoot,env:minimalG2Environment(),encoding:'utf8',windowsHide:true,timeout:15000});
+    let result=run('p2-g2-resource-observation.mjs','--mode=observe','--run-directory='+prefix);
+    assert.equal(result.status,0,result.stdout+result.stderr);
+    let report=JSON.parse(result.stdout);assert.equal(report.ok,true);assert.equal(report.samples,0);assert.equal(report.gate_passed,false);
+    result=run('p2-g2-reconcile.mjs','--mode=reconcile','--run-directory='+prefix,'--output=reconciliation-source.json');
+    assert.equal(result.status,1);report=JSON.parse(result.stdout);
+    assert.equal(report.error_code,'P2_G2_STOPPED_RUN_REQUIRED');assert.equal(report.database_writes,false);assert.equal(report.provider_calls,0);
+    const output=prefix+'/gate-result.jsonl';
+    result=run('p2-g2-evaluate.mjs','--mode=evaluate','--streams='+prefix+'/resource-evidence.jsonl','--output='+output);
+    assert.equal(result.status,1,result.stdout+result.stderr);report=JSON.parse(result.stdout);
+    assert.equal(report.status,'BLOCKED');assert.equal(report.database_writes,false);assert.equal(report.provider_calls,0);assert.equal(report.task_state_changed,false);
+    assert.deepEqual(JSON.parse(readFileSync(path.join(sourceRoot,output),'utf8')),
+      Object.fromEntries(Object.entries(report).filter(([key])=>!['database_writes','provider_calls','task_state_changed'].includes(key))));
+    if(sourceRoot!==runtimeRoot)assert.equal(existsSync(path.join(runtimeRoot,output)),false);
+  }finally{const relative=path.relative(path.join(sourceRoot,'tmp'),path.resolve(directory));assert.ok(relative&&!relative.startsWith('..')&&!path.isAbsolute(relative));rmSync(directory,{recursive:true,force:true});}
 });

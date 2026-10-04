@@ -3,7 +3,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { failG2, g2Hash, validateG2Manifest } from './p2-g2-validation-config.mjs';
 
-const workspace=fileURLToPath(new URL('../',import.meta.url));
+const entryRoot=fileURLToPath(new URL('../',import.meta.url));
+// Match G2_ROOT: staged execution reads and writes facts in the canonical source checkout.
+const workspace=path.basename(path.resolve(entryRoot))==='runtime'
+  &&path.basename(path.dirname(path.resolve(entryRoot)))==='.build'
+  ?path.resolve(entryRoot,'../..'):entryRoot;
 export function g2SourceBinding(manifest){const m=validateG2Manifest(manifest);return {run_id:m.run_id,candidate_fingerprint:m.candidate_fingerprint,
   run_mode:m.mode,manifest_binding:g2Hash(JSON.stringify(m))};}
 export function g2SourceMatches(packet,manifest){const expected=g2SourceBinding(manifest);return Object.entries(expected).every(([k,v])=>packet?.[k]===v);}

@@ -160,4 +160,40 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
   const paths=strings(directory.paths);
   for(const broad of ['src/**/*.mts','scripts/**/*.mts','tools/ts-migration/**','plans/typescript-migration/**'])assert.ok(!paths.includes(broad));
   assert.ok(paths.includes('src/p2-007-*.mts'));assert.ok(paths.includes('src/platform/**'));
+  const directoryJob=record(record(record(workflows['p2-staff-directory']).jobs).regression);
+  assert.ok(Array.isArray(directoryJob.steps));
+  const optional=record(directoryJob.steps.find(step=>record(step).id==='optional'));
+  const optionalScript=String(optional.run);
+  assert.match(optionalScript,/DIRECTORY_DIFF_BASE_REQUIRED/u);
+  const prototypeStep=record(directoryJob.steps.find(step=>String(record(step).name).startsWith('Prototype typecheck')));
+  const historicalStep=record(directoryJob.steps.find(step=>String(record(step).name).startsWith('Frozen historical')));
+  assert.equal(prototypeStep.if,"${{ !cancelled() && steps.optional.outputs.prototype == 'true' }}");
+  assert.equal(historicalStep.if,"${{ !cancelled() && steps.optional.outputs.historical == 'true' }}");
+  const cases:[string[],boolean,boolean,Record<string,string>?,Record<string,string>?][]=[
+    [['src/p2-007-rule-engine.mts','src/p2-015-contact-journey.mts','package.json'],false,false],
+    [['web/admin-workbench-prototype/src/App.tsx'],true,false],
+    [['web/admin-workbench-prototype/package-lock.json'],true,false],
+    [['scripts/validate-p2-016-historical.mjs'],false,true],
+    [['.github/review/pr-evidence-delta.mjs'],false,true],
+    [['.github/review/README.md'],false,false],
+    [['tests/p2-016-historical-validation.test.mjs'],false,true],
+    [['tools/ts-migration/run-tests.mts'],false,true],
+    [['package.json'],true,false,{'prototype:admin:build':'old-build'},{'prototype:admin:build':'new-build'}],
+    [['package.json'],false,true,{'validate:p2:016:historical':'old-history'},{'validate:p2:016:historical':'new-history'}],
+  ];
+  const impactCode=optionalScript.match(/<<'NODE'\n([\s\S]+)\nNODE/u)?.[1];
+  assert.ok(impactCode);
+  const impactTemp=mkdtempSync(path.join(tmpdir(),'p03-directory-impact-'));
+  try {
+    for(const [changed,prototype,historical,before={},after={}] of cases) {
+      const output=path.join(impactTemp,'output.txt');writeFileSync(output,'');
+      const mock=`const execFileSync=(command,args)=>args[0]==='diff'?${JSON.stringify(changed.join('\0'))}:JSON.stringify({scripts:args[1].startsWith('a')?${JSON.stringify(before)}:${JSON.stringify(after)}});`;
+      const code:string=impactCode.replace("import {execFileSync} from 'node:child_process';",mock);
+      const env={...process.env,EXPECTED_BASE:'a'.repeat(40),EXPECTED_HEAD:'b'.repeat(40),GITHUB_OUTPUT:output};
+      const result:SpawnSyncReturns<string>=spawnSync(process.execPath,['--input-type=module','-e',code],{encoding:'utf8',windowsHide:true,env});
+      assert.equal(result.status,0,result.stderr);
+      assert.equal(readFileSync(output,'utf8'),`prototype=${prototype}\nhistorical=${historical}\n`);
+      assert.notEqual(spawnSync(process.execPath,['--input-type=module','-e',code],{windowsHide:true,env:{...env,EXPECTED_BASE:''}}).status,0);
+    }
+  } finally { rmSync(impactTemp,{recursive:true}); }
 });

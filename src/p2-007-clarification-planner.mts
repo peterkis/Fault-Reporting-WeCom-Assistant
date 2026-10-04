@@ -1,3 +1,5 @@
+export interface Clarification { question_code: string; field_path: string; question: string; priority: number; question_count: 1 }
+type Question = Omit<Clarification, 'question_count'>;
 import { P2_007_ERROR_CODES, assertPlainJson, deepFreeze, failP2007 } from './p2-007-domain-utils.mjs';
 
 const QUESTIONS = Object.freeze({
@@ -24,17 +26,17 @@ const FIELD_TO_QUESTION = Object.freeze({
   impact: 'Q_CLINICAL_IMPACT',
 });
 
-export function planClarification(input) {
-  const safe = assertPlainJson(input);
+export function planClarification(input: unknown): Clarification | null {
+  const safe = assertPlainJson(input) as { question_codes?: string[]; missing_fields?: string[]; conflict?: boolean; selected_service_code?: string | null; service_required?: boolean };
   const requestedCodes = Array.isArray(safe.question_codes) ? safe.question_codes : [];
   const missing = Array.isArray(safe.missing_fields) ? safe.missing_fields : [];
-  const candidates = [];
+  const candidates: Question[] = [];
   for (const code of requestedCodes) {
-    if (QUESTIONS[code]) candidates.push({ question_code: code, ...QUESTIONS[code] });
+    if ((QUESTIONS as Record<string, Omit<Question, 'question_code'>>)[code]) candidates.push({ question_code: code, ...(QUESTIONS as Record<string, Omit<Question, 'question_code'>>)[code] } as Question);
   }
   for (const field of missing) {
-    const code = FIELD_TO_QUESTION[field];
-    if (code) candidates.push({ question_code: code, ...QUESTIONS[code] });
+    const code = (FIELD_TO_QUESTION as Record<string, string>)[field];
+    if (code) candidates.push({ question_code: code, ...(QUESTIONS as Record<string, Omit<Question, 'question_code'>>)[code] } as Question);
   }
   if (safe.conflict === true) candidates.push({ question_code: 'Q_CONFIRM_CONFLICTING_FACT', ...QUESTIONS.Q_CONFIRM_CONFLICTING_FACT });
   if ((safe.selected_service_code ?? null) === null && safe.service_required !== false) {

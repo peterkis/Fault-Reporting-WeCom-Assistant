@@ -298,6 +298,29 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "v3-p03": [
+      "tests/p2-007-third-party-reporter-directory.test.mjs",
+      "tests/p2-015-rule-first-orchestration.test.mjs",
+      "tests/p2-016-schema-contract.test.mjs",
+      "tests/p2-007/p2-007-domain-core.test.mjs",
+      "tests/p2-007/p2-007-rule-engine.test.mjs",
+      "tests/p2-007-staff-directory-sync.test.mjs",
+      "tests/p2-007-third-party-staff-directory.integration.test.mjs",
+      "tests/p2-015-contact-journey.test.mjs",
+      "tests/p2-016-contracts.test.mjs",
+      "tests/p2-015-rule-first-orchestration.integration.test.mjs",
+      "tests/p2-007-third-party-staff-directory.test.mjs",
+      "tests/p2-007-staff-directory-worker.test.mjs",
+      "tests/p2-007-staff-directory-process-options.test.mjs",
+      "tests/p2-007-staff-directory-process-role.test.mjs",
+      "tests/arch-006-rule-first-service-loop.test.mjs",
+      "tests/v1-4-architecture-baseline.test.mjs",
+      "tests/p2-g2-cli-network.test.mjs",
+      "tests/p2-g2-manual-evidence.test.mjs",
+      "tests/p2-g2-delivery-evidence.test.mjs",
+      "tests/p2-g2-finalization-evidence.test.mjs",
+      "tests/p2-012-schema-live-guards.test.mjs"
+],
     "v3-p02": ["tests/p2-g1-human-only-assembly.integration.test.mjs", "tests/p2-g1-human-only-assembly.test.mjs", "tests/p2-g1-human-only-assembly-browser.test.mjs", "tests/p2-016-projection-lock-order.integration.test.mjs", "tests/p2-006-workbench-browser.test.mjs", "tests/p2-g2-same-second-ingress.integration.test.mjs", "tests/yxx-ss-009-http-recovery.integration.test.mjs", "tests/p2-002-timeline-projector.test.mjs", "tests/p2-002-timeline-projector.integration.test.mjs", "tests/p2-003-realtime-event-log.test.mjs", "tests/p2-003-realtime-event-log.integration.test.mjs", "tests/arch-006-rule-first-service-loop.test.mjs", "tests/v1-4-architecture-baseline.test.mjs", "tests/p2-g2-ready-candidate.test.mjs", "tests/p2-g2-approval-binding.test.mjs", "tests/p2-g2-cli-network.test.mjs", "tests/p2-g2-process-assembly.integration.test.mjs", "tests/p2-016-live-harness.test.mjs", "tests/p2-012-schema-live-guards.test.mjs", "tests/arch-005-time-contract-architecture.test.mjs"],
     "v3-p01": [
       "tests/p2-001-conversation-contracts.test.mjs",

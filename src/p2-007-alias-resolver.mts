@@ -1,3 +1,10 @@
+import type { ServiceCatalog } from './p2-007-service-catalog.mjs';
+import type { SymptomAlias } from './p2-007-fault-taxonomy.mjs';
+export interface ServiceAlias { alias: string; candidate_service_codes: string[]; selection_policy: string; match_mode?: string; case_sensitive?: boolean; notes?: string }
+export interface AliasDictionary { schema_version: string; alias_set_id: string; alias_set_version: string; service_aliases: ServiceAlias[]; symptom_aliases: SymptomAlias[] }
+type AliasEntry = ServiceAlias & { normalized_alias: string; rule_id: string };
+export type AliasResolver = ReturnType<typeof createAliasResolver>;
+export type AliasResult = ReturnType<AliasResolver['resolve']>;
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -26,14 +33,14 @@ const BUILTIN_SERVICE_ALIASES = Object.freeze([
   { alias: '网络', candidate_service_codes: ['NETWORK.ENDPOINT_ACCESS'], selection_policy: 'AUTO_SELECT' },
 ]);
 
-function validateDictionary(input, catalog) {
+function validateDictionary(input: unknown, catalog: ServiceCatalog): AliasDictionary {
   const dictionary = assertPlainJson(input, {
     errorCode: P2_007_ERROR_CODES.configInvalid,
     maxDepth: 12,
     maxNodes: 100_000,
     maxArrayLength: 20_000,
     maxStringLength: 100_000,
-  });
+  }) as AliasDictionary;
   if (
     dictionary.schema_version !== '1.0.0'
     || typeof dictionary.alias_set_id !== 'string'
@@ -68,7 +75,7 @@ function validateDictionary(input, catalog) {
   return deepFreeze(dictionary);
 }
 
-function occurs(normalizedText, normalizedAlias) {
+function occurs(normalizedText: string, normalizedAlias: string) {
   if (/^[a-z0-9.+_-]+$/u.test(normalizedAlias)) {
     const escaped = normalizedAlias.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
     return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'u').test(normalizedText);
@@ -76,18 +83,18 @@ function occurs(normalizedText, normalizedAlias) {
   return normalizedText.includes(normalizedAlias);
 }
 
-function matchSort(left, right) {
+function matchSort(left: AliasEntry, right: AliasEntry) {
   return right.normalized_alias.length - left.normalized_alias.length
     || left.rule_id.localeCompare(right.rule_id, 'en');
 }
 
-export function createAliasResolver({ dictionary, catalog = loadServiceCatalog() } = {}) {
+export function createAliasResolver({ dictionary, catalog = loadServiceCatalog() }: { dictionary?: unknown; catalog?: ServiceCatalog } = {}) {
   const safeDictionary = validateDictionary(
     dictionary === undefined ? readJsonConfig(DEFAULT_ALIAS_DICTIONARY_PATH) : dictionary,
     catalog,
   );
   const existing = new Set(safeDictionary.service_aliases.map((entry) => normalizeHospitalText(entry.alias)));
-  const serviceEntries = safeDictionary.service_aliases.map((entry, index) => ({
+  const serviceEntries: AliasEntry[] = safeDictionary.service_aliases.map((entry, index) => ({
     ...entry,
     normalized_alias: normalizeHospitalText(entry.alias),
     rule_id: `ALIAS-${String(index + 1).padStart(3, '0')}`,
@@ -109,7 +116,7 @@ export function createAliasResolver({ dictionary, catalog = loadServiceCatalog()
     alias_set_id: safeDictionary.alias_set_id,
     alias_set_version: safeDictionary.alias_set_version,
     alias_set_hash: sha256Canonical(safeDictionary),
-    resolve(text) {
+    resolve(text: unknown) {
       const originalText = typeof text === 'string' ? text : failP2007(P2_007_ERROR_CODES.inputInvalid);
       const normalizedText = normalizeHospitalText(originalText);
       const matches = serviceEntries
@@ -136,7 +143,7 @@ export function createAliasResolver({ dictionary, catalog = loadServiceCatalog()
       const strongest = selectionPool.filter((match) => match.normalized_alias.length === longestLength);
       const candidates = uniqueSorted(strongest.flatMap((match) => match.candidate_service_codes));
       const autoSelected = strongest.find((match) => match.selection_policy === 'AUTO_SELECT' && match.canonical);
-      const selected = candidates.length === 1 ? candidates[0] : autoSelected?.canonical ?? null;
+      const selected = candidates.length === 1 ? candidates[0] as string : autoSelected?.canonical ?? null;
       return deepFreeze({
         original_text: originalText,
         normalized_text: normalizedText,
@@ -152,6 +159,6 @@ export function createAliasResolver({ dictionary, catalog = loadServiceCatalog()
   });
 }
 
-export function resolveAlias(text, options) {
+export function resolveAlias(text: unknown, options?: Parameters<typeof createAliasResolver>[0]) {
   return createAliasResolver(options).resolve(text);
 }

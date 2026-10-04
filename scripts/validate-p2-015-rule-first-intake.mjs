@@ -1,11 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import ts from 'typescript';
 import { P2_015_ACTION_TYPES, P2_015_LIMITS, P2_015_RESULT_CODES } from '../src/p2-015-domain-contracts.mjs';
 
 const root = process.cwd(); const errors = []; let checks = 0;
 const check = (condition, message) => { checks += 1; if (!condition) errors.push(message); };
-const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
+const migrationScope = JSON.parse(fs.readFileSync(path.join(root, 'plans/typescript-migration/scope.json'), 'utf8'));
+const moduleMap = migrationScope.current_module_map;
+const sourcePath = name => path.join(root, moduleMap[name] ?? name);
+const read = (name) => fs.readFileSync(sourcePath(name), 'utf8');
 const required = [
   'database/migrations/030_p2_015_rule_first_intake_orchestration.sql',
   ...['contact_journey','channel_leg','continuation_ref','deterministic_decision','manual_review_item','manual_review_command','safe_action_suggestion','orchestration_input','orchestration_result'].map((name) => `contracts/p2_015_${name}.schema.json`),
@@ -21,7 +25,7 @@ const required = [
   'docs/57_p2_015_manual_review_and_safe_actions.md','evidence/p2-015-start-authorization.md',
   'evidence/p2-015-rule-first-intake-orchestration-report.md',
 ];
-for (const name of required) check(fs.existsSync(path.join(root, name)), `${name} exists`);
+for (const name of required) check(fs.existsSync(sourcePath(name)), `${name} exists`);
 
 const migration = read('database/migrations/030_p2_015_rule_first_intake_orchestration.sql');
 check((migration.match(/CREATE TABLE IF NOT EXISTS intake\./gu) ?? []).length === 6, 'migration 030 creates exactly six intake tables');
@@ -56,9 +60,44 @@ check(P2_015_LIMITS.poolMax <= 4 && P2_015_LIMITS.workerCount === 1, '2C4G pool 
 check(P2_015_LIMITS.defaultBatch === 20 && P2_015_LIMITS.maximumBatch <= 100, 'worker batch bounds');
 check(P2_015_LIMITS.maximumReviewPage <= 100 && P2_015_LIMITS.messageWindowTurns <= 50 && P2_015_LIMITS.evaluatedTextCharacters <= 20_000 && P2_015_LIMITS.openJourneyCandidates <= 10, 'query and message bounds');
 
-const frozen = spawnSync('git', ['-c', `safe.directory=${root.replaceAll('\\','/')}`, 'diff', '--name-only', 'origin/main...HEAD', '--',
+function erasedMigrationRuntime(source) {
+  // Match ARCH-006's locked compiler comparison; executable expressions remain significant.
+  const result = ts.transpileModule(source.replaceAll('\r\n', '\n'), {
+    fileName: 'module.mts', reportDiagnostics: true,
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext,
+      verbatimModuleSyntax: true, removeComments: true, newLine: ts.NewLineKind.LineFeed },
+  });
+  if (result.diagnostics?.some(diagnostic => diagnostic.category === ts.DiagnosticCategory.Error)) {
+    throw new SyntaxError('P2015_MIGRATION_EMIT_INVALID');
+  }
+  return result.outputText;
+}
+
+function onlyRegisteredTypeMigrations(paths) {
+  const git = (...args) => execFileSync('git', ['-c', `safe.directory=${root.replaceAll('\\', '/')}`, ...args],
+    { cwd: root, encoding: 'utf8', windowsHide: true });
+  try {
+    const base = git('merge-base', 'origin/main', 'HEAD').trim();
+    const targets = new Set(Object.values(migrationScope.migration_batches).flat());
+    return [...new Set(paths)].every(physical => {
+      if (!/^src\/p2-007-.+\.(?:mjs|mts)$/u.test(physical)) return false;
+      const logical = physical.replace(/\.mts$/u, '.mjs'), typed = logical.replace(/\.mjs$/u, '.mts');
+      if (!targets.has(logical) || moduleMap[logical] !== typed) return false;
+      const before = git('ls-tree', base, '--', logical, typed).trim().split('\n');
+      const after = git('ls-tree', 'HEAD', '--', logical, typed).trim().split('\n');
+      // A single original file must become a single typed file, retaining its mode.
+      if (before.length !== 1 || after.length !== 1 || !before[0].endsWith('\t' + logical)
+        || !after[0].endsWith('\t' + typed) || !/^100(?:644|755) blob /u.test(before[0])
+        || before[0].split(' ')[0] !== after[0].split(' ')[0]) return false;
+      return erasedMigrationRuntime(git('show', base + ':' + logical)) === erasedMigrationRuntime(git('show', 'HEAD:' + typed));
+    });
+  } catch { return false; }
+}
+
+const frozen = spawnSync('git', ['-c', `safe.directory=${root.replaceAll('\\','/')}`, 'diff', '--no-renames', '--name-only', '-z', 'origin/main...HEAD', '--',
   'database/migrations/001_*','database/migrations/002_*','database/migrations/003_*','database/migrations/004_*','database/migrations/005_*','database/migrations/006_*','database/migrations/007_*','database/migrations/008_*','database/migrations/009_*','database/migrations/010_*','database/migrations/011_*','database/migrations/012_*','database/migrations/020_*','database/migrations/021_*','database/migrations/022_*','src/p2-007-*'], { cwd: root, encoding: 'utf8' });
-check(frozen.status === 0 && frozen.stdout.trim() === '', 'migrations 001-022 and P2-007 runtime are unchanged');
+const frozenPaths = frozen.stdout?.split('\0').filter(Boolean) ?? [];
+check(frozen.status === 0 && (frozenPaths.length === 0 || onlyRegisteredTypeMigrations(frozenPaths)), 'migrations 001-022 and P2-007 runtime are unchanged');
 
 if (errors.length > 0) { console.error(`P2-015 validation failed (${errors.length}/${checks}):`); for (const error of errors) console.error(`- ${error}`); process.exitCode = 1; }
 else console.log(JSON.stringify({ task: 'P2-015', ok: true, checks, deterministic_safe_route_coverage: coverage, source_cases: gold.length,

@@ -1,3 +1,5 @@
+export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+export interface PlainJsonLimits { errorCode?: string; maxDepth?: number; maxNodes?: number; maxArrayLength?: number; maxStringLength?: number }
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { types as utilTypes } from 'node:util';
@@ -10,30 +12,31 @@ export const P2_007_ERROR_CODES = Object.freeze({
 });
 
 export class P2007DomainError extends TypeError {
-  constructor(code) {
+  declare code: string;
+  constructor(code: string) {
     super(code);
     this.name = 'P2007DomainError';
     this.code = code;
   }
 }
 
-export function failP2007(code) {
+export function failP2007(code: string): never {
   throw new P2007DomainError(code);
 }
 
 const POLLUTED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
-export function assertPlainJson(value, {
+export function assertPlainJson<T>(value: T, {
   errorCode = P2_007_ERROR_CODES.inputInvalid,
   maxDepth = 12,
   maxNodes = 20_000,
   maxArrayLength = 5_000,
   maxStringLength = 20_000,
-} = {}) {
+}: PlainJsonLimits = {}): T {
   let nodes = 0;
-  const ancestors = new Set();
+  const ancestors = new Set<object>();
 
-  function visit(current, depth) {
+  function visit(current: unknown, depth: number): JsonValue {
     nodes += 1;
     if (nodes > maxNodes || depth > maxDepth) failP2007(P2_007_ERROR_CODES.limitExceeded);
     if (current === null || typeof current === 'boolean') return current;
@@ -72,22 +75,23 @@ export function assertPlainJson(value, {
     }
 
     ancestors.add(current);
-    const copy = isArray ? [] : {};
+    const copy: JsonValue[] | Record<string, JsonValue> = isArray ? [] : {};
     for (const key of Object.keys(descriptors)) {
-      const descriptor = descriptors[key];
+      const descriptor = descriptors[key] as PropertyDescriptor;
       if (POLLUTED_KEYS.has(key) || !Object.hasOwn(descriptor, 'value')) failP2007(errorCode);
-      copy[key] = visit(descriptor.value, depth + 1);
+      (copy as Record<string, JsonValue>)[key] = visit(descriptor.value, depth + 1);
     }
     ancestors.delete(current);
     return copy;
   }
 
-  return visit(value, 0);
+  // Validation clones data without changing its shape or scalar types.
+  return visit(value, 0) as T;
 }
 
-export function readJsonConfig(path) {
+export function readJsonConfig(path: unknown): unknown {
   if (typeof path !== 'string' || path.length === 0) failP2007(P2_007_ERROR_CODES.configInvalid);
-  let parsed;
+  let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(path, 'utf8'));
   } catch {
@@ -102,7 +106,7 @@ export function readJsonConfig(path) {
   });
 }
 
-export function deepFreeze(value) {
+export function deepFreeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     for (const child of Object.values(value)) deepFreeze(child);
     Object.freeze(value);
@@ -110,26 +114,26 @@ export function deepFreeze(value) {
   return value;
 }
 
-export function canonicalJson(value) {
-  const safe = assertPlainJson(value);
-  function encode(current) {
+export function canonicalJson(value: unknown): string {
+  const safe = assertPlainJson(value) as JsonValue;
+  function encode(current: JsonValue): string {
     if (current === null || typeof current !== 'object') return JSON.stringify(current);
     if (Array.isArray(current)) return `[${current.map(encode).join(',')}]`;
-    return `{${Object.keys(current).sort().map((key) => `${JSON.stringify(key)}:${encode(current[key])}`).join(',')}}`;
+    return `{${Object.keys(current).sort().map((key) => `${JSON.stringify(key)}:${encode(current[key] as JsonValue)}`).join(',')}}`;
   }
   return encode(safe);
 }
 
-export function sha256Canonical(value) {
+export function sha256Canonical(value: unknown) {
   return createHash('sha256').update(canonicalJson(value)).digest('hex');
 }
 
-export function sha256Text(value) {
+export function sha256Text(value: unknown) {
   if (typeof value !== 'string') failP2007(P2_007_ERROR_CODES.inputInvalid);
   return createHash('sha256').update(value).digest('hex');
 }
 
-export function normalizeHospitalText(value) {
+export function normalizeHospitalText(value: unknown) {
   if (typeof value !== 'string' || utilTypes.isProxy(value) || value.length > 20_000) {
     failP2007(P2_007_ERROR_CODES.inputInvalid);
   }
@@ -137,13 +141,13 @@ export function normalizeHospitalText(value) {
     .normalize('NFKC')
     .replace(/[，、；：！？。]/gu, (character) => ({
       '，': ',', '、': ',', '；': ';', '：': ':', '！': '!', '？': '?', '。': '.',
-    })[character])
+    })[character as '，' | '、' | '；' | '：' | '！' | '？' | '。'])
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/gu, '')
     .replace(/\s+/gu, ' ')
     .trim()
     .toLocaleLowerCase('zh-CN');
 }
 
-export function uniqueSorted(values) {
+export function uniqueSorted(values: readonly string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right, 'en'));
 }

@@ -3,6 +3,12 @@ on:
   pull_request:
     paths:
       - '.github/workflows/p2-staff-directory.yml'
+      - '.github/review/**'
+      - 'scripts/validate-p2-016-historical.mjs'
+      - 'scripts/validate-p2-016-ticket-lifecycle-workbench.mjs'
+      - 'tests/p2-016-historical-validation.test.mjs'
+      - 'tools/ts-migration/run-tests.mts'
+      - 'tools/ts-migration/routing.mts'
       - 'src/p2-007-*.mjs'
       - 'src/p2-007-*.mts'
       - 'src/p2-015-*.mjs'
@@ -83,6 +89,30 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/directory-review"
           node .github/review/verify-published-history.mjs --expected-head "$EXPECTED_HEAD" 2>&1 | tee "$RUNNER_TEMP/directory-review/history-identity.txt"
+      - name: Check optional prototype and historical impact
+        id: optional
+        env:
+          EXPECTED_BASE: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {appendFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const {EXPECTED_BASE:base,EXPECTED_HEAD:head,GITHUB_OUTPUT:output}=process.env;
+          if(!/^[a-f0-9]{40}$/.test(base??'')||!/^[a-f0-9]{40}$/.test(head??'')||!output)throw Error('DIRECTORY_DIFF_BASE_REQUIRED');
+          const changed=execFileSync('git',['diff','--name-only','-z',base,head],{encoding:'utf8'}).split('\0').filter(Boolean);
+          const packageScripts=ref=>JSON.parse(execFileSync('git',['show',ref+':package.json'],{encoding:'utf8'})).scripts;
+          let prototypeScript=false,historicalScript=false;
+          if(changed.includes('package.json')){
+            const before=packageScripts(base),after=packageScripts(head);
+            prototypeScript=before['prototype:admin:build']!==after['prototype:admin:build'];
+            historicalScript=before['validate:p2:016:historical']!==after['validate:p2:016:historical'];
+          }
+          const prototype=prototypeScript||changed.some(p=>/^web\/admin-workbench-prototype\//.test(p));
+          const historical=historicalScript||changed.some(p=>/^(?:\.github\/review\/[^/]+\.(?:mjs|json)$|scripts\/validate-p2-016-(?:historical|ticket-lifecycle-workbench)\.mjs$|tests\/p2-016-historical-validation\.test\.mjs$|tools\/ts-migration\/(?:run-tests|routing)\.mts$)/.test(p));
+          appendFileSync(output,`prototype=${prototype}\nhistorical=${historical}\n`);
+          NODE
       - name: Current directory and orchestration regression
         run: |
           set -euo pipefail
@@ -96,13 +126,13 @@ jobs:
           mkdir -p "$RUNNER_TEMP/directory-review"
           npm run validate:architecture:v1.4 2>&1 | tee "$RUNNER_TEMP/directory-review/architecture.txt"
       - name: Prototype typecheck and build (not production acceptance)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.optional.outputs.prototype == 'true' }}
         run: |
           set -euo pipefail
           npm ci --prefix web/admin-workbench-prototype --ignore-scripts --no-audit --no-fund
           npm run prototype:admin:build 2>&1 | tee "$RUNNER_TEMP/directory-review/prototype-build.txt"
       - name: Frozen historical validation (not current readiness)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.optional.outputs.historical == 'true' }}
         run: |
           set -euo pipefail
           npm run validate:p2:016:historical 2>&1 | tee "$RUNNER_TEMP/directory-review/historical.txt"

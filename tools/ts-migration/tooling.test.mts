@@ -34,7 +34,7 @@ test('T01 build and negative checks run on an owned full clone, never on user so
   try {
     const first = build(root), digest = verifyArtifact(root);
     assert.ok(first.typed_implementations.includes('src/migration-canary.mts'));
-    assert.ok(first.unchecked_legacy.includes('src/p2-007-staff-directory-store.mjs'));
+    assert.ok(first.unchecked_legacy.includes('src/p2-015-decision-store.mjs'));
     await t.test('two clean builds produce identical manifests', () => {
       build(root); assert.equal(verifyArtifact(root), digest);
     });
@@ -46,7 +46,7 @@ test('T01 build and negative checks run on an owned full clone, never on user so
         alter(root, relative, readFileSync(path.join(root, relative), 'utf8') + '\n', () => assert.throws(() => verifyArtifact(root), /MIGRATION_INPUT_DRIFT/u));
       });
     }
-    for (const relative of ['src/migration-canary.mjs', 'src/p2-007-staff-directory-store.mjs', 'web/p2-workbench/index.html']) {
+    for (const relative of ['src/migration-canary.mjs', 'src/p2-015-decision-store.mjs', 'web/p2-workbench/index.html']) {
       await t.test('artifact tampering is rejected: ' + relative, () => {
         alter(root, '.build/runtime/' + relative, '// changed', () => assert.throws(() => verifyArtifact(root), /MIGRATION_OUTPUT_TAMPERED/u));
       });
