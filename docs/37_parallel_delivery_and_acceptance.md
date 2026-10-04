@@ -2,17 +2,17 @@
 
 ## 1. 原则
 
-P1-012 与 Phase 1 已完成并取得 `GO`。P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006 已完成。当前无活动 Lane；下一候选 P2-015 未授权。P2-015、P2-016、P2-012、P2-008 及以后 Runtime、P2-G2 至 P2-G5 和 P3 均须另行授权。所有 Feature Flag 默认关闭，完成架构重基线不等同于生产、临床、最终生产前端或 AI 自动回复批准。
+P1-012 与 Phase 1 已完成并取得 `GO`。业务任务、Lane 与 Gate 状态以 [业务架构/Gate 状态](architecture_baseline_status.md) 与 `plans/current_phase.json` 及其引用的既有 Evidence 为准；语言迁移进度以 [TypeScript 迁移执行入口](../plans/typescript-migration/README.md) 为准。普通迁移 PR 使用 v3 活动 selection，完整回归与发布认证按 P09/R01 的独立入口执行；下文业务 Gate 的现场验收与权限要求继续适用。所有持久 Feature Flag 默认关闭，开发检查通过不等同于生产、临床或 AI 自动回复批准。
 
 ## 2. P2 Lanes
 
-| Lane | 架构范围 | 当前授权 |
+| Lane | 架构范围 | 业务完成记录与授权入口 |
 |---|---|---|
 | P2-A | Conversation Core、Timeline、Realtime Event Log | P2-001/P2-002/P2-003 已完成并冻结 |
-| P2-B | Communication Outbox、Handoff、Workbench | P2-004/P2-005/P2-006 已完成；P2-016 未授权 |
-| ASSEMBLY | P1 与 P2-001 至 P2-006 Human-only 组装 | P2-G1 `PASSED`；当前无活动 Assembly |
-| P2-C | Rules、Journey/Manual Review、DeepSeek、Context/Memory | P2-007 已完成；P2-015/P2-008+ 未授权 |
-| P2-D | Human-confirmed Incident、Media/OCR、Metrics | P2-012/P2-011/P2-013 未授权 |
+| P2-B | Communication Outbox、Handoff、Workbench | P2-004/P2-005/P2-006/P2-016 已完成；后续授权见业务事实源 |
+| ASSEMBLY | P1 与 P2-001 至 P2-006 Human-only 组装 | P2-G1 `PASSED`；后续 Assembly 见业务事实源 |
+| P2-C | Rules、Journey/Manual Review、DeepSeek、Context/Memory | P2-007/P2-015 已完成；P2-008 保持阻断 |
+| P2-D | Human-confirmed Incident、Media/OCR、Metrics | P2-012 已完成；Media/OCR 后续须独立授权 |
 
 ### P2-002 独立交付边界
 
@@ -70,7 +70,7 @@ P2-G1 已在 P2-001 至 P2-006 独立完成后完成自动化 Assembly、真实�
 
 ### Assembly Contract 消费（P2-001 至 P2-006 已完成）
 
-- P2-003 已冻结独立 append/replay Contract；P2-G1 未来组装仍不得把 Projection Checkpoint
+- P2-003 已冻结独立 append/replay Contract；P2-G1 组装仍不得把 Projection Checkpoint
   当作 `Last-Event-ID`，也不得让 Realtime Event 反向拥有 Timeline。
 - P2-004 已在独立授权下提供 Communication Message / Outbox / Delivery 事实，并把
   P2-002 的 fixture Mapper 替换为真实只读 Adapter；Communication 事务不能绕过 Source
@@ -148,4 +148,4 @@ V1.4 不再要求历史数据 dry run、未完结工单切换、最终增量、�
 
 ## P2-G1 授权后的并行边界
 
-P2-B 的 P2-004、P2-005、P2-006 均已独立完成，P2-C 的 P2-007 已完成，P2-G1 已通过，ARCH-006 已完成重基线，当前无活动 Lane。下一候选 P2-015 以及 P2-016、P2-012、P2-G2、P2-008、AI/Media、P3 和生产启用仍须另行授权。
+已完成任务的 Acceptance/Stop line 描述各自历史验收与授权，不作为后续已授权 TypeScript 迁移的默认测试清单。当前业务授权见 [业务架构/Gate 状态](architecture_baseline_status.md) 与 `plans/current_phase.json` 及其引用的既有 Evidence，迁移执行见 [TypeScript 迁移执行入口](../plans/typescript-migration/README.md)。P2-G2-LIVE/P2-008、AI/Media、P3 与生产启用仍须独立授权；本轮不推进这些边界。

@@ -1,9 +1,10 @@
+import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 import { randomUUID } from 'node:crypto';
 import { createPostgresPool } from './platform/postgres-pool.mjs';
 
 const NAME = /^p2_g1_isolated_[a-z0-9]{1,12}_[a-f0-9]{24}$/u;
 
-export async function withP2G1IsolatedPostgres({ databaseUrl, purpose, run } = {}) {
+export async function withP2G1IsolatedPostgres<T>({ databaseUrl, purpose, run }: { databaseUrl?: string; purpose?: string; run?: (input: { pool: PostgresPool; databaseUrl: string; databaseName: string }) => T | Promise<T> } = {}) {
   if (typeof databaseUrl !== 'string' || databaseUrl.length < 1 || databaseUrl.length > 4_096
     || typeof purpose !== 'string' || !/^[a-z0-9]{1,12}$/u.test(purpose)
     || typeof run !== 'function') {
@@ -13,9 +14,9 @@ export async function withP2G1IsolatedPostgres({ databaseUrl, purpose, run } = {
   if (!NAME.test(databaseName)) throw new Error('P2_G1_ISOLATED_DATABASE_NAME_INVALID');
   const quotedName = `"${databaseName}"`;
   const admin = createPostgresPool({ connectionString: databaseUrl, max: 1, connectionTimeoutMillis: 2_000, application_name: 'p2_g1_isolated_admin' });
-  let isolatedPool = null;
-  let result;
-  let failure;
+  let isolatedPool: PostgresPool | null = null;
+  let result: T | undefined;
+  let failure: unknown;
   try {
     await admin.query(`CREATE DATABASE ${quotedName} TEMPLATE template0`);
     const isolatedUrl = new URL(databaseUrl);

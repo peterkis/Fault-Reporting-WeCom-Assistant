@@ -1,3 +1,48 @@
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { RealtimeAuthorization, RealtimeFallbackReason, RealtimeFallbackStrategy, RealtimePublicEventView, RealtimeErrorCode } from '../contracts/conversation_realtime_contracts.js';
+import type { PostgresPool } from './platform/postgres-pool.mjs';
+type RawRecord = Readonly<Record<string, unknown>>;
+type Callable = (...args: unknown[]) => unknown;
+type Listener = (event: string, listener: (() => unknown) | null) => unknown;
+type SseCode = (typeof REALTIME_SSE_ERROR_CODES)[keyof typeof REALTIME_SSE_ERROR_CODES];
+interface FallbackOptions { reason?: RealtimeFallbackReason | undefined; strategy?: RealtimeFallbackStrategy | undefined; pollAfterMs?: number | undefined; latestEventId?: string | null; retentionFloorEventId?: string | null }
+interface ReplayRequest { streamName: string; signal?: AbortSignal }
+interface ReplayListRequest extends ReplayRequest { afterEventId: string; limit: number; authorization: NormalizedAuthorization }
+type NormalizedAuthorization = RealtimeAuthorization & { readonly allowed_system_ticket_ids?: readonly string[] };
+export interface RealtimeReplayStore {
+  getRealtimeReplayWindow?: (options: ReplayRequest & { pool?: unknown }) => unknown | Promise<unknown>;
+  getReplayWindow?: (options: ReplayRequest & { pool?: unknown }) => unknown | Promise<unknown>;
+  replayWindow?: (options: ReplayRequest & { pool?: unknown }) => unknown | Promise<unknown>;
+  listAuthorizedRealtimeEvents?: (options: ReplayListRequest & { pool?: unknown }) => unknown | Promise<unknown>;
+  listAuthorizedEvents?: (options: ReplayListRequest & { pool?: unknown }) => unknown | Promise<unknown>;
+  listRealtimeEvents?: (options: ReplayListRequest & { pool?: unknown }) => unknown | Promise<unknown>;
+}
+export interface RealtimeSseOptions<P = unknown> {
+  enabled?: boolean; refreshAuthorization?: boolean; pool?: PostgresPool; eventStore?: RealtimeReplayStore;
+  authenticate?: (request: IncomingMessage) => P | null | Promise<P | null>;
+  authorize?: (principal: P, options: { request: IncomingMessage; scope: string }) => unknown | Promise<unknown>;
+  wakeupHub?: ReturnType<typeof createRealtimeWakeupHub>;
+  maxClients?: number; heartbeatMs?: number; recoveryPollMs?: number; replayBatchSize?: number; maxWritableBufferBytes?: number; drainTimeoutMs?: number;
+  onMetric?: (metric: RawRecord) => unknown; recordMetric?: (metric: RawRecord) => unknown;
+  setIntervalFn?: typeof setInterval; clearIntervalFn?: typeof clearInterval;
+  setTimeoutFn?: typeof setTimeout; clearTimeoutFn?: typeof clearTimeout; queueMicrotaskFn?: typeof queueMicrotask;
+}
+type Metrics = ReturnType<typeof createMetrics>;
+type Configuration = ReturnType<typeof normalizeHandlerConfiguration>;
+interface StreamState {
+  request: IncomingMessage; response: ServerResponse; principal: unknown; authorization: NormalizedAuthorization;
+  configuration: Configuration; metrics: Metrics; lease: unknown; resolveClosed: () => void;
+  responseOff: Listener | null; requestOff: Listener | null; abortController: AbortController;
+  scanCursor: string | null; closed: boolean; streaming: boolean; running: boolean; scheduled: boolean; eventsDue: boolean; heartbeatDue: boolean;
+  heartbeatTimer: ReturnType<typeof setInterval> | null; recoveryTimer: ReturnType<typeof setInterval> | null;
+  heartbeatTimerActive: boolean; recoveryTimerActive: boolean; onResponseClose: (() => void) | null; onRequestAborted: (() => void) | null; cancelDrain: (() => void) | null;
+}
+export interface RealtimeSseHandler {
+  (request: IncomingMessage, response: ServerResponse): Promise<void>;
+  handle: RealtimeSseHandler; close(): Promise<Readonly<Metrics>>; getMetrics(): Readonly<Metrics>; metrics(): Readonly<Metrics>;
+  wakeup(): unknown; notify(): unknown; disconnectPrincipal(principalId: string): Readonly<{ disconnected_count: number }>;
+  wakeupHub: unknown; hubSnapshot(): unknown;
+}
 import { types as utilTypes } from 'node:util';
 
 import * as realtimeEventLog from './p2-003-realtime-event-log.mjs';
@@ -34,7 +79,7 @@ export const REALTIME_SSE_ERROR_CODES = Object.freeze({
   storageFailed: 'CONVERSATION_REALTIME_STORAGE_FAILED',
 });
 
-const ERROR_CODE_SET = new Set(Object.values(REALTIME_SSE_ERROR_CODES));
+const ERROR_CODE_SET: ReadonlySet<string> = new Set(Object.values(REALTIME_SSE_ERROR_CODES));
 const FALLBACK_REASONS = new Set([
   'SSE_DISABLED',
   'CAPACITY_REACHED',
@@ -47,21 +92,22 @@ const FALLBACK_STRATEGIES = new Set([
 ]);
 
 export class RealtimeSseError extends Error {
-  constructor(code) {
-    const stableCode = ERROR_CODE_SET.has(code)
-      ? code
+  declare readonly code: SseCode;
+  constructor(code: unknown) {
+    const stableCode = ERROR_CODE_SET.has(code as string)
+      ? code as SseCode
       : REALTIME_SSE_ERROR_CODES.eventInvalid;
     super(stableCode);
     this.name = 'RealtimeSseError';
-    this.code = stableCode;
+    this.code = stableCode as SseCode;
   }
 }
 
-function fail(code) {
+function fail(code: SseCode): never {
   throw new RealtimeSseError(code);
 }
 
-function isPlainRecord(value) {
+function isPlainRecord(value: unknown): value is RawRecord {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     return false;
   }
@@ -76,7 +122,7 @@ function isPlainRecord(value) {
   }
 }
 
-function ownData(value, key) {
+function ownData(value: unknown, key: string): unknown {
   if (!isPlainRecord(value)) {
     return undefined;
   }
@@ -90,7 +136,7 @@ function ownData(value, key) {
   }
 }
 
-function methodOf(value, names) {
+function methodOf(value: unknown, names: readonly string[]): Callable | null {
   if (value === null || (typeof value !== 'object' && typeof value !== 'function')) {
     return null;
   }
@@ -116,26 +162,26 @@ function methodOf(value, names) {
   return null;
 }
 
-function boundedInteger(value, fallback, { minimum = 1, maximum } = {}) {
+function boundedInteger(value: unknown, fallback: number, { minimum = 1, maximum }: { minimum?: number; maximum?: number } = {}) {
   const candidate = value === undefined ? fallback : value;
   if (
     !Number.isSafeInteger(candidate)
-    || candidate < minimum
-    || candidate > maximum
+    || (candidate as number) < minimum
+    || (candidate as number) > (maximum as number)
   ) {
     fail(REALTIME_SSE_ERROR_CODES.eventInvalid);
   }
-  return candidate;
+  return candidate as number;
 }
 
-function compareCanonicalBigints(left, right) {
+function compareCanonicalBigints(left: string, right: string) {
   if (left.length !== right.length) {
     return left.length < right.length ? -1 : 1;
   }
   return left < right ? -1 : left > right ? 1 : 0;
 }
 
-function canonicalEventId(value, code = REALTIME_SSE_ERROR_CODES.cursorInvalid) {
+function canonicalEventId(value: unknown, code: SseCode = REALTIME_SSE_ERROR_CODES.cursorInvalid) {
   if (
     typeof value !== 'string'
     || !/^(0|[1-9][0-9]*)$/u.test(value)
@@ -147,7 +193,7 @@ function canonicalEventId(value, code = REALTIME_SSE_ERROR_CODES.cursorInvalid) 
   return value;
 }
 
-export function parseRealtimeLastEventId(value) {
+export function parseRealtimeLastEventId(value: unknown) {
   if (value === undefined || value === null) {
     return null;
   }
@@ -159,11 +205,11 @@ export function parseRealtimeLastEventId(value) {
 
 export const parseLastEventId = parseRealtimeLastEventId;
 
-export function normalizeRealtimeAuthorization(value) {
+export function normalizeRealtimeAuthorization(value: unknown) {
   if (!isPlainRecord(value)) {
     fail(REALTIME_SSE_ERROR_CODES.forbidden);
   }
-  let descriptors;
+  let descriptors: Record<string, PropertyDescriptor>;
   try {
     descriptors = Object.getOwnPropertyDescriptors(value);
     const keys = Reflect.ownKeys(descriptors);
@@ -182,7 +228,7 @@ export function normalizeRealtimeAuthorization(value) {
     if (
       keys.some((key) => typeof key !== 'string' || !allowedKeys.has(key))
       || keys.some((key) => {
-        const descriptor = descriptors[key];
+        const descriptor = descriptors[key as string] as PropertyDescriptor;
         return !Object.hasOwn(descriptor, 'value') || descriptor.enumerable !== true;
       })
     ) {
@@ -195,16 +241,16 @@ export function normalizeRealtimeAuthorization(value) {
     fail(REALTIME_SSE_ERROR_CODES.forbidden);
   }
 
-  function aliasedValue(snakeName, camelName) {
+  function aliasedValue(snakeName: string, camelName: string) {
     const hasSnake = Object.hasOwn(descriptors, snakeName);
     const hasCamel = Object.hasOwn(descriptors, camelName);
     if (hasSnake && hasCamel) {
       fail(REALTIME_SSE_ERROR_CODES.forbidden);
     }
     return hasSnake
-      ? descriptors[snakeName].value
+      ? (descriptors[snakeName] as PropertyDescriptor).value
       : hasCamel
-        ? descriptors[camelName].value
+        ? (descriptors[camelName] as PropertyDescriptor).value
         : undefined;
   }
 
@@ -227,8 +273,8 @@ export function buildRealtimeFallback({
   strategy,
   latestEventId = null,
   retentionFloorEventId = null,
-} = {}) {
-  if (!FALLBACK_REASONS.has(reason) || !FALLBACK_STRATEGIES.has(strategy)) {
+}: FallbackOptions = {}) {
+  if (!FALLBACK_REASONS.has(reason as string) || !FALLBACK_STRATEGIES.has(strategy as string)) {
     fail(REALTIME_SSE_ERROR_CODES.eventInvalid);
   }
   const normalizedPollAfterMs = boundedInteger(
@@ -248,7 +294,7 @@ export function buildRealtimeFallback({
   });
 }
 
-function publicEventView(value) {
+function publicEventView(value: unknown) {
   if (!isPlainRecord(value)) {
     fail(REALTIME_SSE_ERROR_CODES.eventInvalid);
   }
@@ -278,7 +324,7 @@ function publicEventView(value) {
   return event;
 }
 
-export function encodeRealtimeSseEvent(value) {
+export function encodeRealtimeSseEvent(value: unknown) {
   const event = publicEventView(value);
   const data = JSON.stringify(event);
   if (/[\r\n]/u.test(data)) {
@@ -295,24 +341,24 @@ export function encodeRealtimeHeartbeat() {
 
 export const encodeRealtimeSseHeartbeat = encodeRealtimeHeartbeat;
 
-export function createRealtimeWakeupHub({ maxClients = REALTIME_SSE_DEFAULTS.maxClients } = {}) {
+export function createRealtimeWakeupHub({ maxClients = REALTIME_SSE_DEFAULTS.maxClients }: { maxClients?: number } = {}) {
   const configuredMaxClients = boundedInteger(
     maxClients,
     REALTIME_SSE_DEFAULTS.maxClients,
     { maximum: REALTIME_SSE_DEFAULTS.maxClients },
   );
-  const subscribers = new Map();
+  const subscribers = new Map<number, () => unknown>();
   let nextSubscriberId = 1;
   let peakClients = 0;
   let closed = false;
 
-  function trySubscribe(onWakeup) {
+  function trySubscribe(onWakeup: unknown) {
     if (closed || typeof onWakeup !== 'function' || subscribers.size >= configuredMaxClients) {
       return null;
     }
     const subscriberId = nextSubscriberId;
     nextSubscriberId += 1;
-    subscribers.set(subscriberId, onWakeup);
+    subscribers.set(subscriberId, onWakeup as () => unknown);
     peakClients = Math.max(peakClients, subscribers.size);
     let released = false;
     return Object.freeze({
@@ -325,7 +371,7 @@ export function createRealtimeWakeupHub({ maxClients = REALTIME_SSE_DEFAULTS.max
     });
   }
 
-  function subscribe(onWakeup) {
+  function subscribe(onWakeup: unknown) {
     const lease = trySubscribe(onWakeup);
     if (lease === null) {
       fail(REALTIME_SSE_ERROR_CODES.capacityReached);
@@ -376,7 +422,7 @@ export function createRealtimeWakeupHub({ maxClients = REALTIME_SSE_DEFAULTS.max
   });
 }
 
-function stableErrorCode(error, fallback = REALTIME_SSE_ERROR_CODES.storageFailed) {
+function stableErrorCode(error: unknown, fallback: SseCode = REALTIME_SSE_ERROR_CODES.storageFailed): SseCode {
   if (error instanceof RealtimeSseError && ERROR_CODE_SET.has(error.code)) {
     return error.code;
   }
@@ -396,7 +442,7 @@ function stableErrorCode(error, fallback = REALTIME_SSE_ERROR_CODES.storageFaile
       const descriptor = Object.getOwnPropertyDescriptor(current, 'code');
       if (descriptor !== undefined) {
         const code = Object.hasOwn(descriptor, 'value') ? descriptor.value : undefined;
-        return typeof code === 'string' && ERROR_CODE_SET.has(code) ? code : fallback;
+        return typeof code === 'string' && ERROR_CODE_SET.has(code) ? code as SseCode : fallback;
       }
       current = Object.getPrototypeOf(current);
     }
@@ -406,8 +452,8 @@ function stableErrorCode(error, fallback = REALTIME_SSE_ERROR_CODES.storageFaile
   return fallback;
 }
 
-function errorEnvelope(code, { retryable = false, fallback = undefined } = {}) {
-  const body = {
+function errorEnvelope(code: string, { retryable = false, fallback = undefined }: { retryable?: boolean; fallback?: ReturnType<typeof buildRealtimeFallback> } = {}) {
+  const body: { ok: boolean; error: Readonly<{ code: string; retryable: boolean }>; fallback?: ReturnType<typeof buildRealtimeFallback> } = {
     ok: false,
     error: Object.freeze({ code, retryable }),
   };
@@ -417,7 +463,7 @@ function errorEnvelope(code, { retryable = false, fallback = undefined } = {}) {
   return Object.freeze(body);
 }
 
-function writeJsonResponse(response, status, body, headers = {}) {
+function writeJsonResponse(response: ServerResponse, status: number, body: unknown, headers: Record<string, string> = {}) {
   try {
     if (response.destroyed || response.writableEnded || response.headersSent) {
       return false;
@@ -440,11 +486,11 @@ function writeJsonResponse(response, status, body, headers = {}) {
   }
 }
 
-function writeErrorResponse(response, status, code, retryable = false, headers = {}) {
+function writeErrorResponse(response: ServerResponse, status: number, code: SseCode, retryable = false, headers: Record<string, string> = {}) {
   return writeJsonResponse(response, status, errorEnvelope(code, { retryable }), headers);
 }
 
-function writeFallbackResponse(response, {
+function writeFallbackResponse(response: ServerResponse, {
   status,
   code,
   reason,
@@ -452,7 +498,7 @@ function writeFallbackResponse(response, {
   pollAfterMs,
   latestEventId = null,
   retentionFloorEventId = null,
-}) {
+}: FallbackOptions & { status: number; code: SseCode }) {
   const fallback = buildRealtimeFallback({
     reason,
     pollAfterMs,
@@ -467,7 +513,7 @@ function writeFallbackResponse(response, {
   );
 }
 
-function normalizeReplayWindow(value) {
+function normalizeReplayWindow(value: unknown) {
   if (!isPlainRecord(value)) {
     fail(REALTIME_SSE_ERROR_CODES.storageFailed);
   }
@@ -493,7 +539,7 @@ function normalizeReplayWindow(value) {
   });
 }
 
-function normalizeReplayPage(value, afterEventId, limit) {
+function normalizeReplayPage(value: unknown, afterEventId: string, limit: number) {
   if (!isPlainRecord(value)) {
     fail(REALTIME_SSE_ERROR_CODES.storageFailed);
   }
@@ -511,7 +557,7 @@ function normalizeReplayPage(value, afterEventId, limit) {
     previousEventId = event.event_id;
     events.push(event);
   }
-  let nextAfterEventId = ownData(value, 'next_after_event_id')
+  let nextAfterEventId: unknown = ownData(value, 'next_after_event_id')
     ?? ownData(value, 'nextAfterEventId')
     ?? (events.at(-1)?.event_id ?? afterEventId);
   nextAfterEventId = canonicalEventId(
@@ -519,8 +565,8 @@ function normalizeReplayPage(value, afterEventId, limit) {
     REALTIME_SSE_ERROR_CODES.storageFailed,
   );
   if (
-    compareCanonicalBigints(nextAfterEventId, afterEventId) < 0
-    || (events.length > 0 && compareCanonicalBigints(nextAfterEventId, events.at(-1).event_id) < 0)
+    compareCanonicalBigints(nextAfterEventId as string, afterEventId) < 0
+    || (events.length > 0 && compareCanonicalBigints(nextAfterEventId as string, (events.at(-1) as RealtimePublicEventView).event_id) < 0)
   ) {
     fail(REALTIME_SSE_ERROR_CODES.storageFailed);
   }
@@ -538,11 +584,11 @@ function normalizeReplayPage(value, afterEventId, limit) {
   }
   return Object.freeze({
     events: Object.freeze(events),
-    next_after_event_id: nextAfterEventId,
+    next_after_event_id: nextAfterEventId as string,
   });
 }
 
-function createReplayReader({ eventStore, pool }) {
+function createReplayReader({ eventStore, pool }: { eventStore: unknown; pool: unknown }) {
   const store = eventStore ?? realtimeEventLog;
   const getWindow = methodOf(store, [
     'getRealtimeReplayWindow',
@@ -558,7 +604,7 @@ function createReplayReader({ eventStore, pool }) {
     fail(REALTIME_SSE_ERROR_CODES.storageFailed);
   }
   return Object.freeze({
-    async getWindow({ streamName, signal }) {
+    async getWindow({ streamName, signal }: ReplayRequest) {
       try {
         const value = await getWindow.call(store, { pool, streamName, signal });
         return normalizeReplayWindow(value);
@@ -566,7 +612,7 @@ function createReplayReader({ eventStore, pool }) {
         throw new RealtimeSseError(stableErrorCode(error));
       }
     },
-    async listEvents({ streamName, afterEventId, limit, authorization, signal }) {
+    async listEvents({ streamName, afterEventId, limit, authorization, signal }: ReplayListRequest) {
       try {
         const value = await listEvents.call(store, {
           pool,
@@ -584,7 +630,7 @@ function createReplayReader({ eventStore, pool }) {
   });
 }
 
-function safeWritableLength(response) {
+function safeWritableLength(response: ServerResponse) {
   try {
     const length = response.writableLength;
     return Number.isSafeInteger(length) && length >= 0 ? length : 0;
@@ -593,12 +639,12 @@ function safeWritableLength(response) {
   }
 }
 
-function listenerMethod(target, name) {
+function listenerMethod(target: unknown, name: string): Listener | null {
   const method = methodOf(target, [name]);
-  return typeof method === 'function' ? method.bind(target) : null;
+  return typeof method === 'function' ? method.bind(target) as Listener : null;
 }
 
-function connectionIsClosed(request, response) {
+function connectionIsClosed(request: IncomingMessage, response: ServerResponse) {
   try {
     return request?.aborted === true
       || request?.destroyed === true
@@ -609,7 +655,7 @@ function connectionIsClosed(request, response) {
   }
 }
 
-function ignoreFailure(operation) {
+function ignoreFailure(operation: () => unknown) {
   try {
     operation();
   } catch {
@@ -617,7 +663,7 @@ function ignoreFailure(operation) {
   }
 }
 
-function waitForDrain(state) {
+function waitForDrain(state: StreamState): Promise<boolean> {
   const { response, configuration, metrics } = state;
   const once = listenerMethod(response, 'once');
   const off = listenerMethod(response, 'off') ?? listenerMethod(response, 'removeListener');
@@ -625,11 +671,11 @@ function waitForDrain(state) {
     return Promise.reject(new RealtimeSseError(REALTIME_SSE_ERROR_CODES.slowClient));
   }
   metrics.active_drain_waiters += 1;
-  return new Promise((resolve, reject) => {
+  return new Promise<boolean>((resolve, reject) => {
     let settled = false;
-    let timer;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     let timerActive = false;
-    const settle = (outcome, error) => {
+    const settle = (outcome: boolean, error?: unknown) => {
       if (settled) {
         return;
       }
@@ -679,7 +725,7 @@ function waitForDrain(state) {
   });
 }
 
-async function writeSseFrame(state, frame) {
+async function writeSseFrame(state: StreamState, frame: string) {
   if (
     state.closed
     || state.response.destroyed
@@ -719,7 +765,7 @@ async function writeSseFrame(state, frame) {
   return true;
 }
 
-function createMetrics(maxClients) {
+function createMetrics(maxClients: number) {
   return {
     max_clients: maxClients,
     active_clients: 0,
@@ -739,7 +785,7 @@ function createMetrics(maxClients) {
   };
 }
 
-function frozenMetrics(metrics) {
+function frozenMetrics(metrics: Metrics) {
   return Object.freeze({
     max_clients: metrics.max_clients,
     active_clients: metrics.active_clients,
@@ -759,7 +805,7 @@ function frozenMetrics(metrics) {
   });
 }
 
-function safeMetric(onMetric, event, metrics, errorCode = null) {
+function safeMetric(onMetric: unknown, event: string, metrics: Metrics, errorCode: SseCode | null = null) {
   if (typeof onMetric !== 'function') {
     return;
   }
@@ -774,7 +820,7 @@ function safeMetric(onMetric, event, metrics, errorCode = null) {
   }
 }
 
-function timerFunction(options, key, fallback) {
+function timerFunction<T extends (...args: never[]) => unknown>(options: unknown, key: string, fallback: T): T {
   const candidate = ownData(options, key);
   if (candidate === undefined) {
     return fallback;
@@ -782,10 +828,10 @@ function timerFunction(options, key, fallback) {
   if (typeof candidate !== 'function') {
     fail(REALTIME_SSE_ERROR_CODES.eventInvalid);
   }
-  return candidate;
+  return candidate as T;
 }
 
-function normalizeHandlerConfiguration(options) {
+function normalizeHandlerConfiguration(options: unknown) {
   if (!isPlainRecord(options)) {
     fail(REALTIME_SSE_ERROR_CODES.eventInvalid);
   }
@@ -835,7 +881,7 @@ function normalizeHandlerConfiguration(options) {
   });
 }
 
-function requestHeader(request, name) {
+function requestHeader(request: IncomingMessage, name: string) {
   try {
     const headers = request.headers;
     if (headers === null || typeof headers !== 'object' || utilTypes.isProxy(headers)) {
@@ -850,14 +896,14 @@ function requestHeader(request, name) {
   }
 }
 
-function principalIsPresent(value) {
+function principalIsPresent(value: unknown) {
   return value !== null
     && typeof value === 'object'
     && !Array.isArray(value)
     && !utilTypes.isProxy(value);
 }
 
-function configureSseHeaders(response) {
+function configureSseHeaders(response: ServerResponse) {
   response.writeHead(200, {
     'content-type': 'text/event-stream; charset=utf-8',
     'cache-control': 'no-cache, no-transform',
@@ -869,7 +915,7 @@ function configureSseHeaders(response) {
   }
 }
 
-export function createRealtimeSseHandler(options = {}) {
+export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOptions<P> = {}): RealtimeSseHandler {
   const configuration = normalizeHandlerConfiguration(options);
   const pool = ownData(options, 'pool');
   const eventStore = ownData(options, 'eventStore');
@@ -884,8 +930,8 @@ export function createRealtimeSseHandler(options = {}) {
   ) {
     fail(REALTIME_SSE_ERROR_CODES.eventInvalid);
   }
-  const authenticateRequest = authenticate ?? (async () => null);
-  const authorizePrincipal = authorize ?? (async () => null);
+  const authenticateRequest = authenticate as RealtimeSseOptions["authenticate"] ?? (async () => null);
+  const authorizePrincipal = authorize as RealtimeSseOptions["authorize"] ?? (async () => null);
   const wakeupHub = suppliedHub ?? createRealtimeWakeupHub({
     maxClients: configuration.maxClients,
   });
@@ -908,18 +954,18 @@ export function createRealtimeSseHandler(options = {}) {
     ? createReplayReader({ eventStore, pool })
     : null;
   const metrics = createMetrics(configuration.maxClients);
-  const streams = new Set();
+  const streams = new Set<StreamState>();
   let handlerClosed = false;
 
   function getMetrics() {
     return frozenMetrics(metrics);
   }
 
-  function emitMetric(event, errorCode = null) {
+  function emitMetric(event: string, errorCode: SseCode | null = null) {
     safeMetric(onMetric, event, metrics, errorCode);
   }
 
-  function cleanupStream(state, { destroy = false, errorCode = null } = {}) {
+  function cleanupStream(state: StreamState, { destroy = false, errorCode = null }: { destroy?: boolean; errorCode?: SseCode | null } = {}) {
     if (state.closed) {
       return;
     }
@@ -927,24 +973,24 @@ export function createRealtimeSseHandler(options = {}) {
     state.streaming = false;
     ignoreFailure(() => state.abortController.abort());
     if (state.cancelDrain) {
-      ignoreFailure(() => state.cancelDrain());
+      ignoreFailure(() => (state.cancelDrain as () => void)());
     }
     if (state.heartbeatTimerActive) {
       state.heartbeatTimerActive = false;
       metrics.active_heartbeat_timers -= 1;
-      ignoreFailure(() => configuration.clearIntervalFn(state.heartbeatTimer));
+      ignoreFailure(() => configuration.clearIntervalFn(state.heartbeatTimer as ReturnType<typeof setInterval>));
     }
     if (state.recoveryTimerActive) {
       state.recoveryTimerActive = false;
       metrics.active_recovery_timers -= 1;
-      ignoreFailure(() => configuration.clearIntervalFn(state.recoveryTimer));
+      ignoreFailure(() => configuration.clearIntervalFn(state.recoveryTimer as ReturnType<typeof setInterval>));
     }
     if (state.responseOff) {
-      ignoreFailure(() => state.responseOff('close', state.onResponseClose));
-      ignoreFailure(() => state.responseOff('error', state.onResponseClose));
+      ignoreFailure(() => (state.responseOff as Listener)('close', state.onResponseClose));
+      ignoreFailure(() => (state.responseOff as Listener)('error', state.onResponseClose));
     }
     if (state.requestOff) {
-      ignoreFailure(() => state.requestOff('aborted', state.onRequestAborted));
+      ignoreFailure(() => (state.requestOff as Listener)('aborted', state.onRequestAborted));
     }
     const release = methodOf(state.lease, ['release']);
     if (release) {
@@ -964,7 +1010,7 @@ export function createRealtimeSseHandler(options = {}) {
     emitMetric('realtime_client_closed', errorCode);
   }
 
-  async function replayAvailable(state) {
+  async function replayAvailable(state: StreamState) {
     if (state.configuration.refreshAuthorization) {
       try {
         state.authorization = normalizeRealtimeAuthorization(await authorizePrincipal(state.principal, {
@@ -977,8 +1023,8 @@ export function createRealtimeSseHandler(options = {}) {
       }
     }
     while (!state.closed) {
-      const afterEventId = state.scanCursor;
-      const page = await replayReader.listEvents({
+      const afterEventId = state.scanCursor as string;
+      const page = await (replayReader as NonNullable<typeof replayReader>).listEvents({
         streamName: REALTIME_STREAM_NAME,
         afterEventId,
         limit: configuration.replayBatchSize,
@@ -1010,7 +1056,7 @@ export function createRealtimeSseHandler(options = {}) {
     }
   }
 
-  async function pump(state) {
+  async function pump(state: StreamState) {
     if (state.running || state.closed) {
       return;
     }
@@ -1036,7 +1082,7 @@ export function createRealtimeSseHandler(options = {}) {
     }
   }
 
-  function handlePumpFailure(state, error) {
+  function handlePumpFailure(state: StreamState, error: unknown) {
     if (state.closed) {
       return;
     }
@@ -1049,7 +1095,7 @@ export function createRealtimeSseHandler(options = {}) {
     cleanupStream(state, { destroy: true, errorCode: code });
   }
 
-  function schedulePump(state) {
+  function schedulePump(state: StreamState) {
     if (state.closed || !state.streaming || state.scheduled || state.running) {
       return;
     }
@@ -1065,7 +1111,7 @@ export function createRealtimeSseHandler(options = {}) {
     }
   }
 
-  function startStreamTimers(state) {
+  function startStreamTimers(state: StreamState) {
     state.heartbeatTimer = configuration.setIntervalFn(() => {
       if (!state.closed) {
         state.heartbeatDue = true;
@@ -1092,7 +1138,7 @@ export function createRealtimeSseHandler(options = {}) {
     }
   }
 
-  async function serveRealtime(request, response, url) {
+  async function serveRealtime(request: IncomingMessage, response: ServerResponse, url: URL) {
     let disconnectedDuringAuthorization = connectionIsClosed(request, response);
     const onEarlyDisconnect = () => {
       disconnectedDuringAuthorization = true;
@@ -1181,8 +1227,8 @@ export function createRealtimeSseHandler(options = {}) {
       return;
     }
 
-    let state;
-    const lease = hubTrySubscribe.call(wakeupHub, () => {
+    let state: StreamState | undefined;
+    const lease = (hubTrySubscribe as Callable).call(wakeupHub, () => {
       if (state && !state.closed) {
         state.eventsDue = true;
         schedulePump(state);
@@ -1200,8 +1246,8 @@ export function createRealtimeSseHandler(options = {}) {
       });
       return;
     }
-    let resolveClosed;
-    const closedPromise = new Promise((resolve) => {
+    let resolveClosed: unknown;
+    const closedPromise = new Promise<void>((resolve) => {
       resolveClosed = resolve;
     });
     const responseOff = listenerMethod(response, 'off')
@@ -1234,7 +1280,7 @@ export function createRealtimeSseHandler(options = {}) {
       onResponseClose: null,
       onRequestAborted: null,
       cancelDrain: null,
-    };
+    } as StreamState;
     state.onResponseClose = () => cleanupStream(state);
     state.onRequestAborted = () => cleanupStream(state, { destroy: true });
     listenerMethod(response, 'once')?.('close', state.onResponseClose);
@@ -1248,7 +1294,7 @@ export function createRealtimeSseHandler(options = {}) {
 
     let window;
     try {
-      window = await replayReader.getWindow({
+      window = await (replayReader as NonNullable<typeof replayReader>).getWindow({
         streamName: REALTIME_STREAM_NAME,
         signal: state.abortController.signal,
       });
@@ -1299,7 +1345,7 @@ export function createRealtimeSseHandler(options = {}) {
     await closedPromise;
   }
 
-  async function handler(request, response) {
+  async function handler(request: IncomingMessage, response: ServerResponse) {
     let url;
     try {
       url = new URL(request.url ?? '/', 'http://localhost');
@@ -1354,10 +1400,10 @@ export function createRealtimeSseHandler(options = {}) {
   }
 
   function wakeup() {
-    return hubWakeup.call(wakeupHub);
+    return (hubWakeup as Callable).call(wakeupHub);
   }
 
-  function disconnectPrincipal(principalId) {
+  function disconnectPrincipal(principalId: unknown) {
     if (typeof principalId !== 'string' || principalId.length < 1 || principalId.length > 128) {
       throw new TypeError('Realtime SSE principal disconnect configuration is invalid.');
     }
@@ -1389,5 +1435,5 @@ export function createRealtimeSseHandler(options = {}) {
       enumerable: true,
     },
   });
-  return Object.freeze(handler);
+  return Object.freeze(handler) as RealtimeSseHandler;
 }

@@ -14,7 +14,7 @@
 | 层级 | 技术 | 用途 |
 |---|---|---|
 | 企业微信 | Node.js 24 + `@wecom/aibot-node-sdk@1.0.6` | 单活 WSS Gateway |
-| 应用/API | 当前 Node.js ESM；增量目标 Node.js 24 + TypeScript strict + ESM（ADR-0026） | REST、SSE、Command、Projection |
+| 应用/API | Node.js 24 + TypeScript strict + ESM（ADR-0026），按 scope 渐进迁移 | REST、SSE、Command、Projection |
 | 数据库 | PostgreSQL | 消息、会话、Ticket、事件、Outbox、AI、Integration |
 | 前端 | 轻量 React/Next.js 或现有静态工作台渐进升级 | 人工处理界面 |
 | 模型 | DeepSeek Provider Adapter | 多轮建议与草稿 |
@@ -67,7 +67,8 @@
 - 所有外部 ID 有唯一约束；
 - Ticket 状态变化使用事务；
 - Outbox 与领域事件同事务；
-- 时间统一 `timestamptz`；
+- 时间遵守 [ARCH-005](48_arch_005_asia_shanghai_time_contract.md)：业务 LocalDateTime 为 Asia/Shanghai 的 `YYYY-MM-DD HH:mm:ss`，使用 PostgreSQL `timestamp without time zone`；物理时间、期限与保留期使用十进制字符串及 BIGINT epoch；
+- 系统 Schema、第三方内部时间、冻结历史与 Adapter 转换前的外部原始时间沿用 ARCH-005 排除规则；
 - JSONB 仅用于扩展字段；
 - 大文件不进数据库；
 - 概念 Schema 不能直接执行；
@@ -96,14 +97,14 @@
 - Secret 不进入仓库、日志或 Evidence。
 
 
-## 10. TypeScript 增量迁移（T00 政策）
+## 10. TypeScript 增量迁移
 
-见 [ADR-0026](../adr/0026_typescript_strict_incremental_migration.md) 与 [执行入口](../plans/typescript-migration/README.md)。当前后端尚未建立根类型检查，本节是迁移约束，不是已实施声明。
+见 [ADR-0026](../adr/0026_typescript_strict_incremental_migration.md) 与 [执行入口](../plans/typescript-migration/README.md)。根 strict 类型检查、MTS→MJS 构建及源码/运行/固定历史宿主已经建立；实际迁移范围以 `plans/typescript-migration/scope.json` 的 current_module_map 为准。
 
 - 生产 `.mts` 经 NodeNext 编译为 `.mjs`；相对运行时 import 保留 `.mjs`，前端原型保留独立 Bundler/JSX 配置。
-- Node `>=24 <25`、SDK `1.0.6`、pg `8.23.0` 不捆绑升级；T01 再核实并锁定 TypeScript、@types/node 24 线和 @types/pg 8 线。本 PR 不改依赖或启动方式。
-- 先建立源码/运行/冻结历史三种验证宿主，再迁移 173 个非 G0 模块和 8 个活动启动脚本；命名 legacy 清单保留，不追求全仓 100% TS。
-- 新生产 JS 禁止，具体工具 bootstrap 例外须另行登记。allowJs 不代表旧 JS 已严格检查，手写声明也不代表实现已通过。
-- types/build 在 T00 为 NOT_APPLICABLE_T00；必要基线未完成时状态为 BASELINE_INCOMPLETE。生产仅运行编译后的 JS，不在 2C4G 上增加常驻编译器。
+- Node、SDK、pg、TypeScript 与类型包版本以 `package.json` / `package-lock.json` 的实际锁定记录为准；本轮不升级依赖。
+- 原 181 项 scope 与 legacy 清单保留，按活动 selection 验证，不追求全仓 JS 清零。
+- 新生产 JS 禁止；allowJs 和手写声明不表示未迁移 JS 实现已经严格检查完成。
+- 生产只运行编译产物，2C4G 上不增加常驻编译器；开发检查不表示发布认证或生产激活。
 
-本次仅修改语言政策；其他技术选型段落是既有内容。本文件既有时间表述与后来 ARCH-005 的差异不在 T00 改写范围内，迁移必须继续遵循实际平台时间契约和已接受的后续基线，不能借语言迁移变更 SQL/时间语义。
+本轮只纠正文档时效与 ARCH-005 描述，不改变 SQL、序列化、精度、排序、保留期限或冻结历史。

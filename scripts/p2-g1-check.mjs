@@ -29,6 +29,9 @@ export async function runP2G1Check({ env = process.env } = {}) {
   const migrationsPresent = REQUIRED_MIGRATIONS.every((name) => existsSync(`database/migrations/${name}`));
   const noNewMigration = !existsSync('database/migrations/022_p2_g1_human_only_assembly.sql');
   const defaultsOff = DEFAULT_FALSE_FLAGS.every((name) => new RegExp(`^${name}=false$`, 'mu').test(envExample));
+  // Source checkouts use the approved migration map; staged runtimes retain logical .mjs paths.
+  const scopePath = 'plans/typescript-migration/scope.json';
+  const currentModuleMap = existsSync(scopePath) ? JSON.parse(readFileSync(scopePath, 'utf8')).current_module_map : {};
   const sourcePresent = [
     'src/p2-g1-human-only-assembly.mjs','src/p2-g1-inbound-projection-coordinator.mjs',
     'src/p2-g1-wecom-gateway.mjs','src/p2-g1-wecom-sender.mjs','src/p2-g1-test-authentication.mjs',
@@ -36,7 +39,7 @@ export async function runP2G1Check({ env = process.env } = {}) {
     'src/p2-g1-process-cluster.mjs','src/p2-g1-process-metrics.mjs','src/p2-g1-isolated-postgres.mjs',
     'src/p2-g1-migrations.mjs','scripts/p2-g1-process-role.mjs','scripts/p2-g1-replay-gap-e2e.mjs',
     'scripts/p2-g1-resource-observation.mjs',
-  ].every(existsSync);
+  ].every((logicalPath) => existsSync(currentModuleMap[logicalPath] ?? logicalPath));
   let postgres = false;
   let relations = false;
   let catalogHash = null;

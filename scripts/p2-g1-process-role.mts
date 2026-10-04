@@ -1,3 +1,19 @@
+import type { PostgresPool } from '../src/platform/postgres-pool.mjs';
+import type { G1RuntimeOptions, G1AuthenticationPort } from '../src/p2-g1-runtime.mjs';
+import type { CommunicationSenderRequest } from '../contracts/communication_contracts.js';
+import type { CommunicationSenderResult } from '../src/p2-004-communication-sender-port.mjs';
+export type G1ProviderResponse = { type: 'provider-send-response'; request_id: string } & ({ ok: true; result: CommunicationSenderResult } | { ok: false; error_code: string });
+export type G1RoleCommand =
+  | { type: 'peer-status'; gateway_authenticated: boolean; worker_ready: boolean }
+  | { type: 'metrics-request'; request_id: string }
+  | { type: 'sse-disconnect'; request_id: string; principal_index: number }
+  | { type: 'provider-send-request'; request_id: string; request: Omit<CommunicationSenderRequest, 'signal'> }
+  | G1ProviderResponse
+  | { type: 'gateway-disconnect' | 'gateway-reconnect'; request_id: string }
+  | { type: 'stop' };
+interface AppOptions { runtimeFactory?: typeof createP2G1Runtime; authenticationFactory?: ((input: { pool: PostgresPool; publicOrigin: string }) => G1AuthenticationPort | Promise<G1AuthenticationPort>) | null; publicOrigin?: string | null; externalSendEnabled?: boolean }
+interface GatewayOptions { intakeFactory?: typeof createP2G1PilotOperationalIntake; gatewayFactory?: typeof createP2G1WeComGateway; senderFactory?: (input: NonNullable<Parameters<typeof createP2G1WeComCommunicationSender>[0]> & { pool: PostgresPool }) => ReturnType<typeof createP2G1WeComCommunicationSender> }
+interface WorkerOptions { extensionFactory?: ((input: { pool: PostgresPool }) => { runOnce(): unknown | Promise<unknown> }) | null; reportCycleHealth?: boolean; beforeReady?: ((input: { pool: PostgresPool }) => unknown | Promise<unknown>) | null }
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
@@ -11,30 +27,30 @@ import { createP2G1WeComCommunicationSender } from '../src/p2-g1-wecom-sender.mj
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
-function role(argv) {
+function role(argv: string[]) {
   const value = argv.find((entry) => entry.startsWith('--role='))?.slice('--role='.length)?.toUpperCase();
-  if (!P2_G1_PROCESS_ROLES.includes(value) || argv.length !== 1) throw new Error('P2_G1_PROCESS_ROLE_INVALID');
+  if (!P2_G1_PROCESS_ROLES.includes(value as string) || argv.length !== 1) throw new Error('P2_G1_PROCESS_ROLE_INVALID');
   return value;
 }
 
-function required(name, pattern = /^.+$/u) {
+function required(name: string, pattern = /^.+$/u) {
   const value = process.env[name];
   if (typeof value !== 'string' || !pattern.test(value)) throw new Error('P2_G1_PROCESS_CONFIGURATION_INVALID');
   return value;
 }
 
-function truth(name) { return process.env[name] === 'true'; }
+function truth(name: string) { return process.env[name] === 'true'; }
 
-function send(value) {
+function send(value: object) {
   if (typeof process.send !== 'function') throw new Error('P2_G1_PROCESS_IPC_REQUIRED');
   process.send(value);
 }
 
-function stableFailure(currentRole) {
+function stableFailure(currentRole: unknown) {
   return `P2_G1_${currentRole}_PROCESS_FAILED`;
 }
 
-function safePoolMetrics(pool) {
+function safePoolMetrics(pool: PostgresPool) {
   return Object.freeze({
     pool_total: Number(pool.totalCount ?? 0),
     pool_idle: Number(pool.idleCount ?? 0),
@@ -43,7 +59,7 @@ function safePoolMetrics(pool) {
   });
 }
 
-async function waitForGateway(gateway, { timeoutMs = 60_000 } = {}) {
+async function waitForGateway(gateway: Pick<ReturnType<typeof createP2G1WeComGateway>, "getStatus">, { timeoutMs = 60_000 } = {}) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (gateway.getStatus().authenticated === true) return true;
@@ -60,7 +76,7 @@ function configuredPrincipals() {
   return values;
 }
 
-export async function runApp({runtimeFactory=createP2G1Runtime,authenticationFactory=null,publicOrigin=null,externalSendEnabled=true}={}) {
+export async function runApp({runtimeFactory=createP2G1Runtime,authenticationFactory=null,publicOrigin=null,externalSendEnabled=true}: AppOptions = {}) {
   const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
     max: 4,
@@ -70,8 +86,8 @@ export async function runApp({runtimeFactory=createP2G1Runtime,authenticationFac
   const metrics = createP2G1ProcessMetrics({ role: 'APP' });
   const peer = { gatewayAuthenticated: !truth('P2_G1_REQUIRE_GATEWAY'), workerReady: false };
   const resolvedOrigin=publicOrigin??`http://127.0.0.1:${Number(required('P2_G1_LISTEN_PORT', /^[0-9]{4,5}$/u))}`;
-  let authentication = null;
-  let runtime;
+  let authentication: G1AuthenticationPort | null = null;
+  let runtime: ReturnType<typeof createP2G1Runtime>;
   try {
     authentication=authenticationFactory?await authenticationFactory({pool,publicOrigin:resolvedOrigin}):null;
     runtime = runtimeFactory({
@@ -106,7 +122,7 @@ export async function runApp({runtimeFactory=createP2G1Runtime,authenticationFac
     metrics.close();
     send({ type: 'role-stopped', role: 'APP' });
   }
-  process.on('message', (message) => {
+  process.on('message', (message: G1RoleCommand) => {
     if (!message || typeof message !== 'object') return;
     if (message.type === 'peer-status') {
       peer.gatewayAuthenticated = message.gateway_authenticated === true;
@@ -128,7 +144,7 @@ export async function runApp({runtimeFactory=createP2G1Runtime,authenticationFac
   send({ type: 'role-ready', role: 'APP', address: started.address, cookies: started.cookies, pool_max: 4 });
 }
 
-export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake,senderFactory=createP2G1WeComCommunicationSender,gatewayFactory=createP2G1WeComGateway}={}) {
+export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake,senderFactory=createP2G1WeComCommunicationSender,gatewayFactory=createP2G1WeComGateway}: GatewayOptions = {}) {
   const enabled = truth('P2_G1_GATEWAY_ENABLED');
   const senderEnabled = truth('P2_G1_SENDER_ENABLED');
   const pool = createPostgresPool({
@@ -138,7 +154,7 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake
     application_name: 'p2_g1_gateway',
   });
   const metrics = createP2G1ProcessMetrics({ role: 'GATEWAY' });
-  let gateway;
+  let gateway: ReturnType<typeof createP2G1WeComGateway>;
   if (enabled) {
     const assembly = createP2G1HumanOnlyAssembly({
       operationalIntake: intakeFactory({ pool, identityHashKey: required('PILOT_LOG_IDENTITY_HASH_KEY', /^.{16,}$/u) }),
@@ -179,7 +195,7 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake
     metrics.close();
     send({ type: 'role-stopped', role: 'GATEWAY' });
   }
-  process.on('message', (message) => {
+  process.on('message', (message: G1RoleCommand) => {
     if (!message || typeof message !== 'object') return;
     if (message.type === 'metrics-request') {
       send({ type: 'metrics-response', role: 'GATEWAY', request_id: message.request_id, metrics: { ...metrics.sample(), ...safePoolMetrics(pool) } });
@@ -215,7 +231,7 @@ export async function runGateway({intakeFactory=createP2G1PilotOperationalIntake
   send({ type: 'role-ready', role: 'GATEWAY', authenticated, pool_max: 1 });
 }
 
-export async function runWorker({extensionFactory=null,reportCycleHealth=false,beforeReady=null}={}) {
+export async function runWorker({extensionFactory=null,reportCycleHealth=false,beforeReady=null}: WorkerOptions = {}) {
   const enabled = truth('P2_G1_SENDER_ENABLED');
   const pool = createPostgresPool({
     connectionString: required('PILOT_DATABASE_URL'),
@@ -226,9 +242,9 @@ export async function runWorker({extensionFactory=null,reportCycleHealth=false,b
   try { await beforeReady?.({pool}); }
   catch(error) { await pool.end(); throw error; }
   const metrics = createP2G1ProcessMetrics({ role: 'WORKER' });
-  const pending = new Map();
+  const pending = new Map<string, { resolve: (result: CommunicationSenderResult) => void; reject: (error: unknown) => void }>();
   const sender = Object.freeze({
-    send(request) {
+    send(request: CommunicationSenderRequest): Promise<CommunicationSenderResult> {
       const requestId = randomUUID();
       const serializable = {
         provider: request.provider,
@@ -239,7 +255,7 @@ export async function runWorker({extensionFactory=null,reportCycleHealth=false,b
         idempotency_key: request.idempotency_key,
         message: request.message,
       };
-      return new Promise((resolve, reject) => {
+      return new Promise<CommunicationSenderResult>((resolve, reject) => {
         pending.set(requestId, { resolve, reject });
         send({ type: 'provider-send-request', role: 'WORKER', request_id: requestId, request: serializable });
       });
@@ -251,8 +267,8 @@ export async function runWorker({extensionFactory=null,reportCycleHealth=false,b
   let running = false;
   let task = Promise.resolve();
   let failureCount = 0;
-  let lastErrorCode = null;
-  const publishHealth = ready => { if (reportCycleHealth) send({ type: 'worker-status', role: 'WORKER', ready, failure_count: failureCount, last_error_code: lastErrorCode }); };
+  let lastErrorCode: string | null = null;
+  const publishHealth: (ready: boolean) => void = ready => { if (reportCycleHealth) send({ type: 'worker-status', role: 'WORKER', ready, failure_count: failureCount, last_error_code: lastErrorCode }); };
   const timer = setInterval(() => {
     if (stopping || running || (!enabled && !extension)) return;
     running = true;
@@ -271,7 +287,7 @@ export async function runWorker({extensionFactory=null,reportCycleHealth=false,b
     metrics.close();
     send({ type: 'role-stopped', role: 'WORKER' });
   }
-  process.on('message', (message) => {
+  process.on('message', (message: G1RoleCommand) => {
     if (!message || typeof message !== 'object') return;
     if (message.type === 'provider-send-response') {
       const request = pending.get(message.request_id);

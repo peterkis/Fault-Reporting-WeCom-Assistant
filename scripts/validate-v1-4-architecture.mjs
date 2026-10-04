@@ -837,7 +837,7 @@ for (const relativePath of p2003Files) {
   check(fs.existsSync(sourcePath(relativePath)), relativePath + ' exists for P2-003 completion');
 }
 check(pkg.scripts['p2:003:migrate'] === 'node --env-file=.env.pilot scripts/p2-003-migrate.mjs', 'package exposes migration 012 command');
-check(pkg.scripts['p2:003:retention:check'] === 'node --env-file=.env.pilot scripts/p2-003-retention.mjs --check', 'package exposes retention check command');
+check(pkg.scripts['p2:003:retention:check'] === 'node .build/tools/verify-artifact.mjs && node --env-file=.env.pilot .build/runtime/scripts/p2-003-retention.mjs --check', 'package exposes verified staged retention check command');
 check(testScriptMatches('test:p2:003', 'node --test tests/p2-003-realtime-event-log.test.mjs'), 'package exposes P2-003 unit tests');
 check(testScriptMatches('test:p2:003:integration', 'node --env-file=.env.pilot --test --test-concurrency=1 tests/p2-003-realtime-event-log.integration.test.mjs'), 'package exposes serial P2-003 integration tests');
 

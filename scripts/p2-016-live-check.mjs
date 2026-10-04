@@ -1,9 +1,11 @@
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createPostgresPool } from '../src/platform/postgres-pool.mjs';
 import { readP2016LiveConfiguration,P2016_LIVE_FUSES } from '../src/p2-016-live-configuration.mjs';
 import { migrateP2016 } from './p2-016-migrate.mjs';
 import { validateP2016 } from './validate-p2-016-ticket-lifecycle-workbench.mjs';
+import { G2_ROOT } from '../src/p2-g2-candidate.mjs';
 
 export function assertP2016ReadyCandidate({state,report,hash}){
   if(state!=='READY_FOR_TARGETED_LIVE_VALIDATION'||report?.status!==state||report?.runtime_input_sha256!==hash
@@ -31,7 +33,7 @@ export async function checkP2016Live(env=process.env){
   try{
     const c=readP2016LiveConfiguration(env);
     const validation=await validateP2016();if(!validation.ok||validation.readiness_evidence_checked!==true)throw new Error('P2_016_ARCHITECTURE_GATE_FAILED');
-    const report=JSON.parse(await readFile(new URL('../evidence/p2-016-automated-readiness-report.json',import.meta.url),'utf8'));
+    const report=JSON.parse(await readFile(path.join(G2_ROOT,'evidence/p2-016-automated-readiness-report.json'),'utf8'));
     assertP2016ReadyCandidate({state:validation.state,report,hash:validation.runtime_input_sha256});
     const migration=await migrateP2016({databaseUrl:c.databaseUrl,mode:'status'});
     if(migration.status!=='NOOP_ALREADY_APPLIED')throw new Error('P2_016_COMMITTED_031_REQUIRED');

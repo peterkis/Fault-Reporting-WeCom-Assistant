@@ -10,6 +10,132 @@ import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { counts, runSelection } from './run-tests.mjs';
 const original = sourceRoot();
+test('P2 staged live checks read canonical source evidence before database gates', () => {
+  verifyArtifact(original);
+  for (const task of ['016', '012']) {
+    const probe = `
+      import assert from 'node:assert/strict'; import {mock} from 'node:test'; import path from 'node:path';
+      import {pathToFileURL,fileURLToPath} from 'node:url'; import {randomUUID} from 'node:crypto'; import * as fs from 'node:fs/promises';
+      const root=process.cwd(),task=${JSON.stringify(task)},runtime=path.join(root,'.build/runtime'),reads=[];
+      const url=p=>pathToFileURL(path.join(runtime,p)).href;
+      const config=await import(url('src/p2-'+task+'-live-configuration.mjs'));
+      const state='READY_FOR_TARGETED_LIVE_VALIDATION',hash='a'.repeat(64);
+      const report={status:state,runtime_input_sha256:hash,all_automated_checks_passed:true,regression:{pass:523,fail:0,skipped:0,cancelled:0,todo:0},live_validation:'NOT_RUN',second_commit_created:false};
+      const exports=Object.fromEntries(Object.entries(fs).filter(([k])=>k!=='default'));
+      mock.module('node:fs/promises',{namedExports:{...exports,readFile:async file=>{reads.push(file instanceof URL?fileURLToPath(file):String(file));return JSON.stringify(report);}}});
+      const suffix=task==='016'?'ticket-lifecycle-workbench':'human-confirmed-incident';
+      mock.module(url('scripts/validate-p2-'+task+'-'+suffix+'.mjs'),{namedExports:{['validateP2'+task]:async()=>({ok:true,state,readiness_evidence_checked:true,runtime_input_sha256:hash})}});
+      mock.module(url('scripts/p2-'+task+'-migrate.mjs'),{namedExports:{['migrateP2'+task]:async()=>({status:'NOT_APPLIED_SYNTHETIC_FIXTURE'})}});
+      const prefix='P2_'+task+'_',env={...Object.fromEntries(config['P2'+task+'_LIVE_FUSES'].map(k=>[k,'true'])),
+        PILOT_DATABASE_URL:'postgres://synthetic.invalid/test',PILOT_LOG_IDENTITY_HASH_KEY:'synthetic-private-key-not-for-logging',
+        WECOM_BOT_ID:'synthetic-bot',WECOM_BOT_SECRET:'synthetic-private-bot-secret',WECOM_WS_URL:'wss://synthetic.invalid'};
+      Object.assign(env,{[prefix+'TEST_PRINCIPAL_IDS']:[randomUUID(),randomUUID()].join(','),[prefix+'TEST_USER_TARGET_HASHES']:'a'.repeat(64),
+        [prefix+'TEST_GROUP_TARGET_HASHES']:'b'.repeat(64),[prefix+'REPORTER_ORIGIN']:'https://reporter.invalid',
+        [prefix+'REPORTER_ALLOWED_HOSTS']:'reporter.invalid',[prefix+'REPORTER_HMAC_SECRET']:'synthetic-reporter-private-key-0001'});
+      if(task==='012')env.P2_012_REPORTER_SCOPE_MODE='APPROVED_GROUP_PARTICIPANTS';
+      const api=await import(url('scripts/p2-'+task+'-live-check.mjs')); const result=await api['checkP2'+task+'Live'](env);
+      assert.deepEqual(reads,[path.join(root,'evidence/p2-'+task+'-automated-readiness-report.json')]);
+      assert.equal(result.ok,false); assert.equal(result.error_code,'P2_'+task+'_COMMITTED_'+(task==='016'?'031':'032')+'_REQUIRED');
+      assert.equal(result.provider_calls,0);assert.equal(result.listener_started,false);assert.equal(result.network_started,false);
+      console.log('CANONICAL_SOURCE_EVIDENCE_NO_DATABASE_OR_SEND');`;
+    const result = spawnSync(process.execPath, ['--experimental-test-module-mocks', '--input-type=module', '--eval', probe],
+      { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 15_000 });
+    assert.equal(result.error, undefined); assert.equal(result.status, 0, result.stdout + result.stderr);
+  }
+});
+test('ARCH-005 staged failure receipts target canonical source evidence with exclusive creation', () => {
+  verifyArtifact(original);
+  const probe = `
+    import assert from 'node:assert/strict'; import {mock} from 'node:test'; import path from 'node:path';
+    import {pathToFileURL,fileURLToPath} from 'node:url'; import * as fs from 'node:fs/promises';
+    const root=process.cwd(),runtime=path.join(root,'.build/runtime'),writes=[],directories=[];
+    const url=p=>pathToFileURL(path.join(runtime,p)).href;
+    const pool=await import(url('src/platform/postgres-pool.mjs'));
+    mock.module(url('src/platform/postgres-pool.mjs'),{namedExports:{...pool,createPostgresPool:()=>({connect:async()=>{throw Error('SYNTHETIC_CONNECTION_REFUSED');},end:async()=>{}})}});
+    const exports=Object.fromEntries(Object.entries(fs).filter(([k])=>k!=='default'));
+    mock.module('node:fs/promises',{namedExports:{...exports,mkdir:async file=>{directories.push(file instanceof URL?fileURLToPath(file):String(file));},
+      writeFile:async(file,text,options)=>{writes.push({file:file instanceof URL?fileURLToPath(file):String(file),record:JSON.parse(text),options});}}});
+    const {reprojectArch005TimeHashes}=await import(url('scripts/arch-005-reproject-time-hashes.mjs'));
+    await assert.rejects(reprojectArch005TimeHashes({databaseUrl:'postgres://synthetic.invalid/test',approved:false}),/NOT_AUTHORIZED/u);
+    assert.equal(writes.length,0);
+    await assert.rejects(reprojectArch005TimeHashes({databaseUrl:'postgres://synthetic.invalid/test',approved:true}),/SYNTHETIC_CONNECTION_REFUSED/u);
+    assert.deepEqual(directories,[path.join(root,'evidence')]);assert.equal(writes.length,1);
+    assert.equal(path.dirname(writes[0].file),path.join(root,'evidence'));assert.equal(writes[0].options.flag,'wx');
+    assert.equal(writes[0].record.outcome,'FAIL'); assert.equal(writes[0].record.authoritative_fact_deletes,0);
+    console.log('CANONICAL_FAILURE_RECEIPT_NO_REAL_DATABASE_OR_FILESYSTEM_WRITES');`;
+  const result = spawnSync(process.execPath, ['--experimental-test-module-mocks', '--input-type=module', '--eval', probe],
+    { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 15_000 });
+  assert.equal(result.error, undefined); assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+test('G2 staged preflight binds the source candidate and reads relative manifests from that source', () => {
+  verifyArtifact(original);
+  const directory = mkdtempSync(path.join(tmpdir(), 'p02-g2-source-manifest-'));
+  try {
+    const manifestFile = path.join(directory, 'live.json');
+    const probe = `
+      import assert from 'node:assert/strict'; import path from 'node:path'; import {writeFileSync} from 'node:fs';
+      import {G2_ROOT,g2CandidateInventory,verifyG2Candidate} from './.build/runtime/src/p2-g2-candidate.mjs';
+      import {readG2ManifestFile} from './.build/runtime/scripts/p2-g2-check.mjs';
+      import {configurationFixture} from './.build/runtime/tests/helpers/p2-g2-configuration-fixture.mjs';
+      const root=process.cwd(),runtime=path.join(root,'.build/runtime');
+      assert.equal(path.resolve(G2_ROOT),root);
+      const source=g2CandidateInventory(); assert.equal(source.fingerprint,g2CandidateInventory(root).fingerprint);
+      assert.notEqual(source.fingerprint,g2CandidateInventory(runtime).fingerprint);
+      const manifest=configurationFixture('live').manifest; manifest.candidate_fingerprint=source.fingerprint;
+      writeFileSync(${JSON.stringify(manifestFile)},JSON.stringify(manifest));
+      const parsed=readG2ManifestFile(path.relative(root,${JSON.stringify(manifestFile)}));
+      assert.deepEqual(parsed,manifest); verifyG2Candidate(parsed.candidate_fingerprint);
+      assert.throws(()=>verifyG2Candidate(parsed.candidate_fingerprint,runtime),/P2_G2_CANDIDATE_CHANGED/u);
+      console.log('SOURCE_CANDIDATE_AND_MANIFEST_VERIFIED_NO_ACTIVATION');`;
+    const result = spawnSync(process.execPath, ['--input-type=module', '--eval', probe],
+      { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 15_000 });
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /SOURCE_CANDIDATE_AND_MANIFEST_VERIFIED_NO_ACTIVATION/u);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+test('P02 affected CLI launchers reach their safety guards from verified artifacts', () => {
+  verifyArtifact(original);
+  const directory = mkdtempSync(path.join(tmpdir(), 'p02-launcher-env-'));
+  try {
+    const environmentFile = path.join(directory, 'empty.env'); writeFileSync(environmentFile, '');
+    const pkg = record(JSON.parse(readFileSync(path.join(original, 'package.json'), 'utf8')) as unknown);
+    const scripts = record(pkg.scripts);
+    const cases = [
+      ['p2:002:rebuild:check', [], 'CONVERSATION_TIMELINE_SOURCE_INVALID'],
+      ['p2:003:retention:check', [], 'CONVERSATION_REALTIME_RETENTION_FAILED'],
+      ['p2:003:retention:apply', [], 'CONVERSATION_REALTIME_RETENTION_NOT_AUTHORIZED'],
+      ['arch:005:reproject', [], 'ARCH_005_PROJECTION_REBUILD_NOT_AUTHORIZED'],
+      ['p2:016:live', ['--invalid'], 'P2_016_LIVE_RUN_FAILED'],
+      ['p2:012:live', ['--invalid'], 'P2_012_LIVE_RUN_FAILED'],
+      ['p2:g2:live', ['--help'], 'Usage:'],
+    ] as const;
+    for (const [name, extra, expected] of cases) {
+      const command = scripts[name]; assert.equal(typeof command, 'string');
+      assert.ok(typeof command === 'string');
+      const parts = command.split(' && ');
+      assert.equal(parts[0], 'node .build/tools/verify-artifact.mjs');
+      assert.ok(parts[1]);
+      const args = parts[1].split(/\s+/u); assert.equal(args.shift(), 'node');
+      const result = spawnSync(process.execPath, [...args.map(arg => arg.startsWith('--env-file=') ? '--env-file=' + environmentFile : arg), ...extra],
+        { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 15_000 });
+      assert.equal(result.error, undefined, name);
+      assert.equal(result.status, name === 'p2:g2:live' ? 0 : 1, name);
+      const output = result.stdout + result.stderr;
+      assert.ok(output.includes(expected), name + ': ' + output);
+      assert.doesNotMatch(output, /ERR_MODULE_NOT_FOUND|ERR_UNKNOWN_FILE_EXTENSION/u);
+    }
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+test('G1 synthetic wrapper runs its nested assembly tests from the staged tree', () => {
+  verifyArtifact(original);
+  const result = spawnSync(process.execPath, ['.build/runtime/scripts/p2-g1-synthetic-e2e.mjs'],
+    { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 30_000 });
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /G1 staged preflight recognizes assembly files/u);
+  assert.doesNotMatch(result.stdout + result.stderr, /ERR_MODULE_NOT_FOUND|ERR_UNKNOWN_FILE_EXTENSION/u);
+});
 test('routed reporter rejects a case trace naming a different execution file',()=>{
   const root=scratch(), log=mkdtempSync(path.join(tmpdir(),'current-case-invalid-'));
   try{

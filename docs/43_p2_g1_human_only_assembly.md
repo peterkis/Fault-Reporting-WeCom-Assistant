@@ -1,5 +1,7 @@
 # 43. P2-G1 Human-only Conversation Center Assembly
 
+> 适用范围：本文件保留 P2-G1 业务契约与历史验收。语言迁移使用 v3 活动 selection，不把历史全仓/现场清单作为普通 PR 默认要求。源码路径按 scope.current_module_map 解析；编译产物与运行时 import 仍为 `.mjs`。
+
 ## 目标与边界
 
 P2-G1 把已完成的 P1 入站链路与 P2-001 至 P2-006 组装为 Human-only 验证闭环。Unified Ticket Core 继续拥有 Ticket 编号、状态、责任与事件；Conversation Timeline 是可重建读模型，Realtime Event Log 是可清理通知投影，Communication Message/Outbox/Delivery 是人工外发事实，只有 Delivery Worker 可以调用 WeCom Sender。

@@ -13,7 +13,7 @@ export interface WorkbenchHttpOptions {
   enabled?: boolean; queryService?: QueryService; commandFacade?: CommandFacade; authenticate?: WorkbenchAuthenticate;
   sseHandler?: ((request: IncomingMessage, response: ServerResponse, url: URL) => unknown | Promise<unknown>) | null;
   healthProvider?: { live: () => { ok: boolean } | Promise<{ ok: boolean }>; ready: () => { ok: boolean } | Promise<{ ok: boolean }>; metrics?: () => unknown | Promise<unknown> } | null;
-  publicOrigin?: string; staticHandler?: ReturnType<typeof createWorkbenchStaticHandler>;
+  publicOrigin?: string | undefined; staticHandler?: ReturnType<typeof createWorkbenchStaticHandler>;
   unauthenticatedHandler?: ((context: RequestContext) => boolean | Promise<boolean>) | null;
   authenticatedHandler?: ((context: AuthenticatedContext) => boolean | Promise<boolean>) | null;
 }

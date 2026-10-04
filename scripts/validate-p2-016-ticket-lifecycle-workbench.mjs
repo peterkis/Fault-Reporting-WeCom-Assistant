@@ -2,10 +2,11 @@ import {existsSync} from 'node:fs';
 import { readFile,readdir } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { fileURLToPath,pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import {isG2SuccessorState,verifyG2Predecessor} from '../src/p2-g2-predecessor-verification.mjs';
-const root=fileURLToPath(new URL('../',import.meta.url));
+import { G2_ROOT } from '../src/p2-g2-candidate.mjs';
+const root=G2_ROOT;
 const base='b1b8e4deb14e6290ca45aea12d92baaef4728c11',authorization='3599fa479c752ed75cd4652e5ffdaee2b212ad24';
 const git=(...args)=>execFileSync('git',['-c','safe.directory='+root.replaceAll('\\','/'),'-c','core.safecrlf=false',...args],{cwd:root,encoding:'utf8',maxBuffer:8000000});
 function sourcePath(relative) {

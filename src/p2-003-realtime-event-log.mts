@@ -1,3 +1,28 @@
+import type {
+  RealtimeEventCommand, RealtimeErrorCode, RealtimeSafeJsonValue,
+  RealtimeSafeJsonObject, RealtimeEventAppendResult, RealtimeAuthorization,
+  RealtimePublicEventView, RealtimeReplayWindow, RealtimeReplayPage,
+} from '../contracts/conversation_realtime_contracts.js';
+import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
+import type { MigrationQueryable } from './platform/legacy-migration-guard.mjs';
+import type { LocalDateTime } from '../contracts/time_contracts.js';
+type RawRecord = Readonly<Record<string, unknown>>;
+type JsonState = { seen: Set<object>; nodes: number };
+type BigintOptions = { minimum?: bigint; nullable?: boolean; allowNumeric?: boolean; code?: RealtimeErrorCode };
+export interface RealtimeStoreOptions { pool?: PostgresPool; enabled?: boolean; defaultRetentionMs?: number; default_retention_ms?: number }
+interface RetentionSummary { mode: 'CHECK' | 'APPLY'; checkedCount: number; expiredPrefixCount: number; deletedCount: number; previousFloor: string; newFloor: string; candidateFloor: string; limit: number }
+// These are the three payloads authored by this module. Other publishers retain
+// the existing safe JSON boundary; no new runtime payload protocol is imposed.
+export interface RealtimeMapperPayloads {
+  'conversation.item.created': RealtimeSafeJsonObject & { readonly item_id: string; readonly session_id: string; readonly sequence_no: string; readonly item_type: string; readonly sender_kind: string; readonly visibility: string; readonly occurred_at: LocalDateTime };
+  'conversation.session.created': RealtimeSafeJsonObject & { readonly session_id: string; readonly thread_id: string; readonly status: string; readonly control_mode: string; readonly generation_version: string; readonly row_version: string; readonly occurred_at: LocalDateTime };
+  'conversation.session.updated': RealtimeMapperPayloads['conversation.session.created'];
+  'conversation.timeline.rebuilt': RealtimeSafeJsonObject & { readonly session_id: string; readonly item_count: number; readonly canonical_timeline_hash: string; readonly occurred_at: LocalDateTime };
+}
+export type RealtimeMappedEvent<T extends keyof RealtimeMapperPayloads = keyof RealtimeMapperPayloads> = {
+  [K in T]: Omit<RealtimeEventCommand, 'event_type' | 'payload'> & { readonly event_type: K; readonly payload: RealtimeMapperPayloads[K] }
+}[T];
+export type NormalizedRealtimeAuthorization = RealtimeAuthorization & { readonly allowed_system_ticket_ids?: readonly string[] };
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { types as utilTypes } from 'node:util';
@@ -77,7 +102,7 @@ export const REALTIME_EVENT_TYPES = Object.freeze([
   'ticket.assignment.changed',
   'ticket.notification.created',
   'ticket.notification.delivery_changed',
-]);
+] as const);
 
 export const REALTIME_SOURCE_TYPES = Object.freeze([
   'CONVERSATION_SESSION',
@@ -90,7 +115,7 @@ export const REALTIME_SOURCE_TYPES = Object.freeze([
   'INCIDENT_EVENT',
   'GATEWAY_EVENT',
   'MANUAL_REVIEW',
-]);
+] as const);
 
 export const REALTIME_AGGREGATE_TYPES = Object.freeze([
   'CONVERSATION_SESSION',
@@ -104,18 +129,18 @@ export const REALTIME_AGGREGATE_TYPES = Object.freeze([
   'INCIDENT_CANDIDATE',
   'GATEWAY_CONNECTION',
   'MANUAL_REVIEW',
-]);
+] as const);
 
 export const REALTIME_AUTHORIZATION_SCOPE_TYPES = Object.freeze([
   'SESSION',
   'THREAD',
   'SYSTEM',
-]);
+] as const);
 
 export const REALTIME_VISIBILITY_SCOPES = Object.freeze([
   'WORKBENCH',
   'RESTRICTED_ADMIN',
-]);
+] as const);
 
 export const REALTIME_ERROR_CODES = Object.freeze({
   disabled: 'CONVERSATION_REALTIME_DISABLED',
@@ -134,7 +159,7 @@ export const REALTIME_ERROR_CODES = Object.freeze({
   schemaDrift: 'P2_003_SCHEMA_DRIFT_REMEDIATION_REQUIRED',
 });
 
-const ERROR_CODE_SET = new Set(Object.values(REALTIME_ERROR_CODES));
+const ERROR_CODE_SET: ReadonlySet<string> = new Set(Object.values(REALTIME_ERROR_CODES));
 const EVENT_TYPE_SET = new Set(REALTIME_EVENT_TYPES);
 const SOURCE_TYPE_SET = new Set(REALTIME_SOURCE_TYPES);
 const AGGREGATE_TYPE_SET = new Set(REALTIME_AGGREGATE_TYPES);
@@ -209,21 +234,22 @@ const FORBIDDEN_JSON_KEYS = new Set([
 ]);
 
 export class RealtimeEventLogError extends Error {
-  constructor(code) {
+  declare readonly code: RealtimeErrorCode;
+  constructor(code: unknown) {
     const stableCode = typeof code === 'string' && ERROR_CODE_SET.has(code)
       ? code
       : REALTIME_ERROR_CODES.eventInvalid;
     super(stableCode);
     this.name = 'RealtimeEventLogError';
-    this.code = stableCode;
+    this.code = stableCode as RealtimeErrorCode;
   }
 }
 
-function fail(code) {
+function fail(code: RealtimeErrorCode): never {
   throw new RealtimeEventLogError(code);
 }
 
-function isStableError(error) {
+function isStableError(error: unknown): error is RealtimeEventLogError {
   try {
     if (
       error === null
@@ -243,7 +269,7 @@ function isStableError(error) {
   }
 }
 
-function safeErrorDataProperty(error, key) {
+function safeErrorDataProperty(error: unknown, key: string): unknown {
   try {
     if (
       error === null
@@ -269,7 +295,7 @@ function safeErrorDataProperty(error, key) {
   return undefined;
 }
 
-function mapStorageError(error, fallback = REALTIME_ERROR_CODES.storageFailed) {
+function mapStorageError(error: unknown, fallback: RealtimeErrorCode = REALTIME_ERROR_CODES.storageFailed) {
   if (isStableError(error)) {
     return error;
   }
@@ -284,7 +310,7 @@ function mapStorageError(error, fallback = REALTIME_ERROR_CODES.storageFailed) {
   return new RealtimeEventLogError(fallback);
 }
 
-function isPlainRecord(value) {
+function isPlainRecord(value: unknown): value is RawRecord {
   if (value === null || typeof value !== 'object' || utilTypes.isProxy(value)) {
     return false;
   }
@@ -295,7 +321,7 @@ function isPlainRecord(value) {
   return prototype === Object.prototype || prototype === null;
 }
 
-function assertPlainRecord(value, code = REALTIME_ERROR_CODES.eventInvalid) {
+function assertPlainRecord(value: unknown, code: RealtimeErrorCode = REALTIME_ERROR_CODES.eventInvalid): asserts value is RawRecord {
   try {
     if (!isPlainRecord(value) || Object.getOwnPropertySymbols(value).length !== 0) {
       fail(code);
@@ -313,16 +339,16 @@ function assertPlainRecord(value, code = REALTIME_ERROR_CODES.eventInvalid) {
   }
 }
 
-function plainRecordSnapshot(value, code = REALTIME_ERROR_CODES.eventInvalid) {
+function plainRecordSnapshot(value: unknown, code: RealtimeErrorCode = REALTIME_ERROR_CODES.eventInvalid) {
   assertPlainRecord(value, code);
-  const snapshot = Object.create(null);
+  const snapshot: Record<string, unknown> = Object.create(null);
   for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value))) {
     snapshot[key] = descriptor.value;
   }
   return Object.freeze(snapshot);
 }
 
-function dataPropertyFromPrototypeChain(target, key, code) {
+function dataPropertyFromPrototypeChain(target: unknown, key: string, code: RealtimeErrorCode): unknown {
   try {
     if (
       target === null
@@ -354,7 +380,7 @@ function dataPropertyFromPrototypeChain(target, key, code) {
   fail(code);
 }
 
-function assertExactKeys(snapshot, allowedKeys, requiredKeys, code) {
+function assertExactKeys(snapshot: RawRecord, allowedKeys: ReadonlySet<string>, requiredKeys: readonly string[], code: RealtimeErrorCode) {
   const keys = Object.keys(snapshot);
   if (
     keys.some((key) => !allowedKeys.has(key))
@@ -364,16 +390,16 @@ function assertExactKeys(snapshot, allowedKeys, requiredKeys, code) {
   }
 }
 
-function normalizeKeyForDenyList(key) {
+function normalizeKeyForDenyList(key: string) {
   return key.toLowerCase().replaceAll(/[^a-z0-9]/gu, '');
 }
 
 function clonePlainJson(
-  value,
-  code = REALTIME_ERROR_CODES.eventInvalid,
-  state = { seen: new Set(), nodes: 0 },
+  value: unknown,
+  code: RealtimeErrorCode = REALTIME_ERROR_CODES.eventInvalid,
+  state: JsonState = { seen: new Set(), nodes: 0 },
   depth = 0,
-) {
+): RealtimeSafeJsonValue {
   if (state.nodes >= SAFE_JSON_MAX_NODES) {
     fail(code);
   }
@@ -441,9 +467,9 @@ function clonePlainJson(
     if (keys.length > SAFE_JSON_MAX_KEYS) {
       fail(code);
     }
-    const copy = Object.create(null);
+    const copy: Record<string, RealtimeSafeJsonValue> = Object.create(null);
     for (const key of keys) {
-      const descriptor = descriptors[key];
+      const descriptor = (descriptors[key] as PropertyDescriptor);
       if (
         !Object.hasOwn(descriptor, 'value')
         || descriptor.enumerable !== true
@@ -467,7 +493,7 @@ function clonePlainJson(
   }
 }
 
-function canonicalJson(value) {
+function canonicalJson(value: RealtimeSafeJsonValue): string {
   if (value === null) {
     return 'null';
   }
@@ -478,19 +504,19 @@ function canonicalJson(value) {
     return `[${value.map((entry) => canonicalJson(entry)).join(',')}]`;
   }
   return `{${Object.keys(value).sort().map(
-    (key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`,
+    (key) => `${JSON.stringify(key)}:${canonicalJson(((value as RealtimeSafeJsonObject)[key] as RealtimeSafeJsonValue))}`,
   ).join(',')}}`;
 }
 
-function sha256Canonical(value) {
+function sha256Canonical(value: RealtimeSafeJsonValue) {
   return createHash('sha256').update(canonicalJson(value)).digest('hex');
 }
 
-function boundedString(value, maximum, {
+function boundedString(value: unknown, maximum: number, {
   minimum = 1,
   pattern = null,
   code = REALTIME_ERROR_CODES.eventInvalid,
-} = {}) {
+}: { minimum?: number; pattern?: RegExp | null; code?: RealtimeErrorCode } = {}) {
   if (
     typeof value !== 'string'
     || !value.isWellFormed()
@@ -505,19 +531,21 @@ function boundedString(value, maximum, {
   return value;
 }
 
-function requiredUuid(value, code = REALTIME_ERROR_CODES.eventInvalid) {
+function requiredUuid(value: unknown, code: RealtimeErrorCode = REALTIME_ERROR_CODES.eventInvalid) {
   if (typeof value !== 'string' || !UUID_PATTERN.test(value)) {
     fail(code);
   }
   return value.toLowerCase();
 }
 
-function canonicalBigint(value, {
+function canonicalBigint(value: unknown, options: BigintOptions & { nullable: true }): string | null;
+function canonicalBigint(value: unknown, options?: BigintOptions & { nullable?: false }): string;
+function canonicalBigint(value: unknown, {
   minimum = 0n,
   nullable = false,
   allowNumeric = false,
   code = REALTIME_ERROR_CODES.eventInvalid,
-} = {}) {
+}: BigintOptions = {}) {
   if (value === null && nullable) {
     return null;
   }
@@ -541,42 +569,42 @@ function canonicalBigint(value, {
   return text;
 }
 
-function boundedInteger(value, fallback, maximum, code = REALTIME_ERROR_CODES.eventInvalid) {
+function boundedInteger(value: unknown, fallback: number, maximum: number, code: RealtimeErrorCode = REALTIME_ERROR_CODES.eventInvalid) {
   const candidate = value === undefined ? fallback : value;
-  if (!Number.isSafeInteger(candidate) || candidate < 1 || candidate > maximum) {
+  if (!Number.isSafeInteger(candidate) || (candidate as number) < 1 || (candidate as number) > maximum) {
     fail(code);
   }
-  return candidate;
+  return candidate as number;
 }
 
-function isoDateTime(value, code = REALTIME_ERROR_CODES.eventInvalid) {
+function isoDateTime(value: unknown, code: RealtimeErrorCode = REALTIME_ERROR_CODES.eventInvalid) {
   try { return assertLocalDateTime(value); }
   catch { fail(code); }
 }
 
-function normalizeStreamName(value, code = REALTIME_ERROR_CODES.eventInvalid) {
+function normalizeStreamName(value: unknown, code: RealtimeErrorCode = REALTIME_ERROR_CODES.eventInvalid): typeof REALTIME_STREAM_NAME {
   const candidate = value === undefined ? REALTIME_STREAM_NAME : value;
   if (candidate !== REALTIME_STREAM_NAME) {
     fail(code);
   }
-  return candidate;
+  return candidate as typeof REALTIME_STREAM_NAME;
 }
 
-function enumValue(value, values, code = REALTIME_ERROR_CODES.eventInvalid) {
-  if (typeof value !== 'string' || !values.has(value)) {
+function enumValue<T extends string>(value: unknown, values: ReadonlySet<T>, code: RealtimeErrorCode = REALTIME_ERROR_CODES.eventInvalid) {
+  if (typeof value !== 'string' || !values.has(value as T)) {
     fail(code);
   }
-  return value;
+  return value as T;
 }
 
-function eventIdentifier(value, maximum = 256, code = REALTIME_ERROR_CODES.eventInvalid) {
+function eventIdentifier(value: unknown, maximum = 256, code: RealtimeErrorCode = REALTIME_ERROR_CODES.eventInvalid) {
   return boundedString(value, maximum, {
     code,
     pattern: /^[A-Za-z0-9][A-Za-z0-9._:\-]*$/u,
   });
 }
 
-function resultRows(result, code = REALTIME_ERROR_CODES.storageFailed) {
+function resultRows(result: unknown, code: RealtimeErrorCode = REALTIME_ERROR_CODES.storageFailed) {
   const rows = dataPropertyFromPrototypeChain(result, 'rows', code);
   if (
     !Array.isArray(rows)
@@ -606,7 +634,7 @@ function resultRows(result, code = REALTIME_ERROR_CODES.storageFailed) {
   return Object.freeze(snapshots);
 }
 
-async function query(queryable, sql, values, code = REALTIME_ERROR_CODES.storageFailed) {
+async function query(queryable: unknown, sql: string, values?: readonly unknown[], code: RealtimeErrorCode = REALTIME_ERROR_CODES.storageFailed): Promise<unknown> {
   const queryMethod = dataPropertyFromPrototypeChain(queryable, 'query', code);
   if (typeof queryMethod !== 'function') {
     fail(code);
@@ -614,7 +642,7 @@ async function query(queryable, sql, values, code = REALTIME_ERROR_CODES.storage
   return queryMethod.call(queryable, sql, values);
 }
 
-async function connectPool(pool, code = REALTIME_ERROR_CODES.storageFailed) {
+async function connectPool(pool: unknown, code: RealtimeErrorCode = REALTIME_ERROR_CODES.storageFailed): Promise<unknown> {
   const connect = dataPropertyFromPrototypeChain(pool, 'connect', code);
   if (typeof connect !== 'function') {
     fail(code);
@@ -626,7 +654,7 @@ async function connectPool(pool, code = REALTIME_ERROR_CODES.storageFailed) {
   }
 }
 
-async function rollbackQuietly(client) {
+async function rollbackQuietly(client: unknown) {
   try {
     await query(client, 'ROLLBACK', undefined, REALTIME_ERROR_CODES.storageFailed);
     return false;
@@ -635,7 +663,7 @@ async function rollbackQuietly(client) {
   }
 }
 
-function releaseQuietly(client, destroy = false) {
+function releaseQuietly(client: unknown, destroy = false) {
   try {
     const release = dataPropertyFromPrototypeChain(
       client,
@@ -650,7 +678,7 @@ function releaseQuietly(client, destroy = false) {
   }
 }
 
-async function acquireStreamLock(transaction, code = REALTIME_ERROR_CODES.storageFailed) {
+async function acquireStreamLock(transaction: unknown, code: RealtimeErrorCode = REALTIME_ERROR_CODES.storageFailed) {
   await query(
     transaction,
     'SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))',
@@ -659,7 +687,7 @@ async function acquireStreamLock(transaction, code = REALTIME_ERROR_CODES.storag
   );
 }
 
-export function normalizeRealtimeEventCommand(input) {
+export function normalizeRealtimeEventCommand(input: unknown): RealtimeEventCommand {
   const snapshot = plainRecordSnapshot(input);
   assertExactKeys(snapshot, COMMAND_KEY_SET, REQUIRED_COMMAND_KEYS, REALTIME_ERROR_CODES.eventInvalid);
   if (snapshot.schema_version !== 1) {
@@ -698,7 +726,7 @@ export function normalizeRealtimeEventCommand(input) {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
   const visibilityScope = enumValue(snapshot.visibility_scope, VISIBILITY_SCOPE_SET);
-  const payload = clonePlainJson(snapshot.payload);
+  const payload = clonePlainJson(snapshot.payload) as RealtimeSafeJsonObject;
   if (payload === null || Array.isArray(payload) || typeof payload !== 'object') {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
@@ -740,7 +768,7 @@ export function normalizeRealtimeEventCommand(input) {
   });
 }
 
-function realtimeEventKeyFromNormalized(command) {
+function realtimeEventKeyFromNormalized(command: RealtimeEventCommand) {
   return `rte_v1_${sha256Canonical([
     'conversation-realtime-event-key-v1',
     command.publisher_name,
@@ -753,11 +781,11 @@ function realtimeEventKeyFromNormalized(command) {
   ])}`;
 }
 
-function realtimePayloadHashFromNormalized(command) {
+function realtimePayloadHashFromNormalized(command: RealtimeEventCommand) {
   return sha256Canonical(command.payload);
 }
 
-function realtimeEventHashFromNormalized(command) {
+function realtimeEventHashFromNormalized(command: RealtimeEventCommand) {
   return sha256Canonical([
     'conversation-realtime-event-hash-v1',
     command.schema_version,
@@ -779,7 +807,7 @@ function realtimeEventHashFromNormalized(command) {
   ]);
 }
 
-function normalizeRealtimeHashInput(input) {
+function normalizeRealtimeHashInput(input: unknown) {
   const snapshot = plainRecordSnapshot(input);
   const allowedRuntimeKeys = new Set([
     ...COMMAND_KEYS,
@@ -792,7 +820,7 @@ function normalizeRealtimeHashInput(input) {
   if (Object.keys(snapshot).some((key) => !allowedRuntimeKeys.has(key))) {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
-  const command = Object.create(null);
+  const command: Record<string, unknown> = Object.create(null);
   for (const key of COMMAND_KEYS) {
     if (!Object.hasOwn(snapshot, key) && key !== 'expires_epoch_ms') {
       fail(REALTIME_ERROR_CODES.eventInvalid);
@@ -802,15 +830,15 @@ function normalizeRealtimeHashInput(input) {
   return normalizeRealtimeEventCommand(command);
 }
 
-export function computeRealtimeEventKey(command) {
+export function computeRealtimeEventKey(command: unknown) {
   return realtimeEventKeyFromNormalized(normalizeRealtimeHashInput(command));
 }
 
-export function computeRealtimeEventHash(command) {
+export function computeRealtimeEventHash(command: unknown) {
   return realtimeEventHashFromNormalized(normalizeRealtimeHashInput(command));
 }
 
-function appendResult(eventId, status) {
+function appendResult(eventId: unknown, status: "INSERTED" | "REPLAYED"): RealtimeEventAppendResult {
   const normalizedEventId = canonicalBigint(eventId, {
     minimum: 1n,
     code: REALTIME_ERROR_CODES.storageFailed,
@@ -824,19 +852,19 @@ function appendResult(eventId, status) {
   });
 }
 
-export async function appendRealtimeEvent(input) {
+export async function appendRealtimeEvent(input: unknown) {
   input = plainRecordSnapshot(input);
   assertExactKeys(
-    input,
+    input as RawRecord,
     new Set(['transaction', 'command']),
     ['transaction', 'command'],
     REALTIME_ERROR_CODES.eventInvalid,
   );
-  const command = normalizeRealtimeEventCommand(input.command);
+  const command = normalizeRealtimeEventCommand((input as RawRecord).command);
   const eventKey = realtimeEventKeyFromNormalized(command);
   const payloadHash = realtimePayloadHashFromNormalized(command);
   const eventHash = realtimeEventHashFromNormalized(command);
-  const transaction = input.transaction;
+  const transaction = (input as RawRecord).transaction;
 
   try {
     await acquireStreamLock(transaction);
@@ -851,7 +879,7 @@ export async function appendRealtimeEvent(input) {
     ));
     if (tail.length > 1
       || (tail.length === 1
-        && command.occurred_at < isoDateTime(tail[0].occurred_at, REALTIME_ERROR_CODES.storageFailed))) {
+        && command.occurred_at < isoDateTime((tail[0] as RawRecord).occurred_at, REALTIME_ERROR_CODES.storageFailed))) {
       fail(REALTIME_ERROR_CODES.eventInvalid);
     }
     await query(
@@ -902,7 +930,7 @@ export async function appendRealtimeEvent(input) {
     ));
 
     if (inserted.length === 1) {
-      return appendResult(inserted[0].event_id, 'INSERTED');
+      return appendResult((inserted[0] as RawRecord).event_id, 'INSERTED');
     }
     if (inserted.length !== 0) {
       fail(REALTIME_ERROR_CODES.storageFailed);
@@ -920,7 +948,7 @@ export async function appendRealtimeEvent(input) {
     if (existingRows.length !== 1) {
       fail(REALTIME_ERROR_CODES.storageFailed);
     }
-    const existing = existingRows[0];
+    const existing = (existingRows[0] as RawRecord);
     if (existing.event_hash !== eventHash || existing.payload_hash !== payloadHash) {
       fail(REALTIME_ERROR_CODES.eventConflict);
     }
@@ -948,11 +976,11 @@ export async function appendRealtimeEvent(input) {
   }
 }
 
-export async function applyRealtimeEventLogMigration(input) {
+export async function applyRealtimeEventLogMigration(input: unknown) {
   input = plainRecordSnapshot(input);
-  const pool = input.pool;
+  const pool = (input as RawRecord).pool;
   try {
-    if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
+    if (await arch005MigrationApplied(pool as MigrationQueryable)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
     const sql = await readFile(MIGRATION_URL, 'utf8');
     await query(pool, sql, undefined, REALTIME_ERROR_CODES.storageFailed);
   } catch (error) {
@@ -960,7 +988,7 @@ export async function applyRealtimeEventLogMigration(input) {
   }
 }
 
-function normalizeUuidArray(value, code) {
+function normalizeUuidArray(value: unknown, code: RealtimeErrorCode) {
   const candidate = value === undefined ? [] : value;
   if (
     !Array.isArray(candidate)
@@ -990,7 +1018,7 @@ function normalizeUuidArray(value, code) {
   return Object.freeze([...new Set(normalized)].sort());
 }
 
-export function normalizeRealtimeAuthorization(input) {
+export function normalizeRealtimeAuthorization(input: unknown): NormalizedRealtimeAuthorization {
   if (input === null || input === undefined) {
     fail(REALTIME_ERROR_CODES.forbidden);
   }
@@ -1024,7 +1052,7 @@ export function normalizeRealtimeAuthorization(input) {
   });
 }
 
-async function readReplayWindow(pool, streamName) {
+async function readReplayWindow(pool: unknown, streamName: typeof REALTIME_STREAM_NAME): Promise<RealtimeReplayWindow> {
   const rows = resultRows(await query(
     pool,
     `WITH requested_stream(stream_name) AS (
@@ -1049,7 +1077,7 @@ async function readReplayWindow(pool, streamName) {
   if (rows.length !== 1) {
     fail(REALTIME_ERROR_CODES.storageFailed);
   }
-  const row = rows[0];
+  const row = (rows[0] as RawRecord);
   return Object.freeze({
     stream_name: normalizeStreamName(row.stream_name, REALTIME_ERROR_CODES.storageFailed),
     retention_floor_event_id: canonicalBigint(row.retention_floor_event_id, {
@@ -1061,17 +1089,17 @@ async function readReplayWindow(pool, streamName) {
   });
 }
 
-export async function getRealtimeReplayWindow(input) {
+export async function getRealtimeReplayWindow(input: unknown) {
   input = plainRecordSnapshot(input);
-  const streamName = normalizeStreamName(input.streamName ?? input.stream_name);
+  const streamName = normalizeStreamName((input as RawRecord).streamName ?? (input as RawRecord).stream_name);
   try {
-    return await readReplayWindow(input.pool, streamName);
+    return await readReplayWindow((input as RawRecord).pool, streamName);
   } catch (error) {
     throw mapStorageError(error);
   }
 }
 
-export async function getRealtimeHighWatermark(input) {
+export async function getRealtimeHighWatermark(input: unknown) {
   const window = await getRealtimeReplayWindow(input);
   return Object.freeze({
     stream_name: window.stream_name,
@@ -1079,7 +1107,7 @@ export async function getRealtimeHighWatermark(input) {
   });
 }
 
-function isAuthorizedPersistedRow(row, authorization) {
+function isAuthorizedPersistedRow(row: RawRecord, authorization: NormalizedRealtimeAuthorization) {
   const visibilityAllowed = row.visibility_scope === 'WORKBENCH'
     || (row.visibility_scope === 'RESTRICTED_ADMIN'
       && authorization.allow_restricted_admin);
@@ -1088,7 +1116,7 @@ function isAuthorizedPersistedRow(row, authorization) {
   }
   if (row.authorization_scope_type === 'SYSTEM') {
     return row.authorization_scope_id === null && (authorization.allow_system_events
-      || row.aggregate_type === 'TICKET' && (authorization.allowed_system_ticket_ids ?? []).includes(row.aggregate_id));
+      || row.aggregate_type === 'TICKET' && (authorization.allowed_system_ticket_ids ?? []).includes(row.aggregate_id as string));
   }
   if (typeof row.authorization_scope_id !== 'string') {
     return false;
@@ -1106,7 +1134,7 @@ function isAuthorizedPersistedRow(row, authorization) {
   return false;
 }
 
-function persistedCommandFromRow(row) {
+function persistedCommandFromRow(row: RawRecord) {
   if (normalizeStreamName(row.stream_name, REALTIME_ERROR_CODES.storageFailed) !== REALTIME_STREAM_NAME) {
     fail(REALTIME_ERROR_CODES.storageFailed);
   }
@@ -1130,12 +1158,12 @@ function persistedCommandFromRow(row) {
   });
 }
 
-export function publicRealtimeEventFromRow(input) {
+export function publicRealtimeEventFromRow(input: unknown): RealtimePublicEventView {
   const row = plainRecordSnapshot(input, REALTIME_ERROR_CODES.storageFailed);
   const payload = clonePlainJson(
     row.payload,
     REALTIME_ERROR_CODES.storageFailed,
-  );
+  ) as RealtimeSafeJsonObject;
   if (payload === null || Array.isArray(payload) || typeof payload !== 'object') {
     fail(REALTIME_ERROR_CODES.storageFailed);
   }
@@ -1171,7 +1199,7 @@ export function publicRealtimeEventFromRow(input) {
   });
 }
 
-function validatePersistedEventRow(row, authorization) {
+function validatePersistedEventRow(row: RawRecord, authorization: NormalizedRealtimeAuthorization) {
   try {
     const command = persistedCommandFromRow(row);
     if (
@@ -1201,18 +1229,18 @@ function validatePersistedEventRow(row, authorization) {
   }
 }
 
-export async function listAuthorizedRealtimeEvents(input) {
+export async function listAuthorizedRealtimeEvents(input: unknown): Promise<RealtimeReplayPage> {
   input = plainRecordSnapshot(input);
-  const pool = input.pool;
-  const streamName = normalizeStreamName(input.streamName ?? input.stream_name);
-  const authorization = normalizeRealtimeAuthorization(input.authorization);
+  const pool = (input as RawRecord).pool;
+  const streamName = normalizeStreamName((input as RawRecord).streamName ?? (input as RawRecord).stream_name);
+  const authorization = normalizeRealtimeAuthorization((input as RawRecord).authorization);
   const limit = boundedInteger(
-    input.limit,
+    (input as RawRecord).limit,
     REALTIME_DEFAULT_REPLAY_LIMIT,
     REALTIME_MAX_REPLAY_LIMIT,
     REALTIME_ERROR_CODES.eventInvalid,
   );
-  const explicitCursor = input.afterEventId ?? input.after_event_id;
+  const explicitCursor = (input as RawRecord).afterEventId ?? (input as RawRecord).after_event_id;
   const afterEventId = explicitCursor === undefined || explicitCursor === null
     ? null
     : canonicalBigint(explicitCursor, { code: REALTIME_ERROR_CODES.cursorInvalid });
@@ -1326,7 +1354,7 @@ export async function listAuthorizedRealtimeEvents(input) {
       fail(REALTIME_ERROR_CODES.storageFailed);
     }
 
-    const metadata = rows[0];
+    const metadata = (rows[0] as RawRecord);
     const floor = canonicalBigint(metadata.retention_floor_event_id, {
       code: REALTIME_ERROR_CODES.storageFailed,
     });
@@ -1381,7 +1409,7 @@ export async function listAuthorizedRealtimeEvents(input) {
   }
 }
 
-function retentionExpiry(value) {
+function retentionExpiry(value: unknown) {
   return isoDateTime(value, REALTIME_ERROR_CODES.retentionFailed);
 }
 
@@ -1394,7 +1422,7 @@ function retentionResult({
   newFloor,
   candidateFloor,
   limit,
-}) {
+}: RetentionSummary) {
   return Object.freeze({
     mode,
     checked_count: checkedCount,
@@ -1408,7 +1436,7 @@ function retentionResult({
   });
 }
 
-function expiredPrefix(rows, nowEpochMs) {
+function expiredPrefix(rows: readonly RawRecord[], nowEpochMs: string) {
   const cutoff = BigInt(assertEpochMsString(nowEpochMs));
   const prefix = [];
   for (const row of rows) {
@@ -1425,7 +1453,7 @@ function expiredPrefix(rows, nowEpochMs) {
   return Object.freeze(prefix);
 }
 
-function normalizeRetentionInput(input, { apply }) {
+function normalizeRetentionInput(input: unknown, { apply }: { apply: boolean }) {
   const snapshot = plainRecordSnapshot(input, REALTIME_ERROR_CODES.retentionFailed);
   if (apply && snapshot.authorized !== true) {
     fail(REALTIME_ERROR_CODES.retentionNotAuthorized);
@@ -1448,7 +1476,7 @@ function normalizeRetentionInput(input, { apply }) {
   } catch {
     fail(REALTIME_ERROR_CODES.retentionFailed);
   }
-  let afterDeleteBeforeFloor = null;
+  let afterDeleteBeforeFloor: (() => unknown | Promise<unknown>) | null = null;
   if (snapshot.faultInjection !== undefined && snapshot.faultInjection !== null) {
     const fault = plainRecordSnapshot(
       snapshot.faultInjection,
@@ -1461,7 +1489,7 @@ function normalizeRetentionInput(input, { apply }) {
     ) {
       fail(REALTIME_ERROR_CODES.retentionFailed);
     }
-    afterDeleteBeforeFloor = fault.afterDeleteBeforeFloor ?? null;
+    afterDeleteBeforeFloor = (fault.afterDeleteBeforeFloor as (() => unknown | Promise<unknown>) | undefined) ?? null;
   }
   return Object.freeze({
     pool: snapshot.pool,
@@ -1472,7 +1500,7 @@ function normalizeRetentionInput(input, { apply }) {
   });
 }
 
-async function readRetentionCandidates(queryable, streamName, floor, limit, { lock }) {
+async function readRetentionCandidates(queryable: unknown, streamName: string, floor: string, limit: number, { lock }: { lock: boolean }) {
   const rows = resultRows(await query(
     queryable,
     `SELECT event.event_id::text, event.expires_at, event.expires_epoch_ms::text
@@ -1487,7 +1515,7 @@ async function readRetentionCandidates(queryable, streamName, floor, limit, { lo
   return rows;
 }
 
-export async function checkRealtimeRetention(input) {
+export async function checkRealtimeRetention(input: unknown) {
   const normalized = normalizeRetentionInput(input, { apply: false });
   try {
     const window = await readReplayWindow(normalized.pool, normalized.streamName);
@@ -1515,7 +1543,7 @@ export async function checkRealtimeRetention(input) {
   }
 }
 
-export async function cleanupRealtimeRetention(input) {
+export async function cleanupRealtimeRetention(input: unknown) {
   const normalized = normalizeRetentionInput(input, { apply: true });
   let client;
   let transactionOpen = false;
@@ -1557,7 +1585,7 @@ export async function cleanupRealtimeRetention(input) {
     if (stateRows.length !== 1) {
       fail(REALTIME_ERROR_CODES.retentionFailed);
     }
-    const previousFloor = canonicalBigint(stateRows[0].retention_floor_event_id, {
+    const previousFloor = canonicalBigint((stateRows[0] as RawRecord).retention_floor_event_id, {
       code: REALTIME_ERROR_CODES.retentionFailed,
     });
     const rows = await readRetentionCandidates(
@@ -1614,7 +1642,7 @@ export async function cleanupRealtimeRetention(input) {
       if (advanced.length !== 1) {
         fail(REALTIME_ERROR_CODES.retentionFailed);
       }
-      newFloor = canonicalBigint(advanced[0].retention_floor_event_id, {
+      newFloor = canonicalBigint((advanced[0] as RawRecord).retention_floor_event_id, {
         code: REALTIME_ERROR_CODES.retentionFailed,
       });
       if (newFloor !== candidateFloor) {
@@ -1647,7 +1675,7 @@ export async function cleanupRealtimeRetention(input) {
   }
 }
 
-function defaultExpiry(occurredAt, defaultRetentionMs) {
+function defaultExpiry(occurredAt: unknown, defaultRetentionMs: number) {
   const occurred = isoDateTime(occurredAt);
   try {
     return formatEpochMsToShanghaiLocal(addEpochMilliseconds(
@@ -1657,7 +1685,7 @@ function defaultExpiry(occurredAt, defaultRetentionMs) {
   } catch { fail(REALTIME_ERROR_CODES.eventInvalid); }
 }
 
-function earlierExpiry(first, second) {
+function earlierExpiry(first: unknown, second: LocalDateTime) {
   if (first === undefined || first === null) {
     return second;
   }
@@ -1665,7 +1693,7 @@ function earlierExpiry(first, second) {
   return normalized < second ? normalized : second;
 }
 
-function withDefaultRetention(command, defaultRetentionMs) {
+function withDefaultRetention(command: unknown, defaultRetentionMs: number) {
   const snapshot = plainRecordSnapshot(command);
   if (Object.hasOwn(snapshot, 'expires_at')) {
     return snapshot;
@@ -1676,13 +1704,13 @@ function withDefaultRetention(command, defaultRetentionMs) {
   });
 }
 
-function assertEnabled(enabled) {
+function assertEnabled(enabled: boolean) {
   if (enabled !== true) {
     fail(REALTIME_ERROR_CODES.disabled);
   }
 }
 
-async function appendStandalone(pool, command) {
+async function appendStandalone(pool: unknown, command: unknown) {
   let client;
   let transactionOpen = false;
   let destroyClient = false;
@@ -1707,8 +1735,8 @@ async function appendStandalone(pool, command) {
   }
 }
 
-export function createRealtimeEventStore(input = {}) {
-  input = plainRecordSnapshot(input);
+export function createRealtimeEventStore(input: RealtimeStoreOptions = {}) {
+  input = plainRecordSnapshot(input) as RealtimeStoreOptions;
   const pool = input.pool;
   const enabled = input.enabled ?? false;
   if (enabled !== true && enabled !== false) {
@@ -1725,16 +1753,16 @@ export function createRealtimeEventStore(input = {}) {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
 
-  async function appendInTransaction(options) {
+  async function appendInTransaction(options: { transaction: PostgresTransaction; command: RealtimeEventCommand }) {
     assertEnabled(enabled);
-    options = plainRecordSnapshot(options);
+    options = plainRecordSnapshot(options) as typeof options;
     return appendRealtimeEvent({
       transaction: options.transaction,
       command: withDefaultRetention(options.command, defaultRetentionMs),
     });
   }
 
-  async function append(commandOrOptions) {
+  async function append(commandOrOptions: RealtimeEventCommand | { command: RealtimeEventCommand }) {
     assertEnabled(enabled);
     const possibleOptions = plainRecordSnapshot(commandOrOptions);
     const command = Object.hasOwn(possibleOptions, 'command')
@@ -1743,31 +1771,31 @@ export function createRealtimeEventStore(input = {}) {
     return appendStandalone(pool, withDefaultRetention(command, defaultRetentionMs));
   }
 
-  async function getHighWatermark(options = {}) {
+  async function getHighWatermark(options: RawRecord = {}) {
     assertEnabled(enabled);
     options = plainRecordSnapshot(options);
     return getRealtimeHighWatermark({ ...options, pool });
   }
 
-  async function getReplayWindow(options = {}) {
+  async function getReplayWindow(options: RawRecord = {}) {
     assertEnabled(enabled);
     options = plainRecordSnapshot(options);
     return getRealtimeReplayWindow({ ...options, pool });
   }
 
-  async function listAuthorizedEvents(options) {
+  async function listAuthorizedEvents(options: RawRecord) {
     assertEnabled(enabled);
     options = plainRecordSnapshot(options);
     return listAuthorizedRealtimeEvents({ ...options, pool });
   }
 
-  async function checkRetention(options = {}) {
+  async function checkRetention(options: RawRecord = {}) {
     assertEnabled(enabled);
     options = plainRecordSnapshot(options);
     return checkRealtimeRetention({ ...options, pool });
   }
 
-  async function cleanupRetention(options) {
+  async function cleanupRetention(options: RawRecord) {
     assertEnabled(enabled);
     options = plainRecordSnapshot(options);
     return cleanupRealtimeRetention({ ...options, pool });
@@ -1791,7 +1819,7 @@ export function createRealtimeEventStore(input = {}) {
   });
 }
 
-function mapperExpiry(snapshot, occurredAt) {
+function mapperExpiry(snapshot: RawRecord, occurredAt: LocalDateTime) {
   const defaultExpires = defaultExpiry(occurredAt, REALTIME_DEFAULT_RETENTION_MS);
   if (snapshot.expires_at !== undefined && snapshot.expires_at !== null) {
     return isoDateTime(snapshot.expires_at);
@@ -1799,14 +1827,14 @@ function mapperExpiry(snapshot, occurredAt) {
   return earlierExpiry(snapshot.retention_until, defaultExpires);
 }
 
-function mapperVisibility(value) {
+function mapperVisibility(value: string) {
   if (!['EXTERNAL', 'INTERNAL', 'RESTRICTED'].includes(value)) {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
   return value === 'RESTRICTED' ? 'RESTRICTED_ADMIN' : 'WORKBENCH';
 }
 
-export function mapConversationItemCreatedEvent(input) {
+export function mapConversationItemCreatedEvent(input: unknown): RealtimeMappedEvent<'conversation.item.created'> {
   const item = plainRecordSnapshot(input);
   const itemId = requiredUuid(item.id ?? item.item_id);
   const sessionId = requiredUuid(item.session_id);
@@ -1849,10 +1877,10 @@ export function mapConversationItemCreatedEvent(input) {
     },
     occurred_at: occurredAt,
     expires_at: mapperExpiry(item, occurredAt),
-  });
+  }) as RealtimeMappedEvent<'conversation.item.created'>;
 }
 
-export function mapConversationSessionEvent(input) {
+export function mapConversationSessionEvent(input: unknown): RealtimeMappedEvent<'conversation.session.created' | 'conversation.session.updated'> {
   const fixture = plainRecordSnapshot(input);
   const sessionId = requiredUuid(fixture.session_id ?? fixture.id);
   const threadId = requiredUuid(fixture.thread_id);
@@ -1865,7 +1893,7 @@ export function mapConversationSessionEvent(input) {
     allowNumeric: true,
   });
   const eventType = fixture.event_type ?? fixture.eventType;
-  if (!['conversation.session.created', 'conversation.session.updated'].includes(eventType)) {
+  if (!['conversation.session.created', 'conversation.session.updated'].includes(eventType as string)) {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
   const occurredAt = isoDateTime(
@@ -1904,14 +1932,14 @@ export function mapConversationSessionEvent(input) {
     },
     occurred_at: occurredAt,
     expires_at: mapperExpiry(fixture, occurredAt),
-  });
+  }) as RealtimeMappedEvent<'conversation.session.created' | 'conversation.session.updated'>;
 }
 
-export function mapTimelineRebuiltEvent(input) {
+export function mapTimelineRebuiltEvent(input: unknown): RealtimeMappedEvent<'conversation.timeline.rebuilt'> {
   const fixture = plainRecordSnapshot(input);
   const sessionId = requiredUuid(fixture.session_id);
   const itemCount = fixture.item_count ?? fixture.itemCount;
-  if (!Number.isSafeInteger(itemCount) || itemCount < 0 || itemCount > 1_000_000) {
+  if (!Number.isSafeInteger(itemCount) || (itemCount as number) < 0 || (itemCount as number) > 1_000_000) {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
   const canonicalTimelineHash = fixture.canonical_timeline_hash ?? fixture.canonical_hash;
@@ -1944,5 +1972,5 @@ export function mapTimelineRebuiltEvent(input) {
     },
     occurred_at: occurredAt,
     expires_at: mapperExpiry(fixture, occurredAt),
-  });
+  }) as RealtimeMappedEvent<'conversation.timeline.rebuilt'>;
 }

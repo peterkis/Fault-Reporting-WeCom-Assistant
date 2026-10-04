@@ -1,3 +1,30 @@
+import type { PostgresPool } from './platform/postgres-pool.mjs';
+import type { OperationalIntake } from './p2-g1-human-only-assembly.mjs';
+import type { G1RealtimeAppender } from './p2-g1-inbound-projection-coordinator.mjs';
+import type { TimelineProjectorOptions } from './p2-002-timeline-projector.mjs';
+import type { WorkbenchAuthenticate, WorkbenchHttpOptions } from './p2-006-workbench-http.mjs';
+import type { CommunicationWorkerOptions } from './p2-004-communication-delivery-worker.mjs';
+import type { G1GatewayStatusPort } from './p2-g1-observability.mjs';
+export type G1SenderPort = NonNullable<CommunicationWorkerOptions['sender']>;
+export interface G1AuthenticationPort { authenticate: WorkbenchAuthenticate; browserCookies?: () => ReturnType<ReturnType<typeof createP2G1TestAuthentication>['browserCookies']>; close?: () => unknown | Promise<unknown> }
+export interface G1RuntimeExtension {
+  runOnce?: () => unknown | Promise<unknown>; stop?: () => unknown | Promise<unknown>;
+  readiness?: (base: Awaited<ReturnType<ReturnType<typeof createP2G1Observability>['readiness']>>) => { ok: boolean } | Promise<{ ok: boolean }>;
+  staticHandler?: WorkbenchHttpOptions['staticHandler']; authenticatedHandler?: WorkbenchHttpOptions['authenticatedHandler']; unauthenticatedHandler?: WorkbenchHttpOptions['unauthenticatedHandler'];
+}
+export interface G1RuntimeOptions {
+  pool?: PostgresPool; operationalIntake?: OperationalIntake; principalId?: string; principalIds?: readonly string[] | null;
+  publicOrigin?: string; listenPort?: number; botId?: string; secret?: string; wsUrl?: string;
+  allowedTargetHashes?: readonly string[] | ReadonlySet<string>; gatewayEnabled?: boolean; senderEnabled?: boolean;
+  senderAdapter?: G1SenderPort | null;
+  senderFactory?: ((input: { gateway: ReturnType<typeof createP2G1WeComGateway> }) => G1SenderPort) | null;
+  extensionFactory?: ((input: { controlService: ReturnType<typeof createConversationControlService>; authorization: ReturnType<typeof createPilotWorkbenchAuthorizationAdapter>; realtime: ReturnType<typeof createRealtimeSseHandler>; coordinator: ReturnType<typeof createP2G1InboundProjectionCoordinator>; queryService: ReturnType<typeof createConversationWorkbenchQueryService>; commandFacade: ReturnType<typeof createConversationWorkbenchCommandFacade> }) => G1RuntimeExtension) | null;
+  realtimeAppender?: G1RealtimeAppender; projectionTransactionStart?: TimelineProjectorOptions['transactionStartHook']; realtimeScopeLimit?: number;
+  gatewayStatusProvider?: G1GatewayStatusPort | null; communicationStatusProvider?: { isReady(): boolean } | null;
+  requireGateway?: boolean; testAuthTtlMs?: number; authentication?: G1AuthenticationPort | null;
+  externalSendEnabled?: boolean; clientFactory?: NonNullable<Parameters<typeof createP2G1WeComGateway>[0]>['clientFactory'];
+  projectionIntervalMs?: number; communicationIntervalMs?: number; closePoolOnStop?: boolean;
+}
 import { createCommunicationService } from './p2-004-communication-core.mjs';
 import { createCommunicationDeliveryWorker, createCommunicationDeliveryOperatorPort, createCommunicationReconciliationPort } from './p2-004-communication-delivery-worker.mjs';
 import { appendRealtimeEvent } from './p2-003-realtime-event-log.mjs';
@@ -44,7 +71,7 @@ export function createP2G1Runtime({
   projectionIntervalMs = 250,
   communicationIntervalMs = 250,
   closePoolOnStop = false,
-} = {}) {
+}: G1RuntimeOptions = {}) {
   if (!pool || typeof pool.query !== 'function' || !operationalIntake || typeof operationalIntake.accept !== 'function'
     || (Number.isInteger(pool.options?.max) && pool.options.max > 4)
     || !Number.isInteger(listenPort) || listenPort < 0 || listenPort > 65535
@@ -64,7 +91,7 @@ export function createP2G1Runtime({
     || typeof externalSendEnabled !== 'boolean') {
     throw new TypeError('P2_G1_RUNTIME_CONFIGURATION_INVALID');
   }
-  const authPort = authentication ?? createP2G1TestAuthentication({ pool, principalId, principalIds, publicOrigin, ttlMs: testAuthTtlMs });
+  const authPort: G1AuthenticationPort = authentication ?? createP2G1TestAuthentication({ pool, principalId, principalIds, publicOrigin, ttlMs: testAuthTtlMs });
   const authorization = createPilotWorkbenchAuthorizationAdapter({ pool });
   const controlAuthorization = createPilotConversationControlAuthorization({ pool });
   const controlService = createConversationControlService({
@@ -97,7 +124,7 @@ export function createP2G1Runtime({
       return authorization.resolveRealtimeAuthorization(principal,{limit:realtimeScopeLimit});
     },
   });
-  let assembly;
+  let assembly: ReturnType<typeof createP2G1HumanOnlyAssembly>;
   const gateway = createP2G1WeComGateway({
     enabled: gatewayEnabled,
     botId,
@@ -130,12 +157,12 @@ export function createP2G1Runtime({
   const extension=extensionFactory?.({controlService,authorization,realtime,coordinator,queryService,commandFacade})??{};
   let listening = false;
   let stopping = false;
-  let projectionTimer = null;
-  let communicationTimer = null;
+  let projectionTimer: ReturnType<typeof setInterval> | null = null;
+  let communicationTimer: ReturnType<typeof setInterval> | null = null;
   let projectionRunning = false;
   let communicationRunning = false;
-  let projectionTask = Promise.resolve();
-  let communicationTask = Promise.resolve();
+  let projectionTask: Promise<unknown> = Promise.resolve();
+  let communicationTask: Promise<unknown> = Promise.resolve();
   const healthProvider = {
     live: async () => Object.freeze({ ok: !stopping, service: 'P2_G1_HUMAN_ONLY' }),
     metrics: observability.metrics,
@@ -199,7 +226,7 @@ export function createP2G1Runtime({
   async function stop() {
     if (stopping) return Object.freeze({ stopped: true });
     stopping = true;
-    clearInterval(projectionTimer); clearInterval(communicationTimer);
+    clearInterval(projectionTimer as ReturnType<typeof setInterval>); clearInterval(communicationTimer as ReturnType<typeof setInterval>);
     await Promise.allSettled([projectionTask, communicationTask]);
     await extension.stop?.();
     await gateway.stop();
@@ -209,7 +236,7 @@ export function createP2G1Runtime({
     listening = false;
     await authPort.close?.();
     await observability.close();
-    if (closePoolOnStop && typeof pool.end === 'function') await pool.end();
+    if (closePoolOnStop && typeof (pool as PostgresPool).end === 'function') await (pool as PostgresPool).end();
     return Object.freeze({ stopped: true });
   }
 
@@ -227,7 +254,7 @@ export function createP2G1Runtime({
     disconnectRealtimePrincipal: (index = 0) => {
       const identities = principalIds ?? [principalId];
       if (!Number.isInteger(index) || index < 0 || index >= identities.length) throw new TypeError('P2_G1_REALTIME_PRINCIPAL_INDEX_INVALID');
-      return realtime.disconnectPrincipal(identities[index]);
+      return realtime.disconnectPrincipal(identities[index] as string);
     },
   });
 }

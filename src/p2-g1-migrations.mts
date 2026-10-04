@@ -1,3 +1,4 @@
+import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
 import { applyChannelMessageInboxMigration } from './p1-003-channel-message-inbox.mjs';
 import { applyServiceIntakeMigration } from './p1-004-service-intake.mjs';
 import { applyPilotTicketCoreMigration } from './p1-005-pilot-ticket-core.mjs';
@@ -13,7 +14,7 @@ import { applyCommunicationMigration } from './p2-004-communication-core.mjs';
 import { applyConversationControlMigration } from './p2-005-conversation-control.mjs';
 import { migrateCurrentBaseline } from '../scripts/migrate-current-baseline.mjs';
 
-export async function applyP2G1Migrations({ pool, databaseUrl } = {}) {
+export async function applyP2G1Migrations({ pool, databaseUrl }: { pool?: PostgresPool; databaseUrl?: string } = {}) {
   if (!pool || typeof pool.query !== 'function' || typeof databaseUrl !== 'string' || databaseUrl.length === 0) {
     throw new TypeError('P2_G1_MIGRATION_CONFIGURATION_INVALID');
   }
@@ -30,6 +31,6 @@ export async function applyP2G1Migrations({ pool, databaseUrl } = {}) {
   await applyRealtimeEventLogMigration({ pool });
   await applyCommunicationMigration({ pool });
   await applyConversationControlMigration({ pool });
-  await migrateCurrentBaseline({ databaseUrl });
+  await migrateCurrentBaseline({ databaseUrl } as Parameters<typeof migrateCurrentBaseline>[0] & { databaseUrl: string });
   return Object.freeze({ migration_count: 14, latest_migration: '022' });
 }

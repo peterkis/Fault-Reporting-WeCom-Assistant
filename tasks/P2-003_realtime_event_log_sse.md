@@ -1,5 +1,7 @@
 # P2-003 Realtime Event Log、SSE 补放与慢客户端治理
 
+> 历史范围：下文描述 P2-003 当时独立任务。全仓串行与现场验收要求保留历史身份，不是本轮类型迁移的默认测试清单；业务契约、权限与原验收结论继续保留。
+
 - 状态：DONE
 - 完成日期：2026-08-31
 - 完成 Evidence：`evidence/p2-003-realtime-event-log-sse-report.md`

@@ -1,4 +1,5 @@
 import { appendFile } from 'node:fs/promises';
+import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
@@ -9,6 +10,7 @@ import { launchP2G1TestBrowserSessions } from '../src/p2-g1-browser-sessions.mjs
 import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
 import { p2016CandidateHash } from './validate-p2-016-ticket-lifecycle-workbench.mjs';
 import { checkP2016Live,assertP2016DatabaseScope } from './p2-016-live-check.mjs';
+import { G2_ROOT } from '../src/p2-g2-candidate.mjs';
 
 export function p2016LiveDuration(argv){
   if(argv.length!==1||!/^--observe-seconds=[0-9]{3,4}$/u.test(argv[0]))throw new Error('P2_016_LIVE_ARGS_INVALID');
@@ -20,7 +22,7 @@ export async function main(argv=process.argv.slice(2)){
   const config=readP2016LiveConfiguration(process.env),runId=randomUUID();
   const guard=createPostgresPool({connectionString:config.databaseUrl,max:1,connectionTimeoutMillis:3000,application_name:'p2_016_live_controller'});
   let guardClient,cluster,browsers,input,stopping=false,blocked=false,fragmentLost=false,control=Promise.resolve();
-  const evidence=new URL('../evidence/p2-016-live-e2e.jsonl',import.meta.url);
+  const evidence=path.join(G2_ROOT,'evidence/p2-016-live-e2e.jsonl');
   const record=async(event,fields={})=>{
     const row={task:'P2-016',run_id:runId,occurred_at:formatEpochMsToShanghaiLocal(String(Date.now())),event,
       runtime_input_sha256:checked.runtime_input_sha256,...fields};

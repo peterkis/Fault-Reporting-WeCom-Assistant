@@ -1,5 +1,7 @@
 # P2-G1 Human-only Conversation Center Assembly
 
+> 历史范围：下文描述已完成的 P2-G1 业务装配与原验收。原全仓串行/现场清单不是本轮类型迁移的默认测试清单；业务与权限不变量继续适用，迁移不重启真实现场或推进 Gate。
+
 - 状态：PASSED
 - 授权日期：2026-09-01
 - 授权 Evidence：`evidence/p2-g1-start-authorization.md`

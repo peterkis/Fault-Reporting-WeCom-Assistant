@@ -12,7 +12,7 @@ export interface WeComGateway {
   start(): Promise<Readonly<{ started: boolean; disabled: boolean }>>; stop(): Promise<Readonly<{ stopped: boolean }>>;
   getAuthenticatedClient(): WeComGatewayClient; getStatus(): Readonly<GatewayMetrics & { enabled: boolean; started: boolean; authenticated: boolean; active_gateway_count: 0 | 1 }>;
 }
-export interface WeComGatewayOptions { enabled?: boolean; botId?: string; secret?: string; wsUrl?: string; onFrame?: (frame: unknown) => void | Promise<void>; clientFactory?: (options: ClientOptions) => WeComGatewayClient; now?: () => Date }
+export interface WeComGatewayOptions { enabled?: boolean; botId?: string | undefined; secret?: string | undefined; wsUrl?: string | undefined; onFrame?: (frame: unknown) => unknown | Promise<unknown>; clientFactory?: ((options: ClientOptions) => WeComGatewayClient) | undefined; now?: () => Date }
 type ErrorObservation = { message?: unknown } | null | undefined;
 
 import AiBot from '@wecom/aibot-node-sdk';
