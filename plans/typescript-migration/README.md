@@ -1,10 +1,10 @@
 # TypeScript 增量迁移执行入口
 
-ACTIVE_SELECTION: v3-p04
+ACTIVE_SELECTION: v3-p05
 
 ## v3 当前入口（2026-10-04）
 
-P00 / PR #39 已于 2026-10-04 使用 merge commit 合并；实际合并与 P01 起始基线为 `614c4a7591ce349269063815bbbf0eca69824664`，保留发布 head `4f6fc5b411ec81c26ea7fcbff9e16e66dcee4009` 的历史。P01 / PR #40 已合并，合并提交为 `f25aeeea31523b7445f0f1e2795767c8c05f1f6d`，保留发布 head `9a1ee62f18a6bf3038930559060ee6c329985f4f`。P02 从该最新 main 接续，按事件日志（A）→时间线（B）→SSE（C）→G1 装配（D）完成 14 个模块的严格类型实现。P02 / PR #41 已合并，合并提交 `841e48493875473b87eaac09afb6e58038d85d49`，发布 head `5de7184c20d4baa78c61af45e5e376c115e0a62f`。P03 从包含此合并的最新 main 接续，按领域合同 → 目录和人员资料 → 规则与旅程迁移原 21 个目标；P03 / PR #42 已合并，合并提交 `e6bdbc991b8c67aa4ee1022b3788aa665254fc43`，发布、审查和 CI head 为 `08267a9501691b6b3851b3de0a6832706e8d2c97`，既有测试不改称 merge commit 的新运行。P04 从该最新 main 接续，按查询授权与命令事务 → 通知、投影和 HTTP 两个内部切片完成原 18 个目标。实际检查与当前 head CI 记录在本轮 PR 正文。开发检查不代表发布认证。
+P00 / PR #39 已于 2026-10-04 使用 merge commit 合并；实际合并与 P01 起始基线为 `614c4a7591ce349269063815bbbf0eca69824664`，保留发布 head `4f6fc5b411ec81c26ea7fcbff9e16e66dcee4009` 的历史。P01 / PR #40 已合并，合并提交为 `f25aeeea31523b7445f0f1e2795767c8c05f1f6d`，保留发布 head `9a1ee62f18a6bf3038930559060ee6c329985f4f`。P02 从该最新 main 接续，按事件日志（A）→时间线（B）→SSE（C）→G1 装配（D）完成 14 个模块的严格类型实现。P02 / PR #41 已合并，合并提交 `841e48493875473b87eaac09afb6e58038d85d49`，发布 head `5de7184c20d4baa78c61af45e5e376c115e0a62f`。P03 从包含此合并的最新 main 接续，按领域合同 → 目录和人员资料 → 规则与旅程迁移原 21 个目标；P03 / PR #42 已合并，合并提交 `e6bdbc991b8c67aa4ee1022b3788aa665254fc43`，发布、审查和 CI head 为 `08267a9501691b6b3851b3de0a6832706e8d2c97`，既有测试不改称 merge commit 的新运行。P04 / PR #43 已合并，merge commit 为 `0975399bad4634f99a9721fa15dc1f492f2a5c97`，发布、审查和 CI head 保持 `cf6ae92a506c35df216455de8d4e065115f42d82` 的原身份。P04 从 P03 合并 main 接续，按查询授权与命令事务 → 通知、投影和 HTTP 两个内部切片完成原 18 个目标。实际检查与当前 head CI 记录在本轮 PR 正文。开发检查不代表发布认证。
 
 PR #38 已合并至 `f72e77337aff5d3e5fd053409d5965fbe47deeb6`。P00 将工作台查询/授权迁入严格 MTS，并同步 CI 与逻辑源码路径兼容；下文 T00～T04-05 和 PR37 记录为历史交接，不再驱动日常批次认证。
 
@@ -16,7 +16,11 @@ selection 从本文件唯一整行读取，必须存在且非空。注册表仍�
 
 本地最终检查：`npm.cmd run migration:build` → `node .build/tools/gate.mjs types` → 自有 PG18 的既有基线初始化 → 直接调用 `.build/tools/run-tests.mjs` 的 `runSelection` 与 `routing.mjs` 的 `loadRoutes/select` → 相关工具测试 → `node .build/tools/verify-artifact.mjs`。不要在单构建路径继续调用会 bootstrap/build 的旧测试别名或 batch gate。报告目录位于仓库外，测试库必须是任务自有 loopback 合成库；保留原宿主、flags、失败/漏跑检查与清理约束。
 
-P04 selection 使用 `v3-p04`，保留原五项核心和补充的 contracts、ManualReview、DeliveryControl 三项；OAuth 公开接口、已校验 Sender 输入的本地类型视图与 Gateway SDK 消息体类型同步及逻辑源码登记分别复用 WeCom auth、Communication core、G1 assembly 和 ARCH-006/V1.4 现有入口。登记不更改宿主、flags 或 subprocess。切片先验证直接子集，整个阶段收口验证核心并集；类型擦除后的执行表达式、SQL 和锁顺序保持基线，未触发浏览器、restart 或额外锁顺序回归。181 项原分母不变，实际原目标累计 85/181，仅表示文件覆盖。
+P05 从包含 PR #43 合并的最新 main 接续，以一个 PR、三个内部提交完成 Journey/Decision/Review → Safe Action/Worker/Orchestration → Runtime/Live Cluster/进程入口的 23 个目标。`src/p2-015-incident-correlation.mjs` 保持原样移交 P06，不计入 P05；181 项总分母不变，原目标累计 108/181 仅表示源码覆盖。`v3-p05` 保留接续修订的十个核心入口，增加直接相关 ManualReview/Worker 单元、目录进程装配及两个架构源码检查；宿主、flags、database/browser/subprocess 登记保持。核心并集只在最终候选完整执行一次，容量/真实子进程恢复不在内部切片重复。
+
+P05 直接类型同步补齐了现有 ARCH-006 检查对已迁移 `.mts` 前驱的识别：只接受原锁定编译器输出字节一致的类型修改；表达式、SQL、事务控制及运行时 enum 变化继续拒绝。既有检查入口的同范围正反例先 RED 后 GREEN，不增加新扫描器或认证集合。Continuation issue/consume/revoke、Action mark 和 Decision projection 使用实际 SQL 字段的本地结果类型；ledger replay 的未知性保持。
+
+历史 P04 selection 使用 `v3-p04`，保留原五项核心和补充的 contracts、ManualReview、DeliveryControl 三项；OAuth 公开接口、已校验 Sender 输入的本地类型视图与 Gateway SDK 消息体类型同步及逻辑源码登记分别复用 WeCom auth、Communication core、G1 assembly 和 ARCH-006/V1.4 现有入口。登记不更改宿主、flags 或 subprocess。切片先验证直接子集，整个阶段收口验证核心并集；类型擦除后的执行表达式、SQL 和锁顺序保持基线，未触发浏览器、restart 或额外锁顺序回归。181 项原分母不变，实际原目标累计 85/181，仅表示文件覆盖。
 
 历史 P03 selection 使用 `v3-p03`，保留原六个核心种子，加入既有编排数据库集成入口；目录 adapter/process、源码断言、ARCH-006/V1.4 及受影响 CLI 按直接影响扩展。仅在实际原型/历史相关差异出现时运行目录 workflow 的额外构建/冻结回放。181 项分母不变，current_module_map 只登记实际完成实现。
 
@@ -24,7 +28,7 @@ P04 selection 使用 `v3-p04`，保留原五项核心和补充的 contracts、Ma
 
 历史 P00 selection 保留原七个入口。P01 selection 使用阶段六个核心种子，加控制/工作台/G1 适配单元及 ARCH-006、V1.4 baseline，共十一个直接相关入口；呈现和重试顺序保持原运行时表达式，不触发额外浏览器或 P2-016 扩展。ARCH-005 仅在实际触及时间契约时扩展。工具回归由现有工具入口执行，不加入业务注册表。类型正反例使用现有 type gate 与有理由的 expect-error。
 
-P01 历史停止线仅约束当时开发授权；PR #40 合并及本轮 P02 已另获授权。P02/P03 已合并；P04 无数据库变更，制品为 STAGED_NOT_ACTIVATED，不更新原 readiness pointer 或大型 Evidence 包。允许本次 P04 范围内提交、HTTPS 推送并创建 PR、核对该 head CI；不自动合并、不进入 P05、不默认运行 full/certify、不部署或操作真实业务。交接记录写在 PR 正文，包含 head、业务行为、实际命令/结果、日志位置与未运行项。撤销使用后继修补或独立 revert PR，保留历史与用户工作。
+P00～P04 已合并，本次 P05 无数据库变更，制品为 STAGED_NOT_ACTIVATED，不更新原 readiness pointer 或大型 Evidence 包。P05 使用已有合成行为与任务自有 loopback PG18；保持决策哈希、事务/锁、失败策略、续接身份边界、默认关闭和停止顺序。P04 ledger replay 消费者字段继续为 unknown；后续 OAuth/YXX/Incident 在组合处使用当前消费的最小结构类型，不提前迁移。fork/roleScriptUrl 继续使用编译后的 .mjs。允许本次 P05 范围内提交、HTTPS 推送并创建 PR、审查和核对该 head CI；不自动合并、不进入 P06、不运行 full/certify、不部署或操作真实业务。交接记录写在 PR 正文，包含 head、业务行为、实际命令/结果、日志位置与未运行项。撤销使用后继修补或独立 revert PR，保留历史与用户工作。
 
 ## 历史入口（下文）
 

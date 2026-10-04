@@ -1,3 +1,21 @@
+import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
+import type { LocalDateTime } from '../contracts/time_contracts.js';
+import type { PilotTicketCore } from './p1-005-pilot-ticket-core.mjs';
+import type { CommunicationCommand, CommunicationDestination, CommunicationResult } from './p2-004-communication-core.mjs';
+import type { IntakeDecisionInput } from './p2-015-service-intake-decision-port.mjs';
+import type { DecisionRecord, ActionRow, DecisionStore } from './p2-015-decision-store.mjs';
+import type { ManualReviewStore } from './p2-015-manual-review.mjs';
+export interface FixedAppendInput { transaction: PostgresTransaction; command: CommunicationCommand; actor: null; resolvedDestinations: CommunicationDestination[] }
+export type FixedCommunicationAppend = (input: FixedAppendInput) => Promise<CommunicationResult>;
+export interface SafeActionContext { trace_id: string; session_id?: string | null; fixed_text?: string; message_type?: CommunicationCommand['message_type']; privacy_class: CommunicationCommand['privacy_class']; retention_until: string; retention_until_epoch_ms: string; destination?: CommunicationDestination | null }
+export interface ActionPortResult { replayed?: boolean; error?: unknown; ticket?: { id: string } | null; ticket_id?: string; id?: string; message_id?: string; appended?: boolean }
+export interface IntakeDecisionPort { apply(input: { transaction: PostgresTransaction; input: IntakeDecisionInput }): Promise<ActionPortResult> }
+export interface TicketCommandPort { createMinimalTicket(input: { transaction: PostgresTransaction; intake_id: string; occurred_at: LocalDateTime; trace_id: string }): Promise<ActionPortResult> }
+export interface CommunicationPort { appendFixed(input: { transaction: PostgresTransaction; action: ActionRow; context: SafeActionContext }): Promise<ActionPortResult | null> }
+export interface SafeActionOptions { intakeDecisionPort: IntakeDecisionPort; ticketCommandPort: TicketCommandPort; communicationPort?: CommunicationPort | null; manualReviewStore: Pick<ManualReviewStore, 'enqueue'>; decisionStore: Pick<DecisionStore, 'markAction'> }
+// Existing discriminants: failed_safe means only fixed communication failed; other errors throw.
+export type ActionExecutionResult = { action_id: string; replayed: true; failed_safe?: never; action_type?: never; result_ref_type?: never; result_ref_id?: never } | { action_id: string; action_type: ActionRow['action_type']; result_ref_type: string; result_ref_id: string; replayed: boolean; failed_safe?: never } | { action_id: string; failed_safe: true; review_id: string; replayed?: never; action_type?: never; result_ref_type?: never; result_ref_id?: never };
+export type SafeActionExecutor = ReturnType<typeof createSafeActionExecutor>;
 import { appendCommunication } from './p2-004-communication-core.mjs';
 import {
   P2_015_ERROR_CODES,
@@ -14,19 +32,19 @@ const FIXED_TEXT = Object.freeze({
   DIRECT_GUIDANCE: '为保护信息安全，请关注机器人单聊并在那里补充故障现象。',
 });
 
-export function createExistingTicketCommandPort({ ticketCore }) {
+export function createExistingTicketCommandPort({ ticketCore }: { ticketCore: Pick<PilotTicketCore, 'createForIntakeInTransaction'> }): TicketCommandPort {
   if (!ticketCore || typeof ticketCore.createForIntakeInTransaction !== 'function') failP2015(P2_015_ERROR_CODES.inputInvalid);
   return Object.freeze({
-    async createMinimalTicket({ transaction, intake_id: intakeId, occurred_at: occurredAt, trace_id: traceId }) {
+    async createMinimalTicket({ transaction, intake_id: intakeId, occurred_at: occurredAt, trace_id: traceId }: Parameters<TicketCommandPort['createMinimalTicket']>[0]) {
       return ticketCore.createForIntakeInTransaction({ intakeId, transaction, occurredAt, traceId });
     },
   });
 }
 
-export function createP2004FixedCommunicationPort({ append = appendCommunication } = {}) {
+export function createP2004FixedCommunicationPort({ append = appendCommunication }: { append?: FixedCommunicationAppend } = {}): CommunicationPort {
   return Object.freeze({
-    async appendFixed({ transaction, action, context }) {
-      const text = context.fixed_text ?? FIXED_TEXT[action.action_type];
+    async appendFixed({ transaction, action, context }: Parameters<CommunicationPort['appendFixed']>[0]) {
+      const text = context.fixed_text ?? (FIXED_TEXT as Partial<Record<ActionRow['action_type'], string>>)[action.action_type];
       if (!text || !context.destination) failP2015(P2_015_ERROR_CODES.actionFailed);
       const result = await append({
         transaction,
@@ -47,26 +65,26 @@ export function createP2004FixedCommunicationPort({ append = appendCommunication
         actor: null,
         resolvedDestinations: [context.destination],
       });
-      if (result?.error) failP2015(P2_015_ERROR_CODES.actionFailed);
-      return result;
+      if ((result as ActionPortResult | null)?.error) failP2015(P2_015_ERROR_CODES.actionFailed);
+      return result as ActionPortResult | null;
     },
   });
 }
 
 export function createSafeActionExecutor({ intakeDecisionPort, ticketCommandPort,
-  communicationPort, manualReviewStore, decisionStore } = {}) {
+  communicationPort, manualReviewStore, decisionStore }: SafeActionOptions = {} as SafeActionOptions) {
   if (!intakeDecisionPort || !ticketCommandPort || !manualReviewStore || !decisionStore) failP2015(P2_015_ERROR_CODES.inputInvalid);
   return Object.freeze({
-    async execute({ transaction, decision, context }) {
+    async execute({ transaction, decision, context }: { transaction: PostgresTransaction; decision: DecisionRecord & { applied_at?: string }; context: SafeActionContext }): Promise<ActionExecutionResult[]> {
       const safeDecision = snapshotP2015Json(decision);
       const safeContext = snapshotP2015Json(context);
-      const results = [];
+      const results: ActionExecutionResult[] = [];
       for (const action of safeDecision.actions) {
         if (action.state !== 'PROPOSED') { results.push({ action_id: action.id, replayed: true }); continue; }
         const commandHash = safeHash({ action_key: action.action_key, payload_hash: action.payload_hash });
-        let result;
-        let refType;
-        let refId;
+        let result: ActionPortResult | null;
+        let refType: string;
+        let refId: string | undefined;
         try {
           switch (action.action_type) {
             case 'APPLY_INTAKE_CLASSIFICATION':
@@ -85,7 +103,7 @@ export function createSafeActionExecutor({ intakeDecisionPort, ticketCommandPort
               result = await ticketCommandPort.createMinimalTicket({ transaction,
                 intake_id: safeDecision.service_intake_id, occurred_at: safeDecision.observed_at,
                 trace_id: safeContext.trace_id });
-              if (result?.error) failP2015(P2_015_ERROR_CODES.actionFailed);
+              if ((result as ActionPortResult | null)?.error) failP2015(P2_015_ERROR_CODES.actionFailed);
               refType = 'TICKET'; refId = result.ticket?.id ?? result.ticket_id ?? result.id;
               if (!refId) failP2015(P2_015_ERROR_CODES.actionFailed);
               await transaction.query(
@@ -119,7 +137,7 @@ export function createSafeActionExecutor({ intakeDecisionPort, ticketCommandPort
             case 'SEND_FIXED_SCOPE_NOTICE':
               if (!communicationPort) failP2015(P2_015_ERROR_CODES.actionFailed);
               result = await communicationPort.appendFixed({ transaction, action, context: safeContext });
-              refType = 'COMMUNICATION'; refId = result.message_id;
+              refType = 'COMMUNICATION'; refId = (result as ActionPortResult).message_id;
               if (action.action_type === 'REQUEST_ONE_DESCRIPTION') {
                 await transaction.query(
                   `UPDATE intake.contact_journey SET status='WAITING_DESCRIPTION',row_version=row_version+1,

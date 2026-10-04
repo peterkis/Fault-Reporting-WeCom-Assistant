@@ -8,7 +8,7 @@ export interface WorkbenchAuthContext {
   auth_method?: string;
   expires_at?: string;
   expires_epoch_ms?: string;
-  csrf_token?: string;
+  csrf_token?: string | null | undefined;
 }
 interface AuthInput { authContext?: WorkbenchAuthContext }
 export interface WorkbenchListInput extends AuthInput { state?: WorkbenchListState; cursor?: string | null; limit?: string | number | null }

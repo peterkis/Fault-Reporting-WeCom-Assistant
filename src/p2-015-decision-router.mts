@@ -1,3 +1,14 @@
+import type { RuleResult } from './p2-007-rule-engine.mjs';
+import type { FactProvenance } from './p2-007-fact-provenance.mjs';
+import type { P2015ResultCode, P2015SafeRoute } from '../contracts/p2_015_contracts.js';
+export type SafeActionType = 'CREATE_MINIMAL_TICKET' | 'APPLY_INTAKE_CLASSIFICATION' | 'REQUEST_ONE_DESCRIPTION' | 'ENQUEUE_MANUAL_REVIEW' | 'APPEND_RELATED_FOLLOW_UP' | 'QUERY_AUTHORIZED_STATUS' | 'ROUTE_SERVICE_REQUEST' | 'ROUTE_BUSINESS_CONSULTATION' | 'SEND_FIXED_ACKNOWLEDGEMENT' | 'SEND_FIXED_SCOPE_NOTICE' | 'ENQUEUE_INCIDENT_REVIEW';
+export interface SafeActionSuggestion { action_ordinal: number; action_type: SafeActionType; execution_policy: 'HUMAN_CONFIRM_REQUIRED' | 'AUTO_SAFE_DB_ONLY'; safe_payload: { service_intake_id?: string | undefined; journey_ref?: string | undefined; clarification_code?: unknown; template_code?: string | null }; payload_hash: string }
+export interface RouteContext { service_intake_id?: string; journey_ref?: string; safe_normalized_text?: string; input_hash?: string; source_refs?: string[]; message_sequence_window?: { start: number; end: number; count: number }; conflicts?: unknown[]; reliable_follow_up?: boolean; delivery_mode?: string; journey_association?: { method: string; [key: string]: unknown }; identity_review_required?: boolean; directory_snapshot_hash?: string; directory_assertion?: unknown; association_review_required?: boolean; association_review_reason?: string; group_corroboration_safety?: GroupCorroborationSafety; catalog_version?: string; rule_set_version?: string }
+export interface GroupCorroborationSafety { policy_version: string; assessment: string; source_privacy_class: string; privacy_flags: unknown[]; clinical_risk: unknown; catalog_hash: string; eligible: boolean }
+// This view describes the operations used by the legacy router, not validation of custom engines.
+interface RouterOutput extends Partial<RuleResult> { catalog_version?: string; rule_set_version?: string; result_hash?: string }
+export interface SafeRoute extends P2015SafeRoute { source_refs: string[]; message_sequence_window?: RouteContext['message_sequence_window']; fact_provenance: ReturnType<typeof safeFacts>; known_fields: { selected_service_code?: unknown; symptom_codes?: unknown; domain_intent?: unknown; transaction_stage?: unknown; scope?: unknown }; unknown_fields: unknown[]; conflicts: unknown[]; clinical_safety_risk: unknown; safe_action_suggestions: SafeActionSuggestion[]; corroboration_anchor?: unknown; privacy_flags?: unknown; journey_association?: RouteContext['journey_association']; identity_review?: { reason_code: string; directory_snapshot_hash?: string | undefined; directory_assertion?: unknown }; association_review?: { reason_code: string }; group_corroboration_safety?: GroupCorroborationSafety; human_override?: { resolution_code: string; principal_id: string } }
+export type BoundarySafeRoute = Omit<SafeRoute, 'fact_provenance'> & { fact_provenance: unknown[] };
 import {
   P2_015_ACTION_TYPES,
   P2_015_ERROR_CODES,
@@ -11,7 +22,7 @@ import {
 export const P2_015_ENGINE_VERSION = 'p2-007-adapter/1.0.0';
 export const P2_015_DECISION_POLICY_VERSION = 'p2-015-safe-route/1.0.9-g2';
 
-const ACTION_BY_RESULT = Object.freeze({
+const ACTION_BY_RESULT: Readonly<Record<P2015ResultCode, SafeActionType[]>> = Object.freeze({
   TICKET_ELIGIBLE: ['APPLY_INTAKE_CLASSIFICATION', 'CREATE_MINIMAL_TICKET'],
   NEEDS_DESCRIPTION: ['APPLY_INTAKE_CLASSIFICATION', 'REQUEST_ONE_DESCRIPTION'],
   MANUAL_REVIEW_REQUIRED: ['APPLY_INTAKE_CLASSIFICATION', 'ENQUEUE_MANUAL_REVIEW'],
@@ -24,7 +35,7 @@ const ACTION_BY_RESULT = Object.freeze({
   INCIDENT_REVIEW_CANDIDATE: ['APPLY_INTAKE_CLASSIFICATION', 'CREATE_MINIMAL_TICKET', 'ENQUEUE_INCIDENT_REVIEW'],
 });
 
-function safeFacts(facts) {
+function safeFacts(facts: FactProvenance[] | undefined) {
   return (Array.isArray(facts) ? facts : []).map((fact) => ({
     fact_id: fact.fact_id,
     field_path: fact.field_path,
@@ -44,9 +55,9 @@ function safeFacts(facts) {
   }));
 }
 
-function trustedReviewContext(context) {
+function trustedReviewContext(context: RouteContext) {
   return {
-    ...(['UNIQUE_GUIDED_JOURNEY','EXISTING_DIRECT_CHANNEL_BINDING','EXPLICIT_TICKET_REFERENCE','EXPLICIT_USER_NEW_TOPIC'].includes(context.journey_association?.method)
+    ...(['UNIQUE_GUIDED_JOURNEY','EXISTING_DIRECT_CHANNEL_BINDING','EXPLICIT_TICKET_REFERENCE','EXPLICIT_USER_NEW_TOPIC'].includes((context.journey_association?.method as string))
       ?{journey_association:context.journey_association}:{}),
     ...(context.identity_review_required === true ? { identity_review: { reason_code: 'DIRECTORY_ACCOUNT_INACTIVE',
       directory_snapshot_hash: context.directory_snapshot_hash, directory_assertion: context.directory_assertion } } : {}),
@@ -54,12 +65,12 @@ function trustedReviewContext(context) {
   };
 }
 
-function routeCode(output, context) {
+function routeCode(output: RouterOutput, context: RouteContext): [P2015ResultCode, string] {
   if (context.association_review_required === true) return ['MANUAL_REVIEW_REQUIRED', context.association_review_reason === 'EXPLICIT_REFERENCE_REJECTED' ? 'EXPLICIT_REFERENCE_REJECTED' : 'MULTIPLE_GUIDED_JOURNEYS'];
   if (context.identity_review_required === true) return ['MANUAL_REVIEW_REQUIRED', 'DIRECTORY_ACCOUNT_INACTIVE'];
   const text = (context.safe_normalized_text ?? '').toLocaleLowerCase('zh-CN');
   const hasFault = output.domain_intent === 'INCIDENT_REPORT' || (output.symptom_codes?.length ?? 0) > 0;
-  if (hasFault && (output.requires_human_review || output.clinical_impact === 'CRITICAL_REVIEW_REQUIRED' || context.conflicts?.length > 0)) {
+  if (hasFault && (output.requires_human_review || output.clinical_impact === 'CRITICAL_REVIEW_REQUIRED' || (context.conflicts?.length as number) > 0)) {
     return ['MANUAL_REVIEW_REQUIRED', 'FAULT_REQUIRES_SAFE_REVIEW'];
   }
   if (hasFault && output.incident_candidate) return ['INCIDENT_REVIEW_CANDIDATE', 'DETERMINISTIC_INCIDENT_CANDIDATE'];
@@ -81,7 +92,7 @@ function routeCode(output, context) {
   return ['MANUAL_REVIEW_REQUIRED', 'SAFE_FALLBACK_UNKNOWN'];
 }
 
-function actionSuggestions(resultCode, context, output) {
+function actionSuggestions(resultCode: P2015ResultCode, context: RouteContext, output: RouterOutput): SafeActionSuggestion[] {
   const manualReview = resultCode === 'MANUAL_REVIEW_REQUIRED';
   let actions = [...(ACTION_BY_RESULT[resultCode] ?? [])];
   if (manualReview && (output.domain_intent === 'INCIDENT_REPORT' || (output.symptom_codes?.length ?? 0) > 0)) {
@@ -110,14 +121,16 @@ function actionSuggestions(resultCode, context, output) {
   });
 }
 
-export function routeP2007Decision({ rule_output: ruleOutput, context = {} }) {
-  const output = snapshotP2015Json(ruleOutput);
+export function routeP2007Decision(input: { rule_output: RuleResult; context?: RouteContext }): SafeRoute;
+export function routeP2007Decision(input: { rule_output: unknown; context?: RouteContext }): BoundarySafeRoute;
+export function routeP2007Decision({ rule_output: ruleOutput, context = {} }: { rule_output: unknown; context?: RouteContext }): BoundarySafeRoute {
+  const output = snapshotP2015Json(ruleOutput) as RouterOutput;
   const safeContext = snapshotP2015Json(context);
   if (typeof output.catalog_version !== 'string' || typeof output.rule_set_version !== 'string'
     || typeof output.result_hash !== 'string') failP2015(P2_015_ERROR_CODES.inputInvalid);
   const [resultCode, reasonCode] = routeCode(output, safeContext);
   if (!P2_015_RESULT_CODES.includes(resultCode)) failP2015(P2_015_ERROR_CODES.inputInvalid);
-  const safeResult = {
+  const safeResult: Omit<SafeRoute, 'input_hash' | 'result_hash'> = {
     result_code: resultCode,
     reason_code: reasonCode,
     catalog_version: output.catalog_version,
@@ -154,9 +167,9 @@ export function routeP2007Decision({ rule_output: ruleOutput, context = {} }) {
   return freezePublic({ ...safeResult, input_hash: inputHash, result_hash: resultHash });
 }
 
-export function routeRuleFailure(context = {}) {
+export function routeRuleFailure(context: RouteContext = {}) {
   const safeContext = snapshotP2015Json(context);
-  const safeResult = {
+  const safeResult: Omit<SafeRoute, 'input_hash' | 'result_hash'> = {
     result_code: 'MANUAL_REVIEW_REQUIRED',
     reason_code: 'RULE_ENGINE_UNAVAILABLE',
     catalog_version: safeContext.catalog_version ?? 'UNAVAILABLE',

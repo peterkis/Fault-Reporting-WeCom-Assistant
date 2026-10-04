@@ -1,6 +1,6 @@
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { P2015ResultCode } from '../contracts/p2_015_contracts.js';
-export interface IntakeDecisionInput { result_code: P2015ResultCode; intake_id: string; expected_version?: number; occurred_at: string; trace_id: string; decision_id: string; reason_code: string; catalog_version: string; rule_set_version: string }
+export interface IntakeDecisionInput { result_code: P2015ResultCode; intake_id: string; expected_version?: number; occurred_at: string; trace_id: string; decision_id: string; reason_code?: string; catalog_version: string; rule_set_version: string }
 export interface DecisionIntakeRow { id: string; request_type: string; status: string; version: number; pilot_ticket_id: string | null }
 import { P2_015_ERROR_CODES, failP2015, freezePublic, snapshotP2015Json } from './p2-015-domain-contracts.mjs';
 

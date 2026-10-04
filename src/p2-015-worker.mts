@@ -1,3 +1,13 @@
+import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
+import type { RuleFirstOrchestrator } from './p2-015-rule-first-orchestrator.mjs';
+export interface WorkerInput { feature_flags?: unknown; batch_size?: number; now_epoch_ms?: string; signal?: AbortSignal | undefined }
+export interface WebWorkerResult { processed?: number; claimed?: number; pending?: boolean; error_code?: string; results?: unknown[] }
+export interface WebWorkerPort { processPendingFromWorker(input: { batchSize: number; nowEpochMs: string; signal?: AbortSignal | undefined }): Promise<WebWorkerResult> }
+export interface DirectorySyncPort { runIfDue(input: { signal?: AbortSignal | undefined }): Promise<{ status: string; [key: string]: unknown }> }
+export interface WorkerOptions { pool: PostgresPool; orchestrator: Pick<RuleFirstOrchestrator, 'preparePersistedIntake' | 'processInTransaction'>; webOrchestrator?: WebWorkerPort | null; directorySyncJob?: DirectorySyncPort | null; beforeClaim?: ((transaction: PostgresTransaction) => Promise<unknown>) | null; afterBatch?: (() => Promise<unknown>) | null; pollMilliseconds?: number }
+export type WorkerBatchResult = { processed: 0; claimed: 0; disabled: true; model_provider_calls: 0; directory_sync?: { status: string; [key: string]: unknown } | null } | { processed: number; claimed: number; disabled: false; results: unknown[]; web_result: WebWorkerResult | null; model_provider_calls: 0; batch_size: number; directory_sync?: { status: string; [key: string]: unknown } | null };
+export type PostBatchMaintenanceError = Error & { code: 'P2_015_POST_BATCH_MAINTENANCE_FAILED'; accepted_batch_committed: true; processed: number };
+export type P2015Worker = ReturnType<typeof createP2015Worker>;
 import {
   P2_015_ERROR_CODES,
   P2_015_LIMITS,
@@ -8,7 +18,7 @@ import {
   snapshotP2015Json,
 } from './p2-015-domain-contracts.mjs';
 
-async function withTransaction(pool, operation) {
+async function withTransaction<T>(pool: PostgresPool, operation: (transaction: PostgresTransaction) => Promise<T>) {
   const client = await pool.connect();
   let destroy = false;
   try {
@@ -26,7 +36,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
   directorySyncJob = null,
   beforeClaim = null,
   afterBatch = null,
-  pollMilliseconds = P2_015_LIMITS.recoveryPollMilliseconds } = {}) {
+  pollMilliseconds = P2_015_LIMITS.recoveryPollMilliseconds }: WorkerOptions = {} as WorkerOptions) {
   if (!pool?.connect || !orchestrator?.preparePersistedIntake || !orchestrator?.processInTransaction
     || (webOrchestrator !== null && typeof webOrchestrator.processPendingFromWorker !== 'function')
     || (directorySyncJob !== null && typeof directorySyncJob.runIfDue !== 'function')
@@ -34,14 +44,14 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
     || !Number.isInteger(pollMilliseconds) || pollMilliseconds < 100 || pollMilliseconds > 60_000) {
     failP2015(P2_015_ERROR_CODES.inputInvalid);
   }
-  let timer = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
   let stopped = true;
   let running = false;
 
-  async function processDueBatch(input = {}) {
+  async function processDueBatch(input: WorkerInput = {}): Promise<WorkerBatchResult> {
     const value = snapshotP2015Json(input);
     const flags = normalizeP2015FeatureFlags(value.feature_flags ?? {});
-    let directorySync = null;
+    let directorySync: { status: string; [key: string]: unknown } | null = null;
     if (directorySyncJob && !value.signal?.aborted) {
       try { directorySync = await directorySyncJob.runIfDue({ signal: value.signal }); }
       catch { directorySync = { status: 'FAILED', error_code: 'THIRD_STAFF_DIRECTORY_MAINTENANCE_FAILED' }; }
@@ -54,9 +64,9 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
     const nowEpochMs = value.now_epoch_ms ?? String(Date.now());
     let processed = 0;
     let claimed = 0;
-    const results = [];
-    let webResult = null;
-    const webClaimedFor = result => result?.claimed ?? result?.processed ?? 0;
+    const results: unknown[] = [];
+    let webResult: WebWorkerResult | null = null;
+    const webClaimedFor = (result: WebWorkerResult | null) => result?.claimed ?? result?.processed ?? 0;
     if (webOrchestrator && !value.signal?.aborted) {
       // Reserve one slot for Web on every batch. If no Web root is due, the
       // zero-result response lets the Bot query use the full batch instead.
@@ -75,7 +85,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
     const botBatchSize = value.signal?.aborted ? 0 : webOrchestrator
       ? webClaimed > 0 ? Math.max(0, batchSize - webClaimed) : batchSize
       : batchSize;
-    const candidates = await pool.query(
+    const candidates = await pool.query<{ id: string }>(
       `SELECT intake.id::text
          FROM intake.service_intake AS intake
          LEFT JOIN intake.channel_leg leg ON leg.source_intake_id=intake.id
@@ -115,7 +125,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
     if(afterBatch)try{await afterBatch();}catch{
       // The intake transactions above have already committed. This maintenance
       // failure must never be represented as a rollback of accepted reports.
-      const error=new Error('P2_015_POST_BATCH_MAINTENANCE_FAILED');error.code=error.message;
+      const error=new Error('P2_015_POST_BATCH_MAINTENANCE_FAILED') as PostBatchMaintenanceError;error.code=error.message as PostBatchMaintenanceError['code'];
       error.accepted_batch_committed=true;error.processed=processed;throw error;
     }
     return freezePublic({ processed, claimed, disabled: false, results, web_result: webResult,
@@ -123,7 +133,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
       ...(directorySyncJob ? { directory_sync: directorySync } : {}) });
   }
 
-  function schedule(featureFlags, signal) {
+  function schedule(featureFlags: unknown, signal?: AbortSignal) {
     if (stopped || signal?.aborted) return;
     timer = setTimeout(async () => {
       timer = null;
@@ -137,7 +147,7 @@ export function createP2015Worker({ pool, orchestrator, webOrchestrator = null,
 
   return Object.freeze({
     processDueBatch,
-    start({ feature_flags: featureFlags = {}, signal } = {}) {
+    start({ feature_flags: featureFlags = {}, signal }: WorkerInput = {}) {
       if (!stopped) return false;
       stopped = false;
       schedule(featureFlags, signal);

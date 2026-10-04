@@ -1,3 +1,17 @@
+import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
+import type { DecisionRow } from './p2-015-decision-store.mjs';
+import type { P2015ResultCode } from '../contracts/p2_015_contracts.js';
+export type ReviewResolutionCode = 'CONFIRM_TICKET_ELIGIBLE' | 'REQUEST_DESCRIPTION' | 'CLASSIFY_SERVICE_REQUEST' | 'CLASSIFY_BUSINESS_CONSULTATION' | 'ACKNOWLEDGE' | 'MARK_OUT_OF_SCOPE' | 'LINK_EXISTING_JOURNEY' | 'KEEP_INCIDENT_REVIEW_CANDIDATE' | 'CANCEL_REVIEW';
+export type ReviewStatus = 'PENDING' | 'RESOLVED' | 'CANCELLED';
+export type ReviewPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+export interface ReviewPrincipal { principal_id: string }
+export interface ReviewAuthorizer { authorizedJourneyIds(input: { principal: ReviewPrincipal; operation: string; review_id?: string }): Promise<string[]> }
+export interface ReviewEnqueue { decision_id: string; journey_id: string; service_intake_id: string; linked_ticket_id?: string | null; review_reason_code: string; basis_input_revision?: string | number | null; priority?: ReviewPriority }
+export interface ReviewRow extends ReviewEnqueue { id: string; review_key: string; priority: ReviewPriority; status: ReviewStatus; row_version: string; created_at: string; safe_result?: unknown }
+type ResolutionRow = ReviewRow & Omit<DecisionRow, 'id' | 'status' | 'safe_result'> & { safe_result: DecisionRow['safe_result']; resolution_command_id: string | null; resolution_command_hash: string | null };
+export interface ReviewCommand { review_id: string; resolution_code: ReviewResolutionCode; resolution_reason_code: string; expected_row_version: string; client_command_id: string; resolved_at: string }
+export type ReviewResolution = { review_id: string; status: Exclude<ReviewStatus, 'PENDING'>; replayed: true } | { id: string; status: 'RESOLVED' | 'CANCELLED'; row_version: string; resolution_decision_id: string; replayed: false };
+export type ManualReviewStore = ReturnType<typeof createManualReviewStore>;
 import {
   P2_015_ERROR_CODES,
   P2_015_LIMITS,
@@ -11,7 +25,7 @@ import {
 const RESOLUTIONS = new Set(['CONFIRM_TICKET_ELIGIBLE','REQUEST_DESCRIPTION','CLASSIFY_SERVICE_REQUEST',
   'CLASSIFY_BUSINESS_CONSULTATION','ACKNOWLEDGE','MARK_OUT_OF_SCOPE','LINK_EXISTING_JOURNEY',
   'KEEP_INCIDENT_REVIEW_CANDIDATE','CANCEL_REVIEW']);
-const RESULT_BY_RESOLUTION = Object.freeze({
+const RESULT_BY_RESOLUTION: Readonly<Record<ReviewResolutionCode, P2015ResultCode>> = Object.freeze({
   CONFIRM_TICKET_ELIGIBLE: 'TICKET_ELIGIBLE', REQUEST_DESCRIPTION: 'NEEDS_DESCRIPTION',
   CLASSIFY_SERVICE_REQUEST: 'SERVICE_REQUEST', CLASSIFY_BUSINESS_CONSULTATION: 'BUSINESS_CONSULTATION',
   ACKNOWLEDGE: 'ACKNOWLEDGEMENT', MARK_OUT_OF_SCOPE: 'OUT_OF_SCOPE',
@@ -19,29 +33,29 @@ const RESULT_BY_RESOLUTION = Object.freeze({
   CANCEL_REVIEW: 'MANUAL_REVIEW_REQUIRED',
 });
 
-export function createManualReviewStore({ authorizer = null, webSource = null } = {}) {
+export function createManualReviewStore({ authorizer = null, webSource = null }: { authorizer?: ReviewAuthorizer | null; webSource?: boolean | null } = {}) {
   if (![true, false, null].includes(webSource)) failP2015(P2_015_ERROR_CODES.inputInvalid);
-  async function supportsWebSource(transaction) {
+  async function supportsWebSource(transaction: PostgresTransaction) {
     if (webSource !== null) return webSource;
-    const result = await transaction.query(`SELECT count(*)::integer AS count
+    const result = await transaction.query<{ count: number }>(`SELECT count(*)::integer AS count
       FROM information_schema.columns WHERE table_schema='intake' AND table_name='deterministic_decision'
         AND column_name IN ('source_kind','primary_web_submission_id','basis_input_revision')`);
     return result.rows[0]?.count === 3;
   }
-  const allowedJourneyIds = async (input) => {
+  const allowedJourneyIds = async (input: Parameters<ReviewAuthorizer['authorizedJourneyIds']>[0]) => {
     if (!authorizer || typeof authorizer.authorizedJourneyIds !== 'function') failP2015(P2_015_ERROR_CODES.authorizationDenied);
     const ids = await authorizer.authorizedJourneyIds(snapshotP2015Json(input));
     if (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string')) failP2015(P2_015_ERROR_CODES.authorizationDenied);
     return ids;
   };
   return Object.freeze({
-    async enqueue({ transaction, input }) {
+    async enqueue({ transaction, input }: { transaction: PostgresTransaction; input: ReviewEnqueue }) {
       const value = snapshotP2015Json(input);
       const reviewKey = `review_v1_${safeHash({ decision_id: value.decision_id, reason: value.review_reason_code, basis_input_revision: value.basis_input_revision ?? null })}`;
       const useWebSource = await supportsWebSource(transaction);
       const basisColumns = useWebSource ? ',basis_input_revision' : '';
       const basisValues = useWebSource ? ',$8' : '';
-      const result = await transaction.query(
+      const result = await transaction.query<ReviewRow>(
         `INSERT INTO intake.manual_review_item (
            review_key,journey_id,decision_id,service_intake_id,linked_ticket_id,review_reason_code,priority${basisColumns}
          ) VALUES ($1,$2::uuid,$3::uuid,$4::uuid,$5::uuid,$6,$7${basisValues})
@@ -52,16 +66,16 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
           value.linked_ticket_id ?? null, value.review_reason_code, value.priority ?? 'NORMAL',
           ...(useWebSource ? [value.basis_input_revision ?? null] : [])],
       );
-      return freezePublic(result.rows[0]);
+      return freezePublic(result.rows[0] as ReviewRow);
     },
 
-    async list({ transaction, principal, cursor = null, limit, priority = null }) {
+    async list({ transaction, principal, cursor = null, limit, priority = null }: { transaction: PostgresTransaction; principal: ReviewPrincipal; cursor?: { priority_rank: number; created_at: string; id: string } | null; limit?: number; priority?: ReviewPriority | null }) {
       if (priority !== null && !['LOW','NORMAL','HIGH','URGENT'].includes(priority)) failP2015(P2_015_ERROR_CODES.inputInvalid);
       const ids = await allowedJourneyIds({ principal, operation: 'LIST_MANUAL_REVIEWS' });
       const pageLimit = normalizeLimit(limit, P2_015_LIMITS.defaultReviewPage, P2_015_LIMITS.maximumReviewPage);
       if (ids.length === 0) return freezePublic({ items: [], next_cursor: null });
       const value = cursor === null ? null : snapshotP2015Json(cursor);
-      const result = await transaction.query(
+      const result = await transaction.query<ReviewRow>(
         `SELECT id::text,review_key,journey_id::text,decision_id::text,service_intake_id::text,
                 linked_ticket_id::text,review_reason_code,priority,status,row_version::text,created_at
            FROM intake.manual_review_item
@@ -74,13 +88,13 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
       );
       const rows = result.rows.slice(0, pageLimit);
       const last = rows.at(-1);
-      const rank = (priority) => ({ URGENT: 1, HIGH: 2, NORMAL: 3, LOW: 4 })[priority];
-      return freezePublic({ items: rows, next_cursor: result.rows.length > pageLimit ? { priority_rank: rank(last.priority), created_at: last.created_at, id: last.id } : null });
+      const rank = (priority: ReviewPriority) => ({ URGENT: 1, HIGH: 2, NORMAL: 3, LOW: 4 })[priority];
+      return freezePublic({ items: rows, next_cursor: result.rows.length > pageLimit ? { priority_rank: rank((last as ReviewRow).priority), created_at: (last as ReviewRow).created_at, id: (last as ReviewRow).id } : null });
     },
 
-    async get({ transaction, principal, review_id: reviewId }) {
+    async get({ transaction, principal, review_id: reviewId }: { transaction: PostgresTransaction; principal: ReviewPrincipal; review_id: string }) {
       const ids = await allowedJourneyIds({ principal, operation: 'GET_MANUAL_REVIEW', review_id: reviewId });
-      const result = await transaction.query(
+      const result = await transaction.query<ReviewRow>(
         `SELECT review.id::text,review.review_key,review.journey_id::text,review.decision_id::text,
                 review.service_intake_id::text,review.linked_ticket_id::text,review.review_reason_code,
                 review.priority,review.status,review.row_version::text,review.created_at,decision.safe_result
@@ -88,10 +102,10 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
           WHERE review.id=$1::uuid AND review.journey_id=ANY($2::uuid[])`, [reviewId, ids],
       );
       if (result.rowCount !== 1) failP2015(P2_015_ERROR_CODES.authorizationDenied);
-      return freezePublic(result.rows[0]);
+      return freezePublic(result.rows[0] as ReviewRow);
     },
 
-    async resolve({ transaction, principal, command }) {
+    async resolve({ transaction, principal, command }: { transaction: PostgresTransaction; principal: ReviewPrincipal; command: ReviewCommand }): Promise<ReviewResolution> {
       const value = snapshotP2015Json(command);
       if (!RESOLUTIONS.has(value.resolution_code)) failP2015(P2_015_ERROR_CODES.inputInvalid);
       const ids = await allowedJourneyIds({ principal, operation: 'RESOLVE_MANUAL_REVIEW', review_id: value.review_id });
@@ -101,7 +115,7 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
       const activeWebPredicate = useWebSource && value.resolution_code !== 'CANCEL_REVIEW'
         ? ` AND (decision.source_kind <> 'WEB' OR (web_binding.revoked_at IS NULL
             AND web_binding.retention_until>platform.local_now() AND web_intake.retention_until>platform.local_now()))` : '';
-      const selected = await transaction.query(
+      const selected = await transaction.query<ResolutionRow>(
         `SELECT review.*,decision.safe_result,decision.channel_leg_id,decision.conversation_session_id,
                 decision.source_window_start_sequence,decision.source_window_end_sequence,
                 decision.source_message_count,decision.source_hash,decision.catalog_version,
@@ -112,7 +126,7 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
           WHERE review.id=$1::uuid AND review.journey_id=ANY($2::uuid[])${activeWebPredicate} FOR UPDATE OF review`, [value.review_id, ids],
       );
       if (selected.rowCount !== 1) failP2015(P2_015_ERROR_CODES.authorizationDenied);
-      const row = selected.rows[0];
+      const row = (selected.rows[0] as ResolutionRow);
       const commandHash = safeHash({ review_id: value.review_id, resolution_code: value.resolution_code,
         resolution_reason_code: value.resolution_reason_code, expected_row_version: value.expected_row_version });
       if (row.status !== 'PENDING') {
@@ -121,11 +135,11 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
       }
       if (String(row.row_version) !== String(value.expected_row_version)) failP2015(P2_015_ERROR_CODES.versionConflict);
       if (useWebSource && row.source_kind === 'WEB') {
-        const current = await transaction.query(
+        const current = await transaction.query<{ input_revision: string }>(
           `SELECT input_revision FROM intake.web_request_binding
             WHERE intake_id=$1::uuid AND revoked_at IS NULL FOR UPDATE`, [row.service_intake_id],
         );
-        if ((current.rowCount !== 1 || String(current.rows[0].input_revision) !== String(row.basis_input_revision))
+        if ((current.rowCount !== 1 || String((current.rows[0] as { input_revision: string }).input_revision) !== String(row.basis_input_revision))
           && value.resolution_code !== 'CANCEL_REVIEW') {
           // A stale item cannot approve old evidence; an operator may still
           // explicitly retire it so the queue does not contain an
@@ -135,15 +149,15 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
       }
       const overrideResultCode = value.resolution_code === 'CANCEL_REVIEW'
         ? 'MANUAL_REVIEW_REQUIRED' : RESULT_BY_RESOLUTION[value.resolution_code];
-      const ordinal = await transaction.query('SELECT COALESCE(max(decision_ordinal),0)::integer+1 AS ordinal FROM intake.deterministic_decision WHERE journey_id=$1::uuid', [row.journey_id]);
+      const ordinal = await transaction.query<{ ordinal: number }>('SELECT COALESCE(max(decision_ordinal),0)::integer+1 AS ordinal FROM intake.deterministic_decision WHERE journey_id=$1::uuid', [row.journey_id]);
       const safeResult = { ...row.safe_result, result_code: overrideResultCode,
         reason_code: value.resolution_reason_code, manual_review_required: false,
         human_override: { resolution_code: value.resolution_code, principal_id: principal.principal_id } };
       const resultHash = safeHash(safeResult);
       const sourceColumns = useWebSource ? 'source_kind,primary_web_submission_id,basis_input_revision,' : '';
       const sourceValues = useWebSource ? '$6,$7::uuid,$8,' : '';
-      const parameter = (number) => `$${number + (useWebSource ? 3 : 0)}`;
-      const override = await transaction.query(
+      const parameter = (number: number) => `$${number + (useWebSource ? 3 : 0)}`;
+      const override = await transaction.query<{ id: string }>(
         `INSERT INTO intake.deterministic_decision (
            journey_id,channel_leg_id,service_intake_id,conversation_session_id,linked_ticket_id,
            ${sourceColumns}
@@ -156,7 +170,7 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
         [row.journey_id,row.channel_leg_id,row.service_intake_id,row.conversation_session_id,row.linked_ticket_id,
           ...(useWebSource ? [row.source_kind ?? 'BOT',row.source_kind === 'WEB' ? row.primary_web_submission_id : null,
             row.source_kind === 'WEB' ? row.basis_input_revision : null] : []),
-          ordinal.rows[0].ordinal,`human_v1_${safeHash({ review: value.review_id, command: value.client_command_id })}`,
+          (ordinal.rows[0] as { ordinal: number }).ordinal,`human_v1_${safeHash({ review: value.review_id, command: value.client_command_id })}`,
           row.source_window_start_sequence,row.source_window_end_sequence,row.source_message_count,row.source_hash,
           row.catalog_version,row.rule_set_version,row.engine_version,row.decision_policy_version,
           overrideResultCode,value.resolution_reason_code,row.input_hash,resultHash,
@@ -164,7 +178,7 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
           overrideResultCode === 'INCIDENT_REVIEW_CANDIDATE',row.observed_at],
       );
       const status = value.resolution_code === 'CANCEL_REVIEW' ? 'CANCELLED' : 'RESOLVED';
-      const updated = await transaction.query(
+      const updated = await transaction.query<{ id: string; status: 'RESOLVED' | 'CANCELLED'; row_version: string; resolution_decision_id: string }>(
         `UPDATE intake.manual_review_item SET status=$2,row_version=row_version+1,
            resolution_command_id=$3::uuid,resolution_command_hash=$4,resolution_code=$5,
            resolution_reason_code=$6,resolved_by_principal_id=$7::uuid,resolution_decision_id=$8::uuid,
@@ -172,10 +186,10 @@ export function createManualReviewStore({ authorizer = null, webSource = null } 
          WHERE id=$1::uuid AND status='PENDING' AND row_version=$10
          RETURNING id::text,status,row_version::text,resolution_decision_id::text`,
         [value.review_id,status,value.client_command_id,commandHash,value.resolution_code,
-          value.resolution_reason_code,principal.principal_id,override.rows[0].id,value.resolved_at,value.expected_row_version],
+          value.resolution_reason_code,principal.principal_id,(override.rows[0] as { id: string }).id,value.resolved_at,value.expected_row_version],
       );
       if (updated.rowCount !== 1) failP2015(P2_015_ERROR_CODES.versionConflict);
-      return freezePublic({ ...updated.rows[0], replayed: false });
+      return freezePublic({ ...(updated.rows[0] as { id: string; status: 'RESOLVED' | 'CANCELLED'; row_version: string; resolution_decision_id: string }), replayed: false });
     },
   });
 }

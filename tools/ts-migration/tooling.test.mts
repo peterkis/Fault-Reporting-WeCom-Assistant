@@ -34,7 +34,7 @@ test('T01 build and negative checks run on an owned full clone, never on user so
   try {
     const first = build(root), digest = verifyArtifact(root);
     assert.ok(first.typed_implementations.includes('src/migration-canary.mts'));
-    assert.ok(first.unchecked_legacy.includes('src/p2-015-decision-store.mjs'));
+    assert.ok(first.unchecked_legacy.includes('src/p2-015-incident-correlation.mjs'));
     await t.test('two clean builds produce identical manifests', () => {
       build(root); assert.equal(verifyArtifact(root), digest);
     });

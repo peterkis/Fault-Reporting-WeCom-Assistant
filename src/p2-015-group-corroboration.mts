@@ -1,27 +1,35 @@
+import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
+import type { RuleResult, CorroborationAnchor } from './p2-007-rule-engine.mjs';
+import type { FactProvenance } from './p2-007-fact-provenance.mjs';
+import type { GroupCorroborationSafety } from './p2-015-decision-router.mjs';
+export interface CorroborationIntake { id: string; source_provider: string; source_bot_id: string; source_chat_type: string; source_chat_id: string | null; reporter_wecom_userid: string; privacy_class: string }
+export interface CorroborationWindow { text: string; rows: { received_epoch_ms: string; message_id: string }[] }
+// Internal DB reader uses only these canonical fields, never raw anchor text.
+interface AnchorRow { id: string; safe_result: { known_fields: { domain_intent?: string; selected_service_code?: string | null; symptom_codes?: string[] }; fact_provenance?: Pick<FactProvenance, 'status' | 'assertion' | 'sensitivity' | 'source_kind' | 'field_path' | 'normalized_value' | 'fact_id'>[]; corroboration_anchor?: unknown; group_corroboration_safety?: GroupCorroborationSafety; conflicts?: unknown[]; clinical_safety_risk: string }; catalog_version: string; rule_set_version: string; result_hash: string; reporter_identity_hash: string; root_epoch: string }
 import { safeHash } from './p2-015-domain-contracts.mjs';
 import { P2_015_ENGINE_VERSION } from './p2-015-decision-router.mjs';
 import { loadServiceCatalog } from './p2-007-service-catalog.mjs';
 
 const catalog=loadServiceCatalog(),symptoms=new Set(catalog.raw.taxonomies.symptom_codes.map(s=>s.code));
 const sensitiveContext=/患者|病人|姓名|身份证|手机|电话|账号|密码|病历|住院号|门诊号|密钥|保密|秘密|token|secret|password|\b\d{6,}\b|(?:\d{1,3}\.){3}\d{1,3}/iu;
-export function assessGroupCorroborationSafety({intake,window,output}){
-  const flags=[...(output.privacy_flags??[])];if(sensitiveContext.test(window.text))flags.push('POSSIBLE_SENSITIVE_CONTEXT');
-  const clinical=output.clinical_impact??'UNKNOWN';
+export function assessGroupCorroborationSafety({intake,window,output}: { intake: CorroborationIntake; window: CorroborationWindow; output: unknown }): GroupCorroborationSafety{
+  const flags=[...((output as RuleResult).privacy_flags??[])];if(sensitiveContext.test(window.text))flags.push('POSSIBLE_SENSITIVE_CONTEXT');
+  const clinical=(output as RuleResult).clinical_impact??'UNKNOWN';
   return {policy_version:'canonical-same-group/1',assessment:'CANONICAL_FIELDS_ONLY_NOT_MESSAGE_DECLASSIFICATION',
     source_privacy_class:intake.privacy_class,privacy_flags:[...new Set(flags)].sort(),clinical_risk:clinical,
     catalog_hash:catalog.catalog_hash,eligible:intake.source_chat_type==='group'&&intake.privacy_class!=='SECRET'
-      &&!output.corroboration_anchor&&flags.length===0&&!['HIGH','CRITICAL','CRITICAL_REVIEW_REQUIRED'].includes(clinical)
-      &&catalog.lookupService(output.selected_service_code)?.enabled===true&&output.symptom_codes.length>0
-      &&output.symptom_codes.every(s=>symptoms.has(s)&&!s.startsWith('DATA.'))};
+      &&!(output as RuleResult).corroboration_anchor&&flags.length===0&&!['HIGH','CRITICAL','CRITICAL_REVIEW_REQUIRED'].includes(clinical)
+      &&catalog.lookupService((output as RuleResult).selected_service_code)?.enabled===true&&(output as RuleResult).symptom_codes.length>0
+      &&(output as RuleResult).symptom_codes.every(s=>symptoms.has(s)&&!s.startsWith('DATA.'))};
 }
 
-export const isGroupCorroboration = text => ['同上','+1','加一','我的也是','俺也一样','+10086'].includes(text);
+export const isGroupCorroboration = (text: string) => ['同上','+1','加一','我的也是','俺也一样','+10086'].includes(text);
 
 // Internal application reader. No raw anchor text or cross-channel context leaves this seam.
-export async function readGroupCorroboration({transaction,intake,window,reporterHash,catalogVersion,ruleVersion}) {
+export async function readGroupCorroboration({transaction,intake,window,reporterHash,catalogVersion,ruleVersion}: { transaction: PostgresTransaction; intake: CorroborationIntake; window: CorroborationWindow; reporterHash: string; catalogVersion: unknown; ruleVersion: unknown }): Promise<CorroborationAnchor | null | undefined> {
   if(intake.source_chat_type!=='group'||!isGroupCorroboration(window.text.trim()))return null;
-  const stamp=window.rows.at(-1).received_epoch_ms;
-  const result=await transaction.query(`SELECT d.id::text,d.safe_result,d.catalog_version,d.rule_set_version,d.result_hash,
+  const stamp=(window.rows.at(-1) as CorroborationWindow['rows'][number]).received_epoch_ms;
+  const result=await transaction.query<AnchorRow>(`SELECT d.id::text,d.safe_result,d.catalog_version,d.rule_set_version,d.result_hash,
       j.reporter_identity_hash,anchor.received_epoch_ms::text AS root_epoch
     FROM intake.service_intake peer
     JOIN intake.channel_leg l ON l.source_intake_id=peer.id
@@ -56,7 +64,7 @@ export async function readGroupCorroboration({transaction,intake,window,reporter
     ORDER BY anchor.received_epoch_ms DESC,d.id LIMIT 101`,[P2_015_ENGINE_VERSION,intake.source_provider,intake.source_bot_id,
       intake.source_chat_id,intake.id,reporterHash,stamp,catalogVersion,ruleVersion,intake.reporter_wecom_userid]);
   if(!result.rows.length||result.rows.length>100)return null;
-  const anchors=[];
+  const anchors: CorroborationAnchor[]=[];
   for(const row of result.rows){
     const safe=row.safe_result,k=safe.known_fields,fs=safe.fact_provenance??[];
     if(safe.corroboration_anchor||fs.some(f=>f.source_kind==='CONTEXT_INHERITANCE'))continue;
@@ -75,7 +83,7 @@ export async function readGroupCorroboration({transaction,intake,window,reporter
       source_fact_ids:facts.map(f=>f.fact_id).sort(),service_code:k.selected_service_code,symptom_codes:[...k.symptom_codes].sort(),
       catalog_version:row.catalog_version,rule_set_version:row.rule_set_version,root_received_epoch_ms:row.root_epoch,
       source_privacy_class:safety.source_privacy_class,safety_policy_version:safety.policy_version,
-      reply_received_epoch_ms:stamp,reply_message_ref:'channel:'+window.rows.at(-1).message_id,reply_reporter_hash:reporterHash});
+      reply_received_epoch_ms:stamp,reply_message_ref:'channel:'+(window.rows.at(-1) as CorroborationWindow['rows'][number]).message_id,reply_reporter_hash:reporterHash});
   }
   if(!anchors.length||new Set(anchors.map(a=>safeHash({service:a.service_code,symptoms:a.symptom_codes}))).size!==1)return null;
   return anchors[0];

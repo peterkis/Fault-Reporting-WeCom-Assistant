@@ -1,13 +1,15 @@
+import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
+interface BindingRow { id: string; journey_id: string; source_intake_id: string; leg_ordinal: number; reporter_identity_hash: string; channel_identity_hash: string; source_provider: string; source_bot_id: string; source_chat_type: string; source_chat_id: string | null; reporter_wecom_userid: string; session_id: string; thread_id: string }
 import { reporterIdentityHash } from './p2-015-contact-journey.mjs';
 import { hmacIdentity } from './p2-015-domain-contracts.mjs';
 
 // Conversation projection and rule evaluation have independent owners. A late
 // projection may fill a previously unavailable reference, never rebind a Leg.
-export async function reconcileP2016ConversationBindings({pool,identityHmacKey,beforeTransaction,afterLegId=null}){
+export async function reconcileP2016ConversationBindings({pool,identityHmacKey,beforeTransaction,afterLegId=null}: { pool: PostgresPool; identityHmacKey: string; beforeTransaction?: (transaction: PostgresTransaction) => Promise<unknown>; afterLegId?: string | null }){
   const tx=await pool.connect();let filled=0;
   try{
     await tx.query('BEGIN');if(beforeTransaction)await beforeTransaction(tx);
-    const rows=(await tx.query(`SELECT leg.id::text,leg.journey_id::text,leg.source_intake_id::text,leg.leg_ordinal,
+    const rows=(await tx.query<BindingRow>(`SELECT leg.id::text,leg.journey_id::text,leg.source_intake_id::text,leg.leg_ordinal,
       leg.reporter_identity_hash,leg.channel_identity_hash,i.source_provider,i.source_bot_id,i.source_chat_type,i.source_chat_id,i.reporter_wecom_userid,
       s.id::text AS session_id,t.id::text AS thread_id
       FROM intake.channel_leg leg JOIN intake.contact_journey journey ON journey.id=leg.journey_id AND journey.reporter_identity_hash=leg.reporter_identity_hash

@@ -1,3 +1,5 @@
+import type { P2016ClosureFactory, ClosureNotificationInput } from '../src/p2-016-runtime.mjs';
+import type { PostgresPool } from '../src/platform/postgres-pool.mjs';
 import { createThirdPartyStaffDirectoryProcessOptions, requireStaffDirectorySchema } from '../src/p2-007-third-party-staff-directory.mjs';
 import { pathToFileURL } from 'node:url';
 import { runApp,runGateway,runWorker } from './p2-g1-process-role.mjs';
@@ -15,9 +17,9 @@ import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mj
 import { P2016_LIVE_FUSES,P2016_TEST_FLAGS } from '../src/p2-016-live-configuration.mjs';
 import { createWeComWorkbenchAuthentication } from '../src/p2-016-workbench-wecom-auth.mjs';
 
-const access=pool=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:process.env.P2_016_REPORTER_HMAC_SECRET});
+const access=(pool: PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:process.env.P2_016_REPORTER_HMAC_SECRET as string});
 export async function main(argv=process.argv.slice(2)){
-  if(typeof process.send!=='function'||argv.length!==1||!['--role=app','--role=worker','--role=gateway'].includes(argv[0]))throw new Error('P2_016_ROLE_INVALID');
+  if(typeof process.send!=='function'||argv.length!==1||!['--role=app','--role=worker','--role=gateway'].includes((argv[0] as string)))throw new Error('P2_016_ROLE_INVALID');
   if((process.env.P2_G1_GATEWAY_ENABLED==='true'||process.env.P2_G1_SENDER_ENABLED==='true')&&P2016_LIVE_FUSES.some(k=>process.env[k]!=='true')&&argv[0]==='--role=gateway')throw new Error('P2_016_LIVE_APPROVAL_REQUIRED');
   if(argv[0]==='--role=app'){
     const workbenchLoginEnabled=process.env.WORKBENCH_WECOM_LOGIN_ENABLED==='true';
@@ -26,30 +28,30 @@ export async function main(argv=process.argv.slice(2)){
       publicOrigin:workbenchLoginEnabled?publicOrigin:null,
       externalSendEnabled:process.env.WORKBENCH_EXTERNAL_SEND_ENABLED==='true',
       authenticationFactory:workbenchLoginEnabled?async({pool,publicOrigin:resolvedOrigin})=>{
-        const auth=createWeComWorkbenchAuthentication({pool,publicOrigin:resolvedOrigin,corpId:process.env.CORP_ID,
-          agentId:process.env.APP_ID,appSecret:process.env.APP_SECRET,identityHashKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY});
+        const auth=createWeComWorkbenchAuthentication({pool,publicOrigin:resolvedOrigin,corpId:process.env.CORP_ID as string,
+          agentId:process.env.APP_ID as string,appSecret:process.env.APP_SECRET as string,identityHashKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY as string});
         await auth.initialize();
         return auth;
       }:null,
       runtimeFactory:options=>createP2016Runtime({...options,...createThirdPartyStaffDirectoryProcessOptions({pool:options.pool,role:'APP'}),workbenchAuthentication:options.authentication,flags:P2016_TEST_FLAGS,
         reporterOrigin:process.env.P2_016_REPORTER_ORIGIN,reporterHmacSecret:process.env.P2_016_REPORTER_HMAC_SECRET,
-        allowedHosts:process.env.P2_016_REPORTER_ALLOWED_HOSTS.split(',')}),
+        allowedHosts:(process.env.P2_016_REPORTER_ALLOWED_HOSTS as string).split(',')}),
     });
   }
   if(argv[0]==='--role=gateway')return runGateway({
     intakeFactory:({pool})=>{
-      const scope=createP2016InboundScope({bot_id:process.env.WECOM_BOT_ID,person_hashes:process.env.P2_016_TEST_USER_TARGET_HASHES.split(','),group_hashes:process.env.P2_016_TEST_GROUP_TARGET_HASHES.split(',')});
+      const scope=createP2016InboundScope({bot_id:process.env.WECOM_BOT_ID,person_hashes:(process.env.P2_016_TEST_USER_TARGET_HASHES as string).split(','),group_hashes:(process.env.P2_016_TEST_GROUP_TARGET_HASHES as string).split(',')});
       const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS});
-      return {accept:input=>scope.accepts(input.message)?inbox.accept(input,processor):Promise.resolve({ok:false,error:{code:'P2_016_INBOUND_SCOPE_REJECTED',retryable:false}})};
+      return {accept:input=>scope.accepts((input as { message?: unknown }).message)?inbox.accept(input,processor):Promise.resolve({ok:false,error:{code:'P2_016_INBOUND_SCOPE_REJECTED',retryable:false}})};
     },
     senderFactory:({pool,...options})=>createP2016WeComSender({...options,cardEnabled:true,reporterAccess:access(pool),
-      origin:process.env.P2_016_REPORTER_ORIGIN,allowedHosts:process.env.P2_016_REPORTER_ALLOWED_HOSTS.split(',')}),
+      origin:process.env.P2_016_REPORTER_ORIGIN as string,allowedHosts:(process.env.P2_016_REPORTER_ALLOWED_HOSTS as string).split(',')}),
   });
   return runWorker({beforeReady:requireStaffDirectorySchema,extensionFactory:({pool})=>{
     const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess:access(pool)});
     const realtime=createP2016RealtimeProjector({pool,enabled:true});
-    const orchestrator=createP2016OrchestrationWorker({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,notifications,realtime,identityHmacKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY});
-    const closure=createTicketClosureService({pool,beforeTransaction:realtime.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async input=>{
+    const orchestrator=createP2016OrchestrationWorker({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,notifications,realtime,identityHmacKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY as string});
+    const closure=(createTicketClosureService as typeof createTicketClosureService & P2016ClosureFactory)({pool,beforeTransaction:realtime.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async (input: ClosureNotificationInput)=>{
       const n=await notifications.project(input);await realtime.ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
     }}});
     const actions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:closure.afterTicketAction});

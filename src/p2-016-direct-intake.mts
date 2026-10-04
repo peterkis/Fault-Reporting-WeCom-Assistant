@@ -1,3 +1,7 @@
+import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
+import type { LocalDateTime } from '../contracts/time_contracts.js';
+import type { ConversationSessionStatus } from '../contracts/conversation_contracts.js';
+interface DirectSessionRow { id: string; status: ConversationSessionStatus; last_activity_at: LocalDateTime; last_activity_epoch_ms: string; service_intake_id: string; primary_message_id: string; eligible: boolean }
 import { createServiceIntakeProcessor } from './p1-004-service-intake.mjs';
 import { buildConversationThreadIdentity, decideConversationSessionBoundary } from './p2-001-conversation-contracts.mjs';
 import { shanghaiLocalToEpochMs } from './platform/time-contract.mjs';
@@ -6,7 +10,7 @@ import { parseExplicitContinuation } from './p2-015-explicit-continuation.mjs';
 export const P2016_DIRECT_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 // An additive, asserted fault is a new issue. Supplemental or negated statements
 // are not converted into a new-topic boundary merely because they say “另外”.
-function additionalFault(text) {
+function additionalFault(text: string) {
   // An explicit issue heading is a user-declared boundary, not a Ticket
   // classification. The normal rule/human pipeline still evaluates its body.
   if(/^(?:新故障|新的故障|另一个故障|另外一个故障|新的报修)[：:，,]\s*\S/u.test(text))return true;
@@ -29,7 +33,7 @@ export function createP2016DirectIntakeProcessor({ idleTimeoutMs = P2016_DIRECT_
     const scope=[identity.provider,identity.channel_account_id,identity.participant_key,receivedEpochMs,message.received_at,
       message.chat_id??null,identity.external_thread_key,message.chat_type];
     const legTypes=message.chat_type==='group'?['GROUP_ORIGIN','GROUP_CONTINUATION']:['DIRECT_ORGANIC','DIRECT_GUIDED'];
-    const sessions = await transaction.query(`SELECT s.id::text,s.status,s.last_activity_at,s.last_activity_epoch_ms::text,s.service_intake_id::text,i.primary_message_id::text,
+    const sessions = await transaction.query<DirectSessionRow>(`SELECT s.id::text,s.status,s.last_activity_at,s.last_activity_epoch_ms::text,s.service_intake_id::text,i.primary_message_id::text,
         (t.status='OPEN' AND i.source_provider=$1 AND i.source_bot_id=$2 AND i.source_chat_type=$8
           AND i.source_chat_id IS NOT DISTINCT FROM $6::text AND i.reporter_wecom_userid=$3
           AND i.retention_until_epoch_ms>GREATEST($4::bigint,platform.physical_epoch_ms())
@@ -48,11 +52,11 @@ export function createP2016DirectIntakeProcessor({ idleTimeoutMs = P2016_DIRECT_
       WHERE t.provider=$1 AND t.channel_account_id=$2 AND t.chat_type=$8
         AND t.external_thread_key=$7 AND s.participant_key=$3 AND s.status<>'ENDED'
       ORDER BY s.id LIMIT 2 FOR UPDATE OF s`, [...scope,legTypes]);
-    if (sessions.rowCount <= 1) {
+    if ((sessions.rowCount as number) <= 1) {
       // Inbox boundaries are authoritative before the asynchronous Session projection.
       // Follow the latest committed new Intake in this same serialized inbound stream,
       // never the older projected Session that the next projector cycle will end.
-      const pending = await transaction.query(`SELECT i.id::text,
+      const pending = await transaction.query<{ id: string; eligible: boolean }>(`SELECT i.id::text,
           (i.status IN ('RECEIVED','WAITING_DESCRIPTION','WAITING_TRIAGE','TICKET_CREATED')
             AND i.retention_until_epoch_ms>GREATEST($4::bigint,platform.physical_epoch_ms())
             AND latest.received_epoch_ms<=$4::bigint
@@ -71,10 +75,10 @@ export function createP2016DirectIntakeProcessor({ idleTimeoutMs = P2016_DIRECT_
               AND thread.external_thread_key=$7 AND seen.participant_key=$3),0)
           AND NOT EXISTS(SELECT 1 FROM conversation.session projected WHERE projected.service_intake_id=i.id)
         ORDER BY i.primary_message_id DESC LIMIT 1 FOR UPDATE OF i`, [...scope,idleTimeoutMs]);
-      if (pending.rowCount) return { id: pending.rows[0].eligible === true ? pending.rows[0].id : null };
+      if (pending.rowCount) return { id: (pending.rows[0] as (typeof pending.rows)[number]).eligible === true ? (pending.rows[0] as (typeof pending.rows)[number]).id : null };
     }
-    if (sessions.rowCount === 1 && sessions.rows[0].eligible === true) {
-      const current = sessions.rows[0];
+    if (sessions.rowCount === 1 && (sessions.rows[0] as DirectSessionRow).eligible === true) {
+      const current = sessions.rows[0] as DirectSessionRow;
       const boundary = decideConversationSessionBoundary({ currentSession: current, receivedAt: message.received_at,
         receivedEpochMs, idleTimeoutMs, nextServiceIntakeId: current.service_intake_id });
       if (boundary.action === 'CONTINUE_SESSION') return { id: current.service_intake_id };

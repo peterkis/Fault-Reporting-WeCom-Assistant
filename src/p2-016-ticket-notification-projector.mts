@@ -5,7 +5,7 @@ import type { ReporterAccess } from './p2-016-reporter-access.mjs';
 interface NotificationEvent { event_id: string; event_type: string; new_status: TicketStatus; created_at: string; aggregate_version: number; ticket_id?: string; ticket_no?: string; intake_id?: string }
 interface NotificationFact extends NotificationEvent { ticket_id: string; ticket_no: string; intake_id: string }
 type AppendObservation = (CommunicationSuccess & { error?: never }) | { error: { code: string }; message_id?: never; outbox_id?: never; delivery_ids?: never };
-interface NotificationOptions { enabled?: boolean; cardEnabled?: boolean; reporterAccess?: Pick<ReporterAccess, 'ensurePublicRefInTransaction' | 'issueInTransaction'>; explicitReferenceEnabled?: boolean; personDestinationAuthorizer?: ((input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>) | null; additionalEventTypes?: readonly string[]; now?: () => string; communicationAppend?: typeof appendCommunication }
+interface NotificationOptions { enabled?: boolean; cardEnabled?: boolean; reporterAccess?: Pick<ReporterAccess, 'ensurePublicRefInTransaction' | 'issueInTransaction'>; explicitReferenceEnabled?: boolean; personDestinationAuthorizer?: ((input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>) | null; additionalEventTypes?: readonly string[]; now?: () => string; communicationAppend?: typeof appendCommunication | undefined }
 
 import { randomUUID } from 'node:crypto';
 import { appendCommunication } from './p2-004-communication-core.mjs';
@@ -19,20 +19,20 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
   ticketNotificationP2016({event_type:'ticket.accepted',new_status:'ACCEPTED'},{additionalEventTypes});
   const configuredEvents=Object.freeze([...additionalEventTypes]);
   return Object.freeze({
-    async project({transaction:tx,ticket,event}: { transaction: PostgresTransaction; ticket: { id: string; ticket_no?: string; intake_id?: string }; event: NotificationEvent }) {
+    async project({transaction:tx,ticket,event}: { transaction: PostgresTransaction; ticket: { id: string; ticket_no?: string; intake_id?: string }; event: NotificationEvent | Pick<NotificationEvent, 'event_id'> }) {
       guardP2016(enabled);
       const fact=await tx.query<NotificationFact>(`SELECT e.event_id::text,e.ticket_id::text,e.event_type,e.new_status,e.created_at,e.aggregate_version,
         t.ticket_no,t.source_intake_id::text AS intake_id FROM pilot_ticket.ticket_event e
         JOIN pilot_ticket.ticket t ON t.id=e.ticket_id WHERE e.event_id=$1::uuid AND e.ticket_id=$2::uuid FOR UPDATE OF e`,[event.event_id,ticket.id]);
       if(fact.rowCount!==1)failP2016('NOTIFICATION_EVENT_INVALID');
-      event=fact.rows[0] as NotificationFact;ticket={id:event.ticket_id as string,ticket_no:event.ticket_no as string,intake_id:event.intake_id as string};
+      event=fact.rows[0] as NotificationFact;ticket={id:(event as NotificationFact).ticket_id as string,ticket_no:(event as NotificationFact).ticket_no as string,intake_id:(event as NotificationFact).intake_id as string};
       const sourceFact=await tx.query(`SELECT source_channel,source_provider FROM intake.service_intake WHERE id=$1::uuid`,[ticket.intake_id]);
       if(sourceFact.rowCount!==1)failP2016('NOTIFICATION_BINDING_INVALID');
       if((sourceFact.rows[0] as (typeof sourceFact.rows)[number]).source_channel==='PORTAL'&&(sourceFact.rows[0] as (typeof sourceFact.rows)[number]).source_provider==='YIXIAOXIU_WEB')
         return {created:false,reason:'WEB_APP_ONLY'};
-      const policy=ticketNotificationP2016({event_type:event.event_type,new_status:event.new_status},{additionalEventTypes:[...configuredEvents,'ticket.created']});
+      const policy=ticketNotificationP2016({event_type:(event as NotificationFact).event_type,new_status:(event as NotificationFact).new_status},{additionalEventTypes:[...configuredEvents,'ticket.created']});
       if(!policy)return {created:false,reason:'NO_EXTERNAL_NOTIFICATION'};
-      const legacy=await tx.query('SELECT 1 FROM notification.outbox WHERE ticket_event_id=$1::uuid LIMIT 1',[event.event_id]);
+      const legacy=await tx.query('SELECT 1 FROM notification.outbox WHERE ticket_event_id=$1::uuid LIMIT 1',[(event as NotificationFact).event_id]);
       if(legacy.rowCount)return {created:false,reason:'P1_NOTIFICATION_OWNS_EVENT'};
       const origin=await tx.query<{ source_bot_id: string; reporter_wecom_userid: string; source_chat_type: string; source_chat_id: string }>(`SELECT i.source_bot_id,i.reporter_wecom_userid,
         CASE WHEN origin.source_chat_type='group' THEN origin.source_chat_type ELSE i.source_chat_type END AS source_chat_type,
@@ -44,11 +44,11 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
         WHERE i.id=$1::uuid`,[ticket.intake_id]);
       if(origin.rowCount!==1)failP2016('NOTIFICATION_BINDING_INVALID');
       const source=(origin.rows[0] as (typeof origin.rows)[number]),binding=textHashP2016(JSON.stringify(['WECOM_AIBOT',source.source_bot_id,source.reporter_wecom_userid]));
-      if(event.event_type==='ticket.created'&&source.source_chat_type!=='group'&&!configuredEvents.includes('ticket.created'))
+      if((event as NotificationFact).event_type==='ticket.created'&&source.source_chat_type!=='group'&&!configuredEvents.includes('ticket.created'))
         return {created:false,reason:'NO_EXTERNAL_NOTIFICATION'};
       const existing=await tx.query<{ message_id: string; outbox_id: string; delivery_id: string }>(`SELECT message_id::text,outbox_id::text,delivery_id::text FROM communication.ticket_notification_binding
         WHERE ticket_event_id=$1::uuid AND notification_type=$2 AND recipient_binding_hash=$3 AND destination_type='PERSON' AND template_version=$4`,
-      [event.event_id,(policy as NonNullable<typeof policy>).notification_type,binding,(policy as NonNullable<typeof policy>).template_version]);
+      [(event as NotificationFact).event_id,(policy as NonNullable<typeof policy>).notification_type,binding,(policy as NonNullable<typeof policy>).template_version]);
       if(existing.rowCount)return {created:false,replayed:true,...existing.rows[0]};
       const suffix=(ticket.ticket_no as string).slice(-4),stamp=stampP2016(now),expiry=String(BigInt(stamp.epoch)+2592000000n);
       const groupReceipt=(policy as NonNullable<typeof policy>).notification_type==='TICKET_CREATED'&&source.source_chat_type==='group';
@@ -58,7 +58,7 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
       if((groupReceipt||groupClosure)&&(await tx.query(`SELECT 1 FROM communication.ticket_notification_binding
         WHERE ticket_event_id=$1::uuid AND notification_type=$2 AND recipient_binding_hash=$3
           AND destination_type='GROUP' AND template_version=$4`,
-      [event.event_id,(policy as NonNullable<typeof policy>).notification_type,groupBinding,(policy as NonNullable<typeof policy>).template_version])).rowCount){
+      [(event as NotificationFact).event_id,(policy as NonNullable<typeof policy>).notification_type,groupBinding,(policy as NonNullable<typeof policy>).template_version])).rowCount){
         return {created:false,replayed:true,reason:'DIRECT_DESTINATION_NOT_ESTABLISHED'};
       }
       const personAllowed=personDestinationAuthorizer===null||await personDestinationAuthorizer({transaction:tx,
@@ -78,11 +78,11 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
         if(group.error)failP2016('NOTIFICATION_FAILED',503);
         await tx.query(`INSERT INTO communication.ticket_notification_binding(ticket_event_id,ticket_id,notification_type,recipient_binding_hash,
           destination_type,template_version,message_id,outbox_id,delivery_id) VALUES($1::uuid,$2::uuid,$3,$4,'GROUP',$5,$6::uuid,$7::uuid,$8::uuid)`,
-        [event.event_id,ticket.id,(policy as NonNullable<typeof policy>).notification_type,groupBinding,(policy as NonNullable<typeof policy>).template_version,group.message_id,group.outbox_id,(group.delivery_ids as readonly string[])[0]]);
+        [(event as NotificationFact).event_id,ticket.id,(policy as NonNullable<typeof policy>).notification_type,groupBinding,(policy as NonNullable<typeof policy>).template_version,group.message_id,group.outbox_id,(group.delivery_ids as readonly string[])[0]]);
         return true;
       }
       if(!personAllowed)return {created:false,reason:'DIRECT_DESTINATION_NOT_ESTABLISHED',group_receipt_created:await appendGroupReceipt()};
-      if(event.event_type==='ticket.created'&&!configuredEvents.includes('ticket.created'))
+      if((event as NotificationFact).event_type==='ticket.created'&&!configuredEvents.includes('ticket.created'))
         return {created:false,group_receipt_created:await appendGroupReceipt(),reason:'NO_PRIVATE_PROGRESS_NOTIFICATION'};
       const commandId=randomUUID();
       // Persist a capability-free view model. The Sender reconstructs the grant only at the network boundary.
@@ -91,7 +91,7 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
       if(cardEnabled){
         const ref=await (reporterAccess as NonNullable<typeof reporterAccess>).ensurePublicRefInTransaction({transaction:tx,ticketId:ticket.id,reporterBindingHash:binding});
         publicRef=ref.public_ref;
-        content={public_ref:publicRef,suffix,status:event.new_status,occurred_at:event.created_at,version:event.aggregate_version,
+        content={public_ref:publicRef,suffix,status:(event as NotificationFact).new_status,occurred_at:(event as NotificationFact).created_at,version:(event as NotificationFact).aggregate_version,
           notification_type:(policy as NonNullable<typeof policy>).notification_type,source:source.source_chat_type==='group'?'GROUP':'DIRECT'};
       }
       const message=await communicationAppend({transaction:tx,actor:null,command:{
@@ -102,7 +102,7 @@ export function createP2016TicketNotificationProjector({enabled=false,cardEnable
       if(message.error)failP2016('NOTIFICATION_FAILED',503);
       await tx.query(`INSERT INTO communication.ticket_notification_binding(ticket_event_id,ticket_id,notification_type,recipient_binding_hash,
         destination_type,template_version,message_id,outbox_id,delivery_id) VALUES($1::uuid,$2::uuid,$3,$4,'PERSON',$5,$6::uuid,$7::uuid,$8::uuid)`,
-      [event.event_id,ticket.id,(policy as NonNullable<typeof policy>).notification_type,binding,(policy as NonNullable<typeof policy>).template_version,message.message_id,message.outbox_id,(message.delivery_ids as readonly string[])[0] as string]);
+      [(event as NotificationFact).event_id,ticket.id,(policy as NonNullable<typeof policy>).notification_type,binding,(policy as NonNullable<typeof policy>).template_version,message.message_id,message.outbox_id,(message.delivery_ids as readonly string[])[0] as string]);
       if(cardEnabled)await (reporterAccess as NonNullable<typeof reporterAccess>).issueInTransaction({transaction:tx,ticketId:ticket.id,deliveryId:(message.delivery_ids as readonly string[])[0] as string,messageId:message.message_id,reporterBindingHash:binding});
       if(groupReceipt)await appendGroupReceipt();
       return {created:true,message_id:message.message_id,outbox_id:message.outbox_id,delivery_id:(message.delivery_ids as readonly string[])[0] as string};
