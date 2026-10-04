@@ -4,7 +4,7 @@ import type { P2015ResultCode } from '../contracts/p2_015_contracts.js';
 export type ReviewResolutionCode = 'CONFIRM_TICKET_ELIGIBLE' | 'REQUEST_DESCRIPTION' | 'CLASSIFY_SERVICE_REQUEST' | 'CLASSIFY_BUSINESS_CONSULTATION' | 'ACKNOWLEDGE' | 'MARK_OUT_OF_SCOPE' | 'LINK_EXISTING_JOURNEY' | 'KEEP_INCIDENT_REVIEW_CANDIDATE' | 'CANCEL_REVIEW';
 export type ReviewStatus = 'PENDING' | 'RESOLVED' | 'CANCELLED';
 export type ReviewPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-export interface ReviewPrincipal { principal_id: string; [key: string]: unknown }
+export interface ReviewPrincipal { principal_id: string }
 export interface ReviewAuthorizer { authorizedJourneyIds(input: { principal: ReviewPrincipal; operation: string; review_id?: string }): Promise<string[]> }
 export interface ReviewEnqueue { decision_id: string; journey_id: string; service_intake_id: string; linked_ticket_id?: string | null; review_reason_code: string; basis_input_revision?: string | number | null; priority?: ReviewPriority }
 export interface ReviewRow extends ReviewEnqueue { id: string; review_key: string; priority: ReviewPriority; status: ReviewStatus; row_version: string; created_at: string; safe_result?: unknown }
@@ -66,7 +66,7 @@ export function createManualReviewStore({ authorizer = null, webSource = null }:
           value.linked_ticket_id ?? null, value.review_reason_code, value.priority ?? 'NORMAL',
           ...(useWebSource ? [value.basis_input_revision ?? null] : [])],
       );
-      return freezePublic(result.rows[0]);
+      return freezePublic(result.rows[0] as ReviewRow);
     },
 
     async list({ transaction, principal, cursor = null, limit, priority = null }: { transaction: PostgresTransaction; principal: ReviewPrincipal; cursor?: { priority_rank: number; created_at: string; id: string } | null; limit?: number; priority?: ReviewPriority | null }) {
@@ -102,7 +102,7 @@ export function createManualReviewStore({ authorizer = null, webSource = null }:
           WHERE review.id=$1::uuid AND review.journey_id=ANY($2::uuid[])`, [reviewId, ids],
       );
       if (result.rowCount !== 1) failP2015(P2_015_ERROR_CODES.authorizationDenied);
-      return freezePublic(result.rows[0]);
+      return freezePublic(result.rows[0] as ReviewRow);
     },
 
     async resolve({ transaction, principal, command }: { transaction: PostgresTransaction; principal: ReviewPrincipal; command: ReviewCommand }): Promise<ReviewResolution> {

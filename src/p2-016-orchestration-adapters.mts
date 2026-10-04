@@ -1,3 +1,11 @@
+import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
+import type { OrchestrationOptions } from './p2-015-rule-first-orchestrator.mjs';
+import type { CommunicationPort } from './p2-015-safe-action-executor.mjs';
+import type { DirectorySyncPort, WebWorkerPort } from './p2-015-worker.mjs';
+import type { createP2016TicketNotificationProjector } from './p2-016-ticket-notification-projector.mjs';
+import type { createP2016RealtimeProjector } from './p2-016-realtime-projector.mjs';
+export type PersonDestinationAuthorizer = (input: { transaction: PostgresTransaction; bot_id: string; reporter_user_id: string }) => boolean | Promise<boolean>;
+export interface OrchestrationWorkerOptions { pool: PostgresPool; identityHmacKey: string; notifications: Pick<ReturnType<typeof createP2016TicketNotificationProjector>, 'project'>; realtime: Pick<ReturnType<typeof createP2016RealtimeProjector>, 'lock' | 'review' | 'ticket'>; directoryPort?: OrchestrationOptions['directoryPort']; directorySource?: string; ruleEngine?: OrchestrationOptions['ruleEngine']; now?: (() => string) | undefined; directorySyncJob?: DirectorySyncPort | null; personDestinationAuthorizer?: PersonDestinationAuthorizer | null; communicationAppend?: typeof appendCommunication; yxxSelfService?: { featureFlags?: unknown } | null }
 import { createRuleFirstOrchestrator } from './p2-015-rule-first-orchestrator.mjs';
 import { createP2015Worker } from './p2-015-worker.mjs';
 import { createDecisionStore } from './p2-015-decision-store.mjs';
@@ -12,15 +20,15 @@ import { createP2016GuidedJourneyStore,p2016AssociationDecision,p2016TicketSourc
 import { reconcileP2016ConversationBindings } from './p2-016-conversation-binding.mjs';
 import { createYxxSelfServiceOrchestrator } from './yxx-self-service-orchestrator.mjs';
 
-function guidanceId(id){const h=textHashP2016('P2016_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
-export function createP2016OrchestrationWorker({pool,identityHmacKey,notifications,realtime,directoryPort,directorySource='WECOM_DIRECTORY',ruleEngine,now,directorySyncJob=null,personDestinationAuthorizer=null,communicationAppend=appendCommunication,yxxSelfService=null}){
+function guidanceId(id: string){const h=textHashP2016('P2016_GUIDANCE:'+id);return h.slice(0,8)+'-'+h.slice(8,12)+'-5'+h.slice(13,16)+'-8'+h.slice(17,20)+'-'+h.slice(20,32);}
+export function createP2016OrchestrationWorker({pool,identityHmacKey,notifications,realtime,directoryPort,directorySource='WECOM_DIRECTORY',ruleEngine,now,directorySyncJob=null,personDestinationAuthorizer=null,communicationAppend=appendCommunication,yxxSelfService=null}: OrchestrationWorkerOptions){
   if(personDestinationAuthorizer!==null&&typeof personDestinationAuthorizer!=='function')failP2016();
   const core=createPilotTicketCore({pool}),decisions=createDecisionStore({sourceWindowScope:'CHANNEL_LEG'}),reviews=createManualReviewStore();
-  const communicationPort={appendFixed:async({transaction,action,context})=>{
-    const session=context.session_id?(await transaction.query('SELECT row_version::integer FROM conversation.session WHERE id=$1::uuid',[context.session_id])).rows[0]:null;
-    const append=async input=>communicationAppend({...input,command:{...input.command,...(session?{expected_row_version:session.row_version}:{})}});
+  const communicationPort: CommunicationPort={appendFixed:async({transaction,action,context}: Parameters<CommunicationPort['appendFixed']>[0])=>{
+    const session=context.session_id?(await transaction.query<{ row_version: number }>('SELECT row_version::integer FROM conversation.session WHERE id=$1::uuid',[context.session_id])).rows[0]:null;
+    const append: typeof appendCommunication=async input=>communicationAppend({...input,command:{...input.command,...(session?{expected_row_version:session.row_version}:{})}});
     if(context.destination?.target_type!=='GROUP'||action.action_type!=='REQUEST_ONE_DESCRIPTION')return createP2004FixedCommunicationPort({append}).appendFixed({transaction,action,context});
-    const row=(await transaction.query(`SELECT i.source_bot_id,i.reporter_wecom_userid FROM intake.service_intake i
+    const row=(await transaction.query<{ source_bot_id: string; reporter_wecom_userid: string }>(`SELECT i.source_bot_id,i.reporter_wecom_userid FROM intake.service_intake i
       JOIN intake.deterministic_decision d ON d.service_intake_id=i.id
       JOIN intake.safe_action_suggestion a ON a.decision_id=d.id WHERE a.id=$1::uuid`,[action.id])).rows[0];
     if(!row)failP2016('NOTIFICATION_BINDING_INVALID');
@@ -44,8 +52,9 @@ export function createP2016OrchestrationWorker({pool,identityHmacKey,notificatio
     journeyStore:createP2016GuidedJourneyStore({now}),decisionOverride:p2016AssociationDecision,
     ...(directoryPort?{directoryPort}:{}),...(ruleEngine?{ruleEngine}:{})});
   // Scheduling cursor only: restart may rescan, but never invents or owns facts.
-  let bindingCursor=null;
-  const webOrchestrator=yxxSelfService===null?null:createYxxSelfServiceOrchestrator({pool,profile:'FULL_SERVICE_LOOP',ruleEngine,
+  let bindingCursor: string | null=null;
+  type WebWorkerFactory = (options: { pool: PostgresPool; profile: 'FULL_SERVICE_LOOP'; ruleEngine: OrchestrationOptions['ruleEngine']; realtimeProjector: OrchestrationWorkerOptions['realtime']; featureFlags: unknown }) => WebWorkerPort;
+  const webOrchestrator: WebWorkerPort | null=yxxSelfService===null?null:(createYxxSelfServiceOrchestrator as typeof createYxxSelfServiceOrchestrator & WebWorkerFactory)({pool,profile:'FULL_SERVICE_LOOP',ruleEngine,
     realtimeProjector:realtime,
     featureFlags:yxxSelfService.featureFlags??{YIXIAOXIU_SELF_SERVICE_ENABLED:false,YIXIAOXIU_MY_REPORTS_ENABLED:false}});
   return createP2015Worker({pool,orchestrator,webOrchestrator,directorySyncJob,beforeClaim:realtime.lock,afterBatch:async()=>{

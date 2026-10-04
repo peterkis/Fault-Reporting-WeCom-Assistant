@@ -23,7 +23,7 @@ export async function p2016TicketSourceIntake({transaction,intakeId}: { transact
 
 // Only a unique, unexpired, same-provider/bot/reporter guided candidate can attach automatically.
 // Existing legs are immutable bindings; ambiguous candidates go to human review, never newest-journey guessing.
-export function createP2016GuidedJourneyStore({now=()=>String(Date.now())}={}){
+export function createP2016GuidedJourneyStore({now=()=>String(Date.now())}: { now?: (() => string) | undefined }={}){
   const original=createContactJourneyStore();
   const publicJourney=(row: JourneyRow,association: GuidedAssociationOutcome | null=null,reason: string | null=null)=>freezePublic({...projectContactJourney(row),association_outcome:association,association_reason:reason});
   return Object.freeze({

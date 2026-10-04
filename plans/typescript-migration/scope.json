@@ -103,7 +103,15 @@
     "src/p2-015-group-corroboration.mjs": "src/p2-015-group-corroboration.mts",
     "src/p2-015-continuation-ref.mjs": "src/p2-015-continuation-ref.mts",
     "src/p2-016-conversation-binding.mjs": "src/p2-016-conversation-binding.mts",
-    "src/p2-016-guided-journey.mjs": "src/p2-016-guided-journey.mts"
+    "src/p2-016-guided-journey.mjs": "src/p2-016-guided-journey.mts",
+    "src/p2-015-safe-action-executor.mjs": "src/p2-015-safe-action-executor.mts",
+    "src/p2-015-worker.mjs": "src/p2-015-worker.mts",
+    "src/p2-015-rule-first-orchestrator.mjs": "src/p2-015-rule-first-orchestrator.mts",
+    "src/p2-016-inbound-scope.mjs": "src/p2-016-inbound-scope.mts",
+    "src/p2-016-orchestration-adapters.mjs": "src/p2-016-orchestration-adapters.mts",
+    "src/p2-016-manual-review-facade.mjs": "src/p2-016-manual-review-facade.mts",
+    "src/p2-016-direct-intake.mjs": "src/p2-016-direct-intake.mts",
+    "src/p2-015-query.mjs": "src/p2-015-query.mts"
   },
   "migration_batches": {
     "T03-01": [

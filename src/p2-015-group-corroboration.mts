@@ -12,21 +12,21 @@ import { loadServiceCatalog } from './p2-007-service-catalog.mjs';
 
 const catalog=loadServiceCatalog(),symptoms=new Set(catalog.raw.taxonomies.symptom_codes.map(s=>s.code));
 const sensitiveContext=/患者|病人|姓名|身份证|手机|电话|账号|密码|病历|住院号|门诊号|密钥|保密|秘密|token|secret|password|\b\d{6,}\b|(?:\d{1,3}\.){3}\d{1,3}/iu;
-export function assessGroupCorroborationSafety({intake,window,output}: { intake: CorroborationIntake; window: CorroborationWindow; output: RuleResult }): GroupCorroborationSafety{
-  const flags=[...(output.privacy_flags??[])];if(sensitiveContext.test(window.text))flags.push('POSSIBLE_SENSITIVE_CONTEXT');
-  const clinical=output.clinical_impact??'UNKNOWN';
+export function assessGroupCorroborationSafety({intake,window,output}: { intake: CorroborationIntake; window: CorroborationWindow; output: unknown }): GroupCorroborationSafety{
+  const flags=[...((output as RuleResult).privacy_flags??[])];if(sensitiveContext.test(window.text))flags.push('POSSIBLE_SENSITIVE_CONTEXT');
+  const clinical=(output as RuleResult).clinical_impact??'UNKNOWN';
   return {policy_version:'canonical-same-group/1',assessment:'CANONICAL_FIELDS_ONLY_NOT_MESSAGE_DECLASSIFICATION',
     source_privacy_class:intake.privacy_class,privacy_flags:[...new Set(flags)].sort(),clinical_risk:clinical,
     catalog_hash:catalog.catalog_hash,eligible:intake.source_chat_type==='group'&&intake.privacy_class!=='SECRET'
-      &&!output.corroboration_anchor&&flags.length===0&&!['HIGH','CRITICAL','CRITICAL_REVIEW_REQUIRED'].includes(clinical)
-      &&catalog.lookupService(output.selected_service_code)?.enabled===true&&output.symptom_codes.length>0
-      &&output.symptom_codes.every(s=>symptoms.has(s)&&!s.startsWith('DATA.'))};
+      &&!(output as RuleResult).corroboration_anchor&&flags.length===0&&!['HIGH','CRITICAL','CRITICAL_REVIEW_REQUIRED'].includes(clinical)
+      &&catalog.lookupService((output as RuleResult).selected_service_code)?.enabled===true&&(output as RuleResult).symptom_codes.length>0
+      &&(output as RuleResult).symptom_codes.every(s=>symptoms.has(s)&&!s.startsWith('DATA.'))};
 }
 
 export const isGroupCorroboration = (text: string) => ['同上','+1','加一','我的也是','俺也一样','+10086'].includes(text);
 
 // Internal application reader. No raw anchor text or cross-channel context leaves this seam.
-export async function readGroupCorroboration({transaction,intake,window,reporterHash,catalogVersion,ruleVersion}: { transaction: PostgresTransaction; intake: CorroborationIntake; window: CorroborationWindow; reporterHash: string; catalogVersion: string; ruleVersion: string }): Promise<CorroborationAnchor | null | undefined> {
+export async function readGroupCorroboration({transaction,intake,window,reporterHash,catalogVersion,ruleVersion}: { transaction: PostgresTransaction; intake: CorroborationIntake; window: CorroborationWindow; reporterHash: string; catalogVersion: unknown; ruleVersion: unknown }): Promise<CorroborationAnchor | null | undefined> {
   if(intake.source_chat_type!=='group'||!isGroupCorroboration(window.text.trim()))return null;
   const stamp=(window.rows.at(-1) as CorroborationWindow['rows'][number]).received_epoch_ms;
   const result=await transaction.query<AnchorRow>(`SELECT d.id::text,d.safe_result,d.catalog_version,d.rule_set_version,d.result_hash,
