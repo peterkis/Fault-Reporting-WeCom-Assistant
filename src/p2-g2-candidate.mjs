@@ -8,7 +8,11 @@ import {requirePreparedYxxCandidate} from './p2-g2-yixiaoxiu-readiness.mjs';
 import {assertG2EvidenceTime} from './p2-g2-evidence-time.mjs';
 import {readG2CurrentEvidence} from './p2-g2-current-evidence.mjs';
 
-export const G2_ROOT = fileURLToPath(new URL('../', import.meta.url));
+const entryRoot = fileURLToPath(new URL('../', import.meta.url));
+// Execution stays in the verified runtime; candidate, manifest and approval facts belong to its source checkout.
+export const G2_ROOT = path.basename(path.resolve(entryRoot)) === 'runtime'
+  && path.basename(path.dirname(path.resolve(entryRoot))) === '.build'
+  ? path.resolve(entryRoot, '../..') : entryRoot;
 export const G2_CANDIDATE_ROOTS = Object.freeze(['src', 'scripts', 'web', 'contracts', 'config', 'config_examples', 'database/migrations', 'tests']);
 export const G2_CANDIDATE_FILES = Object.freeze(['package.json', 'package-lock.json', '.env.example']);
 // Optional on legacy fixtures; every present build control is part of the current candidate.

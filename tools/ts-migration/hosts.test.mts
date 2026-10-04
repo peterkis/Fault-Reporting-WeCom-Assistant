@@ -10,6 +10,33 @@ import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { counts, runSelection } from './run-tests.mjs';
 const original = sourceRoot();
+test('G2 staged preflight binds the source candidate and reads relative manifests from that source', () => {
+  verifyArtifact(original);
+  const directory = mkdtempSync(path.join(tmpdir(), 'p02-g2-source-manifest-'));
+  try {
+    const manifestFile = path.join(directory, 'live.json');
+    const probe = `
+      import assert from 'node:assert/strict'; import path from 'node:path'; import {writeFileSync} from 'node:fs';
+      import {G2_ROOT,g2CandidateInventory,verifyG2Candidate} from './.build/runtime/src/p2-g2-candidate.mjs';
+      import {readG2ManifestFile} from './.build/runtime/scripts/p2-g2-check.mjs';
+      import {configurationFixture} from './.build/runtime/tests/helpers/p2-g2-configuration-fixture.mjs';
+      const root=process.cwd(),runtime=path.join(root,'.build/runtime');
+      assert.equal(path.resolve(G2_ROOT),root);
+      const source=g2CandidateInventory(); assert.equal(source.fingerprint,g2CandidateInventory(root).fingerprint);
+      assert.notEqual(source.fingerprint,g2CandidateInventory(runtime).fingerprint);
+      const manifest=configurationFixture('live').manifest; manifest.candidate_fingerprint=source.fingerprint;
+      writeFileSync(${JSON.stringify(manifestFile)},JSON.stringify(manifest));
+      const parsed=readG2ManifestFile(path.relative(root,${JSON.stringify(manifestFile)}));
+      assert.deepEqual(parsed,manifest); verifyG2Candidate(parsed.candidate_fingerprint);
+      assert.throws(()=>verifyG2Candidate(parsed.candidate_fingerprint,runtime),/P2_G2_CANDIDATE_CHANGED/u);
+      console.log('SOURCE_CANDIDATE_AND_MANIFEST_VERIFIED_NO_ACTIVATION');`;
+    const result = spawnSync(process.execPath, ['--input-type=module', '--eval', probe],
+      { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 15_000 });
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /SOURCE_CANDIDATE_AND_MANIFEST_VERIFIED_NO_ACTIVATION/u);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
 test('P02 affected CLI launchers reach their safety guards from verified artifacts', () => {
   verifyArtifact(original);
   const directory = mkdtempSync(path.join(tmpdir(), 'p02-launcher-env-'));
