@@ -169,7 +169,7 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
   const historicalStep=record(directoryJob.steps.find(step=>String(record(step).name).startsWith('Frozen historical')));
   assert.equal(prototypeStep.if,"${{ !cancelled() && steps.optional.outputs.prototype == 'true' }}");
   assert.equal(historicalStep.if,"${{ !cancelled() && steps.optional.outputs.historical == 'true' }}");
-  const cases:[string[],boolean,boolean][]=[
+  const cases:[string[],boolean,boolean,Record<string,string>?,Record<string,string>?][]=[
     [['src/p2-007-rule-engine.mts','src/p2-015-contact-journey.mts','package.json'],false,false],
     [['web/admin-workbench-prototype/src/App.tsx'],true,false],
     [['web/admin-workbench-prototype/package-lock.json'],true,false],
@@ -178,14 +178,17 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
     [['.github/review/README.md'],false,false],
     [['tests/p2-016-historical-validation.test.mjs'],false,true],
     [['tools/ts-migration/run-tests.mts'],false,true],
+    [['package.json'],true,false,{'prototype:admin:build':'old-build'},{'prototype:admin:build':'new-build'}],
+    [['package.json'],false,true,{'validate:p2:016:historical':'old-history'},{'validate:p2:016:historical':'new-history'}],
   ];
   const impactCode=optionalScript.match(/<<'NODE'\n([\s\S]+)\nNODE/u)?.[1];
   assert.ok(impactCode);
   const impactTemp=mkdtempSync(path.join(tmpdir(),'p03-directory-impact-'));
   try {
-    for(const [changed,prototype,historical] of cases) {
+    for(const [changed,prototype,historical,before={},after={}] of cases) {
       const output=path.join(impactTemp,'output.txt');writeFileSync(output,'');
-      const code:string=impactCode.replace(/execFileSync\('git',\[.*?\],\{encoding:'utf8'\}\)/u,JSON.stringify(changed.join('\0')));
+      const mock=`const execFileSync=(command,args)=>args[0]==='diff'?${JSON.stringify(changed.join('\0'))}:JSON.stringify({scripts:args[1].startsWith('a')?${JSON.stringify(before)}:${JSON.stringify(after)}});`;
+      const code:string=impactCode.replace("import {execFileSync} from 'node:child_process';",mock);
       const env={...process.env,EXPECTED_BASE:'a'.repeat(40),EXPECTED_HEAD:'b'.repeat(40),GITHUB_OUTPUT:output};
       const result:SpawnSyncReturns<string>=spawnSync(process.execPath,['--input-type=module','-e',code],{encoding:'utf8',windowsHide:true,env});
       assert.equal(result.status,0,result.stderr);

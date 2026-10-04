@@ -196,7 +196,11 @@ export function createContactJourneyStore() {
   });
 }
 
-export function resolveDirectJourneyAssociation(input: unknown): DirectJourneyAssociation {
+export interface DirectJourneyAssociationInput { [key: string]: unknown; provider_context_journey_id?: string; direct_binding_journey_id?: string; continuation_journey_id?: string; explicit_reference_journey_id?: string; guided_candidates?: GuidedJourney[] }
+export type BoundaryDirectJourneyAssociation = { outcome: 'LINK'; reason: string; journey_id: unknown } | { outcome: 'ASK_USER_TO_SELECT'; reason: 'MULTIPLE_OPEN_JOURNEYS'; candidates: { id: unknown; service_code: unknown; ticket_suffix: unknown; reported_at: unknown; safe_status: unknown }[] } | { outcome: 'DIRECT_ORGANIC'; reason: 'NO_RELIABLE_ASSOCIATION' };
+export function resolveDirectJourneyAssociation(input: DirectJourneyAssociationInput): DirectJourneyAssociation;
+export function resolveDirectJourneyAssociation(input: unknown): BoundaryDirectJourneyAssociation;
+export function resolveDirectJourneyAssociation(input: unknown): BoundaryDirectJourneyAssociation {
   const value = snapshotP2015Json(input) as Record<string, unknown>;
   const ordered: [string, unknown][] = [
     ['PROVIDER_CONTEXT', value.provider_context_journey_id],

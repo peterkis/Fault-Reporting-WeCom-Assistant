@@ -8,6 +8,7 @@ import os from 'node:os';
 import { g2Hash, minimalG2Environment, failG2 } from '../src/p2-g2-validation-config.mjs';
 import { g2CandidateInventory, G2_ROOT } from '../src/p2-g2-candidate.mjs';
 import {g2EvidenceTime} from '../src/p2-g2-evidence-time.mjs';
+const executionRoot = path.join(G2_ROOT, '.build/runtime');
 
 export function g2TestFiles(suite='g2') {
   if(!['g2','integration','browser','full'].includes(suite))failG2('TEST_SUITE_INVALID');
@@ -26,10 +27,10 @@ export async function runG2Tests({suite='g2',envFile='.env.pilot'}={}) {
   const environment={...minimalG2Environment(),PILOT_DATABASE_URL:settings.PILOT_DATABASE_URL};
   const directory='tmp/p2-g2-tests-'+randomUUID(),absolute=path.join(G2_ROOT,directory);mkdirSync(absolute,{recursive:true,mode:0o700});
   const candidate=g2CandidateInventory(),args=['--expose-gc','--test','--test-concurrency=1','--test-reporter=tap','--test-reporter-destination=stdout',
-    '--test-reporter=./scripts/p2-g2-case-reporter.mjs','--test-reporter-destination='+directory+'/cases.jsonl',
-    '--test-reporter=./scripts/p2-g2-file-coverage-reporter.mjs','--test-reporter-destination='+directory+'/file-coverage.json',...files],started_physical_epoch_ms=String(Date.now());
+    '--test-reporter=./scripts/p2-g2-case-reporter.mjs','--test-reporter-destination='+absolute+'/cases.jsonl',
+    '--test-reporter=./scripts/p2-g2-file-coverage-reporter.mjs','--test-reporter-destination='+absolute+'/file-coverage.json',...files],started_physical_epoch_ms=String(Date.now());
   const collected=await new Promise(resolve=>{
-    const child=spawn(process.execPath,args,{cwd:G2_ROOT,env:environment,windowsHide:true,stdio:['ignore','pipe','pipe']});
+    const child=spawn(process.execPath,args,{cwd:executionRoot,env:{...environment,TS_MIGRATION_TEST_SOURCE_ROOT:G2_ROOT,TS_MIGRATION_TEST_RUNTIME_ROOT:executionRoot},windowsHide:true,stdio:['ignore','pipe','pipe']});
     let stdout='',stderr='',bytes=0,error=null;
     const capture=kind=>chunk=>{bytes+=chunk.length;if(bytes>64*1024*1024){error='OUTPUT_LIMIT';child.kill();return;}
       if(kind==='stdout')stdout+=chunk.toString('utf8');else stderr+=chunk.toString('utf8');};

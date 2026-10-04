@@ -1,5 +1,7 @@
+import type { FactProvenance } from './p2-007-fact-provenance.mjs';
+import type { Clarification } from './p2-007-clarification-planner.mjs';
 import type { ServiceCatalog, CatalogService } from './p2-007-service-catalog.mjs';
-import type { AliasResult } from './p2-007-alias-resolver.mjs';
+import type { AliasDictionary, AliasResult } from './p2-007-alias-resolver.mjs';
 export type RuleResultState = 'COMPLETE' | 'PARTIAL' | 'NEEDS_DESCRIPTION';
 export type RuleAction =
  | { action: 'SET_SELECTED_SERVICE'; value: string | null }
@@ -18,12 +20,21 @@ export type RuleAction =
  | { action: 'INHERIT_FACTS' | 'START_NEW_ANALYSIS_WINDOW' | 'MERGE_TURN' | 'CREATE_CONFLICT' | 'REQUIRE_HUMAN_REVIEW' | 'MARK_TEXT_SEGMENT' | 'EMIT_CORROBORATION' | 'NORMALIZE_TEXT' | 'PARSE_ASSET_HINT' | 'ADD_SERVICE_CANDIDATE' | 'DISAMBIGUATE_BY_CONTEXT' | 'EMIT_NEGATED_FACT' | 'SUPERSEDE_PRIOR_FACT'; [key: string]: unknown };
 export interface RuleCondition { all?: RuleCondition[]; any?: RuleCondition[]; field?: string; eq?: unknown; lte?: number; gte?: number; missing?: boolean; exists?: boolean; contains?: unknown; contains_any?: unknown[]; in?: unknown[]; full_match_any?: string[]; regex?: string; full_match_regex?: string; token_only_or_generic?: string }
 interface DeterministicRule { rule_id: string; version: string; priority: number; when: RuleCondition; actions: RuleAction[]; explanation_template_zh?: string }
-interface RuleSet { schema_version: string; execution_mode: string; rule_set_id: string; rule_set_version: string; rules: DeterministicRule[] }
+export interface RuleSet { schema_version: string; execution_mode: string; rule_set_id: string; rule_set_version: string; rules: DeterministicRule[] }
 export interface CorroborationAnchor { [key: string]: unknown; source_decision_id: string; source_result_hash: string; source_reporter_hash: string; source_fact_ids: string[]; service_code: string; symptom_codes: string[]; catalog_version: string; rule_set_version: string; root_received_epoch_ms: string; reply_received_epoch_ms: string; reply_message_ref: string; reply_reporter_hash: string; source_privacy_class: string; safety_policy_version: string }
 export interface RuleEvaluationInput { [key: string]: unknown; text: string; source_ref: string; observed_at: string; normalized_context?: string; context?: Record<string, unknown> & { corroboration_anchor?: CorroborationAnchor; anchor_age_ms?: number; anchor_compatible?: boolean }; turn?: Record<string, unknown>; source_kind?: string; reporter_directory?: Record<string, unknown>; extracted?: Record<string, unknown> & { occurrence_location?: string }; impact?: Record<string, unknown>; privacy_detector?: Record<string, unknown>; execution_context?: string; asset_hint?: string | null; occurrence_location?: string | null; scope?: string; clinical_impact?: string; transaction_stage?: string; recovery_signal?: string | null; emotion_signal?: boolean; clinical_or_scope_evidence?: boolean }
 interface RuleState extends Omit<RuleEvaluationInput, 'context'> { context: NonNullable<RuleEvaluationInput['context']>; original_text: string; normalized_text: string; normalized_context: string; selected_service_code: string | null; symptom_codes: string[]; symptom_facts: { count: number }; domain_intent: string; scope: string; clinical_impact: string; transaction_stage: string; owner_suggestion: string | null; cause_candidates: { cause_code: string; status: string }[]; incident_reasons: string[]; question_codes: string[]; suppressed_question_codes: string[]; privacy_flags: string[]; intent_signals: string[]; required_fields: string[]; required_confirmations: string[]; forbidden_effects: string[]; action_log: string[]; result_state: RuleResultState | null; analysis_window: string; attempt_result: string | null; conflict: boolean; requires_human_review: boolean; requires_policy_review: boolean; corroboration_anchor?: CorroborationAnchor; catalog_version: string; rule_set_version: string; observed_at: string; source_ref: string }
-export type RuleEngine = ReturnType<typeof createRuleEngine>;
-export type RuleResult = ReturnType<RuleEngine['evaluate']>;
+export interface RuleResult { schema_version: string; catalog_version: string; rule_set_version: string; evaluated_at: string; original_text: string; normalized_text: string; matched_rules: { rule_id: string; version: string; priority: number; explanation: string | undefined }[]; facts: FactProvenance[]; selected_service_code: string | null; service_candidates: string[]; symptom_codes: string[]; fault_types: string[]; domain_intent: string; p1_request_type: 'INCIDENT' | 'UNKNOWN'; transaction_stage: string; scope: string; clinical_impact: string; owner_suggestion: string | null; cause_candidates: { cause_code: string; status: string }[]; privacy_flags: string[]; missing_fields: string[]; confidence: number; clarification_needed: boolean; clarification: Clarification | null; incident_candidate: boolean; incident_reason_codes: string[]; requires_human_review: boolean; result_state: RuleResultState; analysis_window: string; attempt_result: string | null; forbidden_effects: string[]; side_effects: never[]; corroboration_anchor?: CorroborationAnchor; result_hash: string }
+// Existing runtime guards validate the required strings, not optional input fields
+// or every field in an unknown custom action. Preserve those values as unknown.
+type RawDerivedRuleFields = 'scope' | 'clinical_impact' | 'transaction_stage' | 'selected_service_code' | 'domain_intent' | 'owner_suggestion' | 'symptom_codes' | 'cause_candidates' | 'privacy_flags' | 'incident_reason_codes' | 'result_state' | 'attempt_result' | 'forbidden_effects' | 'missing_fields' | 'clarification' | 'facts';
+export type BoundaryRuleResult = Omit<RuleResult, RawDerivedRuleFields> & { [K in RawDerivedRuleFields]: unknown };
+interface RuleEngineMetadata { rule_set_id: string; rule_set_version: string; rule_set_hash: string }
+export interface RuleEngine extends RuleEngineMetadata { evaluate(input: RuleEvaluationInput): RuleResult; evaluate(input: unknown): BoundaryRuleResult }
+export interface BoundaryRuleEngine extends RuleEngineMetadata { evaluate(input: unknown): BoundaryRuleResult }
+export interface RuleEngineOptions { ruleSet?: RuleSet; catalog?: ServiceCatalog; aliasDictionary?: AliasDictionary }
+export interface BoundaryRuleEngineOptions { ruleSet?: unknown; catalog?: ServiceCatalog; aliasDictionary?: unknown }
+
 import { fileURLToPath } from 'node:url';
 
 import { createAliasResolver } from './p2-007-alias-resolver.mjs';
@@ -254,7 +265,9 @@ function factInput(state: RuleState, overrides: Record<string, unknown>) {
   };
 }
 
-export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: { ruleSet?: unknown; catalog?: ServiceCatalog; aliasDictionary?: unknown } = {}) {
+export function createRuleEngine(options?: RuleEngineOptions): RuleEngine;
+export function createRuleEngine(options?: BoundaryRuleEngineOptions): BoundaryRuleEngine;
+export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: BoundaryRuleEngineOptions = {}) {
   const serviceCatalog = catalog ?? loadServiceCatalog();
   const safeRuleSet = validateRuleSet(ruleSet === undefined ? readJsonConfig(DEFAULT_DETERMINISTIC_RULES_PATH) : ruleSet);
   const aliasResolver = createAliasResolver({ dictionary: aliasDictionary, catalog: serviceCatalog });
@@ -434,7 +447,7 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: { ruleSe
         symptom_codes: state.symptom_codes,
         fault_types: uniqueSorted(state.symptom_codes.map(faultTypeForSymptom)),
         domain_intent: state.domain_intent,
-        p1_request_type: state.domain_intent === 'INCIDENT_REPORT' ? 'INCIDENT' : 'UNKNOWN',
+        p1_request_type: state.domain_intent === 'INCIDENT_REPORT' ? 'INCIDENT' as const : 'UNKNOWN' as const,
         transaction_stage: state.transaction_stage,
         scope: state.scope,
         clinical_impact: state.clinical_impact,
@@ -460,6 +473,8 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: { ruleSe
   });
 }
 
-export function evaluateDeterministicRules(input: unknown, options?: Parameters<typeof createRuleEngine>[0]) {
+export function evaluateDeterministicRules(input: RuleEvaluationInput, options?: RuleEngineOptions): RuleResult;
+export function evaluateDeterministicRules(input: unknown, options?: BoundaryRuleEngineOptions): BoundaryRuleResult;
+export function evaluateDeterministicRules(input: unknown, options?: BoundaryRuleEngineOptions) {
   return createRuleEngine(options).evaluate(input);
 }

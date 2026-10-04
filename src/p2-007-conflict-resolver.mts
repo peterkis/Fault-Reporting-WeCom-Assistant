@@ -1,5 +1,8 @@
 import type { FactProvenance } from './p2-007-fact-provenance.mjs';
-export interface FactConflict { conflict_id: string; field_path: string; candidate_fact_ids: string[]; conflict_type: string; resolution_status: 'RESOLVED' | 'DEFERRED_TO_HUMAN'; strategy: string; selected_fact_id: string | null; requires_human: boolean; explanation_code: string; question_code?: string }
+interface FactConflictBase { conflict_id: string; field_path: string; candidate_fact_ids: string[]; conflict_type: string; strategy: string; explanation_code: string }
+export type FactConflict = FactConflictBase & ({ resolution_status: 'RESOLVED'; selected_fact_id: string; requires_human: false } | { resolution_status: 'DEFERRED_TO_HUMAN'; selected_fact_id: null; requires_human: true; question_code: string });
+export interface ConflictInput { facts: readonly FactProvenance[]; field_path?: string }
+export interface BoundaryConflictResult { facts: readonly unknown[]; conflict: { conflict_id: string; field_path: unknown; candidate_fact_ids: unknown[]; conflict_type: string; resolution_status: 'RESOLVED' | 'DEFERRED_TO_HUMAN'; strategy: string; selected_fact_id: unknown; requires_human: boolean; explanation_code: string; question_code?: string } | null; previous_fact?: unknown; current_fact?: unknown; reason?: string }
 export interface ConflictResult { facts: FactProvenance[]; conflict: FactConflict | null; previous_fact?: FactProvenance | null | undefined; current_fact?: FactProvenance | null | undefined; reason?: string }
 import {
   P2_007_ERROR_CODES,
@@ -20,7 +23,9 @@ function conflictType(fieldPath: string) {
   return 'VALUE_CONFLICT';
 }
 
-export function resolveFactConflicts(input: unknown): ConflictResult {
+export function resolveFactConflicts(input: ConflictInput): ConflictResult;
+export function resolveFactConflicts(input: unknown): BoundaryConflictResult;
+export function resolveFactConflicts(input: unknown): BoundaryConflictResult {
   const safe = assertPlainJson(input) as { facts: FactProvenance[]; field_path?: string };
   if (!Array.isArray(safe.facts) || safe.facts.length < 2) failP2007(P2_007_ERROR_CODES.inputInvalid);
   const facts = safe.facts.map((fact) => assertPlainJson(fact));

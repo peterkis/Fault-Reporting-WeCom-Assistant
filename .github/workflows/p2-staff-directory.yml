@@ -102,8 +102,15 @@ jobs:
           const {EXPECTED_BASE:base,EXPECTED_HEAD:head,GITHUB_OUTPUT:output}=process.env;
           if(!/^[a-f0-9]{40}$/.test(base??'')||!/^[a-f0-9]{40}$/.test(head??'')||!output)throw Error('DIRECTORY_DIFF_BASE_REQUIRED');
           const changed=execFileSync('git',['diff','--name-only','-z',base,head],{encoding:'utf8'}).split('\0').filter(Boolean);
-          const prototype=changed.some(p=>/^web\/admin-workbench-prototype\//.test(p));
-          const historical=changed.some(p=>/^(?:\.github\/review\/[^/]+\.(?:mjs|json)$|scripts\/validate-p2-016-(?:historical|ticket-lifecycle-workbench)\.mjs$|tests\/p2-016-historical-validation\.test\.mjs$|tools\/ts-migration\/(?:run-tests|routing)\.mts$)/.test(p));
+          const packageScripts=ref=>JSON.parse(execFileSync('git',['show',ref+':package.json'],{encoding:'utf8'})).scripts;
+          let prototypeScript=false,historicalScript=false;
+          if(changed.includes('package.json')){
+            const before=packageScripts(base),after=packageScripts(head);
+            prototypeScript=before['prototype:admin:build']!==after['prototype:admin:build'];
+            historicalScript=before['validate:p2:016:historical']!==after['validate:p2:016:historical'];
+          }
+          const prototype=prototypeScript||changed.some(p=>/^web\/admin-workbench-prototype\//.test(p));
+          const historical=historicalScript||changed.some(p=>/^(?:\.github\/review\/[^/]+\.(?:mjs|json)$|scripts\/validate-p2-016-(?:historical|ticket-lifecycle-workbench)\.mjs$|tests\/p2-016-historical-validation\.test\.mjs$|tools\/ts-migration\/(?:run-tests|routing)\.mts$)/.test(p));
           appendFileSync(output,`prototype=${prototype}\nhistorical=${historical}\n`);
           NODE
       - name: Current directory and orchestration regression

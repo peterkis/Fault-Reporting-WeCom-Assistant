@@ -1,9 +1,10 @@
 import type { LocalDateTime } from '../contracts/time_contracts.js';
+export type FactSourceKind = 'HUMAN_OPERATOR_CONFIRMED' | 'REPORTER_CORRECTION' | 'AUTHORITATIVE_DIRECTORY' | 'SYSTEM_OBSERVATION' | 'REPORTER_EXPLICIT' | 'DETERMINISTIC_RULE' | 'CONTEXT_INHERITANCE' | 'MEDIA_METADATA' | 'OCR_EXTRACTED_FUTURE' | 'LLM_SUGGESTED_FUTURE' | 'DEFAULT_UNKNOWN' | 'TRUSTED_CHANNEL_METADATA' | 'DIRECTORY_PROFILE_SNAPSHOT' | 'CHANNEL_TRANSITION' | 'CONVERSATION_CONTROL_EVENT' | 'COMMUNICATION_MESSAGE_EVENT' | 'DELIVERY_RECEIPT' | 'INCIDENT_CORRELATION_RULE' | 'MONITORING_CORROBORATION';
 export type FactAssertion = 'AFFIRMED' | 'NEGATED' | 'UNCERTAIN';
 export type FactStatus = 'ACTIVE' | 'SUPERSEDED' | 'CONFLICTED' | 'REJECTED';
 export interface FactProvenance {
  fact_id: string; field_path: string; value: unknown; normalized_value: unknown;
- assertion: FactAssertion; source_kind: string; source_ref: string; source_hash: string;
+ assertion: FactAssertion; source_kind: FactSourceKind; source_ref: string; source_hash: string;
  observed_at: LocalDateTime; confidence_level: string; reliability_tier: number;
  status: FactStatus; sensitivity: string; catalog_version: string; rule_set_version: string;
  rule_id: string | null; replaces_fact_id: unknown; reason_code: unknown;
@@ -32,14 +33,14 @@ const STATUSES = new Set(['ACTIVE', 'SUPERSEDED', 'CONFLICTED', 'REJECTED']);
 const SENSITIVITIES = new Set(['INTERNAL', 'SENSITIVE_INTERNAL', 'PERSONAL', 'PATIENT_SENSITIVE', 'SECRET']);
 const CONFIDENCE_LEVELS = new Set(['EXACT', 'STRONG', 'WEAK', 'UNKNOWN']);
 
-function sourceKind(value: unknown): string {
+function sourceKind(value: unknown): FactSourceKind {
   const mapped = ({
     USER_MESSAGE: 'REPORTER_EXPLICIT',
     RULE: 'DETERMINISTIC_RULE',
     USER_CORRECTION: 'REPORTER_CORRECTION',
   } as Record<string, string>)[value as string] ?? value;
   if (!SOURCE_KINDS.has(mapped as string)) failP2007(P2_007_ERROR_CODES.inputInvalid);
-  return mapped as string;
+  return mapped as FactSourceKind;
 }
 
 function confidenceParts(confidence: unknown, confidenceLevel: unknown, reliabilityTier: unknown) {
