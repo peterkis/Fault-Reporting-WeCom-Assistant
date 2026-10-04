@@ -35,8 +35,8 @@ const HASH = /^[a-f0-9]{64}$/u;
 
 function delay(milliseconds: number) { return new Promise((resolve) => setTimeout(resolve, milliseconds)); }
 
-function validConfiguration(value: Partial<G1ClusterConfiguration> | null | undefined): value is G1ClusterConfiguration {
-  return (value && typeof value === 'object'
+function validConfiguration(value: Partial<G1ClusterConfiguration>): value is G1ClusterConfiguration {
+  return value && typeof value === 'object'
     && typeof value.databaseUrl === 'string' && value.databaseUrl.length > 0
     && typeof value.identityHashKey === 'string' && value.identityHashKey.length >= 16
     && Array.isArray(value.principalIds) && value.principalIds.length >= 2 && value.principalIds.length <= 4
@@ -49,7 +49,7 @@ function validConfiguration(value: Partial<G1ClusterConfiguration> | null | unde
     && (!value.gatewayEnabled || (typeof value.botId === 'string' && value.botId.length > 0
       && typeof value.secret === 'string' && value.secret.length > 0
       && typeof value.wsUrl === 'string' && /^wss:\/\//u.test(value.wsUrl)
-      && value.allowedTargetHashes.length > 0))) as boolean;
+      && value.allowedTargetHashes.length > 0));
 }
 
 function stableRoleMetrics(role: string, value: Readonly<Record<string, unknown>> | null | undefined) {

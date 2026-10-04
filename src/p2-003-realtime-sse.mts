@@ -162,12 +162,12 @@ function methodOf(value: unknown, names: readonly string[]): Callable | null {
   return null;
 }
 
-function boundedInteger(value: unknown, fallback: number, { minimum = 1, maximum }: { minimum?: number; maximum: number }) {
+function boundedInteger(value: unknown, fallback: number, { minimum = 1, maximum }: { minimum?: number; maximum?: number } = {}) {
   const candidate = value === undefined ? fallback : value;
   if (
     !Number.isSafeInteger(candidate)
     || (candidate as number) < minimum
-    || (candidate as number) > maximum
+    || (candidate as number) > (maximum as number)
   ) {
     fail(REALTIME_SSE_ERROR_CODES.eventInvalid);
   }
@@ -1262,7 +1262,7 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
       configuration,
       metrics,
       lease,
-      resolveClosed: resolveClosed as () => void,
+      resolveClosed,
       responseOff,
       requestOff,
       abortController: new AbortController(),
@@ -1280,7 +1280,7 @@ export function createRealtimeSseHandler<P = unknown>(options: RealtimeSseOption
       onResponseClose: null,
       onRequestAborted: null,
       cancelDrain: null,
-    };
+    } as StreamState;
     state.onResponseClose = () => cleanupStream(state);
     state.onRequestAborted = () => cleanupStream(state, { destroy: true });
     listenerMethod(response, 'once')?.('close', state.onResponseClose);

@@ -268,7 +268,7 @@ export async function runWorker({extensionFactory=null,reportCycleHealth=false,b
   let task = Promise.resolve();
   let failureCount = 0;
   let lastErrorCode: string | null = null;
-  const publishHealth = (ready: boolean) => { if (reportCycleHealth) send({ type: 'worker-status', role: 'WORKER', ready, failure_count: failureCount, last_error_code: lastErrorCode }); };
+  const publishHealth: (ready: boolean) => void = ready => { if (reportCycleHealth) send({ type: 'worker-status', role: 'WORKER', ready, failure_count: failureCount, last_error_code: lastErrorCode }); };
   const timer = setInterval(() => {
     if (stopping || running || (!enabled && !extension)) return;
     running = true;

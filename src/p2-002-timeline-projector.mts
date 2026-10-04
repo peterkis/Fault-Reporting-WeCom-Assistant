@@ -7,7 +7,7 @@ type RawRecord = Readonly<Record<string, unknown>>;
 export type SourceRecord = Omit<ConversationProjectionSourceRecord, "retention_until_epoch_ms">;
 type JsonState = { seen: Set<object>; nodes: number };
 interface BindingRow extends Record<string, unknown> { item_id: string; source_hash: string; canonical_order_key: string; privacy_class: ConversationPrivacyClass; retention_until: string }
-interface CheckpointRow extends Record<string, unknown> { projector_name: string; projector_version: string; source_stream: string; cursor_value: string | null; last_source_occurred_at: string | null; last_batch_hash: string; row_version: string; updated_at: string }
+interface CheckpointRow extends Record<string, unknown> { projector_name: string; projector_version: string; source_stream: string; cursor_value: string | null; last_source_occurred_at: string | null; last_batch_hash: string | null; row_version: string; updated_at: string }
 interface ItemRow extends Record<string, unknown> { id: string; session_id: string; sequence_no: string; item_type: ConversationItemType; sender_kind: ConversationItemSenderKind; visibility: ConversationItemVisibility; source_type: SourceRecord['source_type']; source_id: string; projection_variant: string; content_hash: string; privacy_class: ConversationPrivacyClass; occurred_at: string; retention_until: string; projected_at: string }
 export interface TimelineProjectorOptions {
   pool?: PostgresPool; enabled?: boolean; batchSize?: number;
@@ -1228,7 +1228,7 @@ function normalizeProjectInput(input: unknown, configuredBatchSize: number) {
   const explicitStream = (input as RawRecord).sourceStream ?? (input as RawRecord).source_stream ?? null;
   const streams = new Set(records.map((record) => record.source_stream));
   const sourceStream = explicitStream === null
-    ? (streams.size === 1 ? records[0]?.source_stream : null)
+    ? (streams.size === 1 ? records[0]?.source_stream as string : null)
     : contractIdentifier(explicitStream, 128, /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u);
   if (sourceStream === null || records.some(
     (record) => record.projector_name !== projectorName
@@ -1240,7 +1240,7 @@ function normalizeProjectInput(input: unknown, configuredBatchSize: number) {
   return Object.freeze({
     projectorName,
     projectorVersion,
-    sourceStream: sourceStream as string,
+    sourceStream,
     records: Object.freeze(records),
     expectedCheckpoint: (input as RawRecord).expectedCheckpoint ?? (input as RawRecord).expected_checkpoint ?? undefined,
     cursorValue: (input as RawRecord).cursorValue ?? (input as RawRecord).cursor_value ?? null,

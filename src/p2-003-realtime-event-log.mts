@@ -726,7 +726,7 @@ export function normalizeRealtimeEventCommand(input: unknown): RealtimeEventComm
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
   const visibilityScope = enumValue(snapshot.visibility_scope, VISIBILITY_SCOPE_SET);
-  const payload = clonePlainJson(snapshot.payload);
+  const payload = clonePlainJson(snapshot.payload) as RealtimeSafeJsonObject;
   if (payload === null || Array.isArray(payload) || typeof payload !== 'object') {
     fail(REALTIME_ERROR_CODES.eventInvalid);
   }
@@ -761,7 +761,7 @@ export function normalizeRealtimeEventCommand(input: unknown): RealtimeEventComm
     authorization_scope_type: authorizationScopeType,
     authorization_scope_id: authorizationScopeId,
     visibility_scope: visibilityScope,
-    payload: payload as RealtimeSafeJsonObject,
+    payload,
     occurred_at: occurredAt,
     expires_at: expiresAt,
     expires_epoch_ms: expiresEpochMs,
@@ -1193,7 +1193,7 @@ export function publicRealtimeEventFromRow(input: unknown): RealtimePublicEventV
       VISIBILITY_SCOPE_SET,
       REALTIME_ERROR_CODES.storageFailed,
     ),
-    payload: payload as RealtimeSafeJsonObject,
+    payload,
     occurred_at: isoDateTime(row.occurred_at, REALTIME_ERROR_CODES.storageFailed),
     created_at: isoDateTime(row.created_at, REALTIME_ERROR_CODES.storageFailed),
   });
