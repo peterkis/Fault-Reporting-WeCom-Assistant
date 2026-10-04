@@ -1,3 +1,8 @@
+export interface ServiceDefinition { service_code: string; name_zh: string; aliases: string[]; required_fields: string[]; transaction_stages: string[]; common_symptom_codes: string[]; enabled: boolean; default_owner_team?: string }
+export interface ServiceDomain { domain_code: string; name_zh: string; services: ServiceDefinition[] }
+export interface ServiceCatalogData { schema_version: string; catalog_id: string; catalog_version: string; domains: ServiceDomain[]; taxonomies: { symptom_codes: { code: string }[] } }
+export type CatalogService = ServiceDefinition & { category: string; category_name_zh: string };
+export type ServiceCatalog = ReturnType<typeof createServiceCatalog>;
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -17,18 +22,18 @@ export const DEFAULT_SERVICE_CATALOG_PATH = fileURLToPath(new URL(
 const CODE_PATTERN = /^[A-Z][A-Z0-9_]*(?:\.[A-Z][A-Z0-9_]*)+$/u;
 const DOMAIN_PATTERN = /^[A-Z][A-Z0-9_]{1,63}$/u;
 
-function nonEmptyString(value) {
+function nonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0;
 }
 
-export function validateServiceCatalog(input) {
+export function validateServiceCatalog(input: unknown): ServiceCatalogData {
   const catalog = assertPlainJson(input, {
     errorCode: P2_007_ERROR_CODES.configInvalid,
     maxDepth: 16,
     maxNodes: 100_000,
     maxArrayLength: 20_000,
     maxStringLength: 100_000,
-  });
+  }) as ServiceCatalogData;
   if (
     catalog.schema_version !== '1.0.0'
     || !nonEmptyString(catalog.catalog_id)
@@ -75,10 +80,10 @@ export function validateServiceCatalog(input) {
   return deepFreeze(catalog);
 }
 
-export function createServiceCatalog(input) {
+export function createServiceCatalog(input: unknown) {
   const catalog = validateServiceCatalog(input);
-  const byServiceCode = new Map();
-  const byDomainCode = new Map();
+  const byServiceCode = new Map<string, CatalogService>();
+  const byDomainCode = new Map<string, ServiceDomain>();
   for (const domain of catalog.domains) {
     byDomainCode.set(domain.domain_code, domain);
     for (const service of domain.services) {
@@ -97,11 +102,11 @@ export function createServiceCatalog(input) {
     category_count: byDomainCode.size,
     catalog_hash: sha256Canonical(catalog),
     raw: catalog,
-    lookupService(serviceCode) {
+    lookupService(serviceCode: unknown) {
       if (typeof serviceCode !== 'string') return null;
       return byServiceCode.get(serviceCode.toUpperCase()) ?? null;
     },
-    lookupCategory(value) {
+    lookupCategory(value: unknown) {
       if (typeof value !== 'string') return null;
       const code = value.toUpperCase();
       const domain = byDomainCode.get(code);
@@ -114,7 +119,7 @@ export function createServiceCatalog(input) {
       return service ? deepFreeze({
         category: service.category,
         category_name_zh: service.category_name_zh,
-        service_codes: byDomainCode.get(service.category).services.map((item) => item.service_code),
+        service_codes: (byDomainCode.get(service.category) as ServiceDomain).services.map((item) => item.service_code),
       }) : null;
     },
     listServices({ enabledOnly = true } = {}) {
@@ -129,6 +134,6 @@ export function createServiceCatalog(input) {
   });
 }
 
-export function loadServiceCatalog({ path = DEFAULT_SERVICE_CATALOG_PATH, catalog } = {}) {
+export function loadServiceCatalog({ path = DEFAULT_SERVICE_CATALOG_PATH, catalog }: { path?: string; catalog?: unknown } = {}) {
   return createServiceCatalog(catalog === undefined ? readJsonConfig(path) : catalog);
 }

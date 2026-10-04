@@ -1,3 +1,6 @@
+import type { FactProvenance } from './p2-007-fact-provenance.mjs';
+export interface FactConflict { conflict_id: string; field_path: string; candidate_fact_ids: string[]; conflict_type: string; resolution_status: 'RESOLVED' | 'DEFERRED_TO_HUMAN'; strategy: string; selected_fact_id: string | null; requires_human: boolean; explanation_code: string; question_code?: string }
+export interface ConflictResult { facts: FactProvenance[]; conflict: FactConflict | null; previous_fact?: FactProvenance | null | undefined; current_fact?: FactProvenance | null | undefined; reason?: string }
 import {
   P2_007_ERROR_CODES,
   assertPlainJson,
@@ -6,30 +9,30 @@ import {
   sha256Canonical,
 } from './p2-007-domain-utils.mjs';
 
-function sameValue(left, right) {
+function sameValue(left: unknown, right: unknown) {
   return sha256Canonical(left) === sha256Canonical(right);
 }
 
-function conflictType(fieldPath) {
+function conflictType(fieldPath: string) {
   if (fieldPath.includes('location')) return 'LOCATION_CONFLICT';
   if (fieldPath.includes('service')) return 'SERVICE_CONFLICT';
   if (fieldPath.includes('scope')) return 'SCOPE_CONFLICT';
   return 'VALUE_CONFLICT';
 }
 
-export function resolveFactConflicts(input) {
-  const safe = assertPlainJson(input);
+export function resolveFactConflicts(input: unknown): ConflictResult {
+  const safe = assertPlainJson(input) as { facts: FactProvenance[]; field_path?: string };
   if (!Array.isArray(safe.facts) || safe.facts.length < 2) failP2007(P2_007_ERROR_CODES.inputInvalid);
   const facts = safe.facts.map((fact) => assertPlainJson(fact));
-  const fieldPath = safe.field_path ?? facts.at(-1)?.field_path;
+  const fieldPath = safe.field_path ?? facts.at(-1)?.field_path as string;
   const candidates = facts.filter((fact) => fact.field_path === fieldPath && fact.status === 'ACTIVE');
-  if (candidates.length < 2 || candidates.every((fact) => sameValue(fact.normalized_value, candidates[0].normalized_value))) {
+  if (candidates.length < 2 || candidates.every((fact) => sameValue(fact.normalized_value, (candidates[0] as FactProvenance).normalized_value))) {
     return deepFreeze({ facts, conflict: null });
   }
 
   const correction = [...candidates].reverse().find((fact) => fact.source_kind === 'REPORTER_CORRECTION');
   if (correction) {
-    const updated = facts.map((fact) => {
+    const updated: FactProvenance[] = facts.map((fact) => {
       if (fact.fact_id === correction.fact_id) return { ...fact, status: 'ACTIVE', reason_code: 'USER_CORRECTION' };
       if (fact.field_path === fieldPath && fact.status === 'ACTIVE') return { ...fact, status: 'SUPERSEDED', reason_code: 'USER_CORRECTION' };
       return fact;
@@ -54,7 +57,7 @@ export function resolveFactConflicts(input) {
     });
   }
 
-  const updated = facts.map((fact) => fact.field_path === fieldPath && fact.status === 'ACTIVE'
+  const updated: FactProvenance[] = facts.map((fact) => fact.field_path === fieldPath && fact.status === 'ACTIVE'
     ? { ...fact, status: 'CONFLICTED', reason_code: 'UNRESOLVED_CONFLICT' }
     : fact);
   const semantic = { field_path: fieldPath, candidate_fact_ids: candidates.map((fact) => fact.fact_id).sort() };

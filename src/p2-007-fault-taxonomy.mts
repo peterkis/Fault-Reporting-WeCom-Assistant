@@ -1,3 +1,6 @@
+export interface SymptomAlias { alias: string; symptom_code: string; assertion?: string }
+export interface FaultDictionary { schema_version: string; symptom_aliases: SymptomAlias[] }
+export type FaultTaxonomyResolver = ReturnType<typeof createFaultTaxonomyResolver>;
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -25,9 +28,9 @@ const BUILTIN_SYMPTOMS = Object.freeze([
   ['打印失败', 'PRINT.NO_OUTPUT'],
   ['网络不通', 'NETWORK.DISCONNECTED'],
   ['网络断开', 'NETWORK.DISCONNECTED'],
-]);
+] as const);
 
-export function faultTypeForSymptom(symptomCode) {
+export function faultTypeForSymptom(symptomCode: unknown) {
   if (typeof symptomCode !== 'string') return 'UNKNOWN_FAILURE';
   if (symptomCode.startsWith('AUTH.')) return 'AUTHENTICATION_FAILURE';
   if (symptomCode.startsWith('PERFORMANCE.')) return 'PERFORMANCE_DEGRADATION';
@@ -40,8 +43,8 @@ export function faultTypeForSymptom(symptomCode) {
   return 'OTHER_FAILURE';
 }
 
-export function createFaultTaxonomyResolver({ dictionary } = {}) {
-  const source = dictionary === undefined ? readJsonConfig(DEFAULT_FAULT_ALIAS_PATH) : dictionary;
+export function createFaultTaxonomyResolver({ dictionary }: { dictionary?: unknown } = {}) {
+  const source = dictionary === undefined ? readJsonConfig(DEFAULT_FAULT_ALIAS_PATH) as FaultDictionary : dictionary as FaultDictionary;
   if (!source || source.schema_version !== '1.0.0' || !Array.isArray(source.symptom_aliases)) {
     failP2007(P2_007_ERROR_CODES.configInvalid);
   }
@@ -72,11 +75,11 @@ export function createFaultTaxonomyResolver({ dictionary } = {}) {
     || left.rule_id.localeCompare(right.rule_id, 'en'));
 
   return deepFreeze({
-    resolve(text) {
+    resolve(text: unknown) {
       if (typeof text !== 'string') failP2007(P2_007_ERROR_CODES.inputInvalid);
       const normalizedText = normalizeHospitalText(text);
       const rawMatches = entries.filter((entry) => normalizedText.includes(entry.normalized_alias));
-      const matches = [];
+      const matches: { symptom_code: string; fault_type: string; assertion: string; matched_alias: string; rule_id: string }[] = [];
       const coveredCodes = new Set();
       for (const entry of rawMatches) {
         const key = `${entry.symptom_code}:${entry.assertion}`;
@@ -104,6 +107,6 @@ export function createFaultTaxonomyResolver({ dictionary } = {}) {
   });
 }
 
-export function resolveFaultTaxonomy(text, options) {
+export function resolveFaultTaxonomy(text: unknown, options?: Parameters<typeof createFaultTaxonomyResolver>[0]) {
   return createFaultTaxonomyResolver(options).resolve(text);
 }

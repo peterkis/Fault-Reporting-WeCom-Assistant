@@ -1,3 +1,6 @@
+interface IncidentReport { reporter_ref?: string; department_ref?: string; location_ref?: string; evidence_fact_ids?: string[]; service_family?: string; symptom_family?: string; observed_at?: string | null }
+interface IncidentCandidateInput { reports?: IncidentReport[]; thresholds?: Partial<{ [K in keyof typeof DEFAULT_THRESHOLDS]: number }>; evidence_fact_ids?: string[]; service_family?: string | null; symptom_family?: string | null; compatible_fault_signals?: boolean; authoritative_monitoring?: boolean; active_incident?: boolean; clinical_severity_candidate?: string }
+export type IncidentCandidate = ReturnType<typeof generateIncidentCandidate>;
 import { assertLocalDateTime } from './platform/time-contract.mjs';
 import {
   P2_007_ERROR_CODES,
@@ -21,29 +24,29 @@ const DEFAULT_THRESHOLDS = Object.freeze({
   correlation_window_ms: 120_000,
 });
 
-function localOrNull(value) {
+function localOrNull(value: unknown) {
   if (value === null || value === undefined) return null;
   try { return assertLocalDateTime(value); } catch { failP2007(P2_007_ERROR_CODES.localDateTimeInvalid); }
 }
 
-function severity(value) {
+function severity(value: unknown) {
   const map = {
     CRITICAL_REVIEW_REQUIRED: 'CRITICAL', CRITICAL: 'CRITICAL', HIGH: 'HIGH',
     MODERATE: 'MEDIUM', MEDIUM: 'MEDIUM', LOW: 'LOW', UNKNOWN: 'UNKNOWN',
   };
-  return map[value] ?? 'UNKNOWN';
+  return (map as Record<string, string>)[value as string] ?? 'UNKNOWN';
 }
 
-export function generateIncidentCandidate(input) {
-  const safe = assertPlainJson(input);
+export function generateIncidentCandidate(input: unknown) {
+  const safe = assertPlainJson(input) as IncidentCandidateInput;
   const reports = Array.isArray(safe.reports) ? safe.reports : [];
   const thresholds = { ...DEFAULT_THRESHOLDS, ...(safe.thresholds ?? {}) };
   for (const value of Object.values(thresholds)) {
     if (!Number.isInteger(value) || value < 0) failP2007(P2_007_ERROR_CODES.inputInvalid);
   }
-  const reporterKeys = uniqueSorted(reports.map((report) => report.reporter_ref).filter((value) => typeof value === 'string'));
-  const departmentKeys = uniqueSorted(reports.map((report) => report.department_ref).filter((value) => typeof value === 'string'));
-  const locationKeys = uniqueSorted(reports.map((report) => report.location_ref).filter((value) => typeof value === 'string'));
+  const reporterKeys = uniqueSorted(reports.map((report) => report.reporter_ref).filter((value): value is string => typeof value === 'string'));
+  const departmentKeys = uniqueSorted(reports.map((report) => report.department_ref).filter((value): value is string => typeof value === 'string'));
+  const locationKeys = uniqueSorted(reports.map((report) => report.location_ref).filter((value): value is string => typeof value === 'string'));
   const evidenceFactIds = uniqueSorted([
     ...(Array.isArray(safe.evidence_fact_ids) ? safe.evidence_fact_ids : []),
     ...reports.flatMap((report) => Array.isArray(report.evidence_fact_ids) ? report.evidence_fact_ids : []),
@@ -91,7 +94,7 @@ export function generateIncidentCandidate(input) {
   return deepFreeze({
     schema_version: '1.0.0',
     is_candidate: isCandidate,
-    candidate_ref: isCandidate ? `candidate:${clusterHash.slice(0, 32)}` : null,
+    candidate_ref: isCandidate ? `candidate:${(clusterHash as string).slice(0, 32)}` : null,
     cluster_key_hash: clusterHash,
     service_family: serviceFamily,
     symptom_family: symptomFamily,
@@ -109,7 +112,7 @@ export function generateIncidentCandidate(input) {
     promotion_recommendation: promotion,
     human_confirmation_required: true,
     creates_incident: false,
-  });
+  } as const);
 }
 
 export const createIncidentCandidate = generateIncidentCandidate;

@@ -5,7 +5,9 @@ import { P2_015_ACTION_TYPES, P2_015_LIMITS, P2_015_RESULT_CODES } from '../src/
 
 const root = process.cwd(); const errors = []; let checks = 0;
 const check = (condition, message) => { checks += 1; if (!condition) errors.push(message); };
-const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
+const moduleMap = JSON.parse(fs.readFileSync(path.join(root, 'plans/typescript-migration/scope.json'), 'utf8')).current_module_map;
+const sourcePath = name => path.join(root, moduleMap[name] ?? name);
+const read = (name) => fs.readFileSync(sourcePath(name), 'utf8');
 const required = [
   'database/migrations/030_p2_015_rule_first_intake_orchestration.sql',
   ...['contact_journey','channel_leg','continuation_ref','deterministic_decision','manual_review_item','manual_review_command','safe_action_suggestion','orchestration_input','orchestration_result'].map((name) => `contracts/p2_015_${name}.schema.json`),
@@ -21,7 +23,7 @@ const required = [
   'docs/57_p2_015_manual_review_and_safe_actions.md','evidence/p2-015-start-authorization.md',
   'evidence/p2-015-rule-first-intake-orchestration-report.md',
 ];
-for (const name of required) check(fs.existsSync(path.join(root, name)), `${name} exists`);
+for (const name of required) check(fs.existsSync(sourcePath(name)), `${name} exists`);
 
 const migration = read('database/migrations/030_p2_015_rule_first_intake_orchestration.sql');
 check((migration.match(/CREATE TABLE IF NOT EXISTS intake\./gu) ?? []).length === 6, 'migration 030 creates exactly six intake tables');

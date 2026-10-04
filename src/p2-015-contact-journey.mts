@@ -1,3 +1,14 @@
+import type { PostgresTransaction } from './platform/postgres-pool.mjs';
+import type { P2015EntryMode, ReporterDirectoryPort, ReporterDirectoryResult } from '../contracts/p2_015_contracts.js';
+import type { ReporterProfileSnapshot } from './p2-015-reporter-profile.mjs';
+export type { ReporterDirectoryPort, ReporterDirectoryResult };
+type ProfileResolver = (input: Record<string, unknown>, options: { signal: AbortSignal }) => unknown | Promise<unknown>;
+export interface ContactJourneyInput { entry_mode: P2015EntryMode; origin_intake_id: string; session_id?: string | null; linked_ticket_id?: string | null; reporter_identity_hash: string; profile_resolution_status: ReporterDirectoryResult['status']; profile_snapshot?: ReporterProfileSnapshot; evaluation_due_at: string; evaluation_due_epoch_ms: string; reported_at: string; last_activity_at?: string; privacy_class: string; retention_until: string; retention_until_epoch_ms: string }
+export interface JourneyRow { id: string; origin_intake_id: string; origin_session_id: string | null; current_session_id: string | null; linked_ticket_id: string | null; entry_mode: P2015EntryMode; origin_channel: string; current_channel: string; profile_resolution_status: ReporterDirectoryResult['status']; status: string; row_version: string; evaluation_due_at: string; evaluation_due_epoch_ms: string; reported_at: string; last_activity_at: string; retention_until: string; retention_until_epoch_ms: string; reporter_identity_hash?: string; profile_snapshot_hash?: string }
+export interface ChannelLegInput { journey_id: string; source_intake_id: string; leg_type: string; conversation_thread_id?: string | null; conversation_session_id?: string | null; origin_channel_message_id?: string | null; provider_context_hash: string; channel_identity_hash: string; reporter_identity_hash: string; opened_at: string }
+export interface ChannelLegRow { id: string; journey_id: string; leg_ordinal: number; leg_type: string; source_intake_id: string; conversation_thread_id: string | null; conversation_session_id: string | null; origin_channel_message_id: string | null; status: string; row_version: string; opened_at: string; closed_at: string | null }
+export interface GuidedJourney { id: string; service_code?: string; ticket_suffix?: string; reported_at?: string; safe_status?: string; status?: string; entry_mode?: P2015EntryMode; linked_ticket_id?: string | null }
+export type DirectJourneyAssociation = { outcome: 'LINK'; reason: string; journey_id: string } | { outcome: 'ASK_USER_TO_SELECT'; reason: 'MULTIPLE_OPEN_JOURNEYS'; candidates: { id: string; service_code: string | null; ticket_suffix: string | null; reported_at: string | null; safe_status: string | null }[] } | { outcome: 'DIRECT_ORGANIC'; reason: 'NO_RELIABLE_ASSOCIATION' };
 import {
   P2_015_ENTRY_MODES,
   P2_015_ERROR_CODES,
@@ -17,44 +28,44 @@ const ENTRY_CHANNEL = Object.freeze({
   DIRECT_ORGANIC: 'WECOM_DIRECT',
 });
 
-export function createReporterDirectoryPort({ resolveProfile, timeoutMs = 500 } = {}) {
+export function createReporterDirectoryPort({ resolveProfile, timeoutMs = 500 }: { resolveProfile?: ProfileResolver; timeoutMs?: number } = {}): ReporterDirectoryPort {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2000) failP2015(P2_015_ERROR_CODES.inputInvalid);
   let inFlight = false;
   return Object.freeze({
-    async resolve(input) {
+    async resolve(input: Record<string, unknown>): Promise<ReporterDirectoryResult> {
       if (typeof resolveProfile !== 'function' || inFlight) return freezePublic({ status: 'DEFERRED', snapshot: {} });
       const controller = new AbortController();
-      let timer;
+      let timer: ReturnType<typeof setTimeout> | undefined;
       inFlight = true;
       try {
         const pending = Promise.resolve().then(() => resolveProfile(snapshotP2015Json(input), { signal: controller.signal }))
           .finally(() => { inFlight = false; });
-        const result = snapshotReporterProfileEnvelope(await Promise.race([pending, new Promise(resolve => {
+        const result = snapshotReporterProfileEnvelope(await Promise.race([pending, new Promise<unknown>(resolve => {
           timer = setTimeout(() => { controller.abort(); resolve({ status: 'DEFERRED' }); }, timeoutMs);
         })]), 'snapshot');
-        if (!['RESOLVED', 'DEFERRED', 'NOT_FOUND', 'NOT_REQUIRED'].includes(result.status)) failP2015(P2_015_ERROR_CODES.inputInvalid);
+        if (!['RESOLVED', 'DEFERRED', 'NOT_FOUND', 'NOT_REQUIRED'].includes(result.status as string)) failP2015(P2_015_ERROR_CODES.inputInvalid);
         const snapshot = result.status === 'RESOLVED' ? (result.snapshot ?? {}) : {};
-        return deepFreeze({ status: result.status, snapshot });
+        return deepFreeze({ status: result.status, snapshot }) as ReporterDirectoryResult;
       } catch (error) {
-        if (error?.code === P2_015_ERROR_CODES.inputInvalid) throw error;
+        if ((error as { code?: unknown } | null)?.code === P2_015_ERROR_CODES.inputInvalid) throw error;
         return freezePublic({ status: 'DEFERRED', snapshot: {} });
       } finally { controller.abort(); clearTimeout(timer); }
     },
   });
 }
 
-export const MockResolvedDirectory = (snapshot = {}) => createReporterDirectoryPort({
+export const MockResolvedDirectory = (snapshot: Record<string, unknown> = {}) => createReporterDirectoryPort({
   resolveProfile: async () => ({ status: 'RESOLVED', snapshot: { source: 'WECOM_DIRECTORY', version: 'mock-v1', departments: [], ...snapshot } }),
 });
 export const DeferredDirectory = () => createReporterDirectoryPort({ resolveProfile: async () => ({ status: 'DEFERRED' }) });
 export const NotFoundDirectory = () => createReporterDirectoryPort({ resolveProfile: async () => ({ status: 'NOT_FOUND' }) });
 export const FaultingDirectory = () => createReporterDirectoryPort({ resolveProfile: async () => { throw new Error('directory unavailable'); } });
 
-export function reporterIdentityHash({ provider, bot_id: botId, reporter_external_id: reporterExternalId, hmac_key: hmacKey }) {
+export function reporterIdentityHash({ provider, bot_id: botId, reporter_external_id: reporterExternalId, hmac_key: hmacKey }: { provider: string; bot_id: string; reporter_external_id: string; hmac_key: string }) {
   return hmacIdentity(`${provider}\u0000${botId}\u0000${reporterExternalId}`, hmacKey);
 }
 
-function publicJourney(row, replayed = false) {
+function publicJourney(row: JourneyRow, replayed = false) {
   return freezePublic({
     id: row.id,
     origin_intake_id: row.origin_intake_id,
@@ -79,13 +90,13 @@ function publicJourney(row, replayed = false) {
 
 export function createContactJourneyStore() {
   return Object.freeze({
-    async ensureJourney({ transaction, input }) {
+    async ensureJourney({ transaction, input }: { transaction: PostgresTransaction; input: ContactJourneyInput }) {
       if (!transaction?.query) failP2015(P2_015_ERROR_CODES.storageFailed);
       const value = snapshotReporterProfileEnvelope(input);
       if (!P2_015_ENTRY_MODES.includes(value.entry_mode)) failP2015(P2_015_ERROR_CODES.inputInvalid);
       const originChannel = ENTRY_CHANNEL[value.entry_mode];
       const creationKey = `journey_v1_${safeHash({ intake: value.origin_intake_id, entry_mode: value.entry_mode })}`;
-      const existing = await transaction.query(
+      const existing = await transaction.query<JourneyRow>(
         `SELECT id::text, origin_intake_id::text, origin_session_id::text, current_session_id::text,
                 linked_ticket_id::text, entry_mode, origin_channel, current_channel,
                 profile_resolution_status, status, row_version::text, evaluation_due_at,
@@ -95,7 +106,7 @@ export function createContactJourneyStore() {
         [value.origin_intake_id],
       );
       if (existing.rowCount === 1) {
-        const row = existing.rows[0];
+        const row = existing.rows[0] as JourneyRow;
         if (row.reporter_identity_hash !== value.reporter_identity_hash || row.entry_mode !== value.entry_mode) {
           failP2015(P2_015_ERROR_CODES.decisionConflict);
         }
@@ -103,7 +114,7 @@ export function createContactJourneyStore() {
       }
       const profileSnapshot = snapshotReporterProfile(value.profile_snapshot ?? {});
       const profileHash = hashReporterProfile(profileSnapshot);
-      const inserted = await transaction.query(
+      const inserted = await transaction.query<JourneyRow>(
         `INSERT INTO intake.contact_journey (
            creation_key, origin_intake_id, origin_session_id, current_session_id, linked_ticket_id,
            entry_mode, origin_channel, current_channel, reporter_identity_hash,
@@ -123,13 +134,13 @@ export function createContactJourneyStore() {
           JSON.stringify(profileSnapshot), profileHash, value.evaluation_due_at, value.evaluation_due_epoch_ms,
           value.reported_at, value.privacy_class, value.retention_until, value.retention_until_epoch_ms,value.last_activity_at??value.reported_at],
       );
-      return publicJourney(inserted.rows[0], false);
+      return publicJourney(inserted.rows[0] as JourneyRow, false);
     },
 
-    async ensureLeg({ transaction, input }) {
+    async ensureLeg({ transaction, input }: { transaction: PostgresTransaction; input: ChannelLegInput }) {
       if (!transaction?.query) failP2015(P2_015_ERROR_CODES.storageFailed);
       const value = snapshotP2015Json(input);
-      const existing = await transaction.query(
+      const existing = await transaction.query<ChannelLegRow>(
         `SELECT id::text, journey_id::text, leg_ordinal, leg_type, source_intake_id::text,
                 conversation_thread_id::text, conversation_session_id::text,
                 origin_channel_message_id::text, status, row_version::text, opened_at, closed_at
@@ -137,14 +148,14 @@ export function createContactJourneyStore() {
         [value.source_intake_id],
       );
       if (existing.rowCount === 1) {
-        if (existing.rows[0].journey_id !== value.journey_id) failP2015(P2_015_ERROR_CODES.decisionConflict);
-        return freezePublic({ ...existing.rows[0], replayed: true });
+        if ((existing.rows[0] as ChannelLegRow).journey_id !== value.journey_id) failP2015(P2_015_ERROR_CODES.decisionConflict);
+        return freezePublic({ ...existing.rows[0] as ChannelLegRow, replayed: true });
       }
-      const nextOrdinal = await transaction.query(
+      const nextOrdinal = await transaction.query<{ ordinal: number }>(
         'SELECT COALESCE(max(leg_ordinal),0)::integer + 1 AS ordinal FROM intake.channel_leg WHERE journey_id = $1::uuid',
         [value.journey_id],
       );
-      const inserted = await transaction.query(
+      const inserted = await transaction.query<ChannelLegRow>(
         `INSERT INTO intake.channel_leg (
            journey_id, leg_ordinal, leg_type, source_intake_id, conversation_thread_id,
            conversation_session_id, origin_channel_message_id, provider_context_hash,
@@ -153,7 +164,7 @@ export function createContactJourneyStore() {
          RETURNING id::text, journey_id::text, leg_ordinal, leg_type, source_intake_id::text,
            conversation_thread_id::text, conversation_session_id::text,
            origin_channel_message_id::text, status, row_version::text, opened_at, closed_at`,
-        [value.journey_id, nextOrdinal.rows[0].ordinal, value.leg_type, value.source_intake_id,
+        [value.journey_id, (nextOrdinal.rows[0] as { ordinal: number }).ordinal, value.leg_type, value.source_intake_id,
           value.conversation_thread_id ?? null, value.conversation_session_id ?? null,
           value.origin_channel_message_id ?? null, value.provider_context_hash,
           value.channel_identity_hash, value.reporter_identity_hash, value.opened_at],
@@ -165,11 +176,11 @@ export function createContactJourneyStore() {
            WHERE id=$1::uuid`, [value.journey_id, value.conversation_session_id ?? null, value.opened_at],
         );
       }
-      return freezePublic({ ...inserted.rows[0], replayed: false });
+      return freezePublic({ ...inserted.rows[0] as ChannelLegRow, replayed: false });
     },
 
-    async listEligibleGuided({ transaction, reporter_identity_hash: reporterHash, now_epoch_ms: nowEpochMs, limit = 10 }) {
-      const result = await transaction.query(
+    async listEligibleGuided({ transaction, reporter_identity_hash: reporterHash, now_epoch_ms: nowEpochMs, limit = 10 }: { transaction: PostgresTransaction; reporter_identity_hash: string; now_epoch_ms: string; limit?: number }) {
+      const result = await transaction.query<GuidedJourney>(
         `SELECT DISTINCT journey.id::text, journey.entry_mode, journey.status,
                 journey.reported_at, journey.linked_ticket_id::text
            FROM intake.contact_journey AS journey
@@ -185,17 +196,17 @@ export function createContactJourneyStore() {
   });
 }
 
-export function resolveDirectJourneyAssociation(input) {
-  const value = snapshotP2015Json(input);
-  const ordered = [
+export function resolveDirectJourneyAssociation(input: unknown): DirectJourneyAssociation {
+  const value = snapshotP2015Json(input) as Record<string, unknown>;
+  const ordered: [string, unknown][] = [
     ['PROVIDER_CONTEXT', value.provider_context_journey_id],
     ['EXISTING_DIRECT_BINDING', value.direct_binding_journey_id],
     ['CONTINUATION_REF', value.continuation_journey_id],
     ['EXPLICIT_REFERENCE', value.explicit_reference_journey_id],
   ];
   for (const [reason, journeyId] of ordered) if (typeof journeyId === 'string') return freezePublic({ outcome: 'LINK', reason, journey_id: journeyId });
-  const candidates = Array.isArray(value.guided_candidates) ? value.guided_candidates : [];
-  if (candidates.length === 1) return freezePublic({ outcome: 'LINK', reason: 'UNIQUE_GUIDED_JOURNEY', journey_id: candidates[0].id });
+  const candidates = Array.isArray(value.guided_candidates) ? value.guided_candidates as GuidedJourney[] : [];
+  if (candidates.length === 1) return freezePublic({ outcome: 'LINK', reason: 'UNIQUE_GUIDED_JOURNEY', journey_id: (candidates[0] as GuidedJourney).id });
   if (candidates.length > 1) return freezePublic({ outcome: 'ASK_USER_TO_SELECT', reason: 'MULTIPLE_OPEN_JOURNEYS', candidates: candidates.slice(0, 10).map((item) => ({ id: item.id, service_code: item.service_code ?? null, ticket_suffix: item.ticket_suffix ?? null, reported_at: item.reported_at ?? null, safe_status: item.safe_status ?? item.status ?? null })) });
   return freezePublic({ outcome: 'DIRECT_ORGANIC', reason: 'NO_RELIABLE_ASSOCIATION' });
 }

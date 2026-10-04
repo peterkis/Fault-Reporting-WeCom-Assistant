@@ -1,12 +1,19 @@
+import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
+import type { DirectorySnapshot, DirectoryMember, PersonProfile } from './p2-007-staff-directory-contracts.mjs';
+export interface ReporterMembership { department_ref: string; name: string; role: 'MEMBER' }
+export type StoredDirectoryMember = DirectoryMember & { snapshot_version: string; fetched_at: string; sex: string | null; avatar_url: string | null; account_status: string; memberships: ReporterMembership[] };
+type MemberRow = Omit<StoredDirectoryMember, 'memberships'> & { memberships: unknown };
+type ScopeInput = { source_scope: string };
+export type StaffDirectoryStore = ReturnType<typeof createThirdPartyStaffDirectoryStore>;
 import { sha256Text } from './p2-007-domain-utils.mjs';
 
-function failure(code) {
+function failure(code: string) {
   const error = new Error(code);
-  error.code = code;
+  (error as Error & { code: string }).code = code;
   return error;
 }
 
-async function withTransaction(pool, operation) {
+async function withTransaction<T>(pool: Pick<PostgresPool, 'connect'>, operation: (transaction: PostgresTransaction) => Promise<T>): Promise<T> {
   const client = await pool.connect();
   let destroy = false;
   try {
@@ -22,7 +29,7 @@ async function withTransaction(pool, operation) {
   }
 }
 
-function jsonValue(value, fallback = []) {
+function jsonValue(value: unknown, fallback: ReporterMembership[] = []): ReporterMembership[] {
   if (Array.isArray(value)) return value;
   if (typeof value === 'string') {
     try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : fallback; } catch { return fallback; }
@@ -30,7 +37,7 @@ function jsonValue(value, fallback = []) {
   return fallback;
 }
 
-function profileRow(row) {
+function profileRow(row: MemberRow | undefined): StoredDirectoryMember | null {
   if (!row) return null;
   return {
     snapshot_version: row.snapshot_version,
@@ -47,9 +54,9 @@ function profileRow(row) {
   };
 }
 
-async function selectMember(transaction, sourceScope, providerUserId, lock = false) {
+async function selectMember(transaction: PostgresTransaction, sourceScope: string, providerUserId: string, lock = false) {
   if (lock) await transaction.query('SELECT 1 FROM directory.member_current WHERE source_scope=$1 AND provider_user_id=$2 FOR UPDATE', [sourceScope, providerUserId]);
-  const result = await transaction.query(`
+  const result = await transaction.query<MemberRow>(`
     SELECT m.snapshot_version,m.fetched_at,m.provider_user_id,m.employee_id,m.nickname,m.phone,m.sex,
            m.avatar_url,m.provider_wecom_id,m.account_status,
            COALESCE(jsonb_agg(jsonb_build_object('department_ref',d.provider_department_id,'name',d.name,'role','MEMBER')
@@ -66,11 +73,11 @@ async function selectMember(transaction, sourceScope, providerUserId, lock = fal
   return profileRow(result.rows[0]);
 }
 
-export function createThirdPartyStaffDirectoryStore({ pool } = {}) {
+export function createThirdPartyStaffDirectoryStore({ pool }: { pool?: PostgresPool | undefined } = {}) {
   if (!pool?.query || !pool?.connect) throw failure('THIRD_STAFF_DIRECTORY_STORE_INVALID');
 
-  async function findByReporterHash({ source_scope: sourceScope, reporter_identity_hash: reporterHash }) {
-    const result = await pool.query(`
+  async function findByReporterHash({ source_scope: sourceScope, reporter_identity_hash: reporterHash }: ScopeInput & { reporter_identity_hash: string }) {
+    const result = await (pool as PostgresPool).query<MemberRow>(`
       SELECT m.snapshot_version,m.fetched_at,m.provider_user_id,m.employee_id,m.nickname,m.phone,m.sex,
              m.avatar_url,m.provider_wecom_id,m.account_status,
              COALESCE(jsonb_agg(jsonb_build_object('department_ref',d.provider_department_id,'name',d.name,'role','MEMBER')
@@ -89,16 +96,16 @@ export function createThirdPartyStaffDirectoryStore({ pool } = {}) {
     return profileRow(result.rows[0]);
   }
 
-  async function findMemberByProviderUserId({ source_scope: sourceScope, provider_user_id: providerUserId }) {
-    return selectMember(pool, sourceScope, providerUserId);
+  async function findMemberByProviderUserId({ source_scope: sourceScope, provider_user_id: providerUserId }: ScopeInput & { provider_user_id: string }) {
+    return selectMember(pool as PostgresPool, sourceScope, providerUserId);
   }
 
   async function saveResolvedProfile({ source_scope: sourceScope, reporter_identity_hash: reporterHash,
-    source_namespace: sourceNamespace = 'WECOM_AIBOT', profile, member, resolution_method: resolutionMethod = 'EXPLICIT_UID_RESOLVER' }) {
+    source_namespace: sourceNamespace = 'WECOM_AIBOT', profile, member, resolution_method: resolutionMethod = 'EXPLICIT_UID_RESOLVER' }: ScopeInput & { reporter_identity_hash: string; source_namespace?: unknown; profile: PersonProfile; member: DirectoryMember; resolution_method?: string | null }) {
     if (!profile?.provider_user_id || !member?.provider_user_id || profile.provider_user_id !== member.provider_user_id) {
       throw failure('THIRD_STAFF_DIRECTORY_IDENTITY_CONFLICT');
     }
-    return withTransaction(pool, async transaction => {
+    return withTransaction(pool as PostgresPool, async transaction => {
       await transaction.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`THIRD_STAFF_DIRECTORY_SYNC:${sourceScope}`]);
       await transaction.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`THIRD_STAFF_DIRECTORY_BINDING:${sourceScope}:${reporterHash}`]);
       const current = await selectMember(transaction, sourceScope, profile.provider_user_id, true);
@@ -111,7 +118,7 @@ export function createThirdPartyStaffDirectoryStore({ pool } = {}) {
       }
       const existing = await transaction.query(`SELECT provider_user_id FROM directory.identity_binding
         WHERE source_scope=$1 AND reporter_identity_hash=$2 FOR UPDATE`, [sourceScope, reporterHash]);
-      if (existing.rowCount === 1 && existing.rows[0].provider_user_id !== profile.provider_user_id) {
+      if (existing.rowCount === 1 && (existing.rows[0] as { provider_user_id: string }).provider_user_id !== profile.provider_user_id) {
         throw failure('THIRD_STAFF_DIRECTORY_IDENTITY_CONFLICT');
       }
       await transaction.query(`UPDATE directory.member_current
@@ -132,13 +139,13 @@ export function createThirdPartyStaffDirectoryStore({ pool } = {}) {
     });
   }
 
-  async function publishSnapshot({ source_scope: sourceScope, root_ref: rootRef, snapshot }) {
+  async function publishSnapshot({ source_scope: sourceScope, root_ref: rootRef, snapshot }: ScopeInput & { root_ref: string; snapshot: DirectorySnapshot }) {
     if (!snapshot?.snapshot_version || !Array.isArray(snapshot.departments) || !Array.isArray(snapshot.members)
       || !Array.isArray(snapshot.memberships)) throw failure('THIRD_STAFF_DIRECTORY_SNAPSHOT_INVALID');
     const rootHash = sha256Text(rootRef);
-    return withTransaction(pool, async transaction => {
+    return withTransaction(pool as PostgresPool, async transaction => {
       await transaction.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`THIRD_STAFF_DIRECTORY_SYNC:${sourceScope}`]);
-      const run = await transaction.query(`INSERT INTO directory.sync_run(
+      const run = await transaction.query<{ run_id: string }>(`INSERT INTO directory.sync_run(
           source_scope,root_ref_hash,status,snapshot_version,department_count,member_count,membership_count,protocol_warnings)
         VALUES ($1,$2,'RUNNING',$3,$4,$5,$6,$7::jsonb) RETURNING run_id::text`,
       [sourceScope, rootHash, snapshot.snapshot_version, snapshot.counts.departments, snapshot.counts.members,
@@ -195,14 +202,14 @@ export function createThirdPartyStaffDirectoryStore({ pool } = {}) {
           bound_snapshot_version=$2,last_verified_at=platform.local_now()
         WHERE source_scope=$1 AND binding_status='ACTIVE'`, [sourceScope, snapshot.snapshot_version]);
       await transaction.query(`UPDATE directory.sync_run SET status='SUCCEEDED',completed_at=platform.local_now()
-        WHERE run_id=$1::uuid`, [run.rows[0].run_id]);
-      return Object.freeze({ run_id: run.rows[0].run_id, status: 'SUCCEEDED', snapshot_version: snapshot.snapshot_version, counts: snapshot.counts });
+        WHERE run_id=$1::uuid`, [(run.rows[0] as { run_id: string }).run_id]);
+      return Object.freeze({ run_id: (run.rows[0] as { run_id: string }).run_id, status: 'SUCCEEDED', snapshot_version: snapshot.snapshot_version, counts: snapshot.counts });
     });
   }
 
-  async function recordSyncFailure({ source_scope: sourceScope, root_ref: rootRef, error_code: errorCode }) {
+  async function recordSyncFailure({ source_scope: sourceScope, root_ref: rootRef, error_code: errorCode }: ScopeInput & { root_ref: string; error_code: string }) {
     const safeCode = typeof errorCode === 'string' && /^[A-Z][A-Z0-9_]{0,127}$/u.test(errorCode) ? errorCode : 'SYNC_FAILED';
-    await pool.query(`INSERT INTO directory.sync_run(source_scope,root_ref_hash,status,error_code,started_at,completed_at)
+    await (pool as PostgresPool).query(`INSERT INTO directory.sync_run(source_scope,root_ref_hash,status,error_code,started_at,completed_at)
       VALUES ($1,$2,'FAILED',$3,platform.local_now(),platform.local_now())`, [sourceScope, sha256Text(rootRef), safeCode]);
     return Object.freeze({ status: 'FAILED', error_code: safeCode });
   }
