@@ -6,7 +6,12 @@ import type { P2012IncidentQuery } from './p2-012-incident-query.mjs';
 import type { P2012NotificationPolicy } from './p2-012-notification-policy.mjs';
 import type { P2012RealtimeProjector } from './p2-012-realtime-projector.mjs';
 export type P2012Event = Omit<IncidentEvent, 'safe_payload'> & { safe_payload: unknown };
-export interface P2012CommandReceipt { id: string; command_hash: string; state: 'PENDING' | 'COMMITTED' | 'FAILED'; result_ref_type: unknown; result_ref_id: unknown; result_row_version: unknown; result_event_id: unknown; error_code: string }
+// Migration 032 p2012_command_result validates these scalar fields by receipt state.
+export type P2012CommandReceipt = { id: string; command_hash: string } & (
+  { state: 'STARTED'; result_ref_type: 'INCIDENT' | 'CANDIDATE' | null; result_ref_id: null; result_row_version: string | null; result_event_id: string | null; error_code: null }
+  | { state: 'COMMITTED'; result_ref_type: 'INCIDENT' | 'CANDIDATE'; result_ref_id: string; result_row_version: string; result_event_id: string; error_code: null }
+  | { state: 'FAILED'; result_ref_type: unknown; result_ref_id: null; result_row_version: unknown; result_event_id: unknown; error_code: string }
+);
 type ReceiptSuccess = Omit<IncidentCommandSuccess, 'ok' | 'replayed'>;
 // Resource kind and Action are checked independently by the existing authority/state guards.
 type ResourceRow = { id: string; row_version: string; status: string; primary_ticket_id?: string | null; confirmed_scope?: Incident['confirmed_scope']; expires_epoch_ms?: string; source_decision_id?: string; source_result_hash?: string; service_family: string; symptom_family: string; clinical_severity_candidate?: string };
@@ -194,7 +199,7 @@ export function createP2012IncidentCommandService({pool,enabled=false,query=crea
         [scope,c.client_command_id,digest,c.action,c.candidate_review_id??null,c.incident_id??null,c.incident_report_id??null,ctx.principal?.principal_id??null,c.expected_row_version]);
       const receipt=((await tx.query<P2012CommandReceipt>('SELECT * FROM incident.command_receipt WHERE command_scope=$1 AND client_command_id=$2::uuid FOR UPDATE',[scope,c.client_command_id])).rows[0] as P2012CommandReceipt);
       if(receipt.command_hash!==digest)fail('COMMAND_CONFLICT',409);
-      const receiptResult=(r: P2012CommandReceipt): Omit<IncidentCommandSuccess, 'replayed'>=>({ok:true,result_ref_type:r.result_ref_type as 'INCIDENT' | 'CANDIDATE',result_ref_id:r.result_ref_id as string,result_row_version:String(r.result_row_version),result_event_id:r.result_event_id as string});
+      const receiptResult=(r: Extract<P2012CommandReceipt, { state: 'COMMITTED' }>): Omit<IncidentCommandSuccess, 'replayed'>=>({ok:true,result_ref_type:r.result_ref_type,result_ref_id:r.result_ref_id,result_row_version:String(r.result_row_version),result_event_id:r.result_event_id});
       if(receipt.state==='COMMITTED')return frozen({...receiptResult(receipt),replayed:true});
       if(receipt.state==='FAILED')return frozen({ok:false,error:{code:receipt.error_code,retryable:false},replayed:true});
       await tx.query('SAVEPOINT p2012_business');

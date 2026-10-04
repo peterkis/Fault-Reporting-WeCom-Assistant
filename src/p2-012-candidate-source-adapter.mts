@@ -4,7 +4,8 @@ import type { CandidateProjection } from './p2-012-domain-contracts.mjs';
 type Options = { pool: PostgresPool; enabled?: boolean };
 // JSON fields remain unknown until the existing per-field legacy guards or
 // validateCandidate prove the projection. This is only the consumed shape.
-export interface CandidateSourceDecision extends Omit<DecisionRow, 'safe_result'> { safe_result: { incident_candidate?: unknown; incident_review_candidate?: unknown; known_fields?: { selected_service_code?: unknown; symptom_codes?: unknown[] }; fact_provenance?: { fact_id?: unknown }[]; clinical_safety_risk?: unknown; incident_report_decision_ids?: string[] }; manual_review_id?: string | null }
+interface CandidateObservation { incident_candidate?: unknown; incident_review_candidate?: unknown; known_fields?: { selected_service_code?: unknown; symptom_codes?: unknown[] }; fact_provenance?: { fact_id?: unknown }[]; clinical_safety_risk?: unknown; incident_report_decision_ids?: unknown }
+export interface CandidateSourceDecision extends Omit<DecisionRow, 'safe_result'> { safe_result: unknown; manual_review_id?: string | null }
 export type CandidateImportResult = { id: string; status: 'CANDIDATE' | 'UNDER_REVIEW' | 'CONFIRMED' | 'REJECTED' | 'EXPIRED'; row_version: string; created: boolean };
 import { createDecisionStore } from './p2-015-decision-store.mjs';
 import { guard,uuid,hash,validateCandidate,frozen,fail,transaction } from './p2-012-domain-contracts.mjs';
@@ -18,8 +19,8 @@ export function createP2012CandidateSourceAdapter({pool,enabled=false}: Options)
     if(!Array.isArray(reportDecisionIds)||!reportDecisionIds.length||reportDecisionIds.length>100)fail();
     const ids=[...new Set(reportDecisionIds.map(uuid))].sort();
     const record=async (tx: PostgresTransaction)=>{
-      const q=await tx.query<DecisionRow>('SELECT * FROM intake.deterministic_decision WHERE id=$1::uuid',[sourceDecisionId]);
-      if(q.rowCount!==1)fail('SOURCE_NOT_FOUND',404);const source=(q.rows[0] as DecisionRow);
+      const q=await tx.query<CandidateSourceDecision>('SELECT * FROM intake.deterministic_decision WHERE id=$1::uuid',[sourceDecisionId]);
+      if(q.rowCount!==1)fail('SOURCE_NOT_FOUND',404);const source=(q.rows[0] as CandidateSourceDecision);
       await tx.query('SELECT id FROM intake.contact_journey WHERE id=$1::uuid FOR UPDATE',[source.journey_id]);
       const refs=await tx.query('SELECT id::text FROM intake.deterministic_decision WHERE id=ANY($1::uuid[])',[ids]);
       if(refs.rowCount!==ids.length)fail('SOURCE_NOT_FOUND',404);
@@ -39,9 +40,9 @@ export function createP2012CandidateSourceAdapter({pool,enabled=false}: Options)
 // Legacy P2-015 Decisions are sufficient authority for review. Missing cluster
 // metadata stays null; this projection never reconstructs a window or threshold.
 export function projectPersistedCandidate(d: CandidateSourceDecision): CandidateProjection{
-  if(d.safe_result?.incident_candidate)return validateCandidate(d.safe_result.incident_candidate);
-  if(d.result_code!=='INCIDENT_REVIEW_CANDIDATE'||d.safe_result?.incident_review_candidate!==true)fail('SOURCE_EVIDENCE_INCOMPLETE',409);
-  const r=d.safe_result,known=r.known_fields??{},safeCode=(v: unknown)=>typeof v==='string'&&/^[A-Z][A-Z0-9_]{0,63}$/u.test(v)?v:'UNKNOWN';
+  if((d.safe_result as CandidateObservation | null)?.incident_candidate)return validateCandidate((d.safe_result as CandidateObservation).incident_candidate);
+  if(d.result_code!=='INCIDENT_REVIEW_CANDIDATE'||(d.safe_result as CandidateObservation | null)?.incident_review_candidate!==true)fail('SOURCE_EVIDENCE_INCOMPLETE',409);
+  const r=d.safe_result as CandidateObservation,known=r.known_fields??{},safeCode=(v: unknown)=>typeof v==='string'&&/^[A-Z][A-Z0-9_]{0,63}$/u.test(v)?v:'UNKNOWN';
   const facts=Array.isArray(r.fact_provenance)?r.fact_provenance:[];
   return frozen({cluster_key_hash:null,service_family:safeCode(known.selected_service_code),symptom_family:safeCode(known.symptom_codes?.[0]),
     scope_candidate:'UNKNOWN',clinical_severity_candidate:['LOW','MEDIUM','HIGH','CRITICAL'].includes(r.clinical_safety_risk as string)?r.clinical_safety_risk as string:'UNKNOWN',

@@ -3,7 +3,9 @@ import type { CandidateSourceDecision } from './p2-012-candidate-source-adapter.
 export type IncidentCorrelationResult = { correlated: number; correlation_overflow: false } | { correlated: 0; correlation_overflow: true };
 type FaultFamily = { service_family: string; symptom_family: string };
 interface FaultObservation { fact_id?: unknown; source_ref?: unknown; status?: unknown; assertion?: unknown; source_kind?: unknown; field_path?: unknown }
-interface CorrelationRow extends Omit<CandidateSourceDecision, 'safe_result'> { safe_result: { known_fields: { selected_service_code?: unknown; symptom_codes?: unknown; domain_intent?: unknown }; conflicts?: unknown[]; fact_provenance?: FaultObservation[]; clinical_safety_risk?: unknown }; reporter_identity_hash: string; source_bot_id: string; profile_resolution_status: unknown; profile_snapshot: { source?: unknown; version?: unknown; memberships?: { role?: unknown; department_ref?: unknown }[] } | null; fault_at: string }
+interface CorrelationObservation { known_fields: { selected_service_code?: unknown; symptom_codes?: unknown; domain_intent?: unknown }; conflicts?: unknown[]; fact_provenance?: FaultObservation[]; clinical_safety_risk?: unknown }
+interface ProfileObservation { source?: unknown; version?: unknown; memberships?: { role?: unknown; department_ref?: unknown }[] }
+interface CorrelationRow extends CandidateSourceDecision { reporter_identity_hash: string; source_bot_id: string; profile_resolution_status: unknown; profile_snapshot: unknown; fault_at: string }
 import { generateIncidentCandidate } from './p2-007-incident-candidate.mjs';
 import { createP2012CandidateSourceAdapter } from './p2-012-candidate-source-adapter.mjs';
 import { transaction, hash } from './p2-012-domain-contracts.mjs';
@@ -11,7 +13,7 @@ import { P2_015_ENGINE_VERSION } from './p2-015-decision-router.mjs';
 
 const WINDOW_MS = 120000n;
 const code = (value: unknown) => typeof value === 'string' && /^[A-Z][A-Z0-9_.]{0,63}$/u.test(value) ? value.replaceAll('.', '_') : null;
-function faultFamily(known: CorrelationRow['safe_result']['known_fields']): FaultFamily | null {
+function faultFamily(known: CorrelationObservation['known_fields']): FaultFamily | null {
   const service = code(known?.selected_service_code);
   const symptoms = known?.symptom_codes;
   if (!service || service === 'UNKNOWN' || !Array.isArray(symptoms) || !symptoms.length) return null;
@@ -22,7 +24,7 @@ function faultFamily(known: CorrelationRow['safe_result']['known_fields']): Faul
 }
 
 function primaryDepartment(row: CorrelationRow){
-  const profile=row.profile_snapshot;
+  const profile=row.profile_snapshot as ProfileObservation | null;
   if(row.profile_resolution_status!=='RESOLVED'||profile?.source!=='WECOM_DIRECTORY'
     ||typeof profile.version!=='string'||!profile.version||profile.version.length>256||!Array.isArray(profile.memberships))return null;
   const primary=profile.memberships.filter(m=>m?.role==='PRIMARY');
@@ -91,7 +93,7 @@ export function createIncidentCorrelationWorker({ pool, enabled = false }: { poo
       if (result.rows.length > 100) return { correlated: 0, correlation_overflow: true };
       const groups = new Map<string, { family: FaultFamily; rows: { row: CorrelationRow; facts: (FaultObservation & { fact_id: string })[] }[] }>();
       for (const row of result.rows) {
-        const safe = row.safe_result, family = faultFamily(safe.known_fields);
+        const safe = row.safe_result as CorrelationObservation, family = faultFamily(safe.known_fields);
         if (!family || safe.known_fields.domain_intent !== 'INCIDENT_REPORT' || safe.conflicts?.length) continue;
         const facts = (safe.fact_provenance ?? []).filter((f): f is FaultObservation & { fact_id: string } => /^fact_[A-Za-z0-9_-]{8,96}$/u.test((f.fact_id ?? '') as string)
           && f.source_ref === 'intake:' + row.service_intake_id && f.status === 'ACTIVE' && f.assertion === 'AFFIRMED'
@@ -110,7 +112,7 @@ export function createIncidentCorrelationWorker({ pool, enabled = false }: { poo
           (departments.get(row.reporter_identity_hash) as Set<string | null>).add(primaryDepartment(row));
         }
         const severities = ['UNKNOWN', 'LOW', 'MODERATE', 'MEDIUM', 'HIGH', 'CRITICAL', 'CRITICAL_REVIEW_REQUIRED'];
-        const clinicalSeverity = rows.map(({ row }) => row.safe_result.clinical_safety_risk)
+        const clinicalSeverity = rows.map(({ row }) => (row.safe_result as CorrelationObservation).clinical_safety_risk)
           .filter((s): s is string => severities.includes(s as string)).sort((a,b) => severities.indexOf(b)-severities.indexOf(a))[0] ?? 'UNKNOWN';
         const candidate = generateIncidentCandidate({ ...family, clinical_severity_candidate: clinicalSeverity,
           reports: rows.map(({ row, facts }) => ({

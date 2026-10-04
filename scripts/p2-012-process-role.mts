@@ -1,3 +1,10 @@
+import type { PostgresPool } from '../src/platform/postgres-pool.mjs';
+import type { P2016ClosureFactory, ClosureNotificationInput } from '../src/p2-016-runtime.mjs';
+import type { OrchestrationWorkerOptions } from '../src/p2-016-orchestration-adapters.mjs';
+export type P2012Role = 'APP' | 'WORKER' | 'GATEWAY';
+export type P2012RoleMessage = { type: 'role-ready'; role: P2012Role; cookies?: unknown } | { type: 'role-failed'; role: P2012Role; error_code: string } | { type: 'role-stopped'; role: P2012Role };
+export type P2012RoleArgument = '--role=app' | '--role=worker' | '--role=gateway';
+type WorkerOptions = Omit<OrchestrationWorkerOptions, 'notifications' | 'realtime' | 'identityHmacKey' | 'personDestinationAuthorizer'> & { identityHashKey: string; personDestinationAuthorizer: NonNullable<OrchestrationWorkerOptions['personDestinationAuthorizer']> | null; reporterAccess: NonNullable<Parameters<typeof createP2016TicketNotificationProjector>[0]['reporterAccess']>; testLabel?: boolean; ticketNotificationAdditionalEvents?: readonly string[] };
 import { createThirdPartyStaffDirectoryProcessOptions, requireStaffDirectorySchema } from '../src/p2-007-third-party-staff-directory.mjs';
 import { pathToFileURL } from 'node:url';
 import { runApp,runGateway,runWorker } from './p2-g1-process-role.mjs';
@@ -14,16 +21,16 @@ import { createTicketActionService } from '../src/p1-006-ticket-state-actions.mj
 import { P2016_TEST_FLAGS } from '../src/p2-016-live-configuration.mjs';
 import { P2012_LIVE_FUSES,P2012_REPORTER_SCOPE_MODE,P2012_TEST_FLAGS } from '../src/p2-012-live-configuration.mjs';
 
-const access=pool=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:process.env.P2_012_REPORTER_HMAC_SECRET});
-const personAuthorizer=pool=>createP2012PersonDestinationAuthorizer({pool,botId:process.env.P2_012_SCOPE_BOT_ID,
+const access=(pool: PostgresPool)=>createP2016ReporterAccess({pool,enabled:true,hmacSecret:process.env.P2_012_REPORTER_HMAC_SECRET as string});
+const personAuthorizer=(pool: PostgresPool)=>createP2012PersonDestinationAuthorizer({pool,botId:process.env.P2_012_SCOPE_BOT_ID,
   personHashes:(process.env.P2_012_TEST_USER_TARGET_HASHES??'').split(',').filter(Boolean),
   groupHashes:(process.env.P2_012_TEST_GROUP_TARGET_HASHES??'').split(',').filter(Boolean)});
-export function createP2012WorkerExtension({pool,reporterAccess,identityHashKey,personDestinationAuthorizer,testLabel=true,communicationAppend,ticketNotificationAdditionalEvents=[],directoryPort,directorySource='WECOM_DIRECTORY',directorySyncJob=null,yxxSelfService=null}){
+export function createP2012WorkerExtension({pool,reporterAccess,identityHashKey,personDestinationAuthorizer,testLabel=true,communicationAppend,ticketNotificationAdditionalEvents=[],directoryPort,directorySource='WECOM_DIRECTORY',directorySyncJob=null,yxxSelfService=null}: WorkerOptions){
   const incident=createP2012WorkbenchExtension({pool,featureFlags:P2012_TEST_FLAGS,testLabel,communicationAppend});
   const notifications=createP2016TicketNotificationProjector({enabled:true,cardEnabled:true,reporterAccess,personDestinationAuthorizer,communicationAppend,additionalEventTypes:ticketNotificationAdditionalEvents,explicitReferenceEnabled:true});
   const realtime=createP2016RealtimeProjector({pool,enabled:true});
   const orchestrator=createP2016OrchestrationWorker({pool,notifications,realtime,identityHmacKey:identityHashKey,personDestinationAuthorizer,communicationAppend,directoryPort,directorySource,directorySyncJob,yxxSelfService});
-  const closure=createTicketClosureService({pool,beforeTransaction:realtime.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async input=>{
+  const closure=(createTicketClosureService as typeof createTicketClosureService & P2016ClosureFactory)({pool,beforeTransaction:realtime.lock,resolveReporterActor:async()=>null,outbox:{enqueueTicketEvent:async (input: ClosureNotificationInput)=>{
     const n=await notifications.project(input);await realtime.ticket(input);return {...n,delivery_ids:n.delivery_id?[n.delivery_id]:[]};
   }}});
   const actions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:closure.afterTicketAction});
@@ -34,29 +41,29 @@ export function createP2012WorkerExtension({pool,reporterAccess,identityHashKey,
   }};
 }
 export async function main(argv=process.argv.slice(2)){
-  if(typeof process.send!=='function'||argv.length!==1||!['--role=app','--role=worker','--role=gateway'].includes(argv[0]))throw new Error('P2_012_ROLE_INVALID');
+  if(typeof process.send!=='function'||argv.length!==1||!['--role=app','--role=worker','--role=gateway'].includes(argv[0] as string))throw new Error('P2_012_ROLE_INVALID');
   if((process.env.P2_G1_GATEWAY_ENABLED==='true'||process.env.P2_G1_SENDER_ENABLED==='true')&&P2012_LIVE_FUSES.some(k=>process.env[k]!=='true'))throw new Error('P2_012_LIVE_APPROVAL_REQUIRED');
   if(argv[0]==='--role=app')return runApp({runtimeFactory:options=>createP2012Runtime({...options,...createThirdPartyStaffDirectoryProcessOptions({pool:options.pool,role:'APP'}),flags:P2016_TEST_FLAGS,incidentFlags:P2012_TEST_FLAGS,incidentTestLabel:true,
     personDestinationAuthorizer:personAuthorizer(options.pool),
     reporterOrigin:process.env.P2_012_REPORTER_ORIGIN,reporterHmacSecret:process.env.P2_012_REPORTER_HMAC_SECRET,
-    allowedHosts:process.env.P2_012_REPORTER_ALLOWED_HOSTS.split(',')})});
+    allowedHosts:(process.env.P2_012_REPORTER_ALLOWED_HOSTS as string).split(',')})});
   if(argv[0]==='--role=gateway')return runGateway({
     intakeFactory:({pool})=>{
       if(process.env.P2_012_REPORTER_SCOPE_MODE!==P2012_REPORTER_SCOPE_MODE)throw new Error('P2_012_LIVE_CONFIGURATION_INVALID');
-      const groupHashes=process.env.P2_012_TEST_GROUP_TARGET_HASHES.split(',').filter(Boolean);
+      const groupHashes=(process.env.P2_012_TEST_GROUP_TARGET_HASHES as string).split(',').filter(Boolean);
       const registry=createP2012ApprovedGroupReporterRegistry({pool,botId:process.env.WECOM_BOT_ID,groupHashes});
       const scope=createP2012LiveReporterScope({bot_id:process.env.WECOM_BOT_ID,
         person_hashes:(process.env.P2_012_TEST_USER_TARGET_HASHES??'').split(',').filter(Boolean),group_hashes:groupHashes,
         isApprovedGroupReporter:registry.isApprovedGroupReporter,hasMatchingDirectLeg:registry.hasMatchingDirectLeg,require_test_label:true});
       const inbox=createChannelMessageInbox({pool}),processor=createP2016DirectIntakeProcessor({idleTimeoutMs:P2016_DIRECT_IDLE_TIMEOUT_MS});
-      return {accept:async input=>await scope.accepts(input.message)?inbox.accept(input,processor):{ok:false,error:{code:'P2_012_INBOUND_SCOPE_REJECTED',retryable:false}}};
+      return {accept:async input=>await scope.accepts((input as { message?: unknown }).message)?inbox.accept(input,processor):{ok:false,error:{code:'P2_012_INBOUND_SCOPE_REJECTED',retryable:false}}};
     },
-    senderFactory:({pool,...options})=>createP2012DynamicWeComSender({pool,...options,approvedGroupHashes:process.env.P2_012_TEST_GROUP_TARGET_HASHES.split(',').filter(Boolean),
-      botId:process.env.WECOM_BOT_ID,cardEnabled:true,reporterAccess:access(pool),origin:process.env.P2_012_REPORTER_ORIGIN,
-      allowedHosts:process.env.P2_012_REPORTER_ALLOWED_HOSTS.split(',')}),
+    senderFactory:({pool,...options})=>createP2012DynamicWeComSender({pool,...options,approvedGroupHashes:(process.env.P2_012_TEST_GROUP_TARGET_HASHES as string).split(',').filter(Boolean),
+      botId:process.env.WECOM_BOT_ID,cardEnabled:true,reporterAccess:access(pool),origin:process.env.P2_012_REPORTER_ORIGIN as string,
+      allowedHosts:(process.env.P2_012_REPORTER_ALLOWED_HOSTS as string).split(',')}),
   });
   return runWorker({beforeReady:requireStaffDirectorySchema,extensionFactory:({pool})=>createP2012WorkerExtension({...createThirdPartyStaffDirectoryProcessOptions({pool,role:'WORKER'}),pool,reporterAccess:access(pool),
-    identityHashKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY,personDestinationAuthorizer:personAuthorizer(pool)})});
+    identityHashKey:process.env.PILOT_LOG_IDENTITY_HASH_KEY as string,personDestinationAuthorizer:personAuthorizer(pool)})});
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await main().catch(()=>{
   process.send?.({type:'role-failed',role:process.argv[2]?.slice(7).toUpperCase(),error_code:'P2_012_PROCESS_FAILED'});process.exitCode=1;

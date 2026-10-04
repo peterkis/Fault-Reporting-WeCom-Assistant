@@ -2,12 +2,14 @@ import type { PostgresTransaction } from './platform/postgres-pool.mjs';
 import type { WorkbenchPrincipal, WorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import type { CandidateReview, Incident, IncidentPublicView } from '../contracts/p2_012_contracts.js';
 type Kind = 'candidate' | 'incident';
-type ResourceRow = CandidateReview | Incident;
+export type CandidateQueryRow = Omit<CandidateReview, 'source_versions' | 'reason_codes' | 'evidence_fact_ids' | 'roles' | 'source_decision' | 'manual_review' | 'eligible_owners' | 'report_sources'> & { source_versions: unknown; reason_codes: unknown; evidence_fact_ids: unknown };
+type ResourceRow = CandidateQueryRow | Incident;
 export type IncidentNarrowDetail = IncidentPublicView & { roles: readonly string[] };
 export type IncidentBroadDetail = IncidentNarrowDetail & { owner_principal_id: string; owner_team_id: string | null; primary_ticket_id: string | null; owner_display_name: string | null; primary_ticket_no: string | null };
 export interface IncidentSource { id: string; journey_id: string; service_intake_id: string; ticket_id: string | null; channel_leg_id: string; ticket_no: string | null; reporter_identity_hash: string; origin_intake_id: string; assignee_id: string | null; resolver_team_id: string | null }
 type ReadInput = { authContext: unknown; id: string; kind?: Kind; tx?: PostgresTransaction; lock?: boolean };
 type PageInput = { authContext: unknown; kind?: Kind; state?: string | null; after?: string | null; pageLimit?: unknown };
+export type CandidateDetail = CandidateQueryRow & { source_decision: { id: string; result_code: string; reason_code: string; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; input_hash: string; result_hash: string; source_refs: string[] }; manual_review: unknown; report_sources: { source_decision_id: string; journey_id: string; ticket_id: string | null; ticket_no: string | null; service_intake_id: string }[]; eligible_owners: unknown[]; roles: readonly string[] };
 export type P2012IncidentQuery = ReturnType<typeof createP2012IncidentQuery>;
 import { createPilotWorkbenchAuthorizationAdapter } from './p2-006-workbench-authorization.mjs';
 import { ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
@@ -24,7 +26,7 @@ export function createP2012IncidentQuery({pool,enabled=false,authorization=creat
     const r=await tx.query<ResourceRow>(`SELECT c.* FROM incident.${kind==='candidate'?'candidate_review':'incident'} c WHERE c.id=$1::uuid AND ${a.sql}${lock?' FOR UPDATE OF c':''}`,[uuid(id),...a.values]);
     if(r.rowCount!==1)fail('NOT_FOUND',404);return {principal:p,row:(r.rows[0] as ResourceRow)};
   }
-  async function source({tx=pool,principal:p,id}: { tx?: PostgresTransaction; principal: WorkbenchPrincipal; id: string }){
+  async function source({tx=pool,principal:p,id}: { tx?: PostgresTransaction; principal: WorkbenchPrincipal; id: unknown }){
     const pred=ticketPredicateP2016(p,2);
     const q=await tx.query<IncidentSource>(`SELECT d.id::text,d.journey_id::text,d.service_intake_id::text,d.linked_ticket_id::text AS ticket_id,
       d.channel_leg_id::text,t.ticket_no,j.reporter_identity_hash,j.origin_intake_id::text,t.assignee_id::text,t.resolver_team_id
@@ -47,20 +49,20 @@ export function createP2012IncidentQuery({pool,enabled=false,authorization=creat
       const items=q.rows.slice(0,n).map(r=>kind==='candidate'?r:publicIncident(r as Incident)),last=items.at(-1);
       return frozen({items,next_cursor:q.rows.length>n?cursor({kind,state,at:(last as CandidateReview | IncidentPublicView).created_at,id:(last as CandidateReview | IncidentPublicView).id}):null});
     },
-    async detail({authContext,id,kind='incident'}: ReadInput){
+    async detail({authContext,id,kind='incident'}: ReadInput): Promise<IncidentNarrowDetail | IncidentBroadDetail | CandidateDetail>{
       const {principal:p,row}=await resource({authContext,id,kind});
       if(kind==='incident'){
-        const refs=broad(p)?(await pool.query('SELECT owner.display_name AS owner_display_name,t.ticket_no AS primary_ticket_no FROM pilot_ticket.pilot_principal owner LEFT JOIN pilot_ticket.ticket t ON t.id=$2::uuid WHERE owner.id=$1::uuid',[(row as Incident).owner_principal_id,(row as Incident).primary_ticket_id])).rows[0]:null;
+        const refs=broad(p)?(await pool.query<{ owner_display_name: string | null; primary_ticket_no: string | null }>('SELECT owner.display_name AS owner_display_name,t.ticket_no AS primary_ticket_no FROM pilot_ticket.pilot_principal owner LEFT JOIN pilot_ticket.ticket t ON t.id=$2::uuid WHERE owner.id=$1::uuid',[(row as Incident).owner_principal_id,(row as Incident).primary_ticket_id])).rows[0]:null;
         return frozen({...publicIncident(row as Incident),...(broad(p)?{owner_principal_id:(row as Incident).owner_principal_id,owner_display_name:refs?.owner_display_name??null,owner_team_id:(row as Incident).owner_team_id,primary_ticket_id:(row as Incident).primary_ticket_id,primary_ticket_no:refs?.primary_ticket_no??null}:{}),roles:p.roles});
       }
-      const d=((await pool.query<{ id: string; result_code: string; reason_code: string; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; input_hash: string; result_hash: string; safe_result: { incident_report_decision_ids?: string[]; source_refs?: unknown } }>('SELECT id,result_code,reason_code,catalog_version,rule_set_version,engine_version,decision_policy_version,input_hash,result_hash,safe_result FROM intake.deterministic_decision WHERE id=$1::uuid',[(row as CandidateReview).source_decision_id])).rows[0] as { id: string; result_code: string; reason_code: string; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; input_hash: string; result_hash: string; safe_result: { incident_report_decision_ids?: string[]; source_refs?: unknown; }; });
-      const refs=d.safe_result.incident_report_decision_ids??[(row as CandidateReview).source_decision_id];const sources=[];
+      const d=((await pool.query<{ id: string; result_code: string; reason_code: string; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; input_hash: string; result_hash: string; safe_result: unknown }>('SELECT id,result_code,reason_code,catalog_version,rule_set_version,engine_version,decision_policy_version,input_hash,result_hash,safe_result FROM intake.deterministic_decision WHERE id=$1::uuid',[(row as CandidateReview).source_decision_id])).rows[0] as { id: string; result_code: string; reason_code: string; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; input_hash: string; result_hash: string; safe_result: { incident_report_decision_ids?: unknown[]; source_refs?: unknown; }; });
+      const refs=(d.safe_result as { incident_report_decision_ids?: unknown[] }).incident_report_decision_ids??[(row as CandidateReview).source_decision_id];const sources=[];
       for(const ref of refs.slice(0,100)){try{const s=await source({principal:p,id:ref});sources.push({source_decision_id:s.id,journey_id:s.journey_id,ticket_id:s.ticket_id,ticket_no:s.ticket_no,service_intake_id:s.service_intake_id});}catch(e){if((e as { code?: unknown }).code!=='P2_012_SOURCE_NOT_FOUND')throw e;}}
       const manual=(row as CandidateReview).source_manual_review_id?(await pool.query('SELECT id,status,priority,review_reason_code,row_version,resolution_code,created_at,resolved_at FROM intake.manual_review_item WHERE id=$1::uuid',[(row as CandidateReview).source_manual_review_id])).rows[0]??null:null;
-      const safeRefs=(Array.isArray(d.safe_result?.source_refs)?d.safe_result.source_refs:[]).filter(x=>typeof x==='string'&&/^(?:channel:[1-9][0-9]{0,18}|intake:[a-f0-9-]{36})$/iu.test(x)).slice(0,100);
+      const safeRefs=(Array.isArray((d.safe_result as { source_refs?: unknown } | null)?.source_refs)?(d.safe_result as { source_refs: unknown[] }).source_refs:[]).filter((x): x is string=>typeof x==='string'&&/^(?:channel:[1-9][0-9]{0,18}|intake:[a-f0-9-]{36})$/iu.test(x)).slice(0,100);
       const decision={id:d.id,result_code:d.result_code,reason_code:d.reason_code,catalog_version:d.catalog_version,rule_set_version:d.rule_set_version,engine_version:d.engine_version,decision_policy_version:d.decision_policy_version,input_hash:d.input_hash,result_hash:d.result_hash,source_refs:safeRefs};
       const owners=broad(p)?(await pool.query("SELECT p.id,p.display_name FROM pilot_ticket.pilot_principal p WHERE p.is_active AND EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('ADMIN','DISPATCHER','HANDLER')) ORDER BY p.id LIMIT 100")).rows:[];
-      return frozen({...row,source_decision:decision,manual_review:manual,report_sources:sources,eligible_owners:owners,roles:p.roles});
+      return frozen({...row as CandidateQueryRow,source_decision:decision,manual_review:manual,report_sources:sources,eligible_owners:owners,roles:p.roles});
     },
     async children({authContext,id,part,after=null,pageLimit}: { authContext: unknown; id: string; part: string; after?: string | null; pageLimit?: unknown }){
       const {principal:p,row}=await resource({authContext,id,kind:'incident'}),n=limit(pageLimit,part==='events'?200:100);
