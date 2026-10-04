@@ -3,11 +3,58 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
+import { runInNewContext } from 'node:vm';
+import ts from 'typescript';
 import { testRoots } from './helpers/migration-roots.mjs';
 
 const root = process.cwd();
 const text = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const json = (file) => JSON.parse(text(file));
+
+test('ARCH-006 logical source migration allows the approved inventory and rejects dual or out-of-scope source', () => {
+  const source = text('scripts/validate-arch-006-rule-first-service-loop.mjs');
+  const gate = source.slice(source.indexOf('function erasedMigrationRuntime('), source.indexOf('const historicalEvidence='));
+  const scope = json('plans/typescript-migration/scope.json');
+  const logical = 'src/p2-001-conversation-contracts.mjs', typed = logical.replace(/\.mjs$/u, '.mts');
+  assert.equal(scope.current_module_map[logical], undefined, 'approval comes from the full inventory, before completion mapping');
+  function inspect(changes, files, before = 'export const allowed = false;', after = 'export const allowed: boolean = false;') {
+    const errors = [], inventory = Object.values(scope.migration_batches).flat();
+    const context = { root, path, ts, errors, json: () => scope, read: () => after,
+      fs: { existsSync: file => files.has(path.relative(root, file).replaceAll('\\', '/')), readFileSync: () => after },
+      execFileSync: (_git, args) => args.includes('ls-tree') ? inventory.join('\n')
+        : args.includes('diff') ? changes.join('\0') : args.includes('show') ? before : '',
+      check: (accepted, reason) => { if (!accepted) errors.push(reason); },
+      p2016Authorized: true, p2g2Authorized: true,
+    };
+    runInNewContext(gate + '\nresult = { changedPaths, languageMigrations: [...languageMigrations] };', context);
+    return { errors, result: context.result };
+  }
+  const migrated = inspect([logical, typed], new Set([typed]));
+  assert.deepEqual(migrated.errors, []);
+  assert.deepEqual(Array.from(migrated.result.changedPaths), [logical]);
+  assert.deepEqual(Array.from(migrated.result.languageMigrations), [logical]);
+  assert.match(inspect([logical, typed], new Set([logical, typed])).errors.join('\n'), /MIGRATION_DUAL_SOURCE/u);
+  assert.match(inspect(['src/p2-006-unapproved.mts'], new Set(['src/p2-006-unapproved.mts'])).errors.join('\n'), /ARCH006_MIGRATION_OUTSIDE_SCOPE/u);
+  assert.match(inspect(['src/p2-006-unapproved.mjs'], new Set(['src/p2-006-unapproved.mjs'])).errors.join('\n'), /no forbidden Runtime/u);
+  const protectedPath = 'src/p2-006-workbench-query.mjs', protectedTyped = protectedPath.replace(/\.mjs$/u, '.mts');
+  const typeOnly = inspect([protectedPath, protectedTyped], new Set([protectedTyped]));
+  assert.deepEqual(typeOnly.errors, []);
+  assert.deepEqual(Array.from(typeOnly.result.languageMigrations), [protectedPath]);
+  for (const [before, after] of [
+    ['export const allowed = false;', 'export const allowed: boolean = true;'],
+    ["export const sql = 'SELECT 1';", "export const sql: string = 'DELETE FROM ticket';"],
+    ["export function finish(db) { return db.query('COMMIT'); }", "export function finish(db: Db) { return db.query('ROLLBACK'); }"],
+    ['export const allowed = false;', 'enum SideEffect { ENABLE = globalThis.enable() } export const allowed: boolean = false;'],
+  ]) {
+    const changed = inspect([protectedPath, protectedTyped], new Set([protectedTyped]), before, after);
+    assert.deepEqual(Array.from(changed.result.languageMigrations), [], 'runtime edits cannot use a suffix migration exemption');
+    assert.match(changed.errors.join('\n'), /no forbidden Runtime/u);
+  }
+  const authorized = 'src/p2-006-workbench-authorization.mjs', authorizedTyped = authorized.replace(/\.mjs$/u, '.mts');
+  const runtimeRepair = inspect([authorized, authorizedTyped], new Set([authorizedTyped]), 'export const allowed = false;', 'export const allowed: boolean = true;');
+  assert.deepEqual(Array.from(runtimeRepair.result.languageMigrations), []);
+  assert.deepEqual(runtimeRepair.errors, [], 'non-type changes still use the separately authorized predecessor seam rules');
+});
 
 test('ARCH-006 validator passes', () => {
   const result = spawnSync(process.execPath, ['scripts/validate-arch-006-rule-first-service-loop.mjs'], { cwd: root, encoding: 'utf8' });

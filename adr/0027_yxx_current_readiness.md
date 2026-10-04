@@ -152,3 +152,7 @@ stop-resume remain incomplete. This task neither resets those facts nor complete
 Failure remains closed. Before merge, stop and preserve evidence; after merge,
 revert implementation through a separate change while preserving append-only evidence
 and historical approvals. No database rollback or deployment occurs in this task.
+
+## v3 开发准入与认证调度（2026-10-03）
+
+经用户授权，普通 TypeScript PR 采用活动 selection 的类型、一次构建、相关测试、制品和自有资源清理；历史差异保护在独立轻量 PR job 执行。完整 current 回归移至手动 full，证据消费的严格 readiness 移至手动 certify。固定历史证明由 SS009 workflow 的独立手动 certify 执行，R01 分别记录两条成功运行 URL。此调度分离不改变本 ADR 的认证字段、指纹、拒绝条件、证据准备/发布流程或生产授权；普通 PR 通过不代表 READY。

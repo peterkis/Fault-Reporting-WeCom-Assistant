@@ -1,5 +1,25 @@
 # TypeScript 增量迁移执行入口
 
+ACTIVE_SELECTION: v3-p00
+
+## v3 当前入口（2026-10-03）
+
+PR #38 已合并至 `f72e77337aff5d3e5fd053409d5965fbe47deeb6`。P00 将工作台查询/授权迁入严格 MTS，并同步 CI 与逻辑源码路径兼容；下文 T00～T04-05 和 PR37 记录为历史交接，不再驱动日常批次认证。
+
+- 普通 PR：`typescript-merge-check` 一次构建后执行严格类型、活动 selection、直接相关工具回归、制品与自有资源清理。SS009 的独立 Linux job 只执行 published-history preflight 与 PR evidence delta 测试/检查，不安装项目依赖。
+- 手动 `full`：原完整 current 集合去重四分片、structure/tooling、`full-complete`，不消费必须最新 READY 的证据。
+- 手动 `certify`：当前 workflow 加严格 readiness 与 `certify-complete`；历史 workflow 独立执行固定 SS009 证明。R01 交接分别记录两条 SUCCESS workflow URL，不建立跨 workflow 调用。
+
+selection 从本文件唯一整行读取，必须存在且非空。注册表仍为 218 个入口、72 个旧别名，完整合同为 217 current + 1 historical；selection 不是完整验收。
+
+本地最终检查：`npm.cmd run migration:build` → `node .build/tools/gate.mjs types` → 自有 PG18 的既有基线初始化 → 直接调用 `.build/tools/run-tests.mjs` 的 `runSelection` 与 `routing.mjs` 的 `loadRoutes/select` → 相关工具测试 → `node .build/tools/verify-artifact.mjs`。不要在单构建路径继续调用会 bootstrap/build 的旧测试别名或 batch gate。报告目录位于仓库外，测试库必须是任务自有 loopback 合成库；保留原宿主、flags、失败/漏跑检查与清理约束。
+
+P00 selection 为五个工作台/current-readiness 核心入口与 ARCH-006、V1.4 baseline，共七个；ARCH-005 仅在实际触及时间契约时扩展。工具回归由现有工具入口执行，不加入业务注册表。类型正反例使用现有 type gate 与有理由的 expect-error。
+
+P00 无数据库变更，制品为 STAGED_NOT_ACTIVATED，不更新原 readiness pointer 或大型 Evidence 包。提交、推送并创建一个 PR 后停止；full/certify、合并、P01、部署与真实业务操作均不由本轮推进。交接记录写在 PR 正文，包含 head、业务行为、实际命令/结果、日志位置与未运行项。撤销使用后继修补或独立 revert PR，保留历史与用户工作。
+
+## 历史入口（下文）
+
 ## 当前交接（2026-10-02）
 
 PR #37 已合并：发布 head `5ea7982bad2dc8d2236f36b25ce5a9c7427199bf`，merge `78fc466af50c6d4c27850998267510fb1592157b`。独立复审与当前 head CI 已用于本次授权合并；各轮回执仍保留原测试身份，不重绑。随后历史研究归档合并为 `562a96ffdd7148d729ab0eed9d215abe894f12c2`。T04-05 合并收口；T05-01 不自动启动。

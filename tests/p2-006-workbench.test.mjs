@@ -189,6 +189,16 @@ test('refresh storage persists only selected id and filter', () => {
 test('P2-006 creates no migration and static preview check succeeds', async () => {
   assert.equal(fs.existsSync(path.join(root, 'database/migrations/022_p2_006_workbench.sql')), false);
   const { spawnSync } = await import('node:child_process');
-  const result = spawnSync(process.execPath, ['scripts/p2-006-preview.mjs', '--check'], { cwd: root, encoding: 'utf8' });
+  const source = process.env.TS_MIGRATION_TEST_SOURCE_ROOT;
+  assert.ok(source, 'The public npm preview commands require the explicit source root.');
+  const launcher = path.join(source, '.build/tools/npm-launcher.mjs');
+  const options = { cwd: source, encoding: 'utf8', windowsHide: true, timeout: 30_000,
+    env: { ...process.env, P2_006_PREVIEW_APPROVED: 'false' } };
+  const result = spawnSync(process.execPath, [launcher, 'run', 'p2:006:preview:check'], options);
   assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /P2-006 preview check passed/u);
+  const serve = spawnSync(process.execPath, [launcher, 'run', 'p2:006:preview'], options);
+  assert.equal(serve.status, 1, serve.stdout + serve.stderr);
+  assert.match(serve.stderr, /P2_006_PREVIEW_APPROVAL_REQUIRED/u);
+  assert.doesNotMatch(serve.stdout + serve.stderr, /ERR_MODULE_NOT_FOUND|listening on/u);
 });

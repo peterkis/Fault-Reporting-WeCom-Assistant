@@ -1,5 +1,11 @@
 # AGENTS.md
 
+## v3 开发与发布（2026-10-03，当前规则）
+
+普通 TypeScript PR 使用活动 selection 的严格类型、一次构建、相关业务/工具测试、制品与自有资源清理；历史来源与差异保护只由 SS009 的单一 Linux PR job 执行。完整 current 回归使用手动 full；当前严格 readiness 与固定历史证明分别使用两个独立 workflow 的手动 certify，R01 记录两条 SUCCESS 运行 URL。具体步骤见 [迁移执行入口](plans/typescript-migration/README.md)。
+
+下文“预检后执行严格 ready”适用于固定历史复现和发布认证，不是普通迁移 PR 的日常要求。认证器、候选指纹、历史证据、SQL、业务状态、默认 Feature Flag 和生产授权保持原约束。P00 只创建 PR，不运行 full/certify、不自动合并或推进后续阶段；不修改分支保护或 ruleset。
+
 ## Git 历史相关审核：先确认被审对象
 
 涉及 `tested_head`、祖先链、merge-base 或“证据与提交历史不一致”的审核，必须先区分已发布提交与审核环境临时重建的快照。详见 `.github/review/README.md`。
@@ -7,7 +13,7 @@
 - 权威 `expected_head` 必须取自 GitHub 本次 PR 事件或审核元数据的完整 SHA，不得使用本地 `HEAD` 自证，也不得把未知临时 SHA 称为已发布提交。
 - 在完整、干净的 checkout 执行 `node .github/review/verify-published-history.mjs --expected-head <权威完整SHA>`。GitHub merge preview 还须显式传入同一事件的 `--expected-merge` 与 `--expected-base`；不能自行制造单父提交代替。
 - `REVIEW_CHECKOUT_IDENTITY_MISMATCH`、浅克隆、replace/graft 或对象缺失属于审核环境/对象来源未确认。应获取本次权威提交的完整历史再验证；不能直接由该环境推导已发布 PR 存在 P1 祖先链缺陷。无法获取时如实说明本项未验证，继续检查其他可验证代码问题。
-- 预检通过只表示历史身份核验通过，永远不是 readiness/验收通过。必须继续执行原命令 `node scripts/validate-yxx-self-service.mjs --require-ready`；在身份确认后的真实发布对象上出现的断链或验收失败仍须报告并修复。
+- 预检通过只表示历史身份核验通过，永远不是 readiness/验收通过。固定历史复现或发布认证必须继续执行原命令 `node scripts/validate-yxx-self-service.mjs --require-ready`；在身份确认后的真实发布对象上出现的断链或验收失败仍须报告并修复。
 - 禁止为了通过审核修改 `tested_head`、接受“同 tree 即合法祖先”、跳过祖先断言、伪造 PASS、重写旧证据或把临时快照的父提交改造成发布事实。真正 squash/rebase 改写交付历史时仍须保留真实被测祖先或重新生成证据。
 - 仅增加审核工具/文档的后继提交不等于候选源变化；不得仅因 PR head 前移就重绑已正确记录的被测提交。候选内容、完成态和原严格门禁仍按原实现核验。
 

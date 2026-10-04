@@ -9,6 +9,7 @@ const {checkSS010} = await import('../src/yxx-self-service-readiness.mjs');
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import ts from 'typescript';
 
 const root = process.cwd();
 const errors = [];
@@ -201,12 +202,49 @@ check(successor ? fs.existsSync(path.join(root, 'database/migrations/030_p2_015_
 check(!fs.existsSync(path.join(root, 'database/migrations/031_p2_016_ticket_workbench.sql')), 'migration 031 was not created');
 check(p2016Authorized || !fs.existsSync(path.join(root,'database/migrations/031_p2_016_ticket_lifecycle_workbench_notifications.sql')), 'runtime migration 031 requires P2-016 authorization');
 
+function erasedMigrationRuntime(source) {
+  // Use the locked compiler for both representations: erase types and comments,
+  // while retaining every executable expression, literal and control-flow branch.
+  const result = ts.transpileModule(source.replaceAll('\r\n', '\n'), {
+    fileName: 'module.mts', reportDiagnostics: true,
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext,
+      verbatimModuleSyntax: true, removeComments: true, newLine: ts.NewLineKind.LineFeed },
+  });
+  if (result.diagnostics?.some(diagnostic => diagnostic.category === ts.DiagnosticCategory.Error)) {
+    throw new SyntaxError('ARCH006_MIGRATION_EMIT_INVALID');
+  }
+  return result.outputText;
+}
+
 let changedPaths = [];
+const languageMigrations = new Set();
 try {
-  changedPaths = execFileSync('git', ['-c', 'safe.directory=D:/Projects/Fault-Reporting-WeCom-Assistant', '-c','core.safecrlf=false','diff', '--name-only', 'origin/main'], { cwd: root, encoding: 'utf8' })
-    .split(/\r?\n/u).filter(Boolean).map((value) => value.replaceAll('\\', '/'));
+  const migrationScope = json('plans/typescript-migration/scope.json');
+  const migrationTargets = new Set(Object.values(migrationScope.migration_batches).flat());
+  const baselinePaths = new Set(execFileSync('git', ['ls-tree', '-r', '--name-only', 'origin/main', '--', 'src', 'scripts'], { cwd: root, encoding: 'utf8' }).split(/\r?\n/u));
+  const physicalChanges = [
+    ...execFileSync('git', ['-c', 'core.safecrlf=false', 'diff', '--no-renames', '--name-only', '-z', 'origin/main'], { cwd: root, encoding: 'utf8' }).split('\0'),
+    ...execFileSync('git', ['ls-files', '--others', '--exclude-standard', '-z'], { cwd: root, encoding: 'utf8' }).split('\0'),
+  ].filter(Boolean).map(value => value.replaceAll('\\', '/'));
+  changedPaths = [...new Set(physicalChanges.map(physical => {
+    if (!/^(?:src|scripts)\/.+\.(?:mjs|mts)$/u.test(physical)) return physical;
+    const logical = physical.endsWith('.mts') ? physical.slice(0, -4) + '.mjs' : physical;
+    const typed = logical.slice(0, -4) + '.mts';
+    const originalExists = fs.existsSync(path.join(root, logical));
+    const typedExists = fs.existsSync(path.join(root, typed));
+    check(!(originalExists && typedExists), 'MIGRATION_DUAL_SOURCE:' + logical);
+    if (physical.endsWith('.mts')) check(migrationTargets.has(logical), 'ARCH006_MIGRATION_OUTSIDE_SCOPE:' + physical);
+    // Only an unchanged emitted runtime receives the suffix-migration exemption.
+    // Runtime edits and later changes still use the original authorization rules.
+    if (migrationTargets.has(logical) && !originalExists && typedExists
+      && baselinePaths.has(logical) && !baselinePaths.has(typed)) {
+      const before = execFileSync('git', ['show', 'origin/main:' + logical], { cwd: root, encoding: 'utf8' });
+      if (erasedMigrationRuntime(before) === erasedMigrationRuntime(read(typed))) languageMigrations.add(logical);
+    }
+    return logical;
+  }))];
 } catch {
-  errors.push('unable to inspect changed paths against origin/main');
+  errors.push('unable to inspect approved logical source changes against origin/main');
 }
 const p2016Seams=new Set(['src/p1-006-ticket-state-actions.mjs','src/p1-010-ticket-closure.mjs','src/p2-004-communication-delivery-worker.mjs',
   'src/p2-005-conversation-control.mjs','src/p2-006-workbench-http.mjs','src/p2-006-workbench-authorization.mjs']);
@@ -215,7 +253,7 @@ const p2g2RepairSeams=new Set(['src/p1-004-service-intake.mjs','src/p2-006-workb
 const p2g2RepairAuthorized=p2g2Authorized&&['evidence/p2-g2-gold-repair-authorization.md',
   'evidence/p2-g2-direct-session-repair-authorization.md','evidence/p2-g2-continuing-gap-repair-authorization.md']
   .every(file=>fs.existsSync(path.join(root,file)));
-const forbidden = changedPaths.filter((relativePath) => /^(?:database\/migrations\/(?:00[1-9]|01[0-2]|020|021|022)_|src\/p1-|src\/p2-004|src\/p2-005|src\/p2-006|src\/p2-007|web\/|archive\/|\.env\.pilot$)/u.test(relativePath)
+const forbidden = changedPaths.filter((relativePath) => !languageMigrations.has(relativePath) && /^(?:database\/migrations\/(?:00[1-9]|01[0-2]|020|021|022)_|src\/p1-|src\/p2-004|src\/p2-005|src\/p2-006|src\/p2-007|web\/|archive\/|\.env\.pilot$)/u.test(relativePath)
   && !(p2016Authorized&&(p2016Seams.has(relativePath)||/^web\/p2-(?:workbench|reporter)\//u.test(relativePath)))
   && !(p2g2RepairAuthorized&&p2g2RepairSeams.has(relativePath)));
 check(forbidden.length === 0, 'no forbidden Runtime Migration web archive or secret path changed');

@@ -53,6 +53,8 @@ Delivery Adapter 对 PENDING 采用幂等 no-op，对 `DEAD_LETTER + NOT_ATTEMPT
 
 实现不增加常驻 Worker、Redis、消息队列、ORM、构建进程、Socket.IO 或模型。测试 Pool `max<=4`；应用建议总连接不超过 8。`p2:006:preview:check` 只做静态自检；`p2:006:preview` 必须显式设置 `P2_006_PREVIEW_APPROVED=true`，只绑定 `127.0.0.1` 并使用合成端口。
 
+TypeScript 迁移后，先运行 `npm run migration:build`；两个预览命令均先校验当前制品，再执行 `.build/runtime/scripts/p2-006-preview.mjs`。制品缺失或与源码不匹配时须重新构建，命令不会回退到源码执行。
+
 回滚/关闭方式是保持 `HUMAN_WORKBENCH_V2_ENABLED=false`、`CONVERSATION_CENTER_ENABLED=false` 与 `CONVERSATION_REALTIME_SSE_ENABLED=false`。关闭时 API 零数据库访问、零命令写入、零 SSE、零 Worker/Sender 调用，并返回安全 Disabled 页面或 503。
 
 ## 停止线
