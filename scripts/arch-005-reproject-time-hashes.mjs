@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import {
@@ -12,6 +13,7 @@ import {
   assertEpochMsString,
   formatEpochMsToShanghaiLocal,
 } from '../src/platform/time-contract.mjs';
+import { G2_ROOT } from '../src/p2-g2-candidate.mjs';
 
 const APPROVAL = 'ARCH_005_PROJECTION_REBUILD_APPROVED';
 const DATABASE_URL = 'PILOT_DATABASE_URL';
@@ -74,10 +76,10 @@ function realtimeCommand(row) {
 }
 
 async function writeEvidence(evidence) {
-  await mkdir(new URL('../evidence/', import.meta.url), { recursive: true });
-  const path = new URL(`../evidence/arch-005-time-reprojection-${evidence.run_id}.json`, import.meta.url);
-  await writeFile(path, `${JSON.stringify(evidence, null, 2)}\n`, { encoding: 'utf8', flag: 'wx' });
-  return path;
+  await mkdir(path.join(G2_ROOT,'evidence'), { recursive: true });
+  const evidenceUrl = pathToFileURL(path.join(G2_ROOT, 'evidence', `arch-005-time-reprojection-${evidence.run_id}.json`));
+  await writeFile(evidenceUrl, `${JSON.stringify(evidence, null, 2)}\n`, { encoding: 'utf8', flag: 'wx' });
+  return evidenceUrl;
 }
 
 export async function reprojectArch005TimeHashes({ databaseUrl, approved = false } = {}) {
