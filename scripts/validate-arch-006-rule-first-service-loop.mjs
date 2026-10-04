@@ -9,6 +9,7 @@ const {checkSS010} = await import('../src/yxx-self-service-readiness.mjs');
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import ts from 'typescript';
 
 const root = process.cwd();
 const errors = [];
@@ -201,6 +202,20 @@ check(successor ? fs.existsSync(path.join(root, 'database/migrations/030_p2_015_
 check(!fs.existsSync(path.join(root, 'database/migrations/031_p2_016_ticket_workbench.sql')), 'migration 031 was not created');
 check(p2016Authorized || !fs.existsSync(path.join(root,'database/migrations/031_p2_016_ticket_lifecycle_workbench_notifications.sql')), 'runtime migration 031 requires P2-016 authorization');
 
+function erasedMigrationRuntime(source) {
+  // Use the locked compiler for both representations: erase types and comments,
+  // while retaining every executable expression, literal and control-flow branch.
+  const result = ts.transpileModule(source.replaceAll('\r\n', '\n'), {
+    fileName: 'module.mts', reportDiagnostics: true,
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext,
+      verbatimModuleSyntax: true, removeComments: true, newLine: ts.NewLineKind.LineFeed },
+  });
+  if (result.diagnostics?.some(diagnostic => diagnostic.category === ts.DiagnosticCategory.Error)) {
+    throw new SyntaxError('ARCH006_MIGRATION_EMIT_INVALID');
+  }
+  return result.outputText;
+}
+
 let changedPaths = [];
 const languageMigrations = new Set();
 try {
@@ -219,10 +234,13 @@ try {
     const typedExists = fs.existsSync(path.join(root, typed));
     check(!(originalExists && typedExists), 'MIGRATION_DUAL_SOURCE:' + logical);
     if (physical.endsWith('.mts')) check(migrationTargets.has(logical), 'ARCH006_MIGRATION_OUTSIDE_SCOPE:' + physical);
-    // Only a registered suffix transition is a language migration. Later edits to
-    // an already migrated module still pass through its original architecture rules.
+    // Only an unchanged emitted runtime receives the suffix-migration exemption.
+    // Runtime edits and later changes still use the original authorization rules.
     if (migrationTargets.has(logical) && !originalExists && typedExists
-      && baselinePaths.has(logical) && !baselinePaths.has(typed)) languageMigrations.add(logical);
+      && baselinePaths.has(logical) && !baselinePaths.has(typed)) {
+      const before = execFileSync('git', ['show', 'origin/main:' + logical], { cwd: root, encoding: 'utf8' });
+      if (erasedMigrationRuntime(before) === erasedMigrationRuntime(read(typed))) languageMigrations.add(logical);
+    }
     return logical;
   }))];
 } catch {

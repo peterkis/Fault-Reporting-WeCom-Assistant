@@ -306,7 +306,7 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
-        OUT="$RUNNER_TEMP/types-merge"
+        OUT="$RUNNER_TEMP/types-baseline"
         mkdir -p "$OUT"
         git rev-parse HEAD > "$OUT/source-sha.txt"
         node --version > "$OUT/node-version.txt"

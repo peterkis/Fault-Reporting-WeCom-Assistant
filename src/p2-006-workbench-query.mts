@@ -98,8 +98,9 @@ export function encodeConversationCursor({ last_activity_at, session_id }: { las
 export function decodeConversationCursor(value: unknown) {
   if (typeof value !== 'string' || !CURSOR_PATTERN.test(value)) fail(WORKBENCH_ERROR_CODES.cursorInvalid);
   try {
-    const parsed: unknown = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
-    if (!parsed || typeof parsed !== 'object' || !('v' in parsed) || parsed.v !== 1 || !('t' in parsed) || !('s' in parsed) || Object.keys(parsed).sort().join(',') !== 's,t,v') fail(WORKBENCH_ERROR_CODES.cursorInvalid);
+    // The existing version/key and field validators below reject malformed JSON.
+    const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as { v?: unknown; t?: unknown; s?: unknown } | null;
+    if (!parsed || parsed.v !== 1 || Object.keys(parsed).sort().join(',') !== 's,t,v') fail(WORKBENCH_ERROR_CODES.cursorInvalid);
     return Object.freeze({ last_activity_at: localDateTime(parsed.t), session_id: uuid(parsed.s) });
   } catch (error) {
     if (error instanceof WorkbenchError) throw error;
@@ -242,8 +243,8 @@ export function createConversationWorkbenchQueryService({
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function') || typeof now !== 'function') {
     throw new TypeError('Workbench query service configuration is invalid.');
   }
-  const database = pool;
-  const authorization = authorize;
+  // Constructor guards prove these captured ports exist. Non-null assertions
+  // erase to the original access expressions without adding runtime aliases.
   function currentEpochMs() {
     if (nowEpochMs !== null) return assertEpochMsString(nowEpochMs());
     const value = now();
@@ -252,7 +253,7 @@ export function createConversationWorkbenchQueryService({
   }
   function guard() { if (!enabled) fail(WORKBENCH_ERROR_CODES.disabled, 503); }
   async function principalFrom(authContext: WorkbenchAuthContext | undefined) {
-    const principal = await authorization.resolvePrincipal(authContext);
+    const principal = await authorize!.resolvePrincipal(authContext);
     if (principal === null) fail(WORKBENCH_ERROR_CODES.forbidden, 403);
     return principal;
   }
@@ -262,11 +263,11 @@ export function createConversationWorkbenchQueryService({
     const principal = await principalFrom(authContext);
     return Object.freeze({
       authenticated: true,
-      principal: authorization.safePrincipal(principal),
+      principal: authorize!.safePrincipal(principal),
       expires_at: authContext.expires_at,
       expires_epoch_ms: authContext.expires_epoch_ms,
       csrf_token: authContext.auth_method === 'COOKIE' ? authContext.csrf_token : undefined,
-      capabilities: authorization.actionsFor(principal),
+      capabilities: authorize!.actionsFor(principal),
       feature_status: Object.freeze(featureStatus ?? { workbench_enabled: true, realtime_sse_enabled: false, ai_enabled: false, incident_enabled: false, attachments_enabled: false }),
       polling_interval_ms: 5000,
       sse_endpoint: '/api/realtime/events?scope=workbench',
@@ -280,7 +281,7 @@ export function createConversationWorkbenchQueryService({
     const principal = await principalFrom(authContext);
     const pageSize = integer(limit, 30, 100);
     const values: unknown[] = [principal.principal_id];
-    const predicate = authorization.sessionAccessPredicate(principal, { start: 2, ticketAlias: 'tk' });
+    const predicate = authorize!.sessionAccessPredicate(principal, { start: 2, ticketAlias: 'tk' });
     values.push(...predicate.values);
     const clauses = [predicate.sql];
     const stateClause = listStateSql(state, values.length + 1, 1);
@@ -293,7 +294,7 @@ export function createConversationWorkbenchQueryService({
     values.push(pageSize + 1);
     let result;
     try {
-      result = await database.query<WorkbenchRow>(`${baseSelect()} WHERE ${clauses.join(' AND ')} ORDER BY s.last_activity_at DESC, s.id DESC LIMIT $${values.length}`, values);
+      result = await pool!.query<WorkbenchRow>(`${baseSelect()} WHERE ${clauses.join(' AND ')} ORDER BY s.last_activity_at DESC, s.id DESC LIMIT $${values.length}`, values);
     } catch { fail(WORKBENCH_ERROR_CODES.storageFailed, 500); }
     const hasMore = result.rows.length > pageSize;
     const rows = result.rows.slice(0, pageSize);
@@ -311,27 +312,27 @@ export function createConversationWorkbenchQueryService({
       assignment: assignmentView(row, principal.principal_id),
       handoff: handoffView(row), ticket: ticketView(row), latest_delivery: deliveryView(row),
       waiting_duration_seconds: elapsedSeconds(currentEpochMs(), row.last_activity_epoch_ms),
-      capabilities: capabilities(authorization, principal, row),
+      capabilities: capabilities(authorize!, principal, row),
     }));
-    const lastRow = rows.at(-1);
-    return Object.freeze({ items: Object.freeze(items), next_cursor: hasMore && lastRow
-      ? encodeConversationCursor({ last_activity_at: lastRow.last_activity_at, session_id: lastRow.session_id }) : null });
+    // The existing length guard proves both accesses to the last dense PG row.
+    return Object.freeze({ items: Object.freeze(items), next_cursor: hasMore && rows.length > 0
+      ? encodeConversationCursor({ last_activity_at: rows.at(-1)!.last_activity_at, session_id: rows.at(-1)!.session_id }) : null });
   }
 
   async function detailContext(authContext: WorkbenchAuthContext | undefined, sessionId: unknown) {
     const principal = await principalFrom(authContext);
     const id = uuid(sessionId);
-    if (!await authorization.authorizeSession({ principal, sessionId: id, action: 'VIEW' })) fail(WORKBENCH_ERROR_CODES.notFound, 404);
-    const result = await database.query<WorkbenchRow>(`${baseSelect()} WHERE s.id = $2::uuid`, [principal.principal_id, id]);
-    const row = result.rows[0];
-    if (result.rowCount !== 1 || !row) fail(WORKBENCH_ERROR_CODES.notFound, 404);
-    return { principal, row, sessionId: id };
+    if (!await authorize!.authorizeSession({ principal, sessionId: id, action: 'VIEW' })) fail(WORKBENCH_ERROR_CODES.notFound, 404);
+    const result = await pool!.query<WorkbenchRow>(`${baseSelect()} WHERE s.id = $2::uuid`, [principal.principal_id, id]);
+    // PostgreSQL SELECT rowCount=1 proves the first row is present.
+    if (result.rowCount !== 1) fail(WORKBENCH_ERROR_CODES.notFound, 404);
+    return { principal, row: result.rows[0]!, sessionId: id };
   }
 
   async function getConversationDetail({ authContext, sessionId }: WorkbenchDetailInput) {
     guard();
     const { principal, row } = await detailContext(authContext, sessionId);
-    const cursor = await database.query<{ last_read_sequence: string; row_version: string }>('SELECT last_read_sequence::text,row_version::text FROM conversation.read_cursor WHERE principal_id=$1::uuid AND session_id=$2::uuid', [principal.principal_id, row.session_id]);
+    const cursor = await pool!.query<{ last_read_sequence: string; row_version: string }>('SELECT last_read_sequence::text,row_version::text FROM conversation.read_cursor WHERE principal_id=$1::uuid AND session_id=$2::uuid', [principal.principal_id, row.session_id]);
     return Object.freeze({
       session: Object.freeze({ session_id: row.session_id, status: row.status, control_mode: row.control_mode,
         generation_version: Number(row.generation_version), row_version: Number(row.row_version), last_activity_at: localDateTime(row.last_activity_at) }),
@@ -339,7 +340,7 @@ export function createConversationWorkbenchQueryService({
       read_cursor: Object.freeze({ last_read_sequence: String(cursor.rows[0]?.last_read_sequence ?? '0'), row_version: Number(cursor.rows[0]?.row_version ?? 0) }),
       unread_count: row.unread_count, ticket: ticketView(row), incident: Object.freeze({ available: false, reason: 'INCIDENT_NOT_IMPLEMENTED' }),
       attachments: Object.freeze({ available: false, reason: 'ATTACHMENT_NOT_IMPLEMENTED' }),
-      delivery_summary: deliveryView(row), capabilities: capabilities(authorization, principal, row), etag: `"${row.row_version}"`,
+      delivery_summary: deliveryView(row), capabilities: capabilities(authorize!, principal, row), etag: `"${row.row_version}"`,
     });
   }
 
@@ -348,7 +349,7 @@ export function createConversationWorkbenchQueryService({
     const { principal, sessionId: id } = await detailContext(authContext, sessionId);
     if (before_sequence !== undefined && after_sequence !== undefined) fail();
     const pageSize = integer(limit, 50, 200);
-    const audience = authorization.isAdmin(principal) ? 'RESTRICTED_ADMIN' : 'WORKBENCH';
+    const audience = authorize!.isAdmin(principal) ? 'RESTRICTED_ADMIN' : 'WORKBENCH';
     if (!AUDIENCES.has(audience)) fail();
     const visibility = audience === 'RESTRICTED_ADMIN' ? ['EXTERNAL', 'INTERNAL', 'RESTRICTED'] : ['EXTERNAL', 'INTERNAL'];
     const values: unknown[] = [id, visibility];
@@ -357,7 +358,7 @@ export function createConversationWorkbenchQueryService({
     if (before_sequence !== undefined) { values.push(bigintString(before_sequence)); boundary = `AND sequence_no < $3::bigint`; }
     if (after_sequence !== undefined) { values.push(bigintString(after_sequence)); boundary = `AND sequence_no > $3::bigint`; direction = 'ASC'; }
     values.push(pageSize + 1);
-    const result = await database.query<ItemRow>(
+    const result = await pool!.query<ItemRow>(
       `SELECT id::text, sequence_no::text, item_type, sender_kind, visibility, text, safe_content, occurred_at
          FROM conversation.item
         WHERE session_id=$1::uuid AND visibility=ANY($2::text[]) ${boundary}
@@ -368,11 +369,11 @@ export function createConversationWorkbenchQueryService({
     let rows = result.rows.slice(0, pageSize);
     if (direction === 'DESC') rows = rows.reverse();
     const items = rows.map(publicItem);
-    const firstItem = items[0], lastItem = items.at(-1);
     return Object.freeze({
       session_id: id, items: Object.freeze(items),
-      before_sequence: firstItem ? firstItem.sequence_no : null,
-      after_sequence: lastItem ? lastItem.sequence_no : null,
+      // The original length guards prove the first and last dense mapped items.
+      before_sequence: items.length ? items[0]!.sequence_no : null,
+      after_sequence: items.length ? items.at(-1)!.sequence_no : null,
       has_more: hasMore,
     });
   }
@@ -380,7 +381,7 @@ export function createConversationWorkbenchQueryService({
   async function listEligiblePrincipals(input: WorkbenchDetailInput) {
     guard();
     const { principal, sessionId } = await detailContext(input.authContext, input.sessionId);
-    const items = await authorization.listEligiblePrincipals({ principal, sessionId });
+    const items = await authorize!.listEligiblePrincipals({ principal, sessionId });
     if (items === null) fail(WORKBENCH_ERROR_CODES.notFound, 404);
     return Object.freeze({ items });
   }
@@ -388,7 +389,7 @@ export function createConversationWorkbenchQueryService({
   async function listConversationDeliveries(input: WorkbenchDetailInput) {
     guard();
     const { sessionId } = await detailContext(input.authContext, input.sessionId);
-    const result = await database.query<DeliveryRow>(
+    const result = await pool!.query<DeliveryRow>(
       `SELECT d.id::text AS delivery_id,d.status,d.provider AS channel,d.attempt_count,d.last_error_code,d.side_effect_state,d.sent_at
          FROM communication.message m JOIN communication.outbox o ON o.message_id=m.id JOIN communication.delivery d ON d.outbox_id=o.id
         WHERE m.session_id=$1::uuid ORDER BY d.updated_at DESC,d.id DESC LIMIT 100`, [sessionId]);

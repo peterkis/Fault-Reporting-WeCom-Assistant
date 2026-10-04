@@ -106,6 +106,14 @@ test('retired T02 replay cannot suppress independent current CI hard gates',()=>
   assert.match(mergeScript,/ACTIVE_SELECTION_MUST_BE_UNIQUE/u);
   assert.match(mergeScript,/runSelection\(process\.cwd\(\),select\(loadRoutes/u);
   assert.doesNotMatch(mergeScript,/verify-published-history|pr-evidence-delta|--require-ready|--current-full|--batch|migration:typecheck/u);
+  const strict=record(jobs['strict-readiness']);
+  assert.ok(Array.isArray(strict.steps));
+  const strictCleanup=strict.steps.map(record).find(step=>step.name==='Verify the owned database and exact artifact');
+  const strictUpload=strict.steps.map(record).find(step=>String(step.uses??'').startsWith('actions/upload-artifact@'));
+  assert.ok(strictCleanup&&strictUpload);
+  const strictOutput=String(strictCleanup.run).match(/OUT="\$RUNNER_TEMP\/([^"\n]+)"/u)?.[1];
+  assert.ok(strictOutput);
+  assert.equal(record(strictUpload.with).path,'${{ runner.temp }}/'+strictOutput+'/', 'certification identity, artifact and cleanup records must be uploaded');
   for(const value of Object.values(jobs)) {
     const job=record(value);assert.ok(!job['continue-on-error']);
     assert.ok(Array.isArray(job.steps));
