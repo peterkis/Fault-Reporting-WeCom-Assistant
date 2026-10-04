@@ -1,3 +1,13 @@
+import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool.mjs';
+import type { P2015ResultCode } from '../contracts/p2_015_contracts.js';
+import type { SafeActionSuggestion, SafeActionType, BoundarySafeRoute } from './p2-015-decision-router.mjs';
+export interface DecisionRow { id: string; journey_id: string; channel_leg_id: string; service_intake_id: string; conversation_session_id: string | null; linked_ticket_id: string | null; decision_ordinal: number; decision_key: string; source_window_start_sequence: number; source_window_end_sequence: number; source_message_count: number; source_hash: string; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; result_code: P2015ResultCode; reason_code: string; input_hash: string; result_hash: string; safe_result: BoundarySafeRoute; requires_manual_review: boolean; ticket_creation_recommended: boolean; incident_review_candidate: boolean; status: 'RECORDED' | 'HUMAN_OVERRIDDEN'; observed_at: string; source_kind?: 'BOT' | 'WEB'; primary_web_submission_id?: string | null; basis_input_revision?: string | number | null }
+export interface ActionRow extends SafeActionSuggestion { id: string; decision_id: string; action_key: string; state: 'PROPOSED' | 'EXECUTED' | 'REPLAYED' | 'FAILED' | 'CANCELLED'; row_version: string; execution_command_id?: string | null; execution_command_hash?: string | null; result_ref_type?: string | null; result_ref_id?: string | null; error_code?: string | null; retryable?: boolean | null; executed_at?: string | null }
+export type DecisionRecord = ReturnType<typeof publicDecision>;
+type DecisionInputBase = Omit<DecisionRow, 'id' | 'decision_ordinal' | 'decision_key' | 'status' | 'source_kind' | 'primary_web_submission_id' | 'basis_input_revision' | 'conversation_session_id' | 'linked_ticket_id'> & { conversation_session_id?: string | null; linked_ticket_id?: string | null; safe_action_suggestions?: SafeActionSuggestion[] };
+export type DecisionInput = DecisionInputBase & ({ source_kind?: 'BOT'; primary_web_submission_id?: null; basis_input_revision?: null } | { source_kind: 'WEB'; primary_web_submission_id: string; basis_input_revision: number });
+export interface MarkActionInput { transaction: PostgresTransaction; action_id: string; state: ActionRow['state']; command_id: string; command_hash: string; result_ref_type?: string | null; result_ref_id?: string | null; error_code?: string | null; retryable?: boolean | null; executed_at: string }
+export type DecisionStore = ReturnType<typeof createDecisionStore>;
 import {
   P2_015_ERROR_CODES,
   failP2015,
@@ -6,7 +16,7 @@ import {
   snapshotP2015Json,
 } from './p2-015-domain-contracts.mjs';
 
-function publicDecision(row, actions, replayed) {
+function publicDecision(row: DecisionRow, actions: ActionRow[], replayed: boolean) {
   return freezePublic({
     id: row.id, journey_id: row.journey_id, channel_leg_id: row.channel_leg_id,
     service_intake_id: row.service_intake_id, conversation_session_id: row.conversation_session_id,
@@ -27,8 +37,8 @@ function publicDecision(row, actions, replayed) {
   });
 }
 
-async function readActions(transaction, decisionId) {
-  const result = await transaction.query(
+async function readActions(transaction: PostgresTransaction, decisionId: string) {
+  const result = await transaction.query<ActionRow>(
     `SELECT id::text,decision_id::text,action_ordinal,action_key,action_type,execution_policy,
             safe_payload,payload_hash,state,row_version::text,execution_command_id::text,
             execution_command_hash,result_ref_type,result_ref_id,error_code,retryable,executed_at
@@ -36,11 +46,11 @@ async function readActions(transaction, decisionId) {
   );
   return result.rows;
 }
-async function insertActions(transaction, row, decisionKey, suggestions) {
-  const actions = [];
+async function insertActions(transaction: PostgresTransaction, row: DecisionRow, decisionKey: string, suggestions: SafeActionSuggestion[]) {
+  const actions: ActionRow[] = [];
   for (const suggestion of suggestions) {
     const actionKey = `action_v1_${safeHash({ decision_key: decisionKey, ordinal: suggestion.action_ordinal, type: suggestion.action_type, payload_hash: suggestion.payload_hash })}`;
-    const action = await transaction.query(
+    const action = await transaction.query<ActionRow>(
       `INSERT INTO intake.safe_action_suggestion (
          decision_id,action_ordinal,action_key,action_type,execution_policy,safe_payload,payload_hash
        ) VALUES ($1::uuid,$2,$3,$4,$5,$6::jsonb,$7)
@@ -49,32 +59,32 @@ async function insertActions(transaction, row, decisionKey, suggestions) {
       [row.id, suggestion.action_ordinal, actionKey, suggestion.action_type,
         suggestion.execution_policy, JSON.stringify(suggestion.safe_payload), suggestion.payload_hash],
     );
-    actions.push(action.rows[0]);
+    actions.push((action.rows[0] as ActionRow));
   }
   return actions;
 }
 
-export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false}={}) {
+export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false}: { sourceWindowScope?: 'JOURNEY' | 'CHANNEL_LEG'; webSource?: boolean }={}) {
   if(!['JOURNEY','CHANNEL_LEG'].includes(sourceWindowScope))failP2015(P2_015_ERROR_CODES.inputInvalid);
   if(typeof webSource!=='boolean')failP2015(P2_015_ERROR_CODES.inputInvalid);
   return Object.freeze({
-    async ensureHumanActions({ transaction, decisionId, suggestions }) {
+    async ensureHumanActions({ transaction, decisionId, suggestions }: { transaction: PostgresTransaction; decisionId: string; suggestions: SafeActionSuggestion[] }) {
       const value = snapshotP2015Json(suggestions);
       if (!Array.isArray(value) || value.length > 4) failP2015(P2_015_ERROR_CODES.inputInvalid);
-      const selected = await transaction.query('SELECT * FROM intake.deterministic_decision WHERE id=$1::uuid FOR UPDATE', [decisionId]);
+      const selected = await transaction.query<DecisionRow>('SELECT * FROM intake.deterministic_decision WHERE id=$1::uuid FOR UPDATE', [decisionId]);
       const row = selected.rows[0];
       if (!row || row.status !== 'HUMAN_OVERRIDDEN') failP2015(P2_015_ERROR_CODES.authorizationDenied);
       let actions = await readActions(transaction, decisionId);
       if (actions.length) {
         if (actions.length !== value.length || actions.some((action, i) =>
-          action.action_type !== value[i].action_type || action.payload_hash !== value[i].payload_hash)) {
+          action.action_type !== (value[i] as SafeActionSuggestion).action_type || action.payload_hash !== (value[i] as SafeActionSuggestion).payload_hash)) {
           failP2015(P2_015_ERROR_CODES.commandConflict);
         }
       } else actions = await insertActions(transaction, row, row.decision_key, value);
       return publicDecision(row, actions, false);
     },
 
-    async record({ transaction, input }) {
+    async record({ transaction, input }: { transaction: PostgresTransaction; input: DecisionInput }) {
       if (!transaction?.query) failP2015(P2_015_ERROR_CODES.storageFailed);
       const value = snapshotP2015Json(input);
       const sourceKind = value.source_kind ?? 'BOT';
@@ -86,7 +96,7 @@ export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false
           || (value.basis_input_revision !== undefined && value.basis_input_revision !== null)))) {
         failP2015(P2_015_ERROR_CODES.inputInvalid);
       }
-      const identity = {
+      const identity: { journey_id: string; source_window_start_sequence: number; source_window_end_sequence: number; catalog_version: string; rule_set_version: string; engine_version: string; decision_policy_version: string; source_kind?: 'WEB'; primary_web_submission_id?: string; basis_input_revision?: number; channel_leg_id?: string } = {
         journey_id: value.journey_id,
         source_window_start_sequence: value.source_window_start_sequence,
         source_window_end_sequence: value.source_window_end_sequence,
@@ -97,18 +107,18 @@ export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false
       };
       if (sourceKind === 'WEB') {
         identity.source_kind = sourceKind;
-        identity.primary_web_submission_id = value.primary_web_submission_id;
-        identity.basis_input_revision = value.basis_input_revision;
+        identity.primary_web_submission_id = (value.primary_web_submission_id as string);
+        identity.basis_input_revision = (value.basis_input_revision as number);
       }
       let keyVersion='v1';
       if(sourceWindowScope==='CHANNEL_LEG'){
-        const leg=await transaction.query('SELECT leg_ordinal FROM intake.channel_leg WHERE id=$1::uuid AND journey_id=$2::uuid',[value.channel_leg_id,value.journey_id]);
+        const leg=await transaction.query<{ leg_ordinal: number }>('SELECT leg_ordinal FROM intake.channel_leg WHERE id=$1::uuid AND journey_id=$2::uuid',[value.channel_leg_id,value.journey_id]);
         if(leg.rowCount!==1)failP2015(P2_015_ERROR_CODES.inputInvalid);
         // Retain every historical/origin-leg key. Only additional channel legs use a new scoped identity.
-        if(leg.rows[0].leg_ordinal>1){identity.channel_leg_id=value.channel_leg_id;keyVersion='v2';}
+        if((leg.rows[0] as { leg_ordinal: number }).leg_ordinal>1){identity.channel_leg_id=value.channel_leg_id;keyVersion='v2';}
       }
       const decisionKey = `decision_${keyVersion}_${safeHash(identity)}`;
-      const existing = await transaction.query(
+      const existing = await transaction.query<DecisionRow>(
         `SELECT id::text,journey_id::text,channel_leg_id::text,service_intake_id::text,
                 conversation_session_id::text,linked_ticket_id::text,${webSource ? 'source_kind,primary_web_submission_id::text,basis_input_revision,' : ''}
                 decision_ordinal,decision_key,
@@ -119,20 +129,20 @@ export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false
            FROM intake.deterministic_decision WHERE decision_key=$1 FOR UPDATE`, [decisionKey],
       );
       if (existing.rowCount === 1) {
-        const row = existing.rows[0];
+        const row = (existing.rows[0] as DecisionRow);
         if (row.input_hash !== value.input_hash || row.result_hash !== value.result_hash || row.source_hash !== value.source_hash) {
           failP2015(P2_015_ERROR_CODES.decisionConflict);
         }
         return publicDecision(row, await readActions(transaction, row.id), true);
       }
-      const ordinalResult = await transaction.query(
+      const ordinalResult = await transaction.query<{ ordinal: number }>(
         'SELECT COALESCE(max(decision_ordinal),0)::integer + 1 AS ordinal FROM intake.deterministic_decision WHERE journey_id=$1::uuid',
         [value.journey_id],
       );
       const sourceColumns = webSource ? 'source_kind,primary_web_submission_id,basis_input_revision,' : '';
       const sourceValues = webSource ? '$6,$7::uuid,$8,' : '';
-      const parameter = (number) => `$${number + (webSource ? 3 : 0)}`;
-      const inserted = await transaction.query(
+      const parameter = (number: number) => `$${number + (webSource ? 3 : 0)}`;
+      const inserted = await transaction.query<DecisionRow>(
         `INSERT INTO intake.deterministic_decision (
            journey_id,channel_leg_id,service_intake_id,conversation_session_id,linked_ticket_id,
            ${sourceColumns}
@@ -150,14 +160,14 @@ export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false
            ticket_creation_recommended,incident_review_candidate,status,to_char(observed_at,'YYYY-MM-DD HH24:MI:SS') AS observed_at`,
         [value.journey_id, value.channel_leg_id, value.service_intake_id, value.conversation_session_id ?? null,
           value.linked_ticket_id ?? null, ...(webSource ? [sourceKind, sourceKind === 'WEB' ? value.primary_web_submission_id : null,
-            sourceKind === 'WEB' ? value.basis_input_revision : null] : []), ordinalResult.rows[0].ordinal, decisionKey,
+            sourceKind === 'WEB' ? value.basis_input_revision : null] : []), (ordinalResult.rows[0] as { ordinal: number }).ordinal, decisionKey,
           value.source_window_start_sequence, value.source_window_end_sequence, value.source_message_count,
           value.source_hash, value.catalog_version, value.rule_set_version, value.engine_version,
           value.decision_policy_version, value.result_code, value.reason_code, value.input_hash,
           value.result_hash, JSON.stringify(value.safe_result), value.requires_manual_review,
           value.ticket_creation_recommended, value.incident_review_candidate, value.observed_at],
       );
-      const row = inserted.rows[0];
+      const row = (inserted.rows[0] as DecisionRow);
       const actions = await insertActions(transaction, row, decisionKey, value.safe_action_suggestions ?? []);
       return publicDecision(row, actions, false);
     },
@@ -165,8 +175,8 @@ export function createDecisionStore({sourceWindowScope='JOURNEY',webSource=false
     async markAction({ transaction, action_id: actionId, state, command_id: commandId,
       command_hash: commandHash, result_ref_type: resultRefType = null,
       result_ref_id: resultRefId = null, error_code: errorCode = null,
-      retryable = null, executed_at: executedAt }) {
-      const result = await transaction.query(
+      retryable = null, executed_at: executedAt }: MarkActionInput) {
+      const result = await transaction.query<ActionRow>(
         `UPDATE intake.safe_action_suggestion SET state=$2,execution_command_id=$3::uuid,
            execution_command_hash=$4,result_ref_type=$5,result_ref_id=$6,error_code=$7,retryable=$8,
            executed_at=$9::timestamp without time zone,row_version=row_version+1,
