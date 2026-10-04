@@ -1163,7 +1163,7 @@ export function publicRealtimeEventFromRow(input: unknown): RealtimePublicEventV
   const payload = clonePlainJson(
     row.payload,
     REALTIME_ERROR_CODES.storageFailed,
-  );
+  ) as RealtimeSafeJsonObject;
   if (payload === null || Array.isArray(payload) || typeof payload !== 'object') {
     fail(REALTIME_ERROR_CODES.storageFailed);
   }
