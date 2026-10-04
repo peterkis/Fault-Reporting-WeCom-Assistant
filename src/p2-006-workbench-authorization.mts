@@ -63,8 +63,8 @@ async function loadPrincipal(queryable: PostgresTransaction, principalId: unknow
     [uuid(principalId)],
   );
   // PostgreSQL SELECT rowCount=1 proves the first row; preserve the original guard.
-  if (result.rowCount !== 1 || result.rows[0]!.is_active !== true) return null;
-  const row = result.rows[0]!;
+  if (result.rowCount !== 1 || (result.rows[0] as PrincipalRow).is_active !== true) return null;
+  const row = result.rows[0] as PrincipalRow;
   const principal = Object.freeze({
     principal_id: row.id,
     display_name: row.display_name,
@@ -87,13 +87,13 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool }: { pool?: Post
   if (!pool || typeof pool.query !== 'function') throw new TypeError('A PostgreSQL pool is required.');
   // The constructor guard proves the captured pool exists; assertions erase only.
 
-  async function resolvePrincipal(authContext: unknown, { queryable = pool! }: { queryable?: PostgresTransaction } = {}) {
+  async function resolvePrincipal(authContext: unknown, { queryable = pool as PostgresTransaction }: { queryable?: PostgresTransaction } = {}) {
     if (!authContext || typeof authContext !== 'object') return null;
     // UUID validation in loadPrincipal rejects an absent or malformed identifier.
     try { return await loadPrincipal(queryable, (authContext as { principal_id?: unknown }).principal_id); } catch { return null; }
   }
 
-  async function getSessionAccess({ principal, sessionId, queryable = pool! }: { principal: WorkbenchPrincipal; sessionId: string; queryable?: PostgresTransaction }) {
+  async function getSessionAccess({ principal, sessionId, queryable = pool as PostgresTransaction }: { principal: WorkbenchPrincipal; sessionId: string; queryable?: PostgresTransaction }) {
     if (!isWorker(principal)) return null;
     const result = await queryable.query<SessionAccessRow>(
       `SELECT s.id::text AS session_id, s.thread_id::text,
@@ -116,7 +116,7 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool }: { pool?: Post
         principal.principal_id, hasRole(principal, 'HANDLER'), principal.team_ids],
     );
     if (result.rowCount !== 1) return null;
-    const row = result.rows[0]!;
+    const row = result.rows[0] as SessionAccessRow;
     return Object.freeze({
       session_id: row.session_id,
       thread_id: row.thread_id,
@@ -126,7 +126,7 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool }: { pool?: Post
     });
   }
 
-  async function authorizeSession({ principal, sessionId, action = 'VIEW', queryable = pool! }: { principal: WorkbenchPrincipal; sessionId: string; action?: WorkbenchAction; queryable?: PostgresTransaction }) {
+  async function authorizeSession({ principal, sessionId, action = 'VIEW', queryable = pool as PostgresTransaction }: { principal: WorkbenchPrincipal; sessionId: string; action?: WorkbenchAction; queryable?: PostgresTransaction }) {
     const access = await getSessionAccess({ principal, sessionId, queryable });
     if (access === null) return false;
     if (action === 'FORCE_TRANSFER' || action === 'RECONCILE') return hasRole(principal, 'ADMIN');
@@ -150,7 +150,7 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool }: { pool?: Post
   async function listEligiblePrincipals({ principal, sessionId }: { principal: WorkbenchPrincipal; sessionId: string }) {
     const access = await getSessionAccess({ principal, sessionId });
     if (access === null) return null;
-    const result = await pool!.query<EligiblePrincipalRow>(
+    const result = await (pool as PostgresTransaction).query<EligiblePrincipalRow>(
       `SELECT p.id::text AS principal_id, p.display_name,
               COALESCE(bool_or(r.role = 'ADMIN'), false) AS is_admin,
               COALESCE(bool_or(r.role = 'DISPATCHER'), false) AS is_dispatcher,
@@ -182,7 +182,7 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool }: { pool?: Post
     if (!isWorker(principal)) return null;
     if(!Number.isInteger(limit)||limit<1||limit>5000)throw new TypeError('Invalid realtime scope limit.');
     const predicate = sessionAccessPredicate(principal, { start: 1 });
-    const result = await pool!.query<{ session_id: string; thread_id: string }>(
+    const result = await (pool as PostgresTransaction).query<{ session_id: string; thread_id: string }>(
       `SELECT s.id::text AS session_id, s.thread_id::text
          FROM conversation.session AS s
          LEFT JOIN conversation.assignment AS a ON a.session_id = s.id
@@ -195,7 +195,7 @@ export function createPilotWorkbenchAuthorizationAdapter({ pool }: { pool?: Post
     const sessions=freezeArray(result.rows.map(row=>row.session_id)),threads=freezeArray(result.rows.map(row=>row.thread_id));
     const remaining=Math.max(0,256-sessions.length-threads.length);
     const broad=hasRole(principal,'ADMIN')||hasRole(principal,'DISPATCHER');
-    const tickets=!broad&&remaining>0?await pool!.query<{ id: string }>(`SELECT t.id::text FROM pilot_ticket.ticket t
+    const tickets=!broad&&remaining>0?await (pool as PostgresTransaction).query<{ id: string }>(`SELECT t.id::text FROM pilot_ticket.ticket t
       JOIN intake.service_intake i ON i.id=t.source_intake_id
       WHERE i.source_provider='YIXIAOXIU_WEB'
         AND (t.assignee_id=$1::uuid OR t.resolver_team_id=ANY($2::text[]))
