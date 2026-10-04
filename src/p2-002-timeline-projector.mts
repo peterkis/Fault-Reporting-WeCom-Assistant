@@ -1,3 +1,23 @@
+import type { ConversationProjectionSourceRecord, TimelineProjectionErrorCode, SafeJsonValue, SafeJsonObject, ConversationPrivacyClass, TimelineAudience, TimelineProjectionResult, TimelineItemView } from '../contracts/conversation_projection_contracts.js';
+import type { PostgresPool, PostgresTransaction, PostgresPoolClient } from './platform/postgres-pool.mjs';
+import type { MigrationQueryable } from './platform/legacy-migration-guard.mjs';
+import type { LocalDateTime } from '../contracts/time_contracts.js';
+import type { ConversationItemType, ConversationItemSenderKind, ConversationItemVisibility } from '../contracts/conversation_contracts.js';
+type RawRecord = Readonly<Record<string, unknown>>;
+export type SourceRecord = Omit<ConversationProjectionSourceRecord, "retention_until_epoch_ms">;
+type JsonState = { seen: Set<object>; nodes: number };
+interface BindingRow extends Record<string, unknown> { item_id: string; source_hash: string; canonical_order_key: string; privacy_class: ConversationPrivacyClass; retention_until: string }
+interface CheckpointRow extends Record<string, unknown> { projector_name: string; projector_version: string; source_stream: string; cursor_value: string | null; last_source_occurred_at: string | null; last_batch_hash: string; row_version: string; updated_at: string }
+interface ItemRow extends Record<string, unknown> { id: string; session_id: string; sequence_no: string; item_type: ConversationItemType; sender_kind: ConversationItemSenderKind; visibility: ConversationItemVisibility; source_type: SourceRecord['source_type']; source_id: string; projection_variant: string; content_hash: string; privacy_class: ConversationPrivacyClass; occurred_at: string; retention_until: string; projected_at: string }
+export interface TimelineProjectorOptions {
+  pool?: PostgresPool; enabled?: boolean; batchSize?: number;
+  restrictedAuthorizer?: ((input: { sessionId: string; audience: TimelineAudience; signal: unknown }) => unknown | Promise<unknown>) | null;
+  faultInjection?: { beforeCommit?: () => unknown | Promise<unknown>; afterCommit?: () => unknown | Promise<unknown> } | null;
+  itemTransactionHook?: ((input: { transaction: PostgresTransaction; item: Readonly<Pick<ItemRow, 'id' | 'session_id' | 'sequence_no' | 'item_type' | 'sender_kind' | 'visibility'>> & { occurred_at: LocalDateTime; retention_until: LocalDateTime }; source_record: SourceRecord }) => unknown | Promise<unknown>) | null;
+  transactionStartHook?: ((input: { transaction: PostgresTransaction }) => unknown | Promise<unknown>) | null;
+}
+export interface TimelineAdapterOptions extends Record<string, unknown> { sourceStream: string; readBatch: (options: RawRecord) => unknown | Promise<unknown>; mapRow?: (row: unknown, options: RawRecord) => unknown; readSessionRecords?: ((options: RawRecord) => unknown | Promise<unknown>) | null }
+interface ExpectedCheckpoint { absent?: boolean; cursor_value?: string | null; row_version?: string }
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { types as utilTypes } from 'node:util';
@@ -98,7 +118,7 @@ export const TIMELINE_ERROR_CODES = Object.freeze({
   schemaDrift: 'P2_002_SCHEMA_DRIFT_REMEDIATION_REQUIRED',
 });
 
-const TIMELINE_ERROR_CODE_SET = new Set(Object.values(TIMELINE_ERROR_CODES));
+const TIMELINE_ERROR_CODE_SET: ReadonlySet<string> = new Set(Object.values(TIMELINE_ERROR_CODES));
 
 const SOURCE_RECORD_KEYS = Object.freeze([
   'schema_version',
@@ -159,21 +179,22 @@ const FORBIDDEN_JSON_KEYS = new Set([
 ]);
 
 export class TimelineProjectionError extends Error {
-  constructor(code) {
+  declare readonly code: TimelineProjectionErrorCode;
+  constructor(code: unknown) {
     const stableCode = typeof code === 'string' && TIMELINE_ERROR_CODE_SET.has(code)
       ? code
       : TIMELINE_ERROR_CODES.sourceInvalid;
     super(stableCode);
     this.name = 'TimelineProjectionError';
-    this.code = stableCode;
+    this.code = stableCode as TimelineProjectionErrorCode;
   }
 }
 
-function fail(code) {
+function fail(code: TimelineProjectionErrorCode): never {
   throw new TimelineProjectionError(code);
 }
 
-function isStableTimelineProjectionError(error) {
+function isStableTimelineProjectionError(error: unknown): error is TimelineProjectionError {
   try {
     if (
       error === null
@@ -193,7 +214,7 @@ function isStableTimelineProjectionError(error) {
   }
 }
 
-function safeErrorDataProperty(error, key) {
+function safeErrorDataProperty(error: unknown, key: string): unknown {
   try {
     if (
       error === null
@@ -219,7 +240,7 @@ function safeErrorDataProperty(error, key) {
   return undefined;
 }
 
-function throwIfAborted(signal, fallbackCode = TIMELINE_ERROR_CODES.storageFailed) {
+function throwIfAborted(signal: unknown, fallbackCode: TimelineProjectionErrorCode = TIMELINE_ERROR_CODES.storageFailed) {
   if (signal !== undefined && signal !== null) {
     if (
       (typeof signal !== 'object' && typeof signal !== 'function')
@@ -229,7 +250,7 @@ function throwIfAborted(signal, fallbackCode = TIMELINE_ERROR_CODES.storageFaile
     }
     let aborted;
     try {
-      aborted = signal.aborted;
+      aborted = (signal as { aborted: unknown }).aborted;
     } catch {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
     }
@@ -242,7 +263,7 @@ function throwIfAborted(signal, fallbackCode = TIMELINE_ERROR_CODES.storageFaile
   }
 }
 
-function isPlainRecord(value) {
+function isPlainRecord(value: unknown): value is RawRecord {
   if (value === null || typeof value !== 'object') {
     return false;
   }
@@ -256,7 +277,7 @@ function isPlainRecord(value) {
   return prototype === Object.prototype || prototype === null;
 }
 
-function assertPlainRecord(value) {
+function assertPlainRecord(value: unknown): asserts value is RawRecord {
   try {
     if (!isPlainRecord(value)) {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
@@ -277,16 +298,18 @@ function assertPlainRecord(value) {
   }
 }
 
-function plainRecordSnapshot(value) {
+function plainRecordSnapshot<T extends object>(value: T): Readonly<T> & RawRecord;
+function plainRecordSnapshot(value: unknown): RawRecord;
+function plainRecordSnapshot(value: unknown) {
   assertPlainRecord(value);
-  const snapshot = Object.create(null);
+  const snapshot: Record<string, unknown> = Object.create(null);
   for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value))) {
     snapshot[key] = descriptor.value;
   }
   return Object.freeze(snapshot);
 }
 
-function dataPropertyFromPrototypeChain(target, key, errorCode) {
+function dataPropertyFromPrototypeChain(target: unknown, key: string, errorCode: TimelineProjectionErrorCode): unknown {
   try {
     if (
       target === null
@@ -318,11 +341,11 @@ function dataPropertyFromPrototypeChain(target, key, errorCode) {
   fail(errorCode);
 }
 
-function normalizeKeyForDenyList(key) {
+function normalizeKeyForDenyList(key: string) {
   return key.toLowerCase().replaceAll(/[^a-z0-9]/gu, '');
 }
 
-function clonePlainJson(value, state = { seen: new Set(), nodes: 0 }, depth = 0) {
+function clonePlainJson(value: unknown, state: JsonState = { seen: new Set(), nodes: 0 }, depth = 0): SafeJsonValue {
   if (depth > SAFE_JSON_MAX_DEPTH || state.nodes >= SAFE_JSON_MAX_NODES) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
@@ -356,7 +379,7 @@ function clonePlainJson(value, state = { seen: new Set(), nodes: 0 }, depth = 0)
     if (symbols.length !== 0) {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
     }
-    const descriptors = Object.getOwnPropertyDescriptors(value);
+    const descriptors = Object.getOwnPropertyDescriptors(value) as Record<string, PropertyDescriptor>;
 
     if (Array.isArray(value)) {
       if (Object.getPrototypeOf(value) !== Array.prototype || value.length > SAFE_JSON_MAX_ARRAY) {
@@ -389,9 +412,9 @@ function clonePlainJson(value, state = { seen: new Set(), nodes: 0 }, depth = 0)
     if (keys.length > SAFE_JSON_MAX_KEYS) {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
     }
-    const copy = Object.create(null);
+    const copy: Record<string, SafeJsonValue> = Object.create(null);
     for (const key of keys.sort()) {
-      const descriptor = descriptors[key];
+      const descriptor = descriptors[key] as PropertyDescriptor;
       if (
         !Object.hasOwn(descriptor, 'value')
         || descriptor.enumerable !== true
@@ -415,7 +438,7 @@ function clonePlainJson(value, state = { seen: new Set(), nodes: 0 }, depth = 0)
   }
 }
 
-function canonicalJson(value) {
+function canonicalJson(value: SafeJsonValue): string {
   if (value === null) {
     return 'null';
   }
@@ -429,15 +452,15 @@ function canonicalJson(value) {
     return `[${value.map((entry) => canonicalJson(entry)).join(',')}]`;
   }
   return `{${Object.keys(value).sort().map(
-    (key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`,
+    (key) => `${JSON.stringify(key)}:${canonicalJson((value as SafeJsonObject)[key] as SafeJsonValue)}`,
   ).join(',')}}`;
 }
 
-function sha256Canonical(value) {
+function sha256Canonical(value: SafeJsonValue) {
   return createHash('sha256').update(canonicalJson(value)).digest('hex');
 }
 
-function boundedString(value, maximum, { minimum = 1, token = false } = {}) {
+function boundedString(value: unknown, maximum: number, { minimum = 1, token = false } = {}) {
   if (
     typeof value !== 'string'
     || !value.isWellFormed()
@@ -452,7 +475,7 @@ function boundedString(value, maximum, { minimum = 1, token = false } = {}) {
   return value;
 }
 
-function contractIdentifier(value, maximum, pattern) {
+function contractIdentifier(value: unknown, maximum: number, pattern: RegExp) {
   const normalized = boundedString(value, maximum);
   if (!pattern.test(normalized)) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
@@ -460,7 +483,7 @@ function contractIdentifier(value, maximum, pattern) {
   return normalized;
 }
 
-function timelineProjectorName(value) {
+function timelineProjectorName(value: unknown): SourceRecord["projector_name"] {
   const normalized = contractIdentifier(
     value,
     128,
@@ -472,7 +495,7 @@ function timelineProjectorName(value) {
   return normalized;
 }
 
-function nullableText(value) {
+function nullableText(value: unknown) {
   if (value === null || value === undefined) {
     return null;
   }
@@ -487,7 +510,7 @@ function nullableText(value) {
   return value;
 }
 
-function requiredUuid(value) {
+function requiredUuid(value: unknown) {
   if (
     typeof value !== 'string'
     || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value)
@@ -497,12 +520,12 @@ function requiredUuid(value) {
   return value.toLowerCase();
 }
 
-function isoDateTime(value) {
+function isoDateTime(value: unknown) {
   try { return assertLocalDateTime(value); }
   catch { fail(TIMELINE_ERROR_CODES.sourceInvalid); }
 }
 
-function canonicalBigint(value, { minimum = 0n } = {}) {
+function canonicalBigint(value: unknown, { minimum = 0n } = {}) {
   let text;
   if (typeof value === 'bigint') {
     text = value.toString();
@@ -526,36 +549,36 @@ function canonicalBigint(value, { minimum = 0n } = {}) {
   return text;
 }
 
-function boundedInteger(value, fallback, maximum) {
+function boundedInteger(value: unknown, fallback: number, maximum: number) {
   const candidate = value === undefined ? fallback : value;
-  if (!Number.isSafeInteger(candidate) || candidate < 1 || candidate > maximum) {
+  if (!Number.isSafeInteger(candidate) || (candidate as number) < 1 || (candidate as number) > maximum) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
-  return candidate;
+  return candidate as number;
 }
 
-function semanticSourceShape(record) {
+function semanticSourceShape(record: SourceRecord) {
   const semantic = Object.create(null);
   for (const key of SOURCE_RECORD_KEYS) {
     if (key !== 'source_hash' && key !== 'privacy_class' && key !== 'retention_until') {
-      semantic[key] = record[key];
+      semantic[key] = record[key as keyof SourceRecord];
     }
   }
   return semantic;
 }
 
-function computeSourceHash(record) {
-  return sha256Canonical(semanticSourceShape(record));
+function computeSourceHash(record: SourceRecord) {
+  return sha256Canonical(semanticSourceShape(record) as SafeJsonObject);
 }
 
-export function normalizeTimelineSourceRecord(input) {
+export function normalizeTimelineSourceRecord(input: unknown): SourceRecord {
   assertPlainRecord(input);
-  const descriptors = Object.getOwnPropertyDescriptors(input);
+  const descriptors = Object.getOwnPropertyDescriptors(input) as Record<string, PropertyDescriptor>;
   for (const key of Reflect.ownKeys(descriptors)) {
     if (typeof key !== 'string' || !SOURCE_RECORD_KEY_SET.has(key)) {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
     }
-    const descriptor = descriptors[key];
+    const descriptor = descriptors[key] as PropertyDescriptor;
     if (!Object.hasOwn(descriptor, 'value') || descriptor.enumerable !== true) {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
     }
@@ -566,14 +589,14 @@ export function normalizeTimelineSourceRecord(input) {
     }
   }
 
-  if (descriptors.schema_version.value !== 1) {
+  if ((descriptors.schema_version as PropertyDescriptor).value !== 1) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
-  const sourceType = descriptors.source_type.value;
-  const itemType = descriptors.item_type.value;
-  const senderKind = descriptors.sender_kind.value;
-  const visibility = descriptors.visibility.value;
-  const privacyClass = descriptors.privacy_class.value;
+  const sourceType = (descriptors.source_type as PropertyDescriptor).value;
+  const itemType = (descriptors.item_type as PropertyDescriptor).value;
+  const senderKind = (descriptors.sender_kind as PropertyDescriptor).value;
+  const visibility = (descriptors.visibility as PropertyDescriptor).value;
+  const privacyClass = (descriptors.privacy_class as PropertyDescriptor).value;
   if (
     !SOURCE_TYPES.has(sourceType)
     || !ITEM_TYPES.has(itemType)
@@ -584,47 +607,47 @@ export function normalizeTimelineSourceRecord(input) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
 
-  const projectorName = timelineProjectorName(descriptors.projector_name.value);
+  const projectorName = timelineProjectorName((descriptors.projector_name as PropertyDescriptor).value);
 
-  const safeContent = clonePlainJson(descriptors.safe_content.value);
+  const safeContent = clonePlainJson((descriptors.safe_content as PropertyDescriptor).value);
   if (Array.isArray(safeContent) || safeContent === null) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
-  const normalized = Object.freeze({
+  const normalized: SourceRecord = Object.freeze({
     schema_version: 1,
     projector_name: projectorName,
     projector_version: contractIdentifier(
-      descriptors.projector_version.value,
+      (descriptors.projector_version as PropertyDescriptor).value,
       64,
       /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u,
     ),
     source_stream: contractIdentifier(
-      descriptors.source_stream.value,
+      (descriptors.source_stream as PropertyDescriptor).value,
       128,
       /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u,
     ),
     source_type: sourceType,
-    source_id: boundedString(descriptors.source_id.value, 256),
+    source_id: boundedString((descriptors.source_id as PropertyDescriptor).value, 256),
     projection_variant: boundedString(
-      descriptors.projection_variant.value,
+      (descriptors.projection_variant as PropertyDescriptor).value,
       64,
       { token: true },
     ),
-    session_id: requiredUuid(descriptors.session_id.value),
+    session_id: requiredUuid((descriptors.session_id as PropertyDescriptor).value),
     item_type: itemType,
     sender_kind: senderKind,
     visibility,
-    text: nullableText(descriptors.text.value),
-    safe_content: safeContent,
-    occurred_at: isoDateTime(descriptors.occurred_at.value),
-    source_ordinal: canonicalBigint(descriptors.source_ordinal.value),
+    text: nullableText((descriptors.text as PropertyDescriptor).value),
+    safe_content: safeContent as SafeJsonObject,
+    occurred_at: isoDateTime((descriptors.occurred_at as PropertyDescriptor).value),
+    source_ordinal: canonicalBigint((descriptors.source_ordinal as PropertyDescriptor).value),
     source_hash: '',
     privacy_class: privacyClass,
-    retention_until: isoDateTime(descriptors.retention_until.value),
+    retention_until: isoDateTime((descriptors.retention_until as PropertyDescriptor).value),
   });
   const sourceHash = computeSourceHash(normalized);
   if (Object.hasOwn(descriptors, 'source_hash')) {
-    const supplied = descriptors.source_hash.value;
+    const supplied = (descriptors.source_hash as PropertyDescriptor).value;
     if (typeof supplied !== 'string' || !/^[a-f0-9]{64}$/u.test(supplied) || supplied !== sourceHash) {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
     }
@@ -634,11 +657,11 @@ export function normalizeTimelineSourceRecord(input) {
 
 export const normalizeConversationTimelineSourceRecord = normalizeTimelineSourceRecord;
 
-function utf8Hex(value) {
+function utf8Hex(value: string) {
   return Buffer.from(value, 'utf8').toString('hex');
 }
 
-export function computeTimelineCanonicalOrderKey(input) {
+export function computeTimelineCanonicalOrderKey(input: unknown) {
   const record = normalizeTimelineSourceRecord(input);
   const rank = TIMELINE_SOURCE_RANKS[record.source_type];
   return [
@@ -651,7 +674,7 @@ export function computeTimelineCanonicalOrderKey(input) {
   ].join('|');
 }
 
-export function compareTimelineSourceRecords(leftInput, rightInput) {
+export function compareTimelineSourceRecords(leftInput: unknown, rightInput: unknown) {
   const left = computeTimelineCanonicalOrderKey(leftInput);
   const right = computeTimelineCanonicalOrderKey(rightInput);
   return left < right ? -1 : left > right ? 1 : 0;
@@ -659,14 +682,14 @@ export function compareTimelineSourceRecords(leftInput, rightInput) {
 
 export const compareConversationTimelineSourceRecords = compareTimelineSourceRecords;
 
-function canonicalSequence(value, fallback) {
+function canonicalSequence(value: unknown, fallback: number) {
   if (value === undefined || value === null) {
     return String(fallback);
   }
   return canonicalBigint(value, { minimum: 1n });
 }
 
-function canonicalTimelineItem(item, fallbackSequence) {
+function canonicalTimelineItem(item: unknown, fallbackSequence: number): SafeJsonObject & { sequence_no: string; occurred_at: LocalDateTime } {
   const snapshot = plainRecordSnapshot(item);
   const sequence = canonicalSequence(snapshot.sequence_no, fallbackSequence);
   const sourceHash = snapshot.content_hash ?? snapshot.source_hash;
@@ -676,18 +699,18 @@ function canonicalTimelineItem(item, fallbackSequence) {
   return Object.freeze({
     session_id: requiredUuid(snapshot.session_id),
     sequence_no: sequence,
-    item_type: ITEM_TYPES.has(snapshot.item_type)
-      ? snapshot.item_type
+    item_type: ITEM_TYPES.has(snapshot.item_type as string)
+      ? snapshot.item_type as ConversationItemType
       : fail(TIMELINE_ERROR_CODES.sourceInvalid),
-    sender_kind: SENDER_KINDS.has(snapshot.sender_kind)
-      ? snapshot.sender_kind
+    sender_kind: SENDER_KINDS.has(snapshot.sender_kind as string)
+      ? snapshot.sender_kind as ConversationItemSenderKind
       : fail(TIMELINE_ERROR_CODES.sourceInvalid),
-    visibility: VISIBILITIES.has(snapshot.visibility)
-      ? snapshot.visibility
+    visibility: VISIBILITIES.has(snapshot.visibility as string)
+      ? snapshot.visibility as ConversationItemVisibility
       : fail(TIMELINE_ERROR_CODES.sourceInvalid),
     content_hash: sourceHash,
-    source_type: SOURCE_TYPES.has(snapshot.source_type)
-      ? snapshot.source_type
+    source_type: SOURCE_TYPES.has(snapshot.source_type as string)
+      ? snapshot.source_type as SourceRecord['source_type']
       : fail(TIMELINE_ERROR_CODES.sourceInvalid),
     source_id: boundedString(snapshot.source_id, 256),
     projection_variant: boundedString(snapshot.projection_variant, 64, { token: true }),
@@ -695,7 +718,7 @@ function canonicalTimelineItem(item, fallbackSequence) {
   });
 }
 
-function plainArrayValues(value, maximumLength = 100_000) {
+function plainArrayValues(value: unknown, maximumLength = 100_000) {
   try {
     if (
       value === null
@@ -707,7 +730,7 @@ function plainArrayValues(value, maximumLength = 100_000) {
     ) {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
     }
-    const descriptors = Object.getOwnPropertyDescriptors(value);
+    const descriptors = Object.getOwnPropertyDescriptors(value) as Record<string, PropertyDescriptor>;
     const lengthDescriptor = descriptors.length;
     if (
       lengthDescriptor === undefined
@@ -744,7 +767,7 @@ function plainArrayValues(value, maximumLength = 100_000) {
   }
 }
 
-export function computeTimelineCanonicalHash(items) {
+export function computeTimelineCanonicalHash(items: unknown) {
   const values = plainArrayValues(items);
   const hasSequences = [];
   for (const item of values) {
@@ -769,7 +792,7 @@ export function computeTimelineCanonicalHash(items) {
       return leftSequence < rightSequence ? -1 : leftSequence > rightSequence ? 1 : 0;
     });
     for (let index = 0; index < prepared.length; index += 1) {
-      if (prepared[index].sequence_no !== String(index + 1)) {
+      if ((prepared[index] as ReturnType<typeof canonicalTimelineItem>).sequence_no !== String(index + 1)) {
         fail(TIMELINE_ERROR_CODES.sourceInvalid);
       }
     }
@@ -779,7 +802,7 @@ export function computeTimelineCanonicalHash(items) {
 
 export const canonicalConversationTimelineHash = computeTimelineCanonicalHash;
 
-function mapperContext(context, defaults) {
+function mapperContext(context: unknown, defaults: { sourceStream: string }) {
   const snapshot = plainRecordSnapshot(context);
   return Object.freeze({
     projector_name: snapshot.projectorName ?? snapshot.projector_name ?? DEFAULT_PROJECTOR_NAME,
@@ -791,22 +814,22 @@ function mapperContext(context, defaults) {
   });
 }
 
-function inheritedControl(row, context, key) {
+function inheritedControl(row: RawRecord, context: RawRecord, key: string) {
   return row[key] ?? context[key];
 }
 
-function createMappedRecord(fields) {
+function createMappedRecord(fields: RawRecord) {
   const withoutHash = { ...fields };
   return normalizeTimelineSourceRecord(withoutHash);
 }
 
-export function mapChannelMessageTimelineSource(row, context = {}) {
+export function mapChannelMessageTimelineSource(row: RawRecord, context: RawRecord = {}) {
   row = plainRecordSnapshot(row);
   const scope = mapperContext(context, { sourceStream: 'channel.message_inbox' });
   const cleanText = row.clean_text ?? null;
   const msgType = boundedString(row.msg_type, 32);
   const relationType = row.relation_type ?? null;
-  if (relationType !== null && !['PRIMARY', 'SUPPLEMENT', 'CLARIFICATION'].includes(relationType)) {
+  if (relationType !== null && !['PRIMARY', 'SUPPLEMENT', 'CLARIFICATION'].includes(relationType as string)) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
   const hasText = typeof cleanText === 'string' && cleanText.length > 0;
@@ -839,12 +862,12 @@ export function mapChannelMessageTimelineSource(row, context = {}) {
   });
 }
 
-export const mapChannelMessageTimelineSources = (row, context = {}) => Object.freeze([
+export const mapChannelMessageTimelineSources = (row: RawRecord, context = {}) => Object.freeze([
   mapChannelMessageTimelineSource(row, context),
 ]);
 export const mapChannelMessageSourceRecord = mapChannelMessageTimelineSource;
 
-function ticketSafeContent(row) {
+function ticketSafeContent(row: RawRecord) {
   const content = {
     event_type: row.event_type,
     old_status: row.old_status ?? null,
@@ -864,7 +887,7 @@ function ticketSafeContent(row) {
   return content;
 }
 
-export function mapTicketEventTimelineSources(row, context = {}) {
+export function mapTicketEventTimelineSources(row: RawRecord, context: RawRecord = {}) {
   row = plainRecordSnapshot(row);
   const scope = mapperContext(context, { sourceStream: 'pilot_ticket.ticket_event' });
   const base = {
@@ -910,7 +933,7 @@ export function mapTicketEventTimelineSources(row, context = {}) {
 
 export const mapTicketEventSourceRecords = mapTicketEventTimelineSources;
 
-export function mapNotificationDeliveryTimelineSource(row, context = {}) {
+export function mapNotificationDeliveryTimelineSource(row: RawRecord, context: RawRecord = {}) {
   row = plainRecordSnapshot(row);
   const scope = mapperContext(context, { sourceStream: 'notification.delivery_attempt' });
   const attemptCount = row.attempt_count ?? row.attempt_no;
@@ -948,19 +971,19 @@ export function mapNotificationDeliveryTimelineSource(row, context = {}) {
   });
 }
 
-export const mapNotificationDeliveryTimelineSources = (row, context = {}) => Object.freeze([
+export const mapNotificationDeliveryTimelineSources = (row: RawRecord, context = {}) => Object.freeze([
   mapNotificationDeliveryTimelineSource(row, context),
 ]);
 export const mapDeliveryTimelineSource = mapNotificationDeliveryTimelineSource;
 export const mapNotificationDeliverySourceRecord = mapNotificationDeliveryTimelineSource;
 
-function requireFixture(row, expected) {
+function requireFixture(row: RawRecord, expected: string) {
   if (row.fixture !== true && row.fixture_kind !== expected && row.__fixture !== true) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
 }
 
-export function mapCommunicationMessageFixtureTimelineSource(row, context = {}) {
+export function mapCommunicationMessageFixtureTimelineSource(row: RawRecord, context: RawRecord = {}) {
   row = plainRecordSnapshot(row);
   requireFixture(row, 'COMMUNICATION_MESSAGE');
   const scope = mapperContext(context, { sourceStream: 'fixture.communication_message' });
@@ -987,12 +1010,12 @@ export function mapCommunicationMessageFixtureTimelineSource(row, context = {}) 
   });
 }
 
-export const mapCommunicationMessageFixtureTimelineSources = (row, context = {}) => Object.freeze([
+export const mapCommunicationMessageFixtureTimelineSources = (row: RawRecord, context = {}) => Object.freeze([
   mapCommunicationMessageFixtureTimelineSource(row, context),
 ]);
 export const mapCommunicationMessageFixtureSourceRecord = mapCommunicationMessageFixtureTimelineSource;
 
-export function mapHandoffEventFixtureTimelineSource(row, context = {}) {
+export function mapHandoffEventFixtureTimelineSource(row: RawRecord, context: RawRecord = {}) {
   row = plainRecordSnapshot(row);
   requireFixture(row, 'HANDOFF_EVENT');
   if (row.visibility !== undefined && row.visibility !== 'INTERNAL') {
@@ -1020,18 +1043,22 @@ export function mapHandoffEventFixtureTimelineSource(row, context = {}) {
   });
 }
 
-export const mapHandoffEventFixtureTimelineSources = (row, context = {}) => Object.freeze([
+export const mapHandoffEventFixtureTimelineSources = (row: RawRecord, context = {}) => Object.freeze([
   mapHandoffEventFixtureTimelineSource(row, context),
 ]);
 export const mapHandoffEventFixtureSourceRecord = mapHandoffEventFixtureTimelineSource;
 
 export class TimelineSourceAdapter {
-  constructor(options) {
-    options = plainRecordSnapshot(options);
+  declare readonly sourceStream: string;
+  declare readonly readBatchOperation: TimelineAdapterOptions["readBatch"];
+  declare readonly mapRow: NonNullable<TimelineAdapterOptions["mapRow"]>;
+  declare readonly readSessionRecordsOperation: NonNullable<TimelineAdapterOptions["readSessionRecords"]> | null;
+  constructor(options: TimelineAdapterOptions) {
+    options = plainRecordSnapshot(options) as TimelineAdapterOptions;
     const {
       sourceStream,
       readBatch,
-      mapRow = (row) => row,
+      mapRow = (row: unknown) => row,
       readSessionRecords = null,
     } = options;
     this.sourceStream = contractIdentifier(
@@ -1051,7 +1078,7 @@ export class TimelineSourceAdapter {
     Object.freeze(this);
   }
 
-  async readBatch(options = {}) {
+  async readBatch(options: RawRecord = {}) {
     options = plainRecordSnapshot(options);
     try {
       const raw = await this.readBatchOperation(options);
@@ -1088,7 +1115,7 @@ export class TimelineSourceAdapter {
     }
   }
 
-  async readSessionRecords(options = {}) {
+  async readSessionRecords(options: RawRecord = {}) {
     options = plainRecordSnapshot(options);
     if (this.readSessionRecordsOperation === null) {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
@@ -1102,11 +1129,11 @@ export class TimelineSourceAdapter {
   }
 }
 
-export function createTimelineSourceAdapter(options) {
+export function createTimelineSourceAdapter(options: TimelineAdapterOptions) {
   return new TimelineSourceAdapter(options);
 }
 
-export async function applyTimelineProjectionMigration(options) {
+export async function applyTimelineProjectionMigration(options: RawRecord) {
   options = plainRecordSnapshot(options);
   const pool = options.pool;
   try {
@@ -1118,7 +1145,7 @@ export async function applyTimelineProjectionMigration(options) {
     if (typeof query !== 'function') {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
     }
-    if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
+    if (await arch005MigrationApplied(pool as MigrationQueryable)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
     const sql = await readFile(MIGRATION_URL, 'utf8');
     await query.call(pool, sql);
   } catch (error) {
@@ -1126,7 +1153,7 @@ export async function applyTimelineProjectionMigration(options) {
   }
 }
 
-function mapStorageError(error, { rebuilding = false } = {}) {
+function mapStorageError(error: unknown, { rebuilding = false } = {}) {
   if (isStableTimelineProjectionError(error)) {
     return error;
   }
@@ -1160,13 +1187,13 @@ function mapStorageError(error, { rebuilding = false } = {}) {
   );
 }
 
-function assertProjectorEnabled(enabled) {
+function assertProjectorEnabled(enabled: unknown) {
   if (enabled !== true) {
     fail(TIMELINE_ERROR_CODES.disabled);
   }
 }
 
-function assertPool(pool, { transaction = false } = {}) {
+function assertPool(pool: unknown, { transaction = false } = {}): asserts pool is PostgresPool {
   let valid = false;
   try {
     valid = typeof dataPropertyFromPrototypeChain(
@@ -1187,18 +1214,18 @@ function assertPool(pool, { transaction = false } = {}) {
   }
 }
 
-function normalizeProjectInput(input, configuredBatchSize) {
+function normalizeProjectInput(input: unknown, configuredBatchSize: number) {
   input = plainRecordSnapshot(input);
-  const projectorName = timelineProjectorName(input.projectorName ?? input.projector_name);
+  const projectorName = timelineProjectorName((input as RawRecord).projectorName ?? (input as RawRecord).projector_name);
   const projectorVersion = contractIdentifier(
-    input.projectorVersion ?? input.projector_version,
+    (input as RawRecord).projectorVersion ?? (input as RawRecord).projector_version,
     64,
     /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u,
   );
-  const inputRecords = input.records ?? input.sourceRecords ?? input.source_records;
+  const inputRecords = (input as RawRecord).records ?? (input as RawRecord).sourceRecords ?? (input as RawRecord).source_records;
   const records = plainArrayValues(inputRecords, configuredBatchSize)
     .map(normalizeTimelineSourceRecord);
-  const explicitStream = input.sourceStream ?? input.source_stream ?? null;
+  const explicitStream = (input as RawRecord).sourceStream ?? (input as RawRecord).source_stream ?? null;
   const streams = new Set(records.map((record) => record.source_stream));
   const sourceStream = explicitStream === null
     ? (streams.size === 1 ? records[0]?.source_stream : null)
@@ -1213,15 +1240,15 @@ function normalizeProjectInput(input, configuredBatchSize) {
   return Object.freeze({
     projectorName,
     projectorVersion,
-    sourceStream,
+    sourceStream: sourceStream as string,
     records: Object.freeze(records),
-    expectedCheckpoint: input.expectedCheckpoint ?? input.expected_checkpoint ?? undefined,
-    cursorValue: input.cursorValue ?? input.cursor_value ?? null,
-    signal: input.signal,
+    expectedCheckpoint: (input as RawRecord).expectedCheckpoint ?? (input as RawRecord).expected_checkpoint ?? undefined,
+    cursorValue: (input as RawRecord).cursorValue ?? (input as RawRecord).cursor_value ?? null,
+    signal: (input as RawRecord).signal,
   });
 }
 
-function normalizeExpectedCheckpoint(value) {
+function normalizeExpectedCheckpoint(value: unknown): ExpectedCheckpoint | undefined {
   if (value === undefined) {
     return undefined;
   }
@@ -1232,15 +1259,15 @@ function normalizeExpectedCheckpoint(value) {
     return Object.freeze({ cursor_value: boundedString(value, 512) });
   }
   value = plainRecordSnapshot(value);
-  const normalized = Object.create(null);
-  if (value.cursorValue !== undefined || value.cursor_value !== undefined) {
-    const cursorValue = value.cursorValue !== undefined
-      ? value.cursorValue
-      : value.cursor_value;
+  const normalized: ExpectedCheckpoint = Object.create(null);
+  if ((value as RawRecord).cursorValue !== undefined || (value as RawRecord).cursor_value !== undefined) {
+    const cursorValue = (value as RawRecord).cursorValue !== undefined
+      ? (value as RawRecord).cursorValue
+      : (value as RawRecord).cursor_value;
     normalized.cursor_value = cursorValue === null ? null : boundedString(cursorValue, 512);
   }
-  if (value.rowVersion !== undefined || value.row_version !== undefined) {
-    normalized.row_version = canonicalBigint(value.rowVersion ?? value.row_version, { minimum: 1n });
+  if ((value as RawRecord).rowVersion !== undefined || (value as RawRecord).row_version !== undefined) {
+    normalized.row_version = canonicalBigint((value as RawRecord).rowVersion ?? (value as RawRecord).row_version, { minimum: 1n });
   }
   if (Object.keys(normalized).length === 0) {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
@@ -1248,7 +1275,7 @@ function normalizeExpectedCheckpoint(value) {
   return Object.freeze(normalized);
 }
 
-function checkpointMatches(row, expected) {
+function checkpointMatches(row: CheckpointRow | null, expected: ExpectedCheckpoint | undefined) {
   if (expected === undefined) {
     return true;
   }
@@ -1267,7 +1294,7 @@ function checkpointMatches(row, expected) {
   );
 }
 
-function chooseCursorValue(records, explicit) {
+function chooseCursorValue(records: readonly SourceRecord[], explicit: unknown) {
   if (explicit !== null && explicit !== undefined) {
     return boundedString(String(explicit), 512);
   }
@@ -1282,17 +1309,17 @@ function chooseCursorValue(records, explicit) {
   );
 }
 
-function lastOccurredAt(records) {
+function lastOccurredAt(records: readonly SourceRecord[]) {
   if (records.length === 0) {
     return null;
   }
   return records.reduce(
     (latest, record) => record.occurred_at > latest ? record.occurred_at : latest,
-    records[0].occurred_at,
+    (records[0] as SourceRecord).occurred_at,
   );
 }
 
-function safeStats({ received, inserted, replayed, sessions, checkpointUpdated, batchHash }) {
+function safeStats({ received, inserted, replayed, sessions, checkpointUpdated, batchHash }: { received: number; inserted: number; replayed: number; sessions: number; checkpointUpdated: boolean; batchHash: string }) {
   return Object.freeze({
     received_count: received,
     inserted_count: inserted,
@@ -1304,7 +1331,7 @@ function safeStats({ received, inserted, replayed, sessions, checkpointUpdated, 
   });
 }
 
-async function rollbackQuietly(client) {
+async function rollbackQuietly(client: PostgresTransaction) {
   try {
     await client.query('ROLLBACK');
   } catch {
@@ -1312,7 +1339,7 @@ async function rollbackQuietly(client) {
   }
 }
 
-function releaseQuietly(client) {
+function releaseQuietly(client: PostgresTransaction) {
   try {
     const release = dataPropertyFromPrototypeChain(
       client,
@@ -1327,31 +1354,31 @@ function releaseQuietly(client) {
   }
 }
 
-async function connectPool(pool, errorCode) {
+async function connectPool(pool: unknown, errorCode: TimelineProjectionErrorCode): Promise<PostgresPoolClient> {
   try {
     const connect = dataPropertyFromPrototypeChain(pool, 'connect', errorCode);
     if (typeof connect !== 'function') {
       fail(errorCode);
     }
-    return await connect.call(pool);
+    return await connect.call(pool) as PostgresPoolClient;
   } catch {
     fail(errorCode);
   }
 }
 
-async function setProjectionTransactionBounds(client) {
+async function setProjectionTransactionBounds(client: PostgresTransaction) {
   await client.query("SET LOCAL lock_timeout = '5s'");
   await client.query("SET LOCAL statement_timeout = '60s'");
 }
 
-async function acquireAdvisoryLock(client, identity) {
+async function acquireAdvisoryLock(client: PostgresTransaction, identity: string) {
   await client.query(
     "SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))",
     [identity],
   );
 }
 
-async function requireSession(client, sessionId) {
+async function requireSession(client: PostgresTransaction, sessionId: string) {
   const result = await client.query(
     'SELECT id::text FROM conversation.session WHERE id = $1::uuid',
     [sessionId],
@@ -1361,8 +1388,8 @@ async function requireSession(client, sessionId) {
   }
 }
 
-async function getBinding(client, record) {
-  const result = await client.query(
+async function getBinding(client: PostgresTransaction, record: SourceRecord) {
+  const result = await client.query<BindingRow>(
     `SELECT binding.item_id::text, binding.source_hash, binding.canonical_order_key,
             item.privacy_class, item.retention_until
        FROM conversation.item_source_binding AS binding
@@ -1382,26 +1409,26 @@ async function getBinding(client, record) {
       record.session_id,
     ],
   );
-  if (result.rowCount > 1) {
+  if ((result.rowCount as number) > 1) {
     fail(TIMELINE_ERROR_CODES.sourceConflict);
   }
-  return result.rowCount === 0 ? null : result.rows[0];
+  return result.rowCount === 0 ? null : (result.rows[0] as BindingRow);
 }
 
-function tighterPrivacy(current, candidate) {
+function tighterPrivacy(current: ConversationPrivacyClass, candidate: ConversationPrivacyClass) {
   if (!PRIVACY_CLASSES.has(current) || !PRIVACY_CLASSES.has(candidate)) {
     fail(TIMELINE_ERROR_CODES.storageFailed);
   }
-  return PRIVACY_RANK[candidate] > PRIVACY_RANK[current] ? candidate : current;
+  return (PRIVACY_RANK[candidate] as number) > (PRIVACY_RANK[current] as number) ? candidate : current;
 }
 
-function earlierRetention(current, candidate) {
+function earlierRetention(current: unknown, candidate: unknown) {
   const currentIso = postgresTimestampToLocalDateTime(current);
   const candidateIso = isoDateTime(candidate);
   return candidateIso < currentIso ? candidateIso : currentIso;
 }
 
-async function replayExistingBinding(client, binding, record) {
+async function replayExistingBinding(client: PostgresTransaction, binding: BindingRow, record: SourceRecord) {
   if (
     binding.source_hash !== record.source_hash
     || binding.canonical_order_key !== computeTimelineCanonicalOrderKey(record)
@@ -1434,7 +1461,7 @@ async function replayExistingBinding(client, binding, record) {
   );
 }
 
-async function sessionTail(client, sessionId) {
+async function sessionTail(client: PostgresTransaction, sessionId: string) {
   const result = await client.query(
     `SELECT sequence_no::text, canonical_order_key
        FROM conversation.item AS item
@@ -1450,16 +1477,16 @@ async function sessionTail(client, sessionId) {
     fail(TIMELINE_ERROR_CODES.storageFailed);
   }
   return Object.freeze({
-    sequence: BigInt(canonicalBigint(result.rows[0].sequence_no, { minimum: 1n })),
-    canonicalOrderKey: boundedString(result.rows[0].canonical_order_key, 1024),
+    sequence: BigInt(canonicalBigint((result.rows[0] as RawRecord).sequence_no, { minimum: 1n })),
+    canonicalOrderKey: boundedString((result.rows[0] as RawRecord).canonical_order_key, 1024),
   });
 }
 
-async function insertProjectedItem(client, record, sequenceNo, canonicalOrderKey) {
+async function insertProjectedItem(client: PostgresTransaction, record: SourceRecord, sequenceNo: bigint, canonicalOrderKey: string) {
   if (sequenceNo > BigInt(MAX_BIGINT_TEXT)) {
     fail(TIMELINE_ERROR_CODES.sequenceConflict);
   }
-  const inserted = await client.query(
+  const inserted = await client.query<ItemRow>(
     `INSERT INTO conversation.item (
        session_id, sequence_no, item_type, sender_kind, visibility,
        text, safe_content, source_type, source_id, projection_variant,
@@ -1493,8 +1520,8 @@ async function insertProjectedItem(client, record, sequenceNo, canonicalOrderKey
   if (inserted.rowCount !== 1) {
     fail(TIMELINE_ERROR_CODES.storageFailed);
   }
-  const itemId = requiredUuid(inserted.rows[0].id);
-  await client.query(
+  const itemId = requiredUuid((inserted.rows[0] as ItemRow).id);
+  await client.query<ItemRow>(
     `INSERT INTO conversation.item_source_binding (
        projector_name, projector_version, source_stream, source_type,
        source_id, projection_variant, session_id, item_id, source_hash,
@@ -1515,17 +1542,17 @@ async function insertProjectedItem(client, record, sequenceNo, canonicalOrderKey
   );
   return Object.freeze({
     id: itemId,
-    session_id: requiredUuid(inserted.rows[0].session_id),
-    sequence_no: canonicalBigint(inserted.rows[0].sequence_no, { minimum: 1n }),
-    item_type: inserted.rows[0].item_type,
-    sender_kind: inserted.rows[0].sender_kind,
-    visibility: inserted.rows[0].visibility,
-    occurred_at: postgresTimestampToLocalDateTime(inserted.rows[0].occurred_at),
-    retention_until: postgresTimestampToLocalDateTime(inserted.rows[0].retention_until),
+    session_id: requiredUuid((inserted.rows[0] as ItemRow).session_id),
+    sequence_no: canonicalBigint((inserted.rows[0] as ItemRow).sequence_no, { minimum: 1n }),
+    item_type: (inserted.rows[0] as ItemRow).item_type,
+    sender_kind: (inserted.rows[0] as ItemRow).sender_kind,
+    visibility: (inserted.rows[0] as ItemRow).visibility,
+    occurred_at: postgresTimestampToLocalDateTime((inserted.rows[0] as ItemRow).occurred_at),
+    retention_until: postgresTimestampToLocalDateTime((inserted.rows[0] as ItemRow).retention_until),
   });
 }
 
-async function persistedCanonicalTimeline(client, sessionId) {
+async function persistedCanonicalTimeline(client: PostgresTransaction, sessionId: string) {
   const result = await client.query(
     `SELECT item.session_id::text, item.sequence_no::text,
             item.item_type, item.sender_kind, item.visibility,
@@ -1550,8 +1577,8 @@ async function persistedCanonicalTimeline(client, sessionId) {
   });
 }
 
-async function readCheckpointForUpdate(client, projectorName, sourceStream) {
-  const result = await client.query(
+async function readCheckpointForUpdate(client: PostgresTransaction, projectorName: string, sourceStream: string) {
+  const result = await client.query<CheckpointRow>(
     `SELECT projector_version, cursor_value,
             last_source_occurred_at, last_batch_hash,
             row_version::text, updated_at
@@ -1560,13 +1587,13 @@ async function readCheckpointForUpdate(client, projectorName, sourceStream) {
       FOR UPDATE`,
     [projectorName, sourceStream],
   );
-  if (result.rowCount > 1) {
+  if ((result.rowCount as number) > 1) {
     fail(TIMELINE_ERROR_CODES.checkpointConflict);
   }
-  return result.rowCount === 0 ? null : result.rows[0];
+  return result.rowCount === 0 ? null : (result.rows[0] as CheckpointRow);
 }
 
-async function writeCheckpoint(client, {
+async function writeCheckpoint(client: PostgresTransaction, {
   projectorName,
   projectorVersion,
   sourceStream,
@@ -1574,7 +1601,7 @@ async function writeCheckpoint(client, {
   occurredAt,
   batchHash,
   current,
-}) {
+}: { projectorName: string; projectorVersion: string; sourceStream: string; cursorValue: string | null; occurredAt: LocalDateTime | null; batchHash: string; current: CheckpointRow | null }) {
   if (cursorValue === null) {
     return false;
   }
@@ -1595,9 +1622,9 @@ async function writeCheckpoint(client, {
     fail(TIMELINE_ERROR_CODES.checkpointConflict);
   }
   if (
-    /^(0|[1-9][0-9]*)$/u.test(current.cursor_value)
+    /^(0|[1-9][0-9]*)$/u.test(current.cursor_value as string)
     && /^(0|[1-9][0-9]*)$/u.test(cursorValue)
-    && BigInt(current.cursor_value) > BigInt(cursorValue)
+    && BigInt(current.cursor_value as string) > BigInt(cursorValue)
   ) {
     return false;
   }
@@ -1628,7 +1655,7 @@ async function writeCheckpoint(client, {
   return true;
 }
 
-function recordsBatchHash(records) {
+function recordsBatchHash(records: readonly SourceRecord[]) {
   return sha256Canonical([...records]
     .sort(compareTimelineSourceRecords)
     .map((record) => ({
@@ -1641,7 +1668,7 @@ function recordsBatchHash(records) {
     })));
 }
 
-function publicItemFromRow(row) {
+function publicItemFromRow(row: ItemRow) {
   const safeContent = clonePlainJson(row.safe_content);
   if (safeContent === null || Array.isArray(safeContent)) {
     fail(TIMELINE_ERROR_CODES.storageFailed);
@@ -1654,7 +1681,7 @@ function publicItemFromRow(row) {
     sender_kind: row.sender_kind,
     visibility: row.visibility,
     text: nullableText(row.text),
-    safe_content: safeContent,
+    safe_content: safeContent as SafeJsonObject,
     source_type: row.source_type,
     source_id: row.source_id,
     projection_variant: row.projection_variant,
@@ -1668,16 +1695,16 @@ function publicItemFromRow(row) {
   });
 }
 
-function validateRebuildInput(input) {
+function validateRebuildInput(input: unknown) {
   input = plainRecordSnapshot(input);
-  const sessionId = requiredUuid(input.sessionId ?? input.session_id);
-  const projectorName = timelineProjectorName(input.projectorName ?? input.projector_name);
+  const sessionId = requiredUuid((input as RawRecord).sessionId ?? (input as RawRecord).session_id);
+  const projectorName = timelineProjectorName((input as RawRecord).projectorName ?? (input as RawRecord).projector_name);
   const projectorVersion = contractIdentifier(
-    input.projectorVersion ?? input.projector_version,
+    (input as RawRecord).projectorVersion ?? (input as RawRecord).projector_version,
     64,
     /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u,
   );
-  const inputRecords = input.records ?? input.sourceRecords ?? input.source_records;
+  const inputRecords = (input as RawRecord).records ?? (input as RawRecord).sourceRecords ?? (input as RawRecord).source_records;
   const records = plainArrayValues(inputRecords).map(normalizeTimelineSourceRecord);
   if (records.some(
     (record) => record.session_id !== sessionId
@@ -1691,12 +1718,12 @@ function validateRebuildInput(input) {
     projectorName,
     projectorVersion,
     records: Object.freeze(records),
-    authorized: input.authorized === true || input.rebuildAuthorized === true,
-    signal: input.signal,
+    authorized: (input as RawRecord).authorized === true || (input as RawRecord).rebuildAuthorized === true,
+    signal: (input as RawRecord).signal,
   });
 }
 
-function sourceBindingIdentity(record) {
+function sourceBindingIdentity(record: Pick<SourceRecord, "projector_name" | "source_stream" | "source_type" | "source_id" | "projection_variant" | "session_id">) {
   return canonicalJson([
     record.projector_name,
     record.source_stream,
@@ -1707,7 +1734,7 @@ function sourceBindingIdentity(record) {
   ]);
 }
 
-function prepareRebuildRecords(input) {
+function prepareRebuildRecords(input: unknown) {
   const normalized = validateRebuildInput(input);
   const sorted = [...normalized.records].sort(compareTimelineSourceRecords);
   const identities = new Set();
@@ -1728,8 +1755,8 @@ function prepareRebuildRecords(input) {
   return Object.freeze({ ...normalized, sorted: Object.freeze(sorted), canonicalHash: hash });
 }
 
-async function assertRebuildSnapshotCurrent(client, prepared) {
-  const result = await client.query(
+async function assertRebuildSnapshotCurrent(client: PostgresTransaction, prepared: ReturnType<typeof prepareRebuildRecords>) {
+  const result = await client.query<BindingRow & SourceRecord>(
     `SELECT item.id::text AS item_id, item.privacy_class, item.retention_until,
             binding.projector_name, binding.source_stream, binding.source_type,
             binding.source_id, binding.projection_variant,
@@ -1766,7 +1793,7 @@ async function assertRebuildSnapshotCurrent(client, prepared) {
       || seenIdentities.has(identity)
       || row.source_hash !== expected.source_hash
       || !PRIVACY_CLASSES.has(row.privacy_class)
-      || PRIVACY_RANK[row.privacy_class] > PRIVACY_RANK[expected.privacy_class]
+      || (PRIVACY_RANK[row.privacy_class] as number) > (PRIVACY_RANK[expected.privacy_class] as number)
       || postgresTimestampToLocalDateTime(row.retention_until) < isoDateTime(expected.retention_until)
     ) {
       fail(TIMELINE_ERROR_CODES.rebuildFailed);
@@ -1776,8 +1803,8 @@ async function assertRebuildSnapshotCurrent(client, prepared) {
   }
 }
 
-export function createTimelineProjector(options = {}) {
-  options = plainRecordSnapshot(options);
+export function createTimelineProjector(options: TimelineProjectorOptions = {}) {
+  options = plainRecordSnapshot(options) as TimelineProjectorOptions;
   const {
     pool,
     enabled = false,
@@ -1800,12 +1827,12 @@ export function createTimelineProjector(options = {}) {
   if (transactionStartHook !== null && typeof transactionStartHook !== 'function') {
     fail(TIMELINE_ERROR_CODES.sourceInvalid);
   }
-  let beforeCommit = null;
-  let afterCommit = null;
+  let beforeCommit: (() => unknown | Promise<unknown>) | null = null;
+  let afterCommit: (() => unknown | Promise<unknown>) | null = null;
   if (faultInjection !== null) {
     const snapshot = plainRecordSnapshot(faultInjection);
-    beforeCommit = snapshot.beforeCommit ?? null;
-    afterCommit = snapshot.afterCommit ?? null;
+    beforeCommit = (snapshot.beforeCommit as (() => unknown | Promise<unknown>) | undefined) ?? null;
+    afterCommit = (snapshot.afterCommit as (() => unknown | Promise<unknown>) | undefined) ?? null;
     if (
       (beforeCommit !== null && typeof beforeCommit !== 'function')
       || (afterCommit !== null && typeof afterCommit !== 'function')
@@ -1814,12 +1841,12 @@ export function createTimelineProjector(options = {}) {
     }
   }
 
-  async function executeProjectBatch(normalized) {
+  async function executeProjectBatch(normalized: ReturnType<typeof normalizeProjectInput>) {
     throwIfAborted(normalized.signal);
     assertPool(pool, { transaction: true });
     const expectedCheckpoint = normalizeExpectedCheckpoint(normalized.expectedCheckpoint);
     const batchHash = recordsBatchHash(normalized.records);
-    const grouped = new Map();
+    const grouped = new Map<string, SourceRecord[]>();
     for (const record of normalized.records) {
       const group = grouped.get(record.session_id) ?? [];
       group.push(record);
@@ -1851,7 +1878,7 @@ export function createTimelineProjector(options = {}) {
         throwIfAborted(normalized.signal);
         await acquireAdvisoryLock(client, `P2_002_SESSION:${sessionId}`);
         await requireSession(client, sessionId);
-        const records = grouped.get(sessionId).sort(compareTimelineSourceRecords);
+        const records = (grouped.get(sessionId) as SourceRecord[]).sort(compareTimelineSourceRecords);
         const tail = await sessionTail(client, sessionId);
         let sequence = tail.sequence;
         let tailKey = tail.canonicalOrderKey;
@@ -1929,11 +1956,11 @@ export function createTimelineProjector(options = {}) {
     }
   }
 
-  const pendingProjectionOperations = [];
+  const pendingProjectionOperations: { normalized: ReturnType<typeof normalizeProjectInput>; ordinal: number; key: string; resolve: (value: TimelineProjectionResult) => void; reject: (error: unknown) => void }[] = [];
   let projectionDrainActive = false;
   let nextProjectionOperation = 0;
 
-  function projectionOperationKey(normalized) {
+  function projectionOperationKey(normalized: ReturnType<typeof normalizeProjectInput>) {
     const keys = normalized.records.map(computeTimelineCanonicalOrderKey).sort();
     return [
       keys[0] ?? '',
@@ -1948,7 +1975,7 @@ export function createTimelineProjector(options = {}) {
         pendingProjectionOperations.sort((left, right) => (
           left.key < right.key ? -1 : left.key > right.key ? 1 : left.ordinal - right.ordinal
         ));
-        const operation = pendingProjectionOperations.shift();
+        const operation = pendingProjectionOperations.shift() as (typeof pendingProjectionOperations)[number];
         try {
           operation.resolve(await executeProjectBatch(operation.normalized));
         } catch (error) {
@@ -1964,13 +1991,13 @@ export function createTimelineProjector(options = {}) {
     }
   }
 
-  async function projectBatch(input) {
+  async function projectBatch(input: unknown) {
     assertProjectorEnabled(enabled);
     const normalized = normalizeProjectInput(input, configuredBatchSize);
     throwIfAborted(normalized.signal);
     const ordinal = nextProjectionOperation;
     nextProjectionOperation += 1;
-    return new Promise((resolve, reject) => {
+    return new Promise<TimelineProjectionResult>((resolve, reject) => {
       pendingProjectionOperations.push({
         normalized,
         ordinal,
@@ -1987,10 +2014,10 @@ export function createTimelineProjector(options = {}) {
     });
   }
 
-  async function projectOne(input, options = {}) {
+  async function projectOne(input: unknown, options: RawRecord = {}) {
     input = plainRecordSnapshot(input);
     options = plainRecordSnapshot(options);
-    if (input.schema_version === 1) {
+    if ((input as RawRecord).schema_version === 1) {
       const record = normalizeTimelineSourceRecord(input);
       return projectBatch({
         ...options,
@@ -2000,34 +2027,34 @@ export function createTimelineProjector(options = {}) {
         records: [record],
       });
     }
-    const record = input.record ?? input.sourceRecord ?? input.source_record;
-    return projectBatch({ ...input, records: [record] });
+    const record = (input as RawRecord).record ?? (input as RawRecord).sourceRecord ?? (input as RawRecord).source_record;
+    return projectBatch({ ...(input as RawRecord), records: [record] });
   }
 
-  async function listTimelineItems(input) {
+  async function listTimelineItems(input: unknown) {
     assertProjectorEnabled(enabled);
     input = plainRecordSnapshot(input);
     assertPool(pool);
-    const sessionId = requiredUuid(input.sessionId ?? input.session_id);
+    const sessionId = requiredUuid((input as RawRecord).sessionId ?? (input as RawRecord).session_id);
     const afterSequence = canonicalBigint(
-      input.afterSequence ?? input.after_sequence ?? 0,
+      (input as RawRecord).afterSequence ?? (input as RawRecord).after_sequence ?? 0,
     );
-    const limit = boundedInteger(input.limit, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT);
-    const audience = input.audience;
-    if (!TIMELINE_AUDIENCES.includes(audience)) {
+    const limit = boundedInteger((input as RawRecord).limit, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT);
+    const audience = (input as RawRecord).audience;
+    if (!TIMELINE_AUDIENCES.includes(audience as string)) {
       fail(TIMELINE_ERROR_CODES.sourceInvalid);
     }
     if (audience === 'RESTRICTED_ADMIN') {
-      const explicit = input.restrictedAuthorized === true
-        || input.restricted_authorized === true
-        || input.authorized === true;
+      const explicit = (input as RawRecord).restrictedAuthorized === true
+        || (input as RawRecord).restricted_authorized === true
+        || (input as RawRecord).authorized === true;
       if (!explicit) {
         fail(TIMELINE_ERROR_CODES.rebuildNotAuthorized);
       }
       if (restrictedAuthorizer !== null) {
-        let authorized = false;
+        let authorized: unknown = false;
         try {
-          authorized = await restrictedAuthorizer({ sessionId, audience, signal: input.signal });
+          authorized = await restrictedAuthorizer({ sessionId, audience, signal: (input as RawRecord).signal });
         } catch {
           authorized = false;
         }
@@ -2036,14 +2063,14 @@ export function createTimelineProjector(options = {}) {
         }
       }
     }
-    throwIfAborted(input.signal);
+    throwIfAborted((input as RawRecord).signal);
     const visibility = audience === 'EXTERNAL'
       ? ['EXTERNAL']
       : audience === 'WORKBENCH'
         ? ['EXTERNAL', 'INTERNAL']
         : ['EXTERNAL', 'INTERNAL', 'RESTRICTED'];
     try {
-      const result = await pool.query(
+      const result = await pool.query<ItemRow>(
         `SELECT id::text, session_id::text, sequence_no::text,
                 item_type, sender_kind, visibility, text, safe_content,
                 source_type, source_id, projection_variant,
@@ -2063,26 +2090,26 @@ export function createTimelineProjector(options = {}) {
       return Object.freeze({
         session_id: sessionId,
         items: Object.freeze(items),
-        next_after_sequence: items.length === 0 ? null : items.at(-1).sequence_no,
+        next_after_sequence: items.length === 0 ? null : (items.at(-1) as ReturnType<typeof publicItemFromRow>).sequence_no,
       });
     } catch (error) {
       throw mapStorageError(error);
     }
   }
 
-  async function getProjectionCheckpoint(input) {
+  async function getProjectionCheckpoint(input: unknown) {
     assertProjectorEnabled(enabled);
     input = plainRecordSnapshot(input);
     assertPool(pool);
-    const projectorName = timelineProjectorName(input.projectorName ?? input.projector_name);
+    const projectorName = timelineProjectorName((input as RawRecord).projectorName ?? (input as RawRecord).projector_name);
     const sourceStream = contractIdentifier(
-      input.sourceStream ?? input.source_stream,
+      (input as RawRecord).sourceStream ?? (input as RawRecord).source_stream,
       128,
       /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u,
     );
-    throwIfAborted(input.signal);
+    throwIfAborted((input as RawRecord).signal);
     try {
-      const result = await pool.query(
+      const result = await pool.query<CheckpointRow>(
         `SELECT projector_name, projector_version, source_stream,
                 cursor_value, last_source_occurred_at, last_batch_hash,
                 row_version::text, updated_at
@@ -2096,7 +2123,7 @@ export function createTimelineProjector(options = {}) {
       if (result.rowCount !== 1) {
         fail(TIMELINE_ERROR_CODES.checkpointConflict);
       }
-      const row = result.rows[0];
+      const row = result.rows[0] as CheckpointRow;
       return Object.freeze({
         schema_version: 1,
         projector_name: row.projector_name,
@@ -2117,7 +2144,7 @@ export function createTimelineProjector(options = {}) {
     }
   }
 
-  function checkRebuildSession(input) {
+  function checkRebuildSession(input: unknown) {
     assertProjectorEnabled(enabled);
     const prepared = prepareRebuildRecords(input);
     return Object.freeze({
@@ -2130,7 +2157,7 @@ export function createTimelineProjector(options = {}) {
     });
   }
 
-  async function rebuildSession(input) {
+  async function rebuildSession(input: unknown) {
     assertProjectorEnabled(enabled);
     const prepared = prepareRebuildRecords(input);
     if (!prepared.authorized) {
@@ -2230,7 +2257,7 @@ export function createTimelineProjector(options = {}) {
 
 export const createConversationTimelineProjector = createTimelineProjector;
 
-export function createTimelineProjectorWorker(options = {}) {
+export function createTimelineProjectorWorker(options: RawRecord = {}) {
   options = plainRecordSnapshot(options);
   const {
     sourceAdapter,
@@ -2238,9 +2265,9 @@ export function createTimelineProjectorWorker(options = {}) {
     batchSize = DEFAULT_BATCH_SIZE,
   } = options;
   const configuredBatchSize = boundedInteger(batchSize, DEFAULT_BATCH_SIZE, MAX_BATCH_SIZE);
-  let adapterReadBatch;
-  let adapterSourceStream;
-  let projectorProjectBatch;
+  let adapterReadBatch: unknown;
+  let adapterSourceStream: unknown;
+  let projectorProjectBatch: unknown;
   try {
     adapterReadBatch = dataPropertyFromPrototypeChain(
       sourceAdapter,
@@ -2269,7 +2296,7 @@ export function createTimelineProjectorWorker(options = {}) {
     /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u,
   );
 
-  async function runOnce(runOptions = {}) {
+  async function runOnce(runOptions: RawRecord = {}) {
     runOptions = plainRecordSnapshot(runOptions);
     const projectorName = timelineProjectorName(
       runOptions.projectorName ?? DEFAULT_PROJECTOR_NAME,
@@ -2288,9 +2315,9 @@ export function createTimelineProjectorWorker(options = {}) {
     const expectedCheckpoint = runOptions.expectedCheckpoint;
     const signal = runOptions.signal;
     throwIfAborted(signal);
-    let batch;
+    let batch: unknown;
     try {
-      batch = await adapterReadBatch.call(sourceAdapter, {
+      batch = await (adapterReadBatch as (options: RawRecord) => Promise<unknown>).call(sourceAdapter, {
         cursorValue,
         limit: configuredBatchSize,
         batchSize: configuredBatchSize,
@@ -2304,9 +2331,9 @@ export function createTimelineProjectorWorker(options = {}) {
     }
     throwIfAborted(signal);
     batch = plainRecordSnapshot(batch);
-    const records = plainArrayValues(batch.records, configuredBatchSize);
+    const records = plainArrayValues((batch as RawRecord).records, configuredBatchSize);
     if (records.length === 0) {
-      const nextCursor = batch.next_cursor_value ?? batch.cursor_value ?? cursorValue;
+      const nextCursor = (batch as RawRecord).next_cursor_value ?? (batch as RawRecord).cursor_value ?? cursorValue;
       return Object.freeze({
         done: true,
         exhausted: true,
@@ -2315,11 +2342,11 @@ export function createTimelineProjectorWorker(options = {}) {
         stats: null,
       });
     }
-    const nextCursor = batch.next_cursor_value ?? batch.cursor_value ?? null;
-    const exhausted = batch.exhausted === true || batch.done === true;
-    let stats;
+    const nextCursor = (batch as RawRecord).next_cursor_value ?? (batch as RawRecord).cursor_value ?? null;
+    const exhausted = (batch as RawRecord).exhausted === true || (batch as RawRecord).done === true;
+    let stats: TimelineProjectionResult;
     try {
-      stats = await projectorProjectBatch.call(projector, {
+      stats = await (projectorProjectBatch as (options: RawRecord) => Promise<TimelineProjectionResult>).call(projector, {
         projectorName,
         projectorVersion,
         sourceStream,
@@ -2341,7 +2368,7 @@ export function createTimelineProjectorWorker(options = {}) {
     });
   }
 
-  async function run(options = {}) {
+  async function run(options: RawRecord = {}) {
     options = plainRecordSnapshot(options);
     let cursorValue = options.cursorValue ?? null;
     let batches = 0;
@@ -2375,19 +2402,19 @@ export function createTimelineProjectorWorker(options = {}) {
 
 export const createConversationTimelineProjectorWorker = createTimelineProjectorWorker;
 
-async function queryReadOnlySession(client, sessionId, signal) {
+async function queryReadOnlySession(client: PostgresTransaction, sessionId: string, signal: unknown) {
   throwIfAborted(signal);
-  const result = await client.query(
+  const result = await client.query<{ id: string; service_intake_id: string | null }>(
     'SELECT id::text, service_intake_id::text FROM conversation.session WHERE id = $1::uuid',
     [sessionId],
   );
   if (result.rowCount !== 1) {
     fail(TIMELINE_ERROR_CODES.sessionNotFound);
   }
-  return result.rows[0];
+  return result.rows[0] as { id: string; service_intake_id: string | null };
 }
 
-export function createP1TimelineSourceAdapter(options = {}) {
+export function createP1TimelineSourceAdapter(options: RawRecord = {}) {
   options = plainRecordSnapshot(options);
   const {
     pool,
@@ -2402,7 +2429,7 @@ export function createP1TimelineSourceAdapter(options = {}) {
     /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u,
   );
 
-  async function readSessionRecords(readOptions = {}) {
+  async function readSessionRecords(readOptions: RawRecord = {}) {
     readOptions = plainRecordSnapshot(readOptions);
     const { sessionId, session_id, signal } = readOptions;
     const normalizedSessionId = requiredUuid(sessionId ?? session_id);

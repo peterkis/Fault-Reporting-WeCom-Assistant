@@ -10,7 +10,7 @@
 
 ## Phase 2
 
-状态：`IN_PROGRESS`。P2-001 至 P2-007、P2-G1、ARCH-005、ARCH-006 已完成，当前无活动任务或 Lane。下一候选 P2-015 未授权；P2-016、P2-012、P2-008 至 P2-014 与 P2-G2 至 P2-G5 仍为 `TODO / REQUIRES_SEPARATE_AUTHORIZATION`，全部 Feature Flag 保持 `false`。
+业务阶段状态为 `IN_PROGRESS`；完成任务、Gate 与后续授权以 [业务架构/Gate 状态](architecture_baseline_status.md) 与 `plans/current_phase.json` 及其引用的既有 Evidence 为准。本文件列业务阶段范围，旧任务完成与停止线保留各自历史身份。当前语言迁移见 [TypeScript 迁移执行入口](../plans/typescript-migration/README.md)；迁移 P02 不等于业务任务 P2-002，不推进 P2-G2-LIVE/P2-008。全部持久 Feature Flag 默认 `false`。
 
 范围：
 

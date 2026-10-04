@@ -1,5 +1,7 @@
 # P2-003 Durable Realtime Event Log 与 SSE Replay
 
+> 适用范围：本文件保留 P2-003 业务契约与历史验收。语言迁移使用 v3 活动 selection，不把历史全仓/现场清单作为普通 PR 默认要求。源码路径按 scope.current_module_map 解析；编译产物与运行时 import 仍为 `.mjs`。
+
 ## 1. 状态与边界
 
 P2-003 只实现 PostgreSQL durable Realtime Event Log、授权补放、原生 HTTP SSE、心跳、

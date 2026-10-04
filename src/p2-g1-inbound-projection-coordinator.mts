@@ -1,3 +1,16 @@
+import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
+import type { RealtimeEventCommand } from '../contracts/conversation_realtime_contracts.js';
+import type { SourceRecord, TimelineProjectorOptions } from './p2-002-timeline-projector.mjs';
+type RawRecord = Record<string, unknown>;
+export type G1RealtimeAppender = (input: { transaction: PostgresTransaction; command: unknown }) => unknown | Promise<unknown>;
+interface ProjectorOptions { pool?: PostgresPool; enabled?: boolean; batchSize?: number; realtimeAppender?: G1RealtimeAppender; transactionStartHook?: TimelineProjectorOptions['transactionStartHook']; wakeup?: (() => unknown | Promise<unknown>) | null }
+interface CoordinatorOptions { pool?: PostgresPool; projector?: ReturnType<typeof createTimelineProjector> | null; enabled?: boolean; batchSize?: number; wakeup?: (() => unknown | Promise<unknown>) | null }
+interface ChannelRow extends RawRecord { id: string; provider: string; bot_id: string; chat_type: "group" | "single"; chat_id: string; sender_user_id: string; service_intake_id: string | null; received_at: string; received_epoch_ms: string; privacy_class: string; retention_until: string }
+type MessageRow = Parameters<typeof mapCommunicationMessageToTimelineSourceRecord>[0] & RawRecord;
+type DeliveryRow = Parameters<typeof mapCommunicationDeliveryToTimelineSourceRecord>[0] & { session_id: string } & RawRecord;
+type ControlRow = Parameters<typeof mapControlEventToTimelineSourceRecord>[0] & RawRecord;
+type BaseMapping = ReturnType<typeof mapCommunicationMessageToTimelineSourceRecord> | ReturnType<typeof mapCommunicationDeliveryToTimelineSourceRecord>;
+interface ProjectionGroup { cursor: string; session_id: string | null; records: readonly SourceRecord[] }
 import { createHash } from 'node:crypto';
 
 import {
@@ -41,33 +54,33 @@ const PROJECTOR_NAME = 'CONVERSATION_TIMELINE';
 const PROJECTOR_VERSION = 'P2-G1.1';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
-function sha256(value) {
+function sha256(value: unknown) {
   return createHash('sha256').update(String(value)).digest('hex');
 }
 
-function iso(value) {
+function iso(value: unknown) {
   try { return assertLocalDateTime(value); }
   catch { throw new TypeError(P2_G1_PROJECTION_ERROR_CODES.storageFailed); }
 }
 
-function stableOrdinal(value) {
+function stableOrdinal(value: unknown) {
   return BigInt(`0x${sha256(value).slice(0, 15)}`).toString();
 }
 
-function boundedBatchSize(value) {
+function boundedBatchSize(value: number) {
   if (!Number.isInteger(value) || value < 1 || value > 20) {
     throw new TypeError(P2_G1_PROJECTION_ERROR_CODES.invalidConfiguration);
   }
   return value;
 }
 
-function assertPool(pool) {
-  if (!pool || typeof pool.query !== 'function' || typeof pool.connect !== 'function') {
+function assertPool(pool: unknown): asserts pool is PostgresPool {
+  if (!pool || typeof (pool as PostgresPool).query !== 'function' || typeof (pool as PostgresPool).connect !== 'function') {
     throw new TypeError(P2_G1_PROJECTION_ERROR_CODES.invalidConfiguration);
   }
 }
 
-async function withTransaction(pool, operation) {
+async function withTransaction<T>(pool: PostgresPool, operation: (client: PostgresTransaction) => Promise<T>) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -82,11 +95,11 @@ async function withTransaction(pool, operation) {
   }
 }
 
-function creationKey(sourceId) {
+function creationKey(sourceId: unknown) {
   return `P2-G1:CHANNEL_MESSAGE:${sourceId}`;
 }
 
-function mappedRecord(base, overrides) {
+function mappedRecord(base: BaseMapping, overrides: { source_ordinal: string; safe_content?: unknown }) {
   const safeContent = base.content && typeof base.content === 'object' && !Array.isArray(base.content)
     ? base.content
     : {};
@@ -102,7 +115,7 @@ function mappedRecord(base, overrides) {
     item_type: base.item_type,
     sender_kind: base.sender_kind,
     visibility: base.visibility,
-    text: typeof safeContent.text === 'string' ? safeContent.text : null,
+    text: typeof (safeContent as { text?: unknown }).text === 'string' ? (safeContent as { text?: unknown }).text : null,
     safe_content: overrides.safe_content ?? {},
     occurred_at: base.occurred_at,
     source_ordinal: overrides.source_ordinal,
@@ -118,7 +131,7 @@ export function createP2G1TimelineProjector({
   realtimeAppender = appendRealtimeEvent,
   transactionStartHook = null,
   wakeup = null,
-} = {}) {
+}: ProjectorOptions = {}) {
   assertPool(pool);
   boundedBatchSize(batchSize);
   if (typeof enabled !== 'boolean' || typeof realtimeAppender !== 'function' || (wakeup !== null && typeof wakeup !== 'function')
@@ -139,7 +152,7 @@ export function createP2G1TimelineProjector({
           [item.session_id],
         );
         if (session.rowCount !== 1) throw new Error(P2_G1_PROJECTION_ERROR_CODES.storageFailed);
-        const firstMessage = session.rows[0].creation_idempotency_key === creationKey(sourceRecord.source_id);
+        const firstMessage = (session.rows[0] as RawRecord).creation_idempotency_key === creationKey(sourceRecord.source_id);
         await transaction.query(
           `UPDATE conversation.session
               SET generation_version=generation_version+CASE WHEN $2::boolean THEN 0 ELSE 1 END,
@@ -154,7 +167,7 @@ export function createP2G1TimelineProjector({
           `UPDATE conversation.thread
               SET last_activity_at=GREATEST(last_activity_at,$2::timestamp without time zone),updated_at=date_trunc('second', transaction_timestamp() AT TIME ZONE 'Asia/Shanghai')
             WHERE id=$1::uuid`,
-          [session.rows[0].thread_id, sourceRecord.occurred_at],
+          [(session.rows[0] as RawRecord).thread_id, sourceRecord.occurred_at],
         );
       }
       await realtimeAppender({
@@ -171,7 +184,7 @@ export function createP2G1TimelineProjector({
   });
 }
 
-async function resolveChannelSession(pool, row) {
+async function resolveChannelSession(pool: PostgresPool, row: ChannelRow) {
   return withTransaction(pool, async (transaction) => {
     const identity = buildConversationThreadIdentity({
       provider: row.provider,
@@ -191,13 +204,13 @@ async function resolveChannelSession(pool, row) {
       [identity.provider, identity.channel_account_id, identity.chat_type,
         identity.external_thread_key, identity.thread_key, row.received_at],
     );
-    const current = await transaction.query(
+    const current = await transaction.query<{ id: string; service_intake_id: string | null }>(
       `SELECT id::text,status,service_intake_id::text,last_activity_at
          FROM conversation.session
         WHERE thread_id=$1::uuid AND participant_key=$2
           AND status<>'ENDED'
         ORDER BY last_activity_at DESC,id DESC LIMIT 1 FOR UPDATE`,
-      [thread.rows[0].id, identity.participant_key],
+      [(thread.rows[0] as { id: string }).id, identity.participant_key],
     );
     const active = current.rows[0] ?? null;
     const sameIntake = active !== null
@@ -207,8 +220,8 @@ async function resolveChannelSession(pool, row) {
       const boundary = await transaction.query(`SELECT payload->>'session_boundary_reason' AS reason
         FROM intake.service_intake_event WHERE intake_id=$1::uuid AND event_type='intake.received'
         ORDER BY event_ordinal LIMIT 1`, [row.service_intake_id]);
-      const closeReason = ['IDLE_TIMEOUT', 'EXPLICIT_USER_NEW_TOPIC'].includes(boundary.rows[0]?.reason)
-        ? boundary.rows[0].reason : 'DIFFERENT_INTAKE';
+      const closeReason = ['IDLE_TIMEOUT', 'EXPLICIT_USER_NEW_TOPIC'].includes((boundary.rows[0] as { reason?: string } | undefined)?.reason as string)
+        ? (boundary.rows[0] as { reason: string }).reason : 'DIFFERENT_INTAKE';
       const ended = await transaction.query(
         `UPDATE conversation.session
             SET status='ENDED',
@@ -239,15 +252,15 @@ async function resolveChannelSession(pool, row) {
        ON CONFLICT(creation_idempotency_key) DO UPDATE
          SET creation_idempotency_key=EXCLUDED.creation_idempotency_key
        RETURNING id::text`,
-      [thread.rows[0].id, scope.participant_key, scope.service_intake_id,
+      [(thread.rows[0] as { id: string }).id, scope.participant_key, scope.service_intake_id,
         scope.session_scope_key, scope.creation_idempotency_key, row.received_at,
         row.received_epoch_ms ?? shanghaiLocalToEpochMs(row.received_at)],
     );
-    return inserted.rows[0].id;
+    return (inserted.rows[0] as { id: string }).id;
   });
 }
 
-function streamContext(stream, sessionId, row) {
+function streamContext(stream: string, sessionId: string, row: RawRecord) {
   return {
     projectorName: PROJECTOR_NAME,
     projectorVersion: PROJECTOR_VERSION,
@@ -258,8 +271,8 @@ function streamContext(stream, sessionId, row) {
   };
 }
 
-function publicFailure(stream, error, sessionId = null) {
-  const rebuild = error?.code === TIMELINE_ERROR_CODES.rebuildRequired;
+function publicFailure(stream: string, error: unknown, sessionId: string | null = null) {
+  const rebuild = (error as { code?: unknown } | null | undefined)?.code === TIMELINE_ERROR_CODES.rebuildRequired;
   return Object.freeze({
     source_stream: stream,
     code: rebuild ? P2_G1_PROJECTION_ERROR_CODES.rebuildRequired : P2_G1_PROJECTION_ERROR_CODES.storageFailed,
@@ -275,14 +288,14 @@ export function createP2G1InboundProjectionCoordinator({
   enabled = false,
   batchSize = 20,
   wakeup = null,
-} = {}) {
+}: CoordinatorOptions = {}) {
   assertPool(pool);
   const size = boundedBatchSize(batchSize);
   if (typeof enabled !== 'boolean') throw new TypeError(P2_G1_PROJECTION_ERROR_CODES.invalidConfiguration);
   const timeline = projector ?? createP2G1TimelineProjector({ pool, enabled, batchSize: size, wakeup });
   if (!timeline || typeof timeline.projectBatch !== 'function') throw new TypeError(P2_G1_PROJECTION_ERROR_CODES.invalidConfiguration);
 
-  async function projectGroups(stream, groups) {
+  async function projectGroups(stream: string, groups: readonly ProjectionGroup[]) {
     const failures = [];
     let inserted = 0;
     let replayed = 0;
@@ -311,7 +324,7 @@ export function createP2G1InboundProjectionCoordinator({
   }
 
   async function channelMessages() {
-    const rows = await pool.query(
+    const rows = await (pool as PostgresPool).query<ChannelRow>(
       `SELECT mi.id::text,mi.provider,mi.bot_id,mi.chat_type,mi.chat_id,mi.sender_user_id,
               mi.msg_type,mi.clean_text,mi.received_at,mi.received_epoch_ms::text,
               mi.privacy_class,mi.retention_until,mi.retention_until_epoch_ms::text,
@@ -331,7 +344,7 @@ export function createP2G1InboundProjectionCoordinator({
     );
     const groups = [];
     for (const row of rows.rows) {
-      const sessionId = await resolveChannelSession(pool, row);
+      const sessionId = await resolveChannelSession(pool as PostgresPool, row);
       groups.push({
         cursor: row.id,
         session_id: sessionId,
@@ -342,7 +355,7 @@ export function createP2G1InboundProjectionCoordinator({
   }
 
   async function ticketEvents() {
-    const rows = await pool.query(
+    const rows = await (pool as PostgresPool).query<RawRecord & { session_id: string; event_id: string }>(
       `SELECT te.event_id::text,te.ticket_id::text,te.event_type,te.old_status,te.new_status,
               te.aggregate_version,te.event_ordinal,te.internal_note,te.external_note,te.reason_code,
               te.created_at,s.id::text AS session_id,si.privacy_class,si.retention_until
@@ -367,7 +380,7 @@ export function createP2G1InboundProjectionCoordinator({
   }
 
   async function communicationMessages() {
-    const rows = await pool.query(
+    const rows = await (pool as PostgresPool).query<MessageRow>(
       `SELECT m.id::text,m.session_id::text,m.sender_kind,m.purpose,m.message_type,m.visibility,
               m.content,m.privacy_class,m.retention_until,m.created_at
          FROM communication.message m
@@ -390,7 +403,7 @@ export function createP2G1InboundProjectionCoordinator({
   }
 
   async function communicationDeliveries() {
-    const rows = await pool.query(
+    const rows = await (pool as PostgresPool).query<DeliveryRow>(
       `SELECT d.id::text,d.status,d.attempt_count,d.last_error_code,d.side_effect_state,d.updated_at,
               m.session_id::text,m.privacy_class,m.retention_until
          FROM communication.delivery d
@@ -420,7 +433,7 @@ export function createP2G1InboundProjectionCoordinator({
   }
 
   async function controlEvents() {
-    const rows = await pool.query(
+    const rows = await (pool as PostgresPool).query<ControlRow>(
       `SELECT ce.id::text,ce.session_id::text,ce.event_type,ce.event_ordinal,
               ce.new_assignment_status,ce.new_control_mode,ce.reason_code,ce.occurred_at,
               'INTERNAL'::text AS privacy_class,
@@ -467,7 +480,7 @@ export function createP2G1InboundProjectionCoordinator({
 
   async function backlog() {
     if (!enabled) return Object.freeze({ total: 0, disabled: true });
-    const result = await pool.query(`SELECT
+    const result = await (pool as PostgresPool).query<{ channel_messages: number; communication_messages: number; communication_deliveries: number }>(`SELECT
       (SELECT count(*) FROM channel.message_inbox mi WHERE mi.processing_status='COMPLETED' AND NOT EXISTS(
         SELECT 1 FROM conversation.item_source_binding b WHERE b.projector_name=$1 AND b.source_stream=$2 AND b.source_type='CHANNEL_MESSAGE' AND b.source_id=mi.id::text))::integer AS channel_messages,
       (SELECT count(*) FROM communication.message m WHERE m.session_id IS NOT NULL AND NOT EXISTS(
@@ -475,7 +488,7 @@ export function createP2G1InboundProjectionCoordinator({
       (SELECT count(*) FROM communication.delivery d JOIN communication.outbox o ON o.id=d.outbox_id JOIN communication.message m ON m.id=o.message_id WHERE m.session_id IS NOT NULL AND NOT EXISTS(
         SELECT 1 FROM conversation.item_source_binding b WHERE b.projector_name=$1 AND b.source_stream=$4 AND b.source_type='DELIVERY' AND b.source_id=d.id::text AND b.projection_variant=(d.status||'_ATTEMPT_'||d.attempt_count::text)))::integer AS communication_deliveries`,
     [PROJECTOR_NAME, P2_G1_PROJECTION_STREAMS.channelMessage, P2_G1_PROJECTION_STREAMS.communicationMessage, P2_G1_PROJECTION_STREAMS.communicationDelivery]);
-    const counts = result.rows[0];
+    const counts = result.rows[0] as { channel_messages: number; communication_messages: number; communication_deliveries: number };
     return Object.freeze({ ...counts, total: counts.channel_messages + counts.communication_messages + counts.communication_deliveries, disabled: false });
   }
 

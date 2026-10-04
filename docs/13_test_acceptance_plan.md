@@ -1,5 +1,7 @@
 # 13. 测试与验收计划
 
+> 适用范围：本文件“每次发布必须”继续作为业务发布要求。普通 TypeScript PR 按 ../plans/typescript-migration/README.md 的 v3 活动 selection 执行；完整发布认证留给 R01，业务安全要求保留。
+
 阶段边界：G0 只验证企业微信能力；Phase 1 测 Pilot Ticket Core；Phase 2 测异步AI/OCR；Phase 3 单独测试 Ticket Adapter 与 Hospital Tickets。不得用 Mock Hospital Tickets 掩盖 Phase 1 的直接依赖。
 
 ## 1. 测试原则

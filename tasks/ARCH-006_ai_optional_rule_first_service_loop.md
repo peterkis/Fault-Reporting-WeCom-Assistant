@@ -1,5 +1,7 @@
 # ARCH-006 AI-Optional Rule-First Full Service Loop Rebaseline
 
+> 历史范围（2026-09-03）：本架构任务已完成。下文 Acceptance/Stop line 仅描述当时任务与授权；它不是后续已授权 TypeScript 迁移的现行执行单。规则优先、AI 可关闭、单一 Ticket Core、Outbox、隐私和权限不变量继续适用。原日期、基线、验收与 Evidence 引用保留。
+
 - Status: DONE
 - Phase: P2 / IN_PROGRESS
 - Lane: ARCHITECTURE

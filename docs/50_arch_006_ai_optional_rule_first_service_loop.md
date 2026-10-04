@@ -1,5 +1,7 @@
 # 50. ARCH-006 AI-Optional Rule-First Full Service Loop
 
+> 时效说明：下文 2026-09-04 的“当前”是历史快照；后续业务状态见 architecture_baseline_status.md 及其引用事实源。迁移进度见 ../plans/typescript-migration/README.md；本文核心契约与旧 Evidence 保留。
+
 > 实施进展（2026-09-04）：P2-015 保持 DONE；P2-016 已经定向现场、回归和负责人批准收口为 DONE；当前无活动任务或 Lane。P2-012 与 P2-G2 仍未授权。本架构完成事实与历史 Evidence 保持不变。
 
 ## 1. 基线结论

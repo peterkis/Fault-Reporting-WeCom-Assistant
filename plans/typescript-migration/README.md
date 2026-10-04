@@ -1,10 +1,10 @@
 # TypeScript 增量迁移执行入口
 
-ACTIVE_SELECTION: v3-p01
+ACTIVE_SELECTION: v3-p02
 
-## v3 当前入口（2026-10-03）
+## v3 当前入口（2026-10-04）
 
-P00 / PR #39 已于 2026-10-04 使用 merge commit 合并；实际合并与 P01 起始基线为 `614c4a7591ce349269063815bbbf0eca69824664`，保留发布 head `4f6fc5b411ec81c26ea7fcbff9e16e66dcee4009` 的历史。P01 从包含该合并的 main 继续，交付会话通信、控制、工作台 HTTP 与发送适配的严格类型闭环。
+P00 / PR #39 已于 2026-10-04 使用 merge commit 合并；实际合并与 P01 起始基线为 `614c4a7591ce349269063815bbbf0eca69824664`，保留发布 head `4f6fc5b411ec81c26ea7fcbff9e16e66dcee4009` 的历史。P01 / PR #40 已合并，合并提交为 `f25aeeea31523b7445f0f1e2795767c8c05f1f6d`，保留发布 head `9a1ee62f18a6bf3038930559060ee6c329985f4f`。P02 从该最新 main 接续，按事件日志（A）→时间线（B）→SSE（C）→G1 装配（D）迁移；A 已完成 4 入口 / 79 测试，B 已完成 2 直接入口 / 53 测试，C 已完成 5 入口 / 59 测试（首轮浏览器启动/清理失败保留，未改断言，同构建复跑通过）；当前切片为 P02-D，阶段 IN_PROGRESS，尚未完成全部 P02。
 
 PR #38 已合并至 `f72e77337aff5d3e5fd053409d5965fbe47deeb6`。P00 将工作台查询/授权迁入严格 MTS，并同步 CI 与逻辑源码路径兼容；下文 T00～T04-05 和 PR37 记录为历史交接，不再驱动日常批次认证。
 
@@ -16,9 +16,11 @@ selection 从本文件唯一整行读取，必须存在且非空。注册表仍�
 
 本地最终检查：`npm.cmd run migration:build` → `node .build/tools/gate.mjs types` → 自有 PG18 的既有基线初始化 → 直接调用 `.build/tools/run-tests.mjs` 的 `runSelection` 与 `routing.mjs` 的 `loadRoutes/select` → 相关工具测试 → `node .build/tools/verify-artifact.mjs`。不要在单构建路径继续调用会 bootstrap/build 的旧测试别名或 batch gate。报告目录位于仓库外，测试库必须是任务自有 loopback 合成库；保留原宿主、flags、失败/漏跑检查与清理约束。
 
+P02 selection 使用 `v3-p02`，随当前候选的真实改动登记直接测试及必要影响入口；内部 A/B/C/D 不另建 selection。SSE 多方法名兼容与 this 绑定保留，普通 PR 不叠加历史 batch 或发布认证。
+
 历史 P00 selection 保留原七个入口。P01 selection 使用阶段六个核心种子，加控制/工作台/G1 适配单元及 ARCH-006、V1.4 baseline，共十一个直接相关入口；呈现和重试顺序保持原运行时表达式，不触发额外浏览器或 P2-016 扩展。ARCH-005 仅在实际触及时间契约时扩展。工具回归由现有工具入口执行，不加入业务注册表。类型正反例使用现有 type gate 与有理由的 expect-error。
 
-P01 无数据库变更，制品为 STAGED_NOT_ACTIVATED，不更新原 readiness pointer 或大型 Evidence 包。提交、推送并创建一个 PR 后停止；full/certify、P01 合并、P02、部署与真实业务操作均不由本轮推进。交接记录写在 PR 正文，包含 head、业务行为、实际命令/结果、日志位置与未运行项。撤销使用后继修补或独立 revert PR，保留历史与用户工作。
+P01 历史停止线仅约束当时开发授权；PR #40 合并及本轮 P02 已另获授权。P02 无数据库变更，制品为 STAGED_NOT_ACTIVATED，不更新原 readiness pointer 或大型 Evidence 包。允许 P02 范围内提交、HTTPS 推送并创建 PR、核对该 head CI；不自动合并、不进入 P03、不默认运行 full/certify、不部署或操作真实业务。交接记录写在 PR 正文，包含 head、业务行为、实际命令/结果、日志位置与未运行项。撤销使用后继修补或独立 revert PR，保留历史与用户工作。
 
 ## 历史入口（下文）
 

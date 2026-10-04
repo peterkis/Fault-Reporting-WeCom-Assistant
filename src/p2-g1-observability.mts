@@ -1,3 +1,9 @@
+import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
+import type { createP2G1InboundProjectionCoordinator } from './p2-g1-inbound-projection-coordinator.mjs';
+import type { RealtimeSseHandler } from './p2-003-realtime-sse.mjs';
+export interface G1GatewayStatusPort { getStatus(): { authenticated?: boolean; reconnect_total?: number; enabled?: boolean } }
+interface ObserveOptions { pool?: PostgresPool; coordinator?: Pick<ReturnType<typeof createP2G1InboundProjectionCoordinator>, 'backlog'>; gateway?: G1GatewayStatusPort; realtime?: Pick<RealtimeSseHandler, 'getMetrics'>; enabled?: boolean }
+export interface G1ReadinessOptions { httpListening: boolean; workbenchEnabled: boolean; projectionEnabled: boolean; communicationEnabled: boolean; requireGateway?: boolean; featureFlags?: Record<string, unknown> }
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 
 export const P2_G1_REQUIRED_MIGRATION_RELATIONS = Object.freeze([
@@ -20,11 +26,11 @@ export const P2_G1_REQUIRED_MIGRATION_RELATIONS = Object.freeze([
   'conversation.control_event',
 ]);
 
-function safeNumber(value) { const number = Number(value); return Number.isFinite(number) && number >= 0 ? number : 0; }
+function safeNumber(value: unknown) { const number = Number(value); return Number.isFinite(number) && number >= 0 ? number : 0; }
 
-export async function captureP2G1CatalogSnapshot(pool) {
-  if (!pool || typeof pool.query !== 'function') throw new TypeError('P2_G1_CATALOG_CONFIGURATION_INVALID');
-  const result = await pool.query(`SELECT kind,identity FROM (
+export async function captureP2G1CatalogSnapshot(pool: PostgresPool) {
+  if (!pool || typeof (pool as PostgresPool).query !== 'function') throw new TypeError('P2_G1_CATALOG_CONFIGURATION_INVALID');
+  const result = await (pool as PostgresPool).query(`SELECT kind,identity FROM (
     SELECT 'schema' kind,n.nspname identity FROM pg_namespace n WHERE n.nspname IN ('channel','intake','pilot_ticket','notification','conversation','communication')
     UNION ALL SELECT 'table',n.nspname||'.'||c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('channel','intake','pilot_ticket','notification','conversation','communication') AND c.relkind='r'
     UNION ALL SELECT 'column',table_schema||'.'||table_name||'.'||column_name||':'||data_type||':'||is_nullable FROM information_schema.columns WHERE table_schema IN ('channel','intake','pilot_ticket','notification','conversation','communication')
@@ -37,8 +43,8 @@ export async function captureP2G1CatalogSnapshot(pool) {
   return Object.freeze(result.rows.map((row) => `${row.kind}:${row.identity}`));
 }
 
-export function createP2G1Observability({ pool, coordinator, gateway, realtime, enabled = false } = {}) {
-  if (!pool || typeof pool.query !== 'function' || typeof enabled !== 'boolean') throw new TypeError('P2_G1_OBSERVABILITY_CONFIGURATION_INVALID');
+export function createP2G1Observability({ pool, coordinator, gateway, realtime, enabled = false }: ObserveOptions = {}) {
+  if (!pool || typeof (pool as PostgresPool).query !== 'function' || typeof enabled !== 'boolean') throw new TypeError('P2_G1_OBSERVABILITY_CONFIGURATION_INVALID');
   const delay = monitorEventLoopDelay({ resolution: 20 });
   if (enabled) delay.enable();
   let projectionFailures = 0;
@@ -46,7 +52,7 @@ export function createP2G1Observability({ pool, coordinator, gateway, realtime, 
   let previousCpu = process.cpuUsage();
   let previousCpuAt = process.hrtime.bigint();
 
-  function recordProjection(result) {
+  function recordProjection(result: { failures?: unknown; processed?: number } | null | undefined) {
     projectionFailures += safeNumber(result?.failures);
   }
   function recordP1Commit() { p1CommittedFacts += 1; }
@@ -54,12 +60,12 @@ export function createP2G1Observability({ pool, coordinator, gateway, realtime, 
   async function metrics() {
     const [backlog, communication, postgres] = await Promise.all([
       coordinator?.backlog?.() ?? { total: 0 },
-      pool.query(`SELECT
+      (pool as PostgresPool).query(`SELECT
         count(*) FILTER(WHERE status IN ('PENDING','LEASED','SENDING'))::integer pending,
         count(*) FILTER(WHERE status='RECONCILIATION_REQUIRED')::integer reconciliation_required,
         count(*) FILTER(WHERE status='DEAD_LETTER')::integer dead_letter
         FROM communication.delivery`),
-      pool.query(`SELECT
+      (pool as PostgresPool).query(`SELECT
         count(*) FILTER(WHERE state='active')::integer active,
         count(*) FILTER(WHERE state='idle')::integer idle,
         count(*) FILTER(WHERE state NOT IN ('active','idle') OR state IS NULL)::integer other,
@@ -76,9 +82,9 @@ export function createP2G1Observability({ pool, coordinator, gateway, realtime, 
     previousCpu = cpu;
     previousCpuAt = cpuAt;
     const resources = typeof process.getActiveResourcesInfo === 'function' ? process.getActiveResourcesInfo() : [];
-    const poolState = { in_use: safeNumber(pool.totalCount) - safeNumber(pool.idleCount), idle: safeNumber(pool.idleCount) };
-    const realtimeState = realtime?.getMetrics?.() ?? {};
-    const gatewayState = gateway?.getStatus?.() ?? {};
+    const poolState = { in_use: safeNumber((pool as PostgresPool).totalCount) - safeNumber((pool as PostgresPool).idleCount), idle: safeNumber((pool as PostgresPool).idleCount) };
+    const realtimeState: Partial<ReturnType<RealtimeSseHandler["getMetrics"]>> = realtime?.getMetrics?.() ?? {};
+    const gatewayState: ReturnType<G1GatewayStatusPort["getStatus"]> = gateway?.getStatus?.() ?? {};
     return Object.freeze({
       p1_committed_facts: p1CommittedFacts,
       projection_backlog: safeNumber(backlog.total),
@@ -91,8 +97,8 @@ export function createP2G1Observability({ pool, coordinator, gateway, realtime, 
       gateway_reconnect_total: safeNumber(gatewayState.reconnect_total),
       pool_in_use: poolState.in_use,
       pool_idle: poolState.idle,
-      pool_total: safeNumber(pool.totalCount),
-      pool_max: safeNumber(pool.options?.max),
+      pool_total: safeNumber((pool as PostgresPool).totalCount),
+      pool_max: safeNumber((pool as PostgresPool).options?.max),
       postgres_active_connections: safeNumber(postgres.rows[0]?.active),
       postgres_idle_connections: safeNumber(postgres.rows[0]?.idle),
       postgres_other_connections: safeNumber(postgres.rows[0]?.other),
@@ -112,14 +118,14 @@ export function createP2G1Observability({ pool, coordinator, gateway, realtime, 
     });
   }
 
-  async function readiness({ httpListening, workbenchEnabled, projectionEnabled, communicationEnabled, requireGateway = true, featureFlags = {} }) {
+  async function readiness({ httpListening, workbenchEnabled, projectionEnabled, communicationEnabled, requireGateway = true, featureFlags = {} }: G1ReadinessOptions) {
     let database = false;
     let migrations = false;
     let projectionBacklog = null;
     try {
-      await pool.query('SELECT 1');
+      await (pool as PostgresPool).query('SELECT 1');
       database = true;
-      const result = await pool.query('SELECT relation_name,to_regclass(relation_name) IS NOT NULL present FROM unnest($1::text[]) AS relation_name', [P2_G1_REQUIRED_MIGRATION_RELATIONS]);
+      const result = await (pool as PostgresPool).query('SELECT relation_name,to_regclass(relation_name) IS NOT NULL present FROM unnest($1::text[]) AS relation_name', [P2_G1_REQUIRED_MIGRATION_RELATIONS]);
       migrations = result.rows.length === P2_G1_REQUIRED_MIGRATION_RELATIONS.length && result.rows.every((row) => row.present === true);
     } catch { /* safe readiness remains false */ }
     try { projectionBacklog = safeNumber((await coordinator?.backlog?.())?.total); }

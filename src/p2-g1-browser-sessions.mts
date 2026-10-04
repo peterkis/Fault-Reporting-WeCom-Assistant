@@ -1,3 +1,12 @@
+import type { createP2G1TestAuthentication } from './p2-g1-test-authentication.mjs';
+type BrowserCookie = ReturnType<ReturnType<typeof createP2G1TestAuthentication>['browserCookie']>;
+interface CdpReply { success?: boolean; identifier?: string; exceptionDetails?: unknown; result?: { value?: string | { selected?: boolean; submitted?: boolean } } }
+interface CdpEnvelope { id?: number; method?: string; params?: { type?: string; requestId?: string; headers?: Record<string, unknown>; response?: { status?: unknown } }; error?: unknown; result?: CdpReply }
+interface SseTelemetry { event_type: string; received_ms: number }
+interface FetchTelemetry { category: string; start_ms: number; end_ms: number; status: number }
+interface BrowserTelemetry { telemetry?: { sse?: SseTelemetry[]; fetch?: FetchTelemetry[] }; connection_label?: string; timeline_item_count?: number }
+interface BrowserTarget { type: string; webSocketDebuggerUrl: string }
+interface BrowserOptions { origin?: string; cookies?: readonly BrowserCookie[]; headless?: boolean; initialPath?: string; requireCleanupSuccess?: boolean }
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
@@ -60,9 +69,9 @@ const SAFE_TELEMETRY_SOURCE = `(() => {
   };
 })();`;
 
-function delay(milliseconds) { return new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds)); }
+function delay(milliseconds: number) { return new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds)); }
 
-async function waitFor(operation, { timeoutMs = 30_000, intervalMs = 50 } = {}) {
+async function waitFor<T>(operation: () => T | Promise<T>, { timeoutMs = 30_000, intervalMs = 50 } = {}) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     try { const value = await operation(); if (value) return value; }
@@ -78,7 +87,7 @@ function browserExecutable() {
   return executable;
 }
 
-async function removeProfile(profile) {
+async function removeProfile(profile: string) {
   const resolvedProfile = resolve(profile);
   const resolvedTemp = resolve(tmpdir());
   if (!resolvedProfile.startsWith(`${resolvedTemp}${sep}`) || !resolvedProfile.includes('p2-g1-live-browser-')) {
@@ -86,7 +95,7 @@ async function removeProfile(profile) {
   }
   await waitFor(async () => {
     try { await rm(resolvedProfile, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }); return true; }
-    catch (error) { if (!['EBUSY', 'EPERM', 'ENOTEMPTY'].includes(error?.code)) throw error; return false; }
+    catch (error) { if (!['EBUSY', 'EPERM', 'ENOTEMPTY'].includes((error as { code?: string } | null | undefined)?.code as string)) throw error; return false; }
   }, { timeoutMs: 8_000, intervalMs: 100 });
 }
 
@@ -99,7 +108,7 @@ async function cleanupStaleProfiles() {
     let active = false;
     try {
       const [portText] = (await readFile(join(profile, 'DevToolsActivePort'), 'utf8')).trim().split(/\r?\n/u);
-      if (/^[0-9]+$/u.test(portText)) {
+      if (/^[0-9]+$/u.test(portText as string)) {
         const response = await fetch(`http://127.0.0.1:${portText}/json/version`, { signal: AbortSignal.timeout(250) });
         active = response.ok;
       }
@@ -108,7 +117,7 @@ async function cleanupStaleProfiles() {
   }
 }
 
-async function launchOne({ executable, origin, cookie, label, headless,initialPath='/workbench' }) {
+async function launchOne({ executable, origin, cookie, label, headless,initialPath='/workbench' }: { executable: string; origin: string; cookie: BrowserCookie; label: string; headless: boolean; initialPath?: string }) {
   const profile = await mkdtemp(join(tmpdir(), 'p2-g1-live-browser-'));
   const argumentsList = [
     '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--new-window',
@@ -122,23 +131,23 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
     const activePort = await waitFor(async () => {
       if (!existsSync(activePortPath)) return null;
       const [portText] = (await readFile(activePortPath, 'utf8')).trim().split(/\r?\n/u);
-      return /^[0-9]+$/u.test(portText) ? Number(portText) : null;
+      return /^[0-9]+$/u.test(portText as string) ? Number(portText) : null;
     });
     const target = await waitFor(async () => {
       const response = await fetch(`http://127.0.0.1:${activePort}/json/list`, { signal: AbortSignal.timeout(2_000) });
-      const values = await response.json();
+      const values = await response.json() as BrowserTarget[];
       return values.find((value) => value.type === 'page' && value.webSocketDebuggerUrl) ?? null;
     });
-    const socket = new WebSocket(target.webSocketDebuggerUrl);
+    const socket = new WebSocket((target as BrowserTarget).webSocketDebuggerUrl);
     await new Promise((resolveOpen, reject) => {
       socket.addEventListener('open', resolveOpen, { once: true });
       socket.addEventListener('error', reject, { once: true });
     });
     let sequence = 0;
-    const pending = new Map();
-    const eventSourceRequests = new Map();
+    const pending = new Map<number, { timer: ReturnType<typeof setTimeout>; resolve: (value: CdpReply | undefined) => void; reject: (error: unknown) => void }>();
+    const eventSourceRequests = new Map<string, { last_event_id: boolean; status: number | null }>();
     socket.addEventListener('message', (event) => {
-      const message = JSON.parse(String(event.data));
+      const message = JSON.parse(String(event.data)) as CdpEnvelope;
       if (message.method === 'Network.requestWillBeSent' && message.params?.type === 'EventSource'
         && typeof message.params?.requestId === 'string') {
         eventSourceRequests.set(message.params.requestId, { last_event_id: false, status: null });
@@ -147,23 +156,23 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
         && eventSourceRequests.has(message.params.requestId)) {
         const headers = message.params.headers ?? {};
         const cursorHeaderPresent = Object.keys(headers).some((name) => name.toLowerCase() === 'last-event-id');
-        eventSourceRequests.get(message.params.requestId).last_event_id ||= cursorHeaderPresent;
+        (eventSourceRequests.get(message.params.requestId) as { last_event_id: boolean; status: number | null }).last_event_id ||= cursorHeaderPresent;
       }
       if (message.method === 'Network.responseReceived' && message.params?.type === 'EventSource'
         && typeof message.params?.requestId === 'string' && eventSourceRequests.has(message.params.requestId)) {
         const status = Number(message.params?.response?.status);
-        eventSourceRequests.get(message.params.requestId).status = Number.isInteger(status) && status >= 100 && status <= 599 ? status : null;
+        (eventSourceRequests.get(message.params.requestId) as { last_event_id: boolean; status: number | null }).status = Number.isInteger(status) && status >= 100 && status <= 599 ? status : null;
       }
       if (!message.id || !pending.has(message.id)) return;
-      const request = pending.get(message.id);
+      const request = pending.get(message.id) as (typeof pending extends Map<number, infer V> ? V : never);
       pending.delete(message.id);
       clearTimeout(request.timer);
       if (message.error) request.reject(new Error('P2_G1_TEST_BROWSER_COMMAND_FAILED'));
       else request.resolve(message.result);
     });
-    function command(method, params = {}, { timeoutMs = 15_000 } = {}) {
+    function command(method: string, params: Record<string, unknown> = {}, { timeoutMs = 15_000 } = {}) {
       const id = ++sequence;
-      return new Promise((resolveCommand, reject) => {
+      return new Promise<CdpReply | undefined>((resolveCommand, reject) => {
         const timer = setTimeout(() => {
           pending.delete(id);
           reject(new Error('P2_G1_TEST_BROWSER_COMMAND_TIMEOUT'));
@@ -199,7 +208,7 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
         })`,
         returnByValue: true,
       });
-      const value = JSON.parse(evaluated?.result?.value ?? '{"telemetry":{"sse":[],"fetch":[]},"connection_label":"UNKNOWN","timeline_item_count":0}');
+      const value = JSON.parse(evaluated?.result?.value as string ?? '{"telemetry":{"sse":[],"fetch":[]},"connection_label":"UNKNOWN","timeline_item_count":0}') as BrowserTelemetry;
       const telemetry = value.telemetry ?? {};
       const sse = (Array.isArray(telemetry.sse) ? telemetry.sse : []).filter((entry) => entry
         && SAFE_REALTIME_EVENT_TYPES.includes(entry.event_type) && Number.isSafeInteger(entry.received_ms))
@@ -215,8 +224,8 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
         session_label: label,
         sse: Object.freeze(sse),
         fetch: Object.freeze(fetchEntries),
-        connection_label: ['实时连接','轮询模式','正在连接','不可用'].includes(value.connection_label) ? value.connection_label : 'UNKNOWN',
-        timeline_item_count: Number.isSafeInteger(value.timeline_item_count) && value.timeline_item_count >= 0 ? value.timeline_item_count : 0,
+        connection_label: ['实时连接','轮询模式','正在连接','不可用'].includes(value.connection_label as string) ? value.connection_label : 'UNKNOWN',
+        timeline_item_count: Number.isSafeInteger(value.timeline_item_count) && (value.timeline_item_count as number) >= 0 ? value.timeline_item_count : 0,
         eventsource_request_count: eventSourceRequests.size,
         eventsource_last_event_id_request_count: [...eventSourceRequests.values()].filter((entry) => entry.last_event_id).length,
         eventsource_http_410_count: [...eventSourceRequests.values()].filter((entry) => entry.status === 410).length,
@@ -241,11 +250,11 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
         awaitPromise: true,
         returnByValue: true,
       });
-      if (evaluated?.exceptionDetails || evaluated?.result?.value?.selected !== true) throw new Error('P2_G1_TEST_BROWSER_SELECTION_FAILED');
+      if (evaluated?.exceptionDetails || (evaluated?.result?.value as { selected?: boolean } | undefined)?.selected !== true) throw new Error('P2_G1_TEST_BROWSER_SELECTION_FAILED');
       return Object.freeze({ selected: true, session_label: label });
     }
 
-    async function submitInternalNote(text) {
+    async function submitInternalNote(text: unknown) {
       if (typeof text !== 'string' || text.length < 1 || text.length > 20_480) throw new TypeError('P2_G1_TEST_BROWSER_NOTE_INVALID');
       const evaluated = await command('Runtime.evaluate', {
         expression: `(async () => {
@@ -267,7 +276,7 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
         awaitPromise: true,
         returnByValue: true,
       });
-      if (evaluated?.exceptionDetails || evaluated?.result?.value?.submitted !== true) throw new Error('P2_G1_TEST_BROWSER_NOTE_FAILED');
+      if (evaluated?.exceptionDetails || (evaluated?.result?.value as { submitted?: boolean } | undefined)?.submitted !== true) throw new Error('P2_G1_TEST_BROWSER_NOTE_FAILED');
       return Object.freeze({ submitted: true, session_label: label });
     }
 
@@ -275,7 +284,7 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
       try { await Promise.race([command('Browser.close'), delay(2_000)]); } catch { /* continue local cleanup */ }
       if (socket.readyState !== WebSocket.CLOSED) socket.close();
       if (child.exitCode === null) child.kill();
-      await new Promise((resolveExit) => {
+      await new Promise<void>((resolveExit) => {
         if (child.exitCode !== null) resolveExit();
         else { child.once('exit', resolveExit); setTimeout(resolveExit, 2_000).unref?.(); }
       });
@@ -289,7 +298,7 @@ async function launchOne({ executable, origin, cookie, label, headless,initialPa
   }
 }
 
-export async function launchP2G1TestBrowserSessions({ origin, cookies, headless = false,initialPath='/workbench',requireCleanupSuccess=false } = {}) {
+export async function launchP2G1TestBrowserSessions({ origin, cookies, headless = false,initialPath='/workbench',requireCleanupSuccess=false }: BrowserOptions = {}) {
   if (typeof origin !== 'string' || !/^http:\/\/127\.0\.0\.1:[0-9]{4,5}$/u.test(origin)
     || !Array.isArray(cookies) || cookies.length < 2 || cookies.length > 4 || typeof headless !== 'boolean'
     || !['/workbench','/workbench/lifecycle'].includes(initialPath)||typeof requireCleanupSuccess!=='boolean') {
@@ -297,10 +306,10 @@ export async function launchP2G1TestBrowserSessions({ origin, cookies, headless 
   }
   await cleanupStaleProfiles();
   const executable = browserExecutable();
-  const sessions = [];
+  const sessions: Awaited<ReturnType<typeof launchOne>>[] = [];
   try {
     for (let index = 0; index < cookies.length; index += 1) {
-      sessions.push(await launchOne({ executable, origin, cookie: cookies[index], label: String.fromCharCode(65 + index), headless,initialPath }));
+      sessions.push(await launchOne({ executable, origin, cookie: cookies[index] as BrowserCookie, label: String.fromCharCode(65 + index), headless,initialPath }));
     }
   } catch (error) {
     await Promise.allSettled(sessions.map((session) => session.close()));
@@ -310,9 +319,9 @@ export async function launchP2G1TestBrowserSessions({ origin, cookies, headless 
     count: sessions.length,
     safeTelemetry: async () => Object.freeze(await Promise.all(sessions.map((session) => session.safeTelemetry()))),
     selectFirstConversations: async () => Object.freeze(await Promise.all(sessions.map((session) => session.selectFirstConversation()))),
-    submitInternalNote: async ({ sessionIndex = 0, text } = {}) => {
+    submitInternalNote: async ({ sessionIndex = 0, text }: { sessionIndex?: number; text?: string } = {}) => {
       if (!Number.isInteger(sessionIndex) || sessionIndex < 0 || sessionIndex >= sessions.length) throw new TypeError('P2_G1_TEST_BROWSER_SESSION_INVALID');
-      return sessions[sessionIndex].submitInternalNote(text);
+      return (sessions[sessionIndex] as Awaited<ReturnType<typeof launchOne>>).submitInternalNote(text);
     },
     close: async () => {
       const results=await Promise.allSettled(sessions.map((session) => session.close()));

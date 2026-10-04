@@ -2,13 +2,13 @@ import { monitorEventLoopDelay } from 'node:perf_hooks';
 
 export const P2_G1_PROCESS_ROLES = Object.freeze(['APP', 'WORKER', 'GATEWAY']);
 
-function safeNumber(value) {
+function safeNumber(value: unknown) {
   const number = Number(value);
   return Number.isFinite(number) && number >= 0 ? number : 0;
 }
 
-export function createP2G1ProcessMetrics({ role } = {}) {
-  if (!P2_G1_PROCESS_ROLES.includes(role)) throw new TypeError('P2_G1_PROCESS_ROLE_INVALID');
+export function createP2G1ProcessMetrics({ role }: { role?: string } = {}) {
+  if (!P2_G1_PROCESS_ROLES.includes(role as string)) throw new TypeError('P2_G1_PROCESS_ROLE_INVALID');
   const delay = monitorEventLoopDelay({ resolution: 20 });
   delay.enable();
   let closed = false;
@@ -27,7 +27,7 @@ export function createP2G1ProcessMetrics({ role } = {}) {
     previousCpu = cpu;
     previousCpuAt = cpuAt;
     const resources = typeof process.getActiveResourcesInfo === 'function' ? process.getActiveResourcesInfo() : [];
-    const handles = typeof process._getActiveHandles === 'function' ? process._getActiveHandles() : [];
+    const handles = typeof (process as NodeJS.Process & { _getActiveHandles?: () => unknown[] })._getActiveHandles === 'function' ? (process as NodeJS.Process & { _getActiveHandles: () => unknown[] })._getActiveHandles() : [];
     return Object.freeze({
       role,
       rss_bytes: safeNumber(memory.rss),
