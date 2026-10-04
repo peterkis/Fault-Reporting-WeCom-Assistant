@@ -1,3 +1,38 @@
+
+import type { CommunicationSenderKind, CommunicationPurpose, CommunicationMessageType, CommunicationVisibility, CommunicationCommandResult as CommandResult } from '../contracts/communication_contracts.js';
+import type { ConversationChatType, ConversationSessionStatus, ConversationControlMode } from '../contracts/conversation_contracts.js';
+import type { PostgresPool, PostgresTransaction } from './platform/postgres-pool.mjs';
+export type CommunicationJson = null | boolean | number | string | readonly CommunicationJson[] | { readonly [key: string]: CommunicationJson };
+export interface CommunicationCommand {
+  client_command_id: string; privacy_class: 'PUBLIC' | 'INTERNAL' | 'SENSITIVE_INTERNAL' | 'PERSONAL' | 'PATIENT_SENSITIVE' | 'SECRET'; retention_until: string;
+  session_id?: string | null; expected_row_version?: number; sender_kind?: CommunicationSenderKind; purpose?: CommunicationPurpose; message_type?: CommunicationMessageType;
+  visibility?: CommunicationVisibility; text?: string; content?: unknown; reply_to_item_id?: string | null; attachment_ids?: readonly string[]; destination_policy?: string; sender_system_code?: string; retention_until_epoch_ms?: string;
+}
+export interface NormalizedCommunicationCommand {
+  session_id: string | null; expected_row_version: number | null; sender_kind: CommunicationSenderKind; sender_system_code: string | null; purpose: CommunicationPurpose;
+  message_type: CommunicationMessageType; visibility: CommunicationVisibility; idempotency_scope: CommunicationSenderKind; client_command_id: string;
+  content: Readonly<Record<string, CommunicationJson>>; reply_to_item_id: string | null; attachment_ids: readonly CommunicationJson[]; destination_policy: string; privacy_class: CommunicationCommand['privacy_class']; retention_until: string; retention_until_epoch_ms: string;
+}
+export interface CommunicationActor { principal_id?: string; admin_override?: boolean; generation_version_at_start?: number }
+export interface CommunicationDestination { provider: string; channel_account_id: string; target_type: 'PERSON' | 'GROUP'; target_id: string; target_hash?: string }
+export type CommunicationSuccess = Readonly<Omit<CommandResult, 'delivery_ids'> & { delivery_ids: readonly string[] }>;
+type PublicFailure = ReturnType<typeof publicError>;
+export type CommunicationResult = CommunicationSuccess | PublicFailure | null;
+interface MessageRow { id: string; created_at: unknown; command_hash?: string }
+interface IdRow { id: string }
+interface SessionThreadRow { session_id: string; session_status: ConversationSessionStatus; row_version: string | number; thread_id: string; provider: string; channel_account_id: string; chat_type: ConversationChatType; external_thread_key: string; thread_status: string }
+interface SessionContext { ok?: never; session: { id: string; status: ConversationSessionStatus; row_version: number; thread_id: string; control_mode?: ConversationControlMode }; thread: { provider: string; channel_account_id: string; chat_type: ConversationChatType; external_thread_key: string; status: string } }
+export interface CommunicationAuthorizationContext extends SessionContext { transaction: PostgresTransaction; command: NormalizedCommunicationCommand; actor: CommunicationActor | null }
+export interface CommunicationServiceOptions {
+  pool?: PostgresPool; enabled?: boolean; authorizeCommand?: (context: CommunicationAuthorizationContext) => boolean | Promise<boolean>;
+  destinationResolver?: (context: SessionContext & { command: NormalizedCommunicationCommand }) => readonly CommunicationDestination[] | Promise<readonly CommunicationDestination[]>;
+  nowEpochMs?: (() => unknown) | null; now?: () => Date;
+}
+type StorageError = { code?: unknown; message?: unknown; constraint?: unknown } | null | undefined;
+type LegacyRow = { id: string; outbox_id: string; status: string; channel: string; attempt_count: string | number; last_error_code: string | null; sent_at: unknown };
+type LegacyWorker = Pick<ReturnType<typeof createNotificationDeliveryWorker>, 'deliver'>;
+type LegacySender = NonNullable<Parameters<typeof createNotificationDeliveryWorker>[0]>['sender'];
+
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
@@ -61,25 +96,26 @@ export const COMMUNICATION_ERROR_CODES = Object.freeze({
 });
 
 export class CommunicationError extends Error {
-  constructor(code) {
+  declare code: string;
+  constructor(code: string) {
     super(code);
     this.name = 'CommunicationError';
     this.code = code;
   }
 }
 
-function fail(code = COMMUNICATION_ERROR_CODES.commandInvalid) {
+function fail(code: string = COMMUNICATION_ERROR_CODES.commandInvalid): never {
   throw new CommunicationError(code);
 }
 
-function publicError(code, retryable = false) {
+function publicError(code: string, retryable = false) {
   return Object.freeze({
-    ok: false,
+    ok: false as const,
     error: Object.freeze({ code, retryable }),
   });
 }
 
-function ownDataRecord(value, { maximumKeys = 32 } = {}) {
+function ownDataRecord(value: unknown, { maximumKeys = 32 } = {}): string[] {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) fail();
   let prototype;
   let keys;
@@ -99,10 +135,10 @@ function ownDataRecord(value, { maximumKeys = 32 } = {}) {
     if (!descriptor || !Object.hasOwn(descriptor, 'value') || descriptor.get || descriptor.set) fail();
   }
   if (Object.hasOwn(value, 'toJSON')) fail();
-  return keys;
+  return keys as string[];
 }
 
-export function snapshotCommunicationJson(value, limits = {}) {
+export function snapshotCommunicationJson(value: unknown, limits: { maximumDepth?: number; maximumNodes?: number; maximumArrayLength?: number; maximumStringLength?: number } = {}): CommunicationJson {
   const maximumDepth = limits.maximumDepth ?? 8;
   const maximumNodes = limits.maximumNodes ?? 256;
   const maximumArrayLength = limits.maximumArrayLength ?? 32;
@@ -110,7 +146,7 @@ export function snapshotCommunicationJson(value, limits = {}) {
   let nodes = 0;
   const seen = new Set();
 
-  function visit(current, depth) {
+  function visit(current: unknown, depth: number): CommunicationJson {
     nodes += 1;
     if (nodes > maximumNodes || depth > maximumDepth) fail();
     if (current === null || typeof current === 'boolean') return current;
@@ -130,11 +166,11 @@ export function snapshotCommunicationJson(value, limits = {}) {
         if (Object.getPrototypeOf(current) !== Array.prototype || current.length > maximumArrayLength) fail();
         const ownKeys = Reflect.ownKeys(current);
         if (ownKeys.some((key) => typeof key === 'symbol' || (!/^\d+$/u.test(key) && key !== 'length'))) fail();
-        return current.map((entry) => visit(entry, depth + 1));
+        return (current as unknown[]).map((entry) => visit(entry, depth + 1));
       }
-      const result = Object.create(null);
+      const result: Record<string, CommunicationJson> = Object.create(null);
       for (const key of ownDataRecord(current)) {
-        result[key] = visit(Object.getOwnPropertyDescriptor(current, key).value, depth + 1);
+        result[key] = visit((Object.getOwnPropertyDescriptor(current, key) as PropertyDescriptor).value as unknown, depth + 1);
       }
       return result;
     } finally {
@@ -145,45 +181,45 @@ export function snapshotCommunicationJson(value, limits = {}) {
   return visit(value, 0);
 }
 
-function requiredString(value, maximum = 256, pattern = null) {
+function requiredString(value: unknown, maximum = 256, pattern: RegExp | null = null): string {
   if (typeof value !== 'string' || value.length < 1 || value.length > maximum || (pattern && !pattern.test(value))) fail();
   return value;
 }
 
-function nullableUuid(value) {
+function nullableUuid(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   return requiredString(value, 36, UUID_PATTERN).toLowerCase();
 }
 
-function requiredUuid(value) {
+function requiredUuid(value: unknown): string {
   const normalized = nullableUuid(value);
   if (normalized === null) fail();
   return normalized;
 }
 
-function instant(value) {
+function instant(value: unknown) {
   try { return assertLocalDateTime(value); }
   catch { fail(); }
 }
 
-function canonicalJson(value) {
+function canonicalJson(value: CommunicationJson): string {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
   if (value !== null && typeof value === 'object') {
-    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson((value as Record<string, CommunicationJson>)[key] as CommunicationJson)}`).join(',')}}`;
   }
-  return JSON.stringify(value);
+  return JSON.stringify(value) as string;
 }
 
-function sha256(value) {
+function sha256(value: string) {
   return createHash('sha256').update(value).digest('hex');
 }
 
-function iso(value) {
+function iso(value: unknown) {
   try { return assertLocalDateTime(value); }
   catch { fail(COMMUNICATION_ERROR_CODES.storageFailed); }
 }
 
-function normalizeContent(input, messageType) {
+function normalizeContent(input: Record<string, unknown>, messageType: string): Readonly<Record<string, CommunicationJson>> {
   if (input.content !== undefined && input.text !== undefined) fail();
   let content;
   if (input.content !== undefined) {
@@ -193,41 +229,41 @@ function normalizeContent(input, messageType) {
     content = Object.assign(Object.create(null), { text });
   }
   if (content === null || Array.isArray(content) || typeof content !== 'object') fail();
-  if ((messageType === 'text' || messageType === 'markdown') && requiredString(content.text, 20_480).length < 1) fail();
-  return content;
+  if ((messageType === 'text' || messageType === 'markdown') && requiredString((content as Record<string, CommunicationJson>).text, 20_480).length < 1) fail();
+  return content as Readonly<Record<string, CommunicationJson>>;
 }
 
-function validateTopLevel(input) {
+function validateTopLevel(input: unknown): asserts input is Record<string, unknown> {
   for (const key of ownDataRecord(input, { maximumKeys: 24 })) {
     if (!COMMAND_KEYS.has(key)) fail();
   }
   for (const forbidden of ['target_id', 'targetId', 'channel_account_id', 'provider', 'lease_token', 'delivery_status', 'sender_principal_id']) {
-    if (Object.hasOwn(input, forbidden)) fail();
+    if (Object.hasOwn(input as object, forbidden)) fail();
   }
 }
 
-export function normalizeCommunicationCommand(input) {
+export function normalizeCommunicationCommand(input: unknown): NormalizedCommunicationCommand {
   validateTopLevel(input);
-  const senderKind = input.sender_kind ?? 'AGENT';
-  if (!SENDER_KINDS.includes(senderKind)) fail();
+  const senderKind = input.sender_kind as CommunicationSenderKind ?? 'AGENT';
+  if (!SENDER_KINDS.includes(senderKind as CommunicationSenderKind)) fail();
   const inferredPurpose = senderKind === 'AGENT' ? 'HUMAN_REPLY' : senderKind === 'AI' ? 'AI_REPLY' : 'SYSTEM_NOTIFICATION';
-  const purpose = input.purpose ?? inferredPurpose;
-  if (!PURPOSES.includes(purpose)) fail();
+  const purpose = input.purpose as CommunicationPurpose ?? inferredPurpose;
+  if (!PURPOSES.includes(purpose as CommunicationPurpose)) fail();
   const messageType = requiredString(input.message_type ?? 'text', 32);
-  if (!MESSAGE_TYPES.includes(messageType)) fail();
-  const visibility = input.visibility ?? (purpose === 'INTERNAL_NOTE' ? 'INTERNAL' : 'EXTERNAL');
-  if (!VISIBILITIES.includes(visibility)) fail();
-  if (purpose === 'INTERNAL_NOTE' ? !['INTERNAL', 'RESTRICTED'].includes(visibility) : visibility === 'INTERNAL') fail();
-  if ((senderKind === 'AGENT' && !['HUMAN_REPLY', 'INTERNAL_NOTE'].includes(purpose))
+  if (!MESSAGE_TYPES.includes(messageType as CommunicationMessageType)) fail();
+  const visibility = input.visibility as CommunicationVisibility ?? (purpose === 'INTERNAL_NOTE' ? 'INTERNAL' : 'EXTERNAL');
+  if (!VISIBILITIES.includes(visibility as CommunicationVisibility)) fail();
+  if (purpose === 'INTERNAL_NOTE' ? !['INTERNAL', 'RESTRICTED'].includes(visibility as string) : visibility === 'INTERNAL') fail();
+  if ((senderKind === 'AGENT' && !['HUMAN_REPLY', 'INTERNAL_NOTE'].includes(purpose as string))
     || (senderKind === 'AI' && purpose !== 'AI_REPLY')
-    || (senderKind === 'SYSTEM' && !['SYSTEM_NOTIFICATION', 'INTERNAL_NOTE'].includes(purpose))) fail();
+    || (senderKind === 'SYSTEM' && !['SYSTEM_NOTIFICATION', 'INTERNAL_NOTE'].includes(purpose as string))) fail();
   const sessionId = nullableUuid(input.session_id);
   if (senderKind !== 'SYSTEM' && sessionId === null) fail();
-  if (!Number.isSafeInteger(input.expected_row_version) || input.expected_row_version < 1) {
+  if (!Number.isSafeInteger(input.expected_row_version) || (input.expected_row_version as number) < 1) {
     if (!(senderKind === 'SYSTEM' && sessionId === null && input.expected_row_version === undefined)) fail();
   }
   const privacyClass = requiredString(input.privacy_class, 32);
-  if (!PRIVACY_CLASSES.includes(privacyClass)) fail();
+  if (!PRIVACY_CLASSES.includes(privacyClass as CommunicationCommand['privacy_class'])) fail();
   const retentionUntil = instant(input.retention_until);
   let retentionUntilEpochMs;
   try {
@@ -238,18 +274,18 @@ export function normalizeCommunicationCommand(input) {
   const attachmentIds = input.attachment_ids === undefined
     ? []
     : snapshotCommunicationJson(input.attachment_ids, { maximumArrayLength: 10, maximumNodes: 12 });
-  if (!Array.isArray(attachmentIds) || attachmentIds.some((id) => !UUID_PATTERN.test(id))) fail();
+  if (!Array.isArray(attachmentIds) || attachmentIds.some((id) => !UUID_PATTERN.test(id as string))) fail();
   const content = normalizeContent(input, messageType);
   const senderSystemCode = senderKind === 'AGENT'
     ? null
     : requiredString(input.sender_system_code ?? (senderKind === 'AI' ? 'AI_ORCHESTRATOR' : 'SYSTEM'), 64, SYSTEM_CODE_PATTERN);
   const normalized = Object.freeze({
     session_id: sessionId,
-    expected_row_version: input.expected_row_version ?? null,
+    expected_row_version: input.expected_row_version as number | null | undefined ?? null,
     sender_kind: senderKind,
     sender_system_code: senderSystemCode,
     purpose,
-    message_type: messageType,
+    message_type: messageType as CommunicationMessageType,
     visibility,
     idempotency_scope: senderKind,
     client_command_id: requiredUuid(input.client_command_id),
@@ -257,21 +293,21 @@ export function normalizeCommunicationCommand(input) {
     reply_to_item_id: nullableUuid(input.reply_to_item_id),
     attachment_ids: Object.freeze([...attachmentIds]),
     destination_policy: requiredString(input.destination_policy ?? (purpose === 'SYSTEM_NOTIFICATION' ? 'TRUSTED_DESTINATIONS' : 'SESSION_THREAD'), 64),
-    privacy_class: privacyClass,
+    privacy_class: privacyClass as CommunicationCommand['privacy_class'],
     retention_until: retentionUntil,
     retention_until_epoch_ms: retentionUntilEpochMs,
   });
   NORMALIZED_COMMANDS.add(normalized);
-  return normalized;
+  return normalized as NormalizedCommunicationCommand;
 }
 
-export function computeCommunicationContentHash(content) {
+export function computeCommunicationContentHash(content: unknown) {
   const snapshot = snapshotCommunicationJson(content);
   return sha256(canonicalJson(snapshot));
 }
 
-export function computeCommunicationCommandHash(command) {
-  const normalized = NORMALIZED_COMMANDS.has(command) ? command : normalizeCommunicationCommand(command);
+export function computeCommunicationCommandHash(command: CommunicationCommand | NormalizedCommunicationCommand) {
+  const normalized = NORMALIZED_COMMANDS.has(command) ? command as NormalizedCommunicationCommand : normalizeCommunicationCommand(command);
   // retention_until is server policy metadata that Workbench recomputes on
   // each request; it must not turn the same client command into a conflict.
   return sha256(canonicalJson({
@@ -289,7 +325,7 @@ export function computeCommunicationCommandHash(command) {
   }));
 }
 
-export function resolveCommunicationDestination({ thread }) {
+export function resolveCommunicationDestination({ thread }: { thread: SessionContext['thread'] }) {
   if (!thread || thread.provider !== 'WECOM_AIBOT' || !['single', 'group'].includes(thread.chat_type)) {
     fail(COMMUNICATION_ERROR_CODES.destinationInvalid);
   }
@@ -301,7 +337,7 @@ export function resolveCommunicationDestination({ thread }) {
   })]);
 }
 
-function normalizeDestinations(destinations) {
+function normalizeDestinations(destinations: readonly CommunicationDestination[]) {
   if (!Array.isArray(destinations) || destinations.length < 1 || destinations.length > 20) fail(COMMUNICATION_ERROR_CODES.destinationInvalid);
   const seen = new Set();
   return destinations.map((destination) => {
@@ -309,7 +345,7 @@ function normalizeDestinations(destinations) {
     if (keys.some((key) => !['provider', 'channel_account_id', 'target_type', 'target_id', 'target_hash'].includes(key))) fail(COMMUNICATION_ERROR_CODES.destinationInvalid);
     const provider = requiredString(destination.provider, 64);
     const channelAccountId = requiredString(destination.channel_account_id, 256);
-    const targetType = requiredString(destination.target_type, 16);
+    const targetType = requiredString(destination.target_type, 16) as CommunicationDestination['target_type'];
     const targetId = requiredString(destination.target_id, 512);
     if (provider !== 'WECOM_AIBOT' || !['PERSON', 'GROUP'].includes(targetType)) fail(COMMUNICATION_ERROR_CODES.destinationInvalid);
     const targetHash = sha256(targetId);
@@ -321,7 +357,7 @@ function normalizeDestinations(destinations) {
   });
 }
 
-function commandResultFromRows(message, outbox, deliveries, replayed) {
+function commandResultFromRows(message: MessageRow, outbox: IdRow | null, deliveries: readonly IdRow[], replayed: boolean): CommunicationSuccess {
   return Object.freeze({
     message_id: message.id,
     outbox_id: outbox?.id ?? null,
@@ -332,8 +368,8 @@ function commandResultFromRows(message, outbox, deliveries, replayed) {
   });
 }
 
-async function readExistingCommand(transaction, command) {
-  const messageResult = await transaction.query(
+async function readExistingCommand(transaction: PostgresTransaction, command: NormalizedCommunicationCommand): Promise<CommunicationResult> {
+  const messageResult = await transaction.query<MessageRow>(
     `SELECT id::text, command_hash, created_at
        FROM communication.message
       WHERE idempotency_scope = $1 AND client_command_id = $2::uuid`,
@@ -341,23 +377,23 @@ async function readExistingCommand(transaction, command) {
   );
   if (messageResult.rowCount === 0) return null;
   if (messageResult.rowCount !== 1) fail(COMMUNICATION_ERROR_CODES.storageFailed);
-  if (messageResult.rows[0].command_hash !== computeCommunicationCommandHash(command)) {
+  if ((messageResult.rows[0] as MessageRow).command_hash !== computeCommunicationCommandHash(command)) {
     return publicError(COMMUNICATION_ERROR_CODES.commandConflict);
   }
-  const outboxResult = await transaction.query(
+  const outboxResult = await transaction.query<IdRow>(
     'SELECT id::text FROM communication.outbox WHERE message_id = $1::uuid',
-    [messageResult.rows[0].id],
+    [(messageResult.rows[0] as MessageRow).id],
   );
-  const deliveries = outboxResult.rowCount === 0 ? { rows: [] } : await transaction.query(
+  const deliveries = outboxResult.rowCount === 0 ? { rows: [] } : await transaction.query<IdRow>(
     'SELECT id::text FROM communication.delivery WHERE outbox_id = $1::uuid ORDER BY id',
-    [outboxResult.rows[0].id],
+    [(outboxResult.rows[0] as IdRow).id],
   );
-  return commandResultFromRows(messageResult.rows[0], outboxResult.rows[0] ?? null, deliveries.rows, true);
+  return commandResultFromRows((messageResult.rows[0] as MessageRow), (outboxResult.rows[0] as IdRow) ?? null, deliveries.rows, true);
 }
 
-export async function appendCommunication({ transaction, command, actor, resolvedDestinations = [] }) {
+export async function appendCommunication({ transaction, command, actor, resolvedDestinations = [] }: { transaction: PostgresTransaction; command: CommunicationCommand | NormalizedCommunicationCommand; actor: CommunicationActor | null; resolvedDestinations?: readonly CommunicationDestination[] }): Promise<CommunicationResult> {
   if (!transaction || typeof transaction.query !== 'function') fail(COMMUNICATION_ERROR_CODES.storageFailed);
-  const normalized = NORMALIZED_COMMANDS.has(command) ? command : normalizeCommunicationCommand(command);
+  const normalized = NORMALIZED_COMMANDS.has(command) ? command as NormalizedCommunicationCommand : normalizeCommunicationCommand(command);
   const existing = await readExistingCommand(transaction, normalized);
   if (existing !== null) return existing;
   const isInternal = normalized.purpose === 'INTERNAL_NOTE';
@@ -366,7 +402,7 @@ export async function appendCommunication({ transaction, command, actor, resolve
   const senderPrincipalId = normalized.sender_kind === 'AGENT' ? requiredUuid(actor?.principal_id) : null;
   const commandHash = computeCommunicationCommandHash(normalized);
   const contentHash = computeCommunicationContentHash(normalized.content);
-  const inserted = await transaction.query(
+  const inserted = await transaction.query<MessageRow>(
     `INSERT INTO communication.message (
        session_id, sender_kind, sender_principal_id, sender_system_code, purpose,
        message_type, visibility, idempotency_scope, client_command_id, command_hash,
@@ -382,11 +418,11 @@ export async function appendCommunication({ transaction, command, actor, resolve
       normalized.retention_until_epoch_ms],
   );
   if (inserted.rowCount === 0) return readExistingCommand(transaction, normalized);
-  const message = inserted.rows[0];
+  const message = inserted.rows[0] as MessageRow;
   if (isInternal) return commandResultFromRows(message, null, [], false);
 
   const outboxKey = `comm_v1_${sha256(`${normalized.idempotency_scope}\u0000${normalized.client_command_id}`)}`;
-  const outboxResult = await transaction.query(
+  const outboxResult = await transaction.query<IdRow>(
     `INSERT INTO communication.outbox (message_id, idempotency_key, route_policy)
      VALUES ($1::uuid,$2,$3) RETURNING id::text`,
     [message.id, outboxKey, normalized.destination_policy],
@@ -394,19 +430,19 @@ export async function appendCommunication({ transaction, command, actor, resolve
   const deliveries = [];
   for (const destination of destinations) {
     const deliveryKey = `comm_delivery_v1_${sha256(`${outboxKey}\u0000${destination.provider}\u0000${destination.channel_account_id}\u0000${destination.target_type}\u0000${destination.target_hash}`)}`;
-    const delivery = await transaction.query(
+    const delivery = await transaction.query<IdRow>(
       `INSERT INTO communication.delivery (
          outbox_id, provider, channel_account_id, target_type, target_id, target_hash, idempotency_key
        ) VALUES ($1::uuid,$2,$3,$4,$5,$6,$7) RETURNING id::text`,
-      [outboxResult.rows[0].id, destination.provider, destination.channel_account_id,
+      [(outboxResult.rows[0] as IdRow).id, destination.provider, destination.channel_account_id,
         destination.target_type, destination.target_id, destination.target_hash, deliveryKey],
     );
-    deliveries.push(delivery.rows[0]);
+    deliveries.push(delivery.rows[0] as IdRow);
   }
-  return commandResultFromRows(message, outboxResult.rows[0], deliveries, false);
+  return commandResultFromRows(message, (outboxResult.rows[0] as IdRow), deliveries, false);
 }
 
-async function withTransaction(pool, operation) {
+async function withTransaction<T>(pool: PostgresPool | undefined, operation: (transaction: PostgresTransaction) => Promise<T>): Promise<T> {
   if (!pool || typeof pool.connect !== 'function') fail(COMMUNICATION_ERROR_CODES.storageFailed);
   const client = await pool.connect();
   let destroy = false;
@@ -423,8 +459,8 @@ async function withTransaction(pool, operation) {
   }
 }
 
-async function loadSessionAndThread(transaction, command) {
-  const result = await transaction.query(
+async function loadSessionAndThread(transaction: PostgresTransaction, command: NormalizedCommunicationCommand): Promise<SessionContext | PublicFailure> {
+  const result = await transaction.query<SessionThreadRow>(
     `SELECT session.id::text AS session_id, session.status AS session_status,
             session.row_version, session.thread_id::text,
             thread.provider, thread.channel_account_id, thread.chat_type,
@@ -436,7 +472,7 @@ async function loadSessionAndThread(transaction, command) {
     [command.session_id],
   );
   if (result.rowCount !== 1) return publicError(COMMUNICATION_ERROR_CODES.sessionNotFound);
-  const row = result.rows[0];
+  const row = result.rows[0] as SessionThreadRow;
   if (row.session_status === 'ENDED') return publicError(COMMUNICATION_ERROR_CODES.sessionEnded);
   if (Number(row.row_version) !== command.expected_row_version) return publicError(COMMUNICATION_ERROR_CODES.sessionVersionConflict);
   return Object.freeze({
@@ -445,10 +481,10 @@ async function loadSessionAndThread(transaction, command) {
   });
 }
 
-function mapStorageError(error) {
+function mapStorageError(error: unknown) {
   if (error instanceof CommunicationError) return publicError(error.code);
-  if (error?.message === COMMUNICATION_ERROR_CODES.schemaDrift) return publicError(COMMUNICATION_ERROR_CODES.schemaDrift);
-  if (error?.code === '23505' && error?.constraint === 'communication_message_command_unique') return publicError(COMMUNICATION_ERROR_CODES.commandConflict);
+  if ((error as StorageError)?.message === COMMUNICATION_ERROR_CODES.schemaDrift) return publicError(COMMUNICATION_ERROR_CODES.schemaDrift);
+  if ((error as StorageError)?.code === '23505' && (error as StorageError)?.constraint === 'communication_message_command_unique') return publicError(COMMUNICATION_ERROR_CODES.commandConflict);
   return publicError(COMMUNICATION_ERROR_CODES.storageFailed, true);
 }
 
@@ -459,21 +495,21 @@ export function createCommunicationService({
   destinationResolver = resolveCommunicationDestination,
   nowEpochMs = null,
   now = () => new Date(),
-} = {}) {
+}: CommunicationServiceOptions = {}) {
   if (typeof enabled !== 'boolean' || typeof authorizeCommand !== 'function' || typeof destinationResolver !== 'function'
     || (nowEpochMs !== null && typeof nowEpochMs !== 'function') || typeof now !== 'function') throw new TypeError('Communication service configuration is invalid.');
 
-  async function guarded(operation) {
+  async function guarded<T>(operation: () => Promise<T>): Promise<T | PublicFailure> {
     if (!enabled) return publicError(COMMUNICATION_ERROR_CODES.disabled);
     try { return await operation(); } catch (error) { return mapStorageError(error); }
   }
 
-  function withOverrides(command, overrides) {
+  function withOverrides(command: CommunicationCommand, overrides: Partial<CommunicationCommand>) {
     validateTopLevel(command);
     return Object.assign({}, command, overrides);
   }
 
-  function validateRetentionBoundary(normalized) {
+  function validateRetentionBoundary(normalized: NormalizedCommunicationCommand) {
     let current;
     try {
       if (nowEpochMs !== null) current = BigInt(assertEpochMsString(nowEpochMs()));
@@ -487,7 +523,7 @@ export function createCommunicationService({
     if (BigInt(normalized.retention_until_epoch_ms) <= current) fail();
   }
 
-  async function commitExternalMessage({ command, actor }) {
+  async function commitExternalMessage({ command, actor }: { command: CommunicationCommand; actor: CommunicationActor }) {
     return guarded(async () => {
       const normalized = normalizeCommunicationCommand(command);
       validateRetentionBoundary(normalized);
@@ -503,10 +539,10 @@ export function createCommunicationService({
     });
   }
 
-  async function commitInternalNote({ command, actor }) {
+  async function commitInternalNote({ command, actor }: { command: CommunicationCommand; actor: CommunicationActor }) {
     return guarded(async () => {
       validateTopLevel(command);
-      const senderKind = Object.getOwnPropertyDescriptor(command, 'sender_kind')?.value ?? 'AGENT';
+      const senderKind: CommunicationSenderKind = Object.getOwnPropertyDescriptor(command, 'sender_kind')?.value ?? 'AGENT';
       const normalized = normalizeCommunicationCommand(withOverrides(command, { sender_kind: senderKind, purpose: 'INTERNAL_NOTE', message_type: 'text', visibility: 'INTERNAL' }));
       validateRetentionBoundary(normalized);
       return withTransaction(pool, async (transaction) => {
@@ -518,10 +554,10 @@ export function createCommunicationService({
     });
   }
 
-  async function commitSystemNotification({ command, trustedDestinations }) {
+  async function commitSystemNotification({ command, trustedDestinations }: { command: CommunicationCommand; trustedDestinations: readonly CommunicationDestination[] }) {
     return guarded(async () => {
       validateTopLevel(command);
-      const visibility = Object.getOwnPropertyDescriptor(command, 'visibility')?.value ?? 'EXTERNAL';
+      const visibility: CommunicationVisibility = Object.getOwnPropertyDescriptor(command, 'visibility')?.value ?? 'EXTERNAL';
       const normalized = normalizeCommunicationCommand(withOverrides(command, { sender_kind: 'SYSTEM', purpose: 'SYSTEM_NOTIFICATION', visibility }));
       validateRetentionBoundary(normalized);
       if (MEDIA_TYPES.has(normalized.message_type)) return publicError(COMMUNICATION_ERROR_CODES.mediaNotAuthorized);
@@ -533,7 +569,7 @@ export function createCommunicationService({
   return Object.freeze({ commitExternalMessage, commitInternalNote, commitSystemNotification });
 }
 
-function safeLegacyDelivery(row) {
+function safeLegacyDelivery(row: LegacyRow) {
   return Object.freeze({
     source_kind: 'P1_NOTIFICATION',
     delivery_id: row.id,
@@ -546,43 +582,43 @@ function safeLegacyDelivery(row) {
   });
 }
 
-export function createP1NotificationCompatibilityAdapter({ pool, legacyWorker, sender } = {}) {
-  const delegatedWorker = legacyWorker ?? (sender ? createNotificationDeliveryWorker({ pool, sender }) : null);
+export function createP1NotificationCompatibilityAdapter({ pool, legacyWorker, sender }: { pool?: PostgresPool; legacyWorker?: LegacyWorker; sender?: LegacySender } = {}) {
+  const delegatedWorker = legacyWorker ?? (sender ? createNotificationDeliveryWorker({ pool, sender } as NonNullable<Parameters<typeof createNotificationDeliveryWorker>[0]>) : null);
   if (!pool || typeof pool.query !== 'function' || !delegatedWorker || typeof delegatedWorker.deliver !== 'function') throw new TypeError('P1 compatibility requires a pool and existing notification delivery worker.');
   return Object.freeze({
-    async getLegacyDeliveryView({ deliveryId }) {
+    async getLegacyDeliveryView({ deliveryId }: { deliveryId: string }) {
       const id = requiredUuid(deliveryId);
-      const result = await pool.query(
+      const result = await (pool as PostgresPool).query<LegacyRow>(
         `SELECT id::text, outbox_id::text, status, channel, attempt_count, last_error_code, sent_at
            FROM notification.delivery WHERE id = $1::uuid`, [id],
       );
-      return result.rowCount === 1 ? safeLegacyDelivery(result.rows[0]) : null;
+      return result.rowCount === 1 ? safeLegacyDelivery(result.rows[0] as LegacyRow) : null;
     },
-    async listLegacyDeliveryViews({ afterCreatedAt = '1970-01-01 08:00:00', limit = 50 } = {}) {
+    async listLegacyDeliveryViews({ afterCreatedAt = '1970-01-01 08:00:00', limit = 50 }: { afterCreatedAt?: string; limit?: number } = {}) {
       if (!Number.isInteger(limit) || limit < 1 || limit > 200) fail();
-      const result = await pool.query(
+      const result = await (pool as PostgresPool).query<LegacyRow>(
         `SELECT id::text, outbox_id::text, status, channel, attempt_count, last_error_code, sent_at
            FROM notification.delivery WHERE created_at > $1::timestamp without time zone
           ORDER BY created_at, id LIMIT $2::integer`, [instant(afterCreatedAt), limit],
       );
       return Object.freeze(result.rows.map(safeLegacyDelivery));
     },
-    async deliverLegacy({ deliveryId }) {
-      return delegatedWorker.deliver({ deliveryId: requiredUuid(deliveryId) });
+    async deliverLegacy({ deliveryId }: { deliveryId: string }) {
+      return (delegatedWorker as LegacyWorker).deliver({ deliveryId: requiredUuid(deliveryId) });
     },
   });
 }
 
-export async function applyCommunicationMigration({ pool }) {
+export async function applyCommunicationMigration({ pool }: { pool: PostgresTransaction }) {
   if (!pool || typeof pool.query !== 'function') throw new TypeError('A PostgreSQL pool is required.');
   if (await arch005MigrationApplied(pool)) return Object.freeze({ status: 'LEGACY_MIGRATION_SUPERSEDED' });
   const sql = await readFile(MIGRATION_URL, 'utf8');
   try { await pool.query(sql); } catch (error) {
-    if (error?.message === COMMUNICATION_ERROR_CODES.schemaDrift) throw error;
+    if ((error as StorageError)?.message === COMMUNICATION_ERROR_CODES.schemaDrift) throw error;
     throw error;
   }
 }
 
-export function isCommunicationHash(value) {
+export function isCommunicationHash(value: unknown): value is string {
   return typeof value === 'string' && HASH_PATTERN.test(value);
 }

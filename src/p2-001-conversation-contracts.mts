@@ -1,3 +1,14 @@
+
+import type { ConversationChatType, ConversationSessionStatus, ConversationControlMode, ConversationSession } from '../contracts/conversation_contracts.js';
+import type { LocalDateTime } from '../contracts/time_contracts.js';
+import type { PostgresTransaction } from './platform/postgres-pool.mjs';
+type SessionRow = Omit<ConversationSession, 'generation_version' | 'row_version' | 'started_at' | 'last_activity_at' | 'ended_at' | 'created_at' | 'updated_at'> & {
+  generation_version: string | number; row_version: string | number; started_at: unknown; last_activity_at: unknown; ended_at: unknown; created_at: unknown; updated_at: unknown;
+};
+type FeatureFlags = Record<keyof typeof CONVERSATION_FEATURE_FLAG_DEFAULTS, boolean>;
+type StorageError = { code?: unknown; message?: unknown; constraint?: unknown } | null | undefined;
+type BoundarySession = Pick<ConversationSession, 'status' | 'service_intake_id' | 'last_activity_at'> & { last_activity_epoch_ms: unknown };
+
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { arch005MigrationApplied } from './platform/legacy-migration-guard.mjs';
@@ -46,10 +57,10 @@ const GENERATION_INVALIDATION_REASONS = new Set([
   'SESSION_ENDED',
 ]);
 
-const STATUS_TRANSITIONS = Object.freeze({
-  OPEN: new Set(['WAITING_USER', 'ENDED']),
-  WAITING_USER: new Set(['OPEN', 'ENDED']),
-  ENDED: new Set(),
+const STATUS_TRANSITIONS: Readonly<Record<ConversationSessionStatus, ReadonlySet<ConversationSessionStatus>>> = Object.freeze({
+  OPEN: new Set<ConversationSessionStatus>(['WAITING_USER', 'ENDED']),
+  WAITING_USER: new Set<ConversationSessionStatus>(['OPEN', 'ENDED']),
+  ENDED: new Set<ConversationSessionStatus>(),
 });
 
 const ERROR_CODES = Object.freeze({
@@ -75,21 +86,22 @@ const ERROR_CODES = Object.freeze({
 export const CONVERSATION_ERROR_CODES = ERROR_CODES;
 
 export class ConversationContractError extends Error {
-  constructor(code) {
+  declare code: string;
+  constructor(code: string) {
     super(code);
     this.code = code;
   }
 }
 
-function fail(code) {
+function fail(code: string): never {
   throw new ConversationContractError(code);
 }
 
-function isRecord(value) {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function safeBoundedString(value, maximum, code) {
+function safeBoundedString(value: unknown, maximum: number, code: string): string {
   if (
     typeof value !== 'string'
     || !value.isWellFormed()
@@ -103,7 +115,7 @@ function safeBoundedString(value, maximum, code) {
   return value;
 }
 
-function nullableUuid(value, code) {
+function nullableUuid(value: unknown, code: string): string | null {
   if (value === null || value === undefined) {
     return null;
   }
@@ -116,7 +128,7 @@ function nullableUuid(value, code) {
   return value.toLowerCase();
 }
 
-function requiredUuid(value, code) {
+function requiredUuid(value: unknown, code: string): string {
   const normalized = nullableUuid(value, code);
   if (normalized === null) {
     fail(code);
@@ -124,37 +136,37 @@ function requiredUuid(value, code) {
   return normalized;
 }
 
-function validDateTime(value, code) {
+function validDateTime(value: unknown, code: string): LocalDateTime {
   try { return assertLocalDateTime(value); }
   catch { fail(code); }
 }
 
-function positiveSafeInteger(value, code) {
+function positiveSafeInteger(value: number, code: string): number {
   if (!Number.isSafeInteger(value) || value < 1) {
     fail(code);
   }
   return value;
 }
 
-function opaqueDigest(prefix, tuple) {
+function opaqueDigest(prefix: string, tuple: readonly unknown[]) {
   const digest = createHash('sha256')
     .update(JSON.stringify([prefix, ...tuple]))
     .digest('hex');
   return `${prefix}_${digest}`;
 }
 
-function publicError(code, retryable = false) {
+function publicError(code: string, retryable = false) {
   return Object.freeze({
-    ok: false,
+    ok: false as const,
     error: Object.freeze({ code, retryable }),
   });
 }
 
-function isoTimestamp(value) {
+function isoTimestamp(value: unknown) {
   return postgresTimestampToLocalDateTime(value);
 }
 
-function conversationSessionFromRow(row) {
+function conversationSessionFromRow(row: SessionRow) {
   return Object.freeze({
     id: row.id,
     thread_id: row.thread_id,
@@ -175,19 +187,19 @@ function conversationSessionFromRow(row) {
   });
 }
 
-export function normalizeConversationFeatureFlags(flags = {}) {
+export function normalizeConversationFeatureFlags(flags: unknown = {}) {
   if (!isRecord(flags)) {
     fail(ERROR_CODES.controlModeForbidden);
   }
-  const normalized = {};
+  const normalized: Partial<FeatureFlags> = {};
   for (const [name, defaultValue] of Object.entries(CONVERSATION_FEATURE_FLAG_DEFAULTS)) {
     const value = Object.hasOwn(flags, name) ? flags[name] : defaultValue;
     if (typeof value !== 'boolean') {
       fail(ERROR_CODES.controlModeForbidden);
     }
-    normalized[name] = value;
+    normalized[name as keyof FeatureFlags] = value;
   }
-  return Object.freeze(normalized);
+  return Object.freeze(normalized as FeatureFlags);
 }
 
 export function buildConversationThreadIdentity({
@@ -196,7 +208,7 @@ export function buildConversationThreadIdentity({
   chatType,
   chatId = null,
   senderUserId,
-}) {
+}: { provider: string; botId: string; chatType: ConversationChatType; chatId?: string | null; senderUserId: string }) {
   const normalizedProvider = safeBoundedString(provider, 64, ERROR_CODES.threadKeyInvalid);
   const channelAccountId = safeBoundedString(botId, 256, ERROR_CODES.threadKeyInvalid);
   const participantKey = safeBoundedString(
@@ -238,7 +250,7 @@ export function buildConversationSessionScope({
   participantKey,
   serviceIntakeId = null,
   creationIdempotencyKey,
-}) {
+}: { threadKey: string; participantKey: string; serviceIntakeId?: string | null; creationIdempotencyKey: string }) {
   const normalizedThreadKey = safeBoundedString(
     threadKey,
     80,
@@ -281,7 +293,7 @@ export function decideConversationSessionBoundary({
   idleTimeoutMs,
   requestedBoundaryReason = null,
   nextServiceIntakeId = null,
-}) {
+}: { currentSession?: BoundarySession | null; receivedAt: string; receivedEpochMs: string; idleTimeoutMs: number; requestedBoundaryReason?: string | null; nextServiceIntakeId?: string | null }) {
   validDateTime(receivedAt, ERROR_CODES.idleTimeoutInvalid);
   positiveSafeInteger(idleTimeoutMs, ERROR_CODES.idleTimeoutInvalid);
   const normalizedNextIntakeId = nullableUuid(
@@ -333,7 +345,7 @@ export function decideConversationSessionBoundary({
   return Object.freeze({ action: 'CONTINUE_SESSION', reason: null });
 }
 
-export function evaluateConversationSessionStatusTransition({ fromStatus, toStatus }) {
+export function evaluateConversationSessionStatusTransition({ fromStatus, toStatus }: { fromStatus: ConversationSessionStatus; toStatus: ConversationSessionStatus }) {
   if (
     !CONVERSATION_SESSION_STATUSES.includes(fromStatus)
     || !CONVERSATION_SESSION_STATUSES.includes(toStatus)
@@ -341,19 +353,19 @@ export function evaluateConversationSessionStatusTransition({ fromStatus, toStat
     return publicError(ERROR_CODES.sessionEnded);
   }
   if (fromStatus === toStatus) {
-    return Object.freeze({ ok: true, changed: false, status: fromStatus });
+    return Object.freeze({ ok: true as const, changed: false, status: fromStatus });
   }
   if (!STATUS_TRANSITIONS[fromStatus].has(toStatus)) {
     return publicError(ERROR_CODES.sessionEnded);
   }
-  return Object.freeze({ ok: true, changed: true, status: toStatus });
+  return Object.freeze({ ok: true as const, changed: true, status: toStatus });
 }
 
 export function evaluateConversationControlModeTransition({
   fromMode,
   toMode,
   featureFlags = {},
-}) {
+}: { fromMode: ConversationControlMode; toMode: ConversationControlMode; featureFlags?: unknown }) {
   if (!CONVERSATION_CONTROL_MODES.includes(fromMode) || !CONVERSATION_CONTROL_MODES.includes(toMode)) {
     return publicError(ERROR_CODES.controlModeInvalid);
   }
@@ -369,7 +381,7 @@ export function evaluateConversationControlModeTransition({
   }
   if (fromMode === toMode) {
     return Object.freeze({
-      ok: true,
+      ok: true as const,
       changed: false,
       control_mode: fromMode,
       generation_version_increment: 0,
@@ -378,7 +390,7 @@ export function evaluateConversationControlModeTransition({
   }
   if (toMode === 'HUMAN') {
     return Object.freeze({
-      ok: true,
+      ok: true as const,
       changed: true,
       control_mode: 'HUMAN',
       generation_version_increment: 1,
@@ -390,7 +402,7 @@ export function evaluateConversationControlModeTransition({
   }
   if (toMode === 'COPILOT') {
     return Object.freeze({
-      ok: true,
+      ok: true as const,
       changed: true,
       control_mode: 'COPILOT',
       generation_version_increment: 1,
@@ -411,7 +423,7 @@ export function advanceConversationSessionVersions({
   rowVersion,
   reason,
   duplicate = false,
-}) {
+}: { generationVersion: number; rowVersion: number; reason: string; duplicate?: boolean }) {
   const generation = positiveSafeInteger(
     generationVersion,
     ERROR_CODES.expectedRowVersionConflict,
@@ -435,41 +447,41 @@ export function advanceConversationSessionVersions({
   });
 }
 
-export function mapConversationStorageError(error) {
+export function mapConversationStorageError(error: unknown) {
   if (
-    error?.code === '23514'
-    && error?.message === ERROR_CODES.schemaDrift
+    (error as StorageError)?.code === '23514'
+    && (error as StorageError)?.message === ERROR_CODES.schemaDrift
   ) {
     return publicError(ERROR_CODES.schemaDrift);
   }
   if (
-    error?.code === '23505'
-    && error?.constraint === 'conversation_session_creation_idempotency_key_unique'
+    (error as StorageError)?.code === '23505'
+    && (error as StorageError)?.constraint === 'conversation_session_creation_idempotency_key_unique'
   ) {
     return publicError(ERROR_CODES.idempotencyConflict);
   }
   if (
-    error?.code === '23505'
-    && error?.constraint === 'conversation_session_one_active_participant_idx'
+    (error as StorageError)?.code === '23505'
+    && (error as StorageError)?.constraint === 'conversation_session_one_active_participant_idx'
   ) {
     return publicError(ERROR_CODES.activeSessionConflict, true);
   }
   if (
-    error?.code === '23503'
-    && error?.constraint === 'conversation_session_service_intake_fk'
+    (error as StorageError)?.code === '23503'
+    && (error as StorageError)?.constraint === 'conversation_session_service_intake_fk'
   ) {
     return publicError(ERROR_CODES.intakeScopeConflict);
   }
   if (
-    error?.code === '23503'
-    && error?.constraint === 'conversation_session_thread_fk'
+    (error as StorageError)?.code === '23503'
+    && (error as StorageError)?.constraint === 'conversation_session_thread_fk'
   ) {
     return publicError(ERROR_CODES.threadKeyInvalid);
   }
   return publicError(ERROR_CODES.storageFailed, true);
 }
 
-export async function runConversationCenterGuarded({ featureFlags = {}, operation }) {
+export async function runConversationCenterGuarded<T>({ featureFlags = {}, operation }: { featureFlags?: unknown; operation?: () => T | Promise<T> }) {
   let flags;
   try {
     flags = normalizeConversationFeatureFlags(featureFlags);
@@ -500,7 +512,7 @@ export async function createConversationSessionContractRecord({
   creationIdempotencyKey,
   lastActivityAt,
   featureFlags = {},
-}) {
+}: { pool?: PostgresTransaction; threadId: string; participantKey: string; serviceIntakeId?: string | null; creationIdempotencyKey: string; lastActivityAt: string; featureFlags?: unknown }) {
   return runConversationCenterGuarded({
     featureFlags,
     operation: async () => {
@@ -536,14 +548,14 @@ export async function createConversationSessionContractRecord({
         generation_version, row_version, started_at, last_activity_at,
         ended_at, close_reason, created_at, updated_at`;
 
-      const priorReplay = await pool.query(
+      const priorReplay = await pool.query<SessionRow>(
         `SELECT ${columns}
            FROM conversation.session
           WHERE creation_idempotency_key = $1`,
         [normalizedCreationKey],
       );
       if (priorReplay.rowCount === 1) {
-        const existing = priorReplay.rows[0];
+        const existing = priorReplay.rows[0] as SessionRow;
         if (
           existing.thread_id !== normalizedThreadId
           || existing.participant_key !== normalizedParticipantKey
@@ -552,7 +564,7 @@ export async function createConversationSessionContractRecord({
           return publicError(ERROR_CODES.idempotencyConflict);
         }
         return Object.freeze({
-          ok: true,
+          ok: true as const,
           replayed: true,
           session: conversationSessionFromRow(existing),
         });
@@ -561,7 +573,7 @@ export async function createConversationSessionContractRecord({
         return publicError(ERROR_CODES.storageFailed, true);
       }
 
-      const threadResult = await pool.query(
+      const threadResult = await pool.query<{ thread_key: string }>(
         'SELECT thread_key FROM conversation.thread WHERE id = $1::uuid',
         [normalizedThreadId],
       );
@@ -570,7 +582,7 @@ export async function createConversationSessionContractRecord({
       }
 
       const scope = buildConversationSessionScope({
-        threadKey: threadResult.rows[0].thread_key,
+        threadKey: (threadResult.rows[0] as { thread_key: string }).thread_key,
         participantKey: normalizedParticipantKey,
         serviceIntakeId: normalizedServiceIntakeId,
         creationIdempotencyKey: normalizedCreationKey,
@@ -583,7 +595,7 @@ export async function createConversationSessionContractRecord({
         normalizedCreationKey,
         normalizedActivityAt,
       ];
-      const inserted = await pool.query(
+      const inserted = await pool.query<SessionRow>(
         `INSERT INTO conversation.session (
            thread_id, participant_key, service_intake_id,
            session_scope_key, creation_idempotency_key, last_activity_at
@@ -595,13 +607,13 @@ export async function createConversationSessionContractRecord({
       );
       if (inserted.rowCount === 1) {
         return Object.freeze({
-          ok: true,
+          ok: true as const,
           replayed: false,
-          session: conversationSessionFromRow(inserted.rows[0]),
+          session: conversationSessionFromRow(inserted.rows[0] as SessionRow),
         });
       }
 
-      const replay = await pool.query(
+      const replay = await pool.query<SessionRow>(
         `SELECT ${columns}
            FROM conversation.session
           WHERE creation_idempotency_key = $1`,
@@ -610,7 +622,7 @@ export async function createConversationSessionContractRecord({
       if (replay.rowCount !== 1) {
         return publicError(ERROR_CODES.storageFailed, true);
       }
-      const existing = replay.rows[0];
+      const existing = replay.rows[0] as SessionRow;
       if (
         existing.thread_id !== normalizedThreadId
         || existing.participant_key !== normalizedParticipantKey
@@ -620,7 +632,7 @@ export async function createConversationSessionContractRecord({
         return publicError(ERROR_CODES.idempotencyConflict);
       }
       return Object.freeze({
-        ok: true,
+        ok: true as const,
         replayed: true,
         session: conversationSessionFromRow(existing),
       });
@@ -628,7 +640,7 @@ export async function createConversationSessionContractRecord({
   });
 }
 
-export async function applyConversationContractsMigration({ pool }) {
+export async function applyConversationContractsMigration({ pool }: { pool: PostgresTransaction }) {
   if (!pool || typeof pool.query !== 'function') {
     throw new TypeError('A PostgreSQL pool is required.');
   }

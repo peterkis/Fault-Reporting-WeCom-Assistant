@@ -1,3 +1,20 @@
+
+import type { WSClientOptions, SendMarkdownMsgBody } from '@wecom/aibot-node-sdk';
+export interface SafeSdkLogger { debug(message: unknown): void; info(): void; warn(): void; error(): void }
+export interface WeComGatewayClient {
+  on(event: 'authenticated' | 'disconnected', listener: () => void): unknown;
+  on(event: 'message.text' | 'error', listener: (value: unknown) => void): unknown;
+  connect(): unknown; disconnect(): unknown; sendMessage(target: string, body: SendMarkdownMsgBody): Promise<unknown>;
+}
+type ClientOptions = Pick<WSClientOptions, 'botId' | 'secret' | 'wsUrl' | 'maxReconnectAttempts' | 'maxAuthFailureAttempts'> & { logger: SafeSdkLogger };
+interface GatewayMetrics { auth_success_total: number; auth_failure_total: number; reconnect_total: number; inbound_frame_total: number; inbound_failure_total: number; last_error_code: string | null; last_state_change_at: string | null }
+export interface WeComGateway {
+  start(): Promise<Readonly<{ started: boolean; disabled: boolean }>>; stop(): Promise<Readonly<{ stopped: boolean }>>;
+  getAuthenticatedClient(): WeComGatewayClient; getStatus(): Readonly<GatewayMetrics & { enabled: boolean; started: boolean; authenticated: boolean; active_gateway_count: 0 | 1 }>;
+}
+export interface WeComGatewayOptions { enabled?: boolean; botId?: string; secret?: string; wsUrl?: string; onFrame?: (frame: unknown) => void | Promise<void>; clientFactory?: (options: ClientOptions) => WeComGatewayClient; now?: () => Date }
+type ErrorObservation = { message?: unknown } | null | undefined;
+
 import AiBot from '@wecom/aibot-node-sdk';
 
 import { createSafeSdkLogger } from './g0-002-sdk-lifecycle.mjs';
@@ -10,16 +27,16 @@ export const P2_G1_GATEWAY_ERROR_CODES = Object.freeze({
   unavailableBeforeSend: 'GATEWAY_UNAVAILABLE_BEFORE_SEND',
 });
 
-let activeGateway = null;
+let activeGateway: WeComGateway | null = null;
 
-function safeError(error) {
-  const message = String(error?.message ?? error ?? '');
+function safeError(error: unknown) {
+  const message = String((error as ErrorObservation)?.message ?? error ?? '');
   return /auth|secret|credential/iu.test(message)
     ? P2_G1_GATEWAY_ERROR_CODES.authFailed
     : 'P2_G1_GATEWAY_TRANSPORT_ERROR';
 }
 
-function configuration({ botId, secret, wsUrl }) {
+function configuration({ botId, secret, wsUrl }: { botId: string | undefined; secret: string | undefined; wsUrl: string }) {
   if (![botId, secret, wsUrl].every((value) => typeof value === 'string' && value.length > 0)) {
     throw new TypeError(P2_G1_GATEWAY_ERROR_CODES.configurationInvalid);
   }
@@ -33,16 +50,16 @@ export function createP2G1WeComGateway({
   onFrame = async () => {},
   clientFactory = (options) => new AiBot.WSClient(options),
   now = () => new Date(),
-} = {}) {
+}: WeComGatewayOptions = {}): WeComGateway {
   if (typeof enabled !== 'boolean' || typeof onFrame !== 'function' || typeof clientFactory !== 'function' || typeof now !== 'function') {
     throw new TypeError(P2_G1_GATEWAY_ERROR_CODES.configurationInvalid);
   }
   if (enabled) configuration({ botId, secret, wsUrl });
-  let client = null;
+  let client: WeComGatewayClient | null = null;
   let authenticated = false;
   let started = false;
   let stopping = false;
-  const metrics = {
+  const metrics: GatewayMetrics = {
     auth_success_total: 0,
     auth_failure_total: 0,
     reconnect_total: 0,
@@ -54,7 +71,7 @@ export function createP2G1WeComGateway({
 
   function transition() { metrics.last_state_change_at = now().toISOString(); }
 
-  async function handleFrame(frame) {
+  async function handleFrame(frame: unknown) {
     metrics.inbound_frame_total += 1;
     try { await onFrame(frame); }
     catch { metrics.inbound_failure_total += 1; metrics.last_error_code = 'P2_G1_INBOUND_HANDLER_FAILED'; }
@@ -64,7 +81,7 @@ export function createP2G1WeComGateway({
     if (!enabled) return Object.freeze({ started: false, disabled: true });
     if (started) return Object.freeze({ started: true, disabled: false });
     if (activeGateway !== null && activeGateway !== gateway) {
-      const error = new Error(P2_G1_GATEWAY_ERROR_CODES.alreadyActive); error.code = P2_G1_GATEWAY_ERROR_CODES.alreadyActive; throw error;
+      const error = new Error(P2_G1_GATEWAY_ERROR_CODES.alreadyActive) as Error & { code: string }; error.code = P2_G1_GATEWAY_ERROR_CODES.alreadyActive; throw error;
     }
     activeGateway = gateway;
     stopping = false;
@@ -74,8 +91,8 @@ export function createP2G1WeComGateway({
       wsUrl,
       maxReconnectAttempts: 10,
       maxAuthFailureAttempts: 1,
-      logger: createSafeSdkLogger({ onHeartbeatTimerStarted: () => {} }),
-    });
+      logger: createSafeSdkLogger({ onHeartbeatTimerStarted: () => {} }) as SafeSdkLogger,
+    } as ClientOptions);
     if (!client || typeof client.on !== 'function' || typeof client.connect !== 'function' || typeof client.disconnect !== 'function' || typeof client.sendMessage !== 'function') {
       activeGateway = null;
       throw new TypeError(P2_G1_GATEWAY_ERROR_CODES.configurationInvalid);
@@ -128,14 +145,14 @@ export function createP2G1WeComGateway({
 
   function getAuthenticatedClient() {
     if (!enabled || !started || !authenticated || client === null) {
-      const error = new Error(P2_G1_GATEWAY_ERROR_CODES.unavailableBeforeSend);
+      const error = new Error(P2_G1_GATEWAY_ERROR_CODES.unavailableBeforeSend) as Error & { code: string };
       error.code = P2_G1_GATEWAY_ERROR_CODES.unavailableBeforeSend;
       throw error;
     }
     return client;
   }
 
-  function getStatus() {
+  function getStatus(): ReturnType<WeComGateway['getStatus']> {
     return Object.freeze({
       enabled,
       started,

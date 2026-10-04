@@ -1,9 +1,12 @@
+
+import type { ServerResponse } from 'node:http';
+
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const ROOT = fileURLToPath(new URL('../web/p2-workbench/', import.meta.url));
-const ASSETS = Object.freeze({
+const ASSETS: Readonly<Record<string, Readonly<{ file: string; type: string }>>> = Object.freeze({
   '/workbench': Object.freeze({ file: 'index.html', type: 'text/html; charset=utf-8' }),
   '/workbench/': Object.freeze({ file: 'index.html', type: 'text/html; charset=utf-8' }),
   '/static/workbench/workbench.css': Object.freeze({ file: 'workbench.css', type: 'text/css; charset=utf-8' }),
@@ -12,10 +15,10 @@ const ASSETS = Object.freeze({
   '/static/workbench/time-display.mjs': Object.freeze({ file: 'time-display.mjs', type: 'text/javascript; charset=utf-8' }),
 });
 
-export function createWorkbenchStaticHandler({ enabled = false, root = ROOT } = {}) {
+export function createWorkbenchStaticHandler({ enabled = false, root = ROOT }: { enabled?: boolean; root?: string } = {}) {
   if (typeof enabled !== 'boolean') throw new TypeError('Static handler configuration is invalid.');
   const resolvedRoot = path.resolve(root);
-  return async function serve(pathname, response) {
+  return async function serve(pathname: string, response: ServerResponse) {
     const asset = ASSETS[pathname];
     if (!asset) return false;
     if (!enabled) {

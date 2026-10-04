@@ -1,3 +1,23 @@
+import type { IncomingMessage, ServerResponse, Server, OutgoingHttpHeaders } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import type { createConversationWorkbenchQueryService, WorkbenchAuthContext, WorkbenchListState } from './p2-006-workbench-query.mjs';
+import type { createConversationWorkbenchCommandFacade } from './p2-006-workbench-command-facade.mjs';
+import type { DeliveryResolution } from './p2-006-workbench-delivery-control.mjs';
+export interface WorkbenchHttpAuthContext extends WorkbenchAuthContext { auth_method: 'COOKIE' | 'BEARER'; expires_epoch_ms: string; public_origin?: string }
+export type WorkbenchAuthenticate = (request: IncomingMessage) => WorkbenchHttpAuthContext | null | Promise<WorkbenchHttpAuthContext | null>;
+type QueryService = ReturnType<typeof createConversationWorkbenchQueryService>;
+type CommandFacade = ReturnType<typeof createConversationWorkbenchCommandFacade>;
+type RequestContext = { request: IncomingMessage; response: ServerResponse; url: URL };
+type AuthenticatedContext = RequestContext & { authContext: WorkbenchHttpAuthContext; readJson: typeof readJson; validateWriteRequest: typeof validateWriteRequest; json: typeof json };
+export interface WorkbenchHttpOptions {
+  enabled?: boolean; queryService?: QueryService; commandFacade?: CommandFacade; authenticate?: WorkbenchAuthenticate;
+  sseHandler?: ((request: IncomingMessage, response: ServerResponse, url: URL) => unknown | Promise<unknown>) | null;
+  healthProvider?: { live: () => { ok: boolean } | Promise<{ ok: boolean }>; ready: () => { ok: boolean } | Promise<{ ok: boolean }>; metrics?: () => unknown | Promise<unknown> } | null;
+  publicOrigin?: string; staticHandler?: ReturnType<typeof createWorkbenchStaticHandler>;
+  unauthenticatedHandler?: ((context: RequestContext) => boolean | Promise<boolean>) | null;
+  authenticatedHandler?: ((context: AuthenticatedContext) => boolean | Promise<boolean>) | null;
+}
+
 import { createServer } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import { createWorkbenchStaticHandler } from './p2-006-workbench-static.mjs';
@@ -20,49 +40,49 @@ function securityHeaders(api = true) {
   };
 }
 
-function json(response, status, body, extra = {}) {
+function json(response: ServerResponse, status: number, body: unknown, extra: OutgoingHttpHeaders = {}) {
   response.writeHead(status, { ...securityHeaders(), 'content-type': 'application/json; charset=utf-8', ...extra });
   response.end(JSON.stringify(body));
 }
 
-function publicError(response, error) {
+function publicError(response: ServerResponse, error: unknown) {
   const code = error instanceof WorkbenchError ? error.code : WORKBENCH_ERROR_CODES.storageFailed;
   const status = error instanceof WorkbenchError ? error.status : 500;
   json(response, status, { error: { code, retryable: status >= 500 } });
 }
 
-function secureEqual(left, right) {
+function secureEqual(left: unknown, right: unknown) {
   if (typeof left !== 'string' || typeof right !== 'string') return false;
   const a = Buffer.from(left, 'utf8'); const b = Buffer.from(right, 'utf8');
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-async function readJson(request) {
-  if ((request.headers['content-type'] ?? '').split(';', 1)[0].trim().toLowerCase() !== 'application/json') {
+async function readJson(request: IncomingMessage): Promise<Record<string, unknown>> {
+  if (((request.headers['content-type'] ?? '').split(';', 1)[0] as string).trim().toLowerCase() !== 'application/json') {
     throw new WorkbenchError(WORKBENCH_ERROR_CODES.contentTypeInvalid, 415);
   }
-  const chunks = []; let size = 0;
+  const chunks: Buffer[] = []; let size = 0;
   for await (const chunk of request) {
     size += chunk.length;
     if (size > MAX_BODY_BYTES) throw new WorkbenchError(WORKBENCH_ERROR_CODES.requestTooLarge, 413);
     chunks.push(chunk);
   }
   try {
-    const value = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    const value: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('shape');
-    return value;
+    return value as Record<string, unknown>;
   } catch { throw new WorkbenchError(WORKBENCH_ERROR_CODES.requestInvalid, 400); }
 }
 
-function exactKeys(body, allowed, required) {
+function exactKeys(body: Record<string, unknown>, allowed: readonly string[], required: readonly string[]) {
   if (Object.keys(body).some((key) => !allowed.includes(key)) || required.some((key) => !Object.hasOwn(body, key))) {
     throw new WorkbenchError(WORKBENCH_ERROR_CODES.requestInvalid, 400);
   }
 }
 
-function validateWriteRequest(request, authContext, body, { sessionMutation = true } = {}) {
+function validateWriteRequest(request: IncomingMessage, authContext: WorkbenchHttpAuthContext, body: Record<string, unknown>, { sessionMutation = true } = {}) {
   const commandId = request.headers['idempotency-key'];
-  if (typeof commandId !== 'string' || !UUID_PATTERN.test(commandId) || commandId.toLowerCase() !== body.client_command_id?.toLowerCase()) {
+  if (typeof commandId !== 'string' || !UUID_PATTERN.test(commandId) || commandId.toLowerCase() !== (body.client_command_id as string | null | undefined)?.toLowerCase()) {
     throw new WorkbenchError(WORKBENCH_ERROR_CODES.idempotencyMismatch, 400);
   }
   if (sessionMutation) {
@@ -83,7 +103,7 @@ function validateWriteRequest(request, authContext, body, { sessionMutation = tr
   } else throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
 }
 
-function authExpired(authContext) {
+function authExpired(authContext: WorkbenchHttpAuthContext | null | undefined) {
   try {
     return BigInt(assertEpochMsString(authContext?.expires_epoch_ms)) <= BigInt(String(Date.now()));
   } catch {
@@ -91,20 +111,20 @@ function authExpired(authContext) {
   }
 }
 
-function authExpiryDelay(authContext) {
+function authExpiryDelay(authContext: WorkbenchHttpAuthContext) {
   const remaining = BigInt(assertEpochMsString(authContext.expires_epoch_ms)) - BigInt(String(Date.now()));
   if (remaining <= 0n) return 1;
   return Number(remaining > 2_147_483_647n ? 2_147_483_647n : remaining);
 }
 
-export function createWorkbenchAuthenticationPort({ authenticate } = {}) {
+export function createWorkbenchAuthenticationPort({ authenticate }: { authenticate?: WorkbenchAuthenticate } = {}) {
   if (typeof authenticate !== 'function') throw new TypeError('WorkbenchAuthenticationPort authenticate is required.');
   return Object.freeze({ authenticate });
 }
 
 export function createConversationWorkbenchHttpServer({ enabled = false, queryService, commandFacade, authenticate,
   sseHandler = null, healthProvider = null, publicOrigin = 'http://127.0.0.1', staticHandler = createWorkbenchStaticHandler({ enabled }),
-  unauthenticatedHandler = null, authenticatedHandler = null } = {}) {
+  unauthenticatedHandler = null, authenticatedHandler = null }: WorkbenchHttpOptions = {}) {
   if (typeof authenticate !== 'function') throw new TypeError('WorkbenchAuthenticationPort authenticate is required.');
   if (!queryService || !commandFacade || typeof enabled !== 'boolean' || (sseHandler !== null && typeof sseHandler !== 'function')
     || (unauthenticatedHandler !== null && typeof unauthenticatedHandler !== 'function')
@@ -136,7 +156,7 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
         throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
       }
       let authContext;
-      try { authContext = await authenticate(request); } catch { authContext = null; }
+      try { authContext = await (authenticate as WorkbenchAuthenticate)(request); } catch { authContext = null; }
       if (!authContext) throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
       if (authExpired(authContext)) throw new WorkbenchError(WORKBENCH_ERROR_CODES.authExpired, 401);
       authContext = Object.freeze({ ...authContext, public_origin: publicOrigin });
@@ -151,27 +171,27 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
         await sseHandler(request, response, url); return;
       }
       if (request.method === 'GET' && url.pathname === '/api/workbench/bootstrap') {
-        json(response, 200, await queryService.getBootstrap({ authContext })); return;
+        json(response, 200, await (queryService as QueryService).getBootstrap({ authContext })); return;
       }
       if (request.method === 'GET' && url.pathname === '/api/conversations') {
         const allowed = new Set(['state', 'cursor', 'limit']);
         if ([...url.searchParams.keys()].some((key) => !allowed.has(key))) throw new WorkbenchError(WORKBENCH_ERROR_CODES.requestInvalid, 400);
-        json(response, 200, await queryService.listConversations({ authContext, state: url.searchParams.get('state') ?? 'open',
+        json(response, 200, await (queryService as QueryService).listConversations({ authContext, state: url.searchParams.get('state') as WorkbenchListState | null ?? 'open',
           cursor: url.searchParams.get('cursor'), limit: url.searchParams.get('limit') ?? undefined })); return;
       }
       const sessionMatch = url.pathname.match(/^\/api\/conversations\/([0-9a-f-]+)(?:\/(items|eligible-principals|deliveries))?$/iu);
       if (request.method === 'GET' && sessionMatch) {
-        const sessionId = sessionMatch[1]; const child = sessionMatch[2];
-        if (!child) { const detail = await queryService.getConversationDetail({ authContext, sessionId }); json(response, 200, detail, { etag: detail.etag }); return; }
-        if (child === 'items') { json(response, 200, await queryService.listConversationItems({ authContext, sessionId,
+        const sessionId = sessionMatch[1] as string; const child = sessionMatch[2];
+        if (!child) { const detail = await (queryService as QueryService).getConversationDetail({ authContext, sessionId }); json(response, 200, detail, { etag: detail.etag }); return; }
+        if (child === 'items') { json(response, 200, await (queryService as QueryService).listConversationItems({ authContext, sessionId,
           before_sequence: url.searchParams.get('before_sequence') ?? undefined, after_sequence: url.searchParams.get('after_sequence') ?? undefined,
           limit: url.searchParams.get('limit') ?? undefined })); return; }
-        if (child === 'eligible-principals') { json(response, 200, await queryService.listEligiblePrincipals({ authContext, sessionId })); return; }
-        if (child === 'deliveries') { json(response, 200, await queryService.listConversationDeliveries({ authContext, sessionId })); return; }
+        if (child === 'eligible-principals') { json(response, 200, await (queryService as QueryService).listEligiblePrincipals({ authContext, sessionId })); return; }
+        if (child === 'deliveries') { json(response, 200, await (queryService as QueryService).listConversationDeliveries({ authContext, sessionId })); return; }
       }
       const actionMatch = url.pathname.match(/^\/api\/conversations\/([0-9a-f-]+)\/(handoff\/request|handoff\/cancel|takeover|transfer|release|read-cursor|messages|internal-notes)$/iu);
       if (request.method === 'POST' && actionMatch) {
-        const body = await readJson(request); const sessionId = actionMatch[1]; const action = actionMatch[2].toLowerCase();
+        const body = await readJson(request); const sessionId = actionMatch[1] as string; const action = (actionMatch[2] as string).toLowerCase();
         const common = ['client_command_id', 'expected_row_version', 'reason_code'];
         if (action === 'handoff/request') exactKeys(body, [...common], ['client_command_id', 'expected_row_version']);
         else if (action === 'handoff/cancel') exactKeys(body, [...common, 'handoff_id'], ['client_command_id', 'expected_row_version']);
@@ -185,18 +205,18 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
         const method = action === 'handoff/request' ? 'requestHandoff' : action === 'handoff/cancel' ? 'cancelHandoff'
           : action === 'read-cursor' ? 'advanceReadCursor' : action === 'messages' ? 'reply'
             : action === 'internal-notes' ? 'internalNote' : action;
-        const result = await commandFacade[method]({ authContext, sessionId, body });
+        const result = await (commandFacade as CommandFacade)[method as 'requestHandoff' | 'cancelHandoff' | 'advanceReadCursor' | 'reply' | 'internalNote' | 'takeover' | 'transfer' | 'release']({ authContext, sessionId, body });
         json(response, action === 'messages' ? 202 : action === 'internal-notes' ? 201 : 200, result); return;
       }
       const deliveryMatch = url.pathname.match(/^\/api\/deliveries\/([0-9a-f-]+)\/(retry|reconcile)$/iu);
       if (request.method === 'POST' && deliveryMatch) {
         const body = await readJson(request);
-        if (deliveryMatch[2].toLowerCase() === 'retry') exactKeys(body, ['client_command_id', 'reason_code'], ['client_command_id']);
+        if ((deliveryMatch[2] as string).toLowerCase() === 'retry') exactKeys(body, ['client_command_id', 'reason_code'], ['client_command_id']);
         else exactKeys(body, ['client_command_id', 'resolution', 'reason_code'], ['client_command_id', 'resolution', 'reason_code']);
         validateWriteRequest(request, authContext, body, { sessionMutation: false });
-        const result = deliveryMatch[2].toLowerCase() === 'retry'
-          ? await commandFacade.retryDelivery({ authContext, deliveryId: deliveryMatch[1], reason_code: body.reason_code })
-          : await commandFacade.reconcileDelivery({ authContext, deliveryId: deliveryMatch[1], resolution: body.resolution, reason_code: body.reason_code });
+        const result = (deliveryMatch[2] as string).toLowerCase() === 'retry'
+          ? await (commandFacade as CommandFacade).retryDelivery({ authContext, deliveryId: deliveryMatch[1] as string, reason_code: body.reason_code as string })
+          : await (commandFacade as CommandFacade).reconcileDelivery({ authContext, deliveryId: deliveryMatch[1] as string, resolution: body.resolution as DeliveryResolution, reason_code: body.reason_code as string });
         json(response, 200, result); return;
       }
       if (request.method === 'GET' && /^\/api\/attachments\//u.test(url.pathname)) {
@@ -207,16 +227,16 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
   });
 }
 
-export function listenConversationWorkbenchServer(server, { host = '127.0.0.1', port = 0 } = {}) {
+export function listenConversationWorkbenchServer(server: Server, { host = '127.0.0.1', port = 0 } = {}): Promise<AddressInfo> {
   if (!server || typeof server.listen !== 'function' || host !== '127.0.0.1') throw new TypeError('Workbench server must bind to loopback.');
   return new Promise((resolve, reject) => {
-    const onError = (error) => { server.off('listening', onListening); reject(error); };
-    const onListening = () => { server.off('error', onError); resolve(server.address()); };
+    const onError = (error: Error) => { server.off('listening', onListening); reject(error); };
+    const onListening = () => { server.off('error', onError); resolve(server.address() as AddressInfo); };
     server.once('error', onError); server.once('listening', onListening); server.listen(port, host);
   });
 }
 
-export function closeConversationWorkbenchServer(server) {
+export function closeConversationWorkbenchServer(server: Server | null | undefined): Promise<void> {
   if (!server?.listening) return Promise.resolve();
-  return new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  return new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }

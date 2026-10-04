@@ -1,21 +1,27 @@
+
+import type { CommunicationPurpose, CommunicationSenderKind, CommunicationVisibility } from '../contracts/communication_contracts.js';
+interface MessageProjectionInput { id: string; session_id: string | null; purpose: CommunicationPurpose; sender_kind: CommunicationSenderKind; visibility: CommunicationVisibility; content: unknown; privacy_class: string; retention_until: unknown; created_at: unknown }
+interface DeliveryProjectionInput { id: string; session_id?: string | null; status: string; attempt_count: string | number; last_error_code?: string | null; side_effect_state: string; privacy_class?: string; retention_until: unknown; updated_at: unknown }
+interface LegacyProjectionInput { id?: string; delivery_id?: string; outbox_id: string; status: string; channel: string; attempt_count: string | number; last_error_code?: string | null; sent_at?: unknown }
+
 import { createHash } from 'node:crypto';
 import { assertLocalDateTime } from './platform/time-contract.mjs';
 
-function iso(value) {
+function iso(value: unknown) {
   return assertLocalDateTime(value);
 }
 
-function stableOrdinal(value) {
+function stableOrdinal(value: unknown) {
   const digest = createHash('sha256').update(String(value)).digest('hex').slice(0, 15);
   return BigInt(`0x${digest}`).toString();
 }
 
-function boundedString(value, maximum = 256) {
+function boundedString(value: unknown, maximum = 256): string {
   if (typeof value !== 'string' || value.length < 1 || value.length > maximum) throw new TypeError('COMMUNICATION_PROJECTION_INPUT_INVALID');
   return value;
 }
 
-export function mapCommunicationMessageToTimelineSourceRecord(message) {
+export function mapCommunicationMessageToTimelineSourceRecord(message: MessageProjectionInput) {
   if (!message || typeof message !== 'object' || message.session_id == null) throw new TypeError('COMMUNICATION_PROJECTION_INPUT_INVALID');
   const purpose = boundedString(message.purpose, 64);
   const senderKind = boundedString(message.sender_kind, 16);
@@ -44,7 +50,7 @@ export function mapCommunicationMessageToTimelineSourceRecord(message) {
   });
 }
 
-export function mapCommunicationDeliveryToTimelineSourceRecord(delivery) {
+export function mapCommunicationDeliveryToTimelineSourceRecord(delivery: DeliveryProjectionInput) {
   if (!delivery || typeof delivery !== 'object' || delivery.session_id == null) throw new TypeError('COMMUNICATION_PROJECTION_INPUT_INVALID');
   return Object.freeze({
     source_type: 'DELIVERY',
@@ -68,7 +74,7 @@ export function mapCommunicationDeliveryToTimelineSourceRecord(delivery) {
   });
 }
 
-export function mapCommunicationDeliveryChangedRealtimeEvent(delivery) {
+export function mapCommunicationDeliveryChangedRealtimeEvent(delivery: DeliveryProjectionInput) {
   if (!delivery || typeof delivery !== 'object') throw new TypeError('COMMUNICATION_PROJECTION_INPUT_INVALID');
   return Object.freeze({
     event_type: 'communication.delivery.changed',
@@ -88,7 +94,7 @@ export function mapCommunicationDeliveryChangedRealtimeEvent(delivery) {
   });
 }
 
-export function mapLegacyNotificationDeliveryToCommunicationView(row) {
+export function mapLegacyNotificationDeliveryToCommunicationView(row: LegacyProjectionInput) {
   if (!row || typeof row !== 'object') throw new TypeError('COMMUNICATION_PROJECTION_INPUT_INVALID');
   const status = boundedString(row.status, 32);
   if (!['PENDING', 'SENDING', 'SENT', 'DEAD_LETTER'].includes(status)) throw new TypeError('COMMUNICATION_PROJECTION_INPUT_INVALID');

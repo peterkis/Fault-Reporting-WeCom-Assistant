@@ -1,3 +1,11 @@
+
+import type { SendMarkdownMsgBody } from '@wecom/aibot-node-sdk';
+import type { ValidatedSenderRequest } from './p2-004-communication-sender-port.mjs';
+import type { WeComGatewayClient } from './p2-g1-wecom-gateway.mjs';
+type ReceiptObservation = { headers?: { req_id?: unknown }; errcode?: unknown; body?: { errcode?: unknown } } | null | undefined;
+type ErrorObservation = { errcode?: unknown } | null | undefined;
+interface SenderOptions { gateway?: { getAuthenticatedClient(): WeComGatewayClient }; allowedTargetHashes?: readonly string[] | ReadonlySet<string>; enabled?: boolean }
+
 import { createHash } from 'node:crypto';
 
 import { createCommunicationSenderPort } from './p2-004-communication-sender-port.mjs';
@@ -10,10 +18,10 @@ export const P2_G1_SENDER_ERROR_CODES = Object.freeze({
   providerUnknown: 'P2_G1_PROVIDER_RESULT_UNKNOWN',
 });
 
-function sha256(value) { return createHash('sha256').update(String(value)).digest('hex'); }
+function sha256(value: unknown) { return createHash('sha256').update(String(value)).digest('hex'); }
 
-function sdkBody(message) {
-  const text = message?.content?.text;
+function sdkBody(message: ValidatedSenderRequest['message']): SendMarkdownMsgBody {
+  const text = (message?.content as { text?: unknown } | null | undefined)?.text;
   if (typeof text !== 'string' || text.length < 1 || text.length > 20_480) {
     throw new TypeError(P2_G1_SENDER_ERROR_CODES.requestInvalid);
   }
@@ -25,22 +33,22 @@ function sdkBody(message) {
   throw new TypeError(P2_G1_SENDER_ERROR_CODES.requestInvalid);
 }
 
-function normalizeAllowlist(value) {
-  const entries = value instanceof Set ? [...value] : Array.isArray(value) ? value : [];
+function normalizeAllowlist(value: unknown) {
+  const entries: unknown[] = value instanceof Set ? [...value] : Array.isArray(value) ? value : [];
   if (entries.some((entry) => typeof entry !== 'string' || !/^[a-f0-9]{64}$/u.test(entry))) {
     throw new TypeError(P2_G1_SENDER_ERROR_CODES.requestInvalid);
   }
-  return new Set(entries);
+  return new Set(entries as string[]);
 }
 
-function acknowledgedId(receipt) {
-  const requestId = receipt?.headers?.req_id;
+function acknowledgedId(receipt: unknown) {
+  const requestId = (receipt as ReceiptObservation)?.headers?.req_id;
   return typeof requestId === 'string' && requestId.length > 0
     ? `wecom_ack_${sha256(requestId).slice(0, 32)}`
     : null;
 }
 
-export function createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes, enabled } = {}) {
+export function createP2G1WeComCommunicationSender({ gateway, allowedTargetHashes, enabled }: SenderOptions = {}) {
   if (typeof enabled !== 'boolean' || !gateway || typeof gateway.getAuthenticatedClient !== 'function') {
     throw new TypeError(P2_G1_SENDER_ERROR_CODES.requestInvalid);
   }
@@ -58,9 +66,9 @@ export function createP2G1WeComCommunicationSender({ gateway, allowedTargetHashe
       return { outcome: 'REJECTED_NOT_APPLIED', provider_message_id: null, error_code: 'P2_G1_SEND_ABORTED_BEFORE_PROVIDER', retryable: true };
     }
     let client;
-    try { client = gateway.getAuthenticatedClient(); }
+    try { client = (gateway as NonNullable<SenderOptions['gateway']>).getAuthenticatedClient(); }
     catch (error) {
-      const unavailable = new Error('GATEWAY_UNAVAILABLE_BEFORE_SEND');
+      const unavailable = new Error('GATEWAY_UNAVAILABLE_BEFORE_SEND') as Error & { code: string };
       unavailable.code = 'GATEWAY_UNAVAILABLE_BEFORE_SEND';
       throw unavailable;
     }
@@ -71,7 +79,7 @@ export function createP2G1WeComCommunicationSender({ gateway, allowedTargetHashe
     try {
       providerCalled = true;
       const receipt = await client.sendMessage(request.target_id, body);
-      const errcode = receipt?.errcode ?? receipt?.body?.errcode;
+      const errcode = (receipt as ReceiptObservation)?.errcode ?? (receipt as ReceiptObservation)?.body?.errcode;
       if (errcode === 0) {
         return { outcome: 'ACKNOWLEDGED', provider_message_id: acknowledgedId(receipt), error_code: null, retryable: false };
       }
@@ -81,7 +89,7 @@ export function createP2G1WeComCommunicationSender({ gateway, allowedTargetHashe
       return { outcome: 'REJECTED_NOT_APPLIED', provider_message_id: null, error_code: P2_G1_SENDER_ERROR_CODES.providerRejected, retryable: false };
     } catch (error) {
       if (!providerCalled) throw error;
-      if (Number.isInteger(error?.errcode)) {
+      if (Number.isInteger((error as ErrorObservation)?.errcode)) {
         return { outcome: 'REJECTED_NOT_APPLIED', provider_message_id: null, error_code: P2_G1_SENDER_ERROR_CODES.providerRejected, retryable: false };
       }
       return { outcome: 'UNKNOWN', provider_message_id: null, error_code: P2_G1_SENDER_ERROR_CODES.providerUnknown, retryable: false };
