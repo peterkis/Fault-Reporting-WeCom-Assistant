@@ -10,6 +10,48 @@ import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { counts, runSelection } from './run-tests.mjs';
 const original = sourceRoot();
+test('P02 affected CLI launchers reach their safety guards from verified artifacts', () => {
+  verifyArtifact(original);
+  const directory = mkdtempSync(path.join(tmpdir(), 'p02-launcher-env-'));
+  try {
+    const environmentFile = path.join(directory, 'empty.env'); writeFileSync(environmentFile, '');
+    const pkg = record(JSON.parse(readFileSync(path.join(original, 'package.json'), 'utf8')) as unknown);
+    const scripts = record(pkg.scripts);
+    const cases = [
+      ['p2:002:rebuild:check', [], 'CONVERSATION_TIMELINE_SOURCE_INVALID'],
+      ['p2:003:retention:check', [], 'CONVERSATION_REALTIME_RETENTION_FAILED'],
+      ['p2:003:retention:apply', [], 'CONVERSATION_REALTIME_RETENTION_NOT_AUTHORIZED'],
+      ['arch:005:reproject', [], 'ARCH_005_PROJECTION_REBUILD_NOT_AUTHORIZED'],
+      ['p2:016:live', ['--invalid'], 'P2_016_LIVE_RUN_FAILED'],
+      ['p2:012:live', ['--invalid'], 'P2_012_LIVE_RUN_FAILED'],
+      ['p2:g2:live', ['--help'], 'Usage:'],
+    ] as const;
+    for (const [name, extra, expected] of cases) {
+      const command = scripts[name]; assert.equal(typeof command, 'string');
+      assert.ok(typeof command === 'string');
+      const parts = command.split(' && ');
+      assert.equal(parts[0], 'node .build/tools/verify-artifact.mjs');
+      assert.ok(parts[1]);
+      const args = parts[1].split(/\s+/u); assert.equal(args.shift(), 'node');
+      const result = spawnSync(process.execPath, [...args.map(arg => arg.startsWith('--env-file=') ? '--env-file=' + environmentFile : arg), ...extra],
+        { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 15_000 });
+      assert.equal(result.error, undefined, name);
+      assert.equal(result.status, name === 'p2:g2:live' ? 0 : 1, name);
+      const output = result.stdout + result.stderr;
+      assert.ok(output.includes(expected), name + ': ' + output);
+      assert.doesNotMatch(output, /ERR_MODULE_NOT_FOUND|ERR_UNKNOWN_FILE_EXTENSION/u);
+    }
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+test('G1 synthetic wrapper runs its nested assembly tests from the staged tree', () => {
+  verifyArtifact(original);
+  const result = spawnSync(process.execPath, ['.build/runtime/scripts/p2-g1-synthetic-e2e.mjs'],
+    { cwd: original, env: testEnvironment(original, []), encoding: 'utf8', windowsHide: true, timeout: 30_000 });
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /G1 staged preflight recognizes assembly files/u);
+  assert.doesNotMatch(result.stdout + result.stderr, /ERR_MODULE_NOT_FOUND|ERR_UNKNOWN_FILE_EXTENSION/u);
+});
 test('routed reporter rejects a case trace naming a different execution file',()=>{
   const root=scratch(), log=mkdtempSync(path.join(tmpdir(),'current-case-invalid-'));
   try{

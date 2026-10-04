@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { testRoots } from './helpers/migration-roots.mjs';
 
 import { createP2G1HumanOnlyAssembly, P2_G1_LIVE_MODES, validateP2G1ProcessApprovals } from '../src/p2-g1-human-only-assembly.mjs';
 import { createP2G1InboundProjectionCoordinator, P2_G1_PROJECTION_STREAMS } from '../src/p2-g1-inbound-projection-coordinator.mjs';
@@ -13,6 +17,22 @@ import { createP2G1WeComCommunicationSender } from '../src/p2-g1-wecom-sender.mj
 import { configuredP2G1PrincipalIds, createP2G1RunId } from '../scripts/p2-g1-live-e2e.mjs';
 
 function hash(value) { return createHash('sha256').update(value).digest('hex'); }
+
+test('G1 staged preflight recognizes assembly files from source and runtime working directories without activating services', () => {
+  const { sourceRoot, runtimeRoot } = testRoots();
+  const script = pathToFileURL(path.join(runtimeRoot, 'scripts/p2-g1-check.mjs')).href;
+  const probe = `import { runP2G1Check } from ${JSON.stringify(script)}; console.log(JSON.stringify(await runP2G1Check({ env: {} })));`;
+  for (const cwd of [sourceRoot, runtimeRoot]) {
+    const child = spawnSync(process.execPath, ['--input-type=module', '--eval', probe], { cwd, encoding: 'utf8', windowsHide: true });
+    assert.equal(child.status, 0, child.stderr);
+    const result = JSON.parse(child.stdout);
+    assert.equal(result.checks.assembly_sources_present, true, cwd);
+    assert.equal(result.checks.migrations_present, true);
+    assert.equal(result.checks.feature_defaults_off, true);
+    assert.equal(result.checks.postgres, false);
+    assert.equal(result.ok, false, 'No database check or readiness approval is implied');
+  }
+});
 
 class FakeClient extends EventEmitter {
   constructor(send = async () => ({ errcode: 0, headers: { req_id: 'synthetic-ack' } })) { super(); this.send = send; this.connected = 0; this.disconnected = 0; this.calls = []; }
