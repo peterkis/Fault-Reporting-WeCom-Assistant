@@ -67,9 +67,15 @@ function fixture(origin) {
     },
   };
   const query = {
-    async list({ request, cursor }) {
+    async list({ request, cursor, source }) {
       const member = memberFor(request);
-      state.listCalls.push({ member, cursor });
+      state.listCalls.push({ member, cursor, source });
+      if (state.listError) throw state.listError;
+      if (state.sourcePages && member === 'A') {
+        const page = state.sourcePages[source ?? 'ALL']?.[cursor ?? 'first'];
+        if (!page) { const value = new Error('cursor'); value.code = 'YXX_CURSOR_INVALID'; value.status = 400; throw value; }
+        return page;
+      }
       if (state.paginatedLists && member === 'A') {
         if (cursor === 'page-2') return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS.B, intake_no: 'YXX-PAGE-2', display_status: 'UNDER_REVIEW', created_at: '2026-09-16 22:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: null };
         return { schema_version: 1, items: [{ kind: 'WEB_REQUEST', ref: REFS.A, intake_no: 'YXX-PAGE-1', display_status: state.ticketStatus ? 'TICKET_CREATED' : 'RECEIVED_PROCESSING', created_at: '2026-09-16 23:00:00', ticket: ticket(state.ticketStatus) }], next_cursor: 'page-2' };
@@ -151,6 +157,105 @@ async function setSyntheticVisibility(browser, hidden) {
   // that the operating system actually backgrounded the browser process.
   await browser.evaluate(`Object.defineProperty(document,'hidden',{configurable:true,value:${hidden}});document.dispatchEvent(new Event('visibilitychange'))`);
 }
+
+test('SS-007 member filters reports by source with source-bound pagination', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const webFirst = 'C'.repeat(32), webSecond = 'D'.repeat(32), botRef = 'E'.repeat(32);
+  const web = ref => ({ kind: 'WEB_REQUEST', ref, display_status: 'RECEIVED_PROCESSING',
+    created_at: '2026-09-16 23:00:00', created_epoch_ms: '1789570800000', ticket: null });
+  const bot = { kind: 'BOT_TICKET', ref: botRef, display_status: '处理中',
+    created_at: '2026-09-16 22:00:00', created_epoch_ms: '1789567200000',
+    ticket: { ticket_no: 'TCK-20260916-0001', status: 'IN_PROGRESS', updated_at: '2026-09-16 23:00:00' } };
+  f.state.sourcePages = {
+    ALL: { first: { items: [web(webFirst), bot], next_cursor: 'all-page-2' },
+      'all-page-2': { items: [web(webSecond)], next_cursor: null } },
+    WEB: { first: { items: [web(webFirst)], next_cursor: 'web-page-2' },
+      'web-page-2': { items: [web(webSecond)], next_cursor: null } },
+    BOT: { first: { items: [bot], next_cursor: null } },
+  };
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#reports-view')?.hidden===false&&document.querySelectorAll('#report-list a').length===2");
+    assert.deepEqual(await browser.evaluate("Array.from(document.querySelector('#report-source')?.options??[], option=>option.textContent)"),
+      ['全部', '网页报修', '企业微信工单']);
+    await browser.evaluate("document.querySelector('#report-source').value='WEB';document.querySelector('#report-source').dispatchEvent(new Event('change'))");
+    await browser.waitFor(`document.querySelectorAll('#report-list a').length===1&&document.querySelector('#report-list').textContent.includes('${webFirst}')`);
+    assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${botRef}')`), false);
+    await browser.evaluate("document.querySelector('#load-more-reports').click()");
+    await browser.waitFor(`document.querySelector('#report-list').textContent.includes('${webSecond}')`);
+    assert.equal(await browser.evaluate("document.querySelectorAll('#report-list a').length"), 2);
+    await browser.evaluate("document.querySelector('#report-source').value='BOT';document.querySelector('#report-source').dispatchEvent(new Event('change'))");
+    await browser.waitFor(`document.querySelectorAll('#report-list a').length===1&&document.querySelector('#report-list').textContent.includes('${botRef}')`);
+    assert.equal(await browser.evaluate("document.querySelector('#load-more-reports').hidden"), true);
+    await browser.evaluate("document.querySelector('#report-source').value='';document.querySelector('#report-source').dispatchEvent(new Event('change'))");
+    await browser.waitFor("document.querySelectorAll('#report-list a').length===2&&document.querySelector('#load-more-reports').hidden===false");
+    assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${webSecond}')`), false);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
+test('SS-007 report source switches fence late responses and show empty or failed results', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const botRef = 'E'.repeat(32);
+  const web = { kind: 'WEB_REQUEST', ref: REFS.A, display_status: 'RECEIVED_PROCESSING',
+    created_at: '2026-09-16 23:00:00', ticket: null };
+  const bot = { kind: 'BOT_TICKET', ref: botRef, display_status: '处理中',
+    created_at: '2026-09-16 22:00:00', ticket: null };
+  f.state.sourcePages = { ALL: { first: { items: [web], next_cursor: 'all-page-2' } },
+    WEB: { first: { items: [web], next_cursor: null } },
+    BOT: { first: { items: [bot], next_cursor: 'bot-page-2' } } };
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports')", { awaitPromise: false });
+    await browser.waitFor("document.querySelector('#protected-views')?.hidden===false&&document.querySelectorAll('#report-list a').length===1");
+    await browser.evaluate(`(() => {
+      const actualFetch=window.fetch.bind(window);let holdWeb=true;
+      window.fetch=async(path,options)=>{
+        const response=await actualFetch(path,options);
+        if(holdWeb&&String(path).startsWith('/api/yixiaoxiu/my-reports?')&&new URL(path,location.origin).searchParams.get('source')==='WEB'){
+          holdWeb=false;const body=await response.text();
+          // Deliver a completed HTTP response after cancellation, independently of fetch's AbortSignal.
+          return new Promise(resolve=>{window.__releaseSource=()=>resolve(new Response(body,{status:response.status,headers:{'content-type':'application/json'}}));});
+        }
+        return response;
+      };
+      document.querySelector('#report-source').value='WEB';document.querySelector('#report-source').dispatchEvent(new Event('change'));
+    })()`);
+    await browser.waitFor("typeof window.__releaseSource==='function'");
+    assert.equal(await browser.evaluate("document.querySelectorAll('#report-list a').length"), 0);
+    await browser.evaluate("document.querySelector('#report-source').value='BOT';document.querySelector('#report-source').dispatchEvent(new Event('change'))");
+    assert.equal(await browser.evaluate("document.querySelector('#report-source').value"), 'BOT');
+    await browser.waitFor(`document.querySelector('#report-list').textContent.includes('${botRef}')`);
+    await browser.evaluate("(async()=>{window.__releaseSource();await new Promise(resolve=>setTimeout(resolve,50));})()");
+    assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${REFS.A}')`), false);
+    assert.equal(await browser.evaluate("document.querySelector('#report-source').value"), 'BOT');
+    assert.equal(await browser.evaluate("document.querySelector('#load-more-reports').hidden"), false);
+
+    // The absent second BOT page is a definite query failure; first-page results remain retryable.
+    await browser.evaluate("document.querySelector('#load-more-reports').click()");
+    await browser.waitFor("document.querySelector('#app-status').classList.contains('error')&&document.querySelector('#load-more-reports').disabled===false");
+    assert.equal(await browser.evaluate(`document.querySelector('#report-list').textContent.includes('${botRef}')`), true);
+    f.state.sourcePages.WEB.first = { items: [], next_cursor: null };
+    await browser.evaluate("document.querySelector('#report-source').value='WEB';document.querySelector('#report-source').dispatchEvent(new Event('change'))");
+    await browser.waitFor("document.querySelector('#report-list').textContent.includes('暂时没有本人网页报修记录')");
+    assert.equal(await browser.evaluate("document.querySelector('#load-more-reports').hidden"), true);
+    f.state.listError = Object.assign(new Error('unavailable'), { code: 'YXX_UNAVAILABLE', status: 503 });
+    await browser.evaluate("document.querySelector('#report-source').value='BOT';document.querySelector('#report-source').dispatchEvent(new Event('change'))");
+    await browser.waitFor("document.querySelector('#app-status').classList.contains('error')");
+    assert.equal(await browser.evaluate("document.querySelector('#app-status').textContent.includes('服务暂时不可用')"), true);
+    assert.equal(await browser.evaluate("document.querySelectorAll('#report-list a').length"), 0);
+    assert.equal(await browser.evaluate("document.querySelector('#report-source').value"), 'BOT');
+    assert.equal(await browser.evaluate("document.querySelector('#load-more-reports').hidden"), true);
+    await browser.evaluate("document.querySelector('#logout').click()");
+    await browser.waitFor("document.querySelector('#logged-out-view').hidden===false");
+    assert.equal(await browser.evaluate("document.querySelector('#report-source').value"), '');
+    assert.equal(await browser.evaluate("document.querySelector('#report-list').textContent"), '');
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
 
 test('SS-007 refreshed member CSRF preserves the same-scope draft', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;

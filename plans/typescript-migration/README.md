@@ -2,6 +2,14 @@
 
 ACTIVE_SELECTION: v3-p09
 
+## P09 合并后业务入口（2026-10-05）
+
+P09 / [PR #48](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/48) 已合并为 `a8e2ec512dee126db8f08b518aeedcebdc5c314d`；已完成 full、审查与 CI 仍绑定发布 head `e5a7e79296d5a4385ddf43489766ae95d9937f6f`，不改称 merge commit 的新运行。业务 TypeScript 主线保持 169/181，PR38 三个增量另列、10 个 G0 与 12 个 D01 工具保留。
+
+R00 决策后恢复局部业务开发。首个增量 [YXX-UI-001](../../tasks/YXX-UI-001_my_reports_source_filter.md) 为原生“我的报修”来源筛选，复用已有成员查询与 source-bound cursor。活动 v3-p09 四项继续作为跨域 smoke，业务 PR 另执行自己的直接测试、strict types、最终候选一次构建、制品与自有资源清理；不新增 selection 或 CI 平台。D01 按需维护，R01 保持 HOLD，full 不等于 strict readiness 或真实运行授权。
+
+下文 P09 执行要求及较早交付快照保留各自适用时点，不驱动本轮再次 full、重复探针或认证；本业务 PR 不改 SQL、历史 Evidence、业务 Gate、默认开关，不部署、不真实发送。
+
 ## v3 当前入口（2026-10-05）
 
 P08 / [PR #47](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/47) 已使用 merge commit `eefd6ee7182c83ca435a0ac02503ed18db3b12c7` 合并；P08 发布、测试、审查和 CI head 保持 `55410a0ec709515db1616fa8c952a38f8b4d0d12` 的原身份。原 27 个 P08 目标已完成，主线累计仍为 169/181；PR38 的 3 个增量模块单列，10 个 G0 JavaScript 保留，D01 的 12 个工具目标继续列外，不宣称 181/181。
