@@ -64,3 +64,59 @@ const outOfScope: number = counts.out_of_scope_deliveries;
 // @ts-expect-error -- Reconciliation exposes hashes and audit metadata, not message content.
 void delivery.raw_content;
 void [unverified,role,wrongCandidate,wrongEvidence,wrongDatabase,wrongApproval,wrongEncoding,ready,stale,type,result,metric,fact,scenario,accounting,hostCpu,incorrectHost,outOfScope];
+
+import type { SendBudgetReservation } from '../../src/p2-g2-send-budget.mjs';
+import type { CommunicationSenderResult, ValidatedSenderRequest } from '../../src/p2-004-communication-sender-port.mjs';
+import type { ProviderReceipt } from '../../src/p2-g2-provider-receipts.mjs';
+import type { StoredWebhookReceipt } from '../../src/p2-g2-webhook-receipts.mjs';
+import type { G2SendGuardOptions } from '../../src/p2-g2-send-guard.mjs';
+import type { G2NetworkCapabilities } from '../../src/p2-g2-network-boundary.mjs';
+import { inspectG2DatabaseScope } from '../../src/p2-g2-database-scope.mjs';
+import { limitedTemplate, validateLimitedManifest } from '../../src/yxx-limited-write-contract.mjs';
+import type { ApprovedLimitedManifest, LimitedPermission, LimitedPermissions } from '../../src/yxx-limited-write-contract.mjs';
+import { createLimitedGuard } from '../../src/yxx-limited-write-guard.mjs';
+
+declare const reservation: SendBudgetReservation;
+if (reservation.kind === 'REPLAY') {
+  const outcome: 'ACKNOWLEDGED'|'REJECTED_NOT_APPLIED'|'UNKNOWN' = reservation.outcome;
+  // @ts-expect-error -- A replay cannot create a new reservation journal ordinal.
+  void reservation.ordinal;
+  void outcome;
+} else {
+  const ordinal: number = reservation.ordinal;
+  // @ts-expect-error -- A new reservation has no provider outcome yet.
+  void reservation.outcome;
+  void ordinal;
+}
+declare const unknownResult: Extract<CommunicationSenderResult,{outcome:'UNKNOWN'|'REJECTED_NOT_APPLIED'}>;
+// @ts-expect-error -- An unknown delivery result cannot become a provider acknowledgement.
+const ack: Extract<CommunicationSenderResult,{outcome:'ACKNOWLEDGED'}> = unknownResult;
+declare const providerReceipt: ProviderReceipt;
+// @ts-expect-error -- SDK receipt proof cannot be used as a group webhook receipt.
+const webhookReceipt: StoredWebhookReceipt = providerReceipt;
+declare const sendOptions: G2SendGuardOptions;
+declare const request: ValidatedSenderRequest;
+void sendOptions.sender.send(request);
+// @ts-expect-error -- Send Guard's sender cannot accept unverified JSON as a request.
+void sendOptions.sender.send(json);
+// @ts-expect-error -- Network capabilities expose only the two existing member endpoint switches.
+const network: G2NetworkCapabilities = { arbitraryUrl: 'https://synthetic.invalid' };
+declare const scopeResult: Awaited<ReturnType<typeof inspectG2DatabaseScope>>;
+const databaseReady: boolean = scopeResult.ready;
+const template = limitedTemplate();
+const notAuthorized: 'NOT_AUTHORIZED' = template.status;
+// @ts-expect-error -- A populated template remains incapable of authorizing Limited Write.
+const approvedTemplate: ApprovedLimitedManifest = template;
+const approved = validateLimitedManifest(json);
+// @ts-expect-error -- Limited permission keys are closed to the existing operation contract.
+const newPermission: LimitedPermission = 'hospital_database_write';
+// @ts-expect-error -- Limited Write cannot enable real messaging.
+const messaging: LimitedPermissions = { ...approved.permissions, real_message_send: true };
+// @ts-expect-error -- Limited Write cannot activate the parent live gate.
+const parentLive: LimitedPermissions = { ...approved.permissions, parent_p2_g2_live: true };
+declare const limitedGuard: ReturnType<typeof createLimitedGuard>;
+const localQuota: true = limitedGuard.quota.localOnly;
+declare const guardResult: Awaited<ReturnType<typeof limitedGuard.quota>>;
+if (guardResult) { const allowed:true = guardResult; void allowed; }
+else { const rejected:false = guardResult; void rejected; }
+void [ack,webhookReceipt,network,databaseReady,notAuthorized,approvedTemplate,newPermission,messaging,parentLive,localQuota];
