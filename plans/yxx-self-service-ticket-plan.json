@@ -22,9 +22,20 @@
     {
       "id": "YXX-UI-001",
       "title": "我的报修来源筛选",
-      "status": "IMPLEMENTED_WAITING_REVIEW",
+      "status": "MERGED",
       "task": "tasks/YXX-UI-001_my_reports_source_filter.md",
       "depends_on": ["YXX-SS-005", "YXX-SS-007"],
+      "delivery_record": "https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/49",
+      "live_authorized": false,
+      "parent_gate_advanced": false,
+      "database_changes": false
+    },
+    {
+      "id": "YXX-UI-002",
+      "title": "网页报修列表摘要和位置",
+      "status": "IMPLEMENTED_WAITING_REVIEW",
+      "task": "tasks/YXX-UI-002_my_reports_preview.md",
+      "depends_on": ["YXX-SS-005", "YXX-SS-007", "YXX-UI-001"],
       "delivery_record": "CURRENT_PR_HANDOFF",
       "live_authorized": false,
       "parent_gate_advanced": false,

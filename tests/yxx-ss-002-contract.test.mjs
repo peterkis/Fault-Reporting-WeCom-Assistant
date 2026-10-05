@@ -36,6 +36,13 @@ test('SS-002 closed schemas reject identity and operational authority fields',as
   assert.match(oauthOnlyBranch,/write_flag.*const.*false/u);assert.match(oauthOnlyBranch,/YIXIAOXIU_SELF_SERVICE_ENABLED.*const.*false/u);assert.match(oauthOnlyBranch,/YIXIAOXIU_MY_REPORTS_ENABLED.*const.*false/u);
   assert.ok(JSON.parse(await readFile('contracts/yxx_self_service_report_page.schema.json','utf8')).properties.items.items.required.includes('ticket'));
   assert.equal(JSON.parse(await readFile('contracts/yxx_self_service_report_page.schema.json','utf8')).properties.items.items.properties.ref.pattern,'^[A-Za-z0-9_-]{32}$');
+  const report=JSON.parse(await readFile('contracts/yxx_self_service_report_page.schema.json','utf8')).properties.items.items;
+  assert.deepEqual(report.properties.safe_summary.type,['string','null']);
+  assert.equal(report.properties.safe_summary.maxLength,120);
+  assert.equal(report.properties.safe_location.maxLength,80);
+  assert.equal(report.allOf[0].if.properties.kind.const,'BOT_TICKET');
+  assert.equal(report.allOf[0].then.properties.safe_summary.type,'null');
+  assert.equal(report.allOf[0].then.properties.safe_location.type,'null');
   assert.ok(timeline.properties.items.items.required.includes('ticket'));
   for(const key of ['reporter','role','provider','target','ticket_id','status','priority','actor','created_at','accepted_at'])assert.equal(Object.hasOwn(input.properties,key),false,key);
   assert.deepEqual(input.properties.impact_scope.enum,['UNKNOWN','SELF','SINGLE_WORKSTATION','MULTIPLE_USERS','DEPARTMENT']);

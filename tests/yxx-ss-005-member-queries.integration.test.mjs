@@ -117,6 +117,45 @@ test('SS-005 authorization denies OAUTH_ONLY before touching the database and fe
   assert.equal(writes, 0);
 });
 
+test('SS-005 member list previews only retained initial Web descriptions and locations', { skip: !databaseUrl, timeout: 120_000 }, async () => {
+  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxxpreview', run: async ({ pool, databaseUrl: isolated }) => {
+    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
+    const a = scope('preview-a'), b = scope('preview-b');
+    const contexts = { A: authContext(a), B: authContext(b) };
+    const { authorization } = localAuthorization(contexts);
+    const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET });
+    const query = createYxxSelfServiceQuery({ pool, authorization, store, scopeSecret: SECRET });
+    const original = await store.accept({ scope: a, input: requestInput('腕带无法打印') });
+    await store.accept({ scope: a, kind: 'SUPPLEMENT', requestRef: original.receipt.request_ref,
+      input: { schema_version: 1, client_command_id: randomUUID(), expected_input_revision: '1', text: '补充正文不得进入预览' } });
+    const long = await store.accept({ scope: a, input: requestInput('😀'.repeat(130), randomUUID(), { text: '位'.repeat(100), unknown: false }) });
+    const unknown = await store.accept({ scope: a, input: requestInput('未提供位置', randomUUID(), { text: null, unknown: true }) });
+    await store.accept({ scope: b, input: requestInput('B 私有描述') });
+    const bot = await createBotTicket(pool, contexts.A.bot_owner.userId, 'preview');
+    const page = await query.list({ request: 'A' });
+    const item = ref => page.items.find(value => value.ref === ref);
+    assert.equal(item(original.receipt.request_ref).safe_summary, '腕带无法打印');
+    assert.equal(item(original.receipt.request_ref).safe_location, '本部住院楼8层护士站');
+    assert.equal(item(long.receipt.request_ref).safe_summary, '😀'.repeat(120));
+    assert.equal(item(long.receipt.request_ref).safe_location, '位'.repeat(80));
+    assert.equal(item(unknown.receipt.request_ref).safe_location, null);
+    assert.equal(item(bot.public_ref).safe_summary, null);
+    assert.equal(item(bot.public_ref).safe_location, null);
+    assert.equal(JSON.stringify(page).includes('补充正文'), false);
+    assert.equal(JSON.stringify(page).includes('B 私有描述'), false);
+    assert.equal(JSON.stringify(await query.list({ request: 'B' })).includes('腕带无法打印'), false);
+    await pool.query(`UPDATE intake.web_submission s
+      SET retention_until=platform.local_from_epoch_ms(s.received_epoch_ms+1), retention_until_epoch_ms=s.received_epoch_ms+1
+      FROM intake.web_request_binding b WHERE b.intake_id=s.intake_id AND b.request_ref=$1 AND s.kind='SUBMIT'`, [original.receipt.request_ref]);
+    const expired = (await query.list({ request: 'A', source: 'WEB' })).items.find(value => value.ref === original.receipt.request_ref);
+    assert.equal(expired.safe_summary, null);
+    assert.equal(expired.safe_location, null);
+    await pool.query('UPDATE intake.web_request_binding SET revoked_at=platform.local_now() WHERE request_ref=$1', [long.receipt.request_ref]);
+    assert.equal((await query.list({ request: 'A' })).items.some(value => value.ref === long.receipt.request_ref), false);
+  } });
+  await assertNoP2016Residual({ databaseUrl });
+});
+
 test('SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail', { skip: !databaseUrl, timeout: 180_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxx005', run: async ({ pool, databaseUrl: isolated }) => {
     await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });

@@ -158,6 +158,37 @@ async function setSyntheticVisibility(browser, hidden) {
   await browser.evaluate(`Object.defineProperty(document,'hidden',{configurable:true,value:${hidden}});document.dispatchEvent(new Event('visibilitychange'))`);
 }
 
+test('SS-007 member sees Web previews as plain text without per-card detail requests', { timeout: 45000 }, async () => {
+  const f = await startFixture(); let browser;
+  const web = (ref, summary, location) => ({ kind: 'WEB_REQUEST', ref, display_status: 'RECEIVED_PROCESSING',
+    created_at: '2026-09-16 23:00:00', ticket: null, safe_summary: summary, safe_location: location });
+  f.state.sourcePages = { ALL: { first: { items: [
+    web(REFS.A, '<img src=x onerror=window.__xss=1>', '<b>住院楼8层护士站</b>'),
+    web(REFS.B, null, null),
+    { kind: 'BOT_TICKET', ref: 'E'.repeat(32), display_status: '处理中', created_at: '2026-09-16 23:00:00', ticket: null,
+      safe_summary: 'BOT正文不得显示', safe_location: 'BOT位置不得显示' },
+  ], next_cursor: null } } };
+  try {
+    browser = await launchSystemBrowser({ url: `${f.origin}/wecom/yixiaoxiu/`, width: 390, height: 844,
+      cookies: [{ name: 'yxx_session', value: 'member-a', url: f.origin }] });
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports')", { awaitPromise: false });
+    await browser.waitFor("document.querySelectorAll('#report-list a').length===3");
+    assert.deepEqual(await browser.evaluate("Array.from(document.querySelectorAll('.report-preview'),e=>e.textContent)"),
+      ['<img src=x onerror=window.__xss=1>', '故障描述暂不可用']);
+    assert.deepEqual(await browser.evaluate("Array.from(document.querySelectorAll('.report-location'),e=>e.textContent)"),
+      ['位置：<b>住院楼8层护士站</b>', '位置未提供或暂不可用']);
+    assert.equal(await browser.evaluate("document.querySelectorAll('#report-list img,#report-list b').length"), 0);
+    assert.equal(await browser.evaluate('window.__xss'), undefined);
+    assert.equal(await browser.evaluate("document.querySelector('#report-list').textContent.includes('BOT正文')"), false);
+    assert.equal(f.state.detailCalls.length, 0);
+    assert.equal(f.state.listCalls.length, 1);
+    await browser.evaluate("document.querySelector('#logout').click()");
+    await browser.waitFor("document.querySelector('#protected-views').hidden");
+    assert.equal(await browser.evaluate("document.querySelector('#report-list').textContent.includes('住院楼')"), false);
+  } finally { await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]); }
+});
+
 test('SS-007 member filters reports by source with source-bound pagination', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
   const webFirst = 'C'.repeat(32), webSecond = 'D'.repeat(32), botRef = 'E'.repeat(32);

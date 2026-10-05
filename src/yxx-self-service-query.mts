@@ -9,7 +9,7 @@ export interface YxxQueryInput {request:IncomingMessage;source?:YxxMemberSource|
 declare const cursorMember:unique symbol;
 export type YxxReportCursor<Member extends string=string> = string & {readonly [cursorMember]:Member};
 export interface YxxReportCursorPayload<Member extends string=string> {v:1;scope_hash:YxxMemberScope<Member>['scopeHash'];source:YxxMemberSource|null;source_corp_scope:string;source_app_scope:string;snapshot_epoch:string;created_at:string;kind_rank:number;immutable_id:string}
-interface ReportRow {kind:'WEB_REQUEST'|'BOT_TICKET';ref:string;created_at:string;kind_rank:number;immutable_id:string;status:string;input_revision:string;processed_revision:string;pilot_ticket_id:string|null;ticket_no:string|null;ticket_status:TicketStatus|null;ticket_updated_at:string|null;has_pending_review:boolean;updated_at?:string}
+interface ReportRow {kind:'WEB_REQUEST'|'BOT_TICKET';ref:string;created_at:string;kind_rank:number;immutable_id:string;status:string;input_revision:string;processed_revision:string;pilot_ticket_id:string|null;ticket_no:string|null;ticket_status:TicketStatus|null;ticket_updated_at:string|null;has_pending_review:boolean;safe_summary:string|null;safe_location:string|null;updated_at?:string}
 interface WebDetailRow {request_ref:string;input_revision:string;processed_revision:string;revoked_at:string|null;intake_no:string;status:string;pilot_ticket_id:string|null;created_at:string;updated_at:string;safe_description:unknown;safe_location:string|null;supplement_items:{input_revision:unknown;text:unknown}[];ticket_no:string|null;ticket_status:TicketStatus|null;ticket_updated_at:string|null;has_pending_review:boolean;safe_clarification?:null}
 interface BotTicketRow {public_ref:string;ticket_no:string;ticket_status:TicketStatus;created_at:string;ticket_updated_at:string;intake_retention:string}
 type CursorFields={v?:unknown;scope_hash?:unknown;source?:unknown;source_corp_scope?:unknown;source_app_scope?:unknown;snapshot_epoch?:unknown;created_at?:unknown;kind_rank?:unknown;immutable_id?:unknown};
@@ -135,6 +135,8 @@ function reportItem(row:ReportRow) {
     created_at: created,
     created_epoch_ms: createdEpoch,
     ticket: ticketSummary(row),
+    safe_summary: kind === 'WEB_REQUEST' ? row.safe_summary : null,
+    safe_location: kind === 'WEB_REQUEST' ? row.safe_location : null,
   });
 }
 
@@ -203,21 +205,30 @@ async function listRows(transaction:PostgresTransaction,context:ActiveContext,se
              i.status, b.input_revision, b.processed_revision, i.pilot_ticket_id::text,
              t.ticket_no, t.status AS ticket_status, to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,
              EXISTS (SELECT 1 FROM intake.manual_review_item r
-                      WHERE r.service_intake_id=i.id AND r.status='PENDING') AS has_pending_review
+                      WHERE r.service_intake_id=i.id AND r.status='PENDING') AS has_pending_review,
+             NULLIF(left(initial.safe_content->>'description',120),'') AS safe_summary,
+             CASE WHEN (initial.safe_content->'location'->>'unknown')::boolean THEN NULL
+                  ELSE NULLIF(left(initial.safe_content->'location'->>'text',80),'') END AS safe_location
         FROM intake.web_request_binding b
         JOIN intake.service_intake i ON i.id=b.intake_id
+        LEFT JOIN LATERAL (
+          SELECT s.safe_content FROM intake.web_submission s
+           WHERE s.intake_id=i.id AND s.kind='SUBMIT' AND s.retention_until>platform.local_now()
+           ORDER BY s.input_revision LIMIT 1
+        ) initial ON TRUE
         LEFT JOIN pilot_ticket.ticket t ON t.id=i.pilot_ticket_id
        WHERE b.canonical_reporter_binding=$1
          AND b.source_corp_scope=$11 AND b.source_app_scope=$12
          AND b.revoked_at IS NULL
          AND b.retention_until_epoch_ms>platform.physical_epoch_ms()
          AND i.retention_until_epoch_ms>platform.physical_epoch_ms()
+         AND i.source_provider='YIXIAOXIU_WEB'
       UNION ALL
       SELECT 'BOT_TICKET'::text AS kind, r.public_ref AS ref, t.created_at::timestamp without time zone AS created_at,
              1::integer AS kind_rank, t.id::text AS immutable_id,
              i.status, 1::bigint AS input_revision, 1::bigint AS processed_revision, i.pilot_ticket_id::text,
              t.ticket_no, t.status AS ticket_status, to_char(t.updated_at,'YYYY-MM-DD HH24:MI:SS') AS ticket_updated_at,
-             false AS has_pending_review
+             false AS has_pending_review, NULL::text AS safe_summary, NULL::text AS safe_location
         FROM pilot_ticket.reporter_public_ref r
         JOIN pilot_ticket.ticket t ON t.id=r.ticket_id
         JOIN intake.service_intake i ON i.id=t.source_intake_id

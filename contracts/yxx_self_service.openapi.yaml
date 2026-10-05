@@ -53,7 +53,7 @@ paths:
         - {in: query, name: limit, schema: {type: integer, minimum: 1, maximum: 50, default: 20}}
         - {in: query, name: source, schema: {type: string, enum: [WEB, BOT]}}
       responses:
-        '200': {description: 'Member-owned Web Requests and authorized Bot Tickets', content: {application/json: {schema: {$ref: './yxx_self_service_report_page.schema.json'}}}}
+        '200': {description: 'Member-owned Web Requests with optional nullable retained initial text previews (summary max 120, location max 80 characters) and authorized Bot Tickets without text previews', content: {application/json: {schema: {$ref: './yxx_self_service_report_page.schema.json'}}}}
         '400': {$ref: '#/components/responses/Invalid'}
         '401': {$ref: '#/components/responses/AuthRequired'}
         '403': {$ref: '#/components/responses/Forbidden'}
