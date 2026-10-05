@@ -193,7 +193,22 @@ function statusText(value){return ({RECEIVED_PROCESSING:'已收到，正在处�
 function ticketStatusText(value){return ticketStatuses[value]??'状态未知';}
 function ticketSummary(ticket){return ticket?.ticket_no?`工单 ${ticket.ticket_no} · ${ticketStatusText(ticket.status)}`:'尚未生成工单';}
 function renderGuidance(detail={}){for(const [id,key,label] of [['detail-needs-action','needs_action','需要您处理：'],['detail-clarification','safe_clarification','补充提示：']]){const value=typeof detail[key]==='string'?detail[key]:'';$(id).textContent=value?label+value:'';$(id).hidden=!value;}}
-function renderList(items){const list=$('report-list');clear(list);if(!items.length){list.append(node('li',({WEB:'暂时没有本人网页报修记录。',BOT:'暂时没有本人企业微信工单。'})[state.reportSource]??'暂时没有本人报修记录。','quiet'));return;}for(const item of items){const li=node('li');const link=node('a',undefined,'report-link');link.href=item.kind==='WEB_REQUEST'?`${ROOT}reports/${item.ref}`:`${ROOT}tickets/${item.ref}`;const top=node('div',undefined,'report-top');top.append(node('strong',item.kind==='WEB_REQUEST'?'网页报修':'企业微信工单','report-source'),node('span',statusText(item.display_status),'state'));link.append(top,node('span',item.ref,'report-ref'),node('div',ticketSummary(item.ticket),'report-meta'),node('div',item.created_at,'report-meta'));li.append(link);list.append(li);}}
+function renderList(items){
+ const list=$('report-list');clear(list);
+ if(!items.length){list.append(node('li',({WEB:'暂时没有本人网页报修记录。',BOT:'暂时没有本人企业微信工单。'})[state.reportSource]??'暂时没有本人报修记录。','quiet'));return;}
+ for(const item of items){
+  const li=node('li'),link=node('a',undefined,'report-link'),web=item.kind==='WEB_REQUEST';
+  link.href=web?`${ROOT}reports/${item.ref}`:`${ROOT}tickets/${item.ref}`;
+  const top=node('div',undefined,'report-top');
+  top.append(node('strong',web?'网页报修':'企业微信工单','report-source'),node('span',statusText(item.display_status),'state'));link.append(top);
+  if(web){
+   const summary=typeof item.safe_summary==='string'?Array.from(item.safe_summary).slice(0,120).join(''):'';
+   const locationText=typeof item.safe_location==='string'?Array.from(item.safe_location).slice(0,80).join(''):'';
+   link.append(node('div',summary||'故障描述暂不可用','report-preview'),node('div',locationText?`位置：${locationText}`:'位置未提供或暂不可用','report-location report-meta'));
+  }
+  link.append(node('span',item.ref,'report-ref'),node('div',ticketSummary(item.ticket),'report-meta'),node('div',item.created_at,'report-meta'));li.append(link);list.append(li);
+ }
+}
 async function loadReports(append=false){
  if(state.busy&&(!state.listLoading||append)||append&&!state.listCursor)return;
  const operation=beginOperation({busy:true});

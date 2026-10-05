@@ -5,8 +5,10 @@
   "type": "object", "additionalProperties": false, "required": ["items", "next_cursor"],
   "properties": {
     "items": {"type": "array", "maxItems": 50, "items": {"type": "object", "additionalProperties": false, "required": ["kind", "ref", "display_status", "created_at", "created_epoch_ms", "ticket"], "properties": {
-      "kind": {"enum": ["WEB_REQUEST", "BOT_TICKET"]}, "ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"}, "display_status": {"type": "string"}, "created_at": {"$ref": "./local_datetime.schema.json"}, "created_epoch_ms": {"$ref": "./epoch_ms_string.schema.json"}, "ticket": {"anyOf": [{"$ref": "./yxx_self_service_ticket_summary.schema.json"}, {"type": "null"}]}
-    }}},
+      "kind": {"enum": ["WEB_REQUEST", "BOT_TICKET"]}, "ref": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32}$"}, "display_status": {"type": "string"}, "created_at": {"$ref": "./local_datetime.schema.json"}, "created_epoch_ms": {"$ref": "./epoch_ms_string.schema.json"}, "ticket": {"anyOf": [{"$ref": "./yxx_self_service_ticket_summary.schema.json"}, {"type": "null"}]},
+      "safe_summary": {"type": ["string", "null"], "minLength": 1, "maxLength": 120, "description": "Retained initial Web description preview, plain text; not AI redaction. Null for Bot or unavailable content."},
+      "safe_location": {"type": ["string", "null"], "minLength": 1, "maxLength": 80, "description": "Retained initial Web location preview, plain text. Null for Bot, unknown or unavailable location."}
+    }, "allOf": [{"if": {"properties": {"kind": {"const": "BOT_TICKET"}}}, "then": {"properties": {"safe_summary": {"type": "null"}, "safe_location": {"type": "null"}}}}]}},
     "next_cursor": {"type": ["string", "null"], "minLength": 10, "maxLength": 2048}
   }
 }
