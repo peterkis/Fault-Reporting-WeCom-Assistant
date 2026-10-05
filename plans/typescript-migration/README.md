@@ -1,18 +1,20 @@
 # TypeScript 增量迁移执行入口
 
-ACTIVE_SELECTION: v3-p06
+ACTIVE_SELECTION: v3-p07
 
 ## v3 当前入口（2026-10-05）
 
 P00 / PR #39 已于 2026-10-04 使用 merge commit 合并；实际合并与 P01 起始基线为 `614c4a7591ce349269063815bbbf0eca69824664`，保留发布 head `4f6fc5b411ec81c26ea7fcbff9e16e66dcee4009` 的历史。P01 / PR #40 已合并，合并提交为 `f25aeeea31523b7445f0f1e2795767c8c05f1f6d`，保留发布 head `9a1ee62f18a6bf3038930559060ee6c329985f4f`。P02 从该最新 main 接续，按事件日志（A）→时间线（B）→SSE（C）→G1 装配（D）完成 14 个模块的严格类型实现。P02 / PR #41 已合并，合并提交 `841e48493875473b87eaac09afb6e58038d85d49`，发布 head `5de7184c20d4baa78c61af45e5e376c115e0a62f`。P03 从包含此合并的最新 main 接续，按领域合同 → 目录和人员资料 → 规则与旅程迁移原 21 个目标；P03 / PR #42 已合并，合并提交 `e6bdbc991b8c67aa4ee1022b3788aa665254fc43`，发布、审查和 CI head 为 `08267a9501691b6b3851b3de0a6832706e8d2c97`，既有测试不改称 merge commit 的新运行。P04 / PR #43 已合并，merge commit 为 `0975399bad4634f99a9721fa15dc1f492f2a5c97`，发布、审查和 CI head 保持 `cf6ae92a506c35df216455de8d4e065115f42d82` 的原身份。P04 从 P03 合并 main 接续，按查询授权与命令事务 → 通知、投影和 HTTP 两个内部切片完成原 18 个目标。实际检查与当前 head CI 记录在本轮 PR 正文。开发检查不代表发布认证。
 
-P05 / PR #44 已使用 merge commit `97c7b885bf99041807d4c9ab8a6f010cbd3a2436` 合并；发布、测试、审查与 CI head 保持 `f1f9be4c10e4839fa152c88d5c6be16ad162f133`，旧结果不改称在 merge commit 重新执行。P06 从该最新 main 接续，按候选/关联/查询（A）→命令/通知/投影/HTTP（B）→装配/现场边界/进程（C）迁移原 P06 13 项及 P05 移交的 `src/p2-015-incident-correlation.mjs`，共 14 项。原始目标累计 122/181（约 67.4%）只表示源码覆盖。
+P06 / [PR #45](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/45) 已使用 merge commit `09583ec74c3e4e9e0a94a59a95543cbbaeb9833e` 合并；P06 发布、测试、审查和 CI head 保持 `b63d20a213ceda02f2922652a36cd3f6d41cf539` 的原身份，不把旧结果改称 merge commit 的新运行。P06 完成后原目标累计 122/181。
 
-`v3-p06` 最终 selection 只有修订指令的 8 个现有入口：Domain、Incident Integration、Subscription Notification、Reporter HTTP、Process Assembly、Cross Reporter、Dynamic Reporter Scope、Schema/Live Guards。既有 host、flags、PG、PyYAML 和 subprocess 属性保持；最终候选一次构建后运行严格 types、selection、制品及自有资源清理，实际结果保存在 PR 正文和仓库外日志。源码路径检查只复用 `sourceFile`；历史 P2-012 validator、allowlist、Evidence 和冻结 checkout 不变。
+P07 从包含 PR #45 的最新 main 接续，以一个 PR、两个内部提交完成原 20 项：OAuth、成员身份和授权（A），随后 Store、Command、Supplement、Query、Orchestrator、HTTP、Runtime 与两个 Serve 入口（B）。`scope.json` 只登记这些实际 `.mts` 实现；原分母 181 不变，累计 142/181（约 78.5%）仅表示原目标源码覆盖。`src/p2-016-runtime.mts` 只同步 P07 的真实消费类型，不改变运行表达式，也不重复计数。
 
-Candidate 必须由现有人工 `CONFIRM_INCIDENT` 命令确认；关联不创建 Incident。P2-012 保留独立 receipt、授权先于 replay、SAVEPOINT、全局 Realtime→Command 锁顺序以及字符串 row version，不并入 P2-016 ledger。通知模板、Direct Leg、动态 Reporter 授权、范围投影及五个独立现场 fuse 保持。Decision Store 只为已有候选 payload 同步泛型类型，BOT/WEB 身份规则不变。无数据库、OpenAPI、前端、历史 Evidence、业务 Gate 或默认 Feature Flag 变化。
+`v3-p07` 最终 selection 固定为接续指令的 8 个现有入口：Web OAuth、Delegated Identity、SS-004 Orchestration、SS-005 Member Queries、SS-006 Supplement/Review、SS-007 Native HTTP Errors、SS-008 Assembly、Yixiaoxiu OAuth Intent/Profile。保留原 host、flags、PG、browser/subprocess 属性；最终候选一次构建、strict types、核心并集一次、制品与自有资源清理。实际结果和最终 head 的 CI/审查放在 P07 PR 正文及仓库外 `wecom-v3-p07-20261005` 日志，不生成大型 Evidence。
 
-本轮允许三个内部提交、HTTPS 推送及创建一个 P06 PR、最终 Codex 审查和核对该 head 适用 CI；P06 尚未合并，制品为 STAGED_NOT_ACTIVATED。full/certify、发布 readiness、真实发送与部署均未运行；不进入 P07，不读取真实目录或医院数据。关闭仍使用现有默认关闭开关；代码撤销使用后继修补或独立 revert PR，保留历史及用户工作。
+State、Browser Token、Session Token 分型；Provider JSON 从 unknown 经原守卫形成内部成员身份。服务端 scope 与 DB read 后 local-only recheck、成员隔离、精确输入、receipt 重放前 active binding/retention、revision、opaque request_ref、HMAC cursor 均保持。复用 Rule/Review/Ticket/Realtime 链，SQL、锁顺序、默认关闭和业务 Gate 不变。类型正反例覆盖这些当前边界；源码路径检查继续使用既有 `sourceFile`。
+
+Profile、G2 Config、Service Loop Assembly、G2 Process Role 四个 P08 模块保留 `.mjs`，只消费当前所需结构接口；不提前迁移。无数据库、OpenAPI、前端、历史 Evidence 或生产授权变更。制品为 STAGED_NOT_ACTIVATED；full/certify、严格发布 readiness、真实企业微信调用、医院数据、部署和生产入口均未运行。P07 创建 PR 后停止，不自动合并、不进入 P08；关闭使用既有默认关闭开关，撤销使用后继修补或独立 revert PR，保留历史及用户工作。
 
 PR #38 已合并至 `f72e77337aff5d3e5fd053409d5965fbe47deeb6`。P00 将工作台查询/授权迁入严格 MTS，并同步 CI 与逻辑源码路径兼容；下文 T00～T04-05 和 PR37 记录为历史交接，不再驱动日常批次认证。
 
