@@ -11,20 +11,22 @@ export type G2Role = 'APP' | 'WORKER' | 'GATEWAY';
 export type G2FaultId = 'G2-F01' | 'G2-F02' | 'G2-F03' | 'G2-F04' | 'G2-N03' | 'G2-R02';
 export type G2TemplateCode = 'RULE_FIRST_ORCHESTRATOR' | 'TICKET_LIFECYCLE' | 'HUMAN_CONFIRMED_INCIDENT';
 export interface G2Scope {
- bot_hash: string; group_hashes: string[]; person_hashes: string[]; direct_organic_person_hash: string;
- principal_ids: string[]; database_identity_hash: DatabaseIdentityHash; test_prefix: '【p2-g2测试】';
+ bot_hash: unknown; group_hashes: string[]; person_hashes: string[]; direct_organic_person_hash: string;
+ principal_ids: string[]; database_identity_hash: unknown; test_prefix: '【p2-g2测试】';
  approved_inputs: string[]; approved_replies: string[]; approved_templates: G2TemplateCode[];
  allowed_faults: G2FaultId[]; send_budget: {group:number;person:number;total:number};
- ticket_notification_additional_events?: TicketNotificationAdditionalEvent[];
- group_webhook_routes?: {group_hash:string;endpoint_hash:string}[];
+ ticket_notification_additional_events?: TicketNotificationAdditionalEvent[] | null;
+ group_webhook_routes?: {group_hash:string;endpoint_hash:unknown}[] | null;
  member_directory?: {enabled:boolean;internal_member_ids_confirmed:boolean};
- reporter_access_policy?: 'LEGACY_BOUND_GRANT' | 'MEMBER_REQUIRED'; member_entry_config_sha256?: string;
+ reporter_access_policy?: 'LEGACY_BOUND_GRANT' | 'MEMBER_REQUIRED'; member_entry_config_sha256?: unknown;
 }
-interface G2ManifestBase {schema_version:1;gate:'P2-G2';run_id:string;candidate_fingerprint:CandidateFingerprint;
+interface G2ManifestBase {schema_version:1;gate:'P2-G2';run_id:unknown;candidate_fingerprint:unknown;
  feature_flags: Record<G2RequiredFlag,true> & Record<G2ForbiddenFlag,false>;
  listen_port:number;reporter_origin:string;scope:G2Scope;}
-export interface G2Approval {approved:boolean;authority:'PROJECT_OWNER' | null;source_ref:string|null;
- source_sha256:SourceSHA256|null;valid_from_epoch_ms:string;expires_epoch_ms:string;}
+// Regex-only fields retain their original JSON shape; RegExp.test does not prove a string.
+export type G2Approval = {valid_from_epoch_ms:string;expires_epoch_ms:string} &
+ ({approved:true;authority:'PROJECT_OWNER';source_ref:string;source_sha256:unknown} |
+  {approved:false;authority:unknown;source_ref:unknown;source_sha256:unknown});
 export type SyntheticManifest = G2ManifestBase & {mode:'synthetic';approval:G2Approval};
 export type LiveManifest = G2ManifestBase & {mode:'live';approval:G2Approval};
 export type G2Manifest = SyntheticManifest | LiveManifest;
@@ -39,7 +41,7 @@ export interface G2Configuration {manifest:G2Manifest;liveApproved:boolean;datab
  botId:string;secret:string|undefined;wsUrl:string|undefined;identityHashKey:string;reporterHmacSecret:string;
  groupClosureWebhookRoutes:readonly {botId:string;groupId:string;url:string}[];
  ticketNotificationAdditionalEvents:readonly TicketNotificationAdditionalEvent[];}
-export interface G2ConfigurationInput {manifest?:unknown;env?:NodeJS.ProcessEnv;candidateFingerprint?:CandidateFingerprint;
+export interface G2ConfigurationInput {manifest?:unknown;env?:NodeJS.ProcessEnv;candidateFingerprint?:unknown;
  nowEpochMs?:string;role?:G2Role|'CONTROLLER';}
 import { createHash } from 'node:crypto';
 import { assertPlainJson, deepFreeze } from './p2-007-domain-utils.mjs';
@@ -153,7 +155,7 @@ export function validateG2Manifest(manifest: unknown): G2Manifest {
 export function readG2Configuration({ manifest, env = process.env, candidateFingerprint, nowEpochMs = String(Date.now()), role = 'CONTROLLER' }: G2ConfigurationInput = {}): G2Configuration {
   if (!['CONTROLLER', 'APP', 'WORKER', 'GATEWAY'].includes(role)) failG2('PROCESS_ROLE_INVALID');
   const m = validateG2Manifest(manifest), s = m.scope, a = m.approval;
-  if (!HASH.test(candidateFingerprint ?? '') || m.candidate_fingerprint !== candidateFingerprint) failG2('CANDIDATE_CHANGED');
+  if (!HASH.test((candidateFingerprint ?? '') as string) || m.candidate_fingerprint !== candidateFingerprint) failG2('CANDIDATE_CHANGED');
   const start = epoch(a.valid_from_epoch_ms), end = epoch(a.expires_epoch_ms), now = epoch(nowEpochMs);
   if (m.mode === 'live') {
     if (G2_LIVE_FUSES.some(k => env[k] !== 'true')) failG2('LIVE_APPROVAL_REQUIRED');

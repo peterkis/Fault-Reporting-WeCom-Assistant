@@ -1,8 +1,21 @@
 # TypeScript 增量迁移执行入口
 
-ACTIVE_SELECTION: v3-p07
+ACTIVE_SELECTION: v3-p08
 
 ## v3 当前入口（2026-10-05）
+
+P07 / [PR #46](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/46) 已使用 merge commit `43c965cc3ccbf5b6f528bfd19251753a3cd73ded` 合并；P07 发布、测试、审查和 CI head 保持 `6e5fb1275a6f525b9aa432ab16ce01390cdc94db` 的原身份，旧结果不改称 merge commit 的新运行。
+
+P08 从该最新 main 接续，以一个 PR、三个内部提交完成原 27 项：配置/Evidence/Candidate/Gate → 发送与 Limited Write → Profile/Service Loop/角色入口。`scope.json` 只登记实际实现，原分母 181 不变，累计 169/181（约 93.4%）只表示主线目标源码覆盖；PR38 新模块和既有 `.mts` 纯类型同步不重复计数。P09 不新增固定源码迁移项，负责集中回归及业务版本交付；D01 的 12 个工具目标继续列外。本轮不自动进入 P09。
+
+`v3-p08` 为接续指令的 10 个现有核心入口，保留各入口的 host、flags、数据库、浏览器和 subprocess 属性。切片只运行直接子集，最终候选一次构建、strict types 和核心并集一次；角色/SDK 直接类型同步通过现有 tooling/hosts 验证。真实结果、最终 head 的适用 CI 和 Codex review 记录在本轮 PR 正文及仓库外 `wecom-v3-p08-20261005` 日志，不生成大型 Evidence。
+
+外部 JSON 与数据库/IPC 输入保持 unknown 边界；Candidate、Approval、Source、Evidence、Database 摘要分型，预算保留态继续使用原 `RESERVED`/`REPLAY`。原 exact-key、候选/审批复核、UNKNOWN、fsync、数据库范围、进程 HTTP allowlist、三角色 Secret 分配、四 Profile 和 Limited Write 权限保持。`scripts/p2-g2-yixiaoxiu-serve.mts` 直接消费 P08 Profile 类型；两个既有 Sender 只要求实际消费的 SDK sendMessage 能力；G1 Cluster 的 Role Environment 接口收窄为原三角色。这四个既有 `.mts` 只同步类型，不新增原目标计数。Reconciliation 与资源 SQL 的字段值保持 unknown，沿用既有消费检查后才能声称数值有效。未批准 Approval、可空 Scope、仅经正则检查的 ID/摘要/回执时间/OID 保留实际原始类型；正则的隐式转换不充当字符串归一化。配置与后续候选/审批核验继续沿用原守卫。
+
+既有 process-assembly 集成测试在全新 checkout 先复现缺少 `tmp` 父目录的 ENOENT；仅在原夹具中补创建该忽略目录，再从父目录不存在的状态复核同一用例。无业务断言或清理条件减弱。完整 tooling/hosts 运行另复现一个过时的 legacy 分类断言；仅更新为验证本轮 Service Loop 已属于编译目标，保留原负向制品检查，直接复跑受影响用例并由最终 PR CI 完整复核。
+
+无 SQL、数据库 migration、OpenAPI、前端、状态机、历史 Evidence、默认 Feature Flag 或生产授权变更。制品为 STAGED_NOT_ACTIVATED；full/certify、严格发布 readiness、真实企业微信、医院数据、部署和生产入口未运行。完成后 HTTPS 推送并创建一个 P08 PR，停在未合并；关闭沿用默认关闭开关，撤销使用后继修补或独立 revert PR，保留历史及用户工作。下文 P07/P06 等内容为各阶段的交付快照，其测试身份和停止线保持原记录。
+
 
 P00 / PR #39 已于 2026-10-04 使用 merge commit 合并；实际合并与 P01 起始基线为 `614c4a7591ce349269063815bbbf0eca69824664`，保留发布 head `4f6fc5b411ec81c26ea7fcbff9e16e66dcee4009` 的历史。P01 / PR #40 已合并，合并提交为 `f25aeeea31523b7445f0f1e2795767c8c05f1f6d`，保留发布 head `9a1ee62f18a6bf3038930559060ee6c329985f4f`。P02 从该最新 main 接续，按事件日志（A）→时间线（B）→SSE（C）→G1 装配（D）完成 14 个模块的严格类型实现。P02 / PR #41 已合并，合并提交 `841e48493875473b87eaac09afb6e58038d85d49`，发布 head `5de7184c20d4baa78c61af45e5e376c115e0a62f`。P03 从包含此合并的最新 main 接续，按领域合同 → 目录和人员资料 → 规则与旅程迁移原 21 个目标；P03 / PR #42 已合并，合并提交 `e6bdbc991b8c67aa4ee1022b3788aa665254fc43`，发布、审查和 CI head 为 `08267a9501691b6b3851b3de0a6832706e8d2c97`，既有测试不改称 merge commit 的新运行。P04 / PR #43 已合并，merge commit 为 `0975399bad4634f99a9721fa15dc1f492f2a5c97`，发布、审查和 CI head 保持 `cf6ae92a506c35df216455de8d4e065115f42d82` 的原身份。P04 从 P03 合并 main 接续，按查询授权与命令事务 → 通知、投影和 HTTP 两个内部切片完成原 18 个目标。实际检查与当前 head CI 记录在本轮 PR 正文。开发检查不代表发布认证。
 

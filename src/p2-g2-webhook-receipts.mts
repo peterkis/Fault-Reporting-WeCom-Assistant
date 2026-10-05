@@ -1,7 +1,8 @@
 export interface WebhookReceipt {event:'p2_016_group_closure_webhook_result';operation:'send_msg';transport:'WECOM_GROUP_WEBHOOK';
  delivery_ref_hash:string;outbox_id:string;attempt_no:number;provider_errcode:number|null;internal_error_code:string|null;
  outcome:'ACKED'|'REJECTED'|'UNKNOWN';retry_class:'NONE'|'MANUAL_REVIEW'}
-export type StoredWebhookReceipt = Pick<WebhookReceipt,'transport'|'delivery_ref_hash'|'outbox_id'|'attempt_no'|'provider_errcode'|'outcome'> & {physical_epoch_ms:string};
+export type StoredWebhookReceipt = Pick<WebhookReceipt,'transport'|'attempt_no'|'provider_errcode'|'outcome'> &
+ {delivery_ref_hash:unknown;outbox_id:unknown;physical_epoch_ms:unknown};
 export interface WebhookReceiptRow {binding:string;previous:string|null;record:StoredWebhookReceipt;hash:string}
 type RecordInput = Partial<Record<keyof WebhookReceipt|'physical_epoch_ms',unknown>>;
 type RowInput = {binding?:unknown;previous?:unknown;record?:RecordInput;hash?:unknown};

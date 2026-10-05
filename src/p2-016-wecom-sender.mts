@@ -3,7 +3,7 @@ import type { CommunicationSenderResult, ValidatedSenderRequest } from './p2-004
 import type { ReporterAccess } from './p2-016-reporter-access.mjs';
 import type { ReporterLinkMode } from './p2-016-template-card-builder.mjs';
 type ReceiptObservation = { errcode?: unknown; body?: { errcode?: unknown }; headers?: { req_id?: unknown } } | null | undefined;
-interface SenderOptions { gateway: { getAuthenticatedClient: () => WeComGatewayClient }; allowedTargetHashes?: readonly string[]; enabled?: boolean; cardEnabled?: boolean; reporterAccess: Pick<ReporterAccess, 'deliveryBinding' | 'deliveryGrant'>; origin: string; allowedHosts?: readonly string[]; allowLocalHttp?: boolean; linkMode?: ReporterLinkMode }
+interface SenderOptions { gateway: { getAuthenticatedClient: () => Pick<WeComGatewayClient,'sendMessage'> }; allowedTargetHashes?: readonly string[]; enabled?: boolean; cardEnabled?: boolean; reporterAccess: Pick<ReporterAccess, 'deliveryBinding' | 'deliveryGrant'>; origin: string; allowedHosts?: readonly string[]; allowLocalHttp?: boolean; linkMode?: ReporterLinkMode }
 
 import { createP2G1WeComCommunicationSender } from './p2-g1-wecom-sender.mjs';
 import { createCommunicationSenderPort } from './p2-004-communication-sender-port.mjs';

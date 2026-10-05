@@ -1,6 +1,6 @@
 import type { BinaryLike } from 'node:crypto';
 export interface ProviderReceiptBinding {delivery_id:string;outbox_id:string;attempt_no:number}
-export type ProviderReceipt = {transport:'WECOM_AIBOT_WSS';delivery_ref_hash:string;outbox_id:string;attempt_no:number;physical_epoch_ms:string} &
+export type ProviderReceipt = {transport:'WECOM_AIBOT_WSS';delivery_ref_hash:unknown;outbox_id:unknown;attempt_no:number;physical_epoch_ms:unknown} &
  ({provider_errcode:0;outcome:'ACKED'}|{provider_errcode:null;outcome:'UNKNOWN'}|{provider_errcode:number;outcome:'REJECTED'});
 export interface ProviderReceiptRow {binding:string;previous:string|null;record:ProviderReceipt;hash:string}
 type RowInput = {binding?:unknown;previous?:unknown;record?:unknown;hash?:unknown};

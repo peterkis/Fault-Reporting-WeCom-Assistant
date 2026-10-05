@@ -1,3 +1,12 @@
+import type { PostgresPool, PostgresPoolClient } from './platform/postgres-pool.mjs';
+import type { G2Manifest, G2Configuration, G2Role, G2FaultId, CandidateFingerprint } from './p2-g2-validation-config.mjs';
+import type { G2ResourceDatabaseMetrics } from './p2-g2-resource-sampler.mjs';
+import type { InboxMessage } from './p1-003-channel-message-inbox.mjs';
+type InboxResult = Awaited<ReturnType<ReturnType<typeof createChannelMessageInbox>['accept']>>;
+type InboxAcceptInput = {message:InboxMessage;traceId:string;privacyClass?:string;retentionUntil?:string;retentionUntilEpochMs?:string};
+type G1Cluster = ReturnType<typeof createP2G1ProcessCluster>;
+export type G2RoleEnvironment<Role extends G2Role> = NodeJS.ProcessEnv & (Role extends 'APP' ? {} : {APP_SECRET?:never;CORP_ID?:never;APP_ID?:never;YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG_JSON?:never;YIXIAOXIU_MEMBER_TICKET_ENTRY_ENABLED?:never;WECOM_WEB_OAUTH_ENABLED?:never}) &
+ (Role extends 'GATEWAY' ? {YIXIAOXIU_SELF_SERVICE_ENABLED?:never;YIXIAOXIU_MY_REPORTS_ENABLED?:never} : {WECOM_BOT_SECRET?:never;WECOM_WS_URL?:never;P2_G2_SEND_BUDGET_FILE?:never;P2_G2_GROUP_WEBHOOK_ROUTES?:never}) & (Role extends 'WORKER' ? {} : {P2_G2_DIRECTORY_ACCESS_TOKEN?:never});
 import { createChannelMessageInbox } from './p1-003-channel-message-inbox.mjs';
 import { createP2016DirectIntakeProcessor } from './p2-016-direct-intake.mjs';
 import { parseExplicitContinuation } from './p2-015-explicit-continuation.mjs';
@@ -14,8 +23,8 @@ import { G2_RESOURCE_SQL } from './p2-g2-resource-sampler.mjs';
 import { collectG2Reconciliation } from './p2-g2-reconciliation.mjs';
 import {readYxxG2AppConfiguration,YXX_G2_ENV_KEYS,yxxSelfServiceRoleEnvironment,readYxxSelfServiceFlags} from './p2-g2-yixiaoxiu-g2-config.mjs';
 
-export function createG2ProcessCluster({ manifest, env = process.env, budgetFile }) {
-  const c = readG2Configuration({ manifest, env, candidateFingerprint: manifest?.candidate_fingerprint });
+export function createG2ProcessCluster({ manifest, env = process.env, budgetFile }: {manifest:unknown;env?:NodeJS.ProcessEnv;budgetFile:string}) {
+  const c = readG2Configuration({ manifest, env, candidateFingerprint: (manifest as Partial<G2Manifest>|null)?.candidate_fingerprint });
   readYxxG2AppConfiguration({manifest:c.manifest,env});
   const webFlags=readYxxSelfServiceFlags(env);
   if(Object.values(webFlags).some(Boolean)&&c.reporterPolicy!=='MEMBER_REQUIRED')failG2('CONFIGURATION_INVALID');
@@ -27,24 +36,24 @@ export function createG2ProcessCluster({ manifest, env = process.env, budgetFile
   openG2SendBudget({ file: budgetFile, manifest: c.manifest });
   const cluster = createP2G1ProcessCluster({ databaseUrl: c.databaseUrl, identityHashKey: c.identityHashKey,
     principalIds: c.manifest.scope.principal_ids, listenPort: c.manifest.listen_port, testAuthTtlMs: 65 * 60000,
-    gatewayEnabled: true, senderEnabled: true, botId: c.botId, secret: c.secret, wsUrl: c.wsUrl,
+    gatewayEnabled: true, senderEnabled: true, botId: c.botId, secret: c.secret as string, wsUrl: c.wsUrl as string,
     allowedTargetHashes: [...c.manifest.scope.person_hashes, ...c.manifest.scope.group_hashes],
-    baseEnvironment: minimalG2Environment(env), workerHealthEvents: true, allowRoleRestart: true,
+    baseEnvironment: minimalG2Environment(env) as Record<string,string>, workerHealthEvents: true, allowRoleRestart: true,
     roleScriptUrl: new URL('../scripts/p2-g2-process-role.mjs', import.meta.url),
     controlledMessageTypes: ['g2-synthetic-inbound', 'g2-provider-counts', 'g2-environment','g2-scope-counts'],
-    roleEnvironment: role => ({ P2_G2_MANIFEST: JSON.stringify(c.manifest), WECOM_BOT_ID: c.botId,
+    roleEnvironment: ((role:G2Role):NodeJS.ProcessEnv => ({ P2_G2_MANIFEST: JSON.stringify(c.manifest), WECOM_BOT_ID: c.botId,
       ...(role==='APP'&&c.reporterPolicy==='MEMBER_REQUIRED'?Object.fromEntries(YXX_G2_ENV_KEYS.map(k=>[k,env[k]])):{}),
-      ...yxxSelfServiceRoleEnvironment(role,env),
+      ...yxxSelfServiceRoleEnvironment(role as G2Role,env),
       ...(c.liveApproved ? Object.fromEntries(G2_LIVE_FUSES.map(k=>[k,env[k]])) : {}),
       PILOT_LOG_IDENTITY_HASH_KEY: c.identityHashKey, P2_G2_REPORTER_HMAC_SECRET: c.reporterHmacSecret,
       ...(role==='WORKER'&&c.memberDirectoryAccessToken?{P2_G2_DIRECTORY_ACCESS_TOKEN:c.memberDirectoryAccessToken}:{}),
       ...(role === 'GATEWAY' ? { WECOM_BOT_SECRET: c.secret, WECOM_WS_URL: c.wsUrl, P2_G2_SEND_BUDGET_FILE: budgetFile,
-        P2_G2_GROUP_WEBHOOK_ROUTES:JSON.stringify(c.groupClosureWebhookRoutes.map(r=>({group_id:r.groupId,url:r.url}))) } : {}) }),
+        P2_G2_GROUP_WEBHOOK_ROUTES:JSON.stringify(c.groupClosureWebhookRoutes.map(r=>({group_id:r.groupId,url:r.url}))) } : {}) })) as (<Role extends G2Role>(role:Role)=>G2RoleEnvironment<Role>),
   });
-  const fault = (role, id) => {
+  const fault = (role:G2Role, id:G2FaultId) => {
     if (!c.manifest.scope.allowed_faults.includes(id) || id !== 'G2-F02' || !['APP', 'WORKER'].includes(role)) failG2('FAULT_NOT_APPROVED');
   };
-  let controllerPool, controller, started = false, stopping, expiryTimer;
+  let controllerPool:PostgresPool|null|undefined, controller:PostgresPoolClient|null|undefined, started = false, stopping:ReturnType<G1Cluster['stop']>|undefined, expiryTimer:ReturnType<typeof setTimeout>|undefined;
   async function stop() {
     if (!stopping) stopping = (async () => {
       clearTimeout(expiryTimer);
@@ -71,7 +80,7 @@ export function createG2ProcessCluster({ manifest, env = process.env, budgetFile
       controller = await controllerPool.connect();
       controller.on('error', () => { void stop().catch(() => {}); });
       const lock = await controller.query("SELECT pg_try_advisory_lock(hashtextextended('P2_G2_PROCESS_CLUSTER',0)) AS acquired");
-      if (lock.rows[0].acquired !== true) failG2('COMPETING_CONTROLLER');
+      if ((lock.rows[0] as Record<string,unknown>).acquired !== true) failG2('COMPETING_CONTROLLER');
       const startupScope=await requireG2DatabaseScope({ transaction: controller, manifest: c.manifest });
       const result=await cluster.start();
       if(c.liveApproved) expiryTimer=setTimeout(()=>{void stop().catch(()=>{});},
@@ -80,43 +89,43 @@ export function createG2ProcessCluster({ manifest, env = process.env, budgetFile
     } catch (error) { await stop(); throw error; }
   }
   return Object.freeze({ start, stop, status: cluster.status, metrics: ()=>cluster.metrics(),
-    resourceRoleMetrics({phase,faultId}){
+    resourceRoleMetrics({phase,faultId}: {phase:'STEADY'|'FAULT'|'RECOVERY';faultId:G2FaultId|null}){
       const allowStoppedWorker=['FAULT','RECOVERY'].includes(phase)&&faultId==='G2-F02'&&c.manifest.scope.allowed_faults.includes(faultId);
       return cluster.metrics({allowStoppedWorker});
     },
-    async resourceDatabaseMetrics(){if(!controller||stopping)failG2('PROCESS_CLUSTER_STATE_INVALID');return (await controller.query(G2_RESOURCE_SQL)).rows[0];},
+    async resourceDatabaseMetrics(){if(!controller||stopping)failG2('PROCESS_CLUSTER_STATE_INVALID');return (await controller.query<G2ResourceDatabaseMetrics>(G2_RESOURCE_SQL)).rows[0];},
     async captureReconciliation(){
       if(!controller||stopping)failG2('PROCESS_CLUSTER_STATE_INVALID');const tx=controller;
       try{await tx.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');return await collectG2Reconciliation({transaction:tx,manifest:c.manifest});}
       finally{await tx.query('ROLLBACK').catch(()=>{});}
     },
     scopeCounts:()=>cluster.controlledRequest('GATEWAY','g2-scope-counts'),
-    submitSyntheticFrame: frame => {
+    submitSyntheticFrame: (frame:unknown) => {
       if(c.liveApproved)failG2('SYNTHETIC_CONTROL_FORBIDDEN');
       return cluster.controlledRequest('GATEWAY', 'g2-synthetic-inbound', { frame });
     },
     syntheticProviderCounts: () => cluster.controlledRequest('GATEWAY', 'g2-provider-counts'),
     async syntheticEnvironment() {
       const roles = await Promise.all(['APP', 'WORKER', 'GATEWAY'].map(role => cluster.controlledRequest(role, 'g2-environment')));
-      return { model_environment_keys: roles.reduce((n, r) => n + r.model_environment_keys, 0),
-        old_approval_keys: roles.reduce((n, r) => n + r.old_approval_keys, 0), expose_gc: roles.some(r => r.expose_gc),
-        model_network_unreachable:roles.every(r=>r.model_network_unreachable===true),
-        blocked_model_http_probes:roles.reduce((n,r)=>n+r.blocked_model_http_probes,0),network_boundary:'PROCESS_HTTP_ALLOWLIST_NOT_OS_FIREWALL' };
+      return { model_environment_keys: roles.reduce<number>((n, r) => n + (r as {model_environment_keys:number}).model_environment_keys, 0),
+        old_approval_keys: roles.reduce<number>((n, r) => n + (r as {old_approval_keys:number}).old_approval_keys, 0), expose_gc: roles.some(r => (r as {expose_gc:unknown}).expose_gc),
+        model_network_unreachable:roles.every(r=>(r as {model_network_unreachable:unknown}).model_network_unreachable===true),
+        blocked_model_http_probes:roles.reduce<number>((n,r)=>n+(r as {blocked_model_http_probes:number}).blocked_model_http_probes,0),network_boundary:'PROCESS_HTTP_ALLOWLIST_NOT_OS_FIREWALL' };
     },
-    stopRoleForFault(role, id) { fault(role, id); return cluster.controlledStopRole(role); },
-    restartRoleForFault(role, id) { fault(role, id); return cluster.controlledRestartRole(role); },
-    disconnectGatewayForFault(id) {
+    stopRoleForFault(role:G2Role, id:G2FaultId) { fault(role, id); return cluster.controlledStopRole(role); },
+    restartRoleForFault(role:G2Role, id:G2FaultId) { fault(role, id); return cluster.controlledRestartRole(role); },
+    disconnectGatewayForFault(id:G2FaultId) {
       if (id !== 'G2-F01' || !c.manifest.scope.allowed_faults.includes(id)) failG2('FAULT_NOT_APPROVED');
       return cluster.disconnectGateway();
     },
-    reconnectGatewayForFault(id) {
+    reconnectGatewayForFault(id:G2FaultId) {
       if (id !== 'G2-F01' || !c.manifest.scope.allowed_faults.includes(id)) failG2('FAULT_NOT_APPROVED');
       return cluster.reconnectGateway();
     },
   });
 }
 
-export function createG2OperationalIntake({ pool, configuration }) {
+export function createG2OperationalIntake({ pool, configuration }: {pool:PostgresPool;configuration:G2Configuration}) {
   const manifest = validateG2Manifest(configuration?.manifest);
   if (g2Hash(configuration.botId ?? '') !== manifest.scope.bot_hash) failG2('BOT_SCOPE_MISMATCH');
   const registry = createP2012ApprovedGroupReporterRegistry({ pool, botId: configuration.botId,
@@ -125,14 +134,14 @@ export function createG2OperationalIntake({ pool, configuration }) {
     group_hashes: manifest.scope.group_hashes, ...registry, testLabel: G2_TEST_PREFIX, labelSource: 'raw' });
   const inbox = createChannelMessageInbox({ pool }), processor = createP2016DirectIntakeProcessor({ idleTimeoutMs: G2_LIMITS.direct_session_idle_timeout_ms });
   const approved = new Set(manifest.scope.approved_inputs.map(normalizeHospitalText));
-  const approvedInput=text=>{
+  const approvedInput=(text:string)=>{
     const normalized=normalizeHospitalText(text);if(approved.has(normalized))return true;
     const claim=parseExplicitContinuation(normalized);
     return Boolean(claim?.public_ref&&approved.has(normalizeHospitalText('续接工单 {PUBLIC_REF}：'+claim.description)));
   };
   let rejected = 0, accepted = 0;
   return Object.freeze({
-    async accept(input) {
+    async accept(input:InboxAcceptInput): Promise<InboxResult> {
       if(manifest.mode==='live') {
         if(BigInt(Date.now())>=BigInt(manifest.approval.expires_epoch_ms))failG2('APPROVAL_EXPIRED');
         verifyG2ApprovalFile(manifest);verifyG2Candidate(manifest.candidate_fingerprint);

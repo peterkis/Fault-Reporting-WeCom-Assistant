@@ -7,6 +7,12 @@
   "target_breakdown": {"non_g0_src": 173, "active_launchers": 8},
   "target_path_rule": "Replace only the final .mjs suffix of each explicitly listed source path with .mts. Runtime relative imports and emitted paths remain .mjs.",
   "current_module_map": {
+    "src/p2-g2-yixiaoxiu-g2-config.mjs": "src/p2-g2-yixiaoxiu-g2-config.mts",
+    "src/p2-g2-yixiaoxiu-profile.mjs": "src/p2-g2-yixiaoxiu-profile.mts",
+    "src/p2-g2-service-loop-assembly.mjs": "src/p2-g2-service-loop-assembly.mts",
+    "src/p2-g2-communication-append.mjs": "src/p2-g2-communication-append.mts",
+    "scripts/p2-g2-process-role.mjs": "scripts/p2-g2-process-role.mts",
+    "scripts/yxx-self-service-limited-role.mjs": "scripts/yxx-self-service-limited-role.mts",
     "src/p2-g2-yixiaoxiu-readiness.mjs": "src/p2-g2-yixiaoxiu-readiness.mts",
     "src/yxx-limited-write-contract.mjs": "src/yxx-limited-write-contract.mts",
     "src/yxx-limited-write-guard.mjs": "src/yxx-limited-write-guard.mts",

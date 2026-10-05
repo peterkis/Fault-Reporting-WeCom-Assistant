@@ -1,6 +1,6 @@
 import type { PostgresPool } from './platform/postgres-pool.mjs';
 import type { InboxMessage } from './p1-003-channel-message-inbox.mjs';
-export interface TargetedCreationConfig {profile:'YXX_TARGETED_TICKET_CREATION';runId:string;botId:string;groupId:string;members:{A:string;B:string};startEpochMs:string;endEpochMs:string;
+export interface TargetedCreationConfig {profile:'YXX_TARGETED_TICKET_CREATION';runId:unknown;botId:string;groupId:string;members:{A:string;B:string};startEpochMs:string;endEpochMs:string;
  cases:{id:'A1'|'A2'|'B1'|'B2';member:'A'|'B';chatType:'group'|'single';text:string}[]}
 type ConfigInput = Record<string,unknown> & {members:Record<string,unknown>};
 import {createHash} from 'node:crypto';
@@ -52,7 +52,7 @@ export function createTargetedTicketCreation({pool,config,reporterHmacSecret,now
   const access=createP2016ReporterAccess({pool,enabled:true,hmacSecret:reporterHmacSecret});
   const processor=createPilotTicketProcessor({serviceIntakeProcessor:createP2016DirectIntakeProcessor(),
     ticketCore:createPilotTicketCore({pool}),onTicketCreated:async({transaction,ticket,message})=>{
-      await appendTicketEvent({transaction,ticket,eventType:'ticket.created',actor:{type:'SYSTEM',id:null},traceId:c.runId});
+      await appendTicketEvent({transaction,ticket,eventType:'ticket.created',actor:{type:'SYSTEM',id:null},traceId:c.runId as string});
       const hash=createHash('sha256').update(JSON.stringify(['WECOM_AIBOT',(message as InboxMessage).bot_id,(message as InboxMessage).sender_user_id])).digest('hex');
       return access.ensurePublicRefInTransaction({transaction,ticketId:ticket.id,reporterBindingHash:hash});
     }});
@@ -70,7 +70,7 @@ export function createTargetedTicketCreation({pool,config,reporterHmacSecret,now
       &&(m.chat_type==='single'||(m.chat_id===c.groupId&&addressed!==text)));
     if(!item)return {ok:false,code:'YXX_CREATION_SCOPE_DENIED',...g2EvidenceTime(epoch)};
     const retained=String(BigInt(epoch)+7n*86400000n);
-    const result=await inbox.accept({message:m,traceId:c.runId,privacyClass:'PERSONAL',
+    const result=await inbox.accept({message:m,traceId:c.runId as string,privacyClass:'PERSONAL',
       retentionUntil:formatEpochMsToShanghaiLocal(retained),retentionUntilEpochMs:retained},async input=>{
       // Four cases share one short transaction lock; no new budget table or migration.
       await input.transaction.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[c.runId]);

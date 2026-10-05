@@ -4,12 +4,12 @@ export type LimitedPermission = typeof permissions[number];
 type RequiredPermission = 'database_connect'|'real_oauth_identity'|'background_processing'|'web_submit'|'web_supplement'|'internal_review_ticket_actions';
 export type LimitedPermissions = Record<RequiredPermission,true> & Record<'real_message_send'|'parent_p2_g2_live',false> & Record<Exclude<LimitedPermission,RequiredPermission|'real_message_send'|'parent_p2_g2_live'>,boolean>;
 export type LimitedTemplate = ReturnType<typeof limitedTemplate>;
-export interface ApprovedLimitedManifest {schema_version:1;kind:'OWNER_APPROVED_LIMITED_WRITE';status:'APPROVED';ticket:'YXX-SS-011';run_id:string;
- candidate_commit:string;candidate_tree:string;candidate_fingerprint:CandidateFingerprint;app_version:string;config_sha256:string;
- identity_proof_ref:string;database:{name:string;oid:string;identity_sha256:DatabaseIdentityHash;dedicated_test_only:true};
- reporter_aliases:['A','B'];principal_ids:[string,string];window:{starts_at:string;starts_epoch_ms:string;ends_at:string;ends_epoch_ms:string};
+export interface ApprovedLimitedManifest {schema_version:1;kind:'OWNER_APPROVED_LIMITED_WRITE';status:'APPROVED';ticket:'YXX-SS-011';run_id:unknown;
+ candidate_commit:unknown;candidate_tree:unknown;candidate_fingerprint:unknown;app_version:unknown;config_sha256:unknown;
+ identity_proof_ref:string;database:{name:unknown;oid:unknown;identity_sha256:unknown;dedicated_test_only:true};
+ reporter_aliases:['A','B'];principal_ids:[unknown,unknown];window:{starts_at:string;starts_epoch_ms:string;ends_at:string;ends_epoch_ms:string};
  limits:{max_new_intakes:number;max_supplements:number;max_new_tickets:number;per_member_intakes:number;per_member_supplements:number};
- permissions:LimitedPermissions;owner:string;approver:string;approval_record_ref:string;approval_record_sha256:string;
+ permissions:LimitedPermissions;owner:string;approver:string;approval_record_ref:string;approval_record_sha256:unknown;
  backup_ref:string;rollback_ref:string;public_origin:string;listen_port:number}
 export type LimitedMemberConfig = Extract<YxxEntryConfig,{enabled:true}> & {identityMode:'VERIFIED_DELEGATED_MAPPING';reporterUserIds:string[];proofRef:string};
 export interface LimitedConfiguration {env:NodeJS.ProcessEnv;member:LimitedMemberConfig}

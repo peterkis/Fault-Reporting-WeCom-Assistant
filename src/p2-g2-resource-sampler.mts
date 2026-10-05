@@ -2,9 +2,9 @@ import type { G2Manifest, G2FaultId, SourceSHA256 } from './p2-g2-validation-con
 import type { G2MetricName, G2EvidenceDetails } from './p2-g2-evidence.mjs';
 export interface G2HostMetrics {host_cpu_count:number;host_memory_bytes:number;host_memory_available_bytes:number|null;
  host_swap_used_bytes:number|null;postgres_rss_bytes:number|null;proxy_rss_bytes:number|null;oom_counter?:number|null}
-export type G2ResourceDatabaseMetrics = Partial<Record<G2MetricName,number|null>> & {backend_pid?:number};
-export interface G2ResourceCluster {resourceRoleMetrics(input:{phase:'STEADY'|'FAULT'|'RECOVERY';faultId:G2FaultId|null}):Promise<Partial<Record<G2MetricName,unknown>>>;
- resourceDatabaseMetrics():Promise<G2ResourceDatabaseMetrics>;scopeCounts():Promise<Partial<Record<G2MetricName,unknown>>>;
+export type G2ResourceDatabaseMetrics = Partial<Record<G2MetricName,unknown>> & {backend_pid?:unknown};
+export interface G2ResourceCluster {resourceRoleMetrics(input:{phase:'STEADY'|'FAULT'|'RECOVERY';faultId:G2FaultId|null}):Promise<unknown>;
+ resourceDatabaseMetrics():Promise<G2ResourceDatabaseMetrics|undefined>;scopeCounts():Promise<unknown>;
  syntheticEnvironment():Promise<{expose_gc:boolean}>}
 import { readFileSync, openSync, appendFileSync, closeSync, fsyncSync } from 'node:fs';
 import path from 'node:path';
@@ -25,7 +25,7 @@ export const G2_RESOURCE_SQL=`SELECT pg_backend_pid() AS backend_pid,
   (SELECT count(*)::integer FROM incident.candidate_review WHERE status='EXPIRED') AS candidate_expired,
   (SELECT count(*)::integer FROM communication.delivery WHERE last_error_code LIKE 'P2_G2_SEND_%') AS scope_unexpected_deliveries`;
 
-function proc(pid: number|undefined){
+function proc(pid: unknown){
   if(!Number.isInteger(pid)||(pid as number)<=0)return null;
   try{const text=readFileSync('/proc/'+pid+'/status','utf8');return {name:/^Name:\s+(.+)$/mu.exec(text)?.[1],
     ppid:Number(/^PPid:\s+(\d+)$/mu.exec(text)?.[1]),rss:Number(/^VmRSS:\s+(\d+) kB$/mu.exec(text)?.[1])*1024};}catch{return null;}
@@ -37,7 +37,7 @@ function treeRss(master: number,allowedNames: readonly (string|undefined)[]){
     for(const pid of children){const item=proc(pid);if(!item||item.ppid!==master||!allowedNames.includes(item.name)||!Number.isFinite(item.rss))return null;total+=item.rss;}return total;
   }catch{return null;}
 }
-export function readG2HostMetrics({backendPid,proxyPidFile}: {backendPid:number|undefined;proxyPidFile?:string|null}){
+export function readG2HostMetrics({backendPid,proxyPidFile}: {backendPid:unknown;proxyPidFile?:string|null}){
   const result:G2HostMetrics={host_cpu_count:os.cpus().length,host_memory_bytes:os.totalmem(),host_memory_available_bytes:null,
     host_swap_used_bytes:null,postgres_rss_bytes:null,proxy_rss_bytes:null,oom_counter:null};
   if(process.platform!=='linux')return result;
@@ -67,10 +67,10 @@ export function createG2ResourceSampler({cluster,manifest,directory,proxyPidFile
     metrics.user_visible_latency_samples=0;
     try{
       const roles=await cluster.resourceRoleMetrics({phase,faultId}),domain=await cluster.resourceDatabaseMetrics(),scope=await cluster.scopeCounts();
-      const host=readG2HostMetrics({backendPid:domain.backend_pid,proxyPidFile});delete domain.backend_pid;
+      const host=readG2HostMetrics({backendPid:(domain as G2ResourceDatabaseMetrics).backend_pid,proxyPidFile});delete (domain as G2ResourceDatabaseMetrics).backend_pid;
       if(firstOom===null&&Number.isFinite(host.oom_counter))firstOom=host.oom_counter;
       const oom=Number.isFinite(host.oom_counter)&&firstOom!==null?Math.max(0,(host.oom_counter as number)-(firstOom as number)):null;delete host.oom_counter;
-      for(const [k,v] of Object.entries({...roles,...domain,...host,...scope,oom_events_delta:oom}))
+      for(const [k,v] of Object.entries({...(roles as Record<string,unknown>),...domain,...host,...(scope as Record<string,unknown>),oom_events_delta:oom}))
         if(Object.hasOwn(metrics,k)&&Number.isFinite(v)&&(v as number)>=0)metrics[k as G2MetricName]=v as number;
       if(clientLatencyFile){const latency=JSON.parse(readFileSync(clientLatencyFile,'utf8')) as {run_id?:unknown;candidate_fingerprint?:unknown;measurement_kind?:unknown;samples_ms?:unknown};
         if(latency.run_id!==manifest.run_id||latency.candidate_fingerprint!==manifest.candidate_fingerprint

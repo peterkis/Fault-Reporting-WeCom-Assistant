@@ -1,9 +1,7 @@
+export type {YxxProfileLifecycle} from '../src/p2-g2-yixiaoxiu-profile.mjs';
 import type {PostgresPool} from '../src/platform/postgres-pool.mjs';
 import type {YxxEntryConfig,YxxProfile} from '../src/p2-g2-yixiaoxiu-contract.mjs';
-export interface YxxProfileLifecycle {start():Promise<unknown>;stop():Promise<unknown>}
-// P08 profile factory is consumed only for the lifecycle used by this launcher.
-type ProfileFactoryInput = {profile:YxxProfile;pool:PostgresPool|undefined;oauth:ReturnType<typeof createWeComWebOAuth>;publicOrigin:string|undefined;listenPort:number;reporterMemberEntry:YxxEntryConfig|undefined;identityMapping:Awaited<ReturnType<typeof createYxxDelegatedIdentityMapping>>|null;reporterHmacSecret:string|undefined;yxxSelfService:{featureFlags:Record<string,boolean>}};
-type ProfileFactory = (options:ProfileFactoryInput)=>YxxProfileLifecycle;
+import type {YxxProfileLifecycle,YxxProfileOptions} from '../src/p2-g2-yixiaoxiu-profile.mjs';
 import {readFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
@@ -52,7 +50,7 @@ export async function main(argv:string[]=process.argv.slice(2),env:NodeJS.Proces
       const {createPostgresPool}=await import('../src/platform/postgres-pool.mjs');
       pool=createPostgresPool({connectionString:env.PILOT_DATABASE_URL,max:4,connectionTimeoutMillis:2000,application_name:'yixiaoxiu_member_readonly'});
     }
-    runtime=(createYxxProfile as ProfileFactory)({profile:profile as YxxProfile,pool,oauth,publicOrigin,listenPort,reporterMemberEntry,identityMapping,reporterHmacSecret:env.P2_G2_REPORTER_HMAC_SECRET,yxxSelfService:{featureFlags}});
+    runtime=createYxxProfile({profile:profile as YxxProfile,pool,oauth,publicOrigin,listenPort,reporterMemberEntry,identityMapping,reporterHmacSecret:env.P2_G2_REPORTER_HMAC_SECRET,yxxSelfService:{featureFlags}} as YxxProfileOptions);
     await runtime.start();console.log(JSON.stringify({event:'YXX_ENTRY_LISTENING',profile}));
     let stopping:Promise<void>|undefined;const stop=()=>stopping??=(async()=>{await (runtime as YxxProfileLifecycle).stop();await pool?.end();})();
     process.once('SIGTERM',()=>void stop());process.once('SIGINT',()=>void stop());

@@ -1,5 +1,5 @@
 import type { G2Manifest, CandidateFingerprint, SourceSHA256 } from './p2-g2-validation-config.mjs';
-export interface G2SourceBinding {run_id:string;candidate_fingerprint:CandidateFingerprint;run_mode:G2Manifest['mode'];manifest_binding:SourceSHA256}
+export interface G2SourceBinding {run_id:unknown;candidate_fingerprint:unknown;run_mode:G2Manifest['mode'];manifest_binding:SourceSHA256}
 export interface G2SourceReference {ref:string;sha256:SourceSHA256}
 export interface G2SourceReadOptions {root?:string;sha256?:string|null;maxBytes?:number}
 import { readFileSync, lstatSync, writeFileSync } from 'node:fs';

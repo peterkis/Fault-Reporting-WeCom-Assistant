@@ -65,7 +65,7 @@ export function g2CandidateInventory(root = G2_ROOT): CandidateInventory {
   return Object.freeze({ schema_version: 2, gate: 'P2-G2', algorithm: 'SHA256_SORTED_PATH_CONTENT_UTF8_LF_BUILD_INPUTS_V2',
     fingerprint: g2Hash(JSON.stringify(files)) as CandidateFingerprint, file_count: files.length, excluded_local_files: G2_EXCLUDED_LOCAL_FILES, files });
 }
-export function verifyG2Candidate(expected: CandidateFingerprint, root = G2_ROOT) {
+export function verifyG2Candidate(expected: unknown, root = G2_ROOT) {
   const inventory = g2CandidateInventory(root);
   if (inventory.fingerprint !== expected) failG2('CANDIDATE_CHANGED');
   return inventory;
@@ -93,12 +93,12 @@ export function verifyG2ApprovalFile(manifest: G2Manifest, root = G2_ROOT) {
   // A file hash is an integrity check, not proof that a human observed the run.
   // The owner must supply this file; no Gate command generates a positive approval.
   const text = bytes.toString('utf8');
-  if (!text.includes(manifest.run_id) || !text.includes(manifest.candidate_fingerprint)
+  if (!text.includes(manifest.run_id as string) || !text.includes(manifest.candidate_fingerprint as string)
     || !text.includes('P2-G2') || !text.includes('PROJECT_OWNER')
     || !text.split(/\r?\n/u).includes('manifest_scope_sha256: ' + g2ApprovalScopeHash(manifest))) failG2('OWNER_APPROVAL_BINDING_MISMATCH');
 }
 
-export function requirePreparedG2Candidate(fingerprint: CandidateFingerprint, root=G2_ROOT): PreparedG2Candidate{
+export function requirePreparedG2Candidate(fingerprint: unknown, root=G2_ROOT): PreparedG2Candidate{
   const reject: () => never=()=>failG2('READY_CANDIDATE_REQUIRED');
   const readEvidence=(ref: {path?:unknown;sha256?:unknown} | undefined)=>{
     if(!ref||!/^evidence\/p2-g2-[a-z0-9-]+\.(json|tap|md)$/u.test((ref.path??'') as string))reject();
@@ -158,7 +158,7 @@ export function requirePreparedG2Candidate(fingerprint: CandidateFingerprint, ro
       ||!Array.isArray(source.findings)||source.findings.some((f: {resolved?:unknown})=>f.resolved!==true))reject();
   }
   if(inventory.files.some(file=>/^src\/p2-g2-yixiaoxiu-authorizer\.(?:mjs|mts)$/u.test(file.path))){
-    requirePreparedYxxCandidate({fingerprint,root,fullRegression:f,passedNames,verifiedRun:run,verifiedRunReference:((r.source_evidence as Partial<Record<"regression_run" | "scenario_matrix" | "independent_review" | "source_execution", { path?: unknown; sha256?: unknown; }>>).regression_run as { path?: unknown; sha256?: unknown; })});
+    requirePreparedYxxCandidate({fingerprint:fingerprint as CandidateFingerprint,root,fullRegression:f,passedNames,verifiedRun:run,verifiedRunReference:((r.source_evidence as Partial<Record<"regression_run" | "scenario_matrix" | "independent_review" | "source_execution", { path?: unknown; sha256?: unknown; }>>).regression_run as { path?: unknown; sha256?: unknown; })});
   }
   return r as ReportInput & PreparedG2Candidate;
 }

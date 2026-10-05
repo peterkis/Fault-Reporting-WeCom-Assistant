@@ -1,18 +1,18 @@
 import type { PostgresTransaction } from './platform/postgres-pool.mjs';
-export interface ReconciliationCounts {physical_epoch_ms:string;inbox_count:number;ticket_count:number;incident_count:number;
- unknown_pending:number;dead_letters:number;communication_pending:number;safe_actions_pending:number;internal_note_leaks:number;
- automatic_incident_count:number;out_of_scope_deliveries:number;remaining_role_connections:number}
-export interface ReconciliationDelivery {delivery_ref_hash:string;outbox_id:string;message_id:string;audience:string;target_hash:string;
- status:string;attempt_count:number;side_effect_state:string;last_error_code:string|null;purpose:string;sender_kind:string;visibility:string;
- message_type:string;sender_system_code:string|null;client_command_id:string|null;transport:'WECOM_GROUP_WEBHOOK'|'WECOM_AIBOT_WSS';
- source_event_ref:string|null;source_version:string|null;source_version_kind:string|null;template_version:string|null;
- ticket_id:string|null;notification_type:string|null;incident_id:string|null;template_code:string|null;incident_audience:string|null;
- incident_report_ref:string|null;source_event_type:string|null;source_action_type:string|null;source_action_state:string|null;
- source_decision_result:string|null;consumed_grants:number;old_private_created_artifacts:number;direct_leg_count:number;
- origin_channel:string|null;direct_guided_leg_count:number;journey_message_count:number;entry_mode:string|null;organic_without_prior_group:boolean;
- destination_eligible_at_reconciliation?:boolean}
-export interface ReconciliationAttempt {attempt_ref:string;delivery_ref_hash:string;attempt_no:number;outcome:string;
- side_effect_state:string;error_code:string|null;started_epoch_ms:string;completed_epoch_ms:string|null}
+export interface ReconciliationCounts {physical_epoch_ms:unknown;inbox_count:unknown;ticket_count:unknown;incident_count:unknown;
+ unknown_pending:unknown;dead_letters:unknown;communication_pending:unknown;safe_actions_pending:unknown;internal_note_leaks:unknown;
+ automatic_incident_count:unknown;out_of_scope_deliveries:unknown;remaining_role_connections:unknown}
+export interface ReconciliationDelivery {delivery_ref_hash:unknown;outbox_id:unknown;message_id:unknown;audience:unknown;target_hash:unknown;
+ status:unknown;attempt_count:unknown;side_effect_state:unknown;last_error_code:unknown;purpose:unknown;sender_kind:unknown;visibility:unknown;
+ message_type:unknown;sender_system_code:unknown;client_command_id:unknown;transport:unknown;
+ source_event_ref:unknown;source_version:unknown;source_version_kind:unknown;template_version:unknown;
+ ticket_id:unknown;notification_type:unknown;incident_id:unknown;template_code:unknown;incident_audience:unknown;
+ incident_report_ref:unknown;source_event_type:unknown;source_action_type:unknown;source_action_state:unknown;
+ source_decision_result:unknown;consumed_grants:unknown;old_private_created_artifacts:unknown;direct_leg_count:unknown;
+ origin_channel:unknown;direct_guided_leg_count:unknown;journey_message_count:unknown;entry_mode:unknown;organic_without_prior_group:unknown;
+ destination_eligible_at_reconciliation?:unknown}
+export interface ReconciliationAttempt {attempt_ref:unknown;delivery_ref_hash:unknown;attempt_no:unknown;outcome:unknown;
+ side_effect_state:unknown;error_code:unknown;started_epoch_ms:unknown;completed_epoch_ms:unknown}
 import { g2Hash, validateG2Manifest, failG2 } from './p2-g2-validation-config.mjs';
 import { createP2012PersonDestinationAuthorizer } from './p2-012-live-reporter-scope.mjs';
 import { g2SourceBinding } from './p2-g2-evidence-files.mjs';
@@ -100,7 +100,7 @@ export async function collectG2Reconciliation({transaction,manifest}: {transacti
         groupHashes:m.scope.group_hashes,testLabel:m.scope.test_prefix,labelSource:'raw'});
       cache.set(key,await authorize({transaction,bot_id:d.channel_account_id,reporter_user_id:d.target_id}));
     }
-    const eligible=cache.get(key);if(!eligible)counts.out_of_scope_deliveries++;
+    const eligible=cache.get(key);if(!eligible)(counts.out_of_scope_deliveries as number)++;
     const row=deliveries.find(row=>row.delivery_ref_hash===g2Hash(d.id));if(row)row.destination_eligible_at_reconciliation=(eligible as boolean);
   }
   // Error text never enters evidence, even if a legacy caller stored an unsafe value.

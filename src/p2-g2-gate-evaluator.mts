@@ -1,5 +1,5 @@
-import type { G2Manifest, CandidateFingerprint } from './p2-g2-validation-config.mjs';
-import type { G2EvidenceRecord, G2EvidenceDetails, G2EvidenceSource, G2EvidenceType, G2MetricName, G2NumberFact } from './p2-g2-evidence.mjs';
+import type { G2Manifest, CandidateFingerprint, G2FaultId } from './p2-g2-validation-config.mjs';
+import type { G2EvidenceRecord, G2EvidenceDetails, G2EvidenceSource, G2EvidenceType, G2MetricName, G2NumberFact, G2Metrics } from './p2-g2-evidence.mjs';
 export type G2ScenarioId = `G2-E0${1|2|3|4|5|6|7|8}` | `G2-J0${1|2}` | `G2-T0${1|2|3|4}` | `G2-N0${1|2|3|4}` | `G2-I0${1|2|3|4|5|6|7}` | `G2-C0${1|2}` | `G2-R0${1|2|3}` | `G2-F0${1|2|3|4}` | `G2-A0${1|2}` | 'G2-O01';
 export interface G2GateInput {manifest?:unknown;candidateFingerprint?:CandidateFingerprint;streams?:unknown[];
  verifySource?:(source:G2EvidenceSource,record:G2EvidenceRecord,manifest:G2Manifest)=>boolean}
@@ -10,7 +10,7 @@ export const G2_SCENARIO_IDS = Object.freeze(Object.entries({ E: 8, J: 2, T: 4, 
   .flatMap(([prefix, count]) => Array.from({ length: count }, (_, i) => 'G2-' + prefix + String(i + 1).padStart(2, '0') as G2ScenarioId)));
 export const G2_CLIENT_SCENARIOS = Object.freeze(['G2-E01', 'G2-E02', 'G2-E03', 'G2-E04', 'G2-E05', 'G2-T01',
   'G2-N02', 'G2-N03', 'G2-N04', 'G2-I02', 'G2-I03', 'G2-F01']);
-const NORMAL = new Set(['G2-E01', 'G2-E02', 'G2-E03', 'G2-E04', 'G2-I01']);
+const NORMAL = new Set<unknown>(['G2-E01', 'G2-E02', 'G2-E03', 'G2-E04', 'G2-I01']);
 const zeroFields = ['model_provider_calls', 'internal_note_leaks', 'explicit_incident_report_missed',
   'clinical_high_risk_missed', 'real_fault_auto_ignored', 'unsupported_root_cause_confirmed', 'determinism_mismatch'] as const;
 
@@ -104,7 +104,7 @@ export function evaluateG2Gate({ manifest, candidateFingerprint, streams = [], v
   requireFact('G2-END', null, reconciled, 'FINAL_RECONCILIATION_MISSING');
   requireFact('G2-CLEANUP', null, cleaned, 'CLEANUP_MISSING');
 
-  let prior: G2EvidenceRecord|null = null, observer: string|undefined|null = null;
+  let prior: G2EvidenceRecord|null = null, observer: unknown = null;
   const roles = ['app', 'worker', 'gateway'] as const;
   const steady = (r: G2EvidenceRecord) => r.details.phase === 'STEADY' && r.details.metrics?.process_count === 3
     && r.details.metrics?.rule_worker_ready === 1 && r.details.metrics?.gateway_authenticated === 1
@@ -124,14 +124,14 @@ export function evaluateG2Gate({ manifest, candidateFingerprint, streams = [], v
       if (steady(prior) && steady(r) && Number.isFinite(gap) && gap > 0 && gap < G2_LIMITS.maximum_sample_gap_ms) {
         observationMs += gap;
         for (const role of roles) {
-          const uptimeDelta = (m[(role + '_uptime_seconds') as G2MetricName] as number) - ((prior.details.metrics as Partial<Record<"app_rss_bytes" | "app_heap_used_bytes" | "app_heap_total_bytes" | "app_external_bytes" | "app_cpu_percent" | "app_event_loop_delay_p95_ms" | "app_active_resources" | "app_active_timers" | "app_active_sockets" | "app_active_file_handles" | "app_active_handles" | "app_uptime_seconds" | "app_pool_total" | "app_pool_idle" | "app_pool_waiting" | "app_pool_max" | "worker_rss_bytes" | "worker_heap_used_bytes" | "worker_heap_total_bytes" | "worker_external_bytes" | "worker_cpu_percent" | "worker_event_loop_delay_p95_ms" | "worker_active_resources" | "worker_active_timers" | "worker_active_sockets" | "worker_active_file_handles" | "worker_active_handles" | "worker_uptime_seconds" | "worker_pool_total" | "worker_pool_idle" | "worker_pool_waiting" | "worker_pool_max" | "gateway_rss_bytes" | "gateway_heap_used_bytes" | "gateway_heap_total_bytes" | "gateway_external_bytes" | "gateway_cpu_percent" | "gateway_event_loop_delay_p95_ms" | "gateway_active_resources" | "gateway_active_timers" | "gateway_active_sockets" | "gateway_active_file_handles" | "gateway_active_handles" | "gateway_uptime_seconds" | "gateway_pool_total" | "gateway_pool_idle" | "gateway_pool_waiting" | "gateway_pool_max" | "process_count" | "gateway_authenticated" | "gateway_reconnect_total" | "total_rss_bytes" | "total_heap_used_bytes" | "total_cpu_percent" | "sse_clients" | "projection_backlog" | "projection_failures" | "communication_pending" | "dead_letter" | "reconciliation_required" | "postgres_active_connections" | "postgres_idle_connections" | "postgres_other_connections" | "postgres_max_connections" | "postgres_connection_utilization_percent" | "postgres_locks_waiting" | "postgres_transactions" | "safe_actions_pending" | "manual_review_pending" | "manual_review_oldest_age_ms" | "candidate_due" | "candidate_expired" | "user_visible_latency_p95_ms" | "user_visible_latency_samples" | "postgres_rss_bytes" | "proxy_rss_bytes" | "host_cpu_count" | "host_memory_bytes" | "host_memory_available_bytes" | "host_swap_used_bytes" | "oom_events_delta" | "rule_worker_ready" | "rule_worker_failure_count" | "scope_unexpected_inputs" | "scope_unexpected_deliveries", number | null>>)[(role + '_uptime_seconds') as G2MetricName] as number);
+          const uptimeDelta = (m[(role + '_uptime_seconds') as G2MetricName] as number) - ((prior.details.metrics as G2Metrics)[(role + '_uptime_seconds') as G2MetricName] as number);
           if (!Number.isFinite(uptimeDelta) || Math.abs(uptimeDelta * 1000 - wall) > 2000) blocked('ROLE_UPTIME_DISCONTINUITY');
         }
       }
     }
     prior = r;
     const unavailable = roles.filter(role => m[(role + '_rss_bytes') as G2MetricName] === null);
-    const fault = ['FAULT', 'RECOVERY'].includes(d.phase as string) && (manifest as G2Manifest).scope.allowed_faults.includes(d.expected_fault_id as never);
+    const fault = ['FAULT', 'RECOVERY'].includes(d.phase as string) && (manifest as G2Manifest).scope.allowed_faults.includes(d.expected_fault_id as G2FaultId);
     const allowedMissing = fault && d.expected_fault_id === 'G2-F01' ? ['gateway']
       : fault && d.expected_fault_id === 'G2-F02' ? ['app', 'worker'] : [];
     if (d.phase !== 'STEADY' && !fault) blocked('FAULT_SCOPE_INVALID');
@@ -151,7 +151,7 @@ export function evaluateG2Gate({ manifest, candidateFingerprint, streams = [], v
       if (m[(role + '_pool_max') as G2MetricName] !== max || (m[(role + '_pool_total') as G2MetricName] as number) > max) blocked('POOL_LIMIT_VIOLATION');
     }
     if (m.total_rss_bytes !== roles.reduce((sum, role) => sum + (m[(role + '_rss_bytes') as G2MetricName] ?? 0), 0)) blocked('RESOURCE_TOTAL_MISMATCH');
-    const workerCanBeUnready = fault && ['G2-F02', 'G2-F03'].includes(d.expected_fault_id as never);
+    const workerCanBeUnready = fault && ['G2-F02', 'G2-F03'].includes(d.expected_fault_id as G2FaultId);
     const gatewayCanBeUnready = fault && d.expected_fault_id === 'G2-F01';
     if ((!workerCanBeUnready && m.rule_worker_ready !== 1) || (!gatewayCanBeUnready && m.gateway_authenticated !== 1)) blocked('ROLE_NOT_READY');
   }

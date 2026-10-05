@@ -1,17 +1,17 @@
-import type { G2Manifest, CandidateFingerprint, EvidenceSHA256, SourceSHA256 } from './p2-g2-validation-config.mjs';
+import type { G2Manifest, CandidateFingerprint, EvidenceSHA256, SourceSHA256, G2FaultId } from './p2-g2-validation-config.mjs';
 export type G2EvidenceType = typeof G2_EVIDENCE_TYPES[number];
 export type G2ResultValue = typeof G2_RESULT_VALUES[number];
 export type G2MetricName = typeof G2_METRIC_NAMES[number];
 export type G2BooleanFact = typeof G2_BOOLEAN_FACTS[number];
 export type G2NumberFact = typeof G2_NUMBER_FACTS[number];
 export type G2Metrics = Partial<Record<G2MetricName,number|null>>;
-export interface G2EvidenceSource {kind:'MODULE'|'TEST_OUTPUT'|'PROCESS_IPC'|'DB_QUERY'|'CLIENT_FILE'|'OWNER_FILE'|'ENVIRONMENT_FILE';ref:string;sha256:SourceSHA256}
+export interface G2EvidenceSource {kind:'MODULE'|'TEST_OUTPUT'|'PROCESS_IPC'|'DB_QUERY'|'CLIENT_FILE'|'OWNER_FILE'|'ENVIRONMENT_FILE';ref:string;sha256:unknown}
 export type G2EvidenceDetails = {executed:boolean;entry_mode?:'GROUP_MENTION_INLINE'|'GROUP_MENTION_TO_DIRECT_GUIDED'|'DIRECT_ORGANIC';
- phase?:'STARTUP'|'STEADY'|'FAULT'|'RECOVERY'|'END';observer_instance_id?:string;expected_fault_id?:string;
- metrics?:G2Metrics;assertions?:{code:string;passed:boolean}[]} & Partial<Record<Exclude<G2BooleanFact,'executed'>,boolean>> & Partial<Record<G2NumberFact,number>>;
-export interface G2EvidenceRecord {schema_version:1;gate:'P2-G2';run_id:string;run_mode:G2Manifest['mode'];candidate_fingerprint:CandidateFingerprint;
- scenario_id:string;evidence_type:G2EvidenceType;producer:'AUTOMATED'|'MANUAL_ATTESTATION';occurred_at:string;physical_epoch_ms:string;
- sequence:number;result:G2ResultValue;source_refs:G2EvidenceSource[];details:G2EvidenceDetails;previous_hash:EvidenceSHA256;record_hash:EvidenceSHA256}
+ phase?:'STARTUP'|'STEADY'|'FAULT'|'RECOVERY'|'END';observer_instance_id?:unknown;expected_fault_id?:unknown;
+ metrics?:G2Metrics;assertions?:{code:unknown;passed:boolean}[]} & Partial<Record<Exclude<G2BooleanFact,'executed'>,boolean>> & Partial<Record<G2NumberFact,number>>;
+export interface G2EvidenceRecord {schema_version:1;gate:'P2-G2';run_id:unknown;run_mode:G2Manifest['mode'];candidate_fingerprint:unknown;
+ scenario_id:unknown;evidence_type:G2EvidenceType;producer:'AUTOMATED'|'MANUAL_ATTESTATION';occurred_at:string;physical_epoch_ms:string;
+ sequence:number;result:G2ResultValue;source_refs:G2EvidenceSource[];details:G2EvidenceDetails;previous_hash:unknown;record_hash:EvidenceSHA256}
 export type G2AutomatedEntry = Pick<G2EvidenceRecord,'scenario_id'|'evidence_type'|'result'|'source_refs'|'details'>;
 type InputObject = Record<string,unknown>;
 import { openSync, appendFileSync, closeSync, readFileSync, existsSync } from 'node:fs';
