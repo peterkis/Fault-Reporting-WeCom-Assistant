@@ -100,6 +100,10 @@ test('SS-008 actual profiles: delegated Web HTTP -> original Review and Ticket w
       await self.start();const a=browser(self.server),b=browser(self.server);await login(a);await login(b,'b');
       assert.equal((await a.request('/wecom/yixiaoxiu/')).status,200);
       const bootstrap=(await a.request('/api/yixiaoxiu/bootstrap')).json();
+      const catalogResponse=await a.request('/api/yixiaoxiu/service-catalog');
+      assert.equal(catalogResponse.status,200);
+      assert.ok(catalogResponse.json().services.some(service=>service.service_code==='CLINICAL.OUTPATIENT_WORKSTATION'&&service.name_zh==='门诊医生工作站'));
+      assert.equal(JSON.stringify(catalogResponse.json()).includes('default_owner_team'),false);
       const body=input('急诊患者等着做检查，但检查申请完全提交不了');
       const accepted=await a.request('/api/yixiaoxiu/requests',post(body,bootstrap.csrf_token));assert.equal(accepted.status,202,accepted.text);
       const ref=accepted.json().receipt.request_ref;

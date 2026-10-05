@@ -1,5 +1,7 @@
 # YXX-SS-002 contract freeze
 
+2026-10-05 additive local implementation contract: YXX-UI-003 / ADR-0021 adds protected `GET /api/yixiaoxiu/service-catalog` to the original seven operations below. The closed response is `yxx_self_service_service_catalog.schema.json` / `YxxServiceCatalog`: version and at most 200 enabled service code/name/category choices, no internal configuration. Request `service_code` remains nullable and bounded to 64 characters, now accepts dotted catalog segments as well as undotted codes. No database, rule policy, default flag, historical evidence or live authorization change.
+
 The web source is `PORTAL / YIXIAOXIU_WEB / APP_WEB_SELF_SERVICE`. A web form
 is represented by a `WEB_FORM` leg linked to a real web submission. It never
 creates an Inbox row, Bot message, Conversation Thread/Session, or Direct Leg.

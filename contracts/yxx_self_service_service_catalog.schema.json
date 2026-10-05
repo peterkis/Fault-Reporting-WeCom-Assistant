@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hospital.local/schemas/yxx_self_service_service_catalog.schema.json",
+  "title": "Member self-service catalog projection",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "catalog_version", "services"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "catalog_version": {"type": "string", "minLength": 1, "maxLength": 64},
+    "services": {"type": "array", "maxItems": 200, "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["service_code", "name_zh", "category", "category_name_zh"],
+      "properties": {
+        "service_code": {"type": "string", "maxLength": 64, "pattern": "^[A-Z][A-Z0-9_]*(?:\\.[A-Z][A-Z0-9_]*)*$"},
+        "name_zh": {"type": "string", "minLength": 1, "maxLength": 80},
+        "category": {"type": "string", "maxLength": 64, "pattern": "^[A-Z][A-Z0-9_]*$"},
+        "category_name_zh": {"type": "string", "minLength": 1, "maxLength": 80}
+      }
+    }}
+  }
+}

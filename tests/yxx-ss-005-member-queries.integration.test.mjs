@@ -117,6 +117,26 @@ test('SS-005 authorization denies OAUTH_ONLY before touching the database and fe
   assert.equal(writes, 0);
 });
 
+test('SS-005 accepts catalog service codes with the existing receipt and idempotency contract', { skip: !databaseUrl, timeout: 120_000 }, async () => {
+  await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxxcatalog', run: async ({ pool, databaseUrl: isolated }) => {
+    await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });
+    const memberScope = scope('catalog');
+    const store = createYxxSelfServiceStore({ pool, scopeSecret: SECRET });
+    const input = { ...requestInput('门诊医生工作站打不开'), service_code: 'CLINICAL.OUTPATIENT_WORKSTATION' };
+    const accepted = await store.accept({ scope: memberScope, input });
+    assert.equal(accepted.receipt.status, 'ACCEPTED');
+    const replay = await store.accept({ scope: memberScope, input });
+    assert.deepEqual(replay.receipt, accepted.receipt);
+    await assert.rejects(store.accept({ scope: memberScope, input: { ...input, service_code: 'CLINICAL.INPATIENT_WORKSTATION' } }), { code: 'YXX_COMMAND_CONFLICT' });
+    for(const code of ['CLINICAL..SERVICE','CLINICAL.','CLINICAL.1INVALID','A'.repeat(65)]) {
+      await assert.rejects(store.accept({ scope: memberScope, input: { ...input, client_command_id: randomUUID(), service_code: code } }));
+    }
+    assert.equal((await store.accept({ scope: memberScope, input: { ...input, client_command_id: randomUUID(), service_code: null } })).receipt.status, 'ACCEPTED');
+    assert.equal((await store.accept({ scope: memberScope, input: { ...input, client_command_id: randomUUID(), service_code: 'PRINTING' } })).receipt.status, 'ACCEPTED');
+  } });
+  await assertNoP2016Residual({ databaseUrl });
+});
+
 test('SS-005 member list previews only retained initial Web descriptions and locations', { skip: !databaseUrl, timeout: 120_000 }, async () => {
   await withP2016IsolatedDatabase({ databaseUrl, purpose: 'yxxpreview', run: async ({ pool, databaseUrl: isolated }) => {
     await migrateCurrentBaselineWithYxx({ databaseUrl: isolated });

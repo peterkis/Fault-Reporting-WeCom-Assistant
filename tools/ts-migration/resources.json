@@ -151,6 +151,7 @@
     "contracts/yxx_self_service_request.schema.json",
     "contracts/yxx_self_service_request_detail.schema.json",
     "contracts/yxx_self_service_supplement.schema.json",
+    "contracts/yxx_self_service_service_catalog.schema.json",
     "contracts/yxx_self_service_ticket_summary.schema.json",
     "contracts/yxx_self_service_timeline.schema.json",
     "database/migrations/001_p1_003_channel_message_inbox.sql",

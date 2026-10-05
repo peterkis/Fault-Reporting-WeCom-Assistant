@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {createServiceCatalog} from '../src/p2-007-service-catalog.mjs';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
@@ -26,6 +27,10 @@ function adaptSyntheticSession(request, response, url) {
 }
 
 function fixture(origin) {
+  const service=(code,name,enabled=true)=>({service_code:code,name_zh:name,enabled,aliases:[],required_fields:[],transaction_stages:[],common_symptom_codes:[],default_owner_team:'PRIVATE_TEAM'});
+  const serviceCatalog=createServiceCatalog({schema_version:'1.0.0',catalog_id:'private-fixture-catalog',catalog_version:'native-catalog-v1',
+    domains:[{domain_code:'CLINICAL',name_zh:'临床应用',services:[service('CLINICAL.OUTPATIENT_WORKSTATION','门诊医生工作站'),
+      service('CLINICAL.XSS','<img src=x onerror=window.__xss=1>'),service('CLINICAL.DISABLED','禁用服务',false)]}],taxonomies:{symptom_codes:[]}});
   const state = { commandCalls: [], supplementCalls: [], listCalls: [], detailCalls: [], timelineCalls: [],
     commandStatusCalls: [], next: 0, supplementConflict: false, writeFlag: true };
   const memberFor = (request) => (request.headers.cookie ?? '').includes('member-b') ? 'B' : 'A';
@@ -113,7 +118,7 @@ function fixture(origin) {
     },
   };
   const oauthHttp = async ({ response }) => { response.writeHead(401, { 'content-type': 'text/html; charset=utf-8' }); response.end('<p>旧认证提示</p>'); return true; };
-  const config = { publicOrigin: origin, oauth, oauthHttp, command, supplement, query,
+  const config = { publicOrigin: origin, oauth, oauthHttp, command, supplement, query, serviceCatalog,
     authenticateMember: context, featureFlags: FLAGS, recoveryBindingSecret: RECOVERY_SECRET };
   return { native: createYxxSelfServiceNativeHttp(config), config, state, oauth };
 }
@@ -128,6 +133,10 @@ async function startFixture({ enabled = true } = {}) {
   const server = createServer(async (request, response) => {
     const url = new URL(request.url, origin);
     adaptSyntheticSession(request, response, url);
+    if(url.pathname==='/api/yixiaoxiu/service-catalog'){
+      values.state.catalogRequests=(values.state.catalogRequests??0)+1;
+      if(values.state.catalogUnavailable){response.writeHead(503,{'content-type':'application/json','cache-control':'no-store'});response.end(JSON.stringify({error:{code:'YXX_UNAVAILABLE',retryable:true}}));return;}
+    }
     const override = values.state.successBodyOverride;
     if (override && request.method === 'POST' && url.pathname === override.path) {
       values.state.successBodyOverride = null;
@@ -157,6 +166,73 @@ async function setSyntheticVisibility(browser, hidden) {
   // that the operating system actually backgrounded the browser process.
   await browser.evaluate(`Object.defineProperty(document,'hidden',{configurable:true,value:${hidden}});document.dispatchEvent(new Event('visibilitychange'))`);
 }
+
+test('SS-007 member chooses catalog services by Chinese name and submits the canonical code', { timeout: 45000 }, async () => {
+  const f=await startFixture();let browser;
+  try {
+    browser=await launchSystemBrowser({url:`${f.origin}/wecom/yixiaoxiu/`,width:390,height:844,cookies:[{name:'yxx_session',value:'member-a',url:f.origin}]});
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')",{awaitPromise:false});
+    await browser.waitFor("document.querySelector('#new-view')?.hidden===false");
+    assert.equal(await browser.evaluate("document.querySelector('#service-code').tagName"),'SELECT');
+    await browser.waitFor("document.querySelector('#service-code').options.length===3&&!document.querySelector('#service-code').disabled");
+    assert.deepEqual(await browser.evaluate("Array.from(document.querySelector('#service-code').options,o=>({code:o.value,label:o.textContent}))"),[
+      {code:'',label:'不清楚 / 未列出'},
+      {code:'CLINICAL.OUTPATIENT_WORKSTATION',label:'门诊医生工作站'},
+      {code:'CLINICAL.XSS',label:'<img src=x onerror=window.__xss=1>'},
+    ]);
+    assert.equal(await browser.evaluate("document.querySelector('#service-code optgroup').label"),'临床应用');
+    assert.equal(await browser.evaluate("document.querySelectorAll('#service-code img').length"),0);
+    assert.equal(await browser.evaluate('window.__xss'),undefined);
+    assert.equal(f.state.catalogRequests,1);
+    await browser.evaluate("document.querySelector('#description').value='工作站打不开';document.querySelector('#location-text').value='护士站';document.querySelector('#service-code').value='CLINICAL.OUTPATIENT_WORKSTATION';document.querySelector('#new-report-form').requestSubmit()");
+    await waitForState(()=>f.state.commandCalls.length===1);
+    assert.equal(f.state.commandCalls[0].input.service_code,'CLINICAL.OUTPATIENT_WORKSTATION');
+  } finally {await closeBrowserTestResources([()=>browser?.close(),()=>closeServer(f.server)]);}
+});
+
+test('SS-007 unavailable or delayed catalog leaves text reporting available and late choices fenced after logout', { timeout: 60000 }, async () => {
+  const f=await startFixture();let browser;
+  f.state.catalogUnavailable=true;
+  try {
+    browser=await launchSystemBrowser({url:`${f.origin}/wecom/yixiaoxiu/`,width:390,height:844,cookies:[{name:'yxx_session',value:'member-a',url:f.origin}]});
+    await browser.waitFor("document.querySelector('#home-view')?.hidden===false");
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')",{awaitPromise:false});
+    await browser.waitFor("document.querySelector('#service-catalog-status').textContent.includes('暂时无法读取')");
+    assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"),false);
+    await browser.evaluate("document.querySelector('#description').value='目录失败仍报修';document.querySelector('#location-unknown').checked=true;document.querySelector('#new-report-form').requestSubmit()");
+    await waitForState(()=>f.state.commandCalls.length===1);
+    assert.equal(f.state.commandCalls[0].input.service_code,null);
+    await browser.waitFor("document.querySelector('#detail-view')?.hidden===false");
+    f.state.catalogUnavailable=false;
+    await browser.evaluate("location.assign('/wecom/yixiaoxiu/reports/new')",{awaitPromise:false});
+    await browser.waitFor("document.querySelector('#service-code').options.length===3");
+    await browser.evaluate(`{
+      const fetchOriginal=window.fetch.bind(window);
+      window.fetch=async (...args)=>{
+        const response=await fetchOriginal(...args);
+        if(String(args[0]).endsWith('/service-catalog')){
+          const text=await response.text();window.__catalogHeld=true;
+          await new Promise(resolve=>{window.__releaseCatalog=resolve;});
+          return new Response(text,{status:response.status,headers:response.headers});
+        }
+        return response;
+      };
+    }`);
+    await setSyntheticVisibility(browser,true);await setSyntheticVisibility(browser,false);
+    await browser.waitFor('window.__catalogHeld===true');
+    assert.equal(await browser.evaluate("document.querySelector('#protected-views').hidden"),false);
+    assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"),false);
+    assert.equal(await browser.evaluate("document.querySelector('#service-code').disabled"),true);
+    await browser.evaluate("document.querySelector('#logout').click()");
+    await browser.waitFor("document.querySelector('#protected-views').hidden&&document.querySelector('#app-status').textContent.includes('已退出')");
+    await browser.evaluate('window.__releaseCatalog()');
+    await browser.evaluate('new Promise(resolve=>setTimeout(resolve,100))');
+    assert.equal(await browser.evaluate("document.querySelector('#service-code').options.length"),1);
+    assert.equal(await browser.evaluate("document.querySelector('#service-code').textContent.includes('门诊医生')"),false);
+    assert.equal(await browser.evaluate("document.querySelector('#protected-views').hidden"),true);
+  } finally {await closeBrowserTestResources([()=>browser?.evaluate('window.__releaseCatalog?.()').catch(()=>{}),()=>browser?.close(),()=>closeServer(f.server)]);}
+});
 
 test('SS-007 member sees Web previews as plain text without per-card detail requests', { timeout: 45000 }, async () => {
   const f = await startFixture(); let browser;
@@ -937,7 +1013,7 @@ test('SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and restores th
       document.querySelector('#description').value='需要重新确认的草稿';
       document.querySelector('#location-text').value='住院楼8层护士站';
       document.querySelector('#impact-scope').value='DEPARTMENT';
-      document.querySelector('#service-code').value='PRINTING';
+      document.querySelector('#service-code').value='CLINICAL.OUTPATIENT_WORKSTATION';
       document.querySelector('#department').value='护理部';
       document.querySelector('#extension').value='8012';
     })()`);
@@ -957,7 +1033,7 @@ test('SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and restores th
       extension:document.querySelector('#extension').value,
     })`), {
       description: '需要重新确认的草稿', locationText: '住院楼8层护士站', locationUnknown: false,
-      impactScope: 'DEPARTMENT', serviceCode: 'PRINTING', department: '护理部', extension: '8012',
+      impactScope: 'DEPARTMENT', serviceCode: 'CLINICAL.OUTPATIENT_WORKSTATION', department: '护理部', extension: '8012',
     });
     assert.equal(await browser.evaluate("document.querySelector('#submit-report').disabled"), true);
     assert.equal(f.state.commandCalls.length, 0);

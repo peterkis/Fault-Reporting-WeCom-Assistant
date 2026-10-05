@@ -19,6 +19,11 @@ declare const reportPage: C12.YxxReportPage;
 const reportPreview: string|null|undefined = reportPage.items[0]?.safe_summary;
 const reportLocation: string|null|undefined = reportPage.items[0]?.safe_location;
 void [reportPreview, reportLocation];
+declare const serviceCatalog: C12.YxxServiceCatalog;
+const serviceChoice: string|undefined = serviceCatalog.services[0]?.service_code;
+// @ts-expect-error -- the member catalog must not expose private routing ownership
+serviceCatalog.services[0]?.default_owner_team;
+void serviceChoice;
 // @ts-expect-error -- member preview contracts accept plain text or null, never authority objects
 const invalidReportPreview: C12.YxxReportItem['safe_summary'] = {actor: 'internal'};
 // @ts-expect-error -- occurrence location previews must remain plain text or null

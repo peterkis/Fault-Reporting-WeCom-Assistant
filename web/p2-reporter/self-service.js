@@ -62,6 +62,7 @@ function remember(id){
 function forget(){const id=state.pendingCommandId;releaseTabPending();removeDurable(id);}
 function clearClientDom(message='认证已失效，请重新认证。',{preserveContext=false}={}){
  resetReportSource();
+ resetServiceCatalog('');
  $('protected-views').hidden=true;state.revalidationFocus=null;state.sessionCheckDue=false;state.supplementFeedback=null;
  cancelPendingRecovery(true);clearTimeout(state.sessionTimer);state.sessionTimer=null;state.generation+=1;state.stopped=true;state.busy=false;state.controller?.abort();state.controller=null;state.hiddenDraft=null;if(!preserveContext){window.__yxx_csrf=undefined;state.recoveryScope=null;}state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];
  readPending();
@@ -87,6 +88,7 @@ function draftHasInput(draft){return Boolean(draft?.description||draft?.location
 function restoreDraft(draft){if(!draft||draft.path!==location.pathname)return;$('description').value=draft.description;$('location-text').value=draft.locationText;$('location-unknown').checked=draft.locationUnknown;$('impact-scope').value=draft.impactScope;$('service-code').value=draft.serviceCode;$('department').value=draft.department;$('extension').value=draft.extension;$('supplement-text').value=draft.supplement;}
 function prepareBootstrap(){
  resetReportSource();
+ resetServiceCatalog('');
  $('protected-views').hidden=true;state.revalidationFocus=null;state.sessionCheckDue=false;state.supplementFeedback=null;
  clearTimeout(state.sessionTimer);state.sessionTimer=null;state.detail=null;state.detailEtag=null;state.timelineItems=[];state.timelineCursor=null;state.timelineExpanded=false;state.listCursor=null;state.reportItems=[];state.recoveryScope=null;window.__yxx_csrf=undefined;
  for(const id of ['description','location-text','service-code','department','extension','supplement-text']){const value=$(id);if(value)value.value='';}
@@ -193,6 +195,33 @@ function statusText(value){return ({RECEIVED_PROCESSING:'已收到，正在处�
 function ticketStatusText(value){return ticketStatuses[value]??'状态未知';}
 function ticketSummary(ticket){return ticket?.ticket_no?`工单 ${ticket.ticket_no} · ${ticketStatusText(ticket.status)}`:'尚未生成工单';}
 function renderGuidance(detail={}){for(const [id,key,label] of [['detail-needs-action','needs_action','需要您处理：'],['detail-clarification','safe_clarification','补充提示：']]){const value=typeof detail[key]==='string'?detail[key]:'';$(id).textContent=value?label+value:'';$(id).hidden=!value;}}
+function resetServiceCatalog(message){
+ const select=$('service-code');clear(select);const empty=node('option','不清楚 / 未列出');empty.value='';select.append(empty);select.disabled=true;
+ $('service-catalog-status').textContent=message;
+}
+async function loadServiceCatalog(operation){
+ resetServiceCatalog('正在读取服务目录；也可直接填写故障现象。');
+ try{
+  const {body}=await fetchJson('/api/yixiaoxiu/service-catalog',{},operation.signal);
+  if(!ownsOperation(operation))return;
+  const bounded=(value,max)=>typeof value==='string'&&value.trim().length>0&&Array.from(value).length<=max;
+  if(body?.schema_version!==1||!bounded(body.catalog_version,64)||!Array.isArray(body.services)||body.services.length>200)throw new Error('catalog');
+  const codes=new Set(),groups=new Map();
+  for(const item of body.services){
+   if(!item||!bounded(item.service_code,64)||!/^[A-Z][A-Z0-9_]*(?:\.[A-Z][A-Z0-9_]*)*$/u.test(item.service_code)
+    ||!bounded(item.name_zh,80)||!bounded(item.category,64)||!/^[A-Z][A-Z0-9_]*$/u.test(item.category)||!bounded(item.category_name_zh,80)||codes.has(item.service_code))throw new Error('catalog');
+   codes.add(item.service_code);
+   if(!groups.has(item.category)){const group=node('optgroup');group.label=item.category_name_zh;groups.set(item.category,group);}
+   const option=node('option',item.name_zh);option.value=item.service_code;groups.get(item.category).append(option);
+  }
+  $('service-code').append(...groups.values());$('service-code').disabled=false;
+  $('service-catalog-status').textContent=body.services.length?'可按中文名称选择；不清楚时可直接填写故障现象。':'暂时没有可选服务，可直接填写故障现象。';
+ }catch(error){
+  if(!ownsOperation(operation))return;
+  if(error.status===401||error.status===403)throw error;
+  resetServiceCatalog('暂时无法读取服务目录，可直接填写故障现象。');
+ }
+}
 function renderList(items){
  const list=$('report-list');clear(list);
  if(!items.length){list.append(node('li',({WEB:'暂时没有本人网页报修记录。',BOT:'暂时没有本人企业微信工单。'})[state.reportSource]??'暂时没有本人报修记录。','quiet'));return;}
@@ -304,7 +333,7 @@ async function submitNew(event){
  if(!locationText&&!unknown){setStatus('请填写位置，或勾选“位置暂不清楚”。','error');$('location-text').focus();return;}
   const extension=$('extension').value.trim();
   if(extension&&!/^[0-9][0-9 -]{0,19}$/u.test(extension)){setStatus('分机仅支持数字、空格和短横线。','error');$('extension').focus();return;}
-  const id=crypto.randomUUID(),serviceValue=$('service-code').value.trim().toUpperCase(),serviceCode=/^[A-Z][A-Z0-9_]{0,63}$/u.test(serviceValue)?serviceValue:null;
+  const id=crypto.randomUUID(),serviceValue=$('service-code').value.trim().toUpperCase(),serviceCode=serviceValue.length<=64&&/^[A-Z][A-Z0-9_]*(?:\.[A-Z][A-Z0-9_]*)*$/u.test(serviceValue)?serviceValue:null;
   const payload=Object.freeze({schema_version:1,client_command_id:id,description,location:{text:locationText||null,unknown},service_code:serviceCode,impact_scope:$('impact-scope').value,reported_department_text:$('department').value.trim()||null,extension:extension||null});
  if(!remember(id)){setStatus(messageFor(503),'error');return;}const operation=beginOperation({busy:true});
  try{
@@ -360,7 +389,11 @@ async function bootstrap(){
   const sameMemberScope=Boolean(previousScope&&previousScope===nextScope);
   if(sameMemberScope)restoreDraft(draft);
   const path=location.pathname;
-  if(path===refs.new){setView('new-view','新建报修');}
+  if(path===refs.new){
+   setView('new-view','新建报修');$('protected-views').hidden=false;
+   await loadServiceCatalog(operation);if(!ownsOperation(operation))return;
+   if(sameMemberScope)$('service-code').value=draft.serviceCode;
+  }
   else if(path===refs.list){setView('reports-view','我的报修');await loadReports();}
   else{
    const match=path.match(/^\/wecom\/yixiaoxiu\/reports\/([A-Za-z0-9_-]{32})$/u);

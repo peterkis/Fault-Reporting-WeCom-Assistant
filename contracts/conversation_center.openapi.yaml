@@ -1517,6 +1517,9 @@ paths:
   /api/yixiaoxiu/bootstrap:
     $ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1bootstrap'
     servers: [{url: /}]
+  /api/yixiaoxiu/service-catalog:
+    $ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1service-catalog'
+    servers: [{url: /}]
   /api/yixiaoxiu/requests:
     $ref: './yxx_self_service.openapi.yaml#/paths/~1api~1yixiaoxiu~1requests'
     servers: [{url: /}]
