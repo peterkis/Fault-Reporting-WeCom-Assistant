@@ -1,8 +1,24 @@
 # TypeScript 增量迁移执行入口
 
-ACTIVE_SELECTION: v3-p08
+ACTIVE_SELECTION: v3-p09
 
 ## v3 当前入口（2026-10-05）
+
+P08 / [PR #47](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/47) 已使用 merge commit `eefd6ee7182c83ca435a0ac02503ed18db3b12c7` 合并；P08 发布、测试、审查和 CI head 保持 `55410a0ec709515db1616fa8c952a38f8b4d0d12` 的原身份。原 27 个 P08 目标已完成，主线累计仍为 169/181；PR38 的 3 个增量模块单列，10 个 G0 JavaScript 保留，D01 的 12 个工具目标继续列外，不宣称 181/181。
+
+P09 从包含 PR #47 合并的最新 main 接续，不新增固定源码迁移项。`scope.json` 保持只读；活动入口与 `test-routing.json` 增加四项 `v3-p09` smoke：SS-008 Assembly、SS-006 Supplement/Review、Process Assembly、Send Guard。原 entry 的 host、flags、数据库、浏览器、subprocess 属性及 current/full/certify 合同不变。复用这些现有合成集成场景演示提交、补充、人工审核、工单处理关闭、本人查询、Realtime、App/Worker/Gateway 和发送守卫。
+
+集中回归发现 Limited Write 守卫直接从 `pg` 导入的纯类型触发既有 ARCH-005 工厂边界检查。仅将 `src/yxx-limited-write-guard.mts` 的查询输入和结果类型改为消费已有 PostgreSQL 平台端口；不修改检查规则、不增加例外，运行表达式、事务和发送权限保持。该直接修补使用原失败架构入口及相关 Limited Write 测试复核，不增加源码迁移计数。
+
+Manual、Delivery、Finalization Evidence 的既有合成夹具自行创建源码根 `tmp` 父目录，避免依赖其他分片先创建目录；原证据断言与清理不变。工具的改名夹具改用没有活动 TypeScript 调用者的既有 G0 Frame Capture 模块，继续证明只执行编译实现及缺失产物拒绝，不再替换活动 Gateway 所依赖的 SDK Logger 模块。上述直接夹具修补不修改生产 G0、D01 工具、历史证据或完整回归集合。
+
+本地开发验证使用一次构建、strict types、四项 smoke、制品与任务自有 loopback PG18 清理；不读取 `.env.pilot`。先完成全部仓库提交、普通适用 PR CI 和一次 Codex review，再冻结本地、远端与 PR 一致的 final head。在该 head 的同一构建上连续运行三次 Process Assembly 有界探针；3/3 通过只记录未复现 P08 的 `COMMUNICATION_SEND_TIMEOUT`，不宣称修复、不扩大 timeout、不自动重试。任意失败先保留日志并修复直接根因，再冻结新候选。
+
+冻结后只运行一次 GitHub `TypeScript migration` 的手动 `mode=full`，检查四个 current shard、Linux/Windows structure-tooling、exact-head 日志完整性、制品、清理与 `full-complete`。只有 workflow dispatch 确实不可用时才采用一次本地 currentSelection fallback，二者不重复执行。真实结果与 workflow URL 只更新 P09 PR 正文 HANDOFF；full 后不再提交动态结果文件。当前入口记录执行要求，不预写尚未发生的 full 成功结论。
+
+业务 TypeScript 主线交付不等于 181/181、strict readiness、READY_FOR_LIMITED_WRITE_LIVE 或生产授权；full 不替代 R01。R01 仅在明确计划发布或有限真实运行时执行，D01 不自动启动。本轮不运行 certify、strict readiness 或 C10/C11，无 SQL、数据库 migration、业务状态、历史 Evidence、默认 Feature Flag 或生产授权变更，不部署、不真实发送、不操作医院数据。制品保持 STAGED_NOT_ACTIVATED；完成后停止在 P09 PR，不自动合并。关闭沿用默认关闭开关，撤销使用后继修补或独立 revert PR，保留历史与用户工作。
+
+## P08 交付快照（2026-10-05）
 
 P07 / [PR #46](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/46) 已使用 merge commit `43c965cc3ccbf5b6f528bfd19251753a3cd73ded` 合并；P07 发布、测试、审查和 CI head 保持 `6e5fb1275a6f525b9aa432ab16ce01390cdc94db` 的原身份，旧结果不改称 merge commit 的新运行。
 

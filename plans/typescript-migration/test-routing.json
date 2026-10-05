@@ -298,6 +298,12 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "v3-p09": [
+      "tests/yxx-ss-008-assembly.integration.test.mjs",
+      "tests/yxx-ss-006-supplements-review.integration.test.mjs",
+      "tests/p2-g2-process-assembly.integration.test.mjs",
+      "tests/p2-g2-send-guard.integration.test.mjs"
+    ],
     "v3-p08": ["tests/p2-g2-send-budget.test.mjs", "tests/p2-g2-send-guard.integration.test.mjs", "tests/p2-g2-candidate-scope.integration.test.mjs", "tests/p2-g2-process-assembly.integration.test.mjs", "tests/yxx-ss-010-contract.test.mjs", "tests/yxx-ss-010-runtime.integration.test.mjs", "tests/p2-g2-approval-binding.test.mjs", "tests/yxx-current-readiness-cli.test.mts", "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs", "tests/p2-g2-yixiaoxiu-readiness.test.mjs"],
     "v3-p07": ["tests/p2-g2-wecom-web-oauth.test.mjs", "tests/p2-g2-yixiaoxiu-delegated-identity.test.mjs", "tests/yxx-ss-004-orchestration.integration.test.mjs", "tests/yxx-ss-005-member-queries.integration.test.mjs", "tests/yxx-ss-006-supplements-review.integration.test.mjs", "tests/yxx-ss-007-native-http-errors.test.mjs", "tests/yxx-ss-008-assembly.integration.test.mjs", "tests/p2-g2-yixiaoxiu-oauth.test.mjs"],
     "v3-p06": ["tests/p2-012-domain-contracts.test.mjs", "tests/p2-012-incident.integration.test.mjs", "tests/p2-012-subscription-notification.integration.test.mjs", "tests/p2-012-reporter-http.integration.test.mjs", "tests/p2-012-process-assembly.integration.test.mjs", "tests/p2-g2-cross-reporter.integration.test.mjs", "tests/p2-012-live-dynamic-reporter-scope.test.mjs", "tests/p2-012-schema-live-guards.test.mjs"],
