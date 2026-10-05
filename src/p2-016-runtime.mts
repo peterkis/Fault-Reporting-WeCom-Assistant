@@ -14,7 +14,7 @@ type ReviewFacade = ReturnType<typeof createP2016ManualReviewFacade>;
 type IncidentReporterAdapter = NonNullable<Parameters<typeof createP2016ReporterTimeline>[0]>['incidentAdapter'];
 export interface P2016IncidentExtension extends G1RuntimeExtension { ready(): boolean | Promise<boolean>; reporterAdapter?: IncidentReporterAdapter }
 export interface P2016HttpExtension { handler: ReporterHttpHandler; close(): unknown | Promise<unknown> }
-interface WebOAuthPort { enabled: boolean; close?: () => unknown }
+type WebOAuthPort = import('./p2-g2-wecom-web-oauth.mjs').WeComOAuth;
 export interface P2016ClosurePort extends Pick<ReturnType<typeof createTicketClosureService>, 'runAutoClose' | 'runAutoCloseReminders'> { afterTicketAction: TicketActionAfterHook }
 export type ClosureNotificationInput = { transaction: PostgresTransaction; ticket: { id: string; intake_id?: string; source_intake_id?: string }; event: Pick<PublicTicketEvent, 'event_id' | 'event_type' | 'aggregate_version' | 'old_status' | 'new_status'> };
 export type P2016ClosureOptions = Omit<NonNullable<Parameters<typeof createTicketClosureService>[0]>, 'beforeTransaction' | 'outbox'> & { beforeTransaction?: (transaction: PostgresTransaction) => Promise<unknown>; outbox: { enqueueTicketEvent(input: ClosureNotificationInput): Promise<unknown> } };
@@ -146,7 +146,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   const systemActions=createTicketActionService({pool,authorize:async({actor,action})=>actor.type==='SYSTEM'&&action==='auto-close',afterAction:(closure as P2016ClosurePort).afterTicketAction});
   return Object.freeze({...runtime,query,tickets:tickets as TicketFacade,reviews:reviews as ReviewFacade,reporterAccess:access,notifications,realtimeProjector:realtimeProjector as RealtimeProjector,orchestrationWorker,incidentExtension,
     selfService,
-    stop:async()=>{await selfService?.close();memberExtension?.close();webOAuth.close?.();return runtime.stop();},
+    stop:async()=>{await selfService?.close();memberExtension?.close();(webOAuth as {close?:()=>void}).close?.();return runtime.stop();},
     // Explicit system job, never exposed as an HTTP/User/Reporter action. Scheduling belongs to the approved worker role.
     runAutoClose:async()=>(closure as P2016ClosurePort).runAutoClose({actionService:systemActions,limit:20}),
     runAutoCloseReminders:async()=>(closure as P2016ClosurePort).runAutoCloseReminders({limit:20})});

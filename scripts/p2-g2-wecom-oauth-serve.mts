@@ -13,6 +13,6 @@ try{
   const server=createWeComOAuthServer({oauth,publicOrigin});
   server.on('error',()=>{console.error('WECOM_OAUTH_SERVER_FAILED');process.exitCode=1;});
   server.listen(port,'127.0.0.1',()=>console.log(JSON.stringify({event:'WECOM_OAUTH_LISTENING',enabled,mode:'OAUTH_ONLY'})));
-  const stop=()=>{oauth.close?.();server.close();server.closeIdleConnections();};
+  const stop=()=>{(oauth as {close?:()=>void}).close?.();server.close();server.closeIdleConnections();};
   process.once('SIGTERM',stop);process.once('SIGINT',stop);
 }catch{console.error('WECOM_OAUTH_CONFIG_INVALID');process.exitCode=1;}

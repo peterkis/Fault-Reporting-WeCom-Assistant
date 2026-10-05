@@ -1,21 +1,27 @@
+import type { IncomingMessage, ServerResponse, OutgoingHttpHeaders } from 'node:http';
+import type { WeComOAuth, EnabledWeComOAuth, BrowserToken, SessionToken, OAuthState } from './p2-g2-wecom-web-oauth.mjs';
+export interface OAuthHttpContext { request: IncomingMessage; response: ServerResponse; url: URL }
+export type OAuthHttpHandler = (context: OAuthHttpContext) => Promise<boolean>;
 import { WeComOAuthError } from './p2-g2-wecom-web-oauth.mjs';
 
 const root='/wecom/yixiaoxiu/';
 const homepageAuthReturn='?auth_return=1';
-const sessionCookieSeen=request=>(request.headers.cookie??'').split(';').some(part=>part.trim().startsWith(sessionName+'='));
+const sessionCookieSeen=(request: IncomingMessage)=>(request.headers.cookie??'').split(';').some(part=>part.trim().startsWith(sessionName+'='));
 export const browserName='__Host-wecom_oauth',sessionName='__Host-wecom_session';
-const cookie=(name,value,age)=>`${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${age}`;
-export function readWeComCookie(request,name){
+const cookie=(name: string,value: string | null,age: number)=>`${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${age}`;
+export function readWeComCookie(request: IncomingMessage,name: typeof sessionName): SessionToken | null;
+export function readWeComCookie(request: IncomingMessage,name: string): BrowserToken | null;
+export function readWeComCookie(request: IncomingMessage,name: string){
   const values=(request.headers.cookie??'').split(';').map(value=>value.trim()).filter(value=>value.startsWith(name+'='));
-  return values.length===1?values[0].slice(name.length+1):null;
+  return values.length===1?(values[0] as string).slice(name.length+1) as BrowserToken & SessionToken:null;
 }
-const intentName=state=>'__Host-wecom_intent_'+state;
-export function joinWeComBrowserBindings(request,oauth){
+const intentName=(state: string | null)=>'__Host-wecom_intent_'+state;
+export function joinWeComBrowserBindings(request: IncomingMessage,oauth: EnabledWeComOAuth){
   const names=new Set([browserName]);
-  for(const part of (request.headers.cookie??'').split(';')){const name=part.trim().split('=')[0];if(/^__Host-wecom_intent_[a-f0-9]{64}$/u.test(name))names.add(name);}
+  for(const part of (request.headers.cookie??'').split(';')){const name=part.trim().split('=')[0];if(/^__Host-wecom_intent_[a-f0-9]{64}$/u.test(name as string))names.add((name as string));}
   oauth.joinBrowserBindings?.([...names].map(name=>readWeComCookie(request,name)));
 }
-export function beginWeComOAuth({request,response,oauth,returnPath='/wecom/yixiaoxiu/'}){
+export function beginWeComOAuth({request,response,oauth,returnPath='/wecom/yixiaoxiu/'}: {request: IncomingMessage; response: ServerResponse; oauth: EnabledWeComOAuth; returnPath?: unknown}){
   // The per-state cookie also covers two first navigations racing before the shared cookie exists.
   joinWeComBrowserBindings(request,oauth);
   const start=oauth.begin({browserToken:readWeComCookie(request,browserName),returnPath});
@@ -24,21 +30,21 @@ export function beginWeComOAuth({request,response,oauth,returnPath='/wecom/yixia
     cookie(browserName,start.browserToken,1200),cookie(intentName(state),start.browserToken,300),
   ]});response.end();
 }
-export function logoutWeComBrowser({request,oauth}){
+export function logoutWeComBrowser({request,oauth}: {request: IncomingMessage; oauth: EnabledWeComOAuth}){
   oauth.logout(readWeComCookie(request,sessionName));
   const names=new Set([browserName]);
   for(const part of (request.headers.cookie??'').split(';')){
     const name=part.trim().split('=')[0];
-    if(/^__Host-wecom_intent_[a-f0-9]{64}$/u.test(name))names.add(name);
+    if(/^__Host-wecom_intent_[a-f0-9]{64}$/u.test(name as string))names.add((name as string));
   }
   for(const name of names)oauth.logoutBrowser?.(readWeComCookie(request,name));
   return [cookie(sessionName,'',0),...Array.from(names,name=>cookie(name,'',0))];
 }
-function page(response,status,text,extra={}){
+function page(response: ServerResponse,status: number,text: string,extra: OutgoingHttpHeaders={}){
   response.writeHead(status,{'content-type':'text/html; charset=utf-8',...extra});
   response.end('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>医小修 · 企业微信认证</title><body><main><h1>医小修</h1><p>'+text+'</p><a href="'+root+'login">重新认证</a></main></body></html>');
 }
-export function createWeComOAuthHttp({oauth,publicOrigin}={}){
+export function createWeComOAuthHttp({oauth,publicOrigin}: {oauth?: WeComOAuth; publicOrigin?: string | undefined}={}): OAuthHttpHandler{
   return async({request,response,url})=>{
     if(!url.pathname.startsWith(root))return false;
     response.setHeader('cache-control','no-store');response.setHeader('referrer-policy','no-referrer');
@@ -54,7 +60,7 @@ export function createWeComOAuthHttp({oauth,publicOrigin}={}){
         if([...url.searchParams.keys()].some(key=>!['code','state'].includes(key))||url.searchParams.getAll('code').length!==1||url.searchParams.getAll('state').length!==1)
           throw new WeComOAuthError('WECOM_AUTH_REQUIRED');
         joinWeComBrowserBindings(request,oauth);
-        const state=url.searchParams.get('state');
+        const state=url.searchParams.get('state') as OAuthState | null;
         const binding=readWeComCookie(request,intentName(state))??readWeComCookie(request,browserName);
         const result=await oauth.complete({code:url.searchParams.get('code'),state,browserToken:binding});
         oauth.logout(readWeComCookie(request,sessionName));
