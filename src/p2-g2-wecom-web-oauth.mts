@@ -3,10 +3,12 @@ export type OAuthState = string & { readonly [tokenKind]: 'state' };
 export type BrowserToken = string & { readonly [tokenKind]: 'browser' };
 export type SessionToken = string & { readonly [tokenKind]: 'session' };
 declare const identityKind: unique symbol;
+declare const oauthIdentityKind: unique symbol;
+export type OAuthMemberId = string & { readonly [oauthIdentityKind]: 'oauth-member' };
 export type InternalMemberId = string & { readonly [identityKind]: 'internal' };
 export type OpenMemberId = string & { readonly [identityKind]: 'open' };
 export type InternalReturnPath = string & { readonly [identityKind]: 'return-path' };
-export interface OAuthMember { corpId: string; userid: InternalMemberId }
+export interface OAuthMember { corpId: string; userid: OAuthMemberId }
 export interface WeComOAuthOptions { enabled?: boolean | undefined; corpId?: string | undefined; agentId?: string | undefined; publicOrigin?: string | undefined; resolveCode?: ((code: string, options: { signal: AbortSignal }) => Promise<unknown>) | undefined; now?: (() => number) | undefined }
 interface BrowserBinding { expires: number; group: object }
 interface PendingIntent { browser: string; returnPath: InternalReturnPath; binding: BrowserBinding; expires: number }
@@ -81,13 +83,13 @@ export function createWeComWebOAuth({enabled=false,corpId,agentId,publicOrigin,r
         if(closed)fail('WECOM_AUTH_UNAVAILABLE',503);
         if(browsers.get(entry.browser)!==entry.binding||entry.expires<=now())fail();
         if(!identity||typeof identity!=='object'||types.isProxy(identity))fail('WECOM_MEMBER_REQUIRED',403);
-        const descriptor=Object.getOwnPropertyDescriptor(identity,'userid'),userid=descriptor?.value;
+        const descriptor=Object.getOwnPropertyDescriptor(identity,'userid'),userid:unknown=descriptor?.value;
         if(typeof userid!=='string'||!userid||Buffer.byteLength(userid)>64
           ||/[\/\s\x00-\x1f\x7f]/u.test(userid))fail('WECOM_MEMBER_REQUIRED',403);
         // Replacement is a server fact, independent of the Cookie snapshot captured by this request.
         const group=entry.binding.group;
         for(const [key,session] of sessions)if(session.group===group)sessions.delete(key);
-        const sessionToken=random();sessions.set(hash(sessionToken),{corpId:corpId as string,userid:userid as InternalMemberId,expires:now()+900000,browser:entry.browser,group});
+        const sessionToken=random();sessions.set(hash(sessionToken),{corpId:corpId as string,userid:userid as OAuthMemberId,expires:now()+900000,browser:entry.browser,group});
         entry.binding.expires=now()+1200000;
         return {sessionToken:sessionToken as SessionToken,maxAgeSeconds:900,returnPath:entry.returnPath};
       }catch(error){if(error instanceof WeComOAuthError)throw error;fail('WECOM_AUTH_UNAVAILABLE',502);}

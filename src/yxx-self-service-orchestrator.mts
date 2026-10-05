@@ -1,3 +1,25 @@
+import type {PostgresPool,PostgresTransaction} from './platform/postgres-pool.mjs';
+import type {YxxProfile} from './p2-g2-yixiaoxiu-contract.mjs';
+import type {YxxMemberFlags} from './yxx-self-service-authorization.mjs';
+import type {LocalDateTime} from '../contracts/time_contracts.js';
+import type {DecisionStore,DecisionRecord} from './p2-015-decision-store.mjs';
+import type {ManualReviewStore} from './p2-015-manual-review.mjs';
+import type {PilotTicketCore,PilotTicketCreateResult,TicketStatus} from './p1-005-pilot-ticket-core.mjs';
+import type {createP2016RealtimeProjector} from './p2-016-realtime-projector.mjs';
+import type {createYxxSelfServiceStore} from './yxx-self-service-store.mjs';
+type RealtimePort=Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'ticket'|'review'>;
+type RuleEnginePort=Pick<ReturnType<typeof createRuleEngine>,'evaluate'> & {catalog_version?:string;rule_set_version?:string};
+type IntakeDecisionPort=ReturnType<typeof createServiceIntakeDecisionPort>;
+export interface YxxOrchestratorOptions {pool:PostgresPool;ruleEngine?:RuleEnginePort|null|undefined;ticketCore?:Pick<PilotTicketCore,'createForIntakeInTransaction'>|null;decisionStore?:Pick<DecisionStore,'record'|'markAction'>;manualReviewStore?:Pick<ManualReviewStore,'enqueue'>;intakeDecisionPort?:IntakeDecisionPort;realtimeProjector?:RealtimePort|null|undefined;profile?:YxxProfile;featureFlags?:Partial<YxxMemberFlags>}
+export interface YxxPendingInput {batchSize?:number;nowEpochMs?:string;signal?:AbortSignal|null|undefined}
+export type YxxSelfServiceOrchestrator=ReturnType<typeof createYxxSelfServiceOrchestrator>;
+interface WebRoot {intake_id:string;request_ref:string;source_app_scope:string;canonical_reporter_binding:string;input_revision:string;processed_revision:string;retry_count:number;retention_until:string;intake_no:string;status:string;summary:string|null;pilot_ticket_id:string|null;version:number;created_at:LocalDateTime;updated_at:LocalDateTime;intake_retention_until:LocalDateTime}
+interface WebSubmission {id:string;kind:'SUBMIT'|'SUPPLEMENT';input_revision:string;canonical_content_hash:string;safe_content:{description?:string;text?:string;service_code?:string|null;impact_scope?:string;location?:{unknown?:boolean};reported_department_text?:string|null};received_at:LocalDateTime}
+interface WebJourney {id:string;reporter_identity_hash:string;source_app_scope:string;status:string;row_version:string}
+interface WebLeg {id:string;journey_id:string;leg_ordinal:number;leg_type:string;web_submission_id:string;status:string;row_version:string}
+interface SupplementTicket {id:string;status:TicketStatus;version:number;intake_id:string}
+interface ProcessActionsInput {transaction:PostgresTransaction;decision:DecisionRecord;root:WebRoot;journey:WebJourney;observedAt:LocalDateTime;decisionStore:Pick<DecisionStore,'record'|'markAction'>;manualReviewStore:Pick<ManualReviewStore,'enqueue'>;ticketCore:Pick<PilotTicketCore,'createForIntakeInTransaction'>;intakeDecisionPort:IntakeDecisionPort;realtimeProjector:RealtimePort|null|undefined}
+interface SupplementTicketInput {transaction:PostgresTransaction;ticketId:string|null;traceId:string;realtimeProjector?:RealtimePort|null|undefined}
 import { createPilotTicketCore } from './p1-005-pilot-ticket-core.mjs';
 import { createRuleEngine } from './p2-007-rule-engine.mjs';
 import { routeP2007Decision, routeRuleFailure } from './p2-015-decision-router.mjs';
@@ -15,7 +37,7 @@ const WEB_REF = /^[A-Za-z0-9_-]{32}$/u;
 const COMMUNICATION_ACTIONS = new Set(['REQUEST_ONE_DESCRIPTION', 'SEND_FIXED_ACKNOWLEDGEMENT', 'SEND_FIXED_SCOPE_NOTICE']);
 const PROFILES = new Set(['OAUTH_ONLY', 'MEMBER_TICKET_READONLY', 'MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP']);
 
-function boundedTicketTitle(value) {
+function boundedTicketTitle(value:unknown) {
   if (typeof value !== 'string' || value.length === 0) return null;
   let title = '';
   for (const character of value) {
@@ -26,21 +48,21 @@ function boundedTicketTitle(value) {
 }
 
 function inputError(code = 'YXX_SELF_SERVICE_INPUT_INVALID') {
-  const error = new Error(code);
-  error.code = code;
+  const error = new Error(code) as Error & {code:string};
+  (error as {code:string}).code = code;
   return error;
 }
 
-function assertPool(pool) {
+function assertPool(pool:PostgresPool) {
   if (!pool?.connect || typeof pool.query !== 'function') throw inputError('YXX_SELF_SERVICE_POOL_REQUIRED');
 }
 
-function assertRef(value) {
+function assertRef(value:unknown) {
   if (typeof value !== 'string' || !WEB_REF.test(value)) throw inputError('YXX_REQUEST_REF_INVALID');
   return value;
 }
 
-function sourceText(submissions) {
+function sourceText(submissions:WebSubmission[]) {
   const first = submissions.find((row) => row.kind === 'SUBMIT');
   const parts = [];
   if (first?.safe_content?.description) parts.push(first.safe_content.description);
@@ -50,18 +72,18 @@ function sourceText(submissions) {
   return parts.join('\n');
 }
 
-function codeForFailure(error) {
-  const code = typeof error?.code === 'string' ? error.code : 'YXX_PROCESSING_FAILED';
+function codeForFailure(error:unknown) {
+  const code = typeof (error as {code?:unknown}|null)?.code === 'string' ? (error as {code:string}).code : 'YXX_PROCESSING_FAILED';
   return /^[A-Z][A-Z0-9_]{0,63}$/u.test(code) ? code : 'YXX_PROCESSING_FAILED';
 }
 
-function configFlag(value) {
+function configFlag(value:unknown) {
   if (value === undefined || value === null || value === false || value === 'false') return false;
   if (value === true || value === 'true') return true;
   throw inputError('YXX_SELF_SERVICE_CONFIG_INVALID');
 }
 
-async function withTransaction(pool, operation) {
+async function withTransaction<T>(pool:PostgresPool,operation:(transaction:PostgresTransaction)=>Promise<T>):Promise<T> {
   const transaction = await pool.connect();
   let destroy = false;
   try {
@@ -77,8 +99,8 @@ async function withTransaction(pool, operation) {
   }
 }
 
-async function loadWebRoot(transaction, requestRef) {
-  const root = await transaction.query(
+async function loadWebRoot(transaction:PostgresTransaction,requestRef:unknown) {
+  const root = await transaction.query<WebRoot>(
     `SELECT b.intake_id::text,b.request_ref,b.source_app_scope,b.canonical_reporter_binding,
             b.input_revision,b.processed_revision,b.retry_count,b.retention_until,
             i.intake_no,i.status,i.summary,i.pilot_ticket_id::text,i.version,
@@ -92,32 +114,32 @@ async function loadWebRoot(transaction, requestRef) {
       FOR UPDATE OF b,i`, [requestRef],
   );
   if (root.rowCount !== 1) throw inputError('YXX_NOT_FOUND');
-  const row = root.rows[0];
-  const submissions = await transaction.query(
+  const row = (root.rows[0] as WebRoot);
+  const submissions = await transaction.query<WebSubmission>(
     `SELECT id::text,kind,input_revision,canonical_content_hash,safe_content,
             to_char(received_at,'YYYY-MM-DD HH24:MI:SS') AS received_at
        FROM intake.web_submission
       WHERE intake_id=$1::uuid AND retention_until>platform.local_now() ORDER BY input_revision`, [row.intake_id],
   );
-  if (submissions.rows.length === 0 || Number(submissions.rows.at(-1).input_revision) !== Number(row.input_revision)) {
+  if (submissions.rows.length === 0 || Number((submissions.rows.at(-1) as WebSubmission).input_revision) !== Number(row.input_revision)) {
     throw inputError('YXX_WEB_INPUT_SNAPSHOT_MISSING');
   }
   return { row, submissions: submissions.rows };
 }
 
-async function ensureWebJourney(transaction, root) {
-  const existing = await transaction.query(
+async function ensureWebJourney(transaction:PostgresTransaction,root:WebRoot) {
+  const existing = await transaction.query<WebJourney>(
     `SELECT id::text,reporter_identity_hash,source_app_scope,status,row_version::text
        FROM intake.contact_journey WHERE origin_intake_id=$1::uuid FOR UPDATE`, [root.intake_id],
   );
   if (existing.rowCount === 1) {
-    if (existing.rows[0].reporter_identity_hash !== root.canonical_reporter_binding
-      || existing.rows[0].source_app_scope !== root.source_app_scope) throw inputError('YXX_SCOPE_CONFLICT');
-    return existing.rows[0];
+    if ((existing.rows[0] as WebJourney).reporter_identity_hash !== root.canonical_reporter_binding
+      || (existing.rows[0] as WebJourney).source_app_scope !== root.source_app_scope) throw inputError('YXX_SCOPE_CONFLICT');
+    return (existing.rows[0] as WebJourney);
   }
   const epoch = shanghaiLocalToEpochMs(root.created_at);
   const profile = { source: 'YIXIAOXIU_WEB', version: 'v1', account_status: 'ACTIVE' };
-  const inserted = await transaction.query(
+  const inserted = await transaction.query<WebJourney>(
     `INSERT INTO intake.contact_journey (
        creation_key,origin_intake_id,entry_mode,origin_channel,current_channel,source_app_scope,
        reporter_identity_hash,profile_resolution_status,profile_snapshot,profile_snapshot_hash,status,
@@ -131,19 +153,19 @@ async function ensureWebJourney(transaction, root) {
       JSON.stringify(profile), safeHash(profile), root.created_at, epoch, root.intake_retention_until,
       shanghaiLocalToEpochMs(root.intake_retention_until)],
   );
-  return inserted.rows[0];
+  return (inserted.rows[0] as WebJourney);
 }
 
-async function ensureWebLeg(transaction, root, journey, submissionId) {
-  const existing = await transaction.query(
+async function ensureWebLeg(transaction:PostgresTransaction,root:WebRoot,journey:WebJourney,submissionId:string) {
+  const existing = await transaction.query<WebLeg>(
     `SELECT id::text,journey_id::text,leg_ordinal,leg_type,web_submission_id::text,status,row_version::text
        FROM intake.channel_leg WHERE source_intake_id=$1::uuid FOR UPDATE`, [root.intake_id],
   );
   if (existing.rowCount === 1) {
-    if (existing.rows[0].journey_id !== journey.id || existing.rows[0].leg_type !== 'WEB_FORM') throw inputError('YXX_WEB_LEG_CONFLICT');
-    return existing.rows[0];
+    if ((existing.rows[0] as WebLeg).journey_id !== journey.id || (existing.rows[0] as WebLeg).leg_type !== 'WEB_FORM') throw inputError('YXX_WEB_LEG_CONFLICT');
+    return (existing.rows[0] as WebLeg);
   }
-  const inserted = await transaction.query(
+  const inserted = await transaction.query<WebLeg>(
     `INSERT INTO intake.channel_leg (
        journey_id,leg_ordinal,leg_type,source_intake_id,web_submission_id,
        provider_context_hash,channel_identity_hash,reporter_identity_hash,status,opened_at
@@ -152,62 +174,62 @@ async function ensureWebLeg(transaction, root, journey, submissionId) {
     [journey.id, root.intake_id, submissionId, safeHash({ provider: 'YIXIAOXIU_WEB' }),
       safeHash({ source_app_scope: root.source_app_scope }), root.canonical_reporter_binding, root.created_at],
   );
-  return inserted.rows[0];
+  return (inserted.rows[0] as WebLeg);
 }
 
-function classificationCode(decision) {
+function classificationCode(decision:DecisionRecord) {
   if (decision.result_code === 'INCIDENT_REVIEW_CANDIDATE'
     || (decision.result_code === 'MANUAL_REVIEW_REQUIRED' && decision.ticket_creation_recommended)) return 'TICKET_ELIGIBLE';
   return decision.result_code;
 }
 
-function ticketId(result) {
-  return result?.ticket?.id ?? result?.ticket_id ?? result?.id ?? null;
+function ticketId(result:PilotTicketCreateResult) {
+  return result?.ticket?.id ?? (result as {ticket_id?:string})?.ticket_id ?? (result as {id?:string})?.id ?? null;
 }
 
-async function resumeWaitingRequesterTicket({ transaction, ticketId: id, traceId }) {
+async function resumeWaitingRequesterTicket({ transaction, ticketId: id, traceId }:SupplementTicketInput) {
   if (!id) return null;
-  const current = await transaction.query(
+  const current = await transaction.query<Pick<SupplementTicket,'id'|'version'|'status'>>(
     'SELECT id::text,version,status FROM pilot_ticket.ticket WHERE id=$1::uuid FOR UPDATE', [id],
   );
-  if (current.rowCount !== 1 || current.rows[0].status !== 'WAITING_REQUESTER') return null;
+  if (current.rowCount !== 1 || (current.rows[0] as Pick<SupplementTicket,'id'|'version'|'status'>).status !== 'WAITING_REQUESTER') return null;
   return createTicketActionService().performInTransaction({
     ticketId: id,
     action: 'resume',
-    expectedVersion: current.rows[0].version,
+    expectedVersion: (current.rows[0] as SupplementTicket).version,
     actor: { type: 'SYSTEM', id: null },
     reasonCode: 'WEB_SUPPLEMENT_RECEIVED',
     traceId,
   }, transaction);
 }
 
-async function recordWebSupplement({ transaction, ticketId: id, traceId, realtimeProjector }) {
+async function recordWebSupplement({ transaction, ticketId: id, traceId, realtimeProjector }:SupplementTicketInput) {
   const resumed = await resumeWaitingRequesterTicket({ transaction, ticketId: id, traceId });
   if (resumed) {
     await realtimeProjector?.ticket?.({ transaction, ticket: resumed.ticket, event: resumed.event });
     return resumed;
   }
-  const current = await transaction.query(
+  const current = await transaction.query<SupplementTicket>(
     `SELECT id::text,status,version,source_intake_id::text AS intake_id
        FROM pilot_ticket.ticket WHERE id=$1::uuid FOR UPDATE`, [id],
   );
-  if (current.rowCount !== 1 || ['CLOSED', 'CANCELLED'].includes(current.rows[0].status)) return null;
-  const updated = await transaction.query(
+  if (current.rowCount !== 1 || ['CLOSED', 'CANCELLED'].includes((current.rows[0] as Pick<SupplementTicket,'id'|'version'|'status'>).status)) return null;
+  const updated = await transaction.query<SupplementTicket>(
     `UPDATE pilot_ticket.ticket
         SET version=version+1,updated_at=GREATEST(created_at,platform.local_now())
       WHERE id=$1::uuid AND status NOT IN ('CLOSED','CANCELLED')
       RETURNING id::text,status,version,source_intake_id::text AS intake_id`, [id],
   );
   if (updated.rowCount !== 1) return null;
-  const ticket = updated.rows[0];
+  const ticket = (updated.rows[0] as SupplementTicket);
   const event = await appendTicketEvent({ transaction, ticket, eventType: 'ticket.information_added',
-    oldStatus: current.rows[0].status, newStatus: ticket.status, actor: { type: 'SYSTEM', id: null },
+    oldStatus: (current.rows[0] as Pick<SupplementTicket,'id'|'version'|'status'>).status, newStatus: ticket.status, actor: { type: 'SYSTEM', id: null },
     reasonCode: 'WEB_SUPPLEMENT_RECEIVED', traceId });
   await realtimeProjector?.ticket?.({ transaction, ticket, event });
   return { ticket, event };
 }
 
-async function processActions({ transaction, decision, root, journey, observedAt, decisionStore, manualReviewStore, ticketCore, intakeDecisionPort, realtimeProjector }) {
+async function processActions({ transaction, decision, root, journey, observedAt, decisionStore, manualReviewStore, ticketCore, intakeDecisionPort, realtimeProjector }:ProcessActionsInput) {
   let linkedTicketId = decision.linked_ticket_id ?? null;
   const results = [];
   for (const action of decision.actions) {
@@ -292,7 +314,7 @@ async function processActions({ transaction, decision, root, journey, observedAt
 export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, ticketCore = null,
   decisionStore = createDecisionStore({ webSource: true }), manualReviewStore = createManualReviewStore({ webSource: true }),
   intakeDecisionPort = createServiceIntakeDecisionPort(), realtimeProjector = null,
-  profile = 'OAUTH_ONLY', featureFlags = {} } = {}) {
+  profile = 'OAUTH_ONLY', featureFlags = {} }:YxxOrchestratorOptions={} as YxxOrchestratorOptions) {
   assertPool(pool);
   if (!PROFILES.has(profile) || !featureFlags || typeof featureFlags !== 'object' || Array.isArray(featureFlags)
     || Object.keys(featureFlags).some((key) => !['YIXIAOXIU_SELF_SERVICE_ENABLED', 'YIXIAOXIU_MY_REPORTS_ENABLED'].includes(key))) {
@@ -307,11 +329,11 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
     : profile === 'MEMBER_SELF_SERVICE'
       && configuredFlags.YIXIAOXIU_SELF_SERVICE_ENABLED === true
       && configuredFlags.YIXIAOXIU_MY_REPORTS_ENABLED === true;
-  const engine = ruleEngine ?? createRuleEngine();
+  const engine:RuleEnginePort = ruleEngine ?? createRuleEngine();
   const core = ticketCore ?? createPilotTicketCore({ pool });
   let pumpRunning = false;
 
-  async function processOne({ requestRef } = {}) {
+  async function processOne({ requestRef }:{requestRef:unknown}={} as {requestRef:unknown}) {
     assertRef(requestRef);
     if (!canProcess) return Object.freeze({ processed: false, reason: 'FEATURE_DISABLED', profile, flags: configuredFlags });
     try {
@@ -319,11 +341,11 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         await realtimeProjector?.lock?.(transaction);
         const { row: root, submissions } = await loadWebRoot(transaction, requestRef);
         if (Number(root.processed_revision) >= Number(root.input_revision)) return { processed: false, replayed: true, request_ref: requestRef };
-        const latest = submissions.at(-1);
+        const latest = (submissions.at(-1) as WebSubmission);
         const text = sourceText(submissions);
         const sourceHash = safeHash(submissions.map((item) => ({ id: item.id, revision: item.input_revision, hash: item.canonical_content_hash })));
         const revision = Number(root.input_revision);
-        const windowStart = Number(submissions[0].input_revision);
+        const windowStart = Number((submissions[0] as WebSubmission).input_revision);
         const windowCount = submissions.length;
         const initial = submissions.find((item) => item.kind === 'SUBMIT')?.safe_content ?? {};
         const webFields = { service_code: initial.service_code ?? null, impact_scope: initial.impact_scope ?? 'UNKNOWN',
@@ -338,7 +360,7 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
           input_hash: safeHash({ source_hash: sourceHash, input_revision: revision, web_fields: webFields }), web_fields: webFields,
           conflicts: [], reliable_follow_up: false,
         };
-        let routed;
+        let routed:ReturnType<typeof routeP2007Decision>;
         await transaction.query('SAVEPOINT yxx_rule_evaluation');
         try {
           if (text.length > MAX_RULE_TEXT) throw inputError('YXX_RULE_WINDOW_LIMIT_EXCEEDED');
@@ -368,22 +390,22 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         if (decision.result_code === 'OUT_OF_SCOPE' || decision.result_code === 'ACKNOWLEDGEMENT') {
           const [requestType, intakeStatus] = decision.result_code === 'OUT_OF_SCOPE'
             ? ['UNKNOWN', 'IGNORED'] : ['CHATTER', 'COMPLETED'];
-          const terminal = await transaction.query(
+          const terminal = await transaction.query<{version:number;status:string;request_type:string}>(
             `UPDATE intake.service_intake SET request_type=$2,status=$3,version=version+1,
                 updated_at=GREATEST(created_at,platform.local_now())
               WHERE id=$1::uuid AND pilot_ticket_id IS NULL
               RETURNING version,status,request_type`, [root.intake_id, requestType, intakeStatus],
           );
           if (terminal.rowCount === 1) {
-            const ordinal = (await transaction.query(
+            const ordinal = ((await transaction.query<{ordinal:number}>(
               'SELECT COALESCE(max(event_ordinal),0)::integer+1 AS ordinal FROM intake.service_intake_event WHERE intake_id=$1::uuid', [root.intake_id],
-            )).rows[0].ordinal;
+            )).rows[0] as { ordinal: number; }).ordinal;
             await transaction.query(
               `INSERT INTO intake.service_intake_event(event_type,aggregate_type,intake_id,aggregate_version,event_ordinal,occurred_at,trace_id,payload)
                 VALUES('intake.rule_decision_applied','intake',$1::uuid,$2,$3,$4::timestamp without time zone,$5,$6::jsonb)`,
-              [root.intake_id, terminal.rows[0].version, ordinal, latest.received_at, `yxx:${root.request_ref}`,
-                JSON.stringify({ intake_id: root.intake_id, decision_id: decision.id, new_status: terminal.rows[0].status,
-                  new_request_type: terminal.rows[0].request_type, reason_code: decision.reason_code })],
+              [root.intake_id, (terminal.rows[0] as { version: number; status: string; request_type: string; }).version, ordinal, latest.received_at, `yxx:${root.request_ref}`,
+                JSON.stringify({ intake_id: root.intake_id, decision_id: decision.id, new_status: (terminal.rows[0] as { version: number; status: string; request_type: string; }).status,
+                  new_request_type: (terminal.rows[0] as { version: number; status: string; request_type: string; }).request_type, reason_code: decision.reason_code })],
             );
             await transaction.query(`UPDATE intake.contact_journey
               SET status='ENDED',ended_at=GREATEST(last_activity_at,$2::timestamp without time zone),
@@ -419,13 +441,13 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
     }
   }
 
-  async function runPending({ batchSize = DEFAULT_BATCH, nowEpochMs = String(Date.now()), signal = null } = {}) {
+  async function runPending({ batchSize = DEFAULT_BATCH, nowEpochMs = String(Date.now()), signal = null }:YxxPendingInput={}) {
     if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > MAX_BATCH) throw inputError('YXX_BATCH_INVALID');
     if (signal?.aborted) return Object.freeze({ processed: 0, claimed: 0, reason: 'ABORTED', profile, flags: configuredFlags });
     if (pumpRunning) return Object.freeze({ processed: 0, claimed: 0, reason: 'BUSY', profile, flags: configuredFlags });
     pumpRunning = true;
     try {
-      const candidates = await pool.query(
+      const candidates = await pool.query<{request_ref:string}>(
         `SELECT request_ref FROM intake.web_request_binding
           WHERE input_revision>processed_revision AND revoked_at IS NULL
             AND retention_until>platform.local_now()
@@ -441,13 +463,13 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
     } finally { pumpRunning = false; }
   }
 
-  async function processPending(options = {}) {
+  async function processPending(options:YxxPendingInput={}) {
     if (!canProcess) return Object.freeze({ processed: 0, claimed: 0, reason: 'FEATURE_DISABLED', profile, flags: configuredFlags });
     if (profile === 'FULL_SERVICE_LOOP') return Object.freeze({ processed: 0, claimed: 0, reason: 'WORKER_OWNER', profile, flags: configuredFlags });
     return runPending(options);
   }
 
-  async function processPendingFromWorker(options = {}) {
+  async function processPendingFromWorker(options:YxxPendingInput={}) {
     if (!canProcess) return Object.freeze({ processed: 0, claimed: 0, reason: 'FEATURE_DISABLED', profile, flags: configuredFlags });
     if (profile !== 'FULL_SERVICE_LOOP') return Object.freeze({ processed: 0, claimed: 0, reason: 'PROFILE_NOT_WORKER', profile, flags: configuredFlags });
     return runPending(options);
@@ -456,15 +478,15 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
   return Object.freeze({ profile, flags: configuredFlags, processOne, processPending, processPendingFromWorker });
 }
 
-export function createYxxSelfServiceWorker({ orchestrator, pollMilliseconds = 5_000 } = {}) {
+export function createYxxSelfServiceWorker({ orchestrator, pollMilliseconds = 5_000 }:{orchestrator:YxxSelfServiceOrchestrator;pollMilliseconds?:number}={} as {orchestrator:YxxSelfServiceOrchestrator;pollMilliseconds?:number}) {
   if (!orchestrator?.processPending || orchestrator.profile !== 'MEMBER_SELF_SERVICE'
     || !Number.isInteger(pollMilliseconds) || pollMilliseconds < 100 || pollMilliseconds > 60_000) {
     throw inputError('YXX_SELF_SERVICE_WORKER_CONFIG_INVALID');
   }
   let stopped = true;
   let running = false;
-  let timer = null;
-  const schedule = (signal) => {
+  let timer:ReturnType<typeof setTimeout>|null=null;
+  const schedule: (signal?:AbortSignal|null)=>void = (signal) => {
     if (stopped || signal?.aborted) return;
     timer = setTimeout(async () => {
       timer = null;
@@ -476,8 +498,8 @@ export function createYxxSelfServiceWorker({ orchestrator, pollMilliseconds = 5_
     timer.unref?.();
   };
   return Object.freeze({
-    runOnce(input = {}) { return orchestrator.processPending(input); },
-    start({ signal } = {}) { if (!stopped) return false; stopped = false; schedule(signal); return true; },
+    runOnce(input:YxxPendingInput={}) { return orchestrator.processPending(input); },
+    start({ signal }:{signal?:AbortSignal|null|undefined}={}) { if (!stopped) return false; stopped = false; schedule(signal); return true; },
     async stop() { stopped = true; if (timer) { clearTimeout(timer); timer = null; } while (running) await new Promise((resolve) => setTimeout(resolve, 10)); return Object.freeze({ stopped: true, running: false }); },
   });
 }

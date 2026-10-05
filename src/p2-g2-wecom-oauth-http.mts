@@ -13,7 +13,7 @@ export function readWeComCookie(request: IncomingMessage,name: typeof sessionNam
 export function readWeComCookie(request: IncomingMessage,name: string): BrowserToken | null;
 export function readWeComCookie(request: IncomingMessage,name: string){
   const values=(request.headers.cookie??'').split(';').map(value=>value.trim()).filter(value=>value.startsWith(name+'='));
-  return values.length===1?(values[0] as string).slice(name.length+1) as BrowserToken & SessionToken:null;
+  return values.length===1?(values[0] as string).slice(name.length+1) as BrowserToken | SessionToken:null;
 }
 const intentName=(state: string | null)=>'__Host-wecom_intent_'+state;
 export function joinWeComBrowserBindings(request: IncomingMessage,oauth: EnabledWeComOAuth){

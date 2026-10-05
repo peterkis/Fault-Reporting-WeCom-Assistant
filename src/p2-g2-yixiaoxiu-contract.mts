@@ -1,5 +1,6 @@
 export type YxxProfile = 'OAUTH_ONLY' | 'MEMBER_TICKET_READONLY' | 'MEMBER_SELF_SERVICE' | 'FULL_SERVICE_LOOP';
-export interface YxxEntryConfig extends Record<string, unknown> { enabled: boolean; identityMode: 'UNVERIFIED' | 'VERIFIED_SAME_NAMESPACE' | 'VERIFIED_DELEGATED_MAPPING'; memberIdsConfirmed: boolean; proofRef: string | null; proofKind: 'LIVE' | 'SYNTHETIC' | null; corpId: string | null; agentId: string | null; botId: string | null; validationProfile: 'DEPLOYMENT' | 'ISOLATED_TEST'; reporterUserIds?: string[] }
+export interface YxxEntryConfigBase extends Record<string, unknown> { identityMode: 'UNVERIFIED' | 'VERIFIED_SAME_NAMESPACE' | 'VERIFIED_DELEGATED_MAPPING'; memberIdsConfirmed: boolean; proofRef: string | null; proofKind: 'LIVE' | 'SYNTHETIC' | null; validationProfile: 'DEPLOYMENT' | 'ISOLATED_TEST'; reporterUserIds?: string[] }
+export type YxxEntryConfig = YxxEntryConfigBase & ({enabled:true;corpId:string;agentId:string;botId:string}|{enabled:false;corpId:unknown;agentId:unknown;botId:unknown});
 import {exactP2016,publicP2016} from './p2-016-domain-contracts.mjs';
 
 export const YXX_ERROR_STATUS=Object.freeze({CONFIG_INVALID:503,DISABLED:503,IDENTITY_NAMESPACE_UNVERIFIED:503,

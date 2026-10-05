@@ -1,42 +1,55 @@
+import type {IncomingMessage} from 'node:http';
+import type {PostgresTransaction} from './platform/postgres-pool.mjs';
+import type {YxxProfile} from './p2-g2-yixiaoxiu-contract.mjs';
+import type {YxxMemberScope,YxxMemberFlags,LocalOnly} from './yxx-self-service-authorization.mjs';
+import type {YxxSelfServiceStore,YxxRequestInput,YxxSupplementInput} from './yxx-self-service-store.mjs';
+type RawAuth = Record<string,unknown>;
+export interface YxxCommandContext {readonly profile:YxxProfile;readonly flags:YxxMemberFlags;readonly write_flag:boolean;readonly csrf_token?:string;readonly session_generation:string|null;readonly scope:YxxMemberScope}
+export type YxxVerifiedWriteContext=YxxCommandContext & {profile:'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP';write_flag:true;csrf_token:string};
+export interface YxxHttpCommandInput {request:IncomingMessage;input:unknown;kind?:'SUBMIT'|'SUPPLEMENT';requestRef?:string|undefined;transaction?:PostgresTransaction}
+export interface YxxQuotaInput {profile:YxxProfile;scope:YxxMemberScope;kind:'SUBMIT'|'SUPPLEMENT';client_command_id:string;transaction:PostgresTransaction}
+export type YxxQuota = LocalOnly<YxxQuotaInput,boolean>;
+export interface YxxCommandOptions {store:Pick<YxxSelfServiceStore,'accept'|'acceptInTransaction'|'command'>;authenticate:(request:IncomingMessage)=>unknown|Promise<unknown>;recheck:LocalOnly<{request:IncomingMessage;context:YxxCommandContext;transaction?:PostgresTransaction}>;profile?:YxxProfile;flags?:unknown;quota:YxxQuota}
+export type YxxSelfServiceCommand=ReturnType<typeof createYxxMemberCommandContext>;
 import { timingSafeEqual } from 'node:crypto';
 import { snapshotP2015Json } from './p2-015-domain-contracts.mjs';
 
 const HASH = /^[a-f0-9]{64}$/u;
 const PROFILES = new Set(['OAUTH_ONLY', 'MEMBER_TICKET_READONLY', 'MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP']);
 
-function fail(code) {
-  const error = new Error(code);
+function fail(code:string):never {
+  const error = new Error(code) as Error & {code:string};
   error.code = code;
   throw error;
 }
 
-function text(value, code, maximum = 128) {
+function text(value:unknown, code:string, maximum = 128) {
   if (typeof value !== 'string' || value.length < 1 || value.length > maximum) fail(code);
   return value;
 }
 
-function flag(value) {
+function flag(value:unknown) {
   if (value === true || value === 'true') return true;
   if (value === false || value === 'false' || value === undefined || value === null) return false;
   fail('YXX_COMMAND_FLAGS_INVALID');
 }
 
-function equalSecret(left, right) {
+function equalSecret(left:unknown,right:unknown) {
   if (typeof left !== 'string' || typeof right !== 'string') return false;
   const a = Buffer.from(left, 'utf8');
   const b = Buffer.from(right, 'utf8');
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-function header(request, name) {
+function header(request:IncomingMessage,name:string) {
   const headers = request?.headers;
   if (!headers || typeof headers !== 'object' || Array.isArray(headers)) return null;
   const value = headers[name] ?? headers[name.toLowerCase()];
   return Array.isArray(value) ? null : typeof value === 'string' ? value : null;
 }
 
-function configFlags(input) {
-  const value = snapshotP2015Json(input ?? {});
+function configFlags(input:unknown) {
+  const value = snapshotP2015Json(input ?? {}) as RawAuth;
   if (Object.keys(value).some((key) => !['YIXIAOXIU_SELF_SERVICE_ENABLED', 'YIXIAOXIU_MY_REPORTS_ENABLED'].includes(key))) {
     fail('YXX_COMMAND_FLAGS_INVALID');
   }
@@ -46,7 +59,7 @@ function configFlags(input) {
   });
 }
 
-function validatedAuth(auth, fallbackProfile, fallbackFlags) {
+function validatedAuth(auth:RawAuth|null,fallbackProfile:YxxProfile,fallbackFlags:YxxMemberFlags):YxxVerifiedWriteContext {
   if (!auth || typeof auth !== 'object' || Array.isArray(auth)) fail('YXX_AUTH_REQUIRED');
   const selectedProfile = auth.profile ?? fallbackProfile;
   const selectedFlags = auth.flags === undefined ? fallbackFlags : configFlags(auth.flags);
@@ -56,7 +69,7 @@ function validatedAuth(auth, fallbackProfile, fallbackFlags) {
     fail('YXX_MEMBER_WRITE_DISABLED');
   }
   if (selectedProfile === 'MEMBER_TICKET_READONLY' || selectedProfile === 'OAUTH_ONLY'
-    || !['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(selectedProfile)
+    || !['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(selectedProfile as string)
     || auth.write_flag !== true || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== true
     || selectedProfile === 'MEMBER_SELF_SERVICE' && selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== true) {
     fail('YXX_MEMBER_WRITE_DISABLED');
@@ -67,23 +80,23 @@ function validatedAuth(auth, fallbackProfile, fallbackFlags) {
   const generationValue = auth.session_generation ?? auth.generation ?? null;
   const sessionGeneration = generationValue === null ? null : text(generationValue, 'YXX_COMMAND_AUTH_INVALID', 256);
   const trusted = {
-    scopeHash: binding,
+    scopeHash: binding as YxxMemberScope['scopeHash'],
     sourceCorpScope: text(auth.source_corp_scope, 'YXX_COMMAND_AUTH_INVALID'),
     sourceAppScope: text(auth.source_app_scope, 'YXX_COMMAND_AUTH_INVALID'),
     proofRef: text(auth.proof_ref, 'YXX_COMMAND_AUTH_INVALID', 256),
   };
-  return Object.freeze({ profile: selectedProfile, flags: selectedFlags, write_flag: true,
+  return Object.freeze({ profile: selectedProfile as 'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP', flags: selectedFlags, write_flag: true as const,
     csrf_token: csrf, session_generation: sessionGeneration, scope: Object.freeze(trusted) });
 }
 
-function validatedReadAuth(auth, fallbackProfile, fallbackFlags) {
+function validatedReadAuth(auth:RawAuth|null,fallbackProfile:YxxProfile,fallbackFlags:YxxMemberFlags):YxxCommandContext {
   if (!auth || typeof auth !== 'object' || Array.isArray(auth)) fail('YXX_AUTH_REQUIRED');
   const selectedProfile = auth.profile ?? fallbackProfile;
   const selectedFlags = auth.flags === undefined ? fallbackFlags : configFlags(auth.flags);
   if (selectedProfile !== fallbackProfile
     || selectedFlags.YIXIAOXIU_SELF_SERVICE_ENABLED !== fallbackFlags.YIXIAOXIU_SELF_SERVICE_ENABLED
     || selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== fallbackFlags.YIXIAOXIU_MY_REPORTS_ENABLED
-    || !['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(selectedProfile)
+    || !['MEMBER_SELF_SERVICE', 'FULL_SERVICE_LOOP'].includes(selectedProfile as string)
     || selectedFlags.YIXIAOXIU_MY_REPORTS_ENABLED !== true) {
     fail('YXX_MEMBER_READ_DISABLED');
   }
@@ -91,14 +104,14 @@ function validatedReadAuth(auth, fallbackProfile, fallbackFlags) {
   if (!HASH.test(binding)) fail('YXX_COMMAND_AUTH_INVALID');
   const generationValue = auth.session_generation ?? auth.generation ?? null;
   const sessionGeneration = generationValue === null ? null : text(generationValue, 'YXX_COMMAND_AUTH_INVALID', 256);
-  return Object.freeze({ profile: selectedProfile, flags: selectedFlags, write_flag: auth.write_flag === true,
-    session_generation: sessionGeneration, scope: Object.freeze({ scopeHash: binding,
+  return Object.freeze({ profile: selectedProfile as YxxProfile, flags: selectedFlags, write_flag: auth.write_flag === true,
+    session_generation: sessionGeneration, scope: Object.freeze({ scopeHash: binding as YxxMemberScope['scopeHash'],
       sourceCorpScope: text(auth.source_corp_scope, 'YXX_COMMAND_AUTH_INVALID'),
       sourceAppScope: text(auth.source_app_scope, 'YXX_COMMAND_AUTH_INVALID'),
       proofRef: text(auth.proof_ref, 'YXX_COMMAND_AUTH_INVALID', 256) }) });
 }
 
-function sameReadAuthContext(left, right) {
+function sameReadAuthContext(left:YxxCommandContext,right:YxxCommandContext) {
   return left.profile === right.profile
     && left.write_flag === right.write_flag
     && left.flags.YIXIAOXIU_SELF_SERVICE_ENABLED === right.flags.YIXIAOXIU_SELF_SERVICE_ENABLED
@@ -110,7 +123,7 @@ function sameReadAuthContext(left, right) {
     && left.scope.proofRef === right.scope.proofRef;
 }
 
-function sameAuthContext(left, right) {
+function sameAuthContext(left:YxxCommandContext,right:YxxCommandContext) {
   return left.profile === right.profile
     && left.write_flag === right.write_flag
     && left.flags.YIXIAOXIU_SELF_SERVICE_ENABLED === right.flags.YIXIAOXIU_SELF_SERVICE_ENABLED
@@ -127,7 +140,7 @@ function sameAuthContext(left, right) {
 // come from protected server dependencies; none can be supplied by the form.
 // `quota.localOnly` is an explicit contract: its callback may use only the
 // supplied transaction/local state and must never call OAuth or a network API.
-export function createYxxMemberCommandContext({ store, authenticate, recheck, profile = 'OAUTH_ONLY', flags = {}, quota } = {}) {
+export function createYxxMemberCommandContext({ store, authenticate, recheck, profile = 'OAUTH_ONLY', flags = {}, quota }:YxxCommandOptions={} as YxxCommandOptions) {
   if (!store?.accept || typeof authenticate !== 'function' || !PROFILES.has(profile)
     || typeof recheck !== 'function' || recheck.localOnly !== true
     || typeof quota !== 'function' || quota.localOnly !== true) {
@@ -135,11 +148,11 @@ export function createYxxMemberCommandContext({ store, authenticate, recheck, pr
   }
   const configuredFlags = configFlags(flags);
 
-  async function authorize({ request, input, kind = 'SUBMIT' } = {}) {
+  async function authorize({ request, input, kind = 'SUBMIT' }:YxxHttpCommandInput={} as YxxHttpCommandInput) {
     if (!['SUBMIT', 'SUPPLEMENT'].includes(kind)) fail('YXX_COMMAND_INPUT_INVALID');
-    const safeInput = snapshotP2015Json(input);
-    let auth;
-    try { auth = snapshotP2015Json(await authenticate(request)); } catch { fail('YXX_AUTH_REQUIRED'); }
+    const safeInput = snapshotP2015Json(input) as RawAuth | null;
+    let auth:RawAuth|null;
+    try { auth = snapshotP2015Json(await authenticate(request)) as RawAuth | null; } catch { fail('YXX_AUTH_REQUIRED'); }
     const context = validatedAuth(auth, profile, configuredFlags);
     if (!equalSecret(header(request, 'x-csrf-token'), context.csrf_token)) fail('YXX_CSRF_INVALID');
     const commandId = safeInput?.client_command_id;
@@ -147,16 +160,16 @@ export function createYxxMemberCommandContext({ store, authenticate, recheck, pr
     return context;
   }
 
-  async function checkQuota(context, value, kind, transaction) {
+  async function checkQuota(context:YxxCommandContext,value:YxxRequestInput|YxxSupplementInput,kind:'SUBMIT'|'SUPPLEMENT',transaction:PostgresTransaction) {
     try { return await quota({ profile: context.profile, scope: context.scope, kind, client_command_id: value.client_command_id, transaction }) === true; }
     catch { return false; }
   }
 
-  async function verifyBeforeCommit(context, request, transaction) {
-    let latest;
-    try { latest = snapshotP2015Json(await recheck({ request, context, transaction })); }
+  async function verifyBeforeCommit(context:YxxCommandContext,request:IncomingMessage,transaction:PostgresTransaction) {
+    let latest:RawAuth|null;
+    try { latest = snapshotP2015Json(await recheck({ request, context, transaction })) as RawAuth|null; }
     catch (error) {
-      if (error?.code === 'YXX_MEMBER_WRITE_DISABLED' || error?.code === 'YXX_COMMAND_AUTH_INVALID') throw error;
+      if ((error as {code?:string}|null)?.code === 'YXX_MEMBER_WRITE_DISABLED' || (error as {code?:string}|null)?.code === 'YXX_COMMAND_AUTH_INVALID') throw error;
       fail('YXX_AUTH_RECHECK_FAILED');
     }
     const checked = validatedAuth(latest, context.profile, context.flags);
@@ -164,27 +177,27 @@ export function createYxxMemberCommandContext({ store, authenticate, recheck, pr
     return true;
   }
 
-  async function accept({ request, input, kind = 'SUBMIT', requestRef } = {}) {
+  async function accept({ request, input, kind = 'SUBMIT', requestRef }:YxxHttpCommandInput={} as YxxHttpCommandInput) {
     const context = await authorize({ request, input, kind });
     return store.accept({ scope: context.scope, input, kind, requestRef,
       onNewCommand: ({ value, kind: commandKind, transaction }) => checkQuota(context, value, commandKind, transaction),
       onBeforeCommit: ({ transaction }) => verifyBeforeCommit(context, request, transaction) });
   }
 
-  async function acceptInTransaction({ request, input, kind = 'SUBMIT', requestRef, transaction } = {}) {
+  async function acceptInTransaction({ request, input, kind = 'SUBMIT', requestRef, transaction }:YxxHttpCommandInput & {transaction:PostgresTransaction}={} as YxxHttpCommandInput & {transaction:PostgresTransaction}) {
     const context = await authorize({ request, input, kind });
     return store.acceptInTransaction({ scope: context.scope, input, kind, requestRef, transaction,
       onNewCommand: ({ value, kind: commandKind, transaction: current }) => checkQuota(context, value, commandKind, current),
       onBeforeCommit: ({ transaction: current }) => verifyBeforeCommit(context, request, current) });
   }
 
-  async function commandStatus({ request, clientCommandId } = {}) {
-    let auth;
-    try { auth = snapshotP2015Json(await authenticate(request)); } catch { fail('YXX_AUTH_REQUIRED'); }
+  async function commandStatus({ request, clientCommandId }:{request:IncomingMessage;clientCommandId:unknown}={} as {request:IncomingMessage;clientCommandId:unknown}) {
+    let auth:RawAuth|null;
+    try { auth = snapshotP2015Json(await authenticate(request)) as RawAuth | null; } catch { fail('YXX_AUTH_REQUIRED'); }
     const context = validatedReadAuth(auth, profile, configuredFlags);
     const result = await store.command({ scope: context.scope, clientCommandId });
-    let latest;
-    try { latest = snapshotP2015Json(await recheck({ request, context })); }
+    let latest:RawAuth|null;
+    try { latest = snapshotP2015Json(await recheck({ request, context })) as RawAuth|null; }
     catch { fail('YXX_AUTH_RECHECK_FAILED'); }
     if (!sameReadAuthContext(context, validatedReadAuth(latest, context.profile, context.flags))) {
       fail('YXX_AUTH_RECHECK_FAILED');

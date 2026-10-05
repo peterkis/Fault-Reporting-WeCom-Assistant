@@ -1,4 +1,4 @@
-import type { InternalMemberId } from './p2-g2-wecom-web-oauth.mjs';
+import type { OAuthMemberId } from './p2-g2-wecom-web-oauth.mjs';
 export interface WeComAccessTokenProvider { (options?: { signal?: AbortSignal }): Promise<unknown>; invalidate?: (token: string) => void }
 export interface WeComProviderOptions { accessTokenProvider?: WeComAccessTokenProvider; fetchImpl?: typeof fetch }
 import { WeComOAuthError } from './p2-g2-wecom-web-oauth.mjs';
@@ -35,7 +35,7 @@ export function createWeComOAuthCodeResolver({accessTokenProvider,fetchImpl=fetc
       if(body?.errcode!==0){if([40014,42001].includes(body?.errcode as number))accessTokenProvider.invalidate?.(token);throw new Error('provider');}
       if(typeof body.userid!=='string'||!body.userid||Buffer.byteLength(body.userid)>64||/[\/\s\x00-\x1f\x7f]/u.test(body.userid))
         throw new WeComOAuthError('WECOM_MEMBER_REQUIRED',403);
-      return {userid:body.userid as InternalMemberId};
+      return {userid:body.userid as OAuthMemberId};
     }catch(error){
       if(error instanceof WeComOAuthError)throw error;
       throw new WeComOAuthError('WECOM_AUTH_UNAVAILABLE',502);

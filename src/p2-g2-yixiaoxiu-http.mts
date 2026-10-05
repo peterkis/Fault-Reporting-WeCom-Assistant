@@ -1,3 +1,10 @@
+import type {IncomingMessage,ServerResponse,OutgoingHttpHeaders} from 'node:http';
+import type {EnabledWeComOAuth,BrowserToken} from './p2-g2-wecom-web-oauth.mjs';
+import type {OAuthHttpHandler} from './p2-g2-wecom-oauth-http.mjs';
+import type {ReporterAccess} from './p2-016-reporter-access.mjs';
+import type {ReporterTimeline} from './p2-016-reporter-timeline.mjs';
+import type {createYxxMemberAuthorizer} from './p2-g2-yixiaoxiu-authorizer.mjs';
+export interface YxxMemberHttpOptions {oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler;access:ReporterAccess;timeline:ReporterTimeline;authorizer:ReturnType<typeof createYxxMemberAuthorizer>;publicOrigin:string;now?:()=>number}
 import {readFile} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import {textHashP2016} from './p2-016-domain-contracts.mjs';
@@ -6,27 +13,27 @@ import {WeComOAuthError} from './p2-g2-wecom-web-oauth.mjs';
 import {YxxEntryError,failYxx,exactYxx} from './p2-g2-yixiaoxiu-contract.mjs';
 
 const root='/wecom/yixiaoxiu/';
-const assets=Object.freeze({'/reporter/':['index.html','text/html'],'/reporter/open':['index.html','text/html'],
+const assets:Readonly<Record<string,readonly [string,string]>>=Object.freeze({'/reporter/':['index.html','text/html'],'/reporter/open':['index.html','text/html'],
   '/reporter/reporter.js':['reporter.js','text/javascript'],'/reporter/reporter.css':['reporter.css','text/css']});
 const headers=Object.freeze({'cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff',
   'content-security-policy':"default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; connect-src 'self'"});
-function json(response,status,body,extra={}){response.writeHead(status,{'content-type':'application/json; charset=utf-8',...extra});response.end(status===304?undefined:JSON.stringify(body));}
-async function body(request){
-  if((request.headers['content-type']??'').split(';')[0].trim()!=='application/json')failYxx('INPUT_INVALID');
-  const chunks=[];let size=0;for await(const chunk of request){size+=chunk.length;if(size>2048)failYxx('INPUT_INVALID');chunks.push(chunk);}
+function json(response:ServerResponse,status:number,body:unknown,extra:OutgoingHttpHeaders={}){response.writeHead(status,{'content-type':'application/json; charset=utf-8',...extra});response.end(status===304?undefined:JSON.stringify(body));}
+async function body(request:IncomingMessage):Promise<unknown>{
+  if(((request.headers['content-type']??'').split(';')[0] as string).trim()!=='application/json')failYxx('INPUT_INVALID');
+  const chunks:Buffer[]=[];let size=0;for await(const chunk of request as AsyncIterable<Buffer>){size+=chunk.length;if(size>2048)failYxx('INPUT_INVALID');chunks.push(chunk);}
   try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{failYxx('INPUT_INVALID');}
 }
-async function asset(response,item){
+async function asset(response:ServerResponse,item:readonly [string,string]){
   let content=await readFile(new URL('../web/p2-reporter/'+item[0],import.meta.url),'utf8');
   if(item[0]==='index.html')content=content.replace('<html lang="zh-CN">','<html lang="zh-CN" data-identity-mode="MEMBER_REQUIRED">');
   response.writeHead(200,{'content-type':item[1]+'; charset=utf-8'});response.end(content);
 }
-export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,publicOrigin,now=Date.now}){
+export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,publicOrigin,now=Date.now}:YxxMemberHttpOptions){
   const origin=new URL(publicOrigin);
   if(origin.protocol!=='https:'||origin.origin!==publicOrigin)failYxx('CONFIG_INVALID');
-  const entries=new Map();let closed=false;
+  const entries=new Map<string,{locator:ReturnType<ReporterAccess['legacyLocator']>;browser:BrowserToken;expires:number}>();let closed=false;
   const sweep=()=>{for(const [key,entry] of entries)if(entry.expires<=now()||!oauth.browserValid(entry.browser))entries.delete(key);};
-  const handler=async({request,response,url:inputUrl})=>{
+  const handler:OAuthHttpHandler=async({request,response,url:inputUrl})=>{
     if(!inputUrl.pathname.startsWith(root)&&!inputUrl.pathname.startsWith('/api/reporter')&&!inputUrl.pathname.startsWith('/reporter'))return false;
     for(const [key,value] of Object.entries(headers))response.setHeader(key,value);
     try{
@@ -59,7 +66,7 @@ export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,
       }
       const continuation=/^\/wecom\/yixiaoxiu\/continue\/([a-f0-9]{64})$/u.exec(path);
       if(request.method==='GET'&&continuation){
-        if(url.search)failYxx('INPUT_INVALID');sweep();const entry=entries.get(continuation[1]);
+        if(url.search)failYxx('INPUT_INVALID');sweep();const entry=entries.get(continuation[1] as string);
         joinWeComBrowserBindings(request,oauth);
         if(!entry||!oauth.sameBrowserBinding(entry.browser,readWeComCookie(request,browserName))){
           response.writeHead(404,{'content-type':'text/html; charset=utf-8'});
@@ -68,7 +75,7 @@ export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,
         const token=readWeComCookie(request,sessionName);
         try{oauth.authenticate(token);}catch(error){if(!(error instanceof WeComOAuthError))throw error;beginWeComOAuth({request,response,oauth,returnPath:path});return true;}
         const ref=await authorizer.locate({sessionToken:token,locator:entry.locator,access});
-        authorizer.authenticate(token);entries.delete(continuation[1]);
+        authorizer.authenticate(token);entries.delete(continuation[1] as string);
         response.writeHead(303,{location:root+'tickets/'+ref});response.end();return true;
       }
       const page=/^\/wecom\/yixiaoxiu\/tickets\/([A-Za-z0-9_-]{32})$/u.exec(path);
@@ -92,8 +99,8 @@ export function createYxxMemberHttp({oauth,oauthHttp,access,timeline,authorizer,
       if(path.startsWith(root))return oauthHttp({request,response,url});
       failYxx('NOT_FOUND');
     }catch(error){
-      let selected=error;
-      if(!(error instanceof YxxEntryError))selected=new YxxEntryError(/^P2_016_(CURSOR|LIMIT|INPUT)_INVALID$/u.test(error?.code??'')?'INPUT_INVALID':'UNAVAILABLE');
+      let selected=error as YxxEntryError;
+      if(!(error instanceof YxxEntryError))selected=new YxxEntryError(/^P2_016_(CURSOR|LIMIT|INPUT)_INVALID$/u.test((error as {code?:string}|null)?.code??'')?'INPUT_INVALID':'UNAVAILABLE');
       json(response,selected.status,{error:{code:selected.code,retryable:selected.status>=500}});return true;
     }
   };

@@ -6,6 +6,7 @@ export interface YxxMemberScope<Member extends string = string> { readonly scope
 export interface YxxBotOwner { readonly botId: string; readonly userId: string }
 interface MemberContextFields { readonly flags: YxxMemberFlags; readonly write_flag: boolean; readonly csrf_token: string | null; readonly session_generation: string | null; readonly bot_owner: YxxBotOwner | null; readonly identity_mode: string | null }
 export type YxxMemberContext = MemberContextFields & ({readonly profile: 'OAUTH_ONLY'; readonly scope: null} | {readonly profile: Exclude<YxxProfile,'OAUTH_ONLY'>; readonly scope: YxxMemberScope});
+export type YxxActiveMemberContext = YxxMemberContext & {scope:YxxMemberScope};
 export type YxxMemberOperation = 'MY_REPORTS' | 'WEB_DETAIL' | 'WEB_TIMELINE' | 'WEB_COMMAND' | 'BOT_TICKET' | 'BOT_LIST';
 export type YxxMemberSource = 'WEB' | 'BOT';
 export type LocalOnly<Args, Result = unknown> = ((input: Args) => Result | Promise<Result>) & {readonly localOnly: true};
@@ -231,12 +232,12 @@ export function createYxxSelfServiceAuthorization<Request = IncomingMessage>({
     return latest;
   }
 
-  async function read<T>({ request, operation = YXX_MEMBER_READ_OPERATIONS.MY_REPORTS, source = null, run }: YxxMemberReadInput<Request> & { run: (context: YxxMemberContext) => Promise<T> } = {} as YxxMemberReadInput<Request> & {run: (context:YxxMemberContext)=>Promise<T>}) {
+  async function read<T>({ request, operation = YXX_MEMBER_READ_OPERATIONS.MY_REPORTS, source = null, run }: YxxMemberReadInput<Request> & { run: (context: YxxActiveMemberContext) => Promise<T> } = {} as YxxMemberReadInput<Request> & {run: (context:YxxActiveMemberContext)=>Promise<T>}) {
     if (typeof run !== 'function') fail('YXX_MEMBER_RUN_REQUIRED', 503);
     const context = await authorize({ request, operation, source });
     let value: T | undefined;
     let thrown: unknown = null;
-    try { value = await run(context); } catch (error) { thrown = error; }
+    try { value = await run(context as YxxActiveMemberContext); } catch (error) { thrown = error; }
     try { await revalidate(request, context); } catch (error) { if (!thrown) throw error; }
     if (thrown) throw thrown;
     return value as T;
