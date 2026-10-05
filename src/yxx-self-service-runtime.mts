@@ -24,6 +24,15 @@ import {loadServiceCatalog} from './p2-007-service-catalog.mjs';
 import {createRuleEngine} from './p2-007-rule-engine.mjs';
 
 // Composition only: the existing command/store/Core retain all business authority.
+export function resolveYxxServiceCatalog(selected:ServiceCatalog|null|undefined,owner:{getServiceCatalog?:()=>ServiceCatalog}|null|undefined,customProcessor=false):ServiceCatalog|null {
+  if(owner?.getServiceCatalog){
+    try{const actual=owner.getServiceCatalog();return selected===undefined||selected===actual?actual:null;}catch{return null;}
+  }
+  if(selected!==undefined)return selected;
+  if(owner||customProcessor)return null;
+  try{return loadServiceCatalog();}catch{return null;}
+}
+
 export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, reporterMemberEntry,
   identityMapping, reporterHmacSecret, profile = 'MEMBER_SELF_SERVICE', featureFlags = {},
   ruleEngine, realtimeProjector, pollMilliseconds = 5000, quota = Object.assign(async () => true, {localOnly:true as const}), serviceCatalog }:YxxSelfServiceExtensionOptions={} as YxxSelfServiceExtensionOptions) {
@@ -53,11 +62,7 @@ export function createYxxSelfServiceExtension({ pool, oauth, publicOrigin, repor
   const authorization = createYxxSelfServiceAuthorization({ profile, flags: featureFlags, authenticate,
     recheck: Object.assign(authenticate, { localOnly: true as const }) });
   const query = createYxxSelfServiceQuery({ pool, store, authorization, scopeSecret: reporterHmacSecret });
-  let catalog=serviceCatalog??null;
-  if(serviceCatalog===undefined&&!ruleEngine){
-    // Catalog preview must not add a startup dependency to the existing FULL App.
-    try{catalog=loadServiceCatalog();}catch{catalog=null;}
-  }
+  const catalog=resolveYxxServiceCatalog(serviceCatalog,ruleEngine);
   const native = createYxxSelfServiceNativeHttp({ publicOrigin, oauth:oauth as EnabledWeComOAuth,
     oauthHttp: createWeComOAuthHttp({ oauth, publicOrigin }), profile, featureFlags,
     command, supplement: createYxxSelfServiceSupplement({ command }), query,

@@ -8,7 +8,7 @@ import type {PilotTicketCore,PilotTicketCreateResult,TicketStatus} from './p1-00
 import type {createP2016RealtimeProjector} from './p2-016-realtime-projector.mjs';
 import type {createYxxSelfServiceStore} from './yxx-self-service-store.mjs';
 type RealtimePort=Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'ticket'|'review'>;
-type RuleEnginePort=Pick<ReturnType<typeof createRuleEngine>,'evaluate'> & {catalog_version?:string;rule_set_version?:string};
+type RuleEnginePort=Pick<ReturnType<typeof createRuleEngine>,'evaluate'> & {catalog_version?:string;rule_set_version?:string;getServiceCatalog?:()=>import('./p2-007-service-catalog.mjs').ServiceCatalog};
 type IntakeDecisionPort=ReturnType<typeof createServiceIntakeDecisionPort>;
 export interface YxxOrchestratorOptions {pool:PostgresPool;ruleEngine?:RuleEnginePort|null|undefined;ticketCore?:Pick<PilotTicketCore,'createForIntakeInTransaction'>|null;decisionStore?:Pick<DecisionStore,'record'|'markAction'>;manualReviewStore?:Pick<ManualReviewStore,'enqueue'>;intakeDecisionPort?:IntakeDecisionPort;realtimeProjector?:RealtimePort|null|undefined;profile?:YxxProfile;featureFlags?:Partial<YxxMemberFlags>}
 export interface YxxPendingInput {batchSize?:number;nowEpochMs?:string;signal?:AbortSignal|null|undefined}

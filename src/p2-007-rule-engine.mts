@@ -32,7 +32,7 @@ export type BoundaryRuleResult = Omit<RuleResult, RawDerivedRuleFields | 'matche
   matched_rules: (Omit<RuleResult['matched_rules'][number], 'explanation'> & { explanation: unknown })[];
   corroboration_anchor?: unknown;
 };
-interface RuleEngineMetadata { rule_set_id: string; rule_set_version: string; rule_set_hash: string }
+interface RuleEngineMetadata { rule_set_id: string; rule_set_version: string; rule_set_hash: string; getServiceCatalog(): ServiceCatalog }
 export interface RuleEngine extends RuleEngineMetadata { evaluate(input: RuleEvaluationInput): RuleResult; evaluate(input: unknown): BoundaryRuleResult }
 export interface BoundaryRuleEngine extends RuleEngineMetadata { evaluate(input: unknown): BoundaryRuleResult }
 export interface RuleEngineOptions { ruleSet?: RuleSet; catalog?: ServiceCatalog; aliasDictionary?: AliasDictionary }
@@ -282,6 +282,7 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: Boundary
     rule_set_id: safeRuleSet.rule_set_id,
     rule_set_version: safeRuleSet.rule_set_version,
     rule_set_hash: sha256Canonical(safeRuleSet),
+    getServiceCatalog() { return serviceCatalog; },
     evaluate(input: unknown) {
       const safe = assertPlainJson(input, { maxNodes: 50_000, maxArrayLength: 5_000, maxStringLength: 20_000 }) as RuleEvaluationInput;
       if (typeof safe.text !== 'string' || typeof safe.source_ref !== 'string' || typeof safe.observed_at !== 'string') {

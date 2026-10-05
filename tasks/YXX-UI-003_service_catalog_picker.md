@@ -2,7 +2,7 @@
 
 状态：IMPLEMENTED_WAITING_REVIEW。2026-10-05 用户授权“按照建议，逐切片依次完成剩下的候选”；B / PR #50 合并后从 main `243173089684ca59069fc9a13646205f22012f2b` 开始 C。代码/关键 RED→GREEN 完成，最终回归、审查与交付以 PR HANDOFF 实际结果为准。
 
-输入为当前成员在新报修表单选择中文服务名；输出为同一目录服务 code 的既有报修提交，也允许“不清楚/未列出”的 null。目录失败不阻止文字报修，不保证选择服务即可建单，不改规则/责任组/阈值。目录来源复用 P2-007 ServiceCatalog，默认 App 编排与选择器共享同一实例；自定义规则引擎须显式提供与其配对的目录，否则目录 API 不可用、文字入口保留。FULL 的默认 Worker/入口使用同一既有目录配置。
+输入为当前成员在新报修表单选择中文服务名；输出为同一目录服务 code 的既有报修提交，也允许“不清楚/未列出”的 null。目录失败不阻止文字报修，不保证选择服务即可建单，不改规则/责任组/阈值。目录来源复用 P2-007 ServiceCatalog，默认 App 编排与选择器共享同一实例；现有规则引擎新增纯 `getServiceCatalog()` 返回其实际不可变目录，FULL/SELF 组装据此取得同一实例。opaque 自定义引擎/Worker 须提供配对目录；缺失、getter 失败或显式目录与引擎实例不匹配时目录 API 不可用，文字入口保留。FULL 默认独立 Worker/入口仍使用既有同一配置源，不改变原 Worker 组装条件、不增加 App pump 或外发。
 
 先冻结合同：新增 `GET /api/yixiaoxiu/service-catalog`，无查询/正文参数，受 currentMember、self-service/my-reports Flag 与同源边界保护；匿名、OAUTH_ONLY、readonly 或关闭状态拒绝。响应闭合 `{schema_version:1,catalog_version,services}`，最多 200 项，仅启用服务的 `service_code`（最多 64）、`name_zh`（最多 80）、`category`（最多 64）、`category_name_zh`（最多 80），版本最多 64。超界/失败返回 503，不公开责任组、别名、规则、目录身份或哈希。no-store。原七接口是历史基线，本增量经 ADR-0021 的局部追加确认。
 
