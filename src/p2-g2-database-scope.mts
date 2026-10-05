@@ -1,8 +1,10 @@
+import type { PostgresTransaction } from './platform/postgres-pool.mjs';
+export interface DatabaseScopeInput {transaction:PostgresTransaction;manifest:unknown}
 import { validateG2Manifest, failG2 } from './p2-g2-validation-config.mjs';
 
 // This is a read-only startup check. A live run starts from a dedicated empty
 // business database; only explicitly approved local principals/teams may exist.
-export async function inspectG2DatabaseScope({ transaction, manifest }) {
+export async function inspectG2DatabaseScope({ transaction, manifest }: DatabaseScopeInput) {
   const m = validateG2Manifest(manifest);
   const result = await transaction.query(`SELECT
     (SELECT count(*)::integer FROM channel.message_inbox) AS inbox,
@@ -20,13 +22,13 @@ export async function inspectG2DatabaseScope({ transaction, manifest }) {
       EXISTS(SELECT 1 FROM pilot_ticket.pilot_principal_role r WHERE r.principal_id=p.id AND r.role IN ('DISPATCHER','HANDLER')) AS agent
     FROM pilot_ticket.pilot_principal p`);
   const principalsReady = people.rows.length === m.scope.principal_ids.length
-    && people.rows.every(p => p.is_active && m.scope.principal_ids.includes(p.id))
+    && people.rows.every(p => p.is_active && m.scope.principal_ids.includes(p.id as string))
     && people.rows.some(p => p.admin) && people.rows.filter(p => p.agent && !p.admin).length >= 2;
   return Object.freeze({ ...result.rows[0], principals_ready: principalsReady,
-    ready: Object.values(result.rows[0]).every(n => n === 0) && principalsReady });
+    ready: Object.values(result.rows[0] as Record<string,unknown>).every(n => n === 0) && principalsReady });
 }
 
-export async function requireG2DatabaseScope(input) {
+export async function requireG2DatabaseScope(input: DatabaseScopeInput) {
   const result = await inspectG2DatabaseScope(input);
   if (!result.ready) failG2('DEDICATED_EMPTY_DATABASE_REQUIRED');
   return result;

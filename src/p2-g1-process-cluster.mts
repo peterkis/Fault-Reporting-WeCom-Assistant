@@ -6,7 +6,7 @@ export interface G1ClusterConfiguration {
   databaseUrl: string; identityHashKey: string; principalIds: readonly string[]; listenPort: number;
   gatewayEnabled: boolean; senderEnabled: boolean; allowedTargetHashes: readonly string[];
   testAuthTtlMs?: number; botId?: string; secret?: string; wsUrl?: string;
-  roleEnvironment?: (role: string) => NodeJS.ProcessEnv; baseEnvironment?: Record<string, string>;
+  roleEnvironment?: (role: 'APP'|'WORKER'|'GATEWAY') => NodeJS.ProcessEnv; baseEnvironment?: Record<string, string>;
   controlledMessageTypes?: readonly string[]; roleScriptUrl?: URL; allowRoleRestart?: boolean; workerHealthEvents?: boolean;
 }
 type ReadyMessage = { type: 'role-ready'; role: string; cookies?: BrowserCookie[]; worker_ready?: boolean; authenticated?: boolean };
@@ -112,7 +112,7 @@ export function createP2G1ProcessCluster(configuration: Partial<G1ClusterConfigu
       common.WECOM_WS_URL = configuration.wsUrl;
       common.P2_G1_ALLOWED_TARGET_HASHES = (configuration.allowedTargetHashes as readonly string[]).join(',');
     }
-    return { ...common, ...(configuration.roleEnvironment?.(role) ?? {}) };
+    return { ...common, ...(configuration.roleEnvironment?.(role as 'APP'|'WORKER'|'GATEWAY') ?? {}) };
   }
 
   function sendRole(role: string, message: G1RoleCommand) {

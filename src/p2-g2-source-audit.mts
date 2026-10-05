@@ -1,19 +1,29 @@
+import type { CandidateFingerprint, SourceSHA256 } from './p2-g2-validation-config.mjs';
+export interface G2RegressionCounts {tests:number;pass:number;fail:number;skipped:number;cancelled:number;todo:number}
+export interface G2VerifiedRun {mode:'SYNTHETIC_AUTOMATION';suite:'g2'|'full';exit_code:0;error:null;signal:null;
+ candidate_unchanged:true;stdout_sha256:SourceSHA256;candidate_fingerprint:CandidateFingerprint;
+ counts:G2RegressionCounts;files:{path:string;sha256:string}[];completed_physical_epoch_ms?:string}
+type RunInput = {mode?:unknown;suite?:unknown;exit_code?:unknown;error?:unknown;signal?:unknown;candidate_unchanged?:unknown;
+ stdout_sha256?:unknown;candidate_fingerprint?:unknown;counts?:Record<string,unknown>;completed_physical_epoch_ms?:unknown};
+interface Observation {result_code:string;actual_actions:{action_type:string;state:string;result_ref_type:string}[]}
+interface FixtureRow {source_case_id:string;source_fixture:keyof typeof originalFiles;case_id:string;expected_result_code:unknown;
+ counts_toward_normal_ingress_recognition?:boolean;finding?:string;conflict_kind?:string;manual_review_expected?:boolean;review_requirement?:string}
 import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import {g2Hash,failG2} from './p2-g2-validation-config.mjs';
 import {g2EvidenceTime} from './p2-g2-evidence-time.mjs';
 
-const keys=['tests','pass','fail','skipped','cancelled','todo'];
+const keys=['tests','pass','fail','skipped','cancelled','todo'] as const;
 const originalFiles={
   'hospital-it-evaluation-corpus.v1':'tests/fixtures/p2-007/hospital-it-evaluation-corpus.v1.jsonl',
   'hospital-it-multichannel-evaluation-corpus.v1':'tests/fixtures/p2-007/hospital-it-multichannel-evaluation-corpus.v1.jsonl',
   'multichannel_decision_cases.v1.2':'tests/fixtures/p2-007/multichannel_decision_cases.v1.2.jsonl',
 };
-const exceptions={
+const exceptions: Partial<Record<string,{status:string;reason:string}>>={
   'D12-005':{status:'ORIGINAL_SEMANTICS_NOT_VERIFIED',reason:'SDK_CONTEXT_HAS_NO_RELIABLE_NON_MENTION_INDICATOR'},
   'D12-023':{status:'FUTURE_P3_NOT_IMPLEMENTED',reason:'NO_HOSPITAL_MASTER_IDENTITY_BINDING_IN_P2'},
 };
-const differences={
+const differences: Partial<Record<string,string>>={
   'D12-016':'URL_GRANT_ALTERNATIVE_VERIFIED_CARD_EVENT_ASSOCIATION_NOT_IMPLEMENTED',
   'D12-053':'PROACTIVE_OUTBOX_ALTERNATIVE_VERIFIED_CALLBACK_RECEIPT_NOT_IMPLEMENTED',
   'D12-019':'DIRECTORY_SNAPSHOT_ONLY_SYSTEM_PERSON_ID_NOT_IMPLEMENTED',
@@ -29,54 +39,54 @@ const differences={
   'P2-007-C034':'ROLE_QUALIFIED_PURE_FACT_CONFLICT_NOT_NORMAL_REPORTER_INGRESS',
   'P2-007-C090':'BUILD_TIME_PRIVACY_NOT_RUNTIME_ROUTING',
 };
-function declaredIds(text){
-  const ids=new Set();
+function declaredIds(text: string){
+  const ids=new Set<string>();
   for(const m of text.matchAll(/\b(?:P2-007-)?([CX]\d{3})\b/gu))ids.add('P2-007-'+m[1]);
-  for(const m of text.matchAll(/\bD12-(\d{3}(?:\/\d{3})*)\b/gu))for(const part of m[1].split('/'))ids.add('D12-'+part);
+  for(const m of text.matchAll(/\bD12-(\d{3}(?:\/\d{3})*)\b/gu))for(const part of (m[1] as string).split('/'))ids.add('D12-'+part);
   return ids;
 }
-function diagnostics(block){
-  const output=[];for(const raw of block.split(/\r?\n/u)){const line=raw.trimStart();if(line.startsWith('# {')){
+function diagnostics(block: string){
+  const output: unknown[]=[];for(const raw of block.split(/\r?\n/u)){const line=raw.trimStart();if(line.startsWith('# {')){
     try{output.push(JSON.parse(line.slice(2)));}catch{/* Ordinary TAP diagnostics need not be JSON. */}
   }}return output;
 }
-function sourceDeclarations(value,ids=new Set()){
+function sourceDeclarations(value: unknown,ids=new Set<string>()){
   if(value&&typeof value==='object')for(const [key,item] of Object.entries(value)){
     if(['source_case_id','source_case_ids','source_ids','case_id'].includes(key)){
       for(const text of Array.isArray(item)?item:[item])if(typeof text==='string')for(const id of declaredIds(text))ids.add(id);
     }else if(item&&typeof item==='object')sourceDeclarations(item,ids);
   }return ids;
 }
-function observations(value,result=[]){
+function observations(value: unknown,result: Observation[]=[]){
   if(value&&typeof value==='object'){
-    if(typeof value.result_code==='string'&&Array.isArray(value.actual_actions))result.push(value);
+    if(typeof (value as Partial<Observation>).result_code==='string'&&Array.isArray((value as Partial<Observation>).actual_actions))result.push(value as Observation);
     else for(const item of Object.values(value))if(item&&typeof item==='object')observations(item,result);
   }return result;
 }
 
 // Records executed assertions and observations for independent semantic review.
 // A name/diagnostic match is not, by itself, proof of every original expectation.
-export function createG2SourceAudit({tap,run,root}){
-  if(typeof tap!=='string'||tap.length>64*1024*1024||run?.mode!=='SYNTHETIC_AUTOMATION'
-    ||run.exit_code!==0||run.error!==null||run.signal!==null||run.candidate_unchanged!==true
-    ||run.stdout_sha256!==g2Hash(tap)||!['g2','full'].includes(run.suite))failG2('SOURCE_EXECUTION_NOT_VERIFIED');
-  const counts={};for(const line of tap.split(/\r?\n/u)){
+export function createG2SourceAudit({tap,run,root}: {tap:unknown;run:unknown;root:string}){
+  if(typeof tap!=='string'||tap.length>64*1024*1024||(run as RunInput)?.mode!=='SYNTHETIC_AUTOMATION'
+    ||(run as RunInput).exit_code!==0||(run as RunInput).error!==null||(run as RunInput).signal!==null||(run as RunInput).candidate_unchanged!==true
+    ||(run as RunInput).stdout_sha256!==g2Hash(tap)||!['g2','full'].includes((run as RunInput).suite as string))failG2('SOURCE_EXECUTION_NOT_VERIFIED');
+  const counts: Partial<G2RegressionCounts>={};for(const line of tap.split(/\r?\n/u)){
     if(/^\s*not ok \d+/u.test(line))failG2('SOURCE_EXECUTION_NOT_VERIFIED');
-    const m=/^# (tests|pass|fail|skipped|cancelled|todo) (\d+)$/u.exec(line);if(m)counts[m[1]]=Number(m[2]);
+    const m=/^# (tests|pass|fail|skipped|cancelled|todo) (\d+)$/u.exec(line);if(m)counts[m[1] as keyof G2RegressionCounts]=Number(m[2]);
   }
-  if(keys.some(k=>!Number.isSafeInteger(counts[k])||counts[k]!==run.counts?.[k])||counts.tests<1
+  if(keys.some(k=>!Number.isSafeInteger(counts[k])||counts[k]!==(run as RunInput).counts?.[k])||(counts.tests as number)<1
     ||counts.tests!==counts.pass||keys.slice(2).some(k=>counts[k]!==0))failG2('SOURCE_EXECUTION_NOT_VERIFIED');
-  const hashes={};const read=(file,jsonl=false)=>{
-    const raw=readFileSync(path.join(root,file),'utf8').replaceAll('\r\n','\n');hashes[file]=g2Hash(raw);
-    return jsonl?raw.trim().split(/\r?\n/u).map(JSON.parse):JSON.parse(raw);
+  const hashes: Record<string,SourceSHA256>={};const read=(file: string,jsonl=false): unknown=>{
+    const raw=readFileSync(path.join(root,file),'utf8').replaceAll('\r\n','\n');hashes[file]=g2Hash(raw) as SourceSHA256;
+    return jsonl?raw.trim().split(/\r?\n/u).map(JSON.parse as (text:string)=>unknown):JSON.parse(raw);
   };
-  const refs=read('tests/fixtures/p2-015/rule-first-safe-route-gold.v1.jsonl',true);
-  const source=Object.fromEntries(Object.entries(originalFiles).map(([key,file])=>[key,read(file,true)]));
-  const x=read('tests/fixtures/p2-g2/multichannel-adjudications.v1.json').records;
-  const c=read('tests/fixtures/p2-g2/gold-adjudications.v1.jsonl',true);
+  const refs=read('tests/fixtures/p2-015/rule-first-safe-route-gold.v1.jsonl',true) as FixtureRow[];
+  const source=Object.fromEntries(Object.entries(originalFiles).map(([key,file])=>[key,read(file,true) as FixtureRow[]]));
+  const x=(read('tests/fixtures/p2-g2/multichannel-adjudications.v1.json') as {records:FixtureRow[]}).records;
+  const c=read('tests/fixtures/p2-g2/gold-adjudications.v1.jsonl',true) as FixtureRow[];
   read('tests/fixtures/p2-g2/mechanism-adjudications.v1.json');
   if(refs.length!==202||new Set(refs.map(r=>r.source_case_id)).size!==202)failG2('SOURCE_CORPUS_INVALID');
-  const evidence=new Map();
+  const evidence=new Map<string,{test_name:string;test_number:number;tap_block_sha256:string;diagnostic_sha256:string;observed_results:string[];actual_manual_review_action:boolean}[]>();
   for(const block of tap.split(/(?=^[ \t]*# Subtest: )/mu)){
     const name=/^[ \t]*# Subtest: (.+)$/mu.exec(block)?.[1];
     const pass=/^[ \t]*ok (\d+) - (.+)$/mu.exec(block);
@@ -89,7 +99,7 @@ export function createG2SourceAudit({tap,run,root}){
       actual_manual_review_action:observed.some(o=>o.actual_actions.some(a=>
         ['ENQUEUE_MANUAL_REVIEW','ROUTE_SERVICE_REQUEST','ROUTE_BUSINESS_CONSULTATION','QUERY_AUTHORIZED_STATUS'].includes(a.action_type)
         &&['EXECUTED','REPLAYED'].includes(a.state)&&a.result_ref_type==='MANUAL_REVIEW'))};
-    for(const id of ids){if(!evidence.has(id))evidence.set(id,[]);evidence.get(id).push(proof);}
+    for(const id of ids){if(!evidence.has(id))evidence.set(id,[]);(evidence.get(id) as { test_name: string; test_number: number; tap_block_sha256: string; diagnostic_sha256: string; observed_results: string[]; actual_manual_review_action: boolean; }[]).push(proof);}
   }
   const cases=refs.map(ref=>{
     const id=ref.source_case_id,original=source[ref.source_fixture]?.find(r=>r.case_id===id);
@@ -105,10 +115,10 @@ export function createG2SourceAudit({tap,run,root}){
   const normal=cases.filter(c=>c.normal_input_denominator),missing=cases.filter(c=>c.status==='EXECUTION_MISSING');
   if(normal.length!==122)failG2('SOURCE_DENOMINATOR_CHANGED');
   const expectedManual=new Set([...c.filter(c=>c.manual_review_expected).map(c=>c.source_case_id),
-    ...x.filter(r=>['REQUIRED','REQUIRED_ASSOCIATION_REVIEW'].includes(r.review_requirement)).map(r=>r.case_id)]);
+    ...x.filter(r=>['REQUIRED','REQUIRED_ASSOCIATION_REVIEW'].includes(r.review_requirement as string)).map(r=>r.case_id)]);
   const missingManual=cases.filter(c=>expectedManual.has(c.source_case_id)&&!c.proofs.some(p=>p.actual_manual_review_action)).map(c=>c.source_case_id);
-  return {schema_version:1,...(run.completed_physical_epoch_ms?g2EvidenceTime(run.completed_physical_epoch_ms):{}),candidate_fingerprint:run.candidate_fingerprint,run_suite:run.suite,
-    tap_sha256:run.stdout_sha256,source_and_adjudication_hashes:hashes,total_source_cases:202,
+  return {schema_version:1,...((run as RunInput).completed_physical_epoch_ms?g2EvidenceTime((run as RunInput).completed_physical_epoch_ms as string):{}),candidate_fingerprint:(run as RunInput).candidate_fingerprint,run_suite:(run as RunInput).suite,
+    tap_sha256:(run as RunInput).stdout_sha256,source_and_adjudication_hashes:hashes,total_source_cases:202,
     normal_input_cases:122,mechanism_and_other_cases:80,observed_normal_pass_cases:normal.filter(c=>c.proofs.length).length,
     observed_normal_test_coverage_percent:100*normal.filter(c=>c.proofs.length).length/122,
     accounting_complete:missing.length===0,execution_missing:missing.map(c=>c.source_case_id),

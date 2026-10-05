@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createServer } from 'node:net';
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { initializeG2SendBudget, openG2SendBudget } from '../src/p2-g2-send-budget.mjs';
@@ -74,6 +74,7 @@ test('P2-G2 uses three real processes, isolated PostgreSQL, actual HTTP/browser,
       const environment = await cluster.syntheticEnvironment();
       assert.equal(environment.model_environment_keys, 0); assert.equal(environment.old_approval_keys, 0); assert.equal(environment.expose_gc, false);
       assert.equal(environment.model_network_unreachable,true);assert.equal(environment.blocked_model_http_probes,6);
+      mkdirSync(path.join(G2_ROOT,'tmp'),{recursive:true});
       const resourceDirectory=mkdtempSync(path.join(G2_ROOT,'tmp','p2-g2-resource-preview-'));
       t.after(()=>{const relative=path.relative(path.join(G2_ROOT,'tmp'),path.resolve(resourceDirectory));
         assert.ok(relative&&!relative.startsWith('..')&&!path.isAbsolute(relative));rmSync(resourceDirectory,{recursive:true,force:true});});

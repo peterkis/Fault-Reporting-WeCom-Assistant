@@ -4,7 +4,7 @@ import type { ValidatedSenderRequest } from './p2-004-communication-sender-port.
 import type { WeComGatewayClient } from './p2-g1-wecom-gateway.mjs';
 type ReceiptObservation = { headers?: { req_id?: unknown }; errcode?: unknown; body?: { errcode?: unknown } } | null | undefined;
 type ErrorObservation = { errcode?: unknown } | null | undefined;
-interface SenderOptions { gateway?: { getAuthenticatedClient(): WeComGatewayClient }; allowedTargetHashes?: readonly string[] | ReadonlySet<string> | undefined; enabled?: boolean }
+interface SenderOptions { gateway?: { getAuthenticatedClient(): Pick<WeComGatewayClient,'sendMessage'> }; allowedTargetHashes?: readonly string[] | ReadonlySet<string> | undefined; enabled?: boolean }
 
 import { createHash } from 'node:crypto';
 
