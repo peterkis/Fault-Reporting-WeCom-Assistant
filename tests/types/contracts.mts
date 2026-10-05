@@ -15,6 +15,15 @@ import type * as C11 from '../../contracts/yixiaoxiu_contracts.js';
 import type * as C12 from '../../contracts/yxx_self_service_contracts.js';
 
 export type ContractSurface = [typeof C0, typeof C1, typeof C2, typeof C3, typeof C4, typeof C5, typeof C6, typeof C7, typeof C8, typeof C9, typeof C10, typeof C11, typeof C12];
+declare const reportPage: C12.YxxReportPage;
+const reportPreview: string|null|undefined = reportPage.items[0]?.safe_summary;
+const reportLocation: string|null|undefined = reportPage.items[0]?.safe_location;
+void [reportPreview, reportLocation];
+// @ts-expect-error -- member preview contracts accept plain text or null, never authority objects
+const invalidReportPreview: C12.YxxReportItem['safe_summary'] = {actor: 'internal'};
+// @ts-expect-error -- occurrence location previews must remain plain text or null
+const invalidReportLocation: C12.YxxReportItem['safe_location'] = 42;
+void [invalidReportPreview, invalidReportLocation];
 import type { LocalDateTime, PhysicalEpochMs } from '../../contracts/time_contracts.js';
 import type { YxxRequestInput } from '../../contracts/yxx_self_service_contracts.js';
 declare const date: LocalDateTime;
