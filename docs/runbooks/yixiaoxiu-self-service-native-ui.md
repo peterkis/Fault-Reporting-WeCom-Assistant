@@ -1,5 +1,15 @@
 # YXX-SS-007 原生自助报修页面手册
 
+## 2026-10-05 我的报修来源筛选
+
+独立业务增量见 `tasks/YXX-UI-001_my_reports_source_filter.md`。列表提供“全部／网页报修／企业微信工单”，复用现有 `source=WEB|BOT` 查询合同；全部来源不传 source。切换从第一页查询，“加载更多”沿用当前来源与其 cursor，不在浏览器过滤已加载的局部结果。
+
+新来源读取前清空旧列表和 cursor；快速切换取消旧读取，晚到响应必须仍通过当前 operation 归属检查。分页失败保留当前来源的已加载记录与可重试按钮；首次读取失败保持空列表并提示错误，空结果按所选来源说明。
+
+控件可键盘操作，手机宽度下不横向溢出。选择只保留在本页面内存；退出、会话边界清理和页面重新核验初始化会重置为全部，不写 localStorage/sessionStorage。定时同成员会话复核沿用既有保护，不由筛选取消认证或业务提交。
+
+无数据库、OpenAPI/Schema、Ticket 状态或默认 Flag 变更；正式启用仍需独立授权。直接验证使用既有 SS-007 browser/acceptance、SS-005 member-queries；普通 PR 继续使用 v3-p09 跨域 smoke，不触发 full/certify。
+
 当前本地验证以 `evidence/yxx-ss-007-current-readiness-v33.json` 为准。
 原始报告保留作历史记录；任务仍等待当前提交的外部审查。
 时间线默认显示最近100条，按按钮逐页加载更早记录；下一次轮询回到最新窗口。

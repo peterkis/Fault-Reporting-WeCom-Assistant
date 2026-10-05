@@ -59,7 +59,15 @@
     </section>
     <section id="reports-view" class="panel" hidden>
       <div class="section-heading"><h2>我的报修</h2><a class="button small" href="/wecom/yixiaoxiu/reports/new">新建报修</a></div>
-      <p class="quiet">网页报修和本人可见的原有工单会分别标记来源。</p>
+      <p class="quiet">可按来源查看本人网页报修或企业微信工单。</p>
+      <div class="report-filter">
+        <label for="report-source">报修来源</label>
+        <select id="report-source">
+          <option value="">全部</option>
+          <option value="WEB">网页报修</option>
+          <option value="BOT">企业微信工单</option>
+        </select>
+      </div>
       <ol id="report-list" class="report-list" aria-label="我的报修列表"></ol>
       <button id="load-more-reports" class="secondary" type="button" hidden>加载更多</button>
     </section>
