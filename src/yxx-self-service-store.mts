@@ -48,7 +48,7 @@ export function parseYxxRequestInput(value:unknown):YxxRequestInput{
   const locationText=(input.location as RawObject).unknown
     ? ((input.location as RawObject).text===null||(typeof (input.location as RawObject).text==='string'&&((input.location as RawObject).text as string).trim()==='')?null:optionalText((input.location as RawObject).text,YXX_WEB_LIMITS.location))
     : cleanText((input.location as RawObject).text,YXX_WEB_LIMITS.location);
-  let serviceCode=input.service_code===null?null:cleanText(input.service_code,64).toUpperCase();if(serviceCode!==null&&!/^[A-Z][A-Z0-9_]{0,63}$/u.test(serviceCode))throw new TypeError('YXX_INPUT_INVALID');
+  let serviceCode=input.service_code===null?null:cleanText(input.service_code,64).toUpperCase();if(serviceCode!==null&&!/^[A-Z][A-Z0-9_]*(?:\.[A-Z][A-Z0-9_]*)*$/u.test(serviceCode))throw new TypeError('YXX_INPUT_INVALID');
   if(typeof input.impact_scope!=='string'||!IMPACTS.has(input.impact_scope))throw new TypeError('YXX_INPUT_INVALID');
   const department=optionalText(input.reported_department_text,YXX_WEB_LIMITS.department);
   const extension=input.extension===null?null:cleanText(input.extension,YXX_WEB_LIMITS.extension);if(extension!==null&&!/^[0-9][0-9 -]{0,19}$/u.test(extension))throw new TypeError('YXX_INPUT_INVALID');

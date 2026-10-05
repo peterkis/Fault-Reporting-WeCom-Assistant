@@ -8,7 +8,7 @@ import type {PilotTicketCore,PilotTicketCreateResult,TicketStatus} from './p1-00
 import type {createP2016RealtimeProjector} from './p2-016-realtime-projector.mjs';
 import type {createYxxSelfServiceStore} from './yxx-self-service-store.mjs';
 type RealtimePort=Pick<ReturnType<typeof createP2016RealtimeProjector>,'lock'|'ticket'|'review'>;
-type RuleEnginePort=Pick<ReturnType<typeof createRuleEngine>,'evaluate'> & {catalog_version?:string;rule_set_version?:string};
+type RuleEnginePort=Pick<ReturnType<typeof createRuleEngine>,'evaluate'> & {catalog_version?:string;rule_set_version?:string;getServiceCatalog?:()=>import('./p2-007-service-catalog.mjs').ServiceCatalog};
 type IntakeDecisionPort=ReturnType<typeof createServiceIntakeDecisionPort>;
 export interface YxxOrchestratorOptions {pool:PostgresPool;ruleEngine?:RuleEnginePort|null|undefined;ticketCore?:Pick<PilotTicketCore,'createForIntakeInTransaction'>|null;decisionStore?:Pick<DecisionStore,'record'|'markAction'>;manualReviewStore?:Pick<ManualReviewStore,'enqueue'>;intakeDecisionPort?:IntakeDecisionPort;realtimeProjector?:RealtimePort|null|undefined;profile?:YxxProfile;featureFlags?:Partial<YxxMemberFlags>}
 export interface YxxPendingInput {batchSize?:number;nowEpochMs?:string;signal?:AbortSignal|null|undefined}
@@ -365,7 +365,7 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         try {
           if (text.length > MAX_RULE_TEXT) throw inputError('YXX_RULE_WINDOW_LIMIT_EXCEEDED');
           const output = engine.evaluate({ text, source_ref: `web:${root.intake_id}:${revision}`, observed_at: latest.received_at,
-            source_kind: 'WEB', context: { existing_ticket: root.pilot_ticket_id !== null, web_fields: webFields } });
+            source_kind: 'WEB', service_code:webFields.service_code, context: { existing_ticket: root.pilot_ticket_id !== null, web_fields: webFields } });
           routed = routeP2007Decision({ rule_output: output, context: routeContext });
           await transaction.query('RELEASE SAVEPOINT yxx_rule_evaluation');
         } catch (error) {

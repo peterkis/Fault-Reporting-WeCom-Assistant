@@ -2,8 +2,55 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
 import { createYxxSelfServiceNativeHttp } from '../src/yxx-self-service-native-http.mjs';
+import { createServiceCatalog } from '../src/p2-007-service-catalog.mjs';
 
 const recoveryBindingSecret = 'ss007-http-recovery-secret-0123456789abcdef';
+
+test('SS-007 service catalog is a bounded enabled-only member projection with closed access', async () => {
+  const definition = (code, enabled) => ({service_code: code, name_zh: '门诊医生工作站', enabled,
+    aliases: ['内部别名'], required_fields: [], transaction_stages: [], common_symptom_codes: [], default_owner_team: 'PRIVATE_TEAM'});
+  const raw = {schema_version: '1.0.0', catalog_id: 'private-catalog-id', catalog_version: 'catalog-test-v1',
+    domains: [{domain_code: 'CLINICAL', name_zh: '临床应用', services: [definition('CLINICAL.OUTPATIENT_WORKSTATION',true),definition('CLINICAL.DISABLED',false)]}], taxonomies: {symptom_codes: []}};
+  let catalog = createServiceCatalog(raw), profile = 'MEMBER_SELF_SERVICE', writeFlag = true, switchIdentity=false, authReads=0;
+  let flags = {YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
+  let native;
+  const server = createServer(async (request,response) => {
+    if(!await native.handler({request,response,url:new URL(request.url,origin)})){response.writeHead(404);response.end();}
+  });
+  await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const configure = () => createYxxSelfServiceNativeHttp({publicOrigin:origin,serviceCatalog:catalog,
+    featureFlags:flags,recoveryBindingSecret,oauth:{authenticate:()=>({})},oauthHttp:async()=>false,
+    authenticateMember:async()=>({profile,flags,write_flag:writeFlag,csrf_token:'csrf-catalog-0123456789012345678901234',
+      canonical_reporter_binding:(switchIdentity&&authReads++>0?'b':'a').repeat(64),source_corp_scope:'catalog-corp',source_app_scope:'catalog-app'}),
+    command:{accept(){}},supplement:{accept(){}},query:{list(){},detailWithEtag(){},timeline(){},commandStatus(){}}});
+  const headers = {cookie:'__Host-wecom_session=synthetic'};
+  const get = extra => fetch(origin+'/api/yixiaoxiu/service-catalog',{headers:{...headers,...extra}});
+  try {
+    native=configure();
+    const response=await get();assert.equal(response.status,200);
+    assert.equal(response.headers.get('cache-control'),'no-store');
+    assert.deepEqual(await response.json(),{schema_version:1,catalog_version:'catalog-test-v1',services:[
+      {service_code:'CLINICAL.OUTPATIENT_WORKSTATION',name_zh:'门诊医生工作站',category:'CLINICAL',category_name_zh:'临床应用'}]});
+    assert.equal((await fetch(origin+'/api/yixiaoxiu/service-catalog')).status,401);
+    for(profile of ['OAUTH_ONLY','MEMBER_TICKET_READONLY'])assert.equal((await get()).status,403);
+    profile='MEMBER_SELF_SERVICE';writeFlag=false;assert.equal((await get()).status,403);writeFlag=true;
+    assert.equal((await get({'sec-fetch-site':'cross-site'})).status,403);
+    assert.equal((await get({origin:'https://other.invalid'})).status,403);
+    assert.equal((await fetch(origin+'/api/yixiaoxiu/service-catalog?extra=1',{headers})).status,400);
+    switchIdentity=true;authReads=0;assert.equal((await get()).status,403);switchIdentity=false;
+    for(flags of [{YIXIAOXIU_SELF_SERVICE_ENABLED:false,YIXIAOXIU_MY_REPORTS_ENABLED:true},
+      {YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:false}]){
+      native=configure();assert.equal((await get()).status,403);
+    }
+    flags={YIXIAOXIU_SELF_SERVICE_ENABLED:true,YIXIAOXIU_MY_REPORTS_ENABLED:true};
+    catalog=null;native=configure();assert.equal((await get()).status,503);
+    catalog=createServiceCatalog({...raw,domains:[{...raw.domains[0],services:Array.from({length:201},(_,i)=>definition('CLINICAL.S'+i,true))}]});
+    native=configure();assert.equal((await get()).status,503);
+    catalog=createServiceCatalog({...raw,domains:[{...raw.domains[0],services:[{...definition('CLINICAL.SERVICE',true),name_zh:'名'.repeat(81)}]}]});
+    native=configure();assert.equal((await get()).status,503);
+  } finally {await new Promise(resolve=>server.close(resolve));}
+});
 
 test('SS-007 native write UI requires an explicit member write flag while read APIs remain available', async () => {
   const flags = { YIXIAOXIU_SELF_SERVICE_ENABLED: true, YIXIAOXIU_MY_REPORTS_ENABLED: true };

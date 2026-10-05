@@ -8,7 +8,7 @@ P09 / [PR #48](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/
 
 R00 决策后恢复局部业务开发。首个增量 [YXX-UI-001](../../tasks/YXX-UI-001_my_reports_source_filter.md) 为原生“我的报修”来源筛选，复用已有成员查询与 source-bound cursor。活动 v3-p09 四项继续作为跨域 smoke，业务 PR 另执行自己的直接测试、strict types、最终候选一次构建、制品与自有资源清理；不新增 selection 或 CI 平台。D01 按需维护，R01 保持 HOLD，full 不等于 strict readiness 或真实运行授权。
 
-来源筛选已由 [PR #49](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/49) 合并。接续增量 [YXX-UI-002](../../tasks/YXX-UI-002_my_reports_preview.md) 为本人网页报修卡片的初始描述/位置预览；新增有界、可空的成员列表字段，不改数据库结构。后续按已授权顺序实施中文服务目录选择器。
+来源筛选已由 [PR #49](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/49) 合并；本人网页卡片预览 [YXX-UI-002](../../tasks/YXX-UI-002_my_reports_preview.md) 已由 [PR #50](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/50) 合并。按已授权顺序接续 [YXX-UI-003](../../tasks/YXX-UI-003_service_catalog_picker.md) 中文服务目录选择器，只扩展有界成员目录 GET 与既有 code 输入；新增 schema 登记原制品资源清单，原 169/181、活动 selection、Gate 和认证边界不变。
 
 下文 P09 执行要求及较早交付快照保留各自适用时点，不驱动本轮再次 full、重复探针或认证；本业务 PR 不改数据库迁移、历史 Evidence、业务 Gate、默认开关，不部署、不真实发送。
 

@@ -8,7 +8,7 @@ import type {P2012RuntimeOptions} from './p2-012-workbench-assembly.mjs';
 type MemberProfileOptions = YxxMemberExtensionOptions & {listenPort?:number;yxxSelfService?:{featureFlags?:YxxSelfServiceExtensionOptions['featureFlags'];pollMilliseconds?:number|undefined}};
 export type OAuthOnlyProfileOptions = {profile?:'OAUTH_ONLY';listenPort?:number;oauth:WeComOAuth;publicOrigin:string|undefined;pool?:MemberProfileOptions['pool']|undefined;reporterMemberEntry?:unknown;identityMapping?:MemberProfileOptions['identityMapping'];reporterHmacSecret?:string|undefined;yxxSelfService?:MemberProfileOptions['yxxSelfService']};
 export type ReadonlyProfileOptions = MemberProfileOptions & {profile:'MEMBER_TICKET_READONLY'};
-export type SelfServiceProfileOptions = MemberProfileOptions & {profile:'MEMBER_SELF_SERVICE'};
+export type SelfServiceProfileOptions = MemberProfileOptions & Pick<YxxSelfServiceExtensionOptions,'ruleEngine'|'serviceCatalog'> & {profile:'MEMBER_SELF_SERVICE'};
 export type FullServiceProfileOptions = P2012RuntimeOptions & {profile:'FULL_SERVICE_LOOP';listenPort?:number;reporterPolicy:'MEMBER_REQUIRED'};
 export type YxxProfileOptions = OAuthOnlyProfileOptions|ReadonlyProfileOptions|SelfServiceProfileOptions|FullServiceProfileOptions;
 type HttpProfile<Name extends string,SelfService> = {server:Server;selfService:SelfService;start():Promise<{profile:Name;port:number}>;stop():Promise<void>};

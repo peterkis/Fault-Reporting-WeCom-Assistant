@@ -17,7 +17,7 @@
       },
       "allOf": [{"if": {"properties": {"unknown": {"const": false}}}, "then": {"required": ["text"], "properties": {"text": {"type": "string", "minLength": 1}}}}]
     },
-    "service_code": {"type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9_]{0,63}$"},
+    "service_code": {"type": ["string", "null"], "maxLength": 64, "pattern": "^[A-Z][A-Z0-9_]*(?:\\.[A-Z][A-Z0-9_]*)*$"},
     "impact_scope": {"type": "string", "enum": ["UNKNOWN", "SELF", "SINGLE_WORKSTATION", "MULTIPLE_USERS", "DEPARTMENT"]},
     "reported_department_text": {"type": ["string", "null"], "maxLength": 100},
     "extension": {"type": ["string", "null"], "pattern": "^[0-9][0-9 -]{0,19}$"}

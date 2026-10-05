@@ -2,6 +2,7 @@ import type { PostgresTransaction, PostgresPool } from './platform/postgres-pool
 import type { LocalDateTime } from '../contracts/time_contracts.js';
 import type { ReporterDirectoryPort, ReporterDirectoryResult, P2015OrchestrationInput, P2015EntryMode } from '../contracts/p2_015_contracts.js';
 import type { RuleEvaluationInput, RuleResult } from './p2-007-rule-engine.mjs';
+import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
 import type { SafeActionExecutor, SafeActionContext } from './p2-015-safe-action-executor.mjs';
 import type { RouteContext, BoundarySafeRoute } from './p2-015-decision-router.mjs';
 import type { OrchestrationJourney } from './p2-016-guided-journey.mjs';
@@ -11,7 +12,7 @@ import type { CommunicationCommand, CommunicationDestination } from './p2-004-co
 export interface PersistedOrchestrationIntake { id: string; source_provider: string; source_bot_id: string; source_chat_type: 'single' | 'group'; source_chat_id: string | null; reporter_wecom_userid: string; privacy_class: CommunicationCommand['privacy_class']; retention_until: string; retention_until_epoch_ms: string; request_type: string; status: string; pilot_ticket_id: string | null; primary_message_id: string; last_message_at: LocalDateTime; version: number; created_at: string; origin_reported_at: string; recorded_entry_mode: P2015EntryMode | null; session_id: string | null; thread_id: string | null }
 interface WindowRow { sequence_no: number; message_id: string; clean_text: string | null; msg_type: string; normalized_message: unknown; received_at: string; received_epoch_ms: string }
 interface Window { rows: WindowRow[]; bounded: boolean; text: string; total: number }
-export interface OrchestrationRuleEngine { evaluate(input: RuleEvaluationInput): unknown; catalog_version?: string; rule_set_version?: string }
+export interface OrchestrationRuleEngine { evaluate(input: RuleEvaluationInput): unknown; catalog_version?: string; rule_set_version?: string; getServiceCatalog?:()=>ServiceCatalog }
 export interface OrchestrationJourneyStore { ensureJourney(input: { transaction: PostgresTransaction; input: ContactJourneyInput }): Promise<OrchestrationJourney>; ensureLeg(input: { transaction: PostgresTransaction; input: ChannelLegInput }): Promise<ChannelLegRow & { replayed: boolean }> }
 export interface OrchestrationOptions { pool: PostgresPool; identityHmacKey: string; directoryPort?: ReporterDirectoryPort; directorySource?: string; ruleEngine?: OrchestrationRuleEngine | null; journeyStore?: OrchestrationJourneyStore; continuationService?: Pick<ReturnType<typeof createContinuationRefService>, 'issue'>; decisionStore?: DecisionStore; safeActionExecutor: SafeActionExecutor; decisionOverride?: ((input: { transaction: PostgresTransaction; journey: OrchestrationJourney; routeContext: RouteContext }) => Promise<BoundarySafeRoute | null> | BoundarySafeRoute | null) | null }
 export interface ProcessInTransactionInput { transaction: PostgresTransaction; intakeId: string; profile: ReporterDirectoryResult; reporterHash: string; flags: ReturnType<typeof normalizeP2015FeatureFlags>; traceId: string }

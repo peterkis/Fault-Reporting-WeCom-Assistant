@@ -4,6 +4,10 @@ Status: Accepted for local implementation on the `phase2/yixiaoxiu-self-service-
 
 ## Decision
 
+### 2026-10-05 authorized local product increment
+
+YXX-UI-003 adds a protected same-origin, no-store `GET /api/yixiaoxiu/service-catalog` to the original seven-route baseline. It exposes only a bounded version and enabled service codes, Chinese names and categories from the existing rule catalog, never internal routing configuration. Web service codes retain the 64-character/null boundary and accept the catalog's dotted segments in addition to the original undotted codes. A failed catalog read leaves text intake available. This additive contract is authorized for local implementation/review only; flags, Ticket authority, database schema and live boundaries remain unchanged.
+
 - A web submission is `source_channel=PORTAL`, `source_provider=YIXIAOXIU_WEB`,
   `entry_mode=APP_WEB_SELF_SERVICE` and `leg_type=WEB_FORM`.
 - `WEB_FORM` owns a real `web_submission` reference and leaves Bot message,
@@ -12,7 +16,7 @@ Status: Accepted for local implementation on the `phase2/yixiaoxiu-self-service-
 - `intake.web_request_binding`, `intake.web_submission` and
   `intake.web_command_receipt` are technical web-source objects. They do not
   own Ticket state; Unified Ticket Core remains the only Ticket authority.
-- The API surface is the seven routes in the YXX OpenAPI contract. All writes
+- The API surface is the original seven routes plus the authorized catalog increment above. All writes
   use the current member Cookie, CSRF/origin checks, a closed JSON shape and an
   idempotent command ID. The server derives identity and source fields.
 - `MEMBER_TICKET_READONLY` rejects every web write even if a write flag is

@@ -6,9 +6,11 @@ import type {createYxxSelfServiceSupplement} from './yxx-self-service-supplement
 import type {createYxxSelfServiceQuery,YxxQueryInput} from './yxx-self-service-query.mjs';
 import type {YxxProfile} from './p2-g2-yixiaoxiu-contract.mjs';
 import type {YxxMemberFlags,YxxMemberSource} from './yxx-self-service-authorization.mjs';
+import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
+type MemberServiceCatalog=Pick<ServiceCatalog,'catalog_version'|'listServices'>;
 type RawAuth=Record<string,unknown>;
 type ErrorFields={code?:string;status?:number};
-export interface YxxNativeHttpOptions {publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown}
+export interface YxxNativeHttpOptions {publicOrigin:string;oauth:EnabledWeComOAuth;oauthHttp:OAuthHttpHandler|null;command:Pick<YxxSelfServiceCommand,'accept'>;supplement:Pick<ReturnType<typeof createYxxSelfServiceSupplement>,'accept'>;query:Pick<ReturnType<typeof createYxxSelfServiceQuery>,'list'|'detailWithEtag'|'timeline'|'commandStatus'>;authenticateMember:(input:{request:IncomingMessage;sessionToken:SessionToken;member:OAuthMember})=>unknown|Promise<unknown>;profile?:Extract<YxxProfile,'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'>;featureFlags?:unknown;sessionCookieName?:typeof sessionName;recoveryBindingSecret:unknown;serviceCatalog?:MemberServiceCatalog|null}
 import { readFile } from 'node:fs/promises';
 import { createHmac } from 'node:crypto';
 import { beginWeComOAuth, logoutWeComBrowser, sessionName } from './p2-g2-wecom-oauth-http.mjs';
@@ -197,7 +199,7 @@ function recoveryScope(context:RawAuth,secret:Buffer) {
 
 export function createYxxSelfServiceNativeHttp({
   publicOrigin, oauth, oauthHttp = null, command, supplement, query, authenticateMember,
-  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret,
+  profile = 'MEMBER_SELF_SERVICE', featureFlags = {}, sessionCookieName = sessionName, recoveryBindingSecret, serviceCatalog = null,
 }:YxxNativeHttpOptions={} as YxxNativeHttpOptions) {
   if (typeof publicOrigin !== 'string' || !oauth || typeof oauth.authenticate !== 'function'
     || typeof oauthHttp !== 'function' || !command?.accept || !supplement?.accept
@@ -301,6 +303,28 @@ export function createYxxSelfServiceNativeHttp({
         json(response, 200, { authenticated: true, identity_mode: 'MEMBER_SELF_SERVICE', read_only: !serviceEnabled,
           can_submit: serviceEnabled, can_supplement: serviceEnabled, csrf_token: (context as {csrf_token:string}).csrf_token,
           recovery_scope: context.recovery_scope }); return true;
+      }
+      if (url.pathname === '/api/yixiaoxiu/service-catalog' && request.method === 'GET') {
+        if (url.search || header(request,'transfer-encoding') || Number(header(request,'content-length')??0)>0) throw error('YXX_INPUT_INVALID');
+        if (header(request,'sec-fetch-site')==='cross-site' || header(request,'origin') && header(request,'origin')!==origin.origin) throw error('YXX_FORBIDDEN',403);
+        if (!readEnabled || !serviceEnabled) throw error('YXX_FORBIDDEN',403);
+        const before=await currentMember(request,{requireWrite:true});
+        if (!serviceCatalog) throw error('YXX_UNAVAILABLE',503);
+        const bounded=(value:unknown,max:number):string=>{
+          if(typeof value!=='string'||!value.trim()||Array.from(value).length>max)throw error('YXX_UNAVAILABLE',503);
+          return value;
+        };
+        const version=bounded(serviceCatalog.catalog_version,64);
+        const enabled=serviceCatalog.listServices({enabledOnly:true}).filter(item=>item.enabled);
+        if(enabled.length>200)throw error('YXX_UNAVAILABLE',503);
+        const services=enabled.map(item=>{
+          const code=bounded(item.service_code,64),category=bounded(item.category,64);
+          if(!/^[A-Z][A-Z0-9_]*(?:\.[A-Z][A-Z0-9_]*)*$/u.test(code)||!/^[A-Z][A-Z0-9_]*$/u.test(category))throw error('YXX_UNAVAILABLE',503);
+          return {service_code:code,name_zh:bounded(item.name_zh,80),category,category_name_zh:bounded(item.category_name_zh,80)};
+        });
+        const after=await currentMember(request,{requireWrite:true});
+        if(before.recovery_scope!==after.recovery_scope||before.csrf_token!==after.csrf_token)throw error('YXX_FORBIDDEN',403);
+        json(response,200,{schema_version:1,catalog_version:version,services});return true;
       }
       const listPath = url.pathname === '/api/yixiaoxiu/my-reports';
       if (listPath && request.method === 'GET') {

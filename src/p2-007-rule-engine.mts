@@ -22,7 +22,7 @@ export interface RuleCondition { all?: RuleCondition[]; any?: RuleCondition[]; f
 interface DeterministicRule { rule_id: string; version: string; priority: number; when: RuleCondition; actions: RuleAction[]; explanation_template_zh?: string }
 export interface RuleSet { schema_version: string; execution_mode: string; rule_set_id: string; rule_set_version: string; rules: DeterministicRule[] }
 export interface CorroborationAnchor { [key: string]: unknown; source_decision_id: string; source_result_hash: string; source_reporter_hash: string; source_fact_ids: string[]; service_code: string; symptom_codes: string[]; catalog_version: string; rule_set_version: string; root_received_epoch_ms: string; reply_received_epoch_ms: string; reply_message_ref: string; reply_reporter_hash: string; source_privacy_class: string; safety_policy_version: string }
-export interface RuleEvaluationInput { [key: string]: unknown; text: string; source_ref: string; observed_at: string; normalized_context?: string; context?: Record<string, unknown> & { corroboration_anchor?: CorroborationAnchor; anchor_age_ms?: number; anchor_compatible?: boolean }; turn?: Record<string, unknown>; source_kind?: string; reporter_directory?: Record<string, unknown>; extracted?: Record<string, unknown> & { occurrence_location?: string }; impact?: Record<string, unknown>; privacy_detector?: Record<string, unknown>; execution_context?: string; asset_hint?: string | null; occurrence_location?: string | null; scope?: string; clinical_impact?: string; transaction_stage?: string; recovery_signal?: string | null; emotion_signal?: boolean; clinical_or_scope_evidence?: boolean }
+export interface RuleEvaluationInput { [key: string]: unknown; text: string; source_ref: string; observed_at: string; normalized_context?: string; context?: Record<string, unknown> & { corroboration_anchor?: CorroborationAnchor; anchor_age_ms?: number; anchor_compatible?: boolean }; turn?: Record<string, unknown>; source_kind?: string; service_code?: string|null; reporter_directory?: Record<string, unknown>; extracted?: Record<string, unknown> & { occurrence_location?: string }; impact?: Record<string, unknown>; privacy_detector?: Record<string, unknown>; execution_context?: string; asset_hint?: string | null; occurrence_location?: string | null; scope?: string; clinical_impact?: string; transaction_stage?: string; recovery_signal?: string | null; emotion_signal?: boolean; clinical_or_scope_evidence?: boolean }
 interface RuleState extends Omit<RuleEvaluationInput, 'context'> { context: NonNullable<RuleEvaluationInput['context']>; original_text: string; normalized_text: string; normalized_context: string; selected_service_code: string | null; symptom_codes: string[]; symptom_facts: { count: number }; domain_intent: string; scope: string; clinical_impact: string; transaction_stage: string; owner_suggestion: string | null; cause_candidates: { cause_code: string; status: string }[]; incident_reasons: string[]; question_codes: string[]; suppressed_question_codes: string[]; privacy_flags: string[]; intent_signals: string[]; required_fields: string[]; required_confirmations: string[]; forbidden_effects: string[]; action_log: string[]; result_state: RuleResultState | null; analysis_window: string; attempt_result: string | null; conflict: boolean; requires_human_review: boolean; requires_policy_review: boolean; corroboration_anchor?: CorroborationAnchor; catalog_version: string; rule_set_version: string; observed_at: string; source_ref: string }
 export interface RuleResult { schema_version: string; catalog_version: string; rule_set_version: string; evaluated_at: string; original_text: string; normalized_text: string; matched_rules: { rule_id: string; version: string; priority: number; explanation: string | undefined }[]; facts: FactProvenance[]; selected_service_code: string | null; service_candidates: string[]; symptom_codes: string[]; fault_types: string[]; domain_intent: string; p1_request_type: 'INCIDENT' | 'UNKNOWN'; transaction_stage: string; scope: string; clinical_impact: string; owner_suggestion: string | null; cause_candidates: { cause_code: string; status: string }[]; privacy_flags: string[]; missing_fields: string[]; confidence: number; clarification_needed: boolean; clarification: Clarification | null; incident_candidate: boolean; incident_reason_codes: string[]; requires_human_review: boolean; result_state: RuleResultState; analysis_window: string; attempt_result: string | null; forbidden_effects: string[]; side_effects: never[]; corroboration_anchor?: CorroborationAnchor; result_hash: string }
 // Existing runtime guards validate the required strings, not optional input fields
@@ -32,7 +32,7 @@ export type BoundaryRuleResult = Omit<RuleResult, RawDerivedRuleFields | 'matche
   matched_rules: (Omit<RuleResult['matched_rules'][number], 'explanation'> & { explanation: unknown })[];
   corroboration_anchor?: unknown;
 };
-interface RuleEngineMetadata { rule_set_id: string; rule_set_version: string; rule_set_hash: string }
+interface RuleEngineMetadata { rule_set_id: string; rule_set_version: string; rule_set_hash: string; getServiceCatalog(): ServiceCatalog }
 export interface RuleEngine extends RuleEngineMetadata { evaluate(input: RuleEvaluationInput): RuleResult; evaluate(input: unknown): BoundaryRuleResult }
 export interface BoundaryRuleEngine extends RuleEngineMetadata { evaluate(input: unknown): BoundaryRuleResult }
 export interface RuleEngineOptions { ruleSet?: RuleSet; catalog?: ServiceCatalog; aliasDictionary?: AliasDictionary }
@@ -53,6 +53,7 @@ import {
   uniqueSorted,
 } from './p2-007-domain-utils.mjs';
 import { buildFactProvenance } from './p2-007-fact-provenance.mjs';
+import {resolveFactConflicts} from './p2-007-conflict-resolver.mjs';
 import { createFaultTaxonomyResolver, faultTypeForSymptom } from './p2-007-fault-taxonomy.mjs';
 import { loadServiceCatalog } from './p2-007-service-catalog.mjs';
 
@@ -282,12 +283,17 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: Boundary
     rule_set_id: safeRuleSet.rule_set_id,
     rule_set_version: safeRuleSet.rule_set_version,
     rule_set_hash: sha256Canonical(safeRuleSet),
+    getServiceCatalog() { return serviceCatalog; },
     evaluate(input: unknown) {
       const safe = assertPlainJson(input, { maxNodes: 50_000, maxArrayLength: 5_000, maxStringLength: 20_000 }) as RuleEvaluationInput;
       if (typeof safe.text !== 'string' || typeof safe.source_ref !== 'string' || typeof safe.observed_at !== 'string') {
         failP2007(P2_007_ERROR_CODES.inputInvalid);
       }
       const alias = aliasResolver.resolve(safe.text);
+      if(safe.service_code!==undefined&&safe.service_code!==null
+        &&(safe.source_kind!=='WEB'||typeof safe.service_code!=='string'||safe.service_code.length>64||!/^[A-Z][A-Z0-9_]*(?:\.[A-Z][A-Z0-9_]*)*$/u.test(safe.service_code)))failP2007(P2_007_ERROR_CODES.inputInvalid);
+      const webSelection=serviceCatalog.lookupService(safe.service_code);
+      const selectedHint=webSelection?.enabled===true?webSelection.service_code:null;
       const taxonomy = taxonomyResolver.resolve(safe.text);
       const anchor=safe.context?.corroboration_anchor;
       if(anchor){
@@ -327,7 +333,7 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: Boundary
         execution_context: safe.execution_context ?? 'RUNTIME',
         asset_hint: safe.asset_hint ?? null,
         occurrence_location: safe.occurrence_location ?? safe.extracted?.occurrence_location ?? null,
-        selected_service_code: alias.selected_service_code,
+        selected_service_code: selectedHint??alias.selected_service_code,
         symptom_codes: [...taxonomy.symptom_codes],
         symptom_facts: { count: taxonomy.symptom_codes.length },
         domain_intent: 'UNKNOWN',
@@ -374,6 +380,14 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: Boundary
         state.symptom_facts.count = state.symptom_codes.length;
       }
 
+      const serviceContradictions=selectedHint?uniqueSorted([alias.selected_service_code,state.selected_service_code]
+        .filter((value):value is string=>typeof value==='string'&&value!==selectedHint)):[];
+      if(selectedHint){
+        if(serviceContradictions.length){
+          state.selected_service_code=null;state.owner_suggestion=null;state.conflict=true;
+          state.requires_human_review=true;state.result_state='PARTIAL';
+        }else state.selected_service_code=selectedHint;
+      }
       const selectedService = serviceCatalog.lookupService(state.selected_service_code);
       state.transaction_stage = safe.transaction_stage ?? inferTransactionStage(state.normalized_context, selectedService);
       state.owner_suggestion ??= selectedService?.default_owner_team ?? null;
@@ -390,10 +404,26 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: Boundary
       });
 
       const facts = [];
+      if(selectedHint&&serviceContradictions.length){
+        facts.push(buildFactProvenance(factInput(state,{field_path:'service.selected_service_code',value:selectedHint,
+          normalized_value:selectedHint,source_kind:'REPORTER_EXPLICIT',rule_id:null,confidence:0.92,
+          source_hash:sha256Canonical({text:state.original_text,service_code:selectedHint}),reason_code:'WEB_SERVICE_SELECTION'})));
+        for(const code of serviceContradictions){
+          const fromAlias=code===alias.selected_service_code;
+          const selectingRule=orderedRules.find(rule=>matchedRules.some(match=>match.rule_id===rule.rule_id)
+            &&rule.actions.some(action=>action.action==='SELECT_SERVICE'&&action.service_code===code||action.action==='SET_SELECTED_SERVICE'&&action.value===code));
+          facts.push(buildFactProvenance(factInput(state,{field_path:'service.selected_service_code',value:code,
+            normalized_value:code,source_kind:fromAlias?'REPORTER_EXPLICIT':'DETERMINISTIC_RULE',
+            rule_id:fromAlias?alias.rule_id:selectingRule?.rule_id??null,confidence:0.92})));
+        }
+      }
       if (state.selected_service_code && !state.corroboration_anchor) facts.push(buildFactProvenance(factInput(state, {
         field_path: 'service.selected_service_code', value: state.selected_service_code,
         normalized_value: state.selected_service_code, source_kind: 'REPORTER_EXPLICIT',
-        rule_id: alias.rule_id, confidence: 0.92,
+        rule_id: selectedHint&&state.selected_service_code===selectedHint?null:alias.rule_id, confidence: 0.92,
+        ...(selectedHint&&state.selected_service_code===selectedHint?{
+          source_hash:sha256Canonical({text:state.original_text,service_code:selectedHint}),reason_code:'WEB_SERVICE_SELECTION',
+        }:{}),
       })));
       for (const match of taxonomy.matches.filter((item) => item.assertion !== 'NEGATED')) facts.push(buildFactProvenance(factInput(state, {
         field_path: 'fault.symptom_codes', value: match.matched_alias,
@@ -429,7 +459,8 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: Boundary
           confidence: rule ? 0.85 : 0.75,
         })));
       }
-      const distinctFacts = [...new Map(facts.map((fact) => [fact.fact_id, fact])).values()]
+      const resolvedFacts=selectedHint&&serviceContradictions.length?resolveFactConflicts({facts,field_path:'service.selected_service_code'}).facts:facts;
+      const distinctFacts = [...new Map(resolvedFacts.map((fact) => [fact.fact_id, fact])).values()]
         .sort((left, right) => left.fact_id.localeCompare(right.fact_id, 'en'));
       const resultState = state.result_state ?? (
         state.selected_service_code && state.symptom_codes.length > 0 && missingFields.length === 0 ? 'COMPLETE' : 'PARTIAL'
@@ -446,7 +477,7 @@ export function createRuleEngine({ ruleSet, catalog, aliasDictionary }: Boundary
         matched_rules: matchedRules,
         facts: distinctFacts,
         selected_service_code: state.selected_service_code,
-        service_candidates: alias.candidate_service_codes,
+        service_candidates: selectedHint?uniqueSorted([...alias.candidate_service_codes,selectedHint]):alias.candidate_service_codes,
         symptom_codes: state.symptom_codes,
         fault_types: uniqueSorted(state.symptom_codes.map(faultTypeForSymptom)),
         domain_intent: state.domain_intent,

@@ -66,6 +66,7 @@ async function press(target, key) {
 async function focusSubmitWithTabs(target) {
   await target.command('Page.bringToFront');
   await target.waitFor("document.querySelector('#new-view')?.hidden===false");
+  await target.waitFor("document.querySelector('#service-code')?.disabled===false");
   await target.evaluate('document.activeElement?.blur()');
   await press(target, 'Tab');
   assert.equal(await target.evaluate('document.activeElement?.classList.contains("brand")'), true);

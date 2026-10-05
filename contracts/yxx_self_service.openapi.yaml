@@ -11,6 +11,22 @@ servers:
 security:
   - WeComMember: []
 paths:
+  /api/yixiaoxiu/service-catalog:
+    servers: [{url: /}]
+    get:
+      operationId: yxxSelfServiceCatalog
+      security: [{WeComMember: []}]
+      description: >
+        Same-origin, no-store enabled service choices for current members with
+        both self-service and my-reports flags enabled. Version and public names
+        only; bounded to 200 services. No queries, body or internal routing fields.
+        Catalog unavailability leaves text intake available.
+      responses:
+        '200': {description: 'Bounded member service catalog', content: {application/json: {schema: {$ref: './yxx_self_service_service_catalog.schema.json'}}}}
+        '400': {$ref: '#/components/responses/Invalid'}
+        '401': {$ref: '#/components/responses/AuthRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '503': {$ref: '#/components/responses/Unavailable'}
   /api/yixiaoxiu/bootstrap:
     servers: [{url: /}]
     get:

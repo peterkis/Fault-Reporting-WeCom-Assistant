@@ -6,6 +6,8 @@ export interface YxxRequestInput { schema_version: 1; client_command_id: string;
 export interface YxxSupplementInput { schema_version: 1; client_command_id: string; expected_input_revision: string; text: string; }
 export interface YxxReceipt { client_command_id: string; status: 'ACCEPTED'; request_ref: string; intake_no: string; accepted_revision: string; accepted_at: LocalDateTime; accepted_epoch_ms: EpochMs; }
 export interface YxxSelfServiceBootstrap { authenticated: true; identity_mode: 'MEMBER_SELF_SERVICE'; read_only: boolean; can_submit: boolean; can_supplement: boolean; csrf_token: string; recovery_scope: string; }
+export interface YxxServiceChoice { service_code: string; name_zh: string; category: string; category_name_zh: string; }
+export interface YxxServiceCatalog { schema_version: 1; catalog_version: string; services: YxxServiceChoice[]; }
 export interface YxxSelfServiceProfile { profile: 'OAUTH_ONLY'|'MEMBER_TICKET_READONLY'|'MEMBER_SELF_SERVICE'|'FULL_SERVICE_LOOP'; oauth: 'WECom_MEMBER'; business_read: boolean; web_write: boolean; processor: 'NONE'|'APP_BOUNDED_PUMP'|'EXISTING_WORKER'; external_delivery: 'NONE_FOR_WEB'; write_flag: boolean; YIXIAOXIU_SELF_SERVICE_ENABLED: boolean; YIXIAOXIU_MY_REPORTS_ENABLED: boolean; 'x-readonly-write-denied': true; }
 export interface YxxSafeTicket { ticket_no: string; status: string; updated_at?: LocalDateTime; }
 export interface YxxReportItem { kind: 'WEB_REQUEST'|'BOT_TICKET'; ref: string; display_status: string; created_at: LocalDateTime; created_epoch_ms: EpochMs; ticket: YxxSafeTicket|null; safe_summary?: string|null; safe_location?: string|null; }

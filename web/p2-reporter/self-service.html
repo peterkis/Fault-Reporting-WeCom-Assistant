@@ -47,9 +47,9 @@
           <option value="MULTIPLE_USERS">多位用户</option>
           <option value="DEPARTMENT">整个科室</option>
         </select>
-        <label for="service-code">系统代码（可选）</label>
-        <input id="service-code" name="service_code" maxlength="64" autocomplete="off" placeholder="可留空；只填已知的大写代码">
-        <p class="quiet">普通系统或设备名称请写在故障现象里；不知道代码可以留空。</p>
+        <label for="service-code">系统或设备（选填）</label>
+        <select id="service-code" name="service_code" aria-describedby="service-catalog-status" disabled><option value="">不清楚 / 未列出</option></select>
+        <p id="service-catalog-status" class="quiet" role="status" aria-live="polite">可直接在故障现象中填写系统或设备名称。</p>
         <label for="department">科室（可选）</label>
         <input id="department" name="department" maxlength="100" autocomplete="organization">
         <label for="extension">分机（可选）</label>

@@ -5,9 +5,59 @@ import { test } from 'node:test';
 import { createAliasResolver } from '../../src/p2-007-alias-resolver.mjs';
 import { P2007DomainError } from '../../src/p2-007-domain-utils.mjs';
 import { createRuleEngine } from '../../src/p2-007-rule-engine.mjs';
+import {createServiceCatalog,loadServiceCatalog} from '../../src/p2-007-service-catalog.mjs';
 
 const OBSERVED_AT = '2026-09-03 15:30:00';
 const dictionary = JSON.parse(readFileSync('config_examples/p2-007-alias-dictionary.example.json', 'utf8'));
+
+test('validated Web catalog selection is an explicit service fact without a text alias', () => {
+  const output=createRuleEngine().evaluate({text:'提交不了',source_ref:'web:catalog-selection',observed_at:OBSERVED_AT,
+    source_kind:'WEB',service_code:'CLINICAL.OUTPATIENT_WORKSTATION'});
+  assert.equal(output.selected_service_code,'CLINICAL.OUTPATIENT_WORKSTATION');
+  assert.ok(output.service_candidates.includes('CLINICAL.OUTPATIENT_WORKSTATION'));
+  const selected=output.facts.find(fact=>fact.field_path==='service.selected_service_code');
+  assert.equal(selected.normalized_value,'CLINICAL.OUTPATIENT_WORKSTATION');
+  assert.equal(selected.source_kind,'REPORTER_EXPLICIT');
+  assert.equal(selected.reason_code,'WEB_SERVICE_SELECTION');
+  assert.equal(selected.rule_id,null);
+  assert.deepEqual(output.side_effects,[]);
+});
+
+test('Web catalog selection conflicting with resolved text retains both facts for human review', () => {
+  const output=createRuleEngine().evaluate({text:'PACS 打不开',source_ref:'web:selection-conflict',observed_at:OBSERVED_AT,
+    source_kind:'WEB',service_code:'CLINICAL.OUTPATIENT_WORKSTATION'});
+  assert.equal(output.requires_human_review,true);
+  assert.equal(output.result_state,'PARTIAL');
+  assert.equal(output.selected_service_code,null);
+  assert.equal(output.owner_suggestion,null);
+  assert.deepEqual(output.facts.filter(fact=>fact.field_path==='service.selected_service_code').map(fact=>({value:fact.normalized_value,status:fact.status})).sort((a,b)=>a.value.localeCompare(b.value)),[
+    {value:'CLINICAL.OUTPATIENT_WORKSTATION',status:'CONFLICTED'},
+    {value:'DIAG.IMAGING_VIEWER',status:'CONFLICTED'},
+  ]);
+});
+
+test('Web service facts reject cross-source input and retain text-only fallback for unavailable choices', () => {
+  const engine=createRuleEngine(),base={text:'提交不了',source_ref:'web:selection-controls',observed_at:OBSERVED_AT,source_kind:'WEB'};
+  const original=engine.evaluate(base);
+  for(const service_code of [null,'UNKNOWN_SERVICE'])assert.deepEqual(engine.evaluate({...base,service_code}),original);
+  const raw=structuredClone(loadServiceCatalog().raw);
+  raw.domains.flatMap(domain=>domain.services).find(service=>service.service_code==='CLINICAL.OUTPATIENT_WORKSTATION').enabled=false;
+  const disabled=createRuleEngine({catalog:createServiceCatalog(raw)});
+  assert.equal(disabled.evaluate({...base,service_code:'CLINICAL.OUTPATIENT_WORKSTATION'}).selected_service_code,null);
+  assert.throws(()=>engine.evaluate({...base,source_kind:'BOT',service_code:'CLINICAL.OUTPATIENT_WORKSTATION'}),P2007DomainError);
+  assert.throws(()=>engine.evaluate({...base,service_code:['CLINICAL.OUTPATIENT_WORKSTATION']}),P2007DomainError);
+  const unrelated=engine.evaluate({...base,text:'天气怎么样',service_code:'CLINICAL.OUTPATIENT_WORKSTATION'});
+  assert.equal(unrelated.domain_intent,'HOW_TO_QUESTION');assert.equal(unrelated.p1_request_type,'UNKNOWN');
+  assert.deepEqual(unrelated.side_effects,[]);
+});
+
+test('Web selection also defers conflicting rule-derived service facts to human review', () => {
+  const output=createRuleEngine().evaluate({text:'预览正常，但是纸上不全',source_ref:'web:rule-selection-conflict',observed_at:OBSERVED_AT,
+    source_kind:'WEB',service_code:'CLINICAL.OUTPATIENT_WORKSTATION'});
+  assert.equal(output.requires_human_review,true);assert.equal(output.selected_service_code,null);
+  assert.ok(output.facts.some(fact=>fact.field_path==='service.selected_service_code'&&fact.normalized_value==='PRINT.PRINTER_DEVICE'
+    &&fact.source_kind==='DETERMINISTIC_RULE'&&fact.status==='CONFLICTED'));
+});
 
 test('duplicate aliases, duplicate rules and rule config drift fail closed', () => {
   const duplicateAliases = structuredClone(dictionary);

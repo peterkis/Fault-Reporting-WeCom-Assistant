@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
 const routes=[
+  ['GET','/api/yixiaoxiu/service-catalog','yxxSelfServiceCatalog'],
   ['GET','/api/yixiaoxiu/bootstrap','yxxSelfServiceBootstrap'],
   ['POST','/api/yixiaoxiu/requests','yxxCreateRequest'],
   ['GET','/api/yixiaoxiu/my-reports','yxxListMyReports'],
@@ -47,9 +48,20 @@ test('SS-002 closed schemas reject identity and operational authority fields',as
   for(const key of ['reporter','role','provider','target','ticket_id','status','priority','actor','created_at','accepted_at'])assert.equal(Object.hasOwn(input.properties,key),false,key);
   assert.deepEqual(input.properties.impact_scope.enum,['UNKNOWN','SELF','SINGLE_WORKSTATION','MULTIPLE_USERS','DEPARTMENT']);
   assert.equal(input.properties.description.maxLength,4000);assert.equal(supplement.properties.text.maxLength,2000);
+  assert.equal(input.properties.service_code.maxLength,64);
+  const servicePattern=new RegExp(input.properties.service_code.pattern,'u');
+  assert.equal(servicePattern.test('CLINICAL.OUTPATIENT_WORKSTATION'),true);
+  assert.equal(servicePattern.test('PRINTING'),true);
+  assert.equal(servicePattern.test('CLINICAL..BAD'),false);
+  const catalog=JSON.parse(await readFile('contracts/yxx_self_service_service_catalog.schema.json','utf8'));
+  assert.equal(catalog.additionalProperties,false);
+  assert.equal(catalog.properties.services.maxItems,200);
+  assert.equal(catalog.properties.services.items.additionalProperties,false);
+  assert.deepEqual(Object.keys(catalog.properties.services.items.properties).sort(),['category','category_name_zh','name_zh','service_code']);
+  assert.equal(catalog.properties.services.items.properties.name_zh.maxLength,80);
 });
 
-test('SS-002 both OpenAPI documents expose the same seven YXX operation references',async()=>{
+test('SS-002 both OpenAPI documents expose the same eight YXX operation references',async()=>{
   const [root,conversation,contract]=await Promise.all([
     readFile('contracts/openapi.yaml','utf8'),readFile('contracts/conversation_center.openapi.yaml','utf8'),readFile('contracts/yxx_self_service.openapi.yaml','utf8')
   ]);
