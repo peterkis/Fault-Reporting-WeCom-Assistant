@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { createYxxSelfServiceNativeHttp } from '../../src/yxx-self-service-native-http.mjs';
+import {loadServiceCatalog} from '../../src/p2-007-service-catalog.mjs';
 
 export const SS007_FLAGS = Object.freeze({
   YIXIAOXIU_SELF_SERVICE_ENABLED: true,
@@ -152,6 +153,7 @@ export async function startSs007AcceptanceFixture() {
     return true;
   };
   native = createYxxSelfServiceNativeHttp({
+    serviceCatalog: loadServiceCatalog(),
     publicOrigin: origin,
     oauth,
     oauthHttp,
