@@ -1,13 +1,14 @@
 import { readFileSync, mkdirSync, mkdtempSync, realpathSync, rmdirSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { G2_ROOT } from './p2-g2-candidate.mjs';
 import { minimalG2Environment, failG2 } from './p2-g2-validation-config.mjs';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = G2_ROOT;
 export const G2_FROZEN_MERGE = '8c332710dad9b6cf3f6796f3344c04d1c710ddf3';
-export const isG2SuccessorState = state => ['P2_G2_ASSEMBLY_AUTHORIZED', 'P2_G2_READY_FOR_LIVE_E2E'].includes(state?.implementation_authorization_status);
-export function g2PredecessorScopeValid(v) {
+export const isG2SuccessorState = (state: unknown) => ['P2_G2_ASSEMBLY_AUTHORIZED', 'P2_G2_READY_FOR_LIVE_E2E'].includes((state as Record<string,unknown> | null)?.implementation_authorization_status as string);
+export function g2PredecessorScopeValid(value: unknown) {
+  const v=value as Record<string,unknown>;
   const ready = v?.implementation_authorization_status === 'P2_G2_READY_FOR_LIVE_E2E';
   return isG2SuccessorState(v) && v.active_task === 'P2-G2' && v.active_lane === 'ASSEMBLY'
     && v.p2_g2_status === (ready ? 'READY_FOR_LIVE_E2E' : 'IN_PROGRESS')
@@ -17,19 +18,19 @@ export function g2PredecessorScopeValid(v) {
     && (v.next_task_candidate ?? v.next_task) === (ready ? 'P2-G2-LIVE' : 'P2-G2') && v.next_task_authorized === !ready
     && JSON.stringify(v.authorized_gates) === JSON.stringify(['P2-G1', 'P2-G2']);
 }
-const gitAt = (args, cwd) => execFileSync('git', ['-c', 'safe.directory=' + root.replaceAll('\\', '/'),
+const gitAt = (args: string[], cwd: string) => execFileSync('git', ['-c', 'safe.directory=' + root.replaceAll('\\', '/'),
   '-c', 'safe.directory=' + cwd.replaceAll('\\', '/'), ...args], { cwd, encoding: 'utf8', windowsHide: true, maxBuffer: 8000000 });
 
 // Run each predecessor's unchanged validator in its exact completed checkout. This validates history only;
 // it cannot certify the current G2 Runtime or turn a historical live result into G2 readiness.
-export function verifyG2Predecessor(task, includeReadinessEvidence, { sourceRoot = root } = {}) {
+export function verifyG2Predecessor(task: unknown, includeReadinessEvidence: unknown, { sourceRoot = root } = {}) {
   const root = realpathSync(sourceRoot);
-  const git = (args, cwd = root) => gitAt(args, cwd);
+  const git = (args: string[], cwd = root) => gitAt(args, cwd);
   if (realpathSync(git(['rev-parse', '--show-toplevel']).trim()) !== root) failG2('PREDECESSOR_SOURCE_ROOT_INVALID');
-  if (!['P2-012', 'P2-016'].includes(task) || typeof includeReadinessEvidence !== 'boolean') failG2('PREDECESSOR_ARGUMENTS_INVALID');
-  const errors = [];
+  if (!['P2-012', 'P2-016'].includes(task as string) || typeof includeReadinessEvidence !== 'boolean') failG2('PREDECESSOR_ARGUMENTS_INVALID');
+  const errors: string[] = [];
   for (const p of ['MANIFEST.json', 'plans/current_phase.json', 'plans/master_backlog.json', 'plans/parallel_workstreams.json', 'tasks/master_backlog.json', 'project_summary.json']) {
-    const raw = JSON.parse(readFileSync(path.join(root, p), 'utf8')), v = p === 'project_summary.json' ? raw.project : raw;
+    const raw = JSON.parse(readFileSync(path.join(root, p), 'utf8')) as Record<string,unknown>, v = p === 'project_summary.json' ? raw.project : raw;
     if (!g2PredecessorScopeValid(v)) errors.push('P2_G2_SUCCESSOR_SCOPE_INVALID:' + p);
   }
   if (git(['merge-base', G2_FROZEN_MERGE, 'HEAD']).trim() !== G2_FROZEN_MERGE) errors.push('P2_G2_FROZEN_ANCESTRY_INVALID');
@@ -47,7 +48,7 @@ export function verifyG2Predecessor(task, includeReadinessEvidence, { sourceRoot
     const child = spawnSync(process.execPath, ['--input-type=module', '-e', code], {
       cwd: directory, env: minimalG2Environment(), encoding: 'utf8', windowsHide: true, timeout: 120000, maxBuffer: 8000000,
     });
-    let result; try { result = JSON.parse(child.stdout.trim()); } catch { failG2('PREDECESSOR_OUTPUT_INVALID'); }
+    let result: Record<string,unknown>; try { result = JSON.parse(child.stdout.trim()) as Record<string,unknown>; } catch { failG2('PREDECESSOR_OUTPUT_INVALID'); }
     return { ...result, ok: child.status === 0 && result.ok === true, historical_only: true,
       verification_revision: G2_FROZEN_MERGE, successor_task: 'P2-G2', current_runtime_verified: false,
       successor_scope_checked: true, frozen_checkout_cleanup_passed: true };
