@@ -11,6 +11,9 @@ export function d01TypeBoundaries(root:string,input:unknown):void {
   // @ts-expect-error -- Receipt validation does not validate unrelated scalar fields.
   const inventedString:string=receipts[0]?.unvalidated_field;
   void inventedString;
+  // @ts-expect-error -- Catalog validation does not prove capacity-specific profiles exist.
+  const inventedProfiles=receipts[0]?.profiles;
+  void inventedProfiles;
   const scope=readYxxLocalValidationScope(root);
   if(scope){const disabled:false=scope.live_authorized;void disabled;}
   const result=checkSS010({root});

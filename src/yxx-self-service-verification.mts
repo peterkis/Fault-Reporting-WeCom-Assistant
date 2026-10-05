@@ -101,7 +101,7 @@ export function verifyYxxCaseTrace({cases:rawCases,run:rawRun,tap}: {cases:unkno
   assert.deepEqual(observed.sort(),successes.sort());
 }
 
-export function verifyYxxReceipts(kind: string,input: unknown){
+export function verifyYxxReceipts(kind: string,input: unknown): unknown{
   const records=input as ReceiptInput[];
   assert.ok(Array.isArray(records)&&records.length>0);
   for(const r of records){assertG2EvidenceTime(r);assert.equal(r.kind,kind);assert.equal(r.status,'PASS');}
