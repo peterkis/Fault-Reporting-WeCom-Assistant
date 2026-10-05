@@ -1,9 +1,9 @@
 import type { ApprovedLimitedManifest, LimitedMemberConfig } from './yxx-limited-write-contract.mjs';
-import type { PostgresTransaction, PostgresPool, PostgresPoolClient } from './platform/postgres-pool.mjs';
-import type { QueryConfig, QueryResult } from 'pg';
+import type { PostgresTransaction, PostgresPool, PostgresPoolClient, PostgresQueryResult } from './platform/postgres-pool.mjs';
 import type { YxxQuota } from './yxx-self-service-command.mjs';
 export interface LimitedCounts {intakes:number;supplements:number;tickets:number}
 export interface LimitedGuardOptions {manifest:ApprovedLimitedManifest;member:LimitedMemberConfig;secret:string;stopFile?:string|undefined;isStopped?:()=>boolean;now?:()=>number}
+type LimitedQueryInput = Parameters<PostgresPoolClient['query']>[0];
 import {existsSync} from 'node:fs';
 import {reject,memberBindings} from './yxx-limited-write-contract.mjs';
 
@@ -39,7 +39,7 @@ export function createLimitedGuard({manifest,member,secret,stopFile,isStopped=()
   function protectPool(pool: PostgresPool): PostgresPool{
     async function connect(){
       const client=await pool.connect();let transaction=false;
-      const query=async(sql: string|QueryConfig,values?:unknown[]): Promise<QueryResult<Record<string,unknown>>>=>{
+      const query=async(sql: LimitedQueryInput,values?:unknown[]): Promise<PostgresQueryResult>=>{
         const text=typeof sql==='string'?sql:sql?.text,command=text?.trim().toUpperCase();
         if(command==='BEGIN'){
           active();const result=await client.query(sql,values);transaction=true;
@@ -58,7 +58,7 @@ export function createLimitedGuard({manifest,member,secret,stopFile,isStopped=()
     }
     return {connect,options:pool.options,end:pool.end.bind(pool),on:pool.on.bind(pool),
       get totalCount(){return pool.totalCount;},get idleCount(){return pool.idleCount;},get waitingCount(){return pool.waitingCount;},
-      async query(...args: [sql:string|QueryConfig,values?:unknown[]]){const client=await connect();try{return await client.query(...args);}finally{client.release();}}} as PostgresPool;
+      async query(...args: [sql:LimitedQueryInput,values?:unknown[]]){const client=await connect();try{return await client.query(...args);}finally{client.release();}}} as PostgresPool;
   }
   return {active,inspect,quota,protectPool,bindings};
 }

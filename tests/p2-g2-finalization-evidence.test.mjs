@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { configurationFixture } from './helpers/p2-g2-configuration-fixture.mjs';
 import { G2_ROOT } from '../src/p2-g2-candidate.mjs';
@@ -12,6 +12,7 @@ import { writeG2SourceFile, g2SourceBinding } from '../src/p2-g2-evidence-files.
 import { deriveG2Finalization } from '../src/p2-g2-finalization-evidence.mjs';
 
 test('synthetic finalization fixture rejects pending reconciliation, stale cleanup and invented browser removal',t=>{
+  mkdirSync(path.join(G2_ROOT,'tmp'),{recursive:true});
   const dir=mkdtempSync(path.join(G2_ROOT,'tmp','p2-g2-finalization-test-'));
   t.after(()=>{assert.ok(path.relative(path.join(G2_ROOT,'tmp'),dir).startsWith('p2-g2-'));rmSync(dir,{recursive:true,force:true});});
   const prefix=path.relative(G2_ROOT,dir).replaceAll('\\','/'),{manifest}=configurationFixture('live');

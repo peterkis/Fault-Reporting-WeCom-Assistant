@@ -140,9 +140,9 @@ test('batch CLI runs non-canary tests and reports failure without certifying rev
   });
   await t.test('source review executes only the emitted implementation after a real rename', () => {
     // Use a retained legacy module independent of the forthcoming platform type tests.
-    rmSync(path.join(root, 'src/g0-002-sdk-lifecycle.mjs'));
-    writeFileSync(path.join(root, 'src/g0-002-sdk-lifecycle.mts'), "export const migratedProbe: string = 'compiled-platform';\n");
-    writeFileSync(path.join(root, file), "import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {migratedProbe} from '../src/g0-002-sdk-lifecycle.mjs';test('source text and compiled execution',()=>{assert.equal(migratedProbe,'compiled-platform');assert.match(readFileSync('src/g0-002-sdk-lifecycle.mts','utf8'),/: string/u);});\n");
+    rmSync(path.join(root, 'src/g0-003-frame-capture.mjs'));
+    writeFileSync(path.join(root, 'src/g0-003-frame-capture.mts'), "export const migratedProbe: string = 'compiled-platform';\n");
+    writeFileSync(path.join(root, file), "import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {migratedProbe} from '../src/g0-003-frame-capture.mjs';test('source text and compiled execution',()=>{assert.equal(migratedProbe,'compiled-platform');assert.match(readFileSync('src/g0-003-frame-capture.mts','utf8'),/: string/u);});\n");
     const routeFile = path.join(root, 'plans/typescript-migration/test-routing.json');
     const routes = record(JSON.parse(readFileSync(routeFile, 'utf8')) as unknown);
     assert.ok(Array.isArray(routes.entries));
@@ -155,9 +155,9 @@ test('batch CLI runs non-canary tests and reports failure without certifying rev
     assert.ok(Array.isArray(summary.files));
     const result = record(summary.files[0]);
     assert.ok(Array.isArray(result.loaded_project_files));
-    assert.ok(result.loaded_project_files.includes('.build/runtime/src/g0-002-sdk-lifecycle.mjs'));
-    assert.ok(!result.loaded_project_files.includes('src/g0-002-sdk-lifecycle.mjs'));
-    rmSync(path.join(root, '.build/runtime/src/g0-002-sdk-lifecycle.mjs'));
+    assert.ok(result.loaded_project_files.includes('.build/runtime/src/g0-003-frame-capture.mjs'));
+    assert.ok(!result.loaded_project_files.includes('src/g0-003-frame-capture.mjs'));
+    rmSync(path.join(root, '.build/runtime/src/g0-003-frame-capture.mjs'));
     const missing = spawnSync(process.execPath, ['--import', pathToFileURL(path.join(original, '.build/tools/source-hook.mjs')).href, '--test', file], { cwd: root, env: testEnvironment(root, []), encoding: 'utf8', windowsHide: true });
     assert.notEqual(missing.status, 0);
     assert.match(missing.stdout + missing.stderr, /ENOENT/u);
