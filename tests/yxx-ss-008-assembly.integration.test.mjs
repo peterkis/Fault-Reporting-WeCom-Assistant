@@ -88,6 +88,32 @@ test('SS-008 FULL readiness requires both Web migrations only when the extension
   await assertNoP2016Residual({databaseUrl});
 });
 
+test('SS-008 member HTTP pipeline carries its catalog selection into authorized decision facts', {timeout:180000},async()=>{
+  await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'selectedsvc',run:async({pool,databaseUrl:isolated})=>{
+    await migrateCurrentBaselineWithYxx({databaseUrl:isolated});
+    const options={pool,publicOrigin:origin,reporterMemberEntry:config,identityMapping:await mapping(),reporterHmacSecret:secret};
+    const principal=await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'ss008-selection-admin',displayName:'Synthetic Selection',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+    const self=createYxxProfile({...options,profile:'MEMBER_SELF_SERVICE',oauth:createWeComWebOAuth(oauthOptions),yxxSelfService:{featureFlags:flags,pollMilliseconds:100}});
+    const full=createYxxProfile({...options,profile:'FULL_SERVICE_LOOP',reporterPolicy:'MEMBER_REQUIRED',principalId:principal.id,
+      flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true,REPORTER_TIMELINE_ENABLED:true},wecomWebOAuth:oauthOptions,yxxSelfService:{featureFlags:flags}});
+    try{
+      await self.start();const started=await full.start(),member=browser(self.server),staff=browser(full.server,started.cookie);await login(member);
+      const bootstrap=(await member.request('/api/yixiaoxiu/bootstrap')).json();
+      const body={...input('急诊患者等着，操作一直提交不了'),service_code:'CLINICAL.OUTPATIENT_WORKSTATION'};
+      assert.equal((await member.request('/api/yixiaoxiu/requests',post(body,bootstrap.csrf_token))).status,202);
+      const review=await eventually(async()=>{
+        const response=await staff.request('/api/manual-reviews');assert.equal(response.status,200);return response.json().items[0];
+      });
+      const detail=(await staff.request('/api/manual-reviews/'+review.id)).json();
+      const decisions=await staff.request('/api/contact-journeys/'+detail.journey_id+'/decisions');assert.equal(decisions.status,200);
+      assert.equal(decisions.json().at(-1).safe_result.known_fields.selected_service_code,'CLINICAL.OUTPATIENT_WORKSTATION');
+      const facts=decisions.json().flatMap(decision=>decision.safe_result.fact_provenance??[]);
+      assert.ok(facts.some(fact=>fact.field_path==='service.selected_service_code'&&fact.normalized_value==='CLINICAL.OUTPATIENT_WORKSTATION'&&fact.source_kind==='REPORTER_EXPLICIT'&&fact.rule_id===null));
+    }finally{await self.stop();await full.stop();}
+  }});
+  await assertNoP2016Residual({databaseUrl:process.env.PILOT_DATABASE_URL});
+});
+
 test('SS-008 FULL profile uses its paired custom catalog and leaves text intake available without a pair', {timeout:180000},async()=>{
   await withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'fullcatalog',run:async({pool,databaseUrl:isolated})=>{
     await migrateCurrentBaselineWithYxx({databaseUrl:isolated});

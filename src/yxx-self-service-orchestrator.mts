@@ -365,7 +365,7 @@ export function createYxxSelfServiceOrchestrator({ pool, ruleEngine = null, tick
         try {
           if (text.length > MAX_RULE_TEXT) throw inputError('YXX_RULE_WINDOW_LIMIT_EXCEEDED');
           const output = engine.evaluate({ text, source_ref: `web:${root.intake_id}:${revision}`, observed_at: latest.received_at,
-            source_kind: 'WEB', context: { existing_ticket: root.pilot_ticket_id !== null, web_fields: webFields } });
+            source_kind: 'WEB', service_code:webFields.service_code, context: { existing_ticket: root.pilot_ticket_id !== null, web_fields: webFields } });
           routed = routeP2007Decision({ rule_output: output, context: routeContext });
           await transaction.query('RELEASE SAVEPOINT yxx_rule_evaluation');
         } catch (error) {

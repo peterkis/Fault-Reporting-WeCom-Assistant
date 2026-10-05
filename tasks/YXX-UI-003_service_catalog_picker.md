@@ -8,6 +8,8 @@
 
 输入 `service_code` 继续可空，兼容无点号代码，并接受实际目录的 `CATEGORY.SERVICE`（每段以大写字母开头、数字/下划线，整体最多 64）；同步 JSON Schema、公开 d.ts、服务端和页面，保持原幂等、闭合对象与归一化规则。
 
+审查修补的内部规则输入：原初始提交 code 作为显式 `RuleEvaluationInput.service_code` 传入，只允许 WEB 来源、有界语法且当前目录启用的服务成为 `REPORTER_EXPLICIT` 事实；出处 hash 包含描述和 code，不假冒 alias 或人工确认。未知/disabled/null 继续原文本路径。与文本解析或确定性规则的服务事实冲突时保留各出处，通过既有冲突处理进入人工审核，服务/责任建议为空。规则集、阈值、字典、事件和 Ticket 状态机不改；选择本身不代表技术故障或建单批准。公开规则引擎与实际成员 HTTP→授权审核决策分别 RED→GREEN。
+
 已授权公开 seam：真实 Store/Query 的 loopback PG18 集成、原生 HTTP 请求、Mock OAuth 浏览器表单与既有 Schema/TypeScript 合同。逐行为 RED→GREEN，验证禁用/未授权/越界目录、中文映射、XSS、失败后文字提交、退出与晚到响应；沿用既有验收与 v3-p09 四项 smoke。新增 schema 登记现有制品资源，不新增 selection/CI/依赖。
 
 无数据库迁移，默认 Flag 全部 false，最多一次初始目录 GET（随页面会话重新引导可重新取一次），无目录轮询、连接池或外部调用。目录/草稿仅 DOM/内存，清理沿用原 generation/abort/会话边界；关闭原 Flag 或独立 revert PR 回退。
