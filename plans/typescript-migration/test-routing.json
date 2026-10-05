@@ -298,6 +298,23 @@
     "test:yxx:ss:007": {"original":"node --test --test-concurrency=1 tests/yxx-ss-007-*.test.mjs","node_flags":["--test-concurrency=1"],"patterns":["tests/yxx-ss-007-*.test.mjs"],"environment":"ISOLATED_VALUES_NO_ENV_FILE"}
   },
   "selections": {
+    "v3-d01": [
+      "tests/yxx-current-readiness.test.mts",
+      "tests/yxx-current-evidence.test.mts",
+      "tests/yxx-current-readiness-cli.test.mts",
+      "tests/p2-g2-evidence.test.mjs",
+      "tests/p2-g2-finalization-evidence.test.mjs",
+      "tests/p2-g2-manual-evidence.test.mjs",
+      "tests/p2-g2-delivery-evidence.test.mjs",
+      "tests/p2-g2-process-assembly.integration.test.mjs",
+      "tests/p2-g2-source-special-cases.integration.test.mjs",
+      "tests/p2-g2-ready-candidate.test.mjs",
+      "tests/yxx-ss-009-evidence-history.test.mjs",
+      "tests/yxx-ss-009-governance.test.mjs",
+      "tests/yxx-ss-009-evidence.test.mjs",
+      "tests/yxx-ss-010-contract.test.mjs",
+      "tests/p2-g2-current-evidence.test.mjs"
+    ],
     "v3-p09": [
       "tests/yxx-ss-008-assembly.integration.test.mjs",
       "tests/yxx-ss-006-supplements-review.integration.test.mjs",

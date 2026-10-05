@@ -1,6 +1,18 @@
 # TypeScript 增量迁移执行入口
 
-ACTIVE_SELECTION: v3-p09
+ACTIVE_SELECTION: v3-d01
+
+## D01 原目标补齐（2026-10-05）
+
+R00 A/B/C 已由 [PR #49](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/49)、[PR #50](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/50)、[PR #51](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/pull/51) 合并。本次从 PR #51 merge `c7f8519593b2f1fc4f791d6062c9d7f4d81453ff` 接续 D01，不重新执行 R00，不追加业务前置；PR #51 reviewed head `1003fc002c5ec080d64d0c7eb8a8ea13d584a76b` 保持原结果身份。
+
+本轮只迁移原 D01 十二个验证/Evidence 实现，同名 `.mjs` 源码通过正常 rename 替换为严格 `.mts`；运行导入和制品仍为 `.mjs`。原目标达到 181/181，分母仍为 181；这表示原源码清单闭合，不表示全仓无 JavaScript、业务测试 100% 覆盖或发布认证。公开声明、source-host、migration-roots、其他有消费者的 JS 和历史 Evidence 保留。
+
+活动 `v3-d01` 复用原五个种子，补入 manual/delivery、process/control/live、privacy、ready-candidate/test-proof、history/governance、SS009 正反例、SS010 contract/artifact 与 predecessor/current-evidence 直接入口。只新增 selection，不改 entry host/flags/PG/browser/subprocess 或 current/full 合同；`v3-p09` 保留。直接检查使用一次最终构建、strict types、任务自有 loopback PG18、现有 runSelection、相关工具、制品与资源清理。全部提交和直接检查完成后，在最终发布 head 执行一次现有远端 `mode=full`；full 结果仅更新 PR 正文，不新增动态仓库证据提交。
+
+原 181 项完成、保留 JS 分类及后续活动源码依赖范围在本轮 PR 正文 HANDOFF 分别交接。D01 不扩展 G0、迁移脚本、测试或前端迁移，不关闭全局 allowJs。R01/certify/C10/C11 与生产操作不执行，不自动合并。SQL、业务 Gate、默认开关和历史批准保持原约束。
+
+下文是各阶段适用时点的历史记录。
 
 ## P09 合并后业务入口（2026-10-05）
 
