@@ -1,3 +1,18 @@
+import type { PostgresTransaction } from './platform/postgres-pool.mjs';
+export interface ReconciliationCounts {physical_epoch_ms:string;inbox_count:number;ticket_count:number;incident_count:number;
+ unknown_pending:number;dead_letters:number;communication_pending:number;safe_actions_pending:number;internal_note_leaks:number;
+ automatic_incident_count:number;out_of_scope_deliveries:number;remaining_role_connections:number}
+export interface ReconciliationDelivery {delivery_ref_hash:string;outbox_id:string;message_id:string;audience:string;target_hash:string;
+ status:string;attempt_count:number;side_effect_state:string;last_error_code:string|null;purpose:string;sender_kind:string;visibility:string;
+ message_type:string;sender_system_code:string|null;client_command_id:string|null;transport:'WECOM_GROUP_WEBHOOK'|'WECOM_AIBOT_WSS';
+ source_event_ref:string|null;source_version:string|null;source_version_kind:string|null;template_version:string|null;
+ ticket_id:string|null;notification_type:string|null;incident_id:string|null;template_code:string|null;incident_audience:string|null;
+ incident_report_ref:string|null;source_event_type:string|null;source_action_type:string|null;source_action_state:string|null;
+ source_decision_result:string|null;consumed_grants:number;old_private_created_artifacts:number;direct_leg_count:number;
+ origin_channel:string|null;direct_guided_leg_count:number;journey_message_count:number;entry_mode:string|null;organic_without_prior_group:boolean;
+ destination_eligible_at_reconciliation?:boolean}
+export interface ReconciliationAttempt {attempt_ref:string;delivery_ref_hash:string;attempt_no:number;outcome:string;
+ side_effect_state:string;error_code:string|null;started_epoch_ms:string;completed_epoch_ms:string|null}
 import { g2Hash, validateG2Manifest, failG2 } from './p2-g2-validation-config.mjs';
 import { createP2012PersonDestinationAuthorizer } from './p2-012-live-reporter-scope.mjs';
 import { g2SourceBinding } from './p2-g2-evidence-files.mjs';
@@ -66,17 +81,17 @@ export const G2_RECONCILIATION_QUERY_HASH=g2Hash(JSON.stringify(G2_RECONCILIATIO
 
 // The caller owns a read-only repeatable-read transaction. No arbitrary SQL or
 // raw content is accepted. Dedicated run scope is checked before connecting.
-export async function collectG2Reconciliation({transaction,manifest}){
+export async function collectG2Reconciliation({transaction,manifest}: {transaction:PostgresTransaction;manifest:unknown}){
   const m=validateG2Manifest(manifest);
-  const counts=(await transaction.query(G2_RECONCILIATION_SQL.counts,[m.scope.bot_hash,m.scope.group_hashes])).rows[0];
-  const deliveries=(await transaction.query(G2_RECONCILIATION_SQL.deliveries)).rows;
-  const attempts=(await transaction.query(G2_RECONCILIATION_SQL.attempts)).rows;
-  const privateDestinations=(await transaction.query(G2_RECONCILIATION_SQL.private_destinations)).rows;
-  const ticket_events=(await transaction.query(G2_RECONCILIATION_SQL.ticket_events)).rows;
-  const incident_events=(await transaction.query(G2_RECONCILIATION_SQL.incident_events)).rows;
-  const reports=(await transaction.query(G2_RECONCILIATION_SQL.reports)).rows;
+  const counts=((await transaction.query<ReconciliationCounts>(G2_RECONCILIATION_SQL.counts,[m.scope.bot_hash,m.scope.group_hashes])).rows[0] as ReconciliationCounts);
+  const deliveries=(await transaction.query<ReconciliationDelivery>(G2_RECONCILIATION_SQL.deliveries)).rows;
+  const attempts=(await transaction.query<ReconciliationAttempt>(G2_RECONCILIATION_SQL.attempts)).rows;
+  const privateDestinations=(await transaction.query<{id:string;provider:string;channel_account_id:string;target_id:string}>(G2_RECONCILIATION_SQL.private_destinations)).rows;
+  const ticket_events=(await transaction.query<{event_id:string;ticket_id:string;aggregate_version:string;event_type:string;new_status:string}>(G2_RECONCILIATION_SQL.ticket_events)).rows;
+  const incident_events=(await transaction.query<{id:string;incident_id:string;event_ordinal:string;event_type:string;actor_kind:string;report_id:string|null}>(G2_RECONCILIATION_SQL.incident_events)).rows;
+  const reports=(await transaction.query<{id:string;incident_id:string;ticket_id:string;link_state:string;impact_state:string}>(G2_RECONCILIATION_SQL.reports)).rows;
   if(deliveries.length>1000||attempts.length>2000||privateDestinations.length>1000||ticket_events.length>6000||incident_events.length>6000||reports.length>1000)failG2('RECONCILIATION_LIMIT');
-  const cache=new Map();
+  const cache=new Map<string,boolean>();
   for(const d of privateDestinations){
     if(d.provider!=='WECOM_AIBOT'||g2Hash(d.channel_account_id)!==m.scope.bot_hash)continue;
     const key=g2Hash(JSON.stringify([d.channel_account_id,d.target_id]));
@@ -86,11 +101,11 @@ export async function collectG2Reconciliation({transaction,manifest}){
       cache.set(key,await authorize({transaction,bot_id:d.channel_account_id,reporter_user_id:d.target_id}));
     }
     const eligible=cache.get(key);if(!eligible)counts.out_of_scope_deliveries++;
-    const row=deliveries.find(row=>row.delivery_ref_hash===g2Hash(d.id));if(row)row.destination_eligible_at_reconciliation=eligible;
+    const row=deliveries.find(row=>row.delivery_ref_hash===g2Hash(d.id));if(row)row.destination_eligible_at_reconciliation=(eligible as boolean);
   }
   // Error text never enters evidence, even if a legacy caller stored an unsafe value.
   for(const row of [...deliveries,...attempts])for(const key of ['last_error_code','error_code'])
-    if(Object.hasOwn(row,key)&&row[key]!==null&&!/^[A-Z][A-Z0-9_]{1,127}$/u.test(row[key]))row[key]='UNSAFE_ERROR_CODE_REDACTED';
+    if(Object.hasOwn(row,key)&&(row as {last_error_code?:string|null;error_code?:string|null})[key as 'last_error_code'|'error_code']!==null&&!/^[A-Z][A-Z0-9_]{1,127}$/u.test(((row as {last_error_code?:string|null;error_code?:string|null})[key as 'last_error_code'|'error_code'] as string)))(row as {last_error_code?:string|null;error_code?:string|null})[key as 'last_error_code'|'error_code']='UNSAFE_ERROR_CODE_REDACTED';
   return {schema_version:1,kind:'G2_RECONCILIATION_PACKET',...g2SourceBinding(m),
     database_identity_hash:m.scope.database_identity_hash,query_sha256:G2_RECONCILIATION_QUERY_HASH,
     physical_epoch_ms:counts.physical_epoch_ms,counts,deliveries,attempts,ticket_events,incident_events,reports};
