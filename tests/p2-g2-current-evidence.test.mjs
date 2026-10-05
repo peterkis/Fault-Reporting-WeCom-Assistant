@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtempSync,mkdirSync,writeFileSync,unlinkSync,rmdirSync} from 'node:fs';
+import {verifyG2Predecessor,g2PredecessorScopeValid,isG2SuccessorState} from '../src/p2-g2-predecessor-verification.mjs';
+import {G2_ROOT} from '../src/p2-g2-candidate.mjs';
+import {readFileSync} from 'node:fs';
+import path from 'node:path';
 import {readG2CurrentEvidence} from '../src/p2-g2-current-evidence.mjs';
 
 test('current readiness selects append-only reports and rejects invalid pointers without historical fallback',()=>{
@@ -15,4 +19,12 @@ test('current readiness selects append-only reports and rejects invalid pointers
    writeFileSync(phase,JSON.stringify({p2_g2_current_readiness:pointers}));assert.throws(()=>readG2CurrentEvidence(root,'parent'));
   }
  }finally{for(const p of [phase,old,root+'/'+parent,root+'/'+member])unlinkSync(p);rmdirSync(root+'/plans');rmdirSync(root+'/evidence');rmdirSync(root);}
+});
+
+test('compiled predecessor uses the source checkout by default and preserves successor refusal',()=>{
+ const state=JSON.parse(readFileSync(path.join(G2_ROOT,'plans/current_phase.json'),'utf8'));
+ assert.equal(isG2SuccessorState(state),true);assert.equal(g2PredecessorScopeValid(state),true);
+ assert.equal(g2PredecessorScopeValid({...state,last_completed_gate:'P2-G2'}),false);
+ assert.equal(isG2SuccessorState(null),false);
+ assert.throws(()=>verifyG2Predecessor('INVALID',true),{code:'P2_G2_PREDECESSOR_ARGUMENTS_INVALID'});
 });

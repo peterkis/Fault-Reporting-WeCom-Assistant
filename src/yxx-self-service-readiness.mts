@@ -19,11 +19,12 @@ export const SS010_ACCEPTANCE=Object.freeze([
   {id:'YXX-AC-093',tests:['SS010 AC093 real browser limited roles complete supplement review and safe member feedback','SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope']},
   {id:'YXX-AC-094',tests:['SS010 AC094 unknown duplicate and run arguments fail without implicit authorization']},
 ]);
-const lf=value=>value.replaceAll('\r\n','\n');
-export function readSS010Artifact(root,ref){
-  assert.match(ref?.path??'',/^evidence\/yxx-ss-010-[a-zA-Z0-9_.-]+$/u);
+const lf=(value: string)=>value.replaceAll('\r\n','\n');
+export function readSS010Artifact(root: string,input: unknown){
+  const ref=input as {path?:unknown;sha256?:unknown};
+  assert.match((ref?.path??'') as string,/^evidence\/yxx-ss-010-[a-zA-Z0-9_.-]+$/u);
   assert.equal(lstatSync(path.join(root,'evidence')).isSymbolicLink(),false);
-  const target=path.join(root,ref.path),stat=lstatSync(target);assert.ok(stat.isFile()&&!stat.isSymbolicLink()&&stat.size<=64*1024*1024);
+  const target=path.join(root,ref.path as string),stat=lstatSync(target);assert.ok(stat.isFile()&&!stat.isSymbolicLink()&&stat.size<=64*1024*1024);
   const content=lf(readFileSync(target,'utf8'));assert.equal(evidenceHash(content),ref.sha256);return content;
 }
 const defaultSourceRoot=path.basename(path.resolve(G2_ROOT))==='runtime'
@@ -53,12 +54,12 @@ export function checkSS010({root=defaultSourceRoot,requireReady=false}={}){
     }catch{throw Object.assign(new Error('CURRENT_EVIDENCE_INVALID'),{code:'CURRENT_EVIDENCE_INVALID',stage:'EVIDENCE'});}
     if(pointer.schema_version!==2)verifyCurrentYxxCatalog(root,report,pointer);
     verifyCurrentYxxArtifact(root);
-    return {ok:true,status:'READY_FOR_LIMITED_WRITE_LIVE',contract:'ADR-0027',scope_base:scope.base_head,
+    return {ok:true,status:'READY_FOR_LIMITED_WRITE_LIVE' as const,contract:'ADR-0027',scope_base:scope.base_head,
       tested_head:report.tested_head,tested_tree:report.tested_tree,candidate_fingerprint:inventory.fingerprint,
       report_path:reference.path,report_sha256:reference.sha256,base_service_ready:true,ai_enhancement_ready:false,
       database_connections:0,provider_calls:0,listener_started:false,live_authorized:false,parent_gate_advanced:false};
   }
-  return {ok:true,status:'STRUCTURE_VALID_NOT_READY',contract:'ADR-0027',scope_base:scope.base_head,
+  return {ok:true,status:'STRUCTURE_VALID_NOT_READY' as const,contract:'ADR-0027',scope_base:scope.base_head,
     candidate_fingerprint:inventory.fingerprint,database_connections:0,provider_calls:0,listener_started:false,
     live_authorized:false,parent_gate_advanced:false};
 }

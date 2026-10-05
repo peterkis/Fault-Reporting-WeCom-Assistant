@@ -8,19 +8,19 @@ import path from 'node:path';
 // from HEAD or a mutable report. Subsequent committed evidence is append-only.
 export const SS009_PUBLISHED_EVIDENCE_ANCHOR='a1a48f9839315d7683d9973a1d9febfd14aa39a8';
 const textEvidence=/\.(?:json|jsonl|ndjson|md|tap|txt|log|csv|tsv|ya?ml|xml|html|sql|mjs|js|ps1|sh)$/iu;
-const blobHash=bytes=>createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex');
-const fail=(code,details={})=>{throw Object.assign(new Error(code),{code,...details});};
-const records=text=>text.split('\0').filter(Boolean);
+const blobHash=(bytes: Buffer)=>createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex');
+const fail: (code:string,details?:Record<string,unknown>)=>never=(code,details={})=>{throw Object.assign(new Error(code),{code,...details});};
+const records=(text: string)=>text.split('\0').filter(Boolean);
 
 // anchor is injectable only for synthetic Git fixtures. The production caller
 // passes no override. This function is read-only and never trusts diff's index
 // stat cache, assume-unchanged/skip-worktree bits, rename detection or textconv.
-export function verifyYxxEvidenceHistory(root,{anchor=SS009_PUBLISHED_EVIDENCE_ANCHOR}={}){
+export function verifyYxxEvidenceHistory(root: string,{anchor=SS009_PUBLISHED_EVIDENCE_ANCHOR}={}){
   assert.match(anchor,/^[a-f0-9]{40}$/u);
   const env=Object.fromEntries(Object.entries(process.env).filter(([key])=>!key.startsWith('GIT_')));
   env.GIT_NO_REPLACE_OBJECTS='1';
-  const git=args=>execFileSync('git',args,{cwd:root,env,encoding:'utf8',windowsHide:true,maxBuffer:16*1024*1024,stdio:['ignore','pipe','pipe']});
-  let head;
+  const git=(args: string[])=>execFileSync('git',args,{cwd:root,env,encoding:'utf8',windowsHide:true,maxBuffer:16*1024*1024,stdio:['ignore','pipe','pipe']});
+  let head: string;
   try{
     assert.equal(git(['rev-parse','--is-shallow-repository']).trim(),'false');
     assert.equal(git(['for-each-ref','--format=%(refname)','refs/replace/']).trim(),'');
@@ -38,23 +38,23 @@ export function verifyYxxEvidenceHistory(root,{anchor=SS009_PUBLISHED_EVIDENCE_A
     '--diff-filter=a','--full-history','--diff-merges=separate',anchor+'..'+head,'--','evidence/'])))].sort();
   if(rewritten.length)fail('SS009_PUBLISHED_EVIDENCE_CHANGED',{layer:'HISTORY',anchor,files:rewritten});
 
-  const parse=entry=>{const tab=entry.indexOf('\t');assert.ok(tab>0);return [entry.slice(tab+1),entry.slice(0,tab).split(' ')];};
+  const parse=(entry: string): [string,string[]]=>{const tab=entry.indexOf('\t');assert.ok(tab>0);return [entry.slice(tab+1),entry.slice(0,tab).split(' ')];};
   const committed=new Map(records(git(['ls-tree','-r','-z','--full-tree',head,'--','evidence/'])).map(entry=>{
     const [name,[mode,type,oid]]=parse(entry);return [name,{mode,type,oid}];
   }));
   if(!committed.size)fail('SS009_EVIDENCE_HISTORY_UNAVAILABLE',{anchor});
-  const index=new Map();
+  const index=new Map<string,{mode:string|undefined;oid:string|undefined}>();
   for(const entry of records(git(['ls-files','--stage','-z','--','evidence/']))){
     const [name,[mode,oid,stage]]=parse(entry);
     if(stage!=='0')fail('SS009_PUBLISHED_EVIDENCE_CHANGED',{layer:'INDEX',files:[name]});
     index.set(name,{mode,oid});
   }
-  const issues=[],directories=new Set();
+  const issues:{file:string;layer:'INDEX'|'WORKTREE'}[]=[],directories=new Set<string>();
   for(const [name,entry] of committed){
     const staged=index.get(name);
     if(!staged||staged.mode!==entry.mode||staged.oid!==entry.oid){issues.push({file:name,layer:'INDEX'});continue;}
     try{
-      assert.ok(entry.type==='blob'&&['100644','100755'].includes(entry.mode));
+      assert.ok(entry.type==='blob'&&['100644','100755'].includes(entry.mode as string));
       assert.ok(name.startsWith('evidence/')&&!path.isAbsolute(name)&&!name.split('/').includes('..'));
       const parts=name.split('/');let directory=root;
       for(const part of parts.slice(0,-1)){

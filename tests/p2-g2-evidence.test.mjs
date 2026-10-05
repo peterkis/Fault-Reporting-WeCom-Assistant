@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { createG2EvidenceWriter, readG2Evidence, validateG2EvidenceRecord } from '../src/p2-g2-evidence.mjs';
+import { verifyG2LiveSource } from '../src/p2-g2-live-evidence.mjs';
 import { shanghaiLocalToEpochMs } from '../src/platform/time-contract.mjs';
 
 const sha = x => createHash('sha256').update(x).digest('hex');
@@ -53,4 +54,11 @@ test('P2-G2 manual attestation requires its matching source kind and integer tes
   assert.throws(() => validateG2EvidenceRecord(reseal(wrongSource)), { code: 'P2_G2_MANUAL_EVIDENCE_SOURCE_REQUIRED' });
   const fractional = fixture(); fractional.details.tests = 1.5;
   assert.throws(() => validateG2EvidenceRecord(reseal(fractional)), { code: 'P2_G2_EVIDENCE_INVALID' });
+});
+
+// Synthetic negative: a mismatched source must be refused before approval file IO.
+test('G2 startup owner source rejects a mismatched path before opening an approval', () => {
+  const live = {mode:'live',approval:{source_ref:'evidence/p2-g2-live-start-approval-unit.md',source_sha256:'b'.repeat(64)}};
+  assert.equal(verifyG2LiveSource({kind:'OWNER_FILE',ref:'evidence/p2-g2-live-start-approval-other.md',sha256:'b'.repeat(64)},
+    {scenario_id:'G2-START'},live,{root:path.join(os.tmpdir(),'nonexistent-g2-synthetic-root')}),false);
 });
