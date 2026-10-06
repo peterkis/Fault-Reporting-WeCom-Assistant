@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 10:08:33","event_epoch_ms":"1791252513237","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"compiled TypeScript is called by legacy MJS within one runtime module graph","file":"tests/migration-canary.test.mjs","line":7,"nesting":0,"skip":false,"todo":false}

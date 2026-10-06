@@ -1,0 +1,20 @@
+{
+  "name": "validator-validate-v1-4-architecture",
+  "command": [
+    "node",
+    "scripts/validate-v1-4-architecture.mjs"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error_code": null,
+  "stdout": {
+    "path": "validator-validate-v1-4-architecture.stdout",
+    "bytes": 50,
+    "sha256": "ac1058ab8ed14699e2fa28e83e269153aa710adcaebb1dc701ffa9e6969c1981"
+  },
+  "stderr": {
+    "path": "validator-validate-v1-4-architecture.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

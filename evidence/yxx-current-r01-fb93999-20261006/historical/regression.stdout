@@ -1,0 +1,226 @@
+TAP version 13
+# Subtest: SS-008 local successor never suppresses state, migration or historical evidence drift
+ok 1 - SS-008 local successor never suppresses state, migration or historical evidence drift
+  ---
+  duration_ms: 27351.1876
+  type: 'test'
+  ...
+# Subtest: SS-009 history accepts an unchanged published snapshot and new uncommitted evidence
+ok 2 - SS-009 history accepts an unchanged published snapshot and new uncommitted evidence
+  ---
+  duration_ms: 1930.3924
+  type: 'test'
+  ...
+# Subtest: SS-009 history reproduces the base-relative A bypass and rejects the rewritten published file
+ok 3 - SS-009 history reproduces the base-relative A bypass and rejects the rewritten published file
+  ---
+  duration_ms: 1441.1914
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects a committed rewrite in a clean checkout
+ok 4 - SS-009 history rejects a committed rewrite in a clean checkout
+  ---
+  duration_ms: 1610.115
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects a committed rewrite even after a restoring commit
+ok 5 - SS-009 history rejects a committed rewrite even after a restoring commit
+  ---
+  duration_ms: 1910.3518
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects staged rewrites hidden by a restored worktree
+ok 6 - SS-009 history rejects staged rewrites hidden by a restored worktree
+  ---
+  duration_ms: 1519.492
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects worktree rewrites hidden by assume-unchanged
+ok 7 - SS-009 history rejects worktree rewrites hidden by assume-unchanged
+  ---
+  duration_ms: 1583.7985
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects worktree rewrites hidden by skip-worktree
+ok 8 - SS-009 history rejects worktree rewrites hidden by skip-worktree
+  ---
+  duration_ms: 1533.1415
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects deletion of previously published evidence
+ok 9 - SS-009 history rejects deletion of previously published evidence
+  ---
+  duration_ms: 1443.3602
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects committed renames even when Git rename detection is disabled
+ok 10 - SS-009 history rejects committed renames even when Git rename detection is disabled
+  ---
+  duration_ms: 1779.7335
+  type: 'test'
+  ...
+# Subtest: SS-009 history protects new evidence after its first commit without advancing the anchor
+ok 11 - SS-009 history protects new evidence after its first commit without advancing the anchor
+  ---
+  duration_ms: 2400.9629
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects later committed changes to newly added evidence
+ok 12 - SS-009 history rejects later committed changes to newly added evidence
+  ---
+  duration_ms: 1920.594
+  type: 'test'
+  ...
+# Subtest: SS-009 history accepts documented text CRLF checkout but never normalizes binary evidence
+ok 13 - SS-009 history accepts documented text CRLF checkout but never normalizes binary evidence
+  ---
+  duration_ms: 1842.7931
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects indexed file type changes
+ok 14 - SS-009 history rejects indexed file type changes
+  ---
+  duration_ms: 1528.8474
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects symlinked evidence directories even with identical bytes
+ok 15 - SS-009 history rejects symlinked evidence directories even with identical bytes
+  ---
+  duration_ms: 1385.1523
+  type: 'test'
+  ...
+# Subtest: SS-009 history accepts a genuine merge preview without treating additions as rewrites
+ok 16 - SS-009 history accepts a genuine merge preview without treating additions as rewrites
+  ---
+  duration_ms: 1969.8834
+  type: 'test'
+  ...
+# Subtest: SS-009 history refuses unavailable or unrelated anchors instead of trusting HEAD
+ok 17 - SS-009 history refuses unavailable or unrelated anchors instead of trusting HEAD
+  ---
+  duration_ms: 1457.2676
+  type: 'test'
+  ...
+# Subtest: SS-009 history preserves BOM bytes rather than silently decoding them away
+ok 18 - SS-009 history preserves BOM bytes rather than silently decoding them away
+  ---
+  duration_ms: 1497.714
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects binary normalization even behind a text extension
+ok 19 - SS-009 history rejects binary normalization even behind a text extension
+  ---
+  duration_ms: 2084.2419
+  type: 'test'
+  ...
+# Subtest: SS-009 requires local validation scope before accepting protected parent phase state
+ok 20 - SS-009 requires local validation scope before accepting protected parent phase state
+  ---
+  duration_ms: 13128.6079
+  type: 'test'
+  ...
+# Subtest: SS-009 strict completion requires finalized status and PASS while preTamper remains intermediate
+ok 21 - SS-009 strict completion requires finalized status and PASS while preTamper remains intermediate
+  ---
+  duration_ms: 1.3747
+  type: 'test'
+  ...
+# Subtest: SS-009 evidence rejects a forged PASS summary without the matching successful TAP
+ok 22 - SS-009 evidence rejects a forged PASS summary without the matching successful TAP
+  ---
+  duration_ms: 1.2713
+  type: 'test'
+  ...
+# Subtest: SS-009 complete trace matches TAP multiplicity nesting escaped names and collected files
+ok 23 - SS-009 complete trace matches TAP multiplicity nesting escaped names and collected files
+  ---
+  duration_ms: 69.2851
+  type: 'test'
+  ...
+# Subtest: SS-009 trace covers every collected file regardless of shared names or event order
+ok 24 - SS-009 trace covers every collected file regardless of shared names or event order
+  ---
+  duration_ms: 1.2706
+  type: 'test'
+  ...
+# Subtest: SS-009 trace rejects a whole omitted file after adjusting all trace and TAP counts
+ok 25 - SS-009 trace rejects a whole omitted file after adjusting all trace and TAP counts
+  ---
+  duration_ms: 0.7065
+  type: 'test'
+  ...
+# Subtest: SS-009 trace rejects reassigned file provenance even when names nesting and counts match
+ok 26 - SS-009 trace rejects reassigned file provenance even when names nesting and counts match
+  ---
+  duration_ms: 0.9375
+  type: 'test'
+  ...
+# Subtest: SS-009 trace rejects set-preserving file relabeling against the independent execution manifest
+ok 27 - SS-009 trace rejects set-preserving file relabeling against the independent execution manifest
+  ---
+  duration_ms: 1.4144
+  type: 'test'
+  ...
+# Subtest: SS-009 trace reports all unobserved files and skipped events cannot establish coverage
+ok 28 - SS-009 trace reports all unobserved files and skipped events cannot establish coverage
+  ---
+  duration_ms: 2.0315
+  type: 'test'
+  ...
+# Subtest: SS-009 published regression summary equals all raw counts files and unchanged flag
+ok 29 - SS-009 published regression summary equals all raw counts files and unchanged flag
+  ---
+  duration_ms: 4.7922
+  type: 'test'
+  ...
+# Subtest: SS-009 every structured test event has paired reporter observation time
+ok 30 - SS-009 every structured test event has paired reporter observation time
+  ---
+  duration_ms: 1.2483
+  type: 'test'
+  ...
+# Subtest: SS-009 sampler and cleanup errors never skip later owned resource shutdown
+ok 31 - SS-009 sampler and cleanup errors never skip later owned resource shutdown
+  ---
+  duration_ms: 0.8413
+  type: 'test'
+  ...
+# Subtest: SS-009 dedicated proof summaries cannot replace process capacity or catalog observations
+ok 32 - SS-009 dedicated proof summaries cannot replace process capacity or catalog observations
+  ---
+  duration_ms: 6.1813
+  type: 'test'
+  ...
+# Subtest: SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time
+ok 33 - SS-009 run evidence binds real TAP counts current inventory historical coverage and paired time
+  ---
+  duration_ms: 124.4126
+  type: 'test'
+  ...
+# Subtest: SS-009 evidence references reject wrong hashes traversal and linked files
+ok 34 - SS-009 evidence references reject wrong hashes traversal and linked files
+  ---
+  duration_ms: 23.4148
+  type: 'test'
+  ...
+# Subtest: SS-009 governance preserves historical baseline user files parent gate and full collector coverage
+ok 35 - SS-009 governance preserves historical baseline user files parent gate and full collector coverage
+  ---
+  duration_ms: 2118.5409
+  type: 'test'
+  ...
+# Subtest: SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types
+ok 36 - SS-009 parsed OpenAPI resolves seven member APIs consistently with unique operation IDs and shared time types
+  ---
+  duration_ms: 3014.1492
+  type: 'test'
+  ...
+1..36
+# tests 36
+# suites 0
+# pass 36
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 77320.4894

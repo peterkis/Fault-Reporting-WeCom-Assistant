@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 10:10:52","event_epoch_ms":"1791252652752","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"PR8 actual App projection and rule-first Worker use one lock order without losing the earlier source","file":"tests/p2-016-projection-lock-order.integration.test.mjs","line":13,"nesting":0,"skip":false,"todo":false}

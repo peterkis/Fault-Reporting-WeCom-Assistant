@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: SS-009 history accepts an unchanged published snapshot and new uncommitted evidence
+ok 1 - SS-009 history accepts an unchanged published snapshot and new uncommitted evidence
+  ---
+  duration_ms: 87.337149
+  type: 'test'
+  ...
+# Subtest: SS-009 history reproduces the base-relative A bypass and rejects the rewritten published file
+ok 2 - SS-009 history reproduces the base-relative A bypass and rejects the rewritten published file
+  ---
+  duration_ms: 57.21004
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects a committed rewrite in a clean checkout
+ok 3 - SS-009 history rejects a committed rewrite in a clean checkout
+  ---
+  duration_ms: 61.891314
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects a committed rewrite even after a restoring commit
+ok 4 - SS-009 history rejects a committed rewrite even after a restoring commit
+  ---
+  duration_ms: 70.79897
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects staged rewrites hidden by a restored worktree
+ok 5 - SS-009 history rejects staged rewrites hidden by a restored worktree
+  ---
+  duration_ms: 57.666485
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects worktree rewrites hidden by assume-unchanged
+ok 6 - SS-009 history rejects worktree rewrites hidden by assume-unchanged
+  ---
+  duration_ms: 57.936787
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects worktree rewrites hidden by skip-worktree
+ok 7 - SS-009 history rejects worktree rewrites hidden by skip-worktree
+  ---
+  duration_ms: 56.920319
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects deletion of previously published evidence
+ok 8 - SS-009 history rejects deletion of previously published evidence
+  ---
+  duration_ms: 53.365568
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects committed renames even when Git rename detection is disabled
+ok 9 - SS-009 history rejects committed renames even when Git rename detection is disabled
+  ---
+  duration_ms: 73.517938
+  type: 'test'
+  ...
+# Subtest: SS-009 history protects new evidence after its first commit without advancing the anchor
+ok 10 - SS-009 history protects new evidence after its first commit without advancing the anchor
+  ---
+  duration_ms: 83.648653
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects later committed changes to newly added evidence
+ok 11 - SS-009 history rejects later committed changes to newly added evidence
+  ---
+  duration_ms: 71.690419
+  type: 'test'
+  ...
+# Subtest: SS-009 history accepts documented text CRLF checkout but never normalizes binary evidence
+ok 12 - SS-009 history accepts documented text CRLF checkout but never normalizes binary evidence
+  ---
+  duration_ms: 78.157853
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects indexed file type changes
+ok 13 - SS-009 history rejects indexed file type changes
+  ---
+  duration_ms: 60.752935
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects symlinked evidence directories even with identical bytes
+ok 14 - SS-009 history rejects symlinked evidence directories even with identical bytes
+  ---
+  duration_ms: 54.074345
+  type: 'test'
+  ...
+# Subtest: SS-009 history accepts a genuine merge preview without treating additions as rewrites
+ok 15 - SS-009 history accepts a genuine merge preview without treating additions as rewrites
+  ---
+  duration_ms: 76.838649
+  type: 'test'
+  ...
+# Subtest: SS-009 history refuses unavailable or unrelated anchors instead of trusting HEAD
+ok 16 - SS-009 history refuses unavailable or unrelated anchors instead of trusting HEAD
+  ---
+  duration_ms: 56.700626
+  type: 'test'
+  ...
+# Subtest: SS-009 history preserves BOM bytes rather than silently decoding them away
+ok 17 - SS-009 history preserves BOM bytes rather than silently decoding them away
+  ---
+  duration_ms: 53.485934
+  type: 'test'
+  ...
+# Subtest: SS-009 history rejects binary normalization even behind a text extension
+ok 18 - SS-009 history rejects binary normalization even behind a text extension
+  ---
+  duration_ms: 84.242839
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1321.210109

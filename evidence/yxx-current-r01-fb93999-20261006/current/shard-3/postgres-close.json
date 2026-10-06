@@ -1,0 +1,80 @@
+{
+  "container_id": "04624c0fa9e69b8403ffbb0ce85c2ba4eff723430af13c51859479dbd7ea7eec",
+  "volume_name": "7b97dc4749f9fae8b8dfbbcac41a439828d8af8a60757d58b67f4283672010b8",
+  "postgres_stop_exit_code": 0,
+  "postgres_stopped": true,
+  "postgres_data_removed": true,
+  "owned_residuals": 0,
+  "preexisting_resources_touched": false,
+  "error_code": null,
+  "commands": [
+    {
+      "status": 0,
+      "stdout": "{\"id\":\"04624c0fa9e69b8403ffbb0ce85c2ba4eff723430af13c51859479dbd7ea7eec\",\"image\":\"postgres:18\",\"mounts\":[{\"Destination\":\"/var/lib/postgresql\",\"Driver\":\"local\",\"Mode\":\"\",\"Name\":\"7b97dc4749f9fae8b8dfbbcac41a439828d8af8a60757d58b67f4283672010b8\",\"Propagation\":\"\",\"RW\":true,\"Source\":\"/var/lib/docker/volumes/7b97dc4749f9fae8b8dfbbcac41a439828d8af8a60757d58b67f4283672010b8/_data\",\"Type\":\"volume\"}]}\n",
+      "stderr": "",
+      "arguments": [
+        "inspect",
+        "--format",
+        "{\"id\":{{json .Id}},\"image\":{{json .Config.Image}},\"mounts\":{{json .Mounts}}}",
+        "04624c0fa9e69b8403ffbb0ce85c2ba4eff723430af13c51859479dbd7ea7eec"
+      ]
+    },
+    {
+      "status": 0,
+      "stdout": "Flag --time has been deprecated, use --timeout instead\n04624c0fa9e69b8403ffbb0ce85c2ba4eff723430af13c51859479dbd7ea7eec\n",
+      "stderr": "",
+      "arguments": [
+        "stop",
+        "--time",
+        "30",
+        "04624c0fa9e69b8403ffbb0ce85c2ba4eff723430af13c51859479dbd7ea7eec"
+      ]
+    },
+    {
+      "status": 0,
+      "stdout": "{\"Status\":\"exited\",\"Running\":false,\"Paused\":false,\"Restarting\":false,\"OOMKilled\":false,\"Dead\":false,\"Pid\":0,\"ExitCode\":0,\"Error\":\"\",\"StartedAt\":\"2026-10-06T02:07:51.687704818Z\",\"FinishedAt\":\"2026-10-06T02:18:35.103953083Z\",\"Health\":{\"Status\":\"unhealthy\",\"FailingStreak\":0,\"Log\":[{\"Start\":\"2026-10-06T02:18:14.230471552Z\",\"End\":\"2026-10-06T02:18:14.286927471Z\",\"ExitCode\":0,\"Output\":\"/var/run/postgresql:5432 - accepting connections\\n\"},{\"Start\":\"2026-10-06T02:18:19.288141471Z\",\"End\":\"2026-10-06T02:18:19.340609136Z\",\"ExitCode\":0,\"Output\":\"/var/run/postgresql:5432 - accepting connections\\n\"},{\"Start\":\"2026-10-06T02:18:24.34114619Z\",\"End\":\"2026-10-06T02:18:24.406981397Z\",\"ExitCode\":0,\"Output\":\"/var/run/postgresql:5432 - accepting connections\\n\"},{\"Start\":\"2026-10-06T02:18:29.408436059Z\",\"End\":\"2026-10-06T02:18:29.464269401Z\",\"ExitCode\":0,\"Output\":\"/var/run/postgresql:5432 - accepting connections\\n\"},{\"Start\":\"2026-10-06T02:18:34.464836251Z\",\"End\":\"2026-10-06T02:18:34.519019172Z\",\"ExitCode\":0,\"Output\":\"/var/run/postgresql:5432 - accepting connections\\n\"}]}}\n",
+      "stderr": "",
+      "arguments": [
+        "inspect",
+        "--format",
+        "{{json .State}}",
+        "04624c0fa9e69b8403ffbb0ce85c2ba4eff723430af13c51859479dbd7ea7eec"
+      ]
+    },
+    {
+      "status": 0,
+      "stdout": "04624c0fa9e69b8403ffbb0ce85c2ba4eff723430af13c51859479dbd7ea7eec\n",
+      "stderr": "",
+      "arguments": [
+        "rm",
+        "--volumes",
+        "04624c0fa9e69b8403ffbb0ce85c2ba4eff723430af13c51859479dbd7ea7eec"
+      ]
+    },
+    {
+      "status": 0,
+      "stdout": "",
+      "stderr": "",
+      "arguments": [
+        "ps",
+        "--all",
+        "--no-trunc",
+        "--quiet",
+        "--filter",
+        "id=04624c0fa9e69b8403ffbb0ce85c2ba4eff723430af13c51859479dbd7ea7eec"
+      ]
+    },
+    {
+      "status": 0,
+      "stdout": "",
+      "stderr": "",
+      "arguments": [
+        "volume",
+        "ls",
+        "--quiet",
+        "--filter",
+        "name=7b97dc4749f9fae8b8dfbbcac41a439828d8af8a60757d58b67f4283672010b8"
+      ]
+    }
+  ]
+}

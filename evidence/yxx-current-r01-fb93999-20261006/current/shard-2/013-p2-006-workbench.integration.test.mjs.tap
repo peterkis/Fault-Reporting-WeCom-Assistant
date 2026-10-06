@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: P2-006 applies no DDL and leaves no isolated PostgreSQL resources
+ok 1 - P2-006 applies no DDL and leaves no isolated PostgreSQL resources
+  ---
+  duration_ms: 894.277971
+  type: 'test'
+  ...
+# {"migration_022":true,"catalog_unchanged":true,"feature_enabled_only_in_test":true}
+# Subtest: admin/dispatcher/handler authorization is enforced in SQL data access and timeline visibility
+ok 2 - admin/dispatcher/handler authorization is enforced in SQL data access and timeline visibility
+  ---
+  duration_ms: 842.808357
+  type: 'test'
+  ...
+# {"admin_sessions":2,"dispatcher_sessions":2,"assigned_handler_sessions":1,"outsider_sessions":0,"reporter_forbidden":true,"inactive_forbidden":true,"restricted_hidden_from_handler":true}
+# Subtest: 500 conversations and 10,000 items have duplicate-free keyset pages and bounded read latency
+ok 3 - 500 conversations and 10,000 items have duplicate-free keyset pages and bounded read latency
+  ---
+  duration_ms: 34944.248309
+  type: 'test'
+  ...
+# {"sessions":500,"items":10000,"assignments":500,"tickets":500,"deliveries":500,"list_requests":1000,"detail_requests":1000,"keyset_unique":true,"p95":{"list_ms":56.488,"detail_ms":3.642}}
+# Subtest: workbench facade commits human reply, internal note, takeover and idempotent replay through P2-004/P2-005 ports
+ok 4 - workbench facade commits human reply, internal note, takeover and idempotent replay through P2-004/P2-005 ports
+  ---
+  duration_ms: 936.884654
+  type: 'test'
+  ...
+# {"takeover":true,"replayed":true,"transfer":true,"release":true,"handoff_request_cancel":true,"read_cursor":1,"external_messages":1,"internal_notes":1,"external_outbox":1,"internal_outbox":0,"pending_retry":true,"dead_letter_requeue":true,"reconciliation_required_blocks_retry":true,"admin_reconciliation":true}
+# Subtest: 200 real HTTP reply commits and 12-way duplicate submit remain bounded without sender calls or socket residue
+ok 5 - 200 real HTTP reply commits and 12-way duplicate submit remain bounded without sender calls or socket residue
+  ---
+  duration_ms: 2657.570868
+  type: 'test'
+  ...
+# {"reply_http":{"samples":200,"p50_ms":6.386,"p95_ms":8.687,"p99_ms":13.324,"max_ms":54.319},"duplicate_submit_parallel":12,"messages":201,"outboxes":201,"deliveries":201,"sender_calls":0,"heap_samples_bytes":[66830728,74160688,81700640,88148448,94599048,101074040,21492504,28253640],"pool_max":4}
+# Subtest: P2-003 SSE route delivers committed messages through authorized refetch within 2 seconds and releases timers
+ok 6 - P2-003 SSE route delivers committed messages through authorized refetch within 2 seconds and releases timers
+  ---
+  duration_ms: 1979.174226
+  type: 'test'
+  ...
+# {"new_message_commit_sse_refetch":{"samples":100,"p50_ms":11.315,"p95_ms":12.936,"p99_ms":23.893,"max_ms":26.924},"authorized_events":100,"unauthorized_events":0}
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 42512.194607

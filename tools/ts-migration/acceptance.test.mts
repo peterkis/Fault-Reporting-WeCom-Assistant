@@ -6,6 +6,28 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { record, sourceRoot, strings, hash, git } from './common.mjs';
 import { ACCEPTANCE_PATH, currentAcceptance, currentSelection } from './current-acceptance.mjs';
+import {closeOwnedPostgres} from './finalize-current-run.mjs';
+
+test('owned PostgreSQL closure requires observed container and anonymous volume removal',()=>{
+  const id='a'.repeat(64),volume='b'.repeat(64);
+  const exercise=(remaining=false,foreign=false)=>{
+    const calls:string[][]=[];
+    const result=closeOwnedPostgres(id,args=>{
+      calls.push(args);
+      const stdout=args[0]==='inspect'&&args[2]?.includes('mounts')?JSON.stringify({id,image:'postgres:18',mounts:[{Type:foreign?'bind':'volume',Destination:'/var/lib/postgresql',RW:true,Name:volume,Source:'/var/lib/docker/volumes/'+volume+'/_data'}]}):
+        args[0]==='inspect'?JSON.stringify({Running:false,ExitCode:0}):args[0]==='volume'&&remaining?volume+'\n':'';
+      return {status:0,stdout,stderr:''};
+    });
+    return {result,calls};
+  };
+  const clean=exercise();assert.equal(clean.result.postgres_data_removed,true);assert.equal(clean.result.owned_residuals,0);
+  assert.ok(clean.calls.some(args=>JSON.stringify(args)===JSON.stringify(['rm','--volumes',id])));
+  const residual=exercise(true);assert.equal(residual.result.postgres_data_removed,false);assert.equal(residual.result.owned_residuals,1);assert.ok(residual.result.error_code);
+  const foreign=exercise(false,true);assert.equal(foreign.result.postgres_data_removed,false);
+  assert.equal(foreign.calls.some(args=>['stop','rm'].includes(args[0]??'')),false);
+  const invalid=closeOwnedPostgres('unverified',()=>{throw Error('UNEXPECTED_DOCKER_CALL');});
+  assert.equal(invalid.postgres_data_removed,false);assert.equal(invalid.commands.length,0);
+});
 
 test('current acceptance CLI accounts for all registered files and identifies historical scope separately', () => {
   const root=sourceRoot();

@@ -1,0 +1,43 @@
+{
+  "path": "tests/p2-g2-wecom-app-token-failure.test.mjs",
+  "runtime_path": "tests/p2-g2-wecom-app-token-failure.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-wecom-app-token-failure.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "cd66bd46c3f9e7905e462d586162f226532cc089eba3c0d300aba02a09a49451",
+  "executed_sha256": "cd66bd46c3f9e7905e462d586162f226532cc089eba3c0d300aba02a09a49451",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "042-p2-g2-wecom-app-token-failure.test.mjs.tap",
+  "tap_sha256": "7849d4bfbbaab6781d40de7c7e904b1470f391f8dec9b6599b9d485e5cc1999b",
+  "tap_bytes": 1066,
+  "stderr_path": "042-p2-g2-wecom-app-token-failure.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "042-p2-g2-wecom-app-token-failure.test.mjs.cases.jsonl",
+  "case_trace_sha256": "a00e931050fc0c94e247a748025875df66c02cfe19c41fcb24fff996274a11bf",
+  "case_trace_bytes": 1282,
+  "counts": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-g2-wecom-app-token.mjs",
+    ".build/runtime/src/p2-g2-wecom-oauth-provider.mjs",
+    ".build/runtime/src/p2-g2-wecom-web-oauth.mjs",
+    ".build/runtime/tests/p2-g2-wecom-app-token-failure.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 4
+}

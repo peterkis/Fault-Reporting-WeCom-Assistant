@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: system browser renders the same Workbench LocalDateTime under UTC, Tokyo, and New York
+ok 1 - system browser renders the same Workbench LocalDateTime under UTC, Tokyo, and New York
+  ---
+  duration_ms: 12958.102307
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13106.110158

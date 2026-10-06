@@ -1,0 +1,67 @@
+TAP version 13
+# Subtest: real human command source: P2-007-X022/D12-035
+ok 1 - real human command source: P2-007-X022/D12-035
+  ---
+  duration_ms: 1108.156116
+  type: 'test'
+  ...
+# {"source_ids":["P2-007-X022","D12-035"],"successful_commands":1,"rejected_commands":1,"rejected_attempt_recorded_in_gate_evidence":true}
+# {"source_ids":["P2-007-X022","D12-035"],"surface":"AUTHENTICATED_HTTP_COMMAND_WITH_NORMAL_INGRESS_SETUP","provider_calls":0,"new_ticket_delta_excluding_setup":0}
+# Subtest: real human command source: P2-007-X023/D12-036
+ok 2 - real human command source: P2-007-X023/D12-036
+  ---
+  duration_ms: 965.216157
+  type: 'test'
+  ...
+# {"source_ids":["P2-007-X023","D12-036"],"surface":"AUTHENTICATED_HTTP_COMMAND_WITH_NORMAL_INGRESS_SETUP","provider_calls":0,"new_ticket_delta_excluding_setup":0}
+# Subtest: real human command source: P2-007-X024/D12-040
+ok 3 - real human command source: P2-007-X024/D12-040
+  ---
+  duration_ms: 932.582961
+  type: 'test'
+  ...
+# {"source_ids":["P2-007-X024","D12-040"],"surface":"AUTHENTICATED_HTTP_COMMAND_WITH_NORMAL_INGRESS_SETUP","provider_calls":0,"new_ticket_delta_excluding_setup":0}
+# Subtest: real human command source: P2-007-X025/P2-007-X041/D12-037
+ok 4 - real human command source: P2-007-X025/P2-007-X041/D12-037
+  ---
+  duration_ms: 929.798604
+  type: 'test'
+  ...
+# {"source_ids":["P2-007-X025","P2-007-X041","D12-037"],"surface":"AUTHENTICATED_HTTP_COMMAND_WITH_NORMAL_INGRESS_SETUP","provider_calls":0,"new_ticket_delta_excluding_setup":0}
+# Subtest: real human command source: P2-007-X026/D12-038
+ok 5 - real human command source: P2-007-X026/D12-038
+  ---
+  duration_ms: 957.188036
+  type: 'test'
+  ...
+# {"source_ids":["P2-007-X026","D12-038"],"surface":"AUTHENTICATED_HTTP_COMMAND_WITH_NORMAL_INGRESS_SETUP","provider_calls":0,"new_ticket_delta_excluding_setup":0}
+# Subtest: real human command source: P2-007-X027/D12-039
+ok 6 - real human command source: P2-007-X027/D12-039
+  ---
+  duration_ms: 965.513652
+  type: 'test'
+  ...
+# {"source_ids":["P2-007-X027","D12-039"],"surface":"AUTHENTICATED_HTTP_COMMAND_WITH_NORMAL_INGRESS_SETUP","provider_calls":0,"new_ticket_delta_excluding_setup":0}
+# Subtest: real human command source: P2-007-X028
+ok 7 - real human command source: P2-007-X028
+  ---
+  duration_ms: 955.991946
+  type: 'test'
+  ...
+# {"source_ids":["P2-007-X028"],"surface":"AUTHENTICATED_HTTP_COMMAND_WITH_NORMAL_INGRESS_SETUP","provider_calls":0,"new_ticket_delta_excluding_setup":0}
+# Subtest: real human command source: D12-042
+ok 8 - real human command source: D12-042
+  ---
+  duration_ms: 1450.641261
+  type: 'test'
+  ...
+# {"source_ids":["D12-042"],"surface":"AUTHENTICATED_HTTP_COMMAND_WITH_NORMAL_INGRESS_SETUP","provider_calls":0,"new_ticket_delta_excluding_setup":0}
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8641.006562

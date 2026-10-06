@@ -1,0 +1,190 @@
+TAP version 13
+# Subtest: ambiguous HTTP-200 UID rejection retains the token for other reporters
+ok 1 - ambiguous HTTP-200 UID rejection retains the token for other reporters
+  ---
+  duration_ms: 27.136662
+  type: 'test'
+  ...
+# Subtest: organization tree normalization preserves memberships and records observed gid type
+ok 2 - organization tree normalization preserves memberships and records observed gid type
+  ---
+  duration_ms: 3.344714
+  type: 'test'
+  ...
+# Subtest: organization tree normalization rejects duplicate departments and cycles
+ok 3 - organization tree normalization rejects duplicate departments and cycles
+  ---
+  duration_ms: 0.701224
+  type: 'test'
+  ...
+# Subtest: formal adapter obtains one in-memory token and uses form-urlencoded requests
+ok 4 - formal adapter obtains one in-memory token and uses form-urlencoded requests
+  ---
+  duration_ms: 1.589192
+  type: 'test'
+  ...
+# Subtest: default resolver fails closed without calling the detail endpoint
+ok 5 - default resolver fails closed without calling the detail endpoint
+  ---
+  duration_ms: 0.250921
+  type: 'test'
+  ...
+# Subtest: detail and directory records require exact provider identity and employee correlation
+ok 6 - detail and directory records require exact provider identity and employee correlation
+  ---
+  duration_ms: 0.236864
+  type: 'test'
+  ...
+# Subtest: composition is safe to construct while disabled and exposes future injection seams
+ok 7 - composition is safe to construct while disabled and exposes future injection seams
+  ---
+  duration_ms: 1.144364
+  type: 'test'
+  ...
+# Subtest: tree HTTP 401 evicts the rejected token without an immediate retry
+ok 8 - tree HTTP 401 evicts the rejected token without an immediate retry
+  ---
+  duration_ms: 2.9835
+  type: 'test'
+  ...
+# Subtest: detail HTTP 401 evicts the rejected token without an immediate retry
+ok 9 - detail HTTP 401 evicts the rejected token without an immediate retry
+  ---
+  duration_ms: 0.786186
+  type: 'test'
+  ...
+# Subtest: tree HTTP 403 evicts the rejected token without an immediate retry
+ok 10 - tree HTTP 403 evicts the rejected token without an immediate retry
+  ---
+  duration_ms: 0.975791
+  type: 'test'
+  ...
+# Subtest: detail HTTP 403 evicts the rejected token without an immediate retry
+ok 11 - detail HTTP 403 evicts the rejected token without an immediate retry
+  ---
+  duration_ms: 0.869122
+  type: 'test'
+  ...
+# Subtest: token response cap cancels chunked overflow before full buffering
+ok 12 - token response cap cancels chunked overflow before full buffering
+  ---
+  duration_ms: 1.550362
+  type: 'test'
+  ...
+# Subtest: token response cap cancels Content-Length overflow before full buffering
+ok 13 - token response cap cancels Content-Length overflow before full buffering
+  ---
+  duration_ms: 0.461207
+  type: 'test'
+  ...
+# Subtest: tree response cap cancels chunked overflow before full buffering
+ok 14 - tree response cap cancels chunked overflow before full buffering
+  ---
+  duration_ms: 0.372852
+  type: 'test'
+  ...
+# Subtest: tree response cap cancels Content-Length overflow before full buffering
+ok 15 - tree response cap cancels Content-Length overflow before full buffering
+  ---
+  duration_ms: 0.364136
+  type: 'test'
+  ...
+# Subtest: detail response cap cancels chunked overflow before full buffering
+ok 16 - detail response cap cancels chunked overflow before full buffering
+  ---
+  duration_ms: 0.324042
+  type: 'test'
+  ...
+# Subtest: detail response cap cancels Content-Length overflow before full buffering
+ok 17 - detail response cap cancels Content-Length overflow before full buffering
+  ---
+  duration_ms: 0.293882
+  type: 'test'
+  ...
+# Subtest: late authentication failure cannot evict a newer cached token
+ok 18 - late authentication failure cannot evict a newer cached token
+  ---
+  duration_ms: 1.644535
+  type: 'test'
+  ...
+# Subtest: normalization accepts depth 16 and bounds deep/cyclic input before recursion
+ok 19 - normalization accepts depth 16 and bounds deep/cyclic input before recursion
+  ---
+  duration_ms: 0.787152
+  type: 'test'
+  ...
+# Subtest: directory capacity: 1 departments / 2500 full-field members
+ok 20 - directory capacity: 1 departments / 2500 full-field members
+  ---
+  duration_ms: 61.459874
+  type: 'test'
+  ...
+# Subtest: directory capacity: 333 departments / 4290 full-field members
+ok 21 - directory capacity: 333 departments / 4290 full-field members
+  ---
+  duration_ms: 95.230584
+  type: 'test'
+  ...
+# Subtest: directory capacity: 5000 departments / 20000 full-field members
+ok 22 - directory capacity: 5000 departments / 20000 full-field members
+  ---
+  duration_ms: 547.610097
+  type: 'test'
+  ...
+# Subtest: directory capacity includes 40000 memberships without limiting each person to one department
+ok 23 - directory capacity includes 40000 memberships without limiting each person to one department
+  ---
+  duration_ms: 680.009443
+  type: 'test'
+  ...
+# Subtest: directory hash preserves the existing canonical format and generic JSON guards
+ok 24 - directory hash preserves the existing canonical format and generic JSON guards
+  ---
+  duration_ms: 17.877032
+  type: 'test'
+  ...
+# Subtest: formal-size hash is invariant under order but changes with profile or membership data
+ok 25 - formal-size hash is invariant under order but changes with profile or membership data
+  ---
+  duration_ms: 357.950475
+  type: 'test'
+  ...
+# Subtest: directory budgets reject excess departments, members and raw membership occurrences
+ok 26 - directory budgets reject excess departments, members and raw membership occurrences
+  ---
+  duration_ms: 1.036143
+  type: 'test'
+  ...
+# Subtest: non-finite and above-ceiling directory budgets fail closed
+ok 27 - non-finite and above-ceiling directory budgets fail closed
+  ---
+  duration_ms: 0.440388
+  type: 'test'
+  ...
+# Subtest: directory capacity rejects the first departments above its hard ceiling
+ok 28 - directory capacity rejects the first departments above its hard ceiling
+  ---
+  duration_ms: 44.799739
+  type: 'test'
+  ...
+# Subtest: directory capacity rejects the first members above its hard ceiling
+ok 29 - directory capacity rejects the first members above its hard ceiling
+  ---
+  duration_ms: 61.764132
+  type: 'test'
+  ...
+# Subtest: directory capacity rejects the first memberships above its hard ceiling
+ok 30 - directory capacity rejects the first memberships above its hard ceiling
+  ---
+  duration_ms: 181.061299
+  type: 'test'
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 30
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2264.980091

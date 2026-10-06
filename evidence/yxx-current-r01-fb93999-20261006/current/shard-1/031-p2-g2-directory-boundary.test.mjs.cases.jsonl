@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 10:09:38","event_epoch_ms":"1791252578357","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"D12-020 unresolved directory call defers within deadline without growing pending calls","file":"tests/p2-g2-directory-boundary.test.mjs","line":5,"nesting":0,"skip":false,"todo":false}

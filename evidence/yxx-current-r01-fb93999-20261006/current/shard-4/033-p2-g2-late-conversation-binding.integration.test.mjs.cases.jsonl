@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 10:11:33","event_epoch_ms":"1791252693385","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"late actual Conversation projection fills null Leg/Journey references on an idle Worker cycle without rewriting Decision or Ticket","file":"tests/p2-g2-late-conversation-binding.integration.test.mjs","line":13,"nesting":0,"skip":false,"todo":false}

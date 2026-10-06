@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout
+ok 1 - Reporter browser 1440x900 real DB/session, fragment removal, refresh, timezone, safe data and logout
+  ---
+  duration_ms: 15113.732086
+  type: 'test'
+  ...
+# Subtest: Reporter browser 390x844 real DB/session, fragment removal, refresh, timezone, safe data and logout
+ok 2 - Reporter browser 390x844 real DB/session, fragment removal, refresh, timezone, safe data and logout
+  ---
+  duration_ms: 1526.051966
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17019.391812

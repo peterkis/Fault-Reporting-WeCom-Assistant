@@ -1,0 +1,2 @@
+{"remaining_databases":[]}
+[ { server_version: '18.6 (Debian 18.6-1.pgdg13+2)' } ]

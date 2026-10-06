@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "kind": "CURRENT_INDEPENDENT_REVIEW_RECORD",
+  "event_time": "2026-10-06 10:11:41",
+  "event_epoch_ms": "1791252701971",
+  "axis": "SPEC",
+  "reviewer": "codex-r01-fixed-spec-independent",
+  "tested_head": "fb93999b2090cbd794127209876d737e728c8b1c",
+  "tested_tree": "7dee330f40e5bfec6b1659bcf9cd5cc81e91565e",
+  "candidate_fingerprint": "e04ecb3f00f10aab5eb3d67a08f6c01940b8eafa2dc0fdce3cf262689c858777",
+  "independent": true,
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [
+    {
+      "id": "R01-C-SCENARIO-IDENTITY-DRIFT",
+      "path": "tests/yxx-ss-009-governance.test.mjs",
+      "start_line": 29,
+      "end_line": 33,
+      "category": "test",
+      "severity": "high",
+      "resolved": true,
+      "resolution": "Final C restores the exact immutable AC015/AC020 test identity, with explicit comments explaining the historical mapping title and the current eight API coverage. The complete assertion body is byte-identical to prior C, including the service-catalog GET, all eight endpoints, unique operation IDs, shared schema/time types and OpenAPI reference consistency. New C real acceptance is independently required; previous C logs are not rewritten or rebound."
+    }
+  ],
+  "review_text": "本独立SPEC审查锁定最终已发布候选C=fb93999b2090cbd794127209876d737e728c8b1c、tree=7dee330f40e5bfec6b1659bcf9cd5cc81e91565e。本人在干净完整checkout使用权威发布SHA执行published-history preflight，结果PASS_NOT_READINESS；独立调用现有candidate inventory实算源码fingerprint=e04ecb3f00f10aab5eb3d67a08f6c01940b8eafa2dc0fdce3cf262689c858777、862受控文件。比较M=4561230e505897415b30f86178925b515008ea1d...最终C共15物理文件、203新增14删除。未读取另一轴审查，未改源码或旧原件，未执行完整current。\n继续采用已实际阅读的code-review和OCR delegate技能、用户Post-PR52两份指令及追加修复授权、COMMON/R01、ADR0027、既有routing/专项/cleanup/scenario消费者。OCR仅确定性选文件与规则，本次10可选、5MTS因unsupported_ext漏选；5项均人工纳入。前14文件已经由本人在a9a82b9上逐文件审查，本次逐项核对Git blob完全一致后复用本人分析，15项全部有明确审查覆盖，无跳过。回执生产器匹配实际SOURCE_HOST/STAGED_RUNTIME/MIXED_EXPLICIT_ROOTS执行根，capacity业务授权仍使用canonical source；runner由原TAP验证PNG路径/哈希/IHDR和字节后独占归档，仅删除已保存的自有临时原件；finalizer基于GHA明确service ID、PG18匿名挂载、实际正常退出/删卷/残留查询绑定原summary SHA；既有成功条件与消费者未降低。\n新增governance文件审查精确核对相对a9a的唯一差异：两行注释加恢复原固定test.name。已验证最终Git blob等于旧文件仅替换该标题并添加这两行注释，整个断言体逐字不变。AC015和AC020仍在原immutable映射中精确引用该稳定身份，实际断言继续要求8个API、service-catalog GET、全部聚合OpenAPI路径一致、唯一operationId与shared time schema。注释明示历史标题是映射身份、当前覆盖8个API，修复诚实地保留更强行为要求；没有修改旧plan、消费者或证据来制造匹配。本C前驱的SCENARIOS失配在代码上已修复，未来结果必须来自新C的真实运行。\n阅读开发日志scenario-test.txt确认修改后既有文件2/2通过；这是开发检查，不宣称其为最终C full。另保留scenario-identity-green.txt实际MIGRATION_INPUT_DRIFT拒绝，文件名不作为成功证明。前一C full37400530415的31运行回执、4PNG及4真实环境关闭已由本人独立核对，用于判断不变生产/归档修补的效果；它们仍只证明前一C，不改绑为本C。其旧SCENARIOS失败packet和spec材料FAIL补充均保留。本C full37402617276正在独立运行，其完整原件、最终packet/catalog、strict与两条certify尚未在本审查中完成消费。\n最终15文件增量SPEC判定PASS，未解决发现0；这是代码审查结论，不是R01 full、strict readiness、certify或现场批准。SS011 AC096/AC099仍未完成，AC102保留partial close，D01 Windows发送/浏览器/240秒证据初始化超时未证明修复；前一C Linux PNG缺CJK字体的实测环境观察保持。旧原件、SQL、acceptance、默认Feature Flag与生产授权未改变，无merge、OAuth、发送、医院数据、部署或父Gate推进授权。"
+}

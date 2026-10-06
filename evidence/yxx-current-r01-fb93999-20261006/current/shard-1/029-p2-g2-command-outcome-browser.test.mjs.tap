@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: P2-G2 generic proxy 503 after commit keeps the command id for reconciliation; stable failure and conflict stay distinct
+ok 1 - P2-G2 generic proxy 503 after commit keeps the command id for reconciliation; stable failure and conflict stay distinct
+  ---
+  duration_ms: 2026.139486
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2393.50701

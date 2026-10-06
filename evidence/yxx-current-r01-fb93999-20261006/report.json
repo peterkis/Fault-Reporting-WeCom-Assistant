@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-06 10:24:12",
+  "event_epoch_ms": "1791253452283",
+  "tested_head": "fb93999b2090cbd794127209876d737e728c8b1c",
+  "tested_tree": "7dee330f40e5bfec6b1659bcf9cd5cc81e91565e",
+  "candidate_fingerprint": "e04ecb3f00f10aab5eb3d67a08f6c01940b8eafa2dc0fdce3cf262689c858777",
+  "contract": "ADR-0027",
+  "run_id": "r01-fb93999-20261006",
+  "status": "CURRENT_AUTOMATION_COMPLETE",
+  "live_authorized": false,
+  "parent_gate_advanced": false,
+  "historical_live_facts": "PRESERVED_NOT_REVALIDATED",
+  "scope_sha256": "0266c900bea7ef28b2300f058ad044afa26dde5c17db872b0b2a0e2efe4e003b",
+  "acceptance_sha256": "ebc5523ff4576a699793328b5dc90ad9babfa0f25e500a0b2da9a2b00ad46290",
+  "current_runs": [
+    {
+      "path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/summary.json",
+      "bytes": 422703,
+      "sha256": "af3d813f752b6c34d4526094c6b560aa31c030180f85565981b28929b4ebc057"
+    },
+    {
+      "path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/summary.json",
+      "bytes": 340886,
+      "sha256": "e662c48f1055680a52a02f835444f7435506e121709034e3708691bb87a8edc7"
+    },
+    {
+      "path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/summary.json",
+      "bytes": 414964,
+      "sha256": "eb97e17031e81b3f1a383a88704b50699a80c3b5d3589c1580ae921ac260e3a1"
+    },
+    {
+      "path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-4/summary.json",
+      "bytes": 399825,
+      "sha256": "360608d7de4280706391eb4b7cd08cc91614de1fa12a51d4aa25b892c0b4297c"
+    }
+  ],
+  "reviews": [
+    {
+      "path": "evidence/yxx-current-r01-fb93999-20261006/reviews/spec.json",
+      "bytes": 1434,
+      "sha256": "a7b4049c73435700da4ddf81b71a831c3f4b7e145ea3674f7aabbf96c251f85f"
+    },
+    {
+      "path": "evidence/yxx-current-r01-fb93999-20261006/reviews/standards.json",
+      "bytes": 739,
+      "sha256": "19c89481ffadbfa0980babb6446340682e90088a99969b342cffaf7fddb3facb"
+    }
+  ],
+  "build": {
+    "path": "evidence/yxx-current-r01-fb93999-20261006/build-manifest.json",
+    "bytes": 384561,
+    "sha256": "4136cccf031f3b593f50bdfce28f260cf33e8e39e1479df208d6df3e0bac8853"
+  },
+  "specialized": {
+    "path": "evidence/yxx-current-r01-fb93999-20261006/specialized.json",
+    "bytes": 8841,
+    "sha256": "b58c69ceece3ea470da349fc25ed5cec67d67a6301ce5fc4a1ea549dc1d95fb8"
+  },
+  "cleanup": {
+    "path": "evidence/yxx-current-r01-fb93999-20261006/cleanup.json",
+    "bytes": 4577,
+    "sha256": "b4c86fbc7af49ba6c3911181cb855d0a154a9812965b124065c0595cf4f5749f"
+  },
+  "migration_scope": {
+    "path": "evidence/yxx-current-r01-fb93999-20261006/migration-scope.json",
+    "bytes": 532,
+    "sha256": "7e2fb0ce827ce08bb7ae4fd612ebc82c6f2b0889d7f1b4943a632b7dc730a500"
+  },
+  "historical": {
+    "path": "evidence/yxx-current-r01-fb93999-20261006/historical/catalog.json",
+    "bytes": 717,
+    "sha256": "f6cab170d0f06e7f6a5ea8dbf31c76eb7b5dedfb2b385dfed82d6b0277954066"
+  },
+  "source_accounting": {
+    "path": "evidence/yxx-current-r01-fb93999-20261006/source-accounting.json",
+    "bytes": 213519,
+    "sha256": "5aa832bf24b859eb5cecef15ffeebbc15df7caddecefb7a2105b13c961be4830"
+  },
+  "scenarios": {
+    "path": "evidence/yxx-current-r01-fb93999-20261006/scenarios.json",
+    "bytes": 135244,
+    "sha256": "3929bbafbb1fd3f3b5f42fdfe91ca7c41ac49a10038bba6099256923de561919"
+  }
+}

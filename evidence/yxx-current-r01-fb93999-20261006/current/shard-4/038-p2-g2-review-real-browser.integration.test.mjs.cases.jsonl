@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 10:11:41","event_epoch_ms":"1791252701903","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"G2-E07 the actual high-risk inbound Review is visible and resolved in the browser while its original Decision and Ticket survive","file":"tests/p2-g2-review-real-browser.integration.test.mjs","line":6,"nesting":0,"skip":false,"todo":false}

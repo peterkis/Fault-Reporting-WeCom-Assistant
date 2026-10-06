@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 10:10:03","event_epoch_ms":"1791252603710","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"Gate guard checks actual PostgreSQL Delivery binding and preserves existing Direct Leg and numeric ACK sender","file":"tests/p2-g2-send-guard.integration.test.mjs","line":14,"nesting":0,"skip":false,"todo":false}

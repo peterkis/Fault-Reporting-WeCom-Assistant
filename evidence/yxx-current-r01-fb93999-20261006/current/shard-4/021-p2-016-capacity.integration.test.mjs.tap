@@ -1,0 +1,18 @@
+TAP version 13
+# Subtest: P2-016 bounded capacity: 500 Tickets / 5000 events / 200 review resolutions / 500 cards / 100 sessions / 32 SSE
+ok 1 - P2-016 bounded capacity: 500 Tickets / 5000 events / 200 review resolutions / 500 cards / 100 sessions / 32 SSE
+  ---
+  duration_ms: 55093.065243
+  type: 'test'
+  ...
+# {"tickets":500,"ticket_events":5000,"review_resolutions":200,"cards":500,"group_receipts":400,"reporter_sessions":100,"pool_max":4,"sse_max":32,"sse_after_stop":0,"heap_samples_bytes":[20011584,40578352,31637616,73495600,47255456,79798968,101113016,78410672,53633752,75165112,49886064,71606800,93567344,66760192,88252056,62157656,83878848,105831384,74727144,91000680,106339352,75768224,94701640,109522240,77618104,93211096,108940976,119488672,51542784,28385184],"heap_peak_bytes":119488672,"heap_final_bytes":28385184,"heap_fall_or_stable":true,"real_sdk_calls":0,"soak_24h":false}
+# {"cleanup":{"database_count":0,"backend_count":0}}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 55526.651365

@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: G1 staged preflight recognizes assembly files from source and runtime working directories without activating services
+ok 1 - G1 staged preflight recognizes assembly files from source and runtime working directories without activating services
+  ---
+  duration_ms: 172.610428
+  type: 'test'
+  ...
+# Subtest: live CLI exposes only the six explicit modes and requires three process fuses for sending
+ok 2 - live CLI exposes only the six explicit modes and requires three process fuses for sending
+  ---
+  duration_ms: 1.718627
+  type: 'test'
+  ...
+# Subtest: gateway process can commit inbound before the App process projects it
+ok 3 - gateway process can commit inbound before the App process projects it
+  ---
+  duration_ms: 1.834984
+  type: 'test'
+  ...
+# Subtest: process resource interface exposes bounded role metrics without a PID or environment
+ok 4 - process resource interface exposes bounded role metrics without a PID or environment
+  ---
+  duration_ms: 1.061929
+  type: 'test'
+  ...
+# Subtest: gateway permits one active WSClient, gates readiness on authentication, reconnects and shuts down cleanly
+ok 5 - gateway permits one active WSClient, gates readiness on authentication, reconnects and shuts down cleanly
+  ---
+  duration_ms: 6.463865
+  type: 'test'
+  ...
+# Subtest: sender enforces persistent target hash allowlist and maps ACK, explicit rejection, unknown and gateway-unavailable safely
+ok 6 - sender enforces persistent target hash allowlist and maps ACK, explicit rejection, unknown and gateway-unavailable safely
+  ---
+  duration_ms: 2.648804
+  type: 'test'
+  ...
+# Subtest: test authentication is server-configured, active non-reporter only, short-lived and emits strict HttpOnly cookie metadata
+ok 7 - test authentication is server-configured, active non-reporter only, short-lived and emits strict HttpOnly cookie metadata
+  ---
+  duration_ms: 1.737003
+  type: 'test'
+  ...
+# Subtest: test authentication isolates two configured principals with independent short-lived cookies and CSRF values
+ok 8 - test authentication isolates two configured principals with independent short-lived cookies and CSRF values
+  ---
+  duration_ms: 1.238356
+  type: 'test'
+  ...
+# Subtest: live harness requires two distinct configured principals and creates a safe unique run id
+ok 9 - live harness requires two distinct configured principals and creates a safe unique run id
+  ---
+  duration_ms: 0.663161
+  type: 'test'
+  ...
+# Subtest: disabled coordinator performs no database work and batch/stream inventory are bounded
+ok 10 - disabled coordinator performs no database work and batch/stream inventory are bounded
+  ---
+  duration_ms: 0.658193
+  type: 'test'
+  ...
+# Subtest: temporary database failure is isolated behind stable projection errors without raw details or false success
+ok 11 - temporary database failure is isolated behind stable projection errors without raw details or false success
+  ---
+  duration_ms: 1.079914
+  type: 'test'
+  ...
+# Subtest: P2-002 transaction hook is optional and P2-G1 browser source has an in-flight duplicate-submit fence
+ok 12 - P2-002 transaction hook is optional and P2-G1 browser source has an in-flight duplicate-submit fence
+  ---
+  duration_ms: 0.933335
+  type: 'test'
+  ...
+# Subtest: live script has no broad --live mode and no default live-send npm command
+ok 13 - live script has no broad --live mode and no default live-send npm command
+  ---
+  duration_ms: 4.00032
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 434.090877

@@ -1,0 +1,41 @@
+{
+  "path": "tests/p2-007-staff-directory-sync.test.mjs",
+  "runtime_path": "tests/p2-007-staff-directory-sync.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-007-staff-directory-sync.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "77442ad58d21943e5934e50c46e053c37eb56317305af3177ef2199396e18d3a",
+  "executed_sha256": "77442ad58d21943e5934e50c46e053c37eb56317305af3177ef2199396e18d3a",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "014-p2-007-staff-directory-sync.test.mjs.tap",
+  "tap_sha256": "f39d431b1d673bd91ed842f09968ba696eabf8f55aa933966b47a5c05eae23e1",
+  "tap_bytes": 651,
+  "stderr_path": "014-p2-007-staff-directory-sync.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "014-p2-007-staff-directory-sync.test.mjs.cases.jsonl",
+  "case_trace_sha256": "d2d7ccb290a28e46d9c295fc356715c63d36986dd6a3f9b3b8da48e1004f8f33",
+  "case_trace_bytes": 868,
+  "counts": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-007-staff-directory-sync.mjs",
+    ".build/runtime/tests/p2-007-staff-directory-sync.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 3
+}

@@ -1,0 +1,50 @@
+{
+  "path": "tests/v1-4-architecture-baseline.test.mjs",
+  "runtime_path": "tests/v1-4-architecture-baseline.test.mjs",
+  "executed_path": "tests/v1-4-architecture-baseline.test.mjs",
+  "execution_cwd": ".",
+  "source_sha256": "b79ecc839540cb6983e039017a8928e0dae98d9fc060fe8dac136e60f648b7ab",
+  "executed_sha256": "b79ecc839540cb6983e039017a8928e0dae98d9fc060fe8dac136e60f648b7ab",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "SOURCE_HOST",
+  "node_flags": [
+    "--import",
+    "file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/tools/source-hook.mjs",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "048-v1-4-architecture-baseline.test.mjs.tap",
+  "tap_sha256": "814275aeec88f2b018b27621a4b88d8f0542369cec1fde689b43c0c034c12010",
+  "tap_bytes": 3613,
+  "stderr_path": "048-v1-4-architecture-baseline.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "048-v1-4-architecture-baseline.test.mjs.cases.jsonl",
+  "case_trace_sha256": "7b5fc7fdc6d51a9e5464b9ce9737d310c1e9df246aef68477e62c87d6fe637c0",
+  "case_trace_bytes": 5348,
+  "counts": {
+    "tests": 18,
+    "pass": 18,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/tools/bootstrap.mjs",
+    ".build/tools/common.mjs",
+    ".build/tools/source-hook.mjs",
+    ".build/tools/source-host.mjs",
+    ".build/tools/verify-artifact.mjs",
+    "node_modules/typescript/lib/typescript.js",
+    "scripts/validate-v1-4-architecture.mjs",
+    "tests/helpers/migration-roots.mjs",
+    "tests/v1-4-architecture-baseline.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 18
+}

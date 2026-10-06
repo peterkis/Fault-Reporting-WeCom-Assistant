@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: SS-005 authorization denies OAUTH_ONLY before touching the database and fences identity changes
+ok 1 - SS-005 authorization denies OAUTH_ONLY before touching the database and fences identity changes
+  ---
+  duration_ms: 4.398987
+  type: 'test'
+  ...
+# Subtest: SS-005 accepts catalog service codes with the existing receipt and idempotency contract
+ok 2 - SS-005 accepts catalog service codes with the existing receipt and idempotency contract
+  ---
+  duration_ms: 795.859545
+  type: 'test'
+  ...
+# Subtest: SS-005 member list previews only retained initial Web descriptions and locations
+ok 3 - SS-005 member list previews only retained initial Web descriptions and locations
+  ---
+  duration_ms: 796.512378
+  type: 'test'
+  ...
+# Subtest: SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail
+ok 4 - SS-005 lists owned Web roots and legacy Bot Tickets with bound cursors and safe detail
+  ---
+  duration_ms: 1147.600625
+  type: 'test'
+  ...
+# Subtest: SS-005 traverses a 500-row mixed snapshot without loss or duplication
+ok 5 - SS-005 traverses a 500-row mixed snapshot without loss or duplication
+  ---
+  duration_ms: 2415.693472
+  type: 'test'
+  ...
+# Subtest: SS-005 extends aggregate retention for a late accepted supplement
+ok 6 - SS-005 extends aggregate retention for a late accepted supplement
+  ---
+  duration_ms: 803.507067
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6198.134194

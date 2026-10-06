@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-06 10:24:12",
+  "event_epoch_ms": "1791253452850",
+  "tested_head": "fb93999b2090cbd794127209876d737e728c8b1c",
+  "tested_tree": "7dee330f40e5bfec6b1659bcf9cd5cc81e91565e",
+  "candidate_fingerprint": "e04ecb3f00f10aab5eb3d67a08f6c01940b8eafa2dc0fdce3cf262689c858777",
+  "kind": "CURRENT_SPECIALIZED_PROOF",
+  "observations": [
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 4
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/053-yxx-ss-009-crash.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 5
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/054-yxx-ss-009-http-recovery.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-1/055-yxx-ss-010-runtime.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 4
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/054-yxx-ss-009-review-regressions.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/052-yxx-ss-009-capacity.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+      "channel": "SS010_BROWSER",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-4/048-yxx-current-migrations.integration.test.mts.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 0
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 1
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 2
+    },
+    {
+      "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-4/052-yxx-ss-009-catalog.integration.test.mjs.tap",
+      "channel": "SS009_RECEIPT",
+      "receipt_index": 3
+    }
+  ],
+  "images": [
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+        "channel": "SS009_RECEIPT",
+        "receipt_index": 0
+      },
+      "width": 390,
+      "height": 844,
+      "artifact": {
+        "path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs-screenshot-1.png",
+        "bytes": 15301,
+        "sha256": "f95b2c69b9ec41222475521771fa5b2a72d7b3c442abe1c1a094116052d94e99"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs.tap",
+        "channel": "SS009_RECEIPT",
+        "receipt_index": 0
+      },
+      "width": 1440,
+      "height": 900,
+      "artifact": {
+        "path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-2/052-yxx-ss-009-browser.integration.test.mjs-screenshot-2.png",
+        "bytes": 20345,
+        "sha256": "ee69938d258e294efd2f07aed8a42d7071b204c250832255b6795e6828da4cf3"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+        "channel": "SS010_BROWSER",
+        "receipt_index": 0
+      },
+      "width": 390,
+      "height": 844,
+      "artifact": {
+        "path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs-screenshot-1.png",
+        "bytes": 14478,
+        "sha256": "2025900179bbec125b970d4bf6fbb31ca17e02f9243ca8224700ac0a257ddf06"
+      }
+    },
+    {
+      "observation": {
+        "tap_path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs.tap",
+        "channel": "SS010_BROWSER",
+        "receipt_index": 0
+      },
+      "width": 1440,
+      "height": 900,
+      "artifact": {
+        "path": "evidence/yxx-current-r01-fb93999-20261006/current/shard-3/054-yxx-ss-010-browser.integration.test.mjs-screenshot-2.png",
+        "bytes": 18694,
+        "sha256": "2bf52787e66c0e539911f86034cdf1f974fa6293667c1709ff808db917cdde24"
+      }
+    }
+  ]
+}

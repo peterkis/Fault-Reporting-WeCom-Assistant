@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: current readiness rejects a later working-tree rewrite of the adjudicated G0 path
+ok 1 - current readiness rejects a later working-tree rewrite of the adjudicated G0 path
+  ---
+  duration_ms: 2038.315946
+  type: 'test'
+  ...
+# Subtest: current readiness rejects committed evidence rewrite followed by restoration
+ok 2 - current readiness rejects committed evidence rewrite followed by restoration
+  ---
+  duration_ms: 1878.105883
+  type: 'test'
+  ...
+# Subtest: current evidence history checks a rewritten side branch even when an ours merge hides its contents
+ok 3 - current evidence history checks a rewritten side branch even when an ours merge hides its contents
+  ---
+  duration_ms: 1643.745184
+  type: 'test'
+  ...
+# Subtest: current evidence history accepts a new immutable receipt and rejects its deletion or indexed mode change
+ok 4 - current evidence history accepts a new immutable receipt and rejects its deletion or indexed mode change
+  ---
+  duration_ms: 2955.637382
+  type: 'test'
+  ...
+# Subtest: current evidence history rejects expanding the precise adjudication record
+ok 5 - current evidence history rejects expanding the precise adjudication record
+  ---
+  duration_ms: 704.421879
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9387.504087

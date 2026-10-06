@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 10:10:32","event_epoch_ms":"1791252632946","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P2-012 real command capacity 500 candidates, 200 incidents, 2000 reports, 1000 subscriptions, 5000 events, 500 bindings and 32 SSE","file":"tests/p2-012-capacity.integration.test.mjs","line":18,"nesting":0,"skip":false,"todo":false}

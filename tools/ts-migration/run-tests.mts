@@ -1,9 +1,9 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { constants, copyFileSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { hash, record, slash, sourceRoot, outputPath, codeFiles, strings, git } from './common.mjs';
+import { hash, record, safeFile, slash, sourceRoot, outputPath, codeFiles, strings, git } from './common.mjs';
 import { build } from './build.mjs';
 import { verifyArtifact } from './verify-artifact.mjs';
 import { loadRoutes, select, testEnvironment, execution, type Selection } from './routing.mjs';
@@ -31,6 +31,37 @@ function loadedFiles(coverage: string): string[] {
     }
   }
   return [...urls].sort();
+}
+function archiveScreenshots(tap:string,directory:string,prefix:string):Record<string,unknown>[] {
+  const archived:Record<string,unknown>[]=[],sources:string[]=[],folders=new Set<string>();
+  for(const channel of ['SS009_RECEIPT','SS010_BROWSER']){
+    for(const match of tap.matchAll(new RegExp('^# '+channel+' (.+)\\r?$','gmu'))){
+      const receipt=record(JSON.parse(match[1]??'') as unknown);
+      if(channel==='SS009_RECEIPT'&&receipt.kind!=='browser')continue;
+      if(!Array.isArray(receipt.screenshots)||receipt.screenshots.length>16)throw Error('MIGRATION_SCREENSHOT_INVALID');
+      for(const value of receipt.screenshots){
+        const image=record(value);
+        if(typeof image.file!=='string'||!path.isAbsolute(image.file)||typeof image.width!=='number'||typeof image.height!=='number')throw Error('MIGRATION_SCREENSHOT_INVALID');
+        const source=path.resolve(image.file),folder=path.dirname(source),name=path.basename(source);
+        const marker=channel==='SS010_BROWSER'?'ss010-ui-':'ss009-ui-';
+        if(path.dirname(folder)!==path.resolve(tmpdir())||!new RegExp('^'+marker+'[a-f0-9-]{36}$','u').test(path.basename(folder))||!/^[a-f0-9-]{36}\.png$/u.test(name))throw Error('MIGRATION_SCREENSHOT_OUTSIDE_OWNED_TEMP');
+        safeFile(tmpdir(),slash(path.relative(tmpdir(),source)));
+        if(lstatSync(source).size>64*1024*1024)throw Error('MIGRATION_SCREENSHOT_INVALID');
+        const bytes=readFileSync(source);
+        if(bytes.length<24||bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a'||bytes.readUInt32BE(8)!==13||bytes.subarray(12,16).toString('ascii')!=='IHDR'
+          ||bytes.readUInt32BE(16)!==image.width||bytes.readUInt32BE(20)!==image.height||hash(bytes)!==image.sha256||sources.includes(source))throw Error('MIGRATION_SCREENSHOT_INVALID');
+        const target=prefix+'-screenshot-'+(archived.length+1)+'.png';
+        copyFileSync(source,path.join(directory,target),constants.COPYFILE_EXCL);
+        if(!readFileSync(path.join(directory,target)).equals(bytes))throw Error('MIGRATION_SCREENSHOT_COPY_FAILED');
+        archived.push({path:target,source_path:image.file,width:image.width,height:image.height,bytes:bytes.length,sha256:hash(bytes)});
+        sources.push(source);folders.add(folder);
+      }
+    }
+  }
+  // Only the original files just verified and archived belong to this run.
+  for(const source of sources)unlinkSync(source);
+  for(const folder of folders)rmdirSync(folder);
+  return archived;
 }
 export function runSelection(root: string, selection: Selection, options: { reference?: boolean; reportDir?: string } = {}): Counts {
   const manifest = verifyArtifact(root), env = testEnvironment(root, selection.entries);
@@ -84,6 +115,7 @@ export function runSelection(root: string, selection: Selection, options: { refe
       Object.assign(fileResult, { exit_code: result.status, signal: result.signal,
         tap_path: prefix + '.tap', tap_sha256: hash(text), tap_bytes: Buffer.byteLength(text),
         stderr_path: prefix + '.stderr', stderr_sha256: hash(stderr), stderr_bytes: Buffer.byteLength(stderr) });
+      fileResult.screenshot_artifacts=archiveScreenshots(text,log,prefix);
       if (result.error) throw result.error;
       const trace = redact(readFileSync(path.join(log, casePath), 'utf8'));
       writeFileSync(path.join(log, casePath), trace);

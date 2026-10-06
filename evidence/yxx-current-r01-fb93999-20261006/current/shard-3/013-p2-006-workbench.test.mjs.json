@@ -1,0 +1,52 @@
+{
+  "path": "tests/p2-006-workbench.test.mjs",
+  "runtime_path": "tests/p2-006-workbench.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-006-workbench.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "ae0046a9d2dc38855bac0fb4bd2f9bb86eb403cf4a436a4298c5cad3f86f7bdc",
+  "executed_sha256": "ae0046a9d2dc38855bac0fb4bd2f9bb86eb403cf4a436a4298c5cad3f86f7bdc",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "013-p2-006-workbench.test.mjs.tap",
+  "tap_sha256": "4ef98b8c70ba3a22551e4297ee55cc2d4a1acaf16c7efcad65ad9564118935e3",
+  "tap_bytes": 3680,
+  "stderr_path": "013-p2-006-workbench.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "013-p2-006-workbench.test.mjs.cases.jsonl",
+  "case_trace_sha256": "d6bc2593c1ee1f8d8ab6909264e2d0d34b5b21be99017fdfdabe2ea8e30e3b87",
+  "case_trace_bytes": 5004,
+  "counts": {
+    "tests": 17,
+    "pass": 17,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/scripts/p2-006-preview.mjs",
+    ".build/runtime/src/p2-006-workbench-command-facade.mjs",
+    ".build/runtime/src/p2-006-workbench-http.mjs",
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-006-workbench-static.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-006-workbench.test.mjs",
+    ".build/runtime/web/p2-workbench/workbench-state.mjs",
+    ".build/tools/bootstrap.mjs",
+    ".build/tools/common.mjs",
+    ".build/tools/npm-launcher.mjs",
+    ".build/tools/verify-artifact.mjs",
+    "node_modules/typescript/lib/typescript.js"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 17
+}

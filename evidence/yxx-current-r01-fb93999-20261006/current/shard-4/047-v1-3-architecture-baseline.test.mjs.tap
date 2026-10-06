@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: V1.3 compatibility command delegates to active V1.4 validation
+ok 1 - V1.3 compatibility command delegates to active V1.4 validation
+  ---
+  duration_ms: 60.205921
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 785.969527

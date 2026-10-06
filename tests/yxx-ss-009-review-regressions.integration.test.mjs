@@ -19,7 +19,7 @@ import {input} from './helpers/yxx-ss-009-http-fixture.mjs';
 const tables=['channel.message_inbox','intake.service_intake','intake.service_intake_message','intake.service_intake_event',
   'intake.contact_journey','intake.channel_leg','intake.deterministic_decision','intake.safe_action_suggestion',
   'intake.manual_review_item','pilot_ticket.ticket','communication.message','communication.outbox','communication.delivery'];
-const receipt=(t,value)=>t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),candidate_fingerprint:g2CandidateInventory().fingerprint,status:'PASS',...value}));
+const receipt=(t,value)=>t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),candidate_fingerprint:g2CandidateInventory(process.cwd()).fingerprint,status:'PASS',...value}));
 
 test('SS-009 populated 032 Bot graph remains readable linked and replayable after 033 and 034',async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss009botup',run:async({pool,databaseUrl})=>{

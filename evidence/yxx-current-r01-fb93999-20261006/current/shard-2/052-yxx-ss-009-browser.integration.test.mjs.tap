@@ -1,0 +1,18 @@
+TAP version 13
+# Subtest: SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket
+ok 1 - SS-009 real browser and PostgreSQL submit supplement review and original workbench share one Ticket
+  ---
+  duration_ms: 17681.468723
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-06 10:14:23","event_epoch_ms":"1791252863838","kind":"browser","status":"PASS","candidate_fingerprint":"7b800228db68daf829e2efb79e3b599bd314ed50fbc58095596ea56b753ca01e","screenshots":[{"file":"/tmp/ss009-ui-b3c95a37-d40c-412b-a66a-c63909d577b2/e82e6e49-e529-41ce-95e9-c44eb07c29ca.png","width":390,"height":844,"sha256":"f95b2c69b9ec41222475521771fa5b2a72d7b3c442abe1c1a094116052d94e99"},{"file":"/tmp/ss009-ui-b3c95a37-d40c-412b-a66a-c63909d577b2/22498f40-e057-42f3-802a-dee40d22779f.png","width":1440,"height":900,"sha256":"ee69938d258e294efd2f07aed8a42d7071b204c250832255b6795e6828da4cf3"}],"real_pg":true,"real_browser":true,"tickets":2,"external_network_calls":0,"simulated_provider_calls":1}
+# SS009_RECEIPT {"event_time":"2026-10-06 10:14:24","event_epoch_ms":"1791252864052","kind":"cleanup","status":"PASS","candidate_fingerprint":"7b800228db68daf829e2efb79e3b599bd314ed50fbc58095596ea56b753ca01e","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"tls_proxy_listeners","remaining":0},{"resource":"tls_proxy_sockets","remaining":0},{"resource":"tls_directory","remaining":0},{"resource":"member_listener","remaining":0},{"resource":"staff_listener","remaining":0},{"resource":"browser_process","remaining":0},{"resource":"browser_profile","remaining":0},{"resource":"browser_command_timers","remaining":0},{"resource":"browser_socket","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18059.519709
