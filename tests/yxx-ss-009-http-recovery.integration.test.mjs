@@ -25,7 +25,7 @@ test('SS-009 lost actual HTTP response recovers the same authorized command with
       const processor=runtime.selfService.orchestrator;await assert.rejects(processor.processPending({batchSize:21}));const batch=await processor.processPending({batchSize:20});assert.ok(batch.claimed<=20);
     }finally{await runtime.stop();}
   }});
-  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'fault',status:'PASS',candidate_fingerprint:g2CandidateInventory().fingerprint,http_response_lost:true,same_command_recovered:true,cross_member_denied:true,batch_max:20}));
+  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'fault',status:'PASS',candidate_fingerprint:g2CandidateInventory(process.cwd()).fingerprint,http_response_lost:true,same_command_recovered:true,cross_member_denied:true,batch_max:20}));
 });
 
 test('SS-009 locked HTTP supplements recheck logout write shutdown and request revocation',{timeout:120000},async t=>{

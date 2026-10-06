@@ -55,6 +55,6 @@ test('SS010 AC093 real browser limited roles complete supplement review and safe
       context.observeResource('ss010_tls_listener',()=>fixture?.ownedResourceState().listeners??0);
       context.observeResource('ss010_roles',()=>[...runtime.children.values()].filter(child=>child.exitCode===null&&child.signalCode===null).length);
     }catch(error){primaryError=error;}finally{await closeSS009Resources([()=>tab?.close(),()=>fixture?.close(),()=>runtime?.stop()],primaryError);}
-    t.diagnostic('SS010_BROWSER '+JSON.stringify({...g2EvidenceTime(),candidate_fingerprint:g2CandidateInventory().fingerprint,screenshots,real_browser:true,real_postgres:true,external_network_calls:0}));
+    t.diagnostic('SS010_BROWSER '+JSON.stringify({...g2EvidenceTime(),candidate_fingerprint:g2CandidateInventory(process.cwd()).fingerprint,screenshots,real_browser:true,real_postgres:true,external_network_calls:0}));
   }});
 });

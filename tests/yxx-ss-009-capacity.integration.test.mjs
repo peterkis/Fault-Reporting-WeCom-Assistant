@@ -91,7 +91,7 @@ async function capacity(profile,t){
 
     }
   }});
-  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'capacity',status:'PASS',candidate_fingerprint:fingerprint,profiles:receipts}));
+  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'capacity',status:'PASS',candidate_fingerprint:g2CandidateInventory(process.cwd()).fingerprint,profiles:receipts}));
 }
 test('SS-009 MEMBER_SELF_SERVICE actual HTTP capacity 500 submissions 2000 supplements 100 reviews and 32 readers',{timeout:360000},t=>capacity('MEMBER_SELF_SERVICE',t));
 

@@ -202,6 +202,36 @@ test('routed reporter binds each case to the actual compiled entry and original 
     rmSync(root,{recursive:true,force:true});rmSync(log,{recursive:true,force:true});
   }
 });
+test('routed runner archives original screenshot bytes before the owned temporary images disappear',()=>{
+  const root=scratch(),log=mkdtempSync(path.join(tmpdir(),'current-image-report-'));
+  try{
+    writeFileSync(path.join(root,'tests/migration-canary.test.mts'),`
+      import {test} from 'node:test';import {mkdirSync,writeFileSync} from 'node:fs';
+      import {tmpdir} from 'node:os';import path from 'node:path';import {randomUUID,createHash} from 'node:crypto';
+      test('synthetic archival fixture, not browser acceptance',t=>{
+        const directory=path.join(tmpdir(),'ss010-ui-'+randomUUID());mkdirSync(directory);
+        const file=path.join(directory,randomUUID()+'.png');
+        const bytes=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l+QAAAAASUVORK5CYII=','base64');
+        writeFileSync(file,bytes);t.diagnostic('SS010_BROWSER '+JSON.stringify({synthetic_archival_fixture:true,real_browser:false,screenshots:[{file,width:1,height:1,sha256:createHash('sha256').update(bytes).digest('hex')}]}));
+      });`);
+    build(root);runSelection(root,select(loadRoutes(root),'selection','canary'),{reportDir:log});
+    const summary=record(JSON.parse(readFileSync(path.join(log,'summary.json'),'utf8')) as unknown);
+    assert.ok(Array.isArray(summary.files));const file=record(summary.files[0]);
+    assert.ok(Array.isArray(file.screenshot_artifacts),'original PNG must be retained beside its TAP');
+    assert.equal(file.screenshot_artifacts.length,1);const image=record(file.screenshot_artifacts[0]);
+    assert.equal(image.width,1);assert.equal(image.height,1);
+    assert.equal(existsSync(String(image.source_path)),false);
+    const bytes=readFileSync(path.join(log,String(image.path)));
+    assert.equal(bytes.toString('base64'),'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l+QAAAAASUVORK5CYII=');
+    assert.equal(image.sha256,hash(bytes));assert.equal(image.bytes,bytes.length);
+    const originalTap=readFileSync(path.join(log,String(file.tap_path)),'utf8');
+    assert.ok(originalTap.includes(String(image.source_path).replaceAll('\\','\\\\')));
+  }finally{
+    assert.equal(path.dirname(root),path.resolve(tmpdir()));assert.ok(path.basename(root).startsWith('t02-host-test-'));
+    assert.equal(path.dirname(log),path.resolve(tmpdir()));assert.ok(path.basename(log).startsWith('current-image-report-'));
+    rmSync(root,{recursive:true,force:true});rmSync(log,{recursive:true,force:true});
+  }
+});
 function scratch(reference = false): string {
   const root=mkdtempSync(path.join(tmpdir(),'t02-host-test-'));
   execFileSync('git',['clone','--quiet','--no-hardlinks',original,root],{windowsHide:true,stdio:'pipe'});

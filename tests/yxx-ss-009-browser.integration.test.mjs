@@ -45,7 +45,7 @@ test('SS-009 real browser and PostgreSQL submit supplement review and original w
       const screenshotDirectory=join(tmpdir(),'ss009-ui-'+randomUUID());mkdirSync(screenshotDirectory,{recursive:true});
       for(const [width,height] of [[390,844],[1440,900]]){await tab.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});assert.equal(await tab.evaluate('document.documentElement.scrollWidth>innerWidth'),false);const bytes=Buffer.from(await tab.screenshot(),'base64'),file=join(screenshotDirectory,randomUUID()+'.png');writeFileSync(file,bytes);screenshots.push({file,width,height,sha256:createHash('sha256').update(bytes).digest('hex')});}
       const storage=await tab.evaluate('JSON.stringify({local:{...localStorage},session:{...sessionStorage}})');assert.ok(!storage.includes('处方提交不了')&&!storage.includes('synthetic-A')&&!storage.includes('csrf'));
-      proof={...g2EvidenceTime(),kind:'browser',status:'PASS',candidate_fingerprint:g2CandidateInventory().fingerprint,screenshots,real_pg:true,real_browser:true,tickets:2,external_network_calls:0,simulated_provider_calls:fixture.providerCalls};
+      proof={...g2EvidenceTime(),kind:'browser',status:'PASS',candidate_fingerprint:g2CandidateInventory(process.cwd()).fingerprint,screenshots,real_pg:true,real_browser:true,tickets:2,external_network_calls:0,simulated_provider_calls:fixture.providerCalls};
     }catch(error){primaryError=error;}finally{await closeSS009Resources([()=>tab?.close(),()=>staffRuntime?.stop(),()=>runtime?.selfService.close(),()=>fixture?.close(),()=>runtime?.stop()],primaryError);}
     t.diagnostic('SS009_RECEIPT '+JSON.stringify(proof));
   }});

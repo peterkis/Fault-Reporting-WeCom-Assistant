@@ -40,7 +40,7 @@ test('SS-009 migration check rolls back and five catalog drift classes fail clos
       }
     }finally{client.release();}
     assert.deepEqual(await yxxCatalogInventory(pool),applied.inventory);
-    t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'catalog',status:'PASS',candidate_fingerprint:g2CandidateInventory().fingerprint,drift_classes:cases.map(c=>c[0]),check_rollback:true,forbidden_timezone_columns:applied.inventory.forbidden_timezone_columns}));
+    t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'catalog',status:'PASS',candidate_fingerprint:g2CandidateInventory(process.cwd()).fingerprint,drift_classes:cases.map(c=>c[0]),check_rollback:true,forbidden_timezone_columns:applied.inventory.forbidden_timezone_columns}));
   }});
 });
 

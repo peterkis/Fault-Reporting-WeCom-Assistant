@@ -42,7 +42,7 @@ test('SS-009 real process kills recover all acceptance and processing commit bou
       }finally{await c.kill();}
     }
   }});
-  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'fault',status:'PASS',candidate_fingerprint:g2CandidateInventory().fingerprint,real_kills:kills,cases}));
+  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'fault',status:'PASS',candidate_fingerprint:g2CandidateInventory(process.cwd()).fingerprint,real_kills:kills,cases}));
 });
 
 test('SS-009 committed supplement survives a real kill without a second Ticket or duplicate event',{timeout:120000},async t=>{
@@ -59,7 +59,7 @@ test('SS-009 committed supplement survives a real kill without a second Ticket o
       assert.equal((await pool.query('SELECT input_revision,processed_revision FROM intake.web_request_binding')).rows[0].processed_revision,'2');
     }finally{await c.kill();}
   }});
-  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'fault',status:'PASS',candidate_fingerprint:g2CandidateInventory().fingerprint,supplement_real_kill:true,supplement_replayed:true,tickets:1,supplement_events:1}));
+  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'fault',status:'PASS',candidate_fingerprint:g2CandidateInventory(process.cwd()).fingerprint,supplement_real_kill:true,supplement_replayed:true,tickets:1,supplement_events:1}));
 });
 
 test('SS-009 a terminated owned PostgreSQL backend preserves accepted input across a fresh processor', {timeout:120000},async t=>{
@@ -76,5 +76,5 @@ test('SS-009 a terminated owned PostgreSQL backend preserves accepted input acro
       assert.equal((await pool.query('SELECT count(*)::int AS n FROM pilot_ticket.ticket')).rows[0].n,1);
     }finally{await c.kill();}
   }});
-  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'fault',status:'PASS',candidate_fingerprint:g2CandidateInventory().fingerprint,owned_backend_terminated:true,recovery_verified:true,shared_database_service_stopped:false}));
+  t.diagnostic('SS009_RECEIPT '+JSON.stringify({...g2EvidenceTime(),kind:'fault',status:'PASS',candidate_fingerprint:g2CandidateInventory(process.cwd()).fingerprint,owned_backend_terminated:true,recovery_verified:true,shared_database_service_stopped:false}));
 });

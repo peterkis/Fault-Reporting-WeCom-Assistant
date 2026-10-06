@@ -16,10 +16,15 @@ import {yxxCatalogInventory,validateYxxCatalog} from '../scripts/yxx-self-servic
 
 test('current authorized 22 migrations coexist and replay through existing entry points in one owned database',async t=>{
   const {sourceRoot,runtimeRoot}=testRoots(),scope=readCurrentYxxScope(sourceRoot);
+  const cleanupReceipts:Record<string,unknown>[]=[];
+  const testContext={diagnostic(message:string){
+    t.diagnostic(message);
+    if(message.startsWith('SS009_RECEIPT '))cleanupReceipts.push(JSON.parse(message.slice('SS009_RECEIPT '.length)) as Record<string,unknown>);
+  }};
   const digest=(bytes:Buffer|string):string=>createHash('sha256').update(bytes).digest('hex');
   const files=scope.migration_files.map(file=>({path:file,sha256_utf8_lf:digest(readFileSync(path.join(runtimeRoot,file),'utf8').replaceAll('\r\n','\n'))}));
   assert.equal(files.length,22);
-  await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'yxxcurrent',max:1,
+  await withSS009Database({testContext,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'yxxcurrent',max:1,
     run:async({pool,databaseUrl}:{pool:Pool;databaseUrl:string})=>{
       const version=Number((await pool.query<{version:string}>("SELECT current_setting('server_version_num') AS version")).rows[0]?.version);
       assert.ok(version>=180000&&version<190000);
@@ -50,4 +55,7 @@ test('current authorized 22 migrations coexist and replay through existing entry
         initial:{baseline:baseline.status,yxx:baseline.yxx.status,workbench_auth:auth.status,directory:directory.status},
         replay:'ALL_NOOP_MARKERS_UNCHANGED',catalog_verified:true,business_rows:empty.rows[0],live_authorized:false}));
     }});
+  assert.equal(cleanupReceipts.length,1);
+  assert.equal(cleanupReceipts[0]?.candidate_fingerprint,g2CandidateInventory(runtimeRoot).fingerprint,
+    'cleanup receipt must bind the actual executed runtime, independently of the canonical source root');
 });
