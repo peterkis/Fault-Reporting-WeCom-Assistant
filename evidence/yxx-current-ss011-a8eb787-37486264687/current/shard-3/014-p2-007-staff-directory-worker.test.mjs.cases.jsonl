@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 23:18:51","event_epoch_ms":"1791299931632","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"directory maintenance runs in the existing worker even when rule orchestration is disabled","file":"tests/p2-007-staff-directory-worker.test.mjs","line":5,"nesting":0,"skip":false,"todo":false}

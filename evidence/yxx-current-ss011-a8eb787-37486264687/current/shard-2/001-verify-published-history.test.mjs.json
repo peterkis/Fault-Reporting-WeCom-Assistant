@@ -1,0 +1,49 @@
+{
+  "path": ".github/review/verify-published-history.test.mjs",
+  "runtime_path": ".github/review/verify-published-history.test.mjs",
+  "executed_path": ".github/review/verify-published-history.test.mjs",
+  "execution_cwd": ".",
+  "source_sha256": "89ef2dc2119297f9ff830343ad01c7ed11fa0f20c18691d956b0d12a9c4a8466",
+  "executed_sha256": "89ef2dc2119297f9ff830343ad01c7ed11fa0f20c18691d956b0d12a9c4a8466",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "SOURCE_HOST",
+  "node_flags": [
+    "--import",
+    "file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/tools/source-hook.mjs",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "001-verify-published-history.test.mjs.tap",
+  "tap_sha256": "ff95e5918915319fcc3f3afb98b6fa8ac829e62c9f259e778e4d7e9219987c2c",
+  "tap_bytes": 4417,
+  "stderr_path": "001-verify-published-history.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "001-verify-published-history.test.mjs.cases.jsonl",
+  "case_trace_sha256": "7db363e7628aec409bbb3d40dbb2ed50ffc48fadb3cf5e9670c9ee61e9148739",
+  "case_trace_bytes": 6687,
+  "counts": {
+    "tests": 22,
+    "pass": 22,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/tools/bootstrap.mjs",
+    ".build/tools/common.mjs",
+    ".build/tools/source-hook.mjs",
+    ".build/tools/source-host.mjs",
+    ".build/tools/verify-artifact.mjs",
+    ".github/review/verify-published-history.mjs",
+    ".github/review/verify-published-history.test.mjs",
+    "node_modules/typescript/lib/typescript.js"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 22
+}

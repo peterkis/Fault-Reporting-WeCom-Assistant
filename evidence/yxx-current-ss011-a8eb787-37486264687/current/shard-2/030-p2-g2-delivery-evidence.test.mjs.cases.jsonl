@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 23:22:14","event_epoch_ms":"1791300134488","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"synthetic evidence fixture: SENT alone, unrelated attempt, seeded startup and organic prior-group cannot prove live receipt","file":"tests/p2-g2-delivery-evidence.test.mjs","line":13,"nesting":0,"skip":false,"todo":false}

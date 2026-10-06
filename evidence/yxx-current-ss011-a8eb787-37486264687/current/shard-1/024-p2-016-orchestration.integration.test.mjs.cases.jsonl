@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 23:19:16","event_epoch_ms":"1791299956993","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P2-016 existing rule worker creates Ticket notifications, safe group/direct guidance and SYSTEM-only timeout closure","file":"tests/p2-016-orchestration.integration.test.mjs","line":15,"nesting":0,"skip":false,"todo":false}

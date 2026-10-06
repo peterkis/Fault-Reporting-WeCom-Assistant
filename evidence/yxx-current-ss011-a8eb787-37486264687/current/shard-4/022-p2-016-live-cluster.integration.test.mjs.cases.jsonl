@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 23:20:42","event_epoch_ms":"1791300042236","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P2-016 approved topology uses three real bounded processes, rule-first Worker and zero live SDK calls","file":"tests/p2-016-live-cluster.integration.test.mjs","line":12,"nesting":0,"skip":false,"todo":false}

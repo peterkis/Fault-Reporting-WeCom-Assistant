@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: SS011 single Reporter HTTP flow preserves staff scope replay quotas logout and stop
+ok 1 - SS011 single Reporter HTTP flow preserves staff scope replay quotas logout and stop
+  ---
+  duration_ms: 2561.445238
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-06 23:21:22","event_epoch_ms":"1791300082044","kind":"cleanup","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"ss011_roles","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets
+ok 2 - SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets
+  ---
+  duration_ms: 3387.516091
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-06 23:21:25","event_epoch_ms":"1791300085446","kind":"cleanup","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC092 preflight rejects occupied port drift and resumed foreign scope without processing pending
+ok 3 - SS010 AC092 preflight rejects occupied port drift and resumed foreign scope without processing pending
+  ---
+  duration_ms: 1925.396456
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-06 23:21:27","event_epoch_ms":"1791300087367","kind":"cleanup","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC092 concurrent global and supplement limits count committed commands and never charge replays
+ok 4 - SS010 AC092 concurrent global and supplement limits count committed commands and never charge replays
+  ---
+  duration_ms: 996.784138
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-06 23:21:28","event_epoch_ms":"1791300088361","kind":"cleanup","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope
+ok 5 - SS010 AC093 commit-time revocation rolls back facts and new runs cannot reset persisted scope
+  ---
+  duration_ms: 923.094089
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-06 23:21:29","event_epoch_ms":"1791300089293","kind":"cleanup","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC094 lost controller IPC stops roles without starting a Gateway or deleting facts
+ok 6 - SS010 AC094 lost controller IPC stops roles without starting a Gateway or deleting facts
+  ---
+  duration_ms: 1775.742876
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-06 23:21:31","event_epoch_ms":"1791300091066","kind":"cleanup","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11913.378607

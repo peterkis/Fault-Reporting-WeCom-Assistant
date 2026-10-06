@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 23:19:15","event_epoch_ms":"1791299955828","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"P2-012 network-off three-role assembly serves Incident and closes children, sockets and pools","file":"tests/p2-012-process-assembly.integration.test.mjs","line":11,"nesting":0,"skip":false,"todo":false}

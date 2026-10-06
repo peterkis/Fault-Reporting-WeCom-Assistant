@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 23:19:39","event_epoch_ms":"1791299979990","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"X035 explicit critical endpoint fault accepted from UNKNOWN Intake reaches a real human queue without a public Incident","file":"tests/p2-g2-critical-intake.integration.test.mjs","line":8,"nesting":0,"skip":false,"todo":false}

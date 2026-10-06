@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: state, Ticket Event, Outbox, and target deliveries commit together while delivery failures retry independently
+ok 1 - state, Ticket Event, Outbox, and target deliveries commit together while delivery failures retry independently
+  ---
+  duration_ms: 95.703444
+  type: 'test'
+  ...
+# Subtest: a leased Delivery is not sent twice by concurrent Workers and terminal failures become dead letters
+ok 2 - a leased Delivery is not sent twice by concurrent Workers and terminal failures become dead letters
+  ---
+  duration_ms: 55.829822
+  type: 'test'
+  ...
+# Subtest: an Outbox failure rolls back the Ticket state and its Ticket Event
+ok 3 - an Outbox failure rolls back the Ticket state and its Ticket Event
+  ---
+  duration_ms: 19.676739
+  type: 'test'
+  ...
+# Subtest: the default notification matrix keeps internal notes off reporter delivery and the Worker rate-limits each target
+ok 4 - the default notification matrix keeps internal notes off reporter delivery and the Worker rate-limits each target
+  ---
+  duration_ms: 93.993868
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 447.546581

@@ -1,0 +1,220 @@
+TAP version 13
+# Subtest: persists one Channel Message and returns the original result on replay
+ok 1 - persists one Channel Message and returns the original result on replay
+  ---
+  duration_ms: 181.485027
+  type: 'test'
+  ...
+# Subtest: snapshots validated input before connection acquisition
+ok 2 - snapshots validated input before connection acquisition
+  ---
+  duration_ms: 5.583107
+  type: 'test'
+  ...
+# Subtest: concurrent duplicates execute first processing exactly once
+ok 3 - concurrent duplicates execute first processing exactly once
+  ---
+  duration_ms: 128.690095
+  type: 'test'
+  ...
+# Subtest: first-processing failure rolls back the Inbox row and permits a clean retry
+ok 4 - first-processing failure rolls back the Inbox row and permits a clean retry
+  ---
+  duration_ms: 9.696947
+  type: 'test'
+  ...
+# Subtest: non-plain processing result roots fail as processing errors
+ok 5 - non-plain processing result roots fail as processing errors
+  ---
+  duration_ms: 13.508657
+  type: 'test'
+  ...
+# Subtest: processing result snapshot rejects nested non-JSON runtime objects
+ok 6 - processing result snapshot rejects nested non-JSON runtime objects
+  ---
+  duration_ms: 4.893494
+  type: 'test'
+  ...
+# Subtest: processing result validation never executes toJSON hooks
+ok 7 - processing result validation never executes toJSON hooks
+  ---
+  duration_ms: 3.979058
+  type: 'test'
+  ...
+# Subtest: processing result validation rejects Proxy toJSON substitution without executing it
+ok 8 - processing result validation rejects Proxy toJSON substitution without executing it
+  ---
+  duration_ms: 3.803588
+  type: 'test'
+  ...
+# Subtest: inherited toJSON pollution cannot transform an otherwise plain result
+ok 9 - inherited toJSON pollution cannot transform an otherwise plain result
+  ---
+  duration_ms: 5.087561
+  type: 'test'
+  ...
+# Subtest: processing result snapshot accepts nested plain JSON arrays
+ok 10 - processing result snapshot accepts nested plain JSON arrays
+  ---
+  duration_ms: 4.941256
+  type: 'test'
+  ...
+# Subtest: first-processing callback cannot commit the Inbox transaction early
+ok 11 - first-processing callback cannot commit the Inbox transaction early
+  ---
+  duration_ms: 4.259004
+  type: 'test'
+  ...
+# Subtest: first-processing callback cannot change Inbox transaction characteristics
+ok 12 - first-processing callback cannot change Inbox transaction characteristics
+  ---
+  duration_ms: 4.644003
+  type: 'test'
+  ...
+# Subtest: comment-obfuscated transaction control remains blocked
+ok 13 - comment-obfuscated transaction control remains blocked
+  ---
+  duration_ms: 4.383308
+  type: 'test'
+  ...
+# Subtest: SET LOCAL cannot change the Inbox-owned transaction
+ok 14 - SET LOCAL cannot change the Inbox-owned transaction
+  ---
+  duration_ms: 4.541202
+  type: 'test'
+  ...
+# Subtest: session defaults cannot poison a pooled connection after Inbox commit
+ok 15 - session defaults cannot poison a pooled connection after Inbox commit
+  ---
+  duration_ms: 17.035176
+  type: 'test'
+  ...
+# Subtest: function-based session configuration is rejected before pooled connection reuse
+ok 16 - function-based session configuration is rejected before pooled connection reuse
+  ---
+  duration_ms: 21.738465
+  type: 'test'
+  ...
+# Subtest: ordinary Inbox use preserves caller-owned pool session baselines
+ok 17 - ordinary Inbox use preserves caller-owned pool session baselines
+  ---
+  duration_ms: 20.874831
+  type: 'test'
+  ...
+# Subtest: callback-style transaction queries are rejected before PostgreSQL execution
+ok 18 - callback-style transaction queries are rejected before PostgreSQL execution
+  ---
+  duration_ms: 4.860685
+  type: 'test'
+  ...
+# Subtest: unawaited transaction query failure remains a processing failure
+ok 19 - unawaited transaction query failure remains a processing failure
+  ---
+  duration_ms: 5.211063
+  type: 'test'
+  ...
+# Subtest: transaction view is revoked when first processing settles
+ok 20 - transaction view is revoked when first processing settles
+  ---
+  duration_ms: 4.771558
+  type: 'test'
+  ...
+# Subtest: a duplicate after a real process restart receives the committed result
+ok 21 - a duplicate after a real process restart receives the committed result
+  ---
+  duration_ms: 257.23073
+  type: 'test'
+  ...
+# Subtest: temporary database unavailability returns a stable retryable error without processing
+ok 22 - temporary database unavailability returns a stable retryable error without processing
+  ---
+  duration_ms: 2.098815
+  type: 'test'
+  ...
+# Subtest: invalid privacy, retention, plaintext payload and non-contract message fields fail before database access
+ok 23 - invalid privacy, retention, plaintext payload and non-contract message fields fail before database access
+  ---
+  duration_ms: 1.453231
+  type: 'test'
+  ...
+# Subtest: privacy, retention and caller-encrypted raw payload are persisted without entering the result
+ok 24 - privacy, retention and caller-encrypted raw payload are persisted without entering the result
+  ---
+  duration_ms: 6.452446
+  type: 'test'
+  ...
+# Subtest: migration fails closed when an existing Inbox lacks required constraints
+ok 25 - migration fails closed when an existing Inbox lacks required constraints
+  ---
+  duration_ms: 56.45036
+  type: 'test'
+  ...
+# Subtest: migration reports the stable drift error before indexing a table with missing columns
+ok 26 - migration reports the stable drift error before indexing a table with missing columns
+  ---
+  duration_ms: 51.906682
+  type: 'test'
+  ...
+# Subtest: migration rejects a weakened check constraint that keeps the expected name
+ok 27 - migration rejects a weakened check constraint that keeps the expected name
+  ---
+  duration_ms: 59.355903
+  type: 'test'
+  ...
+# Subtest: migration rejects a deferrable idempotency constraint unusable by ON CONFLICT
+ok 28 - migration rejects a deferrable idempotency constraint unusable by ON CONFLICT
+  ---
+  duration_ms: 160.860922
+  type: 'test'
+  ...
+# Subtest: migration rejects a deferrable primary key unusable by later foreign keys
+ok 29 - migration rejects a deferrable primary key unusable by later foreign keys
+  ---
+  duration_ms: 60.871282
+  type: 'test'
+  ...
+# Subtest: migration rejects a same-name hash index that cannot serve retention range scans
+ok 30 - migration rejects a same-name hash index that cannot serve retention range scans
+  ---
+  duration_ms: 61.183716
+  type: 'test'
+  ...
+# Subtest: migration rejects an extra check constraint outside the frozen set
+ok 31 - migration rejects an extra check constraint outside the frozen set
+  ---
+  duration_ms: 58.858346
+  type: 'test'
+  ...
+# Subtest: migration rejects an extra unique constraint that changes write semantics
+ok 32 - migration rejects an extra unique constraint that changes write semantics
+  ---
+  duration_ms: 57.73264
+  type: 'test'
+  ...
+# Subtest: migration rejects a generated column that breaks explicit Inbox writes
+ok 33 - migration rejects a generated column that breaks explicit Inbox writes
+  ---
+  duration_ms: 60.73193
+  type: 'test'
+  ...
+# Subtest: migration is reentrant when the existing Inbox matches the frozen catalog
+ok 34 - migration is reentrant when the existing Inbox matches the frozen catalog
+  ---
+  duration_ms: 58.183425
+  type: 'test'
+  ...
+# Subtest: migration is limited to the P1-003 Channel Inbox and freezes the database constraints
+ok 35 - migration is limited to the P1-003 Channel Inbox and freezes the database constraints
+  ---
+  duration_ms: 0.897106
+  type: 'test'
+  ...
+1..35
+# tests 35
+# suites 0
+# pass 35
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1590.622629

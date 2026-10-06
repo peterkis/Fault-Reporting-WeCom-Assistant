@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: 人工确认高风险显式续报复用原工单，重放不重复建单或通知
+ok 1 - 人工确认高风险显式续报复用原工单，重放不重复建单或通知
+  ---
+  duration_ms: 1210.757134
+  type: 'test'
+  ...
+# Subtest: 合法内部备注不进入 Outbox，真实只读对账不将其判为外发泄漏
+ok 2 - 合法内部备注不进入 Outbox，真实只读对账不将其判为外发泄漏
+  ---
+  duration_ms: 951.022878
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2525.874333

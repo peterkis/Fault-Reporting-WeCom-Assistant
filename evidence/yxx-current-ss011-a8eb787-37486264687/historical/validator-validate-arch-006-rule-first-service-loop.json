@@ -1,0 +1,20 @@
+{
+  "name": "validator-validate-arch-006-rule-first-service-loop",
+  "command": [
+    "node",
+    "scripts/validate-arch-006-rule-first-service-loop.mjs"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error_code": null,
+  "stdout": {
+    "path": "validator-validate-arch-006-rule-first-service-loop.stdout",
+    "bytes": 65,
+    "sha256": "359a30988433ed102b00956b6e7a0a776c5cb045837783b3d22883e26b045a37"
+  },
+  "stderr": {
+    "path": "validator-validate-arch-006-rule-first-service-loop.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

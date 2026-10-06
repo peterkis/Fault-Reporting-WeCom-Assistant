@@ -1,0 +1,5 @@
+
+> fault-reporting-wecom-assistant@0.0.0-p1 migration:verify-artifact
+> node .build/tools/verify-artifact.mjs
+
+{"status":"ARTIFACT_VERIFIED_NOT_ACTIVATED","manifest_sha256":"754664cb491df77c8ef0b63750d3bbefd200009676cadfadd8e42efddff61b06"}

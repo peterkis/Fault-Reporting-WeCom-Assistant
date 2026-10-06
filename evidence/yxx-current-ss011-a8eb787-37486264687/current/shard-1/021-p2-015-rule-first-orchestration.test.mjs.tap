@@ -1,0 +1,59 @@
+TAP version 13
+# warning: in the working copy of 'database/migrations/001_p1_003_channel_message_inbox.sql', LF will be replaced by CRLF the next time Git touches it
+# warning: in the working copy of 'src/p2-007-domain-utils.mjs', LF will be replaced by CRLF the next time Git touches it
+# warning: in the working copy of 'database/migrations/001_p1_003_channel_message_inbox.sql', LF will be replaced by CRLF the next time Git touches it
+# warning: in the working copy of 'src/p2-007-domain-utils.mts', LF will be replaced by CRLF the next time Git touches it
+# warning: in the working copy of 'src/p2-007-domain-utils.mts', LF will be replaced by CRLF the next time Git touches it
+# warning: in the working copy of 'database/migrations/001_p1_003_channel_message_inbox.sql', LF will be replaced by CRLF the next time Git touches it
+# warning: in the working copy of 'src/p2-007-domain-utils.mts', LF will be replaced by CRLF the next time Git touches it
+# Subtest: strict feature flags default false and reject non-canonical values
+ok 1 - strict feature flags default false and reject non-canonical values
+  ---
+  duration_ms: 2.520791
+  type: 'test'
+  ...
+# Subtest: ordinary JSON boundary rejects proxy, accessor, symbol, toJSON, cycles and pollution keys
+ok 2 - ordinary JSON boundary rejects proxy, accessor, symbol, toJSON, cycles and pollution keys
+  ---
+  duration_ms: 0.380875
+  type: 'test'
+  ...
+# Subtest: router protects faults from acknowledgement and maps required examples
+ok 3 - router protects faults from acknowledgement and maps required examples
+  ---
+  duration_ms: 60.86508
+  type: 'test'
+  ...
+# Subtest: ten result codes are reachable and deterministic
+ok 4 - ten result codes are reachable and deterministic
+  ---
+  duration_ms: 90.745098
+  type: 'test'
+  ...
+# Subtest: clinical high risk reaches review and unsupported root cause is never confirmed
+ok 5 - clinical high risk reaches review and unsupported root cause is never confirmed
+  ---
+  duration_ms: 34.659659
+  type: 'test'
+  ...
+# Subtest: gold manifest references all 96 + 42 + 64 frozen cases with ten routes
+ok 6 - gold manifest references all 96 + 42 + 64 frozen cases with ten routes
+  ---
+  duration_ms: 1.138581
+  type: 'test'
+  ...
+# Subtest: public P2-015 validator accepts a committed type migration and rejects runtime or frozen SQL edits
+ok 7 - public P2-015 validator accepts a committed type migration and rejects runtime or frozen SQL edits
+  ---
+  duration_ms: 1382.060102
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1712.817565

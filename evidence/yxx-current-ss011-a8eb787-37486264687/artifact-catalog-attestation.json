@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-06 23:34:18",
+  "event_epoch_ms": "1791300858356",
+  "tested_head": "a8eb787791404759289074f0b667096dfd667f20",
+  "tested_tree": "c5bf22e8f8f51dea45938b13fb4ae6678a8ca011",
+  "candidate_fingerprint": "7045dbd47c212205da61dc69dba7692cdd8809d0f3b067ddf466eb8b37d27277",
+  "kind": "CURRENT_ARTIFACT_CATALOG_ATTESTATION",
+  "report": {
+    "path": "evidence/yxx-current-ss011-a8eb787-37486264687/report.json",
+    "bytes": 3451,
+    "sha256": "f3282dceeda4d8f494927d498c05ad64a4813fc96142dc5a9eae4f328e122110",
+    "encoding": "utf-8"
+  },
+  "catalog": {
+    "path": "evidence/yxx-current-ss011-a8eb787-37486264687/artifact-catalog.json",
+    "bytes": 259654,
+    "sha256": "a05af7bdbf44b4c2676047522ccecd4a6fa2b9272fac53499d88c2f70ed61548"
+  },
+  "original_files": 957,
+  "original_records_stored_once": true,
+  "summary_files_role": "DERIVED_AGGREGATE_OF_PER_FILE_ORIGINALS",
+  "readiness": false,
+  "live_authorized": false,
+  "pending": "H rebuild and independent final certify"
+}

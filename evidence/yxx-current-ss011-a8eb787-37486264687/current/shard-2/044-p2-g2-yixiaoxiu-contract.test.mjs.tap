@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback
+ok 1 - YXX-07 YXX-33 member policy and identity proof fail closed without coercion or legacy fallback
+  ---
+  duration_ms: 2.27553
+  type: 'test'
+  ...
+# Subtest: YXX-01 member Sender validates persisted delivery binding without reading a Grant before its mock SDK call
+ok 2 - YXX-01 member Sender validates persisted delivery binding without reading a Grant before its mock SDK call
+  ---
+  duration_ms: 3.122326
+  type: 'test'
+  ...
+# Subtest: YXX-35 closed member schemas expose authentication mode without raw identity or nullable Ticket guessing
+ok 3 - YXX-35 closed member schemas expose authentication mode without raw identity or nullable Ticket guessing
+  ---
+  duration_ms: 7.995803
+  type: 'test'
+  ...
+# Subtest: YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint
+ok 4 - YXX-06 YXX-07 YXX-33 unverified scope or disabled OAuth cannot construct a permissive member endpoint
+  ---
+  duration_ms: 1.357559
+  type: 'test'
+  ...
+# Subtest: YXX-35 configuration refuses Proxy, accessors, toJSON, cycles and loose identity coercions
+ok 5 - YXX-35 configuration refuses Proxy, accessors, toJSON, cycles and loose identity coercions
+  ---
+  duration_ms: 0.568271
+  type: 'test'
+  ...
+# Subtest: YXX-01 both member card click regions use one canonical ref without a grant or identity
+ok 6 - YXX-01 both member card click regions use one canonical ref without a grant or identity
+  ---
+  duration_ms: 0.459606
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 256.839355
