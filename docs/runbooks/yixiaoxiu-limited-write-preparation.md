@@ -1,5 +1,7 @@
 # SS-010 限定写现场准备
 
+2026-10-06 当前兼容决策见 [ADR-0028](../../adr/0028_single_approved_reporter_limited_write.md)：允许仅 A 或原 A/B 的获批 Reporter，实际 userid 数量与 alias 一致，仍须两个不同的有效获批内部 principal。源码变化后须新候选认证和独立实际批准，单成员 PR 完成后停止；下文为 SS010 原准备轮次记录，历史结果与批准不改写。
+
 本手册准备 SS-011；本轮只在隔离本地验证并提交。不推送、创建 PR、部署、连接真实 OAuth、应用现场迁移或发送消息。当前正式结果以 `evidence/yxx-ss-010-report.json` 为准；文件不存在或严格检查失败时为 NOT_READY。
 
 ## 当前候选与历史
@@ -54,7 +56,7 @@ node scripts/yxx-self-service-readiness.mjs --require-ready
 
 ## 授权文件与受保护配置
 
-模板是 `config_examples/yxx-limited-write-authorization.example.json`。全部 false/null 表示未授权。正式申请填写候选发布 commit/tree、源码指纹、相同 App 版本、配置摘要、身份证明、数据库身份、A/B保护映射、两个坐席、时间窗、总量/每成员配额、负责人及回退依据。
+模板是 `config_examples/yxx-limited-write-authorization.example.json`。全部 false/null 表示未授权，保留原 A/B 模板。正式申请填写候选发布 commit/tree、源码指纹、相同 App 版本、配置摘要、身份证明、数据库身份、仅 A 或 A/B 的保护映射、两个不同的获批坐席、时间窗、总量/每成员配额、负责人及回退依据。
 
 配额建议由负责人裁定，例如总受理6、补充8、潜在Ticket6；模板不预批准数值。时间窗最大65分钟是本工具上限，不是正式60分钟观察认证。发送与父 G2许可必须始终 false。
 
@@ -63,7 +65,7 @@ node scripts/yxx-self-service-readiness.mjs --require-ready
 单独的私有 env 文件只接受以下五项，不加载通用 `.env.pilot` 的旧 live 开关：
 
 - `PILOT_DATABASE_URL`
-- `YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG`：既有 config envelope 的绝对路径，仅批准 A/B 的 `VERIFIED_DELEGATED_MAPPING / LIVE / DEPLOYMENT`
+- `YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG`：既有 config envelope 的绝对路径，仅含批准的 A 或 A/B 的 `VERIFIED_DELEGATED_MAPPING / LIVE / DEPLOYMENT`，userid 数量须与 alias 一致
 - `APP_SECRET`
 - `P2_G2_REPORTER_HMAC_SECRET`
 - `PILOT_LOG_IDENTITY_HASH_KEY`

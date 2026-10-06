@@ -7,7 +7,7 @@ export type LimitedTemplate = ReturnType<typeof limitedTemplate>;
 export interface ApprovedLimitedManifest {schema_version:1;kind:'OWNER_APPROVED_LIMITED_WRITE';status:'APPROVED';ticket:'YXX-SS-011';run_id:unknown;
  candidate_commit:unknown;candidate_tree:unknown;candidate_fingerprint:unknown;app_version:unknown;config_sha256:unknown;
  identity_proof_ref:string;database:{name:unknown;oid:unknown;identity_sha256:unknown;dedicated_test_only:true};
- reporter_aliases:['A','B'];principal_ids:[unknown,unknown];window:{starts_at:string;starts_epoch_ms:string;ends_at:string;ends_epoch_ms:string};
+ reporter_aliases:['A']|['A','B'];principal_ids:[unknown,unknown];window:{starts_at:string;starts_epoch_ms:string;ends_at:string;ends_epoch_ms:string};
  limits:{max_new_intakes:number;max_supplements:number;max_new_tickets:number;per_member_intakes:number;per_member_supplements:number};
  permissions:LimitedPermissions;owner:string;approver:string;approval_record_ref:string;approval_record_sha256:unknown;
  backup_ref:string;rollback_ref:string;public_origin:string;listen_port:number}
@@ -56,7 +56,7 @@ export function validateLimitedManifest(value:unknown,{template=false,now=Date.n
     ||!/^p2_015_ss010_[a-f0-9_]+$/u.test(((value.database as InputObject).name??'') as string)||!/^\d+$/u.test(((value.database as InputObject).oid??'') as string)
     ||!['identity_proof_ref','owner','approver','approval_record_ref','backup_ref','rollback_ref'].every(key=>nonempty(value[key])))reject('AUTHORIZATION_REQUIRED');
   if(!requiredPermissions.every(key=>(value.permissions as InputObject)[key])||(value.permissions as InputObject).real_message_send||(value.permissions as InputObject).parent_p2_g2_live)reject('PERMISSION_INVALID');
-  if(!Array.isArray(value.reporter_aliases)||value.reporter_aliases.length!==2||value.reporter_aliases[0]!=='A'||value.reporter_aliases[1]!=='B'
+  if(!Array.isArray(value.reporter_aliases)||![1,2].includes(value.reporter_aliases.length)||value.reporter_aliases[0]!=='A'||value.reporter_aliases.length===2&&value.reporter_aliases[1]!=='B'
     ||!Array.isArray(value.principal_ids)||value.principal_ids.length!==2||new Set(value.principal_ids).size!==2||value.principal_ids.some(x=>!uuid.test(x as string)))reject();
   for(const side of ['starts','ends']){
     const epoch=(value.window as InputObject)[side+'_epoch_ms'];
@@ -82,7 +82,7 @@ export function readLimitedConfiguration(file:string,manifest:ApprovedLimitedMan
   if(Object.keys(env).some(key=>!['PILOT_DATABASE_URL','YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG','APP_SECRET','P2_G2_REPORTER_HMAC_SECRET','PILOT_LOG_IDENTITY_HASH_KEY'].includes(key)))reject('UNRELATED_CAPABILITY');
   const member=validateYxxEntryConfig(JSON.parse(readFileSync(env.YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG as string,'utf8')).reporterMemberEntry);
   if(!member.enabled||member.identityMode!=='VERIFIED_DELEGATED_MAPPING'||member.validationProfile!=='DEPLOYMENT'||member.proofKind!=='LIVE'
-    ||member.proofRef!==manifest.identity_proof_ref||(member.reporterUserIds as string[]).length!==2
+    ||member.proofRef!==manifest.identity_proof_ref||(member.reporterUserIds as string[]).length!==manifest.reporter_aliases.length
     ||!nonempty(env.APP_SECRET)||Buffer.byteLength(env.P2_G2_REPORTER_HMAC_SECRET??'')<32||Buffer.byteLength(env.PILOT_LOG_IDENTITY_HASH_KEY??'')<16)reject();
   const database=databaseIdentity(env.PILOT_DATABASE_URL);
   if(database.name!==manifest.database.name||database.identity_sha256!==manifest.database.identity_sha256)reject('DATABASE_IDENTITY_MISMATCH');

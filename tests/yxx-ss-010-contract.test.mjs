@@ -6,8 +6,9 @@ import {readFileSync,mkdtempSync,writeFileSync,rmSync,mkdirSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {limitedTemplate,validateLimitedManifest,parseLimitedArguments,databaseIdentity,approvalScope,verifyLimitedApproval,digest} from '../src/yxx-limited-write-contract.mjs';
+import {limitedTemplate,validateLimitedManifest,parseLimitedArguments,databaseIdentity,readLimitedConfiguration,limitedConfigurationDigest,approvalScope,verifyLimitedApproval,digest} from '../src/yxx-limited-write-contract.mjs';
 import {manifestFixture} from './helpers/yxx-ss-010-fixture.mjs';
+import {config,secret} from './helpers/yxx-ss-009-http-fixture.mjs';
 import {readSS010Artifact} from '../src/yxx-self-service-readiness.mjs';
 import {stopLimitedChild} from '../src/yxx-limited-write-runner.mjs';
 
@@ -43,10 +44,51 @@ test('SS010 AC094 unknown duplicate and run arguments fail without implicit auth
     const result=spawnSync(process.execPath,['scripts/yxx-self-service-live.mjs',...args],{encoding:'utf8',windowsHide:true});assert.equal(result.status,1);assert.equal(JSON.parse(result.stdout).live_authorized,false);
   }
 });
+test('SS011 single approved Reporter accepts only A or the existing ordered A B pair',()=>{
+  for(const aliases of [['A'],['A','B']]){
+    const manifest=manifestFixture();manifest.reporter_aliases=aliases;
+    assert.equal(validateLimitedManifest(manifest),manifest);
+    for(const now of [Number(manifest.window.starts_epoch_ms)-1,Number(manifest.window.ends_epoch_ms)]){
+      assert.throws(()=>validateLimitedManifest(manifest,{now}),{code:'SS010_WINDOW_CLOSED'});
+    }
+    for(const principals of [[],[manifest.principal_ids[0]],[manifest.principal_ids[0],manifest.principal_ids[0]]]){
+      assert.throws(()=>validateLimitedManifest({...manifest,principal_ids:principals}),{code:'SS010_CONFIG_INVALID'});
+    }
+  }
+  for(const aliases of [[],['B'],['A','A'],['B','A'],['A','C'],['A','B','C']]){
+    assert.throws(()=>validateLimitedManifest({...manifestFixture(),reporter_aliases:aliases}),{code:'SS010_CONFIG_INVALID'});
+  }
+  assert.deepEqual(limitedTemplate().reporter_aliases,['A','B']);
+});
+test('SS011 configuration binds actual Reporter count and identities without relaxing live proof',()=>{
+  const folder=mkdtempSync(path.join(tmpdir(),'ss011-config-'));
+  try{
+    const memberFile=path.join(folder,'member.json'),envFile=path.join(folder,'limited.env');
+    const env={PILOT_DATABASE_URL:'postgres://synthetic@127.0.0.1/p2_015_ss010_abcd',YIXIAOXIU_MEMBER_TICKET_ENTRY_CONFIG:memberFile,
+      APP_SECRET:'synthetic-app-secret',P2_G2_REPORTER_HMAC_SECRET:secret,PILOT_LOG_IDENTITY_HASH_KEY:'synthetic-identity-key-at-least-32'};
+    writeFileSync(envFile,Object.entries(env).map(([key,value])=>key+"='"+value+"'").join('\n'));
+    const read=(manifest,member)=>{writeFileSync(memberFile,JSON.stringify({reporterMemberEntry:member}));return readLimitedConfiguration(envFile,manifest);};
+    for(const aliases of [['A'],['A','B']]){
+      const manifest=manifestFixture();manifest.reporter_aliases=aliases;
+      const member={...config,proofKind:'LIVE',validationProfile:'DEPLOYMENT',reporterUserIds:config.reporterUserIds.slice(0,aliases.length)};
+      manifest.config_sha256=limitedConfigurationDigest({env,member,manifest});
+      assert.deepEqual(read(manifest,member).member.reporterUserIds,member.reporterUserIds);
+      for(const ids of [[],['member-a','member-a'],['member-a','member-b','member-c'],aliases.length===1?['member-a','member-b']:['member-a']]){
+        const changed={...member,reporterUserIds:ids};
+        const updated={...manifest,config_sha256:limitedConfigurationDigest({env,member:changed,manifest})};
+        assert.throws(()=>read(updated,changed));
+      }
+      assert.throws(()=>read(manifest,{...member,reporterUserIds:member.reporterUserIds.map(id=>id+'-changed')}),{code:'SS010_CONFIG_DIGEST_MISMATCH'});
+      for(const changed of [{...member,proofKind:'SYNTHETIC',validationProfile:'ISOLATED_TEST'},{...member,proofRef:'different-proof'},{...member,corpId:'different-corp'},{...member,agentId:1000003}]){
+        assert.throws(()=>read(manifest,changed));
+      }
+    }
+  }finally{rmSync(folder,{recursive:true,force:true});}
+});
 test('SS010 AC092 owner approval cannot be reused for changed window actors database or quotas',()=>{
   const manifest=manifestFixture(),record=JSON.stringify({kind:'SS011_LIMITED_WRITE_APPROVED',run_id:manifest.run_id,scope_sha256:approvalScope(manifest),candidate_commit:manifest.candidate_commit,owner:manifest.owner,approver:manifest.approver});
   manifest.approval_record_sha256=digest(record);verifyLimitedApproval(manifest,record);
-  for(const mutate of [m=>m.run_id+='a',m=>m.window.ends_epoch_ms='1999999999000',m=>m.limits.max_supplements++,m=>m.principal_ids.reverse(),m=>m.database.oid='4']){
+  for(const mutate of [m=>m.run_id+='a',m=>m.window.ends_epoch_ms='1999999999000',m=>m.limits.max_supplements++,m=>m.principal_ids.reverse(),m=>m.database.oid='4',m=>m.reporter_aliases=['A'],m=>m.config_sha256='f'.repeat(64),m=>m.candidate_commit='f'.repeat(40),m=>m.candidate_tree='f'.repeat(40),m=>m.candidate_fingerprint='f'.repeat(64)]){
     const changed=structuredClone(manifest);mutate(changed);assert.throws(()=>verifyLimitedApproval(changed,record),{code:'SS010_APPROVAL_SCOPE_MISMATCH'});
   }
 });

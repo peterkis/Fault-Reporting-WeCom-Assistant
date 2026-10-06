@@ -21,11 +21,12 @@ export function manifestFixture({databaseUrl='postgres://synthetic@127.0.0.1/p2_
     owner:'synthetic-owner',approver:'synthetic-approver',approval_record_ref:'tests/synthetic-approval',approval_record_sha256:'e'.repeat(64),
     backup_ref:'synthetic-backup',rollback_ref:'synthetic-readonly',public_origin:'https://127.0.0.1',listen_port:port};
 }
-export async function runtimeFixture({pool,databaseUrl}){
+export async function runtimeFixture({pool,databaseUrl,reporterAliases=['A','B']}){
   await migrateCurrentBaselineWithYxx({databaseUrl});
   const manifest=manifestFixture({databaseUrl,oid:(await pool.query('SELECT oid::text FROM pg_database WHERE datname=current_database()')).rows[0].oid,port:await freePort()});
+  manifest.reporter_aliases=[...reporterAliases];
   const access=createPilotAccessService({pool});manifest.principal_ids=[];
   for(const suffix of ['a','b'])manifest.principal_ids.push((await access.upsertPrincipal({wecomUserId:'ss010-staff-'+suffix,displayName:'Synthetic Staff',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']})).id);
   const env={PILOT_DATABASE_URL:databaseUrl,APP_SECRET:'synthetic-app-secret',P2_G2_REPORTER_HMAC_SECRET:secret,PILOT_LOG_IDENTITY_HASH_KEY:'synthetic-identity-key-at-least-32'};
-  return {manifest,configuration:{env,member:config}};
+  return {manifest,configuration:{env,member:{...config,reporterUserIds:config.reporterUserIds.slice(0,reporterAliases.length)}}};
 }
