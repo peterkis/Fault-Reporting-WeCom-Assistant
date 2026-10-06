@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-06 10:11:41",
+  "event_epoch_ms": "1791252701971",
+  "axis": "SPEC",
+  "reviewer": "codex-r01-fixed-spec-independent",
+  "tested_head": "fb93999b2090cbd794127209876d737e728c8b1c",
+  "tested_tree": "7dee330f40e5bfec6b1659bcf9cd5cc81e91565e",
+  "candidate_fingerprint": "e04ecb3f00f10aab5eb3d67a08f6c01940b8eafa2dc0fdce3cf262689c858777",
+  "independent": true,
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [
+    {
+      "id": "R01-C-SCENARIO-IDENTITY-DRIFT",
+      "path": "tests/yxx-ss-009-governance.test.mjs",
+      "start_line": 29,
+      "end_line": 33,
+      "category": "test",
+      "severity": "high",
+      "resolved": true,
+      "resolution": "Final C restores the exact immutable AC015/AC020 test identity, with explicit comments explaining the historical mapping title and the current eight API coverage. The complete assertion body is byte-identical to prior C, including the service-catalog GET, all eight endpoints, unique operation IDs, shared schema/time types and OpenAPI reference consistency. New C real acceptance is independently required; previous C logs are not rewritten or rebound."
+    }
+  ],
+  "raw_review": {
+    "path": "evidence/yxx-current-r01-fb93999-20261006/reviews/spec.raw.json",
+    "bytes": 4568,
+    "sha256": "25dc5825f9f7709f2a88d8c375693673f3c9c6bfc0e9496df9c4baf1010e29ab"
+  }
+}

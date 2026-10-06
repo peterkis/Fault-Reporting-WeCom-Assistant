@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: Ticket delivery operator commands authorize before receipt, persist idempotence and never blindly retry UNKNOWN
+ok 1 - Ticket delivery operator commands authorize before receipt, persist idempotence and never blindly retry UNKNOWN
+  ---
+  duration_ms: 805.305489
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1068.564198

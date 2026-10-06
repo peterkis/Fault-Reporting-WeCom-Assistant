@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: G2-E08 twelve reverse-ordered normal Frames in one local second preserve durable arrival sequence and one Ticket after duplicate replay
+ok 1 - G2-E08 twelve reverse-ordered normal Frames in one local second preserve durable arrival sequence and one Ticket after duplicate replay
+  ---
+  duration_ms: 1449.439855
+  type: 'test'
+  ...
+# {"scenario_id":"G2-E08","source_frames":12,"local_second_count":1,"reverse_submission_order_preserved":true,"replay_message_delta":0,"replay_intake_delta":0,"replay_ticket_delta":0,"seeded_business_facts":false}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1810.68309

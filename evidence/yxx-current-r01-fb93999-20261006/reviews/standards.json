@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "event_time": "2026-10-06 10:10:18",
+  "event_epoch_ms": "1791252618000",
+  "axis": "STANDARDS",
+  "reviewer": "codex-r01-final-c-standards-independent",
+  "tested_head": "fb93999b2090cbd794127209876d737e728c8b1c",
+  "tested_tree": "7dee330f40e5bfec6b1659bcf9cd5cc81e91565e",
+  "candidate_fingerprint": "e04ecb3f00f10aab5eb3d67a08f6c01940b8eafa2dc0fdce3cf262689c858777",
+  "independent": true,
+  "verdict": "PASS",
+  "unresolved_findings": 0,
+  "historical_limitations_reviewed": true,
+  "findings": [],
+  "raw_review": {
+    "path": "evidence/yxx-current-r01-fb93999-20261006/reviews/standards.raw.json",
+    "bytes": 3203,
+    "sha256": "8f9231732624913ab9b255451dd8d3b24d1983321c1fecb4a6b85c66ff5ce99b"
+  }
+}

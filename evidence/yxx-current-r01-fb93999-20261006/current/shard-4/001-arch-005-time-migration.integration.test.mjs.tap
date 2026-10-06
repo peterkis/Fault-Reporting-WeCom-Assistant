@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: existing 001-021 database passes 022 check rollback, apply, forbidden-zero, and repeat no-op
+ok 1 - existing 001-021 database passes 022 check rollback, apply, forbidden-zero, and repeat no-op
+  ---
+  duration_ms: 1289.284941
+  type: 'test'
+  ...
+# Subtest: fresh database executes 001-021-022 through the current-baseline entrypoint
+ok 2 - fresh database executes 001-021-022 through the current-baseline entrypoint
+  ---
+  duration_ms: 757.547404
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2541.582045

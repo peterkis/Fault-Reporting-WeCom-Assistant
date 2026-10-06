@@ -1,0 +1,45 @@
+{
+  "path": "tests/p2-012-client-contract-review.test.mjs",
+  "runtime_path": "tests/p2-012-client-contract-review.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-012-client-contract-review.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "888f3338e65d7b5e80c914f7d8d9a8d68597e0290fe71d4f7ee6d926ef50cc81",
+  "executed_sha256": "888f3338e65d7b5e80c914f7d8d9a8d68597e0290fe71d4f7ee6d926ef50cc81",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--expose-gc",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "016-p2-012-client-contract-review.test.mjs.tap",
+  "tap_sha256": "2f5c165db52b6b4a1e30fb9537bc8369e014b6561153d359e841b791df9c3d66",
+  "tap_bytes": 603,
+  "stderr_path": "016-p2-012-client-contract-review.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "016-p2-012-client-contract-review.test.mjs.cases.jsonl",
+  "case_trace_sha256": "534ab4ee85a1dc3e4607cb4edbe468ab55af2d58a8e85129b29d0c629cdfac98",
+  "case_trace_bytes": 643,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-006-workbench-query.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-012-domain-contracts.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-012-client-contract-review.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

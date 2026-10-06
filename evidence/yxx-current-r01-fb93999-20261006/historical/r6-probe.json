@@ -1,0 +1,20 @@
+{
+  "name": "r6-probe",
+  "command": [
+    "node",
+    ".github/review/ss009-evidence-history-probe.mjs"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error_code": null,
+  "stdout": {
+    "path": "r6-probe.stdout",
+    "bytes": 2532,
+    "sha256": "a1837dea5fe0c20643522a4e481b2773ebf5ac2d2fb208414bfe8bdc10f80262"
+  },
+  "stderr": {
+    "path": "r6-probe.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

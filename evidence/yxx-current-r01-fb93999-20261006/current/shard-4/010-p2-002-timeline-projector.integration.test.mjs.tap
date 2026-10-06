@@ -1,0 +1,101 @@
+TAP version 13
+# Subtest: P2-002 cleanup waits for owned client disconnect before terminating residual backends
+ok 1 - P2-002 cleanup waits for owned client disconnect before terminating residual backends
+  ---
+  duration_ms: 334.59168
+  type: 'test'
+  ...
+# Subtest: P2-002 migration 011 first/repeat apply is exact and leaves P1/P2-001 unchanged
+ok 2 - P2-002 migration 011 first/repeat apply is exact and leaves P1/P2-001 unchanged
+  ---
+  duration_ms: 209.568489
+  type: 'test'
+  ...
+# Subtest: P2-002 migration CLI runs only 011, is repeatable, and rolls check mode back
+ok 3 - P2-002 migration CLI runs only 011, is repeatable, and rolls check mode back
+  ---
+  duration_ms: 785.477297
+  type: 'test'
+  ...
+# {"child_process_runs":4,"child_exit_codes":[0,0,0,0],"preapply_check_created_tables":0,"migration_files_executed":1,"tables_added":3,"p1_p2_001_catalog_unchanged":true,"postapply_check_rolled_back":true,"temp_database_cleanup":true}
+# Subtest: P2-002 migration CLI fails closed on incompatible read-only source dependencies
+ok 4 - P2-002 migration CLI fails closed on incompatible read-only source dependencies
+  ---
+  duration_ms: 249.860054
+  type: 'test'
+  ...
+# {"child_exit_code":1,"stable_error":"P2_002_SCHEMA_DRIFT_REMEDIATION_REQUIRED","p2_tables_created":0,"temp_database_cleanup":true}
+# Subtest: P2-002 migration 011 fails closed on missing column
+ok 5 - P2-002 migration 011 fails closed on missing column
+  ---
+  duration_ms: 147.59135
+  type: 'test'
+  ...
+# Subtest: P2-002 migration 011 fails closed on weakened CHECK constraint
+ok 6 - P2-002 migration 011 fails closed on weakened CHECK constraint
+  ---
+  duration_ms: 151.16847
+  type: 'test'
+  ...
+# Subtest: P2-002 migration 011 fails closed on wrong unique constraint columns
+ok 7 - P2-002 migration 011 fails closed on wrong unique constraint columns
+  ---
+  duration_ms: 155.726468
+  type: 'test'
+  ...
+# Subtest: P2-002 migration 011 fails closed on wrong index access method
+ok 8 - P2-002 migration 011 fails closed on wrong index access method
+  ---
+  duration_ms: 156.744665
+  type: 'test'
+  ...
+# Subtest: P2-002 migration 011 fails closed on wrong partial-index predicate
+ok 9 - P2-002 migration 011 fails closed on wrong partial-index predicate
+  ---
+  duration_ms: 154.095257
+  type: 'test'
+  ...
+# Subtest: P2-002 P1 source adapter reads Channel/Intake/Ticket/Delivery facts without mutating them
+ok 10 - P2-002 P1 source adapter reads Channel/Intake/Ticket/Delivery facts without mutating them
+  ---
+  duration_ms: 914.587714
+  type: 'test'
+  ...
+# {"source_record_count":4,"channel_message_count":1,"ticket_event_variant_count":2,"delivery_count":1,"source_snapshot_unchanged":true}
+# Subtest: P2-002 real worker processes roll back before commit and replay after ACK loss
+ok 11 - P2-002 real worker processes roll back before commit and replay after ACK loss
+  ---
+  duration_ms: 702.156524
+  type: 'test'
+  ...
+# {"before_commit_kill_exit":{"code":null,"signal":"SIGKILL","killed":true},"before_commit_backend_close_polls":1,"before_commit_restart_exit":{"code":0,"signal":null,"killed":false},"before_commit_restart_inserted":1,"after_commit_kill_exit":{"code":null,"signal":"SIGKILL","killed":true},"after_commit_backend_close_polls":1,"after_commit_restart_exit":{"code":0,"signal":null,"killed":false},"after_commit_restart_replayed":1,"final_item_count":1,"final_binding_count":1,"final_checkpoint_cursor":"1","temp_database_cleanup":true}
+# Subtest: P2-002 stale rebuild cannot delete a source committed after snapshot preparation
+ok 12 - P2-002 stale rebuild cannot delete a source committed after snapshot preparation
+  ---
+  duration_ms: 194.599653
+  type: 'test'
+  ...
+# {"connection_wait_polls":1,"stale_rebuild_error":"CONVERSATION_TIMELINE_REBUILD_FAILED","preserved_item_count":3,"preserved_binding_count":3,"preserved_checkpoint_cursor":"3","full_rebuild_item_count":3,"full_rebuild_hash":"bacfbeef75b0d78b3f40610968bc15bf473fe114b8e2518ad993fff877cd9f4b","temp_database_cleanup":true}
+# Subtest: P2-002 projector is idempotent, concurrent, transactional, rebuildable, private, and restart safe
+ok 13 - P2-002 projector is idempotent, concurrent, transactional, rebuildable, private, and restart safe
+  ---
+  duration_ms: 4847.39126
+  type: 'test'
+  ...
+# {"same_source_concurrency":12,"different_source_concurrency":12,"bulk_item_count":2001,"bulk_batch_count":101,"bulk_max_batch_size":20,"bulk_peak_heap_delta_bytes":26551272,"bulk_heap_sample_count":101,"bulk_heap_segment_means_bytes":[25740804,26924614,26831310,32890171],"bulk_first_to_last_heap_trend_bytes":7149367,"bulk_max_adjacent_heap_trend_bytes":6058861,"bulk_interrupted_at_cursor":"20","bulk_restart_remaining_items":1981,"rebuild_canonical_hash":"0435443a3afc31ec816f313268904279f13e47cc2e28be922967031003dde38f","temp_database_cleanup":"verified-by-finally"}
+# Subtest: P2-002 suite leaves no random database or worker backend residual
+ok 14 - P2-002 suite leaves no random database or worker backend residual
+  ---
+  duration_ms: 9.209607
+  type: 'test'
+  ...
+# {"temp_database_count":0,"worker_backend_count":0,"isolated_source_data_residual":0,"isolated_projection_schema_residual":0}
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9238.456081

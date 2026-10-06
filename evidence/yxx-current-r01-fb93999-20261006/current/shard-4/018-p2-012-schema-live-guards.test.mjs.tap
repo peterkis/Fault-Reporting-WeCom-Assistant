@@ -1,0 +1,98 @@
+TAP version 13
+# Subtest: P2-012 both parsed OpenAPI documents declare canonical subscription destinations and service failures
+ok 1 - P2-012 both parsed OpenAPI documents declare canonical subscription destinations and service failures
+  ---
+  duration_ms: 847.011464
+  type: 'test'
+  ...
+# Cloning into '/tmp/fault-reporting-p2-016-historical-N13ipQ'...
+# Note: switching to 'fb93999b2090cbd794127209876d737e728c8b1c'.
+# You are in 'detached HEAD' state. You can look around, make experimental
+# changes and commit them, and you can discard any commits you make in this
+# state without impacting any branches by switching back to a branch.
+# If you want to create a new branch to retain commits you create, you may
+# do so (now or later) by using -c with the switch command. Example:
+#   git switch -c <new-branch-name>
+# Or undo this operation with:
+#   git switch -
+# Turn off this advice by setting config variable advice.detachedHead to false
+# Warning: you are leaving 436 commits behind, not connected to
+# any of your branches:
+#   fb93999 Preserve immutable OpenAPI scenario identity with current eight API checks
+#   a9a82b9 Fix R01 receipt provenance and archive owned run artifacts
+#   4561230 Merge pull request \#52 from peterkis/codex/d01-complete-original-ts-scope
+#   b0dd71b Keep verified receipt variants opaque at the public type boundary
+#  ... and 432 more.
+# If you want to keep them by creating a new branch, this may be a good time
+# to do so with:
+#  git branch <new-branch-name> fb93999
+# HEAD is now at 8c33271 Merge pull request \#6 from peterkis/phase2/p2-012-human-confirmed-incident
+# Subtest: P2-012 static authorization, frozen predecessors, scope, schemas and synthetic fixture gate
+ok 2 - P2-012 static authorization, frozen predecessors, scope, schemas and synthetic fixture gate
+  ---
+  duration_ms: 3144.665269
+  type: 'test'
+  ...
+# Subtest: P2-012 live runner fails before network/listener unless all five independent fuses and verified evidence exist
+ok 3 - P2-012 live runner fails before network/listener unless all five independent fuses and verified evidence exist
+  ---
+  duration_ms: 1.307387
+  type: 'test'
+  ...
+# Subtest: P2-012 readiness cannot be fabricated from partial regression, skips, changed inputs or live claims
+ok 4 - P2-012 readiness cannot be fabricated from partial regression, skips, changed inputs or live claims
+  ---
+  duration_ms: 0.427807
+  type: 'test'
+  ...
+# Subtest: P2-012 DONE requires the approved live candidate, client confirmation, clean Incident deliveries and complete regressions
+ok 5 - P2-012 DONE requires the approved live candidate, client confirmation, clean Incident deliveries and complete regressions
+  ---
+  duration_ms: 0.416677
+  type: 'test'
+  ...
+# Subtest: P2-012 frozen candidate permits only the explicit closeout governance set
+ok 6 - P2-012 frozen candidate permits only the explicit closeout governance set
+  ---
+  duration_ms: 0.388193
+  type: 'test'
+  ...
+# Subtest: P2-012 review hardening preserves exact paths and requires independent current regression evidence
+ok 7 - P2-012 review hardening preserves exact paths and requires independent current regression evidence
+  ---
+  duration_ms: 0.41911
+  type: 'test'
+  ...
+# Subtest: P2-012 v2 HTTP OpenAPI hardening has an independent closed allowlist and complete regression gate
+ok 8 - P2-012 v2 HTTP OpenAPI hardening has an independent closed allowlist and complete regression gate
+  ---
+  duration_ms: 0.743446
+  type: 'test'
+  ...
+# Subtest: P2-012 subscription review preserves its baseline, scope and independent regression
+ok 9 - P2-012 subscription review preserves its baseline, scope and independent regression
+  ---
+  duration_ms: 0.67622
+  type: 'test'
+  ...
+# Subtest: P2-012 paused destination review is bounded and preserves previous full regression evidence
+ok 10 - P2-012 paused destination review is bounded and preserves previous full regression evidence
+  ---
+  duration_ms: 0.418901
+  type: 'test'
+  ...
+# Subtest: P2-012 reporter refresh review is bounded and preserves previous full regression evidence
+ok 11 - P2-012 reporter refresh review is bounded and preserves previous full regression evidence
+  ---
+  duration_ms: 0.368968
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4818.979012

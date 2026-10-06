@@ -1,0 +1,115 @@
+TAP version 13
+# Subtest: D12-017 existing Direct association wins implicit precedence; explicit new-topic command creates a separate binding
+ok 1 - D12-017 existing Direct association wins implicit precedence; explicit new-topic command creates a separate binding
+  ---
+  duration_ms: 1236.485494
+  type: 'test'
+  ...
+# {"source_case_id":"D12-017","surface":"PURE_PRECEDENCE_PLUS_PERSISTED_EXPLICIT_NEW_TOPIC","old_leg_binding_unchanged":true,"explicit_user_command_required":true,"provider_calls":0}
+# Subtest: G2 explicit reference comes from actual group Outbox and binds a fresh Direct Leg without a second Ticket
+ok 2 - G2 explicit reference comes from actual group Outbox and binds a fresh Direct Leg without a second Ticket
+  ---
+  duration_ms: 1131.634396
+  type: 'test'
+  ...
+# {"journeys":[{"status":"TICKET_LINKED","linked":true}],"ref_match":[{"matched":true}],"decisions":[{"reason_code":"EXPLICIT_TECHNICAL_FAULT"},{"reason_code":"EXPLICIT_TECHNICAL_FAULT"}]}
+# {"source_case_id":"D12-018","surface":"ACTUAL_OUTBOX_REFERENCE_THEN_NORMAL_DIRECT_INGRESS","ticket_delta":1,"journeys":1}
+# Subtest: G2 explicit reference refuses WRONG_REPORTER while preserving the current fault
+ok 3 - G2 explicit reference refuses WRONG_REPORTER while preserving the current fault
+  ---
+  duration_ms: 937.532117
+  type: 'test'
+  ...
+# {"boundary":"WRONG_REPORTER","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses WRONG_BOT while preserving the current fault
+ok 4 - G2 explicit reference refuses WRONG_BOT while preserving the current fault
+  ---
+  duration_ms: 929.73965
+  type: 'test'
+  ...
+# {"boundary":"WRONG_BOT","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses REVOKED while preserving the current fault
+ok 5 - G2 explicit reference refuses REVOKED while preserving the current fault
+  ---
+  duration_ms: 934.880365
+  type: 'test'
+  ...
+# {"boundary":"REVOKED","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses EXPIRED while preserving the current fault
+ok 6 - G2 explicit reference refuses EXPIRED while preserving the current fault
+  ---
+  duration_ms: 967.261558
+  type: 'test'
+  ...
+# {"boundary":"EXPIRED","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses TAIL while preserving the current fault
+ok 7 - G2 explicit reference refuses TAIL while preserving the current fault
+  ---
+  duration_ms: 926.342185
+  type: 'test'
+  ...
+# {"boundary":"TAIL","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses UUID while preserving the current fault
+ok 8 - G2 explicit reference refuses UUID while preserving the current fault
+  ---
+  duration_ms: 925.917604
+  type: 'test'
+  ...
+# {"boundary":"UUID","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: G2 explicit reference refuses DIFFERENT_CASE while preserving the current fault
+ok 9 - G2 explicit reference refuses DIFFERENT_CASE while preserving the current fault
+  ---
+  duration_ms: 926.905642
+  type: 'test'
+  ...
+# {"boundary":"DIFFERENT_CASE","surface":"REAL_RECEIPT_NORMAL_DIRECT_FRAME","original_binding_unchanged":true,"current_fault_admitted":true}
+# Subtest: D12-007/014 originally guided Ticket retains channel origin and an audited unique association
+ok 10 - D12-007/014 originally guided Ticket retains channel origin and an audited unique association
+  ---
+  duration_ms: 1043.796301
+  type: 'test'
+  ...
+# {"source_case_ids":["D12-007","D12-014"],"surface":"NORMAL_GROUP_TO_DIRECT_WITH_PERSISTED_ASSOCIATION_REASON","provider_calls":0}
+# Subtest: G2 latest exact Direct recovery blocks older group evidence from a new Incident candidate
+ok 11 - G2 latest exact Direct recovery blocks older group evidence from a new Incident candidate
+  ---
+  duration_ms: 1074.782479
+  type: 'test'
+  ...
+# Subtest: original explicit continuation source X005
+ok 12 - original explicit continuation source X005
+  ---
+  duration_ms: 915.932685
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X005","surface":"ORIGINAL_TEXT_WITH_ACTUAL_PUBLIC_REF_APPLICATION_COMMAND","synthetic_provider_fields_added":0,"source_literal_ref_replaced":true,"original_text_preserved_in_command":true,"bot_prompt_adjudication":"ACTUAL_GROUP_OUTBOX_RECEIPT_NO_UNAUTHORIZED_PRIVATE_PROMPT","same_intake_adjudication":null,"origin_entry_mode":"GROUP_MENTION_INLINE","distinct_reporters":1,"provider_calls":0}
+# Subtest: original explicit continuation source X008
+ok 13 - original explicit continuation source X008
+  ---
+  duration_ms: 931.348635
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X008","surface":"ORIGINAL_TEXT_WITH_ACTUAL_PUBLIC_REF_APPLICATION_COMMAND","synthetic_provider_fields_added":0,"source_literal_ref_replaced":true,"original_text_preserved_in_command":true,"bot_prompt_adjudication":null,"same_intake_adjudication":null,"origin_entry_mode":"GROUP_MENTION_INLINE","distinct_reporters":1,"provider_calls":0}
+# Subtest: original explicit continuation source X012
+ok 14 - original explicit continuation source X012
+  ---
+  duration_ms: 913.17775
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X012","surface":"ORIGINAL_TEXT_WITH_ACTUAL_PUBLIC_REF_APPLICATION_COMMAND","synthetic_provider_fields_added":0,"source_literal_ref_replaced":true,"original_text_preserved_in_command":true,"bot_prompt_adjudication":null,"same_intake_adjudication":"TWO_IMMUTABLE_CHANNEL_INTAKES_ONE_JOURNEY_ONE_TICKET","origin_entry_mode":"GROUP_MENTION_INLINE","distinct_reporters":1,"provider_calls":0}
+# Subtest: original explicit continuation source X030
+ok 15 - original explicit continuation source X030
+  ---
+  duration_ms: 991.351735
+  type: 'test'
+  ...
+# {"source_case_id":"P2-007-X030","surface":"ORIGINAL_TEXT_WITH_ACTUAL_PUBLIC_REF_APPLICATION_COMMAND","synthetic_provider_fields_added":0,"source_literal_ref_replaced":true,"original_text_preserved_in_command":true,"bot_prompt_adjudication":null,"same_intake_adjudication":null,"origin_entry_mode":"GROUP_MENTION_INLINE","distinct_reporters":2,"provider_calls":0}
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15177.202383

@@ -1,0 +1,24 @@
+TAP version 13
+# Subtest: crash before commit leaves no partial facts; crash after commit restarts as replay
+ok 1 - crash before commit leaves no partial facts; crash after commit restarts as replay
+  ---
+  duration_ms: 1371.826315
+  type: 'test'
+  ...
+# {"crash_before_commit_partial_facts":{"journeys":0,"decisions":0,"tickets":0},"crash_after_commit":{"journeys":1,"decisions":1,"tickets":1},"restart_processed":0,"replay_duplicate_delta":0}
+# Subtest: bounded worker processes 500 journeys, 2000 turns, 500 decisions and 100 reviews on one worker
+ok 2 - bounded worker processes 500 journeys, 2000 turns, 500 decisions and 100 reviews on one worker
+  ---
+  duration_ms: 9671.284446
+  type: 'test'
+  ...
+# {"journeys":500,"turns":2000,"decisions":500,"reviews":100,"worker_count":1,"pool_max":4,"batch_max":100,"heap_samples_bytes":[20421128,23199088,26464896,24686240,51102864,51184752],"heap_fall_or_stable":true,"timer_active_after_stop":false,"soak_24h":false}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11272.941201

@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 10:10:07","event_epoch_ms":"1791252607982","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"delegated OAuth HTTP reads own original Bot tickets, denies other members and preserves Grant and business facts","file":"tests/p2-g2-yixiaoxiu-delegated-identity.integration.test.mjs","line":8,"nesting":0,"skip":false,"todo":false}

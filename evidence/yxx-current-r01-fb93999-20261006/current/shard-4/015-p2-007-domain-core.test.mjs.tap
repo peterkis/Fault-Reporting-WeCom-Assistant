@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: service catalog loads all services, categories, version and a stable catalog hash
+ok 1 - service catalog loads all services, categories, version and a stable catalog hash
+  ---
+  duration_ms: 24.136404
+  type: 'test'
+  ...
+# Subtest: invalid catalogs reject duplicate services, duplicate aliases and malformed roots
+ok 2 - invalid catalogs reject duplicate services, duplicate aliases and malformed roots
+  ---
+  duration_ms: 5.514329
+  type: 'test'
+  ...
+# Subtest: at least 50 catalog-backed aliases resolve deterministically and preserve original text
+ok 3 - at least 50 catalog-backed aliases resolve deterministically and preserve original text
+  ---
+  duration_ms: 34.507287
+  type: 'test'
+  ...
+# Subtest: required hospital aliases cover English case folding, Chinese terms and ambiguity
+ok 4 - required hospital aliases cover English case folding, Chinese terms and ambiguity
+  ---
+  duration_ms: 219.973364
+  type: 'test'
+  ...
+# Subtest: fault taxonomy resolves requested failure families
+ok 5 - fault taxonomy resolves requested failure families
+  ---
+  duration_ms: 19.276815
+  type: 'test'
+  ...
+# Subtest: fact provenance is deterministic, complete and LocalDateTime-only
+ok 6 - fact provenance is deterministic, complete and LocalDateTime-only
+  ---
+  duration_ms: 1.727871
+  type: 'test'
+  ...
+# Subtest: reporter correction supersedes service and location facts without deleting history
+ok 7 - reporter correction supersedes service and location facts without deleting history
+  ---
+  duration_ms: 1.208883
+  type: 'test'
+  ...
+# Subtest: contradictory active facts remain append-only and defer to a human
+ok 8 - contradictory active facts remain append-only and defer to a human
+  ---
+  duration_ms: 0.537351
+  type: 'test'
+  ...
+# Subtest: clarification planner returns only the single highest-value question
+ok 9 - clarification planner returns only the single highest-value question
+  ---
+  duration_ms: 0.425945
+  type: 'test'
+  ...
+# Subtest: incident generation deduplicates reporters, creates only a candidate and requires confirmation
+ok 10 - incident generation deduplicates reporters, creates only a candidate and requires confirmation
+  ---
+  duration_ms: 0.928761
+  type: 'test'
+  ...
+# Subtest: notification output is a recommendation only and never authorizes sending
+ok 11 - notification output is a recommendation only and never authorizes sending
+  ---
+  duration_ms: 0.594047
+  type: 'test'
+  ...
+# Subtest: unsafe JSON, proxies, accessors, pollution keys, cycles and order drift fail closed
+ok 12 - unsafe JSON, proxies, accessors, pollution keys, cycles and order drift fail closed
+  ---
+  duration_ms: 0.501264
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 455.32204

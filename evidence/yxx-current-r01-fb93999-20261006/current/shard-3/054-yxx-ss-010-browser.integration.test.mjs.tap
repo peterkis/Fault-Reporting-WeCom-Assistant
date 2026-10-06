@@ -1,0 +1,18 @@
+TAP version 13
+# Subtest: SS010 AC093 real browser limited roles complete supplement review and safe member feedback
+ok 1 - SS010 AC093 real browser limited roles complete supplement review and safe member feedback
+  ---
+  duration_ms: 8632.858573
+  type: 'test'
+  ...
+# SS010_BROWSER {"event_time":"2026-10-06 10:18:33","event_epoch_ms":"1791253113191","candidate_fingerprint":"7b800228db68daf829e2efb79e3b599bd314ed50fbc58095596ea56b753ca01e","screenshots":[{"file":"/tmp/ss010-ui-5b25a626-2010-4ac1-b015-61a5eaee13ad/37235a32-e71d-497c-b640-00b6e8123b61.png","width":390,"height":844,"sha256":"2025900179bbec125b970d4bf6fbb31ca17e02f9243ca8224700ac0a257ddf06"},{"file":"/tmp/ss010-ui-5b25a626-2010-4ac1-b015-61a5eaee13ad/3048b7d6-4ea5-4fee-a459-fc1b590be054.png","width":1440,"height":900,"sha256":"2bf52787e66c0e539911f86034cdf1f974fa6293667c1709ff808db917cdde24"}],"real_browser":true,"real_postgres":true,"external_network_calls":0}
+# SS009_RECEIPT {"event_time":"2026-10-06 10:18:33","event_epoch_ms":"1791253113291","kind":"cleanup","status":"PASS","candidate_fingerprint":"7b800228db68daf829e2efb79e3b599bd314ed50fbc58095596ea56b753ca01e","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"ss010_browser_process","remaining":0},{"resource":"ss010_tls_listener","remaining":0},{"resource":"ss010_roles","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8880.518218

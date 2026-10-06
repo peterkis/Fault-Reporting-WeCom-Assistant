@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "status": "REVIEW_HISTORY_PREFLIGHT_PASS_NOT_READINESS",
+  "checkout_role": "PUBLISHED_PR_HEAD",
+  "expected_head": "fb93999b2090cbd794127209876d737e728c8b1c",
+  "checkout_head": "fb93999b2090cbd794127209876d737e728c8b1c",
+  "checkout_tree": "7dee330f40e5bfec6b1659bcf9cd5cc81e91565e",
+  "checkout_parents": [
+    "a9a82b9edfa527260e30b8617c7b6293cc14fe12"
+  ],
+  "report_path": "evidence/yxx-ss-009-r7-report.json",
+  "tested_head": "8b74de2eb63ea90e3ca23dabcdbc8f5afdadd7e5",
+  "tested_tree": "51dc22c91ce8404b958da950427b11af7a97d278",
+  "merge_base": "8b74de2eb63ea90e3ca23dabcdbc8f5afdadd7e5",
+  "shallow": false,
+  "history_overlays": false,
+  "worktree_clean": true,
+  "strict_readiness": "NOT_RUN",
+  "next_command": "node scripts/validate-yxx-self-service.mjs --require-ready"
+}

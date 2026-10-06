@@ -1,0 +1,20 @@
+{
+  "name": "validator-validate-p2-015-rule-first-intake",
+  "command": [
+    "node",
+    "scripts/validate-p2-015-rule-first-intake.mjs"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error_code": null,
+  "stdout": {
+    "path": "validator-validate-p2-015-rule-first-intake.stdout",
+    "bytes": 644,
+    "sha256": "7639d0da3bbbf7bb7672767ea8f1030473d6b86080bac9b20ffdd5cb7701cd11"
+  },
+  "stderr": {
+    "path": "validator-validate-p2-015-rule-first-intake.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}
