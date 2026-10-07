@@ -1,0 +1,70 @@
+{
+  "synthetic_only": true,
+  "real_http_pg_new_page": true,
+  "production_acceptance": false,
+  "images": [
+    {
+      "file": "new-board-1920.png",
+      "sha256": "37e4cf05bfbb3a410e680ea38ff602423a8b80ed7537f7b2dff20f20ebb40da2",
+      "width": 1920,
+      "height": 1080,
+      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+    },
+    {
+      "file": "new-detail-1920.png",
+      "sha256": "7badd6e86881ca8dc54268a158dcfcb75a4c51892d36fe2fb6089ae7dd5dc4ad",
+      "width": 1920,
+      "height": 1080,
+      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+    },
+    {
+      "file": "new-list-1920.png",
+      "sha256": "62072980a9bf3c7fdcaa5e986ca5bf1dc070e28ad4c5b392bb72ee08749ae75e",
+      "width": 1920,
+      "height": 1080,
+      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+    },
+    {
+      "file": "new-detail-900.png",
+      "sha256": "828d1cc61337673fa99792c6330d0ec756b9b76d3e1c8c82dbbe1336ab2f50cf",
+      "width": 900,
+      "height": 900,
+      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+    },
+    {
+      "file": "new-offline-900.png",
+      "sha256": "819d06396fa9842c81a53f905b4669b149014ca5e37dbe7247e994b488d32a56",
+      "width": 900,
+      "height": 900,
+      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+    },
+    {
+      "file": "new-board-900.png",
+      "sha256": "8092a18dd2c896545f858cb8178757881e725304df4b8154cb853d6e7bc3fab2",
+      "width": 900,
+      "height": 900,
+      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+    },
+    {
+      "file": "prototype-board-1920.png",
+      "sha256": "61a7fd82d6e2bacfde7400d3053eb93b6c99607bfbaa445beae3a3f7878b1836",
+      "width": 1920,
+      "height": 1080,
+      "capture_source": "1948f76a676f9bfd7ebcbecd3af7951da4034e7e"
+    },
+    {
+      "file": "prototype-board-900.png",
+      "sha256": "173f748f70b0d584695154af1647941f512a69fafbb071b376c2663f6df63039",
+      "width": 900,
+      "height": 900,
+      "capture_source": "1948f76a676f9bfd7ebcbecd3af7951da4034e7e"
+    },
+    {
+      "file": "prototype-list-1920.png",
+      "sha256": "149ff7ce4c5a59c536f0b544c2dad36cb96186aac5c2f32e4f5d280e6cbee11a",
+      "width": 1920,
+      "height": 1080,
+      "capture_source": "1948f76a676f9bfd7ebcbecd3af7951da4034e7e"
+    }
+  ]
+}
