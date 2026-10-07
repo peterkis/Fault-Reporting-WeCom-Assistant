@@ -1,10 +1,11 @@
 ---
 plan_id: ADMIN-WORKBENCH-HUMAN-INTEGRATION
 status: PLAN_CONFIRMED
-execution_status: NOT_STARTED
+execution_status: IN_PROGRESS
 confirmed_on: 2026-10-07
 timezone: Asia/Shanghai
 source_head: 3cf707945afac7392806f7d8dca3dfb6be94caad
+execution_source_head: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 scope: full_human_workbench_and_required_backend
 ---
 
@@ -12,7 +13,9 @@ scope: full_human_workbench_and_required_backend
 
 可以接入。正式 React 管理端已经有同源认证、真实看板／列表和安全详情基础；完整人工闭环需要先补齐部分后端命令和查询，再按依赖接入页面。本计划覆盖完整人工业务，用户已逐项回答 Q1–Q13 并确认共同理解。
 
-这是实施路线与任务入口，所有新任务均为 `NOT_STARTED`。确认计划不表示已授权本轮业务实现、真实库迁移、部署、外发、full/certify 或 Gate 推进。
+这是实施路线与任务入口。规划／to-tickets 阶段的发布快照为所有新任务 `NOT_STARTED`，当时确认计划不授权业务实现、真实库迁移、部署、外发、full/certify 或 Gate 推进。
+
+2026-10-07 用户随后授权 implement-spec 实施全部43票，当前进入本地实施与隔离验证。T01 已完成文档共同基线；其他票按 GitHub 当前原生依赖推进。当前授权与逐票实际记录见[实施记录](execution.md)，已发布能力、本地来源群增量、版本／身份和共同约束见[执行基线](execution-baseline.md)。上述规划历史保留；详细新 HTTP／Schema 由所属票同步定稿，不由 T01 预造全部合同。部署、真实依赖／外发、full/certify 和 Gate 边界保持。
 
 ## 快速导航
 
@@ -20,7 +23,8 @@ scope: full_human_workbench_and_required_backend
 | --- | --- |
 | 页面能接什么、还缺什么、对应 REST 在哪里 | [能力与接口映射](capability-map.md) |
 | 按顺序领取任务、看依赖与交付要求 | [实施任务](implementation-plan.md) |
-| 领取已发布的43票、查看实际原生阻塞关系 | [GitHub任务清单](tickets.md)：#56–#98，业务执行未开始 |
+| 领取已发布的43票、查看实际原生阻塞关系 | [GitHub任务清单](tickets.md)：#56–#98，逐票执行前重读GitHub |
+| 找本轮授权、基线及已核对的共同约束 | [实施记录](execution.md)／[执行基线](execution-baseline.md) |
 | 验证业务、权限、并发、通知与浏览器行为 | [验收矩阵](acceptance-matrix.md) |
 | 查找目前实际挂载的全部 HTTP 接口 | [docs/api](../../docs/api/README.md)／[路径索引](../../docs/api/endpoint-index.md) |
 | 本次已决定的交接、退回及跟进规则 | [ADR-0031](../../adr/0031_human_workbench_collaboration_policy.md) |
@@ -28,7 +32,7 @@ scope: full_human_workbench_and_required_backend
 
 ## 基线和事实来源
 
-核对基点为上述 main HEAD 加当前工作区；来源群名称是本地后继增量，尚未提交／发布，不能归入该 HEAD 已发布能力。[本地验证记录](../../evidence/workbench-source-group-names-local.md) 与[独立任务](../../tasks/workbench-source-group-names.md)分别说明其实际状态。
+规划时核对基点为上述 main HEAD 加当时工作区；当时来源群名称为尚未提交／发布的本地后继增量。[本地验证记录](../../evidence/workbench-source-group-names-local.md) 与[独立任务](../../tasks/workbench-source-group-names.md)保留该次实际状态。实施输入现已提交为本地集成 `516b4dce808981bdbcc449a850a1fdeaa2960cfb`，包含该增量，但未 push／部署／启用；不能归入 `3cf70794…` 的已发布能力，不重复开发或把037插入固定历史清单。实际对象见[执行基线](execution-baseline.md)。
 
 按 [AGENTS.md](../../AGENTS.md)、[README](../../README.md)、[架构基线](../../docs/architecture_baseline_status.md)和 Accepted ADR 执行；目标与旧运行合同不一致时，先同步合同／相关基线，再实现和验证。领域设计整体的 PROPOSED 状态、合成原型或旧管理端按钮均不证明新 React 已接入。修改既有 P2 语义前必须读 [Conversation Center 变更前置要求](../../docs/domain-modeling/conversation-context-reference.md)及其指向文档。
 
@@ -96,13 +100,13 @@ flowchart LR
 - 所有新增持久功能开关默认 false；具体名称、配置入口和依赖关系在合同任务中登记。关闭入口／投影能力后，不撤销已提交事实、不删除 Outbox；排空或停止发送按既有安全运行方案执行。
 - 每任务带输入／输出、Schema、数据库或“无数据库变更”、权限与隐私、资源上限、开关、测试、Evidence、关闭／回滚、Backlog 状态。[验收矩阵](acceptance-matrix.md)规定对应风险。
 - 新后端生产源码为 strict `.mts`／ESM，运行时导入保留 `.mjs`。普通 PR 使用活动 selection，严格类型、一次最终构建、相关测试、制品和自有资源清理；full、current certify、historical certify 分别按[迁移入口](../typescript-migration/README.md)独立执行与授权。
-- 每次实施先重新确认 HEAD、HTTPS remote、工作区差异及写入范围，保留当前来源群增量、用户修改、附件目录和旧 Evidence。本计划不授权 commit、push、merge 或分支清理。
+- 每次实施先重新确认 HEAD、HTTPS remote、工作区差异及写入范围，保留当前来源群增量、用户修改、附件目录和旧 Evidence。规划确认本身未授权 commit、push、merge 或分支清理；本轮用户追加授权的本地提交／集成范围见[实施记录](execution.md)，push及发布边界不由规划确认推导。
 
 当前最后完成 Gate 仍为 P2-G1；P2-G2-LIVE／P2-008、AI Shadow／Copilot／OCR／Auto、医院内网新 Source、P3、生产和临床启用保持原边界。知识库、未定义 SLA／工作时间规则、Tauri 与桌面升级不是本计划首版交付。资料附件的受控人工读取是独立前置任务，不升级为 AI／媒体 Gate 通过。
 
 ## 执行入口与停止条件
 
-下一轮若授权开始，先执行 WBINT-00，再执行 WBINT-01；不得直接以原型事件或旧接口串联实现完工。此时先核对来源群本地增量怎样纳入当前工作分支，不重复开发或直接迁移真实库。
+规划阶段要求获授权后先执行 WBINT-00，再执行 WBINT-01；不得直接以原型事件或旧接口串联实现完工。当前 T01 共同基线已完成文档核对，来源群增量已纳入本地输入；逐票继续按真实依赖和自己的详细合同交付，不重复开发或直接迁移真实库。
 
 合同、权限、合法目标组、原始来源或本人绑定不能证明时，停在受影响的动作，显示明确不可用／待核实并保留已记录受理。缺后端时交付前置任务，不能把计划 URL 写进已实现 API 索引或把合成验证记为现场证明。
 

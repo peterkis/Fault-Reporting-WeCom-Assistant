@@ -1,7 +1,7 @@
 ---
 document_id: WBINT-GITHUB-TICKETS
 publication_status: COMPLETE
-execution_status: NOT_STARTED
+execution_status: IN_PROGRESS
 tracker: GITHUB_ISSUES
 snapshot_on: 2026-10-07
 timezone: Asia/Shanghai
@@ -11,9 +11,11 @@ native_blocking_edges: 76
 
 # 人工工作台 GitHub 任务清单
 
-43票已发布为 **#56–#98**，76条原生阻塞关系已核对，每票带 `ready-for-agent`，当前快照全部开放且未领取。业务实现尚未开始。GitHub是逐票状态和阻塞关系的事实源，本文是发布快照；执行前重新读取正文、评论、领取人和依赖。
+43票已发布为 **#56–#98**，76条原生阻塞关系已核对，每票带 `ready-for-agent`；发布时快照全部开放且未领取，业务实现尚未开始。GitHub是逐票状态和阻塞关系的事实源，本文保留发布快照；执行前重新读取正文、评论、领取人和依赖。
 
-当前frontier只有 [T01 / #56：确认接入基线与共同合同](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)。先完成它，再从实际无阻塞票中领取；票号顺序是依赖先于依赖者的编号，不要求所有分支排成一条链。
+2026-10-07 用户随后授权 implement-spec 完成全部43票，详见[实施记录](execution.md)。T01本地文档共同基线为LOCAL_VERIFIED，GitHub仍OPEN，由父任务集成核验后统一收口；本地完成不自行解除原生blockers。T01本次复查43票均OPEN、均有ready-for-agent，76边与发布记录一致，#56由peterkis领取且无blocker。以下未勾选表示未关闭Issue，不覆盖本地执行记录。
+
+发布时frontier只有 [T01 / #56：确认接入基线与共同合同](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)。其实际完成和GitHub收口核验后，再从当前无阻塞票中领取；票号顺序是依赖先于依赖者的编号，不要求所有分支排成一条链。
 
 ## 导航与配置
 
@@ -23,13 +25,14 @@ native_blocking_edges: 76
 - [批准的拆分与逐票正文](ticket-breakdown-proposal.md)／[setup配置记录](agent-skills-setup-proposal.md)
 - [机器可读发布记录](github-ticket-publication.json)：实际Issue/数据库id、来源映射、逐票原生blockers、标签和正文核对；保留只读连接中断及恢复记录。
 
-原WBINT-00–16保留为业务工作包和验收来源；拆分后的精确启动条件以各Issue原生依赖为准，不将整包中的独立事项硬设为阻塞。原计划和配置文件仍在当前工作区，本轮没有commit/push；其他checkout执行前先经T01核对所需输入和来源群本地增量，不从远端缺文件推导重复开发。
+原WBINT-00–16保留为业务工作包和验收来源；拆分后的精确启动条件以各Issue原生依赖为准，不将整包中的独立事项硬设为阻塞。规划／发布时没有commit/push；本轮输入已纳入本地集成516b4dce…，来源群仍未部署／启用。其他checkout执行前读取[执行基线](execution-baseline.md)，不从远端缺文件推导重复开发。
 
 ## 按依赖顺序领取
 
 - [ ] **T01** — [#56 确认接入基线与共同合同](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)
   - **Blocked by:** 无
   - **来源：** WBINT-00 / A00
+  - **本地执行：** LOCAL_VERIFIED（文档），见[共同基线与证据](execution.md)；Issue收口待父任务集成核验。
 
 - [ ] **T02** — [#57 从事项详情执行可靠的内部备注](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/57)
   - **Blocked by:** [#56](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)
@@ -229,7 +232,7 @@ native_blocking_edges: 76
 2. 只有未关闭、未领取、ready-for-agent且所有blockers完成的票才能启动。关闭原因不是完成、或缺少所需合同/证据的依赖，不可当作前置能力已可用。
 3. 按每票Acceptance criteria完成窄业务链，输入/输出Schema、必要DB、权限/隐私、资源、默认关闭、测试、Evidence和关闭方式一起收口。变更接口同步统一API文档。
 4. 实际执行、领取和关闭回写GitHub，工作包仅按完整交付汇总；本地勾选或PR存在不代替完成证据。
-5. 本清单不启动业务工作，不运行真实依赖/发送、迁移、部署、full/certify、merge或Gate推进。原停止线、历史证据和持久Feature Flag默认false保持。
+5. 发布本清单本身不启动业务工作；本轮追加implement-spec授权与本地集成范围见[实施记录](execution.md)。真实依赖/发送、真实库迁移、部署、full/certify、发布合并或Gate推进保持独立授权；原停止线、历史证据和持久Feature Flag默认false保持。
 
 ## 发布核验
 
