@@ -37,6 +37,8 @@
 | 检查与 CI | 现有 Node test runner、PG fixture、浏览器 harness、types-migration workflow | 保持 ACTIVE_SELECTION: v3-p09；增加直接前端类型/构建与相关路由测试 |
 | 桌面宿主 | 后续 Tauri 2 / Windows WebView2 | 复用同一 Web 业务边界；宿主登录、通知与升级另行授权设计，本轮不实现 |
 
+正式包声明精确版本，由根 package-lock 统一安装开发依赖到根 node_modules。前端编译器使用 typescript-web 别名（TS7），后端 typescript 仍为 TS5.9；构建验证声明、锁文件安装和实际包版本一致。不把 vendor 或生成 dist 放进 web 源候选目录，不改变既有 G2 指纹算法、文件上限或旧证据。原型锁文件保持。
+
 新增 Router/Query/Zustand/Table/Morphicons 的精确版本于 2026-10-07 从 npm 元数据核验，已安装并锁定；若安装、类型或组件集成出现真实兼容问题，只处理直接阻断，不借机升级原型主版本。
 
 ## 3. 模块与数据边界
@@ -107,7 +109,7 @@ WEB01 已实际使用 TanStack Table；后续表单、全文搜索、虚拟列�
 
 实际类型检查、前端生产构建；小型 DTO/状态/时间映射测试；现有隔离 PostgreSQL fixture 上的真实 HTTP/对象授权/分页/去重；少量实际浏览器场景覆盖看板→详情→返回/刷新、401/403/404/离线与主画幅/窄窗口。原型与新页面使用同一合成场景截图对照。
 
-CI 保持 `v3-p09` 可解析，新增前端安装/类型/构建与直接检查，必要后端/浏览器入口走现有 routing；制品与自有服务/浏览器/连接清理沿旧规则。普通 WEB01 不运行 standalone full/certify。全部检查、真实 API、截图与资源关闭只有实际执行后才能在交接中记为通过。
+新 WEB01 三个测试同时登记 current 执行计划，保留原 217 项及独立 historical 项；只验证计划可解析，不执行 full/certify、不改旧完成证据。CI 保持 `v3-p09` 可解析，新增前端安装/类型/构建与直接检查，必要后端/浏览器入口走现有 routing；制品与自有服务/浏览器/连接清理沿旧规则。普通 WEB01 不运行 standalone full/certify。全部检查、真实 API、截图与资源关闭只有实际执行后才能在交接中记为通过。
 
 前端延续原型的 `skipLibCheck=true`：锁定 HeroUI 3.2.6 / react-aria 的 vendor 声明在更严格可选字段下存在重复继承冲突，原型本就使用该例外。所有正式 TS/TSX 实现执行 strict 与新增严格选项；项目公开 DTO 另受根严格 type program 检查，其 skipLibCheck 仍为 false。不升级 vendor、不添加 any 或压制正式源代码错误。
 
@@ -116,7 +118,7 @@ CI 保持 `v3-p09` 可解析，新增前端安装/类型/构建与直接检查�
 - [Vite Backend Integration](https://vite.dev/guide/backend-integration)：manifest 与现有后端服务 hash 资源。
 - [React Router 声明式模式](https://reactrouter.com/start/declarative/installation)：在现有 React/Vite 应用内使用路径路由。
 - [TanStack Query 默认行为](https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults)、[请求取消](https://tanstack.com/query/latest/docs/framework/react/guides/query-cancellation)：显式配置重试/刷新，并消费 AbortSignal。
-- 原型 package.json/package-lock、根 package.json、现有 P2-016 HTTP/Query/Runtime、公开 contracts 是本项目实际版本与 API 依据。Context7 只用于核对官方用法，不替代本项目锁文件与直接验证。
+- 原型 package.json/package-lock、正式 package.json、根 package.json/package-lock、现有 P2-016 HTTP/Query/Runtime、公开 contracts 是本项目实际版本与 API 依据。Context7 只用于核对官方用法，不替代本项目锁文件与直接验证。
 
 - [Morphicons 官方用法与减少动效](https://github.com/guillermolg00/morphicons#reduced-motion-all-five-bindings)：使用 Lucide 数据而非 lucide-react 组件；明确启用 reducedMotion=user。
 - [TanStack Table v9 Quick Start](https://github.com/TanStack/table/blob/main/docs/framework/react/quick-start.md)、[Zustand create](https://github.com/pmndrs/zustand/blob/main/docs/apis/create.md)：最小 tableFeatures、类型化局部 UI store。

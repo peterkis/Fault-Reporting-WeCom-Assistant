@@ -21,6 +21,6 @@
 | 卡片打开、关闭、返回、刷新 | 原型没有标准路由；切卡请求身份需重建 | URL 表示对象/视图/过滤，取消过期请求，键盘/Escape/焦点返回与窄窗真实验证 |
 | 我来处理、接管、完工、重开、代录、拖动、声音 | 原型 mutate；旧 command API不等于 ADR-0024 原子主动作 | WEB01 只读。WEB02原子命令、WEB03代录/本人反馈、WEB04真实协作/提醒按后续授权实现 |
 | 正式入口、资源 | 原 `/workbench`、`/workbench/lifecycle` 与成员端有既有 HTTP/static/auth 路径 | 新 `/workbench/app/` 接同一受控链，hash bundle/manifest纳入原制品；UI fallback不吞API；旧关键路由直接回归 |
-| types/build/CI | 前端原型独立 TS7；根 TS5.9 的检查/制品目前不覆盖新 TSX 或 bundle | 当前 `v3-p09` 保持有效；新增前端 npm ci/type/build 与 direct tests，改动工具须跑直接 tooling/hosts 回归 |
+| types/build/CI | 前端原型独立 TS7；根 TS5.9 的检查/制品目前不覆盖新 TSX 或 bundle | 当前 `v3-p09` 保持有效；根 npm ci 纳入前端依赖，新增实际前端 type/build 与 direct tests，改动工具须跑直接 tooling/hosts 回归 |
 
 数据库变更：本轮不做 schema migration，只读已有事实。关闭方式：新入口与既有关闭状态开关一致，旧入口保留；回滚使用独立后继/revert PR。资源：有界每列分页、不按卡片请求扇出、单 App/HTTP、任务自有 PG 与浏览器资源按既有 helper 清理。正式交接只记录实际执行的 API、截图、检查与关闭结果。

@@ -8,7 +8,6 @@
 
 ```powershell
 npm ci --ignore-scripts --no-audit --no-fund
-npm ci --prefix web/admin-workbench --ignore-scripts --no-audit --no-fund
 npm run migration:build
 node .build/tools/gate.mjs types
 node .build/tools/verify-artifact.mjs

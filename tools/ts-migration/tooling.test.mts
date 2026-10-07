@@ -21,7 +21,6 @@ function scratch(reference = false): string {
     copyFileSync(path.join(original, relative), target);
   }
   symlinkSync(path.join(original, 'node_modules'), path.join(root, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
-  if(!reference)symlinkSync(path.join(original,'web/admin-workbench/node_modules'),path.join(root,'web/admin-workbench/node_modules'),process.platform==='win32'?'junction':'dir');
   return root;
 }
 function alter(root: string, relative: string, content: string, fn: () => void): void {
