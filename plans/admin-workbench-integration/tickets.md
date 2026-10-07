@@ -41,6 +41,7 @@ native_blocking_edges: 76
 - [ ] **T03** — [#58 恢复当前浏览器中的24小时草稿](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
   - **Blocked by:** [#57](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/57)
   - **来源：** WBINT-01 / A01
+  - **本地状态：** [LOCAL_VERIFIED／固定候选与七项证据](execution/t03.md)；GitHub仍OPEN，待父任务审阅／集成／关闭。
 
 - [x] **T04** — [#59 一键承接并开始处理无会话工单](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59)
   - **Blocked by:** [#57](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/57)
