@@ -121,6 +121,7 @@ native_blocking_edges: 76
 - [ ] **T23** — [#78 检索并维护来源群显示名称](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/78)
   - **Blocked by:** [#57](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/57)
   - **来源：** WBINT-00 / A00；WBINT-15 / A15
+  - **本地执行：** [LOCAL_VERIFIED：当前候选、逐项验收、RED／GREEN与资源清理](execution/t23.md)；待父任务核验／集成／关票，未发布／启用。
 
 - [ ] **T24** — [#79 按Bot来源可靠通知原报修人](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/79)
   - **Blocked by:** [#66](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/66)
