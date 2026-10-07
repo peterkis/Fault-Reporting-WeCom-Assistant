@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,writeFile,rm} from 'node:fs/promises';
+import {mkdtemp,writeFile,rm,link,symlink,unlink} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createCipheriv,createHash,randomBytes,randomUUID} from 'node:crypto';
@@ -27,6 +27,17 @@ test('trusted saved encrypted screenshot opens as actual authenticated bytes and
     assert.deepEqual(Buffer.concat(chunks),PNG);await lease.close();
     assert.deepEqual(store.ownedResourceState(),{active:0,handles:0,plaintext_bytes:0});
   }finally{await store.close();key.fill(0);await rm(root,{recursive:true,force:true});}
+});
+test('private file reads reject hard links, junction roots and traversal without retaining owned handles',async()=>{
+  await withSavedAsset(async(store,root,asset,key)=>{
+    await assert.rejects(store.open('../manifest.json',new AbortController().signal),{code:'ATTACHMENT_NOT_FOUND'});
+    const alias=join(root,'linked.asset');await link(join(root,asset.ref+'.asset'),alias);
+    try{await assert.rejects(store.open(asset.ref,new AbortController().signal),{code:'ATTACHMENT_STORAGE_UNAVAILABLE'});}finally{await unlink(alias);}
+    const junction=root+'-junction';await symlink(root,junction,'junction');const redirected=createWorkbenchAttachmentStore({root:junction,key});
+    try{await assert.rejects(redirected.entries(),{code:'ATTACHMENT_STORAGE_UNAVAILABLE'});await assert.rejects(redirected.open(asset.ref,new AbortController().signal),{code:'ATTACHMENT_STORAGE_UNAVAILABLE'});assert.deepEqual(redirected.ownedResourceState(),{active:0,handles:0,plaintext_bytes:0});}
+    finally{await redirected.close();await unlink(junction);}
+    assert.deepEqual(store.ownedResourceState(),{active:0,handles:0,plaintext_bytes:0});
+  });
 });
 test('authenticated HTML claiming image MIME is refused before any readable content is released',async()=>{
   const root=await mkdtemp(join(tmpdir(),'t16-format-')),key=randomBytes(32),ref=randomUUID(),bytes=Buffer.from('<html><script>globalThis.t16Canary=1</script></html>');

@@ -9,9 +9,10 @@ type Context=Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']
 type Item=Awaited<ReturnType<ReturnType<typeof createWeb01WorkbenchQuery>['authorizedItem']>>;
 const EMPTY:AttachmentPage={available:false,reason:'STORAGE_UNAVAILABLE',items:[],truncated:false};
 const LIMIT=20;
+function sameRegistration(first:StoredAttachment,current:Readonly<StoredAttachment>):void {if(JSON.stringify(first)!==JSON.stringify(current))throw new AttachmentError('ATTACHMENT_INTEGRITY_FAILED');}
 function visible(asset:StoredAttachment,reason:AttachmentReason|null):AttachmentMetadata {return {ref:asset.ref,display_name:asset.mime_type==='image/png'?'报修附件.png':asset.mime_type==='image/jpeg'?'报修附件.jpg':'报修附件',mime_type:asset.mime_type,byte_size:asset.byte_size,available:reason===null,reason};}
 export function createWorkbenchAttachments({pool,query,enabled=false,store=null}:{pool:PostgresTransaction;query:ReturnType<typeof createWeb01WorkbenchQuery>;enabled?:boolean;store?:AttachmentStore|null}) {
-  const active=new Set<AbortController>();let stopped=false;
+  const active=new Set<AbortController>();let stopped=false,operation:AbortController|null=null,settled:Promise<void>=Promise.resolve();
   async function sources(item:Item,assets:readonly StoredAttachment[]) {
     if(!assets.length)return new Map<string,{fresh:boolean;trusted:boolean}>();
     const rows=await pool.query<{ref:string;fresh:boolean;trusted:boolean}>(`SELECT a.ref,
@@ -50,7 +51,7 @@ export function createWorkbenchAttachments({pool,query,enabled=false,store=null}
     for(const asset of selected.slice(0,LIMIT)){
       signal.throwIfAborted();const source=allowed.get(asset.ref);let reason:AttachmentReason|null=source?.fresh===false?'EXPIRED':source?.trusted===false?'UNTRUSTED':attachmentReason(asset);
       // Server-side validation is bounded and serial; no attachment content is sent or prefetched by the browser.
-      if(!reason){try{const lease=await store.open(asset.ref,signal);await lease.close();}catch(error){const code=error instanceof AttachmentError?error.code.replace('ATTACHMENT_',''):'STORAGE_UNAVAILABLE';reason=['EXPIRED','MISSING','OVERSIZED','UNSUPPORTED','UNTRUSTED','INTEGRITY_FAILED','BUSY'].includes(code)?code as AttachmentReason:'STORAGE_UNAVAILABLE';}}
+      if(!reason){try{const lease=await store.open(asset.ref,signal);try{sameRegistration(asset,lease.asset);}finally{await lease.close();}}catch(error){const code=error instanceof AttachmentError?error.code.replace('ATTACHMENT_',''):'STORAGE_UNAVAILABLE';reason=['EXPIRED','MISSING','OVERSIZED','UNSUPPORTED','UNTRUSTED','INTEGRITY_FAILED','BUSY'].includes(code)?code as AttachmentReason:'STORAGE_UNAVAILABLE';}}
       items.push(visible(asset,reason));
     }
     return {available:true,reason:null,items,truncated:selected.length>LIMIT};
@@ -63,8 +64,11 @@ export function createWorkbenchAttachments({pool,query,enabled=false,store=null}
       if(!metadata&&!content)return false;
       if(request.method!=='GET')failP2016('NOT_FOUND',404);
       const controller=new AbortController(),timer=setTimeout(()=>controller.abort(new AttachmentError('ATTACHMENT_TIMEOUT',504)),ATTACHMENT_DEADLINE_MS);timer.unref();active.add(controller);
-      const disconnected=()=>controller.abort();response.once('close',disconnected);
+      const disconnected=()=>controller.abort();response.once('close',disconnected);let complete=()=>{};
       try{
+        if(stopped)throw new AttachmentError('ATTACHMENT_STORAGE_UNAVAILABLE',503);
+        if(operation)throw new AttachmentError('ATTACHMENT_BUSY',429);
+        operation=controller;settled=new Promise<void>(resolve=>{complete=resolve;});
         if(metadata){if(url.searchParams.size)failP2016();json(response,200,await list(authContext,metadata[1]??'',metadata[2]??'',controller.signal));return true;}
         if(request.headers.range)throw new AttachmentError('ATTACHMENT_RANGE_NOT_SUPPORTED',416);
         if([...url.searchParams.keys()].some(k=>!['kind','id'].includes(k))||['kind','id'].some(k=>url.searchParams.getAll(k).length!==1))failP2016();
@@ -72,15 +76,15 @@ export function createWorkbenchAttachments({pool,query,enabled=false,store=null}
         const asset=await authorize(authContext,kind,id,ref);if(!store)throw new AttachmentError('ATTACHMENT_STORAGE_UNAVAILABLE',503);
         const lease=await store.open(ref,controller.signal);
         try{
-          await authorize(authContext,kind,id,ref);controller.signal.throwIfAborted();
+          sameRegistration(asset,lease.asset);sameRegistration(asset,await authorize(authContext,kind,id,ref));controller.signal.throwIfAborted();
           response.writeHead(200,{'content-type':asset.mime_type,'content-length':asset.byte_size,'content-disposition':'attachment; filename="report-attachment.'+(asset.mime_type==='image/png'?'png':'jpg')+'"','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':"sandbox; default-src 'none'"});
-          for await(const chunk of lease.stream){controller.signal.throwIfAborted();if(BigInt(authContext.expires_epoch_ms)<=BigInt(Date.now()))throw new AttachmentError('ATTACHMENT_AUTH_EXPIRED',401);await authorize(authContext,kind,id,ref);if(!response.write(chunk))await once(response,'drain',{signal:controller.signal});}
+          for await(const chunk of lease.stream){controller.signal.throwIfAborted();if(BigInt(authContext.expires_epoch_ms)<=BigInt(Date.now()))throw new AttachmentError('ATTACHMENT_AUTH_EXPIRED',401);sameRegistration(asset,await authorize(authContext,kind,id,ref));if(!response.write(chunk))await once(response,'drain',{signal:controller.signal});}
           response.end();
         }finally{await lease.close();}
         return true;
       }catch(error){if(response.headersSent){response.destroy();return true;}if(error instanceof AttachmentError){json(response,error.status,{error:{code:error.code,retryable:error.status>=500||error.status===429}});return true;}throw error;}
-      finally{clearTimeout(timer);response.off('close',disconnected);active.delete(controller);}
+      finally{clearTimeout(timer);response.off('close',disconnected);active.delete(controller);if(operation===controller){operation=null;complete();}}
     },
-    async close(){stopped=true;for(const controller of active)controller.abort();await store?.close();},
+    async close(){stopped=true;for(const controller of active)controller.abort();await store?.close();await settled;},
   });
 }

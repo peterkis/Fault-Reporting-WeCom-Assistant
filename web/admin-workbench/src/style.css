@@ -247,3 +247,5 @@ strong { font-weight: var(--fw-medium); }
 .source-group-form p{flex-basis:100%;margin:0;font-size:12px;color:#787774}
 .card-tags .neutral-chip{max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .properties .neutral-chip{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+
+.attachment-section{margin:20px 0;padding:16px;border:1px solid var(--border,#e5e7eb);border-radius:10px}.attachment-section h3{margin:0 0 12px;font-size:15px}.attachment-section ul{list-style:none;margin:0;padding:0}.attachment-section li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}.attachment-section small{display:block;color:#64748b;font-size:12px}.attachment-section button{border:1px solid #cbd5e1;border-radius:6px;background:#fff;padding:5px 10px;font-size:12px;cursor:pointer}.attachment-section button:disabled{opacity:.5;cursor:default}.attachment-section p{color:#64748b;font-size:12px;line-height:1.6}

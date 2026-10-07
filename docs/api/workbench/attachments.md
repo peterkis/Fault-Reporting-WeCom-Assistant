@@ -22,9 +22,13 @@ W 的现有认证宿主；`workbenchAttachmentsEnabled=false` 为默认值，`at
 
 文件为 `{opaque UUID}.asset`，字节序 `12-byte IV || 16-byte GCM tag || ciphertext`，AES-256-GCM；AAD 为该项按 Contract 字段顺序的 UTF-8 JSON，绑定来源、保留、扫描、分类、大小、MIME 和 hash。key 通过显式注入交给受信运行装配；Manifest 与文件路径需仅由受信资产登记者维护，private root 的 ACL/生命周期由运行配置保障，不作为明文存储豁免。现有 G0 捕获不转换为资产。
 
-实际文件在同一已校验句柄读取；拒绝 traversal、绝对文件 key、symlink/junction 祖先、链接文件和 inode/dev 替换。读入有硬上限，不信任扩展名或声明大小。完整 GCM 认证和 SHA256/Magic/MIME 后才发送任何明文；单文件 ≤10MiB，仅一资产在内存，ciphertext/plaintext 有界，HTTP 64KiB 分块与背压，不能将 GCM 未认证 plaintext 直接外发。PNG/JPEG 不承担任意格式预览；HTML/SVG/其他格式明确不可用。扫描记录必须来自受信登记过程；此只读实现没有内置 scanner，生产登记能力仍需独立提供，合成测试预置 PASSED 不证明生产扫描。
+Lease返回该次认证的不可变描述；HTTP将最初授权、lease描述、头部前和每块的当前登记逐字段序列比较，变更即完整性拒绝，不能把旧文件流与新来源／截止混用。路径检查拒绝静态链接，并以lstat/fstat身份检测打开前替换；打开后只用同一句柄，后续重命名不切换读取对象。Windows/Node没有这里可用的目录句柄相对原子open合同，祖先目录的对抗性瞬时替换仍由受信private root ACL前提控制，不宣称抵御持key且可修改目录的恶意管理员。GCM/AAD/SHA提供另一层内容与登记绑定。
 
-单服务同时最多 1 个读取 lease，deadline 15 秒；客户端断开、取消和宿主停止关闭流/句柄并清零 plaintext/key 的自有副本。复用既有 App/Worker/PG/pool，Gateway 无新增连接，SSE32 和总池预算保留。物理过期删除归受信存储留存维护，读取强制截止；不自动删 Ticket/旧事实。
+实际文件在同一已校验句柄读取；拒绝 traversal、绝对文件 key、symlink/junction 祖先、链接文件和 inode/dev 替换。读入有硬上限，不信任扩展名或声明大小。完整 GCM 认证和 SHA256/Magic/MIME 后才发送任何明文；单文件 ≤10MiB，仅一资产在内存，ciphertext/plaintext 有界，HTTP 64KiB 分块与背压，不能将 GCM 未认证 plaintext 直接外发。PNG校验签名、尺寸、分块边界与CRC、IDAT/IEND；JPEG校验尺寸、有限marker与SOF/SOS/EOI结构。均限制8192边长、16777216像素，结构检查不等同完整像素／熵解码或恶意内容扫描。PNG/JPEG仅受控下载，不承担任意格式预览；HTML/SVG/其他格式明确不可用。扫描记录必须来自受信登记过程；此只读实现没有内置 scanner，生产登记能力仍需独立提供，合成测试预置 PASSED 不证明生产扫描。
+
+附件扩展同时最多1个未完成的元信息／下载校验操作及1个读取lease；其余请求明确429 BUSY。准入在认证宿主之后、所有来源与文件校验之前占有，并保持到已发出的PG/fs调用settle。取消不会提前释放逻辑准入；close取消操作并等待其完成。Deadline15秒；客户端断开、取消和宿主停止关闭流/句柄并清零plaintext/key的自有副本。复用既有App/Worker/PG/pool，Gateway无新增连接，SSE32和总池预算保留。物理过期删除归受信存储留存维护，读取强制截止；不自动删Ticket/旧事实。
+
+Deadline取消后续分块、HTTP背压等待及lease；本地文件IO按≤64KiB读循环检查取消，已发出的PG查询和内核fs调用需返回后才观察信号。此合同复用既有有限数据库池并要求受信本地私有文件系统正常提供IO，不能强制抢占正在执行的PG/fs调用；不把合成测试的清理结果当作故障存储或数据库的硬实时保证。
 
 ## 前端和关闭方式
 

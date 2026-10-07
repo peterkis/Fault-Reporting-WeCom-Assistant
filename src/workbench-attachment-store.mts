@@ -123,7 +123,7 @@ export function createWorkbenchAttachmentStore({root,key}:{root:string;key:Uint8
         const bytes=plaintext;
         leaseStream=Readable.from((async function*(){try{for(let at=0;at<bytes.length;at+=ATTACHMENT_CHUNK_BYTES){combined.throwIfAborted();yield Buffer.from(bytes.subarray(at,at+ATTACHMENT_CHUNK_BYTES));}}finally{await release();}})(),{objectMode:false,highWaterMark:ATTACHMENT_CHUNK_BYTES});stream=leaseStream;
         combined.addEventListener('abort',aborted,{once:true});
-        return {stream:leaseStream,close};
+        return {asset:Object.freeze(asset),stream:leaseStream,close};
       }catch(error){await close();throw error;}
     },
     async close(){stopped=true;controller?.abort();stream?.destroy();await finished;secret.fill(0);},

@@ -164,11 +164,20 @@
 | U17 | GET | `/reporter/reporter.js`、`/reporter/reporter.css` | Reporter | 静态：Reporter | [平台](platform/auth-health.md) |
 | U18 | GET | `/`、`/static/pilot-workbench.js`、`/static/pilot-workbench.css` | P | 历史页面/资源 | [平台](platform/auth-health.md) |
 
+## 已保存附件（WBINT-T16，默认关闭）
+
+| 方法 | 完整路径 | 宿主与状态 | 契约文档 |
+| --- | --- | --- | --- |
+| GET | `/api/workbench/items/{kind}/{id}/attachments` | W扩展，获权元信息；无Store／开关关闭明确不可用 | [附件](workbench/attachments.md) |
+| GET | `/api/attachments/{attachmentRef}?kind={kind}&id={id}` | W扩展，受控PNG/JPEG下载；显式注入受信加密Store | [附件](workbench/attachments.md) |
+
+基础会话宿主的旧通配附件路径仍是不可用；上述精确路由仅由P2016附件扩展处理，没有上传、登记或现取Provider能力。
+
 ## 明确拒绝与设计路径
 
 | 方法 | 完整路径 | 状态 | 去哪里找 |
 | --- | --- | --- | --- |
-| GET | `/api/attachments/*` | 主W显式404不可用 | [会话](workbench/conversations.md) |
+| GET | `/api/attachments/*` | 未匹配附件扩展的路径，基础W仍显式404不可用 | [附件](workbench/attachments.md)／[会话](workbench/conversations.md) |
 | POST | `/api/pilot/tickets/{ticketId}/actions/auto-close` | P显式403 | [平台](platform/auth-health.md) |
 | POST | `/api/tickets/{ticketId}/auto-close` | 无HTTP动作 | [工单](workbench/tickets.md) |
 | POST | `/api/incident-candidates/{candidateId}/expire` | 无HTTP动作 | [公共故障](workbench/incidents.md) |
