@@ -13,7 +13,22 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
-## 当前执行状态导航（2026-10-08，T04 收口与T05领取）
+## 当前执行状态导航（2026-10-08，T03收口与新frontier领取）
+
+父任务已核对并关闭6／43票：T01／#56、T02／#57、T03／#58、T04／#59、T16／#71、T23／#78。下方导航保留历史快照，不改写实际被测对象。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T03 / #58 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58#issuecomment-6045803249)及[七项验收与原报告](execution/t03.md)可追溯 |
+| T03本地集成与被测对象 | `09c6ca4e8fb25d3a68202b641c23527d18314a39`已安全快进合入；实际被测干净祖先`0ca2fd3219dac6efbc7e5dfdae4aa5b1dfddf234`的strict／artifact、同制品业务92／92和工具32／32通过，29张真实PNG。文档后继仅3个Markdown，910项完整inputs不变；不重绑旧制品身份 |
+| T03资源与归档 | 自有PG／HTTP／browser／工具清理通过，父任务逐段残留0／0；原runtime987文件逐字节／SHA-256归档，managed worktree已归档，原FAIL保留 |
+| T05 / #60 | IMPLEMENTING；真实HTTP已证明本人承接与已分配沟通的最小原子链，其他风险及最终整合仍待完成，不标整票PASS |
+| T11／#66、T14／#69、T22／#77、T27／#82 | 父任务实时读取全文／空评论／无原assignee及原生blockers，#58与所需#59均CLOSED；四票已领取给peterkis，准备从当前integration创建独立worktree，分别负责工作人员完工、人工复核、会话工作区与公共故障候选 |
+| 来源工作包 | 仅核实上述已完成票；各后续表单和工作包验收仍按实际证据，最终由T43汇总，不以6票关闭推导完整工作台就绪 |
+
+本轮继续单一集成分支与串行PG／HTTP／browser验证；新开关默认false。未push、部署、真实外部服务／发送、full／certify或Gate推进。
+
+## 历史执行状态导航（2026-10-08，T04 收口与T05领取）
 
 父任务已核对并关闭5／43票：T01／#56、T02／#57、T04／#59、T16／#71、T23／#78。下方日期导航保留为各自历史快照，详细证据保留实际测试对象。
 

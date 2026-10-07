@@ -12,6 +12,8 @@ export type P2016TicketActionCommand = { readonly client_command_id: string; rea
 /** Dedicated internal-notes HTTP contract. Legacy notes keeps its separate compatibility contract. */
 export type P2016InternalNoteCommand = { readonly client_command_id: string; readonly expected_version: number; readonly reason_code: string; readonly note: string; readonly external_visible: false; };
 export type P2016InternalNoteResult = { readonly ok: true; readonly ticket_id: string; readonly ticket_version: number; readonly ticket_event_id: string; readonly control_event_id: null; readonly replayed: boolean; };
+export type P2016InternalNoteReceipt = Readonly<{client_command_id:string;ticket_id:string}> & (
+  Readonly<{state:'UNKNOWN'}> | Readonly<{state:'COMMITTED';result:P2016InternalNoteResult}> | Readonly<{state:'FAILED';error:Readonly<{code:string;retryable:false}>}>);
 
 export type P2016TicketTransferCommand = { readonly client_command_id: string; readonly expected_version: number; readonly reason_code: string; readonly target_principal_id: string; readonly resolver_team_id?: string; };
 

@@ -1,5 +1,5 @@
 import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupPage,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
-import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle} from '../../../../contracts/p2_016_contracts';
+import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle} from '../../../../contracts/p2_016_contracts';
 export type {P2016InternalNoteCommand,P2016SelfHandlingCommand};
 export type SelfHandlingAction="take-and-start"|"accept-for-later";
 export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null}
@@ -47,8 +47,8 @@ function decodeDetail(value:unknown):WorkbenchDetail {
   return {item:decodeCard(v.item),description:nullable(v.description),records:v.records.map(decodeRecord),next_cursor:nullable(v.next_cursor),
     responsibility:{ticket_assignee_name:nullable(r.ticket_assignee_name),conversation_assignees:strings(r.conversation_assignees)}};
 }
-export interface Principal {principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean}
-function decodePrincipal(value:unknown):Principal {const v=object(value);if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.ticket_self_handling_enabled!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled};}
+export interface Principal {principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;draft_recovery_enabled:boolean;logout_enabled:boolean}
+function decodePrincipal(value:unknown):Principal {const v=object(value);if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.ticket_self_handling_enabled!=='boolean'||typeof v.draft_recovery_enabled!=='boolean'||typeof v.logout_enabled!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,draft_recovery_enabled:v.draft_recovery_enabled,logout_enabled:v.logout_enabled};}
 function version(value:unknown):number {if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1||value>2147483647)throw new ApiError(502,'INVALID_RESPONSE');return value;}
 function decodeTicketContext(value:unknown,ticketId:string):TicketCommandContext {
   const v=object(value),actions=strings(v.allowed_actions),ticket=id(v.id);
@@ -95,6 +95,22 @@ async function postTicketCommand<T>(ticketId:string,action:string,command:P2016I
 
 }
 export const api={
+  async logout(csrfToken:string|null){
+    if(!csrfToken)throw new ApiError(403,'CSRF_UNAVAILABLE');
+    const response=await fetch('/workbench/logout',{method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',headers:{accept:'application/json','x-csrf-token':csrfToken}});
+    if([401,403,404].includes(response.status))return rejectAuthorization(response);
+    if(response.status!==200||!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
+    const value=object(await response.json());if(Object.keys(value).length!==1||value.logged_out!==true)throw new UnknownCommandOutcome();
+  },
+  internalNoteReceipt:(ticketId:string,commandId:string,signal:AbortSignal):Promise<P2016InternalNoteReceipt>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/internal-notes/commands/'+encodeURIComponent(commandId),signal,value=>{
+    const v=object(value);if(id(v.ticket_id)!==ticketId||id(v.client_command_id)!==commandId)throw new ApiError(502,'INVALID_RESPONSE');
+    const base={ticket_id:ticketId,client_command_id:commandId};
+    if(v.state==='UNKNOWN'&&Object.keys(v).length===3)return {...base,state:'UNKNOWN'};
+    if(v.state==='FAILED'&&Object.keys(v).length===4){const e=object(v.error),code=text(e.code);if(Object.keys(e).length!==2||e.retryable!==false||! /^[A-Z][A-Z0-9_]{0,63}$/u.test(code))throw new ApiError(502,'INVALID_RESPONSE');return {...base,state:'FAILED',error:{code,retryable:false}};}
+    if(v.state==='COMMITTED'&&Object.keys(v).length===4){const r=object(v.result);if(Object.keys(r).length!==6||r.ok!==true||id(r.ticket_id)!==ticketId||r.control_event_id!==null||r.replayed!==true)throw new ApiError(502,'INVALID_RESPONSE');return {...base,state:'COMMITTED',result:{ok:true,ticket_id:ticketId,ticket_version:version(r.ticket_version),ticket_event_id:id(r.ticket_event_id),control_event_id:null,replayed:true}};}
+    throw new ApiError(502,'INVALID_RESPONSE');
+  }),
+
   sourceGroups:(q:string,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/source-groups?'+new URLSearchParams({limit:'50',q,...(cursor?{cursor}:{})}),signal,decodeGroupPage),
   bootstrap:(signal:AbortSignal)=>get('/api/lifecycle/bootstrap',signal,decodePrincipal),
   ticketCommandContext:(ticketId:string,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId),signal,value=>decodeTicketContext(value,ticketId)),

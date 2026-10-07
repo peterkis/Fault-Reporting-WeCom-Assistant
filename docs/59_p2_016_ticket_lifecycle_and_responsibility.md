@@ -30,6 +30,8 @@ HTTP 只接受固定动作路由；Cookie 写入要求 Origin/CSRF/同站，Bear
 
 `ticket_command_receipt` 以 principal scope + command ID 唯一，保存 canonical hash、终态、结果引用及稳定错误。命令授权早于 receipt 读取；事务 SAVEPOINT 保证失败业务没有部分提交。网络中断后使用原 ID 核对同一命令。正文/令牌不进入浏览器持久存储，刷新只恢复 filter 和 selected internal ID。
 
+2026-10-08 WBINT-T03 后继：上述默认浏览器存储边界保留；仅将默认false的宿主选项 `workbenchDraftRecoveryEnabled` 显式设为true并启用内部备注后，可采用当前浏览器原生 IndexedDB／AES-GCM 恢复副本，正文／完整原命令只存密文，凭据永不存入。固定最长24h、重新真实验权、20条／16KiB／500ms限值、成功／丢弃／退出／失权／过期清理见[合同](api/workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03)。过期敏感副本与独立 opaque UNKNOWN操作标识不同；后者最多20个且不得静默驱逐。新只读核对复用原 receipt，用途由服务器绑定，不另建 Ticket／ledger，也不改变已提交备注的服务端留存。
+
 ## 双责任与转派
 
 Conversation Assignment 决定谁沟通；Ticket assignee/team 决定谁解决。责任视图直接读两个事实源，包括可靠绑定 Journey 的各会话；不复制第三份所有权。

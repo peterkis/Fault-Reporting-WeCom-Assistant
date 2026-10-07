@@ -1,16 +1,18 @@
 import {useEffect,useRef,useState} from 'react';
 import type {KeyboardEvent,MouseEvent,ReactNode} from 'react';
 import {Link,Route,Routes,useLocation,useNavigate,useParams,useSearchParams} from 'react-router';
-import {useInfiniteQuery,useQuery} from '@tanstack/react-query';
+import {useInfiniteQuery,useQuery,useMutation,useQueryClient} from '@tanstack/react-query';
 import {Button} from '@heroui/react/button';
 import {LayoutGrid,List,MessageSquare,TriangleAlert,Bell,BookOpen,Settings,ChevronDown,ChevronUp,ArrowUpRight,RefreshCw,ArrowLeft,X,LifeBuoy,Search} from 'lucide-react';
 import {MorphIcon} from 'morphicons/react';
 import {PanelLeftClose as CollapseData,PanelLeftOpen as ExpandData} from 'lucide';
 import {createColumnHelper,tableFeatures,useTable} from '@tanstack/react-table';
-import {api,errorMessage,statusLabels} from '../api/client';
+import {api,ApiError,errorMessage,statusLabels} from '../api/client';
 import type {BoardColumn,CompletionRange,WorkbenchCard,Principal} from '../api/client';
 import {useUiStore} from './ui-store';
 import {TicketNotes} from '../features/ticket-notes/TicketNotes';
+import {clearSessionAuthorization,clearSessionView,clearItemView} from './authorization';
+import {subscribeDrafts} from '../features/drafts/encrypted-drafts';
 import {TicketSelfHandling} from '../features/ticket-handling/TicketSelfHandling';
 import {AttachmentSection} from '../features/attachments/AttachmentSection';
 import {GroupNameEditor} from '../features/source-groups/GroupNameEditor';
@@ -100,6 +102,18 @@ function WorkList({items,search,selected,now,column,label}:{items:WorkbenchCard[
 }
 function Shell({principal,children,navigationBlocked=false}:{principal:Principal;children:ReactNode;navigationBlocked?:boolean}){
   const collapsed=useUiStore(s=>s.sidebarCollapsed),toggle=useUiStore(s=>s.toggleSidebar);
+  const client=useQueryClient();
+  const logout=useMutation({mutationKey:['session-logout',principal.principal_id],mutationFn:()=>api.logout(principal.csrf_token),
+    onSuccess:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout','已退出，当前浏览器的恢复副本已清理。'),
+    onError:()=>clearSessionAuthorization(client,principal.principal_id,undefined,'logout-unknown','服务器退出結果尚未确认，本地恢复副本已清理；请重新核验会话并查看当前工单事实。')});
+  useEffect(()=>{
+    if(!principal.draft_recovery_enabled&&!principal.logout_enabled)return;
+    try{return subscribeDrafts(value=>{
+      if(value.principal!==principal.principal_id)return;
+      if(value.reason==='logout'||value.reason==='logout-unknown')clearSessionView(client,undefined,value.reason==='logout'?'已退出，当前浏览器的恢复副本已清理。':'退出结果尚未确认，请重新核验会话。');
+      else if(value.reason==='revoked'){if(value.kind&&value.id)void clearItemView(client,value.principal,value.kind,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));else clearSessionView(client,undefined,'会话需要重新核验，恢复副本已清理。');}
+    });}catch{return;}
+  },[client,principal.principal_id,principal.draft_recovery_enabled,principal.logout_enabled]);
   const settings=useLocation().pathname.startsWith('/settings/'),canNameGroups=principal.source_group_directory_enabled&&principal.roles.includes('ADMIN');
   const [online,setOnline]=useState(navigator.onLine);
   const guardNavigation=(event:MouseEvent<HTMLAnchorElement>)=>{if(navigationBlocked)event.preventDefault();};
@@ -109,7 +123,7 @@ function Shell({principal,children,navigationBlocked=false}:{principal:Principal
     <p className="nav-label">工作空间</p><Link className={'nav-item '+(!settings?'current':'')} to="/" aria-current={!settings?'page':undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} title="工作台"><LayoutGrid/><span>工作台</span></Link>
     <div className="nav-item muted" title="会话 · 后续开放"><MessageSquare/><span>会话</span><small>后续</small></div><div className="nav-item muted" title="公共故障 · 后续开放"><TriangleAlert/><span>公共故障</span><small>后续</small></div><div className="nav-item muted" title="团队知识库 · 规划中"><BookOpen/><span>团队知识库</span><small>规划中</small></div><div className="nav-item muted" title="通知异常 · 后续开放"><Bell/><span>通知异常</span><small>后续</small></div>
     <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom">{canNameGroups?<Link className={'nav-item '+(settings?'current':'')} aria-current={settings?'page':undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} to="/settings/source-groups" data-action="open-source-groups"><Settings/><span>设置</span></Link>:<div className="nav-item muted" title="设置"><Settings/><span>设置</span></div>}<div className="account"><TeamAvatar name={principal.display_name}/><div><strong>{principal.display_name}</strong><small>已授权内部身份</small></div></div></div></aside>
-    <main><header className="topbar"><button className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle}><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></button><span>信息服务团队 <span className="slash">/</span> <strong>{settings?'设置':'工作台'}</strong></span><span className={'connection '+(!online?'offline':'')}>{online?'按需读取':'网络已断开'}</span>{canNameGroups?<Link to="/settings/source-groups" className="compact-settings" aria-disabled={navigationBlocked} onClick={guardNavigation}>来源群</Link>:null}<a href="/workbench" aria-disabled={navigationBlocked} onClick={guardNavigation}>旧管理端<ArrowUpRight size={14}/></a></header>{children}</main></div>;
+    <main><header className="topbar"><button className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle}><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></button><span>信息服务团队 <span className="slash">/</span> <strong>{settings?'设置':'工作台'}</strong></span><span className={'connection '+(!online?'offline':'')}>{online?'按需读取':'网络已断开'}</span>{canNameGroups?<Link to="/settings/source-groups" className="compact-settings" aria-disabled={navigationBlocked} onClick={guardNavigation}>来源群</Link>:null}<a href="/workbench" aria-disabled={navigationBlocked} onClick={guardNavigation}>旧管理端<ArrowUpRight size={14}/></a>{principal.logout_enabled?<button type="button" data-action="logout-workbench" disabled={logout.isPending} onClick={()=>logout.mutate()}>{logout.isPending?'正在退出…':'退出工作台'}</button>:null}</header>{children}</main></div>;
 }
 function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void}){
   const [internalNoteBlocked,setInternalNoteBlocked]=useState(false),[groupBlocked,setGroupBlocked]=useState(false),[handlingBlocked,setHandlingBlocked]=useState(false);
@@ -189,9 +203,10 @@ function Workbench({principal}:{principal:Principal}){
     {selected.id?<Detail principal={principal} items={unique} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
   </Shell>;
 }
-function Session(){const failure=useUiStore(s=>s.sessionError),reset=useUiStore(s=>s.reset),location=useLocation();
+function Session(){const failure=useUiStore(s=>s.sessionError),closedNotice=useUiStore(s=>s.sessionClosedNotice),reset=useUiStore(s=>s.reset),location=useLocation();
   const [navigationBlocked,setNavigationBlocked]=useState(false);
-  const bootstrap=useQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),enabled:failure===null});
+  const bootstrap=useQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),enabled:failure===null&&closedNotice===null});
+  if(closedNotice)return <div className="entry-state"><h1>医小修工作台</h1><Message text={closedNotice} retry={reset}/><a href="/workbench">返回现有工作台入口</a></div>;
   if(failure)return <div className="entry-state"><h1>医小修工作台</h1><Message text={failure===401?'会话已失效，请重新进入已授权工作台。':'当前身份没有查看权限。'} retry={reset}/><a href="/workbench">返回现有工作台入口</a></div>;
   if(bootstrap.isPending)return <div className="entry-state"><Message text="正在核验内部会话…"/></div>;
   if(bootstrap.isError)return <div className="entry-state"><h1>医小修工作台</h1><Message text={errorMessage(bootstrap.error)} retry={()=>{void bootstrap.refetch();}}/><a href="/workbench">返回现有工作台入口</a></div>;

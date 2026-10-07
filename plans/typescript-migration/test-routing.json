@@ -6,6 +6,13 @@
   "entries": [
     {"path":"tests/t05-conversation-handling.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t05-conversation-handling.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-draft-contract.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-draft-isolation.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-draft-boundaries.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-draft-auth.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-draft-lifecycle.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-drafts.integration.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-drafts.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t04-self-handling.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/t04-self-handling.integration.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/wbint-t16-attachment-resources.integration.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -327,6 +334,13 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/web01-draft-contract.test.mjs",
+      "tests/web01-draft-isolation.browser.test.mjs",
+      "tests/web01-draft-boundaries.browser.test.mjs",
+      "tests/web01-draft-auth.browser.test.mjs",
+      "tests/web01-draft-lifecycle.browser.test.mjs",
+      "tests/web01-drafts.integration.test.mjs",
+      "tests/web01-drafts.browser.test.mjs",
       "tests/t04-self-handling.browser.test.mjs",
       "tests/t04-self-handling.integration.test.mjs",
       "tests/wbint-t16-attachments.test.mts", "tests/wbint-t16-attachments.integration.test.mts", "tests/wbint-t16-attachment-resources.integration.test.mts", "tests/wbint-t16-attachments.browser.test.mts",

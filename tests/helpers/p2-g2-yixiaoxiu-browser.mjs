@@ -11,9 +11,9 @@ import {createWeComWebOAuth} from '../../src/p2-g2-wecom-web-oauth.mjs';
 import {createWeComOAuthCodeResolver} from '../../src/p2-g2-wecom-oauth-provider.mjs';
 import {createYxxReadonlyServer} from '../../src/p2-g2-yixiaoxiu-server.mjs';
 import {entryConfig,entryKey,listenYxx,stopYxx} from './p2-g2-yixiaoxiu-fixture.mjs';
-import {launchSystemBrowser} from './p2-006-browser-harness.mjs';
+import {launchSystemBrowser,closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 
-export async function createYxxBrowserFixture({pool,createApp=null}){
+export async function createYxxBrowserFixture({pool,createApp=null,startApp=listenYxx,stopApp=stopYxx}){
   const openssl=['D:/Program Files/Git/usr/bin/openssl.exe','C:/Program Files/Git/usr/bin/openssl.exe','/usr/bin/openssl','/bin/openssl','/usr/local/bin/openssl'].find(existsSync);
   if(!openssl)throw new Error('YXX_TEST_OPENSSL_REQUIRED');
   const directory=await mkdtemp(join(tmpdir(),'p2-g2-yxx-tls-'));
@@ -54,7 +54,7 @@ export async function createYxxBrowserFixture({pool,createApp=null}){
     }});
     function newApp(){oauth=createWeComWebOAuth({enabled:true,publicOrigin:origin,corpId:entryConfig.corpId,agentId:entryConfig.agentId,resolveCode,now:()=>authClock});
       app=createApp?createApp({oauth,origin}):createYxxReadonlyServer({pool,oauth,publicOrigin:origin,reporterHmacSecret:entryKey,reporterMemberEntry:entryConfig});}
-    newApp();base=await listenYxx(app);
+    newApp();base=await startApp(app);
     return {origin,certificateSpki,
       ownedResourceState:()=>({listeners:Number(proxy.listening)+Number(app.listening),sockets:sockets.size,tlsDirectories:existsSync(directory)?1:0}),
       get providerCalls(){return providerCalls;},get pendingLogins(){return held.length;},get pendingDetails(){return heldDetail.length;},
@@ -62,10 +62,10 @@ export async function createYxxBrowserFixture({pool,createApp=null}){
       releaseLogins:()=>{hold=false;for(const send of held.splice(0))send();},
       failNextTimeline:()=>{failTimeline=true;},holdDetails:()=>{holdDetail=true;},releaseDetails:()=>{holdDetail=false;for(const send of heldDetail.splice(0))send();},
       launch:({width=1440,height=900,path='/synthetic-start'}={})=>launchSystemBrowser({url:origin+path,width,height,certificateSpki}),
-      async restart(){await stopYxx(app);newApp();base=await listenYxx(app);},
-      async close(){oauth.close();for(const socket of sockets)socket.destroy();await stopYxx(proxy);await stopYxx(app);await cleanup();},
+      async restart(){await stopApp(app);newApp();base=await startApp(app);},
+      async close(){await closeBrowserTestResources([async()=>{oauth.close();},async()=>{for(const socket of sockets)socket.destroy();await stopYxx(proxy);},async()=>{await stopApp(app);},cleanup]);},
     };
-  }catch(error){oauth?.close();for(const socket of sockets)socket.destroy();if(proxy?.listening)await stopYxx(proxy);if(app?.listening)await stopYxx(app);await cleanup();throw error;}
+  }catch(error){await closeBrowserTestResources([async()=>{oauth?.close();},async()=>{for(const socket of sockets)socket.destroy();if(proxy?.listening)await stopYxx(proxy);},async()=>{if(app)await stopApp(app);},cleanup],error);}
   async function cleanup(){const owned=relative(resolve(tmpdir()),resolve(directory));assert.ok(!isAbsolute(owned)&&/^p2-g2-yxx-tls-[A-Za-z0-9]+$/u.test(owned));await rm(directory,{recursive:true,force:true});}
 }
 export async function yxxTab(browser,url){

@@ -33,6 +33,25 @@ node .build/tools/run-tests.mjs --selection v3-p09 --report-dir <仓库外的新
 
 全部业务内容只读：无接管、关闭、重开、发送、拖动写状态。Zustand 仅保存侧栏及真实 401/403 触发的界面授权错误标记；身份、凭据和业务事实不持久化。会话失效取消请求并清空缓存；离线、拒绝和错误按真实结果呈现。微动效尊重系统减少动态效果偏好。
 
+## 当前浏览器草稿恢复（WBINT-T03）
+
+后继本地实现通过宿主 `workbenchDraftRecoveryEnabled:boolean=false` 默认关闭；需同时启用内部备注，bootstrap 才返回 `draft_recovery_enabled:true`。当前只接入 TicketNotes；通用存储可复用，后续消费者必须单独定义载荷、当前权限与用途。无服务器草稿服务、跨设备恢复、数据库迁移或新依赖。[接口与只读核对](../../docs/api/workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03)／[实际验证](../../plans/admin-workbench-integration/execution/t03.md)。
+
+仅当前origin／browser profile的原生 IndexedDB `wecom-workbench-drafts-v1`（DB version2，envelope schema1）。范围为内部 `[principal_id,kind,id,purpose]`，当前 `kind=ticket,purpose=internal-note`。公开元数据为该范围、首存／到期epoch、随机revision、IV；敏感 `{schema:1,note,pending}` JSON只存 AES-GCM-256 密文，pending为原T02闭合五字段命令或null。每记录非导出 encrypt/decrypt CryptoKey，96bit新随机IV／128bit tag，AAD绑定schema／scope／首存／到期／revision；不存Cookie、CSRF、OAuth、姓名、原始外部ID、角色或标题。不声称抵御同源XSS／profile访问、磁盘加密／硬件隔离或删除后零化。
+
+| 边界 | 合同与失败行为 |
+| --- | --- |
+| 固定期限 | 首次成功保存起86400000ms，不续期；活动页和初始化／读写清过期密文与key。浏览器关闭期间无法主动删除，但重新进入不恢复过期内容 |
+| 数量／大小 | 每origin最多20份敏感草稿、每份UTF-8载荷JSON最多16384bytes；备注仍最多2000 UTF-16字符。独立opaque未核对操作最多20个、每条最多512bytes；不静默淘汰或遗忘UNKNOWN |
+| 频率／交易 | 常规输入最多500ms开始一次保存，POST前强制原快照。原生crypto在短交易外，落盘再核对失效epoch和原revision；保存成功前继续导航／beforeunload保护 |
+| 重新验权 | 新bootstrap当前principal与真实GET Ticket读权／add-note后恢复；丢写权但可读仅保留原操作只读核对。网络／503不作为失权 |
+| 成功／清理 | 仅匹配原UUID和持久revision删除；较新副本不被旧成功删除。主动丢弃／24h只清敏感副本；退出／可信失权按主体或目标清理，跨标签无正文／凭据信号，迟到写入不得复活 |
+| 不可用／损坏 | IDB、WebCrypto、BroadcastChannel缺失，超限或损坏记录：保留当前输入、明确副本未保存，POST前失败阻止发送，无明文降级。坏UNKNOWN标识保留并失败关闭，不转成可提交新UUID |
+
+UNKNOWN持久化不可变原UUID／版本／正文后，刷新／误关可恢复；不自动发送。正文未过期时显式重放原POST；正文已清理时按原opaque UUID只读核对既有receipt。UNKNOWN或无终态不代表原操作失败，不能换UUID绕过；终态COMMITTED／FAILED才收口。核对旧操作保留后来输入，下一次用户明确提交使用新读取版本。已知HTTP成功但本地清理失败保持真实成功，禁止新提交，允许只读核对同UUID并重试清理。
+
+真实退出仅在 `logout_enabled=true` 时可用，沿既有同源／当前CSRF的 `POST /workbench/logout`；可信成功与结果未知分别呈现，两者都停止展示并尝试清本应用主体副本。只清前端缓存不能称为服务器已退出；合成实际员工session／TLS验证见执行记录。关闭 recovery 只停止恢复入口／新增receipt访问，不删已提交Ticket／事件／receipt；遗留密文按固定到期清理，显式退出仍清已知主体副本。源码回退使用独立forward／revert。
+
 ## 开发与关闭
 
 `npm --prefix web/admin-workbench run dev` 仅绑定 loopback 5194，代理 `/api` 至 loopback 5195；开发者须单独启动已有、获授权的开发 HTTP 服务。生产截图和接入验证不使用 Vite dev/preview。

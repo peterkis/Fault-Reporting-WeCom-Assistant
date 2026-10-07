@@ -8,7 +8,7 @@
 
 | METHOD + PATH | 输入 | 200 响应 |
 | --- | --- | --- |
-| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token`（Bearer 为 null）、`internal_beta:true,ai_enabled:false,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean`（三个宿主能力默认false） |
+| `GET /api/lifecycle/bootstrap` | 无 query | `principal_id,display_name,csrf_token`（Bearer 为 null）、`internal_beta:true,ai_enabled:false,roles[],polling_interval_ms:5000,source_group_directory_enabled:boolean,internal_notes_enabled:boolean,ticket_self_handling_enabled:boolean,draft_recovery_enabled:boolean,logout_enabled:boolean`；新增宿主能力默认false，退出仅在实际员工Cookie认证已初始化且有当前CSRF时可用 |
 | `GET /api/tickets` | `state` 默认 queued；`cursor?`；limit 默认 30、最大 100 | `{items:[TicketDetail],next_cursor}` |
 | `GET /api/tickets/{ticketId}` | UUID，无 query | TicketDetail；ETag 为 `"<version>"`；此路由未实现 If-None-Match/304 |
 | `GET /api/tickets/{ticketId}/events` | cursor?；limit 默认 30、最大 200 | `{items:[TicketEventProjection],next_cursor}` |
@@ -65,7 +65,7 @@ Notification：`notification_type,destination_type,delivery_id,status,side_effec
 
 ## 可靠内部备注（WBINT-T02）
 
-W `POST /api/tickets/{ticketId}/internal-notes` 复用现有 `add-note` facade／ledger／事务；新宿主选项 `workbenchInternalNotesEnabled:boolean=false` 与原生命周期开关共同限制入口。未启用返回 `503 P2_016_DISABLED`；关闭此选项不改变旧 `/notes` 兼容合同、已提交 Ticket／事件／receipt 或其他默认开关。无需数据库变更；不新增事实表、receipt GET、进程或连接池。
+W `POST /api/tickets/{ticketId}/internal-notes` 复用现有 `add-note` facade／ledger／事务；新宿主选项 `workbenchInternalNotesEnabled:boolean=false` 与原生命周期开关共同限制入口。未启用返回 `503 P2_016_DISABLED`；关闭此选项不改变旧 `/notes` 兼容合同、已提交 Ticket／事件／receipt 或其他默认开关。无需数据库变更、事实表、进程或连接池。T03 补齐下文专用只读核对入口。
 
 输入 Schema：[专用内部备注](../../../contracts/p2_016_internal_note_command.schema.json)；类型：[P2016InternalNoteCommand](../../../contracts/p2_016_contracts.d.ts)。闭合 JSON 必需五字段：UUID `client_command_id`、安全整数 `expected_version`（1..2147483647）、大写 code `reason_code`（1..64）、`note:string`（1..2000，trim 后必须非空，运行时按 UTF-16 长度约束）、`external_visible:false`。不得带目标、action、ticket_id 或额外字段。客户端只在首次提交前 trim，服务器不改原正文／hash。Cookie 写入沿公共 32 KiB、精确 Origin／CSRF、非 cross-site、Header/body UUID 与 If-Match 数字版本匹配规则。
 
@@ -77,7 +77,25 @@ W `POST /api/tickets/{ticketId}/internal-notes` 复用现有 `add-note` facade�
 
 正式 React [TicketNotes](../../../web/admin-workbench/src/features/ticket-notes/TicketNotes.tsx) 只在 `internal_notes_enabled=true` 时读取真实 `GET /api/tickets/{ticketId}`。界面显示服务器当前 `allowed_actions` 和数字 `version`；只有当前 `add-note` 许可才提供新写入，未建单事项不猜测能力。`idle／submitting／checking／succeeded／denied／conflict／unknown` 分别呈现；单表单只允许一个 in-flight。可信成功才清输入并使 context／detail／board 查询失效，重读失败不反转已提交结论。
 
-网络失败、发出后的 abort、200 正文／字段不可信、无法确认的 5xx 均保留不可变原 UUID＋原版本＋原 payload，锁定输入并显式“核对保存结果”重放同一 POST；不自动重试或生成新操作。409 保留输入并重读，用户再次明确提交才产生新意图。可信 401／403／404 即使正文不可解析仍触发授权清理；401 清整个会话，对象拒绝取消并清同对象 detail／command-context、刷新 board。组件卸载 abort 自有 POST，abort 不证明未提交。当前 close／move 控件在未知或提交中受限，beforeunload 提醒；草稿／原命令仅存当前组件内存，刷新／24h 恢复由 T03 交付。
+网络失败、发出后的 abort、200 正文／字段不可信、无法确认的 5xx 均保留不可变原 UUID＋原版本＋原 payload，锁定输入并显式“核对保存结果”重放同一 POST；不自动重试或生成新操作。409 保留输入并重读，用户再次明确提交才产生新意图。可信 401／403／404 即使正文不可解析仍触发授权清理；401 清整个会话，对象拒绝取消并清同对象 detail／command-context、刷新 board。组件卸载 abort 自有 POST，abort 不证明未提交。未启用恢复时草稿／原命令仍只存组件内存，close／move 和 beforeunload 保护保留；启用 T03 后，仅实际持久快照已保存才可安全离开。
+
+## 当前浏览器草稿与只读核对（WBINT-T03）
+
+宿主 `workbenchDraftRecoveryEnabled:boolean=false`；只有 notes 与 recovery 均启用，bootstrap 的 `draft_recovery_enabled` 才为 true。当前消费者是内部备注；通用 [存储](../../../web/admin-workbench/src/features/drafts/encrypted-drafts.ts) 以 `[principal_id,kind,id,purpose]` 隔离，后续表单须定义自身闭合载荷和权限恢复规则，不能直接借用内部备注授权。详见[前端合同](../../../web/admin-workbench/README.md#当前浏览器草稿恢复wbint-t03)和[执行记录](../../../plans/admin-workbench-integration/execution/t03.md)。
+
+W `GET /api/tickets/{ticketId}/internal-notes/commands/{commandId}`：两个 UUID、空 query、无 body、`no-store`；不需写动作、CSRF、If-Match 或 Idempotency-Key。原生命周期、notes、recovery 三开关均须启用；关闭返回 `503 P2_016_DISABLED`，不调用新增 receipt 查询。先核对当前 active principal 与 Ticket 可读权限，再在现有 ledger 的只读事务按 `P2_016:<principal>`、原 command UUID、Ticket 和服务器用途 `WORKBENCH_INTERNAL_NOTE` 查找。无数据库变更、第二 ledger、草稿服务或后台轮询。
+
+闭合输出 [Schema](../../../contracts/p2_016_internal_note_receipt.schema.json)／[P2016InternalNoteReceipt](../../../contracts/p2_016_contracts.d.ts) 必含 `client_command_id,ticket_id,state`：
+
+| state | 额外字段与含义 |
+| --- | --- |
+| UNKNOWN | 无 result/error；没有收据、STARTED、其他主体／Ticket／用途或旧兼容 notes UUID均不能推断未提交 |
+| COMMITTED | `result:{ok:true,ticket_id,ticket_version,ticket_event_id,control_event_id:null,replayed:true}`；只有安全结果引用，无正文、payload、hash或私有身份 |
+| FAILED | `error:{code,retryable:false}`；既有明确终态错误，不能把网络或查不到结果转换成此状态 |
+
+身份401／会话403与对象403／404沿可信授权清理；空query外字段400；服务／网络／畸形响应不收口 UNKNOWN。专用 POST 的 receipt 用途只由服务器设置，客户端额外字段拒绝；旧行和原 POST hash／重放语义保留。
+
+POST 前先将不可变原 UUID／版本／payload 成功持久化为密文；失败保留当前输入并阻止本次发送。24h或“丢弃草稿内容”清正文和 CryptoKey，保留最多20个独立 opaque 未核对操作标识；界面仍禁止新UUID，只能按原标识只读核对。COMMITTED／FAILED 才清匹配原标识，UNKNOWN继续保留；不提供普通“忘记”来绕过未知结果。核对旧操作不清后来输入的未提交内容，下一次发送仍须用户明确确认当前版本。已知 POST 成功而本地清理失败仍显示真实成功、禁止新提交并允许同UUID只读核对／重试清理；不降为 UNKNOWN。
 
 资源仍为单 App/API/SSE、复用 pool≤4／同机池预算≤8、SSE32、Worker／Gateway 单活及各 concurrency1；没有新增轮询。关闭方式为显式设 `workbenchInternalNotesEnabled=false` 后装配原宿主；源码回退采用单独 forward／revert，不删除事实。不涉及真实 Provider／OAuth／WeCom、部署、full／certify 或 Gate 推进。隔离 HTTP／生产 bundle 的新旧入口、失权、冲突和未知核对证据见[本票执行记录](../../../plans/admin-workbench-integration/execution/t02.md)。
 
