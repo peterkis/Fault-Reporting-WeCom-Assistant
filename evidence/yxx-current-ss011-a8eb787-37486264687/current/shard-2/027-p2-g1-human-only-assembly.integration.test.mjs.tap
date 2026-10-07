@@ -1,0 +1,59 @@
+TAP version 13
+# Subtest: P2-G1 P1 commit, durable projection recovery, duplicate idempotency, participant isolation and catalog invariance
+ok 1 - P2-G1 P1 commit, durable projection recovery, duplicate idempotency, participant isolation and catalog invariance
+  ---
+  duration_ms: 1114.101114
+  type: 'test'
+  ...
+# {"tickets":3,"duplicate_ticket_delta":0,"duplicate_item_delta":0,"participant_sessions":3,"first_versions":[1,1],"next_versions":[2,2],"p1_survived_projection_failure":true,"recovery_backlog":0,"catalog_unchanged":true}
+# Subtest: P2-G1 different Intake atomically ends the prior participant Session before opening the next
+ok 2 - P2-G1 different Intake atomically ends the prior participant Session before opening the next
+  ---
+  duration_ms: 901.863991
+  type: 'test'
+  ...
+# {"different_intake_sessions":2,"prior_ended":1,"active_sessions":1,"active_versions":[1,1],"projection_failures":0}
+# Subtest: P2-G1 fault paths serialize takeover, isolate internal note, deduplicate reply and recover delivery without blind resend
+ok 3 - P2-G1 fault paths serialize takeover, isolate internal note, deduplicate reply and recover delivery without blind resend
+  ---
+  duration_ms: 1041.694479
+  type: 'test'
+  ...
+# {"concurrent_takeover_winners":1,"internal_note":{"message":1,"outbox":0,"delivery":0},"duplicate_reply_parallel":12,"reply":{"messages":1,"outboxes":1,"deliveries":1},"gateway_unavailable_pending":true,"reconnect_provider_calls":1,"unknown_reconciliation":true,"ai_calls":0,"ocr_calls":0}
+# Subtest: P2-G1 local runtime binds one loopback App and reports human-only readiness with strict Test Auth
+ok 4 - P2-G1 local runtime binds one loopback App and reports human-only readiness with strict Test Auth
+  ---
+  duration_ms: 948.489103
+  type: 'test'
+  ...
+# {"app_processes":1,"loopback_http":true,"readiness":true,"gateway_required":false,"active_gateway_count":0,"projection_batch":20,"communication_batch":20,"communication_sender":"MOCK","sse_client_cap":32,"dynamic_realtime_authorization":true,"test_auth_http_only":true,"human_only":true}
+# Subtest: P2-G1 process cluster runs App, Worker and Gateway in three bounded Node processes
+ok 5 - P2-G1 process cluster runs App, Worker and Gateway in three bounded Node processes
+  ---
+  duration_ms: 1323.547237
+  type: 'test'
+  ...
+# {"process_count":3,"app_pool_max":4,"worker_pool_max":2,"gateway_pool_max":1,"combined_runtime":false,"raw_identifiers_recorded":false}
+# Subtest: P2-G1 isolated PostgreSQL Replay Gap drives real Edge through Last-Event-ID, 410 and refetch
+ok 6 - P2-G1 isolated PostgreSQL Replay Gap drives real Edge through Last-Event-ID, 410 and refetch
+  ---
+  duration_ms: 10670.27848
+  type: 'test'
+  ...
+# {"http_status":410,"last_event_id":true,"refetch":["LIST","DETAIL","TIMELINE"],"process_count":3,"isolated_database_cleanup":true}
+# Subtest: P2-G1 bounded capacity projects 1000 synthetic inbound facts and drains 500 deliveries with no catalog drift
+ok 7 - P2-G1 bounded capacity projects 1000 synthetic inbound facts and drains 500 deliveries with no catalog drift
+  ---
+  duration_ms: 30580.68804
+  type: 'test'
+  ...
+# {"synthetic_inbound":1000,"projected":1000,"delivery_backlog":500,"delivery_sent":500,"sender_calls":500,"projector_batch":20,"delivery_batch":20,"pool_max":4,"catalog_unchanged":true,"oom":0,"soak_24h":false}
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 46906.655128

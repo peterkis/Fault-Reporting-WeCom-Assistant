@@ -1,0 +1,25 @@
+TAP version 13
+# Subtest: SS-009 lost actual HTTP response recovers the same authorized command without a second intake
+ok 1 - SS-009 lost actual HTTP response recovers the same authorized command without a second intake
+  ---
+  duration_ms: 1117.625436
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-06 23:21:17","event_epoch_ms":"1791300077884","kind":"cleanup","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"http_listener","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# SS009_RECEIPT {"event_time":"2026-10-06 23:21:17","event_epoch_ms":"1791300077941","kind":"fault","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","http_response_lost":true,"same_command_recovered":true,"cross_member_denied":true,"batch_max":20}
+# Subtest: SS-009 locked HTTP supplements recheck logout write shutdown and request revocation
+ok 2 - SS-009 locked HTTP supplements recheck logout write shutdown and request revocation
+  ---
+  duration_ms: 1152.789875
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-06 23:21:19","event_epoch_ms":"1791300079094","kind":"cleanup","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"http_listener","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2615.712277

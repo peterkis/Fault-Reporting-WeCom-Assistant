@@ -1,0 +1,51 @@
+{
+  "path": "tests/p2-g2-recognition-boundaries.test.mjs",
+  "runtime_path": "tests/p2-g2-recognition-boundaries.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-recognition-boundaries.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "738157e2b9cb4a11f993fd5c77eb070749588e762d01f9f6c926494d832c0f0c",
+  "executed_sha256": "738157e2b9cb4a11f993fd5c77eb070749588e762d01f9f6c926494d832c0f0c",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "037-p2-g2-recognition-boundaries.test.mjs.tap",
+  "tap_sha256": "a5643b9062934baa774f34da0a0c7d9a878da7ce0edaeeec02a96fddea1f94ec",
+  "tap_bytes": 2759,
+  "stderr_path": "037-p2-g2-recognition-boundaries.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "037-p2-g2-recognition-boundaries.test.mjs.cases.jsonl",
+  "case_trace_sha256": "52567425aeceb52aed8b5984a3ff35104a46c016b21623fb2c6b4c4df20d9b72",
+  "case_trace_bytes": 3331,
+  "counts": {
+    "tests": 10,
+    "pass": 10,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-007-alias-resolver.mjs",
+    ".build/runtime/src/p2-007-clarification-planner.mjs",
+    ".build/runtime/src/p2-007-conflict-resolver.mjs",
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-007-fact-provenance.mjs",
+    ".build/runtime/src/p2-007-fault-taxonomy.mjs",
+    ".build/runtime/src/p2-007-rule-engine.mjs",
+    ".build/runtime/src/p2-007-service-catalog.mjs",
+    ".build/runtime/src/p2-015-decision-router.mjs",
+    ".build/runtime/src/p2-015-domain-contracts.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-g2-recognition-boundaries.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 10
+}

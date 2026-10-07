@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: complete artifact catalog binds all original files without a report hash cycle
+ok 1 - complete artifact catalog binds all original files without a report hash cycle
+  ---
+  duration_ms: 34.695617
+  type: 'test'
+  ...
+# Subtest: combined migration proof rejects incomplete SQL scope wrong markers and failed replay with matching hashes
+ok 2 - combined migration proof rejects incomplete SQL scope wrong markers and failed replay with matching hashes
+  ---
+  duration_ms: 64.837539
+  type: 'test'
+  ...
+# Subtest: current evidence artifact guard rejects changed runtime bytes and a missing build
+ok 3 - current evidence artifact guard rejects changed runtime bytes and a missing build
+  ---
+  duration_ms: 1128.068081
+  type: 'test'
+  ...
+# Subtest: scenario mapping requires unique executed cases and preserves execution line provenance and historical limits
+ok 4 - scenario mapping requires unique executed cases and preserves execution line provenance and historical limits
+  ---
+  duration_ms: 838.864188
+  type: 'test'
+  ...
+# Subtest: source accounting preserves semantic limits and rejects missing execution or manual review even with fresh hashes
+ok 5 - source accounting preserves semantic limits and rejects missing execution or manual review even with fresh hashes
+  ---
+  duration_ms: 759.943488
+  type: 'test'
+  ...
+# Subtest: specialized proof binds raw observations and screenshots to the archived runtime candidate
+ok 6 - specialized proof binds raw observations and screenshots to the archived runtime candidate
+  ---
+  duration_ms: 188.21233
+  type: 'test'
+  ...
+# Subtest: historical proof verifies originals and rejects rehashed wrong identity omitted checks and false successes
+ok 7 - historical proof verifies originals and rejects rehashed wrong identity omitted checks and false successes
+  ---
+  duration_ms: 29.016773
+  type: 'test'
+  ...
+# Subtest: review evidence requires distinct axes reviewers and exact candidate binding
+ok 8 - review evidence requires distinct axes reviewers and exact candidate binding
+  ---
+  duration_ms: 33.727944
+  type: 'test'
+  ...
+# Subtest: cleanup proof requires measured zero residuals and matching successful environment cleanup
+ok 9 - cleanup proof requires measured zero residuals and matching successful environment cleanup
+  ---
+  duration_ms: 13.530433
+  type: 'test'
+  ...
+# Subtest: execution proof binds executed bytes to the archived build and matching source input
+ok 10 - execution proof binds executed bytes to the archived build and matching source input
+  ---
+  duration_ms: 3.741935
+  type: 'test'
+  ...
+# Subtest: execution proof rejects a missing case even when the replacement trace hash matches
+ok 11 - execution proof rejects a missing case even when the replacement trace hash matches
+  ---
+  duration_ms: 3.189695
+  type: 'test'
+  ...
+# Subtest: execution proof rejects consistent hashes with failing counts omitted work or misbound cases
+ok 12 - execution proof rejects consistent hashes with failing counts omitted work or misbound cases
+  ---
+  duration_ms: 30.681422
+  type: 'test'
+  ...
+# Subtest: execution proof checks original TAP bytes instead of trusting PASS counts
+ok 13 - execution proof checks original TAP bytes instead of trusting PASS counts
+  ---
+  duration_ms: 2.819276
+  type: 'test'
+  ...
+# Subtest: strict current readiness rejects a PASS summary without the complete current execution set
+ok 14 - strict current readiness rejects a PASS summary without the complete current execution set
+  ---
+  duration_ms: 14980.314795
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18363.618608

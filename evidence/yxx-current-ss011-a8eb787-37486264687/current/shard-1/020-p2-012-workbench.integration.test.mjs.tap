@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: P2-012 actual HTTP inherits authentication, CSRF, command fence and durable realtime
+ok 1 - P2-012 actual HTTP inherits authentication, CSRF, command fence and durable realtime
+  ---
+  duration_ms: 1080.139206
+  type: 'test'
+  ...
+# Subtest: P2-012 actual HTTP preserves notification failure, rollback and durable replay before explicit recovery
+ok 2 - P2-012 actual HTTP preserves notification failure, rollback and durable replay before explicit recovery
+  ---
+  duration_ms: 1325.606544
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2806.320094

@@ -63,6 +63,7 @@ export async function closeBrowserTestResources(closers,primaryError=null){
 }
 
 export async function launchSystemBrowser({url,width,height,cookies=[],redirectPaths=[],signal,certificateSpki=null,socketFactory=address=>new WebSocket(address)}){
+  signal?.throwIfAborted();
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));
   selectBrowserTarget([],{url,redirectPaths});
   const executable=findSystemBrowser(),profile=await mkdtemp(join(tmpdir(),'p2-006-browser-'));
@@ -75,6 +76,8 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
   let socket=null,sequence=0,closePromise=null,launchError=null;
   child.on('error',()=>{launchError=new Error('P2_006_BROWSER_LAUNCH_FAILED');});
   const pending=new Map();
+  const ownedResourceState=()=>({processes:child.exitCode===null&&child.signalCode===null?1:0,profiles:existsSync(profile)?1:0,
+    commandTimers:pending.size,sockets:!socket||socket.readyState===WebSocket.CLOSED?0:1});
   const rejectPending=()=>{for(const request of pending.values()){
     clearTimeout(request.timer);request.reject(new Error('P2_006_BROWSER_DISCONNECTED'));
   }pending.clear();};
@@ -143,7 +146,8 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     socket.addEventListener('message',event=>{
       const message=JSON.parse(String(event.data));if(!message.id||!pending.has(message.id))return;
       const request=pending.get(message.id);pending.delete(message.id);clearTimeout(request.timer);
-      if(message.error)request.reject(new Error(message.error.message));else request.resolve(message.result);
+      if(message.error)request.reject(new Error(typeof message.error.message==='string'&&message.error.message.trim()
+        ?message.error.message.trim():'P2_006_BROWSER_COMMAND_FAILED'));else request.resolve(message.result);
     });
     await command('Runtime.enable');
     if(cookies.length){
@@ -153,7 +157,11 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
     await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<600});
     async function evaluate(expression,{awaitPromise=true}={}){
       const result=await command('Runtime.evaluate',{expression,awaitPromise,returnByValue:true});
-      if(result.exceptionDetails)throw new Error(result.exceptionDetails.text??'P2_006_BROWSER_EVALUATION_FAILED');
+      if(result.exceptionDetails){
+        const description=result.exceptionDetails.exception?.description,text=result.exceptionDetails.text;
+        throw new Error(typeof description==='string'&&description.trim()?description.trim()
+          :typeof text==='string'&&text.trim()?text.trim():'P2_006_BROWSER_EVALUATION_FAILED');
+      }
       return result.result.value;
     }
     const expectedDocument=new URL(url),documentPaths=new Set([expectedDocument.pathname,...redirectPaths]);
@@ -167,9 +175,14 @@ export async function launchSystemBrowser({url,width,height,cookies=[],redirectP
       for(const type of ['rawKeyDown','keyUp'])await command('Input.dispatchKeyEvent',{type,key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
     }
     return Object.freeze({executable,evaluate,pressTab,command,
-      ownedResourceState:()=>({processes:child.exitCode===null&&child.signalCode===null?1:0,profiles:existsSync(profile)?1:0,commandTimers:pending.size,sockets:socket?.readyState===WebSocket.CLOSED?0:1}),
+      ownedResourceState,
       setTimezone:timezoneId=>command('Emulation.setTimezoneOverride',{timezoneId}),
       screenshot:async()=>(await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})).data,
       waitFor:(expression,options)=>waitFor(()=>evaluate(expression),options),close});
-  }catch(error){await closeBrowserTestResources([close],error);}
+  }catch(error){
+    try{await closeBrowserTestResources([close],error);}catch(failure){
+      if(failure instanceof Error)Object.assign(failure,{browser_executable:executable,browser_owned_resource_state:ownedResourceState()});
+      throw failure;
+    }
+  }
 }

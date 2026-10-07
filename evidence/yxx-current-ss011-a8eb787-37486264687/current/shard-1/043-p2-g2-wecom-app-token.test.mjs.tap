@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: 应用令牌按应用缓存，并发合并，按 expires_in 提前刷新且不泄露 secret
+ok 1 - 应用令牌按应用缓存，并发合并，按 expires_in 提前刷新且不泄露 secret
+  ---
+  duration_ms: 24.697539
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 138.096265

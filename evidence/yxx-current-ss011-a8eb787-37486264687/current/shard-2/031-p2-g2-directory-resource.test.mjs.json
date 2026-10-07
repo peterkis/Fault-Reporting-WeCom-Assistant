@@ -1,0 +1,47 @@
+{
+  "path": "tests/p2-g2-directory-resource.test.mjs",
+  "runtime_path": "tests/p2-g2-directory-resource.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-g2-directory-resource.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "ae81c9a6df04c62d04ba581db059c1c1bb8ebf16e74d16f822abed6ce33d9f32",
+  "executed_sha256": "ae81c9a6df04c62d04ba581db059c1c1bb8ebf16e74d16f822abed6ce33d9f32",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "031-p2-g2-directory-resource.test.mjs.tap",
+  "tap_sha256": "f4406c76422a91b63ff45a02afb791b80f6ec5255a9134dd80f43f2044837fda",
+  "tap_bytes": 563,
+  "stderr_path": "031-p2-g2-directory-resource.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "031-p2-g2-directory-resource.test.mjs.cases.jsonl",
+  "case_trace_sha256": "f3e66ed318c402ef24ffd48195548e27d808f7ced7ed291ad9c28306deb5c2f4",
+  "case_trace_bytes": 615,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-007-staff-directory-contracts.mjs",
+    ".build/runtime/src/p2-015-contact-journey.mjs",
+    ".build/runtime/src/p2-015-domain-contracts.mjs",
+    ".build/runtime/src/p2-015-reporter-profile.mjs",
+    ".build/runtime/src/p2-015-wecom-member-directory.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/p2-g2-directory-resource.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

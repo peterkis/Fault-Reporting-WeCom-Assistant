@@ -1,0 +1,1 @@
+{"event_time":"2026-10-06 23:22:19","event_epoch_ms":"1791300139692","time_basis":"REPORTER_OBSERVED_AT","event":"test:pass","name":"V1.3 compatibility command delegates to active V1.4 validation","file":"tests/v1-3-architecture-baseline.test.mjs","line":5,"nesting":0,"skip":false,"todo":false}

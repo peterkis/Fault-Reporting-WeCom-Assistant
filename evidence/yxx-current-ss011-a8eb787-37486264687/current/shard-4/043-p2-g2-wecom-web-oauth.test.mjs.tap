@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: 网页授权使用固定回调、snsapi_base 和浏览器绑定 state，成员身份仅保留在服务端
+ok 1 - 网页授权使用固定回调、snsapi_base 和浏览器绑定 state，成员身份仅保留在服务端
+  ---
+  duration_ms: 4.3773
+  type: 'test'
+  ...
+# Subtest: code 只发送给固定 getuserinfo 接口，响应只返回成员 userid
+ok 2 - code 只发送给固定 getuserinfo 接口，响应只返回成员 userid
+  ---
+  duration_ms: 24.688675
+  type: 'test'
+  ...
+# Subtest: 跨浏览器与伪造 state 拒绝；成功后 state 和 code 都不能重放
+ok 3 - 跨浏览器与伪造 state 拒绝；成功后 state 和 code 都不能重放
+  ---
+  duration_ms: 1.827622
+  type: 'test'
+  ...
+# Subtest: 过期 state、过期或已退出会话拒绝，重启丢失会话
+ok 4 - 过期 state、过期或已退出会话拒绝，重启丢失会话
+  ---
+  duration_ms: 1.943309
+  type: 'test'
+  ...
+# Subtest: 提供商失败也消耗 state/code，原始错误不外露
+ok 5 - 提供商失败也消耗 state/code，原始错误不外露
+  ---
+  duration_ms: 1.016148
+  type: 'test'
+  ...
+# Subtest: 外部用户、互联企业身份、供应商错误、超大和非 JSON 响应均关闭访问
+ok 6 - 外部用户、互联企业身份、供应商错误、超大和非 JSON 响应均关闭访问
+  ---
+  duration_ms: 1.76251
+  type: 'test'
+  ...
+# Subtest: 关闭态无需凭据，不构造身份端口
+ok 7 - 关闭态无需凭据，不构造身份端口
+  ---
+  duration_ms: 0.319791
+  type: 'test'
+  ...
+# Subtest: 认证资源有界且不并行调用身份提供商
+ok 8 - 认证资源有界且不并行调用身份提供商
+  ---
+  duration_ms: 216.279862
+  type: 'test'
+  ...
+# Subtest: 令牌提供商挂起时仍在五秒内结束认证请求
+ok 9 - 令牌提供商挂起时仍在五秒内结束认证请求
+  ---
+  duration_ms: 4999.26384
+  type: 'test'
+  ...
+# Subtest: 关闭撤销已有会话，晚到的提供商响应不能重新建立会话
+ok 10 - 关闭撤销已有会话，晚到的提供商响应不能重新建立会话
+  ---
+  duration_ms: 0.994307
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5376.698815

@@ -2,7 +2,7 @@ import {tmpdir} from 'node:os';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
+import {mkdirSync,mkdtempSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
 import path from 'node:path';
 import {createServer} from 'node:net';
 import {withSS009Database,closeSS009Resources} from './helpers/yxx-ss-009-resources.mjs';
@@ -16,6 +16,56 @@ import {createYxxProfile} from '../src/p2-g2-yixiaoxiu-profile.mjs';
 import {createWeComWebOAuth} from '../src/p2-g2-wecom-web-oauth.mjs';
 import {createP2016CommandLedger} from '../src/p2-016-ticket-command-ledger.mjs';
 import {createYxxSelfServiceOrchestrator} from '../src/yxx-self-service-orchestrator.mjs';
+
+test('SS011 single Reporter HTTP flow preserves staff scope replay quotas logout and stop',{timeout:90000},async t=>{
+  await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss010',run:async context=>{
+    const setup=await runtimeFixture({...context,reporterAliases:['A']}),directory=mkdtempSync(path.join(tmpdir(),'ss011-single-'));
+    setup.manifest.limits={max_new_intakes:1,max_supplements:2,max_new_tickets:1,per_member_intakes:1,per_member_supplements:2};
+    let runtime;
+    try{
+      await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[setup.manifest.principal_ids[1]]);
+      await assert.rejects(startLimitedRuntime({...setup,stateDirectory:path.join(directory,'inactive-staff'),synthetic:true}),{code:'SS010_STAFF_SCOPE'});
+      await context.pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=true WHERE id=$1::uuid',[setup.manifest.principal_ids[1]]);
+      runtime=await startLimitedRuntime({...setup,stateDirectory:path.join(directory,'active'),synthetic:true});
+      context.observeResource('ss011_roles',()=>[...runtime.children.values()].filter(child=>child.exitCode===null&&child.signalCode===null).length);
+      const server={address:()=>({port:runtime.port})},a=scopedBrowser(server,setup.manifest.public_origin),b=scopedBrowser(server,setup.manifest.public_origin);
+      await login(a);await login(b,'b');
+      assert.equal((await b.request('/api/yixiaoxiu/bootstrap')).status,403);
+      const csrf=(await a.request('/api/yixiaoxiu/bootstrap')).json().csrf_token,body=input('处方提交不了');
+      const first=await a.request('/api/yixiaoxiu/requests',post(body,csrf));assert.equal(first.status,202,first.text);
+      const ref=first.json().receipt.request_ref;
+      const replay=await a.request('/api/yixiaoxiu/requests',post(body,csrf));assert.equal(replay.status,200,replay.text);assert.equal(replay.json().receipt.request_ref,ref);
+      assert.equal((await b.request('/api/yixiaoxiu/requests/'+ref)).status,403);
+      assert.equal((await b.request('/api/yixiaoxiu/requests',post(input('合成非白名单尝试'),csrf))).status,403);
+      await eventually(async()=>(await a.request('/api/yixiaoxiu/requests/'+ref)).json().ticket);
+      const add={schema_version:1,client_command_id:randomUUID(),expected_input_revision:'1',text:'合成补充说明'};
+      assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref+'/supplements',post(add,csrf))).status,202);
+      assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref+'/supplements',post(add,csrf))).status,200);
+      assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref+'/supplements',post({...add,client_command_id:randomUUID(),expected_input_revision:'2'},csrf))).status,202);
+      const over=await a.request('/api/yixiaoxiu/requests/'+ref+'/supplements',post({...add,client_command_id:randomUUID(),expected_input_revision:'3'},csrf));
+      assert.equal(over.status,429,over.text);
+      const overIntake=await a.request('/api/yixiaoxiu/requests',post(input('合成额外报修'),csrf));assert.equal(overIntake.status,429,overIntake.text);
+      await eventually(async()=>(await a.request('/api/yixiaoxiu/requests/'+ref)).json().processed_revision==='3');
+      const ticket=(await context.pool.query('SELECT pilot_ticket_id::text AS id FROM intake.service_intake')).rows[0].id;
+      assert.equal(runtime.cookies.length,2);assert.deepEqual([...runtime.children.keys()],['APP','WORKER']);
+      const staff=scopedBrowser(server,'http://127.0.0.1:'+runtime.port,runtime.cookies[0]);
+      assert.equal((await scopedBrowser(server,'http://127.0.0.1:'+runtime.port,runtime.cookies[1]).request('/api/lifecycle/bootstrap')).status,200);
+      const staffCsrf=(await staff.request('/api/lifecycle/bootstrap')).json().csrf_token;
+      for(const action of ['queue','accept','start','resolve','confirm']){
+        const detail=(await staff.request('/api/tickets/'+ticket)).json();if(action==='queue'&&detail.status==='QUEUED')continue;
+        const result=await staff.request('/api/tickets/'+ticket+'/'+action,post({client_command_id:randomUUID(),expected_version:detail.version,reason_code:'SS011_SYNTHETIC_'+action.toUpperCase()},staffCsrf));
+        assert.equal(result.status,200,action+': '+result.text);
+      }
+      assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref)).json().ticket.status,'CLOSED');
+      assert.equal((await a.request('/wecom/yixiaoxiu/logout',{method:'POST',body:{},headers:{'content-type':'application/json'}})).status,200);
+      assert.equal((await a.request('/api/yixiaoxiu/requests/'+ref)).status,401);
+      assert.equal((await a.request('/api/yixiaoxiu/requests',post(body,csrf))).status,401);
+      writeFileSync(path.join(directory,'active','stop.request'),'synthetic single Reporter stop');
+      await eventually(()=>runtime.status().status==='STOPPED');assert.equal(runtime.status().cleanup_passed,true);
+      assert.deepEqual(JSON.parse(readFileSync(runtime.stateFile)).counts,{intakes:1,supplements:2,tickets:1});
+    }finally{await runtime?.stop();rmSync(directory,{recursive:true,force:true});}
+  }});
+});
 
 test('SS010 AC092 limited App Worker HTTP lifecycle rejects cross-member access and preserves restart budgets',{timeout:180000},async t=>{
   await withSS009Database({testContext:t,databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'ss010',run:async context=>{

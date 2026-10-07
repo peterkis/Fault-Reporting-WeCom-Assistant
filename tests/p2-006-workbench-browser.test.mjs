@@ -5,7 +5,7 @@ import { test } from 'node:test';
 
 import { closeConversationWorkbenchServer, createConversationWorkbenchHttpServer } from '../src/p2-006-workbench-http.mjs';
 import { formatEpochMsToShanghaiLocal } from '../src/platform/time-contract.mjs';
-import { launchSystemBrowser } from './helpers/p2-006-browser-harness.mjs';
+import { launchSystemBrowser, closeBrowserTestResources } from './helpers/p2-006-browser-harness.mjs';
 
 const SESSION_ID = '018f0000-0000-7000-8000-000000000006';
 const OTHER_ID = '018f0000-0000-7000-8000-000000000007';
@@ -60,7 +60,7 @@ function fixture() {
   return { queryService, commandFacade, calls, markRefresh:()=>{refreshed=true;} };
 }
 
-async function withBrowser(width, height, run, { controlledRealtime=false }={}) {
+async function withBrowser(width, height, run, { controlledRealtime=false, testContext }={}) {
   const port = await reservePort();
   const origin = `http://127.0.0.1:${port}`;
   const values = fixture();
@@ -71,26 +71,52 @@ async function withBrowser(width, height, run, { controlledRealtime=false }={}) 
     sseHandler: async (_request, response) => { response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', 'x-accel-buffering': 'no' });if(controlledRealtime){refreshResponse=response;response.flushHeaders();resolveSse();}else response.end('data: {}\n\n'); },
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });
-  let browser;
+  let browser,primaryError,chromeVersion;
   try {
-    browser = await launchSystemBrowser({ url: `${origin}/workbench`, width, height });
-    await browser.waitFor("document.readyState === 'complete' && document.querySelectorAll('[data-session-id]').length === 2");
+    browser = await launchSystemBrowser({ url: `${origin}/workbench`, width, height })
+      .catch(cause=>{throw new Error('P2_006_TEST_BROWSER_START_FAILED',{cause});});
+    chromeVersion=(await browser.command('Browser.getVersion')).product;
+    await browser.waitFor("document.readyState === 'complete' && document.querySelectorAll('[data-session-id]').length === 2")
+      .catch(cause=>{throw new Error('P2_006_TEST_INITIAL_LIST_NOT_READY',{cause});});
     if(controlledRealtime){let timer;try{await Promise.race([sseReady,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('P2_006_TEST_SSE_NOT_READY')),5000);})]);}finally{clearTimeout(timer);}}
-    return await run({ browser, calls: values.calls, origin,refresh:()=>{values.markRefresh();refreshResponse.write('data: {}\n\n');} });
-  } finally {
-    if (browser) await browser.close();
-    server.closeAllConnections?.();
-    await closeConversationWorkbenchServer(server);
+    return await run({ browser, calls: values.calls, origin,refresh:async()=>{
+      if(!refreshResponse||refreshResponse.destroyed||refreshResponse.writableEnded)throw new Error('P2_006_TEST_SSE_NOT_WRITABLE');
+      values.markRefresh();
+      await new Promise((resolve,reject)=>{
+        let settled=false;
+        const finish=error=>{
+          if(settled)return;settled=true;refreshResponse.off('close',closed);
+          if(error)reject(new Error('P2_006_TEST_SSE_WRITE_FAILED',{cause:error}));
+          else{refreshResponse.off('error',failed);resolve();}
+        };
+        const failed=error=>finish(error),closed=()=>finish(new Error('P2_006_TEST_SSE_NOT_WRITABLE'));
+        refreshResponse.once('error',failed);refreshResponse.once('close',closed);
+        try{refreshResponse.write('data: {}\n\n',finish);}catch(error){finish(error);}
+      });
+    } });
+  } catch(error) { primaryError=error; } finally {
+    try{
+      await closeBrowserTestResources([()=>browser?.close(),()=>{
+        const closing=closeConversationWorkbenchServer(server);server.closeAllConnections?.();return closing;
+      }],primaryError);
+    }finally{
+      testContext?.diagnostic(JSON.stringify({kind:'P2_006_WORKBENCH_BROWSER_RESOURCES',browser_executable:browser?.executable??primaryError?.cause?.browser_executable??null,
+        chrome_version:chromeVersion??null,browser_owned_resource_state:browser?.ownedResourceState()??primaryError?.cause?.browser_owned_resource_state??null,
+        server_listening:server.listening,phase_error:primaryError?.message??null,cdp_exception_description:primaryError?.cause?.message??null,
+        runner_image:process.env.ImageOS??null,runner_image_version:process.env.ImageVersion??null,runner_region:process.env.RUNNER_REGION??null}));
+    }
   }
 }
 
-test('system browser fixture retains immutable timeline item identity across realtime refresh',{timeout:90000},async()=>{
+test('system browser fixture retains immutable timeline item identity across realtime refresh',{timeout:90000},async(t)=>{
   await withBrowser(390,844,async({browser,refresh})=>{
     await browser.evaluate(`document.querySelector('[data-session-id="${SESSION_ID}"]').click()`);
-    await browser.waitFor("document.querySelectorAll('#timeline .timeline-item').length===2");
-    refresh();await browser.waitFor("document.querySelector('#timeline').textContent.includes('REFRESH_COMPLETE')");
+    await browser.waitFor("document.querySelectorAll('#timeline .timeline-item').length===2")
+      .catch(cause=>{throw new Error('P2_006_TEST_INITIAL_TIMELINE_NOT_READY',{cause});});
+    await refresh();await browser.waitFor("document.querySelector('#timeline').textContent.includes('REFRESH_COMPLETE')")
+      .catch(cause=>{throw new Error('P2_006_TEST_REFRESH_NOT_OBSERVED',{cause});});
     assert.equal(await browser.evaluate("document.querySelectorAll('#timeline .timeline-item').length"),2);
-  },{controlledRealtime:true});
+  },{controlledRealtime:true,testContext:t});
 });
 
 for (const viewport of [{ label: 'desktop', width: 1440, height: 900 }, { label: 'mobile', width: 390, height: 844 }]) {
@@ -118,12 +144,12 @@ for (const viewport of [{ label: 'desktop', width: 1440, height: 900 }, { label:
       await browser.evaluate(`document.activeElement?.blur()`); await browser.pressTab();
       const focus = await browser.evaluate(`({outline:getComputedStyle(document.activeElement).outlineStyle,width:getComputedStyle(document.activeElement).outlineWidth,tag:document.activeElement.tagName})`);
       assert.notEqual(focus.outline, 'none'); assert.notEqual(focus.width, '0px');
-      await browser.evaluate('location.reload()');
+      await browser.command('Page.reload');
       await browser.waitFor(`document.readyState === 'complete' && document.querySelector('[data-session-id="${SESSION_ID}"]')`);
       const refreshed = await browser.evaluate(`({selected:sessionStorage.getItem('p2_workbench_session')==='${SESSION_ID}',xss:window.__p2_006_xss===1,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth})`);
       assert.deepEqual(refreshed, { selected: true, xss: false, overflow: false });
       assert.equal(calls.takeover, 1); assert.equal(calls.transfer, 1); assert.equal(calls.reply, 1); assert.equal(calls.note, 1); assert.ok(calls.list >= 4);
       t.diagnostic(JSON.stringify({ browser: browser.executable, viewport, interactions: { select: 1, takeover: calls.takeover, transfer: calls.transfer, reply: calls.reply, internal_note: calls.note, sse_update: true, polling_fallback: true, filter: true, refresh_restore: true }, keyboard_focus_visible: true, security_headers: true, xss_executed: false, horizontal_overflow: false }));
-    });
+    },{testContext:t});
   });
 }

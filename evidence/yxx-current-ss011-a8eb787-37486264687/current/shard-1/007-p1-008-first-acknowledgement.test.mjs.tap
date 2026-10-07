@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: first acknowledgement is sent only after commit and a reconnect replay does not create or send twice
+ok 1 - first acknowledgement is sent only after commit and a reconnect replay does not create or send twice
+  ---
+  duration_ms: 74.498018
+  type: 'test'
+  ...
+# Subtest: temporary delivery failure preserves a real Ticket for retry, while a non-report never fabricates a Ticket number
+ok 2 - temporary delivery failure preserves a real Ticket for retry, while a non-report never fabricates a Ticket number
+  ---
+  duration_ms: 41.216203
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 283.563681

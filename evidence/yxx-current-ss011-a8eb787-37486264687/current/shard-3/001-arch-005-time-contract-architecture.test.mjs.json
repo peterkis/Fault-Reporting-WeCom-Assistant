@@ -1,0 +1,49 @@
+{
+  "path": "tests/arch-005-time-contract-architecture.test.mjs",
+  "runtime_path": "tests/arch-005-time-contract-architecture.test.mjs",
+  "executed_path": "tests/arch-005-time-contract-architecture.test.mjs",
+  "execution_cwd": ".",
+  "source_sha256": "3835a42bb97e9fe7c1b85c398c466ae32f0fbf8fffd0fba2ae76d0d2db19b7bd",
+  "executed_sha256": "3835a42bb97e9fe7c1b85c398c466ae32f0fbf8fffd0fba2ae76d0d2db19b7bd",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "SOURCE_HOST",
+  "node_flags": [
+    "--import",
+    "file:///home/runner/work/Fault-Reporting-WeCom-Assistant/Fault-Reporting-WeCom-Assistant/.build/tools/source-hook.mjs",
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "001-arch-005-time-contract-architecture.test.mjs.tap",
+  "tap_sha256": "484113398d23845fcda2c8eed20dd6ab72fb37197543b59a3261338294f95d28",
+  "tap_bytes": 601,
+  "stderr_path": "001-arch-005-time-contract-architecture.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "001-arch-005-time-contract-architecture.test.mjs.cases.jsonl",
+  "case_trace_sha256": "c2ce752605c204f0f71000e044b0e2e41210a5957338b4c87c7c6f3a362e5249",
+  "case_trace_bytes": 656,
+  "counts": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/tools/bootstrap.mjs",
+    ".build/tools/common.mjs",
+    ".build/tools/source-hook.mjs",
+    ".build/tools/source-host.mjs",
+    ".build/tools/verify-artifact.mjs",
+    "node_modules/typescript/lib/typescript.js",
+    "scripts/validate-arch-005-time-contract.mjs",
+    "tests/arch-005-time-contract-architecture.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 2
+}

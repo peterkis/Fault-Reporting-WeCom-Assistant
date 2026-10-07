@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: member directory preserves visible primary membership and missing contact permissions
+ok 1 - member directory preserves visible primary membership and missing contact permissions
+  ---
+  duration_ms: 11.091036
+  type: 'test'
+  ...
+# Subtest: member directory refuses disabled, unconfirmed identifiers, foreign bot, and mismatched identity
+ok 2 - member directory refuses disabled, unconfirmed identifiers, foreign bot, and mismatched identity
+  ---
+  duration_ms: 1.029592
+  type: 'test'
+  ...
+# Subtest: member directory bounds memberships and returns supplied contact fields without inventing location
+ok 3 - member directory bounds memberships and returns supplied contact fields without inventing location
+  ---
+  duration_ms: 1.734976
+  type: 'test'
+  ...
+# Subtest: G2 directory configuration requires explicit internal ID confirmation and keeps missing credential optional
+ok 4 - G2 directory configuration requires explicit internal ID confirmation and keeps missing credential optional
+  ---
+  duration_ms: 3.551145
+  type: 'test'
+  ...
+# Subtest: G2 directory HTTP scope permits only GET for approved members and department lookup
+ok 5 - G2 directory HTTP scope permits only GET for approved members and department lookup
+  ---
+  duration_ms: 2.422156
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 233.041991

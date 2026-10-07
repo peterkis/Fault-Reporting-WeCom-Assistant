@@ -1,0 +1,24 @@
+TAP version 13
+# Subtest: P2-G2 frozen gold through normal ingress: P2-007-C001
+ok 1 - P2-G2 frozen gold through normal ingress: P2-007-C001
+  ---
+  duration_ms: 1098.317994
+  type: 'test'
+  ...
+# {"case_id":"P2-007-C001","source_domain_intent":"INCIDENT_REPORT","frozen_result_code":"SERVICE_REQUEST","frozen_ticket_expected":true,"observed":{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","request_type":"INCIDENT","intake_status":"TICKET_CREATED","tickets":1,"reviews":0,"executed_actions":1},"provider_calls":0,"test_type":"REAL_POSTGRES_NORMAL_FRAME_INGRESS"}
+# Subtest: P2-G2 frozen gold through normal ingress: P2-007-C007
+ok 2 - P2-G2 frozen gold through normal ingress: P2-007-C007
+  ---
+  duration_ms: 939.58786
+  type: 'test'
+  ...
+# {"case_id":"P2-007-C007","source_domain_intent":"INCIDENT_REPORT","frozen_result_code":"TICKET_ELIGIBLE","frozen_ticket_expected":true,"observed":{"result_code":"TICKET_ELIGIBLE","reason_code":"EXPLICIT_TECHNICAL_FAULT","request_type":"INCIDENT","intake_status":"TICKET_CREATED","tickets":1,"reviews":0,"executed_actions":2},"provider_calls":0,"test_type":"REAL_POSTGRES_NORMAL_FRAME_INGRESS"}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2442.785463

@@ -1,0 +1,52 @@
+{
+  "path": "tests/p2-007-third-party-staff-directory.test.mjs",
+  "runtime_path": "tests/p2-007-third-party-staff-directory.test.mjs",
+  "executed_path": ".build/runtime/tests/p2-007-third-party-staff-directory.test.mjs",
+  "execution_cwd": ".build/runtime",
+  "source_sha256": "5c0cf8203406d4d93dca97583a4c37079d3149905a703d3f1c8993f1e842cf8b",
+  "executed_sha256": "5c0cf8203406d4d93dca97583a4c37079d3149905a703d3f1c8993f1e842cf8b",
+  "case_line_basis": "EXECUTED_FILE",
+  "mode": "STAGED_RUNTIME",
+  "node_flags": [
+    "--test-concurrency=1"
+  ],
+  "status": "PASS",
+  "timeout_ms": 240000,
+  "exit_code": 0,
+  "signal": null,
+  "tap_path": "015-p2-007-third-party-staff-directory.test.mjs.tap",
+  "tap_sha256": "510512d5721eb15741b383b1b764ca73d9716333fbbdde5a23816b3500dfd7a6",
+  "tap_bytes": 6563,
+  "stderr_path": "015-p2-007-third-party-staff-directory.test.mjs.stderr",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "screenshot_artifacts": [],
+  "case_trace_path": "015-p2-007-third-party-staff-directory.test.mjs.cases.jsonl",
+  "case_trace_sha256": "1d20b92fe54965e6058ca08828d71ac2c489cae198b337a83c241c87faba813b",
+  "case_trace_bytes": 9453,
+  "counts": {
+    "tests": 30,
+    "pass": 30,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "loaded_project_files": [
+    ".build/runtime/src/p2-007-domain-utils.mjs",
+    ".build/runtime/src/p2-007-staff-directory-contracts.mjs",
+    ".build/runtime/src/p2-007-staff-directory-store.mjs",
+    ".build/runtime/src/p2-007-staff-directory-sync.mjs",
+    ".build/runtime/src/p2-007-third-party-reporter-directory.mjs",
+    ".build/runtime/src/p2-007-third-party-staff-directory-adapter.mjs",
+    ".build/runtime/src/p2-007-third-party-staff-directory.mjs",
+    ".build/runtime/src/p2-015-contact-journey.mjs",
+    ".build/runtime/src/p2-015-domain-contracts.mjs",
+    ".build/runtime/src/p2-015-reporter-profile.mjs",
+    ".build/runtime/src/platform/time-contract.mjs",
+    ".build/runtime/tests/helpers/p2-007-directory-fixture.mjs",
+    ".build/runtime/tests/p2-007-third-party-staff-directory.test.mjs"
+  ],
+  "observed_subprocess_entries": [],
+  "case_count": 30
+}

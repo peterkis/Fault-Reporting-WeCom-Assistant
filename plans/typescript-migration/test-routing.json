@@ -319,7 +319,10 @@
       "tests/yxx-ss-008-assembly.integration.test.mjs",
       "tests/yxx-ss-006-supplements-review.integration.test.mjs",
       "tests/p2-g2-process-assembly.integration.test.mjs",
-      "tests/p2-g2-send-guard.integration.test.mjs"
+      "tests/p2-g2-send-guard.integration.test.mjs",
+      "tests/yxx-ss-010-contract.test.mjs",
+      "tests/yxx-ss-010-runtime.integration.test.mjs",
+      "tests/yxx-ss-010-browser.integration.test.mjs"
     ],
     "v3-p08": ["tests/p2-g2-send-budget.test.mjs", "tests/p2-g2-send-guard.integration.test.mjs", "tests/p2-g2-candidate-scope.integration.test.mjs", "tests/p2-g2-process-assembly.integration.test.mjs", "tests/yxx-ss-010-contract.test.mjs", "tests/yxx-ss-010-runtime.integration.test.mjs", "tests/p2-g2-approval-binding.test.mjs", "tests/yxx-current-readiness-cli.test.mts", "tests/p2-g2-yixiaoxiu-profile.integration.test.mjs", "tests/p2-g2-yixiaoxiu-readiness.test.mjs"],
     "v3-p07": ["tests/p2-g2-wecom-web-oauth.test.mjs", "tests/p2-g2-yixiaoxiu-delegated-identity.test.mjs", "tests/yxx-ss-004-orchestration.integration.test.mjs", "tests/yxx-ss-005-member-queries.integration.test.mjs", "tests/yxx-ss-006-supplements-review.integration.test.mjs", "tests/yxx-ss-007-native-http-errors.test.mjs", "tests/yxx-ss-008-assembly.integration.test.mjs", "tests/p2-g2-yixiaoxiu-oauth.test.mjs"],

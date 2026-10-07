@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: current readiness selects append-only reports and rejects invalid pointers without historical fallback
+ok 1 - current readiness selects append-only reports and rejects invalid pointers without historical fallback
+  ---
+  duration_ms: 5.544423
+  type: 'test'
+  ...
+# Subtest: compiled predecessor uses the source checkout by default and preserves successor refusal
+ok 2 - compiled predecessor uses the source checkout by default and preserves successor refusal
+  ---
+  duration_ms: 4.637309
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 161.508772

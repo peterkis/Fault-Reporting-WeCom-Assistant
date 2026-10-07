@@ -1,6 +1,12 @@
 # TypeScript 增量迁移执行入口
 
-ACTIVE_SELECTION: v3-d01
+ACTIVE_SELECTION: v3-p09
+
+## SS011 单名获批 Reporter 兼容（2026-10-06）
+
+从 PR #53 的真实 merge `9b2861fa4b2efbea117d4f4124fbd239835c099e` 接续 [ADR-0028](../../adr/0028_single_approved_reporter_limited_write.md)。本轮复用 `v3-p09`，保留原四个业务入口并加入现有 SS010 合同、运行 HTTP 和浏览器三个入口；host、flags、资源要求及 workflow 保持。原 D01、R01 和下文迁移批次为历史交付记录，不重新执行。
+
+普通 PR 执行 strict types、一次最终构建、上述 selection、直接相关工具回归、制品及自有资源关闭；不重复本地与远端完整回归。Reporter 仅允许 A 或 A/B，两个不同的有效内部 principal、配置/候选/批准绑定和发送/父 Gate 禁止保持。新源码未获新候选技术认证，PR #53 的 READY 不覆盖本轮；提交单成员 PR 后停止，真实运行须另有有效认证与批准，无数据库变更或现场权限扩大。
 
 ## D01 原目标补齐（2026-10-05）
 

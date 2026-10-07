@@ -1,0 +1,20 @@
+{
+  "name": "validator-validate-arch-005-time-contract",
+  "command": [
+    "node",
+    "scripts/validate-arch-005-time-contract.mjs"
+  ],
+  "exit_code": 0,
+  "signal": null,
+  "error_code": null,
+  "stdout": {
+    "path": "validator-validate-arch-005-time-contract.stdout",
+    "bytes": 302,
+    "sha256": "8a0bc90d5771e6f715c91ca4fda95d739d768a0bf495114493e478a2b009e0c1"
+  },
+  "stderr": {
+    "path": "validator-validate-arch-005-time-contract.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

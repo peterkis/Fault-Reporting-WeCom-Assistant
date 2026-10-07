@@ -1,18 +1,18 @@
 {
   "schema_version": 2,
   "report": {
-    "path": "evidence/yxx-current-r01-fb93999-20261006/report.json",
-    "bytes": 3382,
-    "sha256": "0afb7bb857dd43334e04c362435c977dc703999328c46797d7250972eaac1615"
+    "path": "evidence/yxx-current-ss011-a8eb787-37486264687/report.json",
+    "bytes": 3451,
+    "sha256": "f3282dceeda4d8f494927d498c05ad64a4813fc96142dc5a9eae4f328e122110"
   },
   "artifact_catalog": {
-    "path": "evidence/yxx-current-r01-fb93999-20261006/artifact-catalog.json",
-    "bytes": 254865,
-    "sha256": "29199df8bfddd1adf05f83aac7e204b7d830c28171a8ea481379c78d23e9c488"
+    "path": "evidence/yxx-current-ss011-a8eb787-37486264687/artifact-catalog.json",
+    "bytes": 259654,
+    "sha256": "a05af7bdbf44b4c2676047522ccecd4a6fa2b9272fac53499d88c2f70ed61548"
   },
   "artifact_catalog_attestation": {
-    "path": "evidence/yxx-current-r01-fb93999-20261006/artifact-catalog-attestation.json",
-    "bytes": 1021,
-    "sha256": "b6c141342b4721601361acbe98388a4afa0c0a588599061a52fb578b100bfe43"
+    "path": "evidence/yxx-current-ss011-a8eb787-37486264687/artifact-catalog-attestation.json",
+    "bytes": 1031,
+    "sha256": "9c572983a5e377255c9c3b34ba9e9cfcc015cda90deb6d134708f0c2912b40a2"
   }
 }

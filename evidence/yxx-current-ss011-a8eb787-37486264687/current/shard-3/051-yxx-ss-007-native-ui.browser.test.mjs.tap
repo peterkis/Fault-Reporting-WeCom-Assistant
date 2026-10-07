@@ -1,0 +1,328 @@
+TAP version 13
+# Subtest: SS-007 member chooses catalog services by Chinese name and submits the canonical code
+ok 1 - SS-007 member chooses catalog services by Chinese name and submits the canonical code
+  ---
+  duration_ms: 877.192714
+  type: 'test'
+  ...
+# Subtest: SS-007 unavailable or delayed catalog leaves text reporting available and late choices fenced after logout
+ok 2 - SS-007 unavailable or delayed catalog leaves text reporting available and late choices fenced after logout
+  ---
+  duration_ms: 1126.966407
+  type: 'test'
+  ...
+# Subtest: SS-007 member sees Web previews as plain text without per-card detail requests
+ok 3 - SS-007 member sees Web previews as plain text without per-card detail requests
+  ---
+  duration_ms: 775.433445
+  type: 'test'
+  ...
+# Subtest: SS-007 member filters reports by source with source-bound pagination
+ok 4 - SS-007 member filters reports by source with source-bound pagination
+  ---
+  duration_ms: 808.587563
+  type: 'test'
+  ...
+# Subtest: SS-007 report source switches fence late responses and show empty or failed results
+ok 5 - SS-007 report source switches fence late responses and show empty or failed results
+  ---
+  duration_ms: 858.252913
+  type: 'test'
+  ...
+# Subtest: SS-007 refreshed member CSRF preserves the same-scope draft
+ok 6 - SS-007 refreshed member CSRF preserves the same-scope draft
+  ---
+  duration_ms: 876.854256
+  type: 'test'
+  ...
+# Subtest: SS-007 visible home-view revalidates without a pending command
+ok 7 - SS-007 visible home-view revalidates without a pending command
+  ---
+  duration_ms: 10688.016863
+  type: 'test'
+  ...
+# Subtest: SS-007 visible new-view revalidates without a pending command
+ok 8 - SS-007 visible new-view revalidates without a pending command
+  ---
+  duration_ms: 10744.134414
+  type: 'test'
+  ...
+# Subtest: SS-007 hides protected content while submission delays the session check
+ok 9 - SS-007 hides protected content while submission delays the session check
+  ---
+  duration_ms: 6053.692282
+  type: 'test'
+  ...
+# Subtest: SS-007 hides protected content while detail delays the session check
+ok 10 - SS-007 hides protected content while detail delays the session check
+  ---
+  duration_ms: 6039.195457
+  type: 'test'
+  ...
+# Subtest: SS-007 hides protected content while recovery delays the session check
+ok 11 - SS-007 hides protected content while recovery delays the session check
+  ---
+  duration_ms: 6000.914021
+  type: 'test'
+  ...
+# Subtest: SS-007 hides protected content while same-member submission delays the session check
+ok 12 - SS-007 hides protected content while same-member submission delays the session check
+  ---
+  duration_ms: 6018.873239
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation keeps new visible while unresolved: same
+ok 13 - SS-007 periodic revalidation keeps new visible while unresolved: same
+  ---
+  duration_ms: 5780.522679
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation keeps list visible while unresolved: same
+ok 14 - SS-007 periodic revalidation keeps list visible while unresolved: same
+  ---
+  duration_ms: 5732.043664
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation keeps detail visible while unresolved: same
+ok 15 - SS-007 periodic revalidation keeps detail visible while unresolved: same
+  ---
+  duration_ms: 5752.927031
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation keeps new visible while unresolved: focus-moved
+ok 16 - SS-007 periodic revalidation keeps new visible while unresolved: focus-moved
+  ---
+  duration_ms: 5724.259577
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation keeps new visible while unresolved: changed
+ok 17 - SS-007 periodic revalidation keeps new visible while unresolved: changed
+  ---
+  duration_ms: 11029.478721
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation keeps list visible while unresolved: 503
+ok 18 - SS-007 periodic revalidation keeps list visible while unresolved: 503
+  ---
+  duration_ms: 5919.779772
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic revalidation keeps new visible while unresolved: timeout
+ok 19 - SS-007 periodic revalidation keeps new visible while unresolved: timeout
+  ---
+  duration_ms: 20871.736132
+  type: 'test'
+  ...
+# Subtest: SS-007 detail renders safe location as text and clears it when absent or invalidated
+ok 20 - SS-007 detail renders safe location as text and clears it when absent or invalidated
+  ---
+  duration_ms: 15801.66703
+  type: 'test'
+  ...
+# Subtest: SS-007 detail renders follow-up guidance as text and clears obsolete or denied guidance
+ok 21 - SS-007 detail renders follow-up guidance as text and clears obsolete or denied guidance
+  ---
+  duration_ms: 15728.125557
+  type: 'test'
+  ...
+# Subtest: SS-007 visible report list revalidates a shared-cookie member change
+ok 22 - SS-007 visible report list revalidates a shared-cookie member change
+  ---
+  duration_ms: 5720.466449
+  type: 'test'
+  ...
+# Subtest: SS-007 periodic bootstrap revokes an open write form when the member write flag is removed
+ok 23 - SS-007 periodic bootstrap revokes an open write form when the member write flag is removed
+  ---
+  duration_ms: 5713.709898
+  type: 'test'
+  ...
+# Subtest: SS-007 permission revocation clears member data without showing an authentication-expired message
+ok 24 - SS-007 permission revocation clears member data without showing an authentication-expired message
+  ---
+  duration_ms: 756.2269
+  type: 'test'
+  ...
+# Subtest: SS-007 submit button accepts empty optional extension
+ok 25 - SS-007 submit button accepts empty optional extension
+  ---
+  duration_ms: 820.951483
+  type: 'test'
+  ...
+# Subtest: SS-007 submit button accepts filled optional extension
+ok 26 - SS-007 submit button accepts filled optional extension
+  ---
+  duration_ms: 847.950775
+  type: 'test'
+  ...
+# Subtest: SS-007 rejects an invalid extension before sending a report
+ok 27 - SS-007 rejects an invalid extension before sending a report
+  ---
+  duration_ms: 785.794138
+  type: 'test'
+  ...
+# Subtest: SS-007 visibility bootstrap hides member data before slow and failed revalidation
+ok 28 - SS-007 visibility bootstrap hides member data before slow and failed revalidation
+  ---
+  duration_ms: 1533.531104
+  type: 'test'
+  ...
+# Subtest: SS-007 a late detail response cannot restore an old member draft after identity rotation
+ok 29 - SS-007 a late detail response cannot restore an old member draft after identity rotation
+  ---
+  duration_ms: 906.398466
+  type: 'test'
+  ...
+# Subtest: SS-007 unavailable tab or durable storage blocks new POST commands
+ok 30 - SS-007 unavailable tab or durable storage blocks new POST commands
+  ---
+  duration_ms: 3036.279698
+  type: 'test'
+  ...
+# Subtest: SS-007 durable recovery capacity fails closed without deleting older unknown commands
+ok 31 - SS-007 durable recovery capacity fails closed without deleting older unknown commands
+  ---
+  duration_ms: 733.802076
+  type: 'test'
+  ...
+# Subtest: SS-007 durable recovery quota covers all scopes without deleting other members records
+ok 32 - SS-007 durable recovery quota covers all scopes without deleting other members records
+  ---
+  duration_ms: 817.017472
+  type: 'test'
+  ...
+# Subtest: SS-007 durable capacity recheck retains another scope record added during persistence
+ok 33 - SS-007 durable capacity recheck retains another scope record added during persistence
+  ---
+  duration_ms: 780.075327
+  type: 'test'
+  ...
+# Subtest: SS-007 invalid durable recovery records do not consume the global valid-record quota
+ok 34 - SS-007 invalid durable recovery records do not consume the global valid-record quota
+  ---
+  duration_ms: 781.978945
+  type: 'test'
+  ...
+# Subtest: SS-007 durable read failure blocks a later POST even when storage becomes writable
+ok 35 - SS-007 durable read failure blocks a later POST even when storage becomes writable
+  ---
+  duration_ms: 827.135795
+  type: 'test'
+  ...
+# Subtest: SS-007 ambiguous successful responses keep the original UUID and use GET-only recovery
+ok 36 - SS-007 ambiguous successful responses keep the original UUID and use GET-only recovery
+  ---
+  duration_ms: 8818.651543
+  type: 'test'
+  ...
+# Subtest: SS-007 hanging accepted POSTs time out and stop after five bounded GET recoveries
+ok 37 - SS-007 hanging accepted POSTs time out and stop after five bounded GET recoveries
+  ---
+  duration_ms: 28767.021178
+  type: 'test'
+  ...
+# Subtest: SS-007 v2 recovery migrates durably without blocking another member or losing the original member fence
+ok 38 - SS-007 v2 recovery migrates durably without blocking another member or losing the original member fence
+  ---
+  duration_ms: 923.832908
+  type: 'test'
+  ...
+# Subtest: SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and restores the draft with GET only
+ok 39 - SS-007 same-scope CSRF rotation keeps the v2 recovery UUID and restores the draft with GET only
+  ---
+  duration_ms: 775.097001
+  type: 'test'
+  ...
+# Subtest: SS-007 recovery scope changes discard the hidden member draft
+ok 40 - SS-007 recovery scope changes discard the hidden member draft
+  ---
+  duration_ms: 804.441615
+  type: 'test'
+  ...
+# Subtest: SS-007 synthetic visibility restore reloads cleared detail, bounds an endless timeline, and reloads the first list page
+ok 41 - SS-007 synthetic visibility restore reloads cleared detail, bounds an endless timeline, and reloads the first list page
+  ---
+  duration_ms: 1566.521975
+  type: 'test'
+  ...
+# Subtest: SS-007 renders authoritative ticket lifecycle status in list, detail, and timeline
+ok 42 - SS-007 renders authoritative ticket lifecycle status in list, detail, and timeline
+  ---
+  duration_ms: 944.418378
+  type: 'test'
+  ...
+# Subtest: SS-007 detail and timeline 404 clear rendered state and stop polling
+ok 43 - SS-007 detail and timeline 404 clear rendered state and stop polling
+  ---
+  duration_ms: 2101.824435
+  type: 'test'
+  ...
+# Subtest: SS-007 supplement terminal errors resume polling after a slow POST consumes the timer
+ok 44 - SS-007 supplement terminal errors resume polling after a slow POST consumes the timer
+  ---
+  duration_ms: 3894.772595
+  type: 'test'
+  ...
+# Subtest: SS-007 pending recovery stays GET-only, survives 404, and is discarded on an in-memory identity change
+ok 45 - SS-007 pending recovery stays GET-only, survives 404, and is discarded on an in-memory identity change
+  ---
+  duration_ms: 2057.295287
+  type: 'test'
+  ...
+# Subtest: SS-007 pending GET recovery survives periodic same-scope CSRF rotation and reaches manual retry
+ok 46 - SS-007 pending GET recovery survives periodic same-scope CSRF rotation and reaches manual retry
+  ---
+  duration_ms: 12774.354568
+  type: 'test'
+  ...
+# Subtest: SS-007 pending recovery retries only GET, then requires an explicit bounded restart
+ok 47 - SS-007 pending recovery retries only GET, then requires an explicit bounded restart
+  ---
+  duration_ms: 12762.022913
+  type: 'test'
+  ...
+# Subtest: SS-007 logout timeout keeps an opaque recovery fence on a terminal page
+ok 48 - SS-007 logout timeout keeps an opaque recovery fence on a terminal page
+  ---
+  duration_ms: 2140.001527
+  type: 'test'
+  ...
+# Subtest: SS-007 logout failure stays terminal and does not reopen member data
+ok 49 - SS-007 logout failure stays terminal and does not reopen member data
+  ---
+  duration_ms: 752.747886
+  type: 'test'
+  ...
+# Subtest: SS-007 logout preserves an in-flight POST fence for same-member recovery and discards it for another member
+ok 50 - SS-007 logout preserves an in-flight POST fence for same-member recovery and discards it for another member
+  ---
+  duration_ms: 1701.924893
+  type: 'test'
+  ...
+# Subtest: SS-007 a stale unauthorized response cannot clear the newer member operation
+ok 51 - SS-007 a stale unauthorized response cannot clear the newer member operation
+  ---
+  duration_ms: 868.097496
+  type: 'test'
+  ...
+# Subtest: SS-007 native HTTP keeps the fixed homepage gate and closed API boundary
+ok 52 - SS-007 native HTTP keeps the fixed homepage gate and closed API boundary
+  ---
+  duration_ms: 27.645855
+  type: 'test'
+  ...
+# Subtest: SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated
+ok 53 - SS-007 native UI renders safely at phone and desktop sizes and keeps tabs isolated
+  ---
+  duration_ms: 2673.13221
+  type: 'test'
+  ...
+1..53
+# tests 53
+# suites 0
+# pass 53
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 251845.968081

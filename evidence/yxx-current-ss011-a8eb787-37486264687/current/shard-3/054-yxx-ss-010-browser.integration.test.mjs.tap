@@ -1,0 +1,25 @@
+TAP version 13
+# Subtest: SS011 single approved Reporter uses the real browser form supplement and logout
+ok 1 - SS011 single approved Reporter uses the real browser form supplement and logout
+  ---
+  duration_ms: 13040.957033
+  type: 'test'
+  ...
+# SS009_RECEIPT {"event_time":"2026-10-06 23:29:10","event_epoch_ms":"1791300550874","kind":"cleanup","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"ss011_browser_process","remaining":0},{"resource":"ss011_tls_listener","remaining":0},{"resource":"ss011_roles","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+# Subtest: SS010 AC093 real browser limited roles complete supplement review and safe member feedback
+ok 2 - SS010 AC093 real browser limited roles complete supplement review and safe member feedback
+  ---
+  duration_ms: 13462.50302
+  type: 'test'
+  ...
+# SS010_BROWSER {"event_time":"2026-10-06 23:29:24","event_epoch_ms":"1791300564251","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","screenshots":[{"file":"/tmp/ss010-ui-088b9967-df37-418e-8e88-a32ad86430b7/0fa9db3e-2dfd-4798-b9c5-d0263d20083c.png","width":390,"height":844,"sha256":"ad385bba2a5879ca752a27719981e1ed6a3d29c1431d0b0eb054a239b158e511"},{"file":"/tmp/ss010-ui-088b9967-df37-418e-8e88-a32ad86430b7/161794c6-57d5-4852-b20e-83d07fa99d3f.png","width":1440,"height":900,"sha256":"aec68e8c2d090e9337df3e43cd70297cf1ca974c9f09f85de11939b453ff12d5"}],"real_browser":true,"real_postgres":true,"external_network_calls":0}
+# SS009_RECEIPT {"event_time":"2026-10-06 23:29:24","event_epoch_ms":"1791300564365","kind":"cleanup","status":"PASS","candidate_fingerprint":"a16b5f944f2278612da4c45653c509278dcba772897b314016214127ee89f84f","resources":[{"resource":"owned_database","remaining":0},{"resource":"owned_database_backends","remaining":0},{"resource":"fixture_pool","remaining":0},{"resource":"cleanup_observer_pool","remaining":0},{"resource":"ss010_browser_process","remaining":0},{"resource":"ss010_tls_listener","remaining":0},{"resource":"ss010_roles","remaining":0}],"scope":"OWNED_RUN_RESOURCES_ONLY","preexisting_resources_touched":false}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 26769.897841
