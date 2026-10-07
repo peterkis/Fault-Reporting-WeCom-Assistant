@@ -22,7 +22,7 @@ verified_on: 2026-10-07
 | 当前浏览器内部备注草稿 | `LOCAL_INCREMENT`：T03原生IDB/AES-GCM，固定24h、账号／事项／用途隔离、真实恢复验权；必要专用receipt GET见[合同](../../docs/api/workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) | 默认false，首消费者内部备注；无跨设备／服务端草稿，UNKNOWN过期只清正文并按原UUID只读核对，[记录](execution/t03.md)。01/A01 |
 | 三列看板／列表／详情 | React 已调用 `GET /api/workbench/board`、`GET /api/workbench/items/{kind}/{id}`；每列分页、只读详情，见[看板](../../docs/api/workbench/board.md) | 完整与我有关、搜索、提醒、动作、拖动未接；同一 Ticket 的复核不重复计卡片。01/12–15 |
 | 人工复核 | `GET /api/manual-reviews`、`GET /api/manual-reviews/{reviewId}`、Journey／legs／decisions 查询、`POST .../resolve`，见[复核接口](../../docs/api/workbench/manual-reviews.md) | React 未接；普通 resolve 不是“确认报修并开始处理”。补复合用例并保持材料修订 fence；不必为了统一 UI 新建第二份受理。04 |
-| 一步处理／双责任 | `POST /api/tickets/{ticketId}/accept`、`/start`；已有 `/api/conversations/{sessionId}/takeover-and-accept-ticket` | 现有复合命令只接管并接单、单会话同源检查，不包含开始，不支持完整同事接管／接管关闭／无会话路径。02 |
+| 一步处理／双责任 | 旧 `POST /api/tickets/{ticketId}/accept`、`/start` 和 `/api/conversations/{sessionId}/takeover-and-accept-ticket`；T04 `LOCAL_INCREMENT` 的 `/take-and-start`、`/accept-for-later` 仅无真实会话、当前有效组本人承接 | T04 独立默认 false、039 显式迁移、一次事务与轮次；T05 真会话、完整同事接管／接管关闭仍是缺口。02；[T04 合同/证据](execution/t04.md) |
 | 派单／转派／跨团队接管 | `GET .../eligible-principals`、`GET .../responsibility`、`POST .../transfer` | 当前 transfer 不等于全部 AssignTicket／TakeOver，终态及目标团队约束需修订；补本人／有效组原子交接及限定可见范围。02 |
 | 撤派／停止退回 | 无 Ticket unassign／return HTTP；Conversation `/release` 只释放沟通责任 | 两类显式命令、合法状态、未完工作和交接；默认保留沟通责任。02 |
 | 等待／恢复／取消／内部记录 | 现有 `/request-information`、`/wait-vendor`、`/resume`、`/cancel`、`/notes` | React 未接；显示真实 allowed actions，不用取消模拟撤派；内部记录不默认外发或清待跟进。02/03/12 |
@@ -32,7 +32,7 @@ verified_on: 2026-10-07
 | Reporter 未解决重开 | Web `GET /api/yixiaoxiu/requests/{requestRef}`；Bot `GET /api/reporter/tickets/{publicRef}`，各有 timeline | 本人 feedback／reopen HTTP 未实现；旧 closure 内部路径不证明已挂载。补两种绑定的同一重开用例，新轮次重新承接。06 |
 | 集中会话／人工回复 | 会话 GET list/detail/items，takeover／transfer／release、read-cursor、messages／internal-notes、Delivery 控制，见[会话接口](../../docs/api/workbench/conversations.md) | React 会话页是占位；回复 202 仅说明已受理发送。群按参与者和服务主题隔离，无会话网页不显示虚构发送能力。07 |
 | 已有报修资料／附件 | 安全文字资料、附件元信息；`GET /api/attachments/*` 当前明确 404 | 补获权且有界的人工读取／下载合同；StoragePort、既有采集是否足够先核对，不接 OCR／模型。04 |
-| 来源群显示／维护 | `LOCAL_INCREMENT`：ADMIN 名称登记／修改，GET directory、`POST /api/workbench/source-groups/{groupRef}/name`；板／详情来源字段 | [ADR0030／接口](../../docs/api/workbench/source-groups-design.md)，默认 false；不是群名官方查询、不是已部署。将已有增量纳入基线，补设置页检索，不重做核心。00/15 |
+| 来源群显示／维护 | `LOCAL_INCREMENT`：ADMIN q检索／绑定分页目录、`POST /api/workbench/source-groups/{groupRef}/name`、正式设置／共用可靠名称表单；板／详情来源字段 | [ADR0030／接口](../../docs/api/workbench/source-groups-design.md)，默认 false；不是群名官方查询、不是已部署。T23复用核心／037，实际候选和逐项结果见[本票记录](execution/t23.md)。00/15 |
 | 按来源的工单通知 | 已有 Ticket projector／Delivery 和部分发送器；当前 Web 为 WEB_APP_ONLY，group closure 固定模板 | ADR0023 的所有里程碑、Bot 私聊＋来源群强 @ 双路、H5／已核实代录应用消息尚未完整。补来源绑定／策略／发送适配，权限与真实强 @ 后续独立验证。08 |
 | 公共故障 | candidate 人工 review/reject/confirm；Incident 查询、关联／解除、investigating／scope／primary／recovered／resolve／close、subscription 控制，见[Incident](../../docs/api/workbench/incidents.md) | React 是占位；先接现有，补负责人转交、内部记录、安全进展发布及必要 owner／count 投影。09/10 |
 | 通知异常 | Ticket、Conversation、Incident 各有 notifications／deliveries 查询；Ticket 和 Conversation 有特定 retry／reconcile | 缺完整跨域有界队列及 Incident 专用控制，不能用会话授权重发无会话 Incident。UNKNOWN 必须核对。11 |
@@ -49,7 +49,7 @@ verified_on: 2026-10-07
 | 状态 | METHOD + 候选 PATH | 宿主／任务 | 合同必须表达 |
 | --- | --- | --- | --- |
 | PROPOSED_PATH | `GET /api/workbench/items/{kind}/{id}/command-context` | W／01 | 已授权主体、真实可执行动作、Ticket／Review／实际会话各自版本、有效目标引用、材料修订；独立于展示 DTO |
-| PROPOSED_PATH | `POST /api/tickets/{ticketId}/take-and-start` | W／02 | 本人承接＋开始；合法目标组、明确会话选择／保留沟通，复合原子性 |
+| LOCAL_INCREMENT | `POST /api/tickets/{ticketId}/take-and-start`、`/accept-for-later` | W／T04（02） | 仅无非 ENDED 真会话；当前有效组本人原子承接/开始、首次责任与轮次，默认关闭；[实际合同](../../docs/api/workbench/tickets.md)。T05 会话用例另行冻结 |
 | PROPOSED_PATH | `POST /api/tickets/{ticketId}/assign`、`/takeover` | W／02 | 目标人／组、原责任版本、操作者权限；接管跨团队后目标组有效 |
 | PROPOSED_PATH | `POST /api/tickets/{ticketId}/unassign`、`/return-to-dispatch` | W／02 | 未开始／已开始区分，原因、未完成说明、明确沟通交接；不增轮次 |
 | PROPOSED_PATH | `POST /api/tickets/{ticketId}/complete`、`/takeover-and-complete` | W／03 | 内部过程、对外摘要、工作人员关闭依据、目标轮次；后一命令包括责任交接 |

@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import type {KeyboardEvent,ReactNode} from 'react';
+import type {KeyboardEvent,MouseEvent,ReactNode} from 'react';
 import {Link,Route,Routes,useLocation,useNavigate,useParams,useSearchParams} from 'react-router';
 import {useInfiniteQuery,useQuery,useMutation,useQueryClient} from '@tanstack/react-query';
 import {Button} from '@heroui/react/button';
@@ -9,11 +9,14 @@ import {PanelLeftClose as CollapseData,PanelLeftOpen as ExpandData} from 'lucide
 import {createColumnHelper,tableFeatures,useTable} from '@tanstack/react-table';
 import {api,ApiError,errorMessage,statusLabels} from '../api/client';
 import type {BoardColumn,CompletionRange,WorkbenchCard,Principal} from '../api/client';
-import type {SourceGroupDisplay,SourceGroupNameCommand} from '../../../../contracts/web01_workbench_contracts';
 import {useUiStore} from './ui-store';
 import {TicketNotes} from '../features/ticket-notes/TicketNotes';
-import {clearSessionAuthorization,clearSessionView,clearTicketView} from './authorization';
+import {clearSessionAuthorization,clearSessionView,clearItemView} from './authorization';
 import {subscribeDrafts} from '../features/drafts/encrypted-drafts';
+import {TicketSelfHandling} from '../features/ticket-handling/TicketSelfHandling';
+import {AttachmentSection} from '../features/attachments/AttachmentSection';
+import {GroupNameEditor} from '../features/source-groups/GroupNameEditor';
+import {SourceGroupDirectory} from '../features/source-groups/SourceGroupDirectory';
 
 const names:Record<BoardColumn,string>={pending:'待受理',active:'处理中',closed:'已关闭'};
 const columns:readonly BoardColumn[]=['pending','active','closed'];
@@ -97,7 +100,7 @@ function WorkList({items,search,selected,now,column,label}:{items:WorkbenchCard[
     <More expanded={expanded} count={items.length} controls={'list-'+column} onClick={()=>setExpanded(value=>!value)}/>
   </section>;
 }
-function Shell({principal,children}:{principal:Principal;children:ReactNode}){
+function Shell({principal,children,navigationBlocked=false}:{principal:Principal;children:ReactNode;navigationBlocked?:boolean}){
   const collapsed=useUiStore(s=>s.sidebarCollapsed),toggle=useUiStore(s=>s.toggleSidebar);
   const client=useQueryClient();
   const logout=useMutation({mutationKey:['session-logout',principal.principal_id],mutationFn:()=>api.logout(principal.csrf_token),
@@ -108,45 +111,28 @@ function Shell({principal,children}:{principal:Principal;children:ReactNode}){
     try{return subscribeDrafts(value=>{
       if(value.principal!==principal.principal_id)return;
       if(value.reason==='logout'||value.reason==='logout-unknown')clearSessionView(client,undefined,value.reason==='logout'?'已退出，当前浏览器的恢复副本已清理。':'退出结果尚未确认，请重新核验会话。');
-      else if(value.reason==='revoked'){if(value.kind==='ticket'&&value.id)void clearTicketView(client,value.principal,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));else clearSessionView(client,undefined,'会话需要重新核验，恢复副本已清理。');}
+      else if(value.reason==='revoked'){if(value.kind&&value.id)void clearItemView(client,value.principal,value.kind,value.id,new ApiError(404,'AUTHORIZATION_REJECTED'));else clearSessionView(client,undefined,'会话需要重新核验，恢复副本已清理。');}
     });}catch{return;}
   },[client,principal.principal_id,principal.draft_recovery_enabled,principal.logout_enabled]);
+  const settings=useLocation().pathname.startsWith('/settings/'),canNameGroups=principal.source_group_directory_enabled&&principal.roles.includes('ADMIN');
   const [online,setOnline]=useState(navigator.onLine);
+  const guardNavigation=(event:MouseEvent<HTMLAnchorElement>)=>{if(navigationBlocked)event.preventDefault();};
   useEffect(()=>{const changed=()=>setOnline(navigator.onLine);window.addEventListener('online',changed);window.addEventListener('offline',changed);return()=>{window.removeEventListener('online',changed);window.removeEventListener('offline',changed);};},[]);
   return <div className={'app '+(collapsed?'sidebar-collapsed':'')}><aside className="sidebar" aria-label="主导航"><div className="brand"><span className="brandmark"><LifeBuoy size={18}/></span><strong>医小修</strong><ChevronDown size={14}/></div>
     <button className="sidebar-search" disabled title="全局搜索尚未开放"><Search size={16}/><span>搜索工作区</span><small>预留</small></button>
-    <p className="nav-label">工作空间</p><Link className="nav-item current" to="/" aria-current="page" title="工作台"><LayoutGrid/><span>工作台</span></Link>
+    <p className="nav-label">工作空间</p><Link className={'nav-item '+(!settings?'current':'')} to="/" aria-current={!settings?'page':undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} title="工作台"><LayoutGrid/><span>工作台</span></Link>
     <div className="nav-item muted" title="会话 · 后续开放"><MessageSquare/><span>会话</span><small>后续</small></div><div className="nav-item muted" title="公共故障 · 后续开放"><TriangleAlert/><span>公共故障</span><small>后续</small></div><div className="nav-item muted" title="团队知识库 · 规划中"><BookOpen/><span>团队知识库</span><small>规划中</small></div><div className="nav-item muted" title="通知异常 · 后续开放"><Bell/><span>通知异常</span><small>后续</small></div>
-    <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom"><div className="nav-item muted" title="设置"><Settings/><span>设置</span></div><div className="account"><TeamAvatar name={principal.display_name}/><div><strong>{principal.display_name}</strong><small>已授权内部身份</small></div></div></div></aside>
-    <main><header className="topbar"><button className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle}><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></button><span>信息服务团队 <span className="slash">/</span> <strong>工作台</strong></span><span className={'connection '+(!online?'offline':'')}>{online?'按需读取':'网络已断开'}</span><a href="/workbench">旧管理端<ArrowUpRight size={14}/></a>{principal.logout_enabled?<button type="button" data-action="logout-workbench" disabled={logout.isPending} onClick={()=>logout.mutate()}>{logout.isPending?'正在退出…':'退出工作台'}</button>:null}</header>{children}</main></div>;
+    <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom">{canNameGroups?<Link className={'nav-item '+(settings?'current':'')} aria-current={settings?'page':undefined} aria-disabled={navigationBlocked} onClick={guardNavigation} to="/settings/source-groups" data-action="open-source-groups"><Settings/><span>设置</span></Link>:<div className="nav-item muted" title="设置"><Settings/><span>设置</span></div>}<div className="account"><TeamAvatar name={principal.display_name}/><div><strong>{principal.display_name}</strong><small>已授权内部身份</small></div></div></div></aside>
+    <main><header className="topbar"><button className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle}><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></button><span>信息服务团队 <span className="slash">/</span> <strong>{settings?'设置':'工作台'}</strong></span><span className={'connection '+(!online?'offline':'')}>{online?'按需读取':'网络已断开'}</span>{canNameGroups?<Link to="/settings/source-groups" className="compact-settings" aria-disabled={navigationBlocked} onClick={guardNavigation}>来源群</Link>:null}<a href="/workbench" aria-disabled={navigationBlocked} onClick={guardNavigation}>旧管理端<ArrowUpRight size={14}/></a>{principal.logout_enabled?<button type="button" data-action="logout-workbench" disabled={logout.isPending} onClick={()=>logout.mutate()}>{logout.isPending?'正在退出…':'退出工作台'}</button>:null}</header>{children}</main></div>;
 }
-function GroupNameEditor({group,principal}:{group:SourceGroupDisplay;principal:Principal}){
-  const [name,setName]=useState(group.display_name??''),client=useQueryClient(),pendingCommand=useRef<SourceGroupNameCommand|null>(null);
-  const refresh=async()=>{await Promise.all([client.invalidateQueries({queryKey:['board',principal.principal_id]}),client.invalidateQueries({queryKey:['detail',principal.principal_id]})]);};
-  const mutation=useMutation({mutationFn:(command:SourceGroupNameCommand)=>api.saveGroupName(group.ref,command,principal.csrf_token),onSuccess:refresh,
-    onError:async error=>{
-      if(error instanceof ApiError&&error.status===401){useUiStore.getState().failSession(401);await client.cancelQueries();client.clear();}
-      else if(error instanceof ApiError&&[404,409].includes(error.status))await refresh();
-    }});
-  return <form className="source-group-form" aria-label="维护来源群名称" onSubmit={event=>{
-    event.preventDefault();if(mutation.isPending)return;
-    const displayName=name.trim();if(!displayName)return;
-    // Preserve a command across an uncertain network outcome; changing the name creates a new command.
-    if(!pendingCommand.current||pendingCommand.current.display_name!==displayName)pendingCommand.current={client_command_id:crypto.randomUUID(),expected_row_version:group.row_version,display_name:displayName};
-    mutation.mutate(pendingCommand.current);
-  }}>
-    <label>来源群名称<input name="source-group-name" value={name} required maxLength={128} disabled={mutation.isPending} onChange={event=>setName(event.target.value)}/></label>
-    <Button type="submit" variant="secondary" isDisabled={mutation.isPending||!name.trim()}>{mutation.isPending?'正在保存…':'保存群名称'}</Button>
-    <p>群名称由管理员确认，用于该群报修事项的来源展示。</p>
-    {mutation.isError?<p role="alert">{errorMessage(mutation.error)}</p>:null}
-  </form>;
-}
-function Detail({principal,items,now,fullPage}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean}){
-  const [noteBlocked,setNoteBlocked]=useState(false);
+function Detail({principal,items,now,fullPage,onNavigationBlocked}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean;onNavigationBlocked:(blocked:boolean)=>void}){
+  const [internalNoteBlocked,setInternalNoteBlocked]=useState(false),[groupBlocked,setGroupBlocked]=useState(false),[handlingBlocked,setHandlingBlocked]=useState(false);
+  const commandsBlocked=internalNoteBlocked||groupBlocked||handlingBlocked;
+  useEffect(()=>{onNavigationBlocked(commandsBlocked);return()=>onNavigationBlocked(false);},[commandsBlocked,onNavigationBlocked]);
   const {kind='',id=''}=useParams(),navigate=useNavigate(),location=useLocation(),dialog=useRef<HTMLDialogElement>(null),previousFocus=useRef<HTMLElement|null>(null),pageHeading=useRef<HTMLHeadingElement>(null);
   const result=useInfiniteQuery({queryKey:['detail',principal.principal_id,kind,id],initialPageParam:null as string|null,
     queryFn:({pageParam,signal})=>api.detail(kind,id,pageParam,signal),getNextPageParam:p=>p.next_cursor??undefined});
-  const close=()=>{if(noteBlocked)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:'') ,{replace:true});};
+  const close=()=>{if(commandsBlocked)return;const search=new URLSearchParams(location.search);search.delete('detail');if(!fullPage&&location.state&&typeof location.state==='object'&&'fromBoard' in location.state&&location.state.fromBoard===true)void navigate(-1);else void navigate('/'+(search.size?'?'+search:'') ,{replace:true});};
   useEffect(()=>{
     if(fullPage)return;
     previousFocus.current=document.activeElement instanceof HTMLElement?document.activeElement:null;
@@ -156,12 +142,12 @@ function Detail({principal,items,now,fullPage}:{principal:Principal;items:Workbe
   const detail=result.data?.pages[0],records=result.data?.pages.flatMap(p=>p.records)??[];
   useEffect(()=>{if(fullPage&&detail)pageHeading.current?.focus();},[fullPage,detail]);
   const index=items.findIndex(item=>item.kind===kind&&item.id===id),previous=index>0?items[index-1]:undefined,next=index>=0?items[index+1]:undefined;
-  const move=(item:WorkbenchCard|undefined)=>{if(item&&!noteBlocked)void navigate(itemLink(item,location.search),{replace:true,state:location.state});};
+  const move=(item:WorkbenchCard|undefined)=>{if(item&&!commandsBlocked)void navigate(itemLink(item,location.search),{replace:true,state:location.state});};
   const pageParams=new URLSearchParams(location.search);pageParams.set('detail','page');
   const content=<>
-    <div className="detail-navigation"><button className="icon-button" aria-label="关闭详情" title="返回工作台" disabled={noteBlocked} onClick={close}>{fullPage?<ArrowLeft size={18}/>:<X size={18}/>}</button>
-      {!fullPage?<><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(noteBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} replace><ArrowUpRight size={18}/></Link><button className="icon-button" aria-label="上一项" title="上一项（已加载范围）" disabled={!previous||noteBlocked} onClick={()=>move(previous)}><ChevronUp size={18}/></button><button className="icon-button" aria-label="下一项" title="下一项（已加载范围）" disabled={!next||noteBlocked} onClick={()=>move(next)}><ChevronDown size={18}/></button></>:null}
-      <span>事项详情</span>{!fullPage?<Link className="full-page-link" onClick={event=>{if(noteBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} replace>展开完整页面<ArrowUpRight size={14}/></Link>:null}</div>
+    <div className="detail-navigation"><button className="icon-button" aria-label="关闭详情" title="返回工作台" disabled={commandsBlocked} onClick={close}>{fullPage?<ArrowLeft size={18}/>:<X size={18}/>}</button>
+      {!fullPage?<><Link className="icon-button" aria-label="展开完整页面" title="展开完整页面" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} replace><ArrowUpRight size={18}/></Link><button className="icon-button" aria-label="上一项" title="上一项（已加载范围）" disabled={!previous||commandsBlocked} onClick={()=>move(previous)}><ChevronUp size={18}/></button><button className="icon-button" aria-label="下一项" title="下一项（已加载范围）" disabled={!next||commandsBlocked} onClick={()=>move(next)}><ChevronDown size={18}/></button></>:null}
+      <span>事项详情</span>{!fullPage?<Link className="full-page-link" onClick={event=>{if(commandsBlocked)event.preventDefault();}} to={location.pathname+'?'+pageParams} replace>展开完整页面<ArrowUpRight size={14}/></Link>:null}</div>
     {result.isPending?<Message text="正在读取事项详情…"/>:result.isError?<Message text={errorMessage(result.error)} retry={()=>{void result.refetch();}}/>:detail?<div className="detail-body">
       <header className="detail-heading"><div className="context-line">{detail.item.number}<span>· {detail.item.kind==='ticket'?'工单':detail.item.kind==='review'?'未建单复核事项':'未建单受理事项'}</span></div><h2 id="detail-title" ref={pageHeading} tabIndex={fullPage?-1:undefined}>{detail.item.title}</h2></header>
       <section className="properties" aria-label="事项信息"><dl>
@@ -175,8 +161,10 @@ function Detail({principal,items,now,fullPage}:{principal:Principal;items:Workbe
         <dt>最新活动</dt><dd>{detail.item.updated_at}</dd>
         <dt>实际完结</dt><dd>{detail.item.completed_at??'尚无完结事件'}</dd>
       </dl><p>以上时间均为北京时间；最新活动不代表当前环节耗时。</p></section>
-      {principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={detail.item.source_group.ref+':'+detail.item.source_group.row_version} group={detail.item.source_group} principal={principal}/>:null}
-      {detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes key={principal.principal_id+':'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setNoteBlocked}/>:null}
+      {principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={principal.principal_id+':'+detail.item.source_group.ref} group={detail.item.source_group} principal={principal} onBlockedChange={setGroupBlocked}/>:null}
+      {detail.item.kind==='ticket'&&principal.ticket_self_handling_enabled?<TicketSelfHandling key={principal.principal_id+':'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setHandlingBlocked}/>:null}
+      {detail.item.kind==='ticket'&&principal.internal_notes_enabled?<TicketNotes key={principal.principal_id+':'+detail.item.id} ticketId={detail.item.id} principal={principal} onBlockedChange={setInternalNoteBlocked}/>:null}
+      <AttachmentSection key={principal.principal_id+':'+detail.item.kind+':'+detail.item.id} principal={principal.principal_id} kind={detail.item.kind} id={detail.item.id}/>
       <p className="read-only-note">其他已开放的处理操作可使用 <a href="/workbench">旧管理端</a>。</p>
       <section className="detail-main"><h3>报修内容</h3><p className="description">{detail.description??'暂无可读取的原始报修内容。'}</p><h3 className="activity-title">动态 <span>{records.length} 条已加载</span></h3>
         <ol className="activity-list">{records.map(record=><li key={record.id}>{record.audience!=='REPORT'&&record.actor&&record.actor!=='SYSTEM'?<TeamAvatar name={record.actor}/>:<span className="avatar" aria-hidden="true">{record.audience==='REPORT'?'报':'系'}</span>}<div><header><strong>{record.actor??(record.audience==='REPORT'?'报修材料':'系统记录')}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'对外摘要':'原始报修'}</span></header><p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??record.old_status??'新建')+' → '+(statusLabels[record.new_status]??record.new_status):record.type)}</p></div></li>)}</ol>
@@ -194,6 +182,7 @@ function BoardSection({query,column,label,search,selected,now}:{query:ReturnType
   </section>;
 }
 function Workbench({principal}:{principal:Principal}){
+  const [navigationBlocked,setNavigationBlocked]=useState(false);
   const [params,setParams]=useSearchParams(),location=useLocation(),selected=useParams(),now=useClock();
   const view=params.get('view')==='list'?'list':'board',range:CompletionRange=params.get('range')==='cancelled'?'cancelled':params.get('range')==='all'?'all':'recent',fullPage=Boolean(selected.id&&params.get('detail')==='page');
   const pending=useColumn(principal.principal_id,'pending',range),active=useColumn(principal.principal_id,'active',range),closed=useColumn(principal.principal_id,'closed',range);
@@ -203,7 +192,7 @@ function Workbench({principal}:{principal:Principal}){
   const completionWindow=closed.data?.pages[0]?.range;
   const until=completionWindow?new Date(Date.parse(completionWindow.until.replace(' ','T')+'Z')-86_400_000).toISOString().slice(5,10):'';
   const label=(column:BoardColumn)=>column==='closed'&&range==='cancelled'?'已取消':names[column];
-  return <Shell principal={principal}>{!fullPage?<div className="workspace"><div className="page-title"><span className="page-icon"><LayoutGrid size={30} strokeWidth={1.6}/></span><div><h1>团队工作台</h1><p>让每一件报修，都有回应。</p></div><span className="read-only-badge">{principal.internal_notes_enabled?'人工协作':'只读'}</span></div>
+  return <Shell principal={principal} navigationBlocked={navigationBlocked}>{!fullPage?<div className="workspace"><div className="page-title"><span className="page-icon"><LayoutGrid size={30} strokeWidth={1.6}/></span><div><h1>团队工作台</h1><p>让每一件报修，都有回应。</p></div><span className="read-only-badge">{principal.internal_notes_enabled||principal.ticket_self_handling_enabled?'人工协作':'只读'}</span></div>
     <div className="toolbar"><div className="scope-tabs"><span className="selected">团队工作</span><button disabled title="处理、沟通与关注的完整范围尚未开放">与我有关<small>后续</small></button></div>
       <div className="tools"><Button variant="tertiary" onPress={refresh}><RefreshCw size={16}/>刷新</Button><div className="view-tabs" role="group" aria-label="展示方式"><button aria-pressed={view==='board'} onClick={()=>update('view','board')}><LayoutGrid size={16}/>看板</button><button aria-pressed={view==='list'} onClick={()=>update('view','list')}><List size={16}/>列表</button></div></div></div>
     <div className="range-bar"><span>{queries.some(query=>query.isError)?'部分事项读取失败':'已加载 '+unique.length+' 项'}</span><span>未完成事项不限日期</span><label>已关闭范围 <select value={range} onChange={event=>update('range',event.target.value)}><option value="recent">今天和昨天</option><option value="all">全部完结记录</option><option value="cancelled">已取消（全部时间）</option></select></label>
@@ -211,15 +200,16 @@ function Workbench({principal}:{principal:Principal}){
     {view==='board'?<div className="board">{columns.map((column,index)=>{const query=queries[index];return query?<BoardSection key={column+':'+range} query={query} column={column} label={label(column)} search={location.search} selected={selected.id} now={now}/>:null;})}</div>:<>
       {columns.map((column,index)=>{const query=queries[index];return query?<div key={column+':'+range}>{query.isPending?<Message text={label(column)+'：正在读取…'}/>:query.isError?<Message text={label(column)+'：'+errorMessage(query.error)} retry={()=>{void query.refetch();}}/>:<><WorkList column={column} label={label(column)} items={query.data.pages.flatMap(page=>page.items)} search={location.search} selected={selected.id} now={now}/>{!query.data.pages.some(page=>page.items.length)?<p className="empty">当前授权范围内暂无事项</p>:null}{query.hasNextPage?<Button className="load-more" variant="tertiary" isDisabled={query.isFetchingNextPage} onPress={()=>{void query.fetchNextPage();}}>加载下一页</Button>:null}</>}</div>:null;})}</>}
     <p className="workspace-footnote">展示当前身份获权的服务记录。打开详情不会接管工单。</p></div>:null}
-    {selected.id?<Detail principal={principal} items={unique} now={now} fullPage={fullPage}/>:null}
+    {selected.id?<Detail principal={principal} items={unique} now={now} fullPage={fullPage} onNavigationBlocked={setNavigationBlocked}/>:null}
   </Shell>;
 }
-function Session(){const failure=useUiStore(s=>s.sessionError),closedNotice=useUiStore(s=>s.sessionClosedNotice),reset=useUiStore(s=>s.reset);
+function Session(){const failure=useUiStore(s=>s.sessionError),closedNotice=useUiStore(s=>s.sessionClosedNotice),reset=useUiStore(s=>s.reset),location=useLocation();
+  const [navigationBlocked,setNavigationBlocked]=useState(false);
   const bootstrap=useQuery({queryKey:['session'],queryFn:({signal})=>api.bootstrap(signal),enabled:failure===null&&closedNotice===null});
   if(closedNotice)return <div className="entry-state"><h1>医小修工作台</h1><Message text={closedNotice} retry={reset}/><a href="/workbench">返回现有工作台入口</a></div>;
   if(failure)return <div className="entry-state"><h1>医小修工作台</h1><Message text={failure===401?'会话已失效，请重新进入已授权工作台。':'当前身份没有查看权限。'} retry={reset}/><a href="/workbench">返回现有工作台入口</a></div>;
   if(bootstrap.isPending)return <div className="entry-state"><Message text="正在核验内部会话…"/></div>;
   if(bootstrap.isError)return <div className="entry-state"><h1>医小修工作台</h1><Message text={errorMessage(bootstrap.error)} retry={()=>{void bootstrap.refetch();}}/><a href="/workbench">返回现有工作台入口</a></div>;
-  return <Workbench principal={bootstrap.data}/>;
+  return /^\/settings\/source-groups\/?$/iu.test(location.pathname)?<Shell principal={bootstrap.data} navigationBlocked={navigationBlocked}><SourceGroupDirectory key={bootstrap.data.principal_id} principal={bootstrap.data} onBlockedChange={setNavigationBlocked}/></Shell>:<Workbench principal={bootstrap.data}/>;
 }
-export function App(){return <Routes><Route path="/" element={<Session/>}/><Route path="items/:kind/:id" element={<Session/>}/><Route path="*" element={<div className="entry-state"><Message text="页面不存在。"/><Link to="/">返回工作台</Link></div>}/></Routes>;}
+export function App(){return <Routes><Route path="/" element={<Session/>}/><Route path="items/:kind/:id" element={<Session/>}/><Route path="settings/source-groups" element={<Session/>}/><Route path="*" element={<div className="entry-state"><Message text="页面不存在。"/><Link to="/">返回工作台</Link></div>}/></Routes>;}

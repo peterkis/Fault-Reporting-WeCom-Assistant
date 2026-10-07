@@ -4,7 +4,7 @@ import type { TicketStatus, TicketPriority, TicketRequestType } from './p1-005-p
 import type { StaffDirectoryStore, StoredDirectoryMember } from './p2-007-staff-directory-store.mjs';
 export interface P2016TicketRow { id: string; ticket_no: string; request_type: TicketRequestType; status: TicketStatus; priority: TicketPriority; resolver_team_id: string; assignee_id: string | null; version: number; created_at: string; updated_at: string; intake_id: string }
 export interface TicketQueryInput { authContext: unknown; ticketId: unknown; transaction?: PostgresTransaction; lock?: boolean }
-interface QueryOptions { pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string }
+interface QueryOptions { pool: PostgresTransaction; enabled?: boolean; authorization?: Pick<WorkbenchAuthorizationAdapter, 'resolvePrincipal'>; directoryStore?: Pick<StaffDirectoryStore, 'findByReporterHash'> | null; directorySourceScope?: string; ticketSelfHandlingEnabled?:boolean }
 // JSON projection values remain unknown until the existing visible-field guards narrow them.
 interface ProfileObservation { source?: string; version?: unknown; contact?: { name?: unknown; userid?: unknown; mobile?: unknown; telephone?: unknown } | null; memberships?: { name?: unknown; department_ref?: unknown; role?: string }[]; sex?: unknown; fetched_at?: unknown }
 export type P2016TicketQuery = ReturnType<typeof createP2016TicketQuery>;
@@ -13,6 +13,8 @@ import { createPilotWorkbenchAuthorizationAdapter } from './p2-006-workbench-aut
 import { EXTERNAL_TICKET_STATUS } from './p1-005-pilot-ticket-core.mjs';
 import { getTicketActionTransitions } from './p1-006-ticket-state-actions.mjs';
 import { failP2016,guardP2016,uuidP2016,limitP2016,localP2016,cursorP2016,decodeCursorP2016,publicP2016 } from './p2-016-domain-contracts.mjs';
+
+import {selfHandlingEligibility} from './workbench-ticket-self-handling.mjs';
 
 const BROAD: (p: WorkbenchPrincipal) => boolean=p=>p.roles.some(r=>['ADMIN','DISPATCHER'].includes(r));
 const HISTORICAL_MEMBERSHIP_ROLES=Object.freeze({
@@ -63,7 +65,7 @@ async function webReportForTicket(queryable: PostgresTransaction,ticket: P2016Ti
     reported_department_text:initial.reported_department_text??null,extension:initial.extension??null,
     supplements:supplements.map(item=>({input_revision:String(item.input_revision),text:typeof item.text==='string'?item.text:null}))});
 }
-export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL'}: QueryOptions) {
+export function createP2016TicketQuery({pool,enabled=false,authorization=createPilotWorkbenchAuthorizationAdapter({pool}),directoryStore=null,directorySourceScope='FORMAL',ticketSelfHandlingEnabled=false}: QueryOptions) {
   async function principal(authContext: unknown,queryable: PostgresTransaction=pool) {
     guardP2016(enabled);const p=await authorization.resolvePrincipal(authContext,{queryable});
     if(!p)failP2016('FORBIDDEN',403);return p;
@@ -91,7 +93,13 @@ export function createP2016TicketQuery({pool,enabled=false,authorization=createP
       const items=q.rows.slice(0,n).map(r=>ticketViewP2016(r,p)),last=items.at(-1);
       return publicP2016({items,next_cursor:q.rows.length>n?cursorP2016({v:1,state,at:(last as NonNullable<typeof last>).updated_at,id:(last as NonNullable<typeof last>).id}):null});
     },
-    async detail(input: TicketQueryInput) {const {ticket,principal:p}=await authorizedTicket(input);const report=await webReportForTicket(pool,ticket);return ticketViewP2016(ticket,p,report?{web_report:report}:{});},
+    async detail(input: TicketQueryInput) {
+      const {ticket,principal:p}=await authorizedTicket(input),report=await webReportForTicket(pool,ticket);
+      const view=ticketViewP2016(ticket,p,report?{web_report:report}:{});
+      if(!ticketSelfHandlingEnabled)return view;
+      const eligibility=await selfHandlingEligibility(pool,p,ticket);
+      return publicP2016({...view,handling_cycle:eligibility.cycle,allowed_actions:[...view.allowed_actions,...eligibility.actions]});
+    },
     async reporterContact(input: TicketQueryInput) {
       const {ticket}=await authorizedTicket(input);
       const q=await pool.query<{ profile_resolution_status: string; profile_snapshot: ProfileObservation | null; reporter_identity_hash: string | null }>(`SELECT j.profile_resolution_status,j.profile_snapshot,j.reporter_identity_hash FROM intake.channel_leg l

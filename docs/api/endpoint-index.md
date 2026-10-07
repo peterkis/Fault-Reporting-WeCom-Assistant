@@ -10,7 +10,7 @@
 
 | ID | 方法 | 完整路径 | 宿主 | 状态 / 用途 | 契约文档 |
 | --- | --- | --- | --- | --- | --- |
-| G01 | GET | `/api/workbench/source-groups` | W | 已实现：ADMIN观察群目录；默认关闭 | [来源群](workbench/source-groups-design.md) |
+| G01 | GET | `/api/workbench/source-groups` | W | 本地实现：ADMIN观察群目录、q检索、绑定搜索的分页；默认关闭 | [来源群](workbench/source-groups-design.md) |
 | G02 | POST | `/api/workbench/source-groups/{groupRef}/name` | W | 已实现：ADMIN登记/改名；默认关闭 | [来源群](workbench/source-groups-design.md) |
 | C01 | GET | `/api/workbench/bootstrap` | W | 已实现：会话身份/能力 | [会话](workbench/conversations.md) |
 | C02 | GET | `/api/conversations` | W | 已实现：会话分页 | [会话](workbench/conversations.md) |
@@ -52,6 +52,8 @@
 | T22 | POST | `/api/tickets/{ticketId}/deliveries/{deliveryId}/reconcile` | W | 已实现：通知人工核对 | [工单](workbench/tickets.md) |
 | T23 | POST | `/api/conversations/{sessionId}/takeover-and-accept-ticket` | W | 已实现：原子双责任 | [工单](workbench/tickets.md) |
 | T24 | POST | `/api/tickets/{ticketId}/internal-notes` | W | 已实现、默认关闭：可靠内部备注，旧 notes 兼容保留 | [工单](workbench/tickets.md#可靠内部备注wbint-t02) |
+| T25 | POST | `/api/tickets/{ticketId}/take-and-start` | W | 已实现、默认关闭：无真会话本人承接并开始，一个原子命令 | [工单](workbench/tickets.md#无会话本人承接与开始wbint-t04) |
+| T26 | POST | `/api/tickets/{ticketId}/accept-for-later` | W | 已实现、默认关闭：先接单，本轮首次责任依据 | [工单](workbench/tickets.md#无会话本人承接与开始wbint-t04) |
 | T27 | GET | `/api/tickets/{ticketId}/internal-notes/commands/{commandId}` | W | 已实现、默认关闭：按当前授权和原UUID只读核对内部备注终态 | [草稿与核对](workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) |
 | R01 | GET | `/api/manual-reviews` | W | 已实现：待复核 | [复核](workbench/manual-reviews.md) |
 | R02 | GET | `/api/manual-reviews/{reviewId}` | W | 已实现：复核详情 | [复核](workbench/manual-reviews.md) |
@@ -165,11 +167,20 @@
 | U17 | GET | `/reporter/reporter.js`、`/reporter/reporter.css` | Reporter | 静态：Reporter | [平台](platform/auth-health.md) |
 | U18 | GET | `/`、`/static/pilot-workbench.js`、`/static/pilot-workbench.css` | P | 历史页面/资源 | [平台](platform/auth-health.md) |
 
+## 已保存附件（WBINT-T16，默认关闭）
+
+| 方法 | 完整路径 | 宿主与状态 | 契约文档 |
+| --- | --- | --- | --- |
+| GET | `/api/workbench/items/{kind}/{id}/attachments` | W扩展，获权元信息；无Store／开关关闭明确不可用 | [附件](workbench/attachments.md) |
+| GET | `/api/attachments/{attachmentRef}?kind={kind}&id={id}` | W扩展，受控PNG/JPEG下载；显式注入受信加密Store | [附件](workbench/attachments.md) |
+
+基础会话宿主的旧通配附件路径仍是不可用；上述精确路由仅由P2016附件扩展处理，没有上传、登记或现取Provider能力。
+
 ## 明确拒绝与设计路径
 
 | 方法 | 完整路径 | 状态 | 去哪里找 |
 | --- | --- | --- | --- |
-| GET | `/api/attachments/*` | 主W显式404不可用 | [会话](workbench/conversations.md) |
+| GET | `/api/attachments/*` | 未匹配附件扩展的路径，基础W仍显式404不可用 | [附件](workbench/attachments.md)／[会话](workbench/conversations.md) |
 | POST | `/api/pilot/tickets/{ticketId}/actions/auto-close` | P显式403 | [平台](platform/auth-health.md) |
 | POST | `/api/tickets/{ticketId}/auto-close` | 无HTTP动作 | [工单](workbench/tickets.md) |
 | POST | `/api/incident-candidates/{candidateId}/expire` | 无HTTP动作 | [公共故障](workbench/incidents.md) |

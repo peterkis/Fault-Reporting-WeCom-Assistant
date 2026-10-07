@@ -21,7 +21,7 @@ test('same-profile account and purpose isolation and a separate native browser p
       browser=await launchSystemBrowser({url:path,width:900,height:900,cookies:[browserCookies[0]]});await ready(browser);assert.equal(await browser.evaluate("document.querySelector('textarea').value"),'');
     }catch(failure){error=failure;console.log('T03_SCOPE_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate('({text:document.body.innerText})'):{}));}
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
-  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true,includeSecondStaffSession:true});
+  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
 });
 
 test('late original decryption and confirmed receipt preserve newer unsent input and never resend the recovered command automatically',async()=>{

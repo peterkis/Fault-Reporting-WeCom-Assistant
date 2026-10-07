@@ -1,7 +1,8 @@
-import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
-import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt} from '../../../../contracts/p2_016_contracts';
-export type {P2016InternalNoteCommand};
-export interface TicketCommandContext {id:string;version:number;allowed_actions:string[]}
+import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupPage,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
+import type {P2016InternalNoteCommand,P2016InternalNoteResult,P2016InternalNoteReceipt,P2016SelfHandlingCommand,P2016SelfHandlingResult,P2016HandlingCycle} from '../../../../contracts/p2_016_contracts';
+export type {P2016InternalNoteCommand,P2016SelfHandlingCommand};
+export type SelfHandlingAction="take-and-start"|"accept-for-later";
+export interface TicketCommandContext {id:string;version:number;allowed_actions:string[];resolver_team_id:string;handling_cycle?:P2016HandlingCycle|null}
 export class UnknownCommandOutcome extends Error {constructor(){super('COMMAND_OUTCOME_UNKNOWN');}}
 export type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail };
 export class ApiError extends Error { constructor(public status:number,public code:string){super(code);} }
@@ -17,6 +18,11 @@ function decodeGroup(value:unknown):SourceGroupDisplay {
     ||!['ADMIN_CONFIRMED','UNREGISTERED'].includes(text(v.name_source))
     ||(v.name_source==='UNREGISTERED'?(name!==null||version!=='0'):(name===null||version==='0')))throw new ApiError(502,'INVALID_RESPONSE');
   return {ref,display_name:name,row_version:version,name_source:v.name_source as SourceGroupDisplay['name_source']};
+}
+function decodeGroupPage(value:unknown):SourceGroupPage {
+  const v=object(value);if(!Array.isArray(v.items)||v.items.length>100)throw new ApiError(502,'INVALID_RESPONSE');
+  const items=v.items.map(decodeGroup);if(new Set(items.map(group=>group.ref)).size!==items.length)throw new ApiError(502,'INVALID_RESPONSE');
+  return {items,next_cursor:nullable(v.next_cursor)};
 }
 function decodeCard(value:unknown):WorkbenchCard {
   const v=object(value);if(!['ticket','review','intake'].includes(text(v.kind))||!['pending','active','closed'].includes(text(v.column)))throw new ApiError(502,'INVALID_RESPONSE');
@@ -41,13 +47,15 @@ function decodeDetail(value:unknown):WorkbenchDetail {
   return {item:decodeCard(v.item),description:nullable(v.description),records:v.records.map(decodeRecord),next_cursor:nullable(v.next_cursor),
     responsibility:{ticket_assignee_name:nullable(r.ticket_assignee_name),conversation_assignees:strings(r.conversation_assignees)}};
 }
-export interface Principal {principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;draft_recovery_enabled:boolean;logout_enabled:boolean}
-function decodePrincipal(value:unknown):Principal {const v=object(value);if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.draft_recovery_enabled!=='boolean'||typeof v.logout_enabled!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,draft_recovery_enabled:v.draft_recovery_enabled,logout_enabled:v.logout_enabled};}
+export interface Principal {principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean;ticket_self_handling_enabled:boolean;draft_recovery_enabled:boolean;logout_enabled:boolean}
+function decodePrincipal(value:unknown):Principal {const v=object(value);if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean'||typeof v.ticket_self_handling_enabled!=='boolean'||typeof v.draft_recovery_enabled!=='boolean'||typeof v.logout_enabled!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled,ticket_self_handling_enabled:v.ticket_self_handling_enabled,draft_recovery_enabled:v.draft_recovery_enabled,logout_enabled:v.logout_enabled};}
 function version(value:unknown):number {if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1||value>2147483647)throw new ApiError(502,'INVALID_RESPONSE');return value;}
 function decodeTicketContext(value:unknown,ticketId:string):TicketCommandContext {
   const v=object(value),actions=strings(v.allowed_actions),ticket=id(v.id);
   if(ticket!==ticketId||actions.length>32||new Set(actions).size!==actions.length||actions.some(action=>! /^[a-z][a-z-]{0,63}$/u.test(action)))throw new ApiError(502,'INVALID_RESPONSE');
-  return {id:ticket,version:version(v.version),allowed_actions:actions};
+  const team=text(v.resolver_team_id);if(!/^[A-Z][A-Z0-9_]{0,63}$/u.test(team))throw new ApiError(502,'INVALID_RESPONSE');
+  if(actions.some(action=>['take-and-start','accept-for-later'].includes(action))&&!Object.hasOwn(v,'handling_cycle'))throw new ApiError(502,'INVALID_RESPONSE');
+  return {id:ticket,version:version(v.version),allowed_actions:actions,resolver_team_id:team,...(Object.hasOwn(v,'handling_cycle')?{handling_cycle:v.handling_cycle===null?null:decodeCycle(v.handling_cycle)}:{})};
 }
 async function rejectAuthorization(response:Response):Promise<never>{
   let code='AUTHORIZATION_REJECTED';
@@ -63,6 +71,28 @@ async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown)=>T):
   const value:unknown=await response.json();
   if(!response.ok){const v=object(value),e=object(v.error);throw new ApiError(response.status,text(e.code));}
   return decode(value);
+}
+function decodeCycle(value:unknown):P2016HandlingCycle {const v=object(value);return {id:id(v.id),cycle_no:version(v.cycle_no),first_responsibility_event_id:v.first_responsibility_event_id===null?null:id(v.first_responsibility_event_id)};}
+function decodeTicketReceipt(v:Record<string,unknown>,ticketId:string):P2016InternalNoteResult {return {ok:true,ticket_id:ticketId,ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id),control_event_id:null,replayed:v.replayed as boolean};}
+async function postTicketCommand<T>(ticketId:string,action:string,command:P2016InternalNoteCommand|P2016SelfHandlingCommand,csrfToken:string|null,signal:AbortSignal,decode:(value:Record<string,unknown>)=>T):Promise<T> {
+    try{
+      const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/'+action,{
+        method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
+        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
+      if([401,403,404].includes(response.status))return await rejectAuthorization(response);
+      if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
+      const v=object(await response.json());
+      if(!response.ok){
+        const code=text(object(v.error).code);
+        if(!/^[A-Z][A-Z0-9_]{0,100}$/u.test(code))throw new UnknownCommandOutcome();
+        // A durable FAILED receipt is a known refusal. An unstructured server failure may follow a commit.
+        if(response.status<500||(v.ok===false&&typeof v.replayed==='boolean'&&object(v.error).retryable===false)||['P2_016_DISABLED','P2_016_SELF_HANDLING_UNAVAILABLE'].includes(code))throw new ApiError(response.status,code);
+        throw new UnknownCommandOutcome();
+      }
+      if(v.ok!==true||id(v.ticket_id)!==ticketId||typeof v.replayed!=='boolean'||v.control_event_id!==null)throw new UnknownCommandOutcome();
+      return decode(v);
+    }catch(error){if(error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
+
 }
 export const api={
   async logout(csrfToken:string|null){
@@ -82,38 +112,33 @@ export const api={
     if(v.state==='COMMITTED'&&Object.keys(v).length===4){const r=object(v.result);if(Object.keys(r).length!==6||r.ok!==true||id(r.ticket_id)!==ticketId||r.control_event_id!==null||r.replayed!==true)throw new ApiError(502,'INVALID_RESPONSE');return {...base,state:'COMMITTED',result:{ok:true,ticket_id:ticketId,ticket_version:version(r.ticket_version),ticket_event_id:id(r.ticket_event_id),control_event_id:null,replayed:true}};}
     throw new ApiError(502,'INVALID_RESPONSE');
   }),
-  async addInternalNote(ticketId:string,command:P2016InternalNoteCommand,csrfToken:string|null,signal:AbortSignal):Promise<P2016InternalNoteResult> {
-    try{
-      const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/internal-notes',{
-        method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
-        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
-      if([401,403,404].includes(response.status))return await rejectAuthorization(response);
-      if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
-      const v=object(await response.json());
-      if(!response.ok){
-        const code=text(object(v.error).code);
-        if(!/^[A-Z][A-Z0-9_]{0,100}$/u.test(code))throw new UnknownCommandOutcome();
-        // A durable FAILED receipt is a known refusal. An unstructured server failure may follow a commit.
-        if(response.status<500||(v.ok===false&&typeof v.replayed==='boolean'&&object(v.error).retryable===false)||code==='P2_016_DISABLED')throw new ApiError(response.status,code);
-        throw new UnknownCommandOutcome();
-      }
-      if(v.ok!==true||id(v.ticket_id)!==ticketId||typeof v.replayed!=='boolean'||v.control_event_id!==null)throw new UnknownCommandOutcome();
-      return {ok:true,ticket_id:ticketId,ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id),control_event_id:null,replayed:v.replayed};
-    }catch(error){if(error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
-  },
+
+  sourceGroups:(q:string,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/source-groups?'+new URLSearchParams({limit:'50',q,...(cursor?{cursor}:{})}),signal,decodeGroupPage),
+  bootstrap:(signal:AbortSignal)=>get('/api/lifecycle/bootstrap',signal,decodePrincipal),
+  ticketCommandContext:(ticketId:string,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId),signal,value=>decodeTicketContext(value,ticketId)),
+  addInternalNote:(ticketId:string,command:P2016InternalNoteCommand,csrfToken:string|null,signal:AbortSignal)=>postTicketCommand(ticketId,'internal-notes',command,csrfToken,signal,v=>decodeTicketReceipt(v,ticketId)),
+  selfHandle:(ticketId:string,action:SelfHandlingAction,command:P2016SelfHandlingCommand,csrfToken:string|null,signal:AbortSignal):Promise<P2016SelfHandlingResult>=>postTicketCommand(ticketId,action,command,csrfToken,signal,v=>{
+    const receipt=decodeTicketReceipt(v,ticketId),cycle=decodeCycle(v.handling_cycle);if(cycle.first_responsibility_event_id===null)throw new UnknownCommandOutcome();
+    return {...receipt,handling_cycle:{...cycle,first_responsibility_event_id:cycle.first_responsibility_event_id}};
+  }),
   board:(column:BoardColumn,range:CompletionRange,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/board?'+new URLSearchParams({column,range,limit:'50',...(cursor?{cursor}:{})}),signal,decodePage),
   detail:(kind:string,id:string,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/items/'+encodeURIComponent(kind)+'/'+encodeURIComponent(id)+'?'+new URLSearchParams({limit:'50',...(cursor?{cursor}:{})}),signal,value=>{
     const detail=decodeDetail(value);if(detail.item.kind!==kind||detail.item.id!==id)throw new ApiError(502,'INVALID_RESPONSE');return detail;
   }),
-  async saveGroupName(ref:string,command:SourceGroupNameCommand,csrfToken:string|null):Promise<SourceGroupNameResult> {
-    const response=await fetch('/api/workbench/source-groups/'+encodeURIComponent(ref)+'/name',{
-      method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',
-      headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_row_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
-    if(!response.headers.get('content-type')?.startsWith('application/json'))throw new ApiError(response.ok?502:response.status,'INVALID_RESPONSE');
-    const v=object(await response.json());if(!response.ok)throw new ApiError(response.status,text(object(v.error).code));
-    if(v.ok!==true||typeof v.replayed!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');
-    const group=decodeGroup(v.group);if(group.ref!==ref)throw new ApiError(502,'INVALID_RESPONSE');
-    return {ok:true,group,replayed:v.replayed};
+  async saveGroupName(ref:string,command:SourceGroupNameCommand,csrfToken:string|null,signal:AbortSignal):Promise<SourceGroupNameResult> {
+    try{
+      const response=await fetch('/api/workbench/source-groups/'+encodeURIComponent(ref)+'/name',{
+        method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
+        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_row_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
+      if([401,403,404].includes(response.status))return await rejectAuthorization(response);
+      if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
+      const v=object(await response.json());
+      if(!response.ok){const code=text(object(v.error).code);if(!/^[A-Z][A-Z0-9_]{0,100}$/u.test(code))throw new UnknownCommandOutcome();if(response.status<500||code==='P2_016_DISABLED')throw new ApiError(response.status,code);throw new UnknownCommandOutcome();}
+      if(v.ok!==true||typeof v.replayed!=='boolean')throw new UnknownCommandOutcome();
+      const group=decodeGroup(v.group);
+      if(group.ref!==ref||group.row_version!==String(BigInt(command.expected_row_version)+1n)||group.display_name!==command.display_name.trim()||group.name_source!=='ADMIN_CONFIRMED')throw new UnknownCommandOutcome();
+      return {ok:true,group,replayed:v.replayed};
+    }catch(error){if(error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
   },
 };
 export const statusLabels:Record<string,string>={NEW:'待接单',QUEUED:'待接单',ACCEPTED:'已领取',REOPENED:'重新报障',PENDING:'待复核',RECEIVED:'已受理待建单',WAITING_DESCRIPTION:'待补充报修信息',WAITING_TRIAGE:'待判断',FAILED:'受理处理失败',IN_PROGRESS:'处理中',WAITING_REQUESTER:'等待补充',WAITING_VENDOR:'等待厂商',RESOLVED:'已解决待确认',CLOSED:'已关闭',CANCELLED:'已取消',DUPLICATE_LINKED:'已关联重复单'};

@@ -74,6 +74,6 @@ Origin: <workbench-origin>
 
 共享错误见公共约定；本模块常见 `WORKBENCH_UNAUTHENTICATED/AUTH_EXPIRED/FORBIDDEN/NOT_FOUND/CSRF_INVALID/ORIGIN_INVALID/VERSION_CONFLICT/IDEMPOTENCY_MISMATCH`，投递控制还有 `WORKBENCH_DELIVERY_RETRY_FORBIDDEN/DELIVERY_RECONCILIATION_REQUIRED`。版本冲突刷新后再决定新意图；网络未知结果保持原 ID。
 
-`GET /api/attachments/*` 当前明确返回 404 `WORKBENCH_ATTACHMENT_NOT_AVAILABLE`。会话 detail 中 Incident/attachments 的 available:false 是这一参考视图的状态，不代表独立 Incident API 未实现。
+基础会话宿主的 `GET /api/attachments/*` 明确返回 404 `WORKBENCH_ATTACHMENT_NOT_AVAILABLE`。P2016宿主后继默认关闭的[事项附件扩展](attachments.md)有独立的精确下载合同，不从会话引用自动授予读取权。会话 detail 中 Incident/attachments 的 available:false 是这一参考视图的状态，不代表独立 Incident API 未实现。
 
 核对测试：[unit](../../../tests/p2-006-workbench.test.mjs)、[integration](../../../tests/p2-006-workbench.integration.test.mjs)。更详细背景：[P2-006](../../42_p2_006_realtime_web_workbench.md)。这些是验证入口，不声明本轮重跑了业务验收。

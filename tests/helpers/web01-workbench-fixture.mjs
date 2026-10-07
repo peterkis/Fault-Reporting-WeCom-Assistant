@@ -13,6 +13,10 @@ import {createSafeActionExecutor,createExistingTicketCommandPort} from '../../sr
 import {createManualReviewStore} from '../../src/p2-015-manual-review.mjs';
 import {createDecisionStore} from '../../src/p2-015-decision-store.mjs';
 import {migrateWorkbenchSourceGroups} from '../../scripts/workbench-source-groups-migrate.mjs';
+import {migrateP2012} from '../../scripts/p2-012-migrate.mjs';
+import {migrateYxxSelfService} from '../../scripts/yxx-self-service-migrate.mjs';
+import {createYxxSelfServiceStore} from '../../src/yxx-self-service-store.mjs';
+import {migrateTicketSelfHandling} from '../../scripts/ticket-self-handling-migrate.mjs';
 import {createServiceIntakeDecisionPort} from '../../src/p2-015-service-intake-decision-port.mjs';
 import {migrateWorkbenchAuth} from '../../scripts/p2-016-workbench-auth-migrate.mjs';
 import {createWeComWorkbenchAuthentication} from '../../src/p2-016-workbench-wecom-auth.mjs';
@@ -36,16 +40,25 @@ const scenarios=[
 ];
 const eventTypes={NEW:'ticket.created',QUEUED:'ticket.queued',REOPENED:'ticket.reopened',ACCEPTED:'ticket.accepted',IN_PROGRESS:'ticket.started',WAITING_VENDOR:'ticket.waiting_vendor',WAITING_REQUESTER:'ticket.waiting_requester',CLOSED:'ticket.closed',RESOLVED:'ticket.resolved'};
 async function unusedPort(){const s=createServer();await new Promise(r=>s.listen(0,'127.0.0.1',r));const port=s.address().port;await new Promise(r=>s.close(r));return port;}
-export async function withWeb01Fixture(run,{sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,includeSecondStaffSession=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+// Actual Web source through the existing Store Port: there is no Bot inbox/thread to project into a Session.
+export async function seedWeb01NoConversationIntake({pool,text,location='合成位置'}){
+  const scope={scopeHash:createHash('sha256').update('web01-only-'+randomUUID()).digest('hex'),sourceCorpScope:'web01-synthetic-corp',sourceAppScope:'web01-synthetic-app',proofRef:'web01-synthetic-proof'};
+  const {receipt}=await createYxxSelfServiceStore({pool}).accept({scope,input:{schema_version:1,client_command_id:randomUUID(),description:text,location:{text:location,unknown:false},service_code:null,impact_scope:'SELF',reported_department_text:null,extension:null}});
+  const row=(await pool.query('SELECT i.id::text,i.retention_until FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1',[receipt.request_ref])).rows[0];
+  return {intakeId:row.id,receivedAt:receipt.accepted_at,retentionUntil:row.retention_until,requestRef:receipt.request_ref};
+}
+export async function withWeb01Fixture(run,{installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
+    if(ticketSelfHandlingEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});if(installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});}
     if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
     const access=createPilotAccessService({pool});
     const principals=[];for(const [index,name] of ['林舟','陈悦','周宁','沈然'].entries())principals.push(await access.upsertPrincipal({wecomUserId:'web01-synthetic-'+index,displayName:name,roles:index?['HANDLER']:['ADMIN'],resolverTeamIds:['PILOT_IT']}));
     const outsider=await access.upsertPrincipal({wecomUserId:'web01-synthetic-outsider',displayName:'未授权对象测试',roles:['HANDLER'],resolverTeamIds:[]});
     const core=createPilotTicketCore({pool}),tickets=[];
     for(const [index,[title,location,status]] of scenarios.entries()){
-      const intake=await seedPersistedIntake({pool,text:title+'。全新合成开发材料，请协助排查。',requestType:'INCIDENT',status:'RECEIVED'});
+      const text=title+'。全新合成开发材料，请协助排查。';
+      const intake=ticketSelfHandlingEnabled&&ticketSelfHandlingWebSource?await seedWeb01NoConversationIntake({pool,text,location}):await seedPersistedIntake({pool,text,requestType:'INCIDENT',status:'RECEIVED'});
       let ticket=(await core.createForIntake({intakeId:intake.intakeId,occurredAt:intake.receivedAt,traceId:'web01-synthetic'})).ticket;
       const row=(await pool.query(`UPDATE pilot_ticket.ticket SET title=$2,status=$3,reported_location_text=$4,version=2,
         assignee_id=$5::uuid,created_at=platform.local_now()-interval '30 days',updated_at=platform.local_now()-($6::text||' minutes')::interval
@@ -59,7 +72,7 @@ export async function withWeb01Fixture(run,{sourceGroupDirectoryEnabled=false,wo
       safeActionExecutor:createSafeActionExecutor({intakeDecisionPort:createServiceIntakeDecisionPort(),ticketCommandPort:createExistingTicketCommandPort({ticketCore:core}),manualReviewStore:createManualReviewStore(),decisionStore:createDecisionStore()}),
       ruleEngine:{catalog_version:'WEB01_FIXTURE',rule_set_version:'WEB01_FIXTURE',evaluate(){throw new Error('fixture creates persisted pending review');}}});
     const standalone=await seedPersistedIntake({pool,text:'尚待判断的合成材料，请协助确认。'});
-    for(const intakeId of [standalone.intakeId,tickets[0].intake.intakeId])await orchestrator.processPersistedIntake({service_intake_id:intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
+    for(const intakeId of [standalone.intakeId,...(ticketSelfHandlingEnabled&&ticketSelfHandlingWebSource?[]:[tickets[0].intake.intakeId])])await orchestrator.processPersistedIntake({service_intake_id:intakeId,feature_flags:{RULE_FIRST_ORCHESTRATION_ENABLED:true,MANUAL_REVIEW_QUEUE_ENABLED:true}});
     // Explicit real relation: the pending review and Ticket are the same intake, not two cards.
     await pool.query(`UPDATE intake.manual_review_item SET linked_ticket_id=$2::uuid WHERE service_intake_id=$1::uuid`,[tickets[0].intake.intakeId,tickets[0].ticket.id]);
     await pool.query(`UPDATE intake.contact_journey SET linked_ticket_id=$2::uuid WHERE origin_intake_id=$1::uuid`,[tickets[0].intake.intakeId,tickets[0].ticket.id]);
@@ -87,7 +100,7 @@ export async function withWeb01Fixture(run,{sourceGroupDirectoryEnabled=false,wo
       }finally{await closeBrowserTestResources([async()=>{await tls?.close();if(tls)assert.deepEqual(tls.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});},async()=>{await runtime?.stop();await auth?.close();if(runtime)assert.equal(runtime.server.listening,false);}]);}
     }
     const listenPort=await unusedPort(),origin='http://127.0.0.1:'+listenPort;
-    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id,...(includeSecondStaffSession?[principals[1].id]:[])],externalSendEnabled:false,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});
+    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id,principals[1].id],externalSendEnabled:false,ticketSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});
     const started=await runtime.start(),cookies=started.cookies.map(c=>c.name+'='+c.value);
     // Keep the test-owned fault active until explicit reconciliation: Chromium can transparently repeat a transport request.
     let dropNoteResponses=dropInternalNoteResponses;
@@ -103,7 +116,14 @@ export async function withWeb01Fixture(run,{sourceGroupDirectoryEnabled=false,wo
       const end=response.end.bind(response);
       response.end=(...args)=>[401,403,404].includes(response.statusCode)?end('{'):end(...args);
     });
-    try{return await run({...context,tickets,waiting,principals,outsider,runtime,origin,cookies,browserCookies:started.cookies,restoreInternalNoteResponses});}
+    let dropHandlingResponses=dropSelfHandlingResponses,malformedHandlingSuccess=malformedSelfHandlingSuccess;
+    const restoreSelfHandlingResponses=()=>{dropHandlingResponses=false;malformedHandlingSuccess=false;};
+    if(dropSelfHandlingResponses||malformedSelfHandlingSuccess||malformedSelfHandlingDenial)runtime.server.on('request',(request,response)=>{
+      if(!/\/(take-and-start|accept-for-later)$/u.test(request.url??''))return;
+      const end=response.end.bind(response);
+      response.end=(...args)=>{if(response.statusCode===200&&dropHandlingResponses){request.socket.destroy();return response;}if(response.statusCode===200&&malformedHandlingSuccess)return end('{"ok":true}');if([401,403,404].includes(response.statusCode)&&malformedSelfHandlingDenial)return end('{');return end(...args);};
+    });
+    try{return await run({...context,tickets,waiting,principals,outsider,runtime,origin,cookies,browserCookies:started.cookies,restoreInternalNoteResponses,restoreSelfHandlingResponses});}
     finally{await runtime.stop();if(runtime.server.listening)throw new Error('WEB01_SERVER_NOT_CLOSED');}
   }});
 }

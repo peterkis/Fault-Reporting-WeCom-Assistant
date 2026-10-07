@@ -3,17 +3,22 @@ import {ApiError} from '../api/client';
 import {useUiStore} from './ui-store';
 import {purgeDrafts} from '../features/drafts/encrypted-drafts';
 
-export async function clearTicketView(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){
-  const matches=(key:readonly unknown[])=>key[1]===principal&&((key[0]==='detail'&&key[2]==='ticket'&&key[3]===ticketId)||(key[0]==='ticket-command-context'&&key[2]===ticketId));
+export async function clearItemView(client:QueryClient,principal:unknown,kind:unknown,id:unknown,error:ApiError){
+  const matches=(key:readonly unknown[])=>key[1]===principal&&(((key[0]==='detail'||key[0]==='attachments')&&key[2]===kind&&key[3]===id)||(kind==='ticket'&&key[0]==='ticket-command-context'&&key[2]===id));
   await client.cancelQueries({predicate:query=>matches(query.queryKey)},{revert:false});
   for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)}))query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
-  for(const mutation of client.getMutationCache().findAll({predicate:mutation=>mutation.options.mutationKey?.[1]===principal&&mutation.options.mutationKey?.[2]===ticketId&&['ticket-internal-note','ticket-self-handling'].includes(String(mutation.options.mutationKey?.[0]))}))client.getMutationCache().remove(mutation);
+  for(const mutation of client.getMutationCache().findAll({predicate:mutation=>{
+    const key=mutation.options.mutationKey;
+    return key?.[1]===principal&&((kind==='ticket'&&key[2]===id&&['ticket-internal-note','ticket-self-handling'].includes(String(key[0])))||(key[0]==='attachment-download'&&key[2]===kind&&key[3]===id));
+  }}))client.getMutationCache().remove(mutation);
   void client.invalidateQueries({queryKey:['board',principal],refetchType:'active'});
 }
-export async function clearTicketAuthorization(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){
-  await clearTicketView(client,principal,ticketId,error);
-  if(typeof principal==='string'&&typeof ticketId==='string')await purgeDrafts({principal,kind:'ticket',id:ticketId,reason:'revoked'}).catch(()=>{});
+export function clearTicketView(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){return clearItemView(client,principal,'ticket',ticketId,error);}
+export async function clearItemAuthorization(client:QueryClient,principal:unknown,kind:unknown,id:unknown,error:ApiError){
+  await clearItemView(client,principal,kind,id,error);
+  if(typeof principal==='string'&&typeof id==='string'&&(kind==='ticket'||kind==='review'||kind==='intake'))await purgeDrafts({principal,kind,id,reason:'revoked'}).catch(()=>{});
 }
+export function clearTicketAuthorization(client:QueryClient,principal:unknown,ticketId:unknown,error:ApiError){return clearItemAuthorization(client,principal,'ticket',ticketId,error);}
 export function clearSessionView(client:QueryClient,status:401|403|undefined,notice?:string){
   if(status)useUiStore.getState().failSession(status);else useUiStore.getState().closeSession(notice??'会话已关闭，请重新核验。');
   void client.cancelQueries();client.clear();

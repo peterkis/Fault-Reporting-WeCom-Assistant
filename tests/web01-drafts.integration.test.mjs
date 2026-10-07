@@ -31,5 +31,5 @@ test('an authorized internal-note receipt can be checked without its expired pay
     const events=await (await read('/api/tickets/'+ticketId+'/events')).json();assert.equal(events.items.filter(event=>event.event_type==='ticket.note_added').length,2);
     await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
     assert.equal((await read(path)).status,404);
-  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true,includeSecondStaffSession:true});
+  },{workbenchInternalNotesEnabled:true,workbenchDraftRecoveryEnabled:true});
 });

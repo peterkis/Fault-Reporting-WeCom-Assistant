@@ -55,6 +55,7 @@ export function selectBrowserTarget(values,{url,redirectPaths=[]}){
 
 // Execute every owned cleanup step and retain the original failure alongside
 // cleanup failures. This helper does not treat a cleanup exception as success.
+/** @param {Array<()=>unknown|Promise<unknown>>} closers @param {unknown} [primaryError] */
 export async function closeBrowserTestResources(closers,primaryError=null){
   const errors=primaryError?[primaryError]:[];
   for(const close of closers){try{await close();}catch(error){errors.push(error);}}
@@ -62,6 +63,7 @@ export async function closeBrowserTestResources(closers,primaryError=null){
   if(errors.length>1)throw new AggregateError(errors,'P2_006_BROWSER_TEST_AND_CLEANUP_FAILED');
 }
 
+/** @param {{url:string,width:number,height:number,cookies?:Array<{name:string,value:string,url:string,httpOnly?:boolean,secure?:boolean,sameSite?:string,expires?:number}>,redirectPaths?:string[],signal?:AbortSignal,certificateSpki?:string|null,socketFactory?:(address:string)=>WebSocket}} options */
 export async function launchSystemBrowser({url,width,height,cookies=[],redirectPaths=[],signal,certificateSpki=null,socketFactory=address=>new WebSocket(address)}){
   signal?.throwIfAborted();
   assert.ok(certificateSpki===null||typeof certificateSpki==='string'&&/^[A-Za-z0-9+/]{43}=$/u.test(certificateSpki));

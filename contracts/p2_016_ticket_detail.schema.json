@@ -117,12 +117,56 @@
           "reopen",
           "cancel",
           "add-note",
-          "transfer-assignment"
+          "transfer-assignment",
+          "take-and-start",
+          "accept-for-later"
         ]
       }
     },
     "web_report": {
       "$ref": "p2_016_web_report.schema.json"
+    },
+    "handling_cycle": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "cycle_no",
+            "first_responsibility_event_id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 36,
+              "maxLength": 36,
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "cycle_no": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "first_responsibility_event_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 36,
+                  "maxLength": 36,
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   },
   "x-business-timezone": "Asia/Shanghai",

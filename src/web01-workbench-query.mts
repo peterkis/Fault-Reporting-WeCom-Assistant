@@ -99,6 +99,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null}: {pool:
     const selected=card(row);return sourceGroups?(await sourceGroups.decorate([selected]))[0]??selected:selected;
   }
   return Object.freeze({
+    authorizedItem:item,
     async list(input: Input): Promise<BoardPage> {
       const authorized=await scope(input.authContext);
       const column=input.column??'pending',mode=input.range??'recent';
@@ -136,7 +137,7 @@ export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null}: {pool:
         WHERE id=$1::uuid AND retention_until>platform.local_now()`,[selected.intake_id]);
       const web=report.rows[0]?.source_provider==='YIXIAOXIU_WEB';
       const webRecords=web?`UNION ALL
-        SELECT 'web:'||s.id::text,to_char(s.created_at,'YYYY-MM-DD HH24:MI:SS'),
+        SELECT 'web:'||s.id::text,to_char(s.received_at,'YYYY-MM-DD HH24:MI:SS'),
           CASE WHEN s.kind='SUBMIT' THEN '报修原文' ELSE '报修补充' END,
           CASE WHEN s.kind='SUBMIT' THEN s.safe_content->>'description' ELSE s.safe_content->>'text' END,
           'REPORT',NULL,NULL,NULL FROM intake.web_submission s
