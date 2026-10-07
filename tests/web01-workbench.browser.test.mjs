@@ -8,6 +8,87 @@ import {createHash} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+
+test('a real object denial clears cached note actions even when the rejection body is unreadable',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets,pool})=>{
+    let browser,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+tickets[5].ticket.id+'?detail=page',width:1920,height:1080,cookies:[browserCookies[0]]});
+      await browser.waitFor("Boolean(document.querySelector('[aria-label=\"内部备注\"]'))");
+      await browser.evaluate("(()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 denied synthetic note');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+      await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
+      await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
+      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')&&!document.querySelector('[aria-label=\"内部备注\"]')");
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-allowed-actions'))"),false);
+      assert.equal(await browser.evaluate("document.body.innerText.includes('结果未知')"),false);
+      assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
+    }catch(failure){error=failure;console.log('T02_DENIAL_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText})"):{}));}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchInternalNotesEnabled:true,malformedInternalNoteDenial:true});
+});
+
+for(const fault of ['disconnect','invalid-success'])test('Ticket internal note production form preserves the original command after '+fault,async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets,restoreInternalNoteResponses})=>{
+    const ticketId=tickets[5].ticket.id;
+    const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);const screenshots=[];
+    let browser,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticketId+'?detail=page',width:1920,height:1080,cookies:[browserCookies[0]]});
+      const capture=async name=>{const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name);await writeFile(file,bytes);screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
+      await browser.waitFor("Boolean(document.querySelector('#detail-title'))");
+      await browser.waitFor("document.querySelector('.ticket-command-version')?.textContent==='工单版本 2'");
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('[aria-label=\"内部备注\"]'))"),true);
+      assert.equal(await browser.evaluate("document.querySelector('.ticket-command-version')?.textContent"),'工单版本 2');
+      await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__t02Commands=[];globalThis.fetch=(path,options)=>{if(String(path).endsWith('/internal-notes'))globalThis.__t02Commands.push(JSON.parse(options.body));return original(path,options);};const input=document.querySelector('[aria-label="内部备注"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 bundle synthetic canary');input.dispatchEvent(new Event('input',{bubbles:true}));return true;})()`);
+      await browser.command('Network.enable');await browser.command('Network.emulateNetworkConditions',{offline:false,latency:250,downloadThroughput:-1,uploadThroughput:-1});
+      await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
+      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('正在保存')");
+      assert.equal(await browser.evaluate("document.querySelector('[data-action=save-internal-note]').disabled"),true);
+      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('结果未知')");
+      await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"内部备注\"]').disabled"),true);
+      assert.equal(await browser.evaluate("globalThis.__t02Commands.length"),1);
+      await capture('new-detail-1920.png');
+      const before=await browser.evaluate(`fetch('/api/tickets/${ticketId}').then(r=>r.json()).then(v=>v.version)`);assert.equal(before,3);
+      restoreInternalNoteResponses();
+      await browser.evaluate("document.querySelector('[data-action=check-internal-note]').click()");
+      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('已保存')");
+      const commands=await browser.evaluate('globalThis.__t02Commands');assert.equal(commands.length,2);assert.deepEqual(commands[1],commands[0]);assert.equal(commands[0].external_visible,false);assert.equal(commands[0].expected_version,2);
+      await browser.waitFor("document.querySelector('.activity-list')?.innerText.includes('T02 bundle synthetic canary')&&document.querySelector('.ticket-command-version')?.textContent==='工单版本 3'");
+      assert.equal(await browser.evaluate("document.querySelector('[aria-label=\"内部备注\"]').value"),'');
+      assert.equal(await browser.evaluate(`fetch('/api/tickets/${ticketId}/events').then(r=>r.json()).then(v=>v.items.filter(e=>e.event_type==='ticket.note_added').length)`),1);
+      await capture('new-detail-page-1920.png');console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',ticket_internal_notes:true,fault,screenshots}));
+    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate("({text:document.body.innerText,commands:globalThis.__t02Commands})")));}}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchInternalNotesEnabled:true,dropInternalNoteResponses:fault==='disconnect',malformedInternalNoteSuccess:fault==='invalid-success'});
+});
+
+test('Ticket note conflict retains input without resending and a later identity rejection clears the session',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets,pool,principals})=>{
+    const ticketId=tickets[5].ticket.id;let browser,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+'/workbench/app/items/ticket/'+ticketId+'?detail=page',width:900,height:900,cookies:[browserCookies[0]]});
+      await browser.waitFor("document.querySelector('.ticket-command-version')?.textContent==='工单版本 2'");
+      await browser.evaluate(`(async()=>{const bootstrap=await fetch('/api/lifecycle/bootstrap').then(r=>r.json()),body={client_command_id:crypto.randomUUID(),expected_version:2,reason_code:'WORKBENCH_INTERNAL_NOTE',note:'T02 independent version update',external_visible:false};const response=await fetch('/api/tickets/${ticketId}/internal-notes',{method:'POST',headers:{'content-type':'application/json','idempotency-key':body.client_command_id,'if-match':'"2"','x-csrf-token':bootstrap.csrf_token},body:JSON.stringify(body)});if(response.status!==200)throw Error('setup command failed');})()`);
+      await browser.evaluate("(()=>{const original=globalThis.fetch;globalThis.__t02Commands=[];globalThis.__t02PostStatuses=[];globalThis.__t02InFlight=0;globalThis.fetch=(path,options)=>{globalThis.__t02InFlight++;const note=String(path).endsWith('/internal-notes');if(note)globalThis.__t02Commands.push(JSON.parse(options.body));return original(path,options).then(response=>{if(note)globalThis.__t02PostStatuses.push(response.status);return response;}).finally(()=>{globalThis.__t02InFlight--;});};const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 conflict retained input');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+      await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");
+      await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('保存冲突')&&document.querySelector('.ticket-command-version')?.textContent==='工单版本 3'");
+      assert.equal(await browser.evaluate("document.querySelector('textarea').value"),'T02 conflict retained input');assert.equal(await browser.evaluate('globalThis.__t02Commands.length'),1);
+      assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+      await browser.evaluate("document.querySelector('[data-action=save-internal-note]').click()");await browser.waitFor("document.querySelector('.ticket-note-state')?.textContent.includes('已保存')");
+      const commands=await browser.evaluate('globalThis.__t02Commands');assert.equal(commands.length,2);assert.notEqual(commands[0].client_command_id,commands[1].client_command_id);assert.equal(commands[1].expected_version,3);
+      // Finish the actual post-save refetches before changing identity, so this phase tests mutation denial rather than a racing query denial.
+      await browser.waitFor("globalThis.__t02InFlight===0&&document.querySelector('.ticket-command-version')?.textContent==='工单版本 4'");
+      await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
+      await browser.evaluate("(async()=>{const input=document.querySelector('textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'T02 rejected after expiry');input.dispatchEvent(new Event('input',{bubbles:true}));await new Promise(resolve=>requestAnimationFrame(resolve));document.querySelector('[data-action=save-internal-note]').click();})()");
+      await browser.waitFor("(document.body.innerText.includes('会话已失效')||document.body.innerText.includes('当前身份没有查看权限'))&&!document.querySelector('textarea')&&!document.querySelector('.sidebar')");
+      const statuses=await browser.evaluate('globalThis.__t02PostStatuses');assert.equal(statuses.length,3);assert.deepEqual(statuses.slice(0,2),[409,200]);assert.ok([401,403].includes(statuses[2]));
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('.ticket-allowed-actions')||document.querySelector('#detail-title'))"),false);
+      assert.equal(await browser.evaluate("document.body.innerText.includes('仅供内部的合成处理记录')"),false);
+    }catch(failure){error=failure;console.log('T02_EXPIRY_DIAGNOSTIC '+JSON.stringify(browser?await browser.evaluate("({text:document.body.innerText,statuses:globalThis.__t02PostStatuses,inFlight:globalThis.__t02InFlight})"):{}));}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{workbenchInternalNotesEnabled:true});
+});
 test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/refresh and denied state',async()=>{
   await withWeb01Fixture(async({origin,browserCookies,tickets,pool,principals})=>{
     const directory=resolve(process.env.WEB01_SCREENSHOT_DIR??join(tmpdir(),'web01-ui-'+randomUUID()));await mkdir(directory,{recursive:true});

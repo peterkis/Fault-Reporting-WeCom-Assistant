@@ -17,8 +17,8 @@ execution_status: IN_PROGRESS
 | ID | 任务 | 前置 | 状态 | 验收组 |
 | --- | --- | --- | --- | --- |
 | WBINT-00 | 基线、动作／授权／合同冻结 | 计划已确认 | IN_PROGRESS：T01文档LOCAL_VERIFIED；T23未开始 | A00 |
-| WBINT-01 | 命令上下文、错误与草稿基础 | 00 | NOT_STARTED | A01 |
-| WBINT-02 | 轮次与责任／一步处理／退回 | 01 | NOT_STARTED | A02 |
+| WBINT-01 | 命令上下文、错误与草稿基础 | 00 | IN_PROGRESS：[T02可靠备注LOCAL_VERIFIED](execution/t02.md)；T03持久恢复未开始 | A01 |
+| WBINT-02 | 轮次与责任／一步处理／退回 | 01 | IN_PROGRESS：[T02真实动作／版本LOCAL_VERIFIED](execution/t02.md)；T04–T10未开始 | A02 |
 | WBINT-03 | 完工、接管关闭、责任链 | 02 | NOT_STARTED | A03 |
 | WBINT-04 | 人工复核到处理、受控资料 | 02；完工展示依赖03 | NOT_STARTED | A04 |
 | WBINT-05 | 工作人员代录、成员候选 | 02、04 | NOT_STARTED | A05 |

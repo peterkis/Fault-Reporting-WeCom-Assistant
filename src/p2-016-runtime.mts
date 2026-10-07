@@ -13,7 +13,7 @@ import { createWeb01WorkbenchStatic } from './web01-workbench-static.mjs';
 import {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
 import {createWorkbenchAttachments} from './workbench-attachments.mjs';
 import type {AttachmentStore} from '../contracts/workbench_attachment_contracts.js';
-interface P2016RuntimeOptionsInput { sourceGroupDirectoryEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
+interface P2016RuntimeOptionsInput { sourceGroupDirectoryEnabled?:boolean;workbenchInternalNotesEnabled?:boolean;workbenchAttachmentsEnabled?:boolean;attachmentStore?:AttachmentStore|null }
 
 type RealtimeProjector = ReturnType<typeof createP2016RealtimeProjector>;
 type Notifications = ReturnType<typeof createP2016TicketNotificationProjector>;
@@ -69,9 +69,10 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,directorySource='WECOM_DIRECTORY',directoryStore=null,directorySourceScope='FORMAL',directorySyncJob=null,ruleEngine,serviceCatalog,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
   reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,
-  workbenchAuthentication=null,sourceGroupDirectoryEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=null,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
+  workbenchAuthentication=null,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchAttachmentsEnabled=false,attachmentStore=null,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
   if(typeof sourceGroupDirectoryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   if(typeof workbenchAttachmentsEnabled!=='boolean')failP2016('FLAG_INVALID',503);
+  if(typeof workbenchInternalNotesEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const featureFlags=flagsP2016(flags) as Record<'TICKET_LIFECYCLE_WORKBENCH_ENABLED' | 'REPORTER_TIMELINE_ENABLED' | 'WECOM_TEMPLATE_CARD_ENABLED', boolean>,enabled=featureFlags.TICKET_LIFECYCLE_WORKBENCH_ENABLED;
   const policy=reporterAccessPolicy(reporterPolicy) as 'LEGACY_BOUND_GRANT' | 'MEMBER_REQUIRED',memberConfig=validateYxxEntryConfig(reporterMemberEntry as Record<string, unknown>);
   if(policy==='MEMBER_REQUIRED'&&(!memberConfig.enabled||wecomWebOAuth.enabled!==true||!featureFlags.REPORTER_TIMELINE_ENABLED))failYxx('CONFIG_INVALID');
@@ -114,7 +115,7 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       reviews=createP2016ManualReviewFacade({pool,enabled,query,notificationProjector:notifications,realtimeProjector,personDestinationAuthorizer,communicationAppend});
       const deliveryControl=createP2016DeliveryControl({pool,query,enabled,externalSendEnabled});
       incidentExtension=incidentExtensionFactory?.({pool,realtime,query})??null;
-      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,sourceGroupDirectoryEnabled});
+      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
       const sourceGroups=sourceGroupDirectoryEnabled?createWorkbenchSourceGroups({pool,query}):null;
       const workbenchQuery=createWeb01WorkbenchQuery({pool,query,sourceGroups});

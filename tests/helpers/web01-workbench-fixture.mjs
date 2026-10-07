@@ -31,7 +31,7 @@ const scenarios=[
 ];
 const eventTypes={NEW:'ticket.created',QUEUED:'ticket.queued',REOPENED:'ticket.reopened',ACCEPTED:'ticket.accepted',IN_PROGRESS:'ticket.started',WAITING_VENDOR:'ticket.waiting_vendor',WAITING_REQUESTER:'ticket.waiting_requester',CLOSED:'ticket.closed',RESOLVED:'ticket.resolved'};
 async function unusedPort(){const s=createServer();await new Promise(r=>s.listen(0,'127.0.0.1',r));const port=s.address().port;await new Promise(r=>s.close(r));return port;}
-export async function withWeb01Fixture(run,{sourceGroupDirectoryEnabled=false}={}){
+export async function withWeb01Fixture(run,{sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
     if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
@@ -61,9 +61,23 @@ export async function withWeb01Fixture(run,{sourceGroupDirectoryEnabled=false}={
     const waiting=await seedPersistedIntake({pool,text:'位置尚不清楚，等待补充的全新合成报修。',status:'WAITING_DESCRIPTION'});
     await pool.query("UPDATE intake.service_intake SET intake_no=regexp_replace(intake_no,'^INT-[0-9]{8}','INT-'||to_char(platform.local_now(),'YYYYMMDD'))");
     const listenPort=await unusedPort(),origin='http://127.0.0.1:'+listenPort;
-    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id],externalSendEnabled:false,sourceGroupDirectoryEnabled});
+    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id],externalSendEnabled:false,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled});
     const started=await runtime.start(),cookies=started.cookies.map(c=>c.name+'='+c.value);
-    try{return await run({...context,tickets,waiting,principals,outsider,runtime,origin,cookies,browserCookies:started.cookies});}
+    // Keep the test-owned fault active until explicit reconciliation: Chromium can transparently repeat a transport request.
+    let dropNoteResponses=dropInternalNoteResponses;
+    let malformedNoteSuccess=malformedInternalNoteSuccess;
+    const restoreInternalNoteResponses=()=>{dropNoteResponses=false;malformedNoteSuccess=false;};
+    if(dropInternalNoteResponses||malformedInternalNoteSuccess)runtime.server.on('request',(request,response)=>{
+      if(!request.url?.endsWith('/internal-notes'))return;
+      const end=response.end.bind(response);
+      response.end=(...args)=>{if(response.statusCode===200&&dropNoteResponses){request.socket.destroy();return response;}if(response.statusCode===200&&malformedNoteSuccess)return end('{"ok":true}');return end(...args);};
+    });
+    if(malformedInternalNoteDenial)runtime.server.on('request',(request,response)=>{
+      if(!request.url?.endsWith('/internal-notes'))return;
+      const end=response.end.bind(response);
+      response.end=(...args)=>[401,403,404].includes(response.statusCode)?end('{'):end(...args);
+    });
+    try{return await run({...context,tickets,waiting,principals,outsider,runtime,origin,cookies,browserCookies:started.cookies,restoreInternalNoteResponses});}
     finally{await runtime.stop();if(runtime.server.listening)throw new Error('WEB01_SERVER_NOT_CLOSED');}
   }});
 }
