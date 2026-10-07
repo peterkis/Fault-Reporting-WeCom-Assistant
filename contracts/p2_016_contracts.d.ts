@@ -9,6 +9,9 @@ export type P2016TicketDetail = { readonly id: string; readonly ticket_no: strin
 export type P2016TicketList = { readonly items: ReadonlyArray<P2016TicketDetail>; readonly next_cursor: string | null; };
 
 export type P2016TicketActionCommand = { readonly client_command_id: string; readonly expected_version: number; readonly reason_code: string; readonly note?: string; readonly external_visible?: boolean; };
+/** Dedicated internal-notes HTTP contract. Legacy notes keeps its separate compatibility contract. */
+export type P2016InternalNoteCommand = { readonly client_command_id: string; readonly expected_version: number; readonly reason_code: string; readonly note: string; readonly external_visible: false; };
+export type P2016InternalNoteResult = { readonly ok: true; readonly ticket_id: string; readonly ticket_version: number; readonly ticket_event_id: string; readonly control_event_id: null; readonly replayed: boolean; };
 
 export type P2016TicketTransferCommand = { readonly client_command_id: string; readonly expected_version: number; readonly reason_code: string; readonly target_principal_id: string; readonly resolver_team_id?: string; };
 

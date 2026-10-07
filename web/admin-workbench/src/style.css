@@ -1,6 +1,18 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+.ticket-notes {padding:16px 24px;border-top:1px solid #ececea;border-bottom:1px solid #ececea;font-size:13px;}
+.ticket-command-version {font-weight:600;}
+.ticket-allowed-actions,.ticket-notes form>p {color:#787774;margin:6px 0 12px;}
+.ticket-notes label {display:block;font-weight:600;margin-top:12px;}
+.ticket-notes textarea {display:block;width:100%;min-height:96px;border:1px solid #d9d9d6;border-radius:6px;padding:8px;resize:vertical;}
+.ticket-notes textarea:focus {outline:2px solid #6a8bce;outline-offset:2px;}
+.note-controls {display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;}
+.ticket-notes button {border:1px solid #d9d9d6;border-radius:5px;padding:5px 10px;background:#fff;}
+.ticket-notes button:disabled {opacity:.5;cursor:default;}
+.note-controls span {margin-left:auto;color:#787774;}
+.ticket-note-state {margin-top:10px;}
+
 /* UI spec tokens. Business status, authorization and timestamps remain server facts. */
 :root {
   --font-sans: ui-sans-serif, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;

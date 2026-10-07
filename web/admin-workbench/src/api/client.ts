@@ -1,4 +1,8 @@
 import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord,SourceGroupDisplay,SourceGroupNameCommand,SourceGroupNameResult } from '../../../../contracts/web01_workbench_contracts';
+import type {P2016InternalNoteCommand,P2016InternalNoteResult} from '../../../../contracts/p2_016_contracts';
+export type {P2016InternalNoteCommand};
+export interface TicketCommandContext {id:string;version:number;allowed_actions:string[]}
+export class UnknownCommandOutcome extends Error {constructor(){super('COMMAND_OUTCOME_UNKNOWN');}}
 export type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail };
 export class ApiError extends Error { constructor(public status:number,public code:string){super(code);} }
 function object(value: unknown): Record<string,unknown> {if(!value||typeof value!=='object'||Array.isArray(value))throw new ApiError(502,'INVALID_RESPONSE');return value as Record<string,unknown>;}
@@ -37,10 +41,24 @@ function decodeDetail(value:unknown):WorkbenchDetail {
   return {item:decodeCard(v.item),description:nullable(v.description),records:v.records.map(decodeRecord),next_cursor:nullable(v.next_cursor),
     responsibility:{ticket_assignee_name:nullable(r.ticket_assignee_name),conversation_assignees:strings(r.conversation_assignees)}};
 }
-export interface Principal {principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean}
-function decodePrincipal(value:unknown):Principal {const v=object(value);if(typeof v.source_group_directory_enabled!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled};}
+export interface Principal {principal_id:string;display_name:string;roles:string[];csrf_token:string|null;source_group_directory_enabled:boolean;internal_notes_enabled:boolean}
+function decodePrincipal(value:unknown):Principal {const v=object(value);if(typeof v.source_group_directory_enabled!=='boolean'||typeof v.internal_notes_enabled!=='boolean')throw new ApiError(502,'INVALID_RESPONSE');return {principal_id:id(v.principal_id),display_name:text(v.display_name),roles:strings(v.roles),csrf_token:nullable(v.csrf_token),source_group_directory_enabled:v.source_group_directory_enabled,internal_notes_enabled:v.internal_notes_enabled};}
+function version(value:unknown):number {if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1||value>2147483647)throw new ApiError(502,'INVALID_RESPONSE');return value;}
+function decodeTicketContext(value:unknown,ticketId:string):TicketCommandContext {
+  const v=object(value),actions=strings(v.allowed_actions),ticket=id(v.id);
+  if(ticket!==ticketId||actions.length>32||new Set(actions).size!==actions.length||actions.some(action=>! /^[a-z][a-z-]{0,63}$/u.test(action)))throw new ApiError(502,'INVALID_RESPONSE');
+  return {id:ticket,version:version(v.version),allowed_actions:actions};
+}
+async function rejectAuthorization(response:Response):Promise<never>{
+  let code='AUTHORIZATION_REJECTED';
+  try {const value:unknown=await response.json(),candidate=text(object(object(value).error).code);if(/^[A-Z][A-Z0-9_]{0,100}$/u.test(candidate))code=candidate;}
+  catch { /* The HTTP rejection remains authoritative when its error detail is unreadable. */ }
+  throw new ApiError(response.status,code);
+}
 async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown)=>T):Promise<T> {
   const response=await fetch(path,{signal,credentials:'same-origin',redirect:'error',headers:{accept:'application/json'},cache:'no-store'});
+  // A credible HTTP authorization rejection fences cached authority even if its error body cannot be decoded.
+  if([401,403,404].includes(response.status))return rejectAuthorization(response);
   if(!response.headers.get('content-type')?.startsWith('application/json'))throw new ApiError(response.ok?502:response.status,'INVALID_RESPONSE');
   const value:unknown=await response.json();
   if(!response.ok){const v=object(value),e=object(v.error);throw new ApiError(response.status,text(e.code));}
@@ -48,6 +66,26 @@ async function get<T>(path:string,signal:AbortSignal,decode:(value:unknown)=>T):
 }
 export const api={
   bootstrap:(signal:AbortSignal)=>get('/api/lifecycle/bootstrap',signal,decodePrincipal),
+  ticketCommandContext:(ticketId:string,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId),signal,value=>decodeTicketContext(value,ticketId)),
+  async addInternalNote(ticketId:string,command:P2016InternalNoteCommand,csrfToken:string|null,signal:AbortSignal):Promise<P2016InternalNoteResult> {
+    try{
+      const response=await fetch('/api/tickets/'+encodeURIComponent(ticketId)+'/internal-notes',{
+        method:'POST',signal,credentials:'same-origin',redirect:'error',cache:'no-store',
+        headers:{accept:'application/json','content-type':'application/json','idempotency-key':command.client_command_id,'if-match':'"'+command.expected_version+'"',...(csrfToken?{'x-csrf-token':csrfToken}:{})},body:JSON.stringify(command)});
+      if([401,403,404].includes(response.status))return await rejectAuthorization(response);
+      if(!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
+      const v=object(await response.json());
+      if(!response.ok){
+        const code=text(object(v.error).code);
+        if(!/^[A-Z][A-Z0-9_]{0,100}$/u.test(code))throw new UnknownCommandOutcome();
+        // A durable FAILED receipt is a known refusal. An unstructured server failure may follow a commit.
+        if(response.status<500||(v.ok===false&&typeof v.replayed==='boolean'&&object(v.error).retryable===false)||code==='P2_016_DISABLED')throw new ApiError(response.status,code);
+        throw new UnknownCommandOutcome();
+      }
+      if(v.ok!==true||id(v.ticket_id)!==ticketId||typeof v.replayed!=='boolean'||v.control_event_id!==null)throw new UnknownCommandOutcome();
+      return {ok:true,ticket_id:ticketId,ticket_version:version(v.ticket_version),ticket_event_id:id(v.ticket_event_id),control_event_id:null,replayed:v.replayed};
+    }catch(error){if(error instanceof ApiError&&([401,403,404].includes(error.status)||error.code!=='INVALID_RESPONSE'))throw error;throw new UnknownCommandOutcome();}
+  },
   board:(column:BoardColumn,range:CompletionRange,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/board?'+new URLSearchParams({column,range,limit:'50',...(cursor?{cursor}:{})}),signal,decodePage),
   detail:(kind:string,id:string,cursor:string|null,signal:AbortSignal)=>get('/api/workbench/items/'+encodeURIComponent(kind)+'/'+encodeURIComponent(id)+'?'+new URLSearchParams({limit:'50',...(cursor?{cursor}:{})}),signal,value=>{
     const detail=decodeDetail(value);if(detail.item.kind!==kind||detail.item.id!==id)throw new ApiError(502,'INVALID_RESPONSE');return detail;
