@@ -98,6 +98,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
       assert.equal(await browser.evaluate("document.querySelector('dialog').getBoundingClientRect().width<=innerWidth"),true);
       await capture('new-detail-900.png');
       await browser.command('Network.enable');await browser.command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
+      await browser.waitFor("document.querySelector('.connection.offline')?.textContent==='网络已断开'&&getComputedStyle(document.querySelector('.connection.offline')).display!=='none'");
       await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
       await browser.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('刷新')).click()");
       await browser.waitFor("document.body.innerText.includes('连接失败')");

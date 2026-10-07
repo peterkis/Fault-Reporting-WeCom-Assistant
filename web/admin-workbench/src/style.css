@@ -211,7 +211,7 @@ strong { font-weight: var(--fw-medium); }
   .workspace { padding: var(--s-12) var(--s-8); }
   .board { grid-template-columns: minmax(0,1fr); }
   .topbar { padding: 0 var(--s-8); }
-  .topbar .icon-button, .connection { display: none; }
+  .topbar .icon-button, .connection:not(.offline) { display: none; }
   .topbar a { margin-left: auto; }
   .page-title { flex-wrap: wrap; gap: var(--s-6); }
   .page-icon { width: var(--s-24); height: var(--s-24); }

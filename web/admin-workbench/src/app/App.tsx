@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import type {ReactNode} from 'react';
+import type {KeyboardEvent,ReactNode} from 'react';
 import {Link,Route,Routes,useLocation,useNavigate,useParams,useSearchParams} from 'react-router';
 import {useInfiniteQuery,useQuery} from '@tanstack/react-query';
 import {Button} from '@heroui/react/button';
@@ -41,9 +41,20 @@ function itemLink(item:WorkbenchCard,search:string){return '/items/'+item.kind+'
 function Status({item}:{item:WorkbenchCard}){
   return <><span className={'status-chip '+(statusColors[item.status]??'gray')}>{statusLabels[item.status]??item.status}</span>{item.kind==='ticket'&&item.review_reason?<span className="status-chip yellow">待复核</span>:null}</>;
 }
+function TeamAvatar({name}:{name:string}){
+  let color=0;for(const character of name)color=(color*31+(character.codePointAt(0)??0))>>>0;
+  return <span aria-hidden="true" className={'avatar av'+(color%4+1)}>{Array.from(name).at(-1)}</span>;
+}
 function Owner({name,compact=false}:{name:string|null;compact?:boolean}){
-  let color=0;for(const character of name??'')color=(color*31+(character.codePointAt(0)??0))>>>0;
-  return <span className="owner"><span aria-hidden="true" className={'avatar '+(name?'av'+(color%4+1):'unassigned')}>{name?Array.from(name).at(-1):null}</span><span className="owner-name">{name??(compact?'未领取':'等待领取')}</span></span>;
+  return <span className="owner">{name?<TeamAvatar name={name}/>:<span aria-hidden="true" className="avatar unassigned"/>}<span className="owner-name">{name??(compact?'未领取':'等待领取')}</span></span>;
+}
+function trapDialogFocus(event:KeyboardEvent<HTMLDialogElement>){
+  if(event.key!=='Tab')return;
+  const controls=Array.from(event.currentTarget.querySelectorAll<HTMLElement>('a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])')).filter(element=>element.getClientRects().length>0);
+  const first=controls[0],last=controls.at(-1);
+  if(!first||!last)return;
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
 }
 function Card({item,search,selected,now}:{item:WorkbenchCard;search:string;selected:boolean;now:number}){
   return <article className={'ticket-card '+(selected?'is-selected':'')} data-kind={item.kind} data-item-id={item.id}>
@@ -90,7 +101,7 @@ function Shell({principal,children}:{principal:Principal;children:ReactNode}){
     <button className="sidebar-search" disabled title="全局搜索尚未开放"><Search size={16}/><span>搜索工作区</span><small>预留</small></button>
     <p className="nav-label">工作空间</p><Link className="nav-item current" to="/" aria-current="page" title="工作台"><LayoutGrid/><span>工作台</span></Link>
     <div className="nav-item muted" title="会话 · 后续开放"><MessageSquare/><span>会话</span><small>后续</small></div><div className="nav-item muted" title="公共故障 · 后续开放"><TriangleAlert/><span>公共故障</span><small>后续</small></div><div className="nav-item muted" title="团队知识库 · 规划中"><BookOpen/><span>团队知识库</span><small>规划中</small></div><div className="nav-item muted" title="通知异常 · 后续开放"><Bell/><span>通知异常</span><small>后续</small></div>
-    <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom"><div className="nav-item muted" title="设置"><Settings/><span>设置</span></div><div className="account"><span className="avatar" aria-hidden="true">{Array.from(principal.display_name).at(-1)}</span><div><strong>{principal.display_name}</strong><small>已授权内部身份</small></div></div></div></aside>
+    <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom"><div className="nav-item muted" title="设置"><Settings/><span>设置</span></div><div className="account"><TeamAvatar name={principal.display_name}/><div><strong>{principal.display_name}</strong><small>已授权内部身份</small></div></div></div></aside>
     <main><header className="topbar"><button className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle}><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></button><span>信息服务团队 <span className="slash">/</span> <strong>工作台</strong></span><span className={'connection '+(!online?'offline':'')}>{online?'按需读取':'网络已断开'}</span><a href="/workbench">旧管理端<ArrowUpRight size={14}/></a></header>{children}</main></div>;
 }
 function Detail({principal,items,now,fullPage}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean}){
@@ -128,12 +139,12 @@ function Detail({principal,items,now,fullPage}:{principal:Principal;items:Workbe
       </dl><p>以上时间均为北京时间；最新活动不代表当前环节耗时。</p></section>
       <p className="read-only-note">当前为只读视图。处理操作请使用 <a href="/workbench">旧管理端</a>。</p>
       <section className="detail-main"><h3>报修内容</h3><p className="description">{detail.description??'暂无可读取的原始报修内容。'}</p><h3 className="activity-title">动态 <span>{records.length} 条已加载</span></h3>
-        <ol className="activity-list">{records.map(record=><li key={record.id}><span className="avatar" aria-hidden="true">{record.actor?Array.from(record.actor).at(-1):record.audience==='REPORT'?'报':'系'}</span><div><header><strong>{record.actor??(record.audience==='REPORT'?'报修材料':'系统记录')}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'对外摘要':'原始报修'}</span></header><p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??record.old_status??'新建')+' → '+(statusLabels[record.new_status]??record.new_status):record.type)}</p></div></li>)}</ol>
+        <ol className="activity-list">{records.map(record=><li key={record.id}>{record.audience!=='REPORT'&&record.actor&&record.actor!=='SYSTEM'?<TeamAvatar name={record.actor}/>:<span className="avatar" aria-hidden="true">{record.audience==='REPORT'?'报':'系'}</span>}<div><header><strong>{record.actor??(record.audience==='REPORT'?'报修材料':'系统记录')}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'对外摘要':'原始报修'}</span></header><p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??record.old_status??'新建')+' → '+(statusLabels[record.new_status]??record.new_status):record.type)}</p></div></li>)}</ol>
         {!records.length?<p className="empty">暂无可读取的活动记录。</p>:null}{result.hasNextPage?<Button variant="secondary" isDisabled={result.isFetchingNextPage} onPress={()=>{void result.fetchNextPage();}}>加载更早记录</Button>:<p className="column-end">当前范围的记录已加载完毕</p>}</section>
     </div>:null}
   </>;
   if(fullPage)return <article className="detail-page" aria-labelledby="detail-title">{content}</article>;
-  return <dialog className="detail-dialog" ref={dialog} aria-labelledby={detail?'detail-title':undefined} aria-label={detail?undefined:'事项详情'} onCancel={event=>{event.preventDefault();close();}} onClick={event=>{if(event.target===event.currentTarget){const bounds=event.currentTarget.getBoundingClientRect();if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)close();}}}>{content}</dialog>;
+  return <dialog className="detail-dialog" ref={dialog} aria-labelledby={detail?'detail-title':undefined} aria-label={detail?undefined:'事项详情'} onKeyDown={trapDialogFocus} onCancel={event=>{event.preventDefault();close();}} onClick={event=>{if(event.target===event.currentTarget){const bounds=event.currentTarget.getBoundingClientRect();if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)close();}}}>{content}</dialog>;
 }
 function BoardSection({query,column,label,search,selected,now}:{query:ReturnType<typeof useColumn>;column:BoardColumn;label:string;search:string;selected:string|undefined;now:number}){
   const [expanded,setExpanded]=useState(false),loaded=query.data?.pages.flatMap(page=>page.items)??[],visible=expanded?loaded:loaded.slice(0,3);
