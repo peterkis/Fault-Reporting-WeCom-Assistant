@@ -1,0 +1,148 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join,resolve} from 'node:path';
+import {randomUUID} from 'node:crypto';
+import {createHash} from 'node:crypto';
+import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
+import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
+import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/refresh and denied state',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets,pool,principals})=>{
+    const directory=resolve(process.env.WEB01_SCREENSHOT_DIR??join(tmpdir(),'web01-ui-'+randomUUID()));await mkdir(directory,{recursive:true});
+    const screenshots=[];
+    let browser,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+'/workbench/app/',width:1920,height:1080,cookies:[browserCookies[0]]});
+      const capture=async name=>{
+        // Allow subsequent frame opportunities after DOM readiness; capture once
+        // with the unchanged helper deadline, without retries or a longer timeout.
+        await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
+        await browser.evaluate("Promise.all((document.querySelector('.detail-dialog')?.getAnimations()??[]).map(animation=>animation.finished)).then(()=>true)");
+        const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name);
+        await writeFile(file,bytes);
+        screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});
+      };
+      const reload=async()=>{
+        const previous=await browser.evaluate('performance.timeOrigin');
+        await browser.command('Page.reload');
+        await browser.waitFor(`performance.timeOrigin!==${previous}&&document.readyState==='complete'`);
+      };
+      const expandAll=async()=>{
+        await browser.waitFor("document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')&&document.querySelectorAll('[data-action=expand-column]').length===3");
+        await browser.evaluate("[...document.querySelectorAll('[data-action=expand-column][aria-expanded=false]')].forEach(button=>button.click())");
+      };
+      await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
+      assert.equal(await browser.evaluate("document.querySelectorAll('.board-column').length"),3);
+      assert.deepEqual(await browser.evaluate("(()=>{const card=document.querySelector('.ticket-card'),main=document.querySelector('h1');return {border:getComputedStyle(card).borderWidth,titleSize:getComputedStyle(main).fontSize,text:getComputedStyle(main).color,columns:getComputedStyle(document.querySelector('.board')).gridTemplateColumns.split(' ').length}})()"),{border:'0px',titleSize:'36px',text:'rgb(55, 53, 47)',columns:3});
+      await capture('new-board-1920.png');
+      await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+      assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+      await capture('new-board-1280.png');
+      await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});
+      await expandAll();await browser.waitFor("document.querySelectorAll('.ticket-card').length===15");
+      assert.ok(await browser.evaluate("document.body.innerText.includes('已解决待确认')"));
+      const id=tickets[5].ticket.id;
+      await browser.evaluate(`(()=>{const link=document.querySelector('[data-item-id="${id}"] .card-open');link.focus();link.click();})()`);
+      await browser.waitFor(`document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'`);
+      assert.equal(await browser.evaluate("document.querySelector('dialog').open"),true);
+      assert.equal(await browser.evaluate("document.querySelector('dialog').contains(document.activeElement)"),true);
+      assert.equal(await browser.evaluate("Math.round(document.querySelector('dialog').getBoundingClientRect().width)"),600);
+      assert.ok(await browser.evaluate("document.querySelector('dialog').innerText.includes('仅供内部的合成处理记录')"));
+      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').focus()");
+      await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9,modifiers:8});
+      await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9,modifiers:8});
+      assert.equal(await browser.evaluate("document.querySelector('dialog').contains(document.activeElement)&&document.activeElement.getAttribute('aria-label')!=='关闭详情'"),true);
+      await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
+      await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9,nativeVirtualKeyCode:9});
+      assert.equal(await browser.evaluate("document.activeElement.getAttribute('aria-label')==='关闭详情'"),true);
+      await browser.evaluate("document.querySelector('[aria-label=\"下一项\"]').click()");
+      await browser.waitFor("document.querySelector('#detail-title')?.textContent==='PACS 调阅影像时加载缓慢'");
+      await browser.evaluate("document.querySelector('[aria-label=\"上一项\"]').click()");
+      await browser.waitFor("document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'");
+      await capture('new-detail-1920.png');
+      // CDP key/code without the virtual key generates keyCode=0 and does not
+      // invoke Chromium's native dialog cancellation; use an actual Escape key.
+      await browser.command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27,nativeVirtualKeyCode:27});
+      await browser.command('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27,nativeVirtualKeyCode:27});
+      await browser.waitFor("!document.querySelector('dialog')");
+      assert.equal(await browser.evaluate(`document.activeElement===document.querySelector('[data-item-id="${id}"] .card-open')`),true);
+      await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
+      await browser.waitFor("Boolean(document.querySelector('dialog')?.open&&document.querySelector('#detail-title'))");
+      await browser.command('Input.dispatchMouseEvent',{type:'mousePressed',x:100,y:100,button:'left',clickCount:1});
+      await browser.command('Input.dispatchMouseEvent',{type:'mouseReleased',x:100,y:100,button:'left',clickCount:1});
+      await browser.waitFor("!document.querySelector('dialog')");
+      await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
+      await browser.waitFor("Boolean(document.querySelector('dialog')?.open&&document.querySelector('#detail-title'))");
+      await browser.evaluate("document.querySelector('[aria-label=\"展开完整页面\"]').click()");
+      await browser.waitFor("Boolean(document.querySelector('.detail-page #detail-title'))&&!document.querySelector('dialog')");
+      assert.equal(await browser.evaluate("document.activeElement.id==='detail-title'"),true);
+      await capture('new-detail-page-1920.png');
+      await reload();await browser.waitFor("Boolean(document.querySelector('.detail-page #detail-title'))");
+      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
+      await browser.waitFor("Boolean(document.querySelector('.board'))");
+      await expandAll();await browser.waitFor("document.querySelectorAll('.ticket-card').length===15");
+      await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
+      await browser.waitFor("Boolean(document.querySelector('dialog')?.open&&document.querySelector('#detail-title'))");
+      await reload();await browser.waitFor(`document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'`);
+      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");await browser.waitFor("!document.querySelector('dialog')");
+      await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('列表')).click()");
+      await browser.waitFor("document.querySelectorAll('tbody tr').length===9");
+      await reload();await browser.waitFor("document.querySelectorAll('tbody tr').length===9");
+      await capture('new-list-1920.png');
+      await expandAll();await browser.waitFor("document.querySelectorAll('tbody tr').length===15");
+      await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:900,deviceScaleFactor:1,mobile:false});
+      assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+      await capture('new-list-900.png');
+      await browser.evaluate("document.querySelector('tbody tr a').click()");await browser.waitFor("Boolean(document.querySelector('dialog')?.open&&document.querySelector('#detail-title'))");
+      assert.equal(await browser.evaluate("document.querySelector('dialog').getBoundingClientRect().width<=innerWidth"),true);
+      await capture('new-detail-900.png');
+      await browser.command('Network.enable');await browser.command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
+      await browser.waitFor("document.querySelector('.connection.offline')?.textContent==='网络已断开'&&getComputedStyle(document.querySelector('.connection.offline')).display!=='none'");
+      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
+      await browser.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('刷新')).click()");
+      await browser.waitFor("document.body.innerText.includes('连接失败')");
+      await capture('new-offline-900.png');
+      await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+      // The existing test-auth port issues a distinct cookie name per principal.
+      await browser.command('Network.deleteCookies',{name:browserCookies[0].name,url:origin});
+      await browser.command('Network.setCookies',{cookies:[browserCookies[1]]});await reload();
+      await browser.waitFor("document.body.innerText.includes('当前授权范围内暂无事项')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
+      await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+id});
+      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')");
+      await browser.command('Network.deleteCookies',{name:browserCookies[1].name,url:origin});
+      await browser.command('Network.setCookies',{cookies:[browserCookies[0]]});
+      await browser.command('Page.navigate',{url:origin+'/workbench/app/'});await browser.waitFor("document.querySelectorAll('.ticket-card').length===9&&document.querySelector('.range-bar')?.textContent.includes('已加载 15 项')");
+      assert.equal(await browser.evaluate("document.querySelector('.board').getBoundingClientRect().width<=innerWidth"),true);
+      assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.sidebar')).display==='none'&&getComputedStyle(document.querySelector('.board')).gridTemplateColumns.split(' ').length===1"),true);
+      await capture('new-board-900.png');
+      await browser.command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+      assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.ticket-card')).transitionDuration==='0s'"),true);
+      await expandAll();await browser.waitFor("document.querySelectorAll('.ticket-card').length===15");
+      await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
+      await browser.waitFor("document.querySelector('#detail-title')?.textContent==='住院部西区无线网络频繁断开'");
+      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
+      await browser.waitFor("!document.querySelector('dialog')");
+      const access=createPilotAccessService({pool});
+      await access.upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:[]});
+      // Count real requests, without changing their HTTP result or adding retries.
+      await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__web01DenialReads=0;globalThis.fetch=(...args)=>{if(String(args[0]).startsWith('/api/workbench/items/ticket/${id}'))globalThis.__web01DenialReads++;return original(...args);};return true})()`);
+      await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
+      await browser.waitFor("document.body.innerText.includes('事项不存在，或不在当前授权范围内')&&document.querySelectorAll('.ticket-card').length===2");
+      await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
+      assert.ok(await browser.evaluate('globalThis.__web01DenialReads<=2'),'a denied active query must not recreate and request in a loop');
+      assert.equal(await browser.evaluate("document.querySelector('dialog').innerText.includes('仅供内部的合成处理记录')"),false);
+      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
+      await browser.waitFor("!document.querySelector('dialog')");
+      await access.upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+      await browser.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('刷新')).click()");
+      await browser.waitFor("document.querySelectorAll('.ticket-card').length===15");
+      await pool.query('UPDATE pilot_ticket.pilot_principal SET is_active=false WHERE id=$1::uuid',[principals[0].id]);
+      await browser.evaluate("[...document.querySelectorAll('button')].find(b=>b.textContent.includes('刷新')).click()");
+      await browser.waitFor("document.body.innerText.includes('会话已失效')");assert.equal(await browser.evaluate("document.querySelectorAll('.ticket-card').length"),0);
+      console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',screenshots}));
+    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate("({url:location.href,text:document.body.innerText,rows:document.querySelectorAll('tbody tr').length})")));}}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  });
+});

@@ -251,7 +251,7 @@ test('T02 routes, actual roots and candidate coverage reject invalid inputs',asy
  try{
   const routes=loadRoutes(root), raw=readFileSync(path.join(root,'plans/typescript-migration/test-routing.json'),'utf8');
   await t.test('all legacy entries and aliases remain represented',()=>{
-    assert.equal(routes.entries.filter(entry=>!['tests/yxx-current-readiness-cli.test.mts','tests/yxx-current-readiness.test.mts','tests/yxx-current-history.test.mts','tests/yxx-current-evidence.test.mts','tests/yxx-current-migrations.integration.test.mts'].includes(entry.path)).length,213);
+    assert.equal(routes.entries.filter(entry=>!['tests/web01-workbench.test.mts','tests/web01-workbench.integration.test.mjs','tests/web01-workbench.browser.test.mjs','tests/yxx-current-readiness-cli.test.mts','tests/yxx-current-readiness.test.mts','tests/yxx-current-history.test.mts','tests/yxx-current-evidence.test.mts','tests/yxx-current-migrations.integration.test.mts'].includes(entry.path)).length,213);
     assert.equal(select(routes,'selection','yxx-current-readiness').entries[0]?.path,'tests/yxx-current-readiness.test.mts');
     assert.equal(Object.keys(routes.aliases).length,72);assert.equal(select(routes,'selection','t02-baseline').entries.length,17);
   });

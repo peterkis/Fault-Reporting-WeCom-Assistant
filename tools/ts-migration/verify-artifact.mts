@@ -20,7 +20,8 @@ export function verifyArtifact(root: string, expectedManifest?: string): string 
     if (!actual || actual.path !== item.path || actual.source !== item.source || actual.kind !== item.kind) throw new Error('MIGRATION_OUTPUT_MAPPING');
     const bytes = readFileSync(safeFile(runtime, item.path));
     if (actual.sha256 !== hash(bytes)) throw new Error('MIGRATION_OUTPUT_TAMPERED: ' + item.path);
-    if (item.kind !== 'COMPILED' && !bytes.equals(readFileSync(safeFile(root, item.source)))) throw new Error('MIGRATION_LEGACY_OR_RESOURCE_DRIFT');
+    if (item.kind !== 'COMPILED'&&item.kind!=='WEB' && !bytes.equals(readFileSync(safeFile(root, item.source)))) throw new Error('MIGRATION_LEGACY_OR_RESOURCE_DRIFT');
+    if(item.kind==='WEB'&&!bytes.equals(readFileSync(safeFile(root,'.build/emit/'+item.path))))throw new Error('WEB01_OUTPUT_DRIFT');
     if (item.path.endsWith('.map')) {
       const map = record(JSON.parse(bytes.toString('utf8')) as unknown);
       if (!Array.isArray(map.sources) || map.sources.some((v: unknown) => typeof v !== 'string' || path.isAbsolute(v))) throw new Error('MIGRATION_ABSOLUTE_SOURCE_MAP');

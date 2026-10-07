@@ -9,9 +9,11 @@ import { verifyArtifact } from './verify-artifact.mjs';
 import { runTests, runSelection } from './run-tests.mjs';
 import { batchSelection } from './batches.mjs';
 import { testEnvironment } from './routing.mjs';
+import {typecheckWeb} from './web.mjs';
 
 export function typeGate(root: string): void {
   program(root, 'tsconfig.tools.json'); program(root, 'tsconfig.migration.json'); program(root, 'tsconfig.type-tests.json');
+  typecheckWeb(root);
 }
 export function negativeTypes(root: string): void {
   const options = { ...parsedConfig(root, 'tsconfig.type-tests.json').options, noEmit: true };

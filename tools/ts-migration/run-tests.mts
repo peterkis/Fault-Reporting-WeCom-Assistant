@@ -34,7 +34,7 @@ function loadedFiles(coverage: string): string[] {
 }
 function archiveScreenshots(tap:string,directory:string,prefix:string):Record<string,unknown>[] {
   const archived:Record<string,unknown>[]=[],sources:string[]=[],folders=new Set<string>();
-  for(const channel of ['SS009_RECEIPT','SS010_BROWSER']){
+  for(const channel of ['SS009_RECEIPT','SS010_BROWSER','WEB01_BROWSER']){
     for(const match of tap.matchAll(new RegExp('^# '+channel+' (.+)\\r?$','gmu'))){
       const receipt=record(JSON.parse(match[1]??'') as unknown);
       if(channel==='SS009_RECEIPT'&&receipt.kind!=='browser')continue;
@@ -43,8 +43,9 @@ function archiveScreenshots(tap:string,directory:string,prefix:string):Record<st
         const image=record(value);
         if(typeof image.file!=='string'||!path.isAbsolute(image.file)||typeof image.width!=='number'||typeof image.height!=='number')throw Error('MIGRATION_SCREENSHOT_INVALID');
         const source=path.resolve(image.file),folder=path.dirname(source),name=path.basename(source);
-        const marker=channel==='SS010_BROWSER'?'ss010-ui-':'ss009-ui-';
-        if(path.dirname(folder)!==path.resolve(tmpdir())||!new RegExp('^'+marker+'[a-f0-9-]{36}$','u').test(path.basename(folder))||!/^[a-f0-9-]{36}\.png$/u.test(name))throw Error('MIGRATION_SCREENSHOT_OUTSIDE_OWNED_TEMP');
+        const marker=channel==='WEB01_BROWSER'?'web01-ui-':channel==='SS010_BROWSER'?'ss010-ui-':'ss009-ui-';
+        const validName=channel==='WEB01_BROWSER'?/^new-((board|list|detail|offline)-(1920|900)|board-1280|detail-page-1920)\.png$/u.test(name):/^[a-f0-9-]{36}\.png$/u.test(name);
+        if(path.dirname(folder)!==path.resolve(tmpdir())||!new RegExp('^'+marker+'[a-f0-9-]{36}$','u').test(path.basename(folder))||!validName)throw Error('MIGRATION_SCREENSHOT_OUTSIDE_OWNED_TEMP');
         safeFile(tmpdir(),slash(path.relative(tmpdir(),source)));
         if(lstatSync(source).size>64*1024*1024)throw Error('MIGRATION_SCREENSHOT_INVALID');
         const bytes=readFileSync(source);

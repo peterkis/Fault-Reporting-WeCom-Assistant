@@ -3,19 +3,24 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { cleanGenerated, controlledBuildRoot, hash, identity, mappings, program, sourceRoot, runNode, type BuildManifest } from './common.mjs';
+import {buildWeb} from './web.mjs';
 
 export function build(root: string): BuildManifest {
   sourceRoot(root);
   // Invalidate first: a failed configuration, resource or compile must not leave a usable old artifact.
   for (const name of ['artifact-proof.json', 'runtime', 'emit'] as const) cleanGenerated(root, name);
-  const before = identity(root), map = mappings(root);
+  const before = identity(root);
+  // Preserve source collisions and resource guards before compiling or invoking Vite.
+  mappings(root);
   const compiler = program(root, 'tsconfig.migration.json');
   const emitted = compiler.emit();
   if (emitted.emitSkipped || emitted.diagnostics.length) throw new Error('MIGRATION_EMIT_FAILED');
   const output = path.join(controlledBuildRoot(root), 'runtime');
   try {
+    buildWeb(root);
+    const map=mappings(root);
     for (const item of map) {
-      const from = path.join(root, item.kind === 'COMPILED' ? '.build/emit/' + item.path : item.source);
+      const from = path.join(root, item.kind === 'COMPILED'||item.kind==='WEB' ? '.build/emit/' + item.path : item.source);
       const to = path.join(output, item.path);
       mkdirSync(path.dirname(to), { recursive: true }); copyFileSync(from, to);
     }

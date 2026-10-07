@@ -7,6 +7,9 @@ import type { OrchestrationWorkerOptions } from './p2-016-orchestration-adapters
 import type { P2015Worker } from './p2-015-worker.mjs';
 import type {ServiceCatalog} from './p2-007-service-catalog.mjs';
 import type { TicketActionAfterHook, PublicTicketEvent } from './p1-006-ticket-state-actions.mjs';
+import { createWeb01WorkbenchQuery } from './web01-workbench-query.mjs';
+import { createWeb01WorkbenchHttp } from './web01-workbench-http.mjs';
+import { createWeb01WorkbenchStatic } from './web01-workbench-static.mjs';
 
 type RealtimeProjector = ReturnType<typeof createP2016RealtimeProjector>;
 type Notifications = ReturnType<typeof createP2016TicketNotificationProjector>;
@@ -106,6 +109,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       incidentExtension=incidentExtensionFactory?.({pool,realtime,query})??null;
       const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
+      const web01Http=createWeb01WorkbenchHttp(createWeb01WorkbenchQuery({pool,query}));
+      const web01Static=createWeb01WorkbenchStatic({enabled});
       if(policy==='MEMBER_REQUIRED')memberExtension=(createYxxMemberExtension as typeof createYxxMemberExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
         reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,access,incidentAdapter:incidentExtension?.reporterAdapter??null});
       if(yxxSelfService!==null)selfService=(createYxxSelfServiceExtension as typeof createYxxSelfServiceExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
@@ -134,11 +139,11 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
             checks:{...base.checks,p2_016_schema:schema,workbench_wecom_auth:workbenchAuthSchema,...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
-        authenticatedHandler:async context=>(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
+        authenticatedHandler:async context=>(await web01Http(context))||(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
         unauthenticatedHandler:async context=>(await workbenchAuthentication?.unauthenticatedHandler?.(context))
           ||(await limitedRequestGuard?.(context))||(await selfService?.handler(context))
           ||(policy==='MEMBER_REQUIRED'?reporterHttp(context):(await oauthHttp(context))||reporterHttp(context)),
-        staticHandler:async(pathname,response)=>(await incidentExtension?.staticHandler?.(pathname,response))||ticketStatic(pathname,response),
+        staticHandler:async(pathname,response)=>(await web01Static(pathname,response))||(await incidentExtension?.staticHandler?.(pathname,response))||ticketStatic(pathname,response),
         runOnce:async()=>{if(orchestrationWorker)await orchestrationWorker.processDueBatch({feature_flags:ruleFirstFlags,batch_size:20});await (realtimeProjector as RealtimeProjector).runOnce();await incidentExtension?.runOnce?.();},
       };
     },

@@ -16,7 +16,7 @@
 | 企业微信 | Node.js 24 + `@wecom/aibot-node-sdk@1.0.6` | 单活 WSS Gateway |
 | 应用/API | Node.js 24 + TypeScript strict + ESM（ADR-0026），按 scope 渐进迁移 | REST、SSE、Command、Projection |
 | 数据库 | PostgreSQL | 消息、会话、Ticket、事件、Outbox、AI、Integration |
-| 前端 | 轻量 React/Next.js 或现有静态工作台渐进升级 | 人工处理界面 |
+| 前端 | React/Vite/HeroUI/Tailwind，Router/Query/Zustand/Table（ADR-0029） | 人工处理界面 |
 | 模型 | DeepSeek Provider Adapter | 多轮建议与草稿 |
 | 对象存储 | StoragePort | 私有媒体；可用加密本地盘或外部 S3 |
 | 内网连接 | 独立轻量 Connector Agent | 主动出站 mTLS HTTPS/WSS |

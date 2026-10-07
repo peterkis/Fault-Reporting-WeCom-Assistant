@@ -37,8 +37,9 @@ test('current acceptance CLI accounts for all registered files and identifies hi
   assert.equal(result.status,0,result.stdout+result.stderr);
   const plan=record(JSON.parse(result.stdout) as unknown);
   const current=strings(plan.current_files),historical=strings(plan.historical_registered_files);
-  assert.equal(current.length,217);assert.deepEqual(historical,['tests/yxx-ss-008-validation-scope.test.mjs']);
-  assert.equal(new Set([...current,...historical]).size,218);
+  assert.equal(current.length,220);assert.deepEqual(historical,['tests/yxx-ss-008-validation-scope.test.mjs']);
+  assert.equal(new Set([...current,...historical]).size,221);
+  for(const file of ['tests/web01-workbench.test.mts','tests/web01-workbench.integration.test.mjs','tests/web01-workbench.browser.test.mjs'])assert.ok(current.includes(file));
   assert.ok(current.includes('tests/yxx-current-readiness.test.mts'));
   assert.ok(current.includes('tests/yxx-current-history.test.mts'));
   assert.ok(current.includes('tests/yxx-current-evidence.test.mts'));
@@ -66,7 +67,7 @@ test('acceptance planning rejects omitted files duplicate obligations and change
     git(['worktree','add','--detach',root,'HEAD']);attached=true;
     copyFileSync(path.join(source,ACCEPTANCE_PATH),path.join(root,ACCEPTANCE_PATH));
     for(const file of ['plans/typescript-migration/test-routing.json','tests/yxx-current-evidence.test.mts','tests/yxx-current-history.test.mts','tests/helpers/yxx-current-scope-checkout.mts','tests/yxx-current-migrations.integration.test.mts','tests/yxx-current-readiness-cli.test.mts'])copyFileSync(path.join(source,file),path.join(root,file));
-    assert.equal(currentAcceptance(root).current_files.length,217);
+    assert.equal(currentAcceptance(root).current_files.length,220);
     const doc=record(JSON.parse(readFileSync(path.join(root,ACCEPTANCE_PATH),'utf8')) as unknown),current=strings(doc.current_files);
     for(const changed of [{...doc,current_files:current.slice(1)},{...doc,current_files:[...current,current[0]]},
       {...doc,historical_head:'0'.repeat(40)},{...doc,historical_registered_files:[]}]){
@@ -79,7 +80,7 @@ test('acceptance planning rejects omitted files duplicate obligations and change
   }
 });
 
-test('current shard plan partitions all 217 obligations exactly once and preserves historical separation',()=>{
+test('current shard plan partitions all 220 obligations exactly once and preserves historical separation',()=>{
   const root=sourceRoot();
   const run=(args:string[])=>spawnSync(process.execPath,[path.join(root,'.build/tools/run-tests.mjs'),...args],{
     cwd:root,encoding:'utf8',windowsHide:true,timeout:30_000,
@@ -93,10 +94,10 @@ test('current shard plan partitions all 217 obligations exactly once and preserv
     const selection=currentSelection(root,`${index+1}/4`);
     assert.equal(selection.label,`yxx-current-shard-${index+1}/4`);
     assert.deepEqual(selection.entries.map(entry=>entry.path),shard.files);
-    const selected=strings(shard.files);assert.equal(selected.length,index===0?55:54);
+    const selected=strings(shard.files);assert.equal(selected.length,55);
     return selected;
   });
-  assert.equal(files.length,217);assert.equal(new Set(files).size,217);
+  assert.equal(files.length,220);assert.equal(new Set(files).size,220);
   assert.deepEqual([...files].sort(),currentAcceptance(root).current_files);
   assert.ok(!files.includes('tests/yxx-ss-008-validation-scope.test.mjs'));
   assert.equal(run(['--current-plan','--shards','4']).stdout,result.stdout);
@@ -152,7 +153,7 @@ test('CI shard collection validates all files and original logs and rejects inco
     }
     const run=()=>spawnSync(process.execPath,[path.join(root,'.build/tools/verify-current-shards.mjs'),directory,'--shards','4','--expected-head',head],{cwd:root,encoding:'utf8',windowsHide:true,timeout:30_000});
     const positive=run();assert.equal(positive.status,0,positive.stdout+positive.stderr);
-    const result=record(JSON.parse(positive.stdout) as unknown);assert.equal(result.files,217);assert.equal(result.readiness,false);
+    const result=record(JSON.parse(positive.stdout) as unknown);assert.equal(result.files,220);assert.equal(result.readiness,false);
     const first=summaries[0];assert.ok(first);const original=record(JSON.parse(first.text) as unknown);
     for(const mutation of [{...original,not_run:['tests/missing.test.mjs']},{...original,selected_files:[]},
       {...original,selection:'yxx-current-shard-2/4'},{...original,counts:{...counts,tests:999}}]){

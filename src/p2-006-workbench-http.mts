@@ -149,6 +149,15 @@ export function createConversationWorkbenchHttpServer({ enabled = false, querySe
       if (request.method === 'GET' && url.pathname === '/health/metrics' && typeof healthProvider?.metrics === 'function') {
         json(response, 200, await healthProvider.metrics()); return;
       }
+      // The new internal SPA is protected before its shell or resources are served.
+      // Existing static/member routes keep their original authentication handlers.
+      if (url.pathname==='/workbench/app'||url.pathname.startsWith('/workbench/app/')) {
+        if (!enabled) throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled, 503);
+        let pageAuth;
+        try { pageAuth = await authenticate(request); } catch { pageAuth = null; }
+        if (!pageAuth || authExpired(pageAuth)) throw new WorkbenchError(WORKBENCH_ERROR_CODES.unauthenticated, 401);
+        await queryService.getBootstrap({ authContext: pageAuth });
+      }
       if (await staticHandler(url.pathname, response)) return;
       if (!url.pathname.startsWith('/api/')) { json(response, 404, { error: { code: WORKBENCH_ERROR_CODES.notFound, retryable: false } }); return; }
       if (!enabled) throw new WorkbenchError(WORKBENCH_ERROR_CODES.disabled, 503);

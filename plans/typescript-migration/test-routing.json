@@ -4,6 +4,9 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/web01-workbench.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-workbench.integration.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-workbench.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/yxx-current-migrations.integration.test.mts","mode":"MIXED_EXPLICIT_ROOTS","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/yxx-current-evidence.test.mts","mode":"MIXED_EXPLICIT_ROOTS","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/yxx-current-readiness-cli.test.mts","mode":"MIXED_EXPLICIT_ROOTS","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
@@ -316,6 +319,9 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/web01-workbench.test.mts", "tests/web01-workbench.integration.test.mjs", "tests/web01-workbench.browser.test.mjs",
+      "tests/p2-016-ticket-lifecycle.integration.test.mjs",
+      "tests/p2-016-workbench-http.integration.test.mjs", "tests/p2-016-workbench-auth.integration.test.mjs", "tests/p2-016-workbench-wecom-auth.test.mjs",
       "tests/yxx-ss-008-assembly.integration.test.mjs",
       "tests/yxx-ss-006-supplements-review.integration.test.mjs",
       "tests/p2-g2-process-assembly.integration.test.mjs",

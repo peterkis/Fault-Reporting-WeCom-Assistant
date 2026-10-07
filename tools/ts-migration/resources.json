@@ -27,6 +27,7 @@
     "config_examples/yixiaoxiu-member-ticket-entry.example.json",
     "config_examples/yxx-limited-write-authorization.example.json",
     "config_examples/yxx-self-service-profile.example.json",
+    "contracts/web01_workbench_contracts.d.ts",
     "contracts/ai_conversation_turn.schema.json",
     "contracts/ai_triage_result.schema.json",
     "contracts/communication_contracts.d.ts",

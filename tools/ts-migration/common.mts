@@ -7,7 +7,7 @@ export { sourceRoot, noLinks, cleanGenerated, controlledBuildRoot } from './boot
 
 export const CONFIGS = ['tsconfig.base.json', 'tsconfig.tools.json', 'tsconfig.migration.json', 'tsconfig.type-tests.json'] as const;
 export type FileDigest = { path: string; sha256: string };
-export type OutputFile = FileDigest & { source: string; kind: 'COMPILED' | 'LEGACY' | 'RESOURCE' };
+export type OutputFile = FileDigest & { source: string; kind: 'COMPILED' | 'LEGACY' | 'RESOURCE' | 'WEB' };
 export type SourceIdentity = { head: string; tree: string; dirty: boolean; input_hash: string; inputs: FileDigest[] };
 export type BuildManifest = { schema_version: 1; status: 'STAGED_NOT_ACTIVATED'; node_major: 24; compiler: string; source: SourceIdentity; typed_implementations: string[]; unchecked_legacy: string[]; declaration_inputs: string[]; outputs: OutputFile[] };
 export const hash = (bytes: string | Uint8Array): string => createHash('sha256').update(bytes).digest('hex');
@@ -94,10 +94,14 @@ export function mappings(root: string): { source: string; path: string; kind: Ou
     if (compiled) add(source, outputPath(source) + '.map', 'COMPILED');
   }
   for (const source of resources(root)) if (!outputs.has(source)) add(source, source, 'RESOURCE');
+  const webOutput=path.join(root,'.build/emit/web/admin-workbench');
+  if(existsSync(webOutput))for(const file of outputFiles(webOutput)){
+    add('web/admin-workbench/index.html','web/admin-workbench/'+file,'WEB');
+  }
   return [...outputs.values()].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
 }
 export function inputs(root: string): FileDigest[] {
-  const files = workspaceFiles(root).filter(p => /^(src|scripts|tests|contracts|database\/migrations|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter))\//u.test(p)
+  const files = workspaceFiles(root).filter(p => /^(src|scripts|tests|contracts|database\/migrations|config_examples|tools\/ts-migration|web\/p2-(workbench|reporter)|web\/admin-workbench)\//u.test(p)
     || CONFIGS.includes(p as typeof CONFIGS[number]) || ['package.json','package-lock.json','.env.example','.gitattributes'].includes(p)
     || p.startsWith('plans/typescript-migration/') || p.startsWith('.github/workflows/')
     || ['plans/yxx-current-readiness-scope.json', 'plans/yxx-current-readiness-acceptance.json', 'plans/yxx-ss-009-acceptance.json', '.github/review/pr21-evidence-exceptions.json',
