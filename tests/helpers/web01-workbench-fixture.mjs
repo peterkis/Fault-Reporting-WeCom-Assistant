@@ -42,7 +42,7 @@ export async function seedWeb01NoConversationIntake({pool,text,location='合成�
   const row=(await pool.query('SELECT i.id::text,i.retention_until FROM intake.web_request_binding b JOIN intake.service_intake i ON i.id=b.intake_id WHERE b.request_ref=$1',[receipt.request_ref])).rows[0];
   return {intakeId:row.id,receivedAt:receipt.accepted_at,retentionUntil:row.retention_until,requestRef:receipt.request_ref};
 }
-export async function withWeb01Fixture(run,{installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+export async function withWeb01Fixture(run,{ticketConversationSelfHandlingEnabled=false,installTicketSelfHandlingSchema=true,ticketSelfHandlingWebSource=true,ticketSelfHandlingEnabled=false,dropSelfHandlingResponses=false,malformedSelfHandlingSuccess=false,malformedSelfHandlingDenial=false,sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
     if(ticketSelfHandlingEnabled){await migrateP2012({databaseUrl});await migrateYxxSelfService({databaseUrl});if(installTicketSelfHandlingSchema)await migrateTicketSelfHandling({databaseUrl,mode:'apply'});}
@@ -74,7 +74,7 @@ export async function withWeb01Fixture(run,{installTicketSelfHandlingSchema=true
     const waiting=await seedPersistedIntake({pool,text:'位置尚不清楚，等待补充的全新合成报修。',status:'WAITING_DESCRIPTION'});
     await pool.query("UPDATE intake.service_intake SET intake_no=regexp_replace(intake_no,'^INT-[0-9]{8}','INT-'||to_char(platform.local_now(),'YYYYMMDD'))");
     const listenPort=await unusedPort(),origin='http://127.0.0.1:'+listenPort;
-    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id,principals[1].id],externalSendEnabled:false,ticketSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled});
+    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id,principals[1].id],externalSendEnabled:false,ticketSelfHandlingEnabled,ticketConversationSelfHandlingEnabled,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled});
     const started=await runtime.start(),cookies=started.cookies.map(c=>c.name+'='+c.value);
     // Keep the test-owned fault active until explicit reconciliation: Chromium can transparently repeat a transport request.
     let dropNoteResponses=dropInternalNoteResponses;

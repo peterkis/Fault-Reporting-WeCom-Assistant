@@ -22,7 +22,7 @@ export function normalizeSelfHandlingCommand(input:unknown):SelfHandlingCommand 
   return {action:v.action,ticket_id:uuidP2016(v.ticket_id),client_command_id:uuidP2016(v.client_command_id),expected_version:versionP2016(v.expected_version),reason_code:codeP2016(v.reason_code),resolver_team_id:codeP2016(v.resolver_team_id)};
 }
 // Called by both the query projection and the locked write path. No truncated conversation list proves absence.
-export async function selfHandlingEligibility(tx:PostgresTransaction,principal:WorkbenchPrincipal,ticket:P2016TicketRow,lock=false){
+export async function selfHandlingResponsibilityEligibility(tx:PostgresTransaction,principal:WorkbenchPrincipal,ticket:P2016TicketRow,lock=false){
   if(!await selfHandlingSchemaReady(tx))failP2016('SELF_HANDLING_UNAVAILABLE',503);
   const member=await tx.query(`SELECT p.id FROM pilot_ticket.pilot_principal p
     JOIN pilot_ticket.pilot_team_member m ON m.principal_id=p.id
@@ -33,40 +33,24 @@ export async function selfHandlingEligibility(tx:PostgresTransaction,principal:W
   const cycleQuery=await tx.query<HandlingCycle>(`SELECT c.id::text,c.cycle_no,c.first_responsibility_event_id::text
     FROM pilot_ticket.ticket t JOIN pilot_ticket.ticket_handling_cycle c ON c.id=t.current_handling_cycle_id AND c.ticket_id=t.id WHERE t.id=$1::uuid`,[ticket.id]);
   const cycle=cycleQuery.rows[0]??null;
-  const session=await tx.query(`SELECT s.id FROM conversation.session s
-    WHERE s.status<>'ENDED' AND (s.service_intake_id=$1::uuid OR s.id IN (
-      SELECT related.conversation_session_id FROM intake.channel_leg own JOIN intake.channel_leg related ON related.journey_id=own.journey_id
-      WHERE own.source_intake_id=$1::uuid)) LIMIT 1${lock?' FOR SHARE OF s':''}`,[ticket.intake_id]);
   let rejection:string|null=null;
   if(!member.rowCount)rejection='FORBIDDEN';
   else if(ticket.assignee_id!==null&&ticket.assignee_id!==principal.principal_id)rejection='SELF_HANDLING_OWNER_CONFLICT';
-  else if(session.rowCount)rejection='SELF_HANDLING_CONVERSATION_REQUIRED';
   const initial=['NEW','QUEUED'].includes(ticket.status);
   const accepted=ticket.status==='ACCEPTED'&&ticket.assignee_id===principal.principal_id&&cycle?.first_responsibility_event_id!=null;
   if(!rejection&&!initial&&!accepted)rejection='SELF_HANDLING_STATE_CONFLICT';
   const actions:SelfHandlingAction[]=rejection?[]:initial?['take-and-start','accept-for-later']:['take-and-start'];
   return publicP2016({actions,cycle,rejection});
 }
-export function createTicketSelfHandlingService({pool,query,enabled=false,realtimeProjector=null,closure=null,notificationProjector=null}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;realtimeProjector?:Projector|null;closure?:{afterTicketAction:TicketActionAfterHook}|null;notificationProjector?:{project:(input:ProjectInput)=>Promise<unknown>}|null}){
-  const ledger=createP2016CommandLedger({pool});
-  return Object.freeze({async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
-    guardP2016(enabled);const command=normalizeSelfHandlingCommand(input);
-    if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
-    return ledger.execute({command,authorize:tx=>query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction:tx}),
-      run:async(tx)=>{
-        await realtimeProjector?.lock?.(tx);
-        const {ticket,principal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction:tx,lock:true});
-        if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
-        if(ticket.resolver_team_id!==command.resolver_team_id)failP2016('FORBIDDEN',403);
-        const eligibility=await selfHandlingEligibility(tx,principal,ticket,true);
-        if(!eligibility.actions.includes(command.action))failP2016(eligibility.rejection??'SELF_HANDLING_STATE_CONFLICT',eligibility.rejection==='FORBIDDEN'?403:409);
+export interface SelfHandlingHooks {realtimeProjector?:Projector|null;closure?:{afterTicketAction:TicketActionAfterHook}|null;notificationProjector?:{project:(input:ProjectInput)=>Promise<unknown>}|null}
+export async function performFirstTicketResponsibilityInTransaction({transaction:tx,ticket,principal,command,initialCycle,realtimeProjector=null,closure=null,notificationProjector=null,tracePrefix='t04:'}:{transaction:PostgresTransaction;ticket:P2016TicketRow;principal:WorkbenchPrincipal;command:SelfHandlingCommand;initialCycle:HandlingCycle|null;tracePrefix?:string}&SelfHandlingHooks){
         const actions=createTicketActionService({authorize:async()=>true,afterAction:closure?.afterTicketAction??null});
         const chain:TicketAction[]=ticket.status==='NEW'?['queue','accept']:ticket.status==='QUEUED'?['accept']:[];
         if(command.action==='take-and-start')chain.push('start');
-        let current:P2016TicketRow|PublicPilotTicket=ticket,cycle=eligibility.cycle;
+        let current:P2016TicketRow|PublicPilotTicket=ticket,cycle=initialCycle;
         const results:{ticket:PublicPilotTicket;event:PublicTicketEvent}[]=[];
         for(const action of chain){
-          const result=await actions.performInTransaction({ticketId:ticket.id,action,actor:{type:'PILOT_USER',id:principal.principal_id},expectedVersion:current.version,reasonCode:command.reason_code,traceId:'t04:'+command.client_command_id},tx);
+          const result=await actions.performInTransaction({ticketId:ticket.id,action,actor:{type:'PILOT_USER',id:principal.principal_id},expectedVersion:current.version,reasonCode:command.reason_code,traceId:tracePrefix+command.client_command_id},tx);
           current=result.ticket;results.push(result);
           if(action==='accept'&&!cycle){
             // No hidden history backfill: the currently committed accept is the first responsibility basis.
@@ -91,6 +75,29 @@ export function createTicketSelfHandlingService({pool,query,enabled=false,realti
         const last=results.at(-1);if(!cycle||!cycle.first_responsibility_event_id||!last)failP2016('ACTION_FAILED',503);
         for(const result of results)await tx.query('INSERT INTO pilot_ticket.ticket_handling_cycle_event(ticket_id,cycle_id,ticket_event_id) VALUES($1::uuid,$2::uuid,$3::uuid)',[ticket.id,cycle.id,result.event.event_id]);
         return {ok:true as const,ticket_id:ticket.id,ticket_version:current.version,ticket_event_id:last.event.event_id,control_event_id:null,handling_cycle:{...cycle,first_responsibility_event_id:cycle.first_responsibility_event_id}};
+}
+export async function selfHandlingEligibility(tx:PostgresTransaction,principal:WorkbenchPrincipal,ticket:P2016TicketRow,lock=false){
+  const eligibility=await selfHandlingResponsibilityEligibility(tx,principal,ticket,lock);
+  const session=await tx.query(`SELECT s.id FROM conversation.session s
+    WHERE s.status<>'ENDED' AND (s.service_intake_id=$1::uuid OR s.id IN (
+      SELECT related.conversation_session_id FROM intake.channel_leg own JOIN intake.channel_leg related ON related.journey_id=own.journey_id
+      WHERE own.source_intake_id=$1::uuid)) LIMIT 1${lock?' FOR SHARE OF s':''}`,[ticket.intake_id]);
+  return session.rowCount?publicP2016({...eligibility,actions:[],rejection:eligibility.rejection??'SELF_HANDLING_CONVERSATION_REQUIRED'}):eligibility;
+}
+export function createTicketSelfHandlingService({pool,query,enabled=false,realtimeProjector=null,closure=null,notificationProjector=null}:{pool:PostgresPool;query:P2016TicketQuery;enabled?:boolean;realtimeProjector?:Projector|null;closure?:{afterTicketAction:TicketActionAfterHook}|null;notificationProjector?:{project:(input:ProjectInput)=>Promise<unknown>}|null}){
+  const ledger=createP2016CommandLedger({pool});
+  return Object.freeze({async perform({authContext,command:input}:{authContext:unknown;command:unknown}){
+    guardP2016(enabled);const command=normalizeSelfHandlingCommand(input);
+    if(!await selfHandlingSchemaReady(pool))failP2016('SELF_HANDLING_UNAVAILABLE',503);
+    return ledger.execute({command,authorize:tx=>query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction:tx}),
+      run:async(tx)=>{
+        await realtimeProjector?.lock?.(tx);
+        const {ticket,principal}=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction:tx,lock:true});
+        if(ticket.version!==command.expected_version)failP2016('VERSION_CONFLICT',409);
+        if(ticket.resolver_team_id!==command.resolver_team_id)failP2016('FORBIDDEN',403);
+        const eligibility=await selfHandlingEligibility(tx,principal,ticket,true);
+        if(!eligibility.actions.includes(command.action))failP2016(eligibility.rejection??'SELF_HANDLING_STATE_CONFLICT',eligibility.rejection==='FORBIDDEN'?403:409);
+        return performFirstTicketResponsibilityInTransaction({transaction:tx,ticket,principal,command,initialCycle:eligibility.cycle,realtimeProjector,closure,notificationProjector});
       }});
   }});
 }
