@@ -3,6 +3,8 @@ import type { P2016TicketQuery } from './p2-016-ticket-query.mjs';
 import type { BoardColumn, CompletionRange, BoardPage, WorkbenchCard, WorkbenchDetail, WorkbenchRecord } from '../contracts/web01_workbench_contracts.js';
 import { ticketPredicateP2016 } from './p2-016-ticket-query.mjs';
 import { failP2016, uuidP2016, localP2016, limitP2016, cursorP2016, decodeCursorP2016, publicP2016 } from './p2-016-domain-contracts.mjs';
+import {sourceLabel} from './workbench-source-groups.mjs';
+import type {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
 
 export const WEB01_COLUMNS: readonly BoardColumn[] = ['pending', 'active', 'closed'];
 const STATUS_COLUMNS = {
@@ -14,7 +16,7 @@ export function boardColumn(status: string): BoardColumn {
   for(const column of WEB01_COLUMNS)if(STATUS_COLUMNS[column].some(value=>value===status))return column;
   failP2016();
 }
-interface CardRow extends Omit<WorkbenchCard, 'column'> { sort_at: string }
+interface CardRow extends Omit<WorkbenchCard, 'column'|'source_label'|'source_group'> { sort_at: string }
 interface Input { authContext: unknown; column: string | null; range: string | null; cursor: unknown; limit: unknown }
 const CARD_SQL = `WITH cards AS (
  SELECT 'ticket'::text AS kind,t.id::text,t.source_intake_id::text AS intake_id,t.ticket_no AS number,
@@ -75,12 +77,13 @@ const CARD_SQL = `WITH cards AS (
 function card(row: CardRow): WorkbenchCard {
   return { kind: row.kind, id: row.id, intake_id: row.intake_id, number: row.number, title: row.title,
     status: row.status, column: boardColumn(row.status), priority: row.priority, source: row.source,
+    source_label:sourceLabel(row.source),source_group:null,
     location: row.location, reporter_name: row.reporter_name,
     assignee_name: row.assignee_name, review_reason: row.review_reason,
     created_at: localP2016(row.created_at), updated_at: localP2016(row.updated_at),
     completed_at: row.completed_at === null ? null : localP2016(row.completed_at) };
 }
-export function createWeb01WorkbenchQuery({pool,query}: {pool: PostgresTransaction; query: P2016TicketQuery}) {
+export function createWeb01WorkbenchQuery({pool,query,sourceGroups=null}: {pool: PostgresTransaction; query: P2016TicketQuery;sourceGroups?:ReturnType<typeof createWorkbenchSourceGroups>|null}) {
   async function scope(authContext: unknown) { return ticketPredicateP2016(await query.principal(authContext)); }
   async function range(mode: CompletionRange): Promise<BoardPage['range']> {
     const r=await pool.query<{from:string;until:string}>(`SELECT
@@ -92,7 +95,8 @@ export function createWeb01WorkbenchQuery({pool,query}: {pool: PostgresTransacti
     if(!['ticket','review','intake'].includes(kind))failP2016('NOT_FOUND',404);
     const authorized=await scope(authContext);
     const r=await pool.query<CardRow>(CARD_SQL+' SELECT * FROM cards WHERE kind=$4 AND id=$5', [...authorized.values,kind,uuidP2016(id)]);
-    const row=r.rows[0];if(!row)failP2016('NOT_FOUND',404);return card(row);
+    const row=r.rows[0];if(!row)failP2016('NOT_FOUND',404);
+    const selected=card(row);return sourceGroups?(await sourceGroups.decorate([selected]))[0]??selected:selected;
   }
   return Object.freeze({
     async list(input: Input): Promise<BoardPage> {
@@ -117,7 +121,7 @@ export function createWeb01WorkbenchQuery({pool,query}: {pool: PostgresTransacti
         AND ($8::text IS NULL OR (order_group,order_at,kind,id)<($13::integer,$8::text,$9::text,$10::text))
         ORDER BY order_group DESC,order_at DESC,kind DESC,id DESC LIMIT $11`, [...authorized.values,states,
           selectedColumn!=='closed'||selectedRange!=='recent',window.from,window.until,at,page?.kind??null,id,limit+1,selectedColumn==='closed',page?.order_group??null]);
-      const rows=r.rows.slice(0,limit),items=rows.map(card),last=rows.at(-1);
+      const rows=r.rows.slice(0,limit),items=sourceGroups?await sourceGroups.decorate(rows.map(card)):rows.map(card),last=rows.at(-1);
       return publicP2016({items,column:selectedColumn,range:window,next_cursor:r.rows.length>limit&&last?cursorP2016({v:1,
         principal:authorized.values[1],scope:scopeKey,column,range:mode,from:window.from,at:last.order_at,order_group:last.order_group,kind:last.kind,id:last.id}):null});
     },

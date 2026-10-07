@@ -6,14 +6,19 @@ import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
 import {createP2G1InboundProjectionCoordinator,P2_G1_PROJECTION_STREAMS} from '../src/p2-g1-inbound-projection-coordinator.mjs';
 import {createConversationControlService,createPilotConversationControlAuthorization} from '../src/p2-005-conversation-control.mjs';
 import {appendRealtimeEvent} from '../src/p2-003-realtime-event-log.mjs';
+import {migrateWorkbenchSourceGroups} from '../scripts/workbench-source-groups-migrate.mjs';
 test('WEB01 real HTTP: scope, duplicate review, natural-day completion range, keyset and protected static',async()=>{
-  await withWeb01Fixture(async({origin,cookies,tickets,waiting,pool,principals})=>{
+  await withWeb01Fixture(async({origin,cookies,tickets,waiting,pool,principals,databaseUrl})=>{
     const get=(path,index=0)=>fetch(origin+path,{headers:{cookie:cookies[index]}});
     assert.equal((await fetch(origin+'/api/workbench/board')).status,401);
     assert.equal((await fetch(origin+'/workbench/app/')).status,401);
     assert.equal((await fetch(origin+'/api/workbench/board',{headers:{cookie:'yxx_member_session=synthetic-reporter'}})).status,401);
     const read=async path=>{const response=await get(path);assert.equal(response.status,200,await response.clone().text());return response.json();};
     const bootstrap=await read('/api/lifecycle/bootstrap');assert.equal(bootstrap.principal_id,principals[0].id);
+    assert.equal(bootstrap.source_group_directory_enabled,false);
+    assert.equal((await get('/api/workbench/source-groups')).status,503);
+    assert.equal((await migrateWorkbenchSourceGroups({databaseUrl,mode:'check'})).status,'PENDING');
+    assert.equal((await pool.query("SELECT to_regclass('workbench.source_group_name')::text AS name")).rows[0].name,null);
     const pending=await read('/api/workbench/board?column=pending');
     assert.equal(pending.items.length,7);assert.equal(pending.items.filter(i=>i.intake_id===tickets[0].intake.intakeId).length,1);
     assert.ok(pending.items.some(i=>i.kind==='intake'&&i.id===waiting.intakeId&&i.status==='WAITING_DESCRIPTION'));
@@ -100,4 +105,62 @@ test('WEB01 current communication responsibility excludes a retained assignment 
     assert.deepEqual(after.conversation_assignees,[]);
     assert.equal(after.ticket_assignee_name,before.ticket_assignee_name);
   });
+});
+test('source group HTTP: ADMIN metadata, scoped group identity, replay, conflict, origin and retention',async()=>{
+  await withWeb01Fixture(async({origin,cookies,tickets,pool,principals,databaseUrl})=>{
+    const get=(path,index=0)=>fetch(origin+path,{headers:{cookie:cookies[index]}});
+    const read=async path=>{const r=await get(path);assert.equal(r.status,200,await r.clone().text());return r.json();};
+    const bootstrap=await read('/api/lifecycle/bootstrap');assert.equal(bootstrap.source_group_directory_enabled,true);
+    const handlerBootstrap=await get('/api/lifecycle/bootstrap',1);assert.equal(handlerBootstrap.status,200);const handlerCsrf=(await handlerBootstrap.json()).csrf_token;
+    assert.equal((await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'})).status,'NOOP_ALREADY_APPLIED');
+    const itemPath=id=>'/api/workbench/items/ticket/'+id;
+    const first=(await read(itemPath(tickets[0].ticket.id))).item,ref=first.source_group.ref;
+    assert.match(ref,/^[a-f0-9]{64}$/u);assert.equal(first.source_label,'群聊报修 · 群名称未登记');assert.equal(first.source_group.row_version,'0');
+    const raw=(await pool.query('SELECT source_bot_id,source_chat_id FROM intake.service_intake WHERE id=$1::uuid',[first.intake_id])).rows[0];
+    // Different Bot + same chatid must resolve to a different name record.
+    await pool.query('UPDATE intake.service_intake SET source_chat_id=$2,source_bot_id=$3 WHERE id=$1::uuid',[tickets[1].intake.intakeId,raw.source_chat_id,'other-synthetic-bot']);
+    const other=(await read(itemPath(tickets[1].ticket.id))).item;assert.notEqual(other.source_group.ref,ref);
+    const another=(await read(itemPath(tickets[2].ticket.id))).item;assert.notEqual(another.source_group.ref,ref);
+    const list=await read('/api/workbench/source-groups?limit=1');assert.equal(list.items.length,1);assert.ok(list.next_cursor);
+    assert.equal((await get('/api/workbench/source-groups',1)).status,403);
+    assert.equal((await get('/api/workbench/source-groups?limit=101')).status,400);
+    assert.equal((await get('/api/workbench/source-groups?limit=1&limit=2')).status,400);
+    const post=async(groupRef,body,extra={},index=0)=>fetch(origin+'/api/workbench/source-groups/'+groupRef+'/name',{method:'POST',headers:{cookie:cookies[index],origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':body.client_command_id,'if-match':'"'+body.expected_row_version+'"',...extra},body:JSON.stringify(body)});
+    const command={client_command_id:randomUUID(),expected_row_version:'0',display_name:' 信息科支持群 '};
+    assert.equal((await post(ref,command,{'x-csrf-token':'wrong'})).status,403);
+    assert.equal((await post(ref,command,{origin:'https://other.invalid'})).status,403);
+    assert.equal((await post(ref,command,{'idempotency-key':randomUUID()})).status,400);
+    assert.equal((await post(ref,command,{'if-match':'"1"'})).status,409);
+    assert.equal((await post(ref,command,{'x-csrf-token':handlerCsrf},1)).status,403);
+    assert.equal((await post('f'.repeat(64),command)).status,404);
+    assert.equal((await post(ref,{...command,chatid:'injected'})).status,400);
+    const created=await post(ref,command);assert.equal(created.status,200,await created.clone().text());const saved=await created.json();
+    assert.equal(saved.group.display_name,'信息科支持群');assert.equal(saved.group.row_version,'1');assert.equal(saved.replayed,false);
+    const replay=await post(ref,command);assert.equal(replay.status,200);assert.equal((await replay.json()).replayed,true);
+    assert.equal((await post(ref,{...command,display_name:'不同内容'})).status,409);
+    assert.equal((await post(ref,{...command,client_command_id:randomUUID()})).status,409);
+    const sameName=await post(other.source_group.ref,{client_command_id:randomUUID(),expected_row_version:'0',display_name:'信息科支持群'});assert.equal(sameName.status,200);
+    // A later direct communication channel leaves the Journey origin unchanged.
+    await pool.query("UPDATE intake.contact_journey SET current_channel='WECOM_DIRECT',entry_mode='GROUP_MENTION_TO_DIRECT_GUIDED' WHERE origin_intake_id=$1::uuid",[first.intake_id]);
+    const withName=(await read(itemPath(first.id))).item;assert.equal(withName.source_label,'群聊报修 · 信息科支持群');assert.equal(withName.source_group.ref,ref);
+    // Another Intake may be linked as a supplement; it does not own this Ticket's origin.
+    await pool.query('UPDATE intake.contact_journey SET linked_ticket_id=$1::uuid WHERE origin_intake_id<>$2::uuid',[first.id,first.intake_id]);
+    const afterSupplement=(await read(itemPath(first.id))).item;assert.equal(afterSupplement.source_group.ref,ref);assert.equal(afterSupplement.source_label,withName.source_label);
+    assert.equal((await read('/api/workbench/board?column=pending')).items.find(i=>i.id===first.id).source_label,withName.source_label);
+    const competing=await Promise.all(['甲群','乙群'].map(display_name=>post(ref,{client_command_id:randomUUID(),expected_row_version:'1',display_name})));
+    assert.deepEqual(competing.map(r=>r.status).sort(),[200,409]);
+    const final=(await read(itemPath(first.id))).item;assert.equal(final.source_group.row_version,'2');
+    const changes=await pool.query('SELECT count(*)::int AS count FROM workbench.source_group_name_change WHERE group_ref=$1',[ref]);assert.equal(changes.rows[0].count,2);
+    assert.deepEqual((await pool.query('SELECT source_bot_id,source_chat_id FROM intake.service_intake WHERE id=$1::uuid',[first.intake_id])).rows[0],raw);
+    const json=JSON.stringify(await read('/api/workbench/source-groups'));assert.ok(!json.includes(raw.source_chat_id));assert.ok(!json.includes(raw.source_bot_id));
+    const direct=await seedPersistedIntake({pool,text:'合成单聊报修',chatType:'single',status:'WAITING_DESCRIPTION'});
+    const directItem=(await read('/api/workbench/items/intake/'+direct.intakeId)).item;assert.equal(directItem.source_group,null);assert.equal(directItem.source_label,'Bot 私聊');
+    await pool.query("UPDATE intake.service_intake SET retention_until=platform.local_now()-interval '1 second' WHERE id=$1::uuid",[first.intake_id]);
+    const expired=(await read(itemPath(first.id))).item;assert.equal(expired.source_group,null);assert.equal(expired.source_label,'来源资料不可用');
+    assert.equal((await post(ref,command)).status,404);
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM communication.delivery')).rows[0].count,0);
+    await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=$1::uuid AND role='ADMIN'",[principals[0].id]);
+    // Existing session cannot retain directory privileges after role removal.
+    assert.ok([401,403].includes((await get('/api/workbench/source-groups')).status));
+  },{sourceGroupDirectoryEnabled:true});
 });

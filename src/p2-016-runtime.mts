@@ -10,6 +10,8 @@ import type { TicketActionAfterHook, PublicTicketEvent } from './p1-006-ticket-s
 import { createWeb01WorkbenchQuery } from './web01-workbench-query.mjs';
 import { createWeb01WorkbenchHttp } from './web01-workbench-http.mjs';
 import { createWeb01WorkbenchStatic } from './web01-workbench-static.mjs';
+import {createWorkbenchSourceGroups} from './workbench-source-groups.mjs';
+interface P2016RuntimeOptionsInput { sourceGroupDirectoryEnabled?:boolean }
 
 type RealtimeProjector = ReturnType<typeof createP2016RealtimeProjector>;
 type Notifications = ReturnType<typeof createP2016TicketNotificationProjector>;
@@ -65,7 +67,8 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
   senderAdapter=null,orchestrationWorker=null,identityHmacKey,directoryPort,directorySource='WECOM_DIRECTORY',directoryStore=null,directorySourceScope='FORMAL',directorySyncJob=null,ruleEngine,serviceCatalog,ruleFirstFlags={},ticketNotificationAdditionalEvents=[],testAuthTtlMs=900000,closePoolOnStop=false,
   gatewayStatusProvider=null,communicationStatusProvider=null,requireGateway=gatewayEnabled,incidentExtensionFactory=null,personDestinationAuthorizer=null,communicationAppend,wecomWebOAuth={},
   reporterPolicy='LEGACY_BOUND_GRANT',reporterMemberEntry={},identityMapping=null,yxxSelfService=null,limitedRequestGuard=null,
-  workbenchAuthentication=null,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
+  workbenchAuthentication=null,sourceGroupDirectoryEnabled=false,externalSendEnabled=true}: P2016RuntimeOptions={} as P2016RuntimeOptions): P2016EnabledRuntime | P2016DisabledRuntime {
+  if(typeof sourceGroupDirectoryEnabled!=='boolean')failP2016('FLAG_INVALID',503);
   const featureFlags=flagsP2016(flags) as Record<'TICKET_LIFECYCLE_WORKBENCH_ENABLED' | 'REPORTER_TIMELINE_ENABLED' | 'WECOM_TEMPLATE_CARD_ENABLED', boolean>,enabled=featureFlags.TICKET_LIFECYCLE_WORKBENCH_ENABLED;
   const policy=reporterAccessPolicy(reporterPolicy) as 'LEGACY_BOUND_GRANT' | 'MEMBER_REQUIRED',memberConfig=validateYxxEntryConfig(reporterMemberEntry as Record<string, unknown>);
   if(policy==='MEMBER_REQUIRED'&&(!memberConfig.enabled||wecomWebOAuth.enabled!==true||!featureFlags.REPORTER_TIMELINE_ENABLED))failYxx('CONFIG_INVALID');
@@ -107,9 +110,10 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
       reviews=createP2016ManualReviewFacade({pool,enabled,query,notificationProjector:notifications,realtimeProjector,personDestinationAuthorizer,communicationAppend});
       const deliveryControl=createP2016DeliveryControl({pool,query,enabled,externalSendEnabled});
       incidentExtension=incidentExtensionFactory?.({pool,realtime,query})??null;
-      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled});
+      const ticketHttp=createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled,sourceGroupDirectoryEnabled});
       const ticketStatic=createP2016WorkbenchStatic({enabled,conversationEnabled:true});
-      const web01Http=createWeb01WorkbenchHttp(createWeb01WorkbenchQuery({pool,query}));
+      const sourceGroups=sourceGroupDirectoryEnabled?createWorkbenchSourceGroups({pool,query}):null;
+      const web01Http=createWeb01WorkbenchHttp(createWeb01WorkbenchQuery({pool,query,sourceGroups}),sourceGroups);
       const web01Static=createWeb01WorkbenchStatic({enabled});
       if(policy==='MEMBER_REQUIRED')memberExtension=(createYxxMemberExtension as typeof createYxxMemberExtension)({pool,oauth:webOAuth,publicOrigin:reporterOrigin,
         reporterHmacSecret,reporterMemberEntry:memberConfig,identityMapping,access,incidentAdapter:incidentExtension?.reporterAdapter??null});
@@ -135,9 +139,11 @@ export function createP2016Runtime({pool,flags={},principalId,principalIds=null,
             catch{selfServiceSchema=false;}
           }
           const directorySchema=!directoryStore||await staffDirectorySchemaReady(pool);
-          const ready=base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema;
+          let sourceGroupSchema=true;
+          if(sourceGroupDirectoryEnabled){try{sourceGroupSchema=(await pool.query("SELECT 1 FROM platform.schema_migration WHERE migration_id='037_workbench_source_group_names'")).rowCount===1;}catch{sourceGroupSchema=false;}}
+          const ready=base.ok&&schema&&workbenchAuthSchema&&incidentReady&&selfServiceSchema&&directorySchema&&sourceGroupSchema;
           return {ok:ready,base_service_ready:ready,ai_enhancement_ready:false,ai_enabled:false,
-            checks:{...base.checks,p2_016_schema:schema,workbench_wecom_auth:workbenchAuthSchema,...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
+            checks:{...base.checks,p2_016_schema:schema,workbench_wecom_auth:workbenchAuthSchema,...(sourceGroupDirectoryEnabled?{source_group_directory_schema:sourceGroupSchema}:{}),...(directoryStore?{third_staff_directory_schema:directorySchema}:{}),...(selfService?{yxx_self_service_schema:selfServiceSchema}:{})},scope:'INTERNAL_BETA_NOT_PHASE2_GO'};
         },
         authenticatedHandler:async context=>(await web01Http(context))||(await incidentExtension?.authenticatedHandler?.(context))||ticketHttp(context),
         unauthenticatedHandler:async context=>(await workbenchAuthentication?.unauthenticatedHandler?.(context))

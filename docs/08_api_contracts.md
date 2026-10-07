@@ -1,5 +1,7 @@
 # 08. API 接口契约说明
 
+> 当前可调用接口先查 [服务接口导航](api/README.md) 和 [完整HTTP索引](api/endpoint-index.md)。本文件保留早期设计；`/internal/v1/*`、`/api/v1/tickets/*` 等不代表当前已挂载路由，“所有响应包含trace_id”也不适用于全部当前handler。旧Hospital Tickets迁移段落须按V1.4绿地/唯一Unified Ticket Core基线阅读，不作为新任务来源。当前实现与设计差异见 [差异清单](api/design-and-gaps.md)。
+
 完整机器可读契约见 `contracts/openapi.yaml` 和 JSON Schema。
 
 阶段适用性：Phase 1/2 的 Ticket API 由 Pilot Ticket Core 提供；Phase 3 新增 Ticket Adapter 契约并完成向 Hospital Tickets 的迁移。Gateway 和识别服务不得直接调用 Hospital Tickets。

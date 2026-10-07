@@ -149,7 +149,8 @@ Reporter、Service Agent、Dispatcher、Handler 是角色或关系，不是四�
 | AcceptTicket 接单 | 有权限的目标处理人；无分派时可受控自行接单 | 确认承接；首次流程进入 ACCEPTED | 本轮已有派单通知则不重复；自行接单首次建立责任时通知 |
 | StartWork 开始处理 | 当前处理人；已接单或合规的重开后承接 | IN_PROGRESS | 默认仅更新页面 |
 | TransferAssignment 转派 | 调度员或受限当前处理人；目标有效且范围获准 | 更换责任，保留处理历史；不代替开始/结束 | 默认不额外外发，除非后续业务批准 |
-| UnassignTicket 撤销派单 | 调度员；建议限未开始处理的 QUEUED/ACCEPTED/REOPENED | 清除当前个人责任，保留服务归属组，回到待分配；追加原因 | 页面明确待重新安排；是否补发变更通知待定 |
+| UnassignTicket 撤销派单 | 获权调度员／管理员；未开始处理，精确状态转换实施前冻结 | 清除当前个人责任，保留处理组，回到待安排；追加原因 | 页面明确待重新安排；不额外外发撤派消息 |
+| ReturnToDispatch 停止处理并退回 | 当前处理人或获权调度员／管理员；已开始，含等待报修人／厂商 | 必填原因与未完成说明，清处理人、保留组和本轮历史；默认保留沟通责任 | 不关闭、不新增轮次；同轮不重复已有首次责任通知 |
 | RequestInformation / WaitVendor | 当前处理人；IN_PROGRESS | 等待报修人/第三方，保留处理责任 | 页面更新；额外提醒策略另定 |
 | ResumeWork | 当前处理人；等待状态 | IN_PROGRESS | 页面更新 |
 | ResolveTicket 解决 | 当前处理人或获准管理角色；IN_PROGRESS | RESOLVED，记录安全结果摘要 | “已处理完成，请确认恢复” |
@@ -162,7 +163,7 @@ Reporter、Service Agent、Dispatcher、Handler 是角色或关系，不是四�
 
 当前 facade 不具备表中全部命令；现有 accept/transfer/reopen 不能通过重命名就宣称兼容以上全部行为。特别是 REOPENED 的接单、重新分派和撤销已接单动作，必须补充转换规则与契约测试。
 
-进行中撤销派单不直接开放：默认要求显式转派或“停止处理并退回调度”后继用例，以记录未完工作和责任交接。旧处理人可作为历史参考保留，重开后是否继续负责必须显式确认；实现时不得仅凭旧 assignee_id 绕过再次派工。
+2026-10-07已确认进行中采用独立“停止处理并退回”，及获权可见工单的跨团队人／有效组交接、共享跟进等规则，见[ADR-0031](../../adr/0031_human_workbench_collaboration_policy.md)与[实施计划](../../plans/admin-workbench-integration/README.md)。这是目标合同，当前HTTP尚无完整命令。旧处理人作为历史参考保留，重开后必须显式再次承接；不得仅凭旧 assignee_id 绕过再次派工。
 
 ```mermaid
 flowchart LR

@@ -1,14 +1,15 @@
 import {useEffect,useRef,useState} from 'react';
 import type {KeyboardEvent,ReactNode} from 'react';
 import {Link,Route,Routes,useLocation,useNavigate,useParams,useSearchParams} from 'react-router';
-import {useInfiniteQuery,useQuery} from '@tanstack/react-query';
+import {useInfiniteQuery,useQuery,useMutation,useQueryClient} from '@tanstack/react-query';
 import {Button} from '@heroui/react/button';
 import {LayoutGrid,List,MessageSquare,TriangleAlert,Bell,BookOpen,Settings,ChevronDown,ChevronUp,ArrowUpRight,RefreshCw,ArrowLeft,X,LifeBuoy,Search} from 'lucide-react';
 import {MorphIcon} from 'morphicons/react';
 import {PanelLeftClose as CollapseData,PanelLeftOpen as ExpandData} from 'lucide';
 import {createColumnHelper,tableFeatures,useTable} from '@tanstack/react-table';
-import {api,errorMessage,statusLabels,sourceLabels} from '../api/client';
+import {api,ApiError,errorMessage,statusLabels} from '../api/client';
 import type {BoardColumn,CompletionRange,WorkbenchCard,Principal} from '../api/client';
+import type {SourceGroupDisplay,SourceGroupNameCommand} from '../../../../contracts/web01_workbench_contracts';
 import {useUiStore} from './ui-store';
 
 const names:Record<BoardColumn,string>={pending:'待受理',active:'处理中',closed:'已关闭'};
@@ -62,7 +63,7 @@ function Card({item,search,selected,now}:{item:WorkbenchCard;search:string;selec
       <div className="card-top"><span>{item.number}</span></div>
       <h3>{item.title}</h3>
       <p className="card-meta" title={(item.location??'位置未提供')+' · '+(item.reporter_name??'报修人资料未提供')}>{item.location??'位置未提供'} · {item.reporter_name??'报修人资料未提供'}</p>
-      <div className="card-tags"><Status item={item}/><span className="neutral-chip">{sourceLabels[item.source]??item.source}</span></div>
+      <div className="card-tags"><Status item={item}/><span className="neutral-chip" title={item.source_label}>{item.source_label}</span></div>
       <footer className="card-footer"><Owner name={item.assignee_name}/><time className="activity-time" dateTime={item.updated_at.replace(' ','T')+'+08:00'} title={'最新活动：'+item.updated_at+'（北京时间）'}>更新 {relativeTime(item.updated_at,now)}</time></footer>
       <span className="sr-only">查看详情</span>
     </Link>
@@ -79,7 +80,7 @@ function WorkList({items,search,selected,now,column,label}:{items:WorkbenchCard[
     tableHelper.accessor('number',{header:'编号'}),
     tableHelper.accessor('title',{header:'问题',cell:({row})=><Link className="row-link" to={itemLink(row.original,search)} state={{fromBoard:true}} title={row.original.title}>{row.original.title}<span className="sr-only">查看详情</span></Link>}),
     tableHelper.accessor('status',{header:'状态',cell:({row})=><Status item={row.original}/>}),
-    tableHelper.accessor('source',{header:'来源',cell:({row})=><span className="neutral-chip">{sourceLabels[row.original.source]??row.original.source}</span>}),
+    tableHelper.accessor('source_label',{header:'来源',cell:({row})=><span className="neutral-chip">{row.original.source_label}</span>}),
     tableHelper.accessor('location',{header:'位置',cell:({getValue})=>getValue()??'未提供'}),
     tableHelper.accessor('reporter_name',{header:'报修人',cell:({getValue})=>getValue()??'未提供'}),
     tableHelper.accessor('assignee_name',{header:'负责人',cell:({getValue})=><Owner name={getValue()} compact/>}),
@@ -103,6 +104,27 @@ function Shell({principal,children}:{principal:Principal;children:ReactNode}){
     <div className="nav-item muted" title="会话 · 后续开放"><MessageSquare/><span>会话</span><small>后续</small></div><div className="nav-item muted" title="公共故障 · 后续开放"><TriangleAlert/><span>公共故障</span><small>后续</small></div><div className="nav-item muted" title="团队知识库 · 规划中"><BookOpen/><span>团队知识库</span><small>规划中</small></div><div className="nav-item muted" title="通知异常 · 后续开放"><Bell/><span>通知异常</span><small>后续</small></div>
     <div className="sidebar-note">共同协作，清楚交接。</div><div className="sidebar-bottom"><div className="nav-item muted" title="设置"><Settings/><span>设置</span></div><div className="account"><TeamAvatar name={principal.display_name}/><div><strong>{principal.display_name}</strong><small>已授权内部身份</small></div></div></div></aside>
     <main><header className="topbar"><button className="icon-button" aria-label={collapsed?'展开侧栏':'收起侧栏'} onClick={toggle}><MorphIcon icon={collapsed?ExpandData:CollapseData} size={18} reducedMotion="user"/></button><span>信息服务团队 <span className="slash">/</span> <strong>工作台</strong></span><span className={'connection '+(!online?'offline':'')}>{online?'按需读取':'网络已断开'}</span><a href="/workbench">旧管理端<ArrowUpRight size={14}/></a></header>{children}</main></div>;
+}
+function GroupNameEditor({group,principal}:{group:SourceGroupDisplay;principal:Principal}){
+  const [name,setName]=useState(group.display_name??''),client=useQueryClient(),pendingCommand=useRef<SourceGroupNameCommand|null>(null);
+  const refresh=async()=>{await Promise.all([client.invalidateQueries({queryKey:['board',principal.principal_id]}),client.invalidateQueries({queryKey:['detail',principal.principal_id]})]);};
+  const mutation=useMutation({mutationFn:(command:SourceGroupNameCommand)=>api.saveGroupName(group.ref,command,principal.csrf_token),onSuccess:refresh,
+    onError:async error=>{
+      if(error instanceof ApiError&&error.status===401){useUiStore.getState().failSession(401);await client.cancelQueries();client.clear();}
+      else if(error instanceof ApiError&&[404,409].includes(error.status))await refresh();
+    }});
+  return <form className="source-group-form" aria-label="维护来源群名称" onSubmit={event=>{
+    event.preventDefault();if(mutation.isPending)return;
+    const displayName=name.trim();if(!displayName)return;
+    // Preserve a command across an uncertain network outcome; changing the name creates a new command.
+    if(!pendingCommand.current||pendingCommand.current.display_name!==displayName)pendingCommand.current={client_command_id:crypto.randomUUID(),expected_row_version:group.row_version,display_name:displayName};
+    mutation.mutate(pendingCommand.current);
+  }}>
+    <label>来源群名称<input name="source-group-name" value={name} required maxLength={128} disabled={mutation.isPending} onChange={event=>setName(event.target.value)}/></label>
+    <Button type="submit" variant="secondary" isDisabled={mutation.isPending||!name.trim()}>{mutation.isPending?'正在保存…':'保存群名称'}</Button>
+    <p>群名称由管理员确认，用于该群报修事项的来源展示。</p>
+    {mutation.isError?<p role="alert">{errorMessage(mutation.error)}</p>:null}
+  </form>;
 }
 function Detail({principal,items,now,fullPage}:{principal:Principal;items:WorkbenchCard[];now:number;fullPage:boolean}){
   const {kind='',id=''}=useParams(),navigate=useNavigate(),location=useLocation(),dialog=useRef<HTMLDialogElement>(null),previousFocus=useRef<HTMLElement|null>(null),pageHeading=useRef<HTMLHeadingElement>(null);
@@ -131,13 +153,14 @@ function Detail({principal,items,now,fullPage}:{principal:Principal;items:Workbe
         <dt>处理责任</dt><dd><Owner name={detail.responsibility.ticket_assignee_name}/></dd>
         <dt>报修人</dt><dd>{detail.item.reporter_name??'未提供'}</dd>
         <dt>位置</dt><dd>{detail.item.location??'未提供'}</dd>
-        <dt>来源</dt><dd><span className="neutral-chip">{sourceLabels[detail.item.source]??detail.item.source}</span></dd>
+        <dt>来源</dt><dd><span className="neutral-chip">{detail.item.source_label}</span></dd>
         <dt>沟通责任</dt><dd>{detail.responsibility.conversation_assignees.join('、')||'暂无明确沟通人'}</dd>
         <dt>创建时间</dt><dd>{detail.item.created_at}</dd>
         <dt>最新活动</dt><dd>{detail.item.updated_at}</dd>
         <dt>实际完结</dt><dd>{detail.item.completed_at??'尚无完结事件'}</dd>
       </dl><p>以上时间均为北京时间；最新活动不代表当前环节耗时。</p></section>
-      <p className="read-only-note">当前为只读视图。处理操作请使用 <a href="/workbench">旧管理端</a>。</p>
+      {principal.source_group_directory_enabled&&principal.roles.includes('ADMIN')&&detail.item.source_group?<GroupNameEditor key={detail.item.source_group.ref+':'+detail.item.source_group.row_version} group={detail.item.source_group} principal={principal}/>:null}
+      <p className="read-only-note">工单处理操作请使用 <a href="/workbench">旧管理端</a>。</p>
       <section className="detail-main"><h3>报修内容</h3><p className="description">{detail.description??'暂无可读取的原始报修内容。'}</p><h3 className="activity-title">动态 <span>{records.length} 条已加载</span></h3>
         <ol className="activity-list">{records.map(record=><li key={record.id}>{record.audience!=='REPORT'&&record.actor&&record.actor!=='SYSTEM'?<TeamAvatar name={record.actor}/>:<span className="avatar" aria-hidden="true">{record.audience==='REPORT'?'报':'系'}</span>}<div><header><strong>{record.actor??(record.audience==='REPORT'?'报修材料':'系统记录')}</strong><time title={record.at+'（北京时间）'}>{relativeTime(record.at,now)}</time><span className="record-type">{record.audience==='INTERNAL'?'内部记录':record.audience==='EXTERNAL'?'对外摘要':'原始报修'}</span></header><p>{record.text??(record.new_status?(statusLabels[record.old_status??'']??record.old_status??'新建')+' → '+(statusLabels[record.new_status]??record.new_status):record.type)}</p></div></li>)}</ol>
         {!records.length?<p className="empty">暂无可读取的活动记录。</p>:null}{result.hasNextPage?<Button variant="secondary" isDisabled={result.isFetchingNextPage} onPress={()=>{void result.fetchNextPage();}}>加载更早记录</Button>:<p className="column-end">当前范围的记录已加载完毕</p>}</section>

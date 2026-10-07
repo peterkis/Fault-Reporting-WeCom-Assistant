@@ -1,5 +1,7 @@
 # WEB01 正式管理端
 
+2026-10-07后继增量：管理员可在群来源事项详情登记或修改群名称，统一更新卡片、列表和详情。Ticket业务仍只读；名称资料与原始来源分离。新宿主选项sourceGroupDirectoryEnabled默认false，须独立037迁移与显式装配后才开放，详见[接口合同](../../docs/api/workbench/source-groups-design.md)和[ADR-0030](../../adr/0030_admin_confirmed_source_group_names.md)。下文WEB01无迁移/无写入描述是首版交付范围。
+
 生产入口为同源 `/workbench/app/`；保留 `/workbench`、`/workbench/lifecycle` 与成员端。复用原型视觉及 React/Vite/HeroUI/Tailwind，新增 Router 7、Query 5、Zustand、Table 和 Morphicons。精确版本、后续切片适配位置与授权边界见[技术方案](../../docs/ui/admin-workbench-architecture.md)和 [ADR-0029](../../adr/0029_admin_workbench_frontend_boundaries.md)。
 
 ## 构建与检查

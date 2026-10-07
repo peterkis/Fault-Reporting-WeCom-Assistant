@@ -6,7 +6,7 @@ import type { createP2016DeliveryControl } from './p2-016-delivery-control.mjs';
 import type { LedgerResult, LedgerSuccess } from './p2-016-ticket-command-ledger.mjs';
 type HttpContext = Parameters<NonNullable<WorkbenchHttpOptions['authenticatedHandler']>>[0];
 interface ReviewPort { listManualReviews: (input: { authContext: unknown; status: string; priority: string | null; cursor: string | null; limit: string | null }) => Promise<unknown>; getManualReviewDetail: (input: { authContext: unknown; reviewId: string }) => Promise<unknown>; journey: (input: { authContext: unknown; journeyId: string; part: string | null }) => Promise<unknown>; resolveManualReview: (input: { authContext: unknown; reviewId: string; body: unknown }) => Promise<LedgerResult<LedgerSuccess>> }
-interface HttpOptions { query: P2016TicketQuery; tickets: ReturnType<typeof createP2016TicketCommandFacade>; reviews: ReviewPort; deliveryControl: ReturnType<typeof createP2016DeliveryControl>; enabled?: boolean }
+interface HttpOptions { query: P2016TicketQuery; tickets: ReturnType<typeof createP2016TicketCommandFacade>; reviews: ReviewPort; deliveryControl: ReturnType<typeof createP2016DeliveryControl>; enabled?: boolean;sourceGroupDirectoryEnabled?:boolean }
 
 import { failP2016,guardP2016,exactP2016 } from './p2-016-domain-contracts.mjs';
 function checkVersion(request: IncomingMessage,value: unknown) {
@@ -15,7 +15,7 @@ function checkVersion(request: IncomingMessage,value: unknown) {
 }
 function queryKeys(url: URL,allowed: readonly string[]) {if([...url.searchParams.keys()].some(k=>!allowed.includes(k)))failP2016();}
 function status(result: LedgerResult<LedgerSuccess>) {return result.ok===false?/FORBIDDEN|PERMITTED/u.test(result.error.code)?403:/FAILED|UNAVAILABLE/u.test(result.error.code)?503:409:200;}
-export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled=false}: HttpOptions) {
+export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,enabled=false,sourceGroupDirectoryEnabled=false}: HttpOptions) {
   return async({request,response,url,authContext,readJson,validateWriteRequest,json}: HttpContext)=>{
     const matched=/^\/api\/(tickets(?:\/|$)|manual-reviews(?:\/|$)|contact-journeys(?:\/|$)|lifecycle\/bootstrap$)/u.test(url.pathname)
       ||/^\/api\/conversations\/[^/]+\/takeover-and-accept-ticket$/u.test(url.pathname);
@@ -23,7 +23,7 @@ export function createP2016WorkbenchHttp({query,tickets,reviews,deliveryControl,
     if(request.method==='GET'){
       if(url.pathname==='/api/lifecycle/bootstrap'){queryKeys(url,[]);const principal=await query.principal(authContext);
         json(response,200,{principal_id:principal.principal_id,display_name:principal.display_name,csrf_token:authContext.auth_method==='COOKIE'?authContext.csrf_token:null,
-          internal_beta:true,ai_enabled:false,roles:principal.roles,polling_interval_ms:5000});return true;}
+          internal_beta:true,ai_enabled:false,roles:principal.roles,polling_interval_ms:5000,source_group_directory_enabled:sourceGroupDirectoryEnabled});return true;}
       if(url.pathname==='/api/tickets'){queryKeys(url,['state','cursor','limit']);json(response,200,await query.list({authContext,state:url.searchParams.get('state')??'queued',cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')}));return true;}
       if(url.pathname==='/api/manual-reviews'){queryKeys(url,['status','priority','cursor','limit']);json(response,200,await reviews.listManualReviews({authContext,status:url.searchParams.get('status')??'PENDING',priority:url.searchParams.get('priority'),cursor:url.searchParams.get('cursor'),limit:url.searchParams.get('limit')}));return true;}
       const ticket=/^\/api\/tickets\/([0-9a-f-]{36})(?:\/(events|responsibility|deliveries|eligible-principals|reporter-contact))?$/iu.exec(url.pathname);

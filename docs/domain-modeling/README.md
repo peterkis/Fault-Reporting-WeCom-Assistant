@@ -6,6 +6,7 @@
 - [领域与分层设计](domain-design.md)：目标边界、四条报修路径、工单动作、通知、双端和演进计划。
 - [项目探索与差异](exploration.md)：当前代码依据、覆盖范围、目标缺口及待定问题。
 - [管理端工作台设计](../ui/admin-workbench-design.md)：已讨论的页面、视觉与交互方案及合成数据原型边界。
+- [完整人工工作台实施计划](../../plans/admin-workbench-integration/README.md)：2026-10-07已确认范围、接口缺口、依赖、任务与验收；业务实施尚未开始。[ADR-0031](../../adr/0031_human_workbench_collaboration_policy.md)记录跨团队交接、退回与共享跟进目标合同。
 - [Conversation Center 技术词汇与变更前置要求](conversation-context-reference.md)：本次整理前的 CONTEXT.md 原文。修改既有 P2 会话、投影/重建、实时回放、通信、控制、受理编排或工单命令时必须阅读，并跟随其实现文档入口；保留的技术定义与不变量继续适用。其阶段/验收状态是历史记录，不能用于判断当前 readiness；其中仓库路径仍从仓库根目录解析。
 
 本次统一语言用于领域讨论；涉及新行为的定义以设计提案状态阅读，不能据此认定已实现。既有 V1.4、Accepted ADR、契约和历史证据保持效力。进入实现前按方案逐项处理差异，不能用术语调整静默改变动作或权限。

@@ -146,3 +146,49 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
     await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
   });
 });
+test('source group administrator edits real HTTP metadata and refreshes card, list and detail',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,tickets,pool})=>{
+    const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory,{recursive:true});
+    const screenshots=[];
+    let browser,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+'/workbench/app/',width:1280,height:900,cookies:[browserCookies[0]]});
+      const id=tickets[0].ticket.id;
+      await browser.waitFor(`Boolean(document.querySelector('[data-item-id="${id}"] .card-open'))`);
+      await browser.evaluate(`document.querySelector('[data-item-id="${id}"] .card-open').click()`);
+      await browser.waitFor("Boolean(document.querySelector('form[aria-label=\"维护来源群名称\"] input'))");
+      assert.ok(await browser.evaluate("document.querySelector('dialog').innerText.includes('群名称未登记')"));
+      const change=async name=>{
+        await browser.evaluate(`(()=>{const input=document.querySelector('input[name="source-group-name"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(name)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+        await browser.evaluate("document.querySelector('form[aria-label=\"维护来源群名称\"]').requestSubmit()");
+        await browser.waitFor(`document.querySelector('dialog .properties')?.innerText.includes(${JSON.stringify('群聊报修 · '+name)})`);
+        await browser.waitFor(`document.querySelector('[data-item-id="${id}"]')?.innerText.includes(${JSON.stringify(name)})`);
+      };
+      await change('信息科支持群');
+      assert.equal((await pool.query('SELECT display_name,row_version::text FROM workbench.source_group_name')).rows[0].row_version,'1');
+      await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});
+      await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
+      const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,'new-detail-1920.png');await writeFile(file,bytes);
+      screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});
+      await browser.command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+      await change('合成群'.repeat(42));
+      assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+      const literal='<img src=x onerror=alert(1)>合成群';await change(literal);
+      assert.equal(await browser.evaluate("document.querySelectorAll('dialog .properties img').length"),0);
+      assert.equal((await pool.query('SELECT display_name FROM workbench.source_group_name')).rows[0].display_name,literal);
+      await browser.evaluate("document.querySelector('[aria-label=\"关闭详情\"]').click()");
+      await browser.waitFor("!document.querySelector('dialog')");
+      await browser.evaluate("[...document.querySelectorAll('.view-tabs button')].find(b=>b.textContent.includes('列表')).click()");
+      await browser.waitFor(`document.querySelector('.work-table')?.innerText.includes(${JSON.stringify(literal)})`);
+      assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+      await pool.query("DELETE FROM pilot_ticket.pilot_principal_role WHERE principal_id=(SELECT id FROM pilot_ticket.pilot_principal WHERE wecom_user_id='web01-synthetic-0') AND role='ADMIN'");
+      await pool.query("INSERT INTO pilot_ticket.pilot_principal_role(principal_id,role) SELECT id,'HANDLER' FROM pilot_ticket.pilot_principal WHERE wecom_user_id='web01-synthetic-0'");
+      await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+id+'?detail=page'});
+      await browser.waitFor("Boolean(document.querySelector('.detail-page .properties'))");
+      assert.equal(await browser.evaluate("Boolean(document.querySelector('form[aria-label=\"维护来源群名称\"]'))"),false);
+      assert.ok(await browser.evaluate(`document.querySelector('.detail-page .properties').innerText.includes(${JSON.stringify(literal)})`));
+      console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',source_group_names:true,screenshots}));
+    }catch(failure){error=failure;if(browser)await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{sourceGroupDirectoryEnabled:true});
+});

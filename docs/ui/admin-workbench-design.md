@@ -2,6 +2,8 @@
 
 状态：REVIEW DRAFT，已确认业务决定与待整体确认的页面建议分别标注。日期：2026-09-23。
 
+2026-10-07后继：完整人工业务范围、跨团队人／组交接、两类退回、24小时草稿、实际阅读已读、共享跟进、主动启用声音及公共故障新增跟进功能已逐项确认，见[实施计划](../../plans/admin-workbench-integration/README.md)和[ADR-0031](../../adr/0031_human_workbench_collaboration_policy.md)。本文保留初期页面建议与核查日期；尺寸等以正式管理端壳和后续真实交互为准，不据第9–11节宣称功能已实现。
+
 本文记录 grill-with-docs 讨论中已确认的需求和待决事项；不是最终设计冻结或运行验收。用户已授权进入合成数据视觉原型阶段。既有业务规则以 AGENTS.md、架构基线及 Accepted ADR 为准。领域术语见 [CONTEXT.md](../../CONTEXT.md)，目标与现状差异见 [领域设计](../domain-modeling/domain-design.md) 和 [探索记录](../domain-modeling/exploration.md)。原型入口与运行说明见 [原型说明](../../web/admin-workbench-prototype/README.md)。
 
 ## 1. 已确认的产品边界

@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "files": [
+    "database/migrations/037_workbench_source_group_names.sql",
+    "contracts/workbench_source_group_name_command.schema.json",
     ".env.example",
     "config_examples/conversation_policy.example.json",
     "config_examples/integration_source.example.json",

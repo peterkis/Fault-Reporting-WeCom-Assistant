@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "verification": "LIVE_SINGLE_GROUP_CALLBACK",
+  "content_filter": false,
+  "sdk_version": "1.0.6",
+  "capture": {
+    "test_id": "G0-003",
+    "schema_version": 1,
+    "observed_at_utc": "2026-10-07T10:09:06.725Z",
+    "scenario": "group_mentioned_text",
+    "frame": {
+      "cmd": "aibot_msg_callback",
+      "header_field_names": [
+        "req_id"
+      ],
+      "req_id_hash": "20eaff06c3952d7a"
+    },
+    "message": {
+      "field_names": [
+        "aibotid",
+        "chatid",
+        "chattype",
+        "from",
+        "msgid",
+        "msgtype",
+        "response_url",
+        "text"
+      ],
+      "msg_id_hash": "d4f838fc4ac281ad",
+      "bot_id_hash": "6e7fe6221d148a54",
+      "chat_type": "group",
+      "chat_id_present": true,
+      "chat_id_hash": "536a93b816388eb5",
+      "sender_user_id_hash": "eed67fb12c02e975",
+      "message_type": "text",
+      "create_time_present": false,
+      "text_length_bytes": 35,
+      "quote": {
+        "present": false
+      }
+    },
+    "privacy": {
+      "original_text_recorded": false,
+      "original_identifier_recorded": false,
+      "response_url_recorded": false
+    }
+  },
+  "group_metadata": {
+    "id_path": "body.chatid",
+    "id_present": true,
+    "name_fields": [
+      {
+        "field": "chatname",
+        "present": false,
+        "nonempty_string": false
+      },
+      {
+        "field": "chat_name",
+        "present": false,
+        "nonempty_string": false
+      },
+      {
+        "field": "groupname",
+        "present": false,
+        "nonempty_string": false
+      },
+      {
+        "field": "group_name",
+        "present": false,
+        "nonempty_string": false
+      }
+    ],
+    "field_paths": [
+      {
+        "path": "body.aibotid",
+        "type": "string"
+      },
+      {
+        "path": "body.chatid",
+        "type": "string"
+      },
+      {
+        "path": "body.chattype",
+        "type": "string"
+      },
+      {
+        "path": "body.from",
+        "type": "object"
+      },
+      {
+        "path": "body.from.userid",
+        "type": "string"
+      },
+      {
+        "path": "body.msgid",
+        "type": "string"
+      },
+      {
+        "path": "body.msgtype",
+        "type": "string"
+      },
+      {
+        "path": "body.response_url",
+        "type": "string"
+      },
+      {
+        "path": "body.text",
+        "type": "object"
+      },
+      {
+        "path": "body.text.content",
+        "type": "string"
+      }
+    ]
+  },
+  "constraints": {
+    "replies": 0,
+    "business_database_connections": 0,
+    "original_group_id_recorded": false,
+    "original_group_name_recorded": false,
+    "original_text_recorded": false,
+    "original_user_id_recorded": false,
+    "credentials_recorded": false
+  }
+}
