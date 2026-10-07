@@ -19,6 +19,7 @@ test('WEB01 Chromium production bundle reads real HTTP, board/list/detail/back/r
         // Allow subsequent frame opportunities after DOM readiness; capture once
         // with the unchanged helper deadline, without retries or a longer timeout.
         await browser.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(true))))');
+        await browser.evaluate("Promise.all((document.querySelector('.detail-dialog')?.getAnimations()??[]).map(animation=>animation.finished)).then(()=>true)");
         const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name);
         await writeFile(file,bytes);
         screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});
