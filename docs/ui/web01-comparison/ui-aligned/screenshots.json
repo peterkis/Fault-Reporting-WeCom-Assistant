@@ -1,0 +1,72 @@
+{
+  "synthetic_only": true,
+  "real_http_pg_new_page": true,
+  "production_acceptance": false,
+  "capture_source": "f6e1f4858b4bec82ebcad9a067ddf23da195b4af",
+  "source_input_hash": "0a66684d0aea591a3fbaa09161a1484afa5fbfae0a16d08206db48202f408956",
+  "browser": "Edge 154.0.4258.53",
+  "ui_spec_sha256": "87088afd814b3a80e2ed4538075cb05797a9fb6bf45cadc2f892347ba1259d8e",
+  "runner": {
+    "selected_files": 3,
+    "tests": 3,
+    "pass_count": 3,
+    "screenshot_count": 9,
+    "owned_originals_cleaned": true
+  },
+  "images": [
+    {
+      "file": "new-board-1920.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "02acb6ae6bc5e47cadde41f5288e9c459b8ca16c888e2d82ef58ee0470aef7b5"
+    },
+    {
+      "file": "new-board-1280.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "066d3981173a3f24e61828c35d8b519a8b5aafb9af63bc8b5d80ee418632010f"
+    },
+    {
+      "file": "new-detail-1920.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "6e3d312171fb6ef6e2b89b5217b8fb4108d30687ec8338544beedfdc2ba93dc0"
+    },
+    {
+      "file": "new-detail-page-1920.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "c52b3edac837dee744e660221e7068f8b152c805f8506b9aef5e83246d7fd1f7"
+    },
+    {
+      "file": "new-list-1920.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "2e90ba86580bb2643d379d7e0cce5404290923afd7b59a06c324f1f97677fa79"
+    },
+    {
+      "file": "new-list-900.png",
+      "width": 900,
+      "height": 900,
+      "sha256": "62496b65143b482f613a9a2f1beaea60431a609dac41e8b1468128e771403927"
+    },
+    {
+      "file": "new-detail-900.png",
+      "width": 900,
+      "height": 900,
+      "sha256": "6c95e0d89063c23efde040f0c5100cb5882dd74f06f0b250a3e7dc5a916bcdae"
+    },
+    {
+      "file": "new-offline-900.png",
+      "width": 900,
+      "height": 900,
+      "sha256": "39b40d28b4ffb666caa3329d8cb379780d3ef5adc6a23ece46c492356f91c9d4"
+    },
+    {
+      "file": "new-board-900.png",
+      "width": 900,
+      "height": 900,
+      "sha256": "ffe8c40fc29fe2a4ad6080dae611bdf190a2bc3ff99d133acc3e471b137c1200"
+    }
+  ]
+}
