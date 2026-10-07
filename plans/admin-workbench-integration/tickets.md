@@ -13,7 +13,7 @@ native_blocking_edges: 76
 
 43票已发布为 **#56–#98**，76条原生阻塞关系已核对，每票带 `ready-for-agent`；发布时快照全部开放且未领取，业务实现尚未开始。GitHub是逐票状态和阻塞关系的事实源，本文保留发布快照；执行前重新读取正文、评论、领取人和依赖。
 
-2026-10-07 用户随后授权 implement-spec 完成全部43票，详见[实施记录](execution.md)。首次T01核查时43票均OPEN、76边与发布记录一致；该发布快照保留在机器可读记录中。2026-10-08父任务实时核对后，T01／T02／T04／T16／T23已集成并在GitHub关闭，共5／43票。以下勾选仅表示已核实的Issue关闭状态，不表示发布、部署或整个工作包验收；其他票仍以执行前的GitHub状态为准。
+2026-10-07 用户随后授权 implement-spec 完成全部43票，详见[实施记录](execution.md)。首次T01核查时43票均OPEN、76边与发布记录一致；该发布快照保留在机器可读记录中。2026-10-08父任务实时核对后，T01／T02／T03／T04／T16／T23已集成并在GitHub关闭，共6／43票。以下勾选仅表示已核实的Issue关闭状态，不表示发布、部署或整个工作包验收；其他票仍以执行前的GitHub状态为准。
 
 发布时frontier只有 [T01 / #56：确认接入基线与共同合同](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)。其实际完成和GitHub收口核验后，再从当前无阻塞票中领取；票号顺序是依赖先于依赖者的编号，不要求所有分支排成一条链。
 
@@ -38,10 +38,10 @@ native_blocking_edges: 76
   - **Blocked by:** [#56](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/56)
   - **来源：** WBINT-01 / A01；WBINT-02 / A02
 
-- [ ] **T03** — [#58 恢复当前浏览器中的24小时草稿](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
+- [x] **T03** — [#58 恢复当前浏览器中的24小时草稿](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/58)
   - **Blocked by:** [#57](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/57)
   - **来源：** WBINT-01 / A01
-  - **本地状态：** [LOCAL_VERIFIED／固定候选与七项证据](execution/t03.md)；GitHub仍OPEN，待父任务审阅／集成／关闭。
+  - **本地状态：** [LOCAL_VERIFIED／固定候选与七项证据](execution/t03.md)；已集成、关票，原制品与实际被测祖先保留，未发布／启用。
 
 - [x] **T04** — [#59 一键承接并开始处理无会话工单](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/59)
   - **Blocked by:** [#57](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/57)
