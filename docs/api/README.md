@@ -17,7 +17,7 @@
 | React 管理端三列看板与详情 | [WEB01 看板](workbench/board.md) |
 | 获权事项的已保存报修附件（默认关闭） | [附件读取](workbench/attachments.md) |
 | 完整人工工作台怎样分批接入、有哪些后端缺口 | [实施计划](../../plans/admin-workbench-integration/README.md)／[能力映射](../../plans/admin-workbench-integration/capability-map.md)；其中候选路径尚未挂载 |
-| 管理员维护群名、工单显示具体来源群（默认关闭） | [来源群名称接口](workbench/source-groups-design.md) |
+| 管理员检索／分页维护群名、工单显示具体来源群（默认关闭） | [来源群名称接口](workbench/source-groups-design.md) |
 | 成员新报修、补充、我的报修、命令恢复、服务目录 | [医小修成员自助](member/self-service.md) |
 | 机器人卡片工单详情、旧 Grant 与成员读取 | [Reporter 访问](member/reporter-access.md) |
 | 登录、回调、退出、页面入口、健康检查、历史试点 | [认证与平台入口](platform/auth-health.md) |

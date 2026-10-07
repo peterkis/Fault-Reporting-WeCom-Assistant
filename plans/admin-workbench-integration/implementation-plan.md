@@ -16,7 +16,7 @@ execution_status: IN_PROGRESS
 
 | ID | 任务 | 前置 | 状态 | 验收组 |
 | --- | --- | --- | --- | --- |
-| WBINT-00 | 基线、动作／授权／合同冻结 | 计划已确认 | IN_PROGRESS：T01文档LOCAL_VERIFIED；T23未开始 | A00 |
+| WBINT-00 | 基线、动作／授权／合同冻结 | 计划已确认 | T01文档LOCAL_VERIFIED；[T23本地LOCAL_VERIFIED](execution/t23.md)，待父任务核验／集成 | A00 |
 | WBINT-01 | 命令上下文、错误与草稿基础 | 00 | IN_PROGRESS：[T02可靠备注LOCAL_VERIFIED](execution/t02.md)；T03持久恢复未开始 | A01 |
 | WBINT-02 | 轮次与责任／一步处理／退回 | 01 | IN_PROGRESS：[T02真实动作／版本LOCAL_VERIFIED](execution/t02.md)；T04–T10未开始 | A02 |
 | WBINT-03 | 完工、接管关闭、责任链 | 02 | NOT_STARTED | A03 |
@@ -31,7 +31,7 @@ execution_status: IN_PROGRESS
 | WBINT-12 | 已读、关注、补充跟进、共享预约 | 02、04、06、07；回复跟进依赖08投递结果 | NOT_STARTED | A12 |
 | WBINT-13 | SSE、协作活动、提醒与声音 | 12；各域更新事件已可读 | NOT_STARTED | A13 |
 | WBINT-14 | 服务端授权搜索与筛选 | 04、05、12 | NOT_STARTED | A14 |
-| WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | NOT_STARTED | A15 |
+| WBINT-15 | 合法拖动、设置及交互收口 | 03、04、06、12、13、14 | IN_PROGRESS：[T23来源群设置LOCAL_VERIFIED](execution/t23.md)；T40／T42未完成 | A15 |
 | WBINT-16 | 人工工作台整体隔离验收 | 00–15 | NOT_STARTED | A16 |
 
 依赖是合同与实际能力，不能由任务名称或页面存在代替。独立子任务可提前推进，例如 04 的受控资料读取、07 的已有会话读取、09 的已有 Incident 读取；面向用户启用动作时必须满足完整依赖。

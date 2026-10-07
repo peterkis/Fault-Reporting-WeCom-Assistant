@@ -6,6 +6,7 @@ import {ApiError} from './api/client';
 import {attachmentParentDenied} from './features/attachments/client';
 import {useUiStore} from './app/ui-store';
 import {App} from './app/App';
+import {clearSourceGroupAuthorization} from './features/source-groups/authority';
 import './style.css';
 let client:QueryClient;
 async function clearItemAuthorization(principal:unknown,kind:unknown,id:unknown,error:ApiError){
@@ -18,7 +19,8 @@ client=new QueryClient({queryCache:new QueryCache({onError(error,query){
   if(error instanceof ApiError&&error.status===401){useUiStore.getState().failSession(401);void client.cancelQueries();client.clear();}
   else if(error instanceof ApiError&&error.status===403&&['session','board'].includes(String(query.queryKey[0]))){useUiStore.getState().failSession(403);void client.cancelQueries();client.clear();}
   else if(error instanceof ApiError&&[403,404].includes(error.status)){
-    if(query.queryKey[0]==='ticket-command-context')void clearItemAuthorization(query.queryKey[1],'ticket',query.queryKey[2],error);
+    if(query.queryKey[0]==='source-groups')void clearSourceGroupAuthorization(client,query.queryKey[1],error);
+    else if(query.queryKey[0]==='ticket-command-context')void clearItemAuthorization(query.queryKey[1],'ticket',query.queryKey[2],error);
     else if(query.queryKey[0]==='detail'||(query.queryKey[0]==='attachments'&&attachmentParentDenied(error)))void clearItemAuthorization(query.queryKey[1],query.queryKey[2],query.queryKey[3],error);
     else {void client.cancelQueries({queryKey:query.queryKey,exact:true});query.setState({data:undefined,dataUpdatedAt:0});if(query.queryKey[0]==='detail')void client.invalidateQueries({queryKey:['board',query.queryKey[1]],refetchType:'active'});}
   }
@@ -26,6 +28,7 @@ client=new QueryClient({queryCache:new QueryCache({onError(error,query){
   if(error instanceof ApiError&&error.status===401){useUiStore.getState().failSession(401);void client.cancelQueries();client.clear();}
   else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey?.[0]==='ticket-internal-note')return clearItemAuthorization(mutation.options.mutationKey[1],'ticket',mutation.options.mutationKey[2],error);
   else if(attachmentParentDenied(error)&&mutation.options.mutationKey?.[0]==='attachment-download')return clearItemAuthorization(mutation.options.mutationKey[1],mutation.options.mutationKey[2],mutation.options.mutationKey[3],error);
+  else if(error instanceof ApiError&&[403,404].includes(error.status)&&mutation.options.mutationKey?.[0]==='source-group-name')return clearSourceGroupAuthorization(client,mutation.options.mutationKey[1],error);
 }}),defaultOptions:{queries:{networkMode:'always',retry:false,staleTime:0,refetchOnWindowFocus:false,refetchOnReconnect:false},mutations:{networkMode:'always',retry:false}}});
 const root=document.getElementById('root');if(!root)throw new Error('WORKBENCH_ROOT_MISSING');
 createRoot(root).render(<StrictMode><QueryClientProvider client={client}><BrowserRouter basename="/workbench/app"><App/></BrowserRouter></QueryClientProvider></StrictMode>);

@@ -12,6 +12,11 @@ const LABELS:Readonly<Record<string,string>>={WECOM_GROUP:'群聊报修',WECOM_D
 export function sourceGroupRef(value:unknown):string {
   if(typeof value!=='string'||!/^[a-f0-9]{64}$/u.test(value))failP2016();return value;
 }
+export function sourceGroupSearch(value:unknown):string {
+  if(value===null||value===undefined)return '';
+  if(typeof value!=='string'||/[\u0000-\u001f\u007f]/u.test(value))failP2016();
+  const search=value.trim();if([...search].length>128)failP2016();return search;
+}
 export function sourceGroupNameCommand(input:unknown) {
   const body=exactP2016(input,['client_command_id','expected_row_version','display_name']);
   if(typeof body.expected_row_version!=='string'||!/^(0|[1-9][0-9]{0,18})$/u.test(body.expected_row_version)
@@ -64,16 +69,18 @@ export function createWorkbenchSourceGroups({pool,query}:{pool:PostgresPool;quer
         return {...card,source,source_label:row?.source?sourceLabel(source,sourceGroup?.display_name):'来源资料不可用',source_group:sourceGroup};
       });
     },
-    async list({authContext,cursor,limit}:{authContext:unknown;cursor:unknown;limit:unknown}):Promise<SourceGroupPage> {
-      const principal=await admin(authContext),n=limitP2016(limit??'50');
-      const page=cursor?decodeCursorP2016(cursor,['principal','ref']):null;
-      if(page&&page.principal!==principal.principal_id)failP2016('CURSOR_INVALID');
+    async list({authContext,cursor,limit,q}:{authContext:unknown;cursor:unknown;limit:unknown;q?:unknown}):Promise<SourceGroupPage> {
+      const principal=await admin(authContext),n=limitP2016(limit??'50'),search=sourceGroupSearch(q);
+      const page=cursor?decodeCursorP2016(cursor,['principal','ref','q']):null;
+      if(page&&(page.principal!==principal.principal_id||page.q!==search))failP2016('CURSOR_INVALID');
       const after=page?sourceGroupRef(page.ref):null;
       const result=await pool.query<{ref:string;display_name:string|null;row_version:string}>(OBSERVED_SQL+`
         SELECT o.ref,n.display_name,COALESCE(n.row_version,0)::text AS row_version FROM observed o
-        LEFT JOIN workbench.source_group_name n ON n.ref=o.ref WHERE ($1::text IS NULL OR o.ref>$1) ORDER BY o.ref LIMIT $2`,[after,n+1]);
+        LEFT JOIN workbench.source_group_name n ON n.ref=o.ref WHERE ($1::text IS NULL OR o.ref>$1)
+          AND ($3::text='' OR strpos(lower(COALESCE(n.display_name,'')),lower($3))>0 OR strpos(o.ref,$3)>0)
+        ORDER BY o.ref LIMIT $2`,[after,n+1,search]);
       const items=result.rows.slice(0,n).map(group),last=items.at(-1);
-      return publicP2016({items,next_cursor:result.rows.length>n&&last?cursorP2016({principal:principal.principal_id,ref:last.ref}):null});
+      return publicP2016({items,next_cursor:result.rows.length>n&&last?cursorP2016({principal:principal.principal_id,ref:last.ref,q:search}):null});
     },
     async save({authContext,ref,body}:{authContext:unknown;ref:unknown;body:unknown}):Promise<SourceGroupNameResult> {
       const groupRef=sourceGroupRef(ref),command=sourceGroupNameCommand(body);

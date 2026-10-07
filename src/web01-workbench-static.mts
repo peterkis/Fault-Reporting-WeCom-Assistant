@@ -1,7 +1,7 @@
 import type { ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { failP2016 } from './p2-016-domain-contracts.mjs';
-const UI=/^\/workbench\/app(?:\/(?:items\/(?:ticket|review|intake)\/[0-9a-f-]{36}\/?|))?$/iu;
+const UI=/^\/workbench\/app(?:\/(?:items\/(?:ticket|review|intake)\/[0-9a-f-]{36}\/?|settings\/source-groups\/?|))?$/iu;
 export function createWeb01WorkbenchStatic({enabled=false}: {enabled?:boolean}={}) {
   return async(pathname: string,response: ServerResponse)=>{
     if(pathname!=='/workbench/app'&&!pathname.startsWith('/workbench/app/'))return false;

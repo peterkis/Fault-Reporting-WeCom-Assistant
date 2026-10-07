@@ -31,7 +31,7 @@ verified_on: 2026-10-07
 | Reporter 未解决重开 | Web `GET /api/yixiaoxiu/requests/{requestRef}`；Bot `GET /api/reporter/tickets/{publicRef}`，各有 timeline | 本人 feedback／reopen HTTP 未实现；旧 closure 内部路径不证明已挂载。补两种绑定的同一重开用例，新轮次重新承接。06 |
 | 集中会话／人工回复 | 会话 GET list/detail/items，takeover／transfer／release、read-cursor、messages／internal-notes、Delivery 控制，见[会话接口](../../docs/api/workbench/conversations.md) | React 会话页是占位；回复 202 仅说明已受理发送。群按参与者和服务主题隔离，无会话网页不显示虚构发送能力。07 |
 | 已有报修资料／附件 | 安全文字资料、附件元信息；`GET /api/attachments/*` 当前明确 404 | 补获权且有界的人工读取／下载合同；StoragePort、既有采集是否足够先核对，不接 OCR／模型。04 |
-| 来源群显示／维护 | `LOCAL_INCREMENT`：ADMIN 名称登记／修改，GET directory、`POST /api/workbench/source-groups/{groupRef}/name`；板／详情来源字段 | [ADR0030／接口](../../docs/api/workbench/source-groups-design.md)，默认 false；不是群名官方查询、不是已部署。将已有增量纳入基线，补设置页检索，不重做核心。00/15 |
+| 来源群显示／维护 | `LOCAL_INCREMENT`：ADMIN q检索／绑定分页目录、`POST /api/workbench/source-groups/{groupRef}/name`、正式设置／共用可靠名称表单；板／详情来源字段 | [ADR0030／接口](../../docs/api/workbench/source-groups-design.md)，默认 false；不是群名官方查询、不是已部署。T23复用核心／037，实际候选和逐项结果见[本票记录](execution/t23.md)。00/15 |
 | 按来源的工单通知 | 已有 Ticket projector／Delivery 和部分发送器；当前 Web 为 WEB_APP_ONLY，group closure 固定模板 | ADR0023 的所有里程碑、Bot 私聊＋来源群强 @ 双路、H5／已核实代录应用消息尚未完整。补来源绑定／策略／发送适配，权限与真实强 @ 后续独立验证。08 |
 | 公共故障 | candidate 人工 review/reject/confirm；Incident 查询、关联／解除、investigating／scope／primary／recovered／resolve／close、subscription 控制，见[Incident](../../docs/api/workbench/incidents.md) | React 是占位；先接现有，补负责人转交、内部记录、安全进展发布及必要 owner／count 投影。09/10 |
 | 通知异常 | Ticket、Conversation、Incident 各有 notifications／deliveries 查询；Ticket 和 Conversation 有特定 retry／reconcile | 缺完整跨域有界队列及 Incident 专用控制，不能用会话授权重发无会话 Incident。UNKNOWN 必须核对。11 |
