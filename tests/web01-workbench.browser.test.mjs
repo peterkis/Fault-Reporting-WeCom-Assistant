@@ -8,6 +8,153 @@ import {createHash} from 'node:crypto';
 import {withWeb01Fixture} from './helpers/web01-workbench-fixture.mjs';
 import {launchSystemBrowser,closeBrowserTestResources} from './helpers/p2-006-browser-harness.mjs';
 import {createPilotAccessService} from '../src/p1-009-pilot-access-workbench.mjs';
+import {seedPersistedIntake} from './helpers/p2-015-postgres-harness.mjs';
+
+test('source group name editing keeps an exact version basis, reconciles the original unknown command, and fences revoked ADMIN authority',async()=>{
+  await withWeb01Fixture(async({origin,cookies,browserCookies,tickets,pool})=>{
+    const read=async path=>{const r=await fetch(origin+path,{headers:{cookie:cookies[0]}});assert.equal(r.status,200);return r.json();};
+    const bootstrap=await read('/api/lifecycle/bootstrap'),itemPath='/api/workbench/items/ticket/'+tickets[0].ticket.id,ref=(await read(itemPath)).item.source_group.ref;
+    const post=async body=>{const r=await fetch(origin+'/api/workbench/source-groups/'+ref+'/name',{method:'POST',headers:{cookie:cookies[0],origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':body.client_command_id,'if-match':'"'+body.expected_row_version+'"'},body:JSON.stringify(body)});assert.equal(r.status,200);return r.json();};
+    await post({client_command_id:randomUUID(),expected_row_version:'0',display_name:'T23初始名称'});
+    // A synthetic BIGINT fixture proves the browser never narrows the source-group version to a Ticket number.
+    await pool.query('UPDATE workbench.source_group_name SET row_version=9007199254740993 WHERE ref=$1',[ref]);
+    const directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);let browser,error;
+    try{
+      browser=await launchSystemBrowser({url:origin+'/workbench/app/settings/source-groups?q='+ref,width:1920,height:1080,cookies:[browserCookies[0]]});
+      await browser.waitFor('document.querySelectorAll("[data-source-group-ref]").length===1');
+      await browser.evaluate('document.querySelector("[data-action=edit-source-group]").click()');
+      await browser.waitFor('document.querySelector(".source-group-version")?.textContent.includes("9007199254740993")');
+      await browser.evaluate(`(()=>{const original=globalThis.fetch;globalThis.__t23Commands=[];globalThis.__t23Statuses=[];globalThis.__t23InvalidSuccess=true;globalThis.__t23InvalidDenial=false;globalThis.fetch=async(path,options)=>{if(!String(path).includes('/api/workbench/source-groups/')||!String(path).endsWith('/name'))return original(path,options);globalThis.__t23Commands.push({body:JSON.parse(options.body),match:options.headers['if-match'],key:options.headers['idempotency-key']});const response=await original(path,options);globalThis.__t23Statuses.push(response.status);if(response.status===200&&globalThis.__t23InvalidSuccess){globalThis.__t23InvalidSuccess=false;await response.text();return new Response('{"ok":true}',{status:200,headers:{'content-type':'application/json'}});}if(response.status===403&&globalThis.__t23InvalidDenial){await response.text();return new Response('{',{status:403,headers:{'content-type':'application/json'}});}return response;};})()`);
+      const change=async value=>{await browser.evaluate(`(()=>{const input=document.querySelector('input[name="source-group-name"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);};
+      await change('T23未知结果名称');await browser.evaluate('document.querySelector("form[aria-label=维护来源群名称]").requestSubmit()');
+      await browser.waitFor('globalThis.__t23Statuses.length===1');
+      assert.equal((await read(itemPath)).item.source_group.row_version,'9007199254740994');
+      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("结果未知")');
+      assert.equal(await browser.evaluate('document.querySelector("input[name=source-group-name]").disabled'),true);
+      assert.equal(await browser.evaluate('document.querySelector("[data-action=search-source-groups]").disabled'),true);
+      await browser.evaluate('document.querySelector("[data-action=check-source-group-name]").click()');
+      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("已保存")');
+      await browser.waitFor('document.querySelector("input[name=source-group-name]")?.disabled===false&&document.querySelector(".source-group-version")?.textContent.includes("9007199254740994")');
+      const firstCommands=await browser.evaluate('globalThis.__t23Commands');assert.equal(firstCommands.length,2);assert.deepEqual(firstCommands[1],firstCommands[0]);
+      assert.equal(firstCommands[0].body.expected_row_version,'9007199254740993');assert.equal(firstCommands[0].match,'"9007199254740993"');assert.equal(firstCommands[0].key,firstCommands[0].body.client_command_id);
+      assert.equal((await read(itemPath)).item.source_group.row_version,'9007199254740994');
+      await change('T23冲突后仍保留我的名称');
+      await post({client_command_id:randomUUID(),expected_row_version:'9007199254740994',display_name:'T23同事的新名称'});
+      await browser.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("重新读取目录")).click()');
+      await browser.waitFor('document.querySelector("[data-source-group-ref]")?.textContent.includes("T23同事的新名称")');
+      assert.ok(await browser.evaluate('document.querySelector(".source-group-version").textContent.includes("9007199254740994")'));
+      await browser.evaluate('document.querySelector("form[aria-label=维护来源群名称]").requestSubmit()');
+      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("冲突")');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=refresh-source-group]"))&&document.querySelector("input[name=source-group-name]")?.disabled===false');
+      assert.equal(await browser.evaluate('document.querySelector("input[name=source-group-name]").value'),'T23冲突后仍保留我的名称');
+      assert.equal(await browser.evaluate('globalThis.__t23Commands.length'),3);
+      assert.equal((await read(itemPath)).item.source_group.display_name,'T23同事的新名称');
+      await browser.evaluate('document.querySelector("[data-action=refresh-source-group]").click()');
+      await browser.waitFor('document.querySelector(".source-group-version")?.textContent.includes("9007199254740995")');
+      assert.equal(await browser.evaluate('document.querySelector("input[name=source-group-name]").value'),'T23冲突后仍保留我的名称');
+      await browser.evaluate('document.querySelector("form[aria-label=维护来源群名称]").requestSubmit()');
+      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("已保存")&&globalThis.__t23Commands.length===4');
+      await browser.waitFor('document.querySelector("input[name=source-group-name]")?.disabled===false&&document.querySelector(".source-group-version")?.textContent.includes("9007199254740996")');
+      const commands=await browser.evaluate('globalThis.__t23Commands');assert.equal(commands[2].body.expected_row_version,'9007199254740994');assert.equal(commands[3].body.expected_row_version,'9007199254740995');assert.notEqual(commands[3].body.client_command_id,commands[2].body.client_command_id);
+      assert.equal((await read(itemPath)).item.source_group.row_version,'9007199254740996');
+      await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
+      await browser.evaluate('globalThis.__t23InvalidDenial=true');await change('T23拒绝后必须清理的输入');
+      await browser.evaluate('document.querySelector("form[aria-label=维护来源群名称]").requestSubmit()');
+      await browser.waitFor('document.body.innerText.includes("来源群目录仅管理员可维护")');
+      assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
+      assert.equal(await browser.evaluate('document.body.innerText.includes("T23拒绝后必须清理的输入")'),false);
+      assert.deepEqual(await browser.evaluate('globalThis.__t23Statuses'),[200,200,409,200,403]);
+      await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['ADMIN'],resolverTeamIds:['PILOT_IT']});
+      await browser.command('Page.navigate',{url:origin+'/workbench/app/settings/source-groups?q='+ref});
+      await browser.waitFor('document.querySelectorAll("[data-source-group-ref]").length===1');await browser.evaluate('document.querySelector("[data-action=edit-source-group]").click()');
+      await browser.waitFor('Boolean(document.querySelector("[data-action=refresh-source-group]"))');await change('T23读取失权时须清理的输入');
+      await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
+      await browser.evaluate('document.querySelector("[data-action=refresh-source-group]").click()');
+      await browser.waitFor('document.body.innerText.includes("来源群目录仅管理员可维护")');
+      assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
+      assert.equal(await browser.evaluate('document.body.innerText.includes("T23读取失权时须清理的输入")'),false);
+      console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',source_group_command_basis:true,screenshots:[]}));
+    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,commands:globalThis.__t23Commands,statuses:globalThis.__t23Statuses})')));}}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+    if(!error)await import('node:fs/promises').then(fs=>fs.rmdir(directory));
+  },{sourceGroupDirectoryEnabled:true});
+});
+
+test('the default-off source group settings stays closed without requesting directory storage',async()=>{
+  await withWeb01Fixture(async({origin,browserCookies,runtime})=>{
+    const requests=[];runtime.server.on('request',request=>{if(request.url?.startsWith('/api/workbench/source-groups'))requests.push(request.url);});
+    let browser,error;
+    try{browser=await launchSystemBrowser({url:origin+'/workbench/app/settings/source-groups',width:900,height:900,cookies:[browserCookies[0]]});await browser.waitFor('document.body.innerText.includes("来源群目录未开放")');assert.equal(requests.length,0);assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);}
+    catch(failure){error=failure;}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  });
+});
+
+test('administrator source group settings searches the real directory across pages and keeps same-name identities separate',async()=>{
+  await withWeb01Fixture(async({origin,cookies,browserCookies,tickets,pool})=>{
+    for(let index=0;index<56;index++)await seedPersistedIntake({pool,text:'T23有界目录合成材料'+index,status:'WAITING_DESCRIPTION'});
+    const read=async path=>{const response=await fetch(origin+path,{headers:{cookie:cookies[0]}});assert.equal(response.status,200);return response.json();};
+    const bootstrap=await read('/api/lifecycle/bootstrap'),refs=[];
+    for(const ticket of tickets.slice(0,2)){
+      const item=(await read('/api/workbench/items/ticket/'+ticket.ticket.id)).item;refs.push(item.source_group.ref);
+      const command={client_command_id:randomUUID(),expected_row_version:'0',display_name:'T23同名支持群'};
+      const saved=await fetch(origin+'/api/workbench/source-groups/'+item.source_group.ref+'/name',{method:'POST',headers:{cookie:cookies[0],origin,'content-type':'application/json','x-csrf-token':bootstrap.csrf_token,'idempotency-key':command.client_command_id,'if-match':'"0"'},body:JSON.stringify(command)});assert.equal(saved.status,200);
+    }
+    assert.notEqual(refs[0],refs[1]);
+    const before=await read('/api/tickets/'+tickets[0].ticket.id),directory=join(tmpdir(),'web01-ui-'+randomUUID());await mkdir(directory);
+    let browser,error;const screenshots=[];
+    try{
+      browser=await launchSystemBrowser({url:origin+'/workbench/app/',width:1920,height:1080,cookies:[browserCookies[0]]});
+      await browser.waitFor('Boolean(document.querySelector("[data-action=open-source-groups]"))');
+      await browser.evaluate('document.querySelector("[data-action=open-source-groups]").click()');
+      await browser.waitFor('document.querySelectorAll("[data-source-group-ref]").length===50');
+      assert.ok(await browser.evaluate('document.body.innerText.includes("群名称未登记")'));
+      await browser.evaluate('document.querySelector("[data-action=next-source-groups]").click()');
+      await browser.waitFor('document.querySelector("[data-source-group-page]")?.textContent.includes("第 2 页")&&document.querySelectorAll("[data-source-group-ref]").length>0&&document.querySelectorAll("[data-source-group-ref]").length<50');
+      await browser.evaluate('document.querySelector("[data-action=previous-source-groups]").click()');
+      await browser.waitFor('document.querySelector("[data-source-group-page]")?.textContent.includes("第 1 页")&&document.querySelectorAll("[data-source-group-ref]").length===50');
+      await browser.evaluate(`(()=>{const input=document.querySelector('[aria-label="检索来源群"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'T23同名');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+      await browser.evaluate('document.querySelector("[data-action=search-source-groups]").click()');
+      await browser.waitFor('document.querySelectorAll("[data-source-group-ref]").length===2');
+      assert.deepEqual(new Set(await browser.evaluate('[...document.querySelectorAll("[data-source-group-ref]")].map(row=>row.dataset.sourceGroupRef)')),new Set(refs));
+      await browser.evaluate(`document.querySelector('[data-source-group-ref="${refs[0]}"] [data-action=edit-source-group]').click()`);
+      await browser.waitFor('Boolean(document.querySelector("input[name=source-group-name]"))');
+      const literal='<img src=x onerror=alert(1)>T23资料';
+      await browser.evaluate(`(()=>{const input=document.querySelector('input[name="source-group-name"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(literal)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+      await browser.evaluate('document.querySelector("form[aria-label=维护来源群名称]").requestSubmit()');
+      await browser.waitFor('document.querySelector(".source-group-save-state")?.textContent.includes("已保存")');
+      const current=(await read('/api/workbench/items/ticket/'+tickets[0].ticket.id)).item;
+      assert.equal(current.source_group.ref,refs[0]);assert.equal(current.source_group.display_name,literal);assert.equal(current.source_group.row_version,'2');
+      const after=await read('/api/tickets/'+tickets[0].ticket.id);assert.equal(after.status,before.status);assert.equal(after.version,before.version);
+      assert.equal(await browser.evaluate('document.querySelectorAll(".source-group-directory img").length'),0);
+      await browser.waitFor('document.querySelectorAll("[data-source-group-ref]").length===1');
+      const capture=async(name)=>{const bytes=Buffer.from(await browser.screenshot(),'base64'),file=join(directory,name);await writeFile(file,bytes);screenshots.push({file,width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sha256:createHash('sha256').update(bytes).digest('hex')});};
+      await capture('new-list-1920.png');
+      await browser.command('Emulation.setDeviceMetricsOverride',{width:900,height:900,deviceScaleFactor:1,mobile:false});
+      assert.equal(await browser.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);await capture('new-list-900.png');
+      await browser.command('Network.enable');await browser.command('Network.emulateNetworkConditions',{offline:false,latency:300,downloadThroughput:-1,uploadThroughput:-1});
+      await browser.evaluate(`(()=>{const input=document.querySelector('[aria-label="检索来源群"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'T23没有匹配的全新名称');input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+      await browser.evaluate('document.querySelector("[data-action=search-source-groups]").click()');
+      await browser.waitFor('document.body.innerText.includes("正在读取来源群目录")');
+      await browser.waitFor('document.body.innerText.includes("未找到匹配来源群")');assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);
+      await browser.command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
+      await browser.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("重新读取目录")).click()');
+      await browser.waitFor('document.body.innerText.includes("目录读取失败")');assert.equal(await browser.evaluate('document.body.innerText.includes("未找到匹配来源群")'),false);
+      await browser.command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+      await browser.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("重新读取目录")).click()');await browser.waitFor('document.body.innerText.includes("未找到匹配来源群")');
+      await createPilotAccessService({pool}).upsertPrincipal({wecomUserId:'web01-synthetic-0',displayName:'林舟',roles:['HANDLER'],resolverTeamIds:['PILOT_IT']});
+      await browser.command('Page.navigate',{url:origin+'/workbench/app/settings/source-groups'});
+      await browser.waitFor('document.body.innerText.includes("来源群目录仅管理员可维护")');
+      assert.equal(await browser.evaluate('document.querySelectorAll("[data-source-group-ref]").length'),0);
+      assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
+      await browser.command('Page.navigate',{url:origin+'/workbench/app/items/ticket/'+tickets[0].ticket.id+'?detail=page'});
+      await browser.waitFor(`document.querySelector('.properties')?.innerText.includes(${JSON.stringify(literal)})`);
+      assert.equal(await browser.evaluate('Boolean(document.querySelector("form[aria-label=维护来源群名称]"))'),false);
+      console.log('WEB01_BROWSER '+JSON.stringify({api:'REAL_LOOPBACK_HTTP_PG',source_group_directory:true,screenshots}));
+    }catch(failure){error=failure;if(browser){await writeFile(join(directory,'failure.png'),Buffer.from(await browser.screenshot(),'base64'));await writeFile(join(directory,'failure.json'),JSON.stringify(await browser.evaluate('({text:document.body.innerText,url:location.href})')));}}
+    await closeBrowserTestResources([async()=>{await browser?.close();if(browser)assert.deepEqual(browser.ownedResourceState(),{processes:0,profiles:0,commandTimers:0,sockets:0});}],error);
+  },{sourceGroupDirectoryEnabled:true});
+});
 
 test('a real object denial clears cached note actions even when the rejection body is unreadable',async()=>{
   await withWeb01Fixture(async({origin,browserCookies,tickets,pool})=>{

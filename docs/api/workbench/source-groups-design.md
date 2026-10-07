@@ -45,9 +45,9 @@
 
 ## 管理员目录
 
-`GET /api/workbench/source-groups?limit=50&cursor=...`
+`GET /api/workbench/source-groups?limit=50&q=...&cursor=...`
 
-宿主W，沿现有内部认证链。必须是当前有效ADMIN；普通坐席不能读取全局目录。仅查询有效Intake中已观察群。limit默认50，范围1..100；cursor服务端生成并绑定principal，ref升序keyset分页。仅接受cursor/limit，重复或未知参数拒绝。
+宿主W，沿现有内部认证链。必须是当前有效ADMIN；普通坐席不能读取全局目录。仅查询有效Intake中已观察群。limit默认50，范围1..100；可选q为trim后的0..128个Unicode字符，拒绝ASCII控制字符；空值查询全部，非空值对当前登记名称作不区分大小写的字面子串搜索，也可搜索不透明ref的子串。百分号和下划线没有通配含义。先验权、再搜索、再分页，不在浏览器过滤已加载页。cursor服务端生成并绑定principal及规范化q，ref升序keyset分页；更换搜索须从第一页重新读取。仅接受cursor/limit/q，重复或未知参数拒绝。T23增量无新Schema或数据库迁移，沿既有SourceGroupPage与037。
 
 ```json
 {
@@ -102,7 +102,13 @@ groupRef必须是当前有效的已观察群引用。每次（包括重放）重
 
 ## 管理端使用
 
-从 `/workbench/app/` 看板/列表打开群来源事项详情。模块开启且当前bootstrap身份是ADMIN时显示“来源群名称”表单。保存后失效并重读当前身份board/detail缓存，三处一致；普通坐席只读获权事项的来源标签。名称以React文本渲染，不解析HTML。后端每次写请求重查角色，前端按钮不构成授权。
+T23设置页为 `/workbench/app/settings/source-groups`，沿同一W认证和正式静态制品；宿主只新增该精确SPA路径。管理员且模块开启时从设置进入有界目录，每页50项，可检索当前名称或不透明引用并前后翻页；页码／本页数量不冒充总数，最多显示本页50行及一个名称表单。关闭或普通身份直接打开时明确不可维护，不读取新目录。来源群检索不属于工单全局搜索，不增加第三方目录、上传或AI能力。
+
+从 `/workbench/app/` 看板/列表打开群来源事项详情，或从设置定位目录行。模块开启且当前bootstrap身份是ADMIN时显示同一个“来源群名称”表单。ref为行和表单身份，同名行分别维护；名称以React文本渲染，不解析HTML。普通坐席只读获权事项的来源标签，后端每次写请求重查角色和来源留存，前端按钮不构成授权。
+
+表单进入时固定精确string编辑版本；目录或详情后台重读仅提示更新，不自动改编辑依据或覆盖输入。409保留名称并停止保存，需要用户明确“重新读取并采用最新版本”后再次确认保存；该操作只读取当前资料，保留输入，不自动POST。新保存用新UUID及被明确采用的版本。200回执须含相同ref、规范名称、精确expected+1版本和replayed；网络异常、不可信200或不确定5xx为UNKNOWN，锁定输入和原命令，只有“核对保存结果”按原UUID／原payload／原If-Match重放。未改动的名称不重复提交。
+
+提交／核对／读取采用各有单一自有AbortController，卸载取消；abort不证明原POST未提交。未知结果或请求进行中，目录检索、换页／换群及详情关闭受阻。可信401／403／404即使错误正文不可信仍触发身份／目录授权清理，取消相关查询、清同身份全部目录页与名称mutation缓存、重读bootstrap和获权事项。成功失效并重读当前身份board／detail／directory，三处名称一致；这些缓存不是事实源。原命令和输入仅在组件内存，不引入持久草稿或Zustand业务资料。关闭模块保留已提交名称、版本、审计和原业务事实。
 
 ## 存储、安装和关闭
 
@@ -119,6 +125,6 @@ node .build/runtime/scripts/workbench-source-groups-migrate.mjs --apply
 
 ## 实现和验证
 
-[后端模块](../../../src/workbench-source-groups.mts)、[HTTP](../../../src/web01-workbench-http.mts)、[读取查询](../../../src/web01-workbench-query.mts)、[运行装配](../../../src/p2-016-runtime.mts)、[客户端](../../../web/admin-workbench/src/api/client.ts)、[界面](../../../web/admin-workbench/src/app/App.tsx)、[迁移器](../../../scripts/workbench-source-groups-migrate.mts)。
+[后端模块](../../../src/workbench-source-groups.mts)、[HTTP](../../../src/web01-workbench-http.mts)、[读取查询](../../../src/web01-workbench-query.mts)、[运行装配](../../../src/p2-016-runtime.mts)、[客户端](../../../web/admin-workbench/src/api/client.ts)、[目录](../../../web/admin-workbench/src/features/source-groups/SourceGroupDirectory.tsx)、[共用名称表单](../../../web/admin-workbench/src/features/source-groups/GroupNameEditor.tsx)、[迁移器](../../../scripts/workbench-source-groups-migrate.mts)。
 
-验证覆盖名称与大整数版本、隔离PG/HTTP登记改名、不同Bot/群不串名、幂等/并发、ADMIN及CSRF/Origin、原始群不随单聊改变、过期降级、外部ID不泄露、零外发、正式bundle表单及三处显示。结果见[本轮本地记录](../../../evidence/workbench-source-group-names-local.md)。
+既有核心验证记录保持[原本地证据](../../../evidence/workbench-source-group-names-local.md)的原对象和状态。T23的当前检索／设置／可靠表单、同名Ref、版本依据、撤权及关闭的实际候选、报告和清理见[本票执行记录](../../../plans/admin-workbench-integration/execution/t23.md)；不由旧结果推导本票通过或已发布。
