@@ -21,6 +21,7 @@ function scratch(reference = false): string {
     copyFileSync(path.join(original, relative), target);
   }
   symlinkSync(path.join(original, 'node_modules'), path.join(root, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
+  if(!reference)symlinkSync(path.join(original,'web/admin-workbench/node_modules'),path.join(root,'web/admin-workbench/node_modules'),process.platform==='win32'?'junction':'dir');
   return root;
 }
 function alter(root: string, relative: string, content: string, fn: () => void): void {
@@ -33,6 +34,15 @@ test('T01 build and negative checks run on an owned full clone, never on user so
   const root = scratch();
   try {
     const first = build(root), digest = verifyArtifact(root);
+    await t.test('WEB01 source identity and hashed browser assets cannot fall back or drift',()=>{
+      const asset=first.outputs.find(f=>f.kind==='WEB'&&f.path.endsWith('.js'));
+      assert.ok(asset,'real frontend output must be in the artifact');
+      alter(root,asset.path.replace(/^web\//u,'.build/runtime/web/'),'tampered browser script',()=>assert.throws(()=>verifyArtifact(root),/MIGRATION_OUTPUT_TAMPERED/u));
+      const target=path.join(root,'.build/runtime',asset.path),bytes=readFileSync(target);
+      rmSync(target);try{assert.throws(()=>verifyArtifact(root));}finally{writeFileSync(target,bytes);}
+      const source='web/admin-workbench/src/api/client.ts';
+      alter(root,source,readFileSync(path.join(root,source),'utf8')+'\n// changed input\n',()=>assert.throws(()=>verifyArtifact(root),/MIGRATION_INPUT_DRIFT/u));
+    });
     assert.ok(first.typed_implementations.includes('src/migration-canary.mts'));
     assert.ok(first.typed_implementations.includes('src/p2-015-incident-correlation.mts'));
     assert.ok(first.typed_implementations.includes('src/p2-g2-service-loop-assembly.mts'));
@@ -40,7 +50,7 @@ test('T01 build and negative checks run on an owned full clone, never on user so
       build(root); assert.equal(verifyArtifact(root), digest);
     });
     await t.test('every legacy file preserves exact source bytes', () => {
-      for (const f of first.outputs.filter(x => x.kind !== 'COMPILED')) assert.deepEqual(readFileSync(path.join(root, '.build/runtime', f.path)), readFileSync(path.join(root, f.source)));
+      for (const f of first.outputs.filter(x => x.kind === 'LEGACY' || x.kind === 'RESOURCE')) assert.deepEqual(readFileSync(path.join(root, '.build/runtime', f.path)), readFileSync(path.join(root, f.source)));
     });
     for (const relative of ['src/migration-canary.mts', 'tsconfig.base.json', 'package-lock.json']) {
       await t.test('input drift is rejected: ' + relative, () => {

@@ -240,6 +240,7 @@ function scratch(reference = false): string {
   if (!reference) { const current = new Set(workspaceFiles(original)); for (const relative of workspaceFiles(root)) if (!current.has(relative)) rmSync(path.join(root, relative)); }
   for(const relative of reference?[]:workspaceFiles(original)){const target=path.join(root,relative);mkdirSync(path.dirname(target),{recursive:true});copyFileSync(path.join(original,relative),target);}
   symlinkSync(path.join(original,'node_modules'),path.join(root,'node_modules'),process.platform==='win32'?'junction':'dir');
+  if(!reference)symlinkSync(path.join(original,'web/admin-workbench/node_modules'),path.join(root,'web/admin-workbench/node_modules'),process.platform==='win32'?'junction':'dir');
   return root;
 }
 function alter(root:string,relative:string,text:string,fn:()=>void):void{

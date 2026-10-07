@@ -2,7 +2,15 @@
 
 ACTIVE_SELECTION: v3-p09
 
-## SS011 单名获批 Reporter 兼容（2026-10-06）
+## WEB01 正式管理端接入（2026-10-07）
+
+从包含 PR54 merge `1948f76a676f9bfd7ebcbecd3af7951da4034e7e` 的最新 main 接续 WEB01。原 TypeScript 清单 181/181、D01/R01 为已交付记录，本轮不重做迁移、R00 或 R01；下文 SS011 的“新源码未认证/提交 PR 后停止”属于当时记录，不代表 PR54 合并后状态，也不重绑旧认证。
+
+活动 `v3-p09` 保持可解析及原七项入口，新增 WEB01 映射、真实 PostgreSQL/HTTP 和生产 bundle 浏览器直接检查。新前端使用独立锁文件及原型同版本 React/Vite/HeroUI/Tailwind，新增选型见 [ADR-0029](../../adr/0029_admin_workbench_frontend_boundaries.md)；安装命令为 `npm ci --prefix web/admin-workbench --ignore-scripts`。现有 build 同时执行前端严格类型、Vite emit、bundle/manifest inventory 与原制品 hash 验证，types gate 检查全部正式 TS/TSX；旧管理端/成员端保留。
+
+WEB01 仅提交授权三列看板、列表和只读详情；数据来自新建合成隔离开发库的真实 HTTP，运行 bundle 不导入原型 seed。无 schema migration、业务写动作、默认 flag 或历史 Evidence 变更。适用普通 PR checks 与直接 tooling/hosts 回归，不默认运行 standalone full/certify；不自动合并、不进入 WEB02、不部署或真实发送。实现入口与合成浏览器验证见 [正式前端说明](../../web/admin-workbench/README.md)；原型→API映射见 [WEB01映射](../../docs/ui/admin-workbench-web01-map.md)。
+
+## SS011 单名获批 Reporter 兼容（2026-10-06，当时记录）
 
 从 PR #53 的真实 merge `9b2861fa4b2efbea117d4f4124fbd239835c099e` 接续 [ADR-0028](../../adr/0028_single_approved_reporter_limited_write.md)。本轮复用 `v3-p09`，保留原四个业务入口并加入现有 SS010 合同、运行 HTTP 和浏览器三个入口；host、flags、资源要求及 workflow 保持。原 D01、R01 和下文迁移批次为历史交付记录，不重新执行。
 

@@ -48,6 +48,7 @@ jobs:
         cache-dependency-path: package-lock.json
     - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
     - run: npm ci --ignore-scripts --no-audit --no-fund
+    - run: npm ci --prefix web/admin-workbench --ignore-scripts --no-audit --no-fund
     - name: Read the active nonempty selection and actual tool impact
       id: changes
       shell: bash
@@ -153,6 +154,7 @@ jobs:
     - name: Prepare the YAML parser required by current and historical OpenAPI tests
       run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
     - run: npm ci --ignore-scripts --no-audit --no-fund
+    - run: npm ci --prefix web/admin-workbench --ignore-scripts --no-audit --no-fund
     - name: Verify the actual published object before running its current shard
       id: current
       shell: bash
@@ -220,6 +222,7 @@ jobs:
     - name: Prepare the YAML parser required by current and historical OpenAPI tests
       run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
     - run: npm ci --ignore-scripts --no-audit --no-fund
+    - run: npm ci --prefix web/admin-workbench --ignore-scripts --no-audit --no-fund
     - name: Strict tools, real compiler canary and host rejection tests
       shell: bash
       run: |
@@ -275,6 +278,7 @@ jobs:
         cache-dependency-path: package-lock.json
     - run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
     - run: npm ci --ignore-scripts --no-audit --no-fund
+    - run: npm ci --prefix web/admin-workbench --ignore-scripts --no-audit --no-fund
     - run: mkdir -p "$RUNNER_TEMP/types-baseline"
       shell: bash
     - name: Build the pinned certification candidate
