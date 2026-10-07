@@ -6,10 +6,11 @@ import type {Principal} from '../../api/client';
 import type {SourceGroupDisplay} from '../../../../../contracts/web01_workbench_contracts';
 import {GroupNameEditor} from './GroupNameEditor';
 
-export function SourceGroupDirectory({principal}:{principal:Principal}){
+export function SourceGroupDirectory({principal,onBlockedChange}:{principal:Principal;onBlockedChange:(blocked:boolean)=>void}){
   const [params,setParams]=useSearchParams(),q=params.get('q')??'';
   const [input,setInput]=useState(q),[cursor,setCursor]=useState<string|null>(null),[history,setHistory]=useState<(string|null)[]>([]),[selected,setSelected]=useState<SourceGroupDisplay|null>(null),[invalid,setInvalid]=useState(false);
   const [blocked,setBlocked]=useState(false),[notice,setNotice]=useState('');
+  useEffect(()=>{onBlockedChange(blocked);return()=>onBlockedChange(false);},[blocked,onBlockedChange]);
   const enabled=principal.source_group_directory_enabled&&principal.roles.includes('ADMIN');
   const result=useQuery({queryKey:['source-groups',principal.principal_id,q,cursor],queryFn:({signal})=>api.sourceGroups(q,cursor,signal),enabled});
   useEffect(()=>{setInput(q);setCursor(null);setHistory([]);if(!blocked)setSelected(null);},[q]);
