@@ -370,6 +370,7 @@ export function createWeComWorkbenchAuthentication({
   }
 
   return Object.freeze({
+    supportsLogout:true,
     initialize: refreshIdentityMapping,
     mappingDigest: () => mappingDigest,
     authenticate,

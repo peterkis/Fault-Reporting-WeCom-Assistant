@@ -19,6 +19,7 @@ verified_on: 2026-10-07
 | 页面／业务 | 当前真实能力及入口 | 目标差异／前置任务 |
 | --- | --- | --- |
 | 登录与用户会话 | W 的登录／callback／退出链；`GET /api/lifecycle/bootstrap`、`GET /api/workbench/bootstrap`，见[平台入口](../../docs/api/platform/auth-health.md) | 沿用认证；按对象补真实操作权限／版本上下文，不能从 roles 在浏览器推断全部动作。00/01 |
+| 当前浏览器内部备注草稿 | `LOCAL_INCREMENT`：T03原生IDB/AES-GCM，固定24h、账号／事项／用途隔离、真实恢复验权；必要专用receipt GET见[合同](../../docs/api/workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) | 默认false，首消费者内部备注；无跨设备／服务端草稿，UNKNOWN过期只清正文并按原UUID只读核对，[记录](execution/t03.md)。01/A01 |
 | 三列看板／列表／详情 | React 已调用 `GET /api/workbench/board`、`GET /api/workbench/items/{kind}/{id}`；每列分页、只读详情，见[看板](../../docs/api/workbench/board.md) | 完整与我有关、搜索、提醒、动作、拖动未接；同一 Ticket 的复核不重复计卡片。01/12–15 |
 | 人工复核 | `GET /api/manual-reviews`、`GET /api/manual-reviews/{reviewId}`、Journey／legs／decisions 查询、`POST .../resolve`，见[复核接口](../../docs/api/workbench/manual-reviews.md) | React 未接；普通 resolve 不是“确认报修并开始处理”。补复合用例并保持材料修订 fence；不必为了统一 UI 新建第二份受理。04 |
 | 一步处理／双责任 | `POST /api/tickets/{ticketId}/accept`、`/start`；已有 `/api/conversations/{sessionId}/takeover-and-accept-ticket` | 现有复合命令只接管并接单、单会话同源检查，不包含开始，不支持完整同事接管／接管关闭／无会话路径。02 |
@@ -67,7 +68,7 @@ verified_on: 2026-10-07
 | PROPOSED_PATH | `POST /api/workbench/items/{kind}/{id}/presence` | W／13 | 获权浏览器的查看／编辑短暂活动、租期／释放；不领取或锁单 |
 | PROPOSED_PATH | `GET /api/workbench/search` | W／14 | 全部获权范围内的编号／描述／Reporter 快照／位置，稳定游标和类型标识；不等于当前页过滤 |
 
-草稿安全存储和偏好存储的具体 HTTP／本地协议在 01／15 定稿；没有把未决定的持久化方案列成已存在服务。凡新增 GET/POST 都必须登记错误码、上限、认证和失败恢复；上表的业务语义与任务依赖已确认，候选 URI 和完整字段不是现有合同。
+草稿安全存储已由T03定稿为默认关闭的当前浏览器密文副本与必要既有receipt只读核对，见上表实际合同；偏好存储仍在15定稿。凡新增 GET/POST 都必须登记错误码、上限、认证和失败恢复；上表其余候选 URI 和完整字段不是现有合同。
 
 ## 标识、版本与结果边界
 

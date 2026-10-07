@@ -52,6 +52,7 @@
 | T22 | POST | `/api/tickets/{ticketId}/deliveries/{deliveryId}/reconcile` | W | 已实现：通知人工核对 | [工单](workbench/tickets.md) |
 | T23 | POST | `/api/conversations/{sessionId}/takeover-and-accept-ticket` | W | 已实现：原子双责任 | [工单](workbench/tickets.md) |
 | T24 | POST | `/api/tickets/{ticketId}/internal-notes` | W | 已实现、默认关闭：可靠内部备注，旧 notes 兼容保留 | [工单](workbench/tickets.md#可靠内部备注wbint-t02) |
+| T27 | GET | `/api/tickets/{ticketId}/internal-notes/commands/{commandId}` | W | 已实现、默认关闭：按当前授权和原UUID只读核对内部备注终态 | [草稿与核对](workbench/tickets.md#当前浏览器草稿与只读核对wbint-t03) |
 | R01 | GET | `/api/manual-reviews` | W | 已实现：待复核 | [复核](workbench/manual-reviews.md) |
 | R02 | GET | `/api/manual-reviews/{reviewId}` | W | 已实现：复核详情 | [复核](workbench/manual-reviews.md) |
 | R03 | POST | `/api/manual-reviews/{reviewId}/resolve` | W | 已实现：人工结论 | [复核](workbench/manual-reviews.md) |

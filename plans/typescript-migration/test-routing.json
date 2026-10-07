@@ -4,6 +4,13 @@
   "source_base": "84d39b964d02db335c6c0c900d56d5b0a383f621",
   "legacy_entry_count": 207,
   "entries": [
+    {"path":"tests/web01-draft-contract.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-draft-isolation.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-draft-boundaries.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-draft-auth.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-draft-lifecycle.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-drafts.integration.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
+    {"path":"tests/web01-drafts.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/web01-workbench.test.mts","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":false,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/web01-workbench.integration.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":false,"requires_powershell":false,"requires_pyyaml":false},
     {"path":"tests/web01-workbench.browser.test.mjs","mode":"STAGED_RUNTIME","node_flags":[],"requires_database":true,"requires_browser":true,"requires_powershell":false,"requires_pyyaml":false},
@@ -319,6 +326,13 @@
       "tests/p2-g2-current-evidence.test.mjs"
     ],
     "v3-p09": [
+      "tests/web01-draft-contract.test.mjs",
+      "tests/web01-draft-isolation.browser.test.mjs",
+      "tests/web01-draft-boundaries.browser.test.mjs",
+      "tests/web01-draft-auth.browser.test.mjs",
+      "tests/web01-draft-lifecycle.browser.test.mjs",
+      "tests/web01-drafts.integration.test.mjs",
+      "tests/web01-drafts.browser.test.mjs",
       "tests/web01-workbench.test.mts", "tests/web01-workbench.integration.test.mjs", "tests/web01-workbench.browser.test.mjs",
       "tests/p2-016-ticket-lifecycle.integration.test.mjs",
       "tests/p2-016-workbench-http.integration.test.mjs", "tests/p2-016-workbench-auth.integration.test.mjs", "tests/p2-016-workbench-wecom-auth.test.mjs",

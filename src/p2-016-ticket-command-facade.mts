@@ -41,9 +41,14 @@ export function createP2016TicketCommandFacade({pool,enabled=false,query=createP
   notificationProjector=null,realtimeProjector=null,closure=null}: FacadeOptions) {
   const ledger=createP2016CommandLedger({pool});
   return Object.freeze({
-    async perform({authContext,command:input}: { authContext: unknown; command: unknown }) {
+    async internalNoteReceipt({authContext,ticketId:inputTicket,commandId:inputCommand}:{authContext:unknown;ticketId:unknown;commandId:unknown}){
+      guardP2016(enabled);const ticketId=uuidP2016(inputTicket),commandId=uuidP2016(inputCommand);
+      return ledger.internalNoteReceipt({ticketId,commandId,authorize:transaction=>query.authorizedTicket({authContext,ticketId,transaction})});
+    },
+    async perform({authContext,command:input,internalNote=false}: { authContext: unknown; command: unknown;internalNote?:boolean }) {
       guardP2016(enabled);const command=normalizeP2016TicketCommand(input);
-      return ledger.execute({command,
+      if(internalNote&&command.action!=='add-note')failP2016();
+      return ledger.execute({command,...(internalNote?{receiptType:'WORKBENCH_INTERNAL_NOTE' as const}:{}),
         authorize:async transaction=>{
           const context=await query.authorizedTicket({authContext,ticketId:command.ticket_id,transaction});
           if(command.session_id){

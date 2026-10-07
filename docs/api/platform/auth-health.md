@@ -18,6 +18,8 @@ Cookie：`__Host-wecom_workbench_session`、`__Host-wecom_workbench_csrf`。code
 
 身份bootstrap为 `/api/workbench/bootstrap` 和 `/api/lifecycle/bootstrap`，见 [会话](../workbench/conversations.md)、[工单](../workbench/tickets.md)。没有公开 `/auth/wecom`、`/auth/bootstrap` 或test-auth HTTP登录；测试身份是注入端口/IPC。
 
+T03 的 lifecycle bootstrap 增加 `logout_enabled:boolean`，默认false；实际员工认证端口声明 `supportsLogout:true`、已完成 initialize，且当前 Cookie 身份有 CSRF 时才广告退出。React 调用上述真实 `/workbench/logout`，只有闭合200 JSON `{logged_out:true}` 才显示已退出；请求结果不确定显示“退出结果尚未确认”，清界面与本应用已知主体恢复副本，并要求重新核验，不能宣称服务器session已撤销。同profile其他标签接收无正文／凭据的退出失效信号；实际服务端撤销、旧Cookie401与合成TLS证据见[T03记录](../../../plans/admin-workbench-integration/execution/t03.md)。test-auth不会广告真实退出。
+
 ## 企业微信成员OAuth（O/M/W按模式）
 
 [OAuth handler](../../../src/p2-g2-wecom-oauth-http.mts)、[web OAuth](../../../src/p2-g2-wecom-web-oauth.mts)。条件：`WECOM_WEB_OAUTH_ENABLED`，member读取/写入另需自身Flag。默认关闭。

@@ -1,4 +1,5 @@
-import {randomUUID} from 'node:crypto';
+import assert from 'node:assert/strict';
+import {createHash,createHmac,randomBytes,randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
 import {withP2016IsolatedDatabase,applyThrough030} from './p2-016-postgres-harness.mjs';
 import {seedPersistedIntake} from './p2-015-postgres-harness.mjs';
@@ -13,6 +14,10 @@ import {createManualReviewStore} from '../../src/p2-015-manual-review.mjs';
 import {createDecisionStore} from '../../src/p2-015-decision-store.mjs';
 import {migrateWorkbenchSourceGroups} from '../../scripts/workbench-source-groups-migrate.mjs';
 import {createServiceIntakeDecisionPort} from '../../src/p2-015-service-intake-decision-port.mjs';
+import {migrateWorkbenchAuth} from '../../scripts/p2-016-workbench-auth-migrate.mjs';
+import {createWeComWorkbenchAuthentication} from '../../src/p2-016-workbench-wecom-auth.mjs';
+import {createYxxBrowserFixture} from './p2-g2-yixiaoxiu-browser.mjs';
+import {closeBrowserTestResources} from './p2-006-browser-harness.mjs';
 // Fresh synthetic scenarios match the prototype's visual content. Never part of a production bundle.
 const scenarios=[
  ['门诊二楼打印机无法打印处方','门诊二楼 · 203 诊室','QUEUED'],
@@ -31,7 +36,7 @@ const scenarios=[
 ];
 const eventTypes={NEW:'ticket.created',QUEUED:'ticket.queued',REOPENED:'ticket.reopened',ACCEPTED:'ticket.accepted',IN_PROGRESS:'ticket.started',WAITING_VENDOR:'ticket.waiting_vendor',WAITING_REQUESTER:'ticket.waiting_requester',CLOSED:'ticket.closed',RESOLVED:'ticket.resolved'};
 async function unusedPort(){const s=createServer();await new Promise(r=>s.listen(0,'127.0.0.1',r));const port=s.address().port;await new Promise(r=>s.close(r));return port;}
-export async function withWeb01Fixture(run,{sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
+export async function withWeb01Fixture(run,{sourceGroupDirectoryEnabled=false,workbenchInternalNotesEnabled=false,workbenchDraftRecoveryEnabled=false,realWorkbenchAuthentication=false,includeSecondStaffSession=false,dropInternalNoteResponses=false,malformedInternalNoteSuccess=false,malformedInternalNoteDenial=false}={}){
   return withP2016IsolatedDatabase({databaseUrl:process.env.PILOT_DATABASE_URL,purpose:'web01',run:async context=>{
     const {pool,databaseUrl}=context;await applyThrough030(context);await migrateP2016({databaseUrl});
     if(sourceGroupDirectoryEnabled)await migrateWorkbenchSourceGroups({databaseUrl,mode:'apply'});
@@ -60,8 +65,29 @@ export async function withWeb01Fixture(run,{sourceGroupDirectoryEnabled=false,wo
     await pool.query(`UPDATE intake.contact_journey SET linked_ticket_id=$2::uuid WHERE origin_intake_id=$1::uuid`,[tickets[0].intake.intakeId,tickets[0].ticket.id]);
     const waiting=await seedPersistedIntake({pool,text:'位置尚不清楚，等待补充的全新合成报修。',status:'WAITING_DESCRIPTION'});
     await pool.query("UPDATE intake.service_intake SET intake_no=regexp_replace(intake_no,'^INT-[0-9]{8}','INT-'||to_char(platform.local_now(),'YYYYMMDD'))");
+    if(realWorkbenchAuthentication){
+      await migrateWorkbenchAuth({databaseUrl});let runtime,auth,tls;
+      const identityHashKey='web01-test-only-identity-hash-key',corpId='ww-web01-synthetic',agentId='1000001';
+      const openId=user=>'open-'+user;
+      try{
+        tls=await createYxxBrowserFixture({pool,createApp:({origin})=>{
+          auth=createWeComWorkbenchAuthentication({pool,publicOrigin:origin,corpId,agentId,identityHashKey,accessTokenProvider:async()=> 'web01-test-only-token',fetchImpl:async(url,init)=>{
+            assert.equal(url.origin,'https://qyapi.weixin.qq.com');assert.equal(url.pathname,'/cgi-bin/batch/userid_to_openuserid');assert.equal(init.method,'POST');
+            const users=JSON.parse(init.body).userid_list;assert.equal(users.length,5);
+            return new Response(JSON.stringify({errcode:0,open_userid_list:users.map(userid=>({userid,open_userid:openId(userid)}))}),{headers:{'content-type':'application/json'}});
+          }});
+          runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort:0,workbenchAuthentication:auth,externalSendEnabled:false,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});return runtime.server;
+        },startApp:async app=>{assert.equal(app,runtime.server);await auth.initialize();const started=await runtime.start();return 'http://127.0.0.1:'+started.address.port;},stopApp:async()=>{await runtime?.stop();}});
+        const sessionToken=randomBytes(32).toString('base64url'),csrfToken=randomBytes(32).toString('base64url'),issued=Date.now(),expires=issued+8*3600000;
+        const hash=value=>createHash('sha256').update(value).digest('hex'),identityHash=createHmac('sha256',identityHashKey).update(JSON.stringify(['workbench-identity-v1',corpId,agentId,openId('web01-synthetic-0')])).digest('hex');
+        const sessionId=(await pool.query(`INSERT INTO pilot_ticket.workbench_auth_session(session_token_hash,csrf_token_hash,principal_id,identity_hash,created_at,created_epoch_ms,last_seen_at,last_seen_epoch_ms,expires_epoch_ms,expires_at)
+          VALUES($1,$2,$3::uuid,$4,platform.local_from_epoch_ms($5),$5,platform.local_from_epoch_ms($5),$5,$6,platform.local_from_epoch_ms($6)) RETURNING session_id::text`,[hash(sessionToken),hash(csrfToken),principals[0].id,identityHash,issued,expires])).rows[0].session_id;
+        const browserCookies=[{name:'__Host-wecom_workbench_session',value:sessionToken,url:tls.origin+'/',path:'/',secure:true,httpOnly:true,sameSite:'Lax'},{name:'__Host-wecom_workbench_csrf',value:csrfToken,url:tls.origin+'/',path:'/',secure:true,httpOnly:false,sameSite:'Lax'}];
+        return await run({...context,tickets,waiting,principals,outsider,runtime,origin:tls.origin,certificateSpki:tls.certificateSpki,browserCookies,cookies:[browserCookies.map(c=>c.name+'='+c.value).join('; ')],sessionId,backendOrigin:'http://127.0.0.1:'+runtime.server.address().port});
+      }finally{await closeBrowserTestResources([async()=>{await tls?.close();if(tls)assert.deepEqual(tls.ownedResourceState(),{listeners:0,sockets:0,tlsDirectories:0});},async()=>{await runtime?.stop();await auth?.close();if(runtime)assert.equal(runtime.server.listening,false);}]);}
+    }
     const listenPort=await unusedPort(),origin='http://127.0.0.1:'+listenPort;
-    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id],externalSendEnabled:false,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled});
+    const runtime=createP2016Runtime({pool,flags:{TICKET_LIFECYCLE_WORKBENCH_ENABLED:true},publicOrigin:origin,listenPort,principalIds:[principals[0].id,outsider.id,...(includeSecondStaffSession?[principals[1].id]:[])],externalSendEnabled:false,sourceGroupDirectoryEnabled,workbenchInternalNotesEnabled,workbenchDraftRecoveryEnabled});
     const started=await runtime.start(),cookies=started.cookies.map(c=>c.name+'='+c.value);
     // Keep the test-owned fault active until explicit reconciliation: Chromium can transparently repeat a transport request.
     let dropNoteResponses=dropInternalNoteResponses;
