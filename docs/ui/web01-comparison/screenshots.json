@@ -5,45 +5,51 @@
   "images": [
     {
       "file": "new-board-1920.png",
-      "sha256": "37e4cf05bfbb3a410e680ea38ff602423a8b80ed7537f7b2dff20f20ebb40da2",
+      "sha256": "05e6d33a372ea6475c7aa35bc6394a2010db8683dae9140ca85bd01660d664bc",
       "width": 1920,
       "height": 1080,
-      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+      "capture_source": "bf62195ac14b1437b40a8b7a5b2accdb9fb55856",
+      "source_input_hash": "14589291e8c9906fe41fea8a707227ce6156dc8c5f585fabadc79adae21e9ed7"
     },
     {
       "file": "new-detail-1920.png",
-      "sha256": "7badd6e86881ca8dc54268a158dcfcb75a4c51892d36fe2fb6089ae7dd5dc4ad",
+      "sha256": "d670c67599cfd712e9b39056ea210ba0809cedaea2802c1ad849ab8b4de7a2fd",
       "width": 1920,
       "height": 1080,
-      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+      "capture_source": "bf62195ac14b1437b40a8b7a5b2accdb9fb55856",
+      "source_input_hash": "14589291e8c9906fe41fea8a707227ce6156dc8c5f585fabadc79adae21e9ed7"
     },
     {
       "file": "new-list-1920.png",
-      "sha256": "62072980a9bf3c7fdcaa5e986ca5bf1dc070e28ad4c5b392bb72ee08749ae75e",
+      "sha256": "61fb16adec15e226d3cd2d92d85cab54302e6486f912fbbdf0e0662df0422f46",
       "width": 1920,
       "height": 1080,
-      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+      "capture_source": "bf62195ac14b1437b40a8b7a5b2accdb9fb55856",
+      "source_input_hash": "14589291e8c9906fe41fea8a707227ce6156dc8c5f585fabadc79adae21e9ed7"
     },
     {
       "file": "new-detail-900.png",
-      "sha256": "828d1cc61337673fa99792c6330d0ec756b9b76d3e1c8c82dbbe1336ab2f50cf",
+      "sha256": "33009567b91c4e87dc18303a9507fa3088c9cef372efe379833c07c0679f0b37",
       "width": 900,
       "height": 900,
-      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+      "capture_source": "bf62195ac14b1437b40a8b7a5b2accdb9fb55856",
+      "source_input_hash": "14589291e8c9906fe41fea8a707227ce6156dc8c5f585fabadc79adae21e9ed7"
     },
     {
       "file": "new-offline-900.png",
-      "sha256": "819d06396fa9842c81a53f905b4669b149014ca5e37dbe7247e994b488d32a56",
+      "sha256": "d36b277dbf3ecc5364a608a8befa37275d32040245ecf5a4f1a168cc97ae4669",
       "width": 900,
       "height": 900,
-      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+      "capture_source": "bf62195ac14b1437b40a8b7a5b2accdb9fb55856",
+      "source_input_hash": "14589291e8c9906fe41fea8a707227ce6156dc8c5f585fabadc79adae21e9ed7"
     },
     {
       "file": "new-board-900.png",
-      "sha256": "8092a18dd2c896545f858cb8178757881e725304df4b8154cb853d6e7bc3fab2",
+      "sha256": "d4ffccf1c867cd6e054cfd4deb50a47b82a0898a22abdff217710786510c33e1",
       "width": 900,
       "height": 900,
-      "capture_source": "a964ff9007a76fff57fa20397ab0a2fa4ce3e3b0"
+      "capture_source": "bf62195ac14b1437b40a8b7a5b2accdb9fb55856",
+      "source_input_hash": "14589291e8c9906fe41fea8a707227ce6156dc8c5f585fabadc79adae21e9ed7"
     },
     {
       "file": "prototype-board-1920.png",
