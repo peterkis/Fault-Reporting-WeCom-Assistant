@@ -9,7 +9,8 @@ export async function clearItemView(client:QueryClient,principal:unknown,kind:un
   for(const query of client.getQueryCache().findAll({predicate:query=>matches(query.queryKey)}))query.setState({data:undefined,dataUpdatedAt:0,error,status:'error',fetchStatus:'idle'});
   for(const mutation of client.getMutationCache().findAll({predicate:mutation=>{
     const key=mutation.options.mutationKey;
-    return key?.[1]===principal&&((kind==='ticket'&&key[2]===id&&['ticket-internal-note','ticket-self-handling'].includes(String(key[0])))||(key[0]==='attachment-download'&&key[2]===kind&&key[3]===id));
+    if(!key)return false;
+    return key[1]===principal&&((kind==='ticket'&&key[2]===id&&['ticket-internal-note','ticket-self-handling'].includes(String(key[0])))||(key[0]==='attachment-download'&&key[2]===kind&&key[3]===id));
   }}))client.getMutationCache().remove(mutation);
   void client.invalidateQueries({queryKey:['board',principal],refetchType:'active'});
 }

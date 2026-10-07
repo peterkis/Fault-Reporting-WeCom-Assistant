@@ -102,8 +102,6 @@ export const api={
     if(response.status!==200||!response.headers.get('content-type')?.startsWith('application/json'))throw new UnknownCommandOutcome();
     const value=object(await response.json());if(Object.keys(value).length!==1||value.logged_out!==true)throw new UnknownCommandOutcome();
   },
-  bootstrap:(signal:AbortSignal)=>get('/api/lifecycle/bootstrap',signal,decodePrincipal),
-  ticketCommandContext:(ticketId:string,signal:AbortSignal)=>get('/api/tickets/'+encodeURIComponent(ticketId),signal,value=>decodeTicketContext(value,ticketId)),
   internalNoteReceipt:(ticketId:string,commandId:string,signal:AbortSignal):Promise<P2016InternalNoteReceipt>=>get('/api/tickets/'+encodeURIComponent(ticketId)+'/internal-notes/commands/'+encodeURIComponent(commandId),signal,value=>{
     const v=object(value);if(id(v.ticket_id)!==ticketId||id(v.client_command_id)!==commandId)throw new ApiError(502,'INVALID_RESPONSE');
     const base={ticket_id:ticketId,client_command_id:commandId};
