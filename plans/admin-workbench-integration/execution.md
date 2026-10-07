@@ -13,6 +13,20 @@ local_integration_input: 516b4dce808981bdbcc449a850a1fdeaa2960cfb
 
 当前输入已纳入来源群本地增量，详见[执行基线](execution-baseline.md)。逐票状态仍以 GitHub 为事实源；本记录明确区分本地文档完成、集成核验和 GitHub 收口，不能用本地勾选绕过原生 blockers。父任务核对各票证据并统一处理授权范围内的收口。
 
+## 当前执行状态导航（2026-10-08，T16 收口后）
+
+父任务已核对并关闭4／43票：T01／#56、T02／#57、T16／#71、T23／#78；正式清单的勾选同步本次GitHub实读结果。下方各次导航保留为历史快照。
+
+| 任务／对象 | 当前状态与证据 |
+| --- | --- |
+| T16 / #71 | CLOSED；[收口评论](https://github.com/peterkis/Fault-Reporting-WeCom-Assistant/issues/71#issuecomment-6044440485)与[七项验收、原失败分类及清理](execution/t16.md)可追溯 |
+| T16 本地集成与被测对象 | `afc6def48e7e934c6b2f84e28d151b2c4f7ead00`安全快进合入；实际被测干净祖先为`fce26a8d4722bb8092c7cc82ac59e153e7c9ae0b`。strict／artifact、相关42／42、工具54／54和退休入口1／1通过；文档后继输入不变，不重绑制品 |
+| T16 资源及归档 | 各段Store／runtime／池／随机库及浏览器自有资源清理通过，父任务逐段PG残留0／0；970输出加manifest共971原文件已逐字节／SHA-256复制至外部归档，managed worktree已归档 |
+| WBINT-04 / A04 | 只记录T16附件部分LOCAL_VERIFIED；T14／T15仍未完成，人工复核整组不记PASS |
+| T03 / #58、T04 / #59 | 仍IMPLEMENTING：T03修复存储边界；T04固定候选验证完成后合并附件增量并核验实际交叠。两票未关闭，其原生下游仍未领取 |
+
+本地原文件及真实测试对象独立保留，原594的HTTP失败仍为原因UNKNOWN，观察诊断不记验收。当前未push、部署、真实外部服务／发送、full／certify或Gate推进，所有新增开关保持默认false。
+
 ## 当前执行状态导航（2026-10-08，T23 收口后）
 
 父任务已核对并关闭 3／43 票：T01／#56、T02／#57、T23／#78。下方各日期记录保留为当时快照；当前逐票状态仍以 GitHub 为事实源。
